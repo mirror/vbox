@@ -24,7 +24,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mem.h>
+#include <iprt/string.h>
 #include <VBox/log.h>
+#include <VBox/version.h>
 #include "VBGLR3Internal.h"
 
 
@@ -193,7 +195,15 @@ VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
 }
 
 
-/** @todo Docs */
+/**
+ * Retrieves the installed Guest Additions version/revision.
+ *
+ * @returns IPRT status value
+ * @param   ppszVer    Receives pointer of allocated version string. NULL is accepted.
+ *                     The returned pointer must be freed using RTStrFree().
+ * @param   ppszRev    Receives pointer of allocated revision string. NULL is accepted.
+ *                     The returned pointer must be freed using RTStrFree().
+ */
 VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
 {
     int rc;
@@ -230,26 +240,38 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
         /* Version. */
         DWORD dwType;
         DWORD dwSize = 32;
-        char *pszVer = (char*)RTMemAlloc(dwSize);
-        if (pszVer)
+        if (ppszVer)
         {
-            if (ERROR_SUCCESS == RegQueryValueEx(hKey, "Version", NULL, &dwType, (BYTE*)(LPCTSTR)pszVer, &dwSize))
-                *ppszVer = pszVer;
+            char *pszVer = (char*)RTMemAlloc(dwSize);
+            if (pszVer)
+            {
+                if (ERROR_SUCCESS == RegQueryValueEx(hKey, "Version", NULL, &dwType, (BYTE*)(LPCTSTR)pszVer, &dwSize))
+                    *ppszVer = pszVer;
+            }
         }
         /* Revision. */
         if (ppszRev)
         {
-            dwSize = 32;
+            dwSize = 32; /* Reset */
             char *pszRev = (char*)RTMemAlloc(dwSize);
-            if (ERROR_SUCCESS == RegQueryValueEx(hKey, "Revision", NULL, &dwType, (BYTE*)(LPCTSTR)pszRev, &dwSize))
-                *ppszRev = pszRev;
+            if (pszRev)
+            {
+                if (ERROR_SUCCESS == RegQueryValueEx(hKey, "Revision", NULL, &dwType, (BYTE*)(LPCTSTR)pszRev, &dwSize))
+                    *ppszRev = pszRev;
+            }
         }
     }
     rc = RTErrConvertFromWin32(r);
-
     if (NULL != hKey)
         RegCloseKey(hKey);
 #else
+    /* On non-Windows platforms just return the compile-time version string atm. */
+    /* Version. */
+    if (ppszVer)
+        rc = RTStrAPrintf(ppszVer, "%s", VBOX_VERSION_STRING);
+    /* Revision. */
+    if (ppszRev)
+        rc = RTStrAPrintf(ppszRev, "%s", VBOX_SVN_REV);
 #endif /* RT_OS_WINDOWS */
     return rc;
 }

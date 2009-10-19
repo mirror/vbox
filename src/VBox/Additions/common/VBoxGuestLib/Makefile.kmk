@@ -103,7 +103,9 @@ ifeq ($(KBUILD_TARGET),win) ## @todo get rid of this hack (as soon as it's all i
 	VBoxGuestR3LibMisc.cpp \
 	VBoxGuestR3LibTime.cpp
 endif
-
+#VBoxGuestR3LibMisc.cpp uses VBOX_SVN_REV.
+VBoxGuestR3LibMisc.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+VBoxGuestR3LibMisc.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
 #
 # VBoxGuestR3LibShared - a PIC variant of VBoxGuestR3Lib for linking into .so/.dll/.dylib.
