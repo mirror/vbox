@@ -30,9 +30,6 @@
 #include <HostHardwareLinux.h>
 
 #include <VBox/log.h>
-# ifdef VBOX_WITH_DBUS
-#  include <VBox/dbus.h>
-# endif
 
 #include <iprt/dir.h>
 #include <iprt/env.h>
@@ -56,6 +53,9 @@
 # include <linux/cdrom.h>
 # include <linux/fd.h>
 # include <linux/major.h>
+# ifdef VBOX_WITH_DBUS
+#  include <vbox-dbus.h>
+# endif
 # include <errno.h>
 # include <scsi/scsi.h>
 
@@ -1024,7 +1024,7 @@ int VBoxMainUSBDeviceInfo::UpdateDevices ()
 #if defined(RT_OS_LINUX)
 #ifdef VBOX_WITH_DBUS
         if (   RT_SUCCESS(rc)
-            && RT_SUCCESS(RTDBusLoadLib())
+            && RT_SUCCESS(VBoxLoadDBusLib())
             && (!success || testing()))
             rc = getUSBDeviceInfoFromHal(&mDeviceList, &halSuccess);
         /* Try the old API if the new one *succeeded* as only one of them will
@@ -1069,7 +1069,7 @@ VBoxMainHotplugWaiter::VBoxMainHotplugWaiter ()
     int rc = VINF_SUCCESS;
 
     mContext = new Context;
-    if (RT_SUCCESS(RTDBusLoadLib()))
+    if (RT_SUCCESS(VBoxLoadDBusLib()))
     {
         for (unsigned i = 0; RT_SUCCESS(rc) && i < 5 && !mContext->mConnection; ++i)
         {

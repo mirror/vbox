@@ -371,10 +371,6 @@ ifneq ($(KBUILD_TARGET),win)
 RuntimeR3_SOURCES += \
 	common/err/errmsgxpcom.cpp
 endif
-if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
-RuntimeR3_SOURCES += \
-	$(if $(VBOX_WITH_DBUS),VBox/dbus.cpp,)
-endif
 
 RuntimeR3_SOURCES.win = \
 	generic/RTDirExists-generic.cpp \

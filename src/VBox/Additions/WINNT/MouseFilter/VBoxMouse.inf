@@ -21,10 +21,13 @@
 Signature="$Windows NT$"
 Class=Mouse
 ClassGuid={4D36E96F-E325-11CE-BFC1-08002BE10318}
+Provider=%SUN%
+LayoutFile=layout.inf
 ;edit-DriverVer=08/26/2008,2.00.0000
 ;cat CatalogFile=VBoxMouse.cat
 
-[SourceDisksNames]
+;x86   [SourceDisksNames]
+;amd64 [SourceDisksNames.amd64]
 1 = %VBoxMouse.MediaDesc%
 
 [SourceDisksFiles]
@@ -37,19 +40,23 @@ DefaultDestDir = 12	; DIRID_DRIVERS
 ;x86   %SUN%=VBoxMouse
 ;amd64 %SUN%=VBoxMouse, NTamd64
 
-[DefaultInstall]
-;
-; DefaultInstall section is used to install the class filter driver.
-;
-CopyFiles = @VBoxMouse.sys
+;x86   [VBoxMouse]
+;amd64 [VBoxMouse.NTamd64]
+%VBoxMouse.SvcDesc% = VBoxMouse_Install, *PNP0F03      ; PS/2 device
+
+[VBoxMouse_Install]
+CopyFiles = VBoxMouse_CopyFiles
 AddReg = VBoxMouse_AddReg
+AddServices = VBoxMouse_AddServices
+
+[VBoxMouse_CopyFiles]
+VBoxMouse.sys
 
 [VBoxMouse_AddReg]
 HKLM, System\CurrentControlSet\Control\Class\{4D36E96F-E325-11CE-BFC1-08002BE10318}, UpperFilters, 0x00010000, "VBoxMouse", "mouclass"
 
-[DefaultInstall.Services]
+[VBoxMouse_AddServices]
 AddService = VBoxMouse, , VBoxMouse_Service_Inst
-
 
 [VBoxMouse_Service_Inst]
 DisplayName    = %VBoxMouse.SvcDesc%
@@ -58,6 +65,8 @@ StartType      = %SERVICE_DEMAND_START%
 ErrorControl   = %SERVICE_ERROR_IGNORE%
 ServiceBinary  = %12%\VBoxMouse.sys
 
+[ClassInstall32]
+; This should fix the error 0xe0000101 (The required section was not found in the INF).
 
 [Strings]
 VBoxMouse.SvcDesc       = "VirtualBox Guest Mouse Service"

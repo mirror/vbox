@@ -135,7 +135,6 @@ void vboxClientUsage(const char *pcszFileName)
     RTPrintf("Usage: %s --clipboard|--display|--seamless [-d|--nodaemon]\n", pcszFileName);
     RTPrintf("Start the VirtualBox X Window System guest services.\n\n");
     RTPrintf("Options:\n");
-    RTPrintf("  --checkhostversion      checks for a new VirtualBox host version\n");
     RTPrintf("  --clipboard      start the shared clipboard service\n");
     RTPrintf("  --display     start the display management service\n");
     RTPrintf("  --seamless       start the seamless windows service\n");
@@ -190,15 +189,6 @@ int main(int argc, char *argv[])
             else
                 fSuccess = false;
         }
-#ifdef VBOX_WITH_GUEST_PROPS
-        else if (!strcmp(argv[i], "--checkhostversion"))
-        {
-            if (g_pService == NULL)
-                g_pService = VBoxClient::GetHostVersionService();
-            else
-                fSuccess = false;
-        }
-#endif
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
             vboxClientUsage(pszFileName);
