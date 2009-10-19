@@ -54,7 +54,7 @@ fi
 
 # silently exit if the package was uninstalled but not purged,
 # applies to Debian packages only
-[ -n "$DEBIAN" -a -x $VBOXMANAGE -a -x $BUILDVBOXDRV ] || exit 0
+[ -z "$DEBIAN" -o -x $VBOXMANAGE -a -x $BUILDVBOXDRV ] || exit 0
 
 if [ -n "$NOLSB" ]; then
     if [ -f /etc/redhat-release ]; then
