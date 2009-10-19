@@ -67,6 +67,7 @@ int handleSnapshot(HandlerArg *a)
         CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
 
         /* switch based on the command */
+        bool fDelete = false, fRestore = false;
         if (!strcmp(a->argv[1], "take"))
         {
             /* there must be a name */
@@ -153,7 +154,9 @@ int handleSnapshot(HandlerArg *a)
                 }
             }
         }
-        else if (!strcmp(a->argv[1], "discard"))
+        else if (    (fDelete = !strcmp(a->argv[1], "delete"))
+                  || (fRestore = !strcmp(a->argv[1], "restore"))
+                )
         {
             /* exactly one parameter: snapshot name */
             if (a->argc != 3)
@@ -163,54 +166,31 @@ int handleSnapshot(HandlerArg *a)
                 break;
             }
 
-            ComPtr<ISnapshot> snapshot;
+            ComPtr<ISnapshot> pSnapshot;
 
             /* assume it's a UUID */
             Bstr guid(a->argv[2]);
             if (!guid.isEmpty())
             {
-                CHECK_ERROR_BREAK(machine, GetSnapshot(guid, snapshot.asOutParam()));
+                CHECK_ERROR_BREAK(machine, GetSnapshot(guid, pSnapshot.asOutParam()));
             }
             else
             {
                 /* then it must be a name */
-                CHECK_ERROR_BREAK(machine, FindSnapshot(Bstr(a->argv[2]), snapshot.asOutParam()));
+                CHECK_ERROR_BREAK(machine, FindSnapshot(Bstr(a->argv[2]), pSnapshot.asOutParam()));
+                pSnapshot->COMGETTER(Id)(guid.asOutParam());
             }
-
-            snapshot->COMGETTER(Id)(guid.asOutParam());
-
-            ComPtr<IProgress> progress;
-            CHECK_ERROR_BREAK(console, DeleteSnapshot(guid, progress.asOutParam()));
-
-            showProgress(progress);
-            LONG iRc;
-            progress->COMGETTER(ResultCode)(&iRc);
-            rc = iRc;
-            if (FAILED(rc))
-            {
-                com::ProgressErrorInfo info(progress);
-                if (info.isBasicAvailable())
-                    RTPrintf("Error: failed to discard snapshot. Error message: %lS\n", info.getText().raw());
-                else
-                    RTPrintf("Error: failed to discard snapshot. No error message available!\n");
-            }
-        }
-        else if (!strcmp(a->argv[1], "discardcurrent"))
-        {
-            if (   (a->argc != 3)
-                || (   strcmp(a->argv[2], "--state")
-                    && strcmp(a->argv[2], "-state")))
-            {
-                errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(a->argv[2]).raw());
-                rc = E_FAIL;
-                break;
-            }
-
-            ComPtr<ISnapshot> pCurrentSnapshot;
-            CHECK_ERROR_BREAK(machine, COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam()));
 
             ComPtr<IProgress> pProgress;
-            CHECK_ERROR_BREAK(console, RestoreSnapshot(pCurrentSnapshot, pProgress.asOutParam()));
+            if (fDelete)
+            {
+                CHECK_ERROR_BREAK(console, DeleteSnapshot(guid, pProgress.asOutParam()));
+            }
+            else
+            {
+                // must be restore
+                CHECK_ERROR_BREAK(console, RestoreSnapshot(pSnapshot, pProgress.asOutParam()));
+            }
 
             showProgress(pProgress);
             LONG iRc;
@@ -220,11 +200,10 @@ int handleSnapshot(HandlerArg *a)
             {
                 com::ProgressErrorInfo info(pProgress);
                 if (info.isBasicAvailable())
-                    RTPrintf("Error: failed to restore snapshot. Error message: %lS\n", info.getText().raw());
+                    RTPrintf("Error: snapshot operation failed. Error message: %lS\n", info.getText().raw());
                 else
-                    RTPrintf("Error: failed to restore snapshot. No error message available!\n");
+                    RTPrintf("Error: snapshot operation failed. No error message available!\n");
             }
-
         }
         else if (!strcmp(a->argv[1], "edit"))
         {

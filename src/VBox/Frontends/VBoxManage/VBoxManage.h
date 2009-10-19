@@ -168,7 +168,11 @@ extern void usageGuestProperty(void);
 extern int handleGuestProperty(HandlerArg *a);
 
 /* VBoxManageVMInfo.cpp */
-void showSnapshots(ComPtr<ISnapshot> rootSnapshot, VMINFO_DETAILS details, const com::Bstr &prefix = "", int level = 0);
+void showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
+                   ComPtr<ISnapshot> &currentSnapshot,
+                   VMINFO_DETAILS details,
+                   const com::Bstr &prefix = "",
+                   int level = 0);
 int handleShowVMInfo(HandlerArg *a);
 HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                    ComPtr<IMachine> machine,

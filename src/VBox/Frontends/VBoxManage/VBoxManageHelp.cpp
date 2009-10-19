@@ -326,8 +326,8 @@ void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage snapshot         <uuid>|<name>\n"
                  "                            take <name> [--description <desc>] [--pause] |\n"
-                 "                            discard <uuid>|<name> |\n"
-                 "                            discardcurrent --state|--all |\n"
+                 "                            delete <uuid>|<name> |\n"
+                 "                            restore <uuid>|<name> |\n"
                  "                            edit <uuid>|<name>|--current\n"
                  "                                 [--name <name>]\n"
                  "                                 [--description <desc>] |\n"
