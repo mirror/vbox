@@ -44,28 +44,27 @@ VBoxMouse_LIBS        = \
 INSTALLS += VBoxMouse-inf
 VBoxMouse-inf_INST = $(INST_ADDITIONS)
 VBoxMouse-inf_MODE = a+r,u+w
-VBoxMouse-inf_BLDDIRS = $(PATH_TARGET)/VBoxMouseCat.dir
+ifndef VBOX_SIGNING_MODE
+VBoxMouse-inf_SOURCES = VBoxMouse.inf
+else
+VBoxMouse-inf_SOURCES = \
+	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.inf \
+	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat
 VBoxMouse-inf_CLEAN += \
 	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat \
 	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.sys \
 	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.inf
-
-ifndef VBOX_SIGNING_MODE
- VBoxMouse-inf_SOURCES = $(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.inf
-else
- VBoxMouse-inf_SOURCES = \
-	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.inf \
-	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat
-
- $(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat: $(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.inf $$(TARGET_VBoxMouse)
-	$(call MSG_TOOL,Inf2Cat,VBoxMouse-inf,$@,$<)
-	$(INSTALL) -m 644 $(TARGET_VBoxMouse) $(@D)
-	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
-endif # signing
+VBoxMouse-inf_BLDDIRS = $(PATH_TARGET)/VBoxMouseCat.dir
 
 $(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.inf: $(PATH_SUB_CURRENT)/VBoxMouse.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
 	$(call MSG_GENERATE,VBoxMouse-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
+
+$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat: $(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.inf $$(TARGET_VBoxMouse)
+	$(call MSG_TOOL,Inf2Cat,VBoxMouse-inf,$@,$<)
+	$(INSTALL) -m 644 $(TARGET_VBoxMouse) $(@D)
+	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+endif # signing
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
