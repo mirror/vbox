@@ -62,6 +62,8 @@ PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
 
 #elif PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
 
+    Assert((GCPtr & PAGE_OFFSET_MASK) == 0);
+
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     /*
      * Get the PDE.
@@ -178,6 +180,8 @@ PGM_GST_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t f
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
+
+    Assert((cb & PAGE_OFFSET_MASK) == 0);
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     for (;;)

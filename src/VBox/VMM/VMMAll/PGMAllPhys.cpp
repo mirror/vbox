@@ -2888,7 +2888,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
             /** @todo access bit emulation isn't 100% correct. */
             if (!(fFlags & X86_PTE_A))
             {
-                rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                rc = PGMGstModifyPage(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
                 AssertRC(rc);
             }
             return VINF_SUCCESS;
@@ -2941,12 +2941,12 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
 
             if (!(fFlags1 & X86_PTE_A))
             {
-                rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                rc = PGMGstModifyPage(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
                 AssertRC(rc);
             }
             if (!(fFlags2 & X86_PTE_A))
             {
-                rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrSrc + cb1, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                rc = PGMGstModifyPage(pVCpu, GCPtrSrc + cb1, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
                 AssertRC(rc);
             }
             return VINF_SUCCESS;
@@ -3060,7 +3060,7 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
                 if (!(fFlags & X86_PTE_A))
                 {
                     /** @todo access bit emulation isn't 100% correct. */
-                    rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                    rc = PGMGstModifyPage(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
                     AssertRC(rc);
                 }
                 return VINF_SUCCESS;
@@ -3125,12 +3125,12 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
 
                     if (!(fFlags1 & X86_PTE_A))
                     {
-                        rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                        rc = PGMGstModifyPage(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
                         AssertRC(rc);
                     }
                     if (!(fFlags2 & X86_PTE_A))
                     {
-                        rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrSrc + cb1, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                        rc = PGMGstModifyPage(pVCpu, GCPtrSrc + cb1, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
                         AssertRC(rc);
                     }
                     return VINF_SUCCESS;
@@ -3253,7 +3253,7 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
                 if (!(fFlags & (X86_PTE_A | X86_PTE_D)))
                 {
                     /** @todo dirty & access bit emulation isn't 100% correct. */
-                    rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
+                    rc = PGMGstModifyPage(pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
                     AssertRC(rc);
                 }
                 return VINF_SUCCESS;
@@ -3322,12 +3322,12 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
 
                     if (!(fFlags1 & (X86_PTE_A | X86_PTE_RW)))
                     {
-                        rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrDst, 1, (X86_PTE_A | X86_PTE_RW), ~(uint64_t)(X86_PTE_A | X86_PTE_RW));
+                        rc = PGMGstModifyPage(pVCpu, GCPtrDst, 1, (X86_PTE_A | X86_PTE_RW), ~(uint64_t)(X86_PTE_A | X86_PTE_RW));
                         AssertRC(rc);
                     }
                     if (!(fFlags2 & (X86_PTE_A | X86_PTE_RW)))
                     {
-                        rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrDst + cb1, 1, (X86_PTE_A | X86_PTE_RW), ~(uint64_t)(X86_PTE_A | X86_PTE_RW));
+                        rc = PGMGstModifyPage(pVCpu, GCPtrDst + cb1, 1, (X86_PTE_A | X86_PTE_RW), ~(uint64_t)(X86_PTE_A | X86_PTE_RW));
                         AssertRC(rc);
                     }
                     return VINF_SUCCESS;
