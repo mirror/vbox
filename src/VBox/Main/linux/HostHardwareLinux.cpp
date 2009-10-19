@@ -30,6 +30,9 @@
 #include <HostHardwareLinux.h>
 
 #include <VBox/log.h>
+# ifdef VBOX_WITH_DBUS
+#  include <VBox/dbus.h>
+# endif
 
 #include <iprt/dir.h>
 #include <iprt/env.h>
@@ -53,9 +56,6 @@
 # include <linux/cdrom.h>
 # include <linux/fd.h>
 # include <linux/major.h>
-# ifdef VBOX_WITH_DBUS
-#  include <vbox-dbus.h>
-# endif
 # include <errno.h>
 # include <scsi/scsi.h>
 
