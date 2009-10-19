@@ -9,7 +9,7 @@
         VirtualBox.xidl. This PHP file represents our
         web service API. Depends on WSDL file for actual SOAP bindings.
 
-     Copyright (C) 2008 Sun Microsystems, Inc.
+     Copyright (C) 2009 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -83,7 +83,7 @@
   <xsl:param name="attrname" />
   <xsl:param name="attrtype" />
   <xsl:param name="attrsafearray" />
-  <xsl:variable name="fname"><xsl:call-template name="makeSetterName"><xsl:with-param name="attrname" select="$attrname"/></xsl:call-template> </xsl:variable>
+  <xsl:variable name="fname"><xsl:call-template name="makeSetterName"><xsl:with-param name="attrname" select="$attrname"/></xsl:call-template></xsl:variable>
    public function <xsl:value-of select="$fname"/>($value) {
        $request = stdClass();
        $request->_this = $this->handle;
@@ -101,12 +101,20 @@
 <xsl:template name="interface">
    <xsl:variable name="ifname"><xsl:value-of select="@name" /></xsl:variable>
    <xsl:variable name="wsmap"><xsl:value-of select="@wsmap" /></xsl:variable>
+   <xsl:variable name="extends"><xsl:value-of select="@extends" /></xsl:variable>
    <xsl:text>
 /**
 * Generated VBoxWebService Interface Wrapper
-*/</xsl:text>
-class <xsl:value-of select="$ifname"/> extends VBox_ManagedObject
-{
+*/
+</xsl:text>
+   <xsl:choose>
+      <xsl:when test="($extends = '$unknown') or ($extends = '$dispatched') or ($extends = '$errorinfo')">
+         <xsl:value-of select="concat('class ', $ifname, ' extends VBox_ManagedObject {&#10;')" />
+      </xsl:when>
+      <xsl:when test="//interface[@name=$extends]">
+         <xsl:value-of select="concat('class ', $ifname, ' extends ', $extends, ' {&#10;')" />
+      </xsl:when>
+   </xsl:choose>
    <xsl:for-each select="method">
        <xsl:call-template name="method">
            <xsl:with-param name="wsmap" select="$wsmap" />
@@ -224,8 +232,7 @@ class <xsl:value-of select="$ifname"/> extends VBox_Struct {
        <xsl:if test="param[@dir='out']">
            <xsl:text>)</xsl:text>
        </xsl:if>
-       <xsl:text>;</xsl:text>
-       <xsl:text>&#10;&#10;</xsl:text>
+       <xsl:text>;&#10;</xsl:text>
 </xsl:template>
 
 <xsl:template name="method" >
@@ -256,7 +263,7 @@ class <xsl:value-of select="@name"/> extends VBox_Enum {
 <xsl:text>&lt;?php
 
 /*
-* Copyright (C) 2008 Sun Microsystems, Inc.
+* Copyright (C) 2009 Sun Microsystems, Inc.
 *
 * This file is part of VirtualBox Open Source Edition (OSE), as
 * available from http://www.virtualbox.org. This file is free software;
