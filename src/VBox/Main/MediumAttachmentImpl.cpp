@@ -57,7 +57,7 @@ void MediumAttachment::FinalRelease()
  */
 HRESULT MediumAttachment::init(Machine *aParent,
                                Medium *aMedium,
-                               CBSTR aController,
+                               StorageController *aController,
                                LONG aPort,
                                LONG aDevice,
                                DeviceType_T aType,
@@ -179,7 +179,7 @@ STDMETHODIMP MediumAttachment::COMGETTER(Medium)(IMedium **aHardDisk)
     return S_OK;
 }
 
-STDMETHODIMP MediumAttachment::COMGETTER(Controller)(BSTR *aController)
+STDMETHODIMP MediumAttachment::COMGETTER(Controller)(IStorageController **aController)
 {
     LogFlowThisFuncEnter();
 
@@ -189,7 +189,7 @@ STDMETHODIMP MediumAttachment::COMGETTER(Controller)(BSTR *aController)
     CheckComRCReturnRC(autoCaller.rc());
 
     /* m->controller is constant during life time, no need to lock */
-    m->controller.cloneTo(aController);
+    m->controller.queryInterfaceTo(aController);
 
     LogFlowThisFuncLeave();
     return S_OK;

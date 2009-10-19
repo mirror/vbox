@@ -1264,10 +1264,10 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
 
                 if (attachment.GetMedium().GetId() == aMedium.id())
                 {
-                    machine.DetachDevice (attachment.GetController(), attachment.GetPort(), attachment.GetDevice());
+                    CStorageController controller = attachment.GetController();
+                    machine.DetachDevice (controller.GetName(), attachment.GetPort(), attachment.GetDevice());
                     if (!machine.isOk())
                     {
-                        CStorageController controller = machine.GetStorageControllerByName (attachment.GetController());
                         vboxProblem().cannotDetachDevice (this, machine, VBoxDefs::MediumType_HardDisk, aMedium.location(),
                                                           controller.GetBus(), attachment.GetPort(), attachment.GetDevice());
                         success = false;
@@ -1287,10 +1287,9 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
                 VBoxMedium medium = vboxGlobal().findMedium (attachment.GetMedium().isNull() ? QString() : attachment.GetMedium().GetId());
                 if (medium.id() == aMedium.id())
                 {
-                    machine.MountMedium (attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), QString());
+                    machine.MountMedium (attachment.GetController().GetName(), attachment.GetPort(), attachment.GetDevice(), QString());
                     if (!machine.isOk())
                     {
-                        CStorageController controller = machine.GetStorageControllerByName (attachment.GetController());
                         vboxProblem().cannotUnmountMedium (this, machine, aMedium);
                         success = false;
                         break;
@@ -1309,10 +1308,9 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
                 VBoxMedium medium = vboxGlobal().findMedium (attachment.GetMedium().isNull() ? QString() : attachment.GetMedium().GetId());
                 if (medium.id() == aMedium.id())
                 {
-                    machine.MountMedium (attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), QString());
+                    machine.MountMedium (attachment.GetController().GetName(), attachment.GetPort(), attachment.GetDevice(), QString());
                     if (!machine.isOk())
                     {
-                        CStorageController controller = machine.GetStorageControllerByName (attachment.GetController());
                         vboxProblem().cannotUnmountMedium (this, machine, aMedium);
                         success = false;
                         break;

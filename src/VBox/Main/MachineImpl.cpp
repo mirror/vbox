@@ -2357,10 +2357,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                          * otherwise the attachment that has the youngest
                          * descendant of medium will be used
                          */
-                        if (    (*it)->device() == aDevice
-                             && (*it)->port() == aControllerPort
-                             && (*it)->controller() == aControllerName
-                           )
+                        if (pAttach->matches(aControllerName, aControllerPort, aDevice))
                         {
                             foundIt = it;
                             break;
@@ -2435,7 +2432,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     ComObjPtr<MediumAttachment> attachment;
     attachment.createObject();
-    rc = attachment->init(this, medium, aControllerName, aControllerPort, aDevice, aType, indirect);
+    rc = attachment->init(this, medium, ctl, aControllerPort, aDevice, aType, indirect);
     CheckComRCReturnRC(rc);
 
     if (associate && !medium.isNull())
@@ -3560,7 +3557,7 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
          it != mMediaData->mAttachments.end();
          ++it)
     {
-        if ((*it)->controller() == aName)
+        if (Bstr((*it)->controller()->name()) == aName)
             return setError(VBOX_E_OBJECT_IN_USE,
                             tr("Storage controller named '%ls' has still devices attached"),
                             aName);
@@ -5606,12 +5603,11 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
         if (rc)
             break;
 
-        const Bstr controllerName = aStorageController->name();
         ComObjPtr<MediumAttachment> pAttachment;
         pAttachment.createObject();
         rc = pAttachment->init(this,
                                medium,
-                               controllerName,
+                               aStorageController,
                                dev.lPort,
                                dev.lDevice,
                                dev.deviceType);
@@ -5754,7 +5750,7 @@ HRESULT Machine::getMediumAttachmentsOfController(CBSTR aName,
          it != mMediaData->mAttachments.end();
          ++it)
     {
-        if ((*it)->controller() == aName)
+        if (Bstr((*it)->controller()->name()) == aName)
             atts.push_back(*it);
     }
 

@@ -2704,26 +2704,9 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment)
     SafeIfaceArray<IStorageController> ctrls;
     rc = mMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));
     AssertComRC(rc);
-    Bstr attCtrlName;
-    rc = aMediumAttachment->COMGETTER(Controller)(attCtrlName.asOutParam());
-    AssertComRC(rc);
     ComPtr<IStorageController> ctrl;
-    for (size_t i = 0; i < ctrls.size(); ++i)
-    {
-        Bstr ctrlName;
-        rc = ctrls[i]->COMGETTER(Name)(ctrlName.asOutParam());
-        AssertComRC(rc);
-        if (attCtrlName == ctrlName)
-        {
-            ctrl = ctrls[i];
-            break;
-        }
-    }
-    if (ctrl.isNull())
-    {
-        return setError(E_FAIL,
-                        tr("Could not find storage controller '%ls'"), attCtrlName.raw());
-    }
+    rc = aMediumAttachment->COMGETTER(Controller)(ctrl.asOutParam());
+    AssertComRC(rc);
     StorageControllerType_T enmCtrlType;
     rc = ctrl->COMGETTER(ControllerType)(&enmCtrlType);
     AssertComRC(rc);
@@ -7225,7 +7208,6 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 ++i)
             {
                 ComPtr<IStorageController> controller;
-                BSTR controllerName;
                 ULONG lInstance;
                 StorageControllerType_T enmController;
 
@@ -7234,15 +7216,12 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 * (g++ complains about not being able to pass non POD types through '...')
                 * so we have to query needed values here and pass them.
                 */
-                rc = atts[i]->COMGETTER(Controller)(&controllerName);
-                if (FAILED(rc))
-                    break;
-
-                rc = that->mMachine->GetStorageControllerByName(controllerName, controller.asOutParam());
+                rc = atts[i]->COMGETTER(Controller)(controller.asOutParam());
                 if (FAILED(rc)) throw rc;
-
                 rc = controller->COMGETTER(ControllerType)(&enmController);
+                if (FAILED (rc)) throw rc;
                 rc = controller->COMGETTER(Instance)(&lInstance);
+                if (FAILED (rc)) throw rc;
 
                 /*
                  * don't leave the lock since reconfigureHardDisks isn't going
