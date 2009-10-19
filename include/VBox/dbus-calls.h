@@ -37,6 +37,11 @@ VBOX_PROXY_STUB(dbus_connection_unref, void, (DBusConnection *connection),
                 (connection))
 VBOX_PROXY_STUB(dbus_connection_close, void, (DBusConnection *connection),
                 (connection))
+VBOX_PROXY_STUB(dbus_connection_send, dbus_bool_t,
+                (DBusConnection *connection, DBusMessage *message, dbus_uint32_t *serial),
+                (connection, message, serial))
+VBOX_PROXY_STUB(dbus_connection_flush, void, (DBusConnection *connection),
+                (connection))
 VBOX_PROXY_STUB(dbus_connection_set_exit_on_disconnect, void,
                 (DBusConnection *connection, dbus_bool_t boolean),
                 (connection, boolean))
@@ -51,6 +56,18 @@ VBOX_PROXY_STUB(dbus_bus_remove_match, void,
                 (DBusConnection *connection, const char *string,
                  DBusError *error),
                 (connection, string, error))
+VBOX_PROXY_STUB(dbus_message_append_args_valist, dbus_bool_t,
+                (DBusMessage *message, int first_arg_type, va_list var_args),
+                (message, first_arg_type, var_args))
+VBOX_PROXY_STUB(dbus_message_iter_open_container, dbus_bool_t,
+                (DBusMessageIter *iter, int type, const char *contained_signature, DBusMessageIter *sub),
+                (iter, type, contained_signature, sub))
+VBOX_PROXY_STUB(dbus_message_iter_close_container, dbus_bool_t,
+                (DBusMessageIter *iter, DBusMessageIter *sub),
+                (iter, sub))
+VBOX_PROXY_STUB(dbus_message_iter_append_fixed_array, dbus_bool_t,
+			    (DBusMessageIter *iter, int	element_type, const void *value, int n_elements),
+			    (iter, element_type, value, n_elements))
 VBOX_PROXY_STUB(dbus_message_unref, void, (DBusMessage *message),
                 (message))
 VBOX_PROXY_STUB(dbus_message_new_method_call, DBusMessage*,
