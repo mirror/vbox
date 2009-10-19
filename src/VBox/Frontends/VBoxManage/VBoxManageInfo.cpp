@@ -47,7 +47,11 @@ using namespace com;
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
 
-void showSnapshots(ComPtr<ISnapshot> rootSnapshot, VMINFO_DETAILS details, const Bstr &prefix /* = ""*/, int level /*= 0*/)
+void showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
+                   ComPtr<ISnapshot> &currentSnapshot,
+                   VMINFO_DETAILS details,
+                   const Bstr &prefix /* = ""*/,
+                   int level /*= 0*/)
 {
     /* start with the root */
     Bstr name;
@@ -63,7 +67,12 @@ void showSnapshots(ComPtr<ISnapshot> rootSnapshot, VMINFO_DETAILS details, const
     else
     {
         /* print with indentation */
-        RTPrintf("   %lSName: %lS (UUID: %s)\n", prefix.raw(), name.raw(), Utf8Str(uuid).raw());
+        bool fCurrent = (rootSnapshot == currentSnapshot);
+        RTPrintf("   %lSName: %lS (UUID: %s)%s\n",
+                 prefix.raw(),
+                 name.raw(),
+                 Utf8Str(uuid).raw(),
+                 (fCurrent) ? " *" : "");
     }
 
     /* get the children */
@@ -80,9 +89,12 @@ void showSnapshots(ComPtr<ISnapshot> rootSnapshot, VMINFO_DETAILS details, const
                 if (details == VMINFO_MACHINEREADABLE)
                     newPrefix = Utf8StrFmt("%lS-%d", prefix.raw(), index + 1);
                 else
+                {
                     newPrefix = Utf8StrFmt("%lS   ", prefix.raw());
+                }
+
                 /* recursive call */
-                showSnapshots(snapshot, details, newPrefix, level + 1);
+                showSnapshots(snapshot, currentSnapshot, details, newPrefix, level + 1);
             }
         }
     }
@@ -1831,9 +1843,14 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     rc = machine->GetSnapshot(Bstr(), snapshot.asOutParam());
     if (SUCCEEDED(rc) && snapshot)
     {
-        if (details != VMINFO_MACHINEREADABLE)
-            RTPrintf("Snapshots:\n\n");
-        showSnapshots(snapshot, details);
+        ComPtr<ISnapshot> currentSnapshot;
+        rc = machine->GetCurrentSnapshot(currentSnapshot.asOutParam());
+        if (SUCCEEDED(rc))
+        {
+            if (details != VMINFO_MACHINEREADABLE)
+                RTPrintf("Snapshots:\n\n");
+            showSnapshots(snapshot, currentSnapshot, details);
+        }
     }
 
     if (details != VMINFO_MACHINEREADABLE)

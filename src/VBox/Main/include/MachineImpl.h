@@ -1036,7 +1036,7 @@ private:
 
     typedef std::map<ComObjPtr<Machine>, MachineState_T> AffectedMachines;
 
-    void discardSnapshotHandler(DeleteSnapshotTask &aTask);
+    void deleteSnapshotHandler(DeleteSnapshotTask &aTask);
     void restoreSnapshotHandler(RestoreSnapshotTask &aTask);
 
     HRESULT lockMedia();

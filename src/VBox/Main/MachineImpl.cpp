@@ -7585,7 +7585,7 @@ struct SessionMachine::DeleteSnapshotTask
 
     void handler()
     {
-        machine->discardSnapshotHandler(*this);
+        machine->deleteSnapshotHandler(*this);
     }
 
     ComObjPtr<Snapshot> snapshot;
@@ -9444,7 +9444,7 @@ HRESULT SessionMachine::endTakingSnapshot(BOOL aSuccess)
 }
 
 /**
- * Helper struct for SessionMachine::discardSnapshotHandler().
+ * Helper struct for SessionMachine::deleteSnapshotHandler().
  */
 struct MediumDiscardRec
 {
@@ -9483,7 +9483,7 @@ typedef std::list <MediumDiscardRec> MediumDiscardRecList;
  *
  * @note Locks mParent + this + child objects for writing!
  */
-void SessionMachine::discardSnapshotHandler(DeleteSnapshotTask &aTask)
+void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 {
     LogFlowThisFuncEnter();
 
@@ -9894,6 +9894,9 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                 if (RT_SUCCESS(vrc))
                 {
                     mSSData->mStateFilePath = stateFilePath;
+
+                    /* make the snapshot we restored from the current snapshot */
+                    mData->mCurrentSnapshot = aTask.pSnapshot;
                 }
                 else
                 {
