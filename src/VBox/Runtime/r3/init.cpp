@@ -338,7 +338,7 @@ static int rtR3InitBody(bool fInitSUPLib, const char *pszProgramPath)
         rc = sigaction(SIGCHLD, &saNew, &saOld2);   AssertMsg(rc == 0, ("%d/%d\n", rc, errno));
         if (    rc != 0
             ||  (   saOld2.sa_handler == saOld.sa_handler
-                 && saOld2.sa_flags == saOld.sa_flags)
+                 && !(saOld2.sa_flags & SA_SIGINFO))
            )
             break;
 
