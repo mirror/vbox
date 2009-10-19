@@ -4950,6 +4950,10 @@ void VBoxQGLOverlay::vboxShowOverlay(bool show)
         mpOverlayWidget->setVisible(show);
         mOverlayWidgetVisible = show;
         mGlCurrent = false;
+        if(!show)
+        {
+            mMainDirtyRect.add(mpOverlayWidget->vboxViewport());
+        }
     }
 }
 
@@ -4970,8 +4974,10 @@ void VBoxQGLOverlay::vboxCheckUpdateOverlay(const QRect & rect)
     QRect overRect(mpOverlayWidget->pos(), mpOverlayWidget->size());
     if(overRect.x() != rect.x() || overRect.y() != rect.y())
     {
+#if defined(RT_OS_WINDOWS)
         mpOverlayWidget->setVisible(false);
         mNeedSetVisible = true;
+#endif
         VBOXQGLLOG_QRECT("moving wgt to " , &rect, "\n");
         mpOverlayWidget->move(rect.x(), rect.y());
         mGlCurrent = false;
@@ -4979,8 +4985,10 @@ void VBoxQGLOverlay::vboxCheckUpdateOverlay(const QRect & rect)
 
     if(overRect.width() != rect.width() || overRect.height() != rect.height())
     {
+#if defined(RT_OS_WINDOWS)
         mpOverlayWidget->setVisible(false);
         mNeedSetVisible = true;
+#endif
         VBOXQGLLOG(("resizing wgt to w(%d) ,h(%d)\n" , rect.width(), rect.height()));
         mpOverlayWidget->resize(rect.width(), rect.height());
         mGlCurrent = false;
