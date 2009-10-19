@@ -93,6 +93,9 @@ int main()
         { "--macindex",         402, RTGETOPT_REQ_MACADDR | RTGETOPT_FLAG_INDEX },
         { "--indexnovalue",     403, RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_INDEX },
         { "--macindexnegative", 404, RTGETOPT_REQ_NOTHING },
+        { "--twovalues",        405, RTGETOPT_REQ_STRING },
+        { "--twovaluesindex",   406, RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
+        { "--threevalues",      407, RTGETOPT_REQ_UINT32 },
     };
 
     const char *argv2[] =
@@ -144,6 +147,12 @@ int main()
         "--macindex138",    "08:0:27:00:ab:f3",
         "--indexnovalue1",
         "--macindexnegative",
+
+        "--twovalues",       "firstvalue", "secondvalue",
+        "--twovalues:firstvalue",          "secondvalue",
+        "--twovaluesindex4", "1",          "0xA",
+        "--twovaluesindex5=2",             "0xB",
+        "--threevalues",     "1",          "0xC",          "thirdvalue",
 
         NULL
     };
@@ -282,6 +291,45 @@ int main()
     CHECK(GetState.uIndex == 1);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 404, 1);
+    CHECK(GetState.uIndex == UINT64_MAX);
+
+    /* RTGetOptFetchValue tests */
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 405, 2);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "firstvalue"));
+    CHECK(GetState.uIndex == UINT64_MAX);
+    CHECK_GETOPT(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_STRING), VINF_SUCCESS, 1);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "secondvalue"));
+    CHECK(GetState.uIndex == UINT64_MAX);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 405, 1);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "firstvalue"));
+    CHECK(GetState.uIndex == UINT64_MAX);
+    CHECK_GETOPT(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_STRING), VINF_SUCCESS, 1);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "secondvalue"));
+    CHECK(GetState.uIndex == UINT64_MAX);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 406, 2);
+    CHECK(Val.u32 == 1);
+    CHECK(GetState.uIndex == 4);
+    CHECK_GETOPT(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_UINT32), VINF_SUCCESS, 1);
+    CHECK(Val.u32 == 10);
+    CHECK(GetState.uIndex == 4);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 406, 1);
+    CHECK(Val.u32 == 2);
+    CHECK(GetState.uIndex == 5);
+    CHECK_GETOPT(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_UINT32), VINF_SUCCESS, 1);
+    CHECK(Val.u32 == 11);
+    CHECK(GetState.uIndex == 5);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 407, 2);
+    CHECK(Val.u32 == 1);
+    CHECK(GetState.uIndex == UINT64_MAX);
+    CHECK_GETOPT(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_UINT32), VINF_SUCCESS, 1);
+    CHECK(Val.u32 == 12);
+    CHECK(GetState.uIndex == UINT64_MAX);
+    CHECK_GETOPT(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_STRING), VINF_SUCCESS, 1);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "thirdvalue"));
     CHECK(GetState.uIndex == UINT64_MAX);
 
     /* the end */
