@@ -42,10 +42,10 @@ RT_C_DECLS_END
  *
  * @returns VBox status.
  * @param   pVCpu       The VMCPU handle.
- * @param   GCPtr       Guest Context virtual address of the page. Page aligned!
+ * @param   GCPtr       Guest Context virtual address of the page.
  * @param   pfFlags     Where to store the flags. These are X86_PTE_*, even for big pages.
  * @param   pGCPhys     Where to store the GC physical address of the page.
- *                      This is page aligned. The fact that the
+ *                      This is page aligned!
  */
 PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
 {
