@@ -910,15 +910,13 @@ void VBoxSelectorWnd::vmDelete (const QString &aUuid /*= QUuid_null*/)
             for (int i = 0; i < vec.size(); ++ i)
             {
                 CMediumAttachment hda = vec [i];
-                const QString ctlName = hda.GetController();
-
-                machine.DetachDevice(ctlName, hda.GetPort(), hda.GetDevice());
+                CStorageController controller = hda.GetController();
+                machine.DetachDevice(controller.GetName(), hda.GetPort(), hda.GetDevice());
                 if (!machine.isOk())
                 {
-                    CStorageController ctl = machine.GetStorageControllerByName(ctlName);
                     vboxProblem().cannotDetachDevice (this, machine, VBoxDefs::MediumType_HardDisk,
                         vboxGlobal().getMedium (CMedium (hda.GetMedium())).location(),
-                        ctl.GetBus(), hda.GetPort(), hda.GetDevice());
+                        controller.GetBus(), hda.GetPort(), hda.GetDevice());
                 }
             }
             /* Commit changes */

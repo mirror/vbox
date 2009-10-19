@@ -25,6 +25,7 @@
 #include "VirtualBoxBase.h"
 
 #include "MediumImpl.h"
+#include "StorageControllerImpl.h"
 
 class Machine;
 class Medium;
@@ -52,7 +53,7 @@ public:
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *aParent,
                  Medium *aMedium,
-                 CBSTR aController,
+                 StorageController *aController,
                  LONG aPort,
                  LONG aDevice,
                  DeviceType_T aType,
@@ -67,7 +68,7 @@ public:
 
     // IMediumAttachment properties
     STDMETHOD(COMGETTER(Medium))(IMedium **aMedium);
-    STDMETHOD(COMGETTER(Controller))(BSTR *aController);
+    STDMETHOD(COMGETTER(Controller))(IStorageController **aController);
     STDMETHOD(COMGETTER(Port))(LONG *aPort);
     STDMETHOD(COMGETTER(Device))(LONG *aDevice);
     STDMETHOD(COMGETTER(Type))(DeviceType_T *aType);
@@ -81,7 +82,7 @@ public:
     void setImplicit(bool aImplicit) { m->implicit = aImplicit; }
 
     const ComObjPtr<Medium> &medium() const { return m->medium; }
-    Bstr controller() const { return m->controller; }
+    const ComObjPtr<StorageController> &controller() const { return m->controller; }
     LONG port() const { return m->port; }
     LONG device() const { return m->device; }
     DeviceType_T type() const { return m->type; }
@@ -89,7 +90,7 @@ public:
 
     bool matches(CBSTR aController, LONG aPort, LONG aDevice)
     {
-        return (    aController == m->controller
+        return (    aController == m->controller->name()
                  && aPort == m->port
                  && aDevice == m->device);
     }
@@ -123,7 +124,7 @@ private:
         }
 
         ComObjPtr<Medium> medium;
-        const Bstr controller;
+        ComObjPtr<StorageController> controller;
         const LONG port;
         const LONG device;
         const DeviceType_T type;
