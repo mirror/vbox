@@ -66,8 +66,8 @@ VBOX_PROXY_STUB(dbus_message_iter_close_container, dbus_bool_t,
                 (DBusMessageIter *iter, DBusMessageIter *sub),
                 (iter, sub))
 VBOX_PROXY_STUB(dbus_message_iter_append_fixed_array, dbus_bool_t,
-			    (DBusMessageIter *iter, int	element_type, const void *value, int n_elements),
-			    (iter, element_type, value, n_elements))
+                (DBusMessageIter *iter, int element_type, const void *value, int n_elements),
+                (iter, element_type, value, n_elements))
 VBOX_PROXY_STUB(dbus_message_unref, void, (DBusMessage *message),
                 (message))
 VBOX_PROXY_STUB(dbus_message_new_method_call, DBusMessage*,
