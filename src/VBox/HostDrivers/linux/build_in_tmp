@@ -101,4 +101,5 @@ if make "$@"; then
 fi
 
 # failure
+rm -rf $tmpdir
 exit 1
