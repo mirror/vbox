@@ -20,8 +20,8 @@
  * additional information or have any questions.
  */
 
-#ifndef ____H_VBOX_DBUS
-#define ____H_VBOX_DBUS
+#ifndef ___VBox_DBus_h
+#define ___VBox_DBus_h
 
 #include <stdint.h>
 
@@ -66,11 +66,20 @@ struct DBusMessageIter
 };
 typedef struct DBusMessageIter DBusMessageIter;
 
-#define DBUS_ERROR_NO_MEMORY                  "org.freedesktop.DBus.Error.NoMemory"
-#define DBUS_TYPE_INVALID       ((int) '\0')
-#define DBUS_TYPE_STRING        ((int) 's')
-#define DBUS_TYPE_ARRAY         ((int) 'a')
-#define DBUS_TYPE_DICT_ENTRY    ((int) 'e')
+#define DBUS_ERROR_NO_MEMORY                "org.freedesktop.DBus.Error.NoMemory"
+
+/* Primitive types */
+#define DBUS_TYPE_INVALID                   ((int) '\0')
+#define DBUS_TYPE_INT32                     ((int) 'i')
+#define DBUS_TYPE_UINT32                    ((int) 'u')
+#define DBUS_TYPE_STRING                    ((int) 's')
+#define DBUS_TYPE_STRING_AS_STRING          "s"
+
+/* Compound types */
+#define DBUS_TYPE_ARRAY                     ((int) 'a')
+#define DBUS_TYPE_ARRAY_AS_STRING           "a"
+#define DBUS_TYPE_DICT_ENTRY                ((int) 'e')
+#define DBUS_TYPE_DICT_ENTRY_AS_STRING      "e"
 
 typedef enum
 {
@@ -100,6 +109,6 @@ RTR3DECL(rettype) ( function ) signature ;
  */
 RTR3DECL(int) RTDBusLoadLib(void);
 
-#endif /* ____H_VBOX_DBUS not defined */
+#endif /* ___VBox_DBus_h not defined */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
 
