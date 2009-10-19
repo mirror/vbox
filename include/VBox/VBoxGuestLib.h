@@ -475,8 +475,9 @@ VBGLR3DECL(int)     VbglR3GuestPropWait(uint32_t u32ClientId, const char *pszPat
 /** @name Host version handling
  * @{ */
 VBGLR3DECL(int)     VbglR3HostVersionCompare(const char *pszVer1, const char *pszVer2);
-VBGLR3DECL(bool)    VbglR3HostVersionCheckForUpdate(char **ppszHostVersion, char **ppszGuestVersion);
-VBGLR3DECL(int)     VbglR3HostVersionStore(const char* pszVer);
+VBGLR3DECL(int)     VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *bUpdate, char **ppszHostVersion, char **ppszGuestVersion);
+VBGLR3DECL(int)     VbglR3HostVersionLastCheckedLoad(uint32_t u32ClientId, char **ppszVer);
+VBGLR3DECL(int)     VbglR3HostVersionLastCheckedStore(uint32_t u32ClientId, const char *pszVer);
 /** @}  */
 # endif /* VBOX_WITH_GUEST_PROPS defined */
 
