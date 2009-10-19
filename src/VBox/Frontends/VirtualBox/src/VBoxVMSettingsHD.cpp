@@ -1780,6 +1780,7 @@ void VBoxVMSettingsHD::putBackTo()
             KStorageControllerType ctrType = mStorageModel->data (ctrIndex, StorageModel::R_CtrType).value <KStorageControllerType>();
             CStorageController ctr = mMachine.AddStorageController (ctrName, ctrBusType);
             ctr.SetControllerType (ctrType);
+            int maxUsedPort = -1;
             for (int j = 0; j < mStorageModel->rowCount (ctrIndex); ++ j)
             {
                 QModelIndex attIndex = ctrIndex.child (j, 0);
@@ -1790,6 +1791,14 @@ void VBoxVMSettingsHD::putBackTo()
                 CMediumAttachment attachment = mMachine.GetMediumAttachment (ctrName, attStorageSlot.port, attStorageSlot.device);
                 attachment.SetPassthrough (mStorageModel->data (attIndex, StorageModel::R_AttIsHostDrive).toBool() &&
                                            mStorageModel->data (attIndex, StorageModel::R_AttIsPassthrough).toBool());
+                maxUsedPort = attStorageSlot.port > maxUsedPort ? attStorageSlot.port : maxUsedPort;
+            }
+            if (ctrBusType == KStorageBus_SATA)
+            {
+                ULONG sataPortsCount = maxUsedPort + 1;
+                sataPortsCount = qMax (sataPortsCount, ctr.GetMinPortCount());
+                sataPortsCount = qMin (sataPortsCount, ctr.GetMaxPortCount());
+                ctr.SetPortCount (sataPortsCount);
             }
         }
     }
