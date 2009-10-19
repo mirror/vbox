@@ -756,6 +756,27 @@ typedef struct _CLIPSAVEDSTATEDATA
 
 } CLIPSAVEDSTATEDATA;
 
+
+/**
+ * SSM descriptor table for the CLIPSAVEDSTATEDATA structure.
+ */
+static SSMFIELD const g_aClipSavedStateDataFields[] =
+{
+    SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, pNext),
+    SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, pPrev),
+    SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, pCtx),
+    SSMFIELD_ENTRY(                 CLIPSAVEDSTATEDATA, u32ClientID),
+    SSMFIELD_ENTRY_CUSTOM(fMsgQuit+fMsgReadData+fMsgFormats, RT_OFFSETOF(CLIPSAVEDSTATEDATA, u32ClientID) + 4, 4),
+    SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, async.callHandle),
+    SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, async.paParms),
+    SSMFIELD_ENTRY_IGNORE(          CLIPSAVEDSTATEDATA, data.pv),
+    SSMFIELD_ENTRY_IGNORE(          CLIPSAVEDSTATEDATA, data.cb),
+    SSMFIELD_ENTRY_IGNORE(          CLIPSAVEDSTATEDATA, data.u32Format),
+    SSMFIELD_ENTRY_IGNORE(          CLIPSAVEDSTATEDATA, u32AvailableFormats),
+    SSMFIELD_ENTRY(                 CLIPSAVEDSTATEDATA, u32RequestedFormat),
+    SSMFIELD_ENTRY_TERM()
+};
+
 static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
     /* If there are any pending requests, they must be completed here. Since
@@ -810,7 +831,20 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     uint32_t len;
     int rc = SSMR3GetU32(pSSM, &len);
     AssertRCReturn(rc, rc);
+#if 1
+    uint32_t cbExpected = SSMR3HandleHostBits (pSSM) == 64 ? 72 : 48;
+    if (len != cbExpected)
+    {
+        LogRel2(("Client data size mismatch: expected %d, got %d\n", cbExpected, len));
+        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+    }
+    CLIPSAVEDSTATEDATA savedState;
+    RT_ZERO (savedState);
+    rc = SSMR3GetStructEx (pSSM, &savedState, sizeof(savedState), SSMSTRUCT_FLAGS_MEM_BAND_AID,
+                           &g_aClipSavedStateDataFields[0], NULL);
+    AssertRCReturn (rc, rc);
 
+#else
     if (len != sizeof(CLIPSAVEDSTATEDATA))
     {
         LogRel2(("Client data size mismatch: expected %d, got %d\n", sizeof (CLIPSAVEDSTATEDATA), len));
@@ -820,6 +854,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     CLIPSAVEDSTATEDATA savedState;
     rc = SSMR3GetMem(pSSM, &savedState, sizeof(savedState));
     AssertRCReturn(rc, rc);
+#endif
 
     /* Verify the loaded clients data and update the pClient. */
     if (pClient->u32ClientID != savedState.u32ClientID)
