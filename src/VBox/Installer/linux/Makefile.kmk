@@ -286,6 +286,7 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxdrv.sh.in | $$(dir $$@)
 	$(QUIET)$(SED_EXT) \
 		-e "s|%NOLSB%|yes|g" \
+		-e "s|%DEBIAN%||g" \
 		-e "s|%PACKAGE%|virtualbox|g" \
 		--output $@ \
 		$<

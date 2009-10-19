@@ -35,6 +35,7 @@ DEVICE=/dev/vboxdrv
 GROUPNAME=vboxusers
 LOG="/var/log/vbox-install.log"
 NOLSB=%NOLSB%
+DEBIAN=%DEBIAN%
 
 [ -f /lib/lsb/init-functions ] || NOLSB=yes
 [ -f /etc/vbox/vbox.cfg ] && . /etc/vbox/vbox.cfg
@@ -49,10 +50,11 @@ else
     BUILDVBOXDRV="/usr/share/%PACKAGE%/src/vboxdrv/build_in_tmp"
     BUILDVBOXNETFLT="/usr/share/%PACKAGE%/src/vboxnetflt/build_in_tmp"
     BUILDVBOXNETADP="/usr/share/%PACKAGE%/src/vboxnetadp/build_in_tmp"
-    # silently exit if the package was uninstalled but not purged,
-    # applies to Debian packages only
-    [ -x $VBOXMANAGE -a -x $BUILDVBOXDRV ] || exit 0
 fi
+
+# silently exit if the package was uninstalled but not purged,
+# applies to Debian packages only
+[ -n "$DEBIAN" -a -x $VBOXMANAGE -a -x $BUILDVBOXDRV ] || exit 0
 
 if [ -n "$NOLSB" ]; then
     if [ -f /etc/redhat-release ]; then
