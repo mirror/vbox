@@ -967,12 +967,12 @@ public:
                                    BOOL fTakingSnapshotOnline,
                                    BSTR *aStateFilePath);
     STDMETHOD(EndTakingSnapshot)(BOOL aSuccess);
-    STDMETHOD(DiscardSnapshot)(IConsole *aInitiator, IN_BSTR aId,
-                               MachineState_T *aMachineState, IProgress **aProgress);
-    STDMETHOD(DiscardCurrentState)(IConsole *aInitiator, MachineState_T *aMachineState,
-                                   IProgress **aProgress);
-    STDMETHOD(DiscardCurrentSnapshotAndState)(IConsole *aInitiator, MachineState_T *aMachineState,
-                                              IProgress **aProgress);
+    STDMETHOD(DeleteSnapshot)(IConsole *aInitiator, IN_BSTR aId,
+                              MachineState_T *aMachineState, IProgress **aProgress);
+    STDMETHOD(RestoreSnapshot)(IConsole *aInitiator,
+                               ISnapshot *aSnapshot,
+                               MachineState_T *aMachineState,
+                               IProgress **aProgress);
     STDMETHOD(PullGuestProperties)(ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues),
               ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
     STDMETHOD(PushGuestProperties)(ComSafeArrayIn(IN_BSTR, aNames), ComSafeArrayIn(IN_BSTR, aValues),
@@ -1023,11 +1023,11 @@ private:
     };
 
     struct Task;
-    struct DiscardSnapshotTask;
-    struct DiscardCurrentStateTask;
+    struct DeleteSnapshotTask;
+    struct RestoreSnapshotTask;
 
-    friend struct DiscardSnapshotTask;
-    friend struct DiscardCurrentStateTask;
+    friend struct DeleteSnapshotTask;
+    friend struct RestoreSnapshotTask;
 
     void uninit(Uninit::Reason aReason);
 
@@ -1036,8 +1036,8 @@ private:
 
     typedef std::map<ComObjPtr<Machine>, MachineState_T> AffectedMachines;
 
-    void discardSnapshotHandler(DiscardSnapshotTask &aTask);
-    void discardCurrentStateHandler(DiscardCurrentStateTask &aTask);
+    void discardSnapshotHandler(DeleteSnapshotTask &aTask);
+    void restoreSnapshotHandler(RestoreSnapshotTask &aTask);
 
     HRESULT lockMedia();
     void unlockMedia();

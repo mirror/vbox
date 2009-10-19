@@ -59,7 +59,6 @@ private slots:
     void discardSnapshot();
     void takeSnapshot();
     void discardCurState();
-    void discardCurSnapAndState();
     void showSnapshotDetails();
 
     void machineDataChanged (const VBoxMachineDataChangeEvent &aE);
@@ -90,7 +89,6 @@ private:
     QAction         *mDiscardSnapshotAction;
     QAction         *mTakeSnapshotAction;
     QAction         *mRevertToCurSnapAction;
-    QAction         *mDiscardCurSnapAndStateAction;
     QAction         *mShowSnapshotDetailsAction;
 };
 

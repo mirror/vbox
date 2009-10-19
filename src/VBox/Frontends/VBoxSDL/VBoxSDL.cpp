@@ -601,21 +601,22 @@ public:
     {
         switch (machineState)
         {
-            case MachineState_Null:                return "<null>";
-            case MachineState_Running:             return "Running";
-            case MachineState_Restoring:           return "Restoring";
-            case MachineState_TeleportingFrom:     return "TeleportingFrom";
-            case MachineState_Starting:            return "Starting";
-            case MachineState_PoweredOff:          return "PoweredOff";
-            case MachineState_Saved:               return "Saved";
-            case MachineState_Aborted:             return "Aborted";
-            case MachineState_Stopping:            return "Stopping";
-            case MachineState_Paused:              return "Paused";
-            case MachineState_Stuck:               return "Stuck";
-            case MachineState_Saving:              return "Saving";
-            case MachineState_Discarding:          return "Discarding";
-            case MachineState_SettingUp:           return "SettingUp";
-            default:                               return "no idea";
+            case MachineState_Null:                 return "<null>";
+            case MachineState_PoweredOff:           return "PoweredOff";
+            case MachineState_Saved:                return "Saved";
+            case MachineState_Aborted:              return "Aborted";
+            case MachineState_Running:              return "Running";
+            case MachineState_Paused:               return "Paused";
+            case MachineState_Stuck:                return "GuruMeditation";
+            case MachineState_Starting:             return "Starting";
+            case MachineState_Stopping:             return "Stopping";
+            case MachineState_Saving:               return "Saving";
+            case MachineState_Restoring:            return "Restoring";
+            case MachineState_TeleportingFrom:      return "TeleportingFrom";
+            case MachineState_RestoringSnapshot:    return "RestoringSnapshot";
+            case MachineState_DeletingSnapshot:     return "DeletingSnapshot";
+            case MachineState_SettingUp:            return "SettingUp";
+            default:                                return "no idea";
         }
     }
 
@@ -1773,7 +1774,11 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         if (cSnapshots)
         {
             gProgress = NULL;
-            CHECK_ERROR(gConsole, DiscardCurrentState(gProgress.asOutParam()));
+
+            ComPtr<ISnapshot> pCurrentSnapshot;
+            CHECK_ERROR_BREAK(gMachine, COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam()));
+
+            CHECK_ERROR(gConsole, RestoreSnapshot(pCurrentSnapshot, gProgress.asOutParam()));
             rc = gProgress->WaitForCompletion(-1);
         }
     }

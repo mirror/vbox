@@ -573,9 +573,9 @@
 
     +-&gt; PoweredOff --+
     |                |
-    |   Aborted -----+--&gt;[discardSnapshot()    ]-------------&gt; Discarding --+
-    |                |   [discardCurrentState()]                            |
-    +-&gt; Saved -------+   [discardCurrentSnapshotAndState()]                 |
+    |   Aborted -----+--&gt;[restoreSnapshot()    ]-------&gt; RestoringSnapshot -+
+    |                |   [deleteSnapshot()     ]-------&gt; DeletingSnapshot --+
+    +-&gt; Saved -------+                                                      |
     |                                                                       |
     +---(Saved if restored from an online snapshot, PoweredOff otherwise)---+
       </pre>
@@ -677,12 +677,18 @@
         Teleporting the machine state from another host or process.
       </desc>
     </const>
-    <const name="Discarding"            value="12">
+    <const name="RestoringSnapshot"     value="12">
       <desc>
-        Snapshot of the machine is being discarded.
+        A machine snapshot is being restored; this typically does not take long.
       </desc>
     </const>
-    <const name="SettingUp"             value="13">
+    <const name="DeletingSnapshot"      value="13">
+      <desc>
+        A machine snapshot is being deleted; this can take a long time since this
+        may require merging differencing hard disk images.
+      </desc>
+    </const>
+    <const name="SettingUp"             value="14">
       <desc>
         Lengthy setup operation is in progress.
       </desc>
@@ -704,7 +710,7 @@
         Pseudo-state: first transient state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastTransient"  value="13" wsmap="suppress"> <!-- SettingUp -->
+    <const name="LastTransient"  value="14" wsmap="suppress"> <!-- SettingUp -->
       <desc>
         Pseudo-state: last transient state (for use in relational expressions).
       </desc>
@@ -3630,7 +3636,7 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="6c08103e-b8e6-44fb-bc6c-36067153d4bd"
+     uuid="4e2b8f0f-6575-49d2-bb19-5cd15a6ca2f0"
      internal="yes"
      wsmap="suppress"
      >
@@ -3853,9 +3859,9 @@
       </param>
     </method>
 
-    <method name="discardSnapshot">
+    <method name="deleteSnapshot">
       <desc>
-        Gets called by IConsole::discardSnapshot.
+        Gets called by IConsole::deleteSnapshot.
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Snapshot has more than one child snapshot.
         </result>
@@ -3874,33 +3880,15 @@
       </param>
     </method>
 
-    <method name="discardCurrentState">
+    <method name="restoreSnapshot">
       <desc>
-        Gets called by IConsole::discardCurrentState.
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Virtual machine does not have any snapshot.
-        </result>
+        Gets called by IConsole::RestoreSnapshot.
       </desc>
       <param name="initiator" type="IConsole" dir="in">
         <desc>The console object that initiated this call.</desc>
       </param>
-      <param name="machineState" type="MachineState" dir="out">
-        <desc>New machine state after this operation is started.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-    </method>
-
-    <method name="discardCurrentSnapshotAndState">
-      <desc>
-        Gets called by IConsole::discardCurrentSnapshotAndState.
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Virtual machine does not have any snapshot.
-        </result>
-      </desc>
-      <param name="initiator" type="IConsole" dir="in">
-        <desc>The console object that initiated this call.</desc>
+      <param name="snapshot" type="ISnapshot" dir="in">
+        <desc>The snapshot to restore the VM state from.</desc>
       </param>
       <param name="machineState" type="MachineState" dir="out">
         <desc>New machine state after this operation is started.</desc>
@@ -4453,8 +4441,11 @@
     <attribute name="currentSnapshot" type="ISnapshot" readonly="yes">
       <desc>
         Current snapshot of this machine. This is @c null if the machine
-        currently has no snapshots. Otherwise, this is always the last snapshot
-        in the current implementation; see <link to="ISnapshot"/> for details.
+        currently has no snapshots. If it is not @c null, then it was
+        set by one of <link to="Console::takeSnapshot" />,
+        <link to="Console::deleteSnapshot" />
+        or <link to="Console::restoreSnapshot" />, depending on which
+        was called last. See <link to="ISnapshot"/> for details.
       </desc>
     </attribute>
 
@@ -4470,14 +4461,14 @@
         Returns @c true if the current state of the machine is not
         identical to the state stored in the current snapshot.
 
-        The current state is identical to the current snapshot right
-        after one of the following calls are made:
+        The current state is identical to the current snapshot only
+        directly after one of the following calls are made:
+
         <ul>
-          <li><link to="IConsole::discardCurrentState"/> or
-            <link to="IConsole::discardCurrentSnapshotAndState"/>
+          <li><link to="IConsole::restoreSnapshot"/>
           </li>
           <li><link to="IConsole::takeSnapshot"/> (issued on a
-            powered off or saved machine, for which
+            "powered off" or "saved" machine, for which
             <link to="#settingsModified"/> returns @c false)
           </li>
           <li><link to="IMachine::setCurrentSnapshot"/>
@@ -6087,7 +6078,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="03312360-0364-4b7a-ad71-1a8450133774"
+     uuid="55dd56a5-1d1d-4d81-b742-b082b9571be6"
      wsmap="managed"
      >
     <desc>
@@ -6641,7 +6632,7 @@
       </param>
     </method>
 
-    <method name="discardSnapshot">
+    <method name="deleteSnapshot">
       <desc>
         Starts discarding the specified snapshot asynchronously.
         See <link to="ISnapshot" /> for an introduction to snapshots.
@@ -6737,10 +6728,10 @@
       </param>
     </method>
 
-    <method name="discardCurrentState">
+    <method name="restoreSnapshot">
       <desc>
         Starts resetting the machine's current state to the state contained
-        in the current snapshot, asynchronously. All current settings of the
+        in the given snapshot, asynchronously. All current settings of the
         machine will be reset and changes stored in differencing media
         will be lost.
         See <link to="ISnapshot" /> for an introduction to snapshots.
@@ -6748,10 +6739,10 @@
         After this operation is successfully completed, new empty differencing
         media are created for all normal media of the machine.
 
-        If the current snapshot of the machine is an online snapshot, the
-        machine will go to the <link to="MachineState_Saved"> saved
-        state</link>, so that the next time it is powered on, the execution
-        state will be restored from the current snapshot.
+        If the given snapshot is an online snapshot, the machine will go to
+        the <link to="MachineState_Saved"> saved state</link>, so that the
+        next time it is powered on, the execution state will be restored
+        from the state of the snapshot.
 
         <note>
           The machine must not be running, otherwise the operation will fail.
@@ -6768,58 +6759,9 @@
           Virtual machine is running.
         </result>
       </desc>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
+      <param name="snapshot" type="ISnapshot" dir="in">
+        <desc>The snapshot to restore the VM state from.</desc>
       </param>
-    </method>
-
-    <method name="discardCurrentSnapshotAndState">
-      <desc>
-
-        This method is equivalent to
-        doing <link to="IConsole::discardSnapshot">discardSnapshot</link>
-        (currentSnapshot.id(), progress) followed by
-        <link to="IConsole::discardCurrentState"/>.
-
-        As a result, the machine will be fully restored from the
-        snapshot preceding the current snapshot, while both the current
-        snapshot and the current machine state will be discarded.
-
-        If the current snapshot is the first snapshot of the machine (i.e. it
-        has the only snapshot), the current machine state will be
-        discarded <b>before</b> discarding the snapshot. In other words, the
-        machine will be restored from its last snapshot, before discarding
-        it. This differs from performing a single
-        <link to="IConsole::discardSnapshot"/> call (note that no
-        <link to="IConsole::discardCurrentState"/> will be possible after it)
-        to the effect that the latter will preserve the current state instead of
-        discarding it.
-
-        Unless explicitly mentioned otherwise, all remarks and
-        limitations of the above two methods also apply to this method.
-
-        <note>
-          The machine must not be running, otherwise the operation
-          will fail.
-        </note>
-
-        <note>
-          If the machine state is <link to="MachineState_Saved">Saved</link>
-          prior to this operation, the saved state file will be implicitly
-          discarded (as if <link to="#forgetSavedState"/> were
-          called).
-        </note>
-
-        <note>
-          This method is more efficient than calling both of the above
-          methods separately: it requires less IPC calls and provides
-          a single progress object.
-        </note>
-
-        <result name="VBOX_E_INVALID_VM_STATE">
-          Virtual machine is running.
-        </result>
-      </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
@@ -8173,7 +8115,7 @@
               snapshot has been taken.
           </li>
 
-          <li><link to="IConsole::discardCurrentState"/>: this goes back to
+          <li><link to="IConsole::restoreSnapshot"/>: this goes back to
               a previous snapshot. This resets the machine's state to that of
               the previous snapshot by deleting the differencing image of each
               of the machine's media and setting the machine's settings
@@ -8182,7 +8124,7 @@
               This destroys the machine's current state.
           </li>
 
-          <li><link to="IConsole::discardSnapshot"/>: deletes a snapshot
+          <li><link to="IConsole::deleteSnapshot"/>: deletes a snapshot
               without affecting the current machine state.
 
               This does not change the machine, but instead frees the resources
@@ -8193,15 +8135,6 @@
               Neither the current machine state nor other snapshots are affected
               by this operation, except that parent disk images will be modified
               to contain the disk data associated with the snapshot being deleted.
-          </li>
-
-          <li><link to="IConsole::discardCurrentSnapshotAndState"/>:
-              this completely reverts the virtual machine to the state it was in
-              before the current snapshot has been taken. Effectively, this goes
-              back to the state before the current snapshot, which might be
-              an earlier snapshot.
-
-              The current state, as well as the current snapshot, are lost.
           </li>
       </ul>
 

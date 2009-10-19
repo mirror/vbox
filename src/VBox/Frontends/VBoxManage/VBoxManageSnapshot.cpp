@@ -180,7 +180,7 @@ int handleSnapshot(HandlerArg *a)
             snapshot->COMGETTER(Id)(guid.asOutParam());
 
             ComPtr<IProgress> progress;
-            CHECK_ERROR_BREAK(console, DiscardSnapshot(guid, progress.asOutParam()));
+            CHECK_ERROR_BREAK(console, DeleteSnapshot(guid, progress.asOutParam()));
 
             showProgress(progress);
             LONG iRc;
@@ -199,41 +199,30 @@ int handleSnapshot(HandlerArg *a)
         {
             if (   (a->argc != 3)
                 || (   strcmp(a->argv[2], "--state")
-                    && strcmp(a->argv[2], "-state")
-                    && strcmp(a->argv[2], "--all")
-                    && strcmp(a->argv[2], "-all")))
+                    && strcmp(a->argv[2], "-state")))
             {
                 errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(a->argv[2]).raw());
                 rc = E_FAIL;
                 break;
             }
-            bool fAll = false;
-            if (   !strcmp(a->argv[2], "--all")
-                || !strcmp(a->argv[2], "-all"))
-                fAll = true;
 
-            ComPtr<IProgress> progress;
+            ComPtr<ISnapshot> pCurrentSnapshot;
+            CHECK_ERROR_BREAK(machine, COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam()));
 
-            if (fAll)
-            {
-                CHECK_ERROR_BREAK(console, DiscardCurrentSnapshotAndState(progress.asOutParam()));
-            }
-            else
-            {
-                CHECK_ERROR_BREAK(console, DiscardCurrentState(progress.asOutParam()));
-            }
+            ComPtr<IProgress> pProgress;
+            CHECK_ERROR_BREAK(console, RestoreSnapshot(pCurrentSnapshot, pProgress.asOutParam()));
 
-            showProgress(progress);
+            showProgress(pProgress);
             LONG iRc;
-            progress->COMGETTER(ResultCode)(&iRc);
+            pProgress->COMGETTER(ResultCode)(&iRc);
             rc = iRc;
             if (FAILED(rc))
             {
-                com::ProgressErrorInfo info(progress);
+                com::ProgressErrorInfo info(pProgress);
                 if (info.isBasicAvailable())
-                    RTPrintf("Error: failed to discard. Error message: %lS\n", info.getText().raw());
+                    RTPrintf("Error: failed to restore snapshot. Error message: %lS\n", info.getText().raw());
                 else
-                    RTPrintf("Error: failed to discard. No error message available!\n");
+                    RTPrintf("Error: failed to restore snapshot. No error message available!\n");
             }
 
         }

@@ -185,20 +185,21 @@ Global::stringifyMachineState(MachineState_T aState)
 {
     switch (aState)
     {
-        case MachineState_Null:         return "Null";
-        case MachineState_PoweredOff:   return "PoweredOff";
-        case MachineState_Saved:        return "Saved";
-        case MachineState_Aborted:      return "Aborted";
-        case MachineState_Running:      return "Running";
-        case MachineState_Paused:       return "Paused";
-        case MachineState_Stuck:        return "GuruMeditation";
-        case MachineState_Starting:     return "Starting";
-        case MachineState_Stopping:     return "Stopping";
-        case MachineState_Saving:       return "Saving";
-        case MachineState_Restoring:    return "Restoring";
-        case MachineState_TeleportingFrom: return "TeleportingFrom";
-        case MachineState_Discarding:   return "Discarding";
-        case MachineState_SettingUp:    return "SettingUp";
+        case MachineState_Null:                 return "Null";
+        case MachineState_PoweredOff:           return "PoweredOff";
+        case MachineState_Saved:                return "Saved";
+        case MachineState_Aborted:              return "Aborted";
+        case MachineState_Running:              return "Running";
+        case MachineState_Paused:               return "Paused";
+        case MachineState_Stuck:                return "GuruMeditation";
+        case MachineState_Starting:             return "Starting";
+        case MachineState_Stopping:             return "Stopping";
+        case MachineState_Saving:               return "Saving";
+        case MachineState_Restoring:            return "Restoring";
+        case MachineState_TeleportingFrom:      return "TeleportingFrom";
+        case MachineState_RestoringSnapshot:    return "RestoringSnapshot";
+        case MachineState_DeletingSnapshot:     return "DeletingSnapshot";
+        case MachineState_SettingUp:            return "SettingUp";
         default:
         {
             AssertMsgFailed(("%d (%#x)\n", aState, aState));
