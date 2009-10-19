@@ -508,8 +508,8 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win freebsd)
   VBOX_WITH_NETADP = 1
  endif
 endif
-# Enable the new I/O path
-VBOX_WITH_NEW_IO_CODE = 1
+# Temporary disable the new I/O path
+#VBOX_WITH_NEW_IO_CODE = 1
 
 #
 # Config items for enabling work in progress.
