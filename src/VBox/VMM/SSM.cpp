@@ -840,6 +840,14 @@ typedef SSMFILEFTR const *PCSSMFILEFTR;
 
 
 /*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** Zeros used by the struct putter.
+ * This must be at least 8 bytes or the code breaks. */
+static uint8_t const    g_abZero[_1K] = {0};
+
+
+/*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int                  ssmR3LazyInit(PVM pVM);
@@ -3294,6 +3302,27 @@ DECLINLINE(int) ssmR3PutHCPtrNI(PSSMHANDLE pSSM, void *pv, uint32_t fFlags)
 
 
 /**
+ * SSMR3PutStructEx helper that puts an arbitrary number of zeros.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   cbToFill        The number of zeros to stuff into the state.
+ */
+static int ssmR3PutZeros(PSSMHANDLE pSSM, uint32_t cbToFill)
+{
+    while (cbToFill > 0)
+    {
+        size_t cb = RT_MIN(sizeof(g_abZero), cbToFill);
+        int rc = ssmR3DataWrite(pSSM, g_abZero, cb);
+        if (RT_FAILURE(rc))
+            return rc;
+        cbToFill -= cb;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Puts a structure, extended API.
  *
  * @returns VBox status code.
@@ -3309,7 +3338,6 @@ DECLINLINE(int) ssmR3PutHCPtrNI(PSSMHANDLE pSSM, void *pv, uint32_t fFlags)
 VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cbStruct,
                                 uint32_t fFlags, PCSSMFIELD paFields, void *pvUser)
 {
-    static uint8_t const s_abZero[_1K] = {0};
     int rc;
 
     /*
@@ -3359,6 +3387,7 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
                         ("off=%#x offField=%#x (%s)\n", off, offField, pCur->pszName),
                         VERR_SSM_FIELD_NOT_CONSECUTIVE);
 
+        rc = VINF_SUCCESS;
         uint8_t const *pbField = (uint8_t const *)pvStruct + offField;
         switch ((uintptr_t)pCur->pfnGetPutOrTransformer)
         {
@@ -3385,7 +3414,6 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
             {
                 uint32_t const cEntries = cbField / sizeof(RTRCPTR);
                 AssertMsgReturn(cbField == cEntries * sizeof(RTRCPTR) && cEntries, ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
-                rc = VINF_SUCCESS;
                 for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
                     rc = SSMR3PutRCPtr(pSSM, ((PRTRCPTR)pbField)[i]);
                 break;
@@ -3400,7 +3428,6 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
             {
                 uint32_t const cEntries = cbField / sizeof(void *);
                 AssertMsgReturn(cbField == cEntries * sizeof(void *) && cEntries, ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
-                rc = VINF_SUCCESS;
                 for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
                     rc = ssmR3PutHCPtrNI(pSSM, ((void * const *)pbField)[i], fFlags);
                 break;
@@ -3411,76 +3438,74 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
                 AssertMsgReturn(*(uintptr_t *)pbField <= UINT32_MAX, ("%p (%s)\n", *(uintptr_t *)pbField, pCur->pszName), VERR_SSM_FIELD_INVALID_VALUE);
                 rc = ssmR3DataWrite(pSSM, pbField, sizeof(uint32_t));
                 if ((fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE) && sizeof(void *) != sizeof(uint32_t))
-                    rc = ssmR3DataWrite(pSSM, s_abZero, sizeof(uint32_t));
+                    rc = ssmR3DataWrite(pSSM, g_abZero, sizeof(uint32_t));
                 break;
 
 
             case SSMFIELDTRANS_IGNORE:
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
-                {
-                    uint32_t cb;
-                    for (uint32_t cbLeft = cbField; cbLeft > 0 && RT_SUCCESS(rc); cbLeft -= cb)
-                    {
-                        cb = RT_MIN(sizeof(s_abZero), cbLeft);
-                        rc = ssmR3DataWrite(pSSM, s_abZero, cb);
-                    }
-                }
+                    rc = ssmR3PutZeros(pSSM, cbField);
                 break;
 
             case SSMFIELDTRANS_IGN_GCPHYS:
                 AssertMsgReturn(cbField == sizeof(RTGCPHYS), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
-                    rc = ssmR3DataWrite(pSSM, s_abZero, sizeof(RTGCPHYS));
+                    rc = ssmR3DataWrite(pSSM, g_abZero, sizeof(RTGCPHYS));
                 break;
 
             case SSMFIELDTRANS_IGN_GCPTR:
                 AssertMsgReturn(cbField == sizeof(RTGCPTR), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
-                    rc = ssmR3DataWrite(pSSM, s_abZero, sizeof(RTGCPTR));
+                    rc = ssmR3DataWrite(pSSM, g_abZero, sizeof(RTGCPTR));
                 break;
 
             case SSMFIELDTRANS_IGN_RCPTR:
                 AssertMsgReturn(cbField == sizeof(RTRCPTR), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
-                    rc = ssmR3DataWrite(pSSM, s_abZero, sizeof(RTRCPTR));
+                    rc = ssmR3DataWrite(pSSM, g_abZero, sizeof(RTRCPTR));
                 break;
 
             case SSMFIELDTRANS_IGN_HCPTR:
                 AssertMsgReturn(cbField == sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
-                    rc = ssmR3DataWrite(pSSM, s_abZero, sizeof(void *));
+                    rc = ssmR3DataWrite(pSSM, g_abZero, sizeof(void *));
                 break;
 
 
             case SSMFIELDTRANS_OLD:
-            {
-                uint32_t cb;
-                for (uint32_t cbLeft = pCur->cb; cbLeft > 0 && RT_SUCCESS(rc); cbLeft -= cb)
-                {
-                    cb = RT_MIN(sizeof(s_abZero), cbLeft);
-                    rc = ssmR3DataWrite(pSSM, s_abZero, cb);
-                }
+                AssertMsgReturn(pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = ssmR3PutZeros(pSSM, pCur->cb);
                 break;
-            }
 
             case SSMFIELDTRANS_OLD_GCPHYS:
                 AssertMsgReturn(pCur->cb == sizeof(RTGCPHYS) && pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
-                rc = ssmR3DataWrite(pSSM, s_abZero, sizeof(RTGCPHYS));
+                rc = ssmR3DataWrite(pSSM, g_abZero, sizeof(RTGCPHYS));
                 break;
 
             case SSMFIELDTRANS_OLD_GCPTR:
                 AssertMsgReturn(pCur->cb == sizeof(RTGCPTR) && pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
-                rc = ssmR3DataWrite(pSSM, s_abZero, sizeof(RTGCPTR));
+                rc = ssmR3DataWrite(pSSM, g_abZero, sizeof(RTGCPTR));
                 break;
 
             case SSMFIELDTRANS_OLD_RCPTR:
                 AssertMsgReturn(pCur->cb == sizeof(RTRCPTR) && pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
-                rc = ssmR3DataWrite(pSSM, s_abZero, sizeof(RTRCPTR));
+                rc = ssmR3DataWrite(pSSM, g_abZero, sizeof(RTRCPTR));
                 break;
 
             case SSMFIELDTRANS_OLD_HCPTR:
                 AssertMsgReturn(pCur->cb == sizeof(void *) && pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
-                rc = ssmR3DataWrite(pSSM, s_abZero, sizeof(void *));
+                rc = ssmR3DataWrite(pSSM, g_abZero, sizeof(void *));
+                break;
+
+            case SSMFIELDTRANS_OLD_PAD_HC:
+                AssertMsgReturn(pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = ssmR3PutZeros(pSSM, HC_ARCH_BITS == 64 ? RT_HIWORD(pCur->cb) : RT_LOWORD(pCur->cb));
+                break;
+
+            case SSMFIELDTRANS_OLD_PAD_MSC32:
+                AssertMsgReturn(pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                if (SSM_HOST_IS_MSC_32)
+                    rc = ssmR3PutZeros(pSSM, pCur->cb);
                 break;
 
 
@@ -3513,14 +3538,7 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
                                    cbField, cb32, cb64, HC_ARCH_BITS, cbCtx, cbSaved, pCur->off),
                                 VERR_SSM_FIELD_INVALID_PADDING_SIZE);
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
-                {
-                    uint32_t cb;
-                    for (uint32_t cbLeft = cbSaved; cbLeft > 0 && RT_SUCCESS(rc); cbLeft -= cb)
-                    {
-                        cb = RT_MIN(sizeof(s_abZero), cbLeft);
-                        rc = ssmR3DataWrite(pSSM, s_abZero, cb);
-                    }
-                }
+                    rc = ssmR3PutZeros(pSSM, cbSaved);
                 break;
             }
 
@@ -6054,6 +6072,7 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
                         ("off=%#x offField=%#x (%s)\n", off, offField, pCur->pszName),
                         VERR_SSM_FIELD_NOT_CONSECUTIVE);
 
+        rc = VINF_SUCCESS;
         uint8_t       *pbField  = (uint8_t *)pvStruct + offField;
         switch ((uintptr_t)pCur->pfnGetPutOrTransformer)
         {
@@ -6147,6 +6166,7 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
 
 
             case SSMFIELDTRANS_OLD:
+                AssertMsgReturn(pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 rc = SSMR3Skip(pSSM, pCur->cb);
                 break;
 
@@ -6168,6 +6188,17 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
             case SSMFIELDTRANS_OLD_HCPTR:
                 AssertMsgReturn(pCur->cb == sizeof(void *) && pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 rc = SSMR3Skip(pSSM, ssmR3GetHostBits(pSSM) / 8);
+                break;
+
+            case SSMFIELDTRANS_OLD_PAD_HC:
+                AssertMsgReturn(pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = SSMR3Skip(pSSM, ssmR3GetHostBits(pSSM) == 64 ? RT_HIWORD(pCur->cb) : RT_LOWORD(pCur->cb));
+                break;
+
+            case SSMFIELDTRANS_OLD_PAD_MSC32:
+                AssertMsgReturn(pCur->off == UINT32_MAX / 2, ("%#x %#x (%s)\n", pCur->cb, pCur->off, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                if (ssmR3IsHostMsc32(pSSM))
+                    rc = SSMR3Skip(pSSM, pCur->cb);
                 break;
 
 
