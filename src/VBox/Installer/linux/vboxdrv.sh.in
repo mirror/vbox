@@ -51,6 +51,9 @@ else
     BUILDVBOXNETADP="/usr/share/%PACKAGE%/src/vboxnetadp/build_in_tmp"
 fi
 
+# silently exit if the package was uninstalled but not purged
+[ -x $VBOXMANAGE -a -x $BUILDVBOXDRV ] || exit 0
+
 if [ -n "$NOLSB" ]; then
     if [ -f /etc/redhat-release ]; then
         system=redhat
