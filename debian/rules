@@ -255,6 +255,7 @@ endif
 	$(if $(NOMODS),,dh_installmodules)
 	sed \
 	    -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g' \
+	    -e 's|%DEBIAN%|yes|g' \
 	    -e 's|%PACKAGE%|virtualbox|g' \
 	    src/VBox/Installer/linux/vboxdrv.sh.in > debian/vboxdrv.init
 	dh_installinit --name=vboxdrv
