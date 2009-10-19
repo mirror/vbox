@@ -1881,7 +1881,10 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
     memcpy(rxPacket, pvBuf, cb);
     /* Pad short packets */
     if (cb < 60)
+    {
+        memset(rxPacket + cb, 0, 60 - cb);
         cb = 60;
+    }
     if (!(RCTL & RCTL_SECRC))
     {
         /* Add FCS if CRC stripping is not enabled */
