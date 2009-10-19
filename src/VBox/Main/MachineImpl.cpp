@@ -7595,9 +7595,9 @@ struct SessionMachine::DeleteSnapshotTask
 struct SessionMachine::RestoreSnapshotTask
     : public SessionMachine::Task
 {
-    RestoreSnapshotTask(SessionMachine *m, Progress *p, bool discardCurSnapshot)
+    RestoreSnapshotTask(SessionMachine *m, ComObjPtr<Snapshot> &aSnapshot, Progress *p)
         : Task(m, p),
-          discardCurrentSnapshot(discardCurSnapshot)
+          pSnapshot(aSnapshot)
     {}
 
     void handler()
@@ -7605,7 +7605,7 @@ struct SessionMachine::RestoreSnapshotTask
         machine->restoreSnapshotHandler(*this);
     }
 
-    const bool discardCurrentSnapshot;
+    ComObjPtr<Snapshot> pSnapshot;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -8699,7 +8699,7 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
     LogFlowThisFunc(("\n"));
 
     AssertReturn(aInitiator, E_INVALIDARG);
-    AssertReturn(aMachineState && aProgress, E_POINTER);
+    AssertReturn(aSnapshot && aMachineState && aProgress, E_POINTER);
 
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
@@ -8709,28 +8709,26 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
     ComAssertRet(!Global::IsOnlineOrTransient(mData->mMachineState),
                  E_FAIL);
 
-    if (mData->mCurrentSnapshot.isNull())
-        return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Could not discard the current state of the machine '%ls' because it doesn't have any snapshots"),
-                        mUserData->mName.raw());
+    ComObjPtr<Snapshot> pSnapshot(static_cast<Snapshot*>(aSnapshot));
 
     /* create a progress object. The number of operations is: 1 (preparing) + #
      * of hard disks + 1 (if we need to copy the saved state file) */
     ComObjPtr<Progress> progress;
     progress.createObject();
     {
-        ULONG opCount = 1 + (ULONG)mData->mCurrentSnapshot->getSnapshotMachine()->mMediaData->mAttachments.size();
-        if (mData->mCurrentSnapshot->stateFilePath())
-            ++opCount;
-        progress->init (mParent, aInitiator,
-                        Bstr (tr ("Discarding current machine state")),
-                        FALSE /* aCancelable */, opCount,
-                        Bstr (tr ("Preparing to discard current state")));
+        ULONG opCount =   1     // preparing
+                        + (ULONG)pSnapshot->getSnapshotMachine()->mMediaData->mAttachments.size();  // one for each attachment @todo only for HDs!
+        if (pSnapshot->stateFilePath())
+            ++opCount;      // one for the saved state
+        progress->init(mParent, aInitiator,
+                       Bstr(tr("Restoring snapshot")),
+                       FALSE /* aCancelable */, opCount,
+                       Bstr(tr("Preparing to restore machine state from snapshot")));
     }
 
     /* create and start the task on a separate thread (note that it will not
      * start working until we release alock) */
-    RestoreSnapshotTask *task = new RestoreSnapshotTask(this, progress, false /* discardCurSnapshot */);
+    RestoreSnapshotTask *task = new RestoreSnapshotTask(this, pSnapshot, progress);
     int vrc = RTThreadCreate(NULL,
                              taskHandler,
                              (void*)task,
@@ -9788,7 +9786,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
     }
 
     /* saveSettings() needs mParent lock */
-    AutoWriteLock vboxLock (mParent);
+    AutoWriteLock vboxLock(mParent);
 
     /* @todo We don't need mParent lock so far so unlock() it. Better is to
      * provide an AutoWriteLock argument that lets create a non-locking
@@ -9808,63 +9806,37 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
     bool errorInSubtask = false;
     bool stateRestored = false;
 
-    const bool isLastSnapshot = mData->mCurrentSnapshot->parent().isNull();
-
     try
     {
         /* discard the saved state file if the machine was Saved prior to this
          * operation */
         if (aTask.state == MachineState_Saved)
         {
-            Assert (!mSSData->mStateFilePath.isEmpty());
+            Assert(!mSSData->mStateFilePath.isEmpty());
             RTFileDelete(Utf8Str(mSSData->mStateFilePath).c_str());
             mSSData->mStateFilePath.setNull();
-            aTask.modifyLastState (MachineState_PoweredOff);
-            rc = saveStateSettings (SaveSTS_StateFilePath);
+            aTask.modifyLastState(MachineState_PoweredOff);
+            rc = saveStateSettings(SaveSTS_StateFilePath);
             CheckComRCThrowRC(rc);
         }
 
-        if (aTask.discardCurrentSnapshot && !isLastSnapshot)
-        {
-            /* the "discard current snapshot and state" task is in action, the
-             * current snapshot is not the last one. Discard the current
-             * snapshot first */
-
-            DeleteSnapshotTask subTask (aTask, mData->mCurrentSnapshot);
-            subTask.subTask = true;
-            discardSnapshotHandler (subTask);
-
-            AutoCaller progressCaller (aTask.progress);
-            AutoReadLock progressLock (aTask.progress);
-            if (aTask.progress->completed())
-            {
-                /* the progress can be completed by a subtask only if there was
-                 * a failure */
-                rc = aTask.progress->resultCode();
-                Assert (FAILED(rc));
-                errorInSubtask = true;
-                throw rc;
-            }
-        }
-
         RTTIMESPEC snapshotTimeStamp;
-        RTTimeSpecSetMilli (&snapshotTimeStamp, 0);
+        RTTimeSpecSetMilli(&snapshotTimeStamp, 0);
 
         {
-            ComObjPtr<Snapshot> curSnapshot = mData->mCurrentSnapshot;
-            AutoReadLock snapshotLock (curSnapshot);
+            AutoReadLock snapshotLock(aTask.pSnapshot);
 
             /* remember the timestamp of the snapshot we're restoring from */
-            snapshotTimeStamp = curSnapshot->getTimeStamp();
+            snapshotTimeStamp = aTask.pSnapshot->getTimeStamp();
 
-            ComPtr<SnapshotMachine> pSnapshotMachine(curSnapshot->getSnapshotMachine());
+            ComPtr<SnapshotMachine> pSnapshotMachine(aTask.pSnapshot->getSnapshotMachine());
 
-            /* copy all hardware data from the current snapshot */
+            /* copy all hardware data from the snapshot */
             copyFrom(pSnapshotMachine);
 
             LogFlowThisFunc(("Restoring hard disks from the snapshot...\n"));
 
-            /* restore the attachmends from the snapshot */
+            /* restore the attachments from the snapshot */
             mMediaData.backup();
             mMediaData->mAttachments = pSnapshotMachine->mMediaData->mAttachments;
 
@@ -9888,15 +9860,16 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
              * deleted by #rollback() at the end. */
 
             /* should not have a saved state file associated at this point */
-            Assert (mSSData->mStateFilePath.isNull());
+            Assert(mSSData->mStateFilePath.isNull());
 
-            if (curSnapshot->stateFilePath())
+            if (aTask.pSnapshot->stateFilePath())
             {
-                Utf8Str snapStateFilePath = curSnapshot->stateFilePath();
+                Utf8Str snapStateFilePath = aTask.pSnapshot->stateFilePath();
 
-                Utf8Str stateFilePath = Utf8StrFmt ("%ls%c{%RTuuid}.sav",
-                    mUserData->mSnapshotFolderFull.raw(),
-                    RTPATH_DELIMITER, mData->mUuid.raw());
+                Utf8Str stateFilePath = Utf8StrFmt("%ls%c{%RTuuid}.sav",
+                                                   mUserData->mSnapshotFolderFull.raw(),
+                                                   RTPATH_DELIMITER,
+                                                   mData->mUuid.raw());
 
                 LogFlowThisFunc(("Copying saved state file from '%s' to '%s'...\n",
                                   snapStateFilePath.raw(), stateFilePath.raw()));
@@ -9952,55 +9925,6 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 
         int saveFlags = 0;
 
-        if (aTask.discardCurrentSnapshot && isLastSnapshot)
-        {
-            /* commit changes to have unused diffs deassociated from this
-             * machine before deletion (see below) */
-            commit();
-
-            /* delete the unused diffs now (and uninit them) because discard
-             * may fail otherwise (too many children of the hard disk to be
-             * discarded) */
-            for (std::list< ComObjPtr<Medium> >::const_iterator
-                 it = diffs.begin(); it != diffs.end(); ++it)
-            {
-                /// @todo for now, we ignore errors since we've already
-                /// and therefore cannot fail. Later, we may want to report a
-                /// warning through the Progress object
-                HRESULT rc2 = (*it)->deleteStorageAndWait();
-                if (SUCCEEDED(rc2))
-                    (*it)->uninit();
-            }
-
-            /* prevent further deletion */
-            diffs.clear();
-
-            /* discard the current snapshot and state task is in action, the
-             * current snapshot is the last one. Discard the current snapshot
-             * after discarding the current state. */
-
-            DeleteSnapshotTask subTask (aTask, mData->mCurrentSnapshot);
-            subTask.subTask = true;
-            discardSnapshotHandler (subTask);
-
-            AutoCaller progressCaller (aTask.progress);
-            AutoReadLock progressLock (aTask.progress);
-            if (aTask.progress->completed())
-            {
-                /* the progress can be completed by a subtask only if there
-                 * was a failure */
-                rc = aTask.progress->resultCode();
-                Assert (FAILED(rc));
-                errorInSubtask = true;
-            }
-
-            /* we've committed already, so inform callbacks anyway to ensure
-             * they don't miss some change */
-            /// @todo NEWMEDIA check if we need this informCallbacks at all
-            /// after updating discardCurrentSnapshot functionality
-            saveFlags |= SaveS_InformCallbacksAnyway;
-        }
-
         /* @todo saveSettings() below needs a VirtualBox write lock and we need
          * to leave this object's lock to do this to follow the {parent-child}
          * locking rule. This is the last chance to do that while we are still
@@ -10012,21 +9936,21 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         /* we have already discarded the current state, so set the execution
          * state accordingly no matter of the discard snapshot result */
         if (mSSData->mStateFilePath)
-            setMachineState (MachineState_Saved);
+            setMachineState(MachineState_Saved);
         else
-            setMachineState (MachineState_PoweredOff);
+            setMachineState(MachineState_PoweredOff);
 
         updateMachineStateOnClient();
         stateRestored = true;
 
         /* assign the timestamp from the snapshot */
-        Assert (RTTimeSpecGetMilli (&snapshotTimeStamp) != 0);
+        Assert(RTTimeSpecGetMilli (&snapshotTimeStamp) != 0);
         mData->mLastStateChange = snapshotTimeStamp;
 
         /* save all settings, reset the modified flag and commit. Note that we
          * do so even if the subtask failed (errorInSubtask=true) because we've
          * already committed machine data and deleted old diffs before
-         * discarding the current snapshot so there is no way to rollback */
+         * discarding the snapshot so there is no way to rollback */
         HRESULT rc2 = saveSettings(SaveS_ResetCurStateModified | saveFlags);
 
         /// @todo NEWMEDIA return multiple errors
@@ -10038,8 +9962,9 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         if (SUCCEEDED(rc))
         {
             /* now, delete the unused diffs (only on success!) and uninit them*/
-            for (std::list< ComObjPtr<Medium> >::const_iterator
-                 it = diffs.begin(); it != diffs.end(); ++it)
+            for (std::list< ComObjPtr<Medium> >::const_iterator it = diffs.begin();
+                 it != diffs.end();
+                 ++it)
             {
                 /// @todo for now, we ignore errors since we've already
                 /// discarded and therefore cannot fail. Later, we may want to
@@ -10066,7 +9991,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         if (!stateRestored)
         {
             /* restore the machine state */
-            setMachineState (aTask.state);
+            setMachineState(aTask.state);
             updateMachineStateOnClient();
         }
     }
@@ -10078,9 +10003,9 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
     }
 
     if (SUCCEEDED(rc))
-        mParent->onSnapshotDiscarded (mData->mUuid, Guid());
+        mParent->onSnapshotDiscarded(mData->mUuid, Guid());
 
-    LogFlowThisFunc(("Done discarding current state (rc=%08X)\n", rc));
+    LogFlowThisFunc(("Done restoring snapshot (rc=%08X)\n", rc));
 
     LogFlowThisFuncLeave();
 }
