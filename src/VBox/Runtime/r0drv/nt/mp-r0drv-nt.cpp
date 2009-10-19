@@ -417,6 +417,9 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 
 void rtMpPokeCpuClear()
 {
+    if (!fPokeDPCsInitialized)
+        return;
+
     RTCPUID idCpu = RTMpCpuId();
 
     /* Remove any pending poke DPC from the queue, so another call to RTMpPokeCpu will send an IPI */
