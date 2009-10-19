@@ -371,6 +371,10 @@ ifneq ($(KBUILD_TARGET),win)
 RuntimeR3_SOURCES += \
 	common/err/errmsgxpcom.cpp
 endif
+ifeq ($(KBUILD_TARGET),linux)
+RuntimeR3_SOURCES += \
+	$(if $(VBOX_WITH_DBUS),VBox/dbus.cpp,)
+endif
 
 RuntimeR3_SOURCES.win = \
 	generic/RTDirExists-generic.cpp \
