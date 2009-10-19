@@ -331,6 +331,7 @@ ifdef VBOX_ONLY_SDK
  VBOXWEB_GLUE_PYTHON           = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_wrappers.py
  VBOXWEB_WS_PYTHON             = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_services.py
  VBOXWEB_WS_PERL               = $(VBOX_PATH_SDK)/bindings/webservice/perl/lib/vboxService.pm
+ VBOXWEB_WS_PHP                = $(VBOX_PATH_SDK)/bindings/webservice/php/lib/vboxServiceWrappers.php
  VBOXWEB_SAMPLES_AXIS_DIR      = $(VBOX_PATH_SDK)/bindings/webservice/java/axis/samples
  VBOXWEB_SAMPLES_JAXWS_DIR     = $(VBOX_PATH_SDK)/bindings/webservice/java/jax-ws/samples
  VBOXWEB_JAXWSSAMPLE           = $(VBOXWEB_SAMPLES_JAXWS_DIR)/clienttest.java
@@ -378,6 +379,7 @@ endef
  	$(VBOXWEB_GLUE_PYTHON) \
  	$(VBOXWEB_WS_PYTHON) \
  	$(VBOXWEB_WS_PERL) \
+ 	$(VBOXWEB_WS_PHP) \
  	$(VBOXWEB_PYTHONWSSAMPLE)\
  	$(VBOXWEB_JAXWSSAMPLE) \
  	$(VBOXWEB_METRICSAMPLE) \
@@ -466,6 +468,11 @@ $(VBOXWEB_WS_PERL): $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL)
 	$(QUIET)$(SED) -e "s+http://www.virtualbox.org/Service+http://www.virtualbox.org/+" < $(VBOXWEB_WS_PERL) > $(VBOXWEB_WS_PERL).tmp
 	$(QUIET)$(MV) $(VBOXWEB_WS_PERL).tmp $(VBOXWEB_WS_PERL)
 	$(QUIET)$(APPEND) $@ ''
+
+$(VBOXWEB_WS_PHP): $(VBOXWEB_IDL_SRC) $(VBOXWEBSERVICE_WSDL) $(VBOX_PATH_WEBSERVICE)/websrv-php.xsl
+	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-php.xsl)
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-php.xsl $<
 
 endif # VBOX_ONLY_SDK
 

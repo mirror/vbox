@@ -74,7 +74,7 @@
            <xsl:with-param name="type" select="$attrtype" />
            <xsl:with-param name="value" select="concat('$response->','returnval')" />
            <xsl:with-param name="safearray" select="@safearray"/>
-         </xsl:call-template><xsl:text>;</xsl:text> 
+         </xsl:call-template><xsl:text>;</xsl:text>
    }
 </xsl:template>
 
@@ -205,7 +205,7 @@ class <xsl:value-of select="$ifname"/> extends VBox_Struct {
        $request-><xsl:value-of select="@name" /> = $arg_<xsl:value-of select="@name" /><xsl:text>;</xsl:text>
        </xsl:for-each>
        $response = $this->connection->__soapCall('<xsl:value-of select="../@name"/>_<xsl:value-of select="@name"/>', array((array)$request));
-       <!-- return needs to be the first one -->      
+       <!-- return needs to be the first one -->
        return <xsl:if test="param[@dir='out']">
                 <xsl:text>array(</xsl:text>
               </xsl:if>
@@ -323,7 +323,7 @@ abstract class VBox_ManagedObject
    {
        try
        {
-           $request = new stdClass(); 
+           $request = new stdClass();
            $request->_this = $this->handle;
            $this->connection->__soapCall('IManagedObjectRef_release', array((array)$request));
        } catch (Exception $ex) {}
