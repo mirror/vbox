@@ -2515,7 +2515,7 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
     return rc;
 }
 
-STDMETHODIMP Console::DiscardSnapshot(IN_BSTR aId, IProgress **aProgress)
+STDMETHODIMP Console::DeleteSnapshot(IN_BSTR aId, IProgress **aProgress)
 {
     CheckComArgExpr(aId, Guid(aId).isEmpty() == false);
     CheckComArgOutPointerValid(aProgress);
@@ -2531,14 +2531,14 @@ STDMETHODIMP Console::DiscardSnapshot(IN_BSTR aId, IProgress **aProgress)
             Global::stringifyMachineState(mMachineState));
 
     MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DiscardSnapshot(this, aId, &machineState, aProgress);
+    HRESULT rc = mControl->DeleteSnapshot(this, aId, &machineState, aProgress);
     CheckComRCReturnRC(rc);
 
     setMachineStateLocally(machineState);
     return S_OK;
 }
 
-STDMETHODIMP Console::DiscardCurrentState(IProgress **aProgress)
+STDMETHODIMP Console::RestoreSnapshot(ISnapshot *aSnapshot, IProgress **aProgress)
 {
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
@@ -2547,32 +2547,11 @@ STDMETHODIMP Console::DiscardCurrentState(IProgress **aProgress)
 
     if (Global::IsOnlineOrTransient(mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot discard the current state of the running machine (machine state: %s)"),
-            Global::stringifyMachineState(mMachineState));
+                        tr("Cannot discard the current state of the running machine (machine state: %s)"),
+                        Global::stringifyMachineState(mMachineState));
 
     MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DiscardCurrentState(this, &machineState, aProgress);
-    CheckComRCReturnRC(rc);
-
-    setMachineStateLocally(machineState);
-    return S_OK;
-}
-
-STDMETHODIMP Console::DiscardCurrentSnapshotAndState(IProgress **aProgress)
-{
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoWriteLock alock(this);
-
-    if (Global::IsOnlineOrTransient(mMachineState))
-        return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot discard the current snapshot and state of the running machine (machine state: %s)"),
-            Global::stringifyMachineState(mMachineState));
-
-    MachineState_T machineState = MachineState_Null;
-    HRESULT rc =
-        mControl->DiscardCurrentSnapshotAndState(this, &machineState, aProgress);
+    HRESULT rc = mControl->RestoreSnapshot(this, aSnapshot, &machineState, aProgress);
     CheckComRCReturnRC(rc);
 
     setMachineStateLocally(machineState);
@@ -4030,9 +4009,10 @@ HRESULT Console::updateMachineState(MachineState_T aMachineState)
 
     AutoWriteLock alock(this);
 
-    AssertReturn(mMachineState == MachineState_Saving ||
-                  mMachineState == MachineState_Discarding,
-                  E_FAIL);
+    AssertReturn(    mMachineState == MachineState_Saving
+                  || mMachineState == MachineState_RestoringSnapshot
+                  || mMachineState == MachineState_DeletingSnapshot,
+                 E_FAIL);
 
     return setMachineStateLocally(aMachineState);
 }

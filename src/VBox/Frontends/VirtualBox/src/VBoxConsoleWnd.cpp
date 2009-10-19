@@ -1387,7 +1387,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *aEvent)
                         /* Discard the current state if requested */
                         if (dlg.mCbDiscardCurState->isChecked() && dlg.mCbDiscardCurState->isVisibleTo (&dlg))
                         {
-                            CProgress progress = console.DiscardCurrentState();
+                            CProgress progress = console.RestoreSnapshot(machine.GetCurrentSnapshot());
                             if (console.isOk())
                             {
                                 /* Show the progress dialog */

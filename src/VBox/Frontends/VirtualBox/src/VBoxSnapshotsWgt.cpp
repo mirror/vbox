@@ -255,7 +255,6 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     , mDiscardSnapshotAction (new QAction (mSnapshotActionGroup))
     , mTakeSnapshotAction (new QAction (this))
     , mRevertToCurSnapAction (new QAction (mCurStateActionGroup))
-    , mDiscardCurSnapAndStateAction (new QAction (mCurStateActionGroup))
     , mShowSnapshotDetailsAction (new QAction (this))
 {
     /* Apply UI decorations */
@@ -291,10 +290,6 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
         QSize (22, 22), QSize (16, 16),
         ":/discard_cur_state_22px.png", ":/discard_cur_state_16px.png",
         ":/discard_cur_state_dis_22px.png", ":/discard_cur_state_dis_16px.png"));
-    mDiscardCurSnapAndStateAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (22, 22), QSize (16, 16),
-        ":/discard_cur_state_snapshot_22px.png", ":/discard_cur_state_snapshot_16px.png",
-        ":/discard_cur_state_snapshot_dis_22px.png", ":/discard_cur_state_snapshot_dis_16px.png"));
     mShowSnapshotDetailsAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (22, 22), QSize (16, 16),
         ":/show_snapshot_details_22px.png", ":/show_snapshot_details_16px.png",
@@ -303,7 +298,6 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     mDiscardSnapshotAction->setShortcut (QString ("Ctrl+Shift+D"));
     mTakeSnapshotAction->setShortcut (QString ("Ctrl+Shift+S"));
     mRevertToCurSnapAction->setShortcut (QString ("Ctrl+Shift+R"));
-    mDiscardCurSnapAndStateAction->setShortcut (QString ("Ctrl+Shift+B"));
     mShowSnapshotDetailsAction->setShortcut (QString ("Ctrl+Space"));
 
     /* Setup connections */
@@ -320,8 +314,6 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
              this, SLOT (takeSnapshot()));
     connect (mRevertToCurSnapAction, SIGNAL (triggered()),
              this, SLOT (discardCurState()));
-    connect (mDiscardCurSnapAndStateAction, SIGNAL (triggered()),
-             this, SLOT (discardCurSnapAndState()));
     connect (mShowSnapshotDetailsAction, SIGNAL (triggered()),
              this, SLOT (showSnapshotDetails()));
 
@@ -466,7 +458,7 @@ void VBoxSnapshotsWgt::discardSnapshot()
     QString snapName = mMachine.GetSnapshot (snapId).GetName();
 
     CConsole console = session.GetConsole();
-    CProgress progress = console.DiscardSnapshot (snapId);
+    CProgress progress = console.DeleteSnapshot(snapId);
     if (console.isOk())
     {
         /* Show the progress dialog */
@@ -551,7 +543,7 @@ void VBoxSnapshotsWgt::discardCurState()
         return;
 
     CConsole console = session.GetConsole();
-    CProgress progress = console.DiscardCurrentState();
+    CProgress progress = console.RestoreSnapshot(mMachine.GetCurrentSnapshot());
     if (console.isOk())
     {
         /* show the progress dialog */
@@ -563,37 +555,6 @@ void VBoxSnapshotsWgt::discardCurState()
     }
     else
         vboxProblem().cannotDiscardCurrentState (console);
-
-    session.Close();
-}
-
-void VBoxSnapshotsWgt::discardCurSnapAndState()
-{
-    if (!vboxProblem().askAboutSnapshotAndStateDiscarding())
-        return;
-
-    SnapshotWgtItem *item = mTreeWidget->selectedItems().isEmpty() ? 0 :
-        static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]);
-    AssertReturn (item, (void) 0);
-
-    /* Open a direct session (this call will handle all errors) */
-    CSession session = vboxGlobal().openSession (mMachineId);
-    if (session.isNull())
-        return;
-
-    CConsole console = session.GetConsole();
-    CProgress progress = console.DiscardCurrentSnapshotAndState();
-    if (console.isOk())
-    {
-        /* Show the progress dialog */
-        vboxProblem().showModalProgressDialog (progress, mMachine.GetName(),
-                                               vboxProblem().mainWindowShown());
-
-        if (progress.GetResultCode() != 0)
-            vboxProblem().cannotDiscardCurrentSnapshotAndState (progress);
-    }
-    else
-        vboxProblem().cannotDiscardCurrentSnapshotAndState (console);
 
     session.Close();
 }
@@ -687,13 +648,11 @@ void VBoxSnapshotsWgt::retranslateUi()
     mDiscardSnapshotAction->setText (tr ("&Discard Snapshot"));
     mTakeSnapshotAction->setText (tr ("Take &Snapshot"));
     mRevertToCurSnapAction->setText (tr ("&Revert to Current Snapshot"));
-    mDiscardCurSnapAndStateAction->setText (tr ("D&iscard Current Snapshot and State"));
     mShowSnapshotDetailsAction->setText (tr ("S&how Details"));
 
     mDiscardSnapshotAction->setStatusTip (tr ("Discard the selected snapshot of the virtual machine"));
     mTakeSnapshotAction->setStatusTip (tr ("Take a snapshot of the current virtual machine state"));
     mRevertToCurSnapAction->setStatusTip (tr ("Restore the virtual machine state from the state stored in the current snapshot"));
-    mDiscardCurSnapAndStateAction->setStatusTip (tr ("Discard the current snapshot and revert the machine to the state it had before the snapshot was taken"));
     mShowSnapshotDetailsAction->setStatusTip (tr ("Show details of the selected snapshot"));
 
     mDiscardSnapshotAction->setToolTip (mDiscardSnapshotAction->text().remove ('&').remove ('.') +
@@ -702,8 +661,6 @@ void VBoxSnapshotsWgt::retranslateUi()
         QString (" (%1)").arg (mTakeSnapshotAction->shortcut().toString()));
     mRevertToCurSnapAction->setToolTip (mRevertToCurSnapAction->text().remove ('&').remove ('.') +
         QString (" (%1)").arg (mRevertToCurSnapAction->shortcut().toString()));
-    mDiscardCurSnapAndStateAction->setToolTip (mDiscardCurSnapAndStateAction->text().remove ('&').remove ('.') +
-        QString (" (%1)").arg (mDiscardCurSnapAndStateAction->shortcut().toString()));
     mShowSnapshotDetailsAction->setToolTip (mShowSnapshotDetailsAction->text().remove ('&').remove ('.') +
         QString (" (%1)").arg (mShowSnapshotDetailsAction->shortcut().toString()));
 }

@@ -6527,8 +6527,10 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
     AutoWriteLock alock(this);
 
     /* must be in a protective state because we leave the lock below */
-    AssertReturn(   mData->mMachineState == MachineState_Saving
-                 || mData->mMachineState == MachineState_Discarding, E_FAIL);
+    AssertReturn(    mData->mMachineState == MachineState_Saving
+                  || mData->mMachineState == MachineState_RestoringSnapshot
+                  || mData->mMachineState == MachineState_DeletingSnapshot,
+                 E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -6743,11 +6745,11 @@ HRESULT Machine::deleteImplicitDiffs()
          * operation, so protect with the special state (unless already
          * protected) */
         MachineState_T oldState = mData->mMachineState;
-        if (oldState != MachineState_Saving &&
-            oldState != MachineState_Discarding)
-        {
+        if (    oldState != MachineState_Saving
+             && oldState != MachineState_RestoringSnapshot
+             && oldState != MachineState_DeletingSnapshot
+           )
             setMachineState (MachineState_SettingUp);
-        }
 
         alock.leave();
 
@@ -7572,17 +7574,17 @@ struct SessionMachine::Task
 };
 
 /** Discard snapshot task */
-struct SessionMachine::DiscardSnapshotTask
+struct SessionMachine::DeleteSnapshotTask
     : public SessionMachine::Task
 {
-    DiscardSnapshotTask(SessionMachine *m, Progress *p, Snapshot *s)
-        : Task (m, p),
-          snapshot (s)
+    DeleteSnapshotTask(SessionMachine *m, Progress *p, Snapshot *s)
+        : Task(m, p),
+          snapshot(s)
     {}
 
-    DiscardSnapshotTask (const Task &task, Snapshot *s)
-        : Task (task)
-        , snapshot (s)
+    DeleteSnapshotTask (const Task &task, Snapshot *s)
+        : Task(task)
+        , snapshot(s)
     {}
 
     void handler()
@@ -7593,18 +7595,18 @@ struct SessionMachine::DiscardSnapshotTask
     ComObjPtr<Snapshot> snapshot;
 };
 
-/** Discard current state task */
-struct SessionMachine::DiscardCurrentStateTask
+/** Restore snapshot state task */
+struct SessionMachine::RestoreSnapshotTask
     : public SessionMachine::Task
 {
-    DiscardCurrentStateTask(SessionMachine *m, Progress *p, bool discardCurSnapshot)
+    RestoreSnapshotTask(SessionMachine *m, Progress *p, bool discardCurSnapshot)
         : Task(m, p),
           discardCurrentSnapshot(discardCurSnapshot)
     {}
 
     void handler()
     {
-        machine->discardCurrentStateHandler(*this);
+        machine->restoreSnapshotHandler(*this);
     }
 
     const bool discardCurrentSnapshot;
@@ -8604,10 +8606,10 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
 /**
  *  @note Locks mParent + this + children objects for writing!
  */
-STDMETHODIMP SessionMachine::DiscardSnapshot(IConsole *aInitiator,
-                                             IN_BSTR aId,
-                                             MachineState_T *aMachineState,
-                                             IProgress **aProgress)
+STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
+                                            IN_BSTR aId,
+                                            MachineState_T *aMachineState,
+                                            IProgress **aProgress)
 {
     LogFlowThisFunc(("\n"));
 
@@ -8647,7 +8649,7 @@ STDMETHODIMP SessionMachine::DiscardSnapshot(IConsole *aInitiator,
         if (isModified())
         {
             rc = saveSettings();
-            CheckComRCReturnRC (rc);
+            CheckComRCReturnRC(rc);
         }
     }
 
@@ -8656,26 +8658,30 @@ STDMETHODIMP SessionMachine::DiscardSnapshot(IConsole *aInitiator,
      */
     ComObjPtr<Progress> progress;
     progress.createObject();
-    rc = progress->init (mParent, aInitiator,
-                         Bstr(Utf8StrFmt(tr("Discarding snapshot '%s'"),
-                                            snapshot->getName().c_str())),
-                         FALSE /* aCancelable */,
-                         1 + (ULONG)snapshot->getSnapshotMachine()->mMediaData->mAttachments.size() +
-                         (snapshot->stateFilePath().isNull() ? 0 : 1),
-                         Bstr (tr ("Preparing to discard snapshot")));
-    AssertComRCReturn (rc, rc);
+    rc = progress->init(mParent, aInitiator,
+                        BstrFmt(tr("Discarding snapshot '%s'"),
+                                snapshot->getName().c_str()),
+                        FALSE /* aCancelable */,
+                        1 + (ULONG)snapshot->getSnapshotMachine()->mMediaData->mAttachments.size() +
+                        (snapshot->stateFilePath().isNull() ? 0 : 1),
+                        Bstr (tr ("Preparing to discard snapshot")));
+    AssertComRCReturn(rc, rc);
 
     /* create and start the task on a separate thread */
-    DiscardSnapshotTask *task = new DiscardSnapshotTask (this, progress, snapshot);
-    int vrc = RTThreadCreate (NULL, taskHandler,
-                              (void *) task,
-                              0, RTTHREADTYPE_MAIN_WORKER, 0, "DiscardSnapshot");
+    DeleteSnapshotTask *task = new DeleteSnapshotTask(this, progress, snapshot);
+    int vrc = RTThreadCreate(NULL,
+                             taskHandler,
+                             (void*)task,
+                             0,
+                             RTTHREADTYPE_MAIN_WORKER,
+                             0,
+                             "DeleteSnapshot");
     if (RT_FAILURE(vrc))
         delete task;
     ComAssertRCRet (vrc, E_FAIL);
 
     /* set the proper machine state (note: after creating a Task instance) */
-    setMachineState(MachineState_Discarding);
+    setMachineState(MachineState_DeletingSnapshot);
 
     /* return the progress to the caller */
     progress.queryInterfaceTo(aProgress);
@@ -8689,8 +8695,10 @@ STDMETHODIMP SessionMachine::DiscardSnapshot(IConsole *aInitiator,
 /**
  *  @note Locks this + children objects for writing!
  */
-STDMETHODIMP SessionMachine::DiscardCurrentState (
-    IConsole *aInitiator, MachineState_T *aMachineState, IProgress **aProgress)
+STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
+                                             ISnapshot *aSnapshot,
+                                             MachineState_T *aMachineState,
+                                             IProgress **aProgress)
 {
     LogFlowThisFunc(("\n"));
 
@@ -8702,7 +8710,8 @@ STDMETHODIMP SessionMachine::DiscardCurrentState (
 
     AutoWriteLock alock(this);
 
-    ComAssertRet (!Global::IsOnlineOrTransient (mData->mMachineState), E_FAIL);
+    ComAssertRet(!Global::IsOnlineOrTransient(mData->mMachineState),
+                 E_FAIL);
 
     if (mData->mCurrentSnapshot.isNull())
         return setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -8725,99 +8734,14 @@ STDMETHODIMP SessionMachine::DiscardCurrentState (
 
     /* create and start the task on a separate thread (note that it will not
      * start working until we release alock) */
-    DiscardCurrentStateTask *task =
-        new DiscardCurrentStateTask (this, progress, false /* discardCurSnapshot */);
-    int vrc = RTThreadCreate (NULL, taskHandler,
-                              (void *) task,
-                              0, RTTHREADTYPE_MAIN_WORKER, 0, "DiscardCurState");
-    if (RT_FAILURE(vrc))
-    {
-        delete task;
-        ComAssertRCRet (vrc, E_FAIL);
-    }
-
-    /* set the proper machine state (note: after creating a Task instance) */
-    setMachineState (MachineState_Discarding);
-
-    /* return the progress to the caller */
-    progress.queryInterfaceTo(aProgress);
-
-    /* return the new state to the caller */
-    *aMachineState = mData->mMachineState;
-
-    return S_OK;
-}
-
-/**
- *  @note Locks thos object for writing!
- */
-STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState(IConsole *aInitiator,
-                                                            MachineState_T *aMachineState,
-                                                            IProgress **aProgress)
-{
-    LogFlowThisFunc(("\n"));
-
-    AssertReturn(aInitiator, E_INVALIDARG);
-    AssertReturn(aMachineState && aProgress, E_POINTER);
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
-
-    AutoWriteLock alock(this);
-
-    ComAssertRet (!Global::IsOnlineOrTransient (mData->mMachineState), E_FAIL);
-
-    if (mData->mCurrentSnapshot.isNull())
-        return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Could not discard the current state of the machine '%ls' "
-                           "because it doesn't have any snapshots"),
-                        mUserData->mName.raw());
-
-    /* create a progress object. The number of operations is:
-     *   1 (preparing) + # of hard disks in the current snapshot +
-     *   # of hard disks in the previous snapshot +
-     *   1 if we need to copy the saved state file of the previous snapshot +
-     *   1 if the current snapshot is online
-     * or (if there is no previous snapshot):
-     *   1 (preparing) + # of hard disks in the current snapshot * 2 +
-     *   1 if we need to copy the saved state file of the current snapshot * 2
-     */
-    ComObjPtr<Progress> progress;
-    progress.createObject();
-    {
-        ComObjPtr<Snapshot> curSnapshot = mData->mCurrentSnapshot;
-        ComObjPtr<Snapshot> prevSnapshot = mData->mCurrentSnapshot->parent();
-
-        ULONG opCount = 1;
-        if (prevSnapshot)
-        {
-            opCount += (ULONG)curSnapshot->getSnapshotMachine()->mMediaData->mAttachments.size();
-            opCount += (ULONG)prevSnapshot->getSnapshotMachine()->mMediaData->mAttachments.size();
-            if (prevSnapshot->stateFilePath())
-                ++opCount;
-            if (curSnapshot->stateFilePath())
-                ++opCount;
-        }
-        else
-        {
-            opCount +=
-                (ULONG)curSnapshot->getSnapshotMachine()->mMediaData->mAttachments.size() * 2;
-            if (curSnapshot->stateFilePath())
-                opCount += 2;
-        }
-
-        progress->init(mParent, aInitiator,
-                       Bstr (tr ("Discarding current machine snapshot and state")),
-                       FALSE /* aCancelable */, opCount,
-                       Bstr (tr ("Preparing to discard current snapshot and state")));
-    }
-
-    /* create and start the task on a separate thread */
-    DiscardCurrentStateTask *task =
-        new DiscardCurrentStateTask (this, progress, true /* discardCurSnapshot */);
-    int vrc = RTThreadCreate(NULL, taskHandler,
-                             (void *) task,
-                             0, RTTHREADTYPE_MAIN_WORKER, 0, "DiscardCurStSnp");
+    RestoreSnapshotTask *task = new RestoreSnapshotTask(this, progress, false /* discardCurSnapshot */);
+    int vrc = RTThreadCreate(NULL,
+                             taskHandler,
+                             (void*)task,
+                             0,
+                             RTTHREADTYPE_MAIN_WORKER,
+                             0,
+                             "DiscardCurState");
     if (RT_FAILURE(vrc))
     {
         delete task;
@@ -8825,7 +8749,7 @@ STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState(IConsole *aInitiator
     }
 
     /* set the proper machine state (note: after creating a Task instance) */
-    setMachineState(MachineState_Discarding);
+    setMachineState(MachineState_RestoringSnapshot);
 
     /* return the progress to the caller */
     progress.queryInterfaceTo(aProgress);
@@ -9557,7 +9481,7 @@ typedef std::list <MediumDiscardRec> MediumDiscardRecList;
 
 /**
  * Discard snapshot task handler. Must be called only by
- * DiscardSnapshotTask::handler()!
+ * DeleteSnapshotTask::handler()!
  *
  * When aTask.subTask is true, the associated progress object is left
  * uncompleted on success. On failure, the progress is marked as completed
@@ -9565,7 +9489,7 @@ typedef std::list <MediumDiscardRec> MediumDiscardRecList;
  *
  * @note Locks mParent + this + child objects for writing!
  */
-void SessionMachine::discardSnapshotHandler(DiscardSnapshotTask &aTask)
+void SessionMachine::discardSnapshotHandler(DeleteSnapshotTask &aTask)
 {
     LogFlowThisFuncEnter();
 
@@ -9842,12 +9766,12 @@ void SessionMachine::discardSnapshotHandler(DiscardSnapshotTask &aTask)
 }
 
 /**
- * Discard current state task handler. Must be called only by
- * DiscardCurrentStateTask::handler()!
+ * Restore snapshot state task handler. Must be called only by
+ * RestoreSnapshotTask::handler()!
  *
  * @note Locks mParent + this object for writing.
  */
-void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
+void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 {
     LogFlowThisFuncEnter();
 
@@ -9858,9 +9782,10 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
     {
         /* we might have been uninitialized because the session was accidentally
          * closed by the client, so don't assert */
-        aTask.progress->notifyComplete (
-            E_FAIL, COM_IIDOF (IMachine), getComponentName(),
-            tr ("The session has been accidentally closed"));
+        aTask.progress->notifyComplete(E_FAIL,
+                                       COM_IIDOF(IMachine),
+                                       getComponentName(),
+                                       tr("The session has been accidentally closed"));
 
         LogFlowThisFuncLeave();
         return;
@@ -9880,7 +9805,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
      * the machine is powered off, so there is no need to inform the direct
      * session) */
     if (isModified())
-        rollback (false /* aNotify */);
+        rollback(false /* aNotify */);
 
     HRESULT rc = S_OK;
 
@@ -9909,7 +9834,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
              * current snapshot is not the last one. Discard the current
              * snapshot first */
 
-            DiscardSnapshotTask subTask (aTask, mData->mCurrentSnapshot);
+            DeleteSnapshotTask subTask (aTask, mData->mCurrentSnapshot);
             subTask.subTask = true;
             discardSnapshotHandler (subTask);
 
@@ -10058,7 +9983,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
              * current snapshot is the last one. Discard the current snapshot
              * after discarding the current state. */
 
-            DiscardSnapshotTask subTask (aTask, mData->mCurrentSnapshot);
+            DeleteSnapshotTask subTask (aTask, mData->mCurrentSnapshot);
             subTask.subTask = true;
             discardSnapshotHandler (subTask);
 
@@ -10394,7 +10319,8 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
         /// change anything when in the Starting/Restoring state
     }
     else if (   oldMachineState >= MachineState_Running
-             && oldMachineState != MachineState_Discarding
+             && oldMachineState != MachineState_RestoringSnapshot
+             && oldMachineState != MachineState_DeletingSnapshot
              && oldMachineState != MachineState_SettingUp
              && aMachineState < MachineState_Running
              /* ignore PoweredOff->Saving->PoweredOff transition when taking a

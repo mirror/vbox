@@ -2642,7 +2642,8 @@ void VBoxGlobal::retranslateUi()
     mMachineStates [KMachineState_Saving] =     tr ("Saving", "MachineState");
     mMachineStates [KMachineState_Restoring] =  tr ("Restoring", "MachineState");
     mMachineStates [KMachineState_TeleportingFrom] = tr ("Teleporting From", "MachineState");
-    mMachineStates [KMachineState_Discarding] = tr ("Discarding", "MachineState");
+    mMachineStates [KMachineState_RestoringSnapshot] = tr ("Restoring Snapshot", "MachineState");
+    mMachineStates [KMachineState_DeletingSnapshot] = tr ("Deleting Snapshot", "MachineState");
     mMachineStates [KMachineState_SettingUp] =  tr ("Setting Up", "MachineState");
 
     mSessionStates [KSessionState_Closed] =     tr ("Closed", "SessionState");
@@ -4612,7 +4613,8 @@ void VBoxGlobal::init()
         {KMachineState_Saving, ":/state_saving_16px.png"},
         {KMachineState_Restoring, ":/state_restoring_16px.png"},
         {KMachineState_TeleportingFrom, ":/state_restoring_16px.png"}, /** @todo Live Migration: New icon? (not really important) */
-        {KMachineState_Discarding, ":/state_discarding_16px.png"},
+        {KMachineState_RestoringSnapshot, ":/state_discarding_16px.png"},
+        {KMachineState_DeletingSnapshot, ":/state_discarding_16px.png"},
         {KMachineState_SettingUp, ":/settings_16px.png"},
     };
     for (uint n = 0; n < SIZEOF_ARRAY (kVMStateIcons); n ++)
@@ -4634,7 +4636,8 @@ void VBoxGlobal::init()
     mVMStateColors.insert (KMachineState_Saving,        new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_Restoring,     new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_TeleportingFrom, new QColor (Qt::green));
-    mVMStateColors.insert (KMachineState_Discarding,    new QColor (Qt::green));
+    mVMStateColors.insert (KMachineState_RestoringSnapshot, new QColor (Qt::green));
+    mVMStateColors.insert (KMachineState_DeletingSnapshot, new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_SettingUp,     new QColor (Qt::green));
 
     /* online/offline snapshot icons */
