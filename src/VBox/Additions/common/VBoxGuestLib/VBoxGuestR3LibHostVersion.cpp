@@ -36,7 +36,7 @@
 #include "VBGLR3Internal.h"
 
 /** Compares two VirtualBox version strings and returns the result.
- *  Requires strings in form of "majorVer.minorVer.build"
+ *  Requires strings in form of "majorVer.minorVer.build".
  *
  * @returns 0 if equal, 1 if Ver1 is greater, 2 if Ver2 is greater.
  *
@@ -63,21 +63,35 @@ VBGLR3DECL(int) VbglR3HostVersionCompare(const char *pszVer1, const char *pszVer
 }
 
 
-/** @todo Docs */
-VBGLR3DECL(bool) VbglR3HostVersionCheckForUpdate(char **ppszHostVersion, char **ppszGuestVersion)
+/** Checks for a Guest Additions update by comparing the installed version on
+ *  the guest and the reported host version.
+ *
+ * @returns VBox status code
+ *
+ * @param   u32ClientId          The client id returned by VbglR3InfoSvcConnect().
+ * @param   bUpdate              Receives pointer to boolean flag indicating whether 
+                                 an update was found or not.
+ * @param   ppszHostVersion      Receives pointer of allocated version string.
+ *                               The returned pointer must be freed using RTStrFree().
+ * @param   ppszGuestVersion     Receives pointer of allocated revision string.
+ *                               The returned pointer must be freed using RTStrFree().
+ */
+VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *bUpdate, char **ppszHostVersion, char **ppszGuestVersion)
 {
     int rc;
-    uint32_t uGuestPropSvcClientID;
 
-    rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
-    if (RT_SUCCESS(rc))
-        LogFlow(("Property Service Client ID: %ld\n", uGuestPropSvcClientID));
-    else
-        LogFlow(("Failed to connect to the guest property service! Error: %d\n", rc));
+    Assert(u32ClientId > 0);
+    Assert(bUpdate);
+    Assert(ppszHostVersion);
+    Assert(ppszGuestVersion);
+
+    /* We assume we have an update initially. 
+       Every block down below is allowed to veto */
+    *bUpdate = true;
 
     /* Do we need to do all this stuff? */
     char *pszCheckHostVersion;
-    rc = VbglR3GuestPropReadValueAlloc(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/CheckHostVersion", &pszCheckHostVersion);
+    rc = VbglR3GuestPropReadValueAlloc(u32ClientId, "/VirtualBox/GuestAdd/CheckHostVersion", &pszCheckHostVersion);
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_NOT_FOUND)
@@ -91,17 +105,18 @@ VBGLR3DECL(bool) VbglR3HostVersionCheckForUpdate(char **ppszHostVersion, char **
         if (   atoi(pszCheckHostVersion) == 0
             && strlen(pszCheckHostVersion))
         {
-            rc = VERR_NOT_SUPPORTED;
+            LogRel(("No host version update check performed (disabled)."));
+            *bUpdate = false;
         }
         VbglR3GuestPropReadValueFree(pszCheckHostVersion);
-    }
-    if (rc == VERR_NOT_SUPPORTED)
-        LogRel(("No host version check performed (disabled)."));
+    }    
 
-    if (RT_SUCCESS(rc))
+    /* Make sure we only notify the user once by comparing the host version with
+     * the last checked host version (if any) */
+    if (RT_SUCCESS(rc) && *bUpdate)
     {
-        /* Look up host version (revision) */
-        rc = VbglR3GuestPropReadValueAlloc(uGuestPropSvcClientID, "/VirtualBox/HostInfo/VBoxVer", ppszHostVersion);
+        /* Look up host version */
+        rc = VbglR3GuestPropReadValueAlloc(u32ClientId, "/VirtualBox/HostInfo/VBoxVer", ppszHostVersion);
         if (RT_FAILURE(rc))
         {
             LogFlow(("Could not read VBox host version! rc = %d\n", rc));
@@ -110,96 +125,82 @@ VBGLR3DECL(bool) VbglR3HostVersionCheckForUpdate(char **ppszHostVersion, char **
         {
             LogFlow(("Host version: %s\n", *ppszHostVersion));
 
-            /* Look up guest version */
-            rc = VbglR3GetAdditionsVersion(ppszGuestVersion, NULL /* Revision */);
+            /* Get last checked host version */
+            char *pszLastCheckedHostVersion;
+            rc = VbglR3HostVersionLastCheckedLoad(u32ClientId, &pszLastCheckedHostVersion);
             if (RT_SUCCESS(rc))
             {
-                LogFlow(("Additions version: %s\n", *ppszGuestVersion));
-
-                /* Look up last informed host version */
-                char szVBoxHostVerLastChecked[32];
-#ifdef RT_OS_WINDOWS
-                HKEY hKey;
-                LONG lRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-                if (lRet == ERROR_SUCCESS)
-                {
-                    DWORD dwType;
-                    DWORD dwSize = sizeof(szVBoxHostVerLastChecked);
-                    lRet = RegQueryValueEx(hKey, "HostVerLastChecked", NULL, &dwType, (BYTE*)szVBoxHostVerLastChecked, &dwSize);
-                    if (lRet != ERROR_SUCCESS && lRet != ERROR_FILE_NOT_FOUND)
-                        LogFlow(("Could not read HostVerLastChecked! Error = %ld\n", lRet));
-                    RegCloseKey(hKey);
-                }
-                else if (lRet != ERROR_FILE_NOT_FOUND)
-                {
-                    LogFlow(("Could not open registry key! Error = %ld\n", lRet));
-                    rc = RTErrConvertFromWin32(lRet);
-                }
-#else
-
-#endif
-                /* Compare both versions and prepare message */
-                if (   RT_SUCCESS(rc)
-                    && strcmp(*ppszHostVersion, szVBoxHostVerLastChecked) != 0        /* Make sure we did not process this host version already */
-                    && VbglR3HostVersionCompare(*ppszHostVersion, *ppszGuestVersion) == 1)     /* Is host version greater than guest add version? */
-                {
-                    LogFlow(("Update found."));
-                }
-                else rc = VERR_VERSION_MISMATCH; /* No update found */
+                LogFlow(("Last checked host version: %s\n", pszLastCheckedHostVersion));
+                if (strcmp(*ppszHostVersion, pszLastCheckedHostVersion) == 0)
+                    *bUpdate = false; /* We already notified this version, skip */
+                VbglR3GuestPropReadValueFree(pszLastCheckedHostVersion);
             }
+            else if (rc == VERR_NOT_FOUND) /* Never wrote a last checked host version before */
+            {
+                LogFlow(("Never checked a host version before."));
+                rc = VINF_SUCCESS;
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            /* Look up guest version */
+            rc = VbglR3GetAdditionsVersion(ppszGuestVersion, NULL /* Revision not needed here */);
+        }
+    }
+     
+    /* Do the actual version comparison (if needed, see block(s) above) */
+    if (RT_SUCCESS(rc) && *bUpdate)
+    {
+        if (VbglR3HostVersionCompare(*ppszHostVersion, *ppszGuestVersion) == 1) /* Is host version greater than guest add version? */
+        {
+            /* Yay, we have an update! */
+            LogRel(("Guest Additions update found! Please upgrade this machine to the latest Guest Additions."));
+        }
+        else
+        {
+            /* How sad ... */
+            *bUpdate = false;
         }
     }
 
+    /* Cleanup on failure */
     if (RT_FAILURE(rc))
     {
-        if (*ppszHostVersion)
-            VbglR3GuestPropReadValueFree(*ppszHostVersion);
-        if (*ppszGuestVersion)
-            VbglR3GuestPropReadValueFree(*ppszGuestVersion);
+        VbglR3GuestPropReadValueFree(*ppszHostVersion);
+        VbglR3GuestPropReadValueFree(*ppszGuestVersion);
     }
-    return rc == VINF_SUCCESS ? true : false;
+    return rc;
 }
 
 
-/** @todo Docs */
-VBGLR3DECL(int) VbglR3HostVersionStore(const char* pszVer)
+/** Retrieves the last checked host version.
+ *
+ * @returns VBox status code.
+ *
+ * @param   u32ClientId     The client id returned by VbglR3InfoSvcConnect().
+ * @param   ppszVer         Receives pointer of allocated version string.
+ *                          The returned pointer must be freed using RTStrFree() on VINF_SUCCESS.
+ */
+VBGLR3DECL(int) VbglR3HostVersionLastCheckedLoad(uint32_t u32ClientId, char **ppszVer)
 {
-    int rc;
-    uint32_t uGuestPropSvcClientID;
+    Assert(u32ClientId > 0);
+    Assert(ppszVer);
+    return VbglR3GuestPropReadValueAlloc(u32ClientId, "/VirtualBox/GuestAdd/HostVerLastChecked", ppszVer);
+}
 
-    rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
-    if (RT_FAILURE(rc))
-    {
-        LogFlow(("Failed to connect to the guest property service! Error: %d\n", rc));
-    }
-    else
-    {
-#ifdef RT_OS_WINDOWS
-        HKEY hKey;
-        long lRet;
-        lRet = RegCreateKeyEx (HKEY_LOCAL_MACHINE,
-                               "SOFTWARE\\Sun\\VirtualBox Guest Additions",
-                               0,           /* Reserved */
-                               NULL,        /* lpClass [in, optional] */
-                               0,           /* dwOptions [in] */
-                               KEY_WRITE,
-                               NULL,        /* lpSecurityAttributes [in, optional] */
-                               &hKey,
-                               NULL);       /* lpdwDisposition [out, optional] */
-        if (lRet == ERROR_SUCCESS)
-        {
-            lRet = RegSetValueEx(hKey, "HostVerLastChecked", 0, REG_SZ, (BYTE*)pszVer, (DWORD)(strlen(pszVer)*sizeof(char)));
-            if (lRet != ERROR_SUCCESS)
-                LogFlow(("Could not write HostVerLastChecked! Error = %ld\n", lRet));
-            RegCloseKey(hKey);
-        }
-        else
-            LogFlow(("Could not open registry key! Error = %ld\n", lRet));
-    
-        if (lRet != ERROR_SUCCESS)
-            rc = RTErrConvertFromWin32(lRet);
-#else
-#endif
-    }
-    return rc;
+
+/** Stores the last checked host version for later lookup.
+ *  Requires strings in form of "majorVer.minorVer.build".
+ *
+ * @returns VBox status code.
+ *
+ * @param   u32ClientId     The client id returned by VbglR3InfoSvcConnect().
+ * @param   pszVer          Pointer to version string to store.
+ */
+VBGLR3DECL(int) VbglR3HostVersionLastCheckedStore(uint32_t u32ClientId, const char *pszVer)
+{
+    Assert(u32ClientId > 0);
+    Assert(pszVer);  
+    return VbglR3GuestPropWriteValue(u32ClientId, "/VirtualBox/GuestAdd/HostVerLastChecked", pszVer);
 }

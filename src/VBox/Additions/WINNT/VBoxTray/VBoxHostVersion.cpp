@@ -27,34 +27,46 @@
 #include <VBox/VBoxGuestLib.h>
 
 
+/** @todo Move this part in VbglR3 and just provide a callback for the platform-specific 
+          notification stuff, since this is very similar to the VBoxClient code. */
 int VBoxCheckHostVersion ()
 {
     int rc;
-    char *pszHostVersion;
-    char *pszGuestVersion;
-    rc = VbglR3HostVersionCheckForUpdate(&pszHostVersion, &pszGuestVersion);
+    uint32_t uGuestPropSvcClientID;
+
+    rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
     if (RT_SUCCESS(rc))
     {
-        char szMsg[256]; /* Sizes according to MSDN. */
-        char szTitle[64];
+        char *pszHostVersion;
+        char *pszGuestVersion;
+        bool bUpdate;
+        rc = VbglR3HostVersionCheckForUpdate(uGuestPropSvcClientID, &bUpdate, &pszHostVersion, &pszGuestVersion);
+        if (RT_SUCCESS(rc))
+        {
+            if (bUpdate)
+            {
+                char szMsg[256]; /* Sizes according to MSDN. */
+                char szTitle[64];
+        
+                /** @todo add some translation macros here */
+                _snprintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions update available!");
+                _snprintf(szMsg, sizeof(szMsg), "Your guest is currently running the Guest Additions version %s. "
+                                                "We recommend updating to the latest version (%s) by choosing the "
+                                                "install option from the Devices menu.", pszGuestVersion, pszHostVersion);
+        
+                rc = showBalloonTip(gInstance, gToolWindow, ID_TRAYICON, szMsg, szTitle, 5000, 0);
+                if (RT_FAILURE(rc))
+                    Log(("VBoxTray: Guest Additions update found; however: could not show version notifier balloon tooltip! rc = %d\n", rc));
+            }
 
-        /** @todo add some translation macros here */
-        _snprintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions update available!");
-        _snprintf(szMsg, sizeof(szMsg), "Your guest is currently running the Guest Additions version %s. "
-                                        "We recommend updating to the latest version (%s) by choosing the "
-                                        "install option from the Devices menu.", pszGuestVersion, pszHostVersion);
-
-        rc = showBalloonTip(gInstance, gToolWindow, ID_TRAYICON, szMsg, szTitle, 5000, 0);
-        if (RT_FAILURE(rc))
-            Log(("VBoxTray: Could not show version notifier balloon tooltip! rc = %d\n", rc));
-
-        VbglR3GuestPropReadValueFree(pszHostVersion);
-        VbglR3GuestPropReadValueFree(pszGuestVersion);
+            /* Store host version to not notify again */
+            rc = VbglR3HostVersionLastCheckedStore(uGuestPropSvcClientID, pszHostVersion);
+    
+            VbglR3GuestPropReadValueFree(pszHostVersion);
+            VbglR3GuestPropReadValueFree(pszGuestVersion);
+        }
+        VbglR3GuestPropDisconnect(uGuestPropSvcClientID);
     }
-
-    /* If we didn't have to check for the host version then this is not an error */
-    if (rc == VERR_NOT_SUPPORTED)
-        rc = VINF_SUCCESS;
     return rc;
 }
 
