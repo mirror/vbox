@@ -38,12 +38,12 @@ typedef struct _VBOXCLIPBOARDCLIENTDATA
 
     uint32_t u32ClientID;
 
-    bool fAsync: 1;        /* Guest is waiting for a message. */
-    bool fReadPending: 1;  /* The guest is waiting for data from the host */
+    bool fAsync;        /* Guest is waiting for a message. */
+    bool fReadPending;  /* The guest is waiting for data from the host */
 
-    bool fMsgQuit: 1;
-    bool fMsgReadData: 1;
-    bool fMsgFormats: 1;
+    bool fMsgQuit;
+    bool fMsgReadData;
+    bool fMsgFormats;
 
     struct {
         VBOXHGCMCALLHANDLE callHandle;

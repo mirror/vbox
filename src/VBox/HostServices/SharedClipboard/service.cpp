@@ -718,62 +718,16 @@ static DECLCALLBACK(int) svcHostCall (void *,
     return rc;
 }
 
-/** This structure corresponds to the original layout of the
- * VBOXCLIPBOARDCLIENTDATA structure.  As the structure was saved as a whole
- * when saving state, we need to remember it forever in order to preserve
- * compatibility.
- * @todo the first person who needs to make an incompatible change to the
- *       saved state should switch to saving individual data members.  So far,
- *       there are only three we care about anyway! */
-typedef struct _CLIPSAVEDSTATEDATA
-{
-    struct _CLIPSAVEDSTATEDATA *pNext;
-    struct _CLIPSAVEDSTATEDATA *pPrev;
-
-    VBOXCLIPBOARDCONTEXT *pCtx;
-
-    uint32_t u32ClientID;
-
-    bool fAsync: 1; /* Guest is waiting for a message. */
-
-    bool fMsgQuit: 1;
-    bool fMsgReadData: 1;
-    bool fMsgFormats: 1;
-
-    struct {
-        VBOXHGCMCALLHANDLE callHandle;
-        VBOXHGCMSVCPARM *paParms;
-    } async;
-
-    struct {
-         void *pv;
-         uint32_t cb;
-         uint32_t u32Format;
-    } data;
-
-    uint32_t u32AvailableFormats;
-    uint32_t u32RequestedFormat;
-
-} CLIPSAVEDSTATEDATA;
-
-
 /**
- * SSM descriptor table for the CLIPSAVEDSTATEDATA structure.
+ * SSM descriptor table for the VBOXCLIPBOARDCLIENTDATA structure.
  */
-static SSMFIELD const g_aClipSavedStateDataFields[] =
+static SSMFIELD const g_aClipboardClientDataFields[] =
 {
-    SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, pNext),
-    SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, pPrev),
-    SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, pCtx),
-    SSMFIELD_ENTRY(                 CLIPSAVEDSTATEDATA, u32ClientID),
-    SSMFIELD_ENTRY_CUSTOM(fMsgQuit+fMsgReadData+fMsgFormats, RT_OFFSETOF(CLIPSAVEDSTATEDATA, u32ClientID) + 4, 4),
-    SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, async.callHandle),
-    SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, async.paParms),
-    SSMFIELD_ENTRY_IGNORE(          CLIPSAVEDSTATEDATA, data.pv),
-    SSMFIELD_ENTRY_IGNORE(          CLIPSAVEDSTATEDATA, data.cb),
-    SSMFIELD_ENTRY_IGNORE(          CLIPSAVEDSTATEDATA, data.u32Format),
-    SSMFIELD_ENTRY_IGNORE(          CLIPSAVEDSTATEDATA, u32AvailableFormats),
-    SSMFIELD_ENTRY(                 CLIPSAVEDSTATEDATA, u32RequestedFormat),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, u32ClientID),  /* for validation purposes */
+    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, fMsgQuit),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, fMsgReadData),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, fMsgFormats),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, u32RequestedFormat),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -790,22 +744,15 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
      * by VMMDev. The service therefore must save state as if there were no
      * pending request.
      */
-    LogRel2(("svcSaveState: u32ClientID = %d\n", u32ClientID));
+    LogRel2 (("svcSaveState: u32ClientID = %d\n", u32ClientID));
 
     VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
 
-    CLIPSAVEDSTATEDATA savedState = { 0 };
-    /* Save client structure length & contents */
-    int rc = SSMR3PutU32(pSSM, sizeof(savedState));
-    AssertRCReturn(rc, rc);
-
-    savedState.u32ClientID        = pClient->u32ClientID;
-    savedState.fMsgQuit           = pClient->fMsgQuit;
-    savedState.fMsgReadData       = pClient->fMsgReadData;
-    savedState.fMsgFormats        = pClient->fMsgFormats;
-    savedState.u32RequestedFormat = pClient->u32RequestedFormat;
-    rc = SSMR3PutMem(pSSM, &savedState, sizeof(savedState));
-    AssertRCReturn(rc, rc);
+    /* This field used to be the length. We're using it as a version field
+       with the high bit set. */
+    SSMR3PutU32 (pSSM, UINT32_C (0x80000002));
+    int rc = SSMR3PutStructEx (pSSM, pClient, sizeof(*pClient), 0 /*fFlags*/, &g_aClipboardClientDataFields[0], NULL);
+    AssertRCReturn (rc, rc);
 
     if (pClient->fAsync)
     {
@@ -813,60 +760,118 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
         pClient->fAsync = false;
     }
 
-    vboxSvcClipboardCompleteReadData(pClient, VINF_SUCCESS, 0);
+    vboxSvcClipboardCompleteReadData (pClient, VINF_SUCCESS, 0);
 
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
-    LogRel2(("svcLoadState: u32ClientID = %d\n", u32ClientID));
+    LogRel2 (("svcLoadState: u32ClientID = %d\n", u32ClientID));
 
     VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
 
     /* Existing client can not be in async state yet. */
-    Assert(!pClient->fAsync);
+    Assert (!pClient->fAsync);
+
+    /* Save the client ID for data validation. */
+    /** @todo isn't this the same as u32ClientID? Playing safe for now... */
+    uint32_t const u32ClientIDOld = pClient->u32ClientID;
 
     /* Restore the client data. */
-    uint32_t len;
-    int rc = SSMR3GetU32(pSSM, &len);
-    AssertRCReturn(rc, rc);
-#if 1
-    uint32_t cbExpected = SSMR3HandleHostBits (pSSM) == 64 ? 72 : 48;
-    if (len != cbExpected)
-    {
-        LogRel2(("Client data size mismatch: expected %d, got %d\n", cbExpected, len));
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    }
-    CLIPSAVEDSTATEDATA savedState;
-    RT_ZERO (savedState);
-    rc = SSMR3GetStructEx (pSSM, &savedState, sizeof(savedState), SSMSTRUCT_FLAGS_MEM_BAND_AID,
-                           &g_aClipSavedStateDataFields[0], NULL);
+    uint32_t lenOrVer;
+    int rc = SSMR3GetU32 (pSSM, &lenOrVer);
     AssertRCReturn (rc, rc);
-
-#else
-    if (len != sizeof(CLIPSAVEDSTATEDATA))
+    if (lenOrVer == UINT32_C (0x80000002))
     {
-        LogRel2(("Client data size mismatch: expected %d, got %d\n", sizeof (CLIPSAVEDSTATEDATA), len));
+        rc = SSMR3GetStructEx (pSSM, pClient, sizeof(*pClient), 0 /*fFlags*/, &g_aClipboardClientDataFields[0], NULL);
+        AssertRCReturn (rc, rc);
+    }
+    else if (lenOrVer == (SSMR3HandleHostBits (pSSM) == 64 ? 72 : 48))
+    {
+        /**
+         * This structure corresponds to the original layout of the
+         * VBOXCLIPBOARDCLIENTDATA structure.  As the structure was saved as a whole
+         * when saving state, we need to remember it forever in order to preserve
+         * compatibility.
+         *
+         * (Starting with 3.1 this is no longer used.)
+         */
+        typedef struct _CLIPSAVEDSTATEDATA
+        {
+            struct _CLIPSAVEDSTATEDATA *pNext;
+            struct _CLIPSAVEDSTATEDATA *pPrev;
+
+            VBOXCLIPBOARDCONTEXT *pCtx;
+
+            uint32_t u32ClientID;
+
+            bool fAsync: 1; /* Guest is waiting for a message. */
+
+            bool fMsgQuit: 1;
+            bool fMsgReadData: 1;
+            bool fMsgFormats: 1;
+
+            struct {
+                VBOXHGCMCALLHANDLE callHandle;
+                VBOXHGCMSVCPARM *paParms;
+            } async;
+
+            struct {
+                 void *pv;
+                 uint32_t cb;
+                 uint32_t u32Format;
+            } data;
+
+            uint32_t u32AvailableFormats;
+            uint32_t u32RequestedFormat;
+
+        } CLIPSAVEDSTATEDATA;
+
+        /**
+         * SSM descriptor table for the CLIPSAVEDSTATEDATA structure.
+         */
+        static SSMFIELD const s_aClipSavedStateDataFields30[] =
+        {
+            SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, pNext),
+            SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, pPrev),
+            SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, pCtx),
+            SSMFIELD_ENTRY(                 CLIPSAVEDSTATEDATA, u32ClientID),
+            SSMFIELD_ENTRY_CUSTOM(fMsgQuit+fMsgReadData+fMsgFormats, RT_OFFSETOF(CLIPSAVEDSTATEDATA, u32ClientID) + 4, 4),
+            SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, async.callHandle),
+            SSMFIELD_ENTRY_IGN_HCPTR(       CLIPSAVEDSTATEDATA, async.paParms),
+            SSMFIELD_ENTRY_IGNORE(          CLIPSAVEDSTATEDATA, data.pv),
+            SSMFIELD_ENTRY_IGNORE(          CLIPSAVEDSTATEDATA, data.cb),
+            SSMFIELD_ENTRY_IGNORE(          CLIPSAVEDSTATEDATA, data.u32Format),
+            SSMFIELD_ENTRY_IGNORE(          CLIPSAVEDSTATEDATA, u32AvailableFormats),
+            SSMFIELD_ENTRY(                 CLIPSAVEDSTATEDATA, u32RequestedFormat),
+            SSMFIELD_ENTRY_TERM()
+        };
+
+        CLIPSAVEDSTATEDATA savedState;
+        RT_ZERO (savedState);
+        rc = SSMR3GetStructEx (pSSM, &savedState, sizeof(savedState), SSMSTRUCT_FLAGS_MEM_BAND_AID,
+                               &s_aClipSavedStateDataFields30[0], NULL);
+        AssertRCReturn (rc, rc);
+
+        pClient->fMsgQuit           = savedState.fMsgQuit;
+        pClient->fMsgReadData       = savedState.fMsgReadData;
+        pClient->fMsgFormats        = savedState.fMsgFormats;
+        pClient->u32RequestedFormat = savedState.u32RequestedFormat;
+    }
+    else
+    {
+        LogRel (("Client data size mismatch: got %#x\n", lenOrVer));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
 
-    CLIPSAVEDSTATEDATA savedState;
-    rc = SSMR3GetMem(pSSM, &savedState, sizeof(savedState));
-    AssertRCReturn(rc, rc);
-#endif
-
-    /* Verify the loaded clients data and update the pClient. */
-    if (pClient->u32ClientID != savedState.u32ClientID)
+    /* Verify the client ID. */
+    if (pClient->u32ClientID != u32ClientIDOld)
     {
-        LogRel2(("Client ID mismatch: expected %d, got %d\n", pClient->u32ClientID, savedState.u32ClientID));
+        LogRel (("Client ID mismatch: expected %d, got %d\n", u32ClientIDOld, pClient->u32ClientID));
+        pClient->u32ClientID = u32ClientIDOld;
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
-
-    pClient->fMsgQuit           = savedState.fMsgQuit;
-    pClient->fMsgReadData       = savedState.fMsgReadData;
-    pClient->fMsgFormats        = savedState.fMsgFormats;
-    pClient->u32RequestedFormat = savedState.u32RequestedFormat;
 
     /* Actual host data are to be reported to guest (SYNC). */
     vboxClipboardSync (pClient);
