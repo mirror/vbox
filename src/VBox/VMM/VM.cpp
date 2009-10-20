@@ -1532,11 +1532,13 @@ static DECLCALLBACK(int) vmR3LiveDoStep2(PVM pVM, PSSMHANDLE pSSM)
      * Advance the state and mark if VMR3Suspend was called.
      */
     int rc = VINF_SUCCESS;
-    if (VMR3GetState(pVM) == VMSTATE_SUSPENDED_LS)
+    VMSTATE enmVMState = VMR3GetState(pVM);
+    if (enmVMState == VMSTATE_SUSPENDED_LS)
         vmR3SetState(pVM, VMSTATE_SAVING, VMSTATE_SUSPENDED_LS);
     else
     {
-        vmR3SetState(pVM, VMSTATE_SAVING, VMSTATE_SUSPENDED_EXT_LS);
+        if (enmVMState != VMSTATE_SAVING)
+            vmR3SetState(pVM, VMSTATE_SAVING, VMSTATE_SUSPENDED_EXT_LS);
         rc = VINF_SSM_LIVE_SUSPENDED;
     }
 
@@ -1601,12 +1603,13 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
     int rc = vmR3TrySetState(pVM, "VMR3Save", 2,
                              VMSTATE_SAVING,     VMSTATE_SUSPENDED,
                              VMSTATE_RUNNING_LS, VMSTATE_RUNNING);
-    if (rc == 1)
+    if (rc == 1 && enmAfter != SSMAFTER_TELEPORT)
     {
+        Assert(!pStreamOps);
         rc = SSMR3Save(pVM, pszFilename, enmAfter, pfnProgress, pvProgressUser);
         vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_SAVING);
     }
-    else if (rc == 2)
+    else if (rc == 2 || enmAfter == SSMAFTER_TELEPORT)
     {
         rc = SSMR3LiveSave(pVM, pszFilename, pStreamOps, pvStreamOpsUser,
                            enmAfter, pfnProgress, pvProgressUser, ppSSM);
@@ -1655,17 +1658,18 @@ static int vmR3SaveTeleport(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStre
         rc = SSMR3LiveDoStep1(pSSM);
         if (RT_SUCCESS(rc))
         {
-            for (;;)
-            {
-                /* Try suspend the VM. */
-                rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
-                                        vmR3LiveDoSuspend, NULL);
-                if (rc != VERR_TRY_AGAIN)
-                    break;
+            if (VMR3GetState(pVM) != VMSTATE_SAVING)
+                for (;;)
+                {
+                    /* Try suspend the VM. */
+                    rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
+                                            vmR3LiveDoSuspend, NULL);
+                    if (rc != VERR_TRY_AGAIN)
+                        break;
 
-                /* Wait for the state to change. */
-                RTThreadSleep(250); /** @todo LS: fix this polling wait by some smart use of multiple release event  semaphores.. */
-            }
+                    /* Wait for the state to change. */
+                    RTThreadSleep(250); /** @todo LS: fix this polling wait by some smart use of multiple release event  semaphores.. */
+                }
             if (RT_SUCCESS(rc))
                 rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3LiveDoStep2, 2, pVM, pSSM);
             else
