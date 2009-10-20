@@ -8520,7 +8520,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         rc = createImplicitDiffs(mUserData->mSnapshotFolderFull,
                                  aConsoleProgress,
                                  1,            // operation weight; must be the same as in Console::TakeSnapshot()
-                                 fTakingSnapshotOnline);
+                                 !!fTakingSnapshotOnline);
 
         if (SUCCEEDED(rc) && mSnapshotData.mLastState == MachineState_Saved)
         {
@@ -8553,10 +8553,11 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
                                vrc);
         }
     }
-    catch (HRESULT rc)
+    catch (HRESULT hrc)
     {
         pSnapshot->uninit();
         pSnapshot.setNull();
+        rc = hrc;
     }
 
     if (fTakingSnapshotOnline)
