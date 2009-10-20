@@ -1387,16 +1387,17 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *aEvent)
                         /* Discard the current state if requested */
                         if (dlg.mCbDiscardCurState->isChecked() && dlg.mCbDiscardCurState->isVisibleTo (&dlg))
                         {
-                            CProgress progress = console.RestoreSnapshot(machine.GetCurrentSnapshot());
+                            CSnapshot snapshot = machine.GetCurrentSnapshot();
+                            CProgress progress = console.RestoreSnapshot (snapshot);
                             if (console.isOk())
                             {
                                 /* Show the progress dialog */
                                 vboxProblem().showModalProgressDialog (progress, machine.GetName(), this);
                                 if (progress.GetResultCode() != 0)
-                                    vboxProblem().cannotDiscardCurrentState (progress);
+                                    vboxProblem().cannotRestoreSnapshot (progress, snapshot.GetName());
                             }
                             else
-                                vboxProblem().cannotDiscardCurrentState (console);
+                                vboxProblem().cannotRestoreSnapshot (console, snapshot.GetName());
                         }
                     }
                 }

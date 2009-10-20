@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,19 +23,15 @@
 #ifndef __VBoxSnapshotsWgt_h__
 #define __VBoxSnapshotsWgt_h__
 
+/* Local includes */
 #include "VBoxSnapshotsWgt.gen.h"
 #include "VBoxGlobal.h"
 #include "QIWithRetranslateUI.h"
 
-/* Qt includes */
-#include <QUuid>
-
+/* Local forwards */
 class SnapshotWgtItem;
 
-class QMenu;
-
-class VBoxSnapshotsWgt : public QIWithRetranslateUI<QWidget>,
-                         public Ui::VBoxSnapshotsWgt
+class VBoxSnapshotsWgt : public QIWithRetranslateUI <QWidget>, public Ui::VBoxSnapshotsWgt
 {
     Q_OBJECT;
 
@@ -51,26 +47,22 @@ protected:
 
 private slots:
 
-    void onCurrentChanged (QTreeWidgetItem *aNewItem,
-                           QTreeWidgetItem *aOldItem = 0);
+    void onCurrentChanged (QTreeWidgetItem *aItem = 0);
     void onContextMenuRequested (const QPoint &aPoint);
-    void onItemChanged (QTreeWidgetItem *aItem, int aColumn);
+    void onItemChanged (QTreeWidgetItem *aItem);
 
-    void discardSnapshot();
-    void takeSnapshot();
-    void discardCurState();
+    void restoreSnapshot();
+    void deleteSnapshot();
     void showSnapshotDetails();
+    void takeSnapshot();
 
-    void machineDataChanged (const VBoxMachineDataChangeEvent &aE);
-    void machineStateChanged (const VBoxMachineStateChangeEvent &aE);
-    void sessionStateChanged (const VBoxSessionStateChangeEvent &aE);
-#if 0
-    void snapshotChanged (const VBoxSnapshotEvent &aE);
-#endif
+    void machineDataChanged (const VBoxMachineDataChangeEvent &aEvent);
+    void machineStateChanged (const VBoxMachineStateChangeEvent &aEvent);
+    void sessionStateChanged (const VBoxSessionStateChangeEvent &aEvent);
 
 private:
 
-    void refreshAll (bool aKeepSelected = true);
+    void refreshAll();
     SnapshotWgtItem* findItem (const QString &aSnapshotId);
     SnapshotWgtItem* curStateItem();
     void populateSnapshots (const CSnapshot &aSnapshot, QTreeWidgetItem *aItem);
@@ -79,17 +71,15 @@ private:
     QString          mMachineId;
     KSessionState    mSessionState;
     SnapshotWgtItem *mCurSnapshotItem;
-    QMenu           *mContextMenu;
-    bool             mContextMenuDirty;
     bool             mEditProtector;
 
     QActionGroup    *mSnapshotActionGroup;
     QActionGroup    *mCurStateActionGroup;
 
-    QAction         *mDiscardSnapshotAction;
-    QAction         *mTakeSnapshotAction;
-    QAction         *mRevertToCurSnapAction;
+    QAction         *mRestoreSnapshotAction;
+    QAction         *mDeleteSnapshotAction;
     QAction         *mShowSnapshotDetailsAction;
+    QAction         *mTakeSnapshotAction;
 };
 
 #endif // __VBoxSnapshotsWgt_h__

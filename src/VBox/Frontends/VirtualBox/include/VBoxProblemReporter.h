@@ -208,16 +208,13 @@ public:
     bool warnAboutVirtNotEnabledGuestRequired();
 
     void cannotSetSnapshotFolder (const CMachine &aMachine, const QString &aPath);
-    bool askAboutSnapshotAndStateDiscarding();
-    bool askAboutSnapshotDiscarding();
-    void cannotDiscardSnapshot (const CConsole &aConsole,
-                                const QString &aSnapshotName);
-    void cannotDiscardSnapshot (const CProgress &aProgress,
-                                const QString &aSnapshotName);
-    void cannotDiscardCurrentState (const CConsole &console);
-    void cannotDiscardCurrentState (const CProgress &progress);
-    void cannotDiscardCurrentSnapshotAndState (const CConsole &console);
-    void cannotDiscardCurrentSnapshotAndState (const CProgress &progress);
+
+    bool askAboutSnapshotRestoring (const QString &aSnapshotName);
+    bool askAboutSnapshotDeleting (const QString &aSnapshotName);
+    void cannotRestoreSnapshot (const CConsole &aConsole, const QString &aSnapshotName);
+    void cannotRestoreSnapshot (const CProgress &aProgress, const QString &aSnapshotName);
+    void cannotDeleteSnapshot (const CConsole &aConsole, const QString &aSnapshotName);
+    void cannotDeleteSnapshot (const CProgress &aProgress, const QString &aSnapshotName);
 
     void cannotFindMachineByName (const CVirtualBox &vbox, const QString &name);
 

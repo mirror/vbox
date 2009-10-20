@@ -134,10 +134,10 @@
     <file alias="discard_cur_state_snapshot_22px.png">images/discard_cur_state_snapshot_22px.png</file>
     <file alias="discard_cur_state_snapshot_dis_16px.png">images/discard_cur_state_snapshot_dis_16px.png</file>
     <file alias="discard_cur_state_snapshot_dis_22px.png">images/discard_cur_state_snapshot_dis_22px.png</file>
-    <file alias="discard_snapshot_16px.png">images/discard_snapshot_16px.png</file>
-    <file alias="discard_snapshot_22px.png">images/discard_snapshot_22px.png</file>
-    <file alias="discard_snapshot_dis_16px.png">images/discard_snapshot_dis_16px.png</file>
-    <file alias="discard_snapshot_dis_22px.png">images/discard_snapshot_dis_22px.png</file>
+    <file alias="delete_snapshot_16px.png">images/delete_snapshot_16px.png</file>
+    <file alias="delete_snapshot_22px.png">images/delete_snapshot_22px.png</file>
+    <file alias="delete_snapshot_dis_16px.png">images/delete_snapshot_dis_16px.png</file>
+    <file alias="delete_snapshot_dis_22px.png">images/delete_snapshot_dis_22px.png</file>
     <file alias="take_snapshot_16px.png">images/take_snapshot_16px.png</file>
     <file alias="take_snapshot_22px.png">images/take_snapshot_22px.png</file>
     <file alias="take_snapshot_dis_16px.png">images/take_snapshot_dis_16px.png</file>
