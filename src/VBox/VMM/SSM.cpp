@@ -3950,7 +3950,7 @@ VMMR3DECL(int) SSMR3PutStrZ(PSSMHANDLE pSSM, const char *psz)
     size_t cch = strlen(psz);
     if (cch > _1M)
     {
-        AssertMsgFailed(("a %d byte long string, what's this!?!\n"));
+        AssertMsgFailed(("a %zu byte long string, what's this!?!\n", cch));
         return VERR_TOO_MUCH_DATA;
     }
     uint32_t u32 = (uint32_t)cch;
