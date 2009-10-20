@@ -8307,7 +8307,7 @@
     <const name="Immutable"         value="1">
       <desc>
         Immutable medium (attached indirectly, changes are wiped out
-        after powering off the virtual machine).
+        the next time the virtual machine is started).
       </desc>
     </const>
     <const name="Writethrough"      value="2">
