@@ -773,11 +773,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         StorageControllerType_T enmCtrlType;
         StorageBus_T            enmBus;
         bool                    fSCSI = false;
-        BSTR                    controllerName;
+        Bstr                    controllerName;
 
         rc = ctrls[i]->COMGETTER(ControllerType)(&enmCtrlType);                     H();
         rc = ctrls[i]->COMGETTER(Bus)(&enmBus);                                     H();
-        rc = ctrls[i]->COMGETTER(Name)(&controllerName);                            H();
+        rc = ctrls[i]->COMGETTER(Name)(controllerName.asOutParam());                H();
 
         const char *pszCtrlDev = pConsole->controllerTypeToDev(enmCtrlType);
 
