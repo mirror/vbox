@@ -229,7 +229,11 @@ public:
     {
         if (pstr)
         {
-            *pstr = NULL;
+            if (*pstr)
+            {
+                ::SysFreeString (*pstr);
+                *pstr = NULL;
+            }
             raw_copy (*pstr, bstr);
         }
         return *this;
@@ -411,7 +415,11 @@ public:
     {
         if (pstr)
         {
-            *pstr = NULL;
+            if (*pstr)
+            {
+                ::SysFreeString (*pstr);
+                *pstr = NULL;
+            }
             Bstr::raw_copy(*pstr, m_psz);
         }
         return *this;
