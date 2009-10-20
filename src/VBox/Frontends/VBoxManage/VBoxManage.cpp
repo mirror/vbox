@@ -2030,7 +2030,7 @@ int main(int argc, char *argv[])
         { "registerimage",    handleOpenMedium }, /* backward compatiblity */
         { "closemedium",      handleCloseMedium },
         { "unregisterimage",  handleCloseMedium }, /* backward compatiblity */
-        { "attachdisk",       handleAttachDisk },
+        { "storageattach",    handleStorageAttach },
         { "storagectl",       handleStorageController },
         { "showhdinfo",       handleShowHardDiskInfo },
         { "showvdiinfo",      handleShowHardDiskInfo }, /* backward compatiblity */

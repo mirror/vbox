@@ -91,7 +91,7 @@
 #define USAGE_HOSTONLYIFS           RT_BIT_64(46)
 #define USAGE_DHCPSERVER            RT_BIT_64(47)
 #define USAGE_DUMPHDINFO            RT_BIT_64(48)
-#define USAGE_ATTACHDISK            RT_BIT_64(49)
+#define USAGE_STORAGEATTACH         RT_BIT_64(49)
 #define USAGE_STORAGECONTROLLER     RT_BIT_64(50)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
@@ -196,7 +196,7 @@ int handleOpenMedium(HandlerArg *a);
 int handleCloseMedium(HandlerArg *a);
 
 /* VBoxManageStorageController.cpp */
-int handleAttachDisk(HandlerArg *a);
+int handleStorageAttach(HandlerArg *a);
 int handleStorageController(HandlerArg *a);
 
 // VBoxManageImport.cpp

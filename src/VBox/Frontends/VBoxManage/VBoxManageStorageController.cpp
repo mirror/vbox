@@ -46,63 +46,47 @@ using namespace com;
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static const RTGETOPTDEF g_aAttachDiskOptions[] =
+static const RTGETOPTDEF g_aStorageAttachOptions[] =
 {
-    { "--type",           't', RTGETOPT_REQ_STRING },
-    { "--file",           'f', RTGETOPT_REQ_STRING },
-    { "--controller",     'c', RTGETOPT_REQ_STRING },
+    { "--storagectl",     's', RTGETOPT_REQ_STRING },
     { "--port",           'p', RTGETOPT_REQ_UINT32 },
     { "--device",         'd', RTGETOPT_REQ_UINT32 },
+    { "--medium",         'm', RTGETOPT_REQ_STRING },
+    { "--type",           't', RTGETOPT_REQ_STRING },
+    { "--passthrough",    'h', RTGETOPT_REQ_STRING },
 };
 
-int handleAttachDisk(HandlerArg *a)
+int handleStorageAttach(HandlerArg *a)
 {
     int c;
     HRESULT rc = S_OK;
-    ULONG port   = 0;
-    ULONG device = 0;
+    ULONG port   = ~0U;
+    ULONG device = ~0U;
     bool fRunTime = false;
     const char *pszCtl  = NULL;
     const char *pszType = NULL;
-    const char *pszFile = NULL;
+    const char *pszMedium = NULL;
+    const char *pszPassThrough = NULL;
     Bstr machineuuid (a->argv[0]);
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     ComPtr<IMachine> machine;
     ComPtr<IStorageController> storageCtl;
 
-    if (a->argc < 11)
-        return errorSyntax(USAGE_ATTACHDISK, "Too few parameters");
-    else if (a->argc > 11)
-        return errorSyntax(USAGE_ATTACHDISK, "Too many parameters");
+    if (a->argc < 9)
+        return errorSyntax(USAGE_STORAGEATTACH, "Too few parameters");
+    else if (a->argc > 13)
+        return errorSyntax(USAGE_STORAGEATTACH, "Too many parameters");
 
-    RTGetOptInit (&GetState, a->argc, a->argv, g_aAttachDiskOptions,
-                  RT_ELEMENTS(g_aAttachDiskOptions), 1, 0 /* fFlags */);
+    RTGetOptInit (&GetState, a->argc, a->argv, g_aStorageAttachOptions,
+                  RT_ELEMENTS(g_aStorageAttachOptions), 1, 0 /* fFlags */);
 
     while (   SUCCEEDED(rc)
            && (c = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (c)
         {
-            case 't':   // type <dvd|hdd|fdd>
-            {
-                if (ValueUnion.psz)
-                    pszType = ValueUnion.psz;
-                else
-                    rc = E_FAIL;
-                break;
-            }
-
-            case 'f':   // file <none|uuid|filename|host:<drive>>
-            {
-                if (ValueUnion.psz)
-                    pszFile = ValueUnion.psz;
-                else
-                    rc = E_FAIL;
-                break;
-            }
-
-            case 'c':   // controller name
+            case 's':   // storage controller name
             {
                 if (ValueUnion.psz)
                     pszCtl = ValueUnion.psz;
@@ -123,22 +107,48 @@ int handleAttachDisk(HandlerArg *a)
                 break;
             }
 
+            case 'm':   // medium <none|emptydrive|uuid|filename|host:<drive>>
+            {
+                if (ValueUnion.psz)
+                    pszMedium = ValueUnion.psz;
+                else
+                    rc = E_FAIL;
+                break;
+            }
+
+            case 't':   // type <dvddrive|hdd|fdd>
+            {
+                if (ValueUnion.psz)
+                    pszType = ValueUnion.psz;
+                else
+                    rc = E_FAIL;
+                break;
+            }
+
+            case 'h':   // passthrough <on|off>
+            {
+                if (ValueUnion.psz)
+                    pszPassThrough = ValueUnion.psz;
+                else
+                    rc = E_FAIL;
+                break;
+            }
+
             default:
             {
-                errorGetOpt(USAGE_ATTACHDISK, c, &ValueUnion);
+                errorGetOpt(USAGE_STORAGEATTACH, c, &ValueUnion);
                 rc = E_FAIL;
                 break;
             }
         }
     }
 
-    if (FAILED(rc))
-        return 1;
-
-    if (   fRunTime
-        && !RTStrICmp(pszType, "hdd"))
+    if (   FAILED(rc)
+        || !pszCtl
+        || port == ~0U
+        || device == ~0U)
     {
-        errorArgument("Harddisk's can't be changed while the VM is still running\n");
+        errorGetOpt(USAGE_STORAGEATTACH, c, &ValueUnion);
         return 1;
     }
 
@@ -162,29 +172,84 @@ int handleAttachDisk(HandlerArg *a)
         fRunTime = true;
     }
 
+    if (fRunTime)
+    {
+        if (   !RTStrICmp(pszMedium, "none")
+            || !RTStrICmp(pszType, "hdd"))
+            errorArgument("DVD/HardDisk Drives can't be changed while the VM is still running\n");
+        if (pszPassThrough)
+            errorArgument("Drive passthrough state can't be changed while the VM is still running\n");
+
+        goto leave;
+    }
+
     /* get the mutable session machine */
     a->session->COMGETTER(Machine)(machine.asOutParam());
 
     /* check if the storage controller is present */
     rc = machine->GetStorageControllerByName(Bstr(pszCtl), storageCtl.asOutParam());
     if (FAILED(rc))
-        return errorSyntax(USAGE_ATTACHDISK, "Couldn't find the controller with the name: '%s'\n", pszCtl);
-
-    if (!RTStrICmp(pszType, "dvd"))
     {
-        if (!RTStrICmp(pszFile, "null"))
+        errorSyntax(USAGE_STORAGEATTACH, "Couldn't find the controller with the name: '%s'\n", pszCtl);
+        goto leave;
+    }
+
+    if (!RTStrICmp(pszMedium, "none"))
+    {
+        CHECK_ERROR (machine, DetachDevice(Bstr(pszCtl), port, device));
+    }
+    else if (!RTStrICmp(pszMedium, "emptydrive"))
+    {
+        if (fRunTime)
         {
-            if (fRunTime)
+            ComPtr<IMediumAttachment> mediumAttachment;
+            rc = machine->GetMediumAttachment(Bstr(pszCtl), port, device, mediumAttachment.asOutParam());
+            if (SUCCEEDED(rc))
             {
-                errorArgument("DVD Drive's can't be removed while the VM is still running\n");
-                rc = E_FAIL;
+                DeviceType_T deviceType;
+                mediumAttachment->COMGETTER(Type) (&deviceType);
+
+                if (   (deviceType == DeviceType_DVD)
+                    || (deviceType == DeviceType_Floppy))
+                {
+                    /* just unmount the floppy/dvd */
+                    CHECK_ERROR (machine, MountMedium(Bstr(pszCtl), port, device, NULL));
+                }
             }
             else
             {
-                CHECK_ERROR (machine, DetachDevice(Bstr(pszCtl), port, device));
+                errorArgument("No DVD/Floppy Drive attached to the controller '%s'"
+                              "at the port: %u, device: %u", pszCtl, port, device);
+                goto leave;
             }
+
         }
         else
+        {
+            StorageBus_T storageBus = StorageBus_Null;
+            DeviceType_T deviceType = DeviceType_Null;
+
+            CHECK_ERROR (storageCtl, COMGETTER(Bus)(&storageBus));
+
+            if (storageBus == StorageBus_Floppy)
+                deviceType = DeviceType_Floppy;
+            else
+                deviceType = DeviceType_DVD;
+
+            /* attach a empty floppy/dvd drive after removing previous attachment */
+            machine->DetachDevice(Bstr(pszCtl), port, device);
+            CHECK_ERROR (machine, AttachDevice(Bstr(pszCtl), port, device, deviceType, NULL));
+        }
+    }
+    else
+    {
+        if (!pszType)
+        {
+            errorSyntax(USAGE_STORAGEATTACH, "Argument --type not specified\n");
+            goto leave;
+        }
+
+        if (!RTStrICmp(pszType, "dvddrive"))
         {
             Bstr uuid;
             ComPtr<IMedium> dvdMedium;
@@ -215,31 +280,26 @@ int handleAttachDisk(HandlerArg *a)
             /* Attach/Detach the dvd medium now */
             do
             {
-                /* unmount? */
-                if (!RTStrICmp(pszFile, "none"))
-                {
-                    /* nothing to do, NULL object will cause unmount */
-                }
                 /* host drive? */
-                else if (!RTStrNICmp(pszFile, "host:", 5))
+                if (!RTStrNICmp(pszMedium, "host:", 5))
                 {
                     ComPtr<IHost> host;
                     CHECK_ERROR (a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-                    rc = host->FindHostDVDDrive(Bstr(pszFile + 5), dvdMedium.asOutParam());
+                    rc = host->FindHostDVDDrive(Bstr(pszMedium + 5), dvdMedium.asOutParam());
                     if (!dvdMedium)
                     {
                         /* 2nd try: try with the real name, important on Linux+libhal */
                         char szPathReal[RTPATH_MAX];
-                        if (RT_FAILURE(RTPathReal(pszFile + 5, szPathReal, sizeof(szPathReal))))
+                        if (RT_FAILURE(RTPathReal(pszMedium + 5, szPathReal, sizeof(szPathReal))))
                         {
-                            errorArgument("Invalid host DVD drive name \"%s\"", pszFile + 5);
+                            errorArgument("Invalid host DVD drive name \"%s\"", pszMedium + 5);
                             rc = E_FAIL;
                             break;
                         }
                         rc = host->FindHostDVDDrive(Bstr(szPathReal), dvdMedium.asOutParam());
                         if (!dvdMedium)
                         {
-                            errorArgument("Invalid host DVD drive name \"%s\"", pszFile + 5);
+                            errorArgument("Invalid host DVD drive name \"%s\"", pszMedium + 5);
                             rc = E_FAIL;
                             break;
                         }
@@ -248,46 +308,37 @@ int handleAttachDisk(HandlerArg *a)
                 else
                 {
                     /* first assume it's a UUID */
-                    uuid = pszFile;
+                    uuid = pszMedium;
                     rc = a->virtualBox->GetDVDImage(uuid, dvdMedium.asOutParam());
                     if (FAILED(rc) || !dvdMedium)
                     {
                         /* must be a filename, check if it's in the collection */
-                        rc = a->virtualBox->FindDVDImage(Bstr(pszFile), dvdMedium.asOutParam());
+                        rc = a->virtualBox->FindDVDImage(Bstr(pszMedium), dvdMedium.asOutParam());
                         /* not registered, do that on the fly */
                         if (!dvdMedium)
                         {
                             Bstr emptyUUID;
-                            CHECK_ERROR (a->virtualBox, OpenDVDImage(Bstr(pszFile),
+                            CHECK_ERROR (a->virtualBox, OpenDVDImage(Bstr(pszMedium),
                                          emptyUUID, dvdMedium.asOutParam()));
                         }
                     }
                     if (!dvdMedium)
                     {
+                        errorArgument("Invalid UUID or filename \"%s\"", pszMedium);
                         rc = E_FAIL;
                         break;
                     }
                 }
-            }
-            while (0);
+            } while (0);
 
             if (dvdMedium)
+            {
                 dvdMedium->COMGETTER(Id)(uuid.asOutParam());
-            if (SUCCEEDED(rc))
                 CHECK_ERROR (machine, MountMedium(Bstr(pszCtl), port, device, uuid));
+            }
         }
-    }
-    else if (   !RTStrICmp(pszType, "hdd")
-             && !fRunTime)
-    {
-        Bstr uuid(pszFile);
-
-        if (   !RTStrICmp(pszFile, "none")
-            || !RTStrICmp(pszFile, "null"))
-        {
-            machine->DetachDevice(Bstr(pszCtl), port, device);
-        }
-        else
+        else if (   !RTStrICmp(pszType, "hdd")
+                 && !fRunTime)
         {
             ComPtr<IMediumAttachment> mediumAttachement;
 
@@ -303,18 +354,19 @@ int handleAttachDisk(HandlerArg *a)
             }
 
             /* first guess is that it's a UUID */
+            Bstr uuid(pszMedium);
             ComPtr<IMedium> hardDisk;
             rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
 
             /* not successful? Then it must be a filename */
             if (!hardDisk)
             {
-                rc = a->virtualBox->FindHardDisk(Bstr(pszFile), hardDisk.asOutParam());
+                rc = a->virtualBox->FindHardDisk(Bstr(pszMedium), hardDisk.asOutParam());
                 if (FAILED(rc))
                 {
                     /* open the new hard disk object */
                     CHECK_ERROR (a->virtualBox,
-                                 OpenHardDisk(Bstr(pszFile),
+                                 OpenHardDisk(Bstr(pszMedium),
                                               AccessMode_ReadWrite, false, Bstr(""),
                                               false, Bstr(""), hardDisk.asOutParam()));
                 }
@@ -326,82 +378,102 @@ int handleAttachDisk(HandlerArg *a)
                 CHECK_ERROR (machine, AttachDevice(Bstr(pszCtl), port, device, DeviceType_HardDisk, uuid));
             }
             else
-                rc = E_FAIL;
-        }
-    }
-    else if (!RTStrICmp(pszType, "fdd"))
-    {
-        ComPtr<IMediumAttachment> floppyAttachment;
-        machine->GetMediumAttachment(Bstr(pszCtl), port, device, floppyAttachment.asOutParam());
-
-        if (!RTStrICmp(pszFile, "null"))
-        {
-            if (fRunTime)
             {
-                errorArgument("Floppy Drive's can't be removed while the VM is still running\n");
+                errorArgument("Invalid UUID or filename \"%s\"", pszMedium);
                 rc = E_FAIL;
             }
-            else
-            {
-                if (floppyAttachment)
-                    CHECK_ERROR (machine, DetachDevice(Bstr(pszCtl), port, device));
-            }
         }
-        else
+        else if (!RTStrICmp(pszType, "fdd"))
         {
             Bstr uuid;
             ComPtr<IMedium> floppyMedium;
+            ComPtr<IMediumAttachment> floppyAttachment;
+            machine->GetMediumAttachment(Bstr(pszCtl), port, device, floppyAttachment.asOutParam());
 
             if (   !fRunTime
                 && !floppyAttachment)
                 CHECK_ERROR (machine, AttachDevice(Bstr(pszCtl), port, device, DeviceType_Floppy, NULL));
 
-            /* unmount? */
-            if (!RTStrICmp(pszFile, "none"))
-            {
-                /* nothing to do, NULL object will cause unmount */
-            }
             /* host drive? */
-            else if (!RTStrNICmp(pszFile, "host:", 5))
+            if (!RTStrNICmp(pszMedium, "host:", 5))
             {
                 ComPtr<IHost> host;
 
                 CHECK_ERROR (a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-                rc = host->FindHostFloppyDrive(Bstr(pszFile + 5), floppyMedium.asOutParam());
+                rc = host->FindHostFloppyDrive(Bstr(pszMedium + 5), floppyMedium.asOutParam());
                 if (!floppyMedium)
                 {
-                    errorArgument("Invalid host floppy drive name \"%s\"", pszFile + 5);
+                    errorArgument("Invalid host floppy drive name \"%s\"", pszMedium + 5);
                     rc = E_FAIL;
                 }
             }
             else
             {
                 /* first assume it's a UUID */
-                uuid = pszFile;
+                uuid = pszMedium;
                 rc = a->virtualBox->GetFloppyImage(uuid, floppyMedium.asOutParam());
                 if (FAILED(rc) || !floppyMedium)
                 {
                     /* must be a filename, check if it's in the collection */
-                    rc = a->virtualBox->FindFloppyImage(Bstr(pszFile), floppyMedium.asOutParam());
+                    rc = a->virtualBox->FindFloppyImage(Bstr(pszMedium), floppyMedium.asOutParam());
                     /* not registered, do that on the fly */
                     if (!floppyMedium)
                     {
                         Bstr emptyUUID;
                         CHECK_ERROR (a->virtualBox,
-                                     OpenFloppyImage(Bstr(pszFile),
+                                     OpenFloppyImage(Bstr(pszMedium),
                                                      emptyUUID,
                                                      floppyMedium.asOutParam()));
                     }
                 }
 
                 if (!floppyMedium)
+                {
+                    errorArgument("Invalid UUID or filename \"%s\"", pszMedium);
                     rc = E_FAIL;
+                }
             }
 
             if (floppyMedium)
+            {
                 floppyMedium->COMGETTER(Id)(uuid.asOutParam());
-            if (SUCCEEDED(rc))
                 CHECK_ERROR (machine, MountMedium(Bstr(pszCtl), port, device, uuid));
+            }
+        }
+        else
+        {
+            errorArgument("Invalid --type argument '%s'", pszType);
+            rc = E_FAIL;
+        }
+    }
+
+    if (   pszPassThrough
+        && (SUCCEEDED(rc)))
+    {
+        ComPtr<IMediumAttachment> mattach;
+
+        CHECK_ERROR (machine, GetMediumAttachment(Bstr(pszCtl), port, device, mattach.asOutParam()));
+
+        if (SUCCEEDED(rc))
+        {
+            if (!RTStrICmp(pszPassThrough, "on"))
+            {
+                CHECK_ERROR (mattach, COMSETTER(Passthrough)(true));
+            }
+            else if (!RTStrICmp(pszPassThrough, "off"))
+            {
+                CHECK_ERROR (mattach, COMSETTER(Passthrough)(false));
+            }
+            else
+            {
+                errorArgument("Invalid --passthrough argument '%s'", pszPassThrough);
+                rc = E_FAIL;
+            }
+        }
+        else
+        {
+            errorArgument("Couldn't find the controller attachment for the controller '%s'\n", pszCtl);
+            rc = E_FAIL;
         }
     }
 
@@ -409,6 +481,7 @@ int handleAttachDisk(HandlerArg *a)
     if (SUCCEEDED(rc))
         CHECK_ERROR (machine, SaveSettings());
 
+leave:
     /* it's important to always close sessions */
     a->session->Close();
 
@@ -420,12 +493,9 @@ static const RTGETOPTDEF g_aStorageControllerOptions[] =
 {
     { "--name",             'n', RTGETOPT_REQ_STRING },
     { "--add",              'a', RTGETOPT_REQ_STRING },
-    { "--controller",       't', RTGETOPT_REQ_STRING },
-    { "--port",             'p', RTGETOPT_REQ_UINT32 },
-    { "--device",           'd', RTGETOPT_REQ_UINT32 },
-    { "--passthrough",      'h', RTGETOPT_REQ_STRING },
+    { "--controller",       'c', RTGETOPT_REQ_STRING },
     { "--sataideemulation", 'e', RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
-    { "--sataportcount",    'c', RTGETOPT_REQ_UINT32 },
+    { "--sataportcount",    'p', RTGETOPT_REQ_UINT32 },
     { "--remove",           'r', RTGETOPT_REQ_NOTHING },
 };
 
@@ -436,13 +506,9 @@ int handleStorageController(HandlerArg *a)
     const char       *pszCtl         = NULL;
     const char       *pszBusType     = NULL;
     const char       *pszCtlType     = NULL;
-    const char       *pszPassThrough = NULL;
-    ULONG             cPass          = 0;
     ULONG             satabootdev    = ~0U;
     ULONG             sataidedev     = ~0U;
     ULONG             sataportcount  = ~0U;
-    ULONG             port           = ~0U;
-    ULONG             device         = ~0U;
     bool              fRemoveCtl     = false;
     Bstr              machineuuid (a->argv[0]);
     ComPtr<IMachine>  machine;
@@ -478,36 +544,10 @@ int handleStorageController(HandlerArg *a)
                 break;
             }
 
-            case 't':   // controller <lsilogic/buslogic/intelahci/piix3/piix4/ich6/i82078>
+            case 'c':   // controller <lsilogic/buslogic/intelahci/piix3/piix4/ich6/i82078>
             {
                 if (ValueUnion.psz)
                     pszCtlType = ValueUnion.psz;
-                else
-                    rc = E_FAIL;
-                break;
-            }
-
-            case 'p':   // port
-            {
-                port = ValueUnion.u32;
-                cPass++;
-                break;
-            }
-
-            case 'd':   // device
-            {
-                device = ValueUnion.u32;
-                cPass++;
-                break;
-            }
-
-            case 'h':   // passthrough
-            {
-                if (ValueUnion.psz)
-                {
-                    pszPassThrough = ValueUnion.psz;
-                    cPass++;
-                }
                 else
                     rc = E_FAIL;
                 break;
@@ -530,7 +570,7 @@ int handleStorageController(HandlerArg *a)
                 break;
             }
 
-            case 'c':   // sataportcount
+            case 'p':   // sataportcount
             {
                 sataportcount = ValueUnion.u32;
                 break;
@@ -573,15 +613,9 @@ int handleStorageController(HandlerArg *a)
 
     if (!pszCtl)
     {
+        /* it's important to always close sessions */
+        a->session->Close();
         errorSyntax(USAGE_STORAGECONTROLLER, "Storage Controller Name not specified\n");
-        return 1;
-    }
-
-    if (cPass != 0 && cPass != 3)
-    {
-        errorSyntax(USAGE_STORAGECONTROLLER,
-                    "All three options (--passthrough, --port, --device)\n"
-                    "need to be specified for dvd passthrough to be applied\n");
         return 1;
     }
 
@@ -595,12 +629,12 @@ int handleStorageController(HandlerArg *a)
         for (size_t i = 0; i < mediumAttachments.size(); ++ i)
         {
             ComPtr<IMediumAttachment> mediumAttach = mediumAttachments[i];
-            LONG cPort = 0;
-            LONG cDevice = 0;
+            LONG port = 0;
+            LONG device = 0;
 
-            CHECK_ERROR (mediumAttach, COMGETTER(Port)(&cPort));
-            CHECK_ERROR (mediumAttach, COMGETTER(Device)(&cDevice));
-            CHECK_ERROR (machine, DetachDevice(Bstr(pszCtl), cPort, cDevice));
+            CHECK_ERROR (mediumAttach, COMGETTER(Port)(&port));
+            CHECK_ERROR (mediumAttach, COMGETTER(Device)(&device));
+            CHECK_ERROR (machine, DetachDevice(Bstr(pszCtl), port, device));
         }
 
         if (SUCCEEDED(rc))
@@ -684,36 +718,6 @@ int handleStorageController(HandlerArg *a)
             else
             {
                 errorArgument("Couldn't find the controller with the name: '%s'\n", pszCtl);
-                rc = E_FAIL;
-            }
-        }
-
-        if (   (cPass == 3)
-            && SUCCEEDED(rc))
-        {
-            ComPtr<IMediumAttachment> mattach;
-
-            CHECK_ERROR (machine, GetMediumAttachment(Bstr(pszCtl), port, device, mattach.asOutParam()));
-
-            if (SUCCEEDED(rc))
-            {
-                if (!RTStrICmp(pszPassThrough, "on"))
-                {
-                    CHECK_ERROR (mattach, COMSETTER(Passthrough)(true));
-                }
-                else if (!RTStrICmp(pszPassThrough, "off"))
-                {
-                    CHECK_ERROR (mattach, COMSETTER(Passthrough)(false));
-                }
-                else
-                {
-                    errorArgument("Invalid --passthrough argument '%s'", pszPassThrough);
-                    rc = E_FAIL;
-                }
-            }
-            else
-            {
-                errorArgument("Couldn't find the controller attachment for the controller '%s'\n", pszCtl);
                 rc = E_FAIL;
             }
         }
