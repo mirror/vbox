@@ -53,7 +53,7 @@ public:
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *aParent,
                  Medium *aMedium,
-                 StorageController *aController,
+                 const Bstr &aControllerName,
                  LONG aPort,
                  LONG aDevice,
                  DeviceType_T aType,
@@ -82,15 +82,15 @@ public:
     void setImplicit(bool aImplicit) { m->implicit = aImplicit; }
 
     const ComObjPtr<Medium> &medium() const { return m->medium; }
-    const ComObjPtr<StorageController> &controller() const { return m->controller; }
+    Bstr controllerName() const { return m->controllerName; }
     LONG port() const { return m->port; }
     LONG device() const { return m->device; }
     DeviceType_T type() const { return m->type; }
     bool passthrough() const { AutoReadLock lock(this); return m->passthrough; }
 
-    bool matches(CBSTR aController, LONG aPort, LONG aDevice)
+    bool matches(CBSTR aControllerName, LONG aPort, LONG aDevice)
     {
-        return (    aController == m->controller->name()
+        return (    aControllerName == m->controllerName
                  && aPort == m->port
                  && aDevice == m->device);
     }
@@ -124,7 +124,12 @@ private:
         }
 
         ComObjPtr<Medium> medium;
-        ComObjPtr<StorageController> controller;
+        /* Since MediumAttachment is not a first class citizen when it
+         * comes to managing settings, having a reference to the storage
+         * controller will not work - when settings are changed it will point
+         * to the old, uninitialized instance. Changing this requires
+         * substantial changes to MediumImpl.cpp. */
+        Bstr controllerName;
         const LONG port;
         const LONG device;
         const DeviceType_T type;

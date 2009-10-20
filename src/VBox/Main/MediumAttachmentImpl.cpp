@@ -57,14 +57,14 @@ void MediumAttachment::FinalRelease()
  */
 HRESULT MediumAttachment::init(Machine *aParent,
                                Medium *aMedium,
-                               StorageController *aController,
+                               const Bstr &aControllerName,
                                LONG aPort,
                                LONG aDevice,
                                DeviceType_T aType,
                                bool aImplicit /*= false*/)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aParent=%p aMedium=%p aController=%ls aPort=%d aDevice=%d aType=%d aImplicit=%d\n", aParent, aMedium, aController, aPort, aDevice, aType, aImplicit));
+    LogFlowThisFunc(("aParent=%p aMedium=%p aControllerName=%ls aPort=%d aDevice=%d aType=%d aImplicit=%d\n", aParent, aMedium, aControllerName.raw(), aPort, aDevice, aType, aImplicit));
 
     if (aType == DeviceType_HardDisk)
         AssertReturn(aMedium, E_INVALIDARG);
@@ -77,7 +77,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
 
     m.allocate();
     m->medium = aMedium;
-    unconst(m->controller) = aController;
+    unconst(m->controllerName) = aControllerName;
     unconst(m->port)   = aPort;
     unconst(m->device) = aDevice;
     unconst(m->type)   = aType;
@@ -189,10 +189,13 @@ STDMETHODIMP MediumAttachment::COMGETTER(Controller)(IStorageController **aContr
     CheckComRCReturnRC(autoCaller.rc());
 
     /* m->controller is constant during life time, no need to lock */
-    m->controller.queryInterfaceTo(aController);
+    /** @todo ugly hack, MediumAttachment should have a direct reference
+     * to the storage controller, but can't have that right now due to
+     * how objects are created for settings rollback support. */
+    HRESULT rc = mParent->GetStorageControllerByName(m->controllerName, aController);
 
     LogFlowThisFuncLeave();
-    return S_OK;
+    return rc;
 }
 
 STDMETHODIMP MediumAttachment::COMGETTER(Port)(LONG *aPort)
