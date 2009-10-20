@@ -32,11 +32,12 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/thread.h>
+#include <iprt/ctype.h>
+#include <iprt/net.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
-#include <iprt/ctype.h>
+#include <iprt/thread.h>
 
 #include "../Builtins.h"
 
@@ -631,6 +632,32 @@ static DECLCALLBACK(void) drvIntNetResume(PPDMDRVINS pDrvIns)
         drvIntNetUpdateMacAddress(pThis); /* (could be a state restore) */
         drvIntNetSetActive(pThis, true /* fActive */);
     }
+    if (   PDMDrvHlpVMTeleportedAndNotFullyResumedYet(pDrvIns)
+        && pThis->pConfigIf)
+    {
+        /*
+         * We've just been teleported and need to drop a hint to the switch
+         * since we're likely to have changed to a different port.  We just
+         * push out some ethernet frame that doesn't mean anything to anyone.
+         * For this purpose ethertype 0x801e was chosen since it was registered
+         * to Sun (dunno what it is/was used for though).
+         */
+        union
+        {
+            RTNETETHERHDR   Hdr;
+            uint8_t         ab[128];
+        } Frame;
+        RT_ZERO(Frame);
+        Frame.Hdr.DstMac.au16[0] = 0xffff;
+        Frame.Hdr.DstMac.au16[1] = 0xffff;
+        Frame.Hdr.DstMac.au16[2] = 0xffff;
+        Frame.Hdr.EtherType      = RT_H2BE_U16(0x801e);
+        int rc = pThis->pConfigIf->pfnGetMac(pThis->pConfigIf, &Frame.Hdr.SrcMac);
+        if (RT_SUCCESS(rc))
+            rc = drvIntNetSend(&pThis->INetworkConnector, &Frame, sizeof(Frame));
+        if (RT_FAILURE(rc))
+            LogRel(("IntNet#%u: Sending dummy frame failed: %Rrc\n", pDrvIns->iInstance, rc));
+    }
 }
 
 
@@ -791,7 +818,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     /*
      * Check that no-one is attached to us.
      */
-    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
