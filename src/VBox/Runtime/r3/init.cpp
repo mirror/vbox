@@ -41,6 +41,9 @@
 # include <unistd.h>
 # ifndef RT_OS_OS2
 #  include <pthread.h>
+#  include <signal.h>
+#  include <errno.h>
+#  define IPRT_USE_SIG_CHILD_DUMMY
 # endif
 #endif
 #ifdef RT_OS_OS2
@@ -203,6 +206,21 @@ static int rtR3InitProgramPath(const char *pszProgramPath)
     return VINF_SUCCESS;
 }
 
+
+#ifdef IPRT_USE_SIG_CHILD_DUMMY
+/**
+ * Dummy SIGCHILD handler.
+ *
+ * Assigned on rtR3Init only when SIGCHILD handler is set SIGIGN or SIGDEF to
+ * ensure waitpid works properly for the terminated processes.
+ */
+static void rtR3SigChildHandler(int iSignal)
+{
+    NOREF(iSignal);
+}
+#endif /* IPRT_USE_SIG_CHILD_DUMMY */
+
+
 /**
  * rtR3Init worker.
  */
@@ -294,6 +312,41 @@ static int rtR3InitBody(bool fInitSUPLib, const char *pszProgramPath)
     AssertMsg(rc == 0, ("%d\n", rc));
 #endif
     atexit(rtR3ExitCallback);
+
+#ifdef IPRT_USE_SIG_CHILD_DUMMY
+    /*
+     * SIGCHLD must not be ignored (that's default), otherwise posix compliant waitpid
+     * implementations won't work right.
+     */
+    for (;;)
+    {
+        struct sigaction saOld;
+        rc = sigaction(SIGCHLD, 0, &saOld);         AssertMsg(rc == 0, ("%d/%d\n", rc, errno));
+        if (    rc != 0
+            ||  (saOld.sa_flags & SA_SIGINFO)
+            || (   saOld.sa_handler != SIG_IGN
+                && saOld.sa_handler != SIG_DFL)
+           )
+            break;
+
+        /* Try install dummy handler. */
+        struct sigaction saNew = saOld;
+        saNew.sa_flags   = SA_NOCLDSTOP | SA_RESTART;
+        saNew.sa_handler = rtR3SigChildHandler;
+        rc = sigemptyset(&saNew.sa_mask);           AssertMsg(rc == 0, ("%d/%d\n", rc, errno));
+        struct sigaction saOld2;
+        rc = sigaction(SIGCHLD, &saNew, &saOld2);   AssertMsg(rc == 0, ("%d/%d\n", rc, errno));
+        if (    rc != 0
+            ||  (   saOld2.sa_handler == saOld.sa_handler
+                 && !(saOld2.sa_flags & SA_SIGINFO))
+           )
+            break;
+
+        /* Race during dynamic load, restore and try again... */
+        sigaction(SIGCHLD, &saOld2, NULL);
+        RTThreadYield();
+    }
+#endif /* IPRT_USE_SIG_CHILD_DUMMY */
 
 #ifdef IPRT_WITH_ALIGNMENT_CHECKS
     /*
