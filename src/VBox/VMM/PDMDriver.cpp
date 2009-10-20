@@ -797,6 +797,32 @@ static DECLCALLBACK(int) pdmR3DrvHlp_VMSetRuntimeErrorV(PPDMDRVINS pDrvIns, uint
 }
 
 
+/** @copydoc PDMDEVHLPR3::pfnVMState */
+static DECLCALLBACK(VMSTATE) pdmR3DrvHlp_VMState(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+
+    VMSTATE enmVMState = VMR3GetState(pDrvIns->Internal.s.pVM);
+
+    LogFlow(("pdmR3DrvHlp_VMState: caller='%s'/%d: returns %d (%s)\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance,
+             enmVMState, VMR3GetStateName(enmVMState)));
+    return enmVMState;
+}
+
+
+/** @copydoc PDMDEVHLPR3::pfnVMTeleportedAndNotFullyResumedYet */
+static DECLCALLBACK(bool) pdmR3DrvHlp_VMTeleportedAndNotFullyResumedYet(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+
+    bool fRc = VMR3TeleportedAndNotFullyResumedYet(pDrvIns->Internal.s.pVM);
+
+    LogFlow(("pdmR3DrvHlp_VMState: caller='%s'/%d: returns %RTbool)\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance,
+             fRc));
+    return fRc;
+}
+
+
 /** @copydoc PDMDRVHLP::pfnPDMQueueCreate */
 static DECLCALLBACK(int) pdmR3DrvHlp_PDMQueueCreate(PPDMDRVINS pDrvIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
                                                     PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue)
@@ -1001,19 +1027,6 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTH
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnVMState */
-static DECLCALLBACK(VMSTATE) pdmR3DrvHlp_VMState(PPDMDRVINS pDrvIns)
-{
-    PDMDRV_ASSERT_DRVINS(pDrvIns);
-
-    VMSTATE enmVMState = VMR3GetState(pDrvIns->Internal.s.pVM);
-
-    LogFlow(("pdmR3DrvHlp_VMState: caller='%s'/%d: returns %d (%s)\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance,
-             enmVMState, VMR3GetStateName(enmVMState)));
-    return enmVMState;
-}
-
-
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
 /** @copydoc PDMDRVHLP::pfnPDMAsyncCompletionTemplateCreate */
 static DECLCALLBACK(int) pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
@@ -1050,6 +1063,8 @@ const PDMDRVHLP g_pdmR3DrvHlp =
     pdmR3DrvHlp_VMSetErrorV,
     pdmR3DrvHlp_VMSetRuntimeError,
     pdmR3DrvHlp_VMSetRuntimeErrorV,
+    pdmR3DrvHlp_VMState,
+    pdmR3DrvHlp_VMTeleportedAndNotFullyResumedYet,
     pdmR3DrvHlp_PDMQueueCreate,
     pdmR3DrvHlp_TMGetVirtualFreq,
     pdmR3DrvHlp_TMGetVirtualTime,
@@ -1063,7 +1078,6 @@ const PDMDRVHLP g_pdmR3DrvHlp =
     pdmR3DrvHlp_SUPCallVMMR0Ex,
     pdmR3DrvHlp_USBRegisterHub,
     pdmR3DrvHlp_PDMThreadCreate,
-    pdmR3DrvHlp_VMState,
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
     pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate,
 #endif

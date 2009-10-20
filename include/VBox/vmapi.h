@@ -360,6 +360,7 @@ VMMR3DECL(int)  VMR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUs
 VMMR3DECL(int)  VMR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser);
 VMMR3DECL(VMSTATE) VMR3GetState(PVM pVM);
 VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState);
+VMMR3DECL(bool) VMR3TeleportedAndNotFullyResumedYet(PVM pVM);
 VMMR3DECL(int)  VMR3AtErrorRegister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser);
 VMMR3DECL(int)  VMR3AtErrorRegisterU(PUVM pVM, PFNVMATERROR pfnAtError, void *pvUser);
 VMMR3DECL(int)  VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser);
