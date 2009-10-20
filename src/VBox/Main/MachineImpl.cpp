@@ -7717,6 +7717,25 @@ HRESULT SessionMachine::init (Machine *aMachine)
                     "CONFIG_SYSVIPC=y"));
         return E_FAIL;
     }
+    /* ENOSPC can also be the result of VBoxSVC crashes without properly freeing
+     * the IPC semaphores */
+    if (mIPCSem < 0 && errnoSave == ENOSPC)
+    {
+#ifdef RT_OS_LINUX
+        setError(E_FAIL,
+                 tr("Cannot create IPC semaphore because the system limit for the "
+                    "maximum number of semaphore sets (SEMMNI), or the system wide "
+                    "maximum number of sempahores (SEMMNS) would be exceeded. The "
+                    "current set of SysV IPC semaphores can be determined from "
+                    "the file /proc/sysvipc/sem"));
+#else
+        setError(E_FAIL,
+                 tr("Cannot create IPC semaphore because the system-imposed limit "
+                    "on the maximum number of allowed  semaphores or semaphore "
+                    "identifiers system-wide would be exceeded"));
+#endif
+        return E_FAIL;
+    }
     ComAssertMsgRet (mIPCSem >= 0, ("Cannot create IPC semaphore, errno=%d", errnoSave),
                      E_FAIL);
     /* set the initial value to 1 */
