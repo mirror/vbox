@@ -2742,17 +2742,17 @@ STDMETHODIMP Machine::GetExtraData(IN_BSTR aKey,
     CheckComRCReturnRC (autoCaller.rc());
 
     /* start with nothing found */
-    Bstr("").cloneTo(aValue);
+    Utf8Str strResult;
 
     AutoReadLock alock (this);
 
     settings::ExtraDataItemsMap::const_iterator it = mData->m_pMachineConfigFile->mapExtraDataItems.find(Utf8Str(aKey));
     if (it != mData->m_pMachineConfigFile->mapExtraDataItems.end())
-    {
         // found:
-        const Utf8Str &strValue = it->second;
-        strValue.cloneTo(aValue);
-    }
+        strResult = it->second;
+
+    /* return the result to caller (may be empty) */
+    strResult.cloneTo(aValue);
 
     return S_OK;
 }

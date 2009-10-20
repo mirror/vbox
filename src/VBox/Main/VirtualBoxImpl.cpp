@@ -1606,15 +1606,15 @@ STDMETHODIMP VirtualBox::GetExtraData(IN_BSTR aKey,
     CheckComRCReturnRC(autoCaller.rc());
 
     /* start with nothing found */
-    Bstr("").cloneTo(aValue);
+    Utf8Str strResult;
 
     settings::ExtraDataItemsMap::const_iterator it = m->pMainConfigFile->mapExtraDataItems.find(Utf8Str(aKey));
     if (it != m->pMainConfigFile->mapExtraDataItems.end())
-    {
         // found:
-        const Utf8Str &strValue = it->second;
-        strValue.cloneTo(aValue);
-    }
+        strResult = it->second;
+
+    /* return the result to caller (may be empty) */
+    strResult.cloneTo(aValue);
 
     return S_OK;
 }
