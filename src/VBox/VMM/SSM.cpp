@@ -4750,9 +4750,7 @@ static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
     AssertRC(pSSM->rc);
     pSSM->rc = VINF_SUCCESS;
     pSSM->enmOp = SSMSTATE_LIVE_EXEC;
-    for (PSSMUNIT pUnit = pVM->ssm.s.pHead;
-         /** @todo VMR3GetState(pVM) == VMSTATE_LIVE_SAVING &&*/ pUnit;
-         pUnit = pUnit->pNext)
+    for (PSSMUNIT pUnit = pVM->ssm.s.pHead; pUnit; pUnit = pUnit->pNext)
     {
         /*
          * Skip units without a callback (this is most).
@@ -4866,35 +4864,15 @@ static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 }
 
 
-
 /**
- * Continue a live state saving operation on the worker thread.
+ * Implements the live exec+vote loop.
  *
- * @returns VBox status.
- *
- * @param   pSSM            The SSM handle returned by SSMR3LiveSave.
- *
- * @thread  Non-EMT thread. Will involve the EMT at the end of the operation.
+ * @returns VBox status code (no need to check pSSM->rc).
+ * @param   pVM                 The VM handle.
+ * @param   pSSM                The saved state handle.
  */
-VMMR3_INT_DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
+static int ssmR3DoLiveExecVoteLoop(PVM pVM, PSSMHANDLE pSSM)
 {
-    LogFlow(("SSMR3LiveDoStep1: pSSM=%p\n", pSSM));
-
-    /*
-     * Validate input.
-     */
-    AssertPtrReturn(pSSM, VERR_INVALID_POINTER);
-    PVM pVM = pSSM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    VM_ASSERT_OTHER_THREAD(pVM);
-    AssertMsgReturn(   pSSM->enmAfter == SSMAFTER_DESTROY
-                    || pSSM->enmAfter == SSMAFTER_CONTINUE
-                    || pSSM->enmAfter == SSMAFTER_TELEPORT,
-                    ("%d\n", pSSM->enmAfter),
-                    VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pSSM->enmOp == SSMSTATE_LIVE_STEP1, ("%d\n", pSSM->enmOp), VERR_INVALID_STATE);
-    AssertRCReturn(pSSM->rc, pSSM->rc);
-
     /*
      * Calc the max saved state size before we should give up because of insane
      * amounts of data.
@@ -4962,30 +4940,6 @@ VMMR3_INT_DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
                 return pSSM->rc = VERR_SSM_LOW_ON_DISK_SPACE;
             }
         }
-#if 0 /** @todo check this out... */
-        /*
-         * Check the VM state to see if it has changed.
-         */
-        VMSTATE enmState = VMR3GetState(pVM);
-        if (enmState != VMSTATE_LIVE_SAVING)
-        {
-            switch (enmState)
-            {
-                case VMSTATE_LIVE_CANCELLED:
-                    LogRel(("SSM: Cancelled\n"));
-                    return pSSM->rc = VERR_SSM_LIVE_CANCELLED;
-                case VMSTATE_LIVE_POWERED_OFF:
-                    LogRel(("SSM: Powered off, no state to save, aborting.\n"));
-                    return pSSM->rc = VERR_SSM_LIVE_POWERED_OFF;
-                case VMSTATE_GURU_MEDITATION:
-                    LogRel(("SSM: Guru meditation, aborting.\n"));
-                    return pSSM->rc = VERR_SSM_LIVE_GURU_MEDITATION;
-                default:
-                    LogRel(("SSM: Invalid VM state transition: %d->%d\n", VMSTATE_LIVE_SAVING, enmState));
-                    return pSSM->rc = VERR_INTERNAL_ERROR_3;
-            }
-        }
-#endif
     }
 
     LogRel(("SSM: Giving up: Too many passes! (%u)\n", SSM_MAX_PASSES));
@@ -5053,6 +5007,44 @@ static int ssmR3DoLivePrepRun(PVM pVM, PSSMHANDLE pSSM)
     pSSM->uPercent = 2;
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Continue a live state saving operation on the worker thread.
+ *
+ * @returns VBox status.
+ *
+ * @param   pSSM            The SSM handle returned by SSMR3LiveSave.
+ *
+ * @thread  Non-EMT thread. Will involve the EMT at the end of the operation.
+ */
+VMMR3_INT_DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
+{
+    LogFlow(("SSMR3LiveDoStep1: pSSM=%p\n", pSSM));
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pSSM, VERR_INVALID_POINTER);
+    PVM pVM = pSSM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_OTHER_THREAD(pVM);
+    AssertMsgReturn(   pSSM->enmAfter == SSMAFTER_DESTROY
+                    || pSSM->enmAfter == SSMAFTER_CONTINUE
+                    || pSSM->enmAfter == SSMAFTER_TELEPORT,
+                    ("%d\n", pSSM->enmAfter),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_LIVE_STEP1, ("%d\n", pSSM->enmOp), VERR_INVALID_STATE);
+    AssertRCReturn(pSSM->rc, pSSM->rc);
+
+    /*
+     * Do the prep run, then the exec+vote cycle.
+     */
+    int rc = ssmR3DoLivePrepRun(pVM, pSSM);
+    if (RT_SUCCESS(rc))
+        rc = ssmR3DoLiveExecVoteLoop(pVM, pSSM);
+    return rc;
 }
 
 
@@ -5129,21 +5121,14 @@ VMMR3_INT_DECL(int) SSMR3LiveSave(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
     rc = ssmR3WriteHeaderAndClearPerUnitData(pVM, pSSM);
     if (RT_SUCCESS(rc))
     {
-/** @todo If it turns out we don't need to do ssmR3DoLivePrepRun on EMT0,
- *        simply move the code to SSMR3LiveDoStep1.
- *  Update: This is certinaly the case, move it. */
-        rc = ssmR3DoLivePrepRun(pVM, pSSM);
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Return and let the requstor thread do the pfnLiveExec/Vote part
-             * via SSMR3SaveFinishLive
-             */
-            pSSM->enmOp = SSMSTATE_LIVE_STEP1;
-            ssmR3SetCancellable(pVM, pSSM, true);
-            *ppSSM = pSSM;
-            return VINF_SUCCESS;
-        }
+        /*
+         * Return and let the requstor thread do the pfnLiveExec/Vote part
+         * via SSMR3SaveFinishLive
+         */
+        pSSM->enmOp = SSMSTATE_LIVE_STEP1;
+        ssmR3SetCancellable(pVM, pSSM, true);
+        *ppSSM = pSSM;
+        return VINF_SUCCESS;
     }
     /* bail out. */
     int rc2 = ssmR3StrmClose(&pSSM->Strm);
@@ -5153,12 +5138,6 @@ VMMR3_INT_DECL(int) SSMR3LiveSave(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
     return rc;
 }
 
-
-VMMR3DECL(int) SSMR3LiveToRemote(PVM pVM, PFNVMPROGRESS pfnProgress, void *pvUser /*,
-                                 invent stream interface and stuff */)
-{
-    return VERR_NOT_IMPLEMENTED;
-}
 
 
 /* ... Loading and reading starts here ... */
