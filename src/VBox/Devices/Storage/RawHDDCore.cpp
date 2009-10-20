@@ -525,6 +525,8 @@ static int rawOpen(const char *pszFilename, unsigned uOpenFlags,
     rc = rawOpenImage(pImage, uOpenFlags);
     if (RT_SUCCESS(rc))
         *ppBackendData = pImage;
+    else
+        RTMemFree(pImage);
 
 out:
     LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
@@ -601,10 +603,15 @@ static int rawCreate(const char *pszFilename, uint64_t cbSize,
             rawFreeImage(pImage, false);
             rc = rawOpenImage(pImage, uOpenFlags);
             if (RT_FAILURE(rc))
+            {
+                RTMemFree(pImage);
                 goto out;
+            }
         }
         *ppBackendData = pImage;
     }
+    else
+        RTMemFree(pImage);
 
 out:
     LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
@@ -631,7 +638,10 @@ static int rawClose(void *pBackendData, bool fDelete)
     /* Freeing a never allocated image (e.g. because the open failed) is
      * not signalled as an error. After all nothing bad happens. */
     if (pImage)
+    {
         rawFreeImage(pImage, fDelete);
+        RTMemFree(pImage);
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
