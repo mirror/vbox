@@ -596,7 +596,7 @@
 /** The live snapshot/teleportation operation was aborted because of a fatal
  *  runtime error. */
 #define VERR_SSM_LIVE_FATAL_ERROR               (-1863)
-/** The VM was suspended while saving, don't resume execution. */
+/** The VM was suspended before or while saving, don't resume execution. */
 #define VINF_SSM_LIVE_SUSPENDED                  1864
 /** Complex SSM field fed to SSMR3PutStruct or SSMR3GetStruct.  Use the
  * extended API. */
