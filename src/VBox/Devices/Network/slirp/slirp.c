@@ -1701,9 +1701,9 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
     m_copydata(m, 0, mlen, (char *)buf);
 #else
     if (flags & ETH_ENCAP_URG)
-        slirp_urg_output(pData->pvUser, m, mtod(m, char *), mlen);
+        slirp_urg_output(pData->pvUser, m, mtod(m, const uint8_t *), mlen);
     else
-        slirp_output(pData->pvUser, m, mtod(m, char *), mlen);
+        slirp_output(pData->pvUser, m, mtod(m, const uint8_t *), mlen);
 #endif
 done:
     STAM_PROFILE_STOP(&pData->StatIF_encap, a);
