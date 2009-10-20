@@ -962,10 +962,19 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             /* make sure the buffers suit the request */
             CHECK_SIZE(vmmdevGetRequestSize(requestHeader->requestType));
 
+            int rc = VbglGRVerify(requestHeader, requestHeader->size);
+            if (RT_FAILURE(rc))
+            {
+                dprintf(("VBoxGuest::VBoxGuestDeviceControl: VMMREQUEST: invalid header: size %#x, expected >= %#x (hdr); type=%#x; rc %d!!\n",
+                     requestHeader->size, vmmdevGetRequestSize(requestHeader->requestType), requestHeader->requestType, rc));
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
             /* just perform the request */
             VMMDevRequestHeader *req = NULL;
 
-            int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, requestHeader->size, requestHeader->requestType);
+            rc = VbglGRAlloc((VMMDevRequestHeader **)&req, requestHeader->size, requestHeader->requestType);
 
             if (RT_SUCCESS(rc))
             {
