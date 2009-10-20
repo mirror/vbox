@@ -474,6 +474,10 @@ public:
     void paintEvent (QPaintEvent *pe);
     void resizeEvent (VBoxResizeEvent *re);
 
+#ifndef QT_MAC_USE_COCOA
+    void testAndSetSNCarbonFix();
+#endif /* QT_MAC_USE_COCOA */
+
 private:
 
     void clean();
@@ -505,6 +509,11 @@ private:
     /** For keeping the unused region and thus avoid some RTMemAlloc/RTMemFree calls.
      * This is operated with atomic cmpxchg and atomic xchg. */
     RegionRects volatile *mRegionUnused;
+
+#ifndef QT_MAC_USE_COCOA
+    bool mSnowLeoCarbonFix;
+    EventHandlerRef mDarwinSNWindowHandlerRef;
+#endif /* QT_MAC_USE_COCOA */
 };
 
 #endif /* Q_WS_MAC && VBOX_GUI_USE_QUARTZ2D */

@@ -33,7 +33,12 @@
 #include "VBoxConsoleWnd.h"
 #include "VBoxIChatTheaterWrapper.h"
 
+#include <QDesktopWidget>
+
+#include "iprt/system.h"
+
 //#define COMP_WITH_SHADOW
+//#define OVERLAY_CLIPRECTS
 
 /** @class VBoxQuartz2DFrameBuffer
  *
@@ -41,16 +46,58 @@
  *  interface and uses Apples Quartz2D to store and render VM display data.
  */
 
-VBoxQuartz2DFrameBuffer::VBoxQuartz2DFrameBuffer (VBoxConsoleView *aView) :
-    VBoxFrameBuffer(aView),
-    mDataAddress(NULL),
-    mBitmapData(NULL),
-    mPixelFormat(FramebufferPixelFormat_FOURCC_RGB),
-    mImage(NULL),
-    mRegion (NULL),
-    mRegionUnused (NULL)
+#ifndef QT_MAC_USE_COCOA
+static OSStatus darwinSNWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
+{
+    if (     aInUserData
+        && ::GetEventClass (aInEvent) == kEventClassWindow
+        && ::GetEventKind (aInEvent) == kEventWindowBoundsChanged)
+        static_cast<VBoxQuartz2DFrameBuffer *> (aInUserData)->testAndSetSNCarbonFix();
+
+    return ::CallNextEventHandler (aInHandlerCallRef, aInEvent);
+}
+#endif /* QT_MAC_USE_COCOA */
+
+VBoxQuartz2DFrameBuffer::VBoxQuartz2DFrameBuffer (VBoxConsoleView *aView)
+    : VBoxFrameBuffer(aView)
+    , mDataAddress(NULL)
+    , mBitmapData(NULL)
+    , mPixelFormat(FramebufferPixelFormat_FOURCC_RGB)
+    , mImage(NULL)
+    , mRegion (NULL)
+    , mRegionUnused (NULL)
+#ifndef QT_MAC_USE_COCOA
+    , mSnowLeoCarbonFix (false)
+    , mDarwinSNWindowHandlerRef (NULL)
+#endif /* QT_MAC_USE_COCOA */
 {
     Log (("Quartz2D: Creating\n"));
+
+#ifndef QT_MAC_USE_COCOA
+    /* There seems to be a big bug on Snow Leopard regarding hardware
+     * accelerated image handling in Carbon. If our VM image is used on a
+     * second monitor it seems not really to be valid. (maybe the OpenGL
+     * texture is not properly shared between the two contexts). As a
+     * workaround we make a deep copy on every paint event. This workaround
+     * should only be in place if we are firstly on Snow Leopard and secondly
+     * on any screen beside the primary one. To track the current screen, we
+     * install a event handler for the window move event. Whenever the user
+     * drag the window around we recheck the current screen of the window. */
+    char szInfo[64];
+    int rc = RTSystemQueryOSInfo (RTSYSOSINFO_RELEASE, szInfo, sizeof(szInfo));
+    if (RT_SUCCESS (rc) &&
+        szInfo[0] == '1') /* higher than 1x.x.x */
+    {
+        EventTypeSpec eventTypes[] =
+        {
+            { kEventClassWindow, kEventWindowBoundsChanged }
+        };
+        ::InstallWindowEventHandler (::darwinToNativeWindow (mView->viewport()), darwinSNWindowHandler, RT_ELEMENTS (eventTypes), &eventTypes[0],
+                                     this, &mDarwinSNWindowHandlerRef);
+        /* Initialize it now */
+        testAndSetSNCarbonFix();
+    }
+#endif /* QT_MAC_USE_COCOA */
 
     VBoxResizeEvent event(FramebufferPixelFormat_Opaque,
                           NULL, 0, 0, 640, 480);
@@ -61,6 +108,13 @@ VBoxQuartz2DFrameBuffer::~VBoxQuartz2DFrameBuffer()
 {
     Log (("Quartz2D: Deleting\n"));
     clean();
+#ifndef QT_MAC_USE_COCOA
+    if (mDarwinSNWindowHandlerRef)
+    {
+       ::RemoveEventHandler (mDarwinSNWindowHandlerRef);
+       mDarwinSNWindowHandlerRef = NULL;
+    }
+#endif /* QT_MAC_USE_COCOA */
 }
 
 /** @note This method is called on EMT from under this object's lock */
@@ -186,10 +240,26 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
             CGImageRelease (pauseImg);
         }
         else
-            subImage = CGImageCreateWithImageInRect (mImage, CGRectMake (mView->contentsX(), mView->contentsY(), mView->visibleWidth(), mView->visibleHeight()));
+        {
+
+#ifndef QT_MAC_USE_COCOA
+            /* For the reason of this see the constructor. */
+            if (mSnowLeoCarbonFix)
+            {
+                CGImageRef copy = CGImageCreateCopy (mImage);
+                subImage = CGImageCreateWithImageInRect (copy, CGRectMake (mView->contentsX(), mView->contentsY(), mView->visibleWidth(), mView->visibleHeight()));
+                CGImageRelease (copy);
+            }else
+#endif /* QT_MAC_USE_COCOA */
+                subImage = CGImageCreateWithImageInRect (mImage, CGRectMake (mView->contentsX(), mView->contentsY(), mView->visibleWidth(), mView->visibleHeight()));
+        }
         Assert (VALID_PTR (subImage));
         /* Clear the background (Make the rect fully transparent) */
         CGContextClearRect (ctx, viewRect);
+#ifdef OVERLAY_CLIPRECTS
+        CGContextSetRGBFillColor (ctx, 0.0, 0.0, 5.0, 0.7);
+        CGContextFillRect (ctx, viewRect);
+#endif
 #ifdef COMP_WITH_SHADOW
         /* Enable shadows */
         CGContextSetShadow (ctx, CGSizeMake (10, -10), 10);
@@ -221,6 +291,17 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
         CGContextEndTransparencyLayer (ctx);
 #endif
         CGImageRelease (subImage);
+#ifdef OVERLAY_CLIPRECTS
+        if (rgnRcts && rgnRcts->used > 0)
+        {
+            CGContextBeginPath (ctx);
+            CGContextAddRects (ctx, rgnRcts->rcts, rgnRcts->used);
+            CGContextSetRGBStrokeColor (ctx, 1.0, 0.0, 0.0, 0.7);
+            CGContextDrawPath (ctx, kCGPathStroke);
+        }
+        CGContextSetRGBStrokeColor (ctx, 0.0, 1.0, 0.0, 0.7);
+        CGContextStrokeRect (ctx, viewRect);
+#endif
     }
     else
     {
@@ -238,7 +319,18 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
             CGImageRelease (pauseImg);
         }
         else
-            subImage = CGImageCreateWithImageInRect (mImage, ::darwinToCGRect (is));
+        {
+#ifndef QT_MAC_USE_COCOA
+            /* For the reason of this see the constructor. */
+            if (mSnowLeoCarbonFix)
+            {
+                CGImageRef copy = CGImageCreateCopy (mImage);
+                subImage = CGImageCreateWithImageInRect (copy, ::darwinToCGRect (is));
+                CGImageRelease (copy);
+            }else
+#endif /* QT_MAC_USE_COCOA */
+                subImage = CGImageCreateWithImageInRect (mImage, ::darwinToCGRect (is));
+        }
         Assert (VALID_PTR (subImage));
         /* Ok, for more performance we set a clipping path of the
          * regions given by this paint event. */
@@ -359,5 +451,15 @@ void VBoxQuartz2DFrameBuffer::clean()
         mRegionUnused = NULL;
     }
 }
+
+#ifndef QT_MAC_USE_COCOA
+void VBoxQuartz2DFrameBuffer::testAndSetSNCarbonFix()
+{
+    QWidget* viewport = mView->viewport();
+    Assert (VALID_PTR (viewport));
+    QDesktopWidget dw;
+    mSnowLeoCarbonFix = dw.primaryScreen() != dw.screenNumber (viewport);
+}
+#endif /* QT_MAC_USE_COCOA */
 
 #endif /* defined (VBOX_GUI_USE_QUARTZ2D) */
