@@ -803,93 +803,67 @@ void VBoxProblemReporter::cannotSetSnapshotFolder (const CMachine &aMachine,
         formatErrorInfo (aMachine));
 }
 
-bool VBoxProblemReporter::askAboutSnapshotDiscarding()
+bool VBoxProblemReporter::askAboutSnapshotRestoring (const QString &aSnapshotName)
 {
     return messageOkCancel (mainWindowShown(), Question,
-        tr ("<p>Are you sure you wish to merge the selected snapshot?</p>"),
-        "confirmSnapshotDiscarding" /* aAutoConfirmId */,
-        tr ("Discard"), tr ("Cancel"));
+        tr ("<p>Are you sure you wish to restore the selected snapshot <b>%1</b>? "
+            "This will also cause you to lose your current machine state.</p>")
+            .arg (aSnapshotName),
+        "confirmSnapshotRestoring" /* aAutoConfirmId */,
+        tr ("Restore"), tr ("Cancel"));
 }
 
-bool VBoxProblemReporter::askAboutSnapshotAndStateDiscarding()
+bool VBoxProblemReporter::askAboutSnapshotDeleting (const QString &aSnapshotName)
 {
     return messageOkCancel (mainWindowShown(), Question,
-        tr ("<p>Are you sure you wish to delete the selected snapshot "
-            "and saved state?</p>"),
-        "confirmSnapshotAndStateDiscarding" /* aAutoConfirmId */,
-        tr ("Discard"), tr ("Cancel"));
+        tr ("<p>Are you sure you wish to delete the selected snapshot <b>%1</b>?</p>")
+            .arg (aSnapshotName),
+        "confirmSnapshotDeleting" /* aAutoConfirmId */,
+        tr ("Delete"), tr ("Cancel"));
 }
 
-void VBoxProblemReporter::cannotDiscardSnapshot (const CConsole &aConsole,
+void VBoxProblemReporter::cannotRestoreSnapshot (const CConsole &aConsole,
                                                  const QString &aSnapshotName)
 {
     message (mainWindowShown(), Error,
-        tr ("Failed to discard the snapshot <b>%1</b> of the virtual "
-            "machine <b>%2</b>.")
+        tr ("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
             .arg (aSnapshotName)
             .arg (CConsole (aConsole).GetMachine().GetName()),
         formatErrorInfo (aConsole));
 }
 
-void VBoxProblemReporter::cannotDiscardSnapshot (const CProgress &aProgress,
+void VBoxProblemReporter::cannotRestoreSnapshot (const CProgress &aProgress,
                                                  const QString &aSnapshotName)
 {
     CConsole console (CProgress (aProgress).GetInitiator());
 
     message (mainWindowShown(), Error,
-        tr ("Failed to discard the snapshot <b>%1</b> of the virtual "
-            "machine <b>%2</b>.")
+        tr ("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
             .arg (aSnapshotName)
             .arg (console.GetMachine().GetName()),
         formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
-void VBoxProblemReporter::cannotDiscardCurrentState (const CConsole &console)
+void VBoxProblemReporter::cannotDeleteSnapshot (const CConsole &aConsole,
+                                                const QString &aSnapshotName)
 {
-    message (
-        mainWindowShown(),
-        Error,
-        tr ("Failed to discard the current state of the virtual "
-            "machine <b>%1</b>.")
-            .arg (CConsole (console).GetMachine().GetName()),
-        formatErrorInfo (console));
+    message (mainWindowShown(), Error,
+        tr ("Failed to delete the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
+            .arg (aSnapshotName)
+            .arg (CConsole (aConsole).GetMachine().GetName()),
+        formatErrorInfo (aConsole));
 }
 
-void VBoxProblemReporter::cannotDiscardCurrentState (const CProgress &progress)
+void VBoxProblemReporter::cannotDeleteSnapshot (const CProgress &aProgress,
+                                                const QString &aSnapshotName)
 {
-    CConsole console (CProgress (progress).GetInitiator());
+    CConsole console (CProgress (aProgress).GetInitiator());
 
-    message (
-        mainWindowShown(),
-        Error,
-        tr ("Failed to discard the current state of the virtual "
-            "machine <b>%1</b>.")
+    message (mainWindowShown(), Error,
+        tr ("Failed to delete the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
+            .arg (aSnapshotName)
             .arg (console.GetMachine().GetName()),
-        formatErrorInfo (progress.GetErrorInfo()));
-}
-
-void VBoxProblemReporter::cannotDiscardCurrentSnapshotAndState (const CConsole &console)
-{
-    message (
-        mainWindowShown(),
-        Error,
-        tr ("Failed to discard the current snapshot and the current state "
-            "of the virtual machine <b>%1</b>.")
-            .arg (CConsole (console).GetMachine().GetName()),
-        formatErrorInfo (console));
-}
-
-void VBoxProblemReporter::cannotDiscardCurrentSnapshotAndState (const CProgress &progress)
-{
-    CConsole console (CProgress (progress).GetInitiator());
-
-    message (
-        mainWindowShown(),
-        Error,
-        tr ("Failed to discard the current snapshot and the current state "
-            "of the virtual machine <b>%1</b>.")
-            .arg (console.GetMachine().GetName()),
-        formatErrorInfo (progress.GetErrorInfo()));
+        formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
 void VBoxProblemReporter::cannotFindMachineByName (const CVirtualBox &vbox,
