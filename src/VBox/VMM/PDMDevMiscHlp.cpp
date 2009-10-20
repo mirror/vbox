@@ -139,7 +139,7 @@ const PDMPICHLPR3 g_pdmR3DevPicHlp =
 
 
 
-/** @name HC APIC Helpers
+/** @name R3 APIC Helpers
  * @{
  */
 
