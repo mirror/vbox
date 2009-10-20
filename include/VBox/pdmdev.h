@@ -2176,6 +2176,24 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va));
 
     /**
+     * Gets the VM state.
+     *
+     * @returns VM state.
+     * @param   pDevIns             The device instance.
+     * @thread  Any thread (just keep in mind that it's volatile info).
+     */
+    DECLR3CALLBACKMEMBER(VMSTATE, pfnVMState, (PPDMDEVINS pDevIns));
+
+    /**
+     * Checks if the VM was teleported and hasn't been fully resumed yet.
+     *
+     * @returns true / false.
+     * @param   pDevIns             The device instance.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnVMTeleportedAndNotFullyResumedYet,(PPDMDEVINS pDevIns));
+
+    /**
      * Assert that the current thread is the emulation thread.
      *
      * @returns True if correct.
@@ -2367,17 +2385,11 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnPhysGCPtr2GCPhys, (PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys));
 
-    /**
-     * Gets the VM state.
-     *
-     * @returns VM state.
-     * @param   pDevIns             The device instance.
-     * @thread  Any thread (just keep in mind that it's volatile info).
-     */
-    DECLR3CALLBACKMEMBER(VMSTATE, pfnVMState, (PPDMDEVINS pDevIns));
-
     /** Space reserved for future members.
      * @{ */
+    DECLR3CALLBACKMEMBER(void, pfnReserved1,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved2,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved3,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved4,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved5,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved6,(void));
@@ -3668,6 +3680,14 @@ DECLINLINE(int) PDMDevHlpPhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRT
 DECLINLINE(VMSTATE) PDMDevHlpVMState(PPDMDEVINS pDevIns)
 {
     return pDevIns->pDevHlpR3->pfnVMState(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnVMTeleportedAndNotFullyResumedYet
+ */
+DECLINLINE(bool) PDMDevHlpVMTeleportedAndNotFullyResumedYet(PPDMDEVINS pDevIns)
+{
+    return pDevIns->pDevHlpR3->pfnVMTeleportedAndNotFullyResumedYet(pDevIns);
 }
 
 /**

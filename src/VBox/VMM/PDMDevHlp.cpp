@@ -1033,6 +1033,32 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, uint
 }
 
 
+/** @copydoc PDMDEVHLPR3::pfnVMState */
+static DECLCALLBACK(VMSTATE) pdmR3DevHlp_VMState(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    VMSTATE enmVMState = VMR3GetState(pDevIns->Internal.s.pVMR3);
+
+    LogFlow(("pdmR3DevHlp_VMState: caller='%s'/%d: returns %d (%s)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance,
+             enmVMState, VMR3GetStateName(enmVMState)));
+    return enmVMState;
+}
+
+
+/** @copydoc PDMDEVHLPR3::pfnVMTeleportedAndNotFullyResumedYet */
+static DECLCALLBACK(bool) pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    bool fRc = VMR3TeleportedAndNotFullyResumedYet(pDevIns->Internal.s.pVMR3);
+
+    LogFlow(("pdmR3DevHlp_VMState: caller='%s'/%d: returns %RTbool\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance,
+             fRc));
+    return fRc;
+}
+
+
 /** @copydoc PDMDEVHLPR3::pfnAssertEMT */
 static DECLCALLBACK(bool) pdmR3DevHlp_AssertEMT(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction)
 {
@@ -2276,19 +2302,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPT
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnVMState */
-static DECLCALLBACK(VMSTATE) pdmR3DevHlp_VMState(PPDMDEVINS pDevIns)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-
-    VMSTATE enmVMState = VMR3GetState(pDevIns->Internal.s.pVMR3);
-
-    LogFlow(("pdmR3DevHlp_VMState: caller='%s'/%d: returns %d (%s)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance,
-             enmVMState, VMR3GetStateName(enmVMState)));
-    return enmVMState;
-}
-
-
 /** @copydoc PDMDEVHLPR3::pfnA20IsEnabled */
 static DECLCALLBACK(bool) pdmR3DevHlp_A20IsEnabled(PPDMDEVINS pDevIns)
 {
@@ -2782,6 +2795,8 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_VMSetErrorV,
     pdmR3DevHlp_VMSetRuntimeError,
     pdmR3DevHlp_VMSetRuntimeErrorV,
+    pdmR3DevHlp_VMState,
+    pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet,
     pdmR3DevHlp_AssertEMT,
     pdmR3DevHlp_AssertOther,
     pdmR3DevHlp_DBGFStopV,
@@ -2795,7 +2810,9 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_UTCNow,
     pdmR3DevHlp_PDMThreadCreate,
     pdmR3DevHlp_PhysGCPtr2GCPhys,
-    pdmR3DevHlp_VMState,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -3243,6 +3260,8 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_VMSetErrorV,
     pdmR3DevHlp_VMSetRuntimeError,
     pdmR3DevHlp_VMSetRuntimeErrorV,
+    pdmR3DevHlp_VMState,
+    pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet,
     pdmR3DevHlp_AssertEMT,
     pdmR3DevHlp_AssertOther,
     pdmR3DevHlp_DBGFStopV,
@@ -3256,7 +3275,9 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_UTCNow,
     pdmR3DevHlp_PDMThreadCreate,
     pdmR3DevHlp_PhysGCPtr2GCPhys,
-    pdmR3DevHlp_VMState,
+    0,
+    0,
+    0,
     0,
     0,
     0,
