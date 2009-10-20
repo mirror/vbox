@@ -294,9 +294,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            nictracefile<1-N> <filename>\n"
 #endif /* VBOX_DYNAMIC_NET_ATTACH */
                  "                            usbattach <uuid>|<address> |\n"
-                 "                            usbdetach <uuid>|<address> |\n"
-                 "                            dvdattach none|<uuid>|<filename>|host:<drive> |\n"
-                 "                            floppyattach none|<uuid>|<filename>|host:<drive> |\n");
+                 "                            usbdetach <uuid>|<address> |\n");
         if (fVRDP)
         {
             RTPrintf("                            vrdp on|off] |\n");
