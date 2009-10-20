@@ -308,9 +308,9 @@ bool Machine::MediaData::operator== (const MediaData &that) const
         AttachmentList::iterator thatIt = thatAtts.begin();
         while (thatIt != thatAtts.end())
         {
-            if ((*it)->controller() == (*thatIt)->controller() &&
-                (*it)->port() == (*thatIt)->port() &&
-                (*it)->device() == (*thatIt)->device() &&
+            if ((*it)->matches((*thatIt)->controllerName(),
+                               (*thatIt)->port(),
+                               (*thatIt)->device()) &&
                 (*it)->passthrough() == (*thatIt)->passthrough() &&
                 (*it)->medium().equalsTo ((*thatIt)->medium()))
             {
@@ -2432,7 +2432,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     ComObjPtr<MediumAttachment> attachment;
     attachment.createObject();
-    rc = attachment->init(this, medium, ctl, aControllerPort, aDevice, aType, indirect);
+    rc = attachment->init(this, medium, aControllerName, aControllerPort, aDevice, aType, indirect);
     CheckComRCReturnRC(rc);
 
     if (associate && !medium.isNull())
@@ -3557,7 +3557,7 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
          it != mMediaData->mAttachments.end();
          ++it)
     {
-        if (Bstr((*it)->controller()->name()) == aName)
+        if (Bstr((*it)->controllerName()) == aName)
             return setError(VBOX_E_OBJECT_IN_USE,
                             tr("Storage controller named '%ls' has still devices attached"),
                             aName);
@@ -5607,7 +5607,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
         pAttachment.createObject();
         rc = pAttachment->init(this,
                                medium,
-                               aStorageController,
+                               aStorageController->name(),
                                dev.lPort,
                                dev.lDevice,
                                dev.deviceType);
@@ -5750,7 +5750,7 @@ HRESULT Machine::getMediumAttachmentsOfController(CBSTR aName,
          it != mMediaData->mAttachments.end();
          ++it)
     {
-        if (Bstr((*it)->controller()->name()) == aName)
+        if (Bstr((*it)->controllerName()) == aName)
             atts.push_back(*it);
     }
 
@@ -6641,7 +6641,7 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
             attachment.createObject();
             rc = attachment->init(this,
                                   diff,
-                                  pAtt->controller(),
+                                  pAtt->controllerName(),
                                   pAtt->port(),
                                   pAtt->device(),
                                   DeviceType_HardDisk,
