@@ -221,6 +221,7 @@ File::~File()
 {
     if (m->opened)
         RTFileClose(m->handle);
+    delete m;
 }
 
 const char* File::uri() const
