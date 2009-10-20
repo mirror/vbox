@@ -673,15 +673,7 @@ static void WaitPidDaemonThread(void *unused)
 
 	while (1) {
 	    do {
-#ifdef VBOX
-	        /*
-	         * make sure we wait only for child of our group
-	         * to ensure we do not interfere with RT
-	         */
-	        pid = waitpid((pid_t) 0, &status, 0);
-#else
 	        pid = waitpid((pid_t) -1, &status, 0);
-#endif
 	    } while ((pid_t) -1 == pid && EINTR == errno);
 
             /*
@@ -771,15 +763,7 @@ static void WaitPidDaemonThread(void *unused)
 
 	while (1) {
 	    do {
-#ifdef VBOX
-	        /*
-	         * make sure we wait only for child of our group
-	         * to ensure we do not interfere with RT
-	         */
-	        pid = waitpid((pid_t) 0, &status, WNOHANG);
-#else
 	        pid = waitpid((pid_t) -1, &status, WNOHANG);
-#endif
 	    } while ((pid_t) -1 == pid && EINTR == errno);
 	    if (0 == pid) break;
 	    if ((pid_t) -1 == pid) {
