@@ -1794,14 +1794,15 @@ VMMR3DECL(int) VMR3Teleport(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsU
  * @param   pvStreamOpsUser The user argument to the stream methods.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
+ * @param   fTeleporting    Indicates whether we're teleporting or not.
  *
  * @thread  EMT.
  */
 static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
-                                  PFNVMPROGRESS pfnProgress, void *pvProgressUser)
+                                  PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool fTeleporting)
 {
-    LogFlow(("vmR3Load: pVM=%p pszFilename=%p:{%s} pStreamOps=%p pvStreamOpsUser=%p pfnProgress=%p pvProgressUser=%p\n",
-             pVM, pszFilename, pszFilename, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser));
+    LogFlow(("vmR3Load: pVM=%p pszFilename=%p:{%s} pStreamOps=%p pvStreamOpsUser=%p pfnProgress=%p pvProgressUser=%p fTeleporting=%RTbool\n",
+             pVM, pszFilename, pszFilename, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser, fTeleporting));
 
     /*
      * Validate input (paranoia).
@@ -1822,6 +1823,7 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
                              VMSTATE_LOADING, VMSTATE_SUSPENDED);
     if (RT_FAILURE(rc))
         return rc;
+    pVM->vm.s.fTeleportedAndNotFullyResumedYet = fTeleporting;
 
     rc = SSMR3Load(pVM, pszFilename, pStreamOps, pvStreamOpsUser, SSMAFTER_RESUME, pfnProgress, pvProgressUser);
     if (RT_SUCCESS(rc))
@@ -1831,6 +1833,7 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
     }
     else
     {
+        pVM->vm.s.fTeleportedAndNotFullyResumedYet = false;
         vmR3SetState(pVM, VMSTATE_LOAD_FAILURE, VMSTATE_LOADING);
         rc = VMSetError(pVM, rc, RT_SRC_POS,
                         N_("Unable to restore the virtual machine's saved state from '%s'.  It may be damaged or from an older version of VirtualBox.  Please discard the saved state before starting the virtual machine"),
@@ -1873,8 +1876,9 @@ VMMR3DECL(int) VMR3LoadFromFile(PVM pVM, const char *pszFilename, PFNVMPROGRESS 
      * Forward the request to EMT(0).  No need to setup a rendezvous here
      * since there is no execution taking place when this call is allowed.
      */
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 6,
-                              pVM, pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOpsUser*/, pfnProgress, pvUser);
+    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 7,
+                              pVM, pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOpsUser*/, pfnProgress, pvUser,
+                              false /*fTeleporting*/);
     LogFlow(("VMR3LoadFromFile: returns %Rrc\n", rc));
     return rc;
 }
@@ -1911,8 +1915,9 @@ VMMR3DECL(int) VMR3LoadFromStream(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStre
      * Forward the request to EMT(0).  No need to setup a rendezvous here
      * since there is no execution taking place when this call is allowed.
      */
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 6,
-                              pVM, NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser);
+    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 7,
+                              pVM, NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser,
+                              true /*fTeleporting*/);
     LogFlow(("VMR3LoadFromStream: returns %Rrc\n", rc));
     return rc;
 }
@@ -3183,6 +3188,9 @@ void vmR3SetGuruMeditation(PVM pVM)
 
 /**
  * Checks if the VM was teleported and hasn't been fully resumed yet.
+ *
+ * This applies to both sides of the teleportation since we may leave a working
+ * clone behind and the user is allowed to resume this...
  *
  * @returns true / false.
  * @param   pVM                 The VM handle.
