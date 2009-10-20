@@ -91,10 +91,12 @@ class TeleporterStateSrc : public TeleporterState
 public:
     Utf8Str             mstrHostname;
     uint32_t            muPort;
+    MachineState_T      menmOldMachineState;
 
-    TeleporterStateSrc(Console *pConsole, PVM pVM, Progress *pProgress)
+    TeleporterStateSrc(Console *pConsole, PVM pVM, Progress *pProgress, MachineState_T enmOldMachineState)
         : TeleporterState(pConsole, pVM, pProgress, true /*fIsSource*/)
         , muPort(UINT32_MAX)
+        , menmOldMachineState(enmOldMachineState)
     {
     }
 };
@@ -109,14 +111,16 @@ public:
     IMachine           *mpMachine;
     PRTTCPSERVER        mhServer;
     PRTTIMERLR          mphTimerLR;
+    bool                mfStartPaused;
     int                 mRc;
 
     TeleporterStateTrg(Console *pConsole, PVM pVM, Progress *pProgress,
-                       IMachine *pMachine, PRTTIMERLR phTimerLR)
+                       IMachine *pMachine, PRTTIMERLR phTimerLR, bool fStartPaused)
         : TeleporterState(pConsole, pVM, pProgress, false /*fIsSource*/)
         , mpMachine(pMachine)
         , mhServer(NULL)
         , mphTimerLR(phTimerLR)
+        , mfStartPaused(false)
         , mRc(VINF_SUCCESS)
     {
     }
@@ -616,12 +620,26 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
 
     void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(pState));
     vrc = VMR3Teleport(pState->mpVM, &g_teleporterTcpOps, pvUser, teleporterProgressCallback, pvUser);
-    if (vrc)
+    if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("VMR3Teleport -> %Rrc"), vrc);
 
     hrc = teleporterSrcReadACK(pState, "load-complete");
     if (FAILED(hrc))
         return hrc;
+
+    /*
+     * If we're paused, mention this to the target side.
+     *
+     * Note: This means you have to resume the target manually if you pause it
+     *       during the teleportation.
+     */
+    if (    vrc == VINF_SSM_LIVE_SUSPENDED
+        ||  pState->menmOldMachineState == MachineState_Paused)
+    {
+        hrc = teleporterSrcSubmitCommand(pState, "pause");
+        if (FAILED(hrc))
+            return hrc;
+    }
 
     /*
      * State fun? Automatic power off?
@@ -685,7 +703,10 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
                 case VMSTATE_POWERING_OFF_LS:
                 case VMSTATE_RESETTING:
                 case VMSTATE_RESETTING_LS:
-                    pState->mptrConsole->setMachineState(MachineState_Running);
+                    if (pState->menmOldMachineState == MachineState_Running)
+                        pState->mptrConsole->setMachineState(MachineState_Running);
+                    else
+                        pState->mptrConsole->setMachineState(MachineState_Paused);
                     break;
                 case VMSTATE_GURU_MEDITATION:
                 case VMSTATE_GURU_MEDITATION_LS:
@@ -776,7 +797,7 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress *
                                         TRUE /*aCancelable*/);
     CheckComRCReturnRC(hrc);
 
-    TeleporterStateSrc *pState = new TeleporterStateSrc(this, mpVM, ptrProgress);
+    TeleporterStateSrc *pState = new TeleporterStateSrc(this, mpVM, ptrProgress, mMachineState);
     pState->mstrPassword = aPassword;
     pState->mstrHostname = aHostname;
     pState->muPort       = aPort;
@@ -887,7 +908,7 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
             /*
              * Do the job, when it returns we're done.
              */
-            TeleporterStateTrg State(this, pVM, pProgress, pMachine, &hTimerLR);
+            TeleporterStateTrg State(this, pVM, pProgress, pMachine, &hTimerLR, fStartPaused);
             State.mstrPassword      = strPassword;
             State.mhServer          = hServer;
 
@@ -903,7 +924,7 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
                     vrc = State.mRc;
                     if (RT_SUCCESS(vrc))
                     {
-                        if (fStartPaused)
+                        if (State.mfStartPaused)
                             setMachineState(MachineState_Paused);
                         else
                             vrc = VMR3Resume(pVM);
@@ -1084,8 +1105,6 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
             }
 
             vrc = teleporterTcpWriteACK(pState);
-            if (RT_FAILURE(vrc))
-                break;
         }
         /** @todo implement config verification and hardware compatability checks. Or
          *        maybe leave part of these to the saved state machinery?
@@ -1095,6 +1114,11 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
             /* Don't ACK this. */
             LogRel(("Teleporter: Received cancel command.\n"));
             vrc = VERR_SSM_CANCELLED;
+        }
+        else if (!strcmp(szCmd, "pause"))
+        {
+            pState->mfStartPaused = true;
+            vrc = teleporterTcpWriteACK(pState);
         }
         else if (!strcmp(szCmd, "done"))
         {
@@ -1117,6 +1141,9 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
             teleporterTcpWriteNACK(pState, vrc);
             break;
         }
+
+        if (RT_FAILURE(vrc))
+            break;
     }
 
     pState->mRc = vrc;
