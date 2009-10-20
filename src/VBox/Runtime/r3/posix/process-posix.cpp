@@ -109,45 +109,19 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
 
     /*
      * Spawn the child.
-     *
-     * HACK ALERT! Put the process into a new process group with pgid = pid
-     * to make sure it differs from that of the parent process to ensure that
-     * the IPRT waipit call doesn't race anyone (read XPCOM) doing group wide
-     * waits.
      */
     pid_t pid;
 #ifdef HAVE_POSIX_SPAWN
     if (!(fFlags & RTPROC_FLAGS_DAEMONIZE))
     {
-        posix_spawnattr_t Attr;
-
-        rc = posix_spawnattr_init(&Attr);
+        /** @todo check if it requires any of those two attributes, don't remember atm. */
+        rc = posix_spawn(&pid, pszExec, NULL, NULL, (char * const *)papszArgs,
+                         (char * const *)papszEnv);
         if (!rc)
         {
-# ifndef RT_OS_OS2 /* We don't need this on OS/2 and I don't recall if it's actually implemented. */
-            rc = posix_spawnattr_setflags(&Attr, POSIX_SPAWN_SETPGROUP);
-            Assert(rc == 0);
-            if (!rc)
-            {
-                rc = posix_spawnattr_setpgroup(&Attr, 0 /* pg == child pid */);
-                Assert(rc == 0);
-            }
-# endif
-            if (!rc)
-            {
-                /** @todo check if it requires any mandatory attributes or something, don't
-                 *        remember atm. */
-                rc = posix_spawn(&pid, pszExec, NULL, &Attr, (char * const *)papszArgs,
-                                 (char * const *)papszEnv);
-                if (!rc)
-                {
-                    int rc2 = posix_spawnattr_destroy(&Attr); Assert(rc2 == 0); NOREF(rc2);
-                    if (pProcess)
-                        *pProcess = pid;
-                    return VINF_SUCCESS;
-                }
-            }
-            int rc2 = posix_spawnattr_destroy(&Attr); Assert(rc2 == 0); NOREF(rc2);
+            if (pProcess)
+                *pProcess = pid;
+            return VINF_SUCCESS;
         }
     }
     else
@@ -156,8 +130,6 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
         pid = fork();
         if (!pid)
         {
-            setpgid(0, 0); /* see comment above */
-
             if (fFlags & RTPROC_FLAGS_DAEMONIZE)
             {
                 rc = RTProcDaemonize(true /* fNoChDir */, false /* fNoClose */, NULL /* pszPidFile */);
