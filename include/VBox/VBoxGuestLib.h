@@ -155,6 +155,18 @@ DECLVBGL(int) VbglGRPerform (VMMDevRequestHeader *pReq);
  * @return VBox status code.
  */
 DECLVBGL(void) VbglGRFree (VMMDevRequestHeader *pReq);
+
+/**
+ * Verify the generic request header.
+ *
+ * @param pReq     pointer the request header structure.
+ * @param cbReq    size of the request memory block. It should be equal to the request size
+ *                 for fixed size requests. It can be greater than the request size for
+ *                 variable size requests.
+ *
+ * @return VBox status code.
+ */
+DECLVBGL(int) VbglGRVerify (const VMMDevRequestHeader *pReq, size_t cbReq);
 /** @} */
 
 # ifdef VBOX_WITH_HGCM
