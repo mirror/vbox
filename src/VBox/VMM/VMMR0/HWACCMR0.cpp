@@ -474,6 +474,8 @@ VMMR0DECL(int) HWACCMR0Term(void)
             rc = RTPowerNotificationDeregister(hwaccmR0PowerCallback, 0);
             Assert(RT_SUCCESS(rc));
         }
+        else
+            rc = VINF_SUCCESS;
 
         /* Only disable VT-x/AMD-V on all CPUs if we enabled it before. */
         if (HWACCMR0Globals.fGlobalInit)
