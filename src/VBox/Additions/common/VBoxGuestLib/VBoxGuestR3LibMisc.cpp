@@ -206,32 +206,32 @@ VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
  */
 VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
     HKEY hKey;
     LONG r;
 
     /* Check the new path first. */
     r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-#ifdef RT_ARCH_AMD64
+# ifdef RT_ARCH_AMD64
     if (r != ERROR_SUCCESS)
     {
         /* Check Wow6432Node (for new entries). */
         r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, &hKey);
     }
-#endif
+# endif
 
     /* Still no luck? Then try the old xVM paths ... */
     if (FAILED(r))
     {
         r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-#ifdef RT_ARCH_AMD64
+# ifdef RT_ARCH_AMD64
         if (r != ERROR_SUCCESS)
         {
             /* Check Wow6432Node (for new entries). */
             r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, &hKey);
         }
-#endif
+# endif
     }
 
     /* Did we get something worth looking at? */
@@ -264,7 +264,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
     rc = RTErrConvertFromWin32(r);
     if (NULL != hKey)
         RegCloseKey(hKey);
-#else
+#else /* !RT_OS_WINDOWS */
     /* On non-Windows platforms just return the compile-time version string atm. */
     /* Version. */
     if (ppszVer)
@@ -272,6 +272,6 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
     /* Revision. */
     if (ppszRev)
         rc = RTStrAPrintf(ppszRev, "%s", VBOX_SVN_REV);
-#endif /* RT_OS_WINDOWS */
+#endif /* !RT_OS_WINDOWS */
     return rc;
 }
