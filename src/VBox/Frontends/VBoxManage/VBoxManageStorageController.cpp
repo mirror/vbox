@@ -172,16 +172,20 @@ int handleStorageAttach(HandlerArg *a)
         fRunTime = true;
     }
 
-    if (fRunTime)
+    if (   fRunTime
+        && (   !RTStrICmp(pszMedium, "none")
+            || !RTStrICmp(pszType, "hdd")))
     {
-        if (   !RTStrICmp(pszMedium, "none")
-            || !RTStrICmp(pszType, "hdd"))
-            errorArgument("DVD/HardDisk Drives can't be changed while the VM is still running\n");
-        if (pszPassThrough)
-            errorArgument("Drive passthrough state can't be changed while the VM is still running\n");
-
+        errorArgument("DVD/HardDisk Drives can't be changed while the VM is still running\n");
         goto leave;
     }
+
+    if (fRunTime && pszPassThrough)
+    {
+        errorArgument("Drive passthrough state can't be changed while the VM is still running\n");
+        goto leave;
+    }
+
 
     /* get the mutable session machine */
     a->session->COMGETTER(Machine)(machine.asOutParam());
@@ -213,7 +217,13 @@ int handleStorageAttach(HandlerArg *a)
                     || (deviceType == DeviceType_Floppy))
                 {
                     /* just unmount the floppy/dvd */
-                    CHECK_ERROR (machine, MountMedium(Bstr(pszCtl), port, device, NULL));
+                    CHECK_ERROR (machine, MountMedium(Bstr(pszCtl), port, device, Bstr("")));
+                }
+                else
+                {
+                    errorArgument("No DVD/Floppy Drive attached to the controller '%s'"
+                                  "at the port: %u, device: %u", pszCtl, port, device);
+                    goto leave;
                 }
             }
             else
@@ -238,7 +248,7 @@ int handleStorageAttach(HandlerArg *a)
 
             /* attach a empty floppy/dvd drive after removing previous attachment */
             machine->DetachDevice(Bstr(pszCtl), port, device);
-            CHECK_ERROR (machine, AttachDevice(Bstr(pszCtl), port, device, deviceType, NULL));
+            CHECK_ERROR (machine, AttachDevice(Bstr(pszCtl), port, device, deviceType, Bstr("")));
         }
     }
     else
@@ -268,12 +278,12 @@ int handleStorageAttach(HandlerArg *a)
                     if (deviceType != DeviceType_DVD)
                     {
                         machine->DetachDevice(Bstr(pszCtl), port, device);
-                        rc = machine->AttachDevice(Bstr(pszCtl), port, device, DeviceType_DVD, NULL);
+                        rc = machine->AttachDevice(Bstr(pszCtl), port, device, DeviceType_DVD, Bstr(""));
                     }
                 }
                 else
                 {
-                    rc = machine->AttachDevice(Bstr(pszCtl), port, device, DeviceType_DVD, NULL);
+                    rc = machine->AttachDevice(Bstr(pszCtl), port, device, DeviceType_DVD, Bstr(""));
                 }
             }
 
@@ -392,7 +402,7 @@ int handleStorageAttach(HandlerArg *a)
 
             if (   !fRunTime
                 && !floppyAttachment)
-                CHECK_ERROR (machine, AttachDevice(Bstr(pszCtl), port, device, DeviceType_Floppy, NULL));
+                CHECK_ERROR (machine, AttachDevice(Bstr(pszCtl), port, device, DeviceType_Floppy, Bstr("")));
 
             /* host drive? */
             if (!RTStrNICmp(pszMedium, "host:", 5))
