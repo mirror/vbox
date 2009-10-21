@@ -55,7 +55,6 @@
 #define LOG_GROUP LOG_GROUP_DEFAULT ///@todo LOG_GROUP_DEV_DMA
 #include <VBox/log.h>
 #include <iprt/assert.h>
-#include <iprt/uuid.h>
 #include <iprt/string.h>
 
 #include <stdio.h>
