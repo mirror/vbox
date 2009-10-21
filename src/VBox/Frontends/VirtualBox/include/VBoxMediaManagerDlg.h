@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,16 +23,18 @@
 #ifndef __VBoxMediaManagerDlg_h__
 #define __VBoxMediaManagerDlg_h__
 
+/* Local includes */
 #include "VBoxMediaManagerDlg.gen.h"
+#include "COMDefs.h"
 #include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
-#include "COMDefs.h"
 #include "VBoxDefs.h"
 #include "VBoxMediaComboBox.h"
 
+/* Local forwards */
 class MediaItem;
-class VBoxToolBar;
 class VBoxProgressBar;
+class VBoxToolBar;
 
 class VBoxMediaManagerDlg : public QIWithRetranslateUI2<QIMainDialog>,
                             public Ui::VBoxMediaManagerDlg
@@ -152,10 +154,9 @@ private:
     /* Menu & Toolbar */
     QMenu       *mActionsContextMenu;
     QMenu       *mActionsMenu;
-    VBoxToolBar *mActionsToolBar;
+    VBoxToolBar *mToolBar;
     QAction     *mNewAction;
     QAction     *mAddAction;
-    QAction     *mEditAction;
     QAction     *mRemoveAction;
     QAction     *mReleaseAction;
     QAction     *mRefreshAction;
@@ -167,8 +168,8 @@ private:
     bool mDVDImagesInaccessible;
     bool mFloppyImagesInaccessible;
     QString mHDSelectedId;
-    QString mDVDSelectedId;
-    QString mFloppySelectedId;
+    QString mCDSelectedId;
+    QString mFDSelectedId;
 };
 
 #endif /* __VBoxMediaManagerDlg_h__ */
