@@ -9681,6 +9681,37 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="resize">
+      <desc>
+        Starts resizing this medium. This means that the nominal size of the
+        medium is set to the new value. Both increasing and decreasing the
+        size is possible, and there are no safety checks, since VirtualBox
+        does not make any assumptions about the medium contents.
+
+        Resizing usually needs additional disk space, and possibly also
+        some temporary disk space. Note that resize does not create a full
+        temporary copy of the medium, so the additional disk space requirement
+        is usually much lower than using the clone operation.
+
+        This medium will be placed to <link to="MediumState_LockedWrite"/>
+        state for the duration of this operation.
+
+        Please note that the results can be either returned straight away,
+        or later as the result of the background operation via the object
+        returned via the @a progress parameter.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Medium format does not support resizing.
+        </result>
+      </desc>
+      <param name="logicalSize" type="unsigned long long" dir="in">
+        <desc>New nominal capacity of the medium in megabytes.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
     <method name="reset">
       <desc>
         Starts erasing the contents of this differencing medium.
