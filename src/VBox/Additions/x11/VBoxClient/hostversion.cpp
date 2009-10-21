@@ -125,9 +125,9 @@ public:
 # endif /* VBOX_WITH_DBUS */
 
 # ifdef VBOX_WITH_GUEST_PROPS
+        uint32_t uGuestPropSvcClientID;
         if (RT_SUCCESS(rc))
         {
-            uint32_t uGuestPropSvcClientID;
             rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
             if (RT_FAILURE(rc))
                 LogFlow(("Cannot connect to guest property service! rc = %Rrc\n", rc));
@@ -135,36 +135,33 @@ public:
 
         if (RT_SUCCESS(rc))
         {
+            char *pszHostVersion;
+            char *pszGuestVersion;
+            bool bUpdate;
+
+            rc = VbglR3HostVersionCheckForUpdate(uGuestPropSvcClientID, &bUpdate, &pszHostVersion, &pszGuestVersion);
             if (RT_SUCCESS(rc))
             {
-                char *pszHostVersion;
-                char *pszGuestVersion;
-                bool bUpdate;
-
-                rc = VbglR3HostVersionCheckForUpdate(uGuestPropSvcClientID, &bUpdate, &pszHostVersion, &pszGuestVersion);
-                if (RT_SUCCESS(rc))
+                if (bUpdate)
                 {
-                    if (bUpdate)
-                    {
-                        char szMsg[256];
-                        char szTitle[64];
+                    char szMsg[256];
+                    char szTitle[64];
 
-                        /** @todo add some translation macros here */
-                        RTStrPrintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions update available!");
-                        RTStrPrintf(szMsg, sizeof(szMsg), "Your guest is currently running the Guest Additions version %s. "
-                                                          "We recommend updating to the latest version (%s) by choosing the "
-                                                          "install option from the Devices menu.", pszGuestVersion, pszHostVersion);
-                        rc = showNotify(szTitle, szMsg);
-                        if (RT_FAILURE(rc))
-                            Log(("VBoxClient: Could not show version notifier tooltip! rc = %d\n", rc));
-                    }
-
-                    /* Store host version to not notify again */
-                    rc = VbglR3HostVersionLastCheckedStore(uGuestPropSvcClientID, pszHostVersion);
-
-                    VbglR3GuestPropReadValueFree(pszHostVersion);
-                    VbglR3GuestPropReadValueFree(pszGuestVersion);
+                    /** @todo add some translation macros here */
+                    RTStrPrintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions update available!");
+                    RTStrPrintf(szMsg, sizeof(szMsg), "Your guest is currently running the Guest Additions version %s. "
+                                                      "We recommend updating to the latest version (%s) by choosing the "
+                                                      "install option from the Devices menu.", pszGuestVersion, pszHostVersion);
+                    rc = showNotify(szTitle, szMsg);
+                    if (RT_FAILURE(rc))
+                        Log(("VBoxClient: Could not show version notifier tooltip! rc = %d\n", rc));
                 }
+
+                /* Store host version to not notify again */
+                rc = VbglR3HostVersionLastCheckedStore(uGuestPropSvcClientID, pszHostVersion);
+
+                VbglR3GuestPropReadValueFree(pszHostVersion);
+                VbglR3GuestPropReadValueFree(pszGuestVersion);
             }
             VbglR3GuestPropDisconnect(uGuestPropSvcClientID);
         }
