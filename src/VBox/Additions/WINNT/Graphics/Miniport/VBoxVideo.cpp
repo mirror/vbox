@@ -210,6 +210,91 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     size_t matrixIndex;
     VP_STATUS status = 0;
 
+    /* Always add 800x600 video modes. Windows XP+ needs at least 800x600 resolution
+     * and fallbacks to 800x600x4bpp VGA mode if the driver did not report suitable modes.
+     * This resolution could be rejected by a low resolution host (netbooks, etc).
+     */
+    int cBytesPerPixel;
+    for (cBytesPerPixel = 1; cBytesPerPixel <= 4; cBytesPerPixel++)
+    {
+        int cBitsPerPixel = cBytesPerPixel * 8; /* 8, 16, 24, 32 */
+
+#ifndef VBOX_WITH_8BPP_MODES
+        if (cBitsPerPixel == 8)
+        {
+             continue;
+        }
+#endif /* !VBOX_WITH_8BPP_MODES */
+
+        /* does the mode fit into the VRAM? */
+        if (800 * 600 * cBytesPerPixel > (LONG)vramSize)
+        {
+            continue;
+        }
+
+        VideoModes[gNumVideoModes].Length                       = sizeof(VIDEO_MODE_INFORMATION);
+        VideoModes[gNumVideoModes].ModeIndex                    = gNumVideoModes + 1;
+        VideoModes[gNumVideoModes].VisScreenWidth               = 800;
+        VideoModes[gNumVideoModes].VisScreenHeight              = 600;
+        VideoModes[gNumVideoModes].ScreenStride                 = 800 * cBytesPerPixel;
+        VideoModes[gNumVideoModes].NumberOfPlanes               = 1;
+        VideoModes[gNumVideoModes].BitsPerPlane                 = cBitsPerPixel;
+        VideoModes[gNumVideoModes].Frequency                    = 60;
+        VideoModes[gNumVideoModes].XMillimeter                  = 320;
+        VideoModes[gNumVideoModes].YMillimeter                  = 240;
+        switch (cBytesPerPixel)
+        {
+            case 1:
+            {
+                VideoModes[gNumVideoModes].NumberRedBits                = 6;
+                VideoModes[gNumVideoModes].NumberGreenBits              = 6;
+                VideoModes[gNumVideoModes].NumberBlueBits               = 6;
+                VideoModes[gNumVideoModes].RedMask                      = 0;
+                VideoModes[gNumVideoModes].GreenMask                    = 0;
+                VideoModes[gNumVideoModes].BlueMask                     = 0;
+                VideoModes[gNumVideoModes].AttributeFlags               = VIDEO_MODE_GRAPHICS | VIDEO_MODE_COLOR | VIDEO_MODE_NO_OFF_SCREEN |
+                                                                          VIDEO_MODE_PALETTE_DRIVEN | VIDEO_MODE_MANAGED_PALETTE;
+            } break;
+            case 2:
+            {
+                VideoModes[gNumVideoModes].NumberRedBits                = 5;
+                VideoModes[gNumVideoModes].NumberGreenBits              = 6;
+                VideoModes[gNumVideoModes].NumberBlueBits               = 5;
+                VideoModes[gNumVideoModes].RedMask                      = 0xF800;
+                VideoModes[gNumVideoModes].GreenMask                    = 0x7E0;
+                VideoModes[gNumVideoModes].BlueMask                     = 0x1F;
+                VideoModes[gNumVideoModes].AttributeFlags               = VIDEO_MODE_GRAPHICS | VIDEO_MODE_COLOR | VIDEO_MODE_NO_OFF_SCREEN;
+            } break;
+            case 3:
+            {
+                VideoModes[gNumVideoModes].NumberRedBits                = 8;
+                VideoModes[gNumVideoModes].NumberGreenBits              = 8;
+                VideoModes[gNumVideoModes].NumberBlueBits               = 8;
+                VideoModes[gNumVideoModes].RedMask                      = 0xFF0000;
+                VideoModes[gNumVideoModes].GreenMask                    = 0xFF00;
+                VideoModes[gNumVideoModes].BlueMask                     = 0xFF;
+                VideoModes[gNumVideoModes].AttributeFlags               = VIDEO_MODE_GRAPHICS | VIDEO_MODE_COLOR | VIDEO_MODE_NO_OFF_SCREEN;
+            } break;
+            default:
+            case 4:
+            {
+                VideoModes[gNumVideoModes].NumberRedBits                = 8;
+                VideoModes[gNumVideoModes].NumberGreenBits              = 8;
+                VideoModes[gNumVideoModes].NumberBlueBits               = 8;
+                VideoModes[gNumVideoModes].RedMask                      = 0xFF0000;
+                VideoModes[gNumVideoModes].GreenMask                    = 0xFF00;
+                VideoModes[gNumVideoModes].BlueMask                     = 0xFF;
+                VideoModes[gNumVideoModes].AttributeFlags               = VIDEO_MODE_GRAPHICS | VIDEO_MODE_COLOR | VIDEO_MODE_NO_OFF_SCREEN;
+            } break;
+        }
+        VideoModes[gNumVideoModes].VideoMemoryBitmapWidth       = 800;
+        VideoModes[gNumVideoModes].VideoMemoryBitmapHeight      = 600;
+        VideoModes[gNumVideoModes].DriverSpecificAttributeFlags = 0;
+
+        /* a new mode has been filled in */
+        ++gNumVideoModes;
+    }
+
     /*
      * Query the y-offset from the host
      */
@@ -230,6 +315,13 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         /* does the mode fit into the VRAM? */
         if (resolutionMatrix[matrixIndex].xRes * resolutionMatrix[matrixIndex].yRes * 1 > (LONG)vramSize)
         {
+            ++matrixIndex;
+            continue;
+        }
+
+        if (yOffset == 0 && resolutionMatrix[matrixIndex].xRes == 800 && resolutionMatrix[matrixIndex].yRes == 600)
+        {
+            /* This mode was already added. */
             ++matrixIndex;
             continue;
         }
@@ -289,6 +381,13 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             continue;
         }
 
+        if (yOffset == 0 && resolutionMatrix[matrixIndex].xRes == 800 && resolutionMatrix[matrixIndex].yRes == 600)
+        {
+            /* This mode was already added. */
+            ++matrixIndex;
+            continue;
+        }
+
         /* does the host like that mode? */
         if (!vboxLikesVideoMode(resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 16))
         {
@@ -342,6 +441,13 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             continue;
         }
 
+        if (yOffset == 0 && resolutionMatrix[matrixIndex].xRes == 800 && resolutionMatrix[matrixIndex].yRes == 600)
+        {
+            /* This mode was already added. */
+            ++matrixIndex;
+            continue;
+        }
+
         /* does the host like that mode? */
         if (!vboxLikesVideoMode(resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 24))
         {
@@ -391,6 +497,13 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         /* does the mode fit into the VRAM? */
         if (resolutionMatrix[matrixIndex].xRes * resolutionMatrix[matrixIndex].yRes * 4 > (LONG)vramSize)
         {
+            ++matrixIndex;
+            continue;
+        }
+
+        if (yOffset == 0 && resolutionMatrix[matrixIndex].xRes == 800 && resolutionMatrix[matrixIndex].yRes == 600)
+        {
+            /* This mode was already added. */
             ++matrixIndex;
             continue;
         }
@@ -560,7 +673,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
      * Also we check if we got an user-stored custom resolution in the adapter
      * registry key add it to the modes table.
      */
-    uint32_t xres, yres, bpp = 0;
+    uint32_t xres = 0, yres = 0, bpp = 0;
     if (   (   vboxQueryDisplayRequest(&xres, &yres, &bpp)
             && (xres || yres || bpp))
         || (gCustomXRes || gCustomYRes || gCustomBPP))
@@ -569,9 +682,15 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         /* handle the startup case */
         if (DeviceExtension->CurrentMode == 0)
         {
-            xres = gCustomXRes;
-            yres = gCustomYRes;
-            bpp  = gCustomBPP;
+            /* Use the stored custom resolution values only if nothing was read from host.
+             * The custom mode might be not valid anymore and would block any hints from host.
+             */
+            if (!xres)
+                xres = gCustomXRes;
+            if (!yres)
+                yres = gCustomYRes;
+            if (!bpp)
+                bpp  = gCustomBPP;
             dprintf(("VBoxVideo: using stored custom resolution %dx%dx%d\n", xres, yres, bpp));
         }
         /* round down to multiple of 8 */
@@ -588,6 +707,10 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             if (!bpp)
                 bpp  = DeviceExtension->CurrentModeBPP;
         }
+
+        /* Use a default value. */
+        if (!bpp)
+            bpp = 32;
 
         /* does the host like that mode? */
         if (vboxLikesVideoMode(xres, yres, bpp))
@@ -718,7 +841,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             dprintf(("VBoxVideo: host does not like special mode: (xres = %d, yres = %d, bpp = %d)\n",
                      xres, yres, bpp));
     }
-#ifdef DEBUG
+#ifdef LOG_ENABLED
     {
         int i;
         dprintf(("VBoxVideo: VideoModes (CurrentMode = %d)\n", DeviceExtension->CurrentMode));
