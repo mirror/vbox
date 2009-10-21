@@ -594,7 +594,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
 
     /* Open with final flags. */
     rc = RTFileOpen(&pEpFile->File, pszUri, fFileFlags);
-    if (rc == VERR_INVALID_FUNCTION)
+    if ((rc == VERR_INVALID_FUNCTION) || (rc == VERR_INVALID_PARAMETER))
     {
         /*
          * Solaris doesn't support directio on ZFS so far. :-\
@@ -603,6 +603,11 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
          * ZFS supports write throttling in case applications
          * write more data than can be synced to the disk
          * without blocking the whole application.
+         *
+         * On Linux we have the same problem with cifs.
+         * Shouldn't be a big problem here either because
+         * it's a network filesystem and the data is on another
+         * computer.
          */
         fFileFlags &= ~RTFILE_O_NO_CACHE;
 
