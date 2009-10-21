@@ -360,8 +360,8 @@ void VBoxSnapshotsWgt::onCurrentChanged (QTreeWidgetItem *aItem)
     mShowSnapshotDetailsAction->setEnabled (mCurSnapshotItem && item && !item->isCurrentStateItem());
 
     /* Enable/disable current state actions */
-    mCurStateActionGroup->setEnabled (!busy && mCurSnapshotItem && item && item->isCurrentStateItem() ||
-                                      item && !mCurSnapshotItem);
+    mCurStateActionGroup->setEnabled ((!busy && mCurSnapshotItem && item && item->isCurrentStateItem()) ||
+                                      (item && !mCurSnapshotItem));
 }
 
 void VBoxSnapshotsWgt::onContextMenuRequested (const QPoint &aPoint)
