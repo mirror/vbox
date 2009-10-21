@@ -60,12 +60,12 @@ ifdef VBOX_X11_SEAMLESS_GUEST
 	seamless-host.cpp \
 	seamless-x11.cpp \
 	thread.cpp \
-	display.cpp
+	display.cpp \
+	hostversion.cpp
  VBoxClient_LIBS += \
 	Xext Xmu
 endif
 ifdef VBOX_WITH_GUEST_PROPS
- VBoxClient_SOURCES += hostversion.cpp
  VBoxClient_DEFS += VBOX_WITH_GUEST_PROPS
 endif
 #

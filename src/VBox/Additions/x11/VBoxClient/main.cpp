@@ -137,6 +137,9 @@ void vboxClientUsage(const char *pcszFileName)
     RTPrintf("Options:\n");
     RTPrintf("  --clipboard      start the shared clipboard service\n");
     RTPrintf("  --display     start the display management service\n");
+# ifdef VBOX_WITH_GUEST_PROPS
+    RTPrintf("  --checkhostversion      start the host version notifier service\n");
+# endif
     RTPrintf("  --seamless       start the seamless windows service\n");
     RTPrintf("  -d, --nodaemon   continue running as a system service\n");
     RTPrintf("\n");
@@ -189,7 +192,6 @@ int main(int argc, char *argv[])
             else
                 fSuccess = false;
         }
-#ifdef VBOX_WITH_GUEST_PROPS
         else if (!strcmp(argv[i], "--checkhostversion"))
         {
             if (g_pService == NULL)
@@ -197,7 +199,6 @@ int main(int argc, char *argv[])
             else
                 fSuccess = false;
         }
-#endif
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
             vboxClientUsage(pszFileName);
@@ -222,9 +223,9 @@ int main(int argc, char *argv[])
         {
             RTPrintf("VBoxClient: failed to daemonize.  Exiting.\n");
             Log(("VBoxClient: failed to daemonize.  Exiting.\n"));
-#ifdef DEBUG
+# ifdef DEBUG
             RTPrintf("Error %Rrc\n", rc);
-#endif
+# endif
             return 1;
         }
     }
