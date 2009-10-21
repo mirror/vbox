@@ -3193,6 +3193,7 @@ ResumeExecution:
             }
 
 #ifdef VBOX_STRICT
+            case X86_XCPT_XF:   /* SIMD exception. */
             case X86_XCPT_DE:   /* Divide error. */
             case X86_XCPT_UD:   /* Unknown opcode exception. */
             case X86_XCPT_SS:   /* Stack segment exception. */
@@ -4154,7 +4155,7 @@ static void vmxR0FlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPTR GC
         descriptor[0] = pVCpu->hwaccm.s.uCurrentASID;
         descriptor[1] = GCPtr;
         int rc = VMXR0InvVPID(enmFlush, &descriptor[0]);
-        AssertRC(rc);
+        AssertMsg(rc == VINF_SUCCESS, ("VMXR0InvVPID %x %x %VGv failed with %rc\n", enmFlush, pVCpu->hwaccm.s.uCurrentASID, GCPtr, rc));
     }
 }
 #endif /* HWACCM_VTX_WITH_VPID */
