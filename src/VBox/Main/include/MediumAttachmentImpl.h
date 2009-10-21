@@ -73,7 +73,6 @@ public:
     STDMETHOD(COMGETTER(Device))(LONG *aDevice);
     STDMETHOD(COMGETTER(Type))(DeviceType_T *aType);
     STDMETHOD(COMGETTER(Passthrough))(BOOL *aPassthrough);
-    STDMETHOD(COMSETTER(Passthrough))(BOOL aPassthrough);
 
     // unsafe inline public methods for internal purposes only (ensure there is
     // a caller and a read lock before calling them!)
@@ -101,6 +100,13 @@ public:
         m.backup();
         m->medium = aMedium;
         m->implicit = aImplicit;
+    }
+
+    /** Must be called from under this object's write lock. */
+    void updatePassthrough(bool aPassthrough)
+    {
+        m.backup();
+        m->passthrough = aPassthrough;
     }
 
     /** For com::SupportErrorInfoImpl. */

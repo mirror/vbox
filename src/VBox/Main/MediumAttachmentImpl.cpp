@@ -246,33 +246,6 @@ STDMETHODIMP MediumAttachment::COMGETTER(Type)(DeviceType_T *aType)
     return S_OK;
 }
 
-STDMETHODIMP MediumAttachment::COMSETTER(Passthrough)(BOOL aPassthrough)
-{
-    LogFlowThisFuncEnter();
-
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    /** @todo the entire passthrough handling can only be enabled after the
-     *  MediumAttachment handling in Machine is fixed. */
-#if 0
-    /* the machine need to be mutable */
-    Machine::AutoMutableStateDependency adep(mParent);
-    CheckComRCReturnRC(adep.rc());
-
-    AutoWriteLock lock(this);
-
-    if (m->passthrough != !!aPassthrough)
-    {
-        m.backup();
-        m->passthrough = !!aPassthrough;
-    }
-#endif
-
-    LogFlowThisFuncLeave();
-    return S_OK;
-}
-
 STDMETHODIMP MediumAttachment::COMGETTER(Passthrough)(BOOL *aPassthrough)
 {
     LogFlowThisFuncEnter();

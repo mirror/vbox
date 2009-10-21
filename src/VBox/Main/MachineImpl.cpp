@@ -2521,6 +2521,52 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
     return S_OK;
 }
 
+STDMETHODIMP Machine::PassthroughDevice(IN_BSTR aControllerName, LONG aControllerPort,
+                                        LONG aDevice, BOOL aPassthrough)
+{
+    CheckComArgNotNull(aControllerName);
+
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld aPassthrough=%d\n",
+                     aControllerName, aControllerPort, aDevice, aPassthrough));
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    CheckComRCReturnRC(rc);
+
+    AssertReturn(mData->mMachineState != MachineState_Saved, E_FAIL);
+
+    if (Global::IsOnlineOrTransient(mData->mMachineState))
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Invalid machine state: %s"),
+                        Global::stringifyMachineState(mData->mMachineState));
+
+    MediumAttachment *pAttach = findAttachment(mMediaData->mAttachments,
+                                               aControllerName,
+                                               aControllerPort,
+                                               aDevice);
+    if (!pAttach)
+        return setError(VBOX_E_OBJECT_NOT_FOUND,
+                        tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
+                        aDevice, aControllerPort, aControllerName);
+
+
+    mMediaData.backup();
+
+    AutoWriteLock attLock(pAttach);
+
+    if (pAttach->type() != DeviceType_DVD)
+        return setError(E_INVALIDARG,
+                        tr("Setting passthrough rejected as the device attached to device slot %d on port %d of controller '%ls' is not a DVD"),
+                        aDevice, aControllerPort, aControllerName);
+    pAttach->updatePassthrough(aPassthrough);
+
+    return S_OK;
+}
+
 STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
                                   LONG aControllerPort,
                                   LONG aDevice,

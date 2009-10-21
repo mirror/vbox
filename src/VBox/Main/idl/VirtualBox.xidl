@@ -4059,7 +4059,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="d867a463-0f78-4ec7-a876-8da001464537"
+     uuid="db35f17a-179f-4332-91b2-a49d5cfb678c"
      wsmap="managed"
      >
     <desc>
@@ -4747,6 +4747,42 @@
       </param>
       <param name="device" type="long" dir="in">
         <desc>Device slot number to detach the medium from.</desc>
+      </param>
+    </method>
+
+    <method name="passthroughDevice">
+      <desc>
+        Sets the passthrough mode of an existing DVD device. Changing the
+        setting while the VM is running is forbidden. The setting is only used
+        if at VM start the device is configured as a host DVD drive, in all
+        other cases it is ignored. The device must already exist; see
+        <link to="IMachine::attachDevice"/> for how to attach a new device.
+
+        The @a controllerPort and @a device parameters specify the device slot and
+        have have the same meaning as with <link to="IMachine::attachDevice" />.
+
+        <result name="E_INVALIDARG">
+          SATA device, SATA port, IDE port or IDE slot out of range.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Attempt to modify an unregistered virtual machine.
+        </result>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Invalid machine state.
+        </result>
+
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the storage controller.</desc>
+      </param>
+      <param name="controllerPort" type="long" dir="in">
+        <desc>Storage controller port.</desc>
+      </param>
+      <param name="device" type="long" dir="in">
+        <desc>Device slot in the given port.</desc>
+      </param>
+      <param name="passthrough" type="boolean" dir="in">
+        <desc>New value for the passthrough setting.</desc>
       </param>
     </method>
 
@@ -8362,7 +8398,7 @@
 
   <interface
     name="IMediumAttachment" extends="$unknown"
-    uuid="ff554585-560a-489d-963c-cf6da6a826de"
+    uuid="7bb6ac41-8c03-4863-9eea-d9c76561b8d1"
     wsmap="struct"
   >
     <desc>
@@ -8399,7 +8435,7 @@
       <desc>Device type of this attachment.</desc>
     </attribute>
 
-    <attribute name="passthrough" type="boolean" readonly="no">
+    <attribute name="passthrough" type="boolean" readonly="yes">
       <desc>Pass I/O requests through to a device on the host.</desc>
     </attribute>
 
