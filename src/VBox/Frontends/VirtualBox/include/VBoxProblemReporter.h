@@ -152,6 +152,8 @@ public:
 
     void cannotDeleteFile (const QString& path, QWidget *aParent = NULL) const;
 
+    void checkForMountedWrongUSB() const;
+
     /* Special problem handlers */
     void showBETAWarning();
     void showBEBWarning();
