@@ -4802,7 +4802,8 @@
         have have the same meaning as with <link to="IMachine::attachDevice" />.
 
         The specified device slot can have a medium mounted, which will be
-        unmounted first. Specifying a NULL medium does just an unmount.
+        unmounted first. Specifying a zero UUID (or an empty string) for
+        @a medium does just an unmount.
 
         See <link to="IMedium"/> for more detailed information about
         attaching media.
@@ -4830,8 +4831,9 @@
       <param name="device" type="long" dir="in">
         <desc>Device slot in the given port to attach the medium to.</desc>
       </param>
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the medium to attach.</desc>
+      <param name="medium" type="uuid" mod="string" dir="in">
+        <desc>UUID of the medium to attach. A zero UUID means unmount the
+          currently mounted medium.</desc>
       </param>
     </method>
 
