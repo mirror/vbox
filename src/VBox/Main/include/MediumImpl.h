@@ -146,6 +146,7 @@ public:
     STDMETHOD(CloneTo)(IMedium *aTarget, MediumVariant_T aVariant,
                         IMedium *aParent, IProgress **aProgress);
     STDMETHOD(Compact)(IProgress **aProgress);
+    STDMETHOD(Resize)(ULONG64 aLogicalSize, IProgress **aProgress);
     STDMETHOD(Reset)(IProgress **aProgress);
 
     // public methods for internal purposes only

@@ -2489,6 +2489,18 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
     return rc;
 }
 
+STDMETHODIMP Medium::Resize(ULONG64 aLogicalSize, IProgress **aProgress)
+{
+    CheckComArgOutPointerValid(aProgress);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    NOREF(aLogicalSize);
+    NOREF(aProgress);
+    ReturnComNotImplemented();
+}
+
 STDMETHODIMP Medium::Reset(IProgress **aProgress)
 {
     CheckComArgOutPointerValid(aProgress);
