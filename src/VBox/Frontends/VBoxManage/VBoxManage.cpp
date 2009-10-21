@@ -571,22 +571,22 @@ static int handleControlVM(HandlerArg *a)
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
-    Bstr uuid (a->argv[0]);
-    if (!Guid(uuid).isEmpty())
+    Bstr machineuuid (a->argv[0]);
+    if (!Guid(machineuuid).isEmpty())
     {
-        CHECK_ERROR(a->virtualBox, GetMachine(uuid, machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, GetMachine(machineuuid, machine.asOutParam()));
     }
     else
     {
-        CHECK_ERROR(a->virtualBox, FindMachine(uuid, machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(machineuuid, machine.asOutParam()));
         if (SUCCEEDED (rc))
-            machine->COMGETTER(Id)(uuid.asOutParam());
+            machine->COMGETTER(Id)(machineuuid.asOutParam());
     }
     if (FAILED (rc))
         return 1;
 
     /* open a session for the VM */
-    CHECK_ERROR_RET(a->virtualBox, OpenExistingSession(a->session, uuid), 1);
+    CHECK_ERROR_RET(a->virtualBox, OpenExistingSession(a->session, machineuuid), 1);
 
     do
     {
@@ -1120,6 +1120,7 @@ static int handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "dvdattach"))
         {
+            Bstr uuid;
             if (a->argc != 3)
             {
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
@@ -1152,7 +1153,7 @@ static int handleControlVM(HandlerArg *a)
             else
             {
                 /* first assume it's a UUID */
-                Bstr uuid(a->argv[2]);
+                uuid = a->argv[2];
                 rc = a->virtualBox->GetDVDImage(uuid, dvdMedium.asOutParam());
                 if (FAILED(rc) || !dvdMedium)
                 {
@@ -1183,6 +1184,7 @@ static int handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "floppyattach"))
         {
+            Bstr uuid;
             if (a->argc != 3)
             {
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
@@ -1214,7 +1216,7 @@ static int handleControlVM(HandlerArg *a)
             else
             {
                 /* first assume it's a UUID */
-                Bstr uuid(a->argv[2]);
+                uuid = a->argv[2];
                 rc = a->virtualBox->GetFloppyImage(uuid, floppyMedium.asOutParam());
                 if (FAILED(rc) || !floppyMedium)
                 {
