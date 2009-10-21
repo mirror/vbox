@@ -246,7 +246,7 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
         pStorageBackend->fSyncIoPending = false;
         pStorageBackend->pfnCompleted   = pfnCompleted;
 
-        int rc = RTSemEventCreate(&pStorageBackend->EventSem);
+        rc = RTSemEventCreate(&pStorageBackend->EventSem);
         if (RT_SUCCESS(rc))
         {
             rc = PDMDrvHlpPDMAsyncCompletionTemplateCreate(pDrvVD->pDrvIns, &pStorageBackend->pTemplate,
