@@ -619,13 +619,14 @@ static int dbgfR3VMMWait(PVM pVM)
         /*
          * Wait.
          */
+        uint32_t cPollHack = 1; /** @todo this interface is horrible now that we're using lots of VMR3ReqCall stuff all over DBGF. */
         for (;;)
         {
             int rc;
             if (    !VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_REQUEST)
                 &&  !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
             {
-                int rc = RTSemPingWait(&pVM->dbgf.s.PingPong, 250);
+                int rc = RTSemPingWait(&pVM->dbgf.s.PingPong, cPollHack);
                 if (RT_SUCCESS(rc))
                     break;
                 if (rc != VERR_TIMEOUT)
@@ -636,7 +637,10 @@ static int dbgfR3VMMWait(PVM pVM)
             }
 
             if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+            {
                 rc = VMMR3EmtRendezvousFF(pVM, pVCpu);
+                cPollHack = 1;
+            }
             else if (   VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
                      || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
             {
@@ -645,9 +649,14 @@ static int dbgfR3VMMWait(PVM pVM)
                 if (rc == VINF_SUCCESS)
                     rc = VMR3ReqProcessU(pVM->pUVM, pVCpu->idCpu);
                 LogFlow(("dbgfR3VMMWait: VMR3ReqProcess -> %Rrc rcRet=%Rrc\n", rc, rcRet));
+                cPollHack = 1;
             }
             else
+            {
                 rc = VINF_SUCCESS;
+                if (cPollHack < 120)
+                    cPollHack++;
+            }
 
             if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
             {
