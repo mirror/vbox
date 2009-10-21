@@ -879,7 +879,7 @@ int StorageModel::rowCount (const QModelIndex &aParent) const
            static_cast <AbstractItem*> (aParent.internalPointer())->childCount();
 }
 
-int StorageModel::columnCount (const QModelIndex &aParent) const
+int StorageModel::columnCount (const QModelIndex & /* aParent */) const
 {
     return 1;
 }
