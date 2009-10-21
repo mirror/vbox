@@ -97,18 +97,6 @@
  *
  * @todo Mark which bits are compatible with which BIOSes and
  *       which are our own definitions.
- *
- * @todo r=bird: Is the 0x61 - 0x63 range defined by AMI,
- *       PHOENIX or AWARD? If not I'd say 64MB units is a bit
- *       too big, besides it forces unnecessary math stuff onto
- *       the BIOS.
- *       nike: The way how values encoded are defined by Bochs/QEmu BIOS,
- *       although for them position in CMOS is different:
- *         0x5b - 0x5c: RAM above 4G
- *         0x5f: number of CPUs
- *        Unfortunately for us those positions in our CMOS are already taken
- *        by 4th SATA drive configuration.
- *
  */
 
 
@@ -169,15 +157,15 @@ typedef struct DEVPCBIOS
     /** The size of the LAN boot ROM. */
     uint64_t        cbLanBoot;
     /** The DMI tables. */
-    uint8_t        au8DMIPage[0x1000];
+    uint8_t         au8DMIPage[0x1000];
     /** The boot countdown (in seconds). */
-    uint8_t        uBootDelay;
+    uint8_t         uBootDelay;
     /** I/O-APIC enabled? */
-    uint8_t        u8IOAPIC;
+    uint8_t         u8IOAPIC;
     /** PXE debug logging enabled? */
-    uint8_t        u8PXEDebug;
+    uint8_t         u8PXEDebug;
     /** Number of logical CPUs in guest */
-    uint16_t       cCpus;
+    uint16_t        cCpus;
 } DEVPCBIOS, *PDEVPCBIOS;
 
 #pragma pack(1)
