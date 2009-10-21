@@ -110,7 +110,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RT
     AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
     AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
 
-#if defined(LOG_ENABLED) && !defined(DEBUG_bird)
+#if defined(LOG_ENABLED) && !defined(DEBUG_bird) && !defined(DEBUG_misha)
     SUPR0Printf("VMXR0EnableCpu cpu %d page (%x) %x\n", pCpu->idCpu, pvPageCpu, (uint32_t)pPageCpuPhys);
 #endif
     if (pVM)
@@ -157,7 +157,7 @@ VMMR0DECL(int) VMXR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS p
     /* And clear the X86_CR4_VMXE bit */
     ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
 
-#if defined(LOG_ENABLED) && !defined(DEBUG_bird)
+#if defined(LOG_ENABLED) && !defined(DEBUG_bird) && !defined(DEBUG_misha)
     SUPR0Printf("VMXR0DisableCpu cpu %d\n", pCpu->idCpu);
 #endif
     return VINF_SUCCESS;

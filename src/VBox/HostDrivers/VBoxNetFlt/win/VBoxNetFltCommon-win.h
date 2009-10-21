@@ -152,6 +152,10 @@ typedef struct VBOXNETFLTINS *PVBOXNETFLTINS;
 
 #define VBOX_NETFLT_PACKET_HEADER_MATCH_SIZE 24
 
+#if defined(DEBUG_NETFLT_PACKETS) || !defined(VBOX_LOOPBACK_USEFLAGS)
+# define VBOXNETFLT_PACKETMATCH_LENGTH (ETH_HEADER_SIZE + 2)
+#endif
+
 #ifdef VBOXNETADP
 #define     VBOXNETADP_HEADER_SIZE             14
 #define     VBOXNETADP_MAX_DATA_SIZE           1500
@@ -315,15 +319,6 @@ typedef struct _ADAPT
     NDIS_HANDLE                    hMiniportHandle;
     /** miniport device state */
     ADAPT_DEVICE             MPState;
-#ifdef DEBUG_NETFLT_LOOPBACK
-# error "implement (see comments in the sources below this #error:)"
-        /* @todo FIXME no need for the PPACKET_INFO mechanism here;
-        instead the the NDIS_PACKET.ProtocolReserved + INTERLOCKED_SINGLE_LIST mechanism \
-        similar to that used in TrasferData handling should be used;
-        */
-    /** Pending receive packet queue (i.e. packets that were indicated to the upperlying protocols, but not completed yet)*/
-//    INTERLOCKED_PACKET_QUEUE                   RecvPacketQueue;
-#endif
     /** ndis packet pool used for receives */
     NDIS_HANDLE                    hRecvPacketPoolHandle;
     /** ndis buffer pool used for receives */
@@ -388,28 +383,18 @@ typedef struct _ADAPT
 #endif /* !VBOX_NETFLT_ONDEMAND_BIND */
 
 #ifndef VBOXNETADP
+#if defined(DEBUG_NETFLT_LOOPBACK) || !defined(VBOX_LOOPBACK_USEFLAGS)
+    /** used for maintaining the pending send packets for handling packet loopback */
+    INTERLOCKED_SINGLE_LIST SendPacketQueue;
+#endif
     /** used for serializing calls to the NdisRequest in the vboxNetFltWinSynchNdisRequest */
     RTSEMFASTMUTEX                 hSynchRequestMutex;
-
     /** event used to synchronize with the Ndis Request completion in the vboxNetFltWinSynchNdisRequest */
     KEVENT                         hSynchCompletionEvent;
     /** status of the Ndis Request initiated by the vboxNetFltWinSynchNdisRequest */
     NDIS_STATUS   volatile         fSynchCompletionStatus;
     /** pointer to the Ndis Request being executed by the vboxNetFltWinSynchNdisRequest */
     PNDIS_REQUEST volatile         pSynchRequest;
-#endif
-#ifdef DEBUG_NETFLT_LOOPBACK
-# error "implement (see comments in the sources below this #error:)"
-        /* @todo FIXME no need for the PPACKET_INFO mechanism here;
-        instead the the NDIS_PACKET.ProtocolReserved + INTERLOCKED_SINGLE_LIST mechanism \
-        similar to that used in TrasferData handling should be used;
-        */
-    /** Pending send packet queue (i.e. packets that were sent to the underlying miniport, but not completed yet)*/
-
-    INTERLOCKED_PACKET_QUEUE                   SendPacketQueue;
-    /** Packet info pool, i.e. the pool for the packet queue elements */
-#endif
-#ifndef VBOXNETADP
     /** ndis packet pool used for sends */
     NDIS_HANDLE                    hSendPacketPoolHandle;
     /** ndis buffer pool used for sends */
@@ -453,10 +438,14 @@ typedef struct _SEND_RSVD
     /** original packet receiver from the upperlying protocol
      * can be null if the packet was originated by intnet */
     PNDIS_PACKET    pOriginalPkt;
-
     /** pointer to the buffer to be freed on send completion
      * can be null if no buffer is to be freed */
     PVOID           pBufToFree;
+#if !defined(VBOX_LOOPBACK_USEFLAGS) || defined(DEBUG_NETFLT_PACKETS)
+    SINGLE_LIST_ENTRY ListEntry;
+    /* true if the packet is from IntNet */
+    bool bFromIntNet;
+#endif
 } SEND_RSVD, *PSEND_RSVD;
 
 /** represents the data stored in the protocol recerved field of ndis packet on NdisTransferData processing*/
@@ -499,7 +488,9 @@ C_ASSERT(sizeof(RECV_RSVD) <= sizeof(((PNDIS_PACKET)0)->MiniportReserved));
 C_ASSERT(sizeof(NDIS_DEVICE_POWER_STATE) == sizeof(uint32_t));
 C_ASSERT(sizeof(UINT) == sizeof(uint32_t));
 
+#ifdef VBOX_LOOPBACK_USEFLAGS
 #define NDIS_FLAGS_SKIP_LOOPBACK_W2K    0x400
+#endif
 
 #include "../VBoxNetFltInternal.h"
 #include "VBoxNetFlt-win.h"
