@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,16 +20,7 @@
  * additional information or have any questions.
  */
 
-/* VBox includes */
-#include "VBoxGlobal.h"
-#include "VBoxMediaManagerDlg.h"
-#include "VBoxNewHDWzd.h"
-#include "VBoxProblemReporter.h"
-#include "VBoxToolBar.h"
-#include "QIFileDialog.h"
-#include "QILabel.h"
-
-/* Qt includes */
+/* Global includes */
 #include <QCloseEvent>
 #include <QDir>
 #include <QDragEnterEvent>
@@ -41,6 +32,15 @@
 #include <QPushButton>
 #include <QTimer>
 #include <QUrl>
+
+/* Local includes */
+#include "VBoxGlobal.h"
+#include "VBoxMediaManagerDlg.h"
+#include "VBoxNewHDWzd.h"
+#include "VBoxProblemReporter.h"
+#include "VBoxToolBar.h"
+#include "QIFileDialog.h"
+#include "QILabel.h"
 
 class AddVDMUrlsEvent: public QEvent
 {
@@ -62,22 +62,23 @@ class MediaItem : public QTreeWidgetItem
 {
 public:
 
-    MediaItem (MediaItem *aParent, const VBoxMedium &aMedium,
-               const VBoxMediaManagerDlg *aManager)
+    MediaItem (MediaItem *aParent, const VBoxMedium &aMedium, const VBoxMediaManagerDlg *aManager)
         : QTreeWidgetItem (aParent, QITreeWidget::BasicItemType)
         , mMedium (aMedium)
         , mManager (aManager)
     { refresh(); }
 
-
-    MediaItem (QTreeWidget *aParent, const VBoxMedium &aMedium,
-               const VBoxMediaManagerDlg *aManager)
+    MediaItem (QTreeWidget *aParent, const VBoxMedium &aMedium, const VBoxMediaManagerDlg *aManager)
         : QTreeWidgetItem (aParent, QITreeWidget::BasicItemType)
         , mMedium (aMedium)
         , mManager (aManager)
     { refresh(); }
 
-    const VBoxMedium &medium() const { return mMedium; }
+    void refreshAll()
+    {
+        mMedium.refresh();
+        refresh();
+    }
 
     void setMedium (const VBoxMedium &aMedium)
     {
@@ -85,27 +86,22 @@ public:
         refresh();
     }
 
-    void refreshAll();
+    const VBoxMedium& medium() const { return mMedium; }
 
     VBoxDefs::MediumType type() const { return mMedium.type(); }
 
     KMediumState state() const { return mMedium.state (!mManager->showDiffs()); }
 
     QString id() const { return mMedium.id(); }
+
     QString location() const { return mMedium.location (!mManager->showDiffs()); }
 
-    QString hardDiskFormat() const
-        { return mMedium.hardDiskFormat (!mManager->showDiffs()); }
-    QString hardDiskType() const
-        { return mMedium.hardDiskType (!mManager->showDiffs()); }
+    QString hardDiskFormat() const { return mMedium.hardDiskFormat (!mManager->showDiffs()); }
+    QString hardDiskType() const { return mMedium.hardDiskType (!mManager->showDiffs()); }
 
     QString usage() const { return mMedium.usage (!mManager->showDiffs()); }
 
-    QString toolTip() const
-    {
-        return mMedium.toolTip (!mManager->showDiffs(),
-                                mManager->inAttachMode());
-    }
+    QString toolTip() const { return mMedium.toolTip (!mManager->showDiffs(), mManager->inAttachMode()); }
 
     bool isUsed() const { return mMedium.isUsed(); }
     bool isUsedInSnapshots() const { return mMedium.isUsedInSnapshots(); }
@@ -115,65 +111,29 @@ public:
         int column = treeWidget()->sortColumn();
         ULONG64 thisValue = vboxGlobal().parseSize (       text (column));
         ULONG64 thatValue = vboxGlobal().parseSize (aOther.text (column));
-        if (thisValue && thatValue)
-            return thisValue < thatValue;
-        else
-            return QTreeWidgetItem::operator< (aOther);
+        return thisValue && thatValue ? thisValue < thatValue : QTreeWidgetItem::operator< (aOther);
     }
-
-//    void paintCell (QPainter *aPainter, const QColorGroup &aColorGroup,
-//                    int aColumn, int aWidth, int aSlign)
-//    {
-//        QColorGroup cGroup (aColorGroup);
-//        if (mStatus == KMediumState_NotCreated)
-//            cGroup.setColor (QColorGroup::Text, cGroup.mid());
-//        Q3ListViewItem::paintCell (aPainter, cGroup, aColumn, aWidth, aSlign);
-//    }
-protected:
-
-    void refresh();
 
 private:
 
-    /* Private member vars */
+    void refresh()
+    {
+        /* Fill in columns */
+        setIcon (0, mMedium.icon (!mManager->showDiffs(), mManager->inAttachMode()));
+        /* Set the text */
+        setText (0, mMedium.name (!mManager->showDiffs()));
+        setText (1, mMedium.logicalSize (!mManager->showDiffs()));
+        setText (2, mMedium.size (!mManager->showDiffs()));
+        /* All columns get the same tooltip */
+        QString tt = mMedium.toolTip (!mManager->showDiffs());
+        for (int i = 0; i < treeWidget()->columnCount(); ++ i)
+            setToolTip (i, tt);
+    }
+
     VBoxMedium mMedium;
     const VBoxMediaManagerDlg *mManager;
 };
 
-/**
- * Refreshes the underlying medium (see VBoxMedium::refresh()) and then
- * refreshes this item's columns based on the new values.
- */
-void MediaItem::refreshAll()
-{
-    mMedium.refresh();
-    refresh();
-}
-
-/**
- * Refreshes the item representation according to the associated medium.
- *
- * Note that the underlying medium itself is not refreshed.
- */
-void MediaItem::refresh()
-{
-    /* Fill in columns */
-    setIcon (0, mMedium.icon (!mManager->showDiffs(),
-                              mManager->inAttachMode()));
-    /* Set the text */
-    setText (0, mMedium.name (!mManager->showDiffs()));
-    setText (1, mMedium.logicalSize (!mManager->showDiffs()));
-    setText (2, mMedium.size (!mManager->showDiffs()));
-    /* All columns get the same tooltip */
-    QString tt = mMedium.toolTip (!mManager->showDiffs());
-    for (int i = 0; i < treeWidget()->columnCount(); ++i)
-        setToolTip (i, tt);
-}
-
-
-/**
- * Iterator for MediaItem.
- */
 class MediaItemIterator : public QTreeWidgetItemIterator
 {
 public:
@@ -193,7 +153,6 @@ public:
         return static_cast <MediaItemIterator&> (QTreeWidgetItemIterator::operator++());
     }
 };
-
 
 class VBoxProgressBar: public QWidget
 {
@@ -222,7 +181,6 @@ public:
 
 private:
 
-    /* Private member vars */
     QLabel *mText;
     QProgressBar *mProgressBar;
 };
@@ -230,8 +188,7 @@ private:
 
 VBoxMediaManagerDlg* VBoxMediaManagerDlg::mModelessDialog = 0;
 
-VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */,
-                                          Qt::WindowFlags aFlags /* = Qt::Dialog */)
+VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::WindowFlags aFlags /* = Qt::Dialog */)
     : QIWithRetranslateUI2 <QIMainDialog> (aParent, aFlags)
     , mType (VBoxDefs::MediumType_Invalid)
     , mShowDiffs (true)
@@ -255,68 +212,67 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */,
     mDVDImageIcon    = VBoxGlobal::iconSet (":/cd_16px.png", ":/cd_disabled_16px.png");
     mFloppyImageIcon = VBoxGlobal::iconSet (":/fd_16px.png", ":/fd_disabled_16px.png");
 
-    /* Setup tab widget icons */
-    mTwImages->setTabIcon (HDTab, mHardDiskIcon);
-    mTwImages->setTabIcon (CDTab, mDVDImageIcon);
-    mTwImages->setTabIcon (FDTab, mFloppyImageIcon);
+    /* Setup tab-widget icons */
+    mTabWidget->setTabIcon (HDTab, mHardDiskIcon);
+    mTabWidget->setTabIcon (CDTab, mDVDImageIcon);
+    mTabWidget->setTabIcon (FDTab, mFloppyImageIcon);
 
-    connect (mTwImages, SIGNAL (currentChanged (int)),
-             this, SLOT (processCurrentChanged (int)));
+    connect (mTabWidget, SIGNAL (currentChanged (int)), this, SLOT (processCurrentChanged (int)));
 
-    /* Setup the tree view widgets */
-    mHardDiskView->sortItems (0, Qt::AscendingOrder);
-    mHardDiskView->header()->setResizeMode (0, QHeaderView::Fixed);
-    mHardDiskView->header()->setResizeMode (1, QHeaderView::ResizeToContents);
-    mHardDiskView->header()->setResizeMode (2, QHeaderView::ResizeToContents);
-    mHardDiskView->header()->setStretchLastSection (false);
-    mHardDiskView->setSortingEnabled (true);
-    mHardDiskView->setSupportedDropActions (Qt::LinkAction);
-    mHardDiskView->installEventFilter (this);
-    connect (mHardDiskView, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
+    /* Setup the tree-widgets */
+    mTwHD->sortItems (0, Qt::AscendingOrder);
+    mTwHD->header()->setResizeMode (0, QHeaderView::Fixed);
+    mTwHD->header()->setResizeMode (1, QHeaderView::ResizeToContents);
+    mTwHD->header()->setResizeMode (2, QHeaderView::ResizeToContents);
+    mTwHD->header()->setStretchLastSection (false);
+    mTwHD->setSortingEnabled (true);
+    mTwHD->setSupportedDropActions (Qt::LinkAction);
+    mTwHD->installEventFilter (this);
+    connect (mTwHD, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
              this, SLOT (processCurrentChanged (QTreeWidgetItem *, QTreeWidgetItem *)));
-    connect (mHardDiskView, SIGNAL (itemDoubleClicked (QTreeWidgetItem *, int)),
+    connect (mTwHD, SIGNAL (itemDoubleClicked (QTreeWidgetItem *, int)),
              this, SLOT (processDoubleClick (QTreeWidgetItem *, int)));
-    connect (mHardDiskView, SIGNAL (customContextMenuRequested (const QPoint &)),
+    connect (mTwHD, SIGNAL (customContextMenuRequested (const QPoint &)),
              this, SLOT (showContextMenu (const QPoint &)));
-    connect (mHardDiskView, SIGNAL (resized (const QSize&, const QSize&)),
+    connect (mTwHD, SIGNAL (resized (const QSize &, const QSize &)),
              this, SLOT (makeRequestForAdjustTable()));
-    connect (mHardDiskView->header(), SIGNAL (sectionResized (int, int, int)),
+    connect (mTwHD->header(), SIGNAL (sectionResized (int, int, int)),
              this, SLOT (makeRequestForAdjustTable()));
 
-    mDVDView->sortItems (0, Qt::AscendingOrder);
-    mDVDView->header()->setResizeMode (0, QHeaderView::Fixed);
-    mDVDView->header()->setResizeMode (1, QHeaderView::ResizeToContents);
-    mDVDView->header()->setStretchLastSection (false);
-    mDVDView->setSortingEnabled (true);
-    mDVDView->setSupportedDropActions (Qt::LinkAction);
-    mDVDView->installEventFilter (this);
-    connect (mDVDView, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
+    mTwCD->sortItems (0, Qt::AscendingOrder);
+    mTwCD->header()->setResizeMode (0, QHeaderView::Fixed);
+    mTwCD->header()->setResizeMode (1, QHeaderView::ResizeToContents);
+    mTwCD->header()->setStretchLastSection (false);
+    mTwCD->setSortingEnabled (true);
+    mTwCD->setSupportedDropActions (Qt::LinkAction);
+    mTwCD->installEventFilter (this);
+    connect (mTwCD, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
              this, SLOT (processCurrentChanged (QTreeWidgetItem *, QTreeWidgetItem *)));
-    connect (mDVDView, SIGNAL (itemDoubleClicked (QTreeWidgetItem *, int)),
+    connect (mTwCD, SIGNAL (itemDoubleClicked (QTreeWidgetItem *, int)),
              this, SLOT (processDoubleClick (QTreeWidgetItem *, int)));
-    connect (mDVDView, SIGNAL (customContextMenuRequested (const QPoint &)),
+    connect (mTwCD, SIGNAL (customContextMenuRequested (const QPoint &)),
              this, SLOT (showContextMenu (const QPoint &)));
-    connect (mDVDView, SIGNAL (resized (const QSize&, const QSize&)),
+    connect (mTwCD, SIGNAL (resized (const QSize&, const QSize&)),
              this, SLOT (makeRequestForAdjustTable()));
-    connect (mDVDView->header(), SIGNAL (sectionResized (int, int, int)),
+    connect (mTwCD->header(), SIGNAL (sectionResized (int, int, int)),
              this, SLOT (makeRequestForAdjustTable()));
 
-    mFloppyView->sortItems (0, Qt::AscendingOrder);
-    mFloppyView->header()->setResizeMode (0, QHeaderView::Fixed);
-    mFloppyView->header()->setResizeMode (1, QHeaderView::ResizeToContents);
-    mFloppyView->header()->setStretchLastSection (false);
-    mFloppyView->setSortingEnabled (true);
-    mFloppyView->setSupportedDropActions (Qt::LinkAction);
-    mFloppyView->installEventFilter (this);
-    connect (mFloppyView, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
+    mTwFD->sortItems (0, Qt::AscendingOrder);
+    mTwFD->header()->setResizeMode (0, QHeaderView::Fixed);
+    mTwFD->header()->setResizeMode (1, QHeaderView::ResizeToContents);
+    mTwFD->header()->setStretchLastSection (false);
+    mTwFD->setSortingEnabled (true);
+    mTwFD->setSupportedDropActions (Qt::LinkAction);
+    mTwFD->installEventFilter (this);
+    connect (mTwFD, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
              this, SLOT (processCurrentChanged (QTreeWidgetItem *, QTreeWidgetItem *)));
-    connect (mFloppyView, SIGNAL (itemDoubleClicked (QTreeWidgetItem *, int)),
+    connect (mTwFD, SIGNAL (itemDoubleClicked (QTreeWidgetItem *, int)),
              this, SLOT (processDoubleClick (QTreeWidgetItem *, int)));
-    connect (mFloppyView, SIGNAL (customContextMenuRequested (const QPoint &)),
+    connect (mTwFD, SIGNAL (customContextMenuRequested (const QPoint &)),
              this, SLOT (showContextMenu (const QPoint &)));
-    connect (mFloppyView, SIGNAL (resized (const QSize&, const QSize&)),
+    connect (mTwFD, SIGNAL (resized (const QSize&, const QSize&)),
              this, SLOT (makeRequestForAdjustTable()));
-    connect (mFloppyView->header(), SIGNAL (sectionResized (int, int, int)),
+    connect (mTwFD->header(), SIGNAL (sectionResized (int, int, int)),
              this, SLOT (makeRequestForAdjustTable()));
 
     /* Context menu composing */
@@ -324,23 +280,15 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */,
 
     mNewAction     = new QAction (this);
     mAddAction     = new QAction (this);
-//  mEditAction    = new QAction (this);
     mRemoveAction  = new QAction (this);
     mReleaseAction = new QAction (this);
     mRefreshAction = new QAction (this);
 
-    connect (mNewAction, SIGNAL (triggered()),
-             this, SLOT (doNewMedium()));
-    connect (mAddAction, SIGNAL (triggered()),
-             this, SLOT (doAddMedium()));
-//  connect (mEditAction, SIGNAL (triggered()),
-//           this, SLOT (editImage()));
-    connect (mRemoveAction, SIGNAL (triggered()),
-             this, SLOT (doRemoveMedium()));
-    connect (mReleaseAction, SIGNAL (triggered()),
-             this, SLOT (doReleaseMedium()));
-    connect (mRefreshAction, SIGNAL (triggered()),
-             this, SLOT (refreshAll()));
+    connect (mNewAction, SIGNAL (triggered()), this, SLOT (doNewMedium()));
+    connect (mAddAction, SIGNAL (triggered()), this, SLOT (doAddMedium()));
+    connect (mRemoveAction, SIGNAL (triggered()), this, SLOT (doRemoveMedium()));
+    connect (mReleaseAction, SIGNAL (triggered()), this, SLOT (doReleaseMedium()));
+    connect (mRefreshAction, SIGNAL (triggered()), this, SLOT (refreshAll()));
 
     mNewAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (22, 22), QSize (16, 16),
@@ -350,7 +298,6 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */,
         QSize (22, 22), QSize (16, 16),
         ":/hd_add_22px.png", ":/hd_add_16px.png",
         ":/hd_add_disabled_22px.png", ":/hd_add_disabled_16px.png"));
-//  mEditAction->setIcon (VBoxGlobal::iconSet (":/guesttools_16px.png", ":/guesttools_disabled_16px.png"));
     mRemoveAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (22, 22), QSize (16, 16),
         ":/hd_remove_22px.png", ":/hd_remove_16px.png",
@@ -364,54 +311,45 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */,
         ":/refresh_22px.png", ":/refresh_16px.png",
         ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png"));
 
-//  mActionsContextMenu->addAction (mEditAction);
     mActionsContextMenu->addAction (mRemoveAction);
     mActionsContextMenu->addAction (mReleaseAction);
 
     /* Toolbar composing */
-    mActionsToolBar = new VBoxToolBar (this);
-    mActionsToolBar->setIconSize (QSize (22, 22));
-    mActionsToolBar->setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
-    mActionsToolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
+    mToolBar = new VBoxToolBar (this);
+    mToolBar->setIconSize (QSize (22, 22));
+    mToolBar->setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
+    mToolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
 
-    /* Really messy what the uic produce here: a vbox layout in an hbox layout */
-    QHBoxLayout *centralLayout = qobject_cast <QHBoxLayout*> (centralWidget()->layout());
-    Assert (VALID_PTR (centralLayout));
-    QVBoxLayout *mainLayout = static_cast <QVBoxLayout*> (centralLayout->itemAt(0));
-    Assert (VALID_PTR (mainLayout));
+    QVBoxLayout *mainLayout = qobject_cast <QVBoxLayout*> (centralWidget()->layout());
+    Assert (mainLayout);
 #if MAC_LEOPARD_STYLE
     /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3 */
-    addToolBar (mActionsToolBar);
-    mActionsToolBar->setMacToolbar();
+    addToolBar (mToolBar);
+    mToolBar->setMacToolbar();
     /* No spacing/margin on the mac */
-    VBoxGlobal::setLayoutMargin (centralLayout, 0);
-    mainLayout->insertSpacing (0, 10);
     VBoxGlobal::setLayoutMargin (mainLayout, 0);
+    mainLayout->insertSpacing (0, 10);
 #else /* MAC_LEOPARD_STYLE */
     /* Add the toolbar */
-    mainLayout->insertWidget (0, mActionsToolBar);
+    mainLayout->insertWidget (0, mToolBar);
     /* Set spacing/margin like in the selector window */
-    centralLayout->setSpacing (0);
-    VBoxGlobal::setLayoutMargin (centralLayout, 0);
     mainLayout->setSpacing (5);
     VBoxGlobal::setLayoutMargin (mainLayout, 5);
 #endif /* MAC_LEOPARD_STYLE */
 
-    mActionsToolBar->addAction (mNewAction);
-    mActionsToolBar->addAction (mAddAction);
-    mActionsToolBar->addSeparator();
-//  mActionsToolBar->addAction (mEditAction);
-    mActionsToolBar->addAction (mRemoveAction);
-    mActionsToolBar->addAction (mReleaseAction);
-    mActionsToolBar->addSeparator();
-    mActionsToolBar->addAction (mRefreshAction);
+    mToolBar->addAction (mNewAction);
+    mToolBar->addAction (mAddAction);
+    mToolBar->addSeparator();
+    mToolBar->addAction (mRemoveAction);
+    mToolBar->addAction (mReleaseAction);
+    mToolBar->addSeparator();
+    mToolBar->addAction (mRefreshAction);
 
     /* Menu bar */
     mActionsMenu = menuBar()->addMenu (QString::null);
     mActionsMenu->addAction (mNewAction);
     mActionsMenu->addAction (mAddAction);
     mActionsMenu->addSeparator();
-//  mActionsMenu->addAction (mEditAction);
     mActionsMenu->addAction (mRemoveAction);
     mActionsMenu->addAction (mReleaseAction);
     mActionsMenu->addSeparator();
@@ -433,17 +371,14 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */,
     mButtonBox->button (QDialogButtonBox::Ok)->setDefault (true);
 
     /* Connects for the button box */
-    connect (mButtonBox, SIGNAL (accepted()),
-             this, SLOT (accept()));
-    connect (mButtonBox, SIGNAL (rejected()),
-             this, SLOT (reject()));
-    connect (mButtonBox, SIGNAL (helpRequested()),
-             &vboxProblem(), SLOT (showHelpHelpDialog()));
+    connect (mButtonBox, SIGNAL (accepted()), this, SLOT (accept()));
+    connect (mButtonBox, SIGNAL (rejected()), this, SLOT (reject()));
+    connect (mButtonBox, SIGNAL (helpRequested()), &vboxProblem(), SLOT (showHelpHelpDialog()));
 }
 
 VBoxMediaManagerDlg::~VBoxMediaManagerDlg()
 {
-    delete mActionsToolBar;
+    delete mToolBar;
 }
 
 /**
@@ -479,22 +414,22 @@ void VBoxMediaManagerDlg::setup (VBoxDefs::MediumType aType, bool aDoSelect,
     switch (aType)
     {
         case VBoxDefs::MediumType_HardDisk: mHDSelectedId = aSelectId; break;
-        case VBoxDefs::MediumType_DVD:      mDVDSelectedId = aSelectId; break;
-        case VBoxDefs::MediumType_Floppy:   mFloppySelectedId = aSelectId; break;
+        case VBoxDefs::MediumType_DVD:      mCDSelectedId = aSelectId; break;
+        case VBoxDefs::MediumType_Floppy:   mFDSelectedId = aSelectId; break;
         case VBoxDefs::MediumType_All: break;
         default:
             AssertFailedReturnVoid();
     }
 
-    mTwImages->setTabEnabled (HDTab,
-                              aType == VBoxDefs::MediumType_All ||
-                              aType == VBoxDefs::MediumType_HardDisk);
-    mTwImages->setTabEnabled (CDTab,
-                              aType == VBoxDefs::MediumType_All ||
-                              aType == VBoxDefs::MediumType_DVD);
-    mTwImages->setTabEnabled (FDTab,
-                              aType == VBoxDefs::MediumType_All ||
-                              aType == VBoxDefs::MediumType_Floppy);
+    mTabWidget->setTabEnabled (HDTab,
+                               aType == VBoxDefs::MediumType_All ||
+                               aType == VBoxDefs::MediumType_HardDisk);
+    mTabWidget->setTabEnabled (CDTab,
+                               aType == VBoxDefs::MediumType_All ||
+                               aType == VBoxDefs::MediumType_DVD);
+    mTabWidget->setTabEnabled (FDTab,
+                               aType == VBoxDefs::MediumType_All ||
+                               aType == VBoxDefs::MediumType_Floppy);
 
     mDoSelect = aDoSelect;
 
@@ -542,15 +477,15 @@ void VBoxMediaManagerDlg::setup (VBoxDefs::MediumType aType, bool aDoSelect,
     }
 
     /* For a newly opened dialog, select the first item */
-    if (mHardDiskView->selectedItems().isEmpty())
-        if (QTreeWidgetItem *item = mHardDiskView->topLevelItem (0))
-            setCurrentItem (mHardDiskView, item);
-    if (mDVDView->selectedItems().isEmpty())
-        if (QTreeWidgetItem *item = mDVDView->topLevelItem (0))
-            setCurrentItem (mDVDView, item);
-    if (mFloppyView->selectedItems().isEmpty())
-        if (QTreeWidgetItem *item = mFloppyView->topLevelItem (0))
-            setCurrentItem (mFloppyView, item);
+    if (mTwHD->selectedItems().isEmpty())
+        if (QTreeWidgetItem *item = mTwHD->topLevelItem (0))
+            setCurrentItem (mTwHD, item);
+    if (mTwCD->selectedItems().isEmpty())
+        if (QTreeWidgetItem *item = mTwCD->topLevelItem (0))
+            setCurrentItem (mTwCD, item);
+    if (mTwFD->selectedItems().isEmpty())
+        if (QTreeWidgetItem *item = mTwFD->topLevelItem (0))
+            setCurrentItem (mTwFD, item);
 
     /* Applying language settings */
     retranslateUi();
@@ -559,8 +494,7 @@ void VBoxMediaManagerDlg::setup (VBoxDefs::MediumType aType, bool aDoSelect,
 }
 
 /* static */
-void VBoxMediaManagerDlg::showModeless (QWidget *aCenterWidget /* = 0 */,
-                                        bool aRefresh /* = true */)
+void VBoxMediaManagerDlg::showModeless (QWidget *aCenterWidget /* = 0 */, bool aRefresh /* = true */)
 {
     if (!mModelessDialog)
     {
@@ -568,8 +502,7 @@ void VBoxMediaManagerDlg::showModeless (QWidget *aCenterWidget /* = 0 */,
         mModelessDialog->centerAccording (aCenterWidget);
         connect (vboxGlobal().mainWindow(), SIGNAL (closing()), mModelessDialog, SLOT (close()));
         mModelessDialog->setAttribute (Qt::WA_DeleteOnClose);
-        mModelessDialog->setup (VBoxDefs::MediumType_All,
-                                false /* aDoSelect */, aRefresh);
+        mModelessDialog->setup (VBoxDefs::MediumType_All, false /* aDoSelect */, aRefresh);
 
         /* listen to events that may change the media status and refresh
          * the contents of the modeless dialog */
@@ -584,8 +517,7 @@ void VBoxMediaManagerDlg::showModeless (QWidget *aCenterWidget /* = 0 */,
     }
 
     mModelessDialog->show();
-    mModelessDialog->setWindowState (mModelessDialog->windowState() &
-                                     ~Qt::WindowMinimized);
+    mModelessDialog->setWindowState (mModelessDialog->windowState() & ~Qt::WindowMinimized);
     mModelessDialog->activateWindow();
 }
 
@@ -628,21 +560,18 @@ void VBoxMediaManagerDlg::retranslateUi()
 
     mNewAction->setText (tr ("&New..."));
     mAddAction->setText (tr ("&Add..."));
-    // mEditAction->setText (tr ("&Edit..."));
     mRemoveAction->setText (tr ("R&emove"));
     mReleaseAction->setText (tr ("Re&lease"));
     mRefreshAction->setText (tr ("Re&fresh"));
 
     mNewAction->setShortcut (QKeySequence (QKeySequence::New));
     mAddAction->setShortcut (QKeySequence ("Ins"));
-    // mEditAction->setShortcut (QKeySequence ("Ctrl+E"));
     mRemoveAction->setShortcut (QKeySequence (QKeySequence::Delete));
     mReleaseAction->setShortcut (QKeySequence ("Ctrl+L"));
     mRefreshAction->setShortcut (QKeySequence (QKeySequence::Refresh));
 
     mNewAction->setStatusTip (tr ("Create a new virtual hard disk"));
     mAddAction->setStatusTip (tr ("Add an existing medium"));
-    // mEditAction->setStatusTip (tr ("Edit the properties of the selected medium"));
     mRemoveAction->setStatusTip (tr ("Remove the selected medium"));
     mReleaseAction->setStatusTip (tr ("Release the selected medium by detaching it from the machines"));
     mRefreshAction->setStatusTip (tr ("Refresh the media list"));
@@ -651,8 +580,6 @@ void VBoxMediaManagerDlg::retranslateUi()
         QString (" (%1)").arg (mNewAction->shortcut().toString()));
     mAddAction->setToolTip (mAddAction->text().remove ('&') +
         QString (" (%1)").arg (mAddAction->shortcut().toString()));
-    // mEditAction->setToolTip (mEditAction->text().remove ('&') +
-    //     QString (" (%1)").arg (mEditAction->shortcut().toString()));
     mRemoveAction->setToolTip (mRemoveAction->text().remove ('&') +
         QString (" (%1)").arg (mRemoveAction->shortcut().toString()));
     mReleaseAction->setToolTip (mReleaseAction->text().remove ('&') +
@@ -672,8 +599,7 @@ void VBoxMediaManagerDlg::retranslateUi()
 
     mProgressBar->setText (tr ("Checking accessibility"));
 #ifdef Q_WS_MAC
-    /* Make sure that the widgets aren't jumping around while the progress bar
-     * get visible. */
+    /* Make sure that the widgets aren't jumping around while the progress bar get visible. */
     mProgressBar->adjustSize();
     int h = mProgressBar->height();
     mButtonBox->setMinimumHeight (h + 12);
@@ -682,7 +608,7 @@ void VBoxMediaManagerDlg::retranslateUi()
     if (mDoSelect)
         mButtonBox->button (QDialogButtonBox::Ok)->setText (tr ("&Select"));
 
-    if (mHardDiskView->model()->rowCount() || mDVDView->model()->rowCount() || mFloppyView->model()->rowCount())
+    if (mTwHD->model()->rowCount() || mTwCD->model()->rowCount() || mTwFD->model()->rowCount())
         refreshAll();
 }
 
@@ -695,9 +621,7 @@ void VBoxMediaManagerDlg::closeEvent (QCloseEvent *aEvent)
 bool VBoxMediaManagerDlg::eventFilter (QObject *aObject, QEvent *aEvent)
 {
     /* Check for interesting objects */
-    if (!(aObject == mHardDiskView ||
-          aObject == mDVDView ||
-          aObject == mFloppyView))
+    if (!(aObject == mTwHD || aObject == mTwCD || aObject == mTwFD))
         return QIMainDialog::eventFilter (aObject, aEvent);
 
     switch (aEvent->type())
@@ -762,7 +686,7 @@ void VBoxMediaManagerDlg::mediumAdded (const VBoxMedium &aMedium)
     {
         if (aMedium.parent() && !mSessionMachineId.isNull())
         {
-            /* in !mShowDiffs mode, we ignore all diffs except ones that are
+            /* In !mShowDiffs mode, we ignore all diffs except ones that are
              * directly attached to the related VM in the current state */
             if (!aMedium.isAttachedInCurStateTo (mSessionMachineId))
                 return;
@@ -770,7 +694,7 @@ void VBoxMediaManagerDlg::mediumAdded (const VBoxMedium &aMedium)
             /* Since the base hard disk of this diff has been already appended,
              * we want to replace it with this diff to avoid duplicates in
              * !mShowDiffs mode. */
-            MediaItem *item = searchItem (mHardDiskView, aMedium.root().id());
+            MediaItem *item = searchItem (mTwHD, aMedium.root().id());
             AssertReturnVoid (item);
 
             item->setMedium (aMedium);
@@ -778,7 +702,7 @@ void VBoxMediaManagerDlg::mediumAdded (const VBoxMedium &aMedium)
             /* Check if swapped diff disk is required one */
             if (item->id() == mHDSelectedId)
             {
-                setCurrentItem (mHardDiskView, item);
+                setCurrentItem (mTwHD, item);
                 mHDSelectedId = QString::null;
             }
 
@@ -793,52 +717,52 @@ void VBoxMediaManagerDlg::mediumAdded (const VBoxMedium &aMedium)
     {
         case VBoxDefs::MediumType_HardDisk:
         {
-            item = createHardDiskItem (mHardDiskView, aMedium);
+            item = createHardDiskItem (mTwHD, aMedium);
             AssertReturnVoid (item);
 
             /* Damn Qt4 didn't notifies the table's QHeaderView on adding
              * new tree-widget items, so initialize the header adjustment
              * by calling resizeSections() slot... */
-            QTimer::singleShot (0, mHardDiskView->header(), SLOT (resizeSections()));
+            QTimer::singleShot (0, mTwHD->header(), SLOT (resizeSections()));
 
             if (item->id() == mHDSelectedId)
             {
-                setCurrentItem (mHardDiskView, item);
+                setCurrentItem (mTwHD, item);
                 mHDSelectedId = QString::null;
             }
             break;
         }
         case VBoxDefs::MediumType_DVD:
         {
-            item = new MediaItem (mDVDView, aMedium, this);
+            item = new MediaItem (mTwCD, aMedium, this);
             AssertReturnVoid (item);
 
             /* Damn Qt4 didn't notifies the table's QHeaderView on adding
              * new tree-widget items, so initialize the header adjustment
              * by calling resizeSections() slot... */
-            QTimer::singleShot (0, mDVDView->header(), SLOT (resizeSections()));
+            QTimer::singleShot (0, mTwCD->header(), SLOT (resizeSections()));
 
-            if (item->id() == mDVDSelectedId)
+            if (item->id() == mCDSelectedId)
             {
-                setCurrentItem (mDVDView, item);
-                mDVDSelectedId = QString::null;
+                setCurrentItem (mTwCD, item);
+                mCDSelectedId = QString::null;
             }
             break;
         }
         case VBoxDefs::MediumType_Floppy:
         {
-            item = new MediaItem (mFloppyView, aMedium, this);
+            item = new MediaItem (mTwFD, aMedium, this);
             AssertReturnVoid (item);
 
             /* Damn Qt4 didn't notifies the table's QHeaderView on adding
              * new tree-widget items, so initialize the header adjustment
              * by calling resizeSections() slot... */
-            QTimer::singleShot (0, mFloppyView->header(), SLOT (resizeSections()));
+            QTimer::singleShot (0, mTwFD->header(), SLOT (resizeSections()));
 
-            if (item->id() == mFloppySelectedId)
+            if (item->id() == mFDSelectedId)
             {
-                setCurrentItem (mFloppyView, item);
-                mFloppySelectedId = QString::null;
+                setCurrentItem (mTwFD, item);
+                mFDSelectedId = QString::null;
             }
             break;
         }
@@ -875,17 +799,17 @@ void VBoxMediaManagerDlg::mediumUpdated (const VBoxMedium &aMedium)
     {
         case VBoxDefs::MediumType_HardDisk:
         {
-            item = searchItem (mHardDiskView, aMedium.id());
+            item = searchItem (mTwHD, aMedium.id());
             break;
         }
         case VBoxDefs::MediumType_DVD:
         {
-            item = searchItem (mDVDView, aMedium.id());
+            item = searchItem (mTwCD, aMedium.id());
             break;
         }
         case VBoxDefs::MediumType_Floppy:
         {
-            item = searchItem (mFloppyView, aMedium.id());
+            item = searchItem (mTwFD, aMedium.id());
             break;
         }
         default:
@@ -907,8 +831,7 @@ void VBoxMediaManagerDlg::mediumUpdated (const VBoxMedium &aMedium)
         processCurrentChanged (item);
 }
 
-void VBoxMediaManagerDlg::mediumRemoved (VBoxDefs::MediumType aType,
-                                         const QString &aId)
+void VBoxMediaManagerDlg::mediumRemoved (VBoxDefs::MediumType aType, const QString &aId)
 {
     /* Ignore non-interesting aMedium */
     if (mType != VBoxDefs::MediumType_All && mType != aType)
@@ -946,9 +869,9 @@ void VBoxMediaManagerDlg::mediumEnumStarted()
             mFloppyImagesInaccessible = false;
 
     /* Load default tab icons */
-    mTwImages->setTabIcon (HDTab, mHardDiskIcon);
-    mTwImages->setTabIcon (CDTab, mDVDImageIcon);
-    mTwImages->setTabIcon (FDTab, mFloppyImageIcon);
+    mTabWidget->setTabIcon (HDTab, mHardDiskIcon);
+    mTabWidget->setTabIcon (CDTab, mDVDImageIcon);
+    mTabWidget->setTabIcon (FDTab, mFloppyImageIcon);
 
     /* Load current media list */
     const VBoxMediaList &list = vboxGlobal().currentMediaList();
@@ -959,15 +882,15 @@ void VBoxMediaManagerDlg::mediumEnumStarted()
 
     /* Select the first item to be the current one if the previous saved item
      * was not selected yet. */
-    if (!mHardDiskView->currentItem())
-        if (QTreeWidgetItem *item = mHardDiskView->topLevelItem (0))
-            setCurrentItem (mHardDiskView, item);
-    if (!mDVDView->currentItem())
-        if (QTreeWidgetItem *item = mDVDView->topLevelItem (0))
-            setCurrentItem (mDVDView, item);
-    if (!mFloppyView->currentItem())
-        if (QTreeWidgetItem *item = mFloppyView->topLevelItem (0))
-            setCurrentItem (mFloppyView, item);
+    if (!mTwHD->currentItem())
+        if (QTreeWidgetItem *item = mTwHD->topLevelItem (0))
+            setCurrentItem (mTwHD, item);
+    if (!mTwCD->currentItem())
+        if (QTreeWidgetItem *item = mTwCD->topLevelItem (0))
+            setCurrentItem (mTwCD, item);
+    if (!mTwFD->currentItem())
+        if (QTreeWidgetItem *item = mTwFD->topLevelItem (0))
+            setCurrentItem (mTwFD, item);
 
     processCurrentChanged();
 }
@@ -999,9 +922,9 @@ void VBoxMediaManagerDlg::doNewMedium()
     {
         CMedium hd = dlg.hardDisk();
         /* Select the newly created hard disk */
-        MediaItem *item = searchItem (mHardDiskView, hd.GetId());
+        MediaItem *item = searchItem (mTwHD, hd.GetId());
         AssertReturnVoid (item);
-        mHardDiskView->setCurrentItem (item);
+        mTwHD->setCurrentItem (item);
     }
 }
 
@@ -1030,8 +953,6 @@ void VBoxMediaManagerDlg::doAddMedium()
     {
         case VBoxDefs::MediumType_HardDisk:
         {
-            /// @todo NEWMEDIA use CSystemProperties::GetHardDIskFormats to detect
-            /// possible hard disk extensions
             QList < QPair <QString, QString> > filterList = vboxGlobal().HDDBackends();
             QStringList backends;
             QStringList allPrefix;
@@ -1053,15 +974,13 @@ void VBoxMediaManagerDlg::doAddMedium()
         }
         case VBoxDefs::MediumType_DVD:
         {
-            filter = tr ("CD/DVD-ROM images (*.iso);;"
-                         "All files (*)");
+            filter = tr ("CD/DVD-ROM images (*.iso);;All files (*)");
             title = tr ("Select a CD/DVD-ROM disk image file");
             break;
         }
         case VBoxDefs::MediumType_Floppy:
         {
-            filter = tr ("Floppy images (*.img);;"
-                         "All files (*)");
+            filter = tr ("Floppy images (*.img);;All files (*)");
             title = tr ("Select a floppy disk image file");
             break;
         }
@@ -1102,9 +1021,6 @@ void VBoxMediaManagerDlg::doRemoveMedium()
         {
             bool deleteStorage = false;
 
-            /// @todo NEWMEDIA use CHardDiskFormat to find out if the format
-            /// supports storage deletion
-
             /* We don't want to try to delete inaccessible storage as it will
              * most likely fail. Note that
              * VBoxProblemReporter::confirmRemoveMedium() is aware of that and
@@ -1128,8 +1044,7 @@ void VBoxMediaManagerDlg::doRemoveMedium()
                 CProgress progress = hardDisk.DeleteStorage();
                 if (hardDisk.isOk())
                 {
-                    vboxProblem().showModalProgressDialog (progress, windowTitle(),
-                                                           parentWidget());
+                    vboxProblem().showModalProgressDialog (progress, windowTitle(), parentWidget());
                     if (progress.isOk() && progress.GetResultCode() == S_OK)
                         success = true;
                 }
@@ -1137,8 +1052,7 @@ void VBoxMediaManagerDlg::doRemoveMedium()
                 if (success)
                     vboxGlobal().removeMedium (VBoxDefs::MediumType_HardDisk, id);
                 else
-                    vboxProblem().cannotDeleteHardDiskStorage (this, hardDisk,
-                                                               progress);
+                    vboxProblem().cannotDeleteHardDiskStorage (this, hardDisk, progress);
 
                 /* We don't want to close the hard disk because it was
                  * implicitly closed and removed from the list of known media
@@ -1189,8 +1103,7 @@ void VBoxMediaManagerDlg::doReleaseMedium()
     CMachineVector machines;
 
     const QList <QString> &machineIds = item->medium().curStateMachineIds();
-    for (QList <QString>::const_iterator it = machineIds.begin();
-         it != machineIds.end(); ++ it)
+    for (QList <QString>::const_iterator it = machineIds.begin(); it != machineIds.end(); ++ it)
     {
         CMachine m = mVBox.GetMachine (*it);
         if (!mVBox.isOk())
@@ -1216,8 +1129,7 @@ void VBoxMediaManagerDlg::doReleaseMedium()
     if (!vboxProblem().confirmReleaseMedium (this, item->medium(), usage))
         return;
 
-    for (QList <QString>::const_iterator it = machineIds.begin();
-         it != machineIds.end(); ++ it)
+    for (QList <QString>::const_iterator it = machineIds.begin(); it != machineIds.end(); ++ it)
     {
         if (!releaseMediumFrom (item->medium(), *it))
             break;
@@ -1230,8 +1142,7 @@ void VBoxMediaManagerDlg::doReleaseMedium()
     vboxGlobal().updateMedium (newMedium);
 }
 
-bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
-                                             const QString &aMachineId)
+bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium, const QString &aMachineId)
 {
     CSession session;
     CMachine machine;
@@ -1346,13 +1257,13 @@ QTreeWidget* VBoxMediaManagerDlg::treeWidget (VBoxDefs::MediumType aType) const
     switch (aType)
     {
         case VBoxDefs::MediumType_HardDisk:
-            tree = mHardDiskView;
+            tree = mTwHD;
             break;
         case VBoxDefs::MediumType_DVD:
-            tree = mDVDView;
+            tree = mTwCD;
             break;
         case VBoxDefs::MediumType_Floppy:
-            tree = mFloppyView;
+            tree = mTwFD;
             break;
         default:
             AssertMsgFailed (("Disk type %d unknown!\n", aType));
@@ -1364,7 +1275,7 @@ QTreeWidget* VBoxMediaManagerDlg::treeWidget (VBoxDefs::MediumType aType) const
 VBoxDefs::MediumType VBoxMediaManagerDlg::currentTreeWidgetType() const
 {
     VBoxDefs::MediumType type = VBoxDefs::MediumType_Invalid;
-    switch (mTwImages->currentIndex ())
+    switch (mTabWidget->currentIndex())
     {
         case HDTab:
             type = VBoxDefs::MediumType_HardDisk;
@@ -1376,7 +1287,7 @@ VBoxDefs::MediumType VBoxMediaManagerDlg::currentTreeWidgetType() const
             type = VBoxDefs::MediumType_Floppy;
             break;
         default:
-            AssertMsgFailed (("Page type %d unknown!\n", mTwImages->currentIndex ()));
+            AssertMsgFailed (("Page type %d unknown!\n", mTabWidget->currentIndex()));
             break;
     }
     return type;
@@ -1405,8 +1316,7 @@ MediaItem* VBoxMediaManagerDlg::toMediaItem (QTreeWidgetItem *aItem) const
     return item;
 }
 
-void VBoxMediaManagerDlg::setCurrentItem (QTreeWidget *aTree,
-                                          QTreeWidgetItem *aItem)
+void VBoxMediaManagerDlg::setCurrentItem (QTreeWidget *aTree, QTreeWidgetItem *aItem)
 {
     if (aTree && aItem)
     {
@@ -1417,7 +1327,7 @@ void VBoxMediaManagerDlg::setCurrentItem (QTreeWidget *aTree,
     else processCurrentChanged();
 }
 
-void VBoxMediaManagerDlg::processCurrentChanged (int /* index = -1 */)
+void VBoxMediaManagerDlg::processCurrentChanged (int /* aIndex = -1 */)
 {
     QTreeWidget *tree = currentTreeWidget();
     tree->setFocus();
@@ -1450,13 +1360,11 @@ void VBoxMediaManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem,
     /* New and Add are now enabled even when enumerating since it should be safe */
     bool newEnabled     = currentTreeWidgetType() == VBoxDefs::MediumType_HardDisk;
     bool addEnabled     = true;
-//  bool editEnabled    = notInEnum && item && checkMediumFor (item, Action_Edit);
     bool removeEnabled  = notInEnum && item && checkMediumFor (item, Action_Remove);
     bool releaseEnabled = item && checkMediumFor (item, Action_Release);
 
     mNewAction->setEnabled (newEnabled);
     mAddAction->setEnabled (addEnabled);
-//  mEditAction->setEnabled (editEnabled);
     mRemoveAction->setEnabled (removeEnabled);
     mReleaseAction->setEnabled (releaseEnabled);
 
@@ -1472,30 +1380,30 @@ void VBoxMediaManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem,
                         formatPaneText (tr ("<i>Not&nbsp;Attached</i>"), false) :
                         formatPaneText (item->usage());
 
-        if (item->treeWidget() == mHardDiskView)
+        if (item->treeWidget() == mTwHD)
         {
-            mHdsPane1->setText (formatPaneText (item->location(), true, "end"));
-            mHdsPane2->setText (formatPaneText (QString ("%1 (%2)").arg (item->hardDiskType())
-                                                                   .arg (item->hardDiskFormat()), false));
-            mHdsPane3->setText (usage);
+            mIpHD1->setText (formatPaneText (item->location(), true, "end"));
+            mIpHD2->setText (formatPaneText (QString ("%1 (%2)").arg (item->hardDiskType())
+                                                                .arg (item->hardDiskFormat()), false));
+            mIpHD3->setText (usage);
         }
-        else if (item->treeWidget() == mDVDView)
+        else if (item->treeWidget() == mTwCD)
         {
-            mCdsPane1->setText (formatPaneText (item->location(), true, "end"));
-            mCdsPane2->setText (usage);
+            mIpCD1->setText (formatPaneText (item->location(), true, "end"));
+            mIpCD2->setText (usage);
         }
-        else if (item->treeWidget() == mFloppyView)
+        else if (item->treeWidget() == mTwFD)
         {
-            mFdsPane1->setText (formatPaneText (item->location(), true, "end"));
-            mFdsPane2->setText (usage);
+            mIpFD1->setText (formatPaneText (item->location(), true, "end"));
+            mIpFD2->setText (usage);
         }
     }
     else
         clearInfoPanes();
 
-    mHdsContainer->setEnabled (item);
-    mCdsContainer->setEnabled (item);
-    mFdsContainer->setEnabled (item);
+    mHDContainer->setEnabled (item);
+    mCDContainer->setEnabled (item);
+    mFDContainer->setEnabled (item);
 }
 
 void VBoxMediaManagerDlg::processDoubleClick (QTreeWidgetItem * /* aItem */, int /* aColumn */)
@@ -1520,10 +1428,6 @@ void VBoxMediaManagerDlg::showContextMenu (const QPoint &aPos)
 
 void VBoxMediaManagerDlg::machineStateChanged (const VBoxMachineStateChangeEvent &aEvent)
 {
-    /// @todo (r=dmik) IVirtualBoxCallback::OnMachineStateChange
-    //  must also expose the old state! In this case we won't need to cache
-    //  the state value in every class in GUI that uses this signal.
-
     switch (aEvent.state)
     {
         case KMachineState_PoweredOff:
@@ -1552,9 +1456,9 @@ void VBoxMediaManagerDlg::performTablesAdjustment()
 {
     /* Get all the tree widgets */
     QList <QITreeWidget*> widgetList;
-    widgetList << mHardDiskView;
-    widgetList << mDVDView;
-    widgetList << mFloppyView;
+    widgetList << mTwHD;
+    widgetList << mTwCD;
+    widgetList << mTwFD;
 
     /* Calculate deduction for every header */
     QList <int> deductionsList;
@@ -1575,8 +1479,7 @@ void VBoxMediaManagerDlg::performTablesAdjustment()
     }
 }
 
-void VBoxMediaManagerDlg::addMediumToList (const QString &aLocation,
-                                           VBoxDefs::MediumType aType)
+void VBoxMediaManagerDlg::addMediumToList (const QString &aLocation, VBoxDefs::MediumType aType)
 {
     AssertReturnVoid (!aLocation.isEmpty());
 
@@ -1587,35 +1490,23 @@ void VBoxMediaManagerDlg::addMediumToList (const QString &aLocation,
     {
         case VBoxDefs::MediumType_HardDisk:
         {
-            CMedium hd = mVBox.OpenHardDisk(aLocation, KAccessMode_ReadWrite, false, "", false, "");
+            CMedium hd = mVBox.OpenHardDisk (aLocation, KAccessMode_ReadWrite, false, "", false, "");
             if (mVBox.isOk())
-            {
-                medium = VBoxMedium (CMedium (hd),
-                                     VBoxDefs::MediumType_HardDisk,
-                                     KMediumState_Created);
-            }
+                medium = VBoxMedium (CMedium (hd), VBoxDefs::MediumType_HardDisk, KMediumState_Created);
             break;
         }
         case VBoxDefs::MediumType_DVD:
         {
             CMedium image = mVBox.OpenDVDImage (aLocation, uuid);
             if (mVBox.isOk())
-            {
-                medium = VBoxMedium (CMedium (image),
-                                     VBoxDefs::MediumType_DVD,
-                                     KMediumState_Created);
-            }
+                medium = VBoxMedium (CMedium (image), VBoxDefs::MediumType_DVD, KMediumState_Created);
             break;
         }
         case VBoxDefs::MediumType_Floppy:
         {
             CMedium image = mVBox.OpenFloppyImage (aLocation, uuid);
             if (mVBox.isOk())
-            {
-                medium = VBoxMedium (CMedium (image),
-                                     VBoxDefs::MediumType_Floppy,
-                                     KMediumState_Created);
-            }
+                medium = VBoxMedium (CMedium (image), VBoxDefs::MediumType_Floppy, KMediumState_Created);
             break;
         }
         default:
@@ -1628,8 +1519,7 @@ void VBoxMediaManagerDlg::addMediumToList (const QString &aLocation,
         vboxGlobal().addMedium (medium);
 }
 
-MediaItem* VBoxMediaManagerDlg::createHardDiskItem (QTreeWidget *aTree,
-                                                    const VBoxMedium &aMedium) const
+MediaItem* VBoxMediaManagerDlg::createHardDiskItem (QTreeWidget *aTree, const VBoxMedium &aMedium) const
 {
     AssertReturn (!aMedium.medium().isNull(), 0);
 
@@ -1686,13 +1576,12 @@ void VBoxMediaManagerDlg::updateTabIcons (MediaItem *aItem, ItemAction aAction)
         case ItemAction_Added:
         {
             /* Does it change the overall state? */
-            if (*inaccessible ||
-                aItem->state() != KMediumState_Inaccessible)
+            if (*inaccessible || aItem->state() != KMediumState_Inaccessible)
                 break; /* no */
 
             *inaccessible = true;
 
-            mTwImages->setTabIcon (tab, vboxGlobal().warningIcon());
+            mTabWidget->setTabIcon (tab, vboxGlobal().warningIcon());
 
             break;
         }
@@ -1727,8 +1616,7 @@ void VBoxMediaManagerDlg::updateTabIcons (MediaItem *aItem, ItemAction aAction)
                 MediaItemIterator it (tree);
                 for (; *it; ++ it)
                 {
-                    if (*it != aItem &&
-                        (*it)->state() == KMediumState_Inaccessible)
+                    if (*it != aItem && (*it)->state() == KMediumState_Inaccessible)
                     {
                         *inaccessible = true;
                         break;
@@ -1737,17 +1625,16 @@ void VBoxMediaManagerDlg::updateTabIcons (MediaItem *aItem, ItemAction aAction)
             }
 
             if (*inaccessible)
-                mTwImages->setTabIcon (tab, vboxGlobal().warningIcon());
+                mTabWidget->setTabIcon (tab, vboxGlobal().warningIcon());
             else
-                mTwImages->setTabIcon (tab, *icon);
+                mTabWidget->setTabIcon (tab, *icon);
 
             break;
         }
     }
 }
 
-MediaItem* VBoxMediaManagerDlg::searchItem (QTreeWidget *aTree,
-                                            const QString &aId) const
+MediaItem* VBoxMediaManagerDlg::searchItem (QTreeWidget *aTree, const QString &aId) const
 {
     if (aId.isNull())
         return 0;
@@ -1871,9 +1758,9 @@ void VBoxMediaManagerDlg::addDndUrls (const QList <QUrl> &aUrls)
 
 void VBoxMediaManagerDlg::clearInfoPanes()
 {
-    mHdsPane1->clear(); mHdsPane2->clear(); mHdsPane3->clear();
-    mCdsPane1->clear(); mCdsPane2->clear();
-    mFdsPane1->clear(); mFdsPane2->clear();
+    mIpHD1->clear(); mIpHD2->clear(); mIpHD3->clear();
+    mIpCD1->clear(); mIpCD2->clear();
+    mIpFD1->clear(); mIpFD2->clear();
 }
 
 void VBoxMediaManagerDlg::prepareToRefresh (int aTotal)
@@ -1895,17 +1782,17 @@ void VBoxMediaManagerDlg::prepareToRefresh (int aTotal)
     /* Store the current list selections */
     MediaItem *mi;
 
-    mi = toMediaItem (mHardDiskView->currentItem());
+    mi = toMediaItem (mTwHD->currentItem());
     if (mHDSelectedId.isNull())
         mHDSelectedId = mi ? mi->id() : QString::null;
 
-    mi = toMediaItem (mDVDView->currentItem());
-    if (mDVDSelectedId.isNull())
-        mDVDSelectedId = mi ? mi->id() : QString::null;
+    mi = toMediaItem (mTwCD->currentItem());
+    if (mCDSelectedId.isNull())
+        mCDSelectedId = mi ? mi->id() : QString::null;
 
-    mi = toMediaItem (mFloppyView->currentItem());
-    if (mFloppySelectedId.isNull())
-        mFloppySelectedId = mi ? mi->id() : QString::null;
+    mi = toMediaItem (mTwFD->currentItem());
+    if (mFDSelectedId.isNull())
+        mFDSelectedId = mi ? mi->id() : QString::null;
 
     /* Finally, clear all the lists...
      * Qt4 has interesting bug here. It sends the currentChanged (cur, prev)
@@ -1915,11 +1802,11 @@ void VBoxMediaManagerDlg::prepareToRefresh (int aTotal)
      * seg-fault when trying to make 'prev' element the current due to 'cur'
      * is null and at least one element have to be selected (by policy).
      * So just blocking any signals outgoing from the list during clearing. */
-    mHardDiskView->blockSignals (true);
-    mHardDiskView->clear();
-    mHardDiskView->blockSignals (false);
-    mDVDView->clear();
-    mFloppyView->clear();
+    mTwHD->blockSignals (true);
+    mTwHD->clear();
+    mTwHD->blockSignals (false);
+    mTwCD->clear();
+    mTwFD->clear();
 }
 
 /**
