@@ -576,6 +576,7 @@ public:
     STDMETHOD(AttachDevice)(IN_BSTR aControllerName, LONG aControllerPort,
                             LONG aDevice, DeviceType_T aType, IN_BSTR aId);
     STDMETHOD(DetachDevice)(IN_BSTR aControllerName, LONG aControllerPort, LONG aDevice);
+    STDMETHOD(PassthroughDevice)(IN_BSTR aControllerName, LONG aControllerPort, LONG aDevice, BOOL aPassthrough);
     STDMETHOD(MountMedium)(IN_BSTR aControllerName, LONG aControllerPort,
                            LONG aDevice, IN_BSTR aId);
     STDMETHOD(GetMedium)(IN_BSTR aControllerName, LONG aControllerPort, LONG aDevice,

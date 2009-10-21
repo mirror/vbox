@@ -1788,9 +1788,9 @@ void VBoxVMSettingsHD::putBackTo()
                 KDeviceType attDeviceType = mStorageModel->data (attIndex, StorageModel::R_AttDevice).value <KDeviceType>();
                 QString attMediumId = mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString();
                 mMachine.AttachDevice (ctrName, attStorageSlot.port, attStorageSlot.device, attDeviceType, attMediumId);
-                CMediumAttachment attachment = mMachine.GetMediumAttachment (ctrName, attStorageSlot.port, attStorageSlot.device);
-                attachment.SetPassthrough (mStorageModel->data (attIndex, StorageModel::R_AttIsHostDrive).toBool() &&
-                                           mStorageModel->data (attIndex, StorageModel::R_AttIsPassthrough).toBool());
+                if (attDeviceType == KDeviceType_DVD)
+                    mMachine.PassthroughDevice (ctrName, attStorageSlot.port, attStorageSlot.device,
+                                                mStorageModel->data (attIndex, StorageModel::R_AttIsPassthrough).toBool());
                 maxUsedPort = attStorageSlot.port > maxUsedPort ? attStorageSlot.port : maxUsedPort;
             }
             if (ctrBusType == KStorageBus_SATA)

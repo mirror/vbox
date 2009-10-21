@@ -458,11 +458,11 @@ int handleStorageAttach(HandlerArg *a)
         {
             if (!RTStrICmp(pszPassThrough, "on"))
             {
-                CHECK_ERROR (mattach, COMSETTER(Passthrough)(true));
+                CHECK_ERROR (machine, PassthroughDevice(Bstr(pszCtl), port, device, TRUE));
             }
             else if (!RTStrICmp(pszPassThrough, "off"))
             {
-                CHECK_ERROR (mattach, COMSETTER(Passthrough)(false));
+                CHECK_ERROR (machine, PassthroughDevice(Bstr(pszCtl), port, device, FALSE));
             }
             else
             {

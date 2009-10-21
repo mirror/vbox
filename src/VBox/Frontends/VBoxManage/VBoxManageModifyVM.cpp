@@ -1011,11 +1011,7 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_DVDPASSTHROUGH: // deprecated
             {
-                ComPtr<IMediumAttachment> dvdAttachment;
-                machine->GetMediumAttachment(Bstr("IDE Controller"), 1, 0, dvdAttachment.asOutParam());
-                ASSERT(dvdAttachment);
-
-                CHECK_ERROR (dvdAttachment, COMSETTER(Passthrough)(!strcmp(ValueUnion.psz, "on")));
+                CHECK_ERROR (machine, PassthroughDevice(Bstr("IDE Controller"), 1, 0, !strcmp(ValueUnion.psz, "on")));
                 break;
             }
 
