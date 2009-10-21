@@ -117,8 +117,10 @@ static VBOXNETFLTGLOBALS g_VBoxNetFltGlobals;
 volatile static bool g_bIdcInitialized;
 INIT_IDC_INFO g_InitIdcInfo;
 
+#ifdef VBOX_LOOPBACK_USEFLAGS
 UINT g_fPacketDontLoopBack;
 UINT g_fPacketIsLoopedBack;
+#endif
 
 #define LIST_ENTRY_2_JOB(pListEntry) \
     ( (PJOB)((uint8_t *)(pListEntry) - RT_OFFSETOF(JOB, ListEntry)) )
@@ -521,34 +523,17 @@ static NDIS_STATUS vboxNetFltWinQuPostPacket(PADAPT pAdapt, PNDIS_PACKET pPacket
         /* we have successfuly initialized our packet, post it to the host or to the wire */
         if(bSrcHost)
         {
-#ifdef DEBUG_NETFLT_LOOPBACK
-# error "implement (see comments in the sources below this #error:)"
-        /* @todo FIXME no need for the PPACKET_INFO mechanism here;
-        instead the the NDIS_PACKET.ProtocolReserved + INTERLOCKED_SINGLE_LIST mechanism \
-        similar to that used in TrasferData handling should be used;
-        */
-
-//            SET_PACKET_TO_INFO(pInfo, pMyPacket);
-//            /* we are not using flags here, so they are not valid here */
-//            /* SET_FLAGS_TO_INFO(pInfo, 0); */
-//            LogFlow(("sending packet (%p)\n", pMyPacket));
-//            vboxNetFltWinDoSendViaInfo(&fStatus, pAdapt, pInfo);
-//            LogFlow(("done sending packet (%p), status (%d)\n", pMyPacket, fStatus));
-#else
-            NdisSend(&fStatus, pAdapt->hBindingHandle, pMyPacket);
+#if defined(DEBUG_NETFLT_PACKETS) || !defined(VBOX_LOOPBACK_USEFLAGS)
+            vboxNetFltWinLbPutSendPacket(pAdapt, pMyPacket, false /* bFromIntNet */);
 #endif
+            NdisSend(&fStatus, pAdapt->hBindingHandle, pMyPacket);
 
             if (fStatus != NDIS_STATUS_PENDING)
             {
+#if defined(DEBUG_NETFLT_PACKETS) || !defined(VBOX_LOOPBACK_USEFLAGS)
                 /* the status is NOT pending, complete the packet */
-#ifdef DEBUG_NETFLT_LOOPBACK
-# error "implement (see comments in the sources below this #error:)"
-        /* @todo FIXME no need for the PPACKET_INFO mechanism here;
-        instead the the NDIS_PACKET.ProtocolReserved + INTERLOCKED_SINGLE_LIST mechanism \
-        similar to that used in TrasferData handling should be used;
-        */
-
-//                vboxNetFltWinDoCompleteSendViaInfo(pAdapt, pInfo);
+                bool bTmp = vboxNetFltWinLbRemoveSendPacket(pAdapt, pMyPacket);
+                Assert(bTmp);
 #endif
                 if(pPacket)
                 {
@@ -571,25 +556,7 @@ static NDIS_STATUS vboxNetFltWinQuPostPacket(PADAPT pAdapt, PNDIS_PACKET pPacket
         }
         else
         {
-#ifdef DEBUG_NETFLT_LOOPBACK
-# error "implement (see comments in the sources below this #error:)"
-        /* @todo FIXME no need for the PPACKET_INFO mechanism here;
-        instead the the NDIS_PACKET.ProtocolReserved + INTERLOCKED_SINGLE_LIST mechanism \
-        similar to that used in TrasferData handling should be used;
-        */
-
-//            SET_PACKET_TO_INFO(pInfo, pMyPacket);
-//            /* we are not using flags here, so they are not valid here */
-//            /* SET_FLAGS_TO_INFO(pInfo, 0); */
-//
-//            LogFlow(("indicating receive packet (%p)\n", pMyPacket));
-//            vboxNetFltWinDoIndicateReceiveViaInfo(pAdapt, pInfo);
-//            /* the packet return will be processed in the vboxNetFltWinMpReturnPacket call-back unless
-//             * we specify NDIS_STATUS_RESOURCES as the packet status, which we are NOT doing currently */
-//            LogFlow(("done indicating receive packet (%p)\n", pMyPacket));
-#else
             NdisMIndicateReceivePacket(pAdapt->hMiniportHandle, &pMyPacket, 1);
-#endif
 
             fStatus = NDIS_STATUS_PENDING;
             /* the packet receive completion is always indicated via MiniportReturnPacket */
@@ -1797,9 +1764,12 @@ DECLHIDDEN(PNDIS_PACKET) vboxNetFltWinNdisPacketFromSG(PADAPT pAdapt, PINTNETSG 
                     pSendRsvd = (PSEND_RSVD)(pPacket->ProtocolReserved);
                     pSendRsvd->pOriginalPkt = NULL;
                     pSendRsvd->pBufToFree = pBufToFree;
-
+#ifdef VBOX_LOOPBACK_USEFLAGS
                     /* set "don't loopback" flags */
                     NdisSetPacketFlags(pPacket, g_fPacketDontLoopBack);
+#else
+                    NdisSetPacketFlags(pPacket, 0);
+#endif
                 }
 #ifndef VBOX_NETFLT_ONDEMAND_BIND
                 else
@@ -1990,8 +1960,10 @@ DriverEntry(
 
     do
     {
+#ifdef VBOX_LOOPBACK_USEFLAGS
         ULONG MjVersion;
         ULONG MnVersion;
+#endif
 
 #ifdef VBOX_NETFLT_ONDEMAND_BIND
         /* we are registering in the DriverEntry only when we are working as a protocol
@@ -2007,7 +1979,7 @@ DriverEntry(
             Status = NDIS_STATUS_FAILURE;
             break;
         }
-
+#ifdef VBOX_LOOPBACK_USEFLAGS
         PsGetVersion(&MjVersion, &MnVersion,
           NULL, /* PULONG  BuildNumber  OPTIONAL */
           NULL /* PUNICODE_STRING  CSDVersion  OPTIONAL */
@@ -2022,6 +1994,7 @@ DriverEntry(
         }
 
         g_fPacketIsLoopedBack = NDIS_FLAGS_IS_LOOPBACK_PACKET;
+#endif
 
 #ifndef VBOX_NETFLT_ONDEMAND_BIND
         Status = vboxNetFltWinMpRegister(DriverObject, RegistryPath);
@@ -2099,10 +2072,9 @@ vboxNetFltWinPrepareSendPacket(
 
         vboxNetFltWinCopyPacketInfoOnSend(*ppMyPacket, pPacket);
 
-//        if(bNetFltActive)
-//        {
-            NdisGetPacketFlags(*ppMyPacket) |= g_fPacketDontLoopBack;
-//        }
+#ifdef VBOX_LOOPBACK_USEFLAGS
+        NdisGetPacketFlags(*ppMyPacket) |= g_fPacketDontLoopBack;
+#endif
     }
     else
     {
@@ -2329,11 +2301,10 @@ DECLHIDDEN(VOID) vboxNetFltWinPtFiniPADAPT(PADAPT pAdapt)
 
 
     FINI_INTERLOCKED_SINGLE_LIST(&pAdapt->TransferDataList);
+# if defined(DEBUG_NETFLT_LOOPBACK) || !defined(VBOX_LOOPBACK_USEFLAGS)
+    FINI_INTERLOCKED_SINGLE_LIST(&pAdapt->SendPacketQueue);
+# endif
 #endif
-#ifdef DEBUG_NETFLT_LOOPBACK
-# error "add list cleaning code here"
-#endif
-
 
 #ifndef VBOX_NETFLT_ONDEMAND_BIND
     /* moved to vboxNetFltWinDetachFromInterfaceWorker */
@@ -2457,14 +2428,14 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinPtInitPADAPT(IN  PADAPT pAdapt)
         vboxNetFltWinSetOpState(&pAdapt->PTState, kVBoxNetDevOpState_Deinitialized);
 
         INIT_INTERLOCKED_SINGLE_LIST(&pAdapt->TransferDataList);
+
+# if defined(DEBUG_NETFLT_LOOPBACK) || !defined(VBOX_LOOPBACK_USEFLAGS)
+        INIT_INTERLOCKED_SINGLE_LIST(&pAdapt->SendPacketQueue);
+# endif
 #endif
         /* TODO: do we need it here ?? */
         pAdapt->MPState.PowerState = NdisDeviceStateD3;
         vboxNetFltWinSetOpState(&pAdapt->MPState, kVBoxNetDevOpState_Deinitialized);
-
-#ifdef DEBUG_NETFLT_LOOPBACK
-# error "add list initialization code here"
-#endif
 
 #ifdef VBOX_NETFLT_ONDEMAND_BIND
         {
@@ -2505,8 +2476,88 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinPtInitPADAPT(IN  PADAPT pAdapt)
 
 #define MIN(_a, _b) ((_a) < (_b) ? (_a) : (_b))
 
-#ifdef DEBUG_NETFLT_PACKETS
+#ifndef VBOXNETADP
 
+#ifdef DEBUG_misha
+
+RTMAC g_vboxNetFltWinVerifyMACBroadcast = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+RTMAC g_vboxNetFltWinVerifyMACGuest = {0x08, 0x00, 0x27, 0x01, 0x02, 0x03};
+
+DECLHIDDEN(PRTNETETHERHDR) vboxNetFltWinGetEthHdr(PNDIS_PACKET pPacket)
+{
+    UINT cBufCount1;
+    PNDIS_BUFFER pBuffer1;
+    UINT uTotalPacketLength1;
+    RTNETETHERHDR* pEth;
+    UINT cbLength1 = 0;
+    UINT i = 0;
+
+    NdisQueryPacket(pPacket, NULL, &cBufCount1, &pBuffer1, &uTotalPacketLength1);
+
+    Assert(pBuffer1);
+    Assert(uTotalPacketLength1 >= ETH_HEADER_SIZE);
+    if(uTotalPacketLength1 < ETH_HEADER_SIZE)
+        return NULL;
+
+    NdisQueryBufferSafe(pBuffer1, &pEth, &cbLength1, NormalPagePriority);
+    Assert(cbLength1 >= ETH_HEADER_SIZE);
+    if(cbLength1 < ETH_HEADER_SIZE)
+        return NULL;
+
+    return pEth;
+}
+
+DECLHIDDEN(PRTNETETHERHDR) vboxNetFltWinGetEthHdrSG(PINTNETSG pSG)
+{
+    Assert(pSG->cSegsUsed);
+    Assert(pSG->cSegsAlloc >= pSG->cSegsUsed);
+    Assert(pSG->aSegs[0].cb >= ETH_HEADER_SIZE);
+
+    if(!pSG->cSegsUsed)
+        return NULL;
+
+    if(pSG->aSegs[0].cb < ETH_HEADER_SIZE)
+        return NULL;
+
+    return (PRTNETETHERHDR)pSG->aSegs[0].pv;
+}
+
+DECLHIDDEN(bool) vboxNetFltWinCheckMACs(PNDIS_PACKET pPacket, PRTMAC pDst, PRTMAC pSrc)
+{
+    PRTNETETHERHDR pHdr = vboxNetFltWinGetEthHdr(pPacket);
+    Assert(pHdr);
+
+    if(!pHdr)
+        return false;
+
+    if(pDst && memcmp(pDst, &pHdr->DstMac, sizeof(RTMAC)))
+        return false;
+
+    if(pSrc && memcmp(pSrc, &pHdr->SrcMac, sizeof(RTMAC)))
+        return false;
+
+    return true;
+}
+
+DECLHIDDEN(bool) vboxNetFltWinCheckMACsSG(PINTNETSG pSG, PRTMAC pDst, PRTMAC pSrc)
+{
+    PRTNETETHERHDR pHdr = vboxNetFltWinGetEthHdrSG(pSG);
+    Assert(pHdr);
+
+    if(!pHdr)
+        return false;
+
+    if(pDst && memcmp(pDst, &pHdr->DstMac, sizeof(RTMAC)))
+        return false;
+
+    if(pSrc && memcmp(pSrc, &pHdr->SrcMac, sizeof(RTMAC)))
+        return false;
+
+    return true;
+}
+#endif
+
+# if !defined(VBOX_LOOPBACK_USEFLAGS) || defined(DEBUG_NETFLT_PACKETS)
 /*
  * answers whether the two given packets match based on the packet length and the first cbMatch bytes of the packets
  * if cbMatch < 0 matches complete packets.
@@ -2516,13 +2567,13 @@ DECLHIDDEN(bool) vboxNetFltWinMatchPackets(PNDIS_PACKET pPacket1, PNDIS_PACKET p
     UINT cBufCount1;
     PNDIS_BUFFER pBuffer1;
     UINT uTotalPacketLength1;
-    PVOID pMemBuf1;
+    uint8_t* pMemBuf1;
     UINT cbLength1 = 0;
 
     UINT cBufCount2;
     PNDIS_BUFFER pBuffer2;
     UINT uTotalPacketLength2;
-    PVOID pMemBuf2;
+    uint8_t* pMemBuf2;
     UINT cbLength2 = 0;
     bool bMatch = true;
 
@@ -2542,6 +2593,7 @@ DECLHIDDEN(bool) vboxNetFltWinMatchPackets(PNDIS_PACKET pPacket1, PNDIS_PACKET p
     }
     else
     {
+        UINT ucbLength2Match = 0;
         UINT ucbMatch;
         if(cbMatch < 0 || (UINT)cbMatch > uTotalPacketLength1)
         {
@@ -2556,13 +2608,18 @@ DECLHIDDEN(bool) vboxNetFltWinMatchPackets(PNDIS_PACKET pPacket1, PNDIS_PACKET p
             ucbMatch = (UINT)cbMatch;
         }
 
-        do
+        for(;;)
         {
-            UINT ucbLength2Match;
             if(!cbLength1)
             {
                 NdisQueryBufferSafe(pBuffer1, &pMemBuf1, &cbLength1, NormalPagePriority);
                 NdisGetNextBuffer(pBuffer1, &pBuffer1);
+            }
+            else
+            {
+                Assert(pMemBuf1);
+                Assert(ucbLength2Match);
+                pMemBuf1 += ucbLength2Match;
             }
 
             if(!cbLength2)
@@ -2570,19 +2627,29 @@ DECLHIDDEN(bool) vboxNetFltWinMatchPackets(PNDIS_PACKET pPacket1, PNDIS_PACKET p
                 NdisQueryBufferSafe(pBuffer2, &pMemBuf2, &cbLength2, NormalPagePriority);
                 NdisGetNextBuffer(pBuffer2, &pBuffer2);
             }
+            else
+            {
+                Assert(pMemBuf2);
+                Assert(ucbLength2Match);
+                pMemBuf2 += ucbLength2Match;
+            }
 
             ucbLength2Match = MIN(ucbMatch, cbLength1);
             ucbLength2Match = MIN(ucbMatch, cbLength2);
 
-            if(memcmp(pMemBuf1, pMemBuf2, ucbLength2Match))
+            if(memcmp((PVOID*)pMemBuf1, (PVOID*)pMemBuf2, ucbLength2Match))
             {
                 bMatch = false;
                 break;
             }
+
             ucbMatch -= ucbLength2Match;
+            if(!ucbMatch)
+                break;
+
             cbLength1 -= ucbLength2Match;
             cbLength2 -= ucbLength2Match;
-        } while (ucbMatch);
+        }
     }
 
 #ifdef DEBUG_NETFLT_PACKETS
@@ -2605,10 +2672,10 @@ DECLHIDDEN(bool) vboxNetFltWinMatchPacketAndSG(PNDIS_PACKET pPacket, PINTNETSG p
     UINT cBufCount1;
     PNDIS_BUFFER pBuffer1;
     UINT uTotalPacketLength1;
-    PVOID pMemBuf1;
+    uint8_t* pMemBuf1;
     UINT cbLength1 = 0;
     UINT uTotalPacketLength2 = pSG->cbTotal;
-    PVOID pMemBuf2;
+    uint8_t* pMemBuf2;
     UINT cbLength2 = 0;
     bool bMatch = true;
     bool bCompleteMatch = false;
@@ -2627,7 +2694,9 @@ DECLHIDDEN(bool) vboxNetFltWinMatchPacketAndSG(PNDIS_PACKET pPacket, PINTNETSG p
     }
     else
     {
+        UINT ucbLength2Match = 0;
         UINT ucbMatch;
+
         if(cbMatch < 0 || (UINT)cbMatch > uTotalPacketLength1)
         {
             /* NOTE: assuming uTotalPacketLength1 == uTotalPacketLength2*/
@@ -2639,36 +2708,51 @@ DECLHIDDEN(bool) vboxNetFltWinMatchPacketAndSG(PNDIS_PACKET pPacket, PINTNETSG p
             ucbMatch = (UINT)cbMatch;
         }
 
-        do
+        for(;;)
         {
-            UINT ucbLength2Match;
             if(!cbLength1)
             {
                 NdisQueryBufferSafe(pBuffer1, &pMemBuf1, &cbLength1, NormalPagePriority);
                 NdisGetNextBuffer(pBuffer1, &pBuffer1);
             }
+            else
+            {
+                Assert(pMemBuf1);
+                Assert(ucbLength2Match);
+                pMemBuf1 += ucbLength2Match;
+            }
 
             if(!cbLength2)
             {
                 Assert(i < pSG->cSegsUsed);
-                pMemBuf2 = pSG->aSegs[i].pv;
+                pMemBuf2 = (uint8_t*)pSG->aSegs[i].pv;
                 cbLength2 = pSG->aSegs[i].cb;
                 i++;
+            }
+            else
+            {
+                Assert(pMemBuf2);
+                Assert(ucbLength2Match);
+                pMemBuf2 += ucbLength2Match;
             }
 
             ucbLength2Match = MIN(ucbMatch, cbLength1);
             ucbLength2Match = MIN(ucbMatch, cbLength2);
 
-            if(memcmp(pMemBuf1, pMemBuf2, ucbLength2Match))
+            if(memcmp((PVOID*)pMemBuf1, (PVOID*)pMemBuf2, ucbLength2Match))
             {
                 bMatch = false;
                 Assert(0);
                 break;
             }
+
             ucbMatch -= ucbLength2Match;
+            if(!ucbMatch)
+                break;
+
             cbLength1 -= ucbLength2Match;
             cbLength2 -= ucbLength2Match;
-        } while (ucbMatch);
+        }
     }
 
     if(bMatch && !bCompleteMatch)
@@ -2679,6 +2763,7 @@ DECLHIDDEN(bool) vboxNetFltWinMatchPacketAndSG(PNDIS_PACKET pPacket, PINTNETSG p
     return bMatch;
 }
 
+#  if 0
 /*
  * answers whether the two PINTNETSGs match based on the packet length and the first cbMatch bytes of the PINTNETSG
  * if cbMatch < 0 matches complete packets.
@@ -2762,6 +2847,8 @@ static bool vboxNetFltWinMatchSGs(PINTNETSG pSG1, PINTNETSG pSG2, const INT cbMa
     }
     return bMatch;
 }
+#  endif
+# endif
 #endif
 
 static void vboxNetFltWinFiniNetFltBase()
@@ -3338,44 +3425,24 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
         if (pPacket)
         {
             NDIS_STATUS fStatus;
-# ifdef DEBUG_NETFLT_LOOPBACK
-# error "implement (see comments in the sources below this #error:)"
-        /* @todo FIXME no need for the PPACKET_INFO mechanism here;
-        instead the the NDIS_PACKET.ProtocolReserved + INTERLOCKED_SINGLE_LIST mechanism \
-        similar to that used in TrasferData handling should be used;
-        */
 
-//            PPACKET_INFO pInfo = vboxNetFltWinDoSend(&fStatus, pAdapt, pPacket);
-# else
+#if defined(DEBUG_NETFLT_PACKETS) || !defined(VBOX_LOOPBACK_USEFLAGS)
+            vboxNetFltWinLbPutSendPacket(pAdapt, pPacket, true /* bFromIntNet */);
+#endif
             NdisSend(&fStatus, pAdapt->hBindingHandle, pPacket);
-# endif
             if (fStatus != NDIS_STATUS_PENDING)
             {
+#if defined(DEBUG_NETFLT_PACKETS) || !defined(VBOX_LOOPBACK_USEFLAGS)
+                /* the status is NOT pending, complete the packet */
+                bool bTmp = vboxNetFltWinLbRemoveSendPacket(pAdapt, pPacket);
+                Assert(bTmp);
+#endif
                 if(!NT_SUCCESS(fStatus))
                 {
                     /* TODO: convert status to VERR_xxx */
                     rc = VERR_GENERAL_FAILURE;
                 }
-# ifdef DEBUG_NETFLT_LOOPBACK
-#  error "implement (see comments in the sources below this #error:)"
-        /* @todo FIXME no need for the PPACKET_INFO mechanism here;
-        instead the the NDIS_PACKET.ProtocolReserved + INTERLOCKED_SINGLE_LIST mechanism \
-        similar to that used in TrasferData handling should be used;
-        */
 
-//                if(pInfo)
-//                {
-//                    /* TODO: FIXME: remove this assert */
-//                    Assert(fStatus == NDIS_STATUS_SUCCESS);
-//
-//                    vboxNetFltWinDoCompleteSendViaInfo(pAdapt, pInfo);
-//                    vboxNetFltWinPpFreePacketInfo(pInfo);
-//                }
-//                else
-//                {
-//                    Assert(0);
-//                }
-# endif
                 vboxNetFltWinFreeSGNdisPacket(pPacket, true);
             }
             else
@@ -3402,27 +3469,8 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
                                                              false /*fToWire*/, true /*fCopyMemory*/);
         if (pPacket)
         {
-# ifndef DEBUG_NETFLT_LOOPBACK
             NdisMIndicateReceivePacket(pAdapt->hMiniportHandle, &pPacket, 1);
-# else
-#  error "implement (see comments in the sources below this #error:)"
-        /* @todo FIXME no need for the PPACKET_INFO mechanism here;
-        instead the the NDIS_PACKET.ProtocolReserved + INTERLOCKED_SINGLE_LIST mechanism \
-        similar to that used in TrasferData handling should be used;
-        */
-
-//            PPACKET_INFO pInfo = vboxNetFltWinDoIndicateReceive(pAdapt, pPacket);
-//            if(!pInfo)
-//            {
-//                Assert(0);
-//                vboxNetFltWinFreeSGNdisPacket(pPacket, true);
-//                rc = VERR_NO_MEMORY;
-//            }
-//            else
-# endif
-            {
-                cRefs--;
-            }
+            cRefs--;
 #ifdef VBOXNETADP
             STATISTIC_INCREASE(pAdapt->cRxSuccess);
 #endif
@@ -3458,7 +3506,7 @@ bool vboxNetFltPortOsIsPromiscuous(PVBOXNETFLTINS pThis)
         if(!vboxNetFltWinReferenceAdapt(pAdapt))
             return false;
 
-        bPromiscuous = (pAdapt->fOurSetFilter & NDIS_PACKET_TYPE_PROMISCUOUS) == NDIS_PACKET_TYPE_PROMISCUOUS;
+        bPromiscuous = (pAdapt->fUpperProtocolSetFilter & NDIS_PACKET_TYPE_PROMISCUOUS) == NDIS_PACKET_TYPE_PROMISCUOUS;
             /*vboxNetFltWinIsPromiscuous(pAdapt);*/
 
         vboxNetFltWinDereferenceAdapt(pAdapt);

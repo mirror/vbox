@@ -33,8 +33,10 @@
 /** global lock */
 extern NDIS_SPIN_LOCK     g_GlobalLock;
 
+#ifdef VBOX_LOOPBACK_USEFLAGS
 extern UINT g_fPacketDontLoopBack;
 extern UINT g_fPacketIsLoopedBack;
+#endif
 
 /*
  * Debug Print API
@@ -53,6 +55,13 @@ extern UINT g_fPacketIsLoopedBack;
 DECLHIDDEN(NTSTATUS) vboxNetFltWinPtDispatch(IN PDEVICE_OBJECT pDeviceObject, IN PIRP pIrp);
 DECLHIDDEN(VOID) vboxNetFltWinUnload(IN PDRIVER_OBJECT DriverObject);
 
+#ifndef VBOXNETADP
+# if !defined(VBOX_LOOPBACK_USEFLAGS) || defined(DEBUG_NETFLT_PACKETS)
+DECLHIDDEN(bool) vboxNetFltWinMatchPackets(PNDIS_PACKET pPacket1, PNDIS_PACKET pPacket2, const INT cbMatch);
+DECLHIDDEN(bool) vboxNetFltWinMatchPacketAndSG(PNDIS_PACKET pPacket, PINTNETSG pSG, const INT cbMatch);
+# endif
+#endif
+
 /*************************
  * packet queue API      *
  *************************/
@@ -61,6 +70,15 @@ DECLHIDDEN(VOID) vboxNetFltWinUnload(IN PDRIVER_OBJECT DriverObject);
 #define LIST_ENTRY_2_PACKET_INFO(pListEntry) \
     ( (PPACKET_INFO)((uint8_t *)(pListEntry) - RT_OFFSETOF(PACKET_INFO, ListEntry)) )
 
+#if !defined(VBOX_LOOPBACK_USEFLAGS) || defined(DEBUG_NETFLT_PACKETS)
+
+#define VBOX_SLE_2_SEND_RSVD(_pEntry) \
+    ( (PSEND_RSVD)((uint8_t *)(_pEntry) - RT_OFFSETOF(SEND_RSVD, ListEntry)) )
+
+#define VBOX_SLE_2_SENDPACKET(_pEntry) \
+    ( (PNDIS_PACKET)((uint8_t *)(VBOX_SLE_2_SEND_RSVD(_pEntry)) - RT_OFFSETOF(NDIS_PACKET, ProtocolReserved)) )
+
+#endif
 /**
  * enqueus the packet info to the tail of the queue
  */
@@ -200,7 +218,7 @@ DECLHIDDEN(void) vboxNetFltWinQuFiniPacketQueue(PVBOXNETFLTINS pInstance);
 DECLHIDDEN(NTSTATUS) vboxNetFltWinQuInitPacketQueue(PVBOXNETFLTINS pInstance);
 #endif
 
-
+#ifndef VBOXNETADP
 /**
  * searches the list entry in a single-linked list
  */
@@ -227,6 +245,65 @@ DECLINLINE(bool) vboxNetFltWinSearchListEntry(PSINGLE_LIST pList, PSINGLE_LIST_E
     return false;
 }
 
+#if !defined(VBOX_LOOPBACK_USEFLAGS) || defined(DEBUG_NETFLT_PACKETS)
+
+DECLINLINE(PNDIS_PACKET) vboxNetFltWinSearchPacket(PSINGLE_LIST pList, PNDIS_PACKET pPacket2Search, int cbMatch, bool bRemove)
+{
+    PSINGLE_LIST_ENTRY pHead = &pList->Head;
+    PSINGLE_LIST_ENTRY pCur;
+    PSINGLE_LIST_ENTRY pPrev;
+    PNDIS_PACKET pCurPacket;
+    for(pCur = pHead->Next, pPrev = pHead; pCur; pPrev = pCur, pCur = pCur->Next)
+    {
+        pCurPacket = VBOX_SLE_2_SENDPACKET(pCur);
+        if(pCurPacket == pPacket2Search || vboxNetFltWinMatchPackets(pPacket2Search, pCurPacket, cbMatch))
+        {
+            if(bRemove)
+            {
+                pPrev->Next = pCur->Next;
+                if(pCur == pList->pTail)
+                {
+                    pList->pTail = pPrev;
+                }
+            }
+            return pCurPacket;
+        }
+    }
+    return NULL;
+}
+
+DECLINLINE(PNDIS_PACKET) vboxNetFltWinSearchPacketBySG(PSINGLE_LIST pList, PINTNETSG pSG, int cbMatch, bool bRemove)
+{
+    PSINGLE_LIST_ENTRY pHead = &pList->Head;
+    PSINGLE_LIST_ENTRY pCur;
+    PSINGLE_LIST_ENTRY pPrev;
+    PNDIS_PACKET pCurPacket;
+    for(pCur = pHead->Next, pPrev = pHead; pCur; pPrev = pCur, pCur = pCur->Next)
+    {
+        pCurPacket = VBOX_SLE_2_SENDPACKET(pCur);
+        if(vboxNetFltWinMatchPacketAndSG(pCurPacket, pSG, cbMatch))
+        {
+            if(bRemove)
+            {
+                pPrev->Next = pCur->Next;
+                if(pCur == pList->pTail)
+                {
+                    pList->pTail = pPrev;
+                }
+            }
+            return pCurPacket;
+        }
+    }
+    return NULL;
+}
+
+#endif /* #if !defined(VBOX_LOOPBACK_USEFLAGS) || defined(DEBUG_NETFLT_PACKETS) */
+
+DECLINLINE(bool) vboxNetFltWinSListIsEmpty(PSINGLE_LIST pList)
+{
+    return !pList->Head.Next;
+}
+
 DECLINLINE(void) vboxNetFltWinPutTail(PSINGLE_LIST pList, PSINGLE_LIST_ENTRY pEntry)
 {
     pList->pTail->Next = pEntry;
@@ -234,11 +311,20 @@ DECLINLINE(void) vboxNetFltWinPutTail(PSINGLE_LIST pList, PSINGLE_LIST_ENTRY pEn
     pEntry->Next = NULL;
 }
 
+DECLINLINE(void) vboxNetFltWinPutHead(PSINGLE_LIST pList, PSINGLE_LIST_ENTRY pEntry)
+{
+    pEntry->Next = pList->Head.Next;
+    pList->Head.Next = pEntry;
+    if(!pEntry->Next)
+        pList->pTail = pEntry;
+}
+
 DECLINLINE(PSINGLE_LIST_ENTRY) vboxNetFltWinGetHead(PSINGLE_LIST pList)
 {
     PSINGLE_LIST_ENTRY pEntry = pList->Head.Next;
     if(pEntry && pEntry == pList->pTail)
     {
+        pList->Head.Next = NULL;
         pList->pTail = &pList->Head;
     }
     return pEntry;
@@ -253,10 +339,38 @@ DECLINLINE(bool) vboxNetFltWinInterlockedSearchListEntry(PINTERLOCKED_SINGLE_LIS
     return bFound;
 }
 
+#if !defined(VBOX_LOOPBACK_USEFLAGS) || defined(DEBUG_NETFLT_PACKETS)
+
+DECLINLINE(PNDIS_PACKET) vboxNetFltWinInterlockedSearchPacket(PINTERLOCKED_SINGLE_LIST pList, PNDIS_PACKET pPacket2Search, int cbMatch, bool bRemove)
+{
+    PNDIS_PACKET pFound;
+    NdisAcquireSpinLock(&pList->Lock);
+    pFound = vboxNetFltWinSearchPacket(&pList->List, pPacket2Search, cbMatch, bRemove);
+    NdisReleaseSpinLock(&pList->Lock);
+    return pFound;
+}
+
+DECLINLINE(PNDIS_PACKET) vboxNetFltWinInterlockedSearchPacketBySG(PINTERLOCKED_SINGLE_LIST pList, PINTNETSG pSG, int cbMatch, bool bRemove)
+{
+    PNDIS_PACKET pFound;
+    NdisAcquireSpinLock(&pList->Lock);
+    pFound = vboxNetFltWinSearchPacketBySG(&pList->List, pSG, cbMatch, bRemove);
+    NdisReleaseSpinLock(&pList->Lock);
+    return pFound;
+}
+#endif /* #if !defined(VBOX_LOOPBACK_USEFLAGS) || defined(DEBUG_NETFLT_PACKETS) */
+
 DECLINLINE(void) vboxNetFltWinInterlockedPutTail(PINTERLOCKED_SINGLE_LIST pList, PSINGLE_LIST_ENTRY pEntry)
 {
     NdisAcquireSpinLock(&pList->Lock);
     vboxNetFltWinPutTail(&pList->List, pEntry);
+    NdisReleaseSpinLock(&pList->Lock);
+}
+
+DECLINLINE(void) vboxNetFltWinInterlockedPutHead(PINTERLOCKED_SINGLE_LIST pList, PSINGLE_LIST_ENTRY pEntry)
+{
+    NdisAcquireSpinLock(&pList->Lock);
+    vboxNetFltWinPutHead(&pList->List, pEntry);
     NdisReleaseSpinLock(&pList->Lock);
 }
 
@@ -269,6 +383,63 @@ DECLINLINE(PSINGLE_LIST_ENTRY) vboxNetFltWinInterlockedGetHead(PINTERLOCKED_SING
     return pEntry;
 }
 
+# if defined(DEBUG_NETFLT_PACKETS) || !defined(VBOX_LOOPBACK_USEFLAGS)
+DECLINLINE(void) vboxNetFltWinLbPutSendPacket(PADAPT pAdapt, PNDIS_PACKET pPacket, bool bFromIntNet)
+{
+    PSEND_RSVD pSrv = (PSEND_RSVD)pPacket->ProtocolReserved;
+    pSrv->bFromIntNet = bFromIntNet;
+    vboxNetFltWinInterlockedPutHead(&pAdapt->SendPacketQueue, &pSrv->ListEntry);
+}
+
+DECLINLINE(bool) vboxNetFltWinLbIsFromIntNet(PNDIS_PACKET pPacket)
+{
+    PSEND_RSVD pSrv = (PSEND_RSVD)pPacket->ProtocolReserved;
+    return pSrv->bFromIntNet;
+}
+
+DECLINLINE(PNDIS_PACKET) vboxNetFltWinLbSearchLoopBack(PADAPT pAdapt, PNDIS_PACKET pPacket, bool bRemove)
+{
+    return vboxNetFltWinInterlockedSearchPacket(&pAdapt->SendPacketQueue, pPacket, VBOXNETFLT_PACKETMATCH_LENGTH, bRemove);
+}
+
+DECLINLINE(PNDIS_PACKET) vboxNetFltWinLbSearchLoopBackBySG(PADAPT pAdapt, PINTNETSG pSG, bool bRemove)
+{
+    return vboxNetFltWinInterlockedSearchPacketBySG(&pAdapt->SendPacketQueue, pSG, VBOXNETFLT_PACKETMATCH_LENGTH, bRemove);
+}
+
+DECLINLINE(bool) vboxNetFltWinLbRemoveSendPacket(PADAPT pAdapt, PNDIS_PACKET pPacket)
+{
+    PSEND_RSVD pSrv = (PSEND_RSVD)pPacket->ProtocolReserved;
+    return vboxNetFltWinInterlockedSearchListEntry(&pAdapt->SendPacketQueue, &pSrv->ListEntry, true);
+}
+
+# endif
+
+#endif
+
+#ifdef DEBUG_misha
+DECLHIDDEN(bool) vboxNetFltWinCheckMACs(PNDIS_PACKET pPacket, PRTMAC pDst, PRTMAC pSrc);
+DECLHIDDEN(bool) vboxNetFltWinCheckMACsSG(PINTNETSG pSG, PRTMAC pDst, PRTMAC pSrc);
+extern RTMAC g_vboxNetFltWinVerifyMACBroadcast;
+extern RTMAC g_vboxNetFltWinVerifyMACGuest;
+
+# define VBOXNETFLT_LBVERIFY(_pnf, _p) \
+    do { \
+        Assert(!vboxNetFltWinCheckMACs(_p, NULL, &g_vboxNetFltWinVerifyMACGuest)); \
+        Assert(!vboxNetFltWinCheckMACs(_p, NULL, &(_pnf)->u.s.Mac)); \
+    } while(0)
+
+# define VBOXNETFLT_LBVERIFYSG(_pnf, _p) \
+    do { \
+        Assert(!vboxNetFltWinCheckMACsSG(_p, NULL, &g_vboxNetFltWinVerifyMACGuest)); \
+        Assert(!vboxNetFltWinCheckMACsSG(_p, NULL, &(_pnf)->u.s.Mac)); \
+    } while(0)
+
+#else
+# define VBOXNETFLT_LBVERIFY(_pnf, _p) do{}while(0)
+# define VBOXNETFLT_LBVERIFYSG(_pnf, _p) do{}while(0)
+#endif
+
 /** initializes the list */
 #define INIT_SINGLE_LIST(_pList) \
     { \
@@ -278,13 +449,18 @@ DECLINLINE(PSINGLE_LIST_ENTRY) vboxNetFltWinInterlockedGetHead(PINTERLOCKED_SING
 
 /** initializes the list */
 #define INIT_INTERLOCKED_SINGLE_LIST(_pList) \
-    { \
+    do { \
         INIT_SINGLE_LIST(&(_pList)->List); \
         NdisAllocateSpinLock(&(_pList)->Lock); \
-    }
+    } while(0)
 
 /** delete the packet queue */
-#define FINI_INTERLOCKED_SINGLE_LIST(_pList) NdisFreeSpinLock(&(_pList)->Lock)
+#define FINI_INTERLOCKED_SINGLE_LIST(_pList) \
+    do { \
+        Assert(vboxNetFltWinSListIsEmpty(&(_pList)->List)); \
+        NdisFreeSpinLock(&(_pList)->Lock) \
+    } while(0)
+
 
 /** obtains the PTRANSFERDATA_RSVD given a single list entry it contains */
 #define PT_SLE_2_TRANSFERDATA_RSVD(_pl) \
@@ -779,13 +955,6 @@ DECLHIDDEN(PNDIS_PACKET) vboxNetFltWinNdisPacketFromSG(PADAPT pAdapt, PINTNETSG 
 DECLHIDDEN(void) vboxNetFltWinFreeSGNdisPacket(PNDIS_PACKET pPacket, bool bFreeMem);
 
 #ifdef DEBUG_NETFLT_PACKETS
-DECLHIDDEN(bool) vboxNetFltWinMatchPacketAndSG(PNDIS_PACKET pPacket, PINTNETSG pSG, const INT cbMatch);
-
-DECLHIDDEN(bool) vboxNetFltWinMatchPackets(PNDIS_PACKET pPacket1, PNDIS_PACKET pPacket2, const INT cbMatch);
-
-#endif
-
-#ifdef DEBUG_NETFLT_PACKETS
 #define DBG_CHECK_PACKETS(_p1, _p2) \
     {   \
         bool _b = vboxNetFltWinMatchPackets(_p1, _p2, -1);  \
@@ -821,25 +990,7 @@ DECLHIDDEN(bool) vboxNetFltWinMatchPackets(PNDIS_PACKET pPacket1, PNDIS_PACKET p
  *
  * @return true if the packet is a looped back one, false otherwise
  */
-#ifdef DEBUG_NETFLT_LOOPBACK
-# error "implement (see comments in the sources below this #error:)"
-        /* @todo FIXME no need for the PPACKET_INFO mechanism here;
-        instead the the NDIS_PACKET.ProtocolReserved + INTERLOCKED_SINGLE_LIST mechanism \
-        similar to that used in TrasferData handling should be used;
-        */
-
-//#ifdef VBOX_NETFLT_ONDEMAND_BIND
-//DECLHIDDEN(bool) vboxNetFltWinIsLoopedBackPacket(PADAPT pAdapt, PNDIS_PACKET pPacket);
-//#else
-//DECLHIDDEN(bool) vboxNetFltWinIsLoopedBackPacket(PADAPT pAdapt, PNDIS_PACKET pPacket, bool bOnRecv);
-//#endif
-//
-//#ifdef VBOX_NETFLT_ONDEMAND_BIND
-//DECLHIDDEN(bool) vboxNetFltWinIsLoopedBackPacketSG(PADAPT pAdapt, PINTNETSG pSG);
-//#else
-//DECLHIDDEN(bool) vboxNetFltWinIsLoopedBackPacketSG(PADAPT pAdapt, PINTNETSG pSG, bool bOnRecv);
-//#endif
-#else
+#ifdef VBOX_LOOPBACK_USEFLAGS
 DECLINLINE(bool) vboxNetFltWinIsLoopedBackPacket(PNDIS_PACKET pPacket)
 {
     return (NdisGetPacketFlags(pPacket) & g_fPacketIsLoopedBack) == g_fPacketIsLoopedBack;
