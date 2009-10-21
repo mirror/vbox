@@ -5217,8 +5217,6 @@ int VBoxQGLOverlay::vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd)
 /* static */
 bool VBoxQGLOverlay::isAcceleration2DVideoAvailable()
 {
-    static bool g_bVBoxVHWAChecked = false;
-    static bool g_bVBoxVHWASupported = false;
 #ifndef DEBUG_misha
     if(!g_bVBoxVHWAChecked)
 #endif
