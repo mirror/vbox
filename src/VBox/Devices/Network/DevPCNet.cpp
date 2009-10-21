@@ -4403,8 +4403,10 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     /* Enable physical monitoring again (!) */
     pcnetUpdateRingHandlers(pThis);
 #endif
-    /* Indicate link down to the guest OS that all network connections have been lost. */
-    pcnetTempLinkDown(pThis);
+    /* Indicate link down to the guest OS that all network connections have
+       been lost, unless we've been teleported here. */
+    if (!PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns))
+        pcnetTempLinkDown(pThis);
 
     return VINF_SUCCESS;
 }
