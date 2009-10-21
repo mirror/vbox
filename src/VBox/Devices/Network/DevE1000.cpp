@@ -82,19 +82,19 @@
 #  define E1kLog(a)               LogRel(a)
 #  define E1kLog2(a)              LogRel(a)
 #  define E1kLog3(a)              LogRel(a)
-//#  define E1kLog3(a)
+//#  define E1kLog3(a)              do {} while (0)
 # else
-#  define E1kLog(a)
-#  define E1kLog2(a)
-#  define E1kLog3(a)
+#  define E1kLog(a)               do {} while (0)
+#  define E1kLog2(a)              do {} while (0)
+#  define E1kLog3(a)              do {} while (0)
 # endif
 #else
 #  define E1kLog(a)               Log(a)
 #  define E1kLog2(a)              Log2(a)
 #  define E1kLog3(a)              Log3(a)
-//#  define E1kLog(a)
-//#  define E1kLog2(a)
-//#  define E1kLog3(a)
+//#  define E1kLog(a)               do {} while (0)
+//#  define E1kLog2(a)              do {} while (0)
+//#  define E1kLog3(a)              do {} while (0)
 #endif
 
 //#undef DEBUG
@@ -4574,11 +4574,13 @@ static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
         return rc;
     /*
     * Force the link down here, since PDMNETWORKLINKSTATE_DOWN_RESUME is never
-    * passed to us. We go through all this stuff if the link was up only.
+    * passed to us. We go through all this stuff if the link was up and we
+    * wasn't teleported.
     */
-    if (STATUS & STATUS_LU)
+    if (    (STATUS & STATUS_LU)
+        && !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns))
     {
-        E1kLog(("%s Link is down temporarely\n", INSTANCE(pState)));
+        E1kLog(("%s Link is down temporarily\n", INSTANCE(pState)));
         STATUS &= ~STATUS_LU;
         Phy::setLinkStatus(&pState->phy, false);
         e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
