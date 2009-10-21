@@ -4694,6 +4694,8 @@ VBoxQGLOverlay::VBoxQGLOverlay (VBoxConsoleView *aView, VBoxFrameBuffer * aConta
     mOverlayWidgetVisible = true; /* to ensure it is set hidden with vboxShowOverlay */
     vboxShowOverlay(false);
 
+    mpOverlayWidget->setMouseTracking(true);
+
 //    resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_Opaque,
 //                                      NULL, 0, 0, 640, 480));
 }
