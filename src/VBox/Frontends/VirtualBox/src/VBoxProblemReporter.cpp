@@ -343,6 +343,7 @@ void VBoxProblemReporter::cannotDeleteFile (const QString& path, QWidget *aParen
 
 void VBoxProblemReporter::checkForMountedWrongUSB() const
 {
+#ifdef RT_OS_LINUX
     QFile file ("/proc/mounts");
     if (file.exists() && file.open (QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -363,6 +364,7 @@ void VBoxProblemReporter::checkForMountedWrongUSB() const
                          "your system which could cause USB devices to fail in unexpected ways."),
                      "checkForMountedWrongUSB");
     }
+#endif
 }
 
 // Special Problem handlers
