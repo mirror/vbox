@@ -24,6 +24,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM_ASYNC_COMPLETION
+#define RT_STRICT
 #include "PDMInternal.h"
 #include <VBox/pdm.h>
 #include <VBox/mm.h>
@@ -380,8 +381,9 @@ int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
  * @returns VBox status code.
  * @param   pEpClass    Pointer to the endpoint class data.
  * @param   ppAioMgr    Where to store the pointer to the new async I/O manager on success.
+ * @param   fFailsafe   Flag to force a failsafe manager even if the global flag is not set.
  */
-int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILEMGR ppAioMgr)
+int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILEMGR ppAioMgr, bool fFailsafe)
 {
     int rc = VINF_SUCCESS;
     PPDMACEPFILEMGR pAioMgrNew;
@@ -391,7 +393,7 @@ int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILE
     rc = MMR3HeapAllocZEx(pEpClass->Core.pVM, MM_TAG_PDM_ASYNC_COMPLETION, sizeof(PDMACEPFILEMGR), (void **)&pAioMgrNew);
     if (RT_SUCCESS(rc))
     {
-        pAioMgrNew->fFailsafe = pEpClass->fFailsafe;
+        pAioMgrNew->fFailsafe = fFailsafe ? true : pEpClass->fFailsafe;
 
         rc = RTSemEventCreate(&pAioMgrNew->EventSem);
         if (RT_SUCCESS(rc))
@@ -636,7 +638,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                 if (pEpClassFile->fFailsafe)
                 {
                     /* Safe mode. Every file has its own async I/O manager. */
-                    rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr);
+                    rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr, false);
                     AssertRC(rc);
                 }
                 else
@@ -655,7 +657,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                     /* Check for an idling one or create new if not found */
                     if (!pEpClassFile->pAioMgrHead)
                     {
-                        rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr);
+                        rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr, false);
                         AssertRC(rc);
                     }
                     else

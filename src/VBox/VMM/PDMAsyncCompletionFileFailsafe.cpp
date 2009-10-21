@@ -20,15 +20,17 @@
  * additional information or have any questions.
  */
 #define LOG_GROUP LOG_GROUP_PDM_ASYNC_COMPLETION
+#define RT_STRICT
 #include <iprt/types.h>
+#include <iprt/assert.h>
 #include <VBox/log.h>
 
 #include "PDMAsyncCompletionFileInternal.h"
 
-static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
+static int pdmacFileAioMgrFailsafeProcessEndpointTaskList(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+                                                          PPDMACTASKFILE pTasks)
 {
     int rc = VINF_SUCCESS;
-    PPDMACTASKFILE pTasks = pdmacFileEpGetNewTasks(pEndpoint);
 
     while (pTasks)
     {
@@ -77,6 +79,29 @@ static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMASYNCCOMPLETIONENDPOINTFIL
 
         pCurr->pfnCompleted(pCurr, pCurr->pvUser);
         pdmacFileTaskFree(pEndpoint, pCurr);
+    }
+
+    return rc;
+}
+
+static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
+{
+    int rc = VINF_SUCCESS;
+    PPDMACTASKFILE pTasks = pEndpoint->AioMgr.pReqsPendingHead;
+
+    pEndpoint->AioMgr.pReqsPendingHead = NULL;
+    pEndpoint->AioMgr.pReqsPendingTail = NULL;
+
+    /* Process the request pending list first in case the endpoint was migrated due to an error. */
+    if (pTasks)
+        rc = pdmacFileAioMgrFailsafeProcessEndpointTaskList(pEndpoint, pTasks);
+
+    if (RT_SUCCESS(rc))
+    {
+        pTasks = pdmacFileEpGetNewTasks(pEndpoint);
+
+        if (pTasks);
+            rc = pdmacFileAioMgrFailsafeProcessEndpointTaskList(pEndpoint, pTasks);
     }
 
     return rc;
