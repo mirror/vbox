@@ -222,36 +222,36 @@ int handleModifyVM(HandlerArg *a)
     ULONG NetworkAdapterCount = 0;
     {
         ComPtr <ISystemProperties> info;
-        CHECK_ERROR_RET (a->virtualBox, COMGETTER(SystemProperties) (info.asOutParam()), 1);
-        CHECK_ERROR_RET (info, COMGETTER(NetworkAdapterCount) (&NetworkAdapterCount), 1);
+        CHECK_ERROR_RET(a->virtualBox, COMGETTER(SystemProperties)(info.asOutParam()), 1);
+        CHECK_ERROR_RET(info, COMGETTER(NetworkAdapterCount)(&NetworkAdapterCount), 1);
     }
     ULONG SerialPortCount = 0;
     {
         ComPtr <ISystemProperties> info;
-        CHECK_ERROR_RET (a->virtualBox, COMGETTER(SystemProperties) (info.asOutParam()), 1);
-        CHECK_ERROR_RET (info, COMGETTER(SerialPortCount) (&SerialPortCount), 1);
+        CHECK_ERROR_RET(a->virtualBox, COMGETTER(SystemProperties)(info.asOutParam()), 1);
+        CHECK_ERROR_RET(info, COMGETTER(SerialPortCount)(&SerialPortCount), 1);
     }
 
     /* try to find the given machine */
     if (!Guid(machineuuid).isEmpty())
     {
-        CHECK_ERROR_RET (a->virtualBox, GetMachine (machineuuid, machine.asOutParam()), 1);
+        CHECK_ERROR_RET(a->virtualBox, GetMachine(machineuuid, machine.asOutParam()), 1);
     }
     else
     {
-        CHECK_ERROR_RET (a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()), 1);
+        CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()), 1);
         machine->COMGETTER(Id)(machineuuid.asOutParam());
     }
 
     /* open a session for the VM */
-    CHECK_ERROR_RET (a->virtualBox, OpenSession(a->session, machineuuid), 1);
+    CHECK_ERROR_RET(a->virtualBox, OpenSession(a->session, machineuuid), 1);
 
     /* get the mutable session machine */
     a->session->COMGETTER(Machine)(machine.asOutParam());
     machine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
 
-    RTGetOptInit (&GetOptState, a->argc, a->argv, g_aModifyVMOptions,
-                  RT_ELEMENTS(g_aModifyVMOptions), 1, 0 /* fFlags */);
+    RTGetOptInit(&GetOptState, a->argc, a->argv, g_aModifyVMOptions,
+                 RT_ELEMENTS(g_aModifyVMOptions), 1, 0 /* fFlags */);
 
     while (   SUCCEEDED (rc)
            && (c = RTGetOpt(&GetOptState, &ValueUnion)))
@@ -261,7 +261,7 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_NAME:
             {
                 if (ValueUnion.psz)
-                    CHECK_ERROR (machine, COMSETTER(Name)(Bstr(ValueUnion.psz)));
+                    CHECK_ERROR(machine, COMSETTER(Name)(Bstr(ValueUnion.psz)));
                 break;
             }
             case MODIFYVM_OSTYPE:
@@ -269,10 +269,10 @@ int handleModifyVM(HandlerArg *a)
                 if (ValueUnion.psz)
                 {
                     ComPtr<IGuestOSType> guestOSType;
-                    CHECK_ERROR (a->virtualBox, GetGuestOSType(Bstr(ValueUnion.psz), guestOSType.asOutParam()));
+                    CHECK_ERROR(a->virtualBox, GetGuestOSType(Bstr(ValueUnion.psz), guestOSType.asOutParam()));
                     if (SUCCEEDED(rc) && guestOSType)
                     {
-                        CHECK_ERROR (machine, COMSETTER(OSTypeId)(Bstr(ValueUnion.psz)));
+                        CHECK_ERROR(machine, COMSETTER(OSTypeId)(Bstr(ValueUnion.psz)));
                     }
                     else
                     {
@@ -286,14 +286,14 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_MEMORY:
             {
                 if (ValueUnion.u32 > 0)
-                    CHECK_ERROR (machine, COMSETTER(MemorySize)(ValueUnion.u32));
+                    CHECK_ERROR(machine, COMSETTER(MemorySize)(ValueUnion.u32));
                 break;
             }
 
             case MODIFYVM_VRAM:
             {
                 if (ValueUnion.u32 > 0)
-                    CHECK_ERROR (machine, COMSETTER(VRAMSize)(ValueUnion.u32));
+                    CHECK_ERROR(machine, COMSETTER(VRAMSize)(ValueUnion.u32));
                 break;
             }
 
@@ -303,11 +303,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "efi"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(FirmwareType)(FirmwareType_EFI));
+                        CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_EFI));
                     }
                     else if (!strcmp(ValueUnion.psz, "bios"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(FirmwareType)(FirmwareType_BIOS));
+                        CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_BIOS));
                     }
                     else
                     {
@@ -324,11 +324,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (biosSettings, COMSETTER(ACPIEnabled)(true));
+                        CHECK_ERROR(biosSettings, COMSETTER(ACPIEnabled)(true));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (biosSettings, COMSETTER(ACPIEnabled)(false));
+                        CHECK_ERROR(biosSettings, COMSETTER(ACPIEnabled)(false));
                     }
                     else
                     {
@@ -345,11 +345,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (biosSettings, COMSETTER(IOAPICEnabled)(true));
+                        CHECK_ERROR(biosSettings, COMSETTER(IOAPICEnabled)(true));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (biosSettings, COMSETTER(IOAPICEnabled)(false));
+                        CHECK_ERROR(biosSettings, COMSETTER(IOAPICEnabled)(false));
                     }
                     else
                     {
@@ -366,11 +366,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (machine, SetCpuProperty(CpuPropertyType_PAE, true));
+                        CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_PAE, true));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (machine, SetCpuProperty(CpuPropertyType_PAE, false));
+                        CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_PAE, false));
                     }
                     else
                     {
@@ -387,11 +387,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (machine, SetCpuProperty(CpuPropertyType_Synthetic, true));
+                        CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_Synthetic, true));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (machine, SetCpuProperty(CpuPropertyType_Synthetic, false));
+                        CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_Synthetic, false));
                     }
                     else
                     {
@@ -408,11 +408,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, TRUE));
+                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, TRUE));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, FALSE));
+                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, FALSE));
                     }
                     else
                     {
@@ -429,11 +429,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, TRUE));
+                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, TRUE));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, FALSE));
+                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, FALSE));
                     }
                     else
                     {
@@ -450,11 +450,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, TRUE));
+                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, TRUE));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, FALSE));
+                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, FALSE));
                     }
                     else
                     {
@@ -471,11 +471,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_VPID, TRUE));
+                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_VPID, TRUE));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_VPID, FALSE));
+                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_VPID, FALSE));
                     }
                     else
                     {
@@ -489,14 +489,14 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_CPUS:
             {
                 if (ValueUnion.u32 > 0)
-                    CHECK_ERROR (machine, COMSETTER(CPUCount)(ValueUnion.u32));
+                    CHECK_ERROR(machine, COMSETTER(CPUCount)(ValueUnion.u32));
                 break;
             }
 
             case MODIFYVM_MONITORCOUNT:
             {
                 if (ValueUnion.u32 > 0)
-                    CHECK_ERROR (machine, COMSETTER(MonitorCount)(ValueUnion.u32));
+                    CHECK_ERROR(machine, COMSETTER(MonitorCount)(ValueUnion.u32));
                 break;
             }
 
@@ -506,11 +506,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(Accelerate3DEnabled)(true));
+                        CHECK_ERROR(machine, COMSETTER(Accelerate3DEnabled)(true));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(Accelerate3DEnabled)(false));
+                        CHECK_ERROR(machine, COMSETTER(Accelerate3DEnabled)(false));
                     }
                     else
                     {
@@ -528,11 +528,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(Accelerate2DVideoEnabled)(true));
+                        CHECK_ERROR(machine, COMSETTER(Accelerate2DVideoEnabled)(true));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(Accelerate2DVideoEnabled)(false));
+                        CHECK_ERROR(machine, COMSETTER(Accelerate2DVideoEnabled)(false));
                     }
                     else
                     {
@@ -550,11 +550,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (biosSettings, COMSETTER(LogoFadeIn)(true));
+                        CHECK_ERROR(biosSettings, COMSETTER(LogoFadeIn)(true));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (biosSettings, COMSETTER(LogoFadeIn)(false));
+                        CHECK_ERROR(biosSettings, COMSETTER(LogoFadeIn)(false));
                     }
                     else
                     {
@@ -571,11 +571,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (biosSettings, COMSETTER(LogoFadeOut)(true));
+                        CHECK_ERROR(biosSettings, COMSETTER(LogoFadeOut)(true));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (biosSettings, COMSETTER(LogoFadeOut)(false));
+                        CHECK_ERROR(biosSettings, COMSETTER(LogoFadeOut)(false));
                     }
                     else
                     {
@@ -590,14 +590,14 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_BIOSLOGODISPLAYTIME:
             {
                 if (ValueUnion.u64 > 0)
-                    CHECK_ERROR (biosSettings, COMSETTER(LogoDisplayTime)(ValueUnion.u64));
+                    CHECK_ERROR(biosSettings, COMSETTER(LogoDisplayTime)(ValueUnion.u64));
                 break;
             }
 
             case MODIFYVM_BIOSLOGOIMAGEPATH:
             {
                 if (ValueUnion.psz)
-                    CHECK_ERROR (biosSettings, COMSETTER(LogoImagePath)(Bstr(ValueUnion.psz)));
+                    CHECK_ERROR(biosSettings, COMSETTER(LogoImagePath)(Bstr(ValueUnion.psz)));
                 break;
             }
 
@@ -606,11 +606,11 @@ int handleModifyVM(HandlerArg *a)
                 if (ValueUnion.psz)
                 {
                     if (!strcmp(ValueUnion.psz, "disabled"))
-                        CHECK_ERROR (biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_Disabled));
+                        CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_Disabled));
                     else if (!strcmp(ValueUnion.psz, "menuonly"))
-                        CHECK_ERROR (biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_MenuOnly));
+                        CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_MenuOnly));
                     else if (!strcmp(ValueUnion.psz, "messageandmenu"))
-                        CHECK_ERROR (biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_MessageAndMenu));
+                        CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_MessageAndMenu));
                     else
                     {
                         errorArgument("Invalid --biosbootmenu argument '%s'", ValueUnion.psz);
@@ -623,7 +623,7 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_BIOSSYSTEMTIMEOFFSET:
             {
                 if (ValueUnion.u64 > 0)
-                    CHECK_ERROR (biosSettings, COMSETTER(TimeOffset)(ValueUnion.u64));
+                    CHECK_ERROR(biosSettings, COMSETTER(TimeOffset)(ValueUnion.u64));
                 break;
             }
 
@@ -633,11 +633,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (biosSettings, COMSETTER(PXEDebugEnabled)(true));
+                        CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(true));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (biosSettings, COMSETTER(PXEDebugEnabled)(false));
+                        CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(false));
                     }
                     else
                     {
@@ -657,23 +657,23 @@ int handleModifyVM(HandlerArg *a)
 
                 if (!strcmp(ValueUnion.psz, "none"))
                 {
-                    CHECK_ERROR (machine, SetBootOrder (GetOptState.uIndex, DeviceType_Null));
+                    CHECK_ERROR(machine, SetBootOrder(GetOptState.uIndex, DeviceType_Null));
                 }
                 else if (!strcmp(ValueUnion.psz, "floppy"))
                 {
-                    CHECK_ERROR (machine, SetBootOrder (GetOptState.uIndex, DeviceType_Floppy));
+                    CHECK_ERROR(machine, SetBootOrder(GetOptState.uIndex, DeviceType_Floppy));
                 }
                 else if (!strcmp(ValueUnion.psz, "dvd"))
                 {
-                    CHECK_ERROR (machine, SetBootOrder (GetOptState.uIndex, DeviceType_DVD));
+                    CHECK_ERROR(machine, SetBootOrder(GetOptState.uIndex, DeviceType_DVD));
                 }
                 else if (!strcmp(ValueUnion.psz, "disk"))
                 {
-                    CHECK_ERROR (machine, SetBootOrder (GetOptState.uIndex, DeviceType_HardDisk));
+                    CHECK_ERROR(machine, SetBootOrder(GetOptState.uIndex, DeviceType_HardDisk));
                 }
                 else if (!strcmp(ValueUnion.psz, "net"))
                 {
-                    CHECK_ERROR (machine, SetBootOrder (GetOptState.uIndex, DeviceType_Network));
+                    CHECK_ERROR(machine, SetBootOrder(GetOptState.uIndex, DeviceType_Network));
                 }
                 else
                     return errorArgument("Invalid boot device '%s'", ValueUnion.psz);
@@ -700,7 +700,7 @@ int handleModifyVM(HandlerArg *a)
                         if (FAILED(rc))
                         {
                             /* open the new hard disk object */
-                            CHECK_ERROR (a->virtualBox,
+                            CHECK_ERROR(a->virtualBox,
                                          OpenHardDisk(Bstr(ValueUnion.psz),
                                                       AccessMode_ReadWrite, false, Bstr(""),
                                                       false, Bstr(""), hardDisk.asOutParam()));
@@ -709,7 +709,7 @@ int handleModifyVM(HandlerArg *a)
                     if (hardDisk)
                     {
                         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                        CHECK_ERROR (machine, AttachDevice(Bstr("IDE Controller"), 0, 0, DeviceType_HardDisk, uuid));
+                        CHECK_ERROR(machine, AttachDevice(Bstr("IDE Controller"), 0, 0, DeviceType_HardDisk, uuid));
                     }
                     else
                         rc = E_FAIL;
@@ -736,7 +736,7 @@ int handleModifyVM(HandlerArg *a)
                         if (FAILED(rc))
                         {
                             /* open the new hard disk object */
-                            CHECK_ERROR (a->virtualBox,
+                            CHECK_ERROR(a->virtualBox,
                                          OpenHardDisk(Bstr(ValueUnion.psz),
                                                       AccessMode_ReadWrite, false, Bstr(""),
                                                       false, Bstr(""), hardDisk.asOutParam()));
@@ -745,7 +745,7 @@ int handleModifyVM(HandlerArg *a)
                     if (hardDisk)
                     {
                         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                        CHECK_ERROR (machine, AttachDevice(Bstr("IDE Controller"), 0, 1, DeviceType_HardDisk, uuid));
+                        CHECK_ERROR(machine, AttachDevice(Bstr("IDE Controller"), 0, 1, DeviceType_HardDisk, uuid));
                     }
                     else
                         rc = E_FAIL;
@@ -772,7 +772,7 @@ int handleModifyVM(HandlerArg *a)
                         if (FAILED(rc))
                         {
                             /* open the new hard disk object */
-                            CHECK_ERROR (a->virtualBox,
+                            CHECK_ERROR(a->virtualBox,
                                          OpenHardDisk(Bstr(ValueUnion.psz),
                                                       AccessMode_ReadWrite, false, Bstr(""),
                                                       false, Bstr(""), hardDisk.asOutParam()));
@@ -781,7 +781,7 @@ int handleModifyVM(HandlerArg *a)
                     if (hardDisk)
                     {
                         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                        CHECK_ERROR (machine, AttachDevice(Bstr("IDE Controller"), 1, 1, DeviceType_HardDisk, uuid));
+                        CHECK_ERROR(machine, AttachDevice(Bstr("IDE Controller"), 1, 1, DeviceType_HardDisk, uuid));
                     }
                     else
                         rc = E_FAIL;
@@ -792,7 +792,7 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_IDECONTROLLER: // deprecated
             {
                 ComPtr<IStorageController> storageController;
-                CHECK_ERROR (machine, GetStorageControllerByName(Bstr("IDE Controller"),
+                CHECK_ERROR(machine, GetStorageControllerByName(Bstr("IDE Controller"),
                                                                  storageController.asOutParam()));
 
                 if (!RTStrICmp(ValueUnion.psz, "PIIX3"))
@@ -818,7 +818,7 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_SATAIDEEMULATION: // deprecated
             {
                 ComPtr<IStorageController> SataCtl;
-                CHECK_ERROR (machine, GetStorageControllerByName(Bstr("SATA"), SataCtl.asOutParam()));
+                CHECK_ERROR(machine, GetStorageControllerByName(Bstr("SATA"), SataCtl.asOutParam()));
 
                 if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > 4))
                     return errorSyntax(USAGE_MODIFYVM,
@@ -839,7 +839,7 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_SATAPORTCOUNT: // deprecated
             {
                 ComPtr<IStorageController> SataCtl;
-                CHECK_ERROR (machine, GetStorageControllerByName(Bstr("SATA"), SataCtl.asOutParam()));
+                CHECK_ERROR(machine, GetStorageControllerByName(Bstr("SATA"), SataCtl.asOutParam()));
 
                 if (SUCCEEDED(rc) && ValueUnion.u32 > 0)
                     CHECK_ERROR(SataCtl, COMSETTER(PortCount)(ValueUnion.u32));
@@ -871,7 +871,7 @@ int handleModifyVM(HandlerArg *a)
                         if (FAILED(rc))
                         {
                             /* open the new hard disk object */
-                            CHECK_ERROR (a->virtualBox,
+                            CHECK_ERROR(a->virtualBox,
                                          OpenHardDisk(Bstr(ValueUnion.psz), AccessMode_ReadWrite,
                                                       false, Bstr(""), false,
                                                       Bstr(""), hardDisk.asOutParam()));
@@ -880,7 +880,7 @@ int handleModifyVM(HandlerArg *a)
                     if (hardDisk)
                     {
                         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                        CHECK_ERROR (machine,
+                        CHECK_ERROR(machine,
                                      AttachDevice(Bstr("SATA"), GetOptState.uIndex,
                                                   0, DeviceType_HardDisk, uuid));
                     }
@@ -895,11 +895,11 @@ int handleModifyVM(HandlerArg *a)
                 if (!strcmp(ValueUnion.psz, "on") || !strcmp(ValueUnion.psz, "enable"))
                 {
                     ComPtr<IStorageController> ctl;
-                    CHECK_ERROR (machine, AddStorageController(Bstr("SATA"), StorageBus_SATA, ctl.asOutParam()));
-                    CHECK_ERROR (ctl, COMSETTER(ControllerType)(StorageControllerType_IntelAhci));
+                    CHECK_ERROR(machine, AddStorageController(Bstr("SATA"), StorageBus_SATA, ctl.asOutParam()));
+                    CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_IntelAhci));
                 }
                 else if (!strcmp(ValueUnion.psz, "off") || !strcmp(ValueUnion.psz, "disable"))
-                    CHECK_ERROR (machine, RemoveStorageController(Bstr("SATA")));
+                    CHECK_ERROR(machine, RemoveStorageController(Bstr("SATA")));
                 else
                     return errorArgument("Invalid --usb argument '%s'", ValueUnion.psz);
                 break;
@@ -931,7 +931,7 @@ int handleModifyVM(HandlerArg *a)
                         if (FAILED(rc))
                         {
                             /* open the new hard disk object */
-                            CHECK_ERROR (a->virtualBox,
+                            CHECK_ERROR(a->virtualBox,
                                          OpenHardDisk(Bstr(ValueUnion.psz),
                                                            AccessMode_ReadWrite, false, Bstr(""),
                                                            false, Bstr(""), hardDisk.asOutParam()));
@@ -942,7 +942,7 @@ int handleModifyVM(HandlerArg *a)
                         hardDisk->COMGETTER(Id)(uuid.asOutParam());
                         rc = machine->AttachDevice(Bstr("LsiLogic"), GetOptState.uIndex, 0, DeviceType_HardDisk, uuid);
                         if (FAILED(rc))
-                            CHECK_ERROR (machine,
+                            CHECK_ERROR(machine,
                                          AttachDevice(Bstr("BusLogic"),
                                                       GetOptState.uIndex, 0,
                                                       DeviceType_HardDisk, uuid));
@@ -961,29 +961,29 @@ int handleModifyVM(HandlerArg *a)
                 {
                     rc = machine->RemoveStorageController(Bstr("BusLogic"));
                     if (FAILED(rc))
-                        CHECK_ERROR (machine, RemoveStorageController(Bstr("LsiLogic")));
+                        CHECK_ERROR(machine, RemoveStorageController(Bstr("LsiLogic")));
 
-                    CHECK_ERROR (machine,
+                    CHECK_ERROR(machine,
                                  AddStorageController(Bstr("LsiLogic"),
                                                       StorageBus_SCSI,
                                                       ctl.asOutParam()));
 
                     if (SUCCEEDED(rc))
-                        CHECK_ERROR (ctl, COMSETTER(ControllerType)(StorageControllerType_LsiLogic));
+                        CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_LsiLogic));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "BusLogic"))
                 {
                     rc = machine->RemoveStorageController(Bstr("LsiLogic"));
                     if (FAILED(rc))
-                        CHECK_ERROR (machine, RemoveStorageController(Bstr("BusLogic")));
+                        CHECK_ERROR(machine, RemoveStorageController(Bstr("BusLogic")));
 
-                    CHECK_ERROR (machine,
+                    CHECK_ERROR(machine,
                                  AddStorageController(Bstr("BusLogic"),
                                                       StorageBus_SCSI,
                                                       ctl.asOutParam()));
 
                     if (SUCCEEDED(rc))
-                        CHECK_ERROR (ctl, COMSETTER(ControllerType)(StorageControllerType_BusLogic));
+                        CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_BusLogic));
                 }
                 else
                     return errorArgument("Invalid --scsitype argument '%s'", ValueUnion.psz);
@@ -996,22 +996,22 @@ int handleModifyVM(HandlerArg *a)
                 {
                     ComPtr<IStorageController> ctl;
 
-                    CHECK_ERROR (machine, AddStorageController(Bstr("BusLogic"), StorageBus_SCSI, ctl.asOutParam()));
+                    CHECK_ERROR(machine, AddStorageController(Bstr("BusLogic"), StorageBus_SCSI, ctl.asOutParam()));
                     if (SUCCEEDED(rc))
-                        CHECK_ERROR (ctl, COMSETTER(ControllerType)(StorageControllerType_BusLogic));
+                        CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_BusLogic));
                 }
                 else if (!strcmp(ValueUnion.psz, "off") || !strcmp(ValueUnion.psz, "disable"))
                 {
                     rc = machine->RemoveStorageController(Bstr("BusLogic"));
                     if (FAILED(rc))
-                        CHECK_ERROR (machine, RemoveStorageController(Bstr("LsiLogic")));
+                        CHECK_ERROR(machine, RemoveStorageController(Bstr("LsiLogic")));
                 }
                 break;
             }
 
             case MODIFYVM_DVDPASSTHROUGH: // deprecated
             {
-                CHECK_ERROR (machine, PassthroughDevice(Bstr("IDE Controller"), 1, 0, !strcmp(ValueUnion.psz, "on")));
+                CHECK_ERROR(machine, PassthroughDevice(Bstr("IDE Controller"), 1, 0, !strcmp(ValueUnion.psz, "on")));
                 break;
             }
 
@@ -1029,7 +1029,7 @@ int handleModifyVM(HandlerArg *a)
                 else if (!strncmp(ValueUnion.psz, "host:", 5))
                 {
                     ComPtr<IHost> host;
-                    CHECK_ERROR (a->virtualBox, COMGETTER(Host)(host.asOutParam()));
+                    CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
                     rc = host->FindHostDVDDrive(Bstr(ValueUnion.psz + 5), dvdMedium.asOutParam());
                     if (!dvdMedium)
                     {
@@ -1062,7 +1062,7 @@ int handleModifyVM(HandlerArg *a)
                         if (!dvdMedium)
                         {
                             Bstr emptyUUID;
-                            CHECK_ERROR (a->virtualBox, OpenDVDImage(Bstr(ValueUnion.psz),
+                            CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(ValueUnion.psz),
                                          emptyUUID, dvdMedium.asOutParam()));
                         }
                     }
@@ -1078,7 +1078,7 @@ int handleModifyVM(HandlerArg *a)
                  * storage controllers. */
                 if (dvdMedium)
                     dvdMedium->COMGETTER(Id)(uuid.asOutParam());
-                CHECK_ERROR (machine, MountMedium(Bstr("IDE Controller"), 1, 0, uuid));
+                CHECK_ERROR(machine, MountMedium(Bstr("IDE Controller"), 1, 0, uuid));
                 break;
             }
 
@@ -1133,7 +1133,7 @@ int handleModifyVM(HandlerArg *a)
                             if (!floppyMedium)
                             {
                                 Bstr emptyUUID;
-                                CHECK_ERROR (a->virtualBox,
+                                CHECK_ERROR(a->virtualBox,
                                              OpenFloppyImage(Bstr(ValueUnion.psz),
                                                              emptyUUID,
                                                              floppyMedium.asOutParam()));
@@ -1146,7 +1146,7 @@ int handleModifyVM(HandlerArg *a)
                         }
                     }
                     floppyMedium->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR (machine, MountMedium(Bstr("Floppy Controller"), 0, 0, uuid));
+                    CHECK_ERROR(machine, MountMedium(Bstr("Floppy Controller"), 0, 0, uuid));
                 }
                 break;
             }
@@ -1160,10 +1160,10 @@ int handleModifyVM(HandlerArg *a)
                                        "Missing or Invalid NIC slot number in '%s'",
                                        GetOptState.pDef->pszLong);
 
-                CHECK_ERROR_BREAK (machine, GetNetworkAdapter (GetOptState.uIndex - 1, nic.asOutParam()));
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
-                CHECK_ERROR (nic, COMSETTER(TraceFile)(Bstr(ValueUnion.psz)));
+                CHECK_ERROR(nic, COMSETTER(TraceFile)(Bstr(ValueUnion.psz)));
                 break;
             }
 
@@ -1176,16 +1176,16 @@ int handleModifyVM(HandlerArg *a)
                                        "Missing or Invalid NIC slot number in '%s'",
                                        GetOptState.pDef->pszLong);
 
-                CHECK_ERROR_BREAK (machine, GetNetworkAdapter (GetOptState.uIndex - 1, nic.asOutParam()));
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
                 if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(TraceEnabled)(TRUE));
+                    CHECK_ERROR(nic, COMSETTER(TraceEnabled)(TRUE));
                 }
                 else if (!strcmp(ValueUnion.psz, "off"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(TraceEnabled)(FALSE));
+                    CHECK_ERROR(nic, COMSETTER(TraceEnabled)(FALSE));
                 }
                 else
                 {
@@ -1204,35 +1204,35 @@ int handleModifyVM(HandlerArg *a)
                                        "Missing or Invalid NIC slot number in '%s'",
                                        GetOptState.pDef->pszLong);
 
-                CHECK_ERROR_BREAK (machine, GetNetworkAdapter (GetOptState.uIndex - 1, nic.asOutParam()));
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
                 if (!strcmp(ValueUnion.psz, "Am79C970A"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(AdapterType)(NetworkAdapterType_Am79C970A));
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_Am79C970A));
                 }
                 else if (!strcmp(ValueUnion.psz, "Am79C973"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(AdapterType)(NetworkAdapterType_Am79C973));
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_Am79C973));
                 }
 #ifdef VBOX_WITH_E1000
                 else if (!strcmp(ValueUnion.psz, "82540EM"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(AdapterType)(NetworkAdapterType_I82540EM));
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_I82540EM));
                 }
                 else if (!strcmp(ValueUnion.psz, "82543GC"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(AdapterType)(NetworkAdapterType_I82543GC));
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_I82543GC));
                 }
                 else if (!strcmp(ValueUnion.psz, "82545EM"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(AdapterType)(NetworkAdapterType_I82545EM));
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_I82545EM));
                 }
 #endif
 #ifdef VBOX_WITH_VIRTIO
                 else if (!strcmp(ValueUnion.psz, "virtio"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(AdapterType)(NetworkAdapterType_Virtio));
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_Virtio));
                 }
 #endif /* VBOX_WITH_VIRTIO */
                 else
@@ -1259,10 +1259,10 @@ int handleModifyVM(HandlerArg *a)
                     break;
                 }
 
-                CHECK_ERROR_BREAK (machine, GetNetworkAdapter (GetOptState.uIndex - 1, nic.asOutParam()));
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
-                CHECK_ERROR (nic, COMSETTER(LineSpeed)(ValueUnion.u32));
+                CHECK_ERROR(nic, COMSETTER(LineSpeed)(ValueUnion.u32));
                 break;
             }
 
@@ -1275,40 +1275,40 @@ int handleModifyVM(HandlerArg *a)
                                        "Missing or Invalid NIC slot number in '%s'",
                                        GetOptState.pDef->pszLong);
 
-                CHECK_ERROR_BREAK (machine, GetNetworkAdapter (GetOptState.uIndex - 1, nic.asOutParam()));
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
                 if (!strcmp(ValueUnion.psz, "none"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(Enabled) (FALSE));
+                    CHECK_ERROR(nic, COMSETTER(Enabled)(FALSE));
                 }
                 else if (!strcmp(ValueUnion.psz, "null"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(Enabled) (TRUE));
-                    CHECK_ERROR (nic, Detach());
+                    CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    CHECK_ERROR(nic, Detach());
                 }
                 else if (!strcmp(ValueUnion.psz, "nat"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(Enabled) (TRUE));
-                    CHECK_ERROR (nic, AttachToNAT());
+                    CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    CHECK_ERROR(nic, AttachToNAT());
                 }
                 else if (  !strcmp(ValueUnion.psz, "bridged")
                         || !strcmp(ValueUnion.psz, "hostif")) /* backward compatibility */
                 {
-                    CHECK_ERROR (nic, COMSETTER(Enabled) (TRUE));
-                    CHECK_ERROR (nic, AttachToBridgedInterface());
+                    CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    CHECK_ERROR(nic, AttachToBridgedInterface());
                 }
                 else if (!strcmp(ValueUnion.psz, "intnet"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(Enabled) (TRUE));
-                    CHECK_ERROR (nic, AttachToInternalNetwork());
+                    CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    CHECK_ERROR(nic, AttachToInternalNetwork());
                 }
 #if defined(VBOX_WITH_NETFLT)
                 else if (!strcmp(ValueUnion.psz, "hostonly"))
                 {
 
-                    CHECK_ERROR (nic, COMSETTER(Enabled) (TRUE));
-                    CHECK_ERROR (nic, AttachToHostOnlyInterface());
+                    CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    CHECK_ERROR(nic, AttachToHostOnlyInterface());
                 }
 #endif
                 else
@@ -1328,16 +1328,16 @@ int handleModifyVM(HandlerArg *a)
                                        "Missing or Invalid NIC slot number in '%s'",
                                        GetOptState.pDef->pszLong);
 
-                CHECK_ERROR_BREAK (machine, GetNetworkAdapter (GetOptState.uIndex - 1, nic.asOutParam()));
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
                 if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(CableConnected)(TRUE));
+                    CHECK_ERROR(nic, COMSETTER(CableConnected)(TRUE));
                 }
                 else if (!strcmp(ValueUnion.psz, "off"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(CableConnected)(FALSE));
+                    CHECK_ERROR(nic, COMSETTER(CableConnected)(FALSE));
                 }
                 else
                 {
@@ -1357,17 +1357,17 @@ int handleModifyVM(HandlerArg *a)
                                        "Missing or Invalid NIC slot number in '%s'",
                                        GetOptState.pDef->pszLong);
 
-                CHECK_ERROR_BREAK (machine, GetNetworkAdapter (GetOptState.uIndex - 1, nic.asOutParam()));
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
                 /* remove it? */
                 if (!strcmp(ValueUnion.psz, "none"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(HostInterface)(NULL));
+                    CHECK_ERROR(nic, COMSETTER(HostInterface)(NULL));
                 }
                 else
                 {
-                    CHECK_ERROR (nic, COMSETTER(HostInterface)(Bstr(ValueUnion.psz)));
+                    CHECK_ERROR(nic, COMSETTER(HostInterface)(Bstr(ValueUnion.psz)));
                 }
                 break;
             }
@@ -1381,17 +1381,17 @@ int handleModifyVM(HandlerArg *a)
                                        "Missing or Invalid NIC slot number in '%s'",
                                        GetOptState.pDef->pszLong);
 
-                CHECK_ERROR_BREAK (machine, GetNetworkAdapter (GetOptState.uIndex - 1, nic.asOutParam()));
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
                 /* remove it? */
                 if (!strcmp(ValueUnion.psz, "none"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(InternalNetwork)(NULL));
+                    CHECK_ERROR(nic, COMSETTER(InternalNetwork)(NULL));
                 }
                 else
                 {
-                    CHECK_ERROR (nic, COMSETTER(InternalNetwork)(Bstr(ValueUnion.psz)));
+                    CHECK_ERROR(nic, COMSETTER(InternalNetwork)(Bstr(ValueUnion.psz)));
                 }
                 break;
             }
@@ -1405,10 +1405,10 @@ int handleModifyVM(HandlerArg *a)
                                        "Missing or Invalid NIC slot number in '%s'",
                                        GetOptState.pDef->pszLong);
 
-                CHECK_ERROR_BREAK (machine, GetNetworkAdapter (GetOptState.uIndex - 1, nic.asOutParam()));
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
-                CHECK_ERROR (nic, COMSETTER(NATNetwork)(Bstr(ValueUnion.psz)));
+                CHECK_ERROR(nic, COMSETTER(NATNetwork)(Bstr(ValueUnion.psz)));
 
                 break;
             }
@@ -1422,17 +1422,17 @@ int handleModifyVM(HandlerArg *a)
                                        "Missing or Invalid NIC slot number in '%s'",
                                        GetOptState.pDef->pszLong);
 
-                CHECK_ERROR_BREAK (machine, GetNetworkAdapter (GetOptState.uIndex - 1, nic.asOutParam()));
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
                 /* generate one? */
                 if (!strcmp(ValueUnion.psz, "auto"))
                 {
-                    CHECK_ERROR (nic, COMSETTER(MACAddress)(NULL));
+                    CHECK_ERROR(nic, COMSETTER(MACAddress)(NULL));
                 }
                 else
                 {
-                    CHECK_ERROR (nic, COMSETTER(MACAddress)(Bstr(ValueUnion.psz)));
+                    CHECK_ERROR(nic, COMSETTER(MACAddress)(Bstr(ValueUnion.psz)));
                 }
                 break;
             }
@@ -1447,12 +1447,12 @@ int handleModifyVM(HandlerArg *a)
                                        "Missing or Invalid Serial Port number in '%s'",
                                        GetOptState.pDef->pszLong);
 
-                CHECK_ERROR_BREAK (machine, GetSerialPort (GetOptState.uIndex - 1, uart.asOutParam()));
+                CHECK_ERROR_BREAK(machine, GetSerialPort(GetOptState.uIndex - 1, uart.asOutParam()));
                 ASSERT(uart);
 
                 if (!strcmp(ValueUnion.psz, "disconnected"))
                 {
-                    CHECK_ERROR (uart, COMSETTER(HostMode) (PortMode_Disconnected));
+                    CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_Disconnected));
                 }
                 else if (   !strcmp(ValueUnion.psz, "server")
                          || !strcmp(ValueUnion.psz, "client")
@@ -1466,27 +1466,27 @@ int handleModifyVM(HandlerArg *a)
                                            "Missing or Invalid argument to '%s'",
                                            GetOptState.pDef->pszLong);
 
-                    CHECK_ERROR (uart, COMSETTER(Path) (Bstr(ValueUnion.psz)));
+                    CHECK_ERROR(uart, COMSETTER(Path)(Bstr(ValueUnion.psz)));
 
                     if (!strcmp(pszMode, "server"))
                     {
-                        CHECK_ERROR (uart, COMSETTER(HostMode) (PortMode_HostPipe));
-                        CHECK_ERROR (uart, COMSETTER(Server) (TRUE));
+                        CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_HostPipe));
+                        CHECK_ERROR(uart, COMSETTER(Server)(TRUE));
                     }
                     else if (!strcmp(pszMode, "client"))
                     {
-                        CHECK_ERROR (uart, COMSETTER(HostMode) (PortMode_HostPipe));
-                        CHECK_ERROR (uart, COMSETTER(Server) (FALSE));
+                        CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_HostPipe));
+                        CHECK_ERROR(uart, COMSETTER(Server)(FALSE));
                     }
                     else if (!strcmp(pszMode, "file"))
                     {
-                        CHECK_ERROR (uart, COMSETTER(HostMode) (PortMode_RawFile));
+                        CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_RawFile));
                     }
                 }
                 else
                 {
-                    CHECK_ERROR (uart, COMSETTER(Path) (Bstr(ValueUnion.psz)));
-                    CHECK_ERROR (uart, COMSETTER(HostMode) (PortMode_HostDevice));
+                    CHECK_ERROR(uart, COMSETTER(Path)(Bstr(ValueUnion.psz)));
+                    CHECK_ERROR(uart, COMSETTER(HostMode)(PortMode_HostDevice));
                 }
                 break;
             }
@@ -1500,11 +1500,11 @@ int handleModifyVM(HandlerArg *a)
                                        "Missing or Invalid Serial Port number in '%s'",
                                        GetOptState.pDef->pszLong);
 
-                CHECK_ERROR_BREAK (machine, GetSerialPort (GetOptState.uIndex - 1, uart.asOutParam()));
+                CHECK_ERROR_BREAK(machine, GetSerialPort(GetOptState.uIndex - 1, uart.asOutParam()));
                 ASSERT(uart);
 
                 if (!strcmp(ValueUnion.psz, "off") || !strcmp(ValueUnion.psz, "disable"))
-                    CHECK_ERROR (uart, COMSETTER(Enabled) (FALSE));
+                    CHECK_ERROR(uart, COMSETTER(Enabled)(FALSE));
                 else
                 {
                     const char *pszIOBase = ValueUnion.psz;
@@ -1516,14 +1516,14 @@ int handleModifyVM(HandlerArg *a)
                                            "Missing or Invalid argument to '%s'",
                                            GetOptState.pDef->pszLong);
 
-                    CHECK_ERROR (uart, COMSETTER(IRQ) (ValueUnion.u32));
+                    CHECK_ERROR(uart, COMSETTER(IRQ)(ValueUnion.u32));
 
                     vrc = RTStrToUInt32Ex(pszIOBase, NULL, 0, &uVal);
                     if (vrc != VINF_SUCCESS || uVal == 0)
                         return errorArgument("Error parsing UART I/O base '%s'", pszIOBase);
-                    CHECK_ERROR (uart, COMSETTER(IOBase) (uVal));
+                    CHECK_ERROR(uart, COMSETTER(IOBase)(uVal));
 
-                    CHECK_ERROR (uart, COMSETTER(Enabled) (TRUE));
+                    CHECK_ERROR(uart, COMSETTER(Enabled)(TRUE));
                 }
                 break;
             }
@@ -1531,7 +1531,7 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_GUESTSTATISTICSINTERVAL:
             {
                 if (ValueUnion.u32 > 0)
-                    CHECK_ERROR (machine, COMSETTER(StatisticsUpdateInterval)(ValueUnion.u32));
+                    CHECK_ERROR(machine, COMSETTER(StatisticsUpdateInterval)(ValueUnion.u32));
                 break;
             }
 
@@ -1539,7 +1539,7 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_GUESTMEMORYBALLOON:
             {
                 if (ValueUnion.u32 > 0)
-                    CHECK_ERROR (machine, COMSETTER(MemoryBalloonSize)(ValueUnion.u32));
+                    CHECK_ERROR(machine, COMSETTER(MemoryBalloonSize)(ValueUnion.u32));
                 break;
             }
 #endif
@@ -1553,9 +1553,9 @@ int handleModifyVM(HandlerArg *a)
                     ASSERT(audioAdapter);
 
                     if (!strcmp(ValueUnion.psz, "sb16"))
-                        CHECK_ERROR (audioAdapter, COMSETTER(AudioController)(AudioControllerType_SB16));
+                        CHECK_ERROR(audioAdapter, COMSETTER(AudioController)(AudioControllerType_SB16));
                     else if (!strcmp(ValueUnion.psz, "ac97"))
-                        CHECK_ERROR (audioAdapter, COMSETTER(AudioController)(AudioControllerType_AC97));
+                        CHECK_ERROR(audioAdapter, COMSETTER(AudioController)(AudioControllerType_AC97));
                     else
                     {
                         errorArgument("Invalid --audiocontroller argument '%s'", ValueUnion.psz);
@@ -1576,60 +1576,60 @@ int handleModifyVM(HandlerArg *a)
                     /* disable? */
                     if (!strcmp(ValueUnion.psz, "none"))
                     {
-                        CHECK_ERROR (audioAdapter, COMSETTER(Enabled)(false));
+                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(false));
                     }
                     else if (!strcmp(ValueUnion.psz, "null"))
                     {
-                        CHECK_ERROR (audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Null));
-                        CHECK_ERROR (audioAdapter, COMSETTER(Enabled)(true));
+                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Null));
+                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                     }
 #ifdef RT_OS_WINDOWS
 #ifdef VBOX_WITH_WINMM
                     else if (!strcmp(ValueUnion.psz, "winmm"))
                     {
-                        CHECK_ERROR (audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WinMM));
-                        CHECK_ERROR (audioAdapter, COMSETTER(Enabled)(true));
+                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WinMM));
+                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                     }
 #endif
                     else if (!strcmp(ValueUnion.psz, "dsound"))
                     {
-                        CHECK_ERROR (audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DirectSound));
-                        CHECK_ERROR (audioAdapter, COMSETTER(Enabled)(true));
+                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DirectSound));
+                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                     }
 #endif /* RT_OS_WINDOWS */
 #ifdef RT_OS_LINUX
                     else if (!strcmp(ValueUnion.psz, "oss"))
                     {
-                        CHECK_ERROR (audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
-                        CHECK_ERROR (audioAdapter, COMSETTER(Enabled)(true));
+                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
+                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                     }
 # ifdef VBOX_WITH_ALSA
                     else if (!strcmp(ValueUnion.psz, "alsa"))
                     {
-                        CHECK_ERROR (audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_ALSA));
-                        CHECK_ERROR (audioAdapter, COMSETTER(Enabled)(true));
+                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_ALSA));
+                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                     }
 # endif
 # ifdef VBOX_WITH_PULSE
                     else if (!strcmp(ValueUnion.psz, "pulse"))
                     {
-                        CHECK_ERROR (audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Pulse));
-                        CHECK_ERROR (audioAdapter, COMSETTER(Enabled)(true));
+                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Pulse));
+                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                     }
 # endif
 #endif /* !RT_OS_LINUX */
 #ifdef RT_OS_SOLARIS
                     else if (!strcmp(ValueUnion.psz, "solaudio"))
                     {
-                        CHECK_ERROR (audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_SolAudio));
-                        CHECK_ERROR (audioAdapter, COMSETTER(Enabled)(true));
+                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_SolAudio));
+                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                     }
 
 # ifdef VBOX_WITH_SOLARIS_OSS
                     else if (!strcmp(ValueUnion.psz, "oss"))
                     {
-                        CHECK_ERROR (audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
-                        CHECK_ERROR (audioAdapter, COMSETTER(Enabled)(true));
+                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
+                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                     }
 # endif
 
@@ -1637,8 +1637,8 @@ int handleModifyVM(HandlerArg *a)
 #ifdef RT_OS_DARWIN
                     else if (!strcmp(ValueUnion.psz, "coreaudio"))
                     {
-                        CHECK_ERROR (audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_CoreAudio));
-                        CHECK_ERROR (audioAdapter, COMSETTER(Enabled)(true));
+                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_CoreAudio));
+                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                     }
 
 #endif /* !RT_OS_DARWIN */
@@ -1657,19 +1657,19 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(ValueUnion.psz, "disabled"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(ClipboardMode)(ClipboardMode_Disabled));
+                        CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_Disabled));
                     }
                     else if (!strcmp(ValueUnion.psz, "hosttoguest"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(ClipboardMode)(ClipboardMode_HostToGuest));
+                        CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_HostToGuest));
                     }
                     else if (!strcmp(ValueUnion.psz, "guesttohost"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(ClipboardMode)(ClipboardMode_GuestToHost));
+                        CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_GuestToHost));
                     }
                     else if (!strcmp(ValueUnion.psz, "bidirectional"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(ClipboardMode)(ClipboardMode_Bidirectional));
+                        CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_Bidirectional));
                     }
                     else
                     {
@@ -1690,9 +1690,9 @@ int handleModifyVM(HandlerArg *a)
                     ASSERT(vrdpServer);
 
                     if (!strcmp(ValueUnion.psz, "default"))
-                        CHECK_ERROR (vrdpServer, COMSETTER(Ports)(Bstr("0")));
+                        CHECK_ERROR(vrdpServer, COMSETTER(Ports)(Bstr("0")));
                     else
-                        CHECK_ERROR (vrdpServer, COMSETTER(Ports)(Bstr(ValueUnion.psz)));
+                        CHECK_ERROR(vrdpServer, COMSETTER(Ports)(Bstr(ValueUnion.psz)));
                 }
                 break;
             }
@@ -1705,7 +1705,7 @@ int handleModifyVM(HandlerArg *a)
                     machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
                     ASSERT(vrdpServer);
 
-                    CHECK_ERROR (vrdpServer, COMSETTER(NetAddress)(Bstr(ValueUnion.psz)));
+                    CHECK_ERROR(vrdpServer, COMSETTER(NetAddress)(Bstr(ValueUnion.psz)));
                 }
                 break;
             }
@@ -1720,15 +1720,15 @@ int handleModifyVM(HandlerArg *a)
 
                     if (!strcmp(ValueUnion.psz, "null"))
                     {
-                        CHECK_ERROR (vrdpServer, COMSETTER(AuthType)(VRDPAuthType_Null));
+                        CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_Null));
                     }
                     else if (!strcmp(ValueUnion.psz, "external"))
                     {
-                        CHECK_ERROR (vrdpServer, COMSETTER(AuthType)(VRDPAuthType_External));
+                        CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_External));
                     }
                     else if (!strcmp(ValueUnion.psz, "guest"))
                     {
-                        CHECK_ERROR (vrdpServer, COMSETTER(AuthType)(VRDPAuthType_Guest));
+                        CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_Guest));
                     }
                     else
                     {
@@ -1749,11 +1749,11 @@ int handleModifyVM(HandlerArg *a)
 
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (vrdpServer, COMSETTER(AllowMultiConnection)(true));
+                        CHECK_ERROR(vrdpServer, COMSETTER(AllowMultiConnection)(true));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (vrdpServer, COMSETTER(AllowMultiConnection)(false));
+                        CHECK_ERROR(vrdpServer, COMSETTER(AllowMultiConnection)(false));
                     }
                     else
                     {
@@ -1774,11 +1774,11 @@ int handleModifyVM(HandlerArg *a)
 
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (vrdpServer, COMSETTER(ReuseSingleConnection)(true));
+                        CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(true));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (vrdpServer, COMSETTER(ReuseSingleConnection)(false));
+                        CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(false));
                     }
                     else
                     {
@@ -1799,11 +1799,11 @@ int handleModifyVM(HandlerArg *a)
 
                     if (!strcmp(ValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (vrdpServer, COMSETTER(Enabled)(true));
+                        CHECK_ERROR(vrdpServer, COMSETTER(Enabled)(true));
                     }
                     else if (!strcmp(ValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (vrdpServer, COMSETTER(Enabled)(false));
+                        CHECK_ERROR(vrdpServer, COMSETTER(Enabled)(false));
                     }
                     else
                     {
@@ -1820,13 +1820,13 @@ int handleModifyVM(HandlerArg *a)
                 if (ValueUnion.psz)
                 {
                     ComPtr<IUSBController> UsbCtl;
-                    CHECK_ERROR (machine, COMGETTER(USBController)(UsbCtl.asOutParam()));
+                    CHECK_ERROR(machine, COMGETTER(USBController)(UsbCtl.asOutParam()));
                     if (SUCCEEDED(rc))
                     {
                         if (!strcmp(ValueUnion.psz, "on") || !strcmp(ValueUnion.psz, "enable"))
-                            CHECK_ERROR (UsbCtl, COMSETTER(EnabledEhci)(true));
+                            CHECK_ERROR(UsbCtl, COMSETTER(EnabledEhci)(true));
                         else if (!strcmp(ValueUnion.psz, "off") || !strcmp(ValueUnion.psz, "disable"))
-                            CHECK_ERROR (UsbCtl, COMSETTER(EnabledEhci)(false));
+                            CHECK_ERROR(UsbCtl, COMSETTER(EnabledEhci)(false));
                         else
                             return errorArgument("Invalid --usbehci argument '%s'", ValueUnion.psz);
                     }
@@ -1839,13 +1839,13 @@ int handleModifyVM(HandlerArg *a)
                 if (ValueUnion.psz)
                 {
                     ComPtr<IUSBController> UsbCtl;
-                    CHECK_ERROR (machine, COMGETTER(USBController)(UsbCtl.asOutParam()));
+                    CHECK_ERROR(machine, COMGETTER(USBController)(UsbCtl.asOutParam()));
                     if (SUCCEEDED(rc))
                     {
                         if (!strcmp(ValueUnion.psz, "on") || !strcmp(ValueUnion.psz, "enable"))
-                            CHECK_ERROR (UsbCtl, COMSETTER(Enabled)(true));
+                            CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(true));
                         else if (!strcmp(ValueUnion.psz, "off") || !strcmp(ValueUnion.psz, "disable"))
-                            CHECK_ERROR (UsbCtl, COMSETTER(Enabled)(false));
+                            CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(false));
                         else
                             return errorArgument("Invalid --usb argument '%s'", ValueUnion.psz);
                     }
@@ -1858,9 +1858,9 @@ int handleModifyVM(HandlerArg *a)
                 if (ValueUnion.psz)
                 {
                     if (!strcmp(ValueUnion.psz, "default"))
-                        CHECK_ERROR (machine, COMSETTER(SnapshotFolder)(NULL));
+                        CHECK_ERROR(machine, COMSETTER(SnapshotFolder)(NULL));
                     else
-                        CHECK_ERROR (machine, COMSETTER(SnapshotFolder)(Bstr(ValueUnion.psz)));
+                        CHECK_ERROR(machine, COMSETTER(SnapshotFolder)(Bstr(ValueUnion.psz)));
                 }
                 break;
             }
@@ -1870,9 +1870,9 @@ int handleModifyVM(HandlerArg *a)
                 if (ValueUnion.psz)
                 {
                     if (!strcmp(ValueUnion.psz, "on"))
-                        CHECK_ERROR (machine, COMSETTER(TeleporterEnabled)(1));
+                        CHECK_ERROR(machine, COMSETTER(TeleporterEnabled)(1));
                     else if (!strcmp(ValueUnion.psz, "off"))
-                        CHECK_ERROR (machine, COMSETTER(TeleporterEnabled)(0));
+                        CHECK_ERROR(machine, COMSETTER(TeleporterEnabled)(0));
                     else
                         return errorArgument("Invalid --teleporterenabled value '%s'", ValueUnion.psz);
                 }
@@ -1911,7 +1911,7 @@ int handleModifyVM(HandlerArg *a)
 
     /* commit changes */
     if (SUCCEEDED(rc))
-        CHECK_ERROR (machine, SaveSettings());
+        CHECK_ERROR(machine, SaveSettings());
 
     /* it's important to always close sessions */
     a->session->Close();

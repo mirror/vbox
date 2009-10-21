@@ -574,46 +574,46 @@ static int handleControlVM(HandlerArg *a)
     Bstr uuid (a->argv[0]);
     if (!Guid(uuid).isEmpty())
     {
-        CHECK_ERROR (a->virtualBox, GetMachine (uuid, machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, GetMachine(uuid, machine.asOutParam()));
     }
     else
     {
-        CHECK_ERROR (a->virtualBox, FindMachine (uuid, machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(uuid, machine.asOutParam()));
         if (SUCCEEDED (rc))
-            machine->COMGETTER(Id) (uuid.asOutParam());
+            machine->COMGETTER(Id)(uuid.asOutParam());
     }
     if (FAILED (rc))
         return 1;
 
     /* open a session for the VM */
-    CHECK_ERROR_RET (a->virtualBox, OpenExistingSession (a->session, uuid), 1);
+    CHECK_ERROR_RET(a->virtualBox, OpenExistingSession(a->session, uuid), 1);
 
     do
     {
         /* get the associated console */
         ComPtr<IConsole> console;
-        CHECK_ERROR_BREAK (a->session, COMGETTER(Console)(console.asOutParam()));
+        CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
         /* ... and session machine */
         ComPtr<IMachine> sessionMachine;
-        CHECK_ERROR_BREAK (a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
+        CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
 
         /* which command? */
         if (!strcmp(a->argv[1], "pause"))
         {
-            CHECK_ERROR_BREAK (console, Pause());
+            CHECK_ERROR_BREAK(console, Pause());
         }
         else if (!strcmp(a->argv[1], "resume"))
         {
-            CHECK_ERROR_BREAK (console, Resume());
+            CHECK_ERROR_BREAK(console, Resume());
         }
         else if (!strcmp(a->argv[1], "reset"))
         {
-            CHECK_ERROR_BREAK (console, Reset());
+            CHECK_ERROR_BREAK(console, Reset());
         }
         else if (!strcmp(a->argv[1], "poweroff"))
         {
             ComPtr<IProgress> progress;
-            CHECK_ERROR_BREAK (console, PowerDown(progress.asOutParam()));
+            CHECK_ERROR_BREAK(console, PowerDown(progress.asOutParam()));
 
             showProgress(progress);
 
@@ -635,7 +635,7 @@ static int handleControlVM(HandlerArg *a)
         else if (!strcmp(a->argv[1], "savestate"))
         {
             ComPtr<IProgress> progress;
-            CHECK_ERROR_BREAK (console, SaveState(progress.asOutParam()));
+            CHECK_ERROR_BREAK(console, SaveState(progress.asOutParam()));
 
             showProgress(progress);
 
@@ -656,11 +656,11 @@ static int handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "acpipowerbutton"))
         {
-            CHECK_ERROR_BREAK (console, PowerButton());
+            CHECK_ERROR_BREAK(console, PowerButton());
         }
         else if (!strcmp(a->argv[1], "acpisleepbutton"))
         {
-            CHECK_ERROR_BREAK (console, SleepButton());
+            CHECK_ERROR_BREAK(console, SleepButton());
         }
         else if (!strcmp(a->argv[1], "injectnmi"))
         {
@@ -737,8 +737,8 @@ static int handleControlVM(HandlerArg *a)
             /* Get the number of network adapters */
             ULONG NetworkAdapterCount = 0;
             ComPtr <ISystemProperties> info;
-            CHECK_ERROR_BREAK (a->virtualBox, COMGETTER(SystemProperties) (info.asOutParam()));
-            CHECK_ERROR_BREAK (info, COMGETTER(NetworkAdapterCount) (&NetworkAdapterCount));
+            CHECK_ERROR_BREAK(a->virtualBox, COMGETTER(SystemProperties)(info.asOutParam()));
+            CHECK_ERROR_BREAK(info, COMGETTER(NetworkAdapterCount)(&NetworkAdapterCount));
 
             unsigned n = parseNum(&a->argv[1][12], NetworkAdapterCount, "NIC");
             if (!n)
@@ -754,16 +754,16 @@ static int handleControlVM(HandlerArg *a)
             }
             /* get the corresponding network adapter */
             ComPtr<INetworkAdapter> adapter;
-            CHECK_ERROR_BREAK (sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
+            CHECK_ERROR_BREAK(sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
             if (adapter)
             {
                 if (!strcmp(a->argv[2], "on"))
                 {
-                    CHECK_ERROR_BREAK (adapter, COMSETTER(CableConnected)(TRUE));
+                    CHECK_ERROR_BREAK(adapter, COMSETTER(CableConnected)(TRUE));
                 }
                 else if (!strcmp(a->argv[2], "off"))
                 {
-                    CHECK_ERROR_BREAK (adapter, COMSETTER(CableConnected)(FALSE));
+                    CHECK_ERROR_BREAK(adapter, COMSETTER(CableConnected)(FALSE));
                 }
                 else
                 {
@@ -784,8 +784,8 @@ static int handleControlVM(HandlerArg *a)
             /* Get the number of network adapters */
             ULONG NetworkAdapterCount = 0;
             ComPtr <ISystemProperties> info;
-            CHECK_ERROR_BREAK (a->virtualBox, COMGETTER(SystemProperties) (info.asOutParam()));
-            CHECK_ERROR_BREAK (info, COMGETTER(NetworkAdapterCount) (&NetworkAdapterCount));
+            CHECK_ERROR_BREAK(a->virtualBox, COMGETTER(SystemProperties)(info.asOutParam()));
+            CHECK_ERROR_BREAK(info, COMGETTER(NetworkAdapterCount)(&NetworkAdapterCount));
 
             unsigned n = parseNum(&a->argv[1][12], NetworkAdapterCount, "NIC");
             if (!n)
@@ -802,7 +802,7 @@ static int handleControlVM(HandlerArg *a)
 
             /* get the corresponding network adapter */
             ComPtr<INetworkAdapter> adapter;
-            CHECK_ERROR_BREAK (sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
+            CHECK_ERROR_BREAK(sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
             if (adapter)
             {
                 BOOL fEnabled;
@@ -811,7 +811,7 @@ static int handleControlVM(HandlerArg *a)
                 {
                     if (a->argv[2])
                     {
-                        CHECK_ERROR_RET(adapter, COMSETTER(TraceFile) (Bstr(a->argv[2])), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(TraceFile)(Bstr(a->argv[2])), 1);
                     }
                     else
                     {
@@ -831,8 +831,8 @@ static int handleControlVM(HandlerArg *a)
             /* Get the number of network adapters */
             ULONG NetworkAdapterCount = 0;
             ComPtr <ISystemProperties> info;
-            CHECK_ERROR_BREAK (a->virtualBox, COMGETTER(SystemProperties) (info.asOutParam()));
-            CHECK_ERROR_BREAK (info, COMGETTER(NetworkAdapterCount) (&NetworkAdapterCount));
+            CHECK_ERROR_BREAK(a->virtualBox, COMGETTER(SystemProperties)(info.asOutParam()));
+            CHECK_ERROR_BREAK(info, COMGETTER(NetworkAdapterCount)(&NetworkAdapterCount));
 
             unsigned n = parseNum(&a->argv[1][8], NetworkAdapterCount, "NIC");
             if (!n)
@@ -849,7 +849,7 @@ static int handleControlVM(HandlerArg *a)
 
             /* get the corresponding network adapter */
             ComPtr<INetworkAdapter> adapter;
-            CHECK_ERROR_BREAK (sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
+            CHECK_ERROR_BREAK(sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
             if (adapter)
             {
                 BOOL fEnabled;
@@ -882,8 +882,8 @@ static int handleControlVM(HandlerArg *a)
             /* Get the number of network adapters */
             ULONG NetworkAdapterCount = 0;
             ComPtr <ISystemProperties> info;
-            CHECK_ERROR_BREAK (a->virtualBox, COMGETTER(SystemProperties) (info.asOutParam()));
-            CHECK_ERROR_BREAK (info, COMGETTER(NetworkAdapterCount) (&NetworkAdapterCount));
+            CHECK_ERROR_BREAK(a->virtualBox, COMGETTER(SystemProperties)(info.asOutParam()));
+            CHECK_ERROR_BREAK(info, COMGETTER(NetworkAdapterCount)(&NetworkAdapterCount));
 
             unsigned n = parseNum(&a->argv[1][3], NetworkAdapterCount, "NIC");
             if (!n)
@@ -900,7 +900,7 @@ static int handleControlVM(HandlerArg *a)
 
             /* get the corresponding network adapter */
             ComPtr<INetworkAdapter> adapter;
-            CHECK_ERROR_BREAK (sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
+            CHECK_ERROR_BREAK(sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
             if (adapter)
             {
                 BOOL fEnabled;
@@ -909,12 +909,12 @@ static int handleControlVM(HandlerArg *a)
                 {
                     if (!strcmp(a->argv[2], "null"))
                     {
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
                         CHECK_ERROR_RET(adapter, Detach(), 1);
                     }
                     else if (!strcmp(a->argv[2], "nat"))
                     {
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
                         if (a->argc == 4)
                             CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3])), 1);
                         CHECK_ERROR_RET(adapter, AttachToNAT(), 1);
@@ -928,7 +928,7 @@ static int handleControlVM(HandlerArg *a)
                             rc = E_FAIL;
                             break;
                         }
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
                         CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3])), 1);
                         CHECK_ERROR_RET(adapter, AttachToBridgedInterface(), 1);
                     }
@@ -940,7 +940,7 @@ static int handleControlVM(HandlerArg *a)
                             rc = E_FAIL;
                             break;
                         }
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
                         CHECK_ERROR_RET(adapter, COMSETTER(InternalNetwork)(Bstr(a->argv[3])), 1);
                         CHECK_ERROR_RET(adapter, AttachToInternalNetwork(), 1);
                     }
@@ -953,7 +953,7 @@ static int handleControlVM(HandlerArg *a)
                             rc = E_FAIL;
                             break;
                         }
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
                         CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3])), 1);
                         CHECK_ERROR_RET(adapter, AttachToHostOnlyInterface(), 1);
                     }
@@ -989,11 +989,11 @@ static int handleControlVM(HandlerArg *a)
             {
                 if (!strcmp(a->argv[2], "on"))
                 {
-                    CHECK_ERROR_BREAK (vrdpServer, COMSETTER(Enabled)(TRUE));
+                    CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Enabled)(TRUE));
                 }
                 else if (!strcmp(a->argv[2], "off"))
                 {
-                    CHECK_ERROR_BREAK (vrdpServer, COMSETTER(Enabled)(FALSE));
+                    CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Enabled)(FALSE));
                 }
                 else
                 {
@@ -1028,8 +1028,8 @@ static int handleControlVM(HandlerArg *a)
             }
         }
 #endif /* VBOX_WITH_VRDP */
-        else if (   !strcmp (a->argv[1], "usbattach")
-                 || !strcmp (a->argv[1], "usbdetach"))
+        else if (   !strcmp(a->argv[1], "usbattach")
+                 || !strcmp(a->argv[1], "usbdetach"))
         {
             if (a->argc < 3)
             {
@@ -1047,30 +1047,30 @@ static int handleControlVM(HandlerArg *a)
                 if (attach)
                 {
                     ComPtr <IHost> host;
-                    CHECK_ERROR_BREAK (a->virtualBox, COMGETTER(Host) (host.asOutParam()));
+                    CHECK_ERROR_BREAK(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
                     SafeIfaceArray <IHostUSBDevice> coll;
-                    CHECK_ERROR_BREAK (host, COMGETTER(USBDevices) (ComSafeArrayAsOutParam(coll)));
+                    CHECK_ERROR_BREAK(host, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(coll)));
                     ComPtr <IHostUSBDevice> dev;
-                    CHECK_ERROR_BREAK (host, FindUSBDeviceByAddress (Bstr (a->argv [2]), dev.asOutParam()));
-                    CHECK_ERROR_BREAK (dev, COMGETTER(Id) (usbId.asOutParam()));
+                    CHECK_ERROR_BREAK(host, FindUSBDeviceByAddress(Bstr(a->argv [2]), dev.asOutParam()));
+                    CHECK_ERROR_BREAK(dev, COMGETTER(Id)(usbId.asOutParam()));
                 }
                 else
                 {
                     SafeIfaceArray <IUSBDevice> coll;
-                    CHECK_ERROR_BREAK (console, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(coll)));
+                    CHECK_ERROR_BREAK(console, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(coll)));
                     ComPtr <IUSBDevice> dev;
-                    CHECK_ERROR_BREAK (console, FindUSBDeviceByAddress (Bstr (a->argv [2]),
+                    CHECK_ERROR_BREAK(console, FindUSBDeviceByAddress(Bstr(a->argv [2]),
                                                        dev.asOutParam()));
-                    CHECK_ERROR_BREAK (dev, COMGETTER(Id) (usbId.asOutParam()));
+                    CHECK_ERROR_BREAK(dev, COMGETTER(Id)(usbId.asOutParam()));
                 }
             }
 
             if (attach)
-                CHECK_ERROR_BREAK (console, AttachUSBDevice (usbId));
+                CHECK_ERROR_BREAK(console, AttachUSBDevice(usbId));
             else
             {
                 ComPtr <IUSBDevice> dev;
-                CHECK_ERROR_BREAK (console, DetachUSBDevice (usbId, dev.asOutParam()));
+                CHECK_ERROR_BREAK(console, DetachUSBDevice(usbId, dev.asOutParam()));
             }
         }
         else if (!strcmp(a->argv[1], "setvideomodehint"))
@@ -1342,12 +1342,11 @@ static int handleControlVM(HandlerArg *a)
             errorSyntax(USAGE_CONTROLVM, "Invalid parameter '%s'", Utf8Str(a->argv[1]).raw());
             rc = E_FAIL;
         }
-    }
-    while (0);
+    } while (0);
 
     a->session->Close();
 
-    return SUCCEEDED (rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? 0 : 1;
 }
 
 static int handleDiscardState(HandlerArg *a)
@@ -1378,11 +1377,9 @@ static int handleDiscardState(HandlerArg *a)
                 ComPtr<IConsole> console;
                 CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
                 CHECK_ERROR_BREAK(console, ForgetSavedState(true));
-            }
-            while (0);
+            } while (0);
             CHECK_ERROR_BREAK(a->session, Close());
-        }
-        while (0);
+        } while (0);
     }
 
     return SUCCEEDED(rc) ? 0 : 1;
@@ -1415,12 +1412,10 @@ static int handleAdoptdState(HandlerArg *a)
             {
                 ComPtr<IConsole> console;
                 CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-                CHECK_ERROR_BREAK(console, AdoptSavedState (Bstr (a->argv[1])));
-            }
-            while (0);
+                CHECK_ERROR_BREAK(console, AdoptSavedState(Bstr(a->argv[1])));
+            } while (0);
             CHECK_ERROR_BREAK(a->session, Close());
-        }
-        while (0);
+        } while (0);
     }
 
     return SUCCEEDED(rc) ? 0 : 1;
@@ -1604,7 +1599,7 @@ static int handleSetProperty(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleSharedFolder (HandlerArg *a)
+static int handleSharedFolder(HandlerArg *a)
 {
     HRESULT rc;
 
@@ -1682,7 +1677,7 @@ static int handleSharedFolder (HandlerArg *a)
             ComPtr <IConsole> console;
 
             /* open an existing session for the VM */
-            CHECK_ERROR_RET(a->virtualBox, OpenExistingSession (a->session, uuid), 1);
+            CHECK_ERROR_RET(a->virtualBox, OpenExistingSession(a->session, uuid), 1);
             /* get the session machine */
             CHECK_ERROR_RET(a->session, COMGETTER(Machine)(machine.asOutParam()), 1);
             /* get the session console */
@@ -1696,7 +1691,7 @@ static int handleSharedFolder (HandlerArg *a)
         else
         {
             /* open a session for the VM */
-            CHECK_ERROR_RET (a->virtualBox, OpenSession(a->session, uuid), 1);
+            CHECK_ERROR_RET(a->virtualBox, OpenSession(a->session, uuid), 1);
 
             /* get the mutable session machine */
             a->session->COMGETTER(Machine)(machine.asOutParam());
@@ -1746,7 +1741,7 @@ static int handleSharedFolder (HandlerArg *a)
             ComPtr <IConsole> console;
 
             /* open an existing session for the VM */
-            CHECK_ERROR_RET(a->virtualBox, OpenExistingSession (a->session, uuid), 1);
+            CHECK_ERROR_RET(a->virtualBox, OpenExistingSession(a->session, uuid), 1);
             /* get the session machine */
             CHECK_ERROR_RET(a->session, COMGETTER(Machine)(machine.asOutParam()), 1);
             /* get the session console */
@@ -1760,7 +1755,7 @@ static int handleSharedFolder (HandlerArg *a)
         else
         {
             /* open a session for the VM */
-            CHECK_ERROR_RET (a->virtualBox, OpenSession(a->session, uuid), 1);
+            CHECK_ERROR_RET(a->virtualBox, OpenSession(a->session, uuid), 1);
 
             /* get the mutable session machine */
             a->session->COMGETTER(Machine)(machine.asOutParam());
@@ -2080,8 +2075,7 @@ int main(int argc, char *argv[])
     EventQueue::getMainEventQueue()->processEventQueue(0);
     // end "all-stuff" scope
     ////////////////////////////////////////////////////////////////////////////
-    }
-    while (0);
+    } while (0);
 
     com::Shutdown();
 #endif /* !VBOX_ONLY_DOCS */
