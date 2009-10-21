@@ -806,8 +806,8 @@ void VBoxProblemReporter::cannotSetSnapshotFolder (const CMachine &aMachine,
 bool VBoxProblemReporter::askAboutSnapshotRestoring (const QString &aSnapshotName)
 {
     return messageOkCancel (mainWindowShown(), Question,
-        tr ("<p>Are you sure you wish to restore the selected snapshot <b>%1</b>? "
-            "This will also cause you to lose your current machine state.</p>")
+        tr ("<p>Are you sure you want to restore snapshot <b>%1</b>? "
+            "This will cause you to lose your current machine state, which cannot be recovered.</p>")
             .arg (aSnapshotName),
         "confirmSnapshotRestoring" /* aAutoConfirmId */,
         tr ("Restore"), tr ("Cancel"));
