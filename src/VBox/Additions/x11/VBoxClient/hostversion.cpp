@@ -44,7 +44,7 @@ public:
     virtual int showNotify(const char *pcHeader, const char *pcBody)
     {
         int rc;
-#ifdef VBOX_WITH_DBUS
+# ifdef VBOX_WITH_DBUS
         DBusConnection *conn;
         DBusMessage* msg;
         conn = dbus_bus_get (DBUS_BUS_SESSON, NULL);
@@ -103,30 +103,36 @@ public:
         }
         if (msg != NULL)
             dbus_message_unref(msg);
-#else
+# else
         /* TODO: Implement me */
         rc = VINF_SUCCESS;
-#endif /* VBOX_WITH_DBUS */
+# endif /* VBOX_WITH_DBUS */
         return rc;
     }
 
-    /** @todo Move this part in VbglR3 and just provide a callback for the platform-specific 
+    /** @todo Move this part in VbglR3 and just provide a callback for the platform-specific
               notification stuff, since this is very similar to the VBoxTray code. */
     virtual int run()
     {
         int rc;
         LogFlowFunc(("\n"));
-#ifdef VBOX_WITH_DBUS
+# ifdef VBOX_WITH_DBUS
         rc = RTDBusLoadLib();
         if (RT_FAILURE(rc))
-        {
             LogRel(("VBoxClient: D-Bus seems not to be installed; no host version check/notification done.\n"));
-        }
-#else
+# else
         rc = VERR_NOT_IMPLEMENTED;
-#endif
-        uint32_t uGuestPropSvcClientID;
-        rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
+# endif /* VBOX_WITH_DBUS */
+
+# ifdef VBOX_WITH_GUEST_PROPS
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t uGuestPropSvcClientID;
+            rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
+            if (RT_FAILURE(rc))
+                LogFlow(("Cannot connect to guest property service! rc = %Rrc\n", rc));
+        }
+
         if (RT_SUCCESS(rc))
         {
             if (RT_SUCCESS(rc))
@@ -142,7 +148,7 @@ public:
                     {
                         char szMsg[256];
                         char szTitle[64];
-        
+
                         /** @todo add some translation macros here */
                         RTStrPrintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions update available!");
                         RTStrPrintf(szMsg, sizeof(szMsg), "Your guest is currently running the Guest Additions version %s. "
@@ -155,13 +161,14 @@ public:
 
                     /* Store host version to not notify again */
                     rc = VbglR3HostVersionLastCheckedStore(uGuestPropSvcClientID, pszHostVersion);
-    
+
                     VbglR3GuestPropReadValueFree(pszHostVersion);
                     VbglR3GuestPropReadValueFree(pszGuestVersion);
                 }
             }
             VbglR3GuestPropDisconnect(uGuestPropSvcClientID);
         }
+# endif /* VBOX_WITH_GUEST_PROPS */
         LogFlowFunc(("returning %Rrc\n", rc));
         return rc;
     }

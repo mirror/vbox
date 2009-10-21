@@ -27,5 +27,6 @@ for i in $HOME/.vboxclient-*.pid; do
 done
 
 /usr/bin/VBoxClient --clipboard
+/usr/bin/VBoxClient --checkhostversion
 /usr/bin/VBoxClient --display
 /usr/bin/VBoxClient --seamless
