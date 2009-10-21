@@ -1210,7 +1210,7 @@ StorageSlot VBoxGlobal::toStorageSlot (const QString &aSlot) const
     QRegExp regExp;
     for (int i = 0; i < mSlotTemplates.size(); ++ i)
     {
-        regExp = QRegExp (mSlotTemplates [i].arg ("(\\d+)"));
+        regExp = QRegExp (i >= 0 && i <= 3 ? mSlotTemplates [i] : mSlotTemplates [i].arg ("(\\d+)"));
         if (regExp.indexIn (aSlot) != -1)
         {
             index = i;
