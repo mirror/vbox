@@ -685,7 +685,7 @@
     <const name="DeletingSnapshot"      value="13">
       <desc>
         A machine snapshot is being deleted; this can take a long time since this
-        may require merging differencing hard disk images.
+        may require merging differencing media.
       </desc>
     </const>
     <const name="SettingUp"             value="14">
@@ -1942,7 +1942,7 @@
         <note>
           The specified machine must not be in the Saved state, have an open
           (or a spawning) direct session associated with it, have snapshots or
-          have hard disks attached.
+          have any medium attached.
         </note>
 
         <note>
@@ -1965,7 +1965,7 @@
           Machine is in Saved state.
         </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Machine has snapshot or open session or hard disk attached.
+          Machine has snapshot or open session or medium attached.
         </result>
 
       </desc>
@@ -3828,7 +3828,7 @@
           snapshot's progress. This has the following sub-operations:
           <ul>
             <li>setting up (weight 1);</li>
-            <li>one for each hard disk attachment that needs a differencing image (weight 1 each);</li>
+            <li>one for each medium attachment that needs a differencing image (weight 1 each);</li>
             <li>another one to copy the VM state (if offline with saved state, weight is VM memory size in MB);</li>
             <li>another one to save the VM state (if online, weight is VM memory size in MB);</li>
             <li>finishing up (weight 1)</li>
@@ -4646,22 +4646,23 @@
         For both SCSI and SATA, the @a device parameter is unused and must
         be @c 0.
 
-        For fixed media such as hard disks, the given medium cannot be NULL. It may
-        be NULL for removable media such as DVDs and floppies.
+        For fixed media such as hard disks, the given medium identifier cannot
+        be a zero UUID. It may be a zero UUID for removable media such as DVDs
+        and floppies.
 
         After calling this returns successfully, a new instance of
         <link to="IMediumAttachment"/> will appear in the machine's list of medium
         attachments (<link to="IMachine::mediumAttachments"/>).
 
-        The specified device slot must not have another disk attached to it, or
-        this method will fail.
+        The specified device slot must not have a device attached to it,
+        or this method will fail.
 
         See <link to="IMedium"/> and <link to="IMediumAttachment"/> for more
         information about attaching media.
 
         <note>
-          You cannot attach a hard disk to a running machine. Also, you cannot
-          attach a hard disk to a newly created machine until this machine's
+          You cannot attach a device to a running machine. Also, you cannot
+          attach a device to a newly created machine until this machine's
           settings are saved to disk using <link to="#saveSettings"/>.
         </note>
         <note>
@@ -4700,7 +4701,7 @@
         <desc>Device type of the attached device.</desc>
       </param>
       <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the medium to mount. NULL UUID means do not mount any
+        <desc>UUID of the medium to mount. Zero UUID means do not mount any
         medium.</desc>
       </param>
     </method>
@@ -4716,7 +4717,7 @@
         for more detailed information about attaching media.
 
         <note>
-          You cannot detach the hard disk from a running machine.
+          You cannot detach a device from a running machine.
         </note>
         <note>
           Detaching differencing media implicitly created by <link
@@ -4735,7 +4736,7 @@
           No medium attached to given slot/bus.
         </result>
         <result name="VBOX_E_NOT_SUPPORTED">
-          Hard disk format does not support storage deletion.
+          Medium format does not support storage deletion.
         </result>
 
       </desc>
@@ -6242,7 +6243,7 @@
       <desc>
         Starts the virtual machine execution using the current machine
         state (that is, its current execution state, current settings and
-        current hard disks).
+        current storage devices).
 
         If the machine is powered off or aborted, the execution will
         start from the beginning (as if the real hardware were just
@@ -6454,7 +6455,7 @@
         <note>
           It's a caller's responsibility to make sure the given saved state
           file is compatible with the settings of this virtual machine that
-          represent its virtual hardware (memory size, hard disk configuration
+          represent its virtual hardware (memory size, storage disk configuration
           etc.). If there is a mismatch, the behavior of the virtual machine
           is undefined.
         </note>
@@ -6675,16 +6676,14 @@
         Starts discarding the specified snapshot asynchronously.
         See <link to="ISnapshot" /> for an introduction to snapshots.
 
-        The execution state
-        and settings of the associated machine stored in the snapshot
-        will be deleted. The contents of all differencing media of
-        this snapshot will be merged with the contents of their
-        dependent child media to keep the disks valid (in other
-        words, all changes represented by media being discarded
-        will be propagated to their child medium). After that, this
-        snapshot's differencing medium will be deleted. The parent
-        of this snapshot will become a new parent for all its child
-        snapshots.
+        The execution state and settings of the associated machine stored in
+        the snapshot will be deleted. The contents of all differencing media of
+        this snapshot will be merged with the contents of their dependent child
+        media to keep the medium chain valid (in other words, all changes
+        represented by media being discarded will be propagated to their child
+        medium). After that, this snapshot's differencing medium will be
+        deleted. The parent of this snapshot will become a new parent for all
+        its child snapshots.
 
         If the discarded snapshot is the current one, its parent
         snapshot will become a new current snapshot. The current machine
@@ -6715,7 +6714,7 @@
         (of any type) having differencing child media that belong
         to other machines. Such snapshots can be only discarded after
         you discard all snapshots of other machines containing "foreign"
-        child disks, or detach these "foreign" child disks from machines
+        child media, or detach these "foreign" child media from machines
         they are attached to.
 
         One particular example of the snapshot storing normal media
@@ -6744,7 +6743,7 @@
         </note>
         <note>
           Merging medium contents can be very time and disk space
-          consuming, if these disks are big in size and have many
+          consuming, if these media are big in size and have many
           children. However, if the snapshot being discarded is the last
           (head) snapshot on the branch, the operation will be rather
           quick.
@@ -8171,7 +8170,7 @@
               of the machine's media gets merged with its parent image.
 
               Neither the current machine state nor other snapshots are affected
-              by this operation, except that parent disk images will be modified
+              by this operation, except that parent media will be modified
               to contain the disk data associated with the snapshot being deleted.
           </li>
       </ul>
@@ -8411,14 +8410,13 @@
       Each medium attachment specifies a storage controller as well as a port
       and device number. Fixed media (hard disks) will always also specify
       an instance of IMedium in <link to="#medium" />, referring to the hard disk
-      image or images that represent the virtual hard disk. For removeable media,
-      the IMedia instance is optional; it can be NULL if no media is mounted (see
-      <link to="IMachine::mountMedium" />).
+      medium. For removeable media, the IMedia instance is optional; it can be
+      @c null if no media is mounted (see <link to="IMachine::mountMedium" />).
     </desc>
 
     <attribute name="medium" type="IMedium" readonly="yes">
       <desc>Medium object associated with this attachment; it
-        can be NULL for removable devices.</desc>
+        can be @c null for removable devices.</desc>
     </attribute>
 
     <attribute name="controller" type="IStorageController" readonly="yes">
@@ -8553,38 +8551,37 @@
       fast as possible and let the end-user application decide if it needs to
       check media accessibility right away or not.
 
-      <h3>Hard disk types</h3>
+      <h3>Medium types</h3>
 
-      There are three types of hard disk images (see <link to="MediumType" />):
+      There are three types of medium behavior (see <link to="MediumType" />):
       "normal", "immutable" and "writethrough", represented by the
-      <link to="#type"/> attribute. The type of the hard disk defines how the
-      hard disk is attached to a virtual machine and what happens when a
+      <link to="#type"/> attribute. The type of the medium defines how the
+      medium is attached to a virtual machine and what happens when a
       <link to="ISnapshot">snapshot</link> of the virtual machine with the
-      attached hard disk is taken.
+      attached medium is taken. At the moment DVD and floppy media are always
+      of type "writethrough".
 
-      All hard disks can be also divided in two groups: <i>base</i> hard
-      disks and <i>differencing</i> hard disks. A base hard disk contains all
-      sectors of the hard disk data in its own storage and therefore can be
-      used independently. On the contrary, a differencing hard disk is a
-      "delta" to some other disk and contains only those sectors which differ
-      from that other disk, which is then called a <i>parent</i>. The differencing
-      hard disk is said to be <i>linked to</i> that parent.
-      The parent may be itself a differencing image, thus forming a chain of
-      linked hard disks. The last element in that chain
-      must always be a base medium. Note that several differencing
-      hard disks may be linked to the same parent hard disk.
+      All media can be also divided in two groups: <i>base</i> media and
+      <i>differencing</i> media. A base medium contains all sectors of the
+      medium data in its own storage and therefore can be used independently.
+      In contrast, a differencing mediun is a "delta" to some other medium and
+      contains only those sectors which differ from that other medium, which is
+      then called a <i>parent</i>. The differencing medium is said to be
+      <i>linked to</i> that parent. The parent may be itself a differencing
+      medium, thus forming a chain of linked media. The last element in that
+      chain must always be a base medium. Note that several differencing
+      media may be linked to the same parent medium.
 
-      Differencing hard disks can be distinguished from base hard disks by
-      querying the <link to="#parent"/> attribute: base hard disks do not have
-      parents they would depend on, so the value of this attribute is always
-      @c null for them. Using this attribute, it is possible to walk up
-      the hard disk tree (from the child hard disk to its parent). It is also
-      possible to walk down the tree using the <link to="#children"/>
-      attribute.
+      Differencing media can be distinguished from base media by querying the
+      <link to="#parent"/> attribute: base media do not have parents they would
+      depend on, so the value of this attribute is always @c null for them.
+      Using this attribute, it is possible to walk up the medium tree (from the
+      child medium to its parent). It is also possible to walk down the tree
+      using the <link to="#children"/> attribute.
 
-      Note that the type of all differencing hard disks is
-      <link to="MediumType_Normal" />; all other values are
-      meaningless for them. Base hard disks may be of any type.
+      Note that the type of all differencing media is
+      <link to="MediumType_Normal" />; all other values are meaningless for
+      them. Base media may be of any type.
 
       <h3>Creating hard disks</h3>
 
@@ -8915,10 +8912,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Storage format of this medium.
 
-        The value of this attribute is a string that specifies a backend used to
-        store hard disk data. The storage format is defined when you create a
-        new hard disk or automatically detected when you open an existing hard
-        disk medium, and cannot be changed later.
+        The value of this attribute is a string that specifies a backend used
+        to store medium data. The storage format is defined when you create a
+        new medium or automatically detected when you open an existing medium,
+        and cannot be changed later.
 
         The list of all storage formats supported by this VirtualBox
         installation can be obtained using
@@ -8928,42 +8925,43 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="type" type="MediumType">
       <desc>
-        Type (role) of this hard disk.
+        Type (role) of this medium.
 
         The following constraints apply when changing the value of this
         attribute:
         <ul>
-          <li>If a hard disk is attached to a virtual machine (either in the
+          <li>If a medium is attached to a virtual machine (either in the
               current state or in one of the snapshots), its type cannot be
               changed.
           </li>
-          <li>As long as the hard disk has children, its type cannot be set
+          <li>As long as the medium has children, its type cannot be set
               to <link to="MediumType_Writethrough"/>.
           </li>
-          <li>The type of all differencing hard disks is
+          <li>The type of all differencing media is
               <link to="MediumType_Normal"/> and cannot be changed.
           </li>
         </ul>
 
-        The type of a newly created or opened hard disk is set to
-        <link to="MediumType_Normal"/>.
+        The type of a newly created or opened medium is set to
+        <link to="MediumType_Normal"/>, except for DVD and floppy media,
+        which have a type of <link to="MediumType_Writethrough"/>.
       </desc>
     </attribute>
 
     <attribute name="parent" type="IMedium" readonly="yes">
       <desc>
-        Parent of this hard disk (a hard disk this hard disk is directly based
+        Parent of this medium (the medium this medium is directly based
         on).
 
-        Only differencing hard disks have parents. For base (non-differencing)
-        hard disks, @c null is returned.
+        Only differencing media have parents. For base (non-differencing)
+        media, @c null is returned.
       </desc>
     </attribute>
 
     <attribute name="children" type="IMedium" safearray="yes" readonly="yes">
       <desc>
-        Children of this hard disk (all differencing hard disks directly based
-        on this hard disk). A @c null array is returned if this hard disk
+        Children of this medium (all differencing media directly based
+        on this medium). A @c null array is returned if this medium
         does not have any children.
       </desc>
     </attribute>
@@ -8972,39 +8970,39 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Base medium of this medium.
 
-        If this is a differencing medium, its base hard disk is the medium
-        the given hard disk branch starts from. For all other types of hard
-        disks, this property returns the hard disk object itself (i.e. the same
-        object this property is read on).
+        If this is a differencing medium, its base medium is the medium
+        the given medium branch starts from. For all other types of media, this
+        property returns the medium object itself (i.e. the same object this
+        property is read on).
       </desc>
     </attribute>
 
     <attribute name="readOnly" type="boolean" readonly="yes">
       <desc>
-        Returns @c true if this hard disk is read-only and @c false otherwise.
+        Returns @c true if this medium is read-only and @c false otherwise.
 
-        A hard disk is considered to be read-only when its contents cannot be
+        A medium is considered to be read-only when its contents cannot be
         modified without breaking the integrity of other parties that depend on
-        this hard disk such as its child hard disks or snapshots of virtual
-        machines where this hard disk is attached to these machines. If there
-        are no children and no such snapshots then there is no dependency and
-        the hard disk is not read-only.
+        this medium such as its child media or snapshots of virtual machines
+        where this medium is attached to these machines. If there are no
+        children and no such snapshots then there is no dependency and the
+        medium is not read-only.
 
         The value of this attribute can be used to determine the kind of the
-        attachment that will take place when attaching this hard disk to a
-        virtual machine. If the value is @c false then the hard disk will
-        be attached directly. If the value is @c true then the hard disk
-        will be attached indirectly by creating a new differencing child hard
-        disk for that. See the interface description for more information.
+        attachment that will take place when attaching this medium to a
+        virtual machine. If the value is @c false then the medium will
+        be attached directly. If the value is @c true then the medium
+        will be attached indirectly by creating a new differencing child
+        medium for that. See the interface description for more information.
 
-        Note that all <link to="MediumType_Immutable">Immutable</link> hard
-        disks are always read-only while all
-        <link to="MediumType_Writethrough">Writethrough</link> hard disks are
+        Note that all <link to="MediumType_Immutable">Immutable</link> media
+        are always read-only while all
+        <link to="MediumType_Writethrough">Writethrough</link> media are
         always not.
 
         <note>
           The read-only condition represented by this attribute is related to
-          the hard disk type and usage, not to the current
+          the medium type and usage, not to the current
           <link to="IMedium::state">medium state</link> and not to the read-only
           state of the storage unit.
         </note>
@@ -9013,40 +9011,40 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="logicalSize" type="unsigned long long" readonly="yes">
       <desc>
-        Logical size of this hard disk (in megabytes), as reported to the
-        guest OS running inside the virtual machine this disk is
-        attached to. The logical size is defined when the hard disk is created
+        Logical size of this medium (in megabytes), as reported to the
+        guest OS running inside the virtual machine this medium is
+        attached to. The logical size is defined when the medium is created
         and cannot be changed later.
 
         <note>
-          Reading this property on a differencing hard disk will return the size
+          Reading this property on a differencing medium will return the size
           of its <link to="#base"/> medium.
         </note>
         <note>
-          For hard disks whose state is <link to="#state"/> is <link
+          For media whose state is <link to="#state"/> is <link
           to="MediumState_Inaccessible"/>, the value of this property is the
-          last known logical size. For <link to="MediumaState_NotCreated"/> hard
-          disks, the returned value is zero.
+          last known logical size. For <link to="MediumaState_NotCreated"/>
+          media, the returned value is zero.
         </note>
       </desc>
     </attribute>
 
     <attribute name="autoReset" type="boolean">
       <desc>
-        Whether this differencing hard disk will be automatically reset each
+        Whether this differencing medium will be automatically reset each
         time a virtual machine it is attached to is powered up.
 
         See <link to="#reset()"/> for more information about resetting
-        differencing hard disks.
+        differencing media.
 
         <note>
-          Reading this property on a base (non-differencing) hard disk will
+          Reading this property on a base (non-differencing) medium will
           always @c false. Changing the value of this property in this
           case is not supported.
         </note>
 
         <result name="VBOX_E_NOT_SUPPORTED">
-          This is not a differencing hard disk (when changing the attribute
+          This is not a differencing medium (when changing the attribute
           value).
         </result>
       </desc>
@@ -9291,9 +9289,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="getProperty">
       <desc>
-        Returns the value of the custom hard disk property with the given name.
+        Returns the value of the custom medium property with the given name.
 
-        The list of all properties supported by the given hard disk format can
+        The list of all properties supported by the given medium format can
         be obtained with <link to="IMediumFormat::describeProperties"/>.
 
         Note that if this method returns an empty string in @a value, the
@@ -9314,9 +9312,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="setProperty">
       <desc>
-        Sets the value of the custom hard disk property with the given name.
+        Sets the value of the custom medium property with the given name.
 
-        The list of all properties supported by the given hard disk format can
+        The list of all properties supported by the given medium format can
         be obtained with <link to="IMediumFormat::describeProperties"/>.
 
         Note that setting the property value to @c null or an empty string is
@@ -9347,7 +9345,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         the value of this argument is ignored and the method always returns all
         existing properties.
 
-        The list of all properties supported by the given hard disk format can
+        The list of all properties supported by the given medium format can
         be obtained with <link to="IMediumFormat::describeProperties"/>.
 
         The method returns two arrays, the array of property names corresponding
@@ -9392,7 +9390,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         need to set several properties at once since it will result into less
         IPC calls.
 
-        The list of all properties supported by the given hard disk format can
+        The list of all properties supported by the given medium format can
         be obtained with <link to="IMediumFormat::describeProperties"/>.
 
         Note that setting the property value to @c null or an empty string is
@@ -9417,14 +9415,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         created for this object, if any, must first be deleted using
         <link to="#deleteStorage"/>, otherwise the operation will fail.
 
-        Before the operation starts, the hard disk is placed in
+        Before the operation starts, the medium is placed in
         <link to="MediumState_Creating"/> state. If the create operation
         fails, the medium will be placed back in <link to="MediumState_NotCreated"/>
         state.
 
         After the returned progress object reports that the operation has
         successfully completed, the medium state will be set to <link
-        to="MediumState_Created"/>, the hard disk will be remembered by this
+        to="MediumState_Created"/>, the medium will be remembered by this
         VirtualBox installation and may be attached to virtual machines.
 
         <result name="VBOX_E_NOT_SUPPORTED">
@@ -9433,7 +9431,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
       </desc>
       <param name="logicalSize" type="unsigned long long" dir="in">
-        <desc>Maximum logical size of the hard disk in megabytes.</desc>
+        <desc>Maximum logical size of the medium in megabytes.</desc>
       </param>
       <param name="variant" type="MediumVariant" dir="in">
         <desc>Exact image variant which should be created.</desc>
@@ -9445,16 +9443,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="deleteStorage">
       <desc>
-        Starts deleting the storage unit of this hard disk.
+        Starts deleting the storage unit of this medium.
 
-        The hard disk must not be attached to any known virtual machine and must
-        not have any known child hard disks, otherwise the operation will fail.
+        The medium must not be attached to any known virtual machine and must
+        not have any known child media, otherwise the operation will fail.
         It will also fail if there is no storage unit to delete or if deletion
-        is already in progress, or if the hard disk is being in use (locked for
+        is already in progress, or if the medium is being in use (locked for
         read or for write) or inaccessible. Therefore, the only valid state for
         this operation to succeed is <link to="MediumState_Created"/>.
 
-        Before the operation starts, the hard disk is placed to
+        Before the operation starts, the medium is placed in
         <link to="MediumState_Deleting"/> state and gets removed from the list
         of remembered hard disks (media registry). If the delete operation
         fails, the medium will be remembered again and placed back to
@@ -9468,7 +9466,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <see>#close()</see>
 
         <result name="VBOX_E_OBJECT_IN_USE">
-          Hard disk is attached to a virtual machine.
+          Medium is attached to a virtual machine.
         </result>
         <result name="VBOX_E_NOT_SUPPORTED">
           Storage deletion is not allowed because neither of storage creation
@@ -9491,31 +9489,31 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="createDiffStorage">
       <desc>
-        Starts creating an empty differencing storage unit based on this hard
-        disk in the format and at the location defined by the @a target
+        Starts creating an empty differencing storage unit based on this
+        medium in the format and at the location defined by the @a target
         argument.
 
-        The target hard disk must be in <link to="MediumState_NotCreated"/>
+        The target medium must be in <link to="MediumState_NotCreated"/>
         state (i.e. must not have an existing storage unit). Upon successful
-        completion, this operation will set the type of the target hard disk to
+        completion, this operation will set the type of the target medium to
         <link to="MediumType_Normal"/> and create a storage unit necessary to
-        represent the differencing hard disk data in the given format (according
+        represent the differencing medium data in the given format (according
         to the storage format of the target object).
 
         After the returned progress object reports that the operation is
-        successfully complete, the target hard disk gets remembered by this
+        successfully complete, the target medium gets remembered by this
         VirtualBox installation and may be attached to virtual machines.
 
         <note>
-          The hard disk will be set to <link to="MediumState_LockedRead"/>
+          The medium will be set to <link to="MediumState_LockedRead"/>
           state for the duration of this operation.
         </note>
         <result name="VBOX_E_OBJECT_IN_USE">
-          Hard disk not in @c NotCreated state.
+          Medium not in @c NotCreated state.
         </result>
       </desc>
       <param name="target" type="IMedium" dir="in">
-        <desc>Target hard disk.</desc>
+        <desc>Target medium.</desc>
       </param>
       <param name="variant" type="MediumVariant" dir="in">
         <desc>Exact image variant which should be created.</desc>
@@ -9527,78 +9525,78 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="mergeTo">
       <desc>
-        Starts merging the contents of this hard disk and all intermediate
-        differencing hard disks in the chain to the given target hard disk.
+        Starts merging the contents of this medium and all intermediate
+        differencing media in the chain to the given target medium.
 
-        The target hard disk must be either a descendant of this hard disk or
+        The target medium must be either a descendant of this medium or
         its ancestor (otherwise this method will immediately return a failure).
         It follows that there are two logical directions of the merge operation:
         from ancestor to descendant (<i>forward merge</i>) and from descendant to
-        ancestor (<i>backward merge</i>). Let us consider the following hard disk
+        ancestor (<i>backward merge</i>). Let us consider the following medium
         chain:
 
         <pre>Base &lt;- Diff_1 &lt;- Diff_2</pre>
 
-        Here, calling this method on the <tt>Base</tt> hard disk object with
+        Here, calling this method on the <tt>Base</tt> medium object with
         <tt>Diff_2</tt> as an argument will be a forward merge; calling it on
         <tt>Diff_2</tt> with <tt>Base</tt> as an argument will be a backward
-        merge. Note that in both cases the contents of the resulting hard disk
-        will be the same, the only difference is the hard disk object that takes
+        merge. Note that in both cases the contents of the resulting medium
+        will be the same, the only difference is the medium object that takes
         the result of the merge operation. In case of the forward merge in the
         above example, the result will be written to <tt>Diff_2</tt>; in case of
         the backward merge, the result will be written to <tt>Base</tt>. In
         other words, the result of the operation is always stored in the target
-        hard disk.
+        medium.
 
-        Upon successful operation completion, the storage units of all hard
-        disks in the chain between this (source) hard disk and the target hard
-        disk, including the source hard disk itself, will be automatically
-        deleted and the relevant hard disk objects (including this hard disk)
-        will become uninitialized. This means that any attempt to call any of
+        Upon successful operation completion, the storage units of all media in
+        the chain between this (source) medium and the target medium, including
+        the source medium itself, will be automatically deleted and the
+        relevant medium objects (including this medium) will become
+        uninitialized. This means that any attempt to call any of
         their methods or attributes will fail with the
         <tt>"Object not ready" (E_ACCESSDENIED)</tt> error. Applied to the above
         example, the forward merge of <tt>Base</tt> to <tt>Diff_2</tt> will
-        delete and uninitialize both <tt>Base</tt> and <tt>Diff_1</tt> hard
-        disks. Note that <tt>Diff_2</tt> in this case will become a base hard
-        disk itself since it will no longer be based on any other hard disk.
+        delete and uninitialize both <tt>Base</tt> and <tt>Diff_1</tt> media.
+        Note that <tt>Diff_2</tt> in this case will become a base medium
+        itself since it will no longer be based on any other medium.
 
         Considering the above, all of the following conditions must be met in
         order for the merge operation to succeed:
         <ul>
           <li>
-            Neither this (source) hard disk nor any intermediate
-            differencing hard disk in the chain between it and the target
-            hard disk is attached to any virtual machine.
+            Neither this (source) medium nor any intermediate
+            differencing medium in the chain between it and the target
+            medium is attached to any virtual machine.
           </li>
           <li>
-            Neither the source hard disk nor the target hard disk is an
-            <link to="MediumType_Immutable"/> hard disk.
+            Neither the source medium nor the target medium is an
+            <link to="MediumType_Immutable"/> medium.
           </li>
           <li>
-            The part of the hard disk tree from the source hard disk to the
-            target hard disk is a linear chain, i.e. all hard disks in this
-            chain have exactly one child which is the next hard disk in this
-            chain. The only exception from this rule is the target hard disk in
+            The part of the medium tree from the source medium to the
+            target medium is a linear chain, i.e. all medium in this
+            chain have exactly one child which is the next medium in this
+            chain. The only exception from this rule is the target medium in
             the forward merge operation; it is allowed to have any number of
-            child hard disks because the merge operation will hot change its
+            child media because the merge operation will not change its
             logical contents (as it is seen by the guest OS or by children).
           </li>
           <li>
-            None of the involved hard disks are in
+            None of the involved media are in
             <link to="MediumState_LockedRead"/> or
             <link to="MediumState_LockedWrite"/> state.
           </li>
         </ul>
 
         <note>
-          This (source) hard disk and all intermediates will be placed to <link
-          to="MediumState_Deleting"/> state and the target hard disk will be
+          This (source) medium and all intermediates will be placed to <link
+          to="MediumState_Deleting"/> state and the target medium will be
           placed to <link to="MediumState_LockedWrite"/> state and for the
           duration of this operation.
         </note>
       </desc>
       <param name="targetId" type="uuid" mod="string" dir="in">
-        <desc>UUID of the target ancestor or descendant hard disk.</desc>
+        <desc>UUID of the target ancestor or descendant medium.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -9609,32 +9607,32 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="cloneTo">
       <desc>
-        Starts creating a clone of this hard disk in the format and at the
+        Starts creating a clone of this medium in the format and at the
         location defined by the @a target argument.
 
-        The target hard disk must be either in <link to="MediumState_NotCreated"/>
+        The target medium must be either in <link to="MediumState_NotCreated"/>
         state (i.e. must not have an existing storage unit) or in
         <link to="MediumState_Created"/> state (i.e. created and not locked, and
         big enough to hold the data or else the copy will be partial). Upon
-        successful completion, the cloned hard disk will contain exactly the
-        same sector data as the hard disk being cloned, except that in the
+        successful completion, the cloned medium will contain exactly the
+        same sector data as the medium being cloned, except that in the
         first case a new UUID for the clone will be randomly generated, and in
         the second case the UUID will remain unchanged.
 
-        The @a parent argument defines which hard disk will be the parent
+        The @a parent argument defines which medium will be the parent
         of the clone. Passing a @c null reference indicates that the clone will
         be a base image, i.e. completely independent. It is possible to specify
-        an arbitrary hard disk for this parameter, including the parent of the
-        hard disk which is being cloned. Even cloning to a child of the source
-        hard disk is possible. Note that when cloning to an existing image, the
+        an arbitrary medium for this parameter, including the parent of the
+        medium which is being cloned. Even cloning to a child of the source
+        medium is possible. Note that when cloning to an existing image, the
         @a parent irgument is ignored.
 
         After the returned progress object reports that the operation is
-        successfully complete, the target hard disk gets remembered by this
+        successfully complete, the target medium gets remembered by this
         VirtualBox installation and may be attached to virtual machines.
 
         <note>
-          This hard disk will be placed to <link to="MediumState_LockedRead"/>
+          This medium will be placed to <link to="MediumState_LockedRead"/>
           state for the duration of this operation.
         </note>
         <result name="E_NOTIMPL">
@@ -9642,13 +9640,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
       </desc>
       <param name="target" type="IMedium" dir="in">
-        <desc>Target hard disk.</desc>
+        <desc>Target medium.</desc>
       </param>
       <param name="variant" type="MediumVariant" dir="in">
         <desc>Exact image variant which should be created.</desc>
       </param>
       <param name="parent" type="IMedium" dir="in">
-        <desc>Parent of the cloned hard disk.</desc>
+        <desc>Parent of the cloned medium.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -9659,13 +9657,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="compact">
       <desc>
-        Starts compacting of this hard disk. This means that the disk is
+        Starts compacting of this medium. This means that the medium is
         transformed into a possibly more compact storage representation.
         This potentially creates temporary images, which can require a
         substantial amount of additional disk space.
 
-        This hard disk will be placed to <link to="MediumState_LockedWrite"/>
-        state and all its parent hard disks (if any) will be placed to
+        This medium will be placed to <link to="MediumState_LockedWrite"/>
+        state and all its parent media (if any) will be placed to
         <link to="MediumState_LockedRead"/> state for the duration of this
         operation.
 
@@ -9674,7 +9672,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         returned via the @a progress parameter.
 
         <result name="VBOX_E_NOT_SUPPORTED">
-          Hard disk format does not support compacting (but potentially
+          Medium format does not support compacting (but potentially
           needs it).
         </result>
       </desc>
@@ -9685,20 +9683,20 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="reset">
       <desc>
-        Starts erasing the contents of this differencing hard disk.
+        Starts erasing the contents of this differencing medium.
 
-        This operation will reset the differencing hard disk to its initial
+        This operation will reset the differencing medium to its initial
         state when it does not contain any sector data and any read operation is
-        redirected to its parent hard disk.
+        redirected to its parent medium.
 
-        This hard disk will be placed to <link to="MediumState_LockedWrite"/>
+        This medium will be placed to <link to="MediumState_LockedWrite"/>
         for the duration of this operation.
 
         <result name="VBOX_E_NOT_SUPPORTED">
-          This is not a differencing hard disk.
+          This is not a differencing medium.
         </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Hard disk is not in <link to="MediumState_Created"/> or
+          Medium is not in <link to="MediumState_Created"/> or
           <link to="MediumState_Inaccessible"/> state.
         </result>
       </desc>
@@ -9740,7 +9738,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     uuid="70fcf810-99e8-4edc-aee4-7f51d489e657"
   >
     <desc>
-       Hard disk format capability flags.
+       Medium format capability flags.
     </desc>
 
     <const name="Uuid" value="0x01">
@@ -12615,9 +12613,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   >
     <desc>
         Represents a storage controller that is attached to a virtual machine
-        (<link to="IMachine" />). Just as disks (hard disks, DVDs, FDs) are
-        attached to storage controllers in a real computer, virtual media
-        (represented by <link to="IMedium" />) are attached to virtual
+        (<link to="IMachine" />). Just as drives (hard disks, DVDs, FDs) are
+        attached to storage controllers in a real computer, virtual drives
+        (represented by <link to="IMediumAttachment" />) are attached to virtual
         storage controllers, represented by this interface.
 
         As opposed to physical hardware, VirtualBox has a very generic concept
