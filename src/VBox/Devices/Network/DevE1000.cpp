@@ -800,7 +800,11 @@ struct E1kTcpHeader
 AssertCompileSize(struct E1kTcpHeader, 20);
 
 
-#define E1K_SAVEDSTATE_VERSION 1
+/** The current Saved state version. */
+#define E1K_SAVEDSTATE_VERSION          1 /* 2 - FIXME */
+/** Saved state version for VirtualBox 3.0 and earlier.
+ * This did not include the configuration part nor the E1kEEPROM.  */
+#define E1K_SAVEDSTATE_VERSION_VBOX_30  1
 
 /**
  * Device state structure. Holds the current state of device.
@@ -4401,13 +4405,40 @@ static DECLCALLBACK(void *) e1kQueryInterface(struct PDMIBASE *pInterface, PDMIN
 }
 
 /**
+ * Saves the configuration.
+ *
+ * @param   pState      The E1K state.
+ * @param   pSSM        The handle to the saved state.
+ */
+static void e1kSaveConfig(E1KSTATE *pState, PSSMHANDLE pSSM)
+{
+    SSMR3PutMem(pSSM, &pState->macAddress, sizeof(pState->macAddress));
+    SSMR3PutU32(pSSM, pState->eChip);
+}
+
+/**
+ * Live save - save basic configuration.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pSSM        The handle to the saved state.
+ * @param   uPass
+ */
+static DECLCALLBACK(int) e1kLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    e1kSaveConfig(pState, pSSM);
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
+
+/**
  * Prepares for state saving.
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to save the state to.
+ * @param   pSSM        The handle to the saved state.
  */
-static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
 
@@ -4447,30 +4478,33 @@ static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to save the state to.
+ * @param   pSSM        The handle to the saved state.
  */
-static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
 
+#if 0 /** @todo FIXME: enable when bumping the version. */
+    e1kSaveConfig(pState, pSSM);
+#endif
     e1kDumpState(pState);
-    SSMR3PutMem(pSSMHandle, pState->auRegs, sizeof(pState->auRegs));
-    SSMR3PutBool(pSSMHandle, pState->fIntRaised);
-    Phy::saveState(pSSMHandle, &pState->phy);
-    SSMR3PutU32(pSSMHandle, pState->uSelectedReg);
-    SSMR3PutMem(pSSMHandle, pState->auMTA, sizeof(pState->auMTA));
-    SSMR3PutMem(pSSMHandle, &pState->aRecAddr, sizeof(pState->aRecAddr));
-    SSMR3PutMem(pSSMHandle, pState->auVFTA, sizeof(pState->auVFTA));
-    SSMR3PutU64(pSSMHandle, pState->u64AckedAt);
-    SSMR3PutU16(pSSMHandle, pState->u16RxBSize);
-    //SSMR3PutBool(pSSMHandle, pState->fDelayInts);
-    //SSMR3PutBool(pSSMHandle, pState->fIntMaskUsed);
-    SSMR3PutU16(pSSMHandle, pState->u16TxPktLen);
-    SSMR3PutMem(pSSMHandle, pState->aTxPacket, pState->u16TxPktLen);
-    SSMR3PutBool(pSSMHandle, pState->fIPcsum);
-    SSMR3PutBool(pSSMHandle, pState->fTCPcsum);
-    SSMR3PutMem(pSSMHandle, &pState->contextTSE, sizeof(pState->contextTSE));
-    SSMR3PutMem(pSSMHandle, &pState->contextNormal, sizeof(pState->contextNormal));
+    SSMR3PutMem(pSSM, pState->auRegs, sizeof(pState->auRegs));
+    SSMR3PutBool(pSSM, pState->fIntRaised);
+    Phy::saveState(pSSM, &pState->phy);
+    SSMR3PutU32(pSSM, pState->uSelectedReg);
+    SSMR3PutMem(pSSM, pState->auMTA, sizeof(pState->auMTA));
+    SSMR3PutMem(pSSM, &pState->aRecAddr, sizeof(pState->aRecAddr));
+    SSMR3PutMem(pSSM, pState->auVFTA, sizeof(pState->auVFTA));
+    SSMR3PutU64(pSSM, pState->u64AckedAt);
+    SSMR3PutU16(pSSM, pState->u16RxBSize);
+    //SSMR3PutBool(pSSM, pState->fDelayInts);
+    //SSMR3PutBool(pSSM, pState->fIntMaskUsed);
+    SSMR3PutU16(pSSM, pState->u16TxPktLen);
+    SSMR3PutMem(pSSM, pState->aTxPacket, pState->u16TxPktLen);
+    SSMR3PutBool(pSSM, pState->fIPcsum);
+    SSMR3PutBool(pSSM, pState->fTCPcsum);
+    SSMR3PutMem(pSSM, &pState->contextTSE, sizeof(pState->contextTSE));
+    SSMR3PutMem(pSSM, &pState->contextNormal, sizeof(pState->contextNormal));
     E1kLog(("%s State has been saved\n", INSTANCE(pState)));
     return VINF_SUCCESS;
 }
@@ -4481,9 +4515,9 @@ static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to save the state to.
+ * @param   pSSM        The handle to the saved state.
  */
-static DECLCALLBACK(int) e1kSaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) e1kSaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
 
@@ -4506,9 +4540,9 @@ static DECLCALLBACK(int) e1kSaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to the saved state.
+ * @param   pSSM        The handle to the saved state.
  */
-static DECLCALLBACK(int) e1kLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) e1kLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
 
@@ -4524,37 +4558,65 @@ static DECLCALLBACK(int) e1kLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to the saved state.
+ * @param   pSSM        The handle to the saved state.
  * @param   uVersion    The data unit version number.
- * @param   uPass           The data pass.
+ * @param   uPass       The data pass.
  */
-static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    if (uVersion != E1K_SAVEDSTATE_VERSION)
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+    E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    int       rc;
 
-    E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
-    SSMR3GetMem(pSSMHandle, &pState->auRegs, sizeof(pState->auRegs));
-    SSMR3GetBool(pSSMHandle, &pState->fIntRaised);
-    /** @todo: PHY could be made a separate device with its own versioning */
-    Phy::loadState(pSSMHandle, &pState->phy);
-    SSMR3GetU32(pSSMHandle, &pState->uSelectedReg);
-    SSMR3GetMem(pSSMHandle, &pState->auMTA, sizeof(pState->auMTA));
-    SSMR3GetMem(pSSMHandle, &pState->aRecAddr, sizeof(pState->aRecAddr));
-    SSMR3GetMem(pSSMHandle, &pState->auVFTA, sizeof(pState->auVFTA));
-    SSMR3GetU64(pSSMHandle, &pState->u64AckedAt);
-    SSMR3GetU16(pSSMHandle, &pState->u16RxBSize);
-    //SSMR3GetBool(pSSMHandle, pState->fDelayInts);
-    //SSMR3GetBool(pSSMHandle, pState->fIntMaskUsed);
-    SSMR3GetU16(pSSMHandle, &pState->u16TxPktLen);
-    SSMR3GetMem(pSSMHandle, &pState->aTxPacket, pState->u16TxPktLen);
-    SSMR3GetBool(pSSMHandle, &pState->fIPcsum);
-    SSMR3GetBool(pSSMHandle, &pState->fTCPcsum);
-    SSMR3GetMem(pSSMHandle, &pState->contextTSE, sizeof(pState->contextTSE));
-    SSMR3GetMem(pSSMHandle, &pState->contextNormal, sizeof(pState->contextNormal));
-    E1kLog(("%s State has been restored\n", INSTANCE(pState)));
-    e1kDumpState(pState);
+    if (    uVersion != E1K_SAVEDSTATE_VERSION
+        &&  uVersion != E1K_SAVEDSTATE_VERSION_VBOX_30)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    if (   uVersion > E1K_SAVEDSTATE_VERSION_VBOX_30
+        || uPass    != SSM_PASS_FINAL)
+    {
+        /* config checks */
+        RTMAC macAddress;
+        rc = SSMR3GetMem(pSSM, &macAddress, sizeof(macAddress));
+        AssertRCReturn(rc, rc);
+        if (   memcmp(&macAddress, &pState->macAddress, sizeof(macAddress))
+            && (uPass == 0 || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)) )
+            LogRel(("%s: The mac address differs: config=%RTmac saved=%RTmac\n", &pState->macAddress, &macAddress));
+
+        E1KCHIP eChip;
+        rc = SSMR3GetU32(pSSM, &eChip);
+        AssertRCReturn(rc, rc);
+        if (eChip != pState->eChip)
+        {
+            LogRel(("%s: The mac address differs: config=%u saved=%u\n", pState->eChip, eChip));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
+    }
+
+    if (uPass == SSM_PASS_FINAL)
+    {
+        /* the state */
+        SSMR3GetMem(pSSM, &pState->auRegs, sizeof(pState->auRegs));
+        SSMR3GetBool(pSSM, &pState->fIntRaised);
+        /** @todo: PHY could be made a separate device with its own versioning */
+        Phy::loadState(pSSM, &pState->phy);
+        SSMR3GetU32(pSSM, &pState->uSelectedReg);
+        SSMR3GetMem(pSSM, &pState->auMTA, sizeof(pState->auMTA));
+        SSMR3GetMem(pSSM, &pState->aRecAddr, sizeof(pState->aRecAddr));
+        SSMR3GetMem(pSSM, &pState->auVFTA, sizeof(pState->auVFTA));
+        SSMR3GetU64(pSSM, &pState->u64AckedAt);
+        SSMR3GetU16(pSSM, &pState->u16RxBSize);
+        //SSMR3GetBool(pSSM, pState->fDelayInts);
+        //SSMR3GetBool(pSSM, pState->fIntMaskUsed);
+        SSMR3GetU16(pSSM, &pState->u16TxPktLen);
+        SSMR3GetMem(pSSM, &pState->aTxPacket, pState->u16TxPktLen);
+        SSMR3GetBool(pSSM, &pState->fIPcsum);
+        SSMR3GetBool(pSSM, &pState->fTCPcsum);
+        SSMR3GetMem(pSSM, &pState->contextTSE, sizeof(pState->contextTSE));
+        rc = SSMR3GetMem(pSSM, &pState->contextNormal, sizeof(pState->contextNormal));
+        AssertRCReturn(rc, rc);
+        E1kLog(("%s State has been restored\n", INSTANCE(pState)));
+        e1kDumpState(pState);
+    }
     return VINF_SUCCESS;
 }
 
@@ -4563,9 +4625,9 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to the saved state.
+ * @param   pSSM        The handle to the saved state.
  */
-static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
 
@@ -4725,8 +4787,8 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      * Validate configuration.
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "MAC\0" "CableConnected\0" "AdapterType\0" "LineSpeed\0"))
-                    return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                            N_("Invalid configuraton for E1000 device"));
+        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                                N_("Invalid configuration for E1000 device"));
 
     /** @todo: LineSpeed unused! */
 
@@ -4813,7 +4875,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     Phy::setLinkStatus(&pState->phy, pState->fCableConnected);
 
     rc = PDMDevHlpSSMRegisterEx(pDevIns, E1K_SAVEDSTATE_VERSION, sizeof(E1KSTATE), NULL,
-                                NULL, NULL, NULL,
+                                NULL,        e1kLiveExec, NULL,
                                 e1kSavePrep, e1kSaveExec, NULL,
                                 e1kLoadPrep, e1kLoadExec, e1kLoadDone);
     if (RT_FAILURE(rc))
