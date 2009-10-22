@@ -266,7 +266,6 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIArrowSplitter.h \
 	include/QIMessageBox.h \
 	include/QILabel.h \
-	include/QILabel_p.h \
 	include/QILabelSeparator.h \
 	include/QIAbstractWizard.h \
 	include/QIListView.h \

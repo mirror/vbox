@@ -112,7 +112,7 @@
     </widget>
    </item>
    <item row="2" column="2" >
-    <widget class="QLabel" name="mTxName" >
+    <widget class="QILabel" name="mTxName" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Minimum" hsizetype="Expanding" >
        <horstretch>0</horstretch>
@@ -134,6 +134,11 @@
    <class>QITreeWidget</class>
    <extends>QTreeWidget</extends>
    <header>QITreeWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QILabel</class>
+   <extends>QLabel</extends>
+   <header>QILabel.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,79 +27,67 @@
 #ifndef __QILabel_h__
 #define __QILabel_h__
 
-/* Qt includes */
-#include <QFrame>
+/* Global includes */
+#include <QLabel>
 
-class QILabelPrivate;
-
-class QILabel: public QWidget
+class QILabel: public QLabel
 {
     Q_OBJECT;
 
 public:
 
-    QILabel (QWidget *aParent = NULL, Qt::WindowFlags aFlags = 0);
-    QILabel (const QString &aText, QWidget *aParent = NULL, Qt::WindowFlags aFlags = 0);
+    QILabel (QWidget *aParent = 0, Qt::WindowFlags aFlags = 0);
+    QILabel (const QString &aText, QWidget *aParent = 0, Qt::WindowFlags aFlags = 0);
 
-    /* QLabel extensions */
-    bool fullSizeSelection () const;
-    void setFullSizeSelection (bool bOn);
+    /* Focusing extensions */
+    bool fullSizeSelection() const;
+    void setFullSizeSelection (bool aEnabled);
 
-    void updateSizeHint();
+    /* Size-Hint extensions */
+    void useSizeHintForWidth (int aWidthHint) const;
+    QSize sizeHint() const;
+    QSize minimumSizeHint() const;
 
     /* Default QLabel methods */
-    Qt::Alignment alignment() const;
-    QWidget * buddy() const;
-    int frameWidth() const;
-    bool hasScaledContents() const;
-    int indent() const;
-    int margin() const;
-    QMovie *movie() const;
-    bool openExternalLinks() const;
-    const QPicture *picture() const;
-    const QPixmap *pixmap() const;
-    void setAlignment (Qt::Alignment aAlignment);
-    void setBuddy (QWidget *aBuddy);
-    void setFrameShadow (QFrame::Shadow aShadow);
-    void setFrameShape (QFrame::Shape aShape);
-    void setIndent (int aIndent);
-    void setMargin (int aMargin);
-    void setOpenExternalLinks (bool aOpen);
-    void setScaledContents (bool aOn);
-    void setTextFormat (Qt::TextFormat aFormat);
-    void setTextInteractionFlags (Qt::TextInteractionFlags aFlags);
-    void setWordWrap (bool aOn);
-    void setMinimumWidth (int aMinWidth);
     QString text() const;
-    Qt::TextFormat textFormat() const;
-    Qt::TextInteractionFlags textInteractionFlags() const;
-    bool wordWrap() const;
-
-    /* Default QWidget methods */
-    void setSizePolicy (QSizePolicy aPolicy);
-    void setMinimumSize (const QSize &aSize);
 
 public slots:
 
     void clear();
-    void setMovie (QMovie *aMovie);
-    void setNum (int aNum);
-    void setNum (double aNum);
-    void setPicture (const QPicture &aPicture);
-    void setPixmap (const QPixmap &aPixmap);
     void setText (const QString &aText);
-
-signals:
-
-      void linkActivated (const QString &);
-      void linkHovered (const QString &);
+    void copy();
 
 protected:
 
-    virtual void init();
+    void resizeEvent (QResizeEvent *aEvent);
+    void mousePressEvent (QMouseEvent *aEvent);
+    void mouseReleaseEvent (QMouseEvent *aEvent);
+    void mouseMoveEvent (QMouseEvent *aEvent);
+    void contextMenuEvent (QContextMenuEvent *aEvent);
+    void focusInEvent (QFocusEvent *aEvent);
+    void focusOutEvent (QFocusEvent *aEvent);
+    void paintEvent (QPaintEvent *aEvent);
 
-    /* Protected member vars */
-    QILabelPrivate *mLabel;
+private:
+
+    void init();
+
+    void updateSizeHint() const;
+    void setFullText (const QString &aText);
+    void updateText();
+    QString removeHtmlTags (QString aText) const;
+    Qt::TextElideMode toTextElideMode (const QString& aStr) const;
+    QString compressText (const QString &aText) const;
+
+    QString mText;
+    bool mFullSizeSelection;
+    static const QRegExp mCopyRegExp;
+    static QRegExp mElideRegExp;
+    mutable bool mIsHintValid;
+    mutable int mWidthHint;
+    mutable QSize mOwnSizeHint;
+    bool mStartDragging;
+    QAction *mCopyAction;
 };
 
 #endif // __QILabel_h__

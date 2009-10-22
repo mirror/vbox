@@ -175,14 +175,17 @@ void QIAbstractWizard::initializeWizardFtr()
     QList<QILabel*> textLabels =
         findChildren<QILabel*> (QRegExp ("mText.+"));
     for (int i = 0; i < textLabels.count(); ++ i)
-        textLabels [i]->updateSizeHint();
+        textLabels [i]->useSizeHintForWidth (400);
 
     /* Update sizeHint() of summary viewer of inherited dialog.
      * Please note what summary viewer should have objectName()
      * matching mTeSummary. */
     QITextEdit *teSummary = findChild<QITextEdit*> ("mTeSummary");
     if (teSummary)
+    {
+        teSummary->setMinimumWidth (400);
         teSummary->updateSizeHint();
+    }
 }
 
 QPushButton* QIAbstractWizard::nextButton (QWidget *aOfPage)
