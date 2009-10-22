@@ -150,7 +150,7 @@ RTR3DECL(RTHCINTPTR) RTFileToNative(RTFILE File)
 }
 
 
-RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen)
+RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
 {
     /*
      * Validate input.

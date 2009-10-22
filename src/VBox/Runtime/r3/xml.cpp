@@ -180,25 +180,26 @@ File::File(Mode aMode, const char *aFileName)
 {
     m->strFileName = aFileName;
 
-    unsigned flags = 0;
+    uint32_t flags = 0;
     switch (aMode)
     {
+        /** @todo change to RTFILE_O_DENY_WRITE where appropriate. */
         case Mode_Read:
-            flags = RTFILE_O_READ;
+            flags = RTFILE_O_READ      | RTFILE_O_OPEN           | RTFILE_O_DENY_NONE;
             break;
         case Mode_WriteCreate:      // fail if file exists
-            flags = RTFILE_O_WRITE | RTFILE_O_CREATE;
+            flags = RTFILE_O_WRITE     | RTFILE_O_CREATE         | RTFILE_O_DENY_NONE;
             break;
         case Mode_Overwrite:        // overwrite if file exists
-            flags = RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE;
+            flags = RTFILE_O_WRITE     | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE;
             break;
         case Mode_ReadWrite:
-            flags = RTFILE_O_READ | RTFILE_O_WRITE;
+            flags = RTFILE_O_READWRITE | RTFILE_O_OPEN           | RTFILE_O_DENY_NONE;;
     }
 
-    int vrc = RTFileOpen (&m->handle, aFileName, flags);
-    if (RT_FAILURE (vrc))
-        throw EIPRTFailure (vrc);
+    int vrc = RTFileOpen(&m->handle, aFileName, flags);
+    if (RT_FAILURE(vrc))
+        throw EIPRTFailure(vrc);
 
     m->opened = true;
 }

@@ -607,9 +607,9 @@ static void vbsfFreeFullPath (char *pszFullPath)
  * @param  fMode      file attibutes
  * @retval pfOpen     iprt create flags
  */
-static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, SHFLHANDLE handleInitial, unsigned *pfOpen)
+static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, SHFLHANDLE handleInitial, uint32_t *pfOpen)
 {
-    unsigned fOpen = 0;
+    uint32_t fOpen = 0;
     int rc = VINF_SUCCESS;
 
     if (   (fMode & RTFS_DOS_MASK) != 0
@@ -841,7 +841,7 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
     SHFLHANDLE      handle = SHFL_HANDLE_NIL;
     SHFLFILEHANDLE *pHandle = 0;
     /* Open or create a file. */
-    unsigned fOpen = 0;
+    uint32_t fOpen = 0;
     bool fNoError = false;
     static int cErrors;
 

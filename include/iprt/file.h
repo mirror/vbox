@@ -86,8 +86,8 @@ RTDECL(bool) RTFileExists(const char *pszPath);
 #define RTFILE_O_APPEND                 0x00000004
                                      /* 0x00000008 is unused atm. */
 
-/** Sharing mode: deny none (the default mode). */
-#define RTFILE_O_DENY_NONE              0x00000000
+/** Sharing mode: deny none. */
+#define RTFILE_O_DENY_NONE              0x00000080
 /** Sharing mode: deny read. */
 #define RTFILE_O_DENY_READ              0x00000010
 /** Sharing mode: deny write. */
@@ -102,10 +102,10 @@ RTDECL(bool) RTFileExists(const char *pszPath);
  */
 #define RTFILE_O_DENY_NOT_DELETE        0x00000040
 /** Sharing mode mask. */
-#define RTFILE_O_DENY_MASK              0x00000070
+#define RTFILE_O_DENY_MASK              0x000000f0
 
 /** Action: Open an existing file (the default action). */
-#define RTFILE_O_OPEN                   0x00000000
+#define RTFILE_O_OPEN                   0x00000700
 /** Action: Create a new file or open an existing one. */
 #define RTFILE_O_OPEN_CREATE            0x00000100
 /** Action: Create a new a file. */
@@ -113,10 +113,8 @@ RTDECL(bool) RTFileExists(const char *pszPath);
 /** Action: Create a new file or replace an existing one. */
 #define RTFILE_O_CREATE_REPLACE         0x00000300
 /** Action mask. */
-#define RTFILE_O_ACTION_MASK            0x00000300
+#define RTFILE_O_ACTION_MASK            0x00000700
 
-                                      /*0x00000400
-                                    and 0x00000800 are unused atm. */
 /** Turns off indexing of files on Windows hosts, *CREATE* only.
  * @remarks Window only. */
 #define RTFILE_O_NOT_CONTENT_INDEXED    0x00000800
@@ -200,7 +198,7 @@ RTDECL(bool) RTFileExists(const char *pszPath);
 /** Mask of all valid flags.
  * @remark  This doesn't validate the access mode properly.
  */
-#define RTFILE_O_VALID_MASK             0x1ffFFB77
+#define RTFILE_O_VALID_MASK             0x1ffFFFF7
 
 /** @} */
 
@@ -223,8 +221,9 @@ RTR3DECL(int)  RTFileSetForceFlags(unsigned fOpenForAccess, unsigned fSet, unsig
  * @param   pFile           Where to store the handle to the opened file.
  * @param   pszFilename     Path to the file which is to be opened. (UTF-8)
  * @param   fOpen           Open flags, i.e a combination of the RTFILE_O_* defines.
+ *                          The ACCESS, ACTION and DENY flags are mandatory!
  */
-RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen);
+RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen);
 
 /**
  * Close a file opened by RTFileOpen().

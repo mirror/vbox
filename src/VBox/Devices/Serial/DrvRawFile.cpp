@@ -149,7 +149,7 @@ static DECLCALLBACK(int) drvRawFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
     /*
      * Open the raw file.
      */
-    rc = RTFileOpen(&pThis->OutputFile, pThis->pszLocation, RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+    rc = RTFileOpen(&pThis->OutputFile, pThis->pszLocation, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
     {
         LogRel(("RawFile%d: CreateFile failed rc=%Rrc\n", pDrvIns->iInstance));
@@ -179,7 +179,7 @@ static DECLCALLBACK(void) drvRawFileDestruct(PPDMDRVINS pDrvIns)
         MMR3HeapFree(pThis->pszLocation);
 
     if (pThis->OutputFile != NIL_RTFILE)
-    {    
+    {
         RTFileClose(pThis->OutputFile);
         pThis->OutputFile = NIL_RTFILE;
     }
@@ -199,7 +199,7 @@ static DECLCALLBACK(void) drvRawFilePowerOff(PPDMDRVINS pDrvIns)
     LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
 
     if (pThis->OutputFile != NIL_RTFILE)
-    {    
+    {
         RTFileClose(pThis->OutputFile);
         pThis->OutputFile = NIL_RTFILE;
     }

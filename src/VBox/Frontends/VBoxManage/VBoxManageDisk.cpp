@@ -824,7 +824,7 @@ int handleConvertFromRaw(int argc, char *argv[])
     if (fReadFromStdIn)
         File = 0;
     else
-        rc = RTFileOpen(&File, srcfilename, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+        rc = RTFileOpen(&File, srcfilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
     {
         RTPrintf("File=\"%s\" open error: %Rrf\n", srcfilename, rc);

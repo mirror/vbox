@@ -110,12 +110,12 @@ RTR3DECL(int)  RTFileSetForceFlags(unsigned fOpenForAccess, unsigned fSet, unsig
  *                      Updated on successful return.
  * @internal
  */
-int rtFileRecalcAndValidateFlags(unsigned *pfOpen)
+int rtFileRecalcAndValidateFlags(uint32_t *pfOpen)
 {
     /*
      * Recalc.
      */
-    unsigned fOpen = *pfOpen;
+    uint32_t fOpen = *pfOpen;
     switch (fOpen & RTFILE_O_ACCESS_MASK)
     {
         case RTFILE_O_READ:
@@ -131,28 +131,56 @@ int rtFileRecalcAndValidateFlags(unsigned *pfOpen)
             fOpen &= ~g_fOpenReadWriteMask;
             break;
         default:
-            AssertMsgFailed(("RTFileOpen received an invalid RW value, fOpen=%#x\n", fOpen));
+            AssertMsgFailed(("Invalid RW value, fOpen=%#x\n", fOpen));
             return VERR_INVALID_PARAMETER;
     }
 
     /*
      * Validate                                                                                                                                       .
      */
-    if (    !(fOpen & RTFILE_O_ACCESS_MASK)
+    AssertMsgReturn(fOpen & RTFILE_O_ACCESS_MASK, ("Missing RTFILE_O_READ/WRITE: fOpen=%#x\n", fOpen), VERR_INVALID_PARAMETER);
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-        ||  (fOpen & (~RTFILE_O_VALID_MASK | RTFILE_O_NON_BLOCK))
+    AssertMsgReturn(!(fOpen & (~RTFILE_O_VALID_MASK | RTFILE_O_NON_BLOCK)), ("%#x\n", fOpen), VERR_INVALID_PARAMETER);
 #else
-        ||  (fOpen & ~RTFILE_O_VALID_MASK)
+    AssertMsgReturn(!(fOpen & ~RTFILE_O_VALID_MASK), ("%#x\n", fOpen), VERR_INVALID_PARAMETER);
 #endif
-        ||  (fOpen & (RTFILE_O_TRUNCATE | RTFILE_O_WRITE)) == RTFILE_O_TRUNCATE
-        ||  (   fOpen & RTFILE_O_NOT_CONTENT_INDEXED
-             && !(   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
-                  || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE
-                  || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE))
-       )
+    AssertMsgReturn((fOpen & (RTFILE_O_TRUNCATE | RTFILE_O_WRITE)) != RTFILE_O_TRUNCATE, ("%#x\n", fOpen), VERR_INVALID_PARAMETER);
+
+    switch (fOpen & RTFILE_O_ACTION_MASK)
     {
-        AssertMsgFailed(("Invalid parameters! fOpen=%#x\n", fOpen));
-        return VERR_INVALID_PARAMETER;
+        case 0: /* temporarily */
+            AssertMsgFailed(("Missing RTFILE_O_OPEN/CREATE*! (continuable assertion)\n"));
+            fOpen |= RTFILE_O_OPEN;
+            break;
+        case RTFILE_O_OPEN:
+            AssertMsgReturn(!(RTFILE_O_NOT_CONTENT_INDEXED & fOpen), ("%#x\n", fOpen), VERR_INVALID_PARAMETER);
+        case RTFILE_O_OPEN_CREATE:
+        case RTFILE_O_CREATE:
+        case RTFILE_O_CREATE_REPLACE:
+            break;
+        default:
+            AssertMsgFailed(("Invalid action value: fOpen=%#x\n", fOpen));
+            return VERR_INVALID_PARAMETER;
+    }
+
+    switch (fOpen & RTFILE_O_DENY_MASK)
+    {
+        case 0: /* temporarily */
+            AssertMsgFailed(("Missing RTFILE_O_DENY_*! (continuable assertion)\n"));
+            fOpen |= RTFILE_O_DENY_NONE;
+            break;
+        case RTFILE_O_DENY_NONE:
+        case RTFILE_O_DENY_READ:
+        case RTFILE_O_DENY_WRITE:
+        case RTFILE_O_DENY_WRITE | RTFILE_O_DENY_READ:
+        case RTFILE_O_DENY_NOT_DELETE:
+        case RTFILE_O_DENY_NOT_DELETE | RTFILE_O_DENY_READ:
+        case RTFILE_O_DENY_NOT_DELETE | RTFILE_O_DENY_WRITE:
+        case RTFILE_O_DENY_NOT_DELETE | RTFILE_O_DENY_WRITE | RTFILE_O_DENY_READ:
+            break;
+        default:
+            AssertMsgFailed(("Invalid deny value: fOpen=%#x\n", fOpen));
+            return VERR_INVALID_PARAMETER;
     }
 
     /* done */
@@ -287,12 +315,14 @@ RTDECL(int) RTFileCopyEx(const char *pszSrc, const char *pszDst, uint32_t fFlags
      */
     RTFILE FileSrc;
     int rc = RTFileOpen(&FileSrc, pszSrc,
-                        RTFILE_O_READ | (fFlags & RTFILECOPY_FLAGS_NO_SRC_DENY_WRITE ? 0 : RTFILE_O_DENY_WRITE) | RTFILE_O_OPEN);
+                        RTFILE_O_READ | RTFILE_O_OPEN
+                        | (fFlags & RTFILECOPY_FLAGS_NO_SRC_DENY_WRITE ? RTFILE_O_DENY_NONE : RTFILE_O_DENY_WRITE));
     if (RT_SUCCESS(rc))
     {
         RTFILE FileDst;
         rc = RTFileOpen(&FileDst, pszDst,
-                        RTFILE_O_WRITE | (fFlags & RTFILECOPY_FLAGS_NO_DST_DENY_WRITE ? 0 : RTFILE_O_DENY_WRITE) | RTFILE_O_CREATE);
+                        RTFILE_O_WRITE | RTFILE_O_CREATE
+                        | (fFlags & RTFILECOPY_FLAGS_NO_DST_DENY_WRITE ? RTFILE_O_DENY_NONE : RTFILE_O_DENY_WRITE));
         if (RT_SUCCESS(rc))
         {
             /*

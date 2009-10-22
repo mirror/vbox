@@ -374,32 +374,32 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     if (etc)
     {
         RTStrmPrintf(buff, sizeof(buff), "%s/RESOLV2", etc);
-        rc = RTFileOpen(&f, buff, RTFILE_O_READ);
+        rc = RTFileOpen(&f, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     }
     if (RT_FAILURE(rc))
     {
         RTStrmPrintf(buff, sizeof(buff), "%s/RESOLV2", _PATH_ETC);
-        rc = RTFileOpen(&f, buff, RTFILE_O_READ);
+        rc = RTFileOpen(&f, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     }
     if (RT_FAILURE(rc))
     {
         RTStrmPrintf(buff, sizeof(buff), "%s/resolv.conf", _PATH_ETC);
-        rc = RTFileOpen(&f, buff, RTFILE_O_READ);
+        rc = RTFileOpen(&f, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     }
 #else
 # ifndef DEBUG_vvl
-    rc = RTFileOpen(&f, "/etc/resolv.conf", RTFILE_O_READ);
+    rc = RTFileOpen(&f, "/etc/resolv.conf", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
 # else
     char *home = getenv("HOME");
     RTStrPrintf(buff, sizeof(buff), "%s/resolv.conf", home);
-    rc = RTFileOpen(&f, buff, RTFILE_O_READ);
+    rc = RTFileOpen(&f, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
         Log(("NAT: DNS we're using %s\n", buff));
     }
     else
     {
-        rc = RTFileOpen(&f, "/etc/resolv.conf", RTFILE_O_READ);
+        rc = RTFileOpen(&f, "/etc/resolv.conf", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
         Log(("NAT: DNS we're using %s\n", buff));
     }
 # endif
@@ -770,7 +770,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
     do_slowtimo = 0;
     if (!link_up)
         goto done;
-    
+
     /*
      * *_slowtimo needs calling if there are IP fragments
      * in the fragment queue, or there are TCP connections active
@@ -803,7 +803,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
 #endif
         if (pData->fmbuf_water_line == 1)
         {
-            if (mbuf_alloced < pData->mbuf_water_line_limit/2) 
+            if (mbuf_alloced < pData->mbuf_water_line_limit/2)
             {
                 pData->fmbuf_water_warn_sent = 0;
                 pData->fmbuf_water_line = 0;
@@ -886,7 +886,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
 
         if (pData->fmbuf_water_line == 1)
         {
-            if (mbuf_alloced < pData->mbuf_water_line_limit/2) 
+            if (mbuf_alloced < pData->mbuf_water_line_limit/2)
             {
                 pData->fmbuf_water_line = 0;
                 pData->fmbuf_water_warn_sent = 0;
@@ -1026,7 +1026,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
     /* { */
         if (pData->fmbuf_water_line == 1)
         {
-            if (mbuf_alloced < pData->mbuf_water_line_limit/2) 
+            if (mbuf_alloced < pData->mbuf_water_line_limit/2)
             {
                 pData->fmbuf_water_line = 0;
                 pData->fmbuf_water_warn_sent = 0;
@@ -1323,7 +1323,7 @@ tcp_input_close:
      /* { */
         if (pData->fmbuf_water_line == 1)
         {
-            if (mbuf_alloced < pData->mbuf_water_line_limit/2) 
+            if (mbuf_alloced < pData->mbuf_water_line_limit/2)
             {
                 pData->fmbuf_water_line = 0;
                 pData->fmbuf_water_warn_sent = 0;
@@ -1548,7 +1548,7 @@ void slirp_input(PNATState pData, void *pvArg)
         m_free(pData, m);
         return;
     }
-    eh = mtod(m, struct ethhdr *); 
+    eh = mtod(m, struct ethhdr *);
     proto = ntohs(eh->h_proto);
 #else
     Log2(("NAT: slirp_input %d\n", pkt_len));
@@ -1620,11 +1620,11 @@ void slirp_input(PNATState pData, void *pvArg)
             m->m_pkthdr.header = mtod(m, void *);
 #endif
 #if 1
-            if (   pData->fmbuf_water_line 
+            if (   pData->fmbuf_water_line
                 && pData->fmbuf_water_warn_sent == 0
                 && (curtime - pData->tsmbuf_water_warn_sent) > 500)
             {
-                icmp_error(pData, m, ICMP_SOURCEQUENCH, 0, 0, "Out of resources!!!"); 
+                icmp_error(pData, m, ICMP_SOURCEQUENCH, 0, 0, "Out of resources!!!");
                 pData->fmbuf_water_warn_sent = 1;
                 pData->tsmbuf_water_warn_sent = curtime;
             }

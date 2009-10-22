@@ -960,7 +960,7 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
     int rc = VINF_SUCCESS;
     RTFILE FileDevice;
 
-    rc = RTFileOpen(&FileDevice, pThis->pszDeviceOpen, RTFILE_O_READWRITE);
+    rc = RTFileOpen(&FileDevice, pThis->pszDeviceOpen, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -982,7 +982,7 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
         {
             RTFILE PassthroughDevice;
 
-            rc = RTFileOpen(&PassthroughDevice, pszPassthroughDevice, RTFILE_O_READWRITE);
+            rc = RTFileOpen(&PassthroughDevice, pszPassthroughDevice, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
 
             RTStrFree(pszPassthroughDevice);
 
@@ -1045,7 +1045,8 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
  */
 static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileBlockDevice, PRTFILE pFileRawDevice, bool fReadOnly)
 {
-    unsigned fFlags = (fReadOnly ? RTFILE_O_READ : RTFILE_O_READWRITE) | RTFILE_O_NON_BLOCK;
+    unsigned fFlags = (fReadOnly ? RTFILE_O_READ : RTFILE_O_READWRITE)
+                    | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_NON_BLOCK;
     int rc = RTFileOpen(pFileBlockDevice, pThis->pszDeviceOpen, fFlags);
     if (RT_SUCCESS(rc))
     {

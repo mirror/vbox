@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 
         /* Create the destination as the async completion API can't do this. */
         RTFILE FileTmp;
-        rc = RTFileOpen(&FileTmp, argv[2], RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE);
+        rc = RTFileOpen(&FileTmp, argv[2], RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_NONE);
         if (RT_FAILURE(rc))
         {
             RTPrintf(TESTCASE ": Error while creating the destination!! rc=%d\n", rc);

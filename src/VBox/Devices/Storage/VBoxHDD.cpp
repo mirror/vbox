@@ -737,20 +737,20 @@ static int vdAsyncIOOpen(void *pvUser, const char *pszLocation, unsigned uOpenFl
 
     pStorage->pfnCompleted = pfnCompleted;
 
-    unsigned uFlags = 0;
+    uint32_t fOpen = 0;
 
     if (uOpenFlags & VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY)
-        uFlags |= RTFILE_O_READ | RTFILE_O_DENY_NONE;
+        fOpen |= RTFILE_O_READ      | RTFILE_O_DENY_NONE;
     else
-        uFlags |= RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE;
+        fOpen |= RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE;
 
     if (uOpenFlags & VD_INTERFACEASYNCIO_OPEN_FLAGS_CREATE)
-        uFlags |= RTFILE_O_CREATE;
+        fOpen |= RTFILE_O_CREATE;
     else
-        uFlags |= RTFILE_O_OPEN;
+        fOpen |= RTFILE_O_OPEN;
 
     /* Open the file. */
-    int rc = RTFileOpen(&pStorage->File, pszLocation, uFlags);
+    int rc = RTFileOpen(&pStorage->File, pszLocation, fOpen);
     if (RT_SUCCESS(rc))
     {
         *ppStorage = pStorage;

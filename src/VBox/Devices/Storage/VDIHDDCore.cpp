@@ -88,15 +88,15 @@ static int vdiFileOpen(PVDIIMAGEDESC pImage, bool fReadonly, bool fCreate)
     AssertMsg(!(fReadonly && fCreate), ("Image can't be opened readonly whilebeing created\n"));
 
 #ifndef VBOX_WITH_NEW_IO_CODE
-    unsigned uFileFlags = fReadonly ? RTFILE_O_READ      | RTFILE_O_DENY_NONE
-                                    : RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE;
+    uint32_t fOpen = fReadonly ? RTFILE_O_READ      | RTFILE_O_DENY_NONE
+                               : RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE;
 
     if (fCreate)
-        uFileFlags |= RTFILE_O_CREATE;
+        fOpen |= RTFILE_O_CREATE;
     else
-        uFileFlags |= RTFILE_O_OPEN;
+        fOpen |= RTFILE_O_OPEN;
 
-    rc = RTFileOpen(&pImage->File, pImage->pszFilename, uFileFlags);
+    rc = RTFileOpen(&pImage->File, pImage->pszFilename, fOpen);
 #else
 
     unsigned uOpenFlags = fReadonly ? VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY : 0;
