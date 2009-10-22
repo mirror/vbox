@@ -70,92 +70,92 @@ RTDECL(bool) RTFileExists(const char *pszPath);
 /** @name Open flags
  * @{ */
 /** Open the file with read access. */
-#define RTFILE_O_READ                   0x00000001
+#define RTFILE_O_READ                   UINT32_C(0x00000001)
 /** Open the file with write access. */
-#define RTFILE_O_WRITE                  0x00000002
+#define RTFILE_O_WRITE                  UINT32_C(0x00000002)
 /** Open the file with read & write access. */
-#define RTFILE_O_READWRITE              0x00000003
+#define RTFILE_O_READWRITE              UINT32_C(0x00000003)
 /** The file access mask.
  * @remarks The value 0 is invalid. */
-#define RTFILE_O_ACCESS_MASK            0x00000003
+#define RTFILE_O_ACCESS_MASK            UINT32_C(0x00000003)
 
 /** Open file in APPEND mode, so all writes to the file handle will
  * append data at the end of the file.
  * @remarks It is ignored if write access is not requested, that is
  *          RTFILE_O_WRITE is not set. */
-#define RTFILE_O_APPEND                 0x00000004
-                                     /* 0x00000008 is unused atm. */
+#define RTFILE_O_APPEND                 UINT32_C(0x00000004)
+                                     /* UINT32_C(0x00000008) is unused atm. */
 
 /** Sharing mode: deny none. */
-#define RTFILE_O_DENY_NONE              0x00000080
+#define RTFILE_O_DENY_NONE              UINT32_C(0x00000080)
 /** Sharing mode: deny read. */
-#define RTFILE_O_DENY_READ              0x00000010
+#define RTFILE_O_DENY_READ              UINT32_C(0x00000010)
 /** Sharing mode: deny write. */
-#define RTFILE_O_DENY_WRITE             0x00000020
+#define RTFILE_O_DENY_WRITE             UINT32_C(0x00000020)
 /** Sharing mode: deny read and write. */
-#define RTFILE_O_DENY_READWRITE         0x00000030
+#define RTFILE_O_DENY_READWRITE         UINT32_C(0x00000030)
 /** Sharing mode: deny all. */
 #define RTFILE_O_DENY_ALL               RTFILE_O_DENY_READWRITE
 /** Sharing mode: do NOT deny delete (NT).
  * @remarks This might not be implemented on all platforms, and will be
  *          defaulted & ignored on those.
  */
-#define RTFILE_O_DENY_NOT_DELETE        0x00000040
+#define RTFILE_O_DENY_NOT_DELETE        UINT32_C(0x00000040)
 /** Sharing mode mask. */
-#define RTFILE_O_DENY_MASK              0x000000f0
+#define RTFILE_O_DENY_MASK              UINT32_C(0x000000f0)
 
 /** Action: Open an existing file (the default action). */
-#define RTFILE_O_OPEN                   0x00000700
+#define RTFILE_O_OPEN                   UINT32_C(0x00000700)
 /** Action: Create a new file or open an existing one. */
-#define RTFILE_O_OPEN_CREATE            0x00000100
+#define RTFILE_O_OPEN_CREATE            UINT32_C(0x00000100)
 /** Action: Create a new a file. */
-#define RTFILE_O_CREATE                 0x00000200
+#define RTFILE_O_CREATE                 UINT32_C(0x00000200)
 /** Action: Create a new file or replace an existing one. */
-#define RTFILE_O_CREATE_REPLACE         0x00000300
+#define RTFILE_O_CREATE_REPLACE         UINT32_C(0x00000300)
 /** Action mask. */
-#define RTFILE_O_ACTION_MASK            0x00000700
+#define RTFILE_O_ACTION_MASK            UINT32_C(0x00000700)
 
 /** Turns off indexing of files on Windows hosts, *CREATE* only.
  * @remarks Window only. */
-#define RTFILE_O_NOT_CONTENT_INDEXED    0x00000800
+#define RTFILE_O_NOT_CONTENT_INDEXED    UINT32_C(0x00000800)
 /** Truncate the file.
  * @remarks This will not truncate files opened for read-only.
  * @remarks The trunction doesn't have to be atomically, so anyone else opening
  *          the file may be racing us. The caller is responsible for not causing
  *          this race. */
-#define RTFILE_O_TRUNCATE               0x00001000
+#define RTFILE_O_TRUNCATE               UINT32_C(0x00001000)
 /** Make the handle inheritable on RTProcessCreate(/exec). */
-#define RTFILE_O_INHERIT                0x00002000
+#define RTFILE_O_INHERIT                UINT32_C(0x00002000)
 /** Open file in non-blocking mode - non-portable.
  * @remarks This flag may not be supported on all platforms, in which case it's
  *          considered an invalid parameter. */
-#define RTFILE_O_NON_BLOCK              0x00004000
+#define RTFILE_O_NON_BLOCK              UINT32_C(0x00004000)
 /** Write through directly to disk. Workaround to avoid iSCSI
  * initiator deadlocks on Windows hosts.
  * @remarks This might not be implemented on all platforms, and will be ignored
  *          on those. */
-#define RTFILE_O_WRITE_THROUGH          0x00008000
+#define RTFILE_O_WRITE_THROUGH          UINT32_C(0x00008000)
 
 /** Attribute access: Attributes can be read if the file is being opened with
  * read access, and can be written with write access. */
-#define RTFILE_O_ACCESS_ATTR_DEFAULT    0x00000000
+#define RTFILE_O_ACCESS_ATTR_DEFAULT    UINT32_C(0x00000000)
 /** Attribute access: Attributes can be read.
  * @remarks Windows only.  */
-#define RTFILE_O_ACCESS_ATTR_READ       0x00010000
+#define RTFILE_O_ACCESS_ATTR_READ       UINT32_C(0x00010000)
 /** Attribute access: Attributes can be written.
  * @remarks Windows only.  */
-#define RTFILE_O_ACCESS_ATTR_WRITE      0x00020000
+#define RTFILE_O_ACCESS_ATTR_WRITE      UINT32_C(0x00020000)
 /** Attribute access: Attributes can be both read & written.
  * @remarks Windows only.  */
-#define RTFILE_O_ACCESS_ATTR_READWRITE  0x00030000
+#define RTFILE_O_ACCESS_ATTR_READWRITE  UINT32_C(0x00030000)
 /** Attribute access: The file attributes access mask.
  * @remarks Windows only.  */
-#define RTFILE_O_ACCESS_ATTR_MASK       0x00030000
+#define RTFILE_O_ACCESS_ATTR_MASK       UINT32_C(0x00030000)
 
 /** Open file for async I/O
  * @remarks This flag may not be needed on all platforms, and will be ignored on
  *          those. */
-#define RTFILE_O_ASYNC_IO               0x00040000
+#define RTFILE_O_ASYNC_IO               UINT32_C(0x00040000)
 
 /** Disables caching.
  *
@@ -182,23 +182,23 @@ RTDECL(bool) RTFileExists(const char *pszPath);
  * @remarks This might not be implemented on all platforms,
  *          and will be ignored on those.
  */
-#define RTFILE_O_NO_CACHE               0x00080000
+#define RTFILE_O_NO_CACHE               UINT32_C(0x00080000)
 
 /** Unix file mode mask for use when creating files. */
-#define RTFILE_O_CREATE_MODE_MASK       0x1ff00000
+#define RTFILE_O_CREATE_MODE_MASK       UINT32_C(0x1ff00000)
 /** The number of bits to shift to get the file mode mask.
  * To extract it: (fFlags & RTFILE_O_CREATE_MODE_MASK) >> RTFILE_O_CREATE_MODE_SHIFT.
  */
 #define RTFILE_O_CREATE_MODE_SHIFT      20
 
-                                      /*0x20000000,
-                                        0x40000000
-                                    and 0x80000000 are unused atm. */
+                                      /*UINT32_C(0x20000000),
+                                        UINT32_C(0x40000000)
+                                    and UINT32_C(0x80000000) are unused atm. */
 
 /** Mask of all valid flags.
  * @remark  This doesn't validate the access mode properly.
  */
-#define RTFILE_O_VALID_MASK             0x1ffFFFF7
+#define RTFILE_O_VALID_MASK             UINT32_C(0x1ffffff7)
 
 /** @} */
 
