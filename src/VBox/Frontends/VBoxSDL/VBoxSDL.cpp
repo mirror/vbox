@@ -2292,7 +2292,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         char szBuf[32];
         const char *pcszLf = "\n";
         RTFILE PidFile;
-        RTFileOpen(&PidFile, gpszPidFile, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE);
+        RTFileOpen(&PidFile, gpszPidFile, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
         RTStrFormatNumber(szBuf, RTProcSelf(), 10, 0, 0, 0);
         RTFileWrite(PidFile, szBuf, strlen(szBuf), NULL);
         RTFileWrite(PidFile, pcszLf, strlen(pcszLf), NULL);

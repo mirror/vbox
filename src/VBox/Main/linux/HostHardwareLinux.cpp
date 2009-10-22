@@ -159,7 +159,7 @@ static bool floppyGetName(const char *pcszNode, unsigned Number,
     AssertPtrReturn(pszName, false);
     AssertReturn(Number <= 7, false);
     RTFILE File;
-    int rc = RTFileOpen(&File, pcszNode, RTFILE_O_READ | RTFILE_O_NON_BLOCK);
+    int rc = RTFileOpen(&File, pcszNode, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_NON_BLOCK);
     if (RT_SUCCESS(rc))
     {
         int rcIoCtl;
@@ -329,7 +329,7 @@ static int cdromDoInquiry(const char *pcszNode, uint8_t *pu8Type,
     { { INQUIRY, 0, 0, 0, sizeof(u8Response), 0 }  /* INQUIRY */ };
     int rc, rcIoCtl = 0;
     RTFILE file;
-    rc = RTFileOpen(&file, pcszNode, RTFILE_O_READ | RTFILE_O_NON_BLOCK);
+    rc = RTFileOpen(&file, pcszNode, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_NON_BLOCK);
     if (RT_SUCCESS(rc))
     {
         CdromCommandReq.buffer = u8Response;

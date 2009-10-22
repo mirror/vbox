@@ -168,7 +168,7 @@ static int getDVDInfoFromCAM(DriveInfoList *pList, bool *pfSuccess)
     int rc = VINF_SUCCESS;
     RTFILE FileXpt;
 
-    rc = RTFileOpen(&FileXpt, "/dev/xpt0", RTFILE_O_READWRITE);
+    rc = RTFileOpen(&FileXpt, "/dev/xpt0", RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
         union ccb DeviceCCB;

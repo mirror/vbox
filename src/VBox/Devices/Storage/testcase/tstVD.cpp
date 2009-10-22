@@ -99,7 +99,7 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
     if (fDelete)
     {
         RTFILE File;
-        rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ);
+        rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc))
         {
             RTFileClose(File);
@@ -152,7 +152,7 @@ static int tstVDOpenDelete(const char *pszBackend, const char *pszFilename)
 
     VDClose(pVD, true);
     RTFILE File;
-    rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ);
+    rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
         RTFileClose(File);
@@ -534,7 +534,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     CHECK("VDCreate()");
 
     RTFILE File;
-    rc = RTFileOpen(&File, pszBaseFilename, RTFILE_O_READ);
+    rc = RTFileOpen(&File, pszBaseFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
         RTFileClose(File);
@@ -657,7 +657,7 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     CHECK("VDCreate()");
 
     RTFILE File;
-    rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ);
+    rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
         RTFileClose(File);
@@ -826,7 +826,7 @@ static void tstVmdk()
     }
 
     RTFILE File;
-    rc = RTFileOpen(&File, DST_PATH, RTFILE_O_CREATE | RTFILE_O_WRITE);
+    rc = RTFileOpen(&File, DST_PATH, RTFILE_O_WRITE | RTFILE_O_CREATE | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
         RTFileClose(File);
 

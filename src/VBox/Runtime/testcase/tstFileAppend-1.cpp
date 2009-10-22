@@ -90,11 +90,11 @@ int main()
     RTFileDelete("tstFileAppend-1.tst");
     rc = RTFileOpen(&File,
                     "tstFileAppend-1.tst",
-                    RTFILE_O_OPEN_CREATE |
-                    RTFILE_O_WRITE |
-                    RTFILE_O_APPEND |
-                    RTFILE_O_DENY_NONE |
-                    (0644 << RTFILE_O_CREATE_MODE_SHIFT)
+                      RTFILE_O_WRITE
+                    | RTFILE_O_APPEND
+                    | RTFILE_O_OPEN_CREATE
+                    | RTFILE_O_DENY_NONE
+                    | (0644 << RTFILE_O_CREATE_MODE_SHIFT)
                    );
     if (RT_FAILURE(rc))
         return MyFailure("1st RTFileOpen: %Rrc\n", rc);
@@ -139,10 +139,10 @@ int main()
      */
     rc = RTFileOpen(&File,
                     "tstFileAppend-1.tst",
-                    RTFILE_O_OPEN |
-                    RTFILE_O_WRITE |
-                    RTFILE_O_APPEND |
-                    RTFILE_O_DENY_NONE
+                      RTFILE_O_WRITE
+                    | RTFILE_O_APPEND
+                    | RTFILE_O_OPEN
+                    | RTFILE_O_DENY_NONE
                    );
     if (RT_FAILURE(rc))
         return MyFailure("2nd RTFileOpen: %Rrc\n", rc);
@@ -179,10 +179,10 @@ int main()
      */
     rc = RTFileOpen(&File,
                     "tstFileAppend-1.tst",
-                    RTFILE_O_OPEN |
-                    RTFILE_O_READWRITE |
-                    RTFILE_O_APPEND |
-                    RTFILE_O_DENY_NONE
+                      RTFILE_O_READWRITE
+                    | RTFILE_O_APPEND
+                    | RTFILE_O_OPEN
+                    | RTFILE_O_DENY_NONE
                    );
     if (RT_FAILURE(rc))
         return MyFailure("3rd RTFileOpen: %Rrc\n", rc);
@@ -259,10 +259,10 @@ int main()
      */
     rc = RTFileOpen(&File,
                     "tstFileAppend-1.tst",
-                    RTFILE_O_OPEN |
-                    RTFILE_O_READ |
-                    RTFILE_O_APPEND |
-                    RTFILE_O_DENY_NONE
+                      RTFILE_O_READ
+                    | RTFILE_O_APPEND
+                    | RTFILE_O_OPEN
+                    | RTFILE_O_DENY_NONE
                    );
     if (RT_FAILURE(rc))
         return MyFailure("4th RTFileOpen: %Rrc\n", rc);

@@ -823,7 +823,7 @@ static int CmdListPartitions(int argc, char **argv, ComPtr<IVirtualBox> aVirtual
         return errorSyntax(USAGE_LISTPARTITIONS, "Mandatory parameter -rawdisk missing");
 
     RTFILE RawFile;
-    int vrc = RTFileOpen(&RawFile, rawdisk.raw(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+    int vrc = RTFileOpen(&RawFile, rawdisk.raw(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(vrc))
     {
         RTPrintf("Error opening the raw disk: %Rrc\n", vrc);
@@ -943,7 +943,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     fRelative = true;
 #endif /* RT_OS_DARWIN */
     RTFILE RawFile;
-    int vrc = RTFileOpen(&RawFile, rawdisk.raw(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+    int vrc = RTFileOpen(&RawFile, rawdisk.raw(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(vrc))
     {
         RTPrintf("Error opening the raw disk '%s': %Rrc\n", rawdisk.raw(), vrc);
@@ -1270,7 +1270,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                     &&  pszMBRFilename)
                 {
                     RTFILE MBRFile;
-                    vrc = RTFileOpen(&MBRFile, pszMBRFilename, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+                    vrc = RTFileOpen(&MBRFile, pszMBRFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
                     if (RT_FAILURE(vrc))
                     {
                         RTPrintf("Cannot open replacement MBR file '%s' specified with -mbr: %Rrc\n", pszMBRFilename, vrc);
@@ -1507,7 +1507,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
     if (fWriteToStdOut)
         outFile = 1;
     else
-        vrc = RTFileOpen(&outFile, Utf8Str(dst).raw(), RTFILE_O_OPEN | RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_ALL);
+        vrc = RTFileOpen(&outFile, Utf8Str(dst).raw(), RTFILE_O_WRITE | RTFILE_O_CREATE | RTFILE_O_DENY_ALL);
     if (RT_FAILURE(vrc))
     {
         VDCloseAll(pDisk);

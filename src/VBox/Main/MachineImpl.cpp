@@ -446,7 +446,7 @@ HRESULT Machine::init(VirtualBox *aParent,
         {
             /* check for the file existence */
             RTFILE f = NIL_RTFILE;
-            int vrc = RTFileOpen(&f, mData->m_strConfigFileFull.c_str(), RTFILE_O_READ);
+            int vrc = RTFileOpen(&f, mData->m_strConfigFileFull.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
             if (    RT_SUCCESS(vrc)
                  || vrc == VERR_SHARING_VIOLATION
                )
@@ -6003,8 +6003,7 @@ HRESULT Machine::prepareSaveSettings(bool &aRenamed,
         /* Note: open flags must correlate with RTFileOpen() in lockConfig() */
         path = Utf8Str(mData->m_strConfigFileFull);
         vrc = RTFileOpen(&mData->mHandleCfgFile, path.c_str(),
-                         RTFILE_O_READWRITE | RTFILE_O_CREATE |
-                         RTFILE_O_DENY_WRITE);
+                         RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE);
         if (RT_FAILURE(vrc))
         {
             mData->mHandleCfgFile = NIL_RTFILE;

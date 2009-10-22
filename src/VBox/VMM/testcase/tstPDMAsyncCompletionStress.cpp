@@ -144,7 +144,7 @@ typedef struct PDMACTESTFILE
     /** Number of current active tasks. */
     volatile uint32_t          cTasksActiveCurr;
     /** Pointer to the array of task. */
-    PPDMACTESTFILETASK         paTasks; 
+    PPDMACTESTFILETASK         paTasks;
     /** I/O thread handle. */
     PPDMTHREAD                 hThread;
     /** Flag whether the thread should terminate. */
@@ -166,7 +166,7 @@ static void tstPDMACStressTestFileVerify(PPDMACTESTFILE pTestFile, PPDMACTESTFIL
 
     while (cbLeft)
     {
-        size_t cbCompare; 
+        size_t cbCompare;
         unsigned iSeg = off / pTestFile->cbFileSegment;
         PPDMACTESTFILESEG pSeg = &pTestFile->paSegs[iSeg];
         uint8_t *pbTestPattern;
@@ -194,7 +194,7 @@ static void tstPDMACStressTestFileFillBuffer(PPDMACTESTFILE pTestFile, PPDMACTES
 
     while (cbLeft)
     {
-        size_t cbFill; 
+        size_t cbFill;
         unsigned iSeg = off / pTestFile->cbFileSegment;
         PPDMACTESTFILESEG pSeg = &pTestFile->paSegs[iSeg];
         uint8_t *pbTestPattern;
@@ -250,7 +250,7 @@ static int tstPDMACStressTestFileWrite(PPDMACTESTFILE pTestFile, PPDMACTESTFILET
 
     /* Set new file size of required */
     if ((uint64_t)pTestTask->off + pTestTask->DataSeg.cbSeg > pTestFile->cbFileCurr)
-        pTestFile->cbFileCurr = pTestTask->off + pTestTask->DataSeg.cbSeg; 
+        pTestFile->cbFileCurr = pTestTask->off + pTestTask->DataSeg.cbSeg;
 
     AssertMsg(pTestFile->cbFileCurr <= pTestFile->cbFileMax,
               ("Current file size (%llu) exceeds final size (%llu)\n",
@@ -285,7 +285,7 @@ static int tstPDMACStressTestFileRead(PPDMACTESTFILE pTestFile, PPDMACTESTFILETA
     pTestTask->DataSeg.cbSeg = RTRandU32Ex(1, RT_MIN(pTestFile->cbFileCurr, TASK_TRANSFER_SIZE_MAX));
 
     AssertMsg(pTestFile->cbFileCurr >= pTestTask->DataSeg.cbSeg, ("Impossible\n"));
-    pTestTask->off = RTRandU64Ex(0, pTestFile->cbFileCurr - pTestTask->DataSeg.cbSeg); 
+    pTestTask->off = RTRandU64Ex(0, pTestFile->cbFileCurr - pTestTask->DataSeg.cbSeg);
 
     /* Allocate data buffer. */
     pTestTask->DataSeg.pvSeg = RTMemAlloc(pTestTask->DataSeg.cbSeg);
@@ -328,7 +328,7 @@ static int tstPDMACTestFileThread(PVM pVM, PPDMTHREAD pThread)
     while (pTestFile->fRunning)
     {
         unsigned iTaskCurr = 0;
-        
+
 
         /* Fill all tasks */
         while (   (pTestFile->cTasksActiveCurr < pTestFile->cTasksActiveMax)
@@ -410,7 +410,7 @@ static int tstPDMACStressTestFileOpen(PVM pVM, PPDMACTESTFILE pTestFile, unsigne
     /* Size is a multiple of 512 */
     pTestFile->cbFileMax     = RTRandU64Ex(FILE_SIZE_MIN, FILE_SIZE_MAX) & ~(511UL);
     pTestFile->cbFileCurr    = 0;
-    pTestFile->cbFileSegment = RTRandU32Ex(SEGMENT_SIZE_MIN, RT_MIN(pTestFile->cbFileMax, SEGMENT_SIZE_MAX)) & ~((size_t)511); 
+    pTestFile->cbFileSegment = RTRandU32Ex(SEGMENT_SIZE_MIN, RT_MIN(pTestFile->cbFileMax, SEGMENT_SIZE_MAX)) & ~((size_t)511);
 
     Assert(pTestFile->cbFileMax >= pTestFile->cbFileSegment);
 
@@ -453,7 +453,7 @@ static int tstPDMACStressTestFileOpen(PVM pVM, PPDMACTESTFILE pTestFile, unsigne
                 RTStrPrintf(szFile, sizeof(szFile), "tstPDMAsyncCompletionStress-%d.tmp", iTestId);
 
                 RTFILE FileTmp;
-                rc = RTFileOpen(&FileTmp, szFile, RTFILE_O_CREATE | RTFILE_O_READWRITE);
+                rc = RTFileOpen(&FileTmp, szFile, RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_NONE);
                 if (RT_SUCCESS(rc))
                 {
                     RTFileClose(FileTmp);
@@ -503,7 +503,7 @@ static int tstPDMACStressTestFileOpen(PVM pVM, PPDMACTESTFILE pTestFile, unsigne
     return rc;
 }
 
-/** 
+/**
  * Closes a test file.
  *
  * @returns nothing.

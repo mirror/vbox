@@ -872,7 +872,7 @@ RTR3DECL(int) RTS3GetKey(RTS3 hS3, const char* pszBucketName, const char* pszKey
 
     /* Open the file */
     RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszFileName, RTFILE_O_CREATE | RTFILE_O_WRITE);
+    int rc = RTFileOpen(&hFile, pszFileName, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -930,7 +930,7 @@ RTR3DECL(int) RTS3PutKey(RTS3 hS3, const char* pszBucketName, const char* pszKey
 
     /* Open the file */
     RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszFileName, RTFILE_O_OPEN | RTFILE_O_READ);
+    int rc = RTFileOpen(&hFile, pszFileName, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return rc;
 

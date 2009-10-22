@@ -577,7 +577,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
          */
         RTFILE File = NIL_RTFILE;
 
-        rc = RTFileOpen(&File, pszUri, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+        rc = RTFileOpen(&File, pszUri, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc))
         {
             uint64_t cbSize;

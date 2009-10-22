@@ -1034,7 +1034,7 @@ static DECLCALLBACK(int) vboxdmgCheckIfValid(const char *pszFilename)
      * Open the file and read the footer.
      */
     RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+    int rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
         return rc;
 

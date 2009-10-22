@@ -1062,7 +1062,7 @@ int main (int argc, char **argv)
         {
             char szBuf[32];
             const char *lf = "\n";
-            RTFileOpen(&pidFile, pszPidFile, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE);
+            RTFileOpen(&pidFile, pszPidFile, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
             RTStrFormatNumber(szBuf, getpid(), 10, 0, 0, 0);
             RTFileWrite(pidFile, szBuf, strlen(szBuf), NULL);
             RTFileWrite(pidFile, lf, strlen(lf), NULL);

@@ -108,22 +108,14 @@ RTDECL(bool) RTFileExists(const char *pszPath)
 }
 
 
-RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen)
+RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
 {
     /*
      * Validate input.
      */
-    if (!VALID_PTR(pFile))
-    {
-        AssertMsgFailed(("Invalid pFile %p\n", pFile));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pFile, VERR_INVALID_POINTER);
     *pFile = NIL_RTFILE;
-    if (!VALID_PTR(pszFilename))
-    {
-        AssertMsgFailed(("Invalid pszFilename %p\n", pszFilename));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
 
     /*
      * Merge forced open flags and validate them.
