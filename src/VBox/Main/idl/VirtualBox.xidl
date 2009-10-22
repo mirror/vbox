@@ -11947,11 +11947,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="ports" type="wstring">
       <desc>
-        VRDP server port numbers.
+        VRDP server port numbers. The server will try to bind to one of free ports from the list. 
         <note>
           This is a string of comma separated TCP port numbers or port number ranges.
-          The server will try to bind to one of ports from the list. Example
-          <tt>3000,3010-3012,3015</tt>
+          Example <tt>5000,5010-5012,5015</tt>
         </note>
       </desc>
     </attribute>

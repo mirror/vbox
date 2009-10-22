@@ -224,7 +224,7 @@ void printUsage(USAGECATEGORY u64Cmd)
         if (fVRDP)
         {
             RTPrintf("                            [--vrdp on|off]\n"
-                     "                            [--vrdpport default|<port>]\n"
+                     "                            [--vrdpport default|<ports>]\n"
                      "                            [--vrdpaddress <host>]\n"
                      "                            [--vrdpauthtype null|external|guest]\n"
                      "                            [--vrdpmulticon on|off]\n"
@@ -297,8 +297,8 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            usbdetach <uuid>|<address> |\n");
         if (fVRDP)
         {
-            RTPrintf("                            vrdp on|off] |\n");
-            RTPrintf("                            vrdpport default|<port>] |\n");
+            RTPrintf("                            vrdp on|off |\n");
+            RTPrintf("                            vrdpport default|<ports> |\n");
         }
         RTPrintf("                            setvideomodehint <xres> <yres> <bpp> [display] |\n"
                  "                            setcredentials <username> <password> <domain>\n"
