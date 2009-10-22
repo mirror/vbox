@@ -186,7 +186,6 @@ int handleStorageAttach(HandlerArg *a)
         goto leave;
     }
 
-
     /* get the mutable session machine */
     a->session->COMGETTER(Machine)(machine.asOutParam());
 
@@ -253,6 +252,84 @@ int handleStorageAttach(HandlerArg *a)
     }
     else
     {
+        {
+            /**
+             * try to determine the type of the drive from the
+             * storage controller chipset, the attachment and
+             * the medium being attached
+             */
+            ULONG ctlType = StorageControllerType_Null;
+            CHECK_ERROR(storageCtl, COMGETTER(ControllerType)(&ctlType));
+            if (ctlType == StorageControllerType_I82078)
+            {
+                /**
+                 * floppy controller found so lets assume the medium
+                 * given by the user is also a floppy image or floppy
+                 * host drive
+                 */
+                pszType = "fdd";
+            }
+            else
+            {
+                /**
+                 * for SATA/SCSI/IDE it is hard to tell if it is a harddisk or
+                 * a dvd being attached so lets check if the medium attachment
+                 * and the mediumi, both are of same type. if yes then we are
+                 * sure of its type and don't need the user to enter it manually
+                 * else ask the user for the type.
+                 */
+                ComPtr<IMediumAttachment> mediumAttachement;
+                rc = machine->GetMediumAttachment(Bstr(pszCtl), port, device, mediumAttachement.asOutParam());
+                if (SUCCEEDED(rc))
+                {
+                    DeviceType_T deviceType;
+                    mediumAttachement->COMGETTER(Type)(&deviceType);
+
+                    if (deviceType == DeviceType_DVD)
+                    {
+                        Bstr uuid(pszMedium);
+                        ComPtr<IMedium> dvdMedium;
+                        /* first assume it's a UUID */
+                        rc = a->virtualBox->GetDVDImage(uuid, dvdMedium.asOutParam());
+                        if (FAILED(rc) || !dvdMedium)
+                        {
+                            /* must be a filename, check if it's in the collection */
+                            a->virtualBox->FindDVDImage(Bstr(pszMedium), dvdMedium.asOutParam());
+                        }
+                        if (dvdMedium)
+                        {
+                            /**
+                             * ok so the medium and attachment both are DVD's so it is
+                             * safe to assume that we are dealing with a DVD here
+                             */
+                            pszType = "dvddrive";
+                        }
+                    }
+                    else if (deviceType == DeviceType_HardDisk)
+                    {
+                        Bstr uuid(pszMedium);
+                        ComPtr<IMedium> hardDisk;
+                        /* first assume it's a UUID */
+                        rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
+                        if (FAILED(rc) || !hardDisk)
+                        {
+                            /* must be a filename, check if it's in the collection */
+                            a->virtualBox->FindHardDisk(Bstr(pszMedium), hardDisk.asOutParam());
+                        }
+                        if (hardDisk)
+                        {
+                            /**
+                             * ok so the medium and attachment both are hdd's so it is
+                             * safe to assume that we are dealing with a hdd here
+                             */
+                            pszType = "hdd";
+                        }
+                    }
+                }
+            }
+            /* for all other cases lets ask the user what type of drive it is */
+        }
+
         if (!pszType)
         {
             errorSyntax(USAGE_STORAGEATTACH, "Argument --type not specified\n");
@@ -352,16 +429,8 @@ int handleStorageAttach(HandlerArg *a)
         {
             ComPtr<IMediumAttachment> mediumAttachement;
 
-            /* if there is a dvd drive at the given location, remove it */
-            rc = machine->GetMediumAttachment(Bstr(pszCtl), port, device, mediumAttachement.asOutParam());
-            if (SUCCEEDED(rc))
-            {
-                DeviceType_T deviceType;
-                mediumAttachement->COMGETTER(Type)(&deviceType);
-
-                if (deviceType != DeviceType_HardDisk)
-                    machine->DetachDevice(Bstr(pszCtl), port, device);
-            }
+            /* if there is anything attached at the given location, remove it */
+            machine->DetachDevice(Bstr(pszCtl), port, device);
 
             /* first guess is that it's a UUID */
             Bstr uuid(pszMedium);
