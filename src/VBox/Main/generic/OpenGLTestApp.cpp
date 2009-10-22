@@ -27,7 +27,7 @@
 #include <Windows.h>
 #endif
 
-#include <string>
+#include <string.h>
 
 #ifdef VBOX_WITH_CROGL
 
