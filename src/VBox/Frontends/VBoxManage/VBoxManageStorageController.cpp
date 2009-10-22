@@ -258,7 +258,7 @@ int handleStorageAttach(HandlerArg *a)
              * storage controller chipset, the attachment and
              * the medium being attached
              */
-            ULONG ctlType = StorageControllerType_Null;
+            StorageControllerType_T ctlType = StorageControllerType_Null;
             CHECK_ERROR(storageCtl, COMGETTER(ControllerType)(&ctlType));
             if (ctlType == StorageControllerType_I82078)
             {
@@ -274,7 +274,7 @@ int handleStorageAttach(HandlerArg *a)
                 /**
                  * for SATA/SCSI/IDE it is hard to tell if it is a harddisk or
                  * a dvd being attached so lets check if the medium attachment
-                 * and the mediumi, both are of same type. if yes then we are
+                 * and the medium, both are of same type. if yes then we are
                  * sure of its type and don't need the user to enter it manually
                  * else ask the user for the type.
                  */
