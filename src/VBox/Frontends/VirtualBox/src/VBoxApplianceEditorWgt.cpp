@@ -412,6 +412,9 @@ QWidget * HardwareItem::createEditor (QWidget *aParent, const QStyleOptionViewIt
                     e->addItem (vboxGlobal().toString (KNetworkAdapterType_I82543GC), KNetworkAdapterType_I82543GC);
                     e->addItem (vboxGlobal().toString (KNetworkAdapterType_I82545EM), KNetworkAdapterType_I82545EM);
 #endif /* VBOX_WITH_E1000 */
+#ifdef VBOX_WITH_VIRTIO
+                    e->addItem (vboxGlobal().toString (KNetworkAdapterType_Virtio), KNetworkAdapterType_Virtio);
+#endif /* VBOX_WITH_VIRTIO */
                     editor = e;
                     break;
                 }
