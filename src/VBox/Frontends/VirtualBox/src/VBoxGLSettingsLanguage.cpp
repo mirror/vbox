@@ -192,7 +192,6 @@ VBoxGLSettingsLanguage::VBoxGLSettingsLanguage()
     connect (mTwLanguage, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
              this, SLOT (mTwLanguageChanged (QTreeWidgetItem *, QTreeWidgetItem *)));
 
-    mTxName->setMinimumHeight (fontMetrics().height() * 4);
     /* Applying language settings */
     retranslateUi();
 }
@@ -201,6 +200,7 @@ void VBoxGLSettingsLanguage::getFrom (const CSystemProperties &,
                                       const VBoxGlobalSettings &aGs)
 {
     reload (aGs.languageId());
+    mTxName->setFixedHeight (fontMetrics().height() * 4);
 }
 
 void VBoxGLSettingsLanguage::putBackTo (CSystemProperties &,
