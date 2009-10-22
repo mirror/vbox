@@ -1131,6 +1131,7 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
         /* Reset these to force a TLB flush for the next entry. (-> EXPENSIVE) */
         pVCpu->hwaccm.s.idLastCpu    = NIL_RTCPUID;
         pVCpu->hwaccm.s.uCurrentASID = 0;
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
     }
 
     ASMAtomicWriteBool(&pCpu->fInUse, false);
