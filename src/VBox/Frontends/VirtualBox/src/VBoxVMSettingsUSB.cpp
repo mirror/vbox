@@ -37,6 +37,7 @@ inline static QString emptyToNull (const QString &str)
 VBoxVMSettingsUSB::VBoxVMSettingsUSB (FilterType aType)
     : mValidator (0)
     , mType (aType)
+    , mUSBFilterListModified (false)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsUSB::setupUi (this);
