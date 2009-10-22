@@ -233,7 +233,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
                 iErr = directio(fh, DIRECTIO_ON);
 # elif defined(RT_OS_DARWIN)
             if (fOpen & RTFILE_O_NO_CACHE)
-                iErr = fcntl(fh, F_NOCACHE);
+                iErr = fcntl(fh, F_NOCACHE, 1);
 # endif
             if (iErr < 0)
                 iErr = errno;
