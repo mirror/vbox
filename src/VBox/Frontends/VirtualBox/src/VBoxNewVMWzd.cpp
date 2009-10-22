@@ -385,12 +385,12 @@ bool VBoxNewVMWzd::constructMachine()
             }
 
             /* Attach empty CD/DVD ROM Device */
-            m.AttachDevice (ideCtrName, 1, 0, KDeviceType_DVD, QString());
+            m.AttachDevice (ideCtrName, 1, 0, KDeviceType_DVD, QString(""));
             if (!m.isOk())
                 vboxProblem().cannotAttachDevice (this, m, VBoxDefs::MediumType_DVD, QString(), ideBus, 1, 0);
 
             /* Attach empty Floppy Device */
-            m.AttachDevice (floppyCtrName, 0, 0, KDeviceType_Floppy, QString());
+            m.AttachDevice (floppyCtrName, 0, 0, KDeviceType_Floppy, QString(""));
             if (!m.isOk())
                 vboxProblem().cannotAttachDevice (this, m, VBoxDefs::MediumType_Floppy, QString(), floppyBus, 0, 0);
 
