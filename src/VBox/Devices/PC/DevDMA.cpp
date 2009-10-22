@@ -136,7 +136,6 @@ struct dma_cont {
     uint8_t flip_flop;
     unsigned int dshift;
     struct dma_regs regs[4];
-    uint8_t ext_page[4];
 };
 
 typedef struct {
@@ -160,7 +159,7 @@ enum {
 
 };
 
-static int channels[8] = {-1, 2, 3, 1, -2, -3, -4, 0};
+static int channels[8] = {-1, 2, 3, 1, -1, -1, -1, 0};
 
 static void write_page (void *opaque, uint32_t nport, uint32_t data)
 {
@@ -168,10 +167,11 @@ static void write_page (void *opaque, uint32_t nport, uint32_t data)
     int ichan;
 
     ichan = channels[nport & 7];
-    if (ichan >= 0)
-        d->regs[ichan].page = data;
-    else
-        d->ext_page[-ichan - 1] = data;
+    if (-1 == ichan) {
+        dolog ("invalid channel %#x %#x\n", nport, data);
+        return;
+    }
+    d->regs[ichan].page = data;
 }
 
 static void write_pageh (void *opaque, uint32_t nport, uint32_t data)
@@ -193,10 +193,11 @@ static uint32_t read_page (void *opaque, uint32_t nport)
     int ichan;
 
     ichan = channels[nport & 7];
-    if (ichan >= 0)
-        return d->regs[ichan].page;
-    else
-        return d->regs[-ichan - 1].page;
+    if (-1 == ichan) {
+        dolog ("invalid channel read %#x\n", nport);
+        return 0;
+    }
+    return d->regs[ichan].page;
 }
 
 static uint32_t read_pageh (void *opaque, uint32_t nport)
@@ -667,7 +668,6 @@ static void dma_init2(DMAState *s, struct dma_cont *d, int base, int dshift,
                       int page_base, int pageh_base)
 {
     const static int page_port_list[] = { 0x1, 0x2, 0x3, 0x7 };
-    const static int misc_port_list[] = { 0x0, 0x4, 0x5, 0x6 };
     int i;
 
     d->dshift = dshift;
@@ -706,8 +706,6 @@ static void dma_init2(DMAState *s, struct dma_cont *d, int base, int dshift,
 #ifdef VBOX
         PDMDevHlpIOPortRegister (s->pDevIns, base + ((i + 8) << dshift), 1, d,
                                  io_write_cont, io_read_cont, NULL, NULL, "DMA cont");
-        PDMDevHlpIOPortRegister (s->pDevIns, page_base + misc_port_list[i], 1, d,
-                                 io_write_page, io_read_page, NULL, NULL, "Dummy DMA Page");
 #else
         register_ioport_write (base + ((i + 8) << dshift), 1, 1,
                                write_cont, d);
