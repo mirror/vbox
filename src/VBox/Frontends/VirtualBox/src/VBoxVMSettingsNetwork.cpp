@@ -495,6 +495,14 @@ void VBoxVMSettingsNetwork::populateComboboxes()
     mCbAdapterType->setItemData (4,
         mCbAdapterType->itemText (4), Qt::ToolTipRole);
 #endif /* VBOX_WITH_E1000 */
+#ifdef VBOX_WITH_VIRTIO
+    mCbAdapterType->insertItem (5,
+        vboxGlobal().toString (KNetworkAdapterType_Virtio));
+    mCbAdapterType->setItemData (5,
+        KNetworkAdapterType_Virtio);
+    mCbAdapterType->setItemData (5,
+        mCbAdapterType->itemText (5), Qt::ToolTipRole);
+#endif /* VBOX_WITH_VIRTIO */
 
     /* Set the old value */
     mCbAdapterType->setCurrentIndex (currentAdapter == -1 ?
