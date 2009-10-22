@@ -4580,14 +4580,14 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         AssertRCReturn(rc, rc);
         if (   memcmp(&macAddress, &pState->macAddress, sizeof(macAddress))
             && (uPass == 0 || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)) )
-            LogRel(("%s: The mac address differs: config=%RTmac saved=%RTmac\n", &pState->macAddress, &macAddress));
+            LogRel(("%s: The mac address differs: config=%RTmac saved=%RTmac\n", INSTANCE(pState), &pState->macAddress, &macAddress));
 
         E1KCHIP eChip;
         rc = SSMR3GetU32(pSSM, &eChip);
         AssertRCReturn(rc, rc);
         if (eChip != pState->eChip)
         {
-            LogRel(("%s: The mac address differs: config=%u saved=%u\n", pState->eChip, eChip));
+            LogRel(("%s: The mac address differs: config=%u saved=%u\n", INSTANCE(pState), pState->eChip, eChip));
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
         }
     }
