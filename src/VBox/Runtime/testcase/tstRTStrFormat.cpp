@@ -66,7 +66,7 @@ static DECLCALLBACK(size_t) TstType(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 int main()
 {
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstStrFormat", &hTest);
+    int rc = RTTestInitAndCreate("tstRTStrFormat", &hTest);
     if (rc)
         return rc;
     RTTestBanner(hTest);
