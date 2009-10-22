@@ -2401,11 +2401,11 @@ static DECLCALLBACK(void) lapicInfoBasic(APICDeviceInfo  *dev, APICState *lapic,
     pHlp->pfnPrintf(pHlp, "  ISR       : ");
     lapicDumpVec(dev, lapic, pHlp, 0x100);
     val = get_highest_priority_int(lapic->isr);
-    pHlp->pfnPrintf(pHlp, "    highest = %02X\n", val == ~0 ? 0 : val);
+    pHlp->pfnPrintf(pHlp, "    highest = %02X\n", val == ~0U ? 0 : val);
     pHlp->pfnPrintf(pHlp, "  IRR       : ");
     lapicDumpVec(dev, lapic, pHlp, 0x200);
     val = get_highest_priority_int(lapic->irr);
-    pHlp->pfnPrintf(pHlp, "    highest = %02X\n", val == ~0 ? 0 : val);
+    pHlp->pfnPrintf(pHlp, "    highest = %02X\n", val == ~0U ? 0 : val);
     val = apic_mem_readl(dev, lapic, 0x320);
 }
 
@@ -2413,8 +2413,8 @@ static DECLCALLBACK(void) lapicInfoBasic(APICDeviceInfo  *dev, APICState *lapic,
 static DECLCALLBACK(void) lapicInfoLVT(APICDeviceInfo  *dev, APICState *lapic, PCDBGFINFOHLP pHlp)
 {
     uint32_t        val;
-    static char     *dmodes[] = { "Fixed ", "Reserved", "SMI", "Reserved", 
-                                  "NMI", "INIT", "Reserved", "ExtINT" };
+    static const char *dmodes[] = { "Fixed ", "Reserved", "SMI", "Reserved", 
+                                    "NMI", "INIT", "Reserved", "ExtINT" };
 
     val = apic_mem_readl(dev, lapic, 0x320);
     pHlp->pfnPrintf(pHlp, "  LVT Timer : %08X\n", val);
@@ -2982,8 +2982,8 @@ static DECLCALLBACK(void) ioapicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     pHlp->pfnPrintf(pHlp, " idx dst_mode dst_addr mask trigger rirr polarity dlvr_st dlvr_mode vector\n");
     for (i = 0; i <= max_redir; ++i)
     {
-        static char *dmodes[] = { "Fixed ", "LowPri", "SMI   ", "Resrvd", 
-                                  "NMI   ", "INIT  ", "Resrvd", "ExtINT" };
+        static const char *dmodes[] = { "Fixed ", "LowPri", "SMI   ", "Resrvd", 
+                                        "NMI   ", "INIT  ", "Resrvd", "ExtINT" };
 
         pHlp->pfnPrintf(pHlp, "  %02d   %s      %02X     %d    %s   %d   %s  %s     %s   %3d (%016llX)\n", 
                         i, 
