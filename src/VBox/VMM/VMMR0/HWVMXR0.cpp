@@ -2193,15 +2193,14 @@ static void vmxR0SetupTLBVPID(PVM pVM, PVMCPU pVCpu)
             pCpu->fFlushTLB                  = false;
             pCpu->uCurrentASID               = 1;       /* start at 1; host uses 0 */
             pCpu->cTLBFlushes++;
+            vmxR0FlushVPID(pVM, pVCpu, VMX_FLUSH_ALL_CONTEXTS, 0);
         }
         else
-        {
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushASID);
-            pVCpu->hwaccm.s.fForceTLBFlush     = false;
-        }
 
-        pVCpu->hwaccm.s.cTLBFlushes  = pCpu->cTLBFlushes;
-        pVCpu->hwaccm.s.uCurrentASID = pCpu->uCurrentASID;
+        pVCpu->hwaccm.s.fForceTLBFlush = false;
+        pVCpu->hwaccm.s.cTLBFlushes    = pCpu->cTLBFlushes;
+        pVCpu->hwaccm.s.uCurrentASID   = pCpu->uCurrentASID;
     }
     else
     {
