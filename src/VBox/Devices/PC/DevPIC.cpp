@@ -485,7 +485,7 @@ static int pic_ioport_write(void *opaque, uint32_t addr, uint32_t val)
             if (val & 0x02)
                 AssertReleaseMsgFailed(("single mode not supported"));
             if (val & 0x08)
-                LogRel(("level sensitive irq not supported - ignoring"));
+                AssertReleaseMsgFailed(("level sensitive irq not supported"));
         } else if (val & 0x08) {
             if (val & 0x04)
                 s->poll = 1;
