@@ -664,7 +664,7 @@ static void show_usage()
              "  --evdevkeymap            Use evdev keycode map\n"
 #endif
 #ifdef VBOX_WITH_VRDP
-             "  --vrdp <port>            Listen for VRDP connections on port (default if not specified)\n"
+             "  --vrdp <ports>           Listen for VRDP connections on one of specified ports (default if not specified)\n"
 #endif
              "  --discardstate           Discard saved state (if present) and revert to last snapshot (if present)\n"
 #ifdef VBOX_SECURELABEL

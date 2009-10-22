@@ -115,6 +115,7 @@ public:
 #ifndef VBOX_WITH_XPCOM
         refcnt = 0;
 #endif
+        mLastVRDPPort = -1;
     }
 
     virtual ~ConsoleCallback() {}
@@ -209,10 +210,17 @@ public:
             {
                 LONG port;
                 info->COMGETTER(Port)(&port);
-                if (port != 0)
-                    RTPrintf("Listening on port %d\n", port);
-                else
-                    RTPrintf("VRDP server failed to start\n");
+                if (port != mLastVRDPPort)
+                {
+                    if (port == -1)
+                        RTPrintf("VRDP server is inactive.\n");
+                    else if (port == 0)
+                        RTPrintf("VRDP server failed to start.\n");
+                    else
+                        RTPrintf("Listening on port %d.\n", port);
+
+                    mLastVRDPPort = port;
+                }
             }
         }
 #endif
@@ -275,6 +283,7 @@ private:
 #ifndef VBOX_WITH_XPCOM
     long refcnt;
 #endif
+    long mLastVRDPPort;
 };
 
 #ifdef VBOX_WITH_XPCOM
@@ -350,8 +359,9 @@ static void show_usage()
 #ifdef VBOX_WITH_VRDP
              "   -v, -vrdp, --vrdp on|off|config       Enable (default) or disable the VRDP\n"
              "                                         server or don't change the setting\n"
-             "   -p, -vrdpport, --vrdpport <port>      Port number the VRDP server will bind\n"
-             "                                         to\n"
+             "   -p, -vrdpport, --vrdpport <ports>     Comma-separated list of ports the VRDP\n"
+             "                                         server can bind to. Use a dash between\n"
+             "                                         two port numbers to specify a range\n"
              "   -a, -vrdpaddress, --vrdpaddress <ip>  Interface IP the VRDP will bind to \n"
 #endif
 #ifdef VBOX_FFMPEG

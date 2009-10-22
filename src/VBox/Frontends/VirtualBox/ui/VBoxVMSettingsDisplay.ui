@@ -287,7 +287,7 @@
              <item row="1" column="2">
               <widget class="QLineEdit" name="mLeVRDPPort">
                <property name="whatsThis">
-                <string>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</string>
+                <string>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), which means port 3389, the standard port for RDP.</string>
                </property>
               </widget>
              </item>
