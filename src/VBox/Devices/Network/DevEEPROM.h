@@ -68,7 +68,7 @@ struct EEPROM93C46 {
     };
 
 
-    /* @todo save and load methods */
+    /** @todo save and load methods */
 
     /** Actual content of EEPROM */
     uint16_t m_au16Data[SIZE];
