@@ -560,11 +560,22 @@ PDMBOTHCBDECL(int) parallelIOPortReadECP(PPDMDEVINS pDevIns, void *pvUser,
 
 #ifdef IN_RING3
 /**
- * Saves a state of the serial port device.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to save the state to.
+ * @copydoc FNSSMDEVLIVEEXEC
+ */
+static DECLCALLBACK(int) parallelLiveExec(PPDMDEVINS pDevIns,
+                                          PSSMHANDLE pSSMHandle,
+                                          uint32_t uPass)
+{
+    ParallelState *pThis = PDMINS_2_DATA(pDevIns, ParallelState *);
+
+    SSMR3PutS32(pSSMHandle, pThis->irq);
+    SSMR3PutU32(pSSMHandle, pThis->base);
+    SSMR3PutU32(pSSMHandle, ~0); /* sanity/terminator */
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
+
+/**
+ * @copydoc FNSSMDEVSAVEEXEC
  */
 static DECLCALLBACK(int) parallelSaveExec(PPDMDEVINS pDevIns,
                                           PSSMHANDLE pSSMHandle)
@@ -574,20 +585,13 @@ static DECLCALLBACK(int) parallelSaveExec(PPDMDEVINS pDevIns,
     SSMR3PutU8(pSSMHandle, pThis->reg_data);
     SSMR3PutU8(pSSMHandle, pThis->reg_status);
     SSMR3PutU8(pSSMHandle, pThis->reg_control);
-    SSMR3PutS32(pSSMHandle, pThis->irq);
-    SSMR3PutU32(pSSMHandle, pThis->base);
 
-    return SSMR3PutU32(pSSMHandle, ~0); /* sanity/terminator */
+    parallelLiveExec(pDevIns, pSSMHandle, 0);
+    return VINF_SUCCESS;
 }
 
 /**
- * Loads a saved serial port device state.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to the saved state.
- * @param   uVersion    The data unit version number.
- * @param   uPass       The data pass.
+ * @copydoc FNSSMDEVLOADEXEC
  */
 static DECLCALLBACK(int) parallelLoadExec(PPDMDEVINS pDevIns,
                                           PSSMHANDLE pSSMHandle,
@@ -598,18 +602,35 @@ static DECLCALLBACK(int) parallelLoadExec(PPDMDEVINS pDevIns,
 
     AssertMsgReturn(uVersion == PARALLEL_SAVED_STATE_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+    if (uPass == SSM_PASS_FINAL)
+    {
+        SSMR3GetU8(pSSMHandle, &pThis->reg_data);
+        SSMR3GetU8(pSSMHandle, &pThis->reg_status);
+        SSMR3GetU8(pSSMHandle, &pThis->reg_control);
+    }
 
-    SSMR3GetU8(pSSMHandle, &pThis->reg_data);
-    SSMR3GetU8(pSSMHandle, &pThis->reg_status);
-    SSMR3GetU8(pSSMHandle, &pThis->reg_control);
-    SSMR3GetS32(pSSMHandle, &pThis->irq);
-    SSMR3GetU32(pSSMHandle, &pThis->base);
-
+    /* the config */
+    int32_t  iIrq;
+    SSMR3GetS32(pSSMHandle, &iIrq);
+    uint32_t uIoBase;
+    SSMR3GetU32(pSSMHandle, &uIoBase);
     uint32_t u32;
     int rc = SSMR3GetU32(pSSMHandle, &u32);
     if (RT_FAILURE(rc))
         return rc;
     AssertMsgReturn(u32 == ~0U, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+    if (pThis->irq != iIrq)
+    {
+        LogRel(("Parallel: IRQ changed: config=%#x state=%#x\n", pThis->irq, iIrq));
+        return VERR_SSM_LOAD_CONFIG_MISMATCH;
+    }
+
+    if (pThis->base != uIoBase)
+    {
+        LogRel(("Parallel: IOBase changed: config=%#x state=%#x\n", pThis->base, uIoBase));
+        return VERR_SSM_LOAD_CONFIG_MISMATCH;
+    }
 
     /* not necessary... but it doesn't harm. */
     pThis->pDevInsR3 = pDevIns;
@@ -801,7 +822,8 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
 #endif
     }
 
-    rc = PDMDevHlpSSMRegister(pDevIns, PARALLEL_SAVED_STATE_VERSION, sizeof(*pThis), parallelSaveExec, parallelLoadExec);
+    rc = PDMDevHlpSSMRegister3(pDevIns, PARALLEL_SAVED_STATE_VERSION, sizeof(*pThis),
+                               parallelLiveExec, parallelSaveExec, parallelLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
