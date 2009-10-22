@@ -60,6 +60,8 @@ EOF
       db_get virtualbox/delete-old-modules || true
       if [ "$RET" = "true" ]; then
         find /lib/modules -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+        find /lib/modules -name "vboxnetflt\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+        find /lib/modules -name "vboxnetadp\.*" 2>/dev/null|xargs rm -f 2>/dev/null
       fi
     fi
   fi
