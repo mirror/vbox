@@ -228,8 +228,10 @@ typedef struct PDMACFILECACHEENTRY
     size_t                          cbData;
     /** Pointer to the memory containing the data. */
     uint8_t                        *pbData;
-    /** List of tasks waiting for this one to finish. */
-    PPDMACFILETASKSEG               pHead;
+    /** Head of list of tasks waiting for this one to finish. */
+    PPDMACFILETASKSEG               pWaitingHead;
+    /** Tail of list of tasks waiting for this one to finish. */
+    PPDMACFILETASKSEG               pWaitingTail;
 } PDMACFILECACHEENTRY, *PPDMACFILECACHEENTRY;
 /** I/O is still in progress for this entry. This entry is not evictable. */
 #define PDMACFILECACHE_ENTRY_IO_IN_PROGRESS RT_BIT(0)
