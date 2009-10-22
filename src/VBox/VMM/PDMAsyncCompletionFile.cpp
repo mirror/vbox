@@ -554,6 +554,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
     int rc = VINF_SUCCESS;
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
     PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->pEpClass;
+    bool fUseFailsafeManager = pEpClassFile->fFailsafe;
 
     AssertMsgReturn((fFlags & ~(PDMACEP_FILE_FLAGS_READ_ONLY | PDMACEP_FILE_FLAGS_CACHING)) == 0,
                     ("PDMAsyncCompletion: Invalid flag specified\n"), VERR_INVALID_PARAMETER);
@@ -609,11 +610,14 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
          * without blocking the whole application.
          *
          * On Linux we have the same problem with cifs.
-         * Shouldn't be a big problem here either because
-         * it's a network filesystem and the data is on another
-         * computer.
+         * Have to disable async I/O here too because it requires O_DIRECT.
          */
         fFileFlags &= ~RTFILE_O_NO_CACHE;
+
+#ifdef RT_OS_LINUX
+        fFileFlags &= ~RTFILE_O_ASYNC_IO;
+        fUseFailsafeManager = true;
+#endif
 
         /* Open again. */
         rc = RTFileOpen(&pEpFile->File, pszUri, fFileFlags);
@@ -643,10 +647,10 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                 pEpFile->pTasksFreeTail = pEpFile->pTasksFreeHead;
                 pEpFile->cTasksCached = 0;
 
-                if (pEpClassFile->fFailsafe)
+                if (fUseFailsafeManager)
                 {
                     /* Safe mode. Every file has its own async I/O manager. */
-                    rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr, false);
+                    rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr, true);
                     AssertRC(rc);
                 }
                 else
