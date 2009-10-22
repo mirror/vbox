@@ -11,43 +11,60 @@
 # be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-. /usr/share/debconf/confmodule
-db_version 2.0
-db_capb backup
+# we can be called with the following arguments:
+#  install:          (our version): install our version
+#  upgrade:          (our version): upgrade to our version
+#  abort-upgrade:    (old version): upgrade to a new version failed
 
-# check for old installation
-if [ -r /etc/vbox/vbox.cfg ]; then
-  . /etc/vbox/vbox.cfg
-  if [ "x$INSTALL_DIR" != "x" -a -d "$INSTALL_DIR" ]; then
-    db_fset virtualbox/old-installation-found seen false || true
-    db_input high virtualbox/old-installation-found || true
+if [ "$1" = "install" -o "$1" = "upgrade" ]; then
+
+  . /usr/share/debconf/confmodule
+  db_version 2.0
+  db_capb backup
+
+  # check for active VMs
+  if pidof VBoxSVC > /dev/null 2>&1; then
+    db_fset virtualbox/old-running seen false || true
+    db_input high virtualbox/old-running || true
     db_go || true
     exit 1
   fi
-  # we will remove that file in postinst
-fi
 
-# check for old vboxdrv modules
-if find /lib/modules -name "vboxdrv\.*" 2>/dev/null|grep -q vboxdrv; then
-  # old modules found
-  db_get virtualbox/delete-old-modules || true
-  if [ "$RET" = "false" ]; then
-    cat << EOF
+  # check for old installation
+  if [ -r /etc/vbox/vbox.cfg ]; then
+    . /etc/vbox/vbox.cfg
+    if [ "x$INSTALL_DIR" != "x" -a -d "$INSTALL_DIR" ]; then
+      db_fset virtualbox/old-installation-found seen false || true
+      db_input high virtualbox/old-installation-found || true
+      db_go || true
+      exit 1
+    fi
+    # we will remove that file in postinst
+  fi
+
+  # check for old vboxdrv modules
+  if find /lib/modules -name "vboxdrv\.*" 2>/dev/null|grep -q vboxdrv; then
+    # old modules found
+    db_get virtualbox/delete-old-modules || true
+    if [ "$RET" = "false" ]; then
+      cat << EOF
 Old vboxdrv kernel modules found in
 EOF
-    find /lib/modules -name "vboxdrv\.*" 2>/dev/null|sed "s+\(.*\)+  \1+g"
-    cat << EOF
+      find /lib/modules -name "vboxdrv\.*" 2>/dev/null|sed "s+\(.*\)+  \1+g"
+      cat << EOF
 Removing of these modules denied by debconf setting
 EOF
-  else
-    db_input critical virtualbox/delete-old-modules || true
-    db_go || true
-    db_get virtualbox/delete-old-modules || true
-    if [ "$RET" = "true" ]; then
-      find /lib/modules -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+    else
+      db_input critical virtualbox/delete-old-modules || true
+      db_go || true
+      db_get virtualbox/delete-old-modules || true
+      if [ "$RET" = "true" ]; then
+        find /lib/modules -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+      fi
     fi
   fi
-fi
+
+fi # "$1" = "install" -o "$1" = "upgrade"
 
 #DEBHELPER#
 

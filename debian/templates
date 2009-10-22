@@ -94,3 +94,14 @@ Description-de.UTF-8: Alte Version gefunden
  Es wurde eine alte Version von VirtualBox gefunden. Bitte entfernen Sie die alte Version
  bevor Sie fortfahren. In der Datei /etc/vbox/vbox.cfg finden Sie das Verzeichnis der alten
  Version. Nachdem Sie diese entfernt haben, können Sie /etc/vbox/vbox.cfg löschen.
+
+Template: virtualbox/old-running
+Type: note
+Description: Running VMs found
+ A copy of VirtualBox is currently running.  Please close it and try again. Please note
+ that it can take up to ten seconds for VirtualBox (in particular the VBoxSVC daemon) to
+ finish running.
+Description-de.UTF-8: VirtualBox VMs werden ausgeführt
+ Mindestens eine virtuelle Maschine wird noch ausgeführt. Bitte beenden Sie alle VMs und
+ warten Sie 10 Sekunden, bis sich der VBoxSVC-Daemon beendet hat.
+
