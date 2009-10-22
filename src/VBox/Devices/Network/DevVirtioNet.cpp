@@ -196,6 +196,7 @@ PDMBOTHCBDECL(void)     vnetSetHostFeatures(void *pState, uint32_t uFeatures);
 PDMBOTHCBDECL(int)      vnetGetConfig(void *pState, uint32_t port, uint32_t cb, void *data);
 PDMBOTHCBDECL(int)      vnetSetConfig(void *pState, uint32_t port, uint32_t cb, void *data);
 PDMBOTHCBDECL(void)     vnetReset(void *pState);
+PDMBOTHCBDECL(void)     vnetReady(void *pState);
 #ifdef DEBUG
 static const char *vnetGetQueueName(void *pvState, PVQUEUE pQueue);
 #endif /* DEBUG */
@@ -219,6 +220,7 @@ struct VirtioPCIDevices
     int       (*pfnGetConfig)(void *pvState, uint32_t port, uint32_t cb, void *data);
     int       (*pfnSetConfig)(void *pvState, uint32_t port, uint32_t cb, void *data);
     void      (*pfnReset)(void *pvState);
+    void      (*pfnReady)(void *pvState);
 #ifdef DEBUG
     const char *(*pfnGetQueueName)(void *pvState, PVQUEUE pQueue);
 #endif /* DEBUG */
@@ -228,14 +230,14 @@ struct VirtioPCIDevices
     { /* Virtio Network Device */
         0x1AF4, 0x1000, 0x1AF4, 1 + VIRTIO_NET_ID, 0x0200, 3, "virtio-net", "vnet%d",
         vnetGetHostFeatures, vnetGetHostMinimalFeatures, vnetSetHostFeatures,
-        vnetGetConfig, vnetSetConfig, vnetReset
+        vnetGetConfig, vnetSetConfig, vnetReset, vnetReady
 #ifdef DEBUG
         , vnetGetQueueName
 #endif /* DEBUG */
     },
     { /* Virtio Block Device */
         0x1AF4, 0x1001, 0x1AF4, 1 + VIRTIO_BLK_ID, 0x0180, 2, "virtio-blk", "vblk%d",
-        NULL, NULL, NULL, NULL, NULL, NULL
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL
 #ifdef DEBUG
         , NULL
 #endif /* DEBUG */
@@ -653,6 +655,7 @@ PDMBOTHCBDECL(int) vpciIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
     VPCISTATE  *pState = PDMINS_2_DATA(pDevIns, VPCISTATE *);
     int         rc     = VINF_SUCCESS;
     const char *szInst = INSTANCE(pState);
+    bool        fHasBecomeReady;
     STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatIOWrite), a);
 
     port -= pState->addrIOPort;
@@ -664,7 +667,7 @@ PDMBOTHCBDECL(int) vpciIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
             /* Check if the guest negotiates properly, fall back to basics if it does not. */
             if (VPCI_F_BAD_FEATURE & u32)
             {
-                Log(("%s Guest failed to negotiate properly! (guest=%x)\n",
+                Log(("%s WARNING! Guest failed to negotiate properly (guest=%x)\n",
                      INSTANCE(pState), u32));
                 pState->uGuestFeatures = g_VPCIDevices[pState->enmDevType].pfnGetHostMinimalFeatures(pState);
             }
@@ -719,10 +722,13 @@ PDMBOTHCBDECL(int) vpciIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
         case VPCI_STATUS:
             Assert(cb == 1);
             u32 &= 0xFF;
+            fHasBecomeReady = !(pState->uStatus & VPCI_STATUS_DRV_OK) && (u32 & VPCI_STATUS_DRV_OK);
             pState->uStatus = u32;
             /* Writing 0 to the status port triggers device reset. */
             if (u32 == 0)
                 g_VPCIDevices[pState->enmDevType].pfnReset(pState);
+            else if (fHasBecomeReady)
+                g_VPCIDevices[pState->enmDevType].pfnReady(pState);
             break;
 
         default:
@@ -1110,6 +1116,10 @@ struct VNetState_st
     R3PTRTYPE(PPDMIBASE)    pDrvBase;                 /**< Attached network driver. */
     R3PTRTYPE(PPDMINETWORKCONNECTOR) pDrv;    /**< Connector of attached network driver. */
 
+    R3PTRTYPE(PPDMQUEUE)    pCanRxQueueR3;           /**< Rx wakeup signaller - R3. */
+    R0PTRTYPE(PPDMQUEUE)    pCanRxQueueR0;           /**< Rx wakeup signaller - R0. */
+    RCPTRTYPE(PPDMQUEUE)    pCanRxQueueRC;           /**< Rx wakeup signaller - RC. */
+
     PTMTIMERR3  pLinkUpTimer;                             /**< Link Up(/Restore) Timer. */
 
     /** PCI config area holding MAC address as well as TBD. */
@@ -1287,6 +1297,24 @@ static DECLCALLBACK(bool) vnetCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
 }
 
 #endif /* IN_RING3 */
+
+/**
+ * This function is called when the driver becomes ready.
+ *
+ * @param   pState      The device state structure.
+ */
+PDMBOTHCBDECL(void) vnetReady(void *pvState)
+{
+    VNETSTATE *pState = (VNETSTATE*)pvState;
+    Log(("%s Driver became ready, waking up RX thread...\n", INSTANCE(pState)));
+#ifdef IN_RING3
+    vnetWakeupReceive(pState->VPCI.CTX_SUFF(pDevIns));
+#else
+    PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pState->CTX_SUFF(pCanRxQueue));
+    if (pItem)
+        PDMQueueInsert(pState->CTX_SUFF(pCanRxQueue), pItem);
+#endif
+}
 
 
 #ifdef IN_RING3
@@ -1698,6 +1726,13 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
     return rc;*/
 
+    /* Create the RX notifier signaller. */
+    rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
+                                 vnetCanRxQueueConsumer, true, "VNet-Rcv", &pState->pCanRxQueueR3);
+    if (RT_FAILURE(rc))
+        return rc;
+    pState->pCanRxQueueR0 = PDMQueueR0Ptr(pState->pCanRxQueueR3);
+    pState->pCanRxQueueRC = PDMQueueRCPtr(pState->pCanRxQueueR3);
 
     /* Create Link Up Timer */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, vnetLinkUpTimer, pState,
@@ -1792,6 +1827,7 @@ static DECLCALLBACK(void) vnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     VNETSTATE* pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
     vpciRelocate(pDevIns, offDelta);
+    pState->pCanRxQueueRC = PDMQueueRCPtr(pState->pCanRxQueueR3);
     // TBD
 }
 
