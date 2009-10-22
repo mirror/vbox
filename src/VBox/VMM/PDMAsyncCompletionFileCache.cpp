@@ -489,12 +489,17 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
     RTSemRWRequestWrite(pEndpoint->DataCache.SemRWEntries, RT_INDEFINITE_WAIT);
     pEntry->fFlags &= ~PDMACFILECACHE_ENTRY_IO_IN_PROGRESS;
 
+    /* Process waiting segment list. The data in entry might have changed inbetween. */
+    PPDMACFILETASKSEG pCurr = pEntry->pWaitingHead;
+
+    AssertMsg((pCurr && pEntry->pWaitingTail) || (!pCurr && !pEntry->pWaitingTail),
+                ("The list tail was not updated correctly\n"));
+    pEntry->pWaitingTail = NULL;
+    pEntry->pWaitingHead = NULL;
+
     if (pTask->enmTransferType == PDMACTASKFILETRANSFER_WRITE)
     {
         pEntry->fFlags &= ~PDMACFILECACHE_ENTRY_IS_DIRTY;
-
-        /* Process waiting segment list. The data in entry might have changed inbetween. */
-        PPDMACFILETASKSEG pCurr = pEntry->pHead;
 
         while (pCurr)
         {
@@ -520,9 +525,6 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
         AssertMsg(pTask->enmTransferType == PDMACTASKFILETRANSFER_READ, ("Invalid transfer type\n"));
         AssertMsg(!(pEntry->fFlags & PDMACFILECACHE_ENTRY_IS_DIRTY),("Invalid flags set\n"));
 
-        /* Process waiting segment list. */
-        PPDMACFILETASKSEG pCurr = pEntry->pHead;
-
         while (pCurr)
         {
             if (pCurr->fWrite)
@@ -545,8 +547,6 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
             RTMemFree(pFree);
         }
     }
-
-    pEntry->pHead = NULL;
 
     if (pEntry->fFlags & PDMACFILECACHE_ENTRY_IS_DIRTY)
         pdmacFileCacheWriteToEndpoint(pEntry);
@@ -843,7 +843,8 @@ static PPDMACFILECACHEENTRY pdmacFileCacheEntryAlloc(PPDMACFILECACHEGLOBAL pCach
     pEntryNew->cRefs        = 1; /* We are using it now. */
     pEntryNew->pList        = NULL;
     pEntryNew->cbData       = cbData;
-    pEntryNew->pHead        = NULL;
+    pEntryNew->pWaitingHead = NULL;
+    pEntryNew->pWaitingTail = NULL;
     pEntryNew->pbData       = (uint8_t *)RTMemPageAlloc(cbData);
 
     if (RT_UNLIKELY(!pEntryNew->pbData))
@@ -853,6 +854,34 @@ static PPDMACFILECACHEENTRY pdmacFileCacheEntryAlloc(PPDMACFILECACHEGLOBAL pCach
     }
 
     return pEntryNew;
+}
+
+/**
+ * Adds a segment to the waiting list for a cache entry
+ * which is currently in progress.
+ *
+ * @returns nothing.
+ * @param   pEntry    The cache entry to add the segment to.
+ * @param   pSeg      The segment to add.
+ */
+static void pdmacFileEpCacheEntryAddWaitingSegment(PPDMACFILECACHEENTRY pEntry, PPDMACFILETASKSEG pSeg)
+{
+    pSeg->pNext = NULL;
+
+    if (pEntry->pWaitingHead)
+    {
+        AssertPtr(pEntry->pWaitingTail);
+
+        pEntry->pWaitingTail->pNext = pSeg;
+        pEntry->pWaitingTail = pSeg;
+    }
+    else
+    {
+        Assert(!pEntry->pWaitingTail);
+
+        pEntry->pWaitingHead = pSeg;
+        pEntry->pWaitingTail = pSeg;
+    }
 }
 
 /**
@@ -970,8 +999,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
 
                             ADVANCE_SEGMENT_BUFFER(pSeg->cbTransfer);
 
-                            pSeg->pNext = pEntry->pHead;
-                            pEntry->pHead = pSeg;
+                            pdmacFileEpCacheEntryAddWaitingSegment(pEntry, pSeg);
 
                             off      += pSeg->cbTransfer;
                             cbToRead -= pSeg->cbTransfer;
@@ -1050,8 +1078,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
 
                     ADVANCE_SEGMENT_BUFFER(pSeg->cbTransfer);
 
-                    pSeg->pNext = pEntry->pHead;
-                    pEntry->pHead = pSeg;
+                    pdmacFileEpCacheEntryAddWaitingSegment(pEntry, pSeg);
 
                     off      += pSeg->cbTransfer;
                     OffDiff  += pSeg->cbTransfer;
@@ -1135,8 +1162,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
 
                     ADVANCE_SEGMENT_BUFFER(pSeg->cbTransfer);
 
-                    pSeg->pNext = pEntryNew->pHead;
-                    pEntryNew->pHead = pSeg;
+                    pdmacFileEpCacheEntryAddWaitingSegment(pEntryNew, pSeg);
 
                     off        += pSeg->cbTransfer;
                     cbToRead   -= pSeg->cbTransfer;
@@ -1273,8 +1299,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
 
                             ADVANCE_SEGMENT_BUFFER(pSeg->cbTransfer);
 
-                            pSeg->pNext = pEntry->pHead;
-                            pEntry->pHead = pSeg;
+                            pdmacFileEpCacheEntryAddWaitingSegment(pEntry, pSeg);
 
                             off       += pSeg->cbTransfer;
                             OffDiff   += pSeg->cbTransfer;
@@ -1334,8 +1359,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
 
                                 ADVANCE_SEGMENT_BUFFER(pSeg->cbTransfer);
 
-                                pSeg->pNext = pEntry->pHead;
-                                pEntry->pHead = pSeg;
+                                pdmacFileEpCacheEntryAddWaitingSegment(pEntry, pSeg);
 
                                 off       += pSeg->cbTransfer;
                                 OffDiff   += pSeg->cbTransfer;
@@ -1423,8 +1447,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
 
                     ADVANCE_SEGMENT_BUFFER(pSeg->cbTransfer);
 
-                    pSeg->pNext = pEntry->pHead;
-                    pEntry->pHead = pSeg;
+                    pdmacFileEpCacheEntryAddWaitingSegment(pEntry, pSeg);
 
                     off       += pSeg->cbTransfer;
                     OffDiff   += pSeg->cbTransfer;
