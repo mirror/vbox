@@ -2257,7 +2257,6 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     RTGCUINTPTR errCode, instrInfo;
     bool        fSetupTPRCaching = false;
     uint8_t     u8LastTPR = 0;
-    PHWACCM_CPUINFO pCpu = 0;
     RTCCUINTREG uOldEFlags = ~(RTCCUINTREG)0;
     unsigned    cResume = 0;
 #ifdef VBOX_STRICT
@@ -2497,6 +2496,8 @@ ResumeExecution:
 # endif /* HWACCM_VTX_WITH_VPID */
         )
     {
+        PHWACCM_CPUINFO pCpu;
+
         pCpu = HWACCMR0GetCurrentCpu();
         if (    pVCpu->hwaccm.s.idLastCpu   != pCpu->idCpu
             ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
