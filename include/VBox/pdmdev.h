@@ -3518,6 +3518,27 @@ DECLINLINE(int) PDMDevHlpSSMRegister(PPDMDEVINS pDevIns, uint32_t uVersion, size
 }
 
 /**
+ * Register a save state data unit with a live save callback as well.
+ *
+ * @returns VBox status.
+ * @param   pDevIns             Device instance.
+ * @param   uVersion            Data layout version number.
+ * @param   cbGuess             The approximate amount of data in the unit.
+ *                              Only for progress indicators.
+ * @param   pfnLiveExec         Execute live callback, optional.
+ * @param   pfnSaveExec         Execute save callback, optional.
+ * @param   pfnLoadExec         Execute load callback, optional.
+ */
+DECLINLINE(int) PDMDevHlpSSMRegister3(PPDMDEVINS pDevIns, uint32_t uVersion, size_t cbGuess,
+                                      FNSSMDEVLIVEEXEC pfnLiveExec, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVLOADEXEC pfnLoadExec)
+{
+    return pDevIns->pDevHlpR3->pfnSSMRegister(pDevIns, uVersion, cbGuess, NULL /*pszBefore*/,
+                                              NULL /*pfnLivePrep*/, pfnLiveExec,  NULL /*pfnLiveDone*/,
+                                              NULL /*pfnSavePrep*/, pfnSaveExec,  NULL /*pfnSaveDone*/,
+                                              NULL /*pfnLoadPrep*/, pfnLoadExec,  NULL /*pfnLoadDone*/);
+}
+
+/**
  * @copydoc PDMDEVHLPR3::pfnSSMRegister
  */
 DECLINLINE(int) PDMDevHlpSSMRegisterEx(PPDMDEVINS pDevIns, uint32_t uVersion, size_t cbGuess, const char *pszBefore,
