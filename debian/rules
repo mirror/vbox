@@ -70,6 +70,9 @@ else
 endif
 endif
 
+# shipping Linux kernel modules with bleeding-edge releases doesn't make sense
+instmod := $(if $(filter _Ubuntu_karmic _Debian_sid,$(debrel)),,1)
+
 # Locations of custom built Qt libraries (see below)
 qtstdc5  := /home/vbox/Qt-4.4.3-stdc++5-$(arch)
 qtstdc6  := /home/vbox/Qt-4.4.3-stdc++6-$(arch)
@@ -82,7 +85,7 @@ cfg_flags := $(if $(NOQT),--disable-qt,) \
 	     $(if $(filter _xandros4.1 _ucs1.3 _Debian_sarge _Ubuntu_dapper,$(debrel)),--build-libxslt,) \
 	     $(if $(filter _Debian_etch,$(debrel)),$(if $(ose),,--build-libcurl),) \
 	     $(if $(filter _Debian_sarge _xandros4.1 _ucs1.3,$(debrel)),--with-qt4-dir=$(qtstdc5)) \
-	     $(if $(filter _Debian_etch _Ubuntu_dapper _Ubuntu_edgy _Ubuntu_feisty,$(debrel)),--with-qt4-dir=$(qtstdc6)) \
+	     $(if $(filter _Debian_etch _Ubuntu_dapper _Ubuntu_edgy _Ubuntu_feisty _Ubuntu_gutsy _Ubuntu_hardy,$(debrel)),--with-qt4-dir=$(qtstdc6)) \
 	     $(if $(filter _xandros4.1 _ucs1.3,$(debrel)),--disable-sdl-ttf,) \
 	     $(if $(filter _Debian_sarge _Ubuntu_dapper _Ubuntu_edgy _xandros4.1 _ucs1.3,$(debrel)),--disable-pulse,) \
 	     $(if $(HEADLESS),--build-headless,) \
@@ -135,19 +138,19 @@ debian/modules-stamp: debian/build-stamp
 	for d in $(wildcard /lib/modules/*); do \
 	    if [ -L $$d/build ]; then \
 	        make -C $(builddir)/bin/src/vboxdrv KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
-	        make -C $(builddir)/bin/src/vboxdrv KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all && \
-	        install -D -m 0644 -g 0 -o 0 \
-	            $(builddir)/bin/src/vboxdrv/vboxdrv.ko $(moddir)/$$(basename $$d)/vboxdrv.ko && \
+	        make -j4 -C $(builddir)/bin/src/vboxdrv KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all \
+	        $(if $(instmod),&& install -D -m 0644 -g 0 -o 0 \
+	            $(builddir)/bin/src/vboxdrv/vboxdrv.ko $(moddir)/$$(basename $$d)/vboxdrv.ko); \
 	        make -C $(builddir)/bin/src/vboxnetflt KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
 		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxnetflt || true) && \
-	        make -C $(builddir)/bin/src/vboxnetflt KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all && \
-	        install -D -m 0644 -g 0 -o 0 \
-	            $(builddir)/bin/src/vboxnetflt/vboxnetflt.ko $(moddir)/$$(basename $$d)/vboxnetflt.ko; \
+	        make -j4 -C $(builddir)/bin/src/vboxnetflt KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all \
+	        $(if $(instmod),&& install -D -m 0644 -g 0 -o 0 \
+	            $(builddir)/bin/src/vboxnetflt/vboxnetflt.ko $(moddir)/$$(basename $$d)/vboxnetflt.ko); \
 	        make -C $(builddir)/bin/src/vboxnetadp KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
 		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxnetadp || true) && \
-	        make -C $(builddir)/bin/src/vboxnetadp KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all && \
-	        install -D -m 0644 -g 0 -o 0 \
-	            $(builddir)/bin/src/vboxnetadp/vboxnetadp.ko $(moddir)/$$(basename $$d)/vboxnetadp.ko; \
+	        make -j4 -C $(builddir)/bin/src/vboxnetadp KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all \
+	        $(if $(instmod),&& install -D -m 0644 -g 0 -o 0 \
+	            $(builddir)/bin/src/vboxnetadp/vboxnetadp.ko $(moddir)/$$(basename $$d)/vboxnetadp.ko); \
 	    fi; \
 	done
 	make -C $(builddir)/bin/src/vboxdrv clean
@@ -158,8 +161,9 @@ debian/modules-stamp: debian/build-stamp
 clean:
 	dh_testdir
 	dh_testroot
+	rm -f debian/preinst debian/postinst
 	rm -f debian/$(package).init debian/vboxdrv.init
-	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh debian/preinst
+	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh
 	rm -f debian/modules-stamp debian/build-stamp debian/configure-stamp
 	rm -rf $(builddir) $(moddir)
 	dh_clean
@@ -218,12 +222,14 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
 	$(if $(NOMODS),,for d in $(moddir)/*; do \
-	    install -D -g 0 -o 0 -m 0644 \
-		$$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; \
-	    install -D -g 0 -o 0 -m 0644 \
-		$$d/vboxnetflt.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxnetflt.ko; \
-	    install -D -g 0 -o 0 -m 0644 \
-		$$d/vboxnetadp.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxnetadp.ko; \
+	    if [ -f $$d/vboxdrv.ko -a -f $$d/vboxnetflt.ko -a -f $$d/vboxnetadp.ko ]; then \
+	        install -D -g 0 -o 0 -m 0644 \
+		    $$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; \
+	        install -D -g 0 -o 0 -m 0644 \
+		    $$d/vboxnetflt.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxnetflt.ko; \
+	        install -D -g 0 -o 0 -m 0644 \
+		    $$d/vboxnetadp.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxnetadp.ko; \
+	    fi \
 	    done)
 ifeq ($(ose),)
 	$(if $(NOQT),,mv $(archdir)/kchmviewer $(prefix)/usr/lib/$(package))
@@ -260,6 +266,7 @@ endif
 	    src/VBox/Installer/linux/vboxdrv.sh.in > debian/vboxdrv.init
 	dh_installinit --name=vboxdrv
 	cat debian/preinst.in | sed -e 's|%VER%|$(ver)|g' > debian/preinst
+	cat debian/postinst.in | sed -e 's|%VER%|$(ver)|g' > debian/postinst
 	if [ "$(debrel)" = "_Ubuntu_dapper" -o "$(debrel)" = "_Debian_sarge" ]; then \
 	    cat debian/postrm.dapper > debian/postrm; fi
 	dh_installdebconf
@@ -292,7 +299,7 @@ endif
 	  -Valsa=$(if $(HEADLESS),,libasound2) \
 	  -Vpulse=$(if $(HEADLESS),,libpulse0) \
 	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0) \
-	  -Vdkms=$(if $(filter _Ubuntu_gutsy _Ubuntu_hardy _Ubuntu_intrepid _Ubuntu_jaunty,$(debrel)),dkms,)
+	  -Vdkms=$(if $(filter _Ubuntu_gutsy _Ubuntu_hardy _Ubuntu_intrepid _Ubuntu_jaunty _Ubuntu_karmic,$(debrel)),dkms,)
 	dh_md5sums
 	dh_builddeb --destdir $(pkgdir)
 endif

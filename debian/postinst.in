@@ -1,0 +1,179 @@
+#!/bin/sh
+#
+# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+# we can be called with the following arguments:
+#  configure:         (our version): installing/configuring new version
+#  abort-upgrade:     (old version): upgrading to a new version failed
+#  abort-remove:      (our version): removing this package failed
+#  abort-deconfigure: (our version): error during resolving conflicts
+
+LOG="/var/log/vbox-install.log"
+
+if [ "$1" = "configure" ]; then
+
+  # for debconf
+  . /usr/share/debconf/confmodule
+  db_version 2.0
+
+  # remove old cruft
+  if [ -f /etc/init.d/vboxdrv.sh ]; then
+    echo "Found old version of /etc/init.d/vboxdrv.sh, removing."
+    rm /etc/init.d/vboxdrv.sh
+    update-rc.d vboxdrv.sh remove >/dev/null
+  fi
+  if [ -f /etc/vbox/vbox.cfg ]; then
+    echo "Found old version of /etc/vbox/vbox.cfg, removing."
+    rm /etc/vbox/vbox.cfg
+  fi
+
+  # install udev rule
+  if [ -d /etc/udev/rules.d ]; then
+    udev_call=""
+    udev_app=`which udevadm 2> /dev/null`
+    if [ $? -eq 0 ]; then
+      udev_call="${udev_app} version 2> /dev/null"
+    else
+      udev_app=`which udevinfo 2> /dev/null`
+      if [ $? -eq 0 ]; then
+        udev_call="${udev_app} -V 2> /dev/null"
+      fi
+    fi
+    udev_fix="="
+    if [ "${udev_call}" != "" ]; then
+      udev_out=`${udev_call}`
+      udev_ver=`expr "$udev_out" : '[^0-9]*\([0-9]*\)'`
+      if [ "$udev_ver" = "" -o "$udev_ver" -lt 55 ]; then
+        udev_fix=""
+      fi
+    fi
+    echo "KERNEL=${udev_fix}\"vboxdrv\", NAME=\"vboxdrv\", OWNER=\"root\", GROUP=\"root\", MODE=\"0600\"" \
+      > /etc/udev/rules.d/60-vboxdrv.rules
+  fi
+
+  # create users groups
+  db_input high virtualbox/group-vboxusers || true
+  db_go || true
+  addgroup --system vboxusers || true
+
+  REGISTER_DKMS=1
+  if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
+    db_get virtualbox/module-compilation-allowed
+    if [ "$RET" = "false" ]; then
+      cat << EOF
+Unable to find a precompiled module for the current kernel
+though module compilation denied by debconf setting.
+EOF
+    else
+      db_input critical virtualbox/module-compilation-allowed || true
+      db_go || true
+      db_get virtualbox/module-compilation-allowed
+      if [ "$RET" = "true" ]; then
+        # Compile module. Don't show a message box here if everything works well.
+        cat << EOF
+Messages emitted during module compilation will be logged to $LOG.
+EOF
+        rm -f /etc/vbox/module_not_compiled
+        echo "** Compiling vboxdrv" > /var/log/vbox-install.log
+        if ! /usr/share/virtualbox/src/vboxdrv/build_in_tmp \
+            --save-module-symvers /tmp/vboxdrv-Module.symvers \
+            --no-print-directory KBUILD_VERBOSE= \
+            install >> /var/log/vbox-install.log 2>&1; then
+          db_fset virtualbox/module-compilation-failed seen false
+          db_input critical virtualbox/module-compilation-failed || true
+          db_go || true
+          touch /etc/vbox/module_not_compiled
+          # don't abort the installation!
+        else
+          echo "** Compiling vboxnetflt" >> /var/log/vbox-install.log
+          if ! /usr/share/virtualbox/src/vboxnetflt/build_in_tmp \
+              --use-module-symvers /tmp/vboxdrv-Module.symvers \
+              --no-print-directory KBUILD_VERBOSE= \
+              install >> /var/log/vbox-install.log 2>&1; then
+            db_fset virtualbox/module-compilation-failed seen false
+            db_input critical virtualbox/module-compilation-failed || true
+            db_go || true
+            touch /etc/vbox/module_not_compiled
+            # don't abort the installation!
+          else
+            echo "** Compiling vboxnetadp" >> /var/log/vbox-install.log
+            if ! /usr/share/virtualbox/src/vboxnetadp/build_in_tmp \
+                --use-module-symvers /tmp/vboxdrv-Module.symvers \
+                --no-print-directory KBUILD_VERBOSE= \
+                install >> /var/log/vbox-install.log 2>&1; then
+              db_fset virtualbox/module-compilation-failed seen false
+              db_input critical virtualbox/module-compilation-failed || true
+              db_go || true
+              touch /etc/vbox/module_not_compiled
+              # don't abort the installation!
+            fi
+          fi
+        fi
+        # cleanup
+        rm -f /tmp/vboxdrv-Module.symvers
+        if [ ! -f /etc/vbox/module_not_compiled ]; then
+          # success
+          cat << EOF
+Success!
+EOF
+          REGISTER_DKMS=
+        fi
+      fi
+    fi
+  fi
+
+  # Register at DKMS. If the modules were built above, they are already registered
+  if [ -n "$REGISTER_DKMS" ]; then
+    DKMS=`which dkms 2>/dev/null`
+    if [ -n "$DKMS" ]; then
+      for m in vboxdrv vboxnetflt vboxnetadp; do
+        $DKMS status -m $m | while read line; do
+          if echo "$line" | grep -q added > /dev/null ||
+             echo "$line" | grep -q built > /dev/null ||
+             echo "$line" | grep -q installed > /dev/null; then
+               v=`echo "$line" | sed "s/$m,\([^,]*\)[,:].*/\1/;t;d"`
+               $DKMS remove -m $m -v $v --all
+          fi
+        done
+        $DKMS add -m $m -v %VER%
+      done
+    fi
+  fi
+
+  # There might be an old module active (e.g. manually loaded)
+  if lsmod | grep -q "vboxdrv[^_-]"; then
+    /etc/init.d/vboxdrv stop || true
+  fi
+
+  # The starters need to be Suid root. They drop the privileges before starting
+  # the real frontend.
+  if ! dpkg-statoverride --list /usr/lib/virtualbox/VirtualBox > /dev/null 2>&1; then
+    chmod 4511 /usr/lib/virtualbox/VirtualBox
+  fi
+  if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxHeadless > /dev/null 2>&1; then
+    chmod 4511 /usr/lib/virtualbox/VBoxHeadless
+  fi
+  if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxSDL > /dev/null 2>&1; then
+    chmod 4511 /usr/lib/virtualbox/VBoxSDL
+  fi
+  if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxNetDHCP > /dev/null 2>&1; then
+    chmod 4511 /usr/lib/virtualbox/VBoxNetDHCP
+  fi
+  if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxNetAdpCtl > /dev/null 2>&1; then
+    chmod 4511 /usr/lib/virtualbox/VBoxNetAdpCtl
+  fi
+
+fi # $1 = "configure"
+
+#DEBHELPER#
+
+exit 0
