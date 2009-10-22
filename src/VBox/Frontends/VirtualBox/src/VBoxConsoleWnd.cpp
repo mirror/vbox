@@ -1048,7 +1048,7 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
             while (j < attachments.size() && ctrName.isNull())
             {
                 CMediumAttachment attachment = attachments [j];
-                if (attachment.GetDevice() == KDeviceType_DVD)
+                if (attachment.GetType() == KDeviceType_DVD)
                 {
                     ctrName = controller.GetName();
                     ctrPort = attachment.GetPort();
