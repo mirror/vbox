@@ -132,7 +132,7 @@ void vboxClientSetSignalHandlers(void)
  */
 void vboxClientUsage(const char *pcszFileName)
 {
-    RTPrintf("Usage: %s --clipboard|--display|--seamless [-d|--nodaemon]\n", pcszFileName);
+    RTPrintf("Usage: %s --clipboard|--display|--checkhostversion|--seamless [-d|--nodaemon]\n", pcszFileName);
     RTPrintf("Start the VirtualBox X Window System guest services.\n\n");
     RTPrintf("Options:\n");
     RTPrintf("  --clipboard      start the shared clipboard service\n");
