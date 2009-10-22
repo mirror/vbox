@@ -34,6 +34,7 @@
 #include <iprt/string.h>
 
 #include <iprt/initterm.h>
+#include <iprt/net.h>
 #include <iprt/stream.h>
 #include <iprt/test.h>
 #include <iprt/uuid.h>
@@ -268,6 +269,39 @@ int main()
 
     CHECK42("%RTiop", (RTIOPORT)0x3c4, "03c4");
     CHECK42("%RTiop", (RTIOPORT)0xffff, "ffff");
+
+    RTMAC Mac;
+    Mac.au8[0] = 0;
+    Mac.au8[1] = 0x1b;
+    Mac.au8[2] = 0x21;
+    Mac.au8[3] = 0x0a;
+    Mac.au8[4] = 0x1d;
+    Mac.au8[5] = 0xd9;
+    CHECK42("%RTmac", &Mac, "00:1b:21:0a:1d:d9");
+    Mac.au16[0] = 0xffff;
+    Mac.au16[1] = 0xffff;
+    Mac.au16[2] = 0xffff;
+    CHECK42("%RTmac", &Mac, "ff:ff:ff:ff:ff:ff");
+
+    RTNETADDRIPV4 Ipv4Addr;
+    Ipv4Addr.u = RT_H2N_U32_C(0xf040d003);
+    CHECK42("%RTnaipv4", Ipv4Addr.u, "240.64.208.3");
+    Ipv4Addr.u = RT_H2N_U32_C(0xffffffff);
+    CHECK42("%RTnaipv4", Ipv4Addr.u, "255.255.255.255");
+
+    RTNETADDRIPV6 Ipv6Addr;
+    Ipv6Addr.au16[0] = RT_H2N_U16_C(0x2001);
+    Ipv6Addr.au16[1] = RT_H2N_U16_C(0x0db8);
+    Ipv6Addr.au16[2] = RT_H2N_U16_C(0x85a3);
+    Ipv6Addr.au16[3] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[4] = RT_H2N_U16_C(0x0000);
+    Ipv6Addr.au16[5] = RT_H2N_U16_C(0x8a2e);
+    Ipv6Addr.au16[6] = RT_H2N_U16_C(0x0370);
+    Ipv6Addr.au16[7] = RT_H2N_U16_C(0x7334);
+    CHECK42("%RTnaipv6", &Ipv6Addr, "2001:0db8:85a3:0000:0000:8a2e:0370:7334");
+    Ipv6Addr.au64[0] = UINT64_MAX;
+    Ipv6Addr.au64[1] = UINT64_MAX;
+    CHECK42("%RTnaipv6", &Ipv6Addr, "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
 
     CHECK42("%RTproc", (RTPROCESS)0xffffff, "00ffffff");
     CHECK42("%RTproc", (RTPROCESS)0x43455443, "43455443");
