@@ -36,6 +36,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/include/iprt/mem.h=>include/iprt/mem.h \
     ${PATH_ROOT}/include/iprt/memobj.h=>include/iprt/memobj.h \
     ${PATH_ROOT}/include/iprt/mp.h=>include/iprt/mp.h \
+    ${PATH_ROOT}/include/iprt/net.h=>include/iprt/net.h \
     ${PATH_ROOT}/include/iprt/param.h=>include/iprt/param.h \
     ${PATH_ROOT}/include/iprt/power.h=>include/iprt/power.h \
     ${PATH_ROOT}/include/iprt/process.h=>include/iprt/process.h \
