@@ -2635,14 +2635,9 @@ static int vga_load(QEMUFile *f, void *opaque, int version_id)
     int is_vbe, i;
     uint32_t u32Dummy;
 
+#ifndef VBOX /* checked by the caller. */
     if (version_id > VGA_SAVEDSTATE_VERSION)
-#ifndef VBOX
         return -EINVAL;
-#else /* VBOX */
-    {
-        Log(("vga_load: version_id=%d - UNKNOWN\n", version_id));
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    }
 #endif /* VBOX */
 
     qemu_get_be32s(f, &s->latch);
@@ -4606,8 +4601,11 @@ static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
     Assert(num_rows * num_cols * 8 <= pThis->vram_size);
 
     src = pThis->vram_ptrR3;
-    if (src) {
-        for (col = 0; col < num_cols; ++col) pHlp->pfnPrintf(pHlp, "-"); pHlp->pfnPrintf(pHlp, "\n");
+    if (src)
+    {
+        for (col = 0; col < num_cols; ++col)
+            pHlp->pfnPrintf(pHlp, "-");
+        pHlp->pfnPrintf(pHlp, "\n");
         for (row = 0; row < num_rows; ++row)
         {
             for (col = 0; col < num_cols; ++col)
@@ -4617,7 +4615,9 @@ static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
             }
             pHlp->pfnPrintf(pHlp, "\n");
         }
-        for (col = 0; col < num_cols; ++col) pHlp->pfnPrintf(pHlp, "-"); pHlp->pfnPrintf(pHlp, "\n");
+        for (col = 0; col < num_cols; ++col)
+            pHlp->pfnPrintf(pHlp, "-");
+        pHlp->pfnPrintf(pHlp, "\n");
     }
     else
     {
@@ -5343,61 +5343,133 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
 }
 
 
-/* -=-=-=-=-=- Ring3: Misc Wrappers -=-=-=-=-=- */
+/* -=-=-=-=-=- Ring3: Misc Wrappers & Sidekicks -=-=-=-=-=- */
 
 /**
- * Saves a state of the VGA device.
+ * Saves a important bits of the VGA device config.
  *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to save the state to.
+ * @param   pThis       The VGA instance data.
+ * @param   pSSM        The saved state handle.
  */
-static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static void vgaR3SaveConfig(PVGASTATE pThis, PSSMHANDLE pSSM)
 {
-    vga_save(pSSMHandle, PDMINS_2_DATA(pDevIns, PVGASTATE));
-#ifdef VBOX_WITH_HGSMI
-    return vboxVBVASaveStateExec(pDevIns, pSSMHandle);
-#else
-    return VINF_SUCCESS;
-#endif
+    SSMR3PutU32(pSSM, pThis->vram_size);
+    SSMR3PutU32(pSSM, pThis->cMonitors);
 }
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
+
+/**
+ * @copydoc FNSSMDEVLIVEEXEC
+ */
+static DECLCALLBACK(int) vgaR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    Assert(uPass == 0); NOREF(uPass);
+    vgaR3SaveConfig(pThis, pSSM);
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
+
+
+/**
+ * @copydoc FNSSMDEVSAVEPREP
+ */
 static DECLCALLBACK(int) vgaR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+#ifdef VBOX_WITH_VIDEOHWACCEL
     return vboxVBVASaveStatePrep(pDevIns, pSSM);
-}
+#else
+    return VINF_SUCCESS;
 #endif
+}
+
 
 /**
- * Loads a saved VGA device state.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to the saved state.
- * @param   uVersion    The data unit version number.
- * @param   uPass       The data pass.
+ * @copydoc FNSSMDEVSAVEEXEC
  */
-static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
-    int rc = vga_load(pSSMHandle, PDMINS_2_DATA(pDevIns, PVGASTATE), uVersion);
-    if (RT_FAILURE(rc))
-        return rc;
+    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    vgaR3SaveConfig(pThis, pSSM);
+    vga_save(pSSM, PDMINS_2_DATA(pDevIns, PVGASTATE));
 #ifdef VBOX_WITH_HGSMI
-    return vboxVBVALoadStateExec(pDevIns, pSSMHandle, uVersion);
+    SSMR3PutBool(pSSM, true);
+    return vboxVBVASaveStateExec(pDevIns, pSSM);
 #else
+    SSMR3PutBool(pSSM, false);
     return VINF_SUCCESS;
 #endif
 }
 
-/** @copydoc FNSSMDEVLOADDONE */
+
+/**
+ * @copydoc FNSSMDEVSAVEEXEC
+ */
+static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    int         rc;
+
+    if (    uVersion != VGA_SAVEDSTATE_VERSION
+        &&  uVersion != VGA_SAVEDSTATE_VERSION_HGSMI
+        &&  uVersion != VGA_SAVEDSTATE_VERSION_PRE_HGSMI)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    if (uVersion > VGA_SAVEDSTATE_VERSION_HGSMI)
+    {
+        /* Check the config */
+        uint32_t cbVRam;
+        rc = SSMR3GetU32(pSSM, &cbVRam);
+        AssertRCReturn(rc, rc);
+        if (pThis->vram_size != cbVRam)
+        {
+            LogRel(("DevVGA: VRAM size changed: config=%#x state=%#x\n", pThis->vram_size, cbVRam));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
+
+        uint32_t cMonitors;
+        rc = SSMR3GetU32(pSSM, &cMonitors);
+        AssertRCReturn(rc, rc);
+        if (pThis->cMonitors != cMonitors)
+        {
+            LogRel(("DevVGA: Monitor count changed: config=%u state=%u\n", pThis->cMonitors, cMonitors));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
+    }
+
+    if (uPass == SSM_PASS_FINAL)
+    {
+        rc = vga_load(pSSM, pThis, uVersion);
+        if (RT_FAILURE(rc))
+            return rc;
+        bool fWithHgsmi = uVersion == VGA_SAVEDSTATE_VERSION_HGSMI;
+        if (uVersion > VGA_SAVEDSTATE_VERSION_HGSMI)
+        {
+            rc = SSMR3GetBool(pSSM, &fWithHgsmi);
+            AssertRCReturn(rc, rc);
+        }
+        if (fWithHgsmi)
+        {
+#ifdef VBOX_WITH_HGSMI
+            rc = vboxVBVALoadStateExec(pDevIns, pSSM, uVersion);
+            AssertRCReturn(rc, rc);
+#else
+            AssertLogRelFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
+#endif
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @copydoc FNSSMDEVLOADDONE
+ */
 static DECLCALLBACK(int) vgaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-#ifndef VBOX_WITH_HGSMI
-    return VINF_SUCCESS;
-#else
+#ifdef VBOX_WITH_HGSMI
     return vboxVBVALoadStateDone(pDevIns, pSSM);
+#else
+    return VINF_SUCCESS;
 #endif
 }
 
@@ -6036,13 +6108,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     /* save */
     rc = PDMDevHlpSSMRegisterEx(pDevIns, VGA_SAVEDSTATE_VERSION, sizeof(*pThis), NULL,
-                                NULL, NULL, NULL,
-#ifdef VBOX_WITH_VIDEOHWACCEL
+                                NULL,          vgaR3LiveExec, NULL,
                                 vgaR3SavePrep, vgaR3SaveExec, NULL,
-#else
-                                NULL, vgaR3SaveExec, NULL,
-#endif
-                                NULL, vgaR3LoadExec, vgaR3LoadDone);
+                                NULL,          vgaR3LoadExec, vgaR3LoadDone);
     if (RT_FAILURE(rc))
         return rc;
 
