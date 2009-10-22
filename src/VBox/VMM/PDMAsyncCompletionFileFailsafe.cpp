@@ -100,7 +100,7 @@ static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMASYNCCOMPLETIONENDPOINTFIL
     {
         pTasks = pdmacFileEpGetNewTasks(pEndpoint);
 
-        if (pTasks);
+        if (pTasks)
             rc = pdmacFileAioMgrFailsafeProcessEndpointTaskList(pEndpoint, pTasks);
     }
 
