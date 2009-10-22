@@ -1738,7 +1738,7 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
                               "Port\0"
                               "Version\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Invalid configuraton for sb16 device"));
+                                N_("Invalid configuration for sb16 device"));
 
     /*
      * Read config data.

@@ -227,19 +227,19 @@ struct VirtioPCIDevices
     /*  Vendor  Device SSVendor SubSys             Class   NQ Name          Instance */
     { /* Virtio Network Device */
         0x1AF4, 0x1000, 0x1AF4, 1 + VIRTIO_NET_ID, 0x0200, 3, "virtio-net", "vnet%d",
-        vnetGetHostFeatures, vnetGetHostMinimalFeatures, vnetSetHostFeatures, 
+        vnetGetHostFeatures, vnetGetHostMinimalFeatures, vnetSetHostFeatures,
         vnetGetConfig, vnetSetConfig, vnetReset
 #ifdef DEBUG
         , vnetGetQueueName
 #endif /* DEBUG */
-    }, 
+    },
     { /* Virtio Block Device */
         0x1AF4, 0x1001, 0x1AF4, 1 + VIRTIO_BLK_ID, 0x0180, 2, "virtio-blk", "vblk%d",
         NULL, NULL, NULL, NULL, NULL, NULL
 #ifdef DEBUG
         , NULL
 #endif /* DEBUG */
-    }, 
+    },
 };
 
 
@@ -301,7 +301,7 @@ static void vqueueInit(PVQUEUE pQueue, uint32_t uPageNumber)
 uint16_t vringReadAvailIndex(PVPCISTATE pState, PVRING pVRing)
 {
     uint16_t tmp;
-    
+
     PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
                       pVRing->addrAvail + RT_OFFSETOF(VRINGAVAIL, uNextFreeIndex),
                       &tmp, sizeof(tmp));
@@ -333,7 +333,7 @@ void vringReadDesc(PVPCISTATE pState, PVRING pVRing, uint32_t uIndex, PVRINGDESC
 uint16_t vringReadAvail(PVPCISTATE pState, PVRING pVRing, uint32_t uIndex)
 {
     uint16_t tmp;
-    
+
     PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
                       pVRing->addrAvail + RT_OFFSETOF(VRINGAVAIL, auRing[uIndex % pVRing->uSize]),
                       &tmp, sizeof(tmp));
@@ -343,7 +343,7 @@ uint16_t vringReadAvail(PVPCISTATE pState, PVRING pVRing, uint32_t uIndex)
 uint16_t vringReadAvailFlags(PVPCISTATE pState, PVRING pVRing)
 {
     uint16_t tmp;
-    
+
     PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
                       pVRing->addrAvail + RT_OFFSETOF(VRINGAVAIL, uFlags),
                       &tmp, sizeof(tmp));
@@ -353,7 +353,7 @@ uint16_t vringReadAvailFlags(PVPCISTATE pState, PVRING pVRing)
 DECLINLINE(void) vringSetNotification(PVPCISTATE pState, PVRING pVRing, bool fEnabled)
 {
     uint16_t tmp;
-    
+
     PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
                       pVRing->addrUsed + RT_OFFSETOF(VRINGUSED, uFlags),
                       &tmp, sizeof(tmp));
@@ -372,10 +372,10 @@ bool vqueueGet(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem)
 {
     if (vqueueIsEmpty(pState, pQueue))
         return false;
-    
+
     pElem->nIn = pElem->nOut = 0;
 
-    Log2(("%s vqueueGet: %s avail_idx=%u\n", INSTANCE(pState), 
+    Log2(("%s vqueueGet: %s avail_idx=%u\n", INSTANCE(pState),
           QUEUENAME(pState, pQueue), pQueue->uNextAvailIndex));
 
     VRINGDESC desc;
@@ -988,7 +988,7 @@ DECLCALLBACK(int) vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
 static DECLCALLBACK(int) vpciDestruct(VPCISTATE* pState)
 {
     Log(("%s Destroying PCI instance\n", INSTANCE(pState)));
-    
+
     if (pState->pQueues)
         RTMemFree(pState->pQueues);
 
@@ -1460,7 +1460,7 @@ static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb)
         vqueuePut(&pState->VPCI, pState->pRxQueue, &elem, uElemSize);
     }
     vqueueSync(&pState->VPCI, pState->pRxQueue);
-    
+
     return VINF_SUCCESS;
 }
 
@@ -1477,7 +1477,7 @@ static DECLCALLBACK(int) vnetReceive(PPDMINETWORKPORT pInterface, const void *pv
 {
     VNETSTATE *pState = IFACE_TO_STATE(pInterface, INetworkPort);
     int        rc = VINF_SUCCESS;
- 
+
     Log2(("%s vnetReceive: pvBuf=%p cb=%u\n", INSTANCE(pState), pvBuf, cb));
     rc = vnetCanReceive(pState);
     if (RT_FAILURE(rc))
@@ -1604,7 +1604,7 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
                 unsigned int uSize = elem.aSegsOut[i].cb;
                 if (uSize > VNET_MAX_FRAME_SIZE - uOffset)
                 {
-                    Log(("%s vnetQueueTransmit: Packet is too big (>64k), truncating...\n", INSTANCE(pState))); 
+                    Log(("%s vnetQueueTransmit: Packet is too big (>64k), truncating...\n", INSTANCE(pState)));
                     uSize = VNET_MAX_FRAME_SIZE - uOffset;
                 }
                 PDMDevHlpPhysRead(pState->VPCI.CTX_SUFF(pDevIns), elem.aSegsOut[i].addr,
@@ -1664,7 +1664,7 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "MAC\0" "CableConnected\0" "LineSpeed\0"))
                     return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                            N_("Invalid configuraton for VirtioNet device"));
+                                            N_("Invalid configuration for VirtioNet device"));
 
     /* Get config params */
     rc = CFGMR3QueryBytes(pCfgHandle, "MAC", pState->config.mac.au8,
@@ -1768,7 +1768,7 @@ static DECLCALLBACK(int) vnetDestruct(PPDMDEVINS pDevIns)
         RTSemEventDestroy(pState->hEventMoreRxDescAvail);
         pState->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
     }
-    
+
     return vpciDestruct(&pState->VPCI);
 }
 
