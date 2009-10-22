@@ -2353,6 +2353,144 @@ PDMBOTHCBDECL(int) apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
 
 #ifdef IN_RING3
 
+/* Print a 8-dword LAPIC bit map (256 bits). */
+static void lapicDumpVec(APICDeviceInfo  *dev, APICState *lapic, PCDBGFINFOHLP pHlp, unsigned start)
+{
+    unsigned    i;
+    uint32_t    val;
+
+    for (i = 0; i < 8; ++i)
+    {
+        val = apic_mem_readl(dev, lapic, start + (i << 4));
+        pHlp->pfnPrintf(pHlp, "%08X", val);
+    }
+    pHlp->pfnPrintf(pHlp, "\n");
+}
+
+/* Print basic LAPIC state. */
+static DECLCALLBACK(void) lapicInfoBasic(APICDeviceInfo  *dev, APICState *lapic, PCDBGFINFOHLP pHlp)
+{
+    uint32_t        val;
+    unsigned        max_lvt;
+
+    pHlp->pfnPrintf(pHlp, "Local APIC at %08X:\n", lapic->apicbase);
+    val = apic_mem_readl(dev, lapic, 0x20);
+    pHlp->pfnPrintf(pHlp, "  LAPIC ID  : %08X\n", val);
+    pHlp->pfnPrintf(pHlp, "    APIC ID = %02X\n", (val >> 24) & 0xff);
+    val = apic_mem_readl(dev, lapic, 0x30);
+    max_lvt = (val >> 16) & 0xff;
+    pHlp->pfnPrintf(pHlp, "  APIC VER   : %08X\n", val);
+    pHlp->pfnPrintf(pHlp, "    version  = %02X\n", val & 0xff);
+    pHlp->pfnPrintf(pHlp, "    lvts     = %d\n", ((val >> 16) & 0xff) + 1);
+    val = apic_mem_readl(dev, lapic, 0x80);
+    pHlp->pfnPrintf(pHlp, "  TPR        : %08X\n", val);
+    pHlp->pfnPrintf(pHlp, "    task pri = %d/%d\n", (val >> 4) & 0xf, val & 0xf);
+    val = apic_mem_readl(dev, lapic, 0xA0);
+    pHlp->pfnPrintf(pHlp, "  PPR        : %08X\n", val);
+    pHlp->pfnPrintf(pHlp, "    cpu pri  = %d/%d\n", (val >> 4) & 0xf, val & 0xf);
+    val = apic_mem_readl(dev, lapic, 0xD0);
+    pHlp->pfnPrintf(pHlp, "  LDR       : %08X\n", val);
+    pHlp->pfnPrintf(pHlp, "    log id  = %02X\n", (val >> 24) & 0xff);
+    val = apic_mem_readl(dev, lapic, 0xE0);
+    pHlp->pfnPrintf(pHlp, "  DFR       : %08X\n", val);
+    val = apic_mem_readl(dev, lapic, 0xF0);
+    pHlp->pfnPrintf(pHlp, "  SVR       : %08X\n", val);
+    pHlp->pfnPrintf(pHlp, "    focus   = %s\n", val & (1 << 9) ? "check off" : "check on");
+    pHlp->pfnPrintf(pHlp, "    lapic   = %s\n", val & (1 << 8) ? "ENABLED" : "DISABLED");
+    pHlp->pfnPrintf(pHlp, "    vector  = %02X\n", val & 0xff);
+    pHlp->pfnPrintf(pHlp, "  ISR       : ");
+    lapicDumpVec(dev, lapic, pHlp, 0x100);
+    val = get_highest_priority_int(lapic->isr);
+    pHlp->pfnPrintf(pHlp, "    highest = %02X\n", val == ~0 ? 0 : val);
+    pHlp->pfnPrintf(pHlp, "  IRR       : ");
+    lapicDumpVec(dev, lapic, pHlp, 0x200);
+    val = get_highest_priority_int(lapic->irr);
+    pHlp->pfnPrintf(pHlp, "    highest = %02X\n", val == ~0 ? 0 : val);
+    val = apic_mem_readl(dev, lapic, 0x320);
+}
+
+/* Print the more interesting LAPIC LVT entries. */
+static DECLCALLBACK(void) lapicInfoLVT(APICDeviceInfo  *dev, APICState *lapic, PCDBGFINFOHLP pHlp)
+{
+    uint32_t        val;
+    static char     *dmodes[] = { "Fixed ", "Reserved", "SMI", "Reserved", 
+                                  "NMI", "INIT", "Reserved", "ExtINT" };
+
+    val = apic_mem_readl(dev, lapic, 0x320);
+    pHlp->pfnPrintf(pHlp, "  LVT Timer : %08X\n", val);
+    pHlp->pfnPrintf(pHlp, "    mode    = %s\n", val & (1 << 17) ? "periodic" : "one-shot");
+    pHlp->pfnPrintf(pHlp, "    mask    = %d\n", (val >> 16) & 1);
+    pHlp->pfnPrintf(pHlp, "    status  = %s\n", val & (1 << 12) ? "pending" : "idle");
+    pHlp->pfnPrintf(pHlp, "    vector  = %02X\n", val & 0xff);
+    val = apic_mem_readl(dev, lapic, 0x350);
+    pHlp->pfnPrintf(pHlp, "  LVT LINT0 : %08X\n", val);
+    pHlp->pfnPrintf(pHlp, "    mask    = %d\n", (val >> 16) & 1);
+    pHlp->pfnPrintf(pHlp, "    trigger = %s\n", val & (1 << 15) ? "level" : "edge");
+    pHlp->pfnPrintf(pHlp, "    rem irr = %d\n", (val >> 14) & 1);
+    pHlp->pfnPrintf(pHlp, "    polarty = %d\n", (val >> 13) & 1);
+    pHlp->pfnPrintf(pHlp, "    status  = %s\n", val & (1 << 12) ? "pending" : "idle");
+    pHlp->pfnPrintf(pHlp, "    delivry = %s\n", dmodes[(val >> 8) & 7]);
+    pHlp->pfnPrintf(pHlp, "    vector  = %02X\n", val & 0xff);
+    val = apic_mem_readl(dev, lapic, 0x360);
+    pHlp->pfnPrintf(pHlp, "  LVT LINT1 : %08X\n", val);
+    pHlp->pfnPrintf(pHlp, "    mask    = %d\n", (val >> 16) & 1);
+    pHlp->pfnPrintf(pHlp, "    trigger = %s\n", val & (1 << 15) ? "level" : "edge");
+    pHlp->pfnPrintf(pHlp, "    rem irr = %d\n", (val >> 14) & 1);
+    pHlp->pfnPrintf(pHlp, "    polarty = %d\n", (val >> 13) & 1);
+    pHlp->pfnPrintf(pHlp, "    status  = %s\n", val & (1 << 12) ? "pending" : "idle");
+    pHlp->pfnPrintf(pHlp, "    delivry = %s\n", dmodes[(val >> 8) & 7]);
+    pHlp->pfnPrintf(pHlp, "    vector  = %02X\n", val & 0xff);
+}
+
+/* Print LAPIC timer state. */
+static DECLCALLBACK(void) lapicInfoTimer(APICDeviceInfo  *dev, APICState *lapic, PCDBGFINFOHLP pHlp)
+{
+    uint32_t        val;
+    unsigned        divider;
+
+    pHlp->pfnPrintf(pHlp, "Local APIC timer:\n");
+    val = apic_mem_readl(dev, lapic, 0x380);
+    pHlp->pfnPrintf(pHlp, "  Initial count : %08X\n", val);
+    val = apic_mem_readl(dev, lapic, 0x390);
+    pHlp->pfnPrintf(pHlp, "  Current count : %08X\n", val);
+    val = apic_mem_readl(dev, lapic, 0x3E0);
+    pHlp->pfnPrintf(pHlp, "  Divide config : %08X\n", val);
+    divider = ((val >> 1) & 0x04) | (val & 0x03);
+    pHlp->pfnPrintf(pHlp, "    divider     = %d\n", divider == 7 ? 1 : 2 << divider);
+}
+
+/**
+ * Info handler, device version. Dumps Local APIC(s) state according to given argument.
+ *
+ * @param   pDevIns     Device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional.
+ */
+static DECLCALLBACK(void) lapicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    APICDeviceInfo  *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    APICState       *lapic;
+
+    lapic = getLapic(dev);
+
+    if (pszArgs == NULL || !strcmp(pszArgs, "basic"))
+    {
+        lapicInfoBasic(dev, lapic, pHlp);
+    }
+    else if (!strcmp(pszArgs, "lvt")) 
+    {
+        lapicInfoLVT(dev, lapic, pHlp);
+    }
+    else if (!strcmp(pszArgs, "timer")) 
+    {
+        lapicInfoTimer(dev, lapic, pHlp);
+    }
+    else
+    {
+        pHlp->pfnPrintf(pHlp, "Invalid argument. Recognized arguments are 'basic', 'lvt', 'timer'.\n");
+    }
+}
+
 /**
  * @copydoc FNSSMDEVSAVEEXEC
  */
@@ -2658,6 +2796,12 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return rc;
 
+    /*
+     * Register debugger info callback.
+     */
+    PDMDevHlpDBGFInfoRegister(pDevIns, "lapic", "Display Local APIC state for current CPU. "
+                              "Recognizes 'basic', 'lvt', 'timer' as arguments, defaulting to 'basic'.", lapicInfo);
+
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Statistics.
@@ -2808,6 +2952,56 @@ PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 #ifdef IN_RING3
 
 /**
+ * Info handler, device version. Dumps I/O APIC state.
+ *
+ * @param   pDevIns     Device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional and specific to the handler.
+ */
+static DECLCALLBACK(void) ioapicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    IOAPICState *s = PDMINS_2_DATA(pDevIns, IOAPICState *);
+    uint32_t    val;
+    unsigned    i;
+    unsigned    max_redir;
+
+    pHlp->pfnPrintf(pHlp, "I/O APIC at %08X:\n", 0xfec00000);
+    val = s->id << 24;  /* Would be nice to call ioapic_mem_readl() directly, but that's not so simple. */
+    pHlp->pfnPrintf(pHlp, "  IOAPICID  : %08X\n", val);
+    pHlp->pfnPrintf(pHlp, "    APIC ID = %02X\n", (val >> 24) & 0xff);
+    val = 0x11 | ((IOAPIC_NUM_PINS - 1) << 16);
+    max_redir = (val >> 16) & 0xff;
+    pHlp->pfnPrintf(pHlp, "  IOAPICVER : %08X\n", val);
+    pHlp->pfnPrintf(pHlp, "    version = %02X\n", val & 0xff);
+    pHlp->pfnPrintf(pHlp, "    redirs  = %d\n", ((val >> 16) & 0xff) + 1);
+    val = 0;
+    pHlp->pfnPrintf(pHlp, "  IOAPICARB : %08X\n", val);
+    pHlp->pfnPrintf(pHlp, "    arb ID  = %02X\n", (val >> 24) & 0xff);
+    Assert(sizeof(s->ioredtbl) / sizeof(s->ioredtbl[0]) > max_redir);
+    pHlp->pfnPrintf(pHlp, "I/O redirection table\n");
+    pHlp->pfnPrintf(pHlp, " idx dst_mode dst_addr mask trigger rirr polarity dlvr_st dlvr_mode vector\n");
+    for (i = 0; i <= max_redir; ++i)
+    {
+        static char *dmodes[] = { "Fixed ", "LowPri", "SMI   ", "Resrvd", 
+                                  "NMI   ", "INIT  ", "Resrvd", "ExtINT" };
+
+        pHlp->pfnPrintf(pHlp, "  %02d   %s      %02X     %d    %s   %d   %s  %s     %s   %3d (%016llX)\n", 
+                        i, 
+                        s->ioredtbl[i] & (1 << 11) ? "log " : "phys",           /* dest mode */
+                        (int)(s->ioredtbl[i] >> 56),                            /* dest addr */
+                        (int)(s->ioredtbl[i] >> 16) & 1,                        /* mask */
+                        s->ioredtbl[i] & (1 << 15) ? "level" : "edge ",         /* trigger */
+                        (int)(s->ioredtbl[i] >> 14) & 1,                        /* remote IRR */
+                        s->ioredtbl[i] & (1 << 13) ? "activelo" : "activehi",   /* polarity */
+                        s->ioredtbl[i] & (1 << 12) ? "pend" : "idle",           /* delivery status */
+                        dmodes[(s->ioredtbl[i] >> 8) & 0x07],                   /* delivery mode */
+                        (int)s->ioredtbl[i] & 0xff,                             /* vector */
+                        s->ioredtbl[i]                                          /* entire register */
+                        );
+    }
+}
+
+/**
  * @copydoc FNSSMDEVSAVEEXEC
  */
 static DECLCALLBACK(int) ioapicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
@@ -2936,6 +3130,11 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = PDMDevHlpSSMRegister(pDevIns, 1 /* version */, sizeof(*s), ioapicSaveExec, ioapicLoadExec);
     if (RT_FAILURE(rc))
         return rc;
+
+    /*
+     * Register debugger info callback.
+     */
+    PDMDevHlpDBGFInfoRegister(pDevIns, "ioapic", "Display I/O APIC state.", ioapicInfo);
 
 #ifdef VBOX_WITH_STATISTICS
     /*
