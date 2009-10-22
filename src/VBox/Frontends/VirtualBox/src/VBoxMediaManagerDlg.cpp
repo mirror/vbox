@@ -1198,7 +1198,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium, const QS
                 VBoxMedium medium = vboxGlobal().findMedium (attachment.GetMedium().isNull() ? QString() : attachment.GetMedium().GetId());
                 if (medium.id() == aMedium.id())
                 {
-                    machine.MountMedium (attachment.GetController().GetName(), attachment.GetPort(), attachment.GetDevice(), QString());
+                    machine.MountMedium (attachment.GetController().GetName(), attachment.GetPort(), attachment.GetDevice(), QString(""));
                     if (!machine.isOk())
                     {
                         vboxProblem().cannotUnmountMedium (this, machine, aMedium);
@@ -1219,7 +1219,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium, const QS
                 VBoxMedium medium = vboxGlobal().findMedium (attachment.GetMedium().isNull() ? QString() : attachment.GetMedium().GetId());
                 if (medium.id() == aMedium.id())
                 {
-                    machine.MountMedium (attachment.GetController().GetName(), attachment.GetPort(), attachment.GetDevice(), QString());
+                    machine.MountMedium (attachment.GetController().GetName(), attachment.GetPort(), attachment.GetDevice(), QString(""));
                     if (!machine.isOk())
                     {
                         vboxProblem().cannotUnmountMedium (this, machine, aMedium);
