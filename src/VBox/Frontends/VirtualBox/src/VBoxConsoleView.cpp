@@ -2093,7 +2093,7 @@ bool VBoxConsoleView::winEvent (MSG *aMsg, long* /* aResult */)
 
     /* These special keys have to be handled by Windows as well to update the
      * internal modifier state and to enable/disable the keyboard LED */
-    if (vkey == VK_NUMLOCK || vkey == VK_CAPITAL)
+    if (vkey == VK_NUMLOCK || vkey == VK_CAPITAL || vkey == VK_SHIFT)
         return false;
 
     return result;
@@ -2572,6 +2572,14 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
         muCapsLockAdaptionCnt--;
         codes[(*count)++] = 0x3a;
         codes[(*count)++] = 0x3a | 0x80;
+        /* Some keyboard layouts require shift to be pressed to break
+         * capslock.  For simplicity, only do this if shift is not
+         * already held down. */
+        if (mCapsLock && !(mPressedKeys [0x2a] & IsKeyPressed))
+        {
+            codes[(*count)++] = 0x2a;
+            codes[(*count)++] = 0x2a | 0x80;
+        }
     }
 
 #elif defined(Q_WS_WIN32)
@@ -2587,6 +2595,14 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
         muCapsLockAdaptionCnt--;
         codes[(*count)++] = 0x3a;
         codes[(*count)++] = 0x3a | 0x80;
+        /* Some keyboard layouts require shift to be pressed to break
+         * capslock.  For simplicity, only do this if shift is not
+         * already held down. */
+        if (mCapsLock && !(mPressedKeys [0x2a] & IsKeyPressed))
+        {
+            codes[(*count)++] = 0x2a;
+            codes[(*count)++] = 0x2a | 0x80;
+        }
     }
 
 #elif defined (Q_WS_MAC)
@@ -2597,6 +2613,14 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
         muCapsLockAdaptionCnt--;
         codes[(*count)++] = 0x3a;
         codes[(*count)++] = 0x3a | 0x80;
+        /* Some keyboard layouts require shift to be pressed to break
+         * capslock.  For simplicity, only do this if shift is not
+         * already held down. */
+        if (mCapsLock && !(mPressedKeys [0x2a] & IsKeyPressed))
+        {
+            codes[(*count)++] = 0x2a;
+            codes[(*count)++] = 0x2a | 0x80;
+        }
     }
 
 #else
