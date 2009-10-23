@@ -1186,12 +1186,9 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
 //        vboxVHWACommandCheckHostCmds(pDev);
 
         if(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_VISIBLE
-                || (
-                        lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE
-                        || (
-                                !!(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_OVERLAY)
-                                && pDesc->bVisible
-                           )
+                || lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE
+                || (    !!(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_OVERLAY)
+                     && pDesc->bVisible
                    )
           )
         {
@@ -1583,6 +1580,9 @@ DWORD APIENTRY DdFlip(PDD_FLIPDATA  lpFlip)
         pBody->u.in.hCurrSurf = pCurrDesc->hHostHandle;
         pBody->TargGuestSurfInfo = (uint64_t)pTargDesc;
         pBody->CurrGuestSurfInfo = (uint64_t)pCurrDesc;
+
+        pTargDesc->bVisible = pCurrDesc->bVisible;
+        pCurrDesc->bVisible = false;
 
 //        pBody->u.in.flags = vboxVHWAFromDDFLIPs(lpFlip->dwFlags);
 

@@ -1619,6 +1619,9 @@ vboxNetFltWinPtReceive(
             pPacket = NdisGetReceivedPacket(pAdapt->hBindingHandle, MacReceiveContext);
             if (pPacket != NULL)
             {
+#ifndef VBOX_LOOPBACK_USEFLAGS
+                PNDIS_PACKET pLb = NULL;
+#endif
                 do
                 {
 #ifdef VBOX_LOOPBACK_USEFLAGS
@@ -1632,8 +1635,6 @@ vboxNetFltWinPtReceive(
                     }
 
                     VBOXNETFLT_LBVERIFY(pNetFlt, pPacket);
-#else
-                    PNDIS_PACKET pLb = NULL;
 #endif
                     if(bNetFltActive)
                     {
@@ -1668,7 +1669,7 @@ vboxNetFltWinPtReceive(
                     }
 
 #ifndef VBOX_LOOPBACK_USEFLAGS
-                    Assert(pLb && !vboxNetFltWinLbIsFromIntNet(pLb));
+                    Assert(!pLb || !vboxNetFltWinLbIsFromIntNet(pLb));
 #endif
                     Status = vboxNetFltWinRecvPassThru(pAdapt, pPacket);
                     /* we are done with packet processing, and we will

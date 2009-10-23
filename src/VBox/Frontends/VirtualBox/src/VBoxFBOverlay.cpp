@@ -3123,6 +3123,29 @@ int VBoxGLWidget::vhwaSurfaceLock(struct _VBOXVHWACMD_SURF_LOCK *pCmd)
 int VBoxGLWidget::vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd)
 {
     VBoxVHWASurfaceBase *pSurf = handle2Surface(pCmd->u.in.hSurf);
+#ifdef DEBUG_misha
+    /* for performance reasons we should receive unlock for visible surfaces only
+     * other surfaces receive unlock only once becoming visible, e.g. on DdFlip
+     * Ensure this is so*/
+    if(pSurf != mDisplay.getPrimary())
+    {
+        const OverlayList & overlays = mDisplay.overlays();
+        bool bFound = false;
+
+        for (OverlayList::const_iterator it = overlays.begin();
+             it != overlays.end(); ++ it)
+        {
+            VBoxVHWASurfList * pSurfList = *it;
+            if(pSurfList->current() == pSurf)
+            {
+                bFound = true;
+                break;
+            }
+        }
+
+        Assert(bFound);
+    }
+#endif
     VBOXQGLLOG_ENTER(("pSurf (0x%x)\n",pSurf));
     if(pCmd->u.in.xUpdatedMemValid)
     {
