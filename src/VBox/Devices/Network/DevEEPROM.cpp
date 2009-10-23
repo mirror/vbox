@@ -258,29 +258,20 @@ void EEPROM93C46::save(PSSMHANDLE pSSM)
 
 int EEPROM93C46::load(PSSMHANDLE pSSM)
 {
-    int rc = VINF_SUCCESS;
-    uint8_t uVersion = 0;
+    int rc;
+    uint8_t uVersion;
 
     rc = SSMR3GetU8(pSSM, &uVersion);
     AssertRCReturn(rc, rc);
     if (uVersion != EEPROM93C46_SAVEDSTATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
-    rc = SSMR3GetU8(  pSSM, (uint8_t*)&m_eState);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3GetU8(  pSSM, (uint8_t*)&m_eOp);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3GetBool(pSSM, &m_fWriteEnabled);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32( pSSM, &m_u32InternalWires);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3GetU16( pSSM, &m_u16Word);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3GetU16( pSSM, &m_u16Mask);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3GetU16( pSSM, &m_u16Addr);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3GetMem( pSSM, m_au16Data, sizeof(m_au16Data));
-
-    return rc;
+    SSMR3GetU8(  pSSM, (uint8_t*)&m_eState);
+    SSMR3GetU8(  pSSM, (uint8_t*)&m_eOp);
+    SSMR3GetBool(pSSM, &m_fWriteEnabled);
+    SSMR3GetU32( pSSM, &m_u32InternalWires);
+    SSMR3GetU16( pSSM, &m_u16Word);
+    SSMR3GetU16( pSSM, &m_u16Mask);
+    SSMR3GetU16( pSSM, &m_u16Addr);
+    return SSMR3GetMem( pSSM, m_au16Data, sizeof(m_au16Data));
 }
