@@ -1055,6 +1055,7 @@ int HGSMISetupHostHeap (PHGSMIINSTANCE pIns,
         {
             if (pIns->hostHeap.cRefs)
             {
+                Assert(0);
                 /* It is possible to change the heap only if there is no pending allocations. */
                 rc = VERR_ACCESS_DENIED;
             }
