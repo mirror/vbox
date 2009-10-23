@@ -41,8 +41,6 @@ extern "C" {
 #include "audio.h"
 }
 
-#define SB16_SSM_VERSION 1
-
 #ifndef VBOX
 
 #define LENOFA(a) ((int) (sizeof(a)/sizeof(a[0])))
@@ -59,6 +57,12 @@ extern "C" {
 #endif
 
 #else /* VBOX */
+
+/** Current saved state version. */
+#define SB16_SAVE_STATE_VERSION         2
+/** The version used in VirtualBox version 3.0 and earlier. This didn't include
+ * the config dump. */
+#define SB16_SAVE_STATE_VERSION_VBOX_30 1
 
 DECLINLINE(void) dolog (const char *fmt, ...)
 {
@@ -121,6 +125,13 @@ typedef struct SB16State {
     QEMUSoundCard card;
 #ifndef VBOX
     qemu_irq *pic;
+#endif
+#ifdef VBOX /* lazy bird */
+    int irqCfg;
+    int dmaCfg;
+    int hdmaCfg;
+    int portCfg;
+    int verCfg;
 #endif
     int irq;
     int dma;
@@ -1476,15 +1487,12 @@ static void SB_audio_callback (void *opaque, int free)
 #endif
 }
 
-#ifndef VBOX
 static void SB_save (QEMUFile *f, void *opaque)
 {
+#ifndef VBOX
     SB16State *s = opaque;
 #else
-static DECLCALLBACK(int) sb16SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
-{
-    SB16State *s = PDMINS_2_DATA (pDevIns, SB16State *);
-    QEMUFile *f = pSSMHandle;
+    SB16State *s = (SB16State *)opaque;
 #endif
 
     qemu_put_be32 (f, s->irq);
@@ -1534,37 +1542,25 @@ static DECLCALLBACK(int) sb16SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 
     qemu_put_be32 (f, s->mixer_nreg);
     qemu_put_buffer (f, s->mixer_regs, 256);
-
-#ifdef VBOX
-    return VINF_SUCCESS;
-#endif
 }
 
-#ifndef VBOX
 static int SB_load (QEMUFile *f, void *opaque, int version_id)
 {
+#ifndef VBOX
     SB16State *s = opaque;
 
     if (version_id != 1) {
         return -EINVAL;
     }
-#else  /* VBOX */
-static DECLCALLBACK(int) sb16LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
-                                       uint32_t uVersion, uint32_t uPass)
-{
-    SB16State *s = PDMINS_2_DATA (pDevIns, SB16State *);
-    QEMUFile *f = pSSMHandle;
-
-    AssertMsgReturn(uVersion == SB16_SSM_VERSION, ("%d\n", uVersion),  VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
-#endif /* VBOX */
+#else
+    SB16State *s = (SB16State *)opaque;
+#endif
 
     s->irq=qemu_get_be32 (f);
     s->dma=qemu_get_be32 (f);
     s->hdma=qemu_get_be32 (f);
     s->port=qemu_get_be32 (f);
     s->ver=qemu_get_be32 (f);
-
     s->in_index=qemu_get_be32 (f);
     s->out_data_len=qemu_get_be32 (f);
     s->fmt_stereo=qemu_get_be32 (f);
@@ -1708,6 +1704,73 @@ int SB16_init (AudioState *audio, qemu_irq *pic)
 
 #else /* VBOX */
 
+
+static DECLCALLBACK(int) sb16LiveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    SB16State *pThis = PDMINS_2_DATA (pDevIns, SB16State *);
+
+    SSMR3PutS32(pSSM, pThis->irqCfg);
+    SSMR3PutS32(pSSM, pThis->dmaCfg);
+    SSMR3PutS32(pSSM, pThis->hdmaCfg);
+    SSMR3PutS32(pSSM, pThis->portCfg);
+    SSMR3PutS32(pSSM, pThis->verCfg);
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
+
+static DECLCALLBACK(int) sb16SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    SB16State *pThis = PDMINS_2_DATA (pDevIns, SB16State *);
+
+    sb16LiveExec (pDevIns, pSSM, 0);
+    SB_save (pSSM, pThis);
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) sb16LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
+                                       uint32_t uVersion, uint32_t uPass)
+{
+    SB16State *pThis = PDMINS_2_DATA (pDevIns, SB16State *);
+
+    AssertMsgReturn(    uVersion == SB16_SAVE_STATE_VERSION
+                    ||  uVersion == SB16_SAVE_STATE_VERSION_VBOX_30,
+                    ("%u\n", uVersion),
+                    VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    if (uVersion > SB16_SAVE_STATE_VERSION_VBOX_30)
+    {
+        int32_t irq;
+        SSMR3GetS32 (pSSM, &irq);
+        int32_t dma;
+        SSMR3GetS32 (pSSM, &dma);
+        int32_t hdma;
+        SSMR3GetS32 (pSSM, &hdma);
+        int32_t port;
+        SSMR3GetS32 (pSSM, &port);
+        int32_t ver;
+        int rc = SSMR3GetS32 (pSSM, &ver);
+        AssertRCReturn (rc, rc);
+
+        if (   irq  != pThis->irqCfg
+            || dma  != pThis->dmaCfg
+            || hdma != pThis->hdmaCfg
+            || port != pThis->portCfg
+            || ver  != pThis->verCfg )
+        {
+            LogRel(("SB16: config changed: irq=%x/%x dma=%x/%x hdma=%x/%x port=%x/%x ver=%x/%x (saved/config)\n",
+                    irq,  pThis->irqCfg,
+                    dma,  pThis->dmaCfg,
+                    hdma, pThis->hdmaCfg,
+                    port, pThis->portCfg,
+                    ver,  pThis->verCfg));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
+    }
+    if (uPass != SSM_PASS_FINAL)
+        return VINF_SUCCESS;
+
+    SB_load(pSSM, pThis, uVersion);
+    return VINF_SUCCESS;
+}
+
 static DECLCALLBACK(void *) sb16QueryInterface (struct PDMIBASE *pInterface,
                                                 PDMINTERFACE enmInterface)
 {
@@ -1748,30 +1811,35 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IRQ\" value"));
+    s->irqCfg  = s->irq;
 
     rc = CFGMR3QuerySIntDef(pCfgHandle, "DMA", &s->dma, 1);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"DMA\" value"));
+    s->dmaCfg  = s->dma;
 
     rc = CFGMR3QuerySIntDef(pCfgHandle, "DMA16", &s->hdma, 5);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"DMA16\" value"));
+    s->hdmaCfg = s->hdma;
 
     RTIOPORT Port;
     rc = CFGMR3QueryPortDef(pCfgHandle, "Port", &Port, 0x220);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"Port\" value"));
-    s->port = Port;
+    s->port    = Port;
+    s->portCfg = Port;
 
     uint16_t u16Version;
     rc = CFGMR3QueryU16Def(pCfgHandle, "Version", &u16Version, 0x0405);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"Version\" value"));
-    s->ver = u16Version;
+    s->ver     = u16Version;
+    s->verCfg  = u16Version;
 
     /*
      * Init instance data.
@@ -1815,7 +1883,7 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     s->can_write = 1;
 
-    rc = PDMDevHlpSSMRegister(pDevIns, SB16_SSM_VERSION, sizeof(*s), sb16SaveExec, sb16LoadExec);
+    rc = PDMDevHlpSSMRegister3(pDevIns, SB16_SAVE_STATE_VERSION, sizeof(*s), sb16LiveExec, sb16SaveExec, sb16LoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
