@@ -32,17 +32,6 @@
 
 #include <iprt/types.h>
 
-#if 0
-#ifdef IN_RING3
-# include <ctype.h>
-
-# if defined(_MSC_VER) && !defined(isblank)
-/* isblank for MSC */
-#  define isblank(ch)  ( (ch) == ' ' || (ch) == '\t' )
-# endif
-#endif /* IN_RING3 */
-#endif
-
 /** @name C locale predicates and conversions.
  *
  * For most practical purposes, this can safely be used when parsing UTF-8
