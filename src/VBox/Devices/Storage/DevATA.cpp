@@ -26,14 +26,18 @@
  * write performance issues. */
 #undef VBOX_INSTRUMENT_DMA_WRITES
 
-/**
- * The SSM saved state versions.
+/** @name The SSM saved state versions.
+ * @{
  */
-#define ATA_SAVED_STATE_VERSION 19
-#define ATA_SAVED_STATE_VERSION_WITH_BOOL_TYPE     18
-#define ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE 16
-#define ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS 17
-
+/** The current saved state version. */
+#define ATA_SAVED_STATE_VERSION                         20
+/** The saved state version used by VirtualBox 3.0.
+ * This lacks the config part and has the type at the and.  */
+#define ATA_SAVED_STATE_VERSION_VBOX_30                 19
+#define ATA_SAVED_STATE_VERSION_WITH_BOOL_TYPE          18
+#define ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE      16
+#define ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS    17
+/** @} */
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -6016,108 +6020,123 @@ static DECLCALLBACK(int) ataSaveLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
-
 /**
- * Saves a state of the ATA device.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to save the state to.
+ * @copydoc FNSSMDEVLIVEEXEC
  */
-static DECLCALLBACK(int) ataSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) ataLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
 
+    SSMR3PutU8(pSSM, pThis->u8Type);
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
-        SSMR3PutU8(pSSMHandle, pThis->aCts[i].iSelectedIf);
-        SSMR3PutU8(pSSMHandle, pThis->aCts[i].iAIOIf);
-        SSMR3PutU8(pSSMHandle, pThis->aCts[i].uAsyncIOState);
-        SSMR3PutBool(pSSMHandle, pThis->aCts[i].fChainedTransfer);
-        SSMR3PutBool(pSSMHandle, pThis->aCts[i].fReset);
-        SSMR3PutBool(pSSMHandle, pThis->aCts[i].fRedo);
-        SSMR3PutBool(pSSMHandle, pThis->aCts[i].fRedoIdle);
-        SSMR3PutBool(pSSMHandle, pThis->aCts[i].fRedoDMALastDesc);
-        SSMR3PutMem(pSSMHandle, &pThis->aCts[i].BmDma, sizeof(pThis->aCts[i].BmDma));
-        SSMR3PutGCPhys32(pSSMHandle, pThis->aCts[i].pFirstDMADesc);
-        SSMR3PutGCPhys32(pSSMHandle, pThis->aCts[i].pLastDMADesc);
-        SSMR3PutGCPhys32(pSSMHandle, pThis->aCts[i].pRedoDMABuffer);
-        SSMR3PutU32(pSSMHandle, pThis->aCts[i].cbRedoDMABuffer);
-
+        SSMR3PutBool(pSSM, true);       /* For controller enabled / disabled. */
         for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
         {
-            SSMR3PutBool(pSSMHandle, pThis->aCts[i].aIfs[j].fLBA48);
-            SSMR3PutBool(pSSMHandle, pThis->aCts[i].aIfs[j].fATAPI);
-            SSMR3PutBool(pSSMHandle, pThis->aCts[i].aIfs[j].fIrqPending);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].cMultSectors);
-            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].PCHSGeometry.cCylinders);
-            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].PCHSGeometry.cHeads);
-            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].PCHSGeometry.cSectors);
-            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].cSectorsPerIRQ);
-            SSMR3PutU64(pSSMHandle, pThis->aCts[i].aIfs[j].cTotalSectors);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegFeature);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegFeatureHOB);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegError);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegNSector);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegNSectorHOB);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegSector);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegSectorHOB);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegLCyl);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegLCylHOB);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegHCyl);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegHCylHOB);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegSelect);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegStatus);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegCommand);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATARegDevCtl);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uATATransferMode);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].uTxDir);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].iBeginTransfer);
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].iSourceSink);
-            SSMR3PutBool(pSSMHandle, pThis->aCts[i].aIfs[j].fDMA);
-            SSMR3PutBool(pSSMHandle, pThis->aCts[i].aIfs[j].fATAPITransfer);
-            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].cbTotalTransfer);
-            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].cbElementaryTransfer);
-            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].iIOBufferCur);
-            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].iIOBufferEnd);
-            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].iIOBufferPIODataStart);
-            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].iIOBufferPIODataEnd);
-            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].iATAPILBA);
-            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].cbATAPISector);
-            SSMR3PutMem(pSSMHandle, &pThis->aCts[i].aIfs[j].aATAPICmd, sizeof(pThis->aCts[i].aIfs[j].aATAPICmd));
-            SSMR3PutMem(pSSMHandle, &pThis->aCts[i].aIfs[j].abATAPISense, sizeof(pThis->aCts[i].aIfs[j].abATAPISense));
-            SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].cNotifiedMediaChange);
-            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].MediaEventStatus);
-            SSMR3PutMem(pSSMHandle, &pThis->aCts[i].aIfs[j].Led, sizeof(pThis->aCts[i].aIfs[j].Led));
-            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].cbIOBuffer);
-            if (pThis->aCts[i].aIfs[j].cbIOBuffer)
-                SSMR3PutMem(pSSMHandle, pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer), pThis->aCts[i].aIfs[j].cbIOBuffer);
-            else
-                Assert(pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer) == NULL);
+            SSMR3PutBool(pSSM, pThis->aCts[i].aIfs[j].pDrvBase != NULL);
+            SSMR3PutStrZ(pSSM, pThis->aCts[i].aIfs[j].szSerialNumber);
+            SSMR3PutStrZ(pSSM, pThis->aCts[i].aIfs[j].szFirmwareRevision);
+            SSMR3PutStrZ(pSSM, pThis->aCts[i].aIfs[j].szModelNumber);
         }
     }
-    SSMR3PutU8(pSSMHandle, pThis->u8Type);
 
-    return SSMR3PutU32(pSSMHandle, ~0); /* sanity/terminator */
+    return VINF_SSM_DONT_CALL_AGAIN;
 }
 
 
 /**
- * Loads a saved ATA device state.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to the saved state.
- * @param   uVersion    The data unit version number.
- * @param   uPass       The data pass.
+ * @copydoc FNSSMDEVSAVEEXEC
  */
-static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) ataSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+
+    ataLiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+    {
+        SSMR3PutU8(pSSM, pThis->aCts[i].iSelectedIf);
+        SSMR3PutU8(pSSM, pThis->aCts[i].iAIOIf);
+        SSMR3PutU8(pSSM, pThis->aCts[i].uAsyncIOState);
+        SSMR3PutBool(pSSM, pThis->aCts[i].fChainedTransfer);
+        SSMR3PutBool(pSSM, pThis->aCts[i].fReset);
+        SSMR3PutBool(pSSM, pThis->aCts[i].fRedo);
+        SSMR3PutBool(pSSM, pThis->aCts[i].fRedoIdle);
+        SSMR3PutBool(pSSM, pThis->aCts[i].fRedoDMALastDesc);
+        SSMR3PutMem(pSSM, &pThis->aCts[i].BmDma, sizeof(pThis->aCts[i].BmDma));
+        SSMR3PutGCPhys32(pSSM, pThis->aCts[i].pFirstDMADesc);
+        SSMR3PutGCPhys32(pSSM, pThis->aCts[i].pLastDMADesc);
+        SSMR3PutGCPhys32(pSSM, pThis->aCts[i].pRedoDMABuffer);
+        SSMR3PutU32(pSSM, pThis->aCts[i].cbRedoDMABuffer);
+
+        for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
+        {
+            SSMR3PutBool(pSSM, pThis->aCts[i].aIfs[j].fLBA48);
+            SSMR3PutBool(pSSM, pThis->aCts[i].aIfs[j].fATAPI);
+            SSMR3PutBool(pSSM, pThis->aCts[i].aIfs[j].fIrqPending);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].cMultSectors);
+            SSMR3PutU32(pSSM, pThis->aCts[i].aIfs[j].PCHSGeometry.cCylinders);
+            SSMR3PutU32(pSSM, pThis->aCts[i].aIfs[j].PCHSGeometry.cHeads);
+            SSMR3PutU32(pSSM, pThis->aCts[i].aIfs[j].PCHSGeometry.cSectors);
+            SSMR3PutU32(pSSM, pThis->aCts[i].aIfs[j].cSectorsPerIRQ);
+            SSMR3PutU64(pSSM, pThis->aCts[i].aIfs[j].cTotalSectors);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegFeature);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegFeatureHOB);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegError);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegNSector);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegNSectorHOB);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegSector);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegSectorHOB);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegLCyl);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegLCylHOB);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegHCyl);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegHCylHOB);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegSelect);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegStatus);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegCommand);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegDevCtl);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uATATransferMode);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].uTxDir);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].iBeginTransfer);
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].iSourceSink);
+            SSMR3PutBool(pSSM, pThis->aCts[i].aIfs[j].fDMA);
+            SSMR3PutBool(pSSM, pThis->aCts[i].aIfs[j].fATAPITransfer);
+            SSMR3PutU32(pSSM, pThis->aCts[i].aIfs[j].cbTotalTransfer);
+            SSMR3PutU32(pSSM, pThis->aCts[i].aIfs[j].cbElementaryTransfer);
+            SSMR3PutU32(pSSM, pThis->aCts[i].aIfs[j].iIOBufferCur);
+            SSMR3PutU32(pSSM, pThis->aCts[i].aIfs[j].iIOBufferEnd);
+            SSMR3PutU32(pSSM, pThis->aCts[i].aIfs[j].iIOBufferPIODataStart);
+            SSMR3PutU32(pSSM, pThis->aCts[i].aIfs[j].iIOBufferPIODataEnd);
+            SSMR3PutU32(pSSM, pThis->aCts[i].aIfs[j].iATAPILBA);
+            SSMR3PutU32(pSSM, pThis->aCts[i].aIfs[j].cbATAPISector);
+            SSMR3PutMem(pSSM, &pThis->aCts[i].aIfs[j].aATAPICmd, sizeof(pThis->aCts[i].aIfs[j].aATAPICmd));
+            SSMR3PutMem(pSSM, &pThis->aCts[i].aIfs[j].abATAPISense, sizeof(pThis->aCts[i].aIfs[j].abATAPISense));
+            SSMR3PutU8(pSSM, pThis->aCts[i].aIfs[j].cNotifiedMediaChange);
+            SSMR3PutU32(pSSM, pThis->aCts[i].aIfs[j].MediaEventStatus);
+            SSMR3PutMem(pSSM, &pThis->aCts[i].aIfs[j].Led, sizeof(pThis->aCts[i].aIfs[j].Led));
+            SSMR3PutU32(pSSM, pThis->aCts[i].aIfs[j].cbIOBuffer);
+            if (pThis->aCts[i].aIfs[j].cbIOBuffer)
+                SSMR3PutMem(pSSM, pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer), pThis->aCts[i].aIfs[j].cbIOBuffer);
+            else
+                Assert(pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer) == NULL);
+        }
+    }
+
+    return SSMR3PutU32(pSSM, ~0); /* sanity/terminator */
+}
+
+
+/**
+ * FNSSMDEVLOADEXEC
+ */
+static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
     int             rc;
     uint32_t        u32;
 
     if (   uVersion != ATA_SAVED_STATE_VERSION
+        && uVersion != ATA_SAVED_STATE_VERSION_VBOX_30
         && uVersion != ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE
         && uVersion != ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS
         && uVersion != ATA_SAVED_STATE_VERSION_WITH_BOOL_TYPE)
@@ -6125,7 +6144,71 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         AssertMsgFailed(("uVersion=%d\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+
+    /*
+     * Verify the configuration.
+     */
+    if (uVersion > ATA_SAVED_STATE_VERSION_VBOX_30)
+    {
+        uint8_t u8Type;
+        rc = SSMR3GetU8(pSSM, &u8Type);
+        AssertRCReturn(rc, rc);
+        if (u8Type != pThis->u8Type)
+        {
+            LogRel(("PIIX3 ATA: Config mismatch: u8Type - saved=%u config=%u\n", u8Type, pThis->u8Type));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
+
+        for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+        {
+            bool fEnabled;
+            rc = SSMR3GetBool(pSSM, &fEnabled);
+            AssertRCReturn(rc, rc);
+            if (!fEnabled)
+            {
+                LogRel(("PIIX3 ATA: Ctr#%u onfig mismatch: fEnabled != true\n", i));
+                return VERR_SSM_LOAD_CONFIG_MISMATCH;
+            }
+
+            for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
+            {
+                ATADevState const *pIf = &pThis->aCts[i].aIfs[j];
+
+                bool fInUse;
+                rc = SSMR3GetBool(pSSM, &fInUse);
+                AssertRCReturn(rc, rc);
+                if (fInUse != (pIf->pDrvBase != NULL))
+                {
+                    LogRel(("PIIX3 ATA: LUN#%u config mismatch: fInUse - saved=%RTbool config=%RTbool\n",
+                            pIf->iLUN, fInUse, (pIf->pDrvBase != NULL)));
+                    return VERR_SSM_LOAD_CONFIG_MISMATCH;
+                }
+
+                char szSerialNumber[ATA_SERIAL_NUMBER_LENGTH+1];
+                rc = SSMR3GetStrZ(pSSM, szSerialNumber,     sizeof(szSerialNumber));
+                AssertRCReturn(rc, rc);
+                if (strcmp(szSerialNumber, pIf->szSerialNumber))
+                    LogRel(("PIIX3 ATA: LUN#%u config mismatch: Serial number - saved='%s' config='%s'\n",
+                            pIf->iLUN, szSerialNumber, pIf->szSerialNumber));
+
+                char szFirmwareRevision[ATA_FIRMWARE_REVISION_LENGTH+1];
+                rc = SSMR3GetStrZ(pSSM, szFirmwareRevision, sizeof(szFirmwareRevision));
+                AssertRCReturn(rc, rc);
+                if (strcmp(szFirmwareRevision, pIf->szFirmwareRevision))
+                    LogRel(("PIIX3 ATA: LUN#%u config mismatch: Firmware revision - saved='%s' config='%s'\n",
+                            pIf->iLUN, szFirmwareRevision, pIf->szFirmwareRevision));
+
+                char szModelNumber[ATA_MODEL_NUMBER_LENGTH+1];
+                rc = SSMR3GetStrZ(pSSM, szModelNumber,      sizeof(szModelNumber));
+                AssertRCReturn(rc, rc);
+                if (strcmp(szModelNumber, pIf->szModelNumber))
+                    LogRel(("PIIX3 ATA: LUN#%u config mismatch: Model number - saved='%s' config='%s'\n",
+                            pIf->iLUN, szModelNumber, pIf->szModelNumber));
+            }
+        }
+    }
+    if (uPass != SSM_PASS_FINAL)
+        return VINF_SUCCESS;
 
     /*
      * Restore valid parts of the PCIATAState structure
@@ -6140,64 +6223,64 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
             return rc;
         }
 
-        SSMR3GetU8(pSSMHandle, &pThis->aCts[i].iSelectedIf);
-        SSMR3GetU8(pSSMHandle, &pThis->aCts[i].iAIOIf);
-        SSMR3GetU8(pSSMHandle, &pThis->aCts[i].uAsyncIOState);
-        SSMR3GetBool(pSSMHandle, &pThis->aCts[i].fChainedTransfer);
-        SSMR3GetBool(pSSMHandle, (bool *)&pThis->aCts[i].fReset);
-        SSMR3GetBool(pSSMHandle, (bool *)&pThis->aCts[i].fRedo);
-        SSMR3GetBool(pSSMHandle, (bool *)&pThis->aCts[i].fRedoIdle);
-        SSMR3GetBool(pSSMHandle, (bool *)&pThis->aCts[i].fRedoDMALastDesc);
-        SSMR3GetMem(pSSMHandle, &pThis->aCts[i].BmDma, sizeof(pThis->aCts[i].BmDma));
-        SSMR3GetGCPhys32(pSSMHandle, &pThis->aCts[i].pFirstDMADesc);
-        SSMR3GetGCPhys32(pSSMHandle, &pThis->aCts[i].pLastDMADesc);
-        SSMR3GetGCPhys32(pSSMHandle, &pThis->aCts[i].pRedoDMABuffer);
-        SSMR3GetU32(pSSMHandle, &pThis->aCts[i].cbRedoDMABuffer);
+        SSMR3GetU8(pSSM, &pThis->aCts[i].iSelectedIf);
+        SSMR3GetU8(pSSM, &pThis->aCts[i].iAIOIf);
+        SSMR3GetU8(pSSM, &pThis->aCts[i].uAsyncIOState);
+        SSMR3GetBool(pSSM, &pThis->aCts[i].fChainedTransfer);
+        SSMR3GetBool(pSSM, (bool *)&pThis->aCts[i].fReset);
+        SSMR3GetBool(pSSM, (bool *)&pThis->aCts[i].fRedo);
+        SSMR3GetBool(pSSM, (bool *)&pThis->aCts[i].fRedoIdle);
+        SSMR3GetBool(pSSM, (bool *)&pThis->aCts[i].fRedoDMALastDesc);
+        SSMR3GetMem(pSSM, &pThis->aCts[i].BmDma, sizeof(pThis->aCts[i].BmDma));
+        SSMR3GetGCPhys32(pSSM, &pThis->aCts[i].pFirstDMADesc);
+        SSMR3GetGCPhys32(pSSM, &pThis->aCts[i].pLastDMADesc);
+        SSMR3GetGCPhys32(pSSM, &pThis->aCts[i].pRedoDMABuffer);
+        SSMR3GetU32(pSSM, &pThis->aCts[i].cbRedoDMABuffer);
 
         for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
         {
-            SSMR3GetBool(pSSMHandle, &pThis->aCts[i].aIfs[j].fLBA48);
-            SSMR3GetBool(pSSMHandle, &pThis->aCts[i].aIfs[j].fATAPI);
-            SSMR3GetBool(pSSMHandle, &pThis->aCts[i].aIfs[j].fIrqPending);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].cMultSectors);
-            SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].PCHSGeometry.cCylinders);
-            SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].PCHSGeometry.cHeads);
-            SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].PCHSGeometry.cSectors);
-            SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].cSectorsPerIRQ);
-            SSMR3GetU64(pSSMHandle, &pThis->aCts[i].aIfs[j].cTotalSectors);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegFeature);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegFeatureHOB);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegError);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegNSector);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegNSectorHOB);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegSector);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegSectorHOB);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegLCyl);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegLCylHOB);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegHCyl);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegHCylHOB);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegSelect);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegStatus);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegCommand);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATARegDevCtl);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uATATransferMode);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].uTxDir);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].iBeginTransfer);
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].iSourceSink);
-            SSMR3GetBool(pSSMHandle, &pThis->aCts[i].aIfs[j].fDMA);
-            SSMR3GetBool(pSSMHandle, &pThis->aCts[i].aIfs[j].fATAPITransfer);
-            SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].cbTotalTransfer);
-            SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].cbElementaryTransfer);
-            SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].iIOBufferCur);
-            SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].iIOBufferEnd);
-            SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].iIOBufferPIODataStart);
-            SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].iIOBufferPIODataEnd);
-            SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].iATAPILBA);
-            SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].cbATAPISector);
-            SSMR3GetMem(pSSMHandle, &pThis->aCts[i].aIfs[j].aATAPICmd, sizeof(pThis->aCts[i].aIfs[j].aATAPICmd));
+            SSMR3GetBool(pSSM, &pThis->aCts[i].aIfs[j].fLBA48);
+            SSMR3GetBool(pSSM, &pThis->aCts[i].aIfs[j].fATAPI);
+            SSMR3GetBool(pSSM, &pThis->aCts[i].aIfs[j].fIrqPending);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].cMultSectors);
+            SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].PCHSGeometry.cCylinders);
+            SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].PCHSGeometry.cHeads);
+            SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].PCHSGeometry.cSectors);
+            SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].cSectorsPerIRQ);
+            SSMR3GetU64(pSSM, &pThis->aCts[i].aIfs[j].cTotalSectors);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegFeature);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegFeatureHOB);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegError);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegNSector);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegNSectorHOB);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegSector);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegSectorHOB);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegLCyl);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegLCylHOB);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegHCyl);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegHCylHOB);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegSelect);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegStatus);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegCommand);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegDevCtl);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uATATransferMode);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].uTxDir);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].iBeginTransfer);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].iSourceSink);
+            SSMR3GetBool(pSSM, &pThis->aCts[i].aIfs[j].fDMA);
+            SSMR3GetBool(pSSM, &pThis->aCts[i].aIfs[j].fATAPITransfer);
+            SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].cbTotalTransfer);
+            SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].cbElementaryTransfer);
+            SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].iIOBufferCur);
+            SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].iIOBufferEnd);
+            SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].iIOBufferPIODataStart);
+            SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].iIOBufferPIODataEnd);
+            SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].iATAPILBA);
+            SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].cbATAPISector);
+            SSMR3GetMem(pSSM, &pThis->aCts[i].aIfs[j].aATAPICmd, sizeof(pThis->aCts[i].aIfs[j].aATAPICmd));
             if (uVersion > ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE)
             {
-                SSMR3GetMem(pSSMHandle, pThis->aCts[i].aIfs[j].abATAPISense, sizeof(pThis->aCts[i].aIfs[j].abATAPISense));
+                SSMR3GetMem(pSSM, pThis->aCts[i].aIfs[j].abATAPISense, sizeof(pThis->aCts[i].aIfs[j].abATAPISense));
             }
             else
             {
@@ -6205,43 +6288,44 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
                 memset(pThis->aCts[i].aIfs[j].abATAPISense, '\0', sizeof(pThis->aCts[i].aIfs[j].abATAPISense));
                 pThis->aCts[i].aIfs[j].abATAPISense[0] = 0x70 | (1 << 7);
                 pThis->aCts[i].aIfs[j].abATAPISense[7] = 10;
-                SSMR3GetU8(pSSMHandle, &uATAPISenseKey);
-                SSMR3GetU8(pSSMHandle, &uATAPIASC);
+                SSMR3GetU8(pSSM, &uATAPISenseKey);
+                SSMR3GetU8(pSSM, &uATAPIASC);
                 pThis->aCts[i].aIfs[j].abATAPISense[2] = uATAPISenseKey & 0x0f;
                 pThis->aCts[i].aIfs[j].abATAPISense[12] = uATAPIASC;
             }
             /** @todo triple-check this hack after passthrough is working */
-            SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].cNotifiedMediaChange);
+            SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].cNotifiedMediaChange);
             if (uVersion > ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS)
-                SSMR3GetU32(pSSMHandle, (uint32_t*)&pThis->aCts[i].aIfs[j].MediaEventStatus);
+                SSMR3GetU32(pSSM, (uint32_t*)&pThis->aCts[i].aIfs[j].MediaEventStatus);
             else
                 pThis->aCts[i].aIfs[j].MediaEventStatus = ATA_EVENT_STATUS_UNCHANGED;
-            SSMR3GetMem(pSSMHandle, &pThis->aCts[i].aIfs[j].Led, sizeof(pThis->aCts[i].aIfs[j].Led));
-            SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].cbIOBuffer);
+            SSMR3GetMem(pSSM, &pThis->aCts[i].aIfs[j].Led, sizeof(pThis->aCts[i].aIfs[j].Led));
+            SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].cbIOBuffer);
             if (pThis->aCts[i].aIfs[j].cbIOBuffer)
             {
                 if (pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer))
-                    SSMR3GetMem(pSSMHandle, pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer), pThis->aCts[i].aIfs[j].cbIOBuffer);
+                    SSMR3GetMem(pSSM, pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer), pThis->aCts[i].aIfs[j].cbIOBuffer);
                 else
                 {
                     LogRel(("ATA: No buffer for %d/%d\n", i, j));
-                    if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
+                    if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
                         return VERR_SSM_LOAD_CONFIG_MISMATCH;
 
                     /* skip the buffer if we're loading for the debugger / animator. */
                     uint8_t u8Ignored;
                     size_t cbLeft = pThis->aCts[i].aIfs[j].cbIOBuffer;
                     while (cbLeft-- > 0)
-                        SSMR3GetU8(pSSMHandle, &u8Ignored);
+                        SSMR3GetU8(pSSM, &u8Ignored);
                 }
             }
             else
                 Assert(pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer) == NULL);
         }
     }
-    SSMR3GetU8(pSSMHandle, &pThis->u8Type);
+    if (uVersion <= ATA_SAVED_STATE_VERSION_VBOX_30)
+        SSMR3GetU8(pSSM, &pThis->u8Type);
 
-    rc = SSMR3GetU32(pSSMHandle, &u32);
+    rc = SSMR3GetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
         return rc;
     if (u32 != ~0U)
@@ -6324,7 +6408,12 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0IRQDelay\0R0Enabled\0Type\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle,
+                              "GCEnabled\0"
+                              "R0Enabled\0"
+                              "IRQDelay\0"
+                              "Type\0")
+        /** @todo || invalid keys */)
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("PIIX3 configuration error: unknown option specified"));
 
@@ -6714,7 +6803,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     }
 
     rc = PDMDevHlpSSMRegisterEx(pDevIns, ATA_SAVED_STATE_VERSION, sizeof(*pThis) + cbTotalBuffer, NULL,
-                                NULL, NULL, NULL,
+                                NULL,            ataLiveExec, NULL,
                                 ataSaveLoadPrep, ataSaveExec, NULL,
                                 ataSaveLoadPrep, ataLoadExec, NULL);
     if (RT_FAILURE(rc))
