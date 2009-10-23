@@ -19,10 +19,12 @@
  * additional information or have any questions.
  */
 
-#include <iprt/initterm.h>
-#include <iprt/getopt.h>
-#include <iprt/err.h>
 #include <iprt/assert.h>
+#include <iprt/buildconfig.h>
+#include <iprt/err.h>
+#include <iprt/getopt.h>
+#include <iprt/initterm.h>
+#include <iprt/stream.h>
 #ifdef RT_OS_WINDOWS
 #include <Windows.h>
 #endif
@@ -39,7 +41,7 @@ extern "C" {
 
 static int vboxCheck3DAccelerationSupported()
 {
-    void *spu = crSPULoad(NULL, 0, "render", NULL, NULL);
+    void *spu = crSPULoad(NULL, 0, (char*)"render", NULL, NULL);
     if (spu)
     {
         crSPUUnloadChain(spu);
@@ -57,7 +59,7 @@ static int vboxCheck3DAccelerationSupported()
 static int vboxCheck2DVideoAccelerationSupported()
 {
     static int dummyArgc = 1;
-    static char * dummyArgv = "GlTest";
+    static char * dummyArgv = (char*)"GlTest";
     QApplication app (dummyArgc, &dummyArgv);
 
     VBoxGLTmpContext ctx;
@@ -80,7 +82,7 @@ int main(int argc, char **argv)
 
     RTR3Init();
 
-    if(argc < 3)
+    if(argc < 2)
     {
 #ifdef VBOX_WITH_CROGL
         /* backwards compatibility: check 3D */
@@ -93,6 +95,7 @@ int main(int argc, char **argv)
         {
             { "--test",           't',   RTGETOPT_REQ_STRING },
             { "-test",            't',   RTGETOPT_REQ_STRING },
+            { "--help",           'h',   RTGETOPT_REQ_NOTHING },
         };
 
         RTGETOPTSTATE State;
@@ -124,9 +127,23 @@ int main(int argc, char **argv)
 #endif
                     rc = 1;
                     break;
+
+                case 'h':
+                    RTPrintf("VirtualBox Helper for testing 2D/3D OpenGL capabilities %u.%u.%u\n"
+                             "(C) 2009 Sun Microsystems, Inc.\n"
+                             "All rights reserved.\n"
+                             "\n"
+                             "Usage:\n"
+                             "\n"
+                             "  VBoxTestOGL [ --test 2D|3D]\n"
+                             "\n",
+                            RTBldCfgVersionMajor(), RTBldCfgVersionMinor(), RTBldCfgVersionBuild());
+                    break;
+
                 case VERR_GETOPT_UNKNOWN_OPTION:
                 case VINF_GETOPT_NOT_OPTION:
                     rc = 1;
+
                 default:
                     break;
             }
