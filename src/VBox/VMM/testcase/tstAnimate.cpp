@@ -215,7 +215,7 @@ static DECLCALLBACK(int) scriptRun(PVM pVM, RTFILE File)
                     while (psz && *psz)
                     {
                         /* skip blanks. */
-                        while (isspace(*psz))
+                        while (RT_C_IS_SPACE(*psz))
                             psz++;
                         if (!*psz)
                             break;
@@ -234,7 +234,7 @@ static DECLCALLBACK(int) scriptRun(PVM pVM, RTFILE File)
                         {
                             /* strip end */
                             *pszEnd = '\0';
-                            while (pszEnd > psz && isspace(pszEnd[-1]))
+                            while (pszEnd > psz && RT_C_IS_SPACE(pszEnd[-1]))
                                 *--pszEnd = '\0';
 
                             /* process the line */

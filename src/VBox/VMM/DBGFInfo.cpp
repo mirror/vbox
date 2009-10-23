@@ -880,9 +880,9 @@ static DECLCALLBACK(void) dbgfR3InfoHelp(PVM pVM, PCDBGFINFOHLP pHlp, const char
             const char *psz = strstr(pszArgs, pInfo->szName);
             if (    psz
                 &&  (   psz == pszArgs
-                     || isspace(psz[-1]))
+                     || RT_C_IS_SPACE(psz[-1]))
                 &&  (   !psz[pInfo->cchName]
-                     || isspace(psz[pInfo->cchName])))
+                     || RT_C_IS_SPACE(psz[pInfo->cchName])))
                 pHlp->pfnPrintf(pHlp, "%-16s  %s\n",
                                 pInfo->szName, pInfo->pszDesc);
         }

@@ -229,10 +229,10 @@ static PDBGFSYM dbgfR3SymbolGetName(PVM pVM, const char *pszSymbol)
  */
 static char *dbgfR3Strip(char *psz)
 {
-    while (*psz && isspace(*psz))
+    while (*psz && RT_C_IS_SPACE(*psz))
         psz++;
     char *psz2 = strchr(psz, '\0') - 1;
-    while (psz2 >= psz && isspace(*psz2))
+    while (psz2 >= psz && RT_C_IS_SPACE(*psz2))
         *psz2-- = '\0';
     return psz;
 }
@@ -454,41 +454,41 @@ SYMFILETYPE dbgfR3ModuleProbe(FILE *pFile)
             ||  strstr(szHead, "Linker script and memory map"))
             return SYMFILETYPE_LD_MAP;
 
-        if (   isxdigit(szHead[0])
-            && isxdigit(szHead[1])
-            && isxdigit(szHead[2])
-            && isxdigit(szHead[3])
-            && isxdigit(szHead[4])
-            && isxdigit(szHead[5])
-            && isxdigit(szHead[6])
-            && isxdigit(szHead[7])
+        if (   RT_C_IS_XDIGIT(szHead[0])
+            && RT_C_IS_XDIGIT(szHead[1])
+            && RT_C_IS_XDIGIT(szHead[2])
+            && RT_C_IS_XDIGIT(szHead[3])
+            && RT_C_IS_XDIGIT(szHead[4])
+            && RT_C_IS_XDIGIT(szHead[5])
+            && RT_C_IS_XDIGIT(szHead[6])
+            && RT_C_IS_XDIGIT(szHead[7])
             && szHead[8] == ' '
-            && isalpha(szHead[9])
+            && RT_C_IS_ALPHA(szHead[9])
             && szHead[10] == ' '
-            && (isalpha(szHead[11]) || szHead[11] == '_' || szHead[11] == '$')
+            && (RT_C_IS_ALPHA(szHead[11]) || szHead[11] == '_' || szHead[11] == '$')
             )
             return SYMFILETYPE_LINUX_SYSTEM_MAP;
 
-        if (   isxdigit(szHead[0])
-            && isxdigit(szHead[1])
-            && isxdigit(szHead[2])
-            && isxdigit(szHead[3])
-            && isxdigit(szHead[4])
-            && isxdigit(szHead[5])
-            && isxdigit(szHead[6])
-            && isxdigit(szHead[7])
-            && isxdigit(szHead[8])
-            && isxdigit(szHead[9])
-            && isxdigit(szHead[10])
-            && isxdigit(szHead[11])
-            && isxdigit(szHead[12])
-            && isxdigit(szHead[13])
-            && isxdigit(szHead[14])
-            && isxdigit(szHead[15])
+        if (   RT_C_IS_XDIGIT(szHead[0])
+            && RT_C_IS_XDIGIT(szHead[1])
+            && RT_C_IS_XDIGIT(szHead[2])
+            && RT_C_IS_XDIGIT(szHead[3])
+            && RT_C_IS_XDIGIT(szHead[4])
+            && RT_C_IS_XDIGIT(szHead[5])
+            && RT_C_IS_XDIGIT(szHead[6])
+            && RT_C_IS_XDIGIT(szHead[7])
+            && RT_C_IS_XDIGIT(szHead[8])
+            && RT_C_IS_XDIGIT(szHead[9])
+            && RT_C_IS_XDIGIT(szHead[10])
+            && RT_C_IS_XDIGIT(szHead[11])
+            && RT_C_IS_XDIGIT(szHead[12])
+            && RT_C_IS_XDIGIT(szHead[13])
+            && RT_C_IS_XDIGIT(szHead[14])
+            && RT_C_IS_XDIGIT(szHead[15])
             && szHead[16] == ' '
-            && isalpha(szHead[17])
+            && RT_C_IS_ALPHA(szHead[17])
             && szHead[18] == ' '
-            && (isalpha(szHead[19]) || szHead[19] == '_' || szHead[19] == '$')
+            && (RT_C_IS_ALPHA(szHead[19]) || szHead[19] == '_' || szHead[19] == '$')
             )
             return SYMFILETYPE_LINUX_SYSTEM_MAP;
 
@@ -532,7 +532,7 @@ static int dbgfR3LoadLinuxSystemMap(PVM pVM, FILE *pFile, RTGCUINTPTR ModuleAddr
             &&  u64Address != (RTGCUINTPTR)~0)
         {
             pszEnd++;
-            if (    isalpha(*pszEnd)
+            if (    RT_C_IS_ALPHA(*pszEnd)
                 &&  (pszEnd[1] == ' ' || pszEnd[1] == '\t'))
             {
                 psz = dbgfR3Strip(pszEnd + 2);
