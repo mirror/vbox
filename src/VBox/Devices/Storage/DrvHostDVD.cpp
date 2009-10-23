@@ -64,7 +64,6 @@
 #elif defined(RT_OS_SOLARIS)
 # include <stropts.h>
 # include <fcntl.h>
-# include <ctype.h>
 # include <errno.h>
 # include <pwd.h>
 # include <unistd.h>
@@ -857,9 +856,9 @@ const PDMDRVREG g_DrvHostDVD =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
