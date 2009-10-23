@@ -239,7 +239,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
     }
 
     DWORD dwShareMode;
-    Assert(RTFILE_O_DENY_READWRITE == RTFILE_O_DENY_ALL && !RTFILE_O_DENY_NONE);
+/* misha: disable incorrect assert   Assert(RTFILE_O_DENY_READWRITE == RTFILE_O_DENY_ALL && !RTFILE_O_DENY_NONE); */
     switch (fOpen & RTFILE_O_DENY_MASK)
     {
         case RTFILE_O_DENY_NONE:                                dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE; break;
