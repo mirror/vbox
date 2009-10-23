@@ -1451,7 +1451,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
             if (vsdeHDCIDE.size() == 1)
             {
                 ComPtr<IStorageController> pController;
-                rc = pNewMachine->GetStorageControllerByName(Bstr("IDE Controller"), pController.asOutParam());
+                rc = pNewMachine->AddStorageController(Bstr("IDE Controller"), StorageBus_IDE, pController.asOutParam());
                 if (FAILED(rc)) throw rc;
 
                 const char *pcszIDEType = vsdeHDCIDE.front()->strVbox.c_str();
@@ -1479,7 +1479,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                 const Utf8Str &hdcVBox = vsdeHDCSATA.front()->strVbox;
                 if (hdcVBox == "AHCI")
                 {
-                    rc = pNewMachine->AddStorageController(Bstr("SATA"), StorageBus_SATA, pController.asOutParam());
+                    rc = pNewMachine->AddStorageController(Bstr("SATA Controller"), StorageBus_SATA, pController.asOutParam());
                     if (FAILED(rc)) throw rc;
                 }
                 else
