@@ -309,7 +309,7 @@ static int handleSetGuestProperty(HandlerArg *a)
         a->session->COMGETTER(Machine)(machine.asOutParam());
 
         if (!pszValue && !pszFlags)
-            CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName), Bstr()));
+            CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName), Bstr("")));
         else if (!pszFlags)
             CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName), Bstr(pszValue)));
         else

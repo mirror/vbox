@@ -3362,9 +3362,9 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
             if (!directControl)
                 rc = E_FAIL;
             else
-                rc = directControl->AccessGuestProperty(aName, aValue, aFlags,
-                                                        true /* isSetter */,
-                                                        &dummy, &dummy64, &dummy);
+                rc = directControl->AccessGuestProperty
+                             (aName, *aValue ? aValue : NULL, aFlags,
+                              true /* isSetter */, &dummy, &dummy64, &dummy);
         }
     }
     catch (std::bad_alloc &)
