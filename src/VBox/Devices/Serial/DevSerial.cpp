@@ -588,82 +588,107 @@ PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
 #ifdef IN_RING3
 
 /**
- * Saves a state of the serial port device.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to save the state to.
+ * @copydoc FNSSMDEVLIVEEXEC
  */
-static DECLCALLBACK(int) serialSaveExec(PPDMDEVINS pDevIns,
-                                        PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) serialLiveExec(PPDMDEVINS pDevIns,
+                                        PSSMHANDLE pSSM,
+                                        uint32_t uPass)
 {
     SerialState *pThis = PDMINS_2_DATA(pDevIns, SerialState *);
-
-    SSMR3PutU16(pSSMHandle, pThis->divider);
-    SSMR3PutU8(pSSMHandle, pThis->rbr);
-    SSMR3PutU8(pSSMHandle, pThis->ier);
-    SSMR3PutU8(pSSMHandle, pThis->lcr);
-    SSMR3PutU8(pSSMHandle, pThis->mcr);
-    SSMR3PutU8(pSSMHandle, pThis->lsr);
-    SSMR3PutU8(pSSMHandle, pThis->msr);
-    SSMR3PutU8(pSSMHandle, pThis->scr);
-    SSMR3PutS32(pSSMHandle, pThis->thr_ipending);
-    SSMR3PutS32(pSSMHandle, pThis->irq);
-    SSMR3PutS32(pSSMHandle, pThis->last_break_enable);
-    SSMR3PutU32(pSSMHandle, pThis->base);
-    SSMR3PutBool(pSSMHandle, pThis->msr_changed);
-    return SSMR3PutU32(pSSMHandle, ~0); /* sanity/terminator */
+    SSMR3PutS32(pSSM, pThis->irq);
+    SSMR3PutU32(pSSM, pThis->base);
+    return VINF_SSM_DONT_CALL_AGAIN;
 }
 
 /**
- * Loads a saved serial port device state.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to the saved state.
- * @param   uVersion    The data unit version number.
- * @param   uPass       The data pass.
+ * @copydoc FNSSMDEVSAVEEXEC
+ */
+static DECLCALLBACK(int) serialSaveExec(PPDMDEVINS pDevIns,
+                                        PSSMHANDLE pSSM)
+{
+    SerialState *pThis = PDMINS_2_DATA(pDevIns, SerialState *);
+
+    SSMR3PutU16(pSSM, pThis->divider);
+    SSMR3PutU8(pSSM, pThis->rbr);
+    SSMR3PutU8(pSSM, pThis->ier);
+    SSMR3PutU8(pSSM, pThis->lcr);
+    SSMR3PutU8(pSSM, pThis->mcr);
+    SSMR3PutU8(pSSM, pThis->lsr);
+    SSMR3PutU8(pSSM, pThis->msr);
+    SSMR3PutU8(pSSM, pThis->scr);
+    SSMR3PutS32(pSSM, pThis->thr_ipending);
+    SSMR3PutS32(pSSM, pThis->irq);
+    SSMR3PutS32(pSSM, pThis->last_break_enable);
+    SSMR3PutU32(pSSM, pThis->base);
+    SSMR3PutBool(pSSM, pThis->msr_changed);
+    return SSMR3PutU32(pSSM, ~0); /* sanity/terminator */
+}
+
+/**
+ * @copydoc FNSSMDEVLOADEXEC
  */
 static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
-                                        PSSMHANDLE pSSMHandle,
+                                        PSSMHANDLE pSSM,
                                         uint32_t uVersion,
                                         uint32_t uPass)
 {
     SerialState *pThis = PDMINS_2_DATA(pDevIns, SerialState *);
 
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
     AssertMsgReturn(uVersion == SERIAL_SAVED_STATE_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
 
-    SSMR3GetU16(pSSMHandle, &pThis->divider);
-    SSMR3GetU8(pSSMHandle, &pThis->rbr);
-    SSMR3GetU8(pSSMHandle, &pThis->ier);
-    SSMR3GetU8(pSSMHandle, &pThis->lcr);
-    SSMR3GetU8(pSSMHandle, &pThis->mcr);
-    SSMR3GetU8(pSSMHandle, &pThis->lsr);
-    SSMR3GetU8(pSSMHandle, &pThis->msr);
-    SSMR3GetU8(pSSMHandle, &pThis->scr);
-    SSMR3GetS32(pSSMHandle, &pThis->thr_ipending);
-    SSMR3GetS32(pSSMHandle, &pThis->irq);
-    SSMR3GetS32(pSSMHandle, &pThis->last_break_enable);
-    SSMR3GetU32(pSSMHandle, &pThis->base);
-    SSMR3GetBool(pSSMHandle, &pThis->msr_changed);
-
-    uint32_t u32;
-    int rc = SSMR3GetU32(pSSMHandle, &u32);
-    if (RT_FAILURE(rc))
-        return rc;
-    AssertMsgReturn(u32 == ~0U, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-
-    if (pThis->lsr & UART_LSR_DR)
+    if (uPass == SSM_PASS_FINAL)
     {
-        int rc = RTSemEventSignal(pThis->ReceiveSem);
-        AssertRC(rc);
+        SSMR3GetU16(pSSM, &pThis->divider);
+        SSMR3GetU8(pSSM, &pThis->rbr);
+        SSMR3GetU8(pSSM, &pThis->ier);
+        SSMR3GetU8(pSSM, &pThis->lcr);
+        SSMR3GetU8(pSSM, &pThis->mcr);
+        SSMR3GetU8(pSSM, &pThis->lsr);
+        SSMR3GetU8(pSSM, &pThis->msr);
+        SSMR3GetU8(pSSM, &pThis->scr);
+        SSMR3GetS32(pSSM, &pThis->thr_ipending);
     }
 
-    /* this isn't strictly necessary but cannot hurt... */
-    pThis->pDevInsR3 = pDevIns;
-    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    int32_t  iIrq;
+    SSMR3GetS32(pSSM, &iIrq);
+
+    if (uPass == SSM_PASS_FINAL)
+        SSMR3GetS32(pSSM, &pThis->last_break_enable);
+
+    uint32_t IOBase;
+    int rc = SSMR3GetU32(pSSM, &IOBase);
+    AssertRCReturn(rc, rc);
+
+    if (    pThis->irq  != iIrq
+        ||  pThis->base != IOBase)
+    {
+        LogRel(("Serial#%u: Config mismatch - saved irq=%#x iobase=%#x; configured irq=%#x iobase=%#x\n",
+                pDevIns->iInstance, iIrq, IOBase, pThis->irq, pThis->base));
+        return VERR_SSM_LOAD_CONFIG_MISMATCH;
+    }
+
+    if (uPass == SSM_PASS_FINAL)
+    {
+        SSMR3GetBool(pSSM, &pThis->msr_changed);
+
+        uint32_t u32;
+        rc = SSMR3GetU32(pSSM, &u32);
+        if (RT_FAILURE(rc))
+            return rc;
+        AssertMsgReturn(u32 == ~0U, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+        if (pThis->lsr & UART_LSR_DR)
+        {
+            rc = RTSemEventSignal(pThis->ReceiveSem);
+            AssertRC(rc);
+        }
+
+        /* this isn't strictly necessary but cannot hurt... */
+        pThis->pDevInsR3 = pDevIns;
+        pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+        pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -897,18 +922,28 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
         return rc;
 
     if (pThis->fGCEnabled)
+    {
         rc = PDMDevHlpIOPortRegisterGC(pDevIns, io_base, 8, 0, "serialIOPortWrite",
                                       "serialIOPortRead", NULL, NULL, "Serial");
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
 
     if (pThis->fR0Enabled)
+    {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, io_base, 8, 0, "serialIOPortWrite",
                                       "serialIOPortRead", NULL, NULL, "Serial");
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 #endif /* !VBOX_SERIAL_PCI */
 
     /*
      * Saved state.
      */
-    rc = PDMDevHlpSSMRegister(pDevIns, SERIAL_SAVED_STATE_VERSION, sizeof (*pThis), serialSaveExec, serialLoadExec);
+    rc = PDMDevHlpSSMRegister3(pDevIns, SERIAL_SAVED_STATE_VERSION, sizeof (*pThis),
+                               serialLiveExec, serialSaveExec, serialLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
