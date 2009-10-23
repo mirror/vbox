@@ -27,6 +27,7 @@
 #include <VBox/pdmdrv.h>
 
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/path.h>
@@ -56,7 +57,6 @@
 # include <net/if.h>
 # include <stropts.h>
 # include <fcntl.h>
-# include <ctype.h>
 # include <stdlib.h>
 # include <stdio.h>
 # ifdef VBOX_WITH_CROSSBOW
@@ -646,7 +646,7 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pThis)
     if (pThis->pszDeviceName)
     {
         size_t cch = strlen(pThis->pszDeviceName);
-        if (cch > 1 && isdigit(pThis->pszDeviceName[cch - 1]) != 0)
+        if (cch > 1 && RT_C_IS_DIGIT(pThis->pszDeviceName[cch - 1]) != 0)
             iPPA = pThis->pszDeviceName[cch - 1] - '0';
     }
 
@@ -920,7 +920,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Check that no-one is attached to us.
      */
-    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
@@ -1093,9 +1093,9 @@ const PDMDRVREG g_DrvHostInterface =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
