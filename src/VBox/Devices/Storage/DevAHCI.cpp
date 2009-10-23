@@ -6138,10 +6138,8 @@ static DECLCALLBACK(int) ahciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
             AssertRCReturn(rc, rc);
             if (fInUse != (pThis->ahciPort[i].pDrvBase != NULL))
             {
-                LogRel(("AHCI: Config mismatch: cPortsImpl - saved=%u config=%u\n", u32, pThis->cPortsImpl));
-                if (    u32 < pThis->cPortsImpl
-                    ||  u32 > AHCI_MAX_NR_PORTS_IMPL)
-                    return VERR_SSM_LOAD_CONFIG_MISMATCH;
+                LogRel(("AHCI: Port %u config mismatch: fInUse - saved=%u config=%u\n", fInUse, (pThis->ahciPort[i].pDrvBase != NULL)));
+                return VERR_SSM_LOAD_CONFIG_MISMATCH;
             }
 
             char szSerialNumber[AHCI_SERIAL_NUMBER_LENGTH+1];
