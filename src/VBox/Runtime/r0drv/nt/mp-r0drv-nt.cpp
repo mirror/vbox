@@ -346,12 +346,43 @@ static VOID rtMpNtPokeCpuDummy(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID 
     NOREF(SystemArgument2);
 }
 
+#ifndef IPRT_TARGET_NT4
+
+ULONG_PTR rtMpIpiGenericCall(ULONG_PTR  Argument)
+{
+    return 0;
+}
+
+int rtMpSendIpiVista(RTCPUID idCpu)
+{
+    g_pfnrtKeIpiGenericCall(rtMpIpiGenericCall, 0);
+////    g_pfnrtNtHalRequestIpi(1 << idCpu);
+    return VINF_SUCCESS;
+}
+
+int rtMpSendIpiWin7(RTCPUID idCpu)
+{
+    g_pfnrtKeIpiGenericCall(rtMpIpiGenericCall, 0);
+////    g_pfnrtNtHalSendSoftwareInterrupt(idCpu, DISPATCH_LEVEL);
+    return VINF_SUCCESS;
+}
+#endif /* IPRT_TARGET_NT4 */
+
+int rtMpSendIpiDummy(RTCPUID idCpu)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
 RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 {
     if (!RTMpIsCpuOnline(idCpu))
         return !RTMpIsCpuPossible(idCpu)
               ? VERR_CPU_NOT_FOUND
               : VERR_CPU_OFFLINE;
+
+    int rc = g_pfnrtSendIpi(idCpu);
+    if (rc == VINF_SUCCESS)
+        return rc;
 
     /* Fallback. */
     if (!fPokeDPCsInitialized)
@@ -375,7 +406,7 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
     KeSetTargetProcessorDpc(&aPokeDpcs[idCpu], (int)idCpu);
 
     /* Assuming here that high importance DPCs will be delivered immediately; or at least an IPI will be sent immediately.
-     * @note: seems to be true on Vista
+     * @note: not true on at least Vista & Windows 7
      */
     BOOLEAN bRet = KeInsertQueueDpc(&aPokeDpcs[idCpu], 0, 0);
 
