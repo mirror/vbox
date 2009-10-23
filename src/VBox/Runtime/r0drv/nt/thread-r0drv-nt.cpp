@@ -33,7 +33,6 @@
 *******************************************************************************/
 #include "the-nt-kernel.h"
 #include "internal/iprt.h"
-#include "internal/mp.h"
 #include <iprt/thread.h>
 
 #include <iprt/asm.h>
@@ -93,11 +92,6 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
-
-    /* Remove any pending poke DPC from the queue, so another call to RTMpPokeCpu will send an IPI 
-     * Also do this so we don't exit from ring 0 for the poke DPC (which does nothing).
-     */
-    rtMpPokeCpuClear();
 
     /*
      * Read the globals and check if they are useful.
