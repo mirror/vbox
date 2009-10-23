@@ -1388,12 +1388,14 @@
  */
 /** Unable to start VM execution. */
 #define VERR_SVM_UNABLE_TO_START_VM                 (-4050)
-/** SVM bit not set in K6_EFER MSR */
+/** AMD-V bit not set in K6_EFER MSR */
 #define VERR_SVM_ILLEGAL_EFER_MSR                   (-4051)
-/** SVM CPU extension not available. */
+/** AMD-V CPU extension not available. */
 #define VERR_SVM_NO_SVM                             (-4052)
-/** SVM CPU extension disabled (by BIOS). */
+/** AMD-V CPU extension disabled (by BIOS). */
 #define VERR_SVM_DISABLED                           (-4053)
+/** AMD-V CPU extension in-use. */
+#define VERR_SVM_IN_USE                             (-4054)
 /** @} */
 
 
