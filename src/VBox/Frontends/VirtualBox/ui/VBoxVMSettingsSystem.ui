@@ -335,7 +335,7 @@
           </sizepolicy>
          </property>
          <property name="whatsThis">
-          <string>When checked, activates support for Extended Firmware Interface (EFI), can be used to boot certain guest OS. Activate only if fully understand the consequences.</string>
+          <string>When checked, activates support for the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if activated..</string>
          </property>
          <property name="text">
           <string>Enable &amp;EFI (special OSes only)</string>
