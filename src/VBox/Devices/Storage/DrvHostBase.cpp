@@ -2004,7 +2004,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
 
     /* name to open & watch for */
 #ifdef RT_OS_WINDOWS
-    int iBit = toupper(pThis->pszDevice[0]) - 'A';
+    int iBit = RT_C_TO_UPPER(pThis->pszDevice[0]) - 'A';
     if (    iBit > 'Z' - 'A'
         ||  pThis->pszDevice[1] != ':'
         ||  pThis->pszDevice[2])
