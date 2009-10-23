@@ -345,16 +345,10 @@ HGSMIOFFSET HGSMIGuestRead (PHGSMIINSTANCE pIns)
     return HGSMIOFFSET_VOID;
 }
 
-
-/* The the guest has finished processing of a buffer previously submitted by the host.
- * Called from HGSMI_IO_HOST write handler.
- * @thread EMT
- */
-void HGSMIHostWrite (HGSMIINSTANCE *pIns,
-                     HGSMIOFFSET offBuffer)
+static bool hgsmiProcessHostCmdCompletion (HGSMIINSTANCE *pIns,
+                     HGSMIOFFSET offBuffer,
+                     bool bCompleteFirst)
 {
-    LogFlowFunc(("pIns %p offBuffer 0x%x\n", pIns, offBuffer));
-
     VM_ASSERT_EMT(pIns->pVM);
 
     int rc = hgsmiFIFOLock(pIns);
@@ -368,7 +362,7 @@ void HGSMIHostWrite (HGSMIINSTANCE *pIns,
         {
             Assert(pEntry->fl == (HGSMI_F_HOST_FIFO_ALLOCATED | HGSMI_F_HOST_FIFO_READ));
 
-            if (pEntry->offBuffer == offBuffer)
+            if (bCompleteFirst || pEntry->offBuffer == offBuffer)
             {
                 break;
             }
@@ -385,7 +379,7 @@ void HGSMIHostWrite (HGSMIINSTANCE *pIns,
 
         LogFlowFunc(("read list entry: %p.\n", pEntry));
 
-        Assert(pEntry);
+        Assert(pEntry || bCompleteFirst);
 
         if (pEntry)
         {
@@ -408,13 +402,26 @@ void HGSMIHostWrite (HGSMIINSTANCE *pIns,
 #else
             hgsmiHostCommandFreeCallback(pEntry);
 #endif
+            return true;
         }
-        else
-        {
-            hgsmiFIFOUnlock(pIns);
+
+        hgsmiFIFOUnlock(pIns);
+        if(!bCompleteFirst)
             LogRel(("HGSMI[%s]: ignored invalid write to the host FIFO: 0x%08X!!!\n", pIns->pszName, offBuffer));
-        }
     }
+    return false;
+}
+
+/* The the guest has finished processing of a buffer previously submitted by the host.
+ * Called from HGSMI_IO_HOST write handler.
+ * @thread EMT
+ */
+void HGSMIHostWrite (HGSMIINSTANCE *pIns,
+                     HGSMIOFFSET offBuffer)
+{
+    LogFlowFunc(("pIns %p offBuffer 0x%x\n", pIns, offBuffer));
+
+    hgsmiProcessHostCmdCompletion (pIns, offBuffer, false);
 }
 
 /* The guest reads a new host buffer to be processed.
@@ -1528,6 +1535,13 @@ int HGSMICreate (PHGSMIINSTANCE *ppIns,
     LogFlowFunc(("leave rc = %Rrc, pIns = %p\n", rc, pIns));
 
     return rc;
+}
+
+void HGSMIReset (PHGSMIINSTANCE pIns)
+{
+    while(hgsmiProcessHostCmdCompletion (pIns, 0, true)) {}
+
+    HGSMIHeapSetupUnitialized (&pIns->hostHeap);
 }
 
 void HGSMIDestroy (PHGSMIINSTANCE pIns)

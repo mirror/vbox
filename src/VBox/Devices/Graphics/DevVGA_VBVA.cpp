@@ -944,6 +944,26 @@ int vbvaVHWAConstruct (PVGASTATE pVGAState)
     return VERR_OUT_OF_RESOURCES;
 }
 
+int vbvaVHWAReset (PVGASTATE pVGAState)
+{
+    /* ensure we have all pending cmds processed and h->g cmds disabled */
+    VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_DISABLE, 0);
+    Assert(pCmd);
+    if(pCmd)
+    {
+        int rc = vbvaVHWAHHCommandPost(pVGAState, pCmd);
+        Assert(RT_SUCCESS(rc));
+        if(RT_SUCCESS(rc))
+        {
+            rc = pCmd->rc;
+            Assert(RT_SUCCESS(rc));
+            vbvaVHWAHHCommandRelease(pCmd);
+        }
+        return rc;
+    }
+    return VERR_OUT_OF_RESOURCES;
+}
+
 /* @todo call this also on reset? */
 int vbvaVHWADisable (PVGASTATE pVGAState)
 {
@@ -1345,6 +1365,12 @@ void VBVAReset (PVGASTATE pVGAState)
 
     VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pVGAState->pHGSMI);
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    vbvaVHWAReset (pVGAState);
+#endif
+
+    HGSMIReset (pVGAState->pHGSMI);
+
     if (pCtx)
     {
         vbvaFlush (pVGAState, pCtx);
@@ -1356,6 +1382,7 @@ void VBVAReset (PVGASTATE pVGAState)
             vbvaDisable (uScreenId, pVGAState, pCtx);
         }
     }
+
 }
 
 int VBVAUpdateDisplay (PVGASTATE pVGAState)

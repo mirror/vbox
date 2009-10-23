@@ -457,11 +457,13 @@ int      VBVAInit       (PVGASTATE pVGAState);
 void     VBVADestroy    (PVGASTATE pVGAState);
 int      VBVAUpdateDisplay (PVGASTATE pVGAState);
 void     VBVAReset (PVGASTATE pVGAState);
+void     HGSMIReset (PHGSMIINSTANCE pIns);
 
 # ifdef VBOX_WITH_VIDEOHWACCEL
 int vbvaVHWACommandCompleteAsynch(PPDMDDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd);
 int vbvaVHWAConstruct (PVGASTATE pVGAState);
 int vbvaVHWADisable (PVGASTATE pVGAState);
+int vbvaVHWAReset (PVGASTATE pVGAState);
 
 int vboxVBVASaveStatePrep (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 # endif
