@@ -32,7 +32,7 @@
 bool is3DAccelerationSupported()
 {
     static char pszVBoxPath[RTPATH_MAX];
-    const char *papszArgs[3] = { NULL, "-test", NULL};
+    const char *papszArgs[4] = { NULL, "-test", "3D", NULL};
     int rc;
     RTPROCESS Process;
     RTPROCSTATUS ProcStatus;

@@ -133,9 +133,9 @@ int main(int argc, char **argv)
                              "(C) 2009 Sun Microsystems, Inc.\n"
                              "All rights reserved.\n"
                              "\n"
-                             "Usage:\n"
-                             "\n"
-                             "  VBoxTestOGL [ --test 2D|3D]\n"
+                             "Parameters:\n"
+                             "  --test 2D      test for 2D (video) OpenGL capabilities\n"
+                             "  --test 3D      test for 3D OpenGL capabilities\n"
                              "\n",
                             RTBldCfgVersionMajor(), RTBldCfgVersionMinor(), RTBldCfgVersionBuild());
                     break;
