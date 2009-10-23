@@ -992,7 +992,7 @@ VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
     if (!HWACCMR0Globals.fGlobalInit)
     {
         rc = hwaccmR0EnableCpu(pVM, idCpu);
-        AssertRC(rc);
+        AssertRCReturn(rc, rc);
     }
 
     /* Setup VT-x or AMD-V. */
@@ -1053,7 +1053,7 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
     if (!HWACCMR0Globals.fGlobalInit)
     {
         rc = hwaccmR0EnableCpu(pVM, idCpu);
-        AssertRC(rc);
+        AssertRCReturn(rc, rc);
     }
 
     rc  = HWACCMR0Globals.pfnEnterSession(pVM, pVCpu, pCpu);
