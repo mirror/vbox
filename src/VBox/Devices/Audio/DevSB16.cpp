@@ -1564,6 +1564,7 @@ static DECLCALLBACK(int) sb16LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     s->hdma=qemu_get_be32 (f);
     s->port=qemu_get_be32 (f);
     s->ver=qemu_get_be32 (f);
+
     s->in_index=qemu_get_be32 (f);
     s->out_data_len=qemu_get_be32 (f);
     s->fmt_stereo=qemu_get_be32 (f);
