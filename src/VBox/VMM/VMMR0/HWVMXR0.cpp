@@ -123,6 +123,9 @@ VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RT
      * (which can have very bad consequences!!!)
      */
 
+    if (ASMGetCR4() & X86_CR4_VMXE))
+        return VERR_VMX_IN_VMX_ROOT_MODE;
+
     /* Make sure the VMX instructions don't cause #UD faults. */
     ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);
 

@@ -82,10 +82,12 @@ VMMR0DECL(int) SVMR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RT
     SUPR0Printf("SVMR0EnableCpu cpu %d page (%x) %x\n", pCpu->idCpu, pvPageCpu, (uint32_t)pPageCpuPhys);
 #endif
 
-    /* Turn on AMD-V in the EFER MSR. */
     uint64_t val = ASMRdMsr(MSR_K6_EFER);
-    if (!(val & MSR_K6_EFER_SVME))
-        ASMWrMsr(MSR_K6_EFER, val | MSR_K6_EFER_SVME);
+    if (val & MSR_K6_EFER_SVME)
+        return VERR_SVM_IN_USE;
+
+    /* Turn on AMD-V in the EFER MSR. */
+    ASMWrMsr(MSR_K6_EFER, val | MSR_K6_EFER_SVME);
 
     /* Write the physical page address where the CPU will store the host state while executing the VM. */
     ASMWrMsr(MSR_K8_VM_HSAVE_PA, pPageCpuPhys);
