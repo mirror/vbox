@@ -575,6 +575,16 @@ class E1kEEPROM
         {
             eeprom.write(u32Wires);
         }
+
+        int load(PSSMHANDLE pSSM)
+        {
+            return eeprom.load(pSSM);
+        }
+
+        void save(PSSMHANDLE pSSM)
+        {
+            eeprom.save(pSSM);
+        }
 #endif /* IN_RING3 */
 };
 
@@ -859,7 +869,7 @@ struct E1kState_st
     /** Base address of memory-mapped registers. */
     RTGCPHYS    addrMMReg;
     /** MAC address obtained from the configuration. */
-    RTMAC       macAddress;
+    RTMAC       macConfigured;
     /** Base port of I/O space region. */
     RTIOPORT    addrIOPort;
     /** EMT: */
@@ -4412,7 +4422,7 @@ static DECLCALLBACK(void *) e1kQueryInterface(struct PDMIBASE *pInterface, PDMIN
  */
 static void e1kSaveConfig(E1KSTATE *pState, PSSMHANDLE pSSM)
 {
-    SSMR3PutMem(pSSM, &pState->macAddress, sizeof(pState->macAddress));
+    SSMR3PutMem(pSSM, &pState->macConfigured, sizeof(pState->macConfigured));
     SSMR3PutU32(pSSM, pState->eChip);
 }
 
@@ -4486,6 +4496,7 @@ static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 #if 0 /** @todo FIXME: enable when bumping the version. */
     e1kSaveConfig(pState, pSSM);
+    pState->eeprom.save(pSSM);
 #endif
     e1kDumpState(pState);
     SSMR3PutMem(pSSM, pState->auRegs, sizeof(pState->auRegs));
@@ -4575,12 +4586,12 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         || uPass    != SSM_PASS_FINAL)
     {
         /* config checks */
-        RTMAC macAddress;
-        rc = SSMR3GetMem(pSSM, &macAddress, sizeof(macAddress));
+        RTMAC macConfigured;
+        rc = SSMR3GetMem(pSSM, &macConfigured, sizeof(macConfigured));
         AssertRCReturn(rc, rc);
-        if (   memcmp(&macAddress, &pState->macAddress, sizeof(macAddress))
+        if (   memcmp(&macConfigured, &pState->macConfigured, sizeof(macConfigured))
             && (uPass == 0 || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)) )
-            LogRel(("%s: The mac address differs: config=%RTmac saved=%RTmac\n", INSTANCE(pState), &pState->macAddress, &macAddress));
+            LogRel(("%s: The mac address differs: config=%RTmac saved=%RTmac\n", INSTANCE(pState), &pState->macConfigured, &macConfigured));
 
         E1KCHIP eChip;
         rc = SSMR3GetU32(pSSM, &eChip);
@@ -4594,6 +4605,11 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
     if (uPass == SSM_PASS_FINAL)
     {
+        if (uVersion > E1K_SAVEDSTATE_VERSION_VBOX_30)
+        {
+            rc = pState->eeprom.load(pSSM);
+            AssertRCReturn(rc, rc);
+        }
         /* the state */
         SSMR3GetMem(pSSM, &pState->auRegs, sizeof(pState->auRegs));
         SSMR3GetBool(pSSM, &pState->fIntRaised);
@@ -4793,8 +4809,8 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /** @todo: LineSpeed unused! */
 
     /* Get config params */
-    rc = CFGMR3QueryBytes(pCfgHandle, "MAC", pState->macAddress.au8,
-                          sizeof(pState->macAddress.au8));
+    rc = CFGMR3QueryBytes(pCfgHandle, "MAC", pState->macConfigured.au8,
+                          sizeof(pState->macConfigured.au8));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get MAC address"));
@@ -4866,7 +4882,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pState->INetworkConfig.pfnSetLinkState   = e1kSetLinkState;
 
     /* Initialize the EEPROM */
-    pState->eeprom.init(pState->macAddress);
+    pState->eeprom.init(pState->macConfigured);
 
     /* Initialize internal PHY */
     Phy::init(&pState->phy, iInstance,

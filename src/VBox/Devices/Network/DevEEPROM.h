@@ -22,6 +22,9 @@
 /* Interface */
 #include <iprt/types.h>
 
+/** The current Saved state version. */
+#define EEPROM93C46_SAVEDSTATE_VERSION 1
+
 /**
  * 93C46-compatible EEPROM device emulation.
  *
@@ -69,6 +72,8 @@ struct EEPROM93C46 {
 
 
     /** @todo save and load methods */
+    void save(PSSMHANDLE pSSM);
+    int  load(PSSMHANDLE pSSM);
 
     /** Actual content of EEPROM */
     uint16_t m_au16Data[SIZE];

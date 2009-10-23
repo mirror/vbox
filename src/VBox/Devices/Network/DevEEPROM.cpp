@@ -21,6 +21,7 @@
 
 #define LOG_GROUP LOG_GROUP_DEV_E1000   /// @todo Add a EEPROM logging group.
 #include <VBox/log.h>
+#include <VBox/pdmdev.h>
 #include <iprt/string.h>
 #include "DevEEPROM.h"
 
@@ -242,3 +243,44 @@ uint32_t EEPROM93C46::read()
     return m_u32InternalWires;
 }
 
+void EEPROM93C46::save(PSSMHANDLE pSSM)
+{
+    SSMR3PutU8(  pSSM, EEPROM93C46_SAVEDSTATE_VERSION);
+    SSMR3PutU8(  pSSM, m_eState);
+    SSMR3PutU8(  pSSM, m_eOp);
+    SSMR3PutBool(pSSM, m_fWriteEnabled);
+    SSMR3PutU32( pSSM, m_u32InternalWires);
+    SSMR3PutU16( pSSM, m_u16Word);
+    SSMR3PutU16( pSSM, m_u16Mask);
+    SSMR3PutU16( pSSM, m_u16Addr);
+    SSMR3PutMem( pSSM, m_au16Data, sizeof(m_au16Data));
+}
+
+int EEPROM93C46::load(PSSMHANDLE pSSM)
+{
+    int rc = VINF_SUCCESS;
+    uint8_t uVersion = 0;
+
+    rc = SSMR3GetU8(pSSM, &uVersion);
+    AssertRCReturn(rc, rc);
+    if (uVersion != EEPROM93C46_SAVEDSTATE_VERSION)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    rc = SSMR3GetU8(  pSSM, (uint8_t*)&m_eState);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3GetU8(  pSSM, (uint8_t*)&m_eOp);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3GetBool(pSSM, &m_fWriteEnabled);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32( pSSM, &m_u32InternalWires);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3GetU16( pSSM, &m_u16Word);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3GetU16( pSSM, &m_u16Mask);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3GetU16( pSSM, &m_u16Addr);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3GetMem( pSSM, m_au16Data, sizeof(m_au16Data));
+
+    return rc;
+}
