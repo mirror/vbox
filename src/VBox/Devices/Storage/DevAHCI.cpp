@@ -6138,7 +6138,7 @@ static DECLCALLBACK(int) ahciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
             AssertRCReturn(rc, rc);
             if (fInUse != (pThis->ahciPort[i].pDrvBase != NULL))
             {
-                LogRel(("AHCI: Port %u config mismatch: fInUse - saved=%u config=%u\n", fInUse, (pThis->ahciPort[i].pDrvBase != NULL)));
+                LogRel(("AHCI: Port %u config mismatch: fInUse - saved=%RTbool config=%RTbool\n", fInUse, (pThis->ahciPort[i].pDrvBase != NULL)));
                 return VERR_SSM_LOAD_CONFIG_MISMATCH;
             }
 
