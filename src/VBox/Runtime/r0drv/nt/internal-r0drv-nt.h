@@ -40,10 +40,7 @@ RT_C_DECLS_BEGIN
 *******************************************************************************/
 typedef ULONG (__stdcall *PFNMYEXSETTIMERRESOLUTION)(ULONG, BOOLEAN);
 typedef VOID (__stdcall *PFNMYKEFLUSHQUEUEDDPCS)(VOID);
-typedef VOID (__stdcall *PFNHALREQUESTIPI)(KAFFINITY TargetSet);
-typedef VOID (__stdcall *PFNHALSENDSOFTWAREINTERRUPT)(ULONG ProcessorNumber, KIRQL Irql);
-typedef int (__stdcall *PFNRTSENDIPI)(RTCPUID idCpu);
-typedef ULONG_PTR (__stdcall *PFNRTKEIPIGENERICCALL)(PKIPI_BROADCAST_WORKER BroadcastFunction, ULONG_PTR  Context);
+typedef VOID (__stdcall *PFNRTKESETSYSTEMAFFINITYTHREAD)(KAFFINITY);
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -51,18 +48,10 @@ typedef ULONG_PTR (__stdcall *PFNRTKEIPIGENERICCALL)(PKIPI_BROADCAST_WORKER Broa
 extern RTCPUSET                     g_rtMpNtCpuSet;
 extern PFNMYEXSETTIMERRESOLUTION    g_pfnrtNtExSetTimerResolution;
 extern PFNMYKEFLUSHQUEUEDDPCS       g_pfnrtNtKeFlushQueuedDpcs;
-extern PFNHALREQUESTIPI             g_pfnrtNtHalRequestIpi;
-extern PFNHALSENDSOFTWAREINTERRUPT  g_pfnrtNtHalSendSoftwareInterrupt;
-extern PFNRTSENDIPI                 g_pfnrtSendIpi;
-extern PFNRTKEIPIGENERICCALL        g_pfnrtKeIpiGenericCall;
+extern PFNRTKESETSYSTEMAFFINITYTHREAD g_pfnrtKeSetSystemAffinityThread;
 extern uint32_t                     g_offrtNtPbQuantumEnd;
 extern uint32_t                     g_cbrtNtPbQuantumEnd;
 extern uint32_t                     g_offrtNtPbDpcQueueDepth;
-
-
-int rtMpSendIpiVista(RTCPUID idCpu);
-int rtMpSendIpiWin7(RTCPUID idCpu);
-int rtMpSendIpiDummy(RTCPUID idCpu);
 
 RT_C_DECLS_END
 

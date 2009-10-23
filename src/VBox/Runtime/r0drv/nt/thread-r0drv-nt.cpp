@@ -169,7 +169,12 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
     Assert(pState->uchOldIrql == 255);
     Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
 
+#ifndef IPRT_TARGET_NT4
+    Assert(g_pfnrtKeSetSystemAffinityThread);
+    g_pfnrtKeSetSystemAffinityThread((KAFFINITY)1 << KeGetCurrentProcessorNumber());
+#else
     KeRaiseIrql(DISPATCH_LEVEL, &pState->uchOldIrql);
+#endif
     RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 }
 
@@ -179,7 +184,12 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
     AssertPtr(pState);
 
     RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
+#ifndef IPRT_TARGET_NT4
+    Assert(g_pfnrtKeSetSystemAffinityThread);
+    g_pfnrtKeSetSystemAffinityThread(KeQueryActiveProcessors());
+#else
     KeLowerIrql(pState->uchOldIrql);
+#endif
     pState->uchOldIrql = 255;
 }
 
