@@ -272,6 +272,14 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PFNVMATERROR pfnVMAtError, void *pvU
 #endif
                     break;
 
+                case VERR_SVM_IN_USE:
+#ifdef RT_OS_LINUX
+                    pszError = N_("VirtualBox can't enable the AMD-V extension. "
+                                  "Please disable the KVM kernel extension, recompile your kernel and reboot");
+#else
+                    pszError = N_("VirtualBox can't enable the AMD-V extension. Please close all other virtualization programs.");
+#endif
+
                 case VERR_VERSION_MISMATCH:
                     pszError = N_("VMMR0 driver version mismatch. Please terminate all VMs, make sure that "
                                   "VBoxNetDHCP is not running and try again. If you still get this error, "
