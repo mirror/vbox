@@ -91,7 +91,7 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole, const CSe
     /* Setup handlers */
     connect (mInfoStack, SIGNAL (currentChanged (int)), this, SLOT (onPageChanged (int)));
     connect (&vboxGlobal(), SIGNAL (mediumEnumFinished (const VBoxMediaList &)), this, SLOT (updateDetails()));
-    connect (mConsole, SIGNAL (mediaDriveChanged (VBoxDefs::MediaType)), this, SLOT (updateDetails()));
+    connect (mConsole, SIGNAL (mediaDriveChanged (VBoxDefs::MediumType)), this, SLOT (updateDetails()));
     connect (mConsole, SIGNAL (sharedFoldersChanged()), this, SLOT (updateDetails()));
     connect (mStatTimer, SIGNAL (timeout()), this, SLOT (processStatistics()));
     connect (mConsole, SIGNAL (resizeHintDone()), this, SLOT (processStatistics()));
