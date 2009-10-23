@@ -1,5 +1,5 @@
 /** @file
- * IPRT - ctype.h wrapper and C locale variants.
+ * IPRT - Simple character type classiciation and conversion.
  */
 
 /*
@@ -32,6 +32,7 @@
 
 #include <iprt/types.h>
 
+#if 0
 #ifdef IN_RING3
 # include <ctype.h>
 
@@ -40,6 +41,7 @@
 #  define isblank(ch)  ( (ch) == ' ' || (ch) == '\t' )
 # endif
 #endif /* IN_RING3 */
+#endif
 
 /** @name C locale predicates and conversions.
  *
