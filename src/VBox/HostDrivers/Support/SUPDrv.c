@@ -227,7 +227,7 @@ DECLASM(int)    UNWIND_WRAP(RTThreadUserWaitNoResume)(RTTHREAD Thread, unsigned 
 /* RTThreadPreemptIsEnabled - not necessary */
 /* RTThreadPreemptIsPending - not necessary */
 /* RTThreadPreemptIsPendingTrusty - not necessary */
-/* RTThreadPreemptDisable - not necessary */
+DECLASM(void)   UNWIND_WRAP(RTThreadPreemptDisable)(PRTTHREADPREEMPTSTATE pState);
 DECLASM(void)   UNWIND_WRAP(RTThreadPreemptRestore)(RTTHREADPREEMPTSTATE pState);
 /* RTLogDefaultInstance   - a bit of a gamble, but we do not want the overhead! */
 /* RTMpCpuId              - not necessary */
@@ -394,7 +394,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTThreadPreemptIsPending",               (void *)RTThreadPreemptIsPending },
     { "RTThreadPreemptIsPendingTrusty",         (void *)RTThreadPreemptIsPendingTrusty },
     { "RTThreadPreemptIsPossible",              (void *)RTThreadPreemptIsPossible },
-    { "RTThreadPreemptDisable",                 (void *)RTThreadPreemptDisable },
+    { "RTThreadPreemptDisable",                 (void *)UNWIND_WRAP(RTThreadPreemptDisable) },
     { "RTThreadPreemptRestore",                 (void *)UNWIND_WRAP(RTThreadPreemptRestore) },
     { "RTThreadIsInInterrupt",                  (void *)RTThreadIsInInterrupt },
 
