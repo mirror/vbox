@@ -279,6 +279,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PFNVMATERROR pfnVMAtError, void *pvU
 #else
                     pszError = N_("VirtualBox can't enable the AMD-V extension. Please close all other virtualization programs.");
 #endif
+                    break;
 
                 case VERR_VERSION_MISMATCH:
                     pszError = N_("VMMR0 driver version mismatch. Please terminate all VMs, make sure that "
