@@ -811,7 +811,7 @@ AssertCompileSize(struct E1kTcpHeader, 20);
 
 
 /** The current Saved state version. */
-#define E1K_SAVEDSTATE_VERSION          1 /* 2 - FIXME */
+#define E1K_SAVEDSTATE_VERSION          2
 /** Saved state version for VirtualBox 3.0 and earlier.
  * This did not include the configuration part nor the E1kEEPROM.  */
 #define E1K_SAVEDSTATE_VERSION_VBOX_30  1
@@ -4494,10 +4494,8 @@ static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
 
-#if 0 /** @todo FIXME: enable when bumping the version. */
     e1kSaveConfig(pState, pSSM);
     pState->eeprom.save(pSSM);
-#endif
     e1kDumpState(pState);
     SSMR3PutMem(pSSM, pState->auRegs, sizeof(pState->auRegs));
     SSMR3PutBool(pSSM, pState->fIntRaised);
