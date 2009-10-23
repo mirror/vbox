@@ -8443,7 +8443,7 @@
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="ad3cdc5b-28ce-4390-8273-ca2068a217c5"
+    uuid="aa8167ba-df72-4738-b740-9b84377ba9f1"
     wsmap="managed"
   >
     <desc>
