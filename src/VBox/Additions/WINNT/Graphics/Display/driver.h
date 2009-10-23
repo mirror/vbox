@@ -115,7 +115,7 @@ typedef struct _VBOXVHWASURFDESC
     volatile uint32_t cFlipsTarg;
 #endif
 //    uint32_t cBitsPerPixel;
-    bool bHidden;
+    bool bVisible;
     VBOXVHWAREGION UpdatedMemRegion;
     VBOXVHWAREGION NonupdatedMemRegion;
 }VBOXVHWASURFDESC, *PVBOXVHWASURFDESC;
