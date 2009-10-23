@@ -253,7 +253,7 @@ int handleStorageAttach(HandlerArg *a)
     else
     {
         {
-            /**
+            /*
              * try to determine the type of the drive from the
              * storage controller chipset, the attachment and
              * the medium being attached
@@ -262,7 +262,7 @@ int handleStorageAttach(HandlerArg *a)
             CHECK_ERROR(storageCtl, COMGETTER(ControllerType)(&ctlType));
             if (ctlType == StorageControllerType_I82078)
             {
-                /**
+                /*
                  * floppy controller found so lets assume the medium
                  * given by the user is also a floppy image or floppy
                  * host drive
@@ -271,7 +271,7 @@ int handleStorageAttach(HandlerArg *a)
             }
             else
             {
-                /**
+                /*
                  * for SATA/SCSI/IDE it is hard to tell if it is a harddisk or
                  * a dvd being attached so lets check if the medium attachment
                  * and the medium, both are of same type. if yes then we are
@@ -298,7 +298,7 @@ int handleStorageAttach(HandlerArg *a)
                         }
                         if (dvdMedium)
                         {
-                            /**
+                            /*
                              * ok so the medium and attachment both are DVD's so it is
                              * safe to assume that we are dealing with a DVD here
                              */
@@ -318,7 +318,7 @@ int handleStorageAttach(HandlerArg *a)
                         }
                         if (hardDisk)
                         {
-                            /**
+                            /*
                              * ok so the medium and attachment both are hdd's so it is
                              * safe to assume that we are dealing with a hdd here
                              */
@@ -850,3 +850,4 @@ int handleStorageController(HandlerArg *a)
 }
 
 #endif /* !VBOX_ONLY_DOCS */
+
