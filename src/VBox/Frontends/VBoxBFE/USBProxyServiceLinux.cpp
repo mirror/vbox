@@ -32,8 +32,9 @@
 #include <VBox/usb.h>
 #include <VBox/err.h>
 
-#include <iprt/string.h>
 #include <iprt/alloc.h>
+#include <iprt/ctype.h>
+#include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/err.h>
@@ -41,7 +42,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <errno.h>
 #include <sys/statfs.h>
 #include <sys/poll.h>
@@ -281,7 +281,7 @@ int USBProxyServiceLinux::interruptWait (void)
 static int usbReadSkipSuffix (char **ppszNext)
 {
     char *pszNext = *ppszNext;
-    if (!isspace (*pszNext) && *pszNext)
+    if (!RT_C_IS_SPACE (*pszNext) && *pszNext)
     {
         /* skip unit */
         if (pszNext[0] == 'm' && pszNext[1] == 's')
@@ -301,7 +301,7 @@ static int usbReadSkipSuffix (char **ppszNext)
         }
 
         /* blank or end of the line. */
-        if (!isspace (*pszNext) && *pszNext)
+        if (!RT_C_IS_SPACE (*pszNext) && *pszNext)
         {
             AssertMsgFailed (("pszNext=%s\n", pszNext));
             return VERR_PARSE_ERROR;
@@ -358,12 +358,12 @@ static int usbReadNum (const char *pszValue, unsigned uBase, uint32_t u32Mask, P
          */
         if (paSuffs)
         {
-            if (!isspace (*pszNext) && *pszNext)
+            if (!RT_C_IS_SPACE (*pszNext) && *pszNext)
             {
                 for (PCUSBSUFF pSuff = paSuffs; pSuff->szSuff[0]; pSuff++)
                 {
                     if (    !strncmp (pSuff->szSuff, pszNext, pSuff->cchSuff)
-                        &&  (!pszNext[pSuff->cchSuff] || isspace (pszNext[pSuff->cchSuff])))
+                        &&  (!pszNext[pSuff->cchSuff] || RT_C_IS_SPACE (pszNext[pSuff->cchSuff])))
                     {
                         if (pSuff->uDiv)
                             u32 /= pSuff->uDiv;
@@ -506,7 +506,7 @@ static char * usbReadSkip (const char *pszValue)
         psz = strchr (psz + 1, '=');
     if (!psz)
         return strchr (pszValue,  '\0');
-    while (psz > pszValue && !isspace (psz[-1]))
+    while (psz > pszValue && !RT_C_IS_SPACE (psz[-1]))
         psz--;
     Assert (psz > pszValue);
     return psz;
