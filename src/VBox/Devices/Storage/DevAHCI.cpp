@@ -67,8 +67,13 @@
 
 #define AHCI_MAX_NR_PORTS_IMPL 30
 #define AHCI_NR_COMMAND_SLOTS 32
-#define AHCI_SAVED_STATE_VERSION 2
 #define AHCI_NR_OF_ALLOWED_BIGGER_LISTS 100
+
+/** The current saved state version. */
+#define AHCI_SAVED_STATE_VERSION                3
+/** The saved state version use in VirtualBox 3.0 and earlier.
+ * This was before the config was added and ahciIOTasks was dropped. */
+#define AHCI_SAVED_STATE_VERSION_VBOX_30        2
 
 /**
  * Maximum number of sectors to transfer in a READ/WRITE MULTIPLE request.
@@ -5984,87 +5989,113 @@ static DECLCALLBACK(void) ahciResume(PPDMDEVINS pDevIns)
 }
 
 /**
- * Saves a state of the AHCI device.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to save the state to.
+ * @copydoc FNDEVSSMLIVEEXEC
  */
-static DECLCALLBACK(int) ahciSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) ahciLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
-    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+
+    /* config. */
+    SSMR3PutU32(pSSM, pThis->cPortsImpl);
+    for (uint32_t i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
+    {
+        SSMR3PutBool(pSSM, pThis->ahciPort[i].pDrvBase != NULL);
+        SSMR3PutStrZ(pSSM, pThis->ahciPort[i].szSerialNumber);
+        SSMR3PutStrZ(pSSM, pThis->ahciPort[i].szFirmwareRevision);
+        SSMR3PutStrZ(pSSM, pThis->ahciPort[i].szModelNumber);
+    }
+
+    static const char *s_apszIdeEmuPortNames[4] = { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
+    for (size_t i = 0; i < RT_ELEMENTS(s_apszIdeEmuPortNames); i++)
+    {
+        uint32_t iPort;
+        int rc = CFGMR3QueryU32Def(pDevIns->pCfgHandle, s_apszIdeEmuPortNames[i], &iPort, i);
+        AssertRCReturn(rc, rc);
+        SSMR3PutU32(pSSM, iPort);
+    }
+
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
+
+/**
+ * @copydoc FNDEVSSMSAVEEXEC
+ */
+static DECLCALLBACK(int) ahciSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
     uint32_t i;
+    int rc;
 
-    Assert(!pAhci->f8ByteMMIO4BytesWrittenSuccessfully);
+    Assert(!pThis->f8ByteMMIO4BytesWrittenSuccessfully);
 
-    /* First the main device structure. */
-    SSMR3PutU32(pSSMHandle, pAhci->regHbaCap);
-    SSMR3PutU32(pSSMHandle, pAhci->regHbaCtrl);
-    SSMR3PutU32(pSSMHandle, pAhci->regHbaIs);
-    SSMR3PutU32(pSSMHandle, pAhci->regHbaPi);
-    SSMR3PutU32(pSSMHandle, pAhci->regHbaVs);
-    SSMR3PutU32(pSSMHandle, pAhci->regHbaCccCtl);
-    SSMR3PutU32(pSSMHandle, pAhci->regHbaCccPorts);
-    SSMR3PutU8(pSSMHandle, pAhci->uCccPortNr);
-    SSMR3PutU64(pSSMHandle, pAhci->uCccTimeout);
-    SSMR3PutU32(pSSMHandle, pAhci->uCccNr);
-    SSMR3PutU32(pSSMHandle, pAhci->uCccCurrentNr);
-    SSMR3PutU32(pSSMHandle, pAhci->u32PortsInterrupted);
-    SSMR3PutBool(pSSMHandle, pAhci->fReset);
-    SSMR3PutBool(pSSMHandle, pAhci->f64BitAddr);
-    SSMR3PutBool(pSSMHandle, pAhci->fR0Enabled);
-    SSMR3PutBool(pSSMHandle, pAhci->fGCEnabled);
+    /* The config */
+    rc = ahciLiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
+    AssertRCReturn(rc, rc);
+
+    /* The main device structure. */
+    SSMR3PutU32(pSSM, pThis->regHbaCap);
+    SSMR3PutU32(pSSM, pThis->regHbaCtrl);
+    SSMR3PutU32(pSSM, pThis->regHbaIs);
+    SSMR3PutU32(pSSM, pThis->regHbaPi);
+    SSMR3PutU32(pSSM, pThis->regHbaVs);
+    SSMR3PutU32(pSSM, pThis->regHbaCccCtl);
+    SSMR3PutU32(pSSM, pThis->regHbaCccPorts);
+    SSMR3PutU8(pSSM, pThis->uCccPortNr);
+    SSMR3PutU64(pSSM, pThis->uCccTimeout);
+    SSMR3PutU32(pSSM, pThis->uCccNr);
+    SSMR3PutU32(pSSM, pThis->uCccCurrentNr);
+    SSMR3PutU32(pSSM, pThis->u32PortsInterrupted);
+    SSMR3PutBool(pSSM, pThis->fReset);
+    SSMR3PutBool(pSSM, pThis->f64BitAddr);
+    SSMR3PutBool(pSSM, pThis->fR0Enabled);
+    SSMR3PutBool(pSSM, pThis->fGCEnabled);
 
     /* Now every port. */
     for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
     {
-        Assert(pAhci->ahciPort[i].uActTasksActive == 0);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].regCLB);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].regCLBU);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].regFB);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].regFBU);
-        SSMR3PutGCPhys(pSSMHandle, pAhci->ahciPort[i].GCPhysAddrClb);
-        SSMR3PutGCPhys(pSSMHandle, pAhci->ahciPort[i].GCPhysAddrFb);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].regIS);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].regIE);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].regCMD);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].regTFD);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].regSIG);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].regSSTS);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].regSCTL);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].regSERR);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].regSACT);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].regCI);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].PCHSGeometry.cCylinders);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].PCHSGeometry.cHeads);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].PCHSGeometry.cSectors);
-        SSMR3PutU64(pSSMHandle, pAhci->ahciPort[i].cTotalSectors);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].cMultSectors);
-        SSMR3PutU8(pSSMHandle, pAhci->ahciPort[i].uATATransferMode);
-        SSMR3PutBool(pSSMHandle, pAhci->ahciPort[i].fResetDevice);
+        Assert(pThis->ahciPort[i].uActTasksActive == 0);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].regCLB);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].regCLBU);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].regFB);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].regFBU);
+        SSMR3PutGCPhys(pSSM, pThis->ahciPort[i].GCPhysAddrClb);
+        SSMR3PutGCPhys(pSSM, pThis->ahciPort[i].GCPhysAddrFb);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].regIS);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].regIE);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].regCMD);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].regTFD);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].regSIG);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].regSSTS);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].regSCTL);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].regSERR);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].regSACT);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].regCI);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].PCHSGeometry.cCylinders);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].PCHSGeometry.cHeads);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].PCHSGeometry.cSectors);
+        SSMR3PutU64(pSSM, pThis->ahciPort[i].cTotalSectors);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].cMultSectors);
+        SSMR3PutU8(pSSM, pThis->ahciPort[i].uATATransferMode);
+        SSMR3PutBool(pSSM, pThis->ahciPort[i].fResetDevice);
 
-        for (uint8_t uActTask = 0; uActTask < AHCI_NR_COMMAND_SLOTS; uActTask++)
-            SSMR3PutU8(pSSMHandle, pAhci->ahciPort[i].ahciIOTasks[uActTask]);
-
-        SSMR3PutU8(pSSMHandle, pAhci->ahciPort[i].uActWritePos);
-        SSMR3PutU8(pSSMHandle, pAhci->ahciPort[i].uActReadPos);
-        SSMR3PutBool(pSSMHandle, pAhci->ahciPort[i].fPoweredOn);
-        SSMR3PutBool(pSSMHandle, pAhci->ahciPort[i].fSpunUp);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].u32TasksFinished);
-        SSMR3PutU32(pSSMHandle, pAhci->ahciPort[i].u32QueuedTasksFinished);
+        /* No need to save */
+        SSMR3PutU8(pSSM, pThis->ahciPort[i].uActWritePos);
+        SSMR3PutU8(pSSM, pThis->ahciPort[i].uActReadPos);
+        SSMR3PutBool(pSSM, pThis->ahciPort[i].fPoweredOn);
+        SSMR3PutBool(pSSM, pThis->ahciPort[i].fSpunUp);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].u32TasksFinished);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].u32QueuedTasksFinished);
     }
 
     /* Now the emulated ata controllers. */
-    for (i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
+    for (i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
-        int rc;
-
-        rc = ataControllerSaveExec(&pAhci->aCts[i], pSSMHandle);
+        rc = ataControllerSaveExec(&pThis->aCts[i], pSSM);
         if (RT_FAILURE(rc))
             return rc;
     }
 
-    return SSMR3PutU32(pSSMHandle, ~0); /* sanity/terminator */
+    return SSMR3PutU32(pSSM, UINT32_MAX); /* sanity/terminator */
 }
 
 /**
@@ -6072,91 +6103,163 @@ static DECLCALLBACK(int) ahciSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to the saved state.
+ * @param   pSSM  The handle to the saved state.
  * @param   uVersion  The data unit version number.
  * @param   uPass           The data pass.
  */
-static DECLCALLBACK(int) ahciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) ahciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
     uint32_t u32;
     uint32_t i;
+    int rc;
 
-    if (uVersion != AHCI_SAVED_STATE_VERSION)
+    if (    uVersion != AHCI_SAVED_STATE_VERSION
+        &&  uVersion != AHCI_SAVED_STATE_VERSION_VBOX_30)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    /* Restore data. */
-
-    /* First the main device structure. */
-    SSMR3GetU32(pSSMHandle, &pAhci->regHbaCap);
-    SSMR3GetU32(pSSMHandle, &pAhci->regHbaCtrl);
-    SSMR3GetU32(pSSMHandle, &pAhci->regHbaIs);
-    SSMR3GetU32(pSSMHandle, &pAhci->regHbaPi);
-    SSMR3GetU32(pSSMHandle, &pAhci->regHbaVs);
-    SSMR3GetU32(pSSMHandle, &pAhci->regHbaCccCtl);
-    SSMR3GetU32(pSSMHandle, &pAhci->regHbaCccPorts);
-    SSMR3GetU8(pSSMHandle, &pAhci->uCccPortNr);
-    SSMR3GetU64(pSSMHandle, &pAhci->uCccTimeout);
-    SSMR3GetU32(pSSMHandle, &pAhci->uCccNr);
-    SSMR3GetU32(pSSMHandle, &pAhci->uCccCurrentNr);
-
-    SSMR3GetU32(pSSMHandle, &pAhci->u32PortsInterrupted);
-    SSMR3GetBool(pSSMHandle, &pAhci->fReset);
-    SSMR3GetBool(pSSMHandle, &pAhci->f64BitAddr);
-    SSMR3GetBool(pSSMHandle, &pAhci->fR0Enabled);
-    SSMR3GetBool(pSSMHandle, &pAhci->fGCEnabled);
-
-    /* Now every port. */
-    for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
+    /* Verify config. */
+    if (uVersion > AHCI_SAVED_STATE_VERSION_VBOX_30)
     {
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regCLB);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regCLBU);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regFB);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regFBU);
-        SSMR3GetGCPhys(pSSMHandle, (RTGCPHYS *)&pAhci->ahciPort[i].GCPhysAddrClb);
-        SSMR3GetGCPhys(pSSMHandle, (RTGCPHYS *)&pAhci->ahciPort[i].GCPhysAddrFb);
-        SSMR3GetU32(pSSMHandle, (uint32_t *)&pAhci->ahciPort[i].regIS);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regIE);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regCMD);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regTFD);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regSIG);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regSSTS);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regSCTL);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regSERR);
-        SSMR3GetU32(pSSMHandle, (uint32_t *)&pAhci->ahciPort[i].regSACT);
-        SSMR3GetU32(pSSMHandle, (uint32_t *)&pAhci->ahciPort[i].regCI);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].PCHSGeometry.cCylinders);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].PCHSGeometry.cHeads);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].PCHSGeometry.cSectors);
-        SSMR3GetU64(pSSMHandle, &pAhci->ahciPort[i].cTotalSectors);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].cMultSectors);
-        SSMR3GetU8(pSSMHandle, &pAhci->ahciPort[i].uATATransferMode);
-        SSMR3GetBool(pSSMHandle, &pAhci->ahciPort[i].fResetDevice);
+        rc = SSMR3GetU32(pSSM, &u32);
+        AssertRCReturn(rc, rc);
+        if (u32 != pThis->cPortsImpl)
+        {
+            LogRel(("AHCI: Config mismatch: cPortsImpl - saved=%u config=%u\n", u32, pThis->cPortsImpl));
+            if (    u32 < pThis->cPortsImpl
+                ||  u32 > AHCI_MAX_NR_PORTS_IMPL)
+                return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
 
-        for (uint8_t uActTask = 0; uActTask < AHCI_NR_COMMAND_SLOTS; uActTask++)
-            SSMR3GetU8(pSSMHandle, (uint8_t *)&pAhci->ahciPort[i].ahciIOTasks[uActTask]);
+        for (uint32_t i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
+        {
+            bool fInUse;
+            rc = SSMR3GetBool(pSSM, &fInUse);
+            AssertRCReturn(rc, rc);
+            if (fInUse != (pThis->ahciPort[i].pDrvBase != NULL))
+            {
+                LogRel(("AHCI: Config mismatch: cPortsImpl - saved=%u config=%u\n", u32, pThis->cPortsImpl));
+                if (    u32 < pThis->cPortsImpl
+                    ||  u32 > AHCI_MAX_NR_PORTS_IMPL)
+                    return VERR_SSM_LOAD_CONFIG_MISMATCH;
+            }
 
-        SSMR3GetU8(pSSMHandle, &pAhci->ahciPort[i].uActWritePos);
-        SSMR3GetU8(pSSMHandle, &pAhci->ahciPort[i].uActReadPos);
-        SSMR3GetBool(pSSMHandle, &pAhci->ahciPort[i].fPoweredOn);
-        SSMR3GetBool(pSSMHandle, &pAhci->ahciPort[i].fSpunUp);
-        SSMR3GetU32(pSSMHandle, (uint32_t *)&pAhci->ahciPort[i].u32TasksFinished);
-        SSMR3GetU32(pSSMHandle, (uint32_t *)&pAhci->ahciPort[i].u32QueuedTasksFinished);
+            char szSerialNumber[AHCI_SERIAL_NUMBER_LENGTH+1];
+            rc = SSMR3GetStrZ(pSSM, szSerialNumber,     sizeof(szSerialNumber));
+            AssertRCReturn(rc, rc);
+            if (strcmp(szSerialNumber, pThis->ahciPort[i].szSerialNumber))
+                LogRel(("ACHI: Port %u config mismatch: Serial number - saved='%s' config='%s'\n",
+                        szSerialNumber, pThis->ahciPort[i].szSerialNumber));
+
+            char szFirmwareRevision[AHCI_FIRMWARE_REVISION_LENGTH+1];
+            rc = SSMR3GetStrZ(pSSM, szFirmwareRevision, sizeof(szFirmwareRevision));
+            AssertRCReturn(rc, rc);
+            if (strcmp(szFirmwareRevision, pThis->ahciPort[i].szFirmwareRevision))
+                LogRel(("ACHI: Port %u config mismatch: Firmware revision - saved='%s' config='%s'\n",
+                        szFirmwareRevision, pThis->ahciPort[i].szFirmwareRevision));
+
+            char szModelNumber[AHCI_MODEL_NUMBER_LENGTH+1];
+            rc = SSMR3GetStrZ(pSSM, szModelNumber,      sizeof(szModelNumber));
+            AssertRCReturn(rc, rc);
+            if (strcmp(szModelNumber, pThis->ahciPort[i].szModelNumber))
+                LogRel(("ACHI: Port %u config mismatch: Model number - saved='%s' config='%s'\n",
+                        szModelNumber, pThis->ahciPort[i].szModelNumber));
+        }
+
+        static const char *s_apszIdeEmuPortNames[4] = { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
+        for (size_t i = 0; i < RT_ELEMENTS(s_apszIdeEmuPortNames); i++)
+        {
+            uint32_t iPort;
+            rc = CFGMR3QueryU32Def(pDevIns->pCfgHandle, s_apszIdeEmuPortNames[i], &iPort, i);
+            AssertRCReturn(rc, rc);
+
+            uint32_t iPortSaved;
+            rc = SSMR3GetU32(pSSM, &iPortSaved);
+            AssertRCReturn(rc, rc);
+
+            if (iPortSaved != iPort)
+            {
+                LogRel(("ACHI: IDE %s config mismatch: saved=%u config=%u\n",
+                        s_apszIdeEmuPortNames[i], iPortSaved, iPort));
+                return VERR_SSM_LOAD_CONFIG_MISMATCH;
+            }
+        }
     }
 
-    /* Now the emulated ata controllers. */
-    for (i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
+    if (uPass == SSM_PASS_FINAL)
     {
-        int rc = ataControllerLoadExec(&pAhci->aCts[i], pSSMHandle);
+        /* Restore data. */
+
+        /* The main device structure. */
+        SSMR3GetU32(pSSM, &pThis->regHbaCap);
+        SSMR3GetU32(pSSM, &pThis->regHbaCtrl);
+        SSMR3GetU32(pSSM, &pThis->regHbaIs);
+        SSMR3GetU32(pSSM, &pThis->regHbaPi);
+        SSMR3GetU32(pSSM, &pThis->regHbaVs);
+        SSMR3GetU32(pSSM, &pThis->regHbaCccCtl);
+        SSMR3GetU32(pSSM, &pThis->regHbaCccPorts);
+        SSMR3GetU8(pSSM, &pThis->uCccPortNr);
+        SSMR3GetU64(pSSM, &pThis->uCccTimeout);
+        SSMR3GetU32(pSSM, &pThis->uCccNr);
+        SSMR3GetU32(pSSM, &pThis->uCccCurrentNr);
+
+        SSMR3GetU32(pSSM, &pThis->u32PortsInterrupted);
+        SSMR3GetBool(pSSM, &pThis->fReset);
+        SSMR3GetBool(pSSM, &pThis->f64BitAddr);
+        SSMR3GetBool(pSSM, &pThis->fR0Enabled);
+        SSMR3GetBool(pSSM, &pThis->fGCEnabled);
+
+        /* Now every port. */
+        for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
+        {
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regCLB);
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regCLBU);
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regFB);
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regFBU);
+            SSMR3GetGCPhys(pSSM, (RTGCPHYS *)&pThis->ahciPort[i].GCPhysAddrClb);
+            SSMR3GetGCPhys(pSSM, (RTGCPHYS *)&pThis->ahciPort[i].GCPhysAddrFb);
+            SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].regIS);
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regIE);
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regCMD);
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regTFD);
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regSIG);
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regSSTS);
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regSCTL);
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].regSERR);
+            SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].regSACT);
+            SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].regCI);
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cCylinders);
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cHeads);
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cSectors);
+            SSMR3GetU64(pSSM, &pThis->ahciPort[i].cTotalSectors);
+            SSMR3GetU32(pSSM, &pThis->ahciPort[i].cMultSectors);
+            SSMR3GetU8(pSSM, &pThis->ahciPort[i].uATATransferMode);
+            SSMR3GetBool(pSSM, &pThis->ahciPort[i].fResetDevice);
+
+            if (uVersion <= AHCI_SAVED_STATE_VERSION_VBOX_30)
+                SSMR3Skip(pSSM, AHCI_NR_COMMAND_SLOTS * sizeof(uint8_t)); /* no active data here */
+
+            SSMR3GetU8(pSSM, &pThis->ahciPort[i].uActWritePos);
+            SSMR3GetU8(pSSM, &pThis->ahciPort[i].uActReadPos);
+            SSMR3GetBool(pSSM, &pThis->ahciPort[i].fPoweredOn);
+            SSMR3GetBool(pSSM, &pThis->ahciPort[i].fSpunUp);
+            SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32TasksFinished);
+            SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32QueuedTasksFinished);
+        }
+
+        /* Now the emulated ata controllers. */
+        for (i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+        {
+            rc = ataControllerLoadExec(&pThis->aCts[i], pSSM);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+        rc = SSMR3GetU32(pSSM, &u32);
         if (RT_FAILURE(rc))
             return rc;
+        AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
     }
-
-    int rc = SSMR3GetU32(pSSMHandle, &u32);
-    if (RT_FAILURE(rc))
-        return rc;
-    AssertMsgReturn(u32 == ~0U, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
     return VINF_SUCCESS;
 }
@@ -6345,15 +6448,16 @@ static DECLCALLBACK(int) ahciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Validate and read configuration.
      */
-    rc = CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0"
+    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0"
                                           "R0Enabled\0"
                                           "PrimaryMaster\0"
                                           "PrimarySlave\0"
                                           "SecondaryMaster\0"
                                           "SecondarySlave\0"
                                           "PortCount\0"
-                                          "UseAsyncInterfaceIfAvailable\0");
-    if (RT_FAILURE(rc))
+                                          "UseAsyncInterfaceIfAvailable\0"
+                                          "HighIOThreshold\0"
+                                          "MillisToSleep\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("AHCI configuration error: unknown option specified"));
 
@@ -6551,7 +6655,7 @@ static DECLCALLBACK(int) ahciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     for (i = 0; i < pThis->cPortsImpl; i++)
     {
         char szName[24];
-        RTStrPrintf(szName, sizeof(szName), "Port%d", i);
+        RTStrPrintf(szName, sizeof(szName), "Port%u", i);
 
         PAHCIPort pAhciPort      = &pThis->ahciPort[i];
         /*
@@ -6782,7 +6886,7 @@ static DECLCALLBACK(int) ahciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     }
 
     rc = PDMDevHlpSSMRegisterEx(pDevIns, AHCI_SAVED_STATE_VERSION, sizeof(*pThis)+cbTotalBufferSize, NULL,
-                                NULL, NULL, NULL,
+                                NULL,         ahciLiveExec, NULL,
                                 ahciSavePrep, ahciSaveExec, NULL,
                                 ahciLoadPrep, ahciLoadExec, NULL);
     if (RT_FAILURE(rc))
