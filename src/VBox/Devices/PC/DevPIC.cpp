@@ -751,7 +751,6 @@ PDMBOTHCBDECL(int) picIOPortElcrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 
 #ifdef IN_RING3
 
-#ifdef DEBUG
 /**
  * PIC status info callback.
  *
@@ -787,7 +786,6 @@ static DECLCALLBACK(void) picInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
         pHlp->pfnPrintf(pHlp, "  elcr_mask                 = %02x\n", pThis->aPics[i].elcr_mask);
     }
 }
-#endif /* DEBUG */
 
 /**
  * Saves a state of the programmable interrupt controller device.
@@ -1047,12 +1045,10 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return rc;
 
 
-#ifdef DEBUG
     /*
      * Register the info item.
      */
     PDMDevHlpDBGFInfoRegister(pDevIns, "pic", "PIC info.", picInfo);
-#endif
 
     /*
      * Initialize the device state.
