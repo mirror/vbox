@@ -4572,6 +4572,11 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu)
 
         Assert(pVCpu->pgm.s.iShwUser != PGMPOOL_IDX_NESTED_ROOT);
 
+# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+        if (pPool->cDirtyPages)
+            pgmPoolResetDirtyPages(pVM);
+# endif
+
         /* Mark the page as unlocked; allow flushing again. */
         pgmPoolUnlockPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 
