@@ -331,6 +331,11 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VERR_VMX_UNABLE_TO_RESUME_VM:
             HWACCMR3CheckError(pVM, rc);
             break;
+
+        /* Up a level; fatal */
+        case VERR_VMX_IN_VMX_ROOT_MODE:
+        case VERR_SVM_IN_USE:
+            break;
 #endif
 
         /*
