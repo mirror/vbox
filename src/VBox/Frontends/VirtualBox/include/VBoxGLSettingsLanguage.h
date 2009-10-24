@@ -50,7 +50,8 @@ protected:
 
 private slots:
 
-    void mTwLanguageChanged (QTreeWidgetItem *aCurr, QTreeWidgetItem *aPrev);
+    void mTwItemPainted (QTreeWidgetItem *aItem, QPainter *aPainter);
+    void mTwLanguageChanged (QTreeWidgetItem *aItem);
 
 private:
 

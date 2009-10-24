@@ -62,14 +62,16 @@ class MediaItem : public QTreeWidgetItem
 {
 public:
 
+    enum { MediaItemType = QTreeWidgetItem::UserType + 1 };
+
     MediaItem (MediaItem *aParent, const VBoxMedium &aMedium, const VBoxMediaManagerDlg *aManager)
-        : QTreeWidgetItem (aParent, QITreeWidget::BasicItemType)
+        : QTreeWidgetItem (aParent, MediaItemType)
         , mMedium (aMedium)
         , mManager (aManager)
     { refresh(); }
 
     MediaItem (QTreeWidget *aParent, const VBoxMedium &aMedium, const VBoxMediaManagerDlg *aManager)
-        : QTreeWidgetItem (aParent, QITreeWidget::BasicItemType)
+        : QTreeWidgetItem (aParent, MediaItemType)
         , mMedium (aMedium)
         , mManager (aManager)
     { refresh(); }
@@ -144,7 +146,7 @@ public:
     MediaItem* operator*()
     {
         QTreeWidgetItem *item = QTreeWidgetItemIterator::operator*();
-        return item && item->type() == QITreeWidget::BasicItemType ?
+        return item && item->type() == MediaItem::MediaItemType ?
             static_cast <MediaItem*> (item) : 0;
     }
 
@@ -226,7 +228,6 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
     mTwHD->header()->setResizeMode (2, QHeaderView::ResizeToContents);
     mTwHD->header()->setStretchLastSection (false);
     mTwHD->setSortingEnabled (true);
-    mTwHD->setSupportedDropActions (Qt::LinkAction);
     mTwHD->installEventFilter (this);
     connect (mTwHD, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
              this, SLOT (processCurrentChanged (QTreeWidgetItem *, QTreeWidgetItem *)));
@@ -244,7 +245,6 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
     mTwCD->header()->setResizeMode (1, QHeaderView::ResizeToContents);
     mTwCD->header()->setStretchLastSection (false);
     mTwCD->setSortingEnabled (true);
-    mTwCD->setSupportedDropActions (Qt::LinkAction);
     mTwCD->installEventFilter (this);
     connect (mTwCD, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
              this, SLOT (processCurrentChanged (QTreeWidgetItem *, QTreeWidgetItem *)));
@@ -262,7 +262,6 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
     mTwFD->header()->setResizeMode (1, QHeaderView::ResizeToContents);
     mTwFD->header()->setStretchLastSection (false);
     mTwFD->setSortingEnabled (true);
-    mTwFD->setSupportedDropActions (Qt::LinkAction);
     mTwFD->installEventFilter (this);
     connect (mTwFD, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
              this, SLOT (processCurrentChanged (QTreeWidgetItem *, QTreeWidgetItem *)));
@@ -1311,7 +1310,7 @@ MediaItem* VBoxMediaManagerDlg::toMediaItem (QTreeWidgetItem *aItem) const
 {
     /* Convert the QTreeWidgetItem to a MediaItem if it is valid. */
     MediaItem *item = 0;
-    if (aItem && aItem->type() == QITreeWidget::BasicItemType)
+    if (aItem && aItem->type() == MediaItem::MediaItemType)
         item = static_cast <MediaItem*> (aItem);
     return item;
 }

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,71 +20,51 @@
  * additional information or have any questions.
  */
 
-#include "QITreeWidget.h"
-
+/* Global includes */
 #include <QPainter>
 #include <QResizeEvent>
+
+/* Local includes */
+#include "QITreeWidget.h"
 
 QITreeWidget::QITreeWidget (QWidget *aParent)
     : QTreeWidget (aParent)
 {
 }
 
-void QITreeWidget::setSupportedDropActions (Qt::DropActions aAction)
-{
-    mSupportedDropActions = aAction;
-}
-
-Qt::DropActions QITreeWidget::supportedDropActions() const
-{
-    return mSupportedDropActions;
-}
-
 void QITreeWidget::paintEvent (QPaintEvent *aEvent)
 {
-    /* Painter for items */
-    QPainter painter (viewport());
+    /* Opens Items Painter */
+    QPainter painter;
+    painter.begin (viewport());
 
-    /* Here we let the items make some painting inside the viewport. */
+    /* Notify connected objects about painting */
     QTreeWidgetItemIterator it (this);
     while (*it)
     {
-        switch ((*it)->type())
-        {
-            case ComplexItemType:
-            {
-                /* Let the ComplexItem paint itself */
-                ComplexTreeWidgetItem *i = static_cast<ComplexTreeWidgetItem*> (*it);
-                i->paintItem (&painter);
-                break;
-            }
-            case BasicItemType:
-            {
-                /* Do nothing for BasicItem */
-                break;
-            }
-            default:
-            {
-                /* Wrong item is used */
-                break;
-            }
-        }
+        emit painted (*it, &painter);
         ++ it;
     }
+
+    /* Close Items Painter */
     painter.end();
 
+    /* Base-class paint-event */
     QTreeWidget::paintEvent (aEvent);
 }
 
 void QITreeWidget::resizeEvent (QResizeEvent *aEvent)
 {
+    /* Base-class resize-event */
     QTreeWidget::resizeEvent (aEvent);
+
+    /* Notify connected objects about resize */
     emit resized (aEvent->size(), aEvent->oldSize());
 }
 
 void QITreeWidget::addTopBottomMarginToItems (int aMargin)
 {
-    for (int i=0; i < topLevelItemCount(); ++i)
+    for (int i = 0; i < topLevelItemCount(); ++ i)
     {
         QTreeWidgetItem *item = topLevelItem (i);
         QSize s = item->sizeHint (0);

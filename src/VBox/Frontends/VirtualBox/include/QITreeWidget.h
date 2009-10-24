@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,7 @@
 #ifndef __QITreeWidget_h__
 #define __QITreeWidget_h__
 
+/* Global includes */
 #include <QTreeWidget>
 
 /*
@@ -34,52 +35,19 @@ class QITreeWidget: public QTreeWidget
 
 public:
 
-    /*
-     * There are two allowed QTreeWidgetItem types which may be used with
-     * QITreeWidget: basic and complex.
-     * Complex type used in every place where the particular item have to
-     * be separately repainted with it's own content.
-     * Basic are used in all other places.
-     */
-    enum
-    {
-        BasicItemType   = QTreeWidgetItem::UserType + 1,
-        ComplexItemType = QTreeWidgetItem::UserType + 2
-    };
-
     QITreeWidget (QWidget *aParent = 0);
-
-    void setSupportedDropActions (Qt::DropActions aAction);
 
     void addTopBottomMarginToItems (int aMargin);
 
 signals:
 
+    void painted (QTreeWidgetItem *aItem, QPainter *aPainter);
     void resized (const QSize &aSize, const QSize &aOldSize);
 
 protected:
 
-    virtual Qt::DropActions supportedDropActions () const;
-
-    void paintEvent (QPaintEvent *);
-    void resizeEvent (QResizeEvent *);
-
-    /* Protected member vars */
-    Qt::DropActions mSupportedDropActions;
-};
-
-/*
- * Interface for more complex items which requires special repainting
- * routine inside QITreeWidget's viewport.
- */
-class ComplexTreeWidgetItem : public QTreeWidgetItem
-{
-public:
-
-    ComplexTreeWidgetItem (QTreeWidget *aParent)
-        : QTreeWidgetItem  (aParent, QITreeWidget::ComplexItemType) {}
-
-    virtual void paintItem (QPainter *aPainter) = 0;
+    void paintEvent (QPaintEvent *aEvent);
+    void resizeEvent (QResizeEvent *aEvent);
 };
 
 #endif /* __QITreeWidget_h__ */
