@@ -39,13 +39,15 @@ extern const char *gVBoxLangFileExt;
 extern const char *gVBoxLangIDRegExp;
 extern const char *gVBoxBuiltInLangName;
 
-class LanguageItem : public ComplexTreeWidgetItem
+class LanguageItem : public QTreeWidgetItem
 {
 public:
 
+    enum { LanguageItemType = QTreeWidgetItem::UserType + 1 };
+
     LanguageItem (QTreeWidget *aParent, const QTranslator &aTranslator,
                   const QString &aId, bool aBuiltIn = false)
-        : ComplexTreeWidgetItem (aParent), mBuiltIn (aBuiltIn)
+        : QTreeWidgetItem (aParent, LanguageItemType), mBuiltIn (aBuiltIn)
     {
         Assert (!aId.isEmpty());
 
@@ -106,7 +108,7 @@ public:
     /* Constructs an item for an invalid language ID (i.e. when a language
      * file is missing or corrupt). */
     LanguageItem (QTreeWidget *aParent, const QString &aId)
-        : ComplexTreeWidgetItem (aParent), mBuiltIn (false)
+        : QTreeWidgetItem (aParent, LanguageItemType), mBuiltIn (false)
     {
         Assert (!aId.isEmpty());
 
@@ -124,7 +126,7 @@ public:
     /* Constructs an item for the default language ID (column 1 will be set
      * to QString::null) */
     LanguageItem (QTreeWidget *aParent)
-        : ComplexTreeWidgetItem (aParent), mBuiltIn (false)
+        : QTreeWidgetItem (aParent, LanguageItemType), mBuiltIn (false)
     {
         setText (0, VBoxGLSettingsLanguage::tr ("Default", "Language"));
         setText (1, QString::null);
@@ -133,6 +135,8 @@ public:
         setText (2, "                ");
         setText (3, "                ");
     }
+
+    bool isBuiltIn() const { return mBuiltIn; }
 
     bool operator< (const QTreeWidgetItem &aOther) const
     {
@@ -144,10 +148,9 @@ public:
             return false;
         if (mBuiltIn)
             return true;
-        if (aOther.type() == QITreeWidget::ComplexItemType &&
-            ((LanguageItem*) &aOther)->mBuiltIn)
+        if (aOther.type() == LanguageItemType && ((LanguageItem*) &aOther)->mBuiltIn)
             return false;
-        return ComplexTreeWidgetItem::operator< (aOther);
+        return QTreeWidgetItem::operator< (aOther);
     }
 
 private:
@@ -160,17 +163,6 @@ private:
         if (msg.isEmpty())
             msg = QString (aSrc);
         return msg;
-    }
-
-    void paintItem (QPainter *aPainter)
-    {
-        if (mBuiltIn)
-        {
-            QRect rect = treeWidget()->visualItemRect (this);
-            aPainter->setPen (treeWidget()->palette().color (QPalette::Mid));
-            aPainter->drawLine (rect.x(), rect.y() + rect.height() - 1,
-                 rect.x() + rect.width(), rect.y() + rect.height() - 1);
-        }
     }
 
     bool mBuiltIn : 1;
@@ -189,22 +181,22 @@ VBoxGLSettingsLanguage::VBoxGLSettingsLanguage()
     mTwLanguage->hideColumn (3);
 
     /* Setup Connections */
+    connect (mTwLanguage, SIGNAL (painted (QTreeWidgetItem *, QPainter *)),
+             this, SLOT (mTwItemPainted (QTreeWidgetItem *, QPainter *)));
     connect (mTwLanguage, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
-             this, SLOT (mTwLanguageChanged (QTreeWidgetItem *, QTreeWidgetItem *)));
+             this, SLOT (mTwLanguageChanged (QTreeWidgetItem *)));
 
     /* Applying language settings */
     retranslateUi();
 }
 
-void VBoxGLSettingsLanguage::getFrom (const CSystemProperties &,
-                                      const VBoxGlobalSettings &aGs)
+void VBoxGLSettingsLanguage::getFrom (const CSystemProperties & /* aProps */, const VBoxGlobalSettings &aGs)
 {
     reload (aGs.languageId());
     mTxName->setFixedHeight (fontMetrics().height() * 4);
 }
 
-void VBoxGLSettingsLanguage::putBackTo (CSystemProperties &,
-                                        VBoxGlobalSettings &aGs)
+void VBoxGLSettingsLanguage::putBackTo (CSystemProperties & /* aProps */, VBoxGlobalSettings &aGs)
 {
     QTreeWidgetItem *curItem = mTwLanguage->currentItem();
     Assert (curItem);
@@ -295,13 +287,27 @@ void VBoxGLSettingsLanguage::retranslateUi()
     reload (VBoxGlobal::languageId());
 }
 
-void VBoxGLSettingsLanguage::mTwLanguageChanged (QTreeWidgetItem *aCurItem,
-                                                 QTreeWidgetItem *)
+void VBoxGLSettingsLanguage::mTwItemPainted (QTreeWidgetItem *aItem, QPainter *aPainter)
 {
-    if (!aCurItem) return;
+    if (aItem && aItem->type() == LanguageItem::LanguageItemType)
+    {
+        LanguageItem *item = static_cast <LanguageItem*> (aItem);
+        if (item->isBuiltIn())
+        {
+            QRect rect = mTwLanguage->visualItemRect (item);
+            aPainter->setPen (mTwLanguage->palette().color (QPalette::Mid));
+            aPainter->drawLine (rect.x(), rect.y() + rect.height() - 1,
+                                rect.x() + rect.width(), rect.y() + rect.height() - 1);
+        }
+    }
+}
+
+void VBoxGLSettingsLanguage::mTwLanguageChanged (QTreeWidgetItem *aItem)
+{
+    if (!aItem) return;
 
     /* Disable labels for the Default language item */
-    bool enabled = !aCurItem->text (1).isNull();
+    bool enabled = !aItem->text (1).isNull();
 
     mTxName->setEnabled (enabled);
     mTxName->setText (QString ("<table>"
@@ -309,9 +315,9 @@ void VBoxGLSettingsLanguage::mTwLanguageChanged (QTreeWidgetItem *aCurItem,
                                "<tr><td>%3&nbsp;</td><td>%4</td></tr>"
                                "</table>")
                       .arg (tr ("Language:"))
-                      .arg (aCurItem->text (2))
+                      .arg (aItem->text (2))
                       .arg (tr ("Author(s):"))
-                      .arg (aCurItem->text (3)));
+                      .arg (aItem->text (3)));
 
     mLanguageChanged = true;
 }
