@@ -106,6 +106,9 @@
          <property name="bottomMargin" >
           <number>0</number>
          </property>
+         <property name="spacing" >
+          <number>1</number>
+         </property>
          <item>
           <widget class="QTreeWidget" name="mTwFilters" >
            <property name="contextMenuPolicy" >
