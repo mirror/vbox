@@ -1,8 +1,8 @@
-<ui version="4.0" >
+<ui version="4.0">
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
- Copyright (C) 2008 Sun Microsystems, Inc.
+ Copyright (C) 2008-2009 Sun Microsystems, Inc.
 
  This file is part of VirtualBox Open Source Edition (OSE), as
  available from http://www.virtualbox.org. This file is free software;
@@ -17,83 +17,95 @@
  additional information or have any questions.
  </comment>
  <class>VBoxVMSettingsSF</class>
- <widget class="QWidget" name="VBoxVMSettingsSF" >
-  <property name="geometry" >
+ <widget class="QWidget" name="VBoxVMSettingsSF">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>294</width>
-    <height>218</height>
+    <width>300</width>
+    <height>220</height>
    </rect>
   </property>
-  <property name="sizePolicy" >
-   <sizepolicy vsizetype="Expanding" hsizetype="Expanding" >
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
-  </property>
-  <layout class="QGridLayout" >
-   <item row="0" column="0" >
-    <widget class="QWidget" native="1" name="mGbSharedFolders" >
-     <layout class="QHBoxLayout" >
-      <property name="leftMargin" >
-       <number>0</number>
-      </property>
-      <property name="topMargin" >
-       <number>0</number>
-      </property>
-      <property name="rightMargin" >
-       <number>0</number>
-      </property>
-      <property name="bottomMargin" >
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="QTreeWidget" name="mTreeView" >
-        <property name="minimumSize" >
-         <size>
-          <width>0</width>
-          <height>200</height>
-         </size>
-        </property>
-        <property name="contextMenuPolicy" >
-         <enum>Qt::CustomContextMenu</enum>
-        </property>
-        <property name="whatsThis" >
-         <string>Lists all shared folders accessible to this machine. Use 'net use x: \\vboxsvr\share' to access a shared folder named &lt;i>share&lt;/i> from a DOS-like OS, or 'mount -t vboxsf share mount_point' to access it from a Linux OS. This feature requires Guest Additions.</string>
-        </property>
-        <property name="uniformRowHeights" >
-         <bool>true</bool>
-        </property>
-        <property name="allColumnsShowFocus" >
-         <bool>true</bool>
-        </property>
-        <column>
-         <property name="text" >
-          <string>Name</string>
-         </property>
-        </column>
-        <column>
-         <property name="text" >
-          <string>Path</string>
-         </property>
-        </column>
-        <column>
-         <property name="text" >
-          <string>Access</string>
-         </property>
-        </column>
-       </widget>
-      </item>
-     </layout>
+  <layout class="QVBoxLayout">
+   <property name="margin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QILabelSeparator" native="1" name="mNameSeparator">
+     <property name="text">
+      <string>&amp;Folders List</string>
+     </property>
+     <property name="buddy">
+      <cstring>mTwFolders</cstring>
+     </property>
     </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="mLtFolders">
+     <property name="margin">
+      <number>0</number>
+     </property>
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QTreeWidget" name="mTwFolders">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>200</height>
+        </size>
+       </property>
+       <property name="contextMenuPolicy">
+        <enum>Qt::CustomContextMenu</enum>
+       </property>
+       <property name="whatsThis">
+        <string>Lists all shared folders accessible to this machine. Use 'net use x: \\vboxsvr\share' to access a shared folder named &lt;i>share&lt;/i> from a DOS-like OS, or 'mount -t vboxsf share mount_point' to access it from a Linux OS. This feature requires Guest Additions.</string>
+       </property>
+       <property name="uniformRowHeights">
+        <bool>true</bool>
+       </property>
+       <property name="allColumnsShowFocus">
+        <bool>true</bool>
+       </property>
+       <column>
+        <property name="text">
+         <string>Name</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Path</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Access</string>
+        </property>
+       </column>
+      </widget>
+     </item>
+     <item>
+      <widget class="VBoxToolBar" native="1" name="mTbFolders"/>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
- <layoutdefault spacing="6" margin="11" />
- <includes>
-  <include location="local" >VBoxGlobal.h</include>
- </includes>
+ <customwidgets>
+  <customwidget>
+   <class>QILabelSeparator</class>
+   <extends>QLabel</extends>
+   <header>QILabelSeparator.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>VBoxToolBar</class>
+   <extends>QWidget</extends>
+   <header>VBoxToolBar.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
