@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,9 +23,11 @@
 #ifndef __VBoxVMSettingsSF_h__
 #define __VBoxVMSettingsSF_h__
 
+/* Local includes */
 #include "VBoxSettingsPage.h"
 #include "VBoxVMSettingsSF.gen.h"
 
+/* Local forwards */
 class SFTreeViewItem;
 
 enum SFDialogType
@@ -35,11 +37,10 @@ enum SFDialogType
     MachineType = 0x02,
     ConsoleType = 0x04
 };
-typedef QPair<QString, SFDialogType> SFolderName;
-typedef QList<SFolderName> SFoldersNameList;
+typedef QPair <QString, SFDialogType> SFolderName;
+typedef QList <SFolderName> SFoldersNameList;
 
-class VBoxVMSettingsSF : public VBoxSettingsPage,
-                         public Ui::VBoxVMSettingsSF
+class VBoxVMSettingsSF : public VBoxSettingsPage, public Ui::VBoxVMSettingsSF
 {
     Q_OBJECT;
 
@@ -55,7 +56,7 @@ public:
     void putBackToMachine();
     void putBackToConsole();
 
-    int dialogType() { return mDialogType; }
+    int dialogType() const;
 
 protected:
 
@@ -72,9 +73,8 @@ private slots:
     void edtTriggered();
     void delTriggered();
 
-    void processCurrentChanged (QTreeWidgetItem *aCurrentItem,
-                                QTreeWidgetItem *aPreviousItem = 0);
-    void processDoubleClick (QTreeWidgetItem *aItem, int aColumn);
+    void processCurrentChanged (QTreeWidgetItem *aCurrentItem);
+    void processDoubleClick (QTreeWidgetItem *aItem);
     void showContextMenu (const QPoint &aPos);
 
     void adjustList();
@@ -84,22 +84,17 @@ private:
 
     void showEvent (QShowEvent *aEvent);
 
-    void removeSharedFolder (const QString &aName, const QString &aPath,
-                             SFDialogType aType);
-    void createSharedFolder (const QString &aName, const QString &aPath,
-                             bool aWritable,
-                             SFDialogType aType);
+    void createSharedFolder (const QString &aName, const QString &aPath, bool aWritable, SFDialogType aType);
+    void removeSharedFolder (const QString &aName, const QString &aPath, SFDialogType aType);
 
     void getFrom (const CSharedFolderVector &aVec, SFTreeViewItem *aItem);
-    void putBackTo     (CSharedFolderVector &aVec, SFTreeViewItem *aItem);
+    void putBackTo (CSharedFolderVector &aVec, SFTreeViewItem *aItem);
 
-    SFTreeViewItem* searchRoot (bool aIsPermanent,
-                                SFDialogType aType = WrongType);
-    bool isEditable (const QString &);
+    SFTreeViewItem* searchRoot (bool aIsPermanent, SFDialogType aType = WrongType);
+    bool isEditable (const QString &aKey);
     SFoldersNameList usedList (bool aIncludeSelected);
 
     int       mDialogType;
-    QMenu    *mMenu;
     QAction  *mNewAction;
     QAction  *mEdtAction;
     QAction  *mDelAction;
