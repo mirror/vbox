@@ -962,23 +962,7 @@ VMMDECL(bool)           CPUMIsHyperDebugStateActive(PVMCPU pVCpu);
 VMMDECL(void)           CPUMDeactivateHyperDebugState(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
 VMMDECL(bool)           CPUMAreHiddenSelRegsValid(PVM pVM);
-
-/**
- * CPU modes.
- */
-typedef enum CPUMMODE
-{
-    /** The usual invalid zero entry. */
-    CPUMMODE_INVALID = 0,
-    /** Real mode. */
-    CPUMMODE_REAL,
-    /** Protected mode (32-bit). */
-    CPUMMODE_PROTECTED,
-    /** Long mode (64-bit). */
-    CPUMMODE_LONG
-} CPUMMODE;
-
-VMMDECL(CPUMMODE)  CPUMGetGuestMode(PVMCPU pVCpu);
+VMMDECL(CPUMMODE)       CPUMGetGuestMode(PVMCPU pVCpu);
 
 
 #ifdef IN_RING3

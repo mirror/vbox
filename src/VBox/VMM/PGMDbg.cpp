@@ -336,6 +336,58 @@ VMMR3DECL(int) PGMR3DbgWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, void const *pvSrc, 
 }
 
 
+/**
+ * memchr() with alignment considerations.
+ *
+ * @returns Pointer to matching byte, NULL if none found.
+ * @param   pb                  Where to search. Aligned.
+ * @param   b                   What to search for.
+ * @param   cb                  How much to search .
+ * @param   uAlign              The alignment restriction of the result.
+ */
+static const uint8_t *pgmR3DbgAlignedMemChr(const uint8_t *pb, uint8_t b, size_t cb, uint32_t uAlign)
+{
+    const uint8_t *pbRet;
+    if (uAlign <= 32)
+    {
+        pbRet = (const uint8_t *)memchr(pb, b, cb);
+        if ((uintptr_t)pbRet & (uAlign - 1))
+        {
+            do
+            {
+                pbRet++;
+                size_t cbLeft = cb - (pbRet - pb);
+                if (!cbLeft)
+                {
+                    pbRet = NULL;
+                    break;
+                }
+                pbRet = (const uint8_t *)memchr(pbRet, b, cbLeft);
+            } while ((uintptr_t)pbRet & (uAlign - 1));
+        }
+    }
+    else
+    {
+        pbRet = NULL;
+        if (cb)
+        {
+            for (;;)
+            {
+                if (*pb == b)
+                {
+                    pbRet = pb;
+                    break;
+                }
+                if (cb <= uAlign)
+                    break;
+                cb -= uAlign;
+                pb += uAlign;
+            }
+        }
+    }
+    return pbRet;
+}
+
 
 /**
  * Scans a page for a byte string, keeping track of potential
@@ -344,9 +396,10 @@ VMMR3DECL(int) PGMR3DbgWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, void const *pvSrc, 
  * @returns true and *poff on match.
  *          false on mismatch.
  * @param   pbPage          Pointer to the current page.
- * @param   poff            Input: The offset into the page.
+ * @param   poff            Input: The offset into the page (aligned).
  *                          Output: The page offset of the match on success.
  * @param   cb              The number of bytes to search, starting of *poff.
+ * @param   uAlign          The needle alignment. This is of course less than a page.
  * @param   pabNeedle       The byte string to search for.
  * @param   cbNeedle        The length of the byte string.
  * @param   pabPrev         The buffer that keeps track of a partial match that we
@@ -356,7 +409,7 @@ VMMR3DECL(int) PGMR3DbgWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, void const *pvSrc, 
  *                          Output: The number of partial matching bytes from this page.
  *                          Initialize to 0 before the first call to this function.
  */
-static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb,
+static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb, uint32_t uAlign,
                              const uint8_t *pabNeedle, size_t cbNeedle,
                              uint8_t *pabPrev, size_t *pcbPrev)
 {
@@ -378,9 +431,12 @@ static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb,
 
         /* check out the remainder of the previous page. */
         const uint8_t *pb = pabPrev;
-        while (cbPrev-- > 0)
+        for (;;)
         {
-            pb = (const uint8_t *)memchr(pb + 1, *pabNeedle, cbPrev);
+            if (cbPrev <= uAlign)
+                break;
+            cbPrev -= uAlign;
+            pb = pgmR3DbgAlignedMemChr(pb + uAlign, *pabNeedle, cbPrev, uAlign);
             if (!pb)
                 break;
             cbPrev = *pcbPrev - (pb - pabPrev);
@@ -404,7 +460,7 @@ static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb,
     const uint8_t *pbEnd = pb + cb;
     for (;;)
     {
-        pb = (const uint8_t *)memchr(pb, *pabNeedle, cb);
+        pb = pgmR3DbgAlignedMemChr(pb, *pabNeedle, cb, uAlign);
         if (!pb)
             break;
         cb = pbEnd - pb;
@@ -429,11 +485,11 @@ static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb,
             }
         }
 
-        /* no match, skip a byte ahead. */
-        if (cb <= 1)
+        /* no match, skip ahead. */
+        if (cb <= uAlign)
             break;
-        pb++;
-        cb--;
+        pb += uAlign;
+        cb -= uAlign;
     }
 
     return false;
@@ -452,11 +508,14 @@ static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb,
  * @param   pVM             Pointer to the shared VM structure.
  * @param   GCPhys          Where to start searching.
  * @param   cbRange         The number of bytes to search.
+ * @param   GCPhysAlign     The alignment of the needle. Must be a power of two
+ *                          and less or equal to 4GB.
  * @param   pabNeedle       The byte string to search for.
  * @param   cbNeedle        The length of the byte string. Max 256 bytes.
  * @param   pGCPhysHit      Where to store the address of the first occurence on success.
  */
-VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCPHYS pGCPhysHit)
+VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, RTGCPHYS GCPhysAlign,
+                                    const uint8_t *pabNeedle, size_t cbNeedle, PRTGCPHYS pGCPhysHit)
 {
     /*
      * Validate and adjust the input a bit.
@@ -478,9 +537,30 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
     if (GCPhys + cbNeedle - 1 < GCPhys)
         return VERR_DBGF_MEM_NOT_FOUND;
 
-    const RTGCPHYS GCPhysLast = GCPhys + cbRange - 1 >= GCPhys
-                              ? GCPhys + cbRange - 1
-                              : ~(RTGCPHYS)0;
+    if (!GCPhysAlign)
+        return VERR_INVALID_PARAMETER;
+    if (GCPhysAlign > UINT32_MAX)
+        return VERR_NOT_POWER_OF_TWO;
+    if (GCPhysAlign & (GCPhysAlign - 1))
+        return VERR_INVALID_PARAMETER;
+
+    if (GCPhys & (GCPhysAlign - 1))
+    {
+        RTGCPHYS Adj = GCPhysAlign - (GCPhys & (GCPhysAlign - 1));
+        if (    cbRange <= Adj
+            ||  GCPhys + Adj < GCPhys)
+            return VERR_DBGF_MEM_NOT_FOUND;
+        GCPhys  += Adj;
+        cbRange -= Adj;
+    }
+
+    const bool      fAllZero   = ASMMemIsAll8(pabNeedle, cbNeedle, 0) == NULL;
+    const uint32_t  cIncPages  = GCPhysAlign <= PAGE_SIZE
+                               ? 1
+                               : GCPhysAlign >> PAGE_SHIFT;
+    const RTGCPHYS  GCPhysLast = GCPhys + cbRange - 1 >= GCPhys
+                               ? GCPhys + cbRange - 1
+                               : ~(RTGCPHYS)0;
 
     /*
      * Search the memory - ignore MMIO and zero pages, also don't
@@ -510,30 +590,41 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
             /*
              * Iterate the relevant pages.
              */
-            uint8_t abPrev[MAX_NEEDLE_SIZE];
-            size_t  cbPrev = 0;
-            const uint32_t cPages = pRam->cb >> PAGE_SHIFT;
-            for (uint32_t iPage = off >> PAGE_SHIFT; iPage < cPages; iPage++)
+            uint8_t         abPrev[MAX_NEEDLE_SIZE];
+            size_t          cbPrev   = 0;
+            const uint32_t  cPages   = pRam->cb >> PAGE_SHIFT;
+            uint32_t        iPage    = off >> PAGE_SHIFT;
+            uint32_t        offPage  = GCPhys & PAGE_OFFSET_MASK;
+            GCPhys &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
+            for (;; offPage = 0)
             {
                 PPGMPAGE pPage = &pRam->aPages[iPage];
-                if (    !PGM_PAGE_IS_ZERO(pPage)
+                if (    (   !PGM_PAGE_IS_ZERO(pPage)
+                         || fAllZero)
                     &&  !PGM_PAGE_IS_MMIO(pPage))
                 {
-                    void const *pvPage;
-                    PGMPAGEMAPLOCK Lock;
-                    int rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK, &pvPage, &Lock);
+                    void const     *pvPage;
+                    PGMPAGEMAPLOCK  Lock;
+                    int rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys, &pvPage, &Lock);
                     if (RT_SUCCESS(rc))
                     {
-                        int32_t  offPage = (GCPhys & PAGE_OFFSET_MASK);
-                        uint32_t cbSearch = (GCPhys ^ GCPhysLast) & ~(RTGCPHYS)PAGE_OFFSET_MASK
-                                          ? PAGE_SIZE                           - (uint32_t)offPage
-                                          : (GCPhysLast & PAGE_OFFSET_MASK) + 1 - (uint32_t)offPage;
-                        bool fRc = pgmR3DbgScanPage((uint8_t const *)pvPage, &offPage, cbSearch,
-                                                    pabNeedle, cbNeedle, &abPrev[0], &cbPrev);
+                        int32_t     offHit = offPage;
+                        bool        fRc;
+                        if (GCPhysAlign < PAGE_SIZE)
+                        {
+                            uint32_t cbSearch = (GCPhys ^ GCPhysLast) & ~(RTGCPHYS)PAGE_OFFSET_MASK
+                                              ? PAGE_SIZE                           - (uint32_t)offPage
+                                              : (GCPhysLast & PAGE_OFFSET_MASK) + 1 - (uint32_t)offPage;
+                            fRc = pgmR3DbgScanPage((uint8_t const *)pvPage, &offHit, cbSearch, (uint32_t)GCPhysAlign,
+                                                   pabNeedle, cbNeedle, &abPrev[0], &cbPrev);
+                        }
+                        else
+                            fRc = memcmp(pvPage, pabNeedle, cbNeedle) == 0
+                               && (GCPhysLast - GCPhys) >= cbNeedle;
                         PGMPhysReleasePageMappingLock(pVM, &Lock);
                         if (fRc)
                         {
-                            *pGCPhysHit = (GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK) + offPage;
+                            *pGCPhysHit = GCPhys + offHit;
                             pgmUnlock(pVM);
                             return VINF_SUCCESS;
                         }
@@ -545,12 +636,16 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
                     cbPrev = 0;
 
                 /* advance to the next page. */
-                GCPhys |= PAGE_OFFSET_MASK;
-                if (GCPhys++ >= GCPhysLast)
+                GCPhys += (RTGCPHYS)cIncPages << PAGE_SHIFT;
+                if (GCPhys >= GCPhysLast) /* (may not always hit, but we're run out of ranges.) */
                 {
                     pgmUnlock(pVM);
                     return VERR_DBGF_MEM_NOT_FOUND;
                 }
+                iPage += cIncPages;
+                if (    iPage < cIncPages
+                    ||  iPage >= cPages)
+                    break;
             }
         }
     }
@@ -571,12 +666,15 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
  * @param   pVM             Pointer to the shared VM structure.
  * @param   pVCpu           The CPU context to search in.
  * @param   GCPtr           Where to start searching.
+ * @param   GCPtrAlign      The alignment of the needle. Must be a power of two
+ *                          and less or equal to 4GB.
  * @param   cbRange         The number of bytes to search. Max 256 bytes.
  * @param   pabNeedle       The byte string to search for.
  * @param   cbNeedle        The length of the byte string.
  * @param   pGCPtrHit       Where to store the address of the first occurence on success.
  */
-VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPtrHit)
+VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR cbRange, RTGCPTR GCPtrAlign,
+                                   const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPtrHit)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -599,18 +697,41 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR
     if (GCPtr + cbNeedle - 1 < GCPtr)
         return VERR_DBGF_MEM_NOT_FOUND;
 
+    if (!GCPtrAlign)
+        return VERR_INVALID_PARAMETER;
+    if (GCPtrAlign > UINT32_MAX)
+        return VERR_NOT_POWER_OF_TWO;
+    if (GCPtrAlign & (GCPtrAlign - 1))
+        return VERR_INVALID_PARAMETER;
+
+    if (GCPtr & (GCPtrAlign - 1))
+    {
+        RTGCPTR Adj = GCPtrAlign - (GCPtr & (GCPtrAlign - 1));
+        if (    cbRange <= Adj
+            ||  GCPtr + Adj < GCPtr)
+            return VERR_DBGF_MEM_NOT_FOUND;
+        GCPtr   += Adj;
+        cbRange -= Adj;
+    }
+
     /*
      * Search the memory - ignore MMIO, zero and not-present pages.
      */
+    const bool      fAllZero  = ASMMemIsAll8(pabNeedle, cbNeedle, 0) == NULL;
     PGMMODE         enmMode   = PGMGetGuestMode(pVCpu);
     RTGCPTR         GCPtrMask = PGMMODE_IS_LONG_MODE(enmMode) ? UINT64_MAX : UINT32_MAX;
     uint8_t         abPrev[MAX_NEEDLE_SIZE];
     size_t          cbPrev    = 0;
+    const uint32_t  cIncPages = GCPtrAlign <= PAGE_SIZE
+                              ? 1
+                              : GCPtrAlign >> PAGE_SHIFT;
     const RTGCPTR   GCPtrLast = GCPtr + cbRange - 1 >= GCPtr
                               ? (GCPtr + cbRange - 1) & GCPtrMask
                               : GCPtrMask;
     RTGCPTR         cPages    = (((GCPtrLast - GCPtr) + (GCPtr & PAGE_OFFSET_MASK)) >> PAGE_SHIFT) + 1;
-    while (cPages-- > 0)
+    uint32_t        offPage   = GCPtr & PAGE_OFFSET_MASK;
+    GCPtr &= ~(RTGCPTR)PAGE_OFFSET_MASK;
+    for (;; offPage = 0)
     {
         RTGCPHYS GCPhys;
         int rc = PGMPhysGCPtr2GCPhys(pVCpu, GCPtr, &GCPhys);
@@ -618,24 +739,32 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR
         {
             PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
             if (    pPage
-                &&  !PGM_PAGE_IS_ZERO(pPage) /** @todo handle all zero needle. */
+                &&  (   !PGM_PAGE_IS_ZERO(pPage)
+                     || fAllZero)
                 &&  !PGM_PAGE_IS_MMIO(pPage))
             {
                 void const *pvPage;
                 PGMPAGEMAPLOCK Lock;
-                rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys & ~(RTGCPTR)PAGE_OFFSET_MASK, &pvPage, &Lock);
+                rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys, &pvPage, &Lock);
                 if (RT_SUCCESS(rc))
                 {
-                    int32_t  offPage = (GCPtr & PAGE_OFFSET_MASK);
-                    uint32_t cbSearch = cPages > 0
-                                      ? PAGE_SIZE                          - (uint32_t)offPage
-                                      : (GCPtrLast & PAGE_OFFSET_MASK) + 1 - (uint32_t)offPage;
-                    bool fRc = pgmR3DbgScanPage((uint8_t const *)pvPage, &offPage, cbSearch,
-                                                pabNeedle, cbNeedle, &abPrev[0], &cbPrev);
+                    int32_t offHit = offPage;
+                    bool    fRc;
+                    if (GCPtrAlign < PAGE_SIZE)
+                    {
+                        uint32_t cbSearch = cPages > 0
+                                          ? PAGE_SIZE                          - (uint32_t)offPage
+                                          : (GCPtrLast & PAGE_OFFSET_MASK) + 1 - (uint32_t)offPage;
+                        fRc = pgmR3DbgScanPage((uint8_t const *)pvPage, &offHit, cbSearch, (uint32_t)GCPtrAlign,
+                                               pabNeedle, cbNeedle, &abPrev[0], &cbPrev);
+                    }
+                    else
+                        fRc = memcmp(pvPage, pabNeedle, cbNeedle) == 0
+                           && (GCPtrLast - GCPtr) >= cbNeedle;
                     PGMPhysReleasePageMappingLock(pVM, &Lock);
                     if (fRc)
                     {
-                        *pGCPtrHit = (GCPtr & ~(RTGCPTR)PAGE_OFFSET_MASK) + offPage;
+                        *pGCPtrHit = GCPtr + offHit;
                         return VINF_SUCCESS;
                     }
                 }
@@ -649,9 +778,10 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR
             cbPrev = 0; /* ignore error. */
 
         /* advance to the next page. */
-        GCPtr |= PAGE_OFFSET_MASK;
-        GCPtr++;
-        GCPtr &= GCPtrMask;
+        if (cPages <= cIncPages)
+            break;
+        cPages -= cIncPages;
+        GCPtr += (RTGCPTR)cIncPages << PAGE_SHIFT;
     }
     return VERR_DBGF_MEM_NOT_FOUND;
 }
