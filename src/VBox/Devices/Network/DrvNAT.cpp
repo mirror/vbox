@@ -286,64 +286,62 @@ static DECLCALLBACK(void) drvNATUrgRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, in
     if (RT_SUCCESS(rc))
     {
         rc = pThis->pPort->pfnReceive(pThis->pPort, pu8Buf, cb);
-        rc = RTCritSectLeave(&pThis->csDevAccess);
         AssertReleaseRC(rc);
-        slirp_ext_m_free(pThis->pNATState, pvArg);
     }
     else if (   RT_FAILURE(rc) 
              && (  rc == VERR_TIMEOUT
-                || rc == VERR_INTERRUPTED))
+                && rc == VERR_INTERRUPTED))
     {
-        rc = RTCritSectLeave(&pThis->csDevAccess);
-        slirp_ext_m_free(pThis->pNATState, pvArg);
-    } 
-    else
-    {
-        rc = RTCritSectLeave(&pThis->csDevAccess);
-        slirp_ext_m_free(pThis->pNATState, pvArg);
         AssertReleaseRC(rc);
-    }
+    } 
+
+    rc = RTCritSectLeave(&pThis->csDevAccess);
+    AssertReleaseRC(rc);
+
     if (ASMAtomicDecU32(&pThis->cUrgPkt) == 0) 
     {
         drvNATRecvWakeup(pThis->pDrvIns, pThis->pRecvThread);
         drvNATNotifyNATThread(pThis);
     }
+    slirp_ext_m_free(pThis->pNATState, pvArg);
 }
 
 
 static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int cb, void *pvArg)
 {
+    int rc;
     STAM_PROFILE_START(&pThis->StatNATRecv, a);
 
     STAM_PROFILE_START(&pThis->StatNATRecvWait, b);
 
     while(ASMAtomicReadU32(&pThis->cUrgPkt) != 0)
-        RTSemEventWait(pThis->EventRecv, RT_INDEFINITE_WAIT);
+    {
+        rc = RTSemEventWait(pThis->EventRecv, RT_INDEFINITE_WAIT);
+        if (   RT_FAILURE(rc) 
+            && ( rc == VERR_TIMEOUT
+                 || rc == VERR_INTERRUPTED))
+            goto done_unlocked; 
+    }
 
-    int rc = RTCritSectEnter(&pThis->csDevAccess);
+    rc = RTCritSectEnter(&pThis->csDevAccess);
+
     rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
     {
         rc = pThis->pPort->pfnReceive(pThis->pPort, pu8Buf, cb);
         AssertReleaseRC(rc);
-        rc = RTCritSectLeave(&pThis->csDevAccess);
-        AssertReleaseRC(rc);
-        slirp_ext_m_free(pThis->pNATState, pvArg);
     } 
     else if (   RT_FAILURE(rc) 
-             && (  rc == VERR_TIMEOUT
-                || rc == VERR_INTERRUPTED))
+             && (  rc != VERR_TIMEOUT
+                && rc != VERR_INTERRUPTED))
     {
-        rc = RTCritSectLeave(&pThis->csDevAccess);
-        AssertReleaseRC(rc);
-        slirp_ext_m_free(pThis->pNATState, pvArg);
-    }
-    else
-    {
-        rc = RTCritSectLeave(&pThis->csDevAccess);
-        slirp_ext_m_free(pThis->pNATState, pvArg);
         AssertReleaseRC(rc);
     }
+
+    rc = RTCritSectLeave(&pThis->csDevAccess);
+    AssertReleaseRC(rc);
+done_unlocked:
+    slirp_ext_m_free(pThis->pNATState, pvArg);
     ASMAtomicDecU32(&pThis->cPkt);
 
     drvNATNotifyNATThread(pThis);
