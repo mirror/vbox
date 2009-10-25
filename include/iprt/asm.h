@@ -5122,6 +5122,8 @@ DECLINLINE(bool) ASMMemIsZeroPage(void const *pvPage)
  * @param   pv      Pointer to the memory block.
  * @param   cb      Number of bytes in the block. This MUST be aligned on 32-bit!
  * @param   u8      The value it's supposed to be filled with.
+ *
+ * @todo Fix name, it is a predicate function but it's not returning boolean!
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
 DECLASM(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8);
@@ -5149,6 +5151,8 @@ DECLINLINE(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8)
  * @param   pv      Pointer to the memory block.
  * @param   cb      Number of bytes in the block. This MUST be aligned on 32-bit!
  * @param   u32     The value it's supposed to be filled with.
+ *
+ * @todo Fix name, it is a predicate function but it's not returning boolean!
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
 DECLASM(uint32_t *) ASMMemIsAllU32(void const *pv, size_t cb, uint32_t u32);
