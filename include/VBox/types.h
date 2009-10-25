@@ -794,6 +794,20 @@ typedef struct CFGMNODE *PCFGMNODE;
 /** Configuration manager tree leaf - A value. */
 typedef struct CFGMLEAF *PCFGMLEAF;
 
+/**
+ * CPU modes.
+ */
+typedef enum CPUMMODE
+{
+    /** The usual invalid zero entry. */
+    CPUMMODE_INVALID = 0,
+    /** Real mode. */
+    CPUMMODE_REAL,
+    /** Protected mode (32-bit). */
+    CPUMMODE_PROTECTED,
+    /** Long mode (64-bit). */
+    CPUMMODE_LONG
+} CPUMMODE;
 
 /** @} */
 

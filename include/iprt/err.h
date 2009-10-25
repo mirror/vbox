@@ -604,6 +604,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VINF_CALLBACK_RETURN                88
 /** Authentication failure. */
 #define VERR_AUTHENTICATION_FAILURE         (-89)
+/** Not a power of two. */
+#define VERR_NOT_POWER_OF_TWO               (-90)
 /** @} */
 
 

@@ -43,13 +43,14 @@
  * @param   pVM         The VM handle.
  * @param   idCpu       The ID of the CPU context to search in.
  * @param   pAddress    Where to store the mixed address.
+ * @param   pu64Align   The alignment restriction imposed on the search result.
  * @param   pcbRange    The number of bytes to scan. Passed as a pointer because
  *                      it may be 64-bit.
  * @param   pabNeedle   What to search for - exact search.
  * @param   cbNeedle    Size of the search byte string.
  * @param   pHitAddress Where to put the address of the first hit.
  */
-static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, PCRTGCUINTPTR pcbRange,
+static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, PCRTGCUINTPTR pcbRange, RTGCUINTPTR *puAlign,
                                        const uint8_t *pabNeedle, size_t cbNeedle, PDBGFADDRESS pHitAddress)
 {
     Assert(idCpu == VMMGetCpuId(pVM));
@@ -76,8 +77,11 @@ static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAd
         ||  DBGFADDRESS_IS_PHYS(pAddress)
         )
     {
+        RTGCPHYS GCPhysAlign = *puAlign;
+        if (GCPhysAlign != *puAlign)
+            return VERR_OUT_OF_RANGE;
         RTGCPHYS PhysHit;
-        rc = PGMR3DbgScanPhysical(pVM, pAddress->FlatPtr, cbRange, pabNeedle, cbNeedle, &PhysHit);
+        rc = PGMR3DbgScanPhysical(pVM, pAddress->FlatPtr, cbRange, GCPhysAlign, pabNeedle, cbNeedle, &PhysHit);
         if (RT_SUCCESS(rc))
             DBGFR3AddrFromPhys(pVM, pHitAddress, PhysHit);
     }
@@ -91,7 +95,7 @@ static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAd
             return VERR_DBGF_MEM_NOT_FOUND;
 #endif
         RTGCUINTPTR GCPtrHit;
-        rc = PGMR3DbgScanVirtual(pVM, pVCpu, pAddress->FlatPtr, cbRange, pabNeedle, cbNeedle, &GCPtrHit);
+        rc = PGMR3DbgScanVirtual(pVM, pVCpu, pAddress->FlatPtr, cbRange, *puAlign, pabNeedle, cbNeedle, &GCPtrHit);
         if (RT_SUCCESS(rc))
             DBGFR3AddrFromFlat(pVM, pHitAddress, GCPtrHit);
     }
@@ -113,17 +117,20 @@ static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAd
  * @param   idCpu       The ID of the CPU context to search in.
  * @param   pAddress    Where to store the mixed address.
  * @param   cbRange     The number of bytes to scan.
- * @param   pabNeedle   What to search for - exact search.
+ * @param   uAlign      The alignment restriction imposed on the result.
+ *                      Usually set to 1.
+ * @param   pvNeedle    What to search for - exact search.
  * @param   cbNeedle    Size of the search byte string.
  * @param   pHitAddress Where to put the address of the first hit.
  *
  * @thread  Any thread.
  */
-VMMR3DECL(int) DBGFR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PDBGFADDRESS pHitAddress)
+VMMR3DECL(int) DBGFR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRange, RTGCUINTPTR uAlign,
+                             const void *pvNeedle, size_t cbNeedle, PDBGFADDRESS pHitAddress)
 {
     AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
-    return VMR3ReqCallWait(pVM, idCpu, (PFNRT)dbgfR3MemScan, 7,
-                           pVM, idCpu, pAddress, &cbRange, pabNeedle, cbNeedle, pHitAddress);
+    return VMR3ReqCallWait(pVM, idCpu, (PFNRT)dbgfR3MemScan, 8,
+                           pVM, idCpu, pAddress, &cbRange, &uAlign, pvNeedle, cbNeedle, pHitAddress);
 
 }
 
