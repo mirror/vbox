@@ -725,6 +725,8 @@ static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
     if (pEpFile->fCaching)
         pdmacFileEpCacheDestroy(pEpFile);
 
+    RTFileClose(pEpFile->File);
+
     return VINF_SUCCESS;
 }
 
