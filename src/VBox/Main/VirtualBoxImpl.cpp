@@ -1186,7 +1186,7 @@ STDMETHODIMP VirtualBox::FindMachine (IN_BSTR aName, IMachine **aMachine)
         : setError (VBOX_E_OBJECT_NOT_FOUND,
             tr ("Could not find a registered machine named '%ls'"), aName);
 
-    LogFlowThisFunc(("rc=%08X\n", rc));
+    LogFlowThisFunc(("aName=\"%ls\", aMachine=%p, rc=%08X\n", aName, *aMachine, rc));
     LogFlowThisFuncLeave();
 
     return rc;
