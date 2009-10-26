@@ -24,6 +24,7 @@
 *******************************************************************************/
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
+#include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 
@@ -35,6 +36,188 @@
 #include "VBoxManage.h"
 using namespace com;
 
+/**
+ * Helper function used with "VBoxManage snapshot ... dump".
+ * @param pMedium
+ * @param pThisSnapshot
+ * @param pCurrentSnapshot
+ * @param uMediumLevel
+ * @param uSnapshotLevel
+ * @return
+ */
+bool FindAndPrintSnapshotUsingMedium(ComPtr<IMedium> &pMedium,
+                                     ComPtr<ISnapshot> &pThisSnapshot,
+                                     ComPtr<ISnapshot> &pCurrentSnapshot,
+                                     uint32_t uMediumLevel,
+                                     uint32_t uSnapshotLevel)
+{
+    HRESULT rc;
+
+    do
+    {
+        // get snapshot machine so we can figure out which diff image this created
+        ComPtr<IMachine> pSnapshotMachine;
+        CHECK_ERROR_BREAK(pThisSnapshot, COMGETTER(Machine)(pSnapshotMachine.asOutParam()));
+
+        // get media attachments
+        SafeIfaceArray<IMediumAttachment> aAttachments;
+        CHECK_ERROR_BREAK(pSnapshotMachine, COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(aAttachments)));
+
+        bool fFound = false;
+
+        for (uint32_t i = 0;
+             i < aAttachments.size();
+             ++i)
+        {
+            ComPtr<IMediumAttachment> pAttach(aAttachments[i]);
+            DeviceType_T type;
+            CHECK_ERROR_BREAK(pAttach, COMGETTER(Type)(&type));
+            if (type == DeviceType_HardDisk)
+            {
+                ComPtr<IMedium> pMediumInSnapshot;
+                CHECK_ERROR_BREAK(pAttach, COMGETTER(Medium)(pMediumInSnapshot.asOutParam()));
+
+                if (pMediumInSnapshot == pMedium)
+                {
+                    // get snapshot name
+                    Bstr bstrSnapshotName;
+                    CHECK_ERROR_BREAK(pThisSnapshot, COMGETTER(Name)(bstrSnapshotName.asOutParam()));
+
+                    RTPrintf("%*s  \"%ls\"\n",
+                             50 + uSnapshotLevel * 2, "",            // indent
+                             bstrSnapshotName.raw());
+                    return true;        // found
+                }
+            }
+        }
+
+        if (!fFound)
+        {
+            SafeIfaceArray<ISnapshot> aSnapshots;
+            CHECK_ERROR_BREAK(pThisSnapshot, COMGETTER(Children)(ComSafeArrayAsOutParam(aSnapshots)));
+
+            for (uint32_t i = 0;
+                i < aSnapshots.size();
+                ++i)
+            {
+                ComPtr<ISnapshot> pChild(aSnapshots[i]);
+                if (FindAndPrintSnapshotUsingMedium(pMedium,
+                                                    pChild,
+                                                    pCurrentSnapshot,
+                                                    uMediumLevel,
+                                                    uSnapshotLevel + 1))
+                    // found:
+                    break;
+            }
+        }
+    } while (0);
+
+    return false;
+}
+
+/**
+ * Helper function used with "VBoxManage snapshot ... dump". Called from DumpSnapshot()
+ * for each hard disk attachment found in a virtual machine. This then writes out the
+ * root (base) medium for that hard disk attachment and recurses into the children
+ * tree of that medium, correlating it with the snapshots of the machine.
+ * @param pCurrentStateMedium constant, the medium listed in the current machine data (latest diff image).
+ * @param pMedium variant, initially the base medium, then a child of the base medium when recursing.
+ * @param pRootSnapshot constant, the root snapshot of the machine, if any; this then looks into the child snapshots.
+ * @param pCurrentSnapshot constant, the machine's current snapshot (so we can mark it in the output).
+ * @param uLevel variant, the recursion level for output indentation.
+ */
+void DumpMediumWithChildren(ComPtr<IMedium> &pCurrentStateMedium,
+                            ComPtr<IMedium> &pMedium,
+                            ComPtr<ISnapshot> &pRootSnapshot,
+                            ComPtr<ISnapshot> &pCurrentSnapshot,
+                            uint32_t uLevel)
+{
+    HRESULT rc;
+    do
+    {
+        // print this medium
+        Bstr bstrMediumName;
+        CHECK_ERROR_BREAK(pMedium, COMGETTER(Name)(bstrMediumName.asOutParam()));
+        RTPrintf("%*s  \"%ls\"%s\n",
+                 uLevel * 2, "",            // indent
+                 bstrMediumName.raw(),
+                 (pCurrentStateMedium == pMedium) ? " (CURRENT STATE)" : "");
+
+        // find and print the snapshot that uses this particular medium (diff image)
+        FindAndPrintSnapshotUsingMedium(pMedium, pRootSnapshot, pCurrentSnapshot, uLevel, 0);
+
+        // recurse into children
+        SafeIfaceArray<IMedium> aChildren;
+        CHECK_ERROR_BREAK(pMedium, COMGETTER(Children)(ComSafeArrayAsOutParam(aChildren)));
+        for (uint32_t i = 0;
+             i < aChildren.size();
+             ++i)
+        {
+            ComPtr<IMedium> pChild(aChildren[i]);
+            DumpMediumWithChildren(pCurrentStateMedium, pChild, pRootSnapshot, pCurrentSnapshot, uLevel + 1);
+        }
+    } while (0);
+}
+
+/**
+ * Implementation for "VBoxManage snapshot ... dump". This goes thru the machine's
+ * medium attachments and calls DumpMediumWithChildren() for each hard disk medium found,
+ * which then dumps the parent/child tree of that medium together with the corresponding
+ * snapshots.
+ * @param pMachine Machine to dump snapshots for.
+ */
+void DumpSnapshot(ComPtr<IMachine> &pMachine)
+{
+    HRESULT rc;
+
+    do
+    {
+        // get root snapshot
+        ComPtr<ISnapshot> pSnapshot;
+        CHECK_ERROR_BREAK(pMachine, GetSnapshot(Bstr(""), pSnapshot.asOutParam()));
+
+        // get current snapshot
+        ComPtr<ISnapshot> pCurrentSnapshot;
+        CHECK_ERROR_BREAK(pMachine, COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam()));
+
+        // get media attachments
+        SafeIfaceArray<IMediumAttachment> aAttachments;
+        CHECK_ERROR_BREAK(pMachine, COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(aAttachments)));
+        for (uint32_t i = 0;
+             i < aAttachments.size();
+             ++i)
+        {
+            ComPtr<IMediumAttachment> pAttach(aAttachments[i]);
+            DeviceType_T type;
+            CHECK_ERROR_BREAK(pAttach, COMGETTER(Type)(&type));
+            if (type == DeviceType_HardDisk)
+            {
+                ComPtr<IMedium> pCurrentStateMedium;
+                CHECK_ERROR_BREAK(pAttach, COMGETTER(Medium)(pCurrentStateMedium.asOutParam()));
+
+                ComPtr<IMedium> pBaseMedium;
+                CHECK_ERROR_BREAK(pCurrentStateMedium, COMGETTER(Base)(pBaseMedium.asOutParam()));
+
+                Bstr bstrBaseMediumName;
+                CHECK_ERROR_BREAK(pBaseMedium, COMGETTER(Name)(bstrBaseMediumName.asOutParam()));
+
+                RTPrintf("[%RI32] Images and snapshots for medium \"%ls\"\n", i, bstrBaseMediumName.raw());
+
+                DumpMediumWithChildren(pCurrentStateMedium,
+                                       pBaseMedium,
+                                       pSnapshot,
+                                       pCurrentSnapshot,
+                                       0);
+            }
+        }
+    } while (0);
+}
+
+/**
+ * Implementation for all VBoxManage snapshot ... subcommands.
+ * @param a
+ * @return
+ */
 int handleSnapshot(HandlerArg *a)
 {
     HRESULT rc;
@@ -44,18 +227,19 @@ int handleSnapshot(HandlerArg *a)
         return errorSyntax(USAGE_SNAPSHOT, "Not enough parameters");
 
     /* the first argument must be the VM */
-    ComPtr<IMachine> machine;
+    Bstr bstrMachine(a->argv[0]);
+    ComPtr<IMachine> pMachine;
     /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
-    if (FAILED(rc) || !machine)
+    rc = a->virtualBox->GetMachine(bstrMachine, pMachine.asOutParam());
+    if (FAILED(rc) || !pMachine)
     {
         /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(bstrMachine, pMachine.asOutParam()));
     }
-    if (!machine)
+    if (!pMachine)
         return 1;
     Bstr guid;
-    machine->COMGETTER(Id)(guid.asOutParam());
+    pMachine->COMGETTER(Id)(guid.asOutParam());
 
     do
     {
@@ -172,12 +356,12 @@ int handleSnapshot(HandlerArg *a)
             Bstr guid(a->argv[2]);
             if (!guid.isEmpty())
             {
-                CHECK_ERROR_BREAK(machine, GetSnapshot(guid, pSnapshot.asOutParam()));
+                CHECK_ERROR_BREAK(pMachine, GetSnapshot(guid, pSnapshot.asOutParam()));
             }
             else
             {
                 /* then it must be a name */
-                CHECK_ERROR_BREAK(machine, FindSnapshot(Bstr(a->argv[2]), pSnapshot.asOutParam()));
+                CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]), pSnapshot.asOutParam()));
                 pSnapshot->COMGETTER(Id)(guid.asOutParam());
             }
 
@@ -219,7 +403,7 @@ int handleSnapshot(HandlerArg *a)
             if (   !strcmp(a->argv[2], "--current")
                 || !strcmp(a->argv[2], "-current"))
             {
-                CHECK_ERROR_BREAK(machine, COMGETTER(CurrentSnapshot)(snapshot.asOutParam()));
+                CHECK_ERROR_BREAK(pMachine, COMGETTER(CurrentSnapshot)(snapshot.asOutParam()));
             }
             else
             {
@@ -227,12 +411,12 @@ int handleSnapshot(HandlerArg *a)
                 Bstr guid(a->argv[2]);
                 if (!guid.isEmpty())
                 {
-                    CHECK_ERROR_BREAK(machine, GetSnapshot(guid, snapshot.asOutParam()));
+                    CHECK_ERROR_BREAK(pMachine, GetSnapshot(guid, snapshot.asOutParam()));
                 }
                 else
                 {
                     /* then it must be a name */
-                    CHECK_ERROR_BREAK(machine, FindSnapshot(Bstr(a->argv[2]), snapshot.asOutParam()));
+                    CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]), snapshot.asOutParam()));
                 }
             }
 
@@ -290,18 +474,22 @@ int handleSnapshot(HandlerArg *a)
             Bstr guid(a->argv[2]);
             if (!guid.isEmpty())
             {
-                CHECK_ERROR_BREAK(machine, GetSnapshot(guid, snapshot.asOutParam()));
+                CHECK_ERROR_BREAK(pMachine, GetSnapshot(guid, snapshot.asOutParam()));
             }
             else
             {
                 /* then it must be a name */
-                CHECK_ERROR_BREAK(machine, FindSnapshot(Bstr(a->argv[2]), snapshot.asOutParam()));
+                CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]), snapshot.asOutParam()));
             }
 
             /* get the machine of the given snapshot */
-            ComPtr<IMachine> machine;
-            snapshot->COMGETTER(Machine)(machine.asOutParam());
-            showVMInfo(a->virtualBox, machine, VMINFO_NONE, console);
+            ComPtr<IMachine> pMachine2;
+            snapshot->COMGETTER(Machine)(pMachine2.asOutParam());
+            showVMInfo(a->virtualBox, pMachine2, VMINFO_NONE, console);
+        }
+        else if (!strcmp(a->argv[1], "dump"))          // undocumented parameter to debug snapshot info
+        {
+            DumpSnapshot(pMachine);
         }
         else
         {
