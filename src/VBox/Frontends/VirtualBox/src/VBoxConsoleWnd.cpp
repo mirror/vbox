@@ -2667,14 +2667,15 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
                 attData += QString ("<br>&nbsp;<nobr>%1:&nbsp;%2</nobr>")
                     .arg (vboxGlobal().toString (StorageSlot (controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
                     .arg (vboxMedium.isNull() || vboxMedium.isHostDrive() ? vboxMedium.name() : vboxMedium.location());
-                attachmentsPresent = true;
+                if (!vboxMedium.isNull())
+                    attachmentsPresent = true;
             }
             if (!attData.isNull())
                 data += QString ("<br><nobr><b>%1</b></nobr>").arg (controller.GetName()) + attData;
         }
 
-        if (!attachmentsPresent)
-            data += tr ("<br><nobr><b>No CD/DVD devices attached</b></nobr>", "CD/DVD tooltip");
+        if (data.isNull())
+            data = tr ("<br><nobr><b>No CD/DVD devices attached</b></nobr>", "CD/DVD tooltip");
 
         mCDLed->setToolTip (tip.arg (data));
         mCDLed->setState (attachmentsPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
@@ -2701,14 +2702,15 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
                 attData += QString ("<br>&nbsp;<nobr>%1:&nbsp;%2</nobr>")
                     .arg (vboxGlobal().toString (StorageSlot (controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
                     .arg (vboxMedium.isNull() || vboxMedium.isHostDrive() ? vboxMedium.name() : vboxMedium.location());
-                attachmentsPresent = true;
+                if (!vboxMedium.isNull())
+                    attachmentsPresent = true;
             }
             if (!attData.isNull())
                 data += QString ("<br><nobr><b>%1</b></nobr>").arg (controller.GetName()) + attData;
         }
 
-        if (!attachmentsPresent)
-            data += tr ("<br><nobr><b>No floppy devices attached</b></nobr>", "FD tooltip");
+        if (data.isNull())
+            data = tr ("<br><nobr><b>No floppy devices attached</b></nobr>", "FD tooltip");
 
         mFDLed->setToolTip (tip.arg (data));
         mFDLed->setState (attachmentsPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
