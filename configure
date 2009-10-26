@@ -818,7 +818,7 @@ check_ssl()
 extern "C" int main(void)
 {
   printf("found version %s", OPENSSL_VERSION_TEXT);
-#if OPENSSL_VERSION_NUMBER >= 0x0090800
+#if OPENSSL_VERSION_NUMBER >= 0x00908000
   printf(", OK.\n");
   return 0;
 #else
