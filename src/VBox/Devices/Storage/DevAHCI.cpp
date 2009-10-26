@@ -573,6 +573,12 @@ typedef struct AHCI
     /** The critical section. */
     PDMCRITSECT                     lock;
 
+    /** Semaphore that gets set when fSignalIdle is set. */
+    RTSEMEVENT                      hEvtIdle;
+#if HC_ARCH_BITS == 32
+    uint32_t                        Alignment7;
+#endif
+
     /** Bitmask of ports which asserted an interrupt. */
     uint32_t                        u32PortsInterrupted;
     /** Device is in a reset state. */
@@ -585,12 +591,16 @@ typedef struct AHCI
     bool                            fR0Enabled;
     /** If the new async interface is used if available. */
     bool                            fUseAsyncInterfaceIfAvailable;
+    /** Indicates that hEvtIdle should be signalled when a port is entering the
+     * idle state. */
+    bool volatile                   fSignalIdle;
+    bool                            afAlignment8[1];
 
     /** Number of usable ports on this controller. */
     uint32_t                        cPortsImpl;
 
 #if HC_ARCH_BITS == 64
-    uint32_t                        Alignment7;
+    uint32_t                        Alignment9;
 #endif
 
     /** Flag whether we have written the first 4bytes in an 8byte MMIO write successfully. */
@@ -4916,7 +4926,11 @@ static DECLCALLBACK(int) ahciTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterfa
     ahciLog(("%s: pInterface=%p pvUser=%p uTag=%u\n",
              __FUNCTION__, pInterface, pvUser, pAhciPortTaskState->uTag));
 
-    return ahciTransferComplete(pAhciPort, pAhciPortTaskState);
+    int rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState);
+
+    if (pAhciPort->uActTasksActive == 0 && pAhciPort->pAhciR3->fSignalIdle)
+        RTSemEventSignal(pAhciPort->pAhciR3->hEvtIdle);
+    return rc;
 }
 
 /**
@@ -5373,6 +5387,8 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             u64StartTime = RTTimeMilliTS();
 
         ASMAtomicXchgBool(&pAhciPort->fAsyncIOThreadIdle, true);
+        if (pAhci->fSignalIdle)
+            RTSemEventSignal(pAhci->hEvtIdle);
 
         rc = RTSemEventWait(pAhciPort->AsyncIORequestSem, 1000);
         if (rc == VERR_TIMEOUT)
@@ -5636,6 +5652,9 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         }
     }
 
+    if (pAhci->fSignalIdle)
+        RTSemEventSignal(pAhci->hEvtIdle);
+
     /* Free task state memory */
     if (pAhciPortTaskState->pSGListHead)
         RTMemFree(pAhciPortTaskState->pSGListHead);
@@ -5767,6 +5786,9 @@ static DECLCALLBACK(int) ahciDestruct(PPDMDEVINS pDevIns)
         for (unsigned i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
             ataControllerDestroy(&pAhci->aCts[i]);
 
+        RTSemEventDestroy(pAhci->hEvtIdle);
+        pAhci->hEvtIdle = NIL_RTSEMEVENT;
+
         PDMR3CritSectDelete(&pAhci->lock);
     }
 
@@ -5881,6 +5903,7 @@ static bool ahciWaitForAllAsyncIOIsFinished(PPDMDEVINS pDevIns, unsigned cMillie
     PAHCIPort pAhciPort;
     bool      fAllFinished;
 
+    ASMAtomicWriteBool(&pAhci->fSignalIdle, true);
     u64Start = RTTimeMilliTS();
     for (;;)
     {
@@ -5904,9 +5927,12 @@ static bool ahciWaitForAllAsyncIOIsFinished(PPDMDEVINS pDevIns, unsigned cMillie
             || RTTimeMilliTS() - u64Start >= cMillies)
             break;
 
-        /* Sleep a bit. */
-        RTThreadSleep(100); /** @todo wait on something which can be woken up. 100ms is too long for teleporting VMs! */
+        /* Wait for a port to signal idleness. */
+        int rc = RTSemEventWait(pAhci->hEvtIdle, 100 /*ms*/);
+        AssertMsg(RT_SUCCESS(rc) || rc == VERR_TIMEOUT, ("%Rrc\n", rc)); NOREF(rc);
     }
+
+    ASMAtomicWriteBool(&pAhci->fSignalIdle, false);
     return fAllFinished;
 }
 
@@ -6501,6 +6527,7 @@ static DECLCALLBACK(int) ahciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pThis->hEvtIdle  = NIL_RTSEMEVENT;
 
     PCIDevSetVendorId    (&pThis->dev, 0x8086); /* Intel */
     PCIDevSetDeviceId    (&pThis->dev, 0x2829); /* ICH-8M */
@@ -6581,6 +6608,9 @@ static DECLCALLBACK(int) ahciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         Log(("%s: Failed to create critical section.\n", __FUNCTION__));
         return rc;
     }
+
+    rc = RTSemEventCreate(&pThis->hEvtIdle);
+    AssertRCReturn(rc, rc);
 
     /* Create the timer for command completion coalescing feature. */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, ahciCccTimer, pThis,
