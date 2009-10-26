@@ -56,6 +56,15 @@
 # pragma warning(disable:4244)
 #endif
 
+/** The current saved state version.*/
+#define APIC_SAVED_STATE_VERSION            3
+/** The saved state version used by VirtualBox v3 and earlier.
+ * This does not include the config.  */
+#define APIC_SAVED_STATE_VERSION_VBOX_30    2
+/** Some ancient version... */
+#define APIC_SAVED_STATE_VERSION_ANCIENT    1
+
+
 /** @def APIC_LOCK
  * Acquires the PDM lock. */
 #define APIC_LOCK(pThis, rcBusy) \
@@ -96,7 +105,7 @@
     do {                                                  \
         uint32_t i;                                       \
         APICState *apic = (dev)->CTX_SUFF(paLapics);      \
-        for (i = 0; i < dev->cCpus; i++)                  \
+        for (i = 0; i < (dev)->cCpus; i++)                  \
         {                                                 \
             if (mask & (1 << (apic->id)))                 \
             {                                             \
@@ -337,8 +346,10 @@ typedef struct
 
     /** Number of CPUs on the system (same as LAPIC count). */
     uint32_t                cCpus;
-    /** Struct size and statistics alignment padding. */
-    uint32_t                u32Alignment0;
+    /** Whether we've got an IO APIC or not. */
+    bool                    fIoApic;
+    /** Alignment padding. */
+    bool                    afPadding[3];
 
 # ifdef VBOX_WITH_STATISTICS
     STAMCOUNTER             StatMMIOReadGC;
@@ -1863,15 +1874,12 @@ static int apic_load(QEMUFile *f, void *opaque, int version_id)
     int i;
 
 #ifdef VBOX
-    if ((version_id < 1) || (version_id > 2))
-        return -EINVAL;
-
      /* XXX: what if the base changes? (registered memory regions) */
     qemu_get_be32s(f, &s->apicbase);
 
     switch (version_id)
     {
-        case 1:
+        case APIC_SAVED_STATE_VERSION_ANCIENT:
         {
             uint8_t val = 0;
             qemu_get_8s(f, &val);
@@ -1882,11 +1890,14 @@ static int apic_load(QEMUFile *f, void *opaque, int version_id)
             s->arb_id = val;
             break;
         }
-        case 2:
+        case APIC_SAVED_STATE_VERSION:
+        case APIC_SAVED_STATE_VERSION_VBOX_30:
             qemu_get_be32s(f, &s->id);
             qemu_get_be32s(f, &s->phys_id);
             qemu_get_be32s(f, &s->arb_id);
             break;
+        default:
+            return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
     qemu_get_be32s(f, &s->tpr);
 #else
@@ -2413,7 +2424,7 @@ static DECLCALLBACK(void) lapicInfoBasic(APICDeviceInfo  *dev, APICState *lapic,
 static DECLCALLBACK(void) lapicInfoLVT(APICDeviceInfo  *dev, APICState *lapic, PCDBGFINFOHLP pHlp)
 {
     uint32_t        val;
-    static const char *dmodes[] = { "Fixed ", "Reserved", "SMI", "Reserved", 
+    static const char *dmodes[] = { "Fixed ", "Reserved", "SMI", "Reserved",
                                     "NMI", "INIT", "Reserved", "ExtINT" };
 
     val = apic_mem_readl(dev, lapic, 0x320);
@@ -2477,11 +2488,11 @@ static DECLCALLBACK(void) lapicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     {
         lapicInfoBasic(dev, lapic, pHlp);
     }
-    else if (!strcmp(pszArgs, "lvt")) 
+    else if (!strcmp(pszArgs, "lvt"))
     {
         lapicInfoLVT(dev, lapic, pHlp);
     }
-    else if (!strcmp(pszArgs, "timer")) 
+    else if (!strcmp(pszArgs, "timer"))
     {
         lapicInfoTimer(dev, lapic, pHlp);
     }
@@ -2492,14 +2503,32 @@ static DECLCALLBACK(void) lapicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 }
 
 /**
+ * @copydoc FNSSMDEVLIVEEXEC
+ */
+static DECLCALLBACK(int) apicLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    APICDeviceInfo *pThis = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+
+    SSMR3PutU32( pSSM, pThis->cCpus);
+    SSMR3PutBool(pSSM, pThis->fIoApic);
+    SSMR3PutU32( pSSM, pThis->enmVersion);
+    AssertCompile(PDMAPICVERSION_APIC == 2);
+
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
+
+/**
  * @copydoc FNSSMDEVSAVEEXEC
  */
-static DECLCALLBACK(int) apicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) apicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
 
+    /* config */
+    apicLiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
+
     /* save all APICs data, @todo: is it correct? */
-    foreach_apic(dev, 0xffffffff, apic_save(pSSMHandle, apic));
+    foreach_apic(dev, 0xffffffff, apic_save(pSSM, apic));
 
     return VINF_SUCCESS;
 }
@@ -2507,15 +2536,46 @@ static DECLCALLBACK(int) apicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 /**
  * @copydoc FNSSMDEVLOADEXEC
  */
-static DECLCALLBACK(int) apicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) apicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+    APICDeviceInfo *pThis = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+
+    if (    uVersion != APIC_SAVED_STATE_VERSION
+        &&  uVersion != APIC_SAVED_STATE_VERSION_VBOX_30
+        &&  uVersion != APIC_SAVED_STATE_VERSION_ANCIENT)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    /* config */
+    if (uVersion > APIC_SAVED_STATE_VERSION_VBOX_30) {
+        uint32_t cCpus;
+        int rc = SSMR3GetU32(pSSM, &cCpus); AssertRCReturn(rc, rc);
+        if (cCpus != pThis->cCpus)
+        {
+            LogRel(("APIC: Config mismatch - cCpus: saved=%#x config=%#x\n", cCpus, pThis->cCpus));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
+        bool fIoApic;
+        rc = SSMR3GetBool(pSSM, &fIoApic); AssertRCReturn(rc, rc);
+        if (fIoApic != pThis->fIoApic)
+        {
+            LogRel(("APIC: Config mismatch - fIoApic: saved=%RTbool config=%RTbool\n", fIoApic, pThis->fIoApic));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
+        uint32_t uApicVersion;
+        rc = SSMR3GetU32(pSSM, &uApicVersion); AssertRCReturn(rc, rc);
+        if (uApicVersion != (uint32_t)pThis->enmVersion)
+        {
+            LogRel(("APIC: Config mismatch - uApicVersion: saved=%#x config=%#x\n", uApicVersion, pThis->enmVersion));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
+    }
+
+    if (uPass != SSM_PASS_FINAL)
+        return VINF_SUCCESS;
 
     /* load all APICs data */ /** @todo: is it correct? */
-    foreach_apic(dev, 0xffffffff,
-                 if (apic_load(pSSMHandle, apic, uVersion))
-                 {
+    foreach_apic(pThis, 0xffffffff,
+                 if (apic_load(pSSM, apic, uVersion)) {
                       AssertFailed();
                       return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
                  }
@@ -2554,6 +2614,8 @@ static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
         /* Clear any pending APIC interrupt action flag. */
         cpuClearInterrupt(dev, pApic);
     }
+    /** @todo r=bird: Why is this done everytime, while the constructor first
+     *        checks the CPUID?  Who is right? */
     dev->pApicHlpR3->pfnChangeFeature(dev->pDevInsR3, dev->enmVersion);
 
     APIC_UNLOCK(dev);
@@ -2595,7 +2657,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     PDMAPICREG      ApicReg;
     int             rc;
     uint32_t        i;
-    bool            fIOAPIC;
+    bool            fIoApic;
     bool            fGCEnabled;
     bool            fR0Enabled;
     APICDeviceInfo  *pThis = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
@@ -2616,7 +2678,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "NumCPUs\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "IOAPIC", &fIOAPIC, true);
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "IOAPIC", &fIoApic, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
@@ -2636,9 +2698,10 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query integer value \"NumCPUs\""));
 
-    Log(("APIC: cCpus=%d fR0Enabled=%RTbool fGCEnabled=%RTbool fIOAPIC=%RTbool\n", cCpus, fR0Enabled, fGCEnabled, fIOAPIC));
+    Log(("APIC: cCpus=%d fR0Enabled=%RTbool fGCEnabled=%RTbool fIoApic=%RTbool\n", cCpus, fR0Enabled, fGCEnabled, fIoApic));
 
-    /* TODO: Current implementation is limited to 32 CPUs due to the use of 32 bits bitmasks. */
+    /** @todo Current implementation is limited to 32 CPUs due to the use of 32
+     *        bits bitmasks. */
     if (cCpus > 32)
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Invalid value for \"NumCPUs\""));
@@ -2650,6 +2713,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->pDevInsR0  = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC  = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->cCpus      = cCpus;
+    pThis->fIoApic    = fIoApic;
     /* Use PDMAPICVERSION_X2APIC to activate x2APIC mode */
     pThis->enmVersion = PDMAPICVERSION_APIC;
 
@@ -2730,10 +2794,11 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * The the CPUID feature bit.
      */
+    /** @todo r=bird: See remark in the apicReset. */
     uint32_t u32Eax, u32Ebx, u32Ecx, u32Edx;
     PDMDevHlpGetCpuId(pDevIns, 0, &u32Eax, &u32Ebx, &u32Ecx, &u32Edx);
     if (u32Eax >= 1) {
-        if (   fIOAPIC                       /* If IOAPIC is enabled, enable Local APIC in any case */
+        if (   fIoApic                       /* If IOAPIC is enabled, enable Local APIC in any case */
             || (   u32Ebx == X86_CPUID_VENDOR_INTEL_EBX
                 && u32Ecx == X86_CPUID_VENDOR_INTEL_ECX
                 && u32Edx == X86_CPUID_VENDOR_INTEL_EDX /* GenuineIntel */)
@@ -2792,7 +2857,8 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Saved state.
      */
-    rc = PDMDevHlpSSMRegister(pDevIns, 2 /* version */, sizeof(*pThis), apicSaveExec, apicLoadExec);
+    rc = PDMDevHlpSSMRegister3(pDevIns, APIC_SAVED_STATE_VERSION, sizeof(*pThis),
+                               apicLiveExec, apicSaveExec, apicLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2982,11 +3048,11 @@ static DECLCALLBACK(void) ioapicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     pHlp->pfnPrintf(pHlp, " idx dst_mode dst_addr mask trigger rirr polarity dlvr_st dlvr_mode vector\n");
     for (i = 0; i <= max_redir; ++i)
     {
-        static const char *dmodes[] = { "Fixed ", "LowPri", "SMI   ", "Resrvd", 
+        static const char *dmodes[] = { "Fixed ", "LowPri", "SMI   ", "Resrvd",
                                         "NMI   ", "INIT  ", "Resrvd", "ExtINT" };
 
-        pHlp->pfnPrintf(pHlp, "  %02d   %s      %02X     %d    %s   %d   %s  %s     %s   %3d (%016llX)\n", 
-                        i, 
+        pHlp->pfnPrintf(pHlp, "  %02d   %s      %02X     %d    %s   %d   %s  %s     %s   %3d (%016llX)\n",
+                        i,
                         s->ioredtbl[i] & (1 << 11) ? "log " : "phys",           /* dest mode */
                         (int)(s->ioredtbl[i] >> 56),                            /* dest addr */
                         (int)(s->ioredtbl[i] >> 16) & 1,                        /* mask */
@@ -3004,21 +3070,21 @@ static DECLCALLBACK(void) ioapicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
 /**
  * @copydoc FNSSMDEVSAVEEXEC
  */
-static DECLCALLBACK(int) ioapicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) ioapicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     IOAPICState *s = PDMINS_2_DATA(pDevIns, IOAPICState *);
-    ioapic_save(pSSMHandle, s);
+    ioapic_save(pSSM, s);
     return VINF_SUCCESS;
 }
 
 /**
  * @copydoc FNSSMDEVLOADEXEC
  */
-static DECLCALLBACK(int) ioapicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) ioapicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     IOAPICState *s = PDMINS_2_DATA(pDevIns, IOAPICState *);
 
-    if (ioapic_load(pSSMHandle, s, uVersion)) {
+    if (ioapic_load(pSSM, s, uVersion)) {
         AssertFailed();
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
