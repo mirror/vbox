@@ -2162,7 +2162,7 @@ int vmmdevHGCMSaveState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
 }
 
 /* @thread EMT */
-int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM, uint32_t u32Version)
+int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM, uint32_t uVersion)
 {
     int rc = VINF_SUCCESS;
 
@@ -2175,8 +2175,7 @@ int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM, uint32_t u32
 
     LogFlowFunc(("cCmds = %d\n", cCmds));
 
-    if (   SSM_VERSION_MAJOR(u32Version) ==  0
-        && SSM_VERSION_MINOR(u32Version) < 9)
+    if (uVersion < 9)
     {
         /* Only the guest physical address is saved. */
         while (cCmds--)

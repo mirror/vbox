@@ -55,26 +55,33 @@
 #define PCIDEV_2_VMMDEVSTATE(pPciDev)              ( (VMMDevState *)(pPciDev) )
 #define VMMDEVSTATE_2_DEVINS(pVMMDevState)         ( (pVMMDevState)->pDevIns )
 
-#define VBOX_GUEST_ADDITIONS_VERSION_1_03(s)            \
-    ((RT_HIWORD ((s)->guestInfo.additionsVersion) == 1) && \
-     (RT_LOWORD ((s)->guestInfo.additionsVersion) == 3))
+#define VBOX_GUEST_ADDITIONS_VERSION_1_03(s) \
+    (   RT_HIWORD((s)->guestInfo.additionsVersion) == 1 \
+     && RT_LOWORD((s)->guestInfo.additionsVersion) == 3 )
 
 #define VBOX_GUEST_ADDITIONS_VERSION_OK(additionsVersion) \
-      (RT_HIWORD(additionsVersion) == RT_HIWORD(VMMDEV_VERSION) \
-    && RT_LOWORD(additionsVersion) <= RT_LOWORD(VMMDEV_VERSION))
+      (   RT_HIWORD(additionsVersion) == RT_HIWORD(VMMDEV_VERSION) \
+       && RT_LOWORD(additionsVersion) <= RT_LOWORD(VMMDEV_VERSION) )
 
 #define VBOX_GUEST_ADDITIONS_VERSION_OLD(additionsVersion) \
-      ((RT_HIWORD(additionsVersion) < RT_HIWORD(VMMDEV_VERSION) \
-      || ((RT_HIWORD(additionsVersion) == RT_HIWORD(VMMDEV_VERSION) \
-          && RT_LOWORD(additionsVersion) <= RT_LOWORD(VMMDEV_VERSION))
+      (   (RT_HIWORD(additionsVersion) < RT_HIWORD(VMMDEV_VERSION) \
+       || (   RT_HIWORD(additionsVersion) == RT_HIWORD(VMMDEV_VERSION) \
+           && RT_LOWORD(additionsVersion) <= RT_LOWORD(VMMDEV_VERSION) ) )
 
 #define VBOX_GUEST_ADDITIONS_VERSION_TOO_OLD(additionsVersion) \
-      (RT_HIWORD(additionsVersion) < RT_HIWORD(VMMDEV_VERSION))
+      ( RT_HIWORD(additionsVersion) < RT_HIWORD(VMMDEV_VERSION) )
 
 #define VBOX_GUEST_ADDITIONS_VERSION_NEW(additionsVersion) \
-      ((RT_HIWORD(additionsVersion) > RT_HIWORD(VMMDEV_VERSION) \
-      || ((RT_HIWORD(additionsVersion) == RT_HIWORD(VMMDEV_VERSION) \
-          && RT_LOWORD(additionsVersion) > RT_LOWORD(VMMDEV_VERSION))
+      (   RT_HIWORD(additionsVersion) > RT_HIWORD(VMMDEV_VERSION) \
+       || (   RT_HIWORD(additionsVersion) == RT_HIWORD(VMMDEV_VERSION) \
+           && RT_LOWORD(additionsVersion) >  RT_LOWORD(VMMDEV_VERSION) ) )
+
+/** The saved state version. */
+#define VMMDEV_SAVED_STATE_VERSION          12
+/** The saved state version used by VirtualBox 3.0.
+ *  This doesn't have the config part. */
+#define VMMDEV_SAVED_STATE_VERSION_VBOX_30  11
+
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -2102,110 +2109,145 @@ static DECLCALLBACK(void) vmmdevVBVAChange(PPDMIVMMDEVPORT pInterface, bool fEna
 }
 
 
-/* -=-=-=-=-=- IHGCMPort -=-=-=-=-=- */
-
-/** Converts a VMMDev port interface pointer to a VMMDev state pointer. */
-#define IHGCMPORT_2_VMMDEVSTATE(pInterface) ( (VMMDevState*)((uintptr_t)pInterface - RT_OFFSETOF(VMMDevState, HGCMPort)) )
-
-
-
-#define VMMDEV_SSM_VERSION  11
+/* -=-=-=-=-=- Saved State -=-=-=-=-=- */
 
 /**
- * Saves a state of the VMM device.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to save the state to.
+ * @copydoc FNSSMDEVLIVEEXEC
  */
-static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) vmmdevLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState*);
-    SSMR3PutU32(pSSMHandle, pThis->hypervisorSize);
-    SSMR3PutU32(pSSMHandle, pThis->mouseCapabilities);
-    SSMR3PutU32(pSSMHandle, pThis->mouseXAbs);
-    SSMR3PutU32(pSSMHandle, pThis->mouseYAbs);
 
-    SSMR3PutBool(pSSMHandle, pThis->fNewGuestFilterMask);
-    SSMR3PutU32(pSSMHandle, pThis->u32NewGuestFilterMask);
-    SSMR3PutU32(pSSMHandle, pThis->u32GuestFilterMask);
-    SSMR3PutU32(pSSMHandle, pThis->u32HostEventFlags);
-    // here be dragons (probably)
-//    SSMR3PutBool(pSSMHandle, pThis->pVMMDevRAMR3->V.V1_04.fHaveEvents);
-    SSMR3PutMem(pSSMHandle, &pThis->pVMMDevRAMR3->V, sizeof (pThis->pVMMDevRAMR3->V));
+    SSMR3PutBool(pSSM, pThis->fGetHostTimeDisabled);
+    SSMR3PutBool(pSSM, pThis->fBackdoorLogDisabled);
+    SSMR3PutBool(pSSM, pThis->fKeepCredentials);
+    SSMR3PutBool(pSSM, pThis->fHeapEnabled);
 
-    SSMR3PutMem(pSSMHandle, &pThis->guestInfo, sizeof (pThis->guestInfo));
-    SSMR3PutU32(pSSMHandle, pThis->fu32AdditionsOk);
-    SSMR3PutU32(pSSMHandle, pThis->u32VideoAccelEnabled);
-    SSMR3PutBool(pSSMHandle, pThis->fGuestSentChangeEventAck);
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
 
-    SSMR3PutU32(pSSMHandle, pThis->guestCaps);
+
+/**
+ * @copydoc FNSSMDEVSAVEEXEC
+ *
+ */
+static DECLCALLBACK(int) vmmdevSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState*);
+
+    vmmdevLiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
+
+    SSMR3PutU32(pSSM, pThis->hypervisorSize);
+    SSMR3PutU32(pSSM, pThis->mouseCapabilities);
+    SSMR3PutU32(pSSM, pThis->mouseXAbs);
+    SSMR3PutU32(pSSM, pThis->mouseYAbs);
+
+    SSMR3PutBool(pSSM, pThis->fNewGuestFilterMask);
+    SSMR3PutU32(pSSM, pThis->u32NewGuestFilterMask);
+    SSMR3PutU32(pSSM, pThis->u32GuestFilterMask);
+    SSMR3PutU32(pSSM, pThis->u32HostEventFlags);
+    /* The following is not strictly necessary as PGM restors MMIO2, keeping it for historical reasons. */
+    SSMR3PutMem(pSSM, &pThis->pVMMDevRAMR3->V, sizeof(pThis->pVMMDevRAMR3->V));
+
+    SSMR3PutMem(pSSM, &pThis->guestInfo, sizeof (pThis->guestInfo));
+    SSMR3PutU32(pSSM, pThis->fu32AdditionsOk);
+    SSMR3PutU32(pSSM, pThis->u32VideoAccelEnabled);
+    SSMR3PutBool(pSSM, pThis->fGuestSentChangeEventAck);
+
+    SSMR3PutU32(pSSM, pThis->guestCaps);
 
 #ifdef VBOX_WITH_HGCM
-    vmmdevHGCMSaveState (pThis, pSSMHandle);
+    vmmdevHGCMSaveState(pThis, pSSM);
 #endif /* VBOX_WITH_HGCM */
 
-    SSMR3PutU32(pSSMHandle, pThis->fHostCursorRequested);
+    SSMR3PutU32(pSSM, pThis->fHostCursorRequested);
 
     return VINF_SUCCESS;
 }
 
 /**
- * Loads the saved VMM device state.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to the saved state.
- * @param   uVersion    The data unit version number.
- * @param   uPass       The data pass.
+ * @copydoc FNSSMDEVLOADEXEC
  */
-static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     /** @todo The code load code is assuming we're always loaded into a freshly
      *        constructed VM. */
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState*);
-    if (   SSM_VERSION_MAJOR_CHANGED(uVersion, VMMDEV_SSM_VERSION)
-        || (SSM_VERSION_MINOR(uVersion) < 6))
+    int          rc;
+
+    if (   uVersion > VMMDEV_SAVED_STATE_VERSION
+        || uVersion < 6)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    SSMR3GetU32(pSSMHandle, &pThis->hypervisorSize);
-    SSMR3GetU32(pSSMHandle, &pThis->mouseCapabilities);
-    SSMR3GetU32(pSSMHandle, &pThis->mouseXAbs);
-    SSMR3GetU32(pSSMHandle, &pThis->mouseYAbs);
-
-    SSMR3GetBool(pSSMHandle, &pThis->fNewGuestFilterMask);
-    SSMR3GetU32(pSSMHandle, &pThis->u32NewGuestFilterMask);
-    SSMR3GetU32(pSSMHandle, &pThis->u32GuestFilterMask);
-    SSMR3GetU32(pSSMHandle, &pThis->u32HostEventFlags);
-//    SSMR3GetBool(pSSMHandle, &pThis->pVMMDevRAMR3->fHaveEvents);
-    // here be dragons (probably)
-    SSMR3GetMem(pSSMHandle, &pThis->pVMMDevRAMR3->V, sizeof (pThis->pVMMDevRAMR3->V));
-
-    SSMR3GetMem(pSSMHandle, &pThis->guestInfo, sizeof (pThis->guestInfo));
-    SSMR3GetU32(pSSMHandle, &pThis->fu32AdditionsOk);
-    SSMR3GetU32(pSSMHandle, &pThis->u32VideoAccelEnabled);
-    if (uVersion > 10)
-        SSMR3GetBool(pSSMHandle, &pThis->fGuestSentChangeEventAck);
-
-    SSMR3GetU32(pSSMHandle, &pThis->guestCaps);
-
-    /* Attributes which were temporarily introduced in r30072 */
-    if (   SSM_VERSION_MAJOR(uVersion) ==  0
-        && SSM_VERSION_MINOR(uVersion) == 7)
+    /* config */
+    if (uVersion > VMMDEV_SAVED_STATE_VERSION_VBOX_30)
     {
-        uint32_t temp;
-        SSMR3GetU32(pSSMHandle, &temp);
-        SSMR3GetU32(pSSMHandle, &temp);
+        bool f;
+        rc = SSMR3GetBool(pSSM, &f); AssertRCReturn(rc, rc);
+        if (pThis->fGetHostTimeDisabled != f)
+            LogRel(("VMMDev: Config mismatch - fGetHostTimeDisabled: config=%RTbool saved=%RTbool\n", pThis->fGetHostTimeDisabled, f));
+
+        rc = SSMR3GetBool(pSSM, &f); AssertRCReturn(rc, rc);
+        if (pThis->fBackdoorLogDisabled != f)
+            LogRel(("VMMDev: Config mismatch - fBackdoorLogDisabled: config=%RTbool saved=%RTbool\n", pThis->fBackdoorLogDisabled, f));
+
+        rc = SSMR3GetBool(pSSM, &f); AssertRCReturn(rc, rc);
+        if (pThis->fKeepCredentials != f)
+        {
+            LogRel(("VMMDev: Config mismatch - fKeepCredentials: config=%RTbool saved=%RTbool\n", pThis->fKeepCredentials, f));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
+        rc = SSMR3GetBool(pSSM, &f); AssertRCReturn(rc, rc);
+        if (pThis->fHeapEnabled != f)
+        {
+            LogRel(("VMMDev: Config mismatch - fHeapEnabled: config=%RTbool saved=%RTbool\n", pThis->fHeapEnabled, f));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
     }
 
+    if (uPass != SSM_PASS_FINAL)
+        return VINF_SUCCESS;
+
+    /* state */
+    SSMR3GetU32(pSSM, &pThis->hypervisorSize);
+    SSMR3GetU32(pSSM, &pThis->mouseCapabilities);
+    SSMR3GetU32(pSSM, &pThis->mouseXAbs);
+    SSMR3GetU32(pSSM, &pThis->mouseYAbs);
+
+    SSMR3GetBool(pSSM, &pThis->fNewGuestFilterMask);
+    SSMR3GetU32(pSSM, &pThis->u32NewGuestFilterMask);
+    SSMR3GetU32(pSSM, &pThis->u32GuestFilterMask);
+    SSMR3GetU32(pSSM, &pThis->u32HostEventFlags);
+
+//    SSMR3GetBool(pSSM, &pThis->pVMMDevRAMR3->fHaveEvents);
+    // here be dragons (probably)
+    SSMR3GetMem(pSSM, &pThis->pVMMDevRAMR3->V, sizeof (pThis->pVMMDevRAMR3->V));
+
+    SSMR3GetMem(pSSM, &pThis->guestInfo, sizeof (pThis->guestInfo));
+    SSMR3GetU32(pSSM, &pThis->fu32AdditionsOk);
+    SSMR3GetU32(pSSM, &pThis->u32VideoAccelEnabled);
+    if (uVersion > 10)
+        SSMR3GetBool(pSSM, &pThis->fGuestSentChangeEventAck);
+
+    rc = SSMR3GetU32(pSSM, &pThis->guestCaps);
+
+    /* Attributes which were temporarily introduced in r30072 */
+    if (uVersion == 7)
+    {
+        uint32_t temp;
+        SSMR3GetU32(pSSM, &temp);
+        rc = SSMR3GetU32(pSSM, &temp);
+    }
+    AssertRCReturn(rc, rc);
+
 #ifdef VBOX_WITH_HGCM
-    vmmdevHGCMLoadState (pThis, pSSMHandle, uVersion);
+    rc = vmmdevHGCMLoadState(pThis, pSSM, uVersion);
+    AssertRCReturn(rc, rc);
 #endif /* VBOX_WITH_HGCM */
 
-    if (   SSM_VERSION_MAJOR(uVersion) ==  0
-        && SSM_VERSION_MINOR(uVersion) >= 10)
-        SSMR3GetU32(pSSMHandle, &pThis->fHostCursorRequested);
+    if (uVersion >= 10)
+        rc = SSMR3GetU32(pSSM, &pThis->fHostCursorRequested);
+    AssertRCReturn(rc, rc);
 
     /*
      * On a resume, we send the capabilities changed message so
@@ -2215,14 +2257,13 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     if (pThis->pDrv)
     {
         pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->mouseCapabilities);
-        if (   SSM_VERSION_MAJOR(uVersion) ==  0
-            && SSM_VERSION_MINOR(uVersion) >= 10)
-                pThis->pDrv->pfnUpdatePointerShape(pThis->pDrv,
-                                                   pThis->fHostCursorRequested,
-                                                   0,
-                                                   0, 0,
-                                                   0, 0,
-                                                   NULL);
+        if (uVersion >= 10)
+            pThis->pDrv->pfnUpdatePointerShape(pThis->pDrv,
+                                               pThis->fHostCursorRequested,
+                                               0,
+                                               0, 0,
+                                               0, 0,
+                                               NULL);
     }
 
     /* Reestablish the acceleration status. */
@@ -2251,17 +2292,18 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
  *
  * @returns VBox status code.
  * @param   pDevIns    The device instance.
- * @param   pSSMHandle The handle to the saved state.
+ * @param   pSSM The handle to the saved state.
  */
-static DECLCALLBACK(int) vmmdevLoadStateDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) vmmdevLoadStateDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState*);
 
 #ifdef VBOX_WITH_HGCM
-    vmmdevHGCMLoadStateDone (pThis, pSSMHandle);
+    int rc = vmmdevHGCMLoadStateDone(pThis, pSSM);
+    AssertLogRelRCReturn(rc, rc);
 #endif /* VBOX_WITH_HGCM */
 
-    VMMDevNotifyGuest (pThis, VMMDEV_EVENT_RESTORED);
+    VMMDevNotifyGuest(pThis, VMMDEV_EVENT_RESTORED);
 
     return VINF_SUCCESS;
 }
@@ -2324,8 +2366,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"KeepCredentials\" as a boolean"));
 
-    bool fHeapEnabled;
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "HeapEnabled", &fHeapEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "HeapEnabled", &pThis->fHeapEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"HeapEnabled\" as a boolean"));
@@ -2412,7 +2453,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                    N_("Failed to allocate %u bytes of memory for the VMM device"), VMMDEV_RAM_SIZE);
     vmmdevInitRam(pThis);
 
-    if (fHeapEnabled)
+    if (pThis->fHeapEnabled)
     {
         rc = PDMDevHlpMMIO2Register(pDevIns, 2 /*iRegion*/, VMMDEV_HEAP_SIZE, 0 /*fFlags*/, (void **)&pThis->pVMMDevHeapR3, "VMMDev Heap");
         if (RT_FAILURE(rc))
@@ -2434,7 +2475,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, VMMDEV_RAM_SIZE, PCI_ADDRESS_SPACE_MEM, vmmdevIORAMRegionMap);
     if (RT_FAILURE(rc))
         return rc;
-    if (fHeapEnabled)
+    if (pThis->fHeapEnabled)
     {
         rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, VMMDEV_HEAP_SIZE, PCI_ADDRESS_SPACE_MEM_PREFETCH, vmmdevIORAMRegionMap);
         if (RT_FAILURE(rc))
@@ -2484,10 +2525,10 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Register saved state and init the HGCM CmdList critsect.
      */
-    rc = PDMDevHlpSSMRegisterEx(pDevIns, VMMDEV_SSM_VERSION, sizeof(*pThis), NULL,
-                                NULL, NULL, NULL,
-                                NULL, vmmdevSaveState, NULL,
-                                NULL, vmmdevLoadState, vmmdevLoadStateDone);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, VMMDEV_SAVED_STATE_VERSION, sizeof(*pThis), NULL,
+                                NULL, vmmdevLiveExec, NULL,
+                                NULL, vmmdevSaveExec, NULL,
+                                NULL, vmmdevLoadExec, vmmdevLoadStateDone);
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_HGCM
