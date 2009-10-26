@@ -4401,7 +4401,7 @@ bool Machine::checkForSpawnFailure()
     if (!autoCaller.isOk())
     {
         /* nothing to do */
-        LogFlowThisFunc(("Already uninitialized!"));
+        LogFlowThisFunc(("Already uninitialized!\n"));
         return true;
     }
 
@@ -4411,7 +4411,7 @@ bool Machine::checkForSpawnFailure()
     if (mData->mSession.mState != SessionState_Spawning)
     {
         /* nothing to do */
-        LogFlowThisFunc(("Not spawning any more!"));
+        LogFlowThisFunc(("Not spawning any more!\n"));
         return true;
     }
 
@@ -8074,7 +8074,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     mData->mSession.mState = SessionState_Closed;
     mData->mSession.mType.setNull();
 
-    /* close the interprocess semaphore before leaving the shared lock */
+    /* close the interprocess semaphore before leaving the exclusive lock */
 #if defined(RT_OS_WINDOWS)
     if (mIPCSem)
         ::CloseHandle (mIPCSem);
@@ -8102,7 +8102,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     /* free the essential data structure last */
     mData.free();
 
-    /* leave the shared lock before setting the below two to NULL */
+    /* leave the exclusive lock before setting the below two to NULL */
     alock.leave();
 
     unconst(mParent).setNull();
@@ -8321,7 +8321,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
 
     AutoCaller autoCaller(this);
 
-    LogFlowThisFunc(("state=%d\n", autoCaller.state()));
+    LogFlowThisFunc(("callerstate=%d\n", autoCaller.state()));
     /*
      *  We don't assert below because it might happen that a non-direct session
      *  informs us it is closed right after we've been uninitialized -- it's ok.
@@ -9048,7 +9048,7 @@ bool SessionMachine::checkForDeath()
         {
             /* return true if not ready, to cause the client watcher to exclude
              * the corresponding session from watching */
-            LogFlowThisFunc(("Already uninitialized!"));
+            LogFlowThisFunc(("Already uninitialized!\n"));
             return true;
         }
 
