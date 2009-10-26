@@ -99,8 +99,18 @@ public:
             dbus_message_iter_append_basic(&iter,DBUS_TYPE_INT32,&msg_timeout);
 
             DBusError err;
-            dbus_connection_send_with_reply_and_block(conn, msg, 30 * 1000, &err);
+            DBusMessage *reply;
+            reply = dbus_connection_send_with_reply_and_block(conn, msg,
+                30 * 1000 /* 30 seconds timeout */, &err);
+            if (dbus_error_is_set(&err))
+            {
+                Log(("D-BUS returned an error while sending the notification: %s", err.message));
+            }
+            else if (reply)
+            {
                 dbus_connection_flush(conn);
+                dbus_message_unref(reply);
+            }
         }
         if (msg != NULL)
             dbus_message_unref(msg);

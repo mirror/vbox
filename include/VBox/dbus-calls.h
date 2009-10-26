@@ -27,6 +27,8 @@
 /** The following are the symbols which we need from libdbus-1. */
 VBOX_PROXY_STUB(dbus_error_init, void, (DBusError *error),
                 (error))
+VBOX_PROXY_STUB(dbus_error_is_set, dbus_bool_t, (const DBusError *error),
+                (error))
 VBOX_PROXY_STUB(dbus_bus_get, DBusConnection *,
                 (DBusBusType type, DBusError *error), (type, error))
 VBOX_PROXY_STUB(dbus_bus_get_private, DBusConnection *,
