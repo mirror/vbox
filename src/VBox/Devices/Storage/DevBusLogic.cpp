@@ -2269,7 +2269,7 @@ static bool buslogicWaitForAsyncIOFinished(PBUSLOGIC pBusLogic, unsigned cMillie
      * Wait for any pending async operation to finish
      */
     u64Start = RTTimeMilliTS();
-    do
+    for (;;)
     {
         fIdle = true;
 
@@ -2283,14 +2283,26 @@ static bool buslogicWaitForAsyncIOFinished(PBUSLOGIC pBusLogic, unsigned cMillie
                 break;
             }
         }
-        if (RTTimeMilliTS() - u64Start >= cMillies)
+        if (   fIdle
+            || RTTimeMilliTS() - u64Start >= cMillies)
             break;
 
         /* Sleep for a bit. */
-        RTThreadSleep(100);
-    } while (!fIdle);
+        RTThreadSleep(100); /** @todo wait on something which can be woken up. 100ms is too long for teleporting VMs! */
+    }
 
     return fIdle;
+}
+
+static DECLCALLBACK(int) buslogicLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+
+    /* Save the device config. */
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
+        SSMR3PutBool(pSSM, pThis->aDeviceStates[i].fPresent);
+
+    return VINF_SSM_DONT_CALL_AGAIN;
 }
 
 static DECLCALLBACK(int) buslogicSaveLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
@@ -2305,17 +2317,6 @@ static DECLCALLBACK(int) buslogicSaveLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     }
 
     return VINF_SUCCESS;
-}
-
-static DECLCALLBACK(int) buslogicLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
-{
-    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
-
-    /* Save the device config. */
-    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
-        SSMR3PutBool(pSSM, pThis->aDeviceStates[i].fPresent);
-
-    return VINF_SSM_DONT_CALL_AGAIN;
 }
 
 static DECLCALLBACK(int) buslogicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
