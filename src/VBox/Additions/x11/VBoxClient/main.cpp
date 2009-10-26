@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
     XSetErrorHandler(vboxClientXLibErrorHandler);
     /* Set an X11 I/O error handler, so that we can shutdown properly on fatal errors. */
     XSetIOErrorHandler(vboxClientXLibIOErrorHandler);
-    g_pService->run();
+    g_pService->run(fDaemonise);
     VBoxClient::CleanUp();
     return 1;  /* We should never get here. */
 }

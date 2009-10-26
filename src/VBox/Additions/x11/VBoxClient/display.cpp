@@ -103,6 +103,7 @@ static int x11ConnectionMonitor(RTTHREAD, void *)
     Display *pDisplay = XOpenDisplay(NULL);
     while (true)
         XNextEvent(pDisplay, &ev);
+    return 0;
 }
 
 /**
@@ -177,7 +178,7 @@ public:
     {
         return ".vboxclient-display.pid";
     }
-    virtual int run()
+    virtual int run(bool fDaemonised /* = false */)
     {
         int rc = initDisplay();
         if (RT_SUCCESS(rc))

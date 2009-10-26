@@ -35,7 +35,7 @@ public:
     /** Get the services default path to pidfile, relative to $HOME */
     virtual const char *getPidFilePath() = 0;
     /** Run the service main loop */
-    virtual int run() = 0;
+    virtual int run(bool fDaemonised = false) = 0;
     /** Clean up any global resources before we shut down hard */
     virtual void cleanup() = 0;
     /** Virtual destructor.  Not used */

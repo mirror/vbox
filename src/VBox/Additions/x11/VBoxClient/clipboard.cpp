@@ -289,7 +289,7 @@ public:
     {
         return ".vboxclient-clipboard.pid";
     }
-    virtual int run()
+    virtual int run(bool fDaemonised /* = false */)
     {
         int rc = vboxClipboardConnect();
         if (RT_SUCCESS(rc))
