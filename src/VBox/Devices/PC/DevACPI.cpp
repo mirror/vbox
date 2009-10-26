@@ -2001,6 +2001,36 @@ static void acpiPciConfigWrite(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u3
     }
 }
 
+static DECLCALLBACK(void) acpiReset(PPDMDEVINS pDevIns)
+{
+    ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
+
+    s->pm1a_en           = 0;
+    s->pm1a_sts          = 0;
+    s->pm1a_ctl          = 0;
+    s->pm_timer_initial  = TMTimerGet(s->CTX_SUFF(ts));
+    acpiPMTimerReset(s);
+    s->uBatteryIndex     = 0;
+    s->uSystemInfoIndex  = 0;
+    s->gpe0_en           = 0;
+    s->gpe0_sts          = 0;
+    s->uSleepState       = 0;
+
+    /** @todo Should we really reset PM base? */
+    acpiUpdatePmHandlers(s, PM_PORT_BASE);
+
+    acpiPlantTables(s);
+}
+
+/**
+ * Relocates the GC pointer members.
+ */
+static DECLCALLBACK(void) acpiRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+{
+    ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
+    s->tsRC = TMTimerRCPtr(s->CTX_SUFF(ts));
+}
+
 /**
  * Construct a device instance for a VM.
  *
@@ -2218,36 +2248,6 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach LUN #0"));
 
     return rc;
-}
-
-/**
- * Relocates the GC pointer members.
- */
-static DECLCALLBACK(void) acpiRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
-    s->tsRC = TMTimerRCPtr(s->CTX_SUFF(ts));
-}
-
-static DECLCALLBACK(void) acpiReset(PPDMDEVINS pDevIns)
-{
-    ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
-
-    s->pm1a_en           = 0;
-    s->pm1a_sts          = 0;
-    s->pm1a_ctl          = 0;
-    s->pm_timer_initial  = TMTimerGet(s->CTX_SUFF(ts));
-    acpiPMTimerReset(s);
-    s->uBatteryIndex     = 0;
-    s->uSystemInfoIndex  = 0;
-    s->gpe0_en           = 0;
-    s->gpe0_sts          = 0;
-    s->uSleepState       = 0;
-
-    /** @todo Should we really reset PM base? */
-    acpiUpdatePmHandlers(s, PM_PORT_BASE);
-
-    acpiPlantTables(s);
 }
 
 /**
