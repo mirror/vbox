@@ -2998,6 +2998,9 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
  */
 VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
 {
+    bool fIsOldGuestPagingMode64Bits = (pVCpu->pgm.s.enmGuestMode >= PGMMODE_AMD64);
+    bool fIsNewGuestPagingMode64Bits = (enmGuestMode >= PGMMODE_AMD64);
+
     Log(("PGMR3ChangeMode: Guest mode: %s -> %s\n", PGMGetModeName(pVCpu->pgm.s.enmGuestMode), PGMGetModeName(enmGuestMode)));
     STAM_REL_COUNTER_INC(&pVCpu->pgm.s.cGuestModeChanges);
 
@@ -3022,8 +3025,16 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
     /*
      * Exit old mode(s).
      */
+#if HC_ARCH_BITS == 32
+    /* The nested shadow paging mode for AMD-V does change when running 64 bits guests on 32 bits hosts; typically PAE <-> AMD64 */
+    const bool fForceShwEnterExit = (    fIsOldGuestPagingMode64Bits != fIsNewGuestPagingMode64Bits 
+                                     &&  enmShadowMode == PGMMODE_NESTED);
+#else
+    const bool fForceShwEnterExit = false;
+#endif
     /* shadow */
-    if (enmShadowMode != pVCpu->pgm.s.enmShadowMode)
+    if (    enmShadowMode != pVCpu->pgm.s.enmShadowMode
+        ||  fForceShwEnterExit)
     {
         LogFlow(("PGMR3ChangeMode: Shadow mode: %s -> %s\n",  PGMGetModeName(pVCpu->pgm.s.enmShadowMode), PGMGetModeName(enmShadowMode)));
         if (PGM_SHW_PFN(Exit, pVCpu))
@@ -3059,28 +3070,29 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
     /*
      * Enter new shadow mode (if changed).
      */
-    if (enmShadowMode != pVCpu->pgm.s.enmShadowMode)
+    if (    enmShadowMode != pVCpu->pgm.s.enmShadowMode
+        ||  fForceShwEnterExit)
     {
         int rc;
         pVCpu->pgm.s.enmShadowMode = enmShadowMode;
         switch (enmShadowMode)
         {
             case PGMMODE_32_BIT:
-                rc = PGM_SHW_NAME_32BIT(Enter)(pVCpu);
+                rc = PGM_SHW_NAME_32BIT(Enter)(pVCpu, false);
                 break;
             case PGMMODE_PAE:
             case PGMMODE_PAE_NX:
-                rc = PGM_SHW_NAME_PAE(Enter)(pVCpu);
+                rc = PGM_SHW_NAME_PAE(Enter)(pVCpu, false);
                 break;
             case PGMMODE_AMD64:
             case PGMMODE_AMD64_NX:
-                rc = PGM_SHW_NAME_AMD64(Enter)(pVCpu);
+                rc = PGM_SHW_NAME_AMD64(Enter)(pVCpu, fIsNewGuestPagingMode64Bits);
                 break;
             case PGMMODE_NESTED:
-                rc = PGM_SHW_NAME_NESTED(Enter)(pVCpu);
+                rc = PGM_SHW_NAME_NESTED(Enter)(pVCpu, fIsNewGuestPagingMode64Bits);
                 break;
             case PGMMODE_EPT:
-                rc = PGM_SHW_NAME_EPT(Enter)(pVCpu);
+                rc = PGM_SHW_NAME_EPT(Enter)(pVCpu, fIsNewGuestPagingMode64Bits);
                 break;
             case PGMMODE_REAL:
             case PGMMODE_PROTECTED:
