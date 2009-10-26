@@ -22,6 +22,7 @@
 #include <iprt/err.h>
 #include <iprt/ldr.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
 
 #ifdef VBOX_WITH_DBUS
  #include <VBox/dbus.h>
@@ -61,7 +62,7 @@ public:
                                                "Notify");
             if (conn == NULL)
             {
-                LogFlow(("Could not create D-BUS message!\n"));
+                Log(("Could not create D-BUS message!\n"));
                 rc = VERR_INVALID_HANDLE;
             }
         }
@@ -97,8 +98,8 @@ public:
             dbus_message_iter_close_container(&iter,&array);
             dbus_message_iter_append_basic(&iter,DBUS_TYPE_INT32,&msg_timeout);
 
-            /* @todo Send with waiting for a reply! */
-            if (dbus_connection_send(conn, msg, NULL))
+            DBusError err;
+            dbus_connection_send_with_reply_and_block(conn, msg, 30 * 1000, &err);
                 dbus_connection_flush(conn);
         }
         if (msg != NULL)
@@ -112,10 +113,16 @@ public:
 
     /** @todo Move this part in VbglR3 and just provide a callback for the platform-specific
               notification stuff, since this is very similar to the VBoxTray code. */
-    virtual int run()
+    virtual int run(bool fDaemonised /* = false */)
     {
         int rc;
         LogFlowFunc(("\n"));
+
+        /* Because we need desktop notifications to be displayed, wait
+         * some time to make the desktop environment load (as a work around). */
+        if (fDaemonised)
+            RTThreadSleep(30 * 1000 /* Wait 30 seconds */);
+
 # ifdef VBOX_WITH_DBUS
         rc = RTDBusLoadLib();
         if (RT_FAILURE(rc))
@@ -130,7 +137,7 @@ public:
         {
             rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
             if (RT_FAILURE(rc))
-                LogFlow(("Cannot connect to guest property service! rc = %Rrc\n", rc));
+                Log(("Cannot connect to guest property service! rc = %Rrc\n", rc));
         }
 
         if (RT_SUCCESS(rc))
@@ -153,6 +160,7 @@ public:
                                                       "We recommend updating to the latest version (%s) by choosing the "
                                                       "install option from the Devices menu.", pszGuestVersion, pszHostVersion);
                     rc = showNotify(szTitle, szMsg);
+                    LogRel(("VBoxClient: VirtualBox Guest Additions update available!"));
                     if (RT_FAILURE(rc))
                         Log(("VBoxClient: Could not show version notifier tooltip! rc = %d\n", rc));
                 }

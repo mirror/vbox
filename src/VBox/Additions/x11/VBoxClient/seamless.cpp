@@ -35,7 +35,7 @@ public:
     {
         return ".vboxclient-seamless.pid";
     }
-    virtual int run()
+    virtual int run(bool fDaemonised /* = false */)
     {
         /* Initialise threading in X11 and in Xt. */
         if (!XInitThreads())
