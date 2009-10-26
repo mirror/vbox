@@ -1623,7 +1623,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return rc;
     if (pThis->u8IOAPIC)
-        pcbiosPlantMPStable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE, pThis->cCpus);
+        pcbiosPlantMpsTable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE, pThis->cCpus);
 
     rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage,
                               PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "DMI tables");
