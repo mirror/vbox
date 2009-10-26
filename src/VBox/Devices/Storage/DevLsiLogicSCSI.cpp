@@ -2380,7 +2380,7 @@ static int lsilogicHardReset(PLSILOGICSCSI pThis)
     pThis->cMaxDevices  = LSILOGIC_DEVICES_MAX;
     pThis->cMaxBuses    = 1;
     pThis->cbReplyFrame = 128; /* @todo Figure out where it is needed. */
-    /* @todo: Put stuff to reset here. */
+    /** @todo: Put stuff to reset here. */
 
     lsilogicInitializeConfigurationPages(pThis);
 
@@ -4785,12 +4785,12 @@ static DECLCALLBACK(int) lsilogicMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegio
  *
  * @retruns Flag which indicates if all I/O completed in the given timeout.
  * @param   pLsiLogic    Pointer to the dveice instance to check.
- * @param   cMillis      Timeout in milliseconds to wait.
+ * @param   cMillis      Timeout in milliseconds to wait per device.
  */
 static bool lsilogicWaitForAsyncIOFinished(PLSILOGICSCSI pLsiLogic, unsigned cMillies)
 {
     uint64_t u64Start;
-    bool     fIdle;
+    unsigned i;
 
     /*
      * Wait for any pending async operation to finish
@@ -4798,27 +4798,22 @@ static bool lsilogicWaitForAsyncIOFinished(PLSILOGICSCSI pLsiLogic, unsigned cMi
     u64Start = RTTimeMilliTS();
     for (;;)
     {
-        fIdle = true;
-
         /* Check every port. */
-        for (unsigned i = 0; i < RT_ELEMENTS(pLsiLogic->aDeviceStates); i++)
-        {
-            PLSILOGICDEVICE pLsiLogicDevice = &pLsiLogic->aDeviceStates[i];
-            if (ASMAtomicReadU32(&pLsiLogicDevice->cOutstandingRequests))
-            {
-                fIdle = false;
+        for (i = 0; i < RT_ELEMENTS(pLsiLogic->aDeviceStates); i++)
+            if (ASMAtomicReadU32(&pLsiLogic->aDeviceStates[i].cOutstandingRequests))
                 break;
-            }
-        }
-        if (   fIdle
-            || RTTimeMilliTS() - u64Start >= cMillies)
-            break;
+        if (i >= RT_ELEMENTS(pLsiLogic->aDeviceStates))
+            return true;
 
-        /* Sleep for a bit. */
-        RTThreadSleep(100); /** @todo wait on something which can be woken up. 100ms is too long for teleporting VMs! */
+        uint64_t cMsElapsed = RTTimeMilliTS() - u64Start;
+        if (cMsElapsed >= cMillies)
+            return false;
+
+        /* Try synchronize the request queue for this device. */
+        PPDMISCSICONNECTOR pDrvSCSIConnector = pLsiLogic->aDeviceStates[i].pDrvSCSIConnector;
+        uint32_t cMsLeft = cMillies - (uint32_t)cMsElapsed;
+        pDrvSCSIConnector->pfnSyncronizeRequests(pDrvSCSIConnector, RT_MAX(cMsLeft, 100));
     }
-
-    return fIdle;
 }
 
 static DECLCALLBACK(int) lsilogicLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
@@ -4832,26 +4827,12 @@ static DECLCALLBACK(int) lsilogicLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     return VINF_SSM_DONT_CALL_AGAIN;
 }
 
-static DECLCALLBACK(int) lsilogicSaveLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
-{
-    PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
-
-    /* Wait that no task is pending on any device. */
-    if (!lsilogicWaitForAsyncIOFinished(pLsiLogic, 20000))
-    {
-        AssertLogRelMsgFailed(("LsiLogic: There are still tasks outstanding\n"));
-        return VERR_TIMEOUT;
-    }
-
-    return VINF_SUCCESS;
-}
-
 static DECLCALLBACK(int) lsilogicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     /* Every device first. */
-    lsilogicSaveLoadPrep(pDevIns, pSSM);
+    lsilogicLiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
     for (unsigned i = 0; i < RT_ELEMENTS(pLsiLogic->aDeviceStates); i++)
     {
         PLSILOGICDEVICE pDevice = &pLsiLogic->aDeviceStates[i];
@@ -5171,28 +5152,6 @@ static DECLCALLBACK(int)  lsilogicAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint
 }
 
 /**
- * @copydoc FNPDMDEVPOWEROFF
- */
-static DECLCALLBACK(void) lsilogicPowerOff(PPDMDEVINS pDevIns)
-{
-    PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
-
-    bool fIdle = lsilogicWaitForAsyncIOFinished(pLsiLogic, 20000);
-    Assert(fIdle);
-}
-
-/**
- * @copydoc FNPDMDEVSUSPEND
- */
-static DECLCALLBACK(void) lsilogicSuspend(PPDMDEVINS pDevIns)
-{
-    PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
-
-    bool fIdle = lsilogicWaitForAsyncIOFinished(pLsiLogic, 20000);
-    Assert(fIdle);
-}
-
-/**
  * @copydoc FNPDMDEVRESET
  */
 static DECLCALLBACK(void) lsilogicReset(PPDMDEVINS pDevIns)
@@ -5200,6 +5159,19 @@ static DECLCALLBACK(void) lsilogicReset(PPDMDEVINS pDevIns)
     PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     int rc;
 
+/** @todo r=bird: this is a deadlock trap. We're EMT(0), if there are
+ *        outstanding requests they may require EMT interaction because of
+ *        physical write backs around lsilogicDeviceSCSIRequestCompleted...
+ *
+ *        I have some more generic solution for delayed suspend, reset and
+ *        poweroff handling that I'm considering.  The idea is that the
+ *        notification callback returns a status indicating that it didn't
+ *        complete and needs to be called again or something.  EMT continues on
+ *        the next device and when it's done, it processes incoming requests and
+ *        does another notification round... This way we could combine the waits
+ *        in the I/O controllers and reduce the time it takes to suspend a VM a
+ *        wee bit...
+ */
     bool fIdle = lsilogicWaitForAsyncIOFinished(pLsiLogic, 20000);
     Assert(fIdle);
 
@@ -5448,10 +5420,8 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic cannot register legacy I/O handlers"));
 
     /* Register save state handlers. */
-    rc = PDMDevHlpSSMRegisterEx(pDevIns, LSILOGIC_SAVED_STATE_VERSION, sizeof(*pThis), NULL,
-                                NULL,                 lsilogicLiveExec, NULL,
-                                lsilogicSaveLoadPrep, lsilogicSaveExec, NULL,
-                                lsilogicSaveLoadPrep, lsilogicLoadExec, NULL);
+    rc = PDMDevHlpSSMRegister3(pDevIns, LSILOGIC_SAVED_STATE_VERSION, sizeof(*pThis),
+                               lsilogicLiveExec, lsilogicSaveExec, lsilogicLoadExec);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic cannot register save state handlers"));
 
@@ -5502,7 +5472,7 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
     /* pfnReset */
     lsilogicReset,
     /* pfnSuspend */
-    lsilogicSuspend,
+    NULL,
     /* pfnResume */
     NULL,
     /* pfnAttach */
@@ -5514,7 +5484,7 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
     /* pfnInitComplete */
     NULL,
     /* pfnPowerOff */
-    lsilogicPowerOff,
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32VersionEnd */
