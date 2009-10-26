@@ -3763,6 +3763,19 @@ HRESULT Machine::openSession(IInternalSessionControl *aControl)
 
     LogFlowThisFunc(("mSession.mState=%s\n", Global::stringifySessionState(mData->mSession.mState)));
 
+    /* Hack: in case the session is closing and there is a progress object
+     * which allows waiting for the session to be closed, take the opportunity
+     * and do a limited wait (max. 1 second). This helps a lot when the system
+     * is busy and thus session closing can take a little while. */
+    if (    mData->mSession.mState == SessionState_Closing
+        &&  mData->mSession.mProgress)
+    {
+        alock.leave();
+        mData->mSession.mProgress->WaitForCompletion(1000);
+        alock.enter();
+        LogFlowThisFunc(("after waiting: mSession.mState=%s\n", Global::stringifySessionState(mData->mSession.mState)));
+    }
+
     if (mData->mSession.mState == SessionState_Open ||
         mData->mSession.mState == SessionState_Closing)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
