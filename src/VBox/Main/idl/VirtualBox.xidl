@@ -720,7 +720,7 @@
 
   <enum
     name="SessionState"
-    uuid="CF2700C0-EA4B-47ae-9725-7810114B94D8"
+    uuid="cf2700c0-ea4b-47ae-9725-7810114b94d8"
   >
     <desc>
       Session state. This enumeration represents possible values of
@@ -746,12 +746,11 @@
     </const>
     <const name="Spawning"              value="3">
       <desc>
-        A new (direct) session is being opened for the machine
-        as a result of <link to="IVirtualBox::openRemoteSession"/>
-        call (<link to="IMachine::sessionState"/>);
-        the session is currently being opened
-        as a result of <link to="IVirtualBox::openRemoteSession"/>
-        call (<link to="ISession::state"/>)
+        A new (direct) session is being opened for the machine as a result of
+        <link to="IVirtualBox::openRemoteSession"/> call
+        (<link to="IMachine::sessionState"/> or <link to="ISession::state"/>).
+        This state also occurs as a short transient state when a new direct
+        session is opened by calling <link to="IVirtualBox::openSession"/>.
       </desc>
     </const>
     <const name="Closing"               value="4">
