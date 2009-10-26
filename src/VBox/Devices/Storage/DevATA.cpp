@@ -405,7 +405,10 @@ typedef struct ATACONTROLLER
     uint8_t             AsyncIOReqHead;
     /** The position at which to get a new request for the AIO thread. */
     uint8_t             AsyncIOReqTail;
-    uint8_t             Alignment3[2]; /**< Explicit padding of the 2 byte gap. */
+    /** Whether to call RTThreadUserSignal when idle.
+     * Before setting this, call RTThreadUserReset. */
+    bool volatile       fSignalIdle;
+    uint8_t             Alignment3[1]; /**< Explicit padding of the 1 byte gap. */
     /** Magic delay before triggering interrupts in DMA mode. */
     uint32_t            DelayIRQMillies;
     /** The mutex protecting the request queue. */
@@ -688,11 +691,9 @@ static void ataAsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
     pCtl->AsyncIOReqHead %= RT_ELEMENTS(pCtl->aAsyncIORequests);
     rc = RTSemMutexRelease(pCtl->AsyncIORequestMutex);
     AssertRC(rc);
-    LogBird(("ata: %x: signalling\n", pCtl->IOPortBase1));
     rc = PDMR3CritSectScheduleExitEvent(&pCtl->lock, pCtl->AsyncIOSem);
     if (RT_FAILURE(rc))
     {
-        LogBird(("ata: %x: schedule failed, rc=%Rrc\n", pCtl->IOPortBase1, rc));
         rc = RTSemEventSignal(pCtl->AsyncIOSem);
         AssertRC(rc);
     }
@@ -842,7 +843,7 @@ static void ataStartTransfer(ATADevState *s, uint32_t cbTotalTransfer, uint8_t u
     /* If the controller is already doing something else right now, ignore
      * the command that is being submitted. Some broken guests issue commands
      * twice (e.g. the Linux kernel that comes with Acronis True Image 8). */
-    if (!fChainedTransfer && !ataAsyncIOIsIdle(pCtl, true))
+    if (!fChainedTransfer && !ataAsyncIOIsIdle(pCtl, true /*fStrict*/))
     {
         Log(("%s: Ctl#%d: ignored command %#04x, controller state %d\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl), s->uATARegCommand, pCtl->uAsyncIOState));
         LogRel(("PIIX3 IDE: guest issued command %#04x while controller busy\n", s->uATARegCommand));
@@ -3736,28 +3737,71 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
  * @returns true on success.
  * @returns false when the thread is still processing.
  * @param   pThis       Pointer to the controller data.
- * @param   cMillies    How long to wait (total).
+ * @param   cMillies    How long to wait (total).  This isn't very accurate.
  */
 static bool ataWaitForAsyncIOIsIdle(PATACONTROLLER pCtl, unsigned cMillies)
 {
     uint64_t        u64Start;
+    bool            fRc;
+
+    /* Hope for the simple way out...  */
+    if (ataAsyncIOIsIdle(pCtl, false /*fStrict*/))
+        return true;
 
     /*
-     * Wait for any pending async operation to finish
+     * Have to wait. Do the setup while owning the mutex to avoid races.
      */
+    RTSemMutexRequest(pCtl->AsyncIORequestMutex, RT_INDEFINITE_WAIT);
+
+    RTThreadUserReset(pCtl->AsyncIOThread);
+    ASMAtomicWriteBool(&pCtl->fSignalIdle, true);
+
+    RTSemMutexRelease(pCtl->AsyncIORequestMutex);
+
     u64Start = RTTimeMilliTS();
     for (;;)
     {
-        if (ataAsyncIOIsIdle(pCtl, false))
-            return true;
+        fRc = ataAsyncIOIsIdle(pCtl, false /*fStrict*/);
+        if (fRc)
+            break;
+
         if (RTTimeMilliTS() - u64Start >= cMillies)
             break;
 
-        /* Sleep for a bit. */
-        RTThreadSleep(100);
+        int rc = RTThreadUserWait(pCtl->AsyncIOThread, 100 /*ms*/);
+        AssertMsg(   (   RT_SUCCESS(rc)
+                      && ataAsyncIOIsIdle(pCtl, false /*fStrict*/))
+                  || rc == VERR_TIMEOUT,
+                  ("rc=%Rrc i=%u\n", rc, ATACONTROLLER_IDX(pCtl)));
     }
 
-    return false;
+    ASMAtomicWriteBool(&pCtl->fSignalIdle, false);
+    return fRc;
+}
+
+/**
+ * Waits for all async I/O threads to complete whatever they are doing at the
+ * moment.
+ *
+ * @returns true on success.
+ * @returns false when one or more threads is still processing.
+ * @param   pThis       Pointer to the instance data.
+ * @param   cMillies    How long to wait per controller.
+ */
+static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, uint32_t cMillies)
+{
+    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+        if (   pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD
+            && !ataWaitForAsyncIOIsIdle(&pThis->aCts[i], cMillies))
+        {
+            LogRel(("PIIX3 ATA: Ctl#%u is still executing, DevSel=%d AIOIf=%d CmdIf0=%#04x CmdIf1=%#04x\n",
+                    i, pThis->aCts[i].iSelectedIf, pThis->aCts[i].iAIOIf,
+                    pThis->aCts[i].aIfs[0].uATARegCommand, pThis->aCts[i].aIfs[1].uATARegCommand));
+            return false;
+        }
+    return true;
 }
 
 #endif /* IN_RING3 */
@@ -4499,6 +4543,25 @@ static void ataDMATransfer(PATACONTROLLER pCtl)
     s->iIOBufferEnd = iIOBufferEnd;
 }
 
+/**
+ * Signal ataWaitForAsyncIOIsIdle that we're idle (if we actually are).
+ *
+ * @param   pCtl        The controller.
+ */
+static void ataAsyncSignalIdle(PATACONTROLLER pCtl)
+{
+    /*
+     * Take the mutex here and recheck the idle indicator as there might be
+     * interesting races, like in the ataReset code.
+     */
+    int rc = RTSemMutexRequest(pCtl->AsyncIORequestMutex, RT_INDEFINITE_WAIT); AssertRC(rc);
+
+    if (    pCtl->fSignalIdle
+        &&  ataAsyncIOIsIdle(pCtl, false /*fStrict*/))
+        RTThreadUserSignal(pCtl->AsyncIOThread);
+
+    rc = RTSemMutexRelease(pCtl->AsyncIORequestMutex); AssertRC(rc);
+}
 
 /** Asynch I/O thread for an interface. Once upon a time this was readable
  * code with several loops and a different semaphore for each purpose. But
@@ -4520,6 +4583,8 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
         /* Keep this thread from doing anything as long as EMT is suspended. */
         while (pCtl->fRedoIdle)
         {
+            if (pCtl->fSignalIdle)
+                ataAsyncSignalIdle(pCtl);
             rc = RTSemEventWait(pCtl->SuspendIOSem, RT_INDEFINITE_WAIT);
             /* Continue if we got a signal by RTThreadPoke().
              * We will get notified if there is a request to process.
@@ -4535,9 +4600,9 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
         /* Wait for work.  */
         while (pReq == NULL)
         {
-            LogBird(("ata: %x: going to sleep...\n", pCtl->IOPortBase1));
+            if (pCtl->fSignalIdle)
+                ataAsyncSignalIdle(pCtl);
             rc = RTSemEventWait(pCtl->AsyncIOSem, RT_INDEFINITE_WAIT);
-            LogBird(("ata: %x: waking up\n", pCtl->IOPortBase1));
             /* Continue if we got a signal by RTThreadPoke().
              * We will get notified if there is a request to process.
              */
@@ -4575,9 +4640,7 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
         /* Do our work.  */
         {
         STAM_PROFILE_START(&pCtl->StatLockWait, a);
-        LogBird(("ata: %x: entering critsect\n", pCtl->IOPortBase1));
         PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
-        LogBird(("ata: %x: entered\n", pCtl->IOPortBase1));
         STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
         }
 
@@ -4973,25 +5036,15 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
 #endif /* DEBUG || VBOX_WITH_STATISTICS */
         }
 
-        LogBird(("ata: %x: leaving critsect\n", pCtl->IOPortBase1));
         PDMCritSectLeave(&pCtl->lock);
     }
 
+    /* Signal the ultimate idleness. */
+    RTThreadUserSignal(ThreadSelf);
+
     /* Cleanup the state.  */
-    if (pCtl->AsyncIOSem)
-    {
-        RTSemEventDestroy(pCtl->AsyncIOSem);
-        pCtl->AsyncIOSem = NIL_RTSEMEVENT;
-    }
-    if (pCtl->SuspendIOSem)
-    {
-        RTSemEventDestroy(pCtl->SuspendIOSem);
-        pCtl->SuspendIOSem = NIL_RTSEMEVENT;
-    }
     /* Do not destroy request mutex yet, still needed for proper shutdown. */
     pCtl->fShutdown = false;
-    /* This must be last, as it also signals thread exit to EMT. */
-    pCtl->AsyncIOThread = NIL_RTTHREAD;
 
     Log2(("%s: Ctl#%d: return %Rrc\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl), rc));
     return rc;
@@ -5364,9 +5417,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
     }
     else
         AssertMsgFailed(("ataIOPortWrite1: unsupported write to port %x val=%x size=%d\n", Port, u32, cb));
-    LogBird(("ata: leaving critsect\n"));
     PDMCritSectLeave(&pCtl->lock);
-    LogBird(("ata: left critsect\n"));
     return rc;
 }
 
@@ -5562,64 +5613,6 @@ PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 
 #ifdef IN_RING3
 
-/**
- * Waits for all async I/O threads to complete whatever they
- * are doing at the moment.
- *
- * @returns true on success.
- * @returns false when one or more threads is still processing.
- * @param   pThis       Pointer to the instance data.
- * @param   cMillies    How long to wait (total).
- */
-static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, unsigned cMillies)
-{
-    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-    uint64_t        u64Start;
-    PATACONTROLLER  pCtl;
-    bool            fAllIdle = false;
-
-    /*
-     * Wait for any pending async operation to finish
-     */
-    u64Start = RTTimeMilliTS();
-    for (;;)
-    {
-        /* Check all async I/O threads. */
-        fAllIdle = true;
-        for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-        {
-            pCtl = &pThis->aCts[i];
-
-            /*
-             * Only check if the thread is idling if the request mutex is set up.
-             * It is possible that the creation of the first controller failed and that
-             * the request mutex is not initialized on the second one yet
-             * But it would be called without the following check.
-             */
-            if (pCtl->AsyncIORequestMutex != NIL_RTSEMEVENT)
-            {
-                fAllIdle &= ataAsyncIOIsIdle(pCtl, false);
-                if (!fAllIdle)
-                    break;
-            }
-        }
-        if (    fAllIdle
-            ||  RTTimeMilliTS() - u64Start >= cMillies)
-            break;
-
-        /* Sleep for a bit. */
-        RTThreadSleep(100); /** @todo wait on something which can be woken up. 100ms is too long for teleporting VMs! */
-    }
-
-    if (!fAllIdle)
-        LogRel(("PIIX3 ATA: Ctl#%d is still executing, DevSel=%d AIOIf=%d CmdIf0=%#04x CmdIf1=%#04x\n",
-                ATACONTROLLER_IDX(pCtl), pCtl->iSelectedIf, pCtl->iAIOIf,
-                pCtl->aIfs[0].uATARegCommand, pCtl->aIfs[1].uATARegCommand));
-
-    return fAllIdle;
-}
-
-
 DECLINLINE(void) ataRelocBuffer(PPDMDEVINS pDevIns, ATADevState *s)
 {
     if (s->pbIOBufferR3)
@@ -5660,47 +5653,71 @@ static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
     PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
     int             rc;
 
-    Log(("%s:\n", __FUNCTION__));
+    Log(("ataDestruct\n"));
 
     /*
-     * Terminate all async helper threads
+     * Tell the async I/O threads to terminate.
      */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
         if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
         {
-            ASMAtomicXchgU32(&pThis->aCts[i].fShutdown, true);
+            ASMAtomicWriteU32(&pThis->aCts[i].fShutdown, true);
             rc = RTSemEventSignal(pThis->aCts[i].AsyncIOSem);
             AssertRC(rc);
         }
     }
 
     /*
-     * Wait for them to complete whatever they are doing and then
-     * for them to terminate.
+     * Wait for the threads to terminate before destroying their resources.
      */
-    if (ataWaitForAllAsyncIOIsIdle(pDevIns, 20000))
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
-        for (unsigned i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+        if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
         {
             rc = RTThreadWait(pThis->aCts[i].AsyncIOThread, 30000 /* 30 s*/, NULL);
-            AssertMsgRC(rc || rc == VERR_INVALID_HANDLE, ("rc=%Rrc i=%d\n", rc, i));
+            if (RT_SUCCESS(rc))
+                pThis->aCts[i].AsyncIOThread = NIL_RTTHREAD;
+            else
+                LogRel(("PIIX3 ATA Dtor: Ctl#%u is still executing, DevSel=%d AIOIf=%d CmdIf0=%#04x CmdIf1=%#04x rc=%Rrc\n",
+                        i, pThis->aCts[i].iSelectedIf, pThis->aCts[i].iAIOIf,
+                        pThis->aCts[i].aIfs[0].uATARegCommand, pThis->aCts[i].aIfs[1].uATARegCommand, rc));
         }
     }
-    else
-        AssertMsgFailed(("Async I/O is still busy!\n"));
 
     /*
-     * Now the request mutexes are no longer needed. Free resources.
+     * Free resources.
      */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
-        if (pThis->aCts[i].AsyncIORequestMutex != NIL_RTSEMEVENT)
+        if (pThis->aCts[i].AsyncIORequestMutex != NIL_RTSEMMUTEX)
         {
             RTSemMutexDestroy(pThis->aCts[i].AsyncIORequestMutex);
-            pThis->aCts[i].AsyncIORequestMutex = NIL_RTSEMEVENT;
+            pThis->aCts[i].AsyncIORequestMutex = NIL_RTSEMMUTEX;
+        }
+        if (pThis->aCts[i].AsyncIOSem != NIL_RTSEMEVENT)
+        {
+            RTSemEventDestroy(pThis->aCts[i].AsyncIOSem);
+            pThis->aCts[i].AsyncIOSem = NIL_RTSEMEVENT;
+        }
+        if (pThis->aCts[i].SuspendIOSem != NIL_RTSEMEVENT)
+        {
+            RTSemEventDestroy(pThis->aCts[i].SuspendIOSem);
+            pThis->aCts[i].SuspendIOSem = NIL_RTSEMEVENT;
+        }
+
+        /* try one final time */
+        if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
+        {
+            rc = RTThreadWait(pThis->aCts[i].AsyncIOThread, 1 /*ms*/, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                pThis->aCts[i].AsyncIOThread = NIL_RTTHREAD;
+                LogRel(("PIIX3 ATA Dtor: Ctl#%u actually completed.\n", i));
+            }
         }
     }
+
     return VINF_SUCCESS;
 }
 
@@ -5955,7 +5972,7 @@ static DECLCALLBACK(void) ataSuspend(PPDMDEVINS pDevIns)
 {
     Log(("%s:\n", __FUNCTION__));
     if (!ataWaitForAllAsyncIOIsIdle(pDevIns, 20000))
-        AssertMsgFailed(("Async I/O didn't stop in 20 seconds!\n"));
+        AssertMsgFailed(("Async I/O didn't stop in ~40 seconds!\n"));
     return;
 }
 
@@ -5994,7 +6011,7 @@ static DECLCALLBACK(void) ataPowerOff(PPDMDEVINS pDevIns)
 {
     Log(("%s:\n", __FUNCTION__));
     if (!ataWaitForAllAsyncIOIsIdle(pDevIns, 20000))
-        AssertMsgFailed(("Async I/O didn't stop in 20 seconds!\n"));
+        AssertMsgFailed(("Async I/O didn't stop in ~40 seconds!\n"));
     return;
 }
 
@@ -6012,11 +6029,9 @@ static DECLCALLBACK(int) ataSaveLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     /* sanity - the suspend notification will wait on the async stuff. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-    {
-        Assert(ataAsyncIOIsIdle(&pThis->aCts[i], false));
-        if (!ataAsyncIOIsIdle(&pThis->aCts[i], false))
-            return VERR_SSM_IDE_ASYNC_TIMEOUT;
-    }
+        AssertLogRelMsgReturn(ataAsyncIOIsIdle(&pThis->aCts[i], false /*fStrict*/),
+                              ("i=%u\n", i),
+                              VERR_SSM_IDE_ASYNC_TIMEOUT);
     return VINF_SUCCESS;
 }
 
@@ -6219,8 +6234,7 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         if (!ataAsyncIOIsIdle(&pThis->aCts[i], false))
         {
             AssertMsgFailed(("Async I/O for controller %d is active\n", i));
-            rc = VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-            return rc;
+            return VERR_INTERNAL_ERROR_4;
         }
 
         SSMR3GetU8(pSSM, &pThis->aCts[i].iSelectedIf);
@@ -6402,7 +6416,8 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     {
         pThis->aCts[i].AsyncIOSem = NIL_RTSEMEVENT;
         pThis->aCts[i].SuspendIOSem = NIL_RTSEMEVENT;
-        pThis->aCts[i].AsyncIORequestMutex = NIL_RTSEMEVENT;
+        pThis->aCts[i].AsyncIORequestMutex = NIL_RTSEMMUTEX;
+        pThis->aCts[i].AsyncIOThread = NIL_RTTHREAD;
     }
 
     /*
@@ -6680,14 +6695,15 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
          */
         pCtl->uAsyncIOState = ATA_AIO_NEW;
         rc = RTSemEventCreate(&pCtl->AsyncIOSem);
-        AssertRC(rc);
+        AssertLogRelRCReturn(rc, rc);
         rc = RTSemEventCreate(&pCtl->SuspendIOSem);
-        AssertRC(rc);
+        AssertLogRelRCReturn(rc, rc);
         rc = RTSemMutexCreate(&pCtl->AsyncIORequestMutex);
-        AssertRC(rc);
+        AssertLogRelRCReturn(rc, rc);
         ataAsyncIOClearRequests(pCtl);
-        rc = RTThreadCreateF(&pCtl->AsyncIOThread, ataAsyncIOLoop, (void *)pCtl, 128*1024, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "ATA-%u", i);
-        AssertRC(rc);
+        rc = RTThreadCreateF(&pCtl->AsyncIOThread, ataAsyncIOLoop, (void *)pCtl, 128*1024 /*cbStack*/,
+                             RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "ATA-%u", i);
+        AssertLogRelRCReturn(rc, rc);
         Assert(pCtl->AsyncIOThread != NIL_RTTHREAD && pCtl->AsyncIOSem != NIL_RTSEMEVENT && pCtl->SuspendIOSem != NIL_RTSEMEVENT && pCtl->AsyncIORequestMutex != NIL_RTSEMMUTEX);
         Log(("%s: controller %d AIO thread id %#x; sem %p susp_sem %p mutex %p\n", __FUNCTION__, i, pCtl->AsyncIOThread, pCtl->AsyncIOSem, pCtl->SuspendIOSem, pCtl->AsyncIORequestMutex));
 
