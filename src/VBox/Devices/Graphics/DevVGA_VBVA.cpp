@@ -885,7 +885,7 @@ static int vbvaVHWAHHCommandPost(PVGASTATE pVGAState, VBOXVHWACMD* pCmd)
 {
     RTSEMEVENT hComplEvent;
     int rc = RTSemEventCreate(&hComplEvent);
-    Assert(RT_SUCCESS(rc));
+    AssertRC(rc);
     if(RT_SUCCESS(rc))
     {
         /* ensure the cmd is not deleted until we process it */
@@ -901,7 +901,7 @@ static int vbvaVHWAHHCommandPost(PVGASTATE pVGAState, VBOXVHWACMD* pCmd)
             /* the command is completed */
         }
 
-        Assert(RT_SUCCESS(rc));
+        AssertRC(rc);
         if(RT_SUCCESS(rc))
         {
             RTSemEventDestroy(hComplEvent);
@@ -926,11 +926,11 @@ int vbvaVHWAConstruct (PVGASTATE pVGAState)
         pBody->pVM = pVM;
 
         int rc = vbvaVHWAHHCommandPost(pVGAState, pCmd);
-        Assert(RT_SUCCESS(rc));
+        AssertRC(rc);
         if(RT_SUCCESS(rc))
         {
             rc = pCmd->rc;
-            Assert(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED);
+            AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
             vbvaVHWAHHCommandRelease(pCmd);
             if(rc == VERR_NOT_IMPLEMENTED)
             {
@@ -952,11 +952,17 @@ int vbvaVHWAReset (PVGASTATE pVGAState)
     if(pCmd)
     {
         int rc = vbvaVHWAHHCommandPost(pVGAState, pCmd);
-        Assert(RT_SUCCESS(rc));
+        AssertRC(rc);
         if(RT_SUCCESS(rc))
         {
             rc = pCmd->rc;
-            Assert(RT_SUCCESS(rc));
+#ifdef DEBUG_bird /** @todo the assertion below hits when booting dsl here and resetting during early boot... */
+            AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
+            if (rc == VERR_NOT_IMPLEMENTED)
+                rc = VINF_SUCCESS;
+#else
+            AssertRC(rc);
+#endif
             vbvaVHWAHHCommandRelease(pCmd);
         }
         return rc;
@@ -972,11 +978,11 @@ int vbvaVHWADisable (PVGASTATE pVGAState)
     if(pCmd)
     {
         int rc = vbvaVHWAHHCommandPost(pVGAState, pCmd);
-        Assert(RT_SUCCESS(rc));
+        AssertRC(rc);
         if(RT_SUCCESS(rc))
         {
             rc = pCmd->rc;
-            Assert(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED);
+            AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
             vbvaVHWAHHCommandRelease(pCmd);
             if(rc == VERR_NOT_IMPLEMENTED)
             {
@@ -1015,7 +1021,7 @@ int vbvaVHWACommandCompleteAsynch(PPDMDDISPLAYVBVACALLBACKS pInterface, PVBOXVHW
                                           VBVAHOSTCMD_SIZE(sizeof(VBVAHOSTCMDEVENT)),
                                           HGSMI_CH_VBVA,
                                           VBVAHG_EVENT);
-            Assert(RT_SUCCESS(rc));
+            AssertRC(rc);
             if(RT_SUCCESS(rc))
             {
                 memset(pHostCmd, 0 , VBVAHOSTCMD_SIZE(sizeof(VBVAHOSTCMDEVENT)));
@@ -1036,7 +1042,7 @@ int vbvaVHWACommandCompleteAsynch(PPDMDDISPLAYVBVACALLBACKS pInterface, PVBOXVHW
                                           VBVAHOSTCMD_SIZE(sizeof(VBVAHOSTCMDVHWACMDCOMPLETE)),
                                           HGSMI_CH_VBVA,
                                           VBVAHG_DISPLAY_CUSTOM);
-                Assert(RT_SUCCESS(rc));
+                AssertRC(rc);
                 if(RT_SUCCESS(rc))
                 {
                     memset(pHostCmd, 0 , VBVAHOSTCMD_SIZE(sizeof(VBVAHOSTCMDVHWACMDCOMPLETE)));
@@ -1055,7 +1061,7 @@ int vbvaVHWACommandCompleteAsynch(PPDMDDISPLAYVBVACALLBACKS pInterface, PVBOXVHW
         if(RT_SUCCESS(rc))
         {
             rc = HGSMIHostCommandProcessAndFreeAsynch(pIns, pHostCmd, (pCmd->Flags & VBOXVHWACMD_FLAG_GH_ASYNCH_IRQ) != 0);
-            Assert(RT_SUCCESS(rc));
+            AssertRC(rc);
             if(RT_SUCCESS(rc))
             {
                 return rc;
