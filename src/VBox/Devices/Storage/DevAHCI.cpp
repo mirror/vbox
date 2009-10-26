@@ -5905,7 +5905,7 @@ static bool ahciWaitForAllAsyncIOIsFinished(PPDMDEVINS pDevIns, unsigned cMillie
             break;
 
         /* Sleep a bit. */
-        RTThreadSleep(100);
+        RTThreadSleep(100); /** @todo wait on something which can be woken up. 100ms is too long for teleporting VMs! */
     }
     return fAllFinished;
 }
