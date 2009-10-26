@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox storage devices:
- * LsiLogic LSI53c1030 SCSI controller.
+ * VBox storage devices: LsiLogic LSI53c1030 SCSI controller.
  */
 
 /*
@@ -20,6 +18,7 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
+
 //#define DEBUG
 #define LOG_GROUP LOG_GROUP_DEV_LSILOGICSCSI
 #include <VBox/pdmdev.h>
@@ -64,7 +63,11 @@
 #define LSILOGICSCSI_PCI_SUBSYSTEM_VENDOR_ID  (0x1000)
 #define LSILOGICSCSI_PCI_SUBSYSTEM_ID         (0x8000)
 
-#define LSILOGIC_SAVED_STATE_MINOR_VERSION 1
+/** The current saved state version. */
+#define LSILOGIC_SAVED_STATE_VERSION          2
+/** The saved state version used by VirtualBox 3.0 and earlier.  It does not
+ * include the device config part. */
+#define LSILOGIC_SAVED_STATE_VERSION_VBOX_30  1
 
 /**
  * A simple SG element for a 64bit adress.
@@ -4793,7 +4796,7 @@ static bool lsilogicWaitForAsyncIOFinished(PLSILOGICSCSI pLsiLogic, unsigned cMi
      * Wait for any pending async operation to finish
      */
     u64Start = RTTimeMilliTS();
-    do
+    for (;;)
     {
         fIdle = true;
 
@@ -4807,14 +4810,26 @@ static bool lsilogicWaitForAsyncIOFinished(PLSILOGICSCSI pLsiLogic, unsigned cMi
                 break;
             }
         }
-        if (RTTimeMilliTS() - u64Start >= cMillies)
+        if (   fIdle
+            || RTTimeMilliTS() - u64Start >= cMillies)
             break;
 
         /* Sleep for a bit. */
-        RTThreadSleep(100);
-    } while (!fIdle);
+        RTThreadSleep(100); /** @todo wait on something which can be woken up. 100ms is too long for teleporting VMs! */
+    }
 
     return fIdle;
+}
+
+static DECLCALLBACK(int) lsilogicLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+
+    /* Save the device config. */
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
+        SSMR3PutBool(pSSM, pThis->aDeviceStates[i].pDrvBase != NULL);
+
+    return VINF_SSM_DONT_CALL_AGAIN;
 }
 
 static DECLCALLBACK(int) lsilogicSaveLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
@@ -4836,6 +4851,7 @@ static DECLCALLBACK(int) lsilogicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     /* Every device first. */
+    lsilogicSaveLoadPrep(pDevIns, pSSM);
     for (unsigned i = 0; i < RT_ELEMENTS(pLsiLogic->aDeviceStates); i++)
     {
         PLSILOGICDEVICE pDevice = &pLsiLogic->aDeviceStates[i];
@@ -4895,12 +4911,31 @@ static DECLCALLBACK(int) lsilogicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 static DECLCALLBACK(int) lsilogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI   pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    int             rc;
 
-    /* We support saved states only from this and older versions. */
-    if (uVersion > LSILOGIC_SAVED_STATE_MINOR_VERSION)
+    if (    uVersion != LSILOGIC_SAVED_STATE_VERSION
+        &&  uVersion != LSILOGIC_SAVED_STATE_VERSION_VBOX_30)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+
+    /* device config */
+    if (uVersion > LSILOGIC_SAVED_STATE_VERSION_VBOX_30)
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(pLsiLogic->aDeviceStates); i++)
+        {
+            bool fPresent;
+            rc = SSMR3GetBool(pSSM, &fPresent);
+            AssertRCReturn(rc, rc);
+            if (fPresent != (pLsiLogic->aDeviceStates[i].pDrvBase != NULL))
+            {
+                LogRel(("LsiLogic: Target %u config mismatch: config=%RTbool state=%RTbool\n",
+                        i, pLsiLogic->aDeviceStates[i].pDrvBase != NULL, fPresent));
+                return VERR_SSM_LOAD_CONFIG_MISMATCH;
+            }
+        }
+    }
+    if (uPass != SSM_PASS_FINAL)
+        return VINF_SUCCESS;
 
     /* Every device first. */
     for (unsigned i = 0; i < RT_ELEMENTS(pLsiLogic->aDeviceStates); i++)
@@ -4967,7 +5002,7 @@ static DECLCALLBACK(int) lsilogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     }
 
     uint32_t u32;
-    int rc = SSMR3GetU32(pSSM, &u32);
+    rc = SSMR3GetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
         return rc;
     AssertMsgReturn(u32 == ~0U, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
@@ -5413,8 +5448,8 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic cannot register legacy I/O handlers"));
 
     /* Register save state handlers. */
-    rc = PDMDevHlpSSMRegisterEx(pDevIns, LSILOGIC_SAVED_STATE_MINOR_VERSION, sizeof(*pThis), NULL,
-                                NULL, NULL, NULL,
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, LSILOGIC_SAVED_STATE_VERSION, sizeof(*pThis), NULL,
+                                NULL,                 lsilogicLiveExec, NULL,
                                 lsilogicSaveLoadPrep, lsilogicSaveExec, NULL,
                                 lsilogicSaveLoadPrep, lsilogicLoadExec, NULL);
     if (RT_FAILURE(rc))
@@ -5488,3 +5523,4 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
 
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
+
