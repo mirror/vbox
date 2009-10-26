@@ -47,6 +47,7 @@ class VBoxSettingsSelector: public QObject
 public:
 
     VBoxSettingsSelector (QWidget *aParent = NULL);
+    ~VBoxSettingsSelector();
 
     virtual QWidget *widget() const = 0;
 

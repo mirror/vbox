@@ -72,6 +72,12 @@ VBoxSettingsSelector::VBoxSettingsSelector (QWidget *aParent /* = NULL */)
 {
 }
 
+VBoxSettingsSelector::~VBoxSettingsSelector()
+{
+    qDeleteAll (mItemList);
+    mItemList.clear();
+}
+
 void VBoxSettingsSelector::setItemText (int aId, const QString &aText)
 {
     if (SelectorItem *item = findItem (aId))
