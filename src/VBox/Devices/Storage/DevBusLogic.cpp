@@ -2260,40 +2260,6 @@ static DECLCALLBACK(bool) buslogicNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQU
     return true;
 }
 
-static bool buslogicWaitForAsyncIOFinished(PBUSLOGIC pBusLogic, unsigned cMillies)
-{
-    uint64_t u64Start;
-    bool     fIdle;
-
-    /*
-     * Wait for any pending async operation to finish
-     */
-    u64Start = RTTimeMilliTS();
-    for (;;)
-    {
-        fIdle = true;
-
-        /* Check every port. */
-        for (unsigned i = 0; i < RT_ELEMENTS(pBusLogic->aDeviceStates); i++)
-        {
-            PBUSLOGICDEVICE pBusLogicDevice = &pBusLogic->aDeviceStates[i];
-            if (ASMAtomicReadU32(&pBusLogicDevice->cOutstandingRequests))
-            {
-                fIdle = false;
-                break;
-            }
-        }
-        if (   fIdle
-            || RTTimeMilliTS() - u64Start >= cMillies)
-            break;
-
-        /* Sleep for a bit. */
-        RTThreadSleep(100); /** @todo wait on something which can be woken up. 100ms is too long for teleporting VMs! */
-    }
-
-    return fIdle;
-}
-
 static DECLCALLBACK(int) buslogicLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
@@ -2303,20 +2269,6 @@ static DECLCALLBACK(int) buslogicLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
         SSMR3PutBool(pSSM, pThis->aDeviceStates[i].fPresent);
 
     return VINF_SSM_DONT_CALL_AGAIN;
-}
-
-static DECLCALLBACK(int) buslogicSaveLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
-{
-    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
-
-    /* Wait that no task is pending on any device. */
-    if (!buslogicWaitForAsyncIOFinished(pBusLogic, 20000))
-    {
-        AssertLogRelMsgFailed(("BusLogic: There are still tasks outstanding\n"));
-        return VERR_TIMEOUT;
-    }
-
-    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) buslogicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
@@ -2624,15 +2576,6 @@ static DECLCALLBACK(int)  buslogicAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint
     return rc;
 }
 
-static DECLCALLBACK(void) buslogicSuspend(PPDMDEVINS pDevIns)
-{
-    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
-
-    /* Wait that no task is pending on any device. */
-    if (!buslogicWaitForAsyncIOFinished(pBusLogic, 20000))
-        AssertLogRelMsgFailed(("BusLogic: There are still tasks outstanding\n"));
-}
-
 static DECLCALLBACK(void) buslogicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     uint32_t i;
@@ -2834,10 +2777,8 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot attach to status driver"));
     }
 
-    rc = PDMDevHlpSSMRegisterEx(pDevIns, BUSLOGIC_SAVED_STATE_MINOR_VERSION, sizeof(*pThis), NULL,
-                                NULL,                 buslogicLiveExec, NULL,
-                                buslogicSaveLoadPrep, buslogicSaveExec, NULL,
-                                buslogicSaveLoadPrep, buslogicLoadExec, NULL);
+    rc = PDMDevHlpSSMRegister3(pDevIns, BUSLOGIC_SAVED_STATE_MINOR_VERSION, sizeof(*pThis),
+                               buslogicLiveExec, buslogicSaveExec, buslogicLoadExec);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot register save state handlers"));
 
@@ -2863,9 +2804,7 @@ const PDMDEVREG g_DeviceBusLogic =
     /* pszDescription */
     "BusLogic BT-958 SCSI host adapter.\n",
     /* fFlags */
-      PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0
-    | PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION
-    | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION,
+    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_STORAGE,
     /* cMaxInstances */
@@ -2885,7 +2824,7 @@ const PDMDEVREG g_DeviceBusLogic =
     /* pfnReset */
     buslogicReset,
     /* pfnSuspend */
-    buslogicSuspend,
+    NULL,
     /* pfnResume */
     NULL,
     /* pfnAttach */
