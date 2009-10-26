@@ -68,8 +68,11 @@
 #define RW_STATE_WORD0 3
 #define RW_STATE_WORD1 4
 
-/** The version of the saved state. */
-#define PIT_SAVED_STATE_VERSION 2
+/** The current saved state version. */
+#define PIT_SAVED_STATE_VERSION             3
+/** The saved state version used by VirtualBox 3.0 and earlier.
+ * This did not include the config part. */
+#define PIT_SAVED_STATE_VERSION_VBOX_30     2
 
 /** @def FAKE_REFRESH_CLOCK
  * Define this to flip the 15usec refresh bit on every read.
@@ -139,11 +142,13 @@ typedef struct PITState
 #else
     uint32_t                Alignment1;
 #endif
+    /** Config: I/O port base. */
+    RTIOPORT                IOPortBaseCfg;
+    /** Config: Speaker enabled. */
+    bool                    fSpeakerCfg;
+    bool                    afAlignment0[HC_ARCH_BITS == 32 ? 1 : 5];
     /** Pointer to the device instance. */
     PPDMDEVINSR3            pDevIns;
-#if HC_ARCH_BITS == 32
-    uint32_t                Alignment0;
-#endif
     /** Number of IRQs that's been raised. */
     STAMCOUNTER             StatPITIrq;
     /** Profiling the timer callback handler. */
@@ -709,100 +714,140 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
 
 /**
- * Saves a state of the programmable interval timer device.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to save the state to.
+ * @copydoc FNSSMDEVLIVEEXEC
  */
-static DECLCALLBACK(int) pitSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) pitLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    PITState *pThis = PDMINS_2_DATA(pDevIns, PITState *);
+    SSMR3PutIOPort(pSSM, pThis->IOPortBaseCfg);
+    SSMR3PutU8(    pSSM, pThis->channels[0].irq);
+    SSMR3PutBool(  pSSM, pThis->fSpeakerCfg);
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
+
+
+/**
+ * @copydoc FNSSMDEVSAVEEXEC
+ */
+static DECLCALLBACK(int) pitSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PITState *pThis = PDMINS_2_DATA(pDevIns, PITState *);
     unsigned i;
 
+    /* The config. */
+    pitLiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
+
+    /* The state. */
     for (i = 0; i < RT_ELEMENTS(pThis->channels); i++)
     {
         PITChannelState *s = &pThis->channels[i];
-        SSMR3PutU32(pSSMHandle, s->count);
-        SSMR3PutU16(pSSMHandle, s->latched_count);
-        SSMR3PutU8(pSSMHandle, s->count_latched);
-        SSMR3PutU8(pSSMHandle, s->status_latched);
-        SSMR3PutU8(pSSMHandle, s->status);
-        SSMR3PutU8(pSSMHandle, s->read_state);
-        SSMR3PutU8(pSSMHandle, s->write_state);
-        SSMR3PutU8(pSSMHandle, s->write_latch);
-        SSMR3PutU8(pSSMHandle, s->rw_mode);
-        SSMR3PutU8(pSSMHandle, s->mode);
-        SSMR3PutU8(pSSMHandle, s->bcd);
-        SSMR3PutU8(pSSMHandle, s->gate);
-        SSMR3PutU64(pSSMHandle, s->count_load_time);
-        SSMR3PutU64(pSSMHandle, s->u64NextTS);
-        SSMR3PutU64(pSSMHandle, s->u64ReloadTS);
-        SSMR3PutS64(pSSMHandle, s->next_transition_time);
+        SSMR3PutU32(pSSM, s->count);
+        SSMR3PutU16(pSSM, s->latched_count);
+        SSMR3PutU8(pSSM, s->count_latched);
+        SSMR3PutU8(pSSM, s->status_latched);
+        SSMR3PutU8(pSSM, s->status);
+        SSMR3PutU8(pSSM, s->read_state);
+        SSMR3PutU8(pSSM, s->write_state);
+        SSMR3PutU8(pSSM, s->write_latch);
+        SSMR3PutU8(pSSM, s->rw_mode);
+        SSMR3PutU8(pSSM, s->mode);
+        SSMR3PutU8(pSSM, s->bcd);
+        SSMR3PutU8(pSSM, s->gate);
+        SSMR3PutU64(pSSM, s->count_load_time);
+        SSMR3PutU64(pSSM, s->u64NextTS);
+        SSMR3PutU64(pSSM, s->u64ReloadTS);
+        SSMR3PutS64(pSSM, s->next_transition_time);
         if (s->CTX_SUFF(pTimer))
-            TMR3TimerSave(s->CTX_SUFF(pTimer), pSSMHandle);
+            TMR3TimerSave(s->CTX_SUFF(pTimer), pSSM);
     }
 
-    SSMR3PutS32(pSSMHandle, pThis->speaker_data_on);
+    SSMR3PutS32(pSSM, pThis->speaker_data_on);
 #ifdef FAKE_REFRESH_CLOCK
-    return SSMR3PutS32(pSSMHandle, pThis->dummy_refresh_clock);
+    return SSMR3PutS32(pSSM, pThis->dummy_refresh_clock);
 #else
-    return SSMR3PutS32(pSSMHandle, 0);
+    return SSMR3PutS32(pSSM, 0);
 #endif
 }
 
 
 /**
- * Loads a saved programmable interval timer device state.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to the saved state.
- * @param   uVersion    The data unit version number.
- * @param   uPass       The data pass.
+ * @copydoc FNSSMDEVLOADEXEC
  */
-static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PITState *pThis = PDMINS_2_DATA(pDevIns, PITState *);
+    PITState   *pThis = PDMINS_2_DATA(pDevIns, PITState *);
+    int         rc;
 
-    if (uVersion != PIT_SAVED_STATE_VERSION)
+    if (    uVersion != PIT_SAVED_STATE_VERSION
+        &&  uVersion != PIT_SAVED_STATE_VERSION_VBOX_30)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
+    /* The config. */
+    if (uVersion > PIT_SAVED_STATE_VERSION_VBOX_30)
+    {
+        RTIOPORT IOPortBaseCfg;
+        rc = SSMR3GetIOPort(pSSM, &IOPortBaseCfg); AssertRCReturn(rc, rc);
+        if (IOPortBaseCfg != pThis->IOPortBaseCfg)
+        {
+            LogRel(("PIT: Config mismatch - IOPortBaseCfg: saved=%RTiop config=%RTiop\n", IOPortBaseCfg, pThis->IOPortBaseCfg));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
+
+        uint8_t u8Irq;
+        rc = SSMR3GetU8(pSSM, &u8Irq); AssertRCReturn(rc, rc);
+        if (u8Irq != pThis->channels[0].irq)
+        {
+            LogRel(("PIT: Config mismatch - u8Irq: saved=%#x config=%#x\n", u8Irq, pThis->channels[0].irq));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
+
+        bool fSpeakerCfg;
+        rc = SSMR3GetBool(pSSM, &fSpeakerCfg); AssertRCReturn(rc, rc);
+        if (fSpeakerCfg != pThis->fSpeakerCfg)
+        {
+            LogRel(("PIT: Config mismatch - fSpeakerCfg: saved=%RTbool config=%RTbool\n", fSpeakerCfg, pThis->fSpeakerCfg));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
+    }
+
+    if (uPass != SSM_PASS_FINAL)
+        return VINF_SUCCESS;
+
+    /* The state. */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->channels); i++)
     {
         PITChannelState *s = &pThis->channels[i];
-        SSMR3GetU32(pSSMHandle, &s->count);
-        SSMR3GetU16(pSSMHandle, &s->latched_count);
-        SSMR3GetU8(pSSMHandle, &s->count_latched);
-        SSMR3GetU8(pSSMHandle, &s->status_latched);
-        SSMR3GetU8(pSSMHandle, &s->status);
-        SSMR3GetU8(pSSMHandle, &s->read_state);
-        SSMR3GetU8(pSSMHandle, &s->write_state);
-        SSMR3GetU8(pSSMHandle, &s->write_latch);
-        SSMR3GetU8(pSSMHandle, &s->rw_mode);
-        SSMR3GetU8(pSSMHandle, &s->mode);
-        SSMR3GetU8(pSSMHandle, &s->bcd);
-        SSMR3GetU8(pSSMHandle, &s->gate);
-        SSMR3GetU64(pSSMHandle, &s->count_load_time);
-        SSMR3GetU64(pSSMHandle, &s->u64NextTS);
-        SSMR3GetU64(pSSMHandle, &s->u64ReloadTS);
-        SSMR3GetS64(pSSMHandle, &s->next_transition_time);
+        SSMR3GetU32(pSSM, &s->count);
+        SSMR3GetU16(pSSM, &s->latched_count);
+        SSMR3GetU8(pSSM, &s->count_latched);
+        SSMR3GetU8(pSSM, &s->status_latched);
+        SSMR3GetU8(pSSM, &s->status);
+        SSMR3GetU8(pSSM, &s->read_state);
+        SSMR3GetU8(pSSM, &s->write_state);
+        SSMR3GetU8(pSSM, &s->write_latch);
+        SSMR3GetU8(pSSM, &s->rw_mode);
+        SSMR3GetU8(pSSM, &s->mode);
+        SSMR3GetU8(pSSM, &s->bcd);
+        SSMR3GetU8(pSSM, &s->gate);
+        SSMR3GetU64(pSSM, &s->count_load_time);
+        SSMR3GetU64(pSSM, &s->u64NextTS);
+        SSMR3GetU64(pSSM, &s->u64ReloadTS);
+        SSMR3GetS64(pSSM, &s->next_transition_time);
         if (s->CTX_SUFF(pTimer))
         {
-            TMR3TimerLoad(s->CTX_SUFF(pTimer), pSSMHandle);
+            TMR3TimerLoad(s->CTX_SUFF(pTimer), pSSM);
             LogRel(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=%d) (restore)\n",
                     s->mode, s->count, s->count, PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100, i));
         }
         pThis->channels[0].cRelLogEntries = 0;
     }
 
-    SSMR3GetS32(pSSMHandle, &pThis->speaker_data_on);
+    SSMR3GetS32(pSSM, &pThis->speaker_data_on);
 #ifdef FAKE_REFRESH_CLOCK
-    return SSMR3GetS32(pSSMHandle, &pThis->dummy_refresh_clock);
+    return SSMR3GetS32(pSSM, &pThis->dummy_refresh_clock);
 #else
     int32_t u32Dummy;
-    return SSMR3GetS32(pSSMHandle, &u32Dummy);
+    return SSMR3GetS32(pSSM, &u32Dummy);
 #endif
 }
 
@@ -985,7 +1030,9 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read R0Enabled as boolean"));
 
-    pThis->pDevIns = pDevIns;
+    pThis->pDevIns         = pDevIns;
+    pThis->IOPortBaseCfg   = u16Base;
+    pThis->fSpeakerCfg     = fSpeaker;
     pThis->channels[0].irq = u8Irq;
     for (i = 0; i < RT_ELEMENTS(pThis->channels); i++)
     {
@@ -1034,7 +1081,7 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         }
     }
 
-    rc = PDMDevHlpSSMRegister(pDevIns, PIT_SAVED_STATE_VERSION, sizeof(*pThis), pitSaveExec, pitLoadExec);
+    rc = PDMDevHlpSSMRegister3(pDevIns, PIT_SAVED_STATE_VERSION, sizeof(*pThis), pitLiveExec, pitSaveExec, pitLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
