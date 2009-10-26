@@ -1524,23 +1524,13 @@ static void arp_input(PNATState pData, struct mbuf *m)
     }
 }
 
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
-void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
-#else
 void slirp_input(PNATState pData, void *pvArg)
-#endif
 {
     struct mbuf *m;
     int proto;
     static bool fWarnedIpv6;
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
-    struct ethhdr *eh = (struct ethhdr*)pkt;
-    int size = 0;
-#else
     struct ethhdr *eh;
-#endif
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m = (struct mbuf *)pvArg;
     if (m->m_len < ETH_HLEN)
     {
@@ -1550,55 +1540,6 @@ void slirp_input(PNATState pData, void *pvArg)
     }
     eh = mtod(m, struct ethhdr *);
     proto = ntohs(eh->h_proto);
-#else
-    Log2(("NAT: slirp_input %d\n", pkt_len));
-    if (pkt_len < ETH_HLEN)
-    {
-        LogRel(("NAT: packet having size %d has been ingnored\n", pkt_len));
-        return;
-    }
-    Log4(("NAT: in:%R[ether]->%R[ether]\n", &eh->h_source, &eh->h_dest));
-
-    if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) == 0)
-    {
-        /* @todo vasily: add ether logging routine in debug.c */
-        Log(("NAT: packet was addressed to other MAC\n"));
-        RTMemFree((void *)pkt);
-        return;
-    }
-
-    if (pkt_len < MSIZE)
-    {
-        size = MCLBYTES;
-    }
-    else if (pkt_len < MCLBYTES)
-    {
-        size = MCLBYTES;
-    }
-    else if(pkt_len < MJUM9BYTES)
-    {
-        size = MJUM9BYTES;
-    }
-    else if (pkt_len < MJUM16BYTES)
-    {
-        size = MJUM16BYTES;
-    }
-    else
-    {
-        AssertMsgFailed(("Unsupported size"));
-    }
-    m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
-    if (!m)
-    {
-        LogRel(("NAT: can't allocate new mbuf\n"));
-        RTMemFree((void *)pkt);
-        return;
-    }
-
-    m->m_len = pkt_len ;
-    memcpy(m->m_data, pkt, pkt_len);
-    proto = ntohs(*(uint16_t *)(pkt + 12));
-#endif
     /* Note: we add to align the IP header */
 
 
@@ -1619,7 +1560,6 @@ void slirp_input(PNATState pData, void *pvArg)
             M_ASSERTPKTHDR(m);
             m->m_pkthdr.header = mtod(m, void *);
 #endif
-#if 1
             if (   pData->fmbuf_water_line
                 && pData->fmbuf_water_warn_sent == 0
                 && (curtime - pData->tsmbuf_water_warn_sent) > 500)
@@ -1628,7 +1568,6 @@ void slirp_input(PNATState pData, void *pvArg)
                 pData->fmbuf_water_warn_sent = 1;
                 pData->tsmbuf_water_warn_sent = curtime;
             }
-#endif
             ip_input(pData, m);
             break;
         case ETH_P_IPV6:
@@ -1644,9 +1583,6 @@ void slirp_input(PNATState pData, void *pvArg)
             m_free(pData, m);
             break;
     }
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
-    RTMemFree((void *)pkt);
-#endif
 }
 
 /* output the IP packet to the ethernet device */
@@ -2106,7 +2042,6 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     m->m_len = sizeof(struct arphdr) + ETH_HLEN;
 #endif
     if_encap(pData, ETH_P_ARP, m, ETH_ENCAP_URG);
-    Log(("NAT: ARP request sent\n"));
 }
 
 /* updates the arp cache
