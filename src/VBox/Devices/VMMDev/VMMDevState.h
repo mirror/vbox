@@ -175,6 +175,9 @@ typedef struct VMMDevState
     /** Don't clear credentials */
     bool fKeepCredentials;
 
+    /** Heap enabled. */
+    bool fHeapEnabled;
+
 #ifdef VBOX_WITH_HGCM
     /** List of pending HGCM requests, used for saving the HGCM state. */
     R3PTRTYPE(PVBOXHGCMCMD) pHGCMCmdList;
