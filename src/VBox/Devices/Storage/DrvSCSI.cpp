@@ -670,6 +670,16 @@ static int drvscsiProcessRequestOne(PDRVSCSI pThis, PPDMSCSIREQUEST pRequest)
 }
 
 /**
+ * Request function to syncronize the request execution.
+ *
+ * @returns VINF_SUCCESS.
+ */
+static int drvscsiAsyncIOLoopSyncCallback(void)
+{
+    return VINF_SUCCESS;
+}
+
+/**
  * Request function to wakeup the thread.
  *
  * @returns VWRN_STATE_CHANGED.
@@ -715,6 +725,9 @@ static int drvscsiAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 
     rc = RTReqCall(pThis->pQueueRequests, &pReq, 10000 /* 10 sec. */, (PFNRT)drvscsiAsyncIOLoopWakeupFunc, 0);
     AssertMsgRC(rc, ("Inserting request into queue failed rc=%Rrc\n", rc));
+    if (RT_SUCCESS(rc))
+        RTReqFree(pReq);
+    /*else: leak it */
 
     return rc;
 }
@@ -734,6 +747,25 @@ static DECLCALLBACK(int) drvscsiRequestSend(PPDMISCSICONNECTOR pInterface, PPDMS
     AssertMsgReturn(RT_SUCCESS(rc), ("Inserting request into queue failed rc=%Rrc\n", rc), rc);
 
     return VINF_SUCCESS;
+}
+
+/** @copydoc PDMISCSICONNECTOR::pfnSyncronizeRequests. */
+static DECLCALLBACK(int) drvscsiSyncronizeRequests(PPDMISCSICONNECTOR pInterface, uint32_t cMillies)
+{
+    int rc;
+    PDRVSCSI pThis = PDMISCSICONNECTOR_2_DRVSCSI(pInterface);
+    PRTREQ pReq;
+
+    Assert(cMillies > 100);
+    AssertReturn(pThis->pQueueRequests, VERR_INVALID_STATE);
+
+    rc = RTReqCall(pThis->pQueueRequests, &pReq, cMillies, (PFNRT)drvscsiAsyncIOLoopSyncCallback, 0);
+    AssertMsgRC(rc, ("Inserting request into queue failed rc=%Rrc\n", rc));
+    if (RT_SUCCESS(rc))
+        RTReqFree(pReq);
+    /*else: leak it */
+
+    return rc;
 }
 
 /* -=-=-=-=- IBase -=-=-=-=- */
@@ -793,6 +825,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
      */
     pDrvIns->IBase.pfnQueryInterface                    = drvscsiQueryInterface;
     pThis->ISCSIConnector.pfnSCSIRequestSend            = drvscsiRequestSend;
+    pThis->ISCSIConnector.pfnSyncronizeRequests         = drvscsiSyncronizeRequests;
 
     /*
      * Try attach driver below and query it's block interface.
@@ -903,9 +936,9 @@ const PDMDRVREG g_DrvSCSI =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
