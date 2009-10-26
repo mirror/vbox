@@ -554,6 +554,8 @@ int main()
     GEN_CHECK_OFF(RTCState, current_tm.tm_wday);
     GEN_CHECK_OFF(RTCState, current_tm.tm_yday);
     GEN_CHECK_OFF(RTCState, irq);
+    GEN_CHECK_OFF(RTCState, fUTC);
+    GEN_CHECK_OFF(RTCState, IOPortBase);
     GEN_CHECK_OFF(RTCState, pPeriodicTimerR0);
     GEN_CHECK_OFF(RTCState, pPeriodicTimerR3);
     GEN_CHECK_OFF(RTCState, pPeriodicTimerRC);
@@ -568,7 +570,6 @@ int main()
     GEN_CHECK_OFF(RTCState, pDevInsR0);
     GEN_CHECK_OFF(RTCState, pDevInsR3);
     GEN_CHECK_OFF(RTCState, pDevInsRC);
-    GEN_CHECK_OFF(RTCState, fUTC);
     GEN_CHECK_OFF(RTCState, RtcReg);
     GEN_CHECK_OFF(RTCState, pRtcHlpR3);
     GEN_CHECK_OFF(RTCState, cRelLogEntries);

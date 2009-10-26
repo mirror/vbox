@@ -110,6 +110,13 @@ RT_C_DECLS_END
 #define REG_B_UIE 0x10
 
 
+/** The saved state version. */
+#define RTC_SAVED_STATE_VERSION             2
+/** The saved state version used by VirtualBox 3.0 and earlier.
+ * This does not include the configuration.  */
+#define RTC_SAVED_STATE_VERSION_VBOX_30     1
+
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -132,7 +139,10 @@ struct RTCState {
     uint8_t cmos_index;
     uint8_t Alignment0[7];
     struct my_tm current_tm;
+    /** The configured IRQ. */
     int32_t irq;
+    /** The configured I/O port base. */
+    RTIOPORT IOPortBase;
     /** Use UTC or local time initially. */
     bool fUTC;
     /* periodic timer */
@@ -585,77 +595,116 @@ PDMBOTHCBDECL(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *p
     rtc_update_second2((RTCState *)pvUser);
 }
 
-
 #ifdef IN_RING3
+
 /**
- * Saves a state of the programmable interval timer device.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to save the state to.
+ * @copydoc FNSSMDEVLIVEEXEC
  */
-static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) rtcLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
 
-    SSMR3PutMem(pSSMHandle, pThis->cmos_data, 128);
-    SSMR3PutU8(pSSMHandle, pThis->cmos_index);
+    SSMR3PutU8(    pSSM, pThis->irq);
+    SSMR3PutIOPort(pSSM, pThis->IOPortBase);
+    SSMR3PutBool(  pSSM, pThis->fUTC);
 
-    SSMR3PutS32(pSSMHandle, pThis->current_tm.tm_sec);
-    SSMR3PutS32(pSSMHandle, pThis->current_tm.tm_min);
-    SSMR3PutS32(pSSMHandle, pThis->current_tm.tm_hour);
-    SSMR3PutS32(pSSMHandle, pThis->current_tm.tm_wday);
-    SSMR3PutS32(pSSMHandle, pThis->current_tm.tm_mday);
-    SSMR3PutS32(pSSMHandle, pThis->current_tm.tm_mon);
-    SSMR3PutS32(pSSMHandle, pThis->current_tm.tm_year);
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
 
-    TMR3TimerSave(pThis->CTX_SUFF(pPeriodicTimer), pSSMHandle);
 
-    SSMR3PutS64(pSSMHandle, pThis->next_periodic_time);
+/**
+ * @copydoc FNSSMDEVSAVEEXEC
+ */
+static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
 
-    SSMR3PutS64(pSSMHandle, pThis->next_second_time);
-    TMR3TimerSave(pThis->CTX_SUFF(pSecondTimer), pSSMHandle);
-    TMR3TimerSave(pThis->CTX_SUFF(pSecondTimer2), pSSMHandle);
+    /* The config. */
+    rtcLiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
+
+    /* The state. */
+    SSMR3PutMem(pSSM, pThis->cmos_data, 128);
+    SSMR3PutU8(pSSM, pThis->cmos_index);
+
+    SSMR3PutS32(pSSM, pThis->current_tm.tm_sec);
+    SSMR3PutS32(pSSM, pThis->current_tm.tm_min);
+    SSMR3PutS32(pSSM, pThis->current_tm.tm_hour);
+    SSMR3PutS32(pSSM, pThis->current_tm.tm_wday);
+    SSMR3PutS32(pSSM, pThis->current_tm.tm_mday);
+    SSMR3PutS32(pSSM, pThis->current_tm.tm_mon);
+    SSMR3PutS32(pSSM, pThis->current_tm.tm_year);
+
+    TMR3TimerSave(pThis->CTX_SUFF(pPeriodicTimer), pSSM);
+
+    SSMR3PutS64(pSSM, pThis->next_periodic_time);
+
+    SSMR3PutS64(pSSM, pThis->next_second_time);
+    TMR3TimerSave(pThis->CTX_SUFF(pSecondTimer), pSSM);
+    TMR3TimerSave(pThis->CTX_SUFF(pSecondTimer2), pSSM);
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * Loads a saved programmable interval timer device state.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to the saved state.
- * @param   uVersion    The data unit version number.
- * @param   uPass       The data pass.
+ * @copydoc FNSSMDEVLOADEXEC
  */
-static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    RTCState   *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    int         rc;
 
-    if (uVersion != 1)
+    if (    uVersion != RTC_SAVED_STATE_VERSION
+        &&  uVersion != RTC_SAVED_STATE_VERSION_VBOX_30)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    SSMR3GetMem(pSSMHandle, pThis->cmos_data, 128);
-    SSMR3GetU8(pSSMHandle, &pThis->cmos_index);
+    /* The config. */
+    if (uVersion > RTC_SAVED_STATE_VERSION_VBOX_30)
+    {
+        uint8_t u8Irq;
+        rc = SSMR3GetU8(pSSM, &u8Irq);          AssertRCReturn(rc, rc);
+        if (u8Irq != pThis->irq)
+        {
+            LogRel(("RTC: Config mismatch - u8Irq: saved=%#x config=%#x\n", u8Irq, pThis->irq));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
 
-    SSMR3GetS32(pSSMHandle, &pThis->current_tm.tm_sec);
-    SSMR3GetS32(pSSMHandle, &pThis->current_tm.tm_min);
-    SSMR3GetS32(pSSMHandle, &pThis->current_tm.tm_hour);
-    SSMR3GetS32(pSSMHandle, &pThis->current_tm.tm_wday);
-    SSMR3GetS32(pSSMHandle, &pThis->current_tm.tm_mday);
-    SSMR3GetS32(pSSMHandle, &pThis->current_tm.tm_mon);
-    SSMR3GetS32(pSSMHandle, &pThis->current_tm.tm_year);
+        RTIOPORT IOPortBase;
+        rc = SSMR3GetIOPort(pSSM, &IOPortBase); AssertRCReturn(rc, rc);
+        if (IOPortBase != pThis->IOPortBase)
+        {
+            LogRel(("RTC: Config mismatch - IOPortBase: saved=%RTiop config=%RTiop\n", IOPortBase, pThis->IOPortBase));
+            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+        }
 
-    TMR3TimerLoad(pThis->CTX_SUFF(pPeriodicTimer), pSSMHandle);
+        bool fUTC;
+        rc = SSMR3GetBool(pSSM, &fUTC);         AssertRCReturn(rc, rc);
+        if (fUTC != pThis->fUTC)
+            LogRel(("RTC: Config mismatch - fUTC: saved=%RTbool config=%RTbool\n", fUTC, pThis->fUTC));
+    }
 
-    SSMR3GetS64(pSSMHandle, &pThis->next_periodic_time);
+    if (uPass != SSM_PASS_FINAL)
+        return VINF_SUCCESS;
 
-    SSMR3GetS64(pSSMHandle, &pThis->next_second_time);
-    TMR3TimerLoad(pThis->CTX_SUFF(pSecondTimer), pSSMHandle);
-    TMR3TimerLoad(pThis->CTX_SUFF(pSecondTimer2), pSSMHandle);
+    /* The state. */
+    SSMR3GetMem(pSSM, pThis->cmos_data, 128);
+    SSMR3GetU8(pSSM, &pThis->cmos_index);
+
+    SSMR3GetS32(pSSM, &pThis->current_tm.tm_sec);
+    SSMR3GetS32(pSSM, &pThis->current_tm.tm_min);
+    SSMR3GetS32(pSSM, &pThis->current_tm.tm_hour);
+    SSMR3GetS32(pSSM, &pThis->current_tm.tm_wday);
+    SSMR3GetS32(pSSM, &pThis->current_tm.tm_mday);
+    SSMR3GetS32(pSSM, &pThis->current_tm.tm_mon);
+    SSMR3GetS32(pSSM, &pThis->current_tm.tm_year);
+
+    TMR3TimerLoad(pThis->CTX_SUFF(pPeriodicTimer), pSSM);
+
+    SSMR3GetS64(pSSM, &pThis->next_periodic_time);
+
+    SSMR3GetS64(pSSM, &pThis->next_second_time);
+    TMR3TimerLoad(pThis->CTX_SUFF(pSecondTimer), pSSM);
+    TMR3TimerLoad(pThis->CTX_SUFF(pSecondTimer2), pSSM);
 
     int period_code = pThis->cmos_data[RTC_REG_A] & 0x0f;
     if (    period_code != 0
@@ -820,48 +869,58 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 {
     RTCState   *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
     int         rc;
-    uint8_t     u8Irq;
-    uint16_t    u16Base;
-    bool        fGCEnabled;
-    bool        fR0Enabled;
     Assert(iInstance == 0);
 
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Irq\0" "Base\0" "GCEnabled\0" "R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle,
+                              "Irq\0"
+                              "Base\0"
+                              "UseUTC\0"
+                              "GCEnabled\0"
+                              "R0Enabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     /*
      * Init the data.
      */
+    uint8_t u8Irq;
     rc = CFGMR3QueryU8Def(pCfgHandle, "Irq", &u8Irq, 8);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"Irq\" as a uint8_t failed"));
+    pThis->irq = u8Irq;
 
-    rc = CFGMR3QueryU16Def(pCfgHandle, "Base", &u16Base, 0x70);
+    rc = CFGMR3QueryPortDef(pCfgHandle, "Base", &pThis->IOPortBase, 0x70);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"Base\" as a uint16_t failed"));
+                                N_("Configuration error: Querying \"Base\" as a RTIOPORT failed"));
 
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "UseUTC", &pThis->fUTC, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"UseUTC\" as a bool failed"));
+
+    bool fGCEnabled;
     rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read GCEnabled as boolean"));
 
+    bool fR0Enabled;
     rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read R0Enabled as boolean"));
 
-    Log(("RTC: Irq=%#x Base=%#x fGCEnabled=%RTbool fR0Enabled=%RTbool\n", u8Irq, u16Base, fGCEnabled, fR0Enabled));
+    Log(("RTC: Irq=%#x Base=%#x fGCEnabled=%RTbool fR0Enabled=%RTbool\n",
+         u8Irq, pThis->IOPortBase, fGCEnabled, fR0Enabled));
 
 
     pThis->pDevInsR3            = pDevIns;
     pThis->pDevInsR0            = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC            = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->irq                  = u8Irq;
     pThis->cmos_data[RTC_REG_A] = 0x26;
     pThis->cmos_data[RTC_REG_B] = 0x02;
     pThis->cmos_data[RTC_REG_C] = 0x00;
@@ -894,30 +953,34 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                 &pThis->pSecondTimer2R3);
     if (RT_FAILURE(rc))
         return rc;
-    pThis->pSecondTimer2R0 = TMTimerR0Ptr(pThis->pSecondTimer2R3);
-    pThis->pSecondTimer2RC = TMTimerRCPtr(pThis->pSecondTimer2R3);
-    pThis->next_second_time = TMTimerGet(pThis->CTX_SUFF(pSecondTimer2)) + (TMTimerGetFreq(pThis->CTX_SUFF(pSecondTimer2)) * 99) / 100;
+    pThis->pSecondTimer2R0  = TMTimerR0Ptr(pThis->pSecondTimer2R3);
+    pThis->pSecondTimer2RC  = TMTimerRCPtr(pThis->pSecondTimer2R3);
+    pThis->next_second_time = TMTimerGet(pThis->CTX_SUFF(pSecondTimer2))
+                            + (TMTimerGetFreq(pThis->CTX_SUFF(pSecondTimer2)) * 99) / 100;
     rc = TMTimerSet(pThis->CTX_SUFF(pSecondTimer2), pThis->next_second_time);
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = PDMDevHlpIOPortRegister(pDevIns, u16Base, 2, NULL, rtcIOPortWrite, rtcIOPortRead, NULL, NULL, "MC146818 RTC/CMOS");
+    rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBase, 2, NULL,
+                                 rtcIOPortWrite, rtcIOPortRead, NULL, NULL, "MC146818 RTC/CMOS");
     if (RT_FAILURE(rc))
         return rc;
     if (fGCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterGC(pDevIns, u16Base, 2, 0, "rtcIOPortWrite", "rtcIOPortRead", NULL, NULL, "MC146818 RTC/CMOS");
+        rc = PDMDevHlpIOPortRegisterGC(pDevIns, pThis->IOPortBase, 2, 0,
+                                       "rtcIOPortWrite", "rtcIOPortRead", NULL, NULL, "MC146818 RTC/CMOS");
         if (RT_FAILURE(rc))
             return rc;
     }
     if (fR0Enabled)
     {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, u16Base, 2, 0, "rtcIOPortWrite", "rtcIOPortRead", NULL, NULL, "MC146818 RTC/CMOS");
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBase, 2, 0,
+                                       "rtcIOPortWrite", "rtcIOPortRead", NULL, NULL, "MC146818 RTC/CMOS");
         if (RT_FAILURE(rc))
             return rc;
     }
 
-    rc = PDMDevHlpSSMRegister(pDevIns, 1 /* version */, sizeof(*pThis), rtcSaveExec, rtcLoadExec);
+    rc = PDMDevHlpSSMRegister3(pDevIns, RTC_SAVED_STATE_VERSION, sizeof(*pThis), rtcLiveExec, rtcSaveExec, rtcLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -986,6 +1049,7 @@ const PDMDEVREG g_DeviceMC146818 =
     /* u32VersionEnd */
     PDM_DEVREG_VERSION
 };
+
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
