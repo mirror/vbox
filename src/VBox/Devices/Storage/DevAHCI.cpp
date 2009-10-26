@@ -1,9 +1,7 @@
 /* $Id$ */
 /** @file
- *
- * VBox storage devices:
- * AHCI controller device (disk).
- * Implements the AHCI standard 1.1
+ * VBox storage devices: AHCI controller device (disk and cdrom).
+ *                       Implements the AHCI standard 1.1
  */
 
 /*
@@ -24,19 +22,18 @@
 
 /** @page pg_dev_ahci   AHCI - Advanced Host Controller Interface Emulation.
  *
- * This component implements an AHCI SATA controller.
- * The device is split into two parts. The first part implements the
- * register interface for the guest and the second one does the data transfer.
+ * This component implements an AHCI serial ATA controller.  The device is split
+ * into two parts.  The first part implements the register interface for the
+ * guest and the second one does the data transfer.
  *
- * The guest can access the controller in two ways. The first one is the native
+ * The guest can access the controller in two ways.  The first one is the native
  * way implementing the registers described in the AHCI specification and is
- * the preferred one.
- * The second implements the I/O ports used for booting from the hard disk
- * and for guests which don't have an AHCI SATA driver.
+ * the preferred one.  The second implements the I/O ports used for booting from
+ * the hard disk and for guests which don't have an AHCI SATA driver.
  *
  * The data is transfered in an asychronous way using one thread per implemented
- * port or using the new async completion interface which is still under development.
- *
+ * port or using the new async completion interface which is still under
+ * development. [not quite up to date]
  */
 
 /*******************************************************************************
