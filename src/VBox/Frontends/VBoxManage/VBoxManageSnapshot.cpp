@@ -37,7 +37,11 @@
 using namespace com;
 
 /**
- * Helper function used with "VBoxManage snapshot ... dump".
+ * Helper function used with "VBoxManage snapshot ... dump". Gets called to find the
+ * snapshot in the machine's snapshot tree that uses a particular diff image child of
+ * a medium.
+ * Horribly inefficient since we keep re-querying the snapshots tree for each image,
+ * but this is for quick debugging only.
  * @param pMedium
  * @param pThisSnapshot
  * @param pCurrentSnapshot
@@ -63,8 +67,6 @@ bool FindAndPrintSnapshotUsingMedium(ComPtr<IMedium> &pMedium,
         SafeIfaceArray<IMediumAttachment> aAttachments;
         CHECK_ERROR_BREAK(pSnapshotMachine, COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(aAttachments)));
 
-        bool fFound = false;
-
         for (uint32_t i = 0;
              i < aAttachments.size();
              ++i)
@@ -83,32 +85,31 @@ bool FindAndPrintSnapshotUsingMedium(ComPtr<IMedium> &pMedium,
                     Bstr bstrSnapshotName;
                     CHECK_ERROR_BREAK(pThisSnapshot, COMGETTER(Name)(bstrSnapshotName.asOutParam()));
 
-                    RTPrintf("%*s  \"%ls\"\n",
+                    RTPrintf("%*s  \"%ls\"%s\n",
                              50 + uSnapshotLevel * 2, "",            // indent
-                             bstrSnapshotName.raw());
+                             bstrSnapshotName.raw(),
+                             (pThisSnapshot == pCurrentSnapshot) ? " (CURSNAP)" : "");
                     return true;        // found
                 }
             }
         }
 
-        if (!fFound)
-        {
-            SafeIfaceArray<ISnapshot> aSnapshots;
-            CHECK_ERROR_BREAK(pThisSnapshot, COMGETTER(Children)(ComSafeArrayAsOutParam(aSnapshots)));
+        // not found: then recurse into child snapshots
+        SafeIfaceArray<ISnapshot> aSnapshots;
+        CHECK_ERROR_BREAK(pThisSnapshot, COMGETTER(Children)(ComSafeArrayAsOutParam(aSnapshots)));
 
-            for (uint32_t i = 0;
-                i < aSnapshots.size();
-                ++i)
-            {
-                ComPtr<ISnapshot> pChild(aSnapshots[i]);
-                if (FindAndPrintSnapshotUsingMedium(pMedium,
-                                                    pChild,
-                                                    pCurrentSnapshot,
-                                                    uMediumLevel,
-                                                    uSnapshotLevel + 1))
-                    // found:
-                    break;
-            }
+        for (uint32_t i = 0;
+            i < aSnapshots.size();
+            ++i)
+        {
+            ComPtr<ISnapshot> pChild(aSnapshots[i]);
+            if (FindAndPrintSnapshotUsingMedium(pMedium,
+                                                pChild,
+                                                pCurrentSnapshot,
+                                                uMediumLevel,
+                                                uSnapshotLevel + 1))
+                // found:
+                break;
         }
     } while (0);
 
@@ -141,7 +142,7 @@ void DumpMediumWithChildren(ComPtr<IMedium> &pCurrentStateMedium,
         RTPrintf("%*s  \"%ls\"%s\n",
                  uLevel * 2, "",            // indent
                  bstrMediumName.raw(),
-                 (pCurrentStateMedium == pMedium) ? " (CURRENT STATE)" : "");
+                 (pCurrentStateMedium == pMedium) ? " (CURSTATE)" : "");
 
         // find and print the snapshot that uses this particular medium (diff image)
         FindAndPrintSnapshotUsingMedium(pMedium, pRootSnapshot, pCurrentSnapshot, uLevel, 0);
