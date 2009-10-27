@@ -105,7 +105,7 @@
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation type="unfinished"></translation>
+        <translation>Táto chyba znamená, že kernelový ovládač buď nebol schopný alokovať dostatok pamäte alebo že nejaká operácia mapovania zlyhala.&lt;br/&gt;&lt;br/&gt;Sú známe problémy s Linuxom 2.6.29. Ak používate toto jadro, prosím upravte /usr/src/vboxdrv-*/Makefile a povoľte &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. Potom rekompilujte kernelový modul spustením &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; ako root.</translation>
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
@@ -568,103 +568,103 @@ verzia %1</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Názov</translation>
+        <translation>Názov</translation>
     </message>
     <message>
         <source>Product</source>
-        <translation type="unfinished"></translation>
+        <translation>Výrobok</translation>
     </message>
     <message>
         <source>Product-URL</source>
-        <translation type="unfinished"></translation>
+        <translation>URL výrobku</translation>
     </message>
     <message>
         <source>Vendor</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodávateľ</translation>
     </message>
     <message>
         <source>Vendor-URL</source>
-        <translation type="unfinished"></translation>
+        <translation>URL dodávateľa</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation type="unfinished"></translation>
+        <translation>Verzia</translation>
     </message>
     <message>
         <source>Description</source>
-        <translation type="unfinished"></translation>
+        <translation>Popis</translation>
     </message>
     <message>
         <source>License</source>
-        <translation type="unfinished"></translation>
+        <translation>Licencia</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished">Typ hostiteľského OS</translation>
+        <translation>Typ hosťovského OS</translation>
     </message>
     <message>
         <source>CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU</translation>
     </message>
     <message>
         <source>RAM</source>
-        <translation type="unfinished"></translation>
+        <translation>RAM</translation>
     </message>
     <message>
         <source>Hard Disk Controller IDE</source>
-        <translation type="unfinished"></translation>
+        <translation>Radič pevného disku IDE</translation>
     </message>
     <message>
         <source>Hard Disk Controller SATA</source>
-        <translation type="unfinished"></translation>
+        <translation>Radič pevného disku SATA</translation>
     </message>
     <message>
         <source>Hard Disk Controller SCSI</source>
-        <translation type="unfinished"></translation>
+        <translation>Radič pevného disku SCSI</translation>
     </message>
     <message>
         <source>DVD</source>
-        <translation type="unfinished"></translation>
+        <translation>DVD</translation>
     </message>
     <message>
         <source>Floppy</source>
-        <translation type="unfinished">Disketa</translation>
+        <translation>Disketa</translation>
     </message>
     <message>
         <source>Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Sieťový adaptér</translation>
     </message>
     <message>
         <source>USB Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>USB radič</translation>
     </message>
     <message>
         <source>Sound Card</source>
-        <translation type="unfinished"></translation>
+        <translation>Zvuková karta</translation>
     </message>
     <message>
         <source>Virtual Disk Image</source>
-        <translation type="unfinished">Obraz virtuálneho disku</translation>
+        <translation>Obraz virtuálneho disku</translation>
     </message>
     <message>
         <source>Unknown Hardware Item</source>
-        <translation type="unfinished"></translation>
+        <translation>Položka neznámeho hardware</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Pôvodná hodnota:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfigurácia</translation>
     </message>
     <message>
         <source>Warnings:</source>
-        <translation type="unfinished"></translation>
+        <translation>Upozornenia:</translation>
     </message>
 </context>
 <context>
@@ -3105,37 +3105,37 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Processor(s)</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Procesor(y)</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Systém</translation>
     </message>
     <message>
         <source>Remote Display Server Port</source>
         <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Port pre RDS (Remote Display Server)</translation>
     </message>
     <message>
         <source>Remote Display Server</source>
         <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Remote Display Server</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vypnutý</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Displej</translation>
     </message>
     <message>
         <source>Raw File</source>
@@ -5543,7 +5543,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation></translation>
+        <translation>&amp;Snímky</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
@@ -6366,7 +6366,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; &amp;Späť</translation>
+        <translation>&lt; &amp;Späť</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
@@ -6814,11 +6814,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enable &amp;Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>Povoliť &amp;audio</translation>
     </message>
     <message>
         <source>Host Audio &amp;Driver:</source>
-        <translation type="unfinished"></translation>
+        <translation>Hostiteľský ovládač au&amp;dia:</translation>
     </message>
     <message>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
@@ -6826,7 +6826,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Audio &amp;Controller:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ra&amp;dič audia:</translation>
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
@@ -7882,7 +7882,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Shared Clipboard:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Zdieľaná schránka:</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
@@ -7890,15 +7890,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>S&amp;napshot Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>Priečinok pre s&amp;nímky:</translation>
     </message>
     <message>
         <source>&amp;Description</source>
-        <translation type="unfinished">&amp;Popis</translation>
+        <translation>&amp;Popis</translation>
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="unfinished">Zobrazí popis virtuálneho stroja. Pole s popisom je užitočné pre uloženie komentára o detailoch konfigurácie inštalovaného hosťovského OS.</translation>
+        <translation>Zobrazí popis virtuálneho stroja. Pole s popisom je užitočné pre uloženie komentára o detailoch konfigurácie inštalovaného hosťovského OS.</translation>
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
@@ -7906,15 +7906,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Removable Media:</source>
-        <translation type="unfinished"></translation>
+        <translation>Vymeniteľné médiá:</translation>
     </message>
     <message>
         <source>&amp;Remember Runtime Changes</source>
-        <translation type="unfinished"></translation>
+        <translation>P&amp;amatať si nastavenia urobené počas behu</translation>
     </message>
     <message>
         <source>Mini ToolBar:</source>
-        <translation type="unfinished"></translation>
+        <translation>Mini nástrojová lišta:</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
@@ -7929,7 +7929,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsHD</name>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie je vybraný žiaden pevný disk pre &lt;i&gt;%1&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
@@ -8434,47 +8434,47 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Motherboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Matičná doska</translation>
     </message>
     <message>
         <source>Base &amp;Memory:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Základná pamäť:</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="unfinished">Ovláda množstvo pamäte poskytnutej virtuálnemu stroju. Ak pridelíte priveľa, stroj možno nenaštartuje.</translation>
+        <translation>Ovláda množstvo pamäte poskytnutej virtuálnemu stroju. Ak pridelíte priveľa, stroj nemusí naštartovať.</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>&amp;Boot Order:</source>
-        <translation type="unfinished"></translation>
+        <translation>Po&amp;radie bootovania:</translation>
     </message>
     <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="unfinished">Definuje poradie zariadení, z ktorých sa bude bootovať. Pomocou zaškrtávacieho poľa vľavo zapnete alebo vypnete jednotlivé bootovacie zariadenia. Presunutím položky hore alebo dolu zmeníte poradie zariadení.</translation>
+        <translation>Definuje poradie zariadení, z ktorých sa bude bootovať. Pomocou zaškrtávacieho poľa vľavo zapnete alebo vypnete jednotlivé bootovacie zariadenia. Presunutím položky hore alebo dolu zmeníte poradie zariadení.</translation>
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
-        <translation type="unfinished">Presunúť dolu (Ctrl-dolu)</translation>
+        <translation>Presunúť dolu (Ctrl-dolu)</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished">Presunie zvolené bootovacie zariadenie nižšie.</translation>
+        <translation>Presunie zvolené bootovacie zariadenie nižšie.</translation>
     </message>
     <message>
         <source>Move Up (Ctrl-Up)</source>
-        <translation type="unfinished">Presunúť hore (Ctrl-hore)</translation>
+        <translation>Presunúť hore (Ctrl-hore)</translation>
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished">Presunie zvolené bootovacie zariadenie vyššie.</translation>
+        <translation>Presunie zvolené bootovacie zariadenie vyššie.</translation>
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozšírené vlastnosti:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
@@ -8482,7 +8482,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enable &amp;ACPI</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapnúť &amp;ACPI</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
@@ -8490,19 +8490,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enable &amp;IO APIC</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapnúť &amp;IO APIC</translation>
     </message>
     <message>
         <source>&amp;Processor</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Procesor</translation>
     </message>
     <message>
         <source>&amp;Processor(s):</source>
-        <translation type="unfinished"></translation>
+        <translation>P&amp;rocesor(y):</translation>
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ovláda počet virtuálnych CPU vo virtuálnom stroji.</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
@@ -8510,15 +8510,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished">Zapnúť PA&amp;E/NX</translation>
+        <translation>Zapnúť PA&amp;E/NX</translation>
     </message>
     <message>
         <source>Acce&amp;leration</source>
-        <translation type="unfinished"></translation>
+        <translation>Ak&amp;celerácia</translation>
     </message>
     <message>
         <source>Hardware Virtualization:</source>
-        <translation type="unfinished"></translation>
+        <translation>Hardvérová virtualizácia:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
@@ -8526,7 +8526,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">Zapnúť &amp;VT-x/AMD-V</translation>
+        <translation>Zapnúť &amp;VT-x/AMD-V</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
@@ -8534,50 +8534,50 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished"></translation>
+        <translation>Povoliť Nested &amp;Paging</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsUSB</name>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished">&amp;Pridať prázdny filter</translation>
+        <translation>&amp;Pridať prázdny filter</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished">P&amp;ridať filter pre zariadenie</translation>
+        <translation>P&amp;ridať filter pre zariadenie</translation>
     </message>
     <message>
         <source>&amp;Edit Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Upraviť filter</translation>
     </message>
     <message>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished">O&amp;dstrániť filter</translation>
+        <translation>O&amp;dstrániť filter</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished">Pre&amp;sunúť filter nahor</translation>
+        <translation>Pre&amp;sunúť filter nahor</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished">Presu&amp;núť filter nadol</translation>
+        <translation>Presu&amp;núť filter nadol</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished">Pridá nový filter USB so všetkými poľami implicitne nastavenými na prázdne reťazce. Majte na pamäti, že takému filtru zodpovedá akékoľvek pripojené zariadenie USB.</translation>
+        <translation>Pridá nový filter USB so všetkými poľami implicitne nastavenými na prázdne reťazce. Majte na pamäti, že takému filtru zodpovedá akékoľvek pripojené zariadenie USB.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished">Pridá nový filter USB so všetkými poľami implicitne nastavenými na hodnoty zvoleného zariadenia USB pripojeného k hostiteľskému PC.</translation>
+        <translation>Pridá nový filter USB so všetkými poľami implicitne nastavenými na hodnoty zvoleného zariadenia USB pripojeného k hostiteľskému PC.</translation>
     </message>
     <message>
         <source>Edits the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Upraví vybraný filter USB.</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Odstráni vybraní filter USB.</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
@@ -8618,7 +8618,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>[filter]</source>
-        <translation type="unfinished"></translation>
+        <translation>[filter]</translation>
     </message>
 </context>
 <context>
@@ -8626,29 +8626,29 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Any</source>
         <comment>remote</comment>
-        <translation type="unfinished">Akýkoľvek</translation>
+        <translation>Akýkoľvek</translation>
     </message>
     <message>
         <source>Yes</source>
         <comment>remote</comment>
-        <translation type="unfinished">Áno</translation>
+        <translation>Áno</translation>
     </message>
     <message>
         <source>No</source>
         <comment>remote</comment>
-        <translation type="unfinished">Nie</translation>
+        <translation>Nie</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Názov:</translation>
     </message>
     <message>
         <source>Displays the filter name.</source>
-        <translation type="unfinished">Zobrazí meno filtra.</translation>
+        <translation>Zobrazí meno filtra.</translation>
     </message>
     <message>
         <source>&amp;Vendor ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;ID dodávateľa:</translation>
     </message>
     <message>
         <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>

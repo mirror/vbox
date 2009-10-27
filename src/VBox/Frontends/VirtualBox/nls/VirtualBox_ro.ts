@@ -129,7 +129,7 @@
     </message>
     <message>
         <source>VirtualBox - Runtime Error</source>
-        <translation type="unfinished"></translation>
+        <translation>Eroare rulare - VirtualBox</translation>
     </message>
     <message>
         <source>&lt;b&gt;Cannot access the kernel driver!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
@@ -156,22 +156,22 @@
     <name>QIArrowSplitter</name>
     <message>
         <source>&amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Îna&amp;poi</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished">&amp;Următor</translation>
+        <translation>&amp;Următor</translation>
     </message>
 </context>
 <context>
     <name>QIFileDialog</name>
     <message>
         <source>Select a directory</source>
-        <translation type="unfinished">Selectați un director</translation>
+        <translation>Selectați un director</translation>
     </message>
     <message>
         <source>Select a file</source>
-        <translation type="unfinished">Selectați un fișier</translation>
+        <translation>Selectați un fișier</translation>
     </message>
 </context>
 <context>
@@ -364,7 +364,7 @@
     <name>QIHttp</name>
     <message>
         <source>Connection timed out</source>
-        <translation>Conectarea a depășit limita de timp.</translation>
+        <translation>Conectarea a depășit limita de timp</translation>
     </message>
     <message>
         <source>Could not locate the file on the server (response: %1)</source>
@@ -402,11 +402,11 @@
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished">&amp;Detalii</translation>
+        <translation>&amp;Detalii</translation>
     </message>
     <message>
         <source>&amp;Details (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Detalii (%1 din %2)</translation>
     </message>
 </context>
 <context>
@@ -603,107 +603,107 @@ Versiunea %1</translation>
     <name>VBoxApplianceEditorWgt</name>
     <message>
         <source>Virtual System %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistem virtual %1</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Nume</translation>
+        <translation>Nume</translation>
     </message>
     <message>
         <source>Product</source>
-        <translation type="unfinished"></translation>
+        <translation>Produs</translation>
     </message>
     <message>
         <source>Product-URL</source>
-        <translation type="unfinished"></translation>
+        <translation>URL-Produs</translation>
     </message>
     <message>
         <source>Vendor</source>
-        <translation type="unfinished"></translation>
+        <translation>Vânzător</translation>
     </message>
     <message>
         <source>Vendor-URL</source>
-        <translation type="unfinished"></translation>
+        <translation>URL-Vânzător</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation type="unfinished"></translation>
+        <translation>Versiune</translation>
     </message>
     <message>
         <source>Description</source>
-        <translation type="unfinished"></translation>
+        <translation>Descriere</translation>
     </message>
     <message>
         <source>License</source>
-        <translation type="unfinished"></translation>
+        <translation>Licență</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished">Tip SO musafir</translation>
+        <translation>Tip SO musafir</translation>
     </message>
     <message>
         <source>CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU</translation>
     </message>
     <message>
         <source>RAM</source>
-        <translation type="unfinished"></translation>
+        <translation>RAM</translation>
     </message>
     <message>
         <source>Hard Disk Controller IDE</source>
-        <translation type="unfinished"></translation>
+        <translation>Controlor disc dur IDE</translation>
     </message>
     <message>
         <source>Hard Disk Controller SATA</source>
-        <translation type="unfinished"></translation>
+        <translation>Controlor disc dur SATA</translation>
     </message>
     <message>
         <source>Hard Disk Controller SCSI</source>
-        <translation type="unfinished"></translation>
+        <translation>Controlor disc dur SCSI</translation>
     </message>
     <message>
         <source>DVD</source>
-        <translation type="unfinished"></translation>
+        <translation>DVD</translation>
     </message>
     <message>
         <source>Floppy</source>
-        <translation type="unfinished">Dischetă</translation>
+        <translation>Dischetă</translation>
     </message>
     <message>
         <source>Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Placă de rețea</translation>
     </message>
     <message>
         <source>USB Controller</source>
-        <translation type="unfinished">Controlor USB</translation>
+        <translation>Controlor USB</translation>
     </message>
     <message>
         <source>Sound Card</source>
-        <translation type="unfinished"></translation>
+        <translation>Placă de sunet</translation>
     </message>
     <message>
         <source>Virtual Disk Image</source>
-        <translation type="unfinished">Imagine disc virtuală</translation>
+        <translation>Imagine disc virtuală</translation>
     </message>
     <message>
         <source>Unknown Hardware Item</source>
-        <translation type="unfinished"></translation>
+        <translation>Item hardware necunoscut</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MO</translation>
+        <translation>MO</translation>
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Valoare originală:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurație</translation>
     </message>
     <message>
         <source>Warnings:</source>
-        <translation type="unfinished"></translation>
+        <translation>Atenționări:</translation>
     </message>
 </context>
 <context>
@@ -1222,7 +1222,7 @@ Versiunea %1</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>Mod contin&amp;uu</translation>
+        <translation>Mod trans*parent</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
@@ -1409,17 +1409,17 @@ Versiunea %1</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun VirtualBox</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
+        <translation>Indică statusul funcțiilor de virtualizare hardware folosite de această mașină virtuală: &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -1802,34 +1802,34 @@ Versiunea %1</translation>
     <name>VBoxEmptyFileSelector</name>
     <message>
         <source>&amp;Choose...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ale&amp;ge...</translation>
     </message>
 </context>
 <context>
     <name>VBoxExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
-        <translation type="unfinished"></translation>
+        <translation>Selectați un fișier în care să export</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Appliance</source>
-        <translation type="unfinished"></translation>
+        <translation>Mașină virtuală</translation>
     </message>
     <message>
         <source>Exporting Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Export mașină virtuală...</translation>
     </message>
     <message>
         <source>Appliance Export Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Asistent export mașină virtuală</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Bun venit la asistentul export Mașină virtuală!</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -1843,43 +1843,43 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; Îna&amp;poi</translation>
+        <translation>&lt; Îna&amp;poi</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">Î&amp;nainte&gt;</translation>
+        <translation>Î&amp;nainte&gt;</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Anulează</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Setări export mașină virtuală</translation>
     </message>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aici puteți modifica setări adiționale pentru mașinile virtuale selectate. Puteți modifica majoritatea proprietăților afișate, făcând dublu click pe ele.</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>Restabilire valori implicite</translation>
     </message>
     <message>
         <source>&amp;Export &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Export &gt;</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished"></translation>
+        <translation>Scrie în formatul vechi OVF 0.9 pentru a păstra compatibilitatea cu alte produse de virtualizare.</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Scrie OVF 0.9 (format vechi)</translation>
     </message>
     <message>
         <source>Please choose a filename to export the OVF in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vă rugăm selectați un nume de fișier pentru a salva fișierul OVF.</translation>
     </message>
     <message>
         <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
@@ -1891,11 +1891,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Checking files ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Verificare fișiere ...</translation>
     </message>
     <message>
         <source>Removing files ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ștergere fișiere ...</translation>
     </message>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
@@ -1903,27 +1903,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation type="unfinished"></translation>
+        <translation>Sistem de fișiere &amp;local</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun &amp;Cloud</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Simple Storage System (S3)</translation>
     </message>
     <message>
         <source>&amp;Username:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nume &amp;utilizator:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Parolă:</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Fișier:</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
@@ -1931,7 +1931,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nume de gazdă:</translation>
     </message>
 </context>
 <context>
@@ -2017,7 +2017,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Rețea</translation>
+        <translation>Rețea</translation>
     </message>
 </context>
 <context>
@@ -2061,11 +2061,11 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation type="unfinished"></translation>
+        <translation>Când este bifat, iconița atașată ferestrei, va reflecta conținutul MV în timp real.</translation>
     </message>
     <message>
         <source>&amp;Dock Icon Realtime Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Previzualizare în timp re&amp;al</translation>
     </message>
 </context>
 <context>
@@ -2151,211 +2151,211 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
-        <translation type="unfinished"></translation>
+        <translation>rețeaua %1</translation>
     </message>
     <message>
         <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>adresa IPv4 a gazdei pentru &lt;b&gt;%1&lt;/b&gt; este greșită</translation>
     </message>
     <message>
         <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>masca de rețea IPv4 a gazdei pentru &lt;b&gt;%1&lt;/b&gt; este greșită</translation>
     </message>
     <message>
         <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>adresa IPv6 a gazdei pentru &lt;b&gt;%1&lt;/b&gt; este greșită</translation>
     </message>
     <message>
         <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>adresa serverului DHCP pentru &lt;b&gt;%1&lt;/b&gt; este greșită</translation>
     </message>
     <message>
         <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>masca de rețea pentru serverul DHCP al &lt;b&gt;%1&lt;/b&gt; este greșită</translation>
     </message>
     <message>
         <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>Limita inferioară de adresă DHCP a &lt;b&gt;%1&lt;/b&gt; este greșită</translation>
     </message>
     <message>
         <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>Limita superioară de adresă DHCP a &lt;b&gt;%1&lt;/b&gt; este greșită</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished">Dispozitiv</translation>
+        <translation>Placă de rețea</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>Configurată automat</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>Configurată manual</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresă IPv4</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished"></translation>
+        <translation>nestabilit</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Mască rețea IPv4</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished"></translation>
+        <translation>nestabilită</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresă IPv6</translation>
     </message>
     <message>
         <source>IPv6 Network Mask Length</source>
-        <translation type="unfinished"></translation>
+        <translation>Lungime mască rețea IPv6</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished"></translation>
+        <translation>nestabilită</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation type="unfinished"></translation>
+        <translation>Server DHCP</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>Activat</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>Dezactivat</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresă</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Mască de rețea</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished"></translation>
+        <translation>Limita inferioară</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished"></translation>
+        <translation>nestabilită</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished"></translation>
+        <translation>Limita superioară</translation>
     </message>
     <message>
         <source>&amp;Add host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Adaugă rețea doar-gazdă</translation>
     </message>
     <message>
         <source>&amp;Remove host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>Ște&amp;rge rețea doar-gazdă</translation>
     </message>
     <message>
         <source>&amp;Edit host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Modifică rețea doar-gazdă</translation>
     </message>
     <message>
         <source>Performing</source>
         <comment>creating/removing host-only network</comment>
-        <translation type="unfinished"></translation>
+        <translation>În curs</translation>
     </message>
     <message>
         <source>&amp;Host-only Networks:</source>
-        <translation type="unfinished"></translation>
+        <translation>Rețele d&amp;oar-gazdă:</translation>
     </message>
     <message>
         <source>Lists all available host-only networks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Listează toate rețelele doar-gazdă disponibile.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Nume</translation>
+        <translation>Nume</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Detalii rețea doar-gazdă</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Pl&amp;acă de rețea</translation>
     </message>
     <message>
         <source>Manual &amp;Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Configurare manuală</translation>
     </message>
     <message>
         <source>Use manual configuration for this host-only network adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Folosește configurarea manuală pentru această placă de rețea doar-gazdă.</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresă &amp;IPv4:</translation>
     </message>
     <message>
         <source>Displays the host IPv4 address for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afișează adresa IPv4 pentru această placă de rețea.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mască rețea IPv4:</translation>
     </message>
     <message>
         <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afișează masca de rețea IPv4 pentru această placă de rețea.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresă I&amp;Pv6:</translation>
     </message>
     <message>
         <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afișează adresa IPv6 pentru această placă de rețea, dacă IPv6 este suportat.</translation>
     </message>
     <message>
         <source>IPv6 Network Mask &amp;Length:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Lungime mască rețea IPv6:</translation>
     </message>
     <message>
         <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afișează lungimea prefixului măștii de rețea IPv6 pentru această placă de rețea, dacă IPv6 este suportat.</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished"></translation>
+        <translation>Server &amp;DHCP</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished"></translation>
+        <translation>Activ&amp;ează Server</translation>
     </message>
     <message>
         <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Indică dacă serverul DHCP este activat sau nu pe mașină la pornire.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ad&amp;resă server:</translation>
     </message>
     <message>
         <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
@@ -2363,7 +2363,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mască server:</translation>
     </message>
     <message>
         <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
@@ -3246,7 +3246,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     <message>
         <source>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation type="unfinished">&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Checking...</source>
@@ -3299,52 +3299,52 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     <message>
         <source>Enabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Activată</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Dezactivată</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Rețea internă, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>SCSI</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SCSI</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">PIIX3</translation>
+        <translation>PIIX3</translation>
     </message>
     <message>
         <source>PIIX4</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">PIIX4</translation>
+        <translation>PIIX4</translation>
     </message>
     <message>
         <source>ICH6</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ICH6</translation>
     </message>
     <message>
         <source>AHCI</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>AHCI</translation>
     </message>
     <message>
         <source>Lsilogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lsilogic</translation>
     </message>
     <message>
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>BusLogic</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -3359,7 +3359,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     <message>
         <source>Intel PRO/1000 MT Server (82545EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 T Server (82543GC)</translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
@@ -3374,7 +3374,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1 MO&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Processor(s)</source>
@@ -3389,7 +3389,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sistem</translation>
     </message>
     <message>
         <source>Remote Display Server Port</source>
@@ -4050,19 +4050,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; Îna&amp;poi</translation>
+        <translation>&lt; Îna&amp;poi</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">Î&amp;nainte&gt;</translation>
+        <translation>Î&amp;nainte&gt;</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Renunță</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Setări import mașină virtuală</translation>
     </message>
     <message>
         <source>These are the virtual machines as described in the appliance with their suggested mappings for importing into VirtualBox. You can change many of the shown properties by double-clicking on the items and disable others by using the check boxes below.</source>
@@ -4074,7 +4074,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Import &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Importă &gt;</translation>
     </message>
 </context>
 <context>
@@ -4085,31 +4085,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Software License Agreement</source>
-        <translation type="unfinished"></translation>
+        <translation>Acord licență software</translation>
     </message>
     <message>
         <source>&amp;Disagree</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nu sunt de acord</translation>
     </message>
     <message>
         <source>&amp;Agree</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sunt de acord</translation>
     </message>
     <message>
         <source>&amp;Print...</source>
-        <translation type="unfinished"></translation>
+        <translation>Im&amp;primă...</translation>
     </message>
     <message>
         <source>&amp;Save...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Salvează...</translation>
     </message>
     <message>
         <source>Text (*.txt)</source>
-        <translation type="unfinished"></translation>
+        <translation>Text (*.txt)</translation>
     </message>
     <message>
         <source>Save license to file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvează licența în fișier...</translation>
     </message>
 </context>
 <context>
@@ -4131,7 +4131,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxLineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>Mo&amp;difică</translation>
     </message>
 </context>
 <context>
@@ -4344,15 +4344,15 @@ p, li { white-space: pre-wrap; }
     <name>VBoxMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Arată mereu minibara</translation>
     </message>
     <message>
         <source>Exit Full Screen or Seamless Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieși din mod pe tot ecranul/transparent</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation type="unfinished"></translation>
+        <translation>Închide MV</translation>
     </message>
 </context>
 <context>
@@ -4869,11 +4869,11 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Creează disc dur nou</translation>
     </message>
     <message>
         <source>&amp;Use existing hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>F&amp;olosește disc dur existent</translation>
     </message>
 </context>
 <context>
@@ -4896,7 +4896,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&amp;Version:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Versiunea:</translation>
     </message>
 </context>
 <context>
@@ -5495,7 +5495,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nu am putut intra în modul continuu din cauza memoriei video insuficiente pe musafir.&lt;/p&gt;&lt;p&gt;Ar trebui să configurați MV să aibe cel puțin &lt;b&gt;%1&lt;/b&gt; memorie video.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nu am putut intra în modul transparent din cauza memoriei video insuficiente pe musafir.&lt;/p&gt;&lt;p&gt;Ar trebui să configurați MV să aibe cel puțin &lt;b&gt;%1&lt;/b&gt; memorie video.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
@@ -5944,7 +5944,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>Select Country/Territory</source>
-        <translation type="unfinished"></translation>
+        <translation>Alegeți Țara/Zona</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
@@ -5956,11 +5956,11 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&amp;E-mail:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;E-mail:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Parolă:</translation>
     </message>
     <message>
         <source>I &amp;would like to register creating a new Sun Online account:</source>
@@ -5968,35 +5968,35 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&amp;First Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Prenume:</translation>
     </message>
     <message>
         <source>&amp;Last Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nume:</translation>
     </message>
     <message>
         <source>&amp;Company:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Companie:</translation>
     </message>
     <message>
         <source>Co&amp;untry:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ț&amp;ara:</translation>
     </message>
     <message>
         <source>E-&amp;mail:</source>
-        <translation type="unfinished"></translation>
+        <translation>E-&amp;mail:</translation>
     </message>
     <message>
         <source>P&amp;assword:</source>
-        <translation type="unfinished"></translation>
+        <translation>Pa&amp;rolă:</translation>
     </message>
     <message>
         <source>Co&amp;nfirm Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Confirmare parolă:</translation>
     </message>
     <message>
         <source>&amp;Register</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Înregistrare</translation>
     </message>
 </context>
 <context>
@@ -6316,7 +6316,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
@@ -6336,7 +6336,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">Reî&amp;mprospătează</translation>
+        <translation>Reî&amp;mprospătează</translation>
     </message>
 </context>
 <context>
@@ -6359,7 +6359,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation type="unfinished">Pe pagina &lt;b&gt;%1&lt;/b&gt;, %2</translation>
+        <translation>Pe pagina &lt;b&gt;%1&lt;/b&gt;, %2</translation>
     </message>
 </context>
 <context>
@@ -6777,15 +6777,15 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
     <name>VBoxTextEditor</name>
     <message>
         <source>Edit text</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifică text</translation>
     </message>
     <message>
         <source>&amp;Replace...</source>
-        <translation type="unfinished"></translation>
+        <translation>Î&amp;nlocuiește...</translation>
     </message>
     <message>
         <source>Replaces the current text with the content of a given file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Înlocuiește textul curent cu un fișier dat.</translation>
     </message>
     <message>
         <source>Text (*.txt);;All (*.*)</source>
@@ -6793,7 +6793,7 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
     </message>
     <message>
         <source>Select a file to open...</source>
-        <translation type="unfinished"></translation>
+        <translation>Selectați un fișier pe care să-l deschid...</translation>
     </message>
 </context>
 <context>
@@ -8118,39 +8118,39 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation type="unfinished">ați asociat mașinii virtuale mai puțin de &lt;b&gt;%1&lt;/b&gt; memorie video, care este minimul necesar pentru a comuta în modul pe tot ecranul sau transparent.</translation>
+        <translation>ați asociat mașinii virtuale mai puțin de &lt;b&gt;%1&lt;/b&gt; memorie video, care este minimul necesar pentru a comuta în modul pe tot ecranul sau transparent.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Video</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Video</translation>
     </message>
     <message>
         <source>Video &amp;Memory:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Memorie video:</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="unfinished">Controlează cantitatea de memorie video oferită mașinii virtuale.</translation>
+        <translation>Controlează cantitatea de memorie video oferită mașinii virtuale.</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MO</translation>
+        <translation>MO</translation>
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Funcții avansate:</translation>
+        <translation>Funcții avansate:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">Când este bifat, mașina virtuală va avea acces la capacitățile grafice 3D ale mașinii gazdă.</translation>
+        <translation>Când este bifat, mașina virtuală va avea acces la capacitățile grafice 3D ale mașinii gazdă.</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">Activează accelerarea &amp;3D</translation>
+        <translation>Activează accelerarea &amp;3D</translation>
     </message>
     <message>
         <source>&amp;Remote Display</source>
@@ -8162,31 +8162,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished"></translation>
+        <translation>Activ&amp;ează server</translation>
     </message>
     <message>
         <source>Server &amp;Port:</source>
-        <translation type="unfinished">&amp;Port server:</translation>
+        <translation>&amp;Port server:</translation>
     </message>
     <message>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="unfinished">Afișează numărul de port al serverului VRDP. Puteți specifica &lt;tt&gt;0&lt;/tt&gt; (zero) pentru a reseta portul la valoarea implicită.</translation>
+        <translation>Afișează numărul de port al serverului VRDP. Puteți specifica &lt;tt&gt;0&lt;/tt&gt; (zero) pentru a reseta portul la valoarea implicită.</translation>
     </message>
     <message>
         <source>Authentication &amp;Method:</source>
-        <translation type="unfinished">&amp;Metodă autentificare:</translation>
+        <translation>&amp;Metodă autentificare:</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="unfinished">Definește metoda de autentificare VRDP.</translation>
+        <translation>Definește metoda de autentificare VRDP.</translation>
     </message>
     <message>
         <source>Authentication &amp;Timeout:</source>
-        <translation type="unfinished">&amp;Timeout autentificare:</translation>
+        <translation>&amp;Timeout autentificare:</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished">Specifică timeoutul pentru autentificarea musafirului, în milisecunde.</translation>
+        <translation>Specifică timeoutul pentru autentificarea musafirului, în milisecunde.</translation>
     </message>
 </context>
 <context>
@@ -9294,11 +9294,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistem</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Afișare</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
@@ -9556,23 +9556,23 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Removable Media:</source>
-        <translation type="unfinished"></translation>
+        <translation>Medii amovibile:</translation>
     </message>
     <message>
         <source>&amp;Remember Runtime Changes</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Reține schimbările din timpul rulării</translation>
     </message>
     <message>
         <source>Mini ToolBar:</source>
-        <translation type="unfinished"></translation>
+        <translation>Minibară:</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dacă este bifat, afișează Minibara în modul pe tot ecranul și în cel transparent.</translation>
     </message>
     <message>
         <source>Show In &amp;Fullscreen/Seamless</source>
-        <translation type="unfinished"></translation>
+        <translation>Arată în mod pe tot &amp;ecranul/transparent</translation>
     </message>
 </context>
 <context>
@@ -9655,7 +9655,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="unfinished">Definește tipul controlorului virtual IDE. În funcție de această valoare, VirtualBox va oferi mașinii virtuale o configurație hardware IDE diferită.</translation>
+        <translation>Definește tipul controlorului virtual IDE. În funcție de această valoare, VirtualBox va oferi mașinii virtuale o configurație hardware IDE diferită.</translation>
     </message>
 </context>
 <context>
@@ -9816,27 +9816,27 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Guest &amp;MAC Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresă &amp;MAC musafir:</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">Afișează adresa MAC a acestei plăci de rețea. Conține exact 12 caractere alese din {0-9,A-F}. Notați faptul că al doile caracter trebuie să fie un număr par.</translation>
+        <translation>Afișează adresa MAC a acestei plăci de rețea. Conține exact 12 caractere alese din {0-9,A-F}. Notați faptul că al doilea caracter trebuie să fie un număr par.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">Generează o nouă adresă MAC aleatoare.</translation>
+        <translation>Generează o nouă adresă MAC aleatoare.</translation>
     </message>
     <message>
         <source>&amp;Cable connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Ca&amp;blu de rețea conectat</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished">Indică dacă rețeaua virtuală este conectată la mașină la pornire sau nu.</translation>
+        <translation>Indică dacă rețeaua virtuală este conectată la mașină la pornire sau nu.</translation>
     </message>
     <message>
         <source>Additional Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Opțiuni suplimentare</translation>
     </message>
 </context>
 <context>
@@ -10076,7 +10076,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Port/File &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Cale port/fișier:</translation>
     </message>
 </context>
 <context>
@@ -10122,85 +10122,85 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
         <comment>%1 is 1 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is 32 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;CPU-uri&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Motherboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Placă de &amp;bază</translation>
     </message>
     <message>
         <source>Base &amp;Memory:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Memorie:</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="unfinished">Controlează cantitatea de memorie rezervată mașinii virtuale. Dacă alocați prea multă, mașina ar putea să nu pornească.</translation>
+        <translation>Controlează cantitatea de memorie rezervată mașinii virtuale. Dacă alocați prea multă, mașina ar putea să nu pornească.</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MO</translation>
+        <translation>MO</translation>
     </message>
     <message>
         <source>&amp;Boot Order:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordine de &amp;boot:</translation>
     </message>
     <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="unfinished">Definește ordinea de boot. Folosiți căsuțele de selecție din stânga pentru a activa sau dezactiva dispozitivele de boot, individual. Mutați itemii în sus și în jos pentru a schimba ordinea.</translation>
+        <translation>Definește ordinea de boot. Folosiți căsuțele de selecție din stânga pentru a activa sau dezactiva dispozitivele de boot, individual. Mutați itemii în sus și în jos pentru a schimba ordinea.</translation>
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
-        <translation type="unfinished">Mută în jos (Ctrl-Down)</translation>
+        <translation>Mută în jos (Ctrl-Down)</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mută dispozitivul de boot selectat în jos.</translation>
     </message>
     <message>
         <source>Move Up (Ctrl-Up)</source>
-        <translation type="unfinished">Mută în sus (Ctrl-Up)</translation>
+        <translation>Mută în sus (Ctrl-Up)</translation>
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mută dispozitivul de boot selectat în sus.</translation>
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Funcții avansate:</translation>
+        <translation>Funcții avansate:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished">Când este bifat, mașina virtuală va suporta ACPI (Advanced Confirguration și Power Management Interface). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivați această opțiune după ce ați instalat un sistem de operare musafir Windows!</translation>
+        <translation>Când este bifat, mașina virtuală va suporta ACPI (Advanced Confirguration și Power Management Interface). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivați această opțiune după ce ați instalat un sistem de operare musafir Windows!</translation>
     </message>
     <message>
         <source>Enable &amp;ACPI</source>
-        <translation type="unfinished"></translation>
+        <translation>Activează &amp;ACPI</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished">Când este bifat, mașina virtuală va suporta IO ACPI (Input Output Advanced Confirguration și Power Management Interface). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivați această opțiune după ce ați instalat un sistem de operare musafir Windows!</translation>
+        <translation>Când este bifat, mașina virtuală va suporta IO ACPI (Input Output Advanced Confirguration și Power Management Interface). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivați această opțiune după ce ați instalat un sistem de operare musafir Windows!</translation>
     </message>
     <message>
         <source>Enable &amp;IO APIC</source>
-        <translation type="unfinished"></translation>
+        <translation>Activează IO A&amp;CPI</translation>
     </message>
     <message>
         <source>&amp;Processor</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Procesor</translation>
     </message>
     <message>
         <source>&amp;Processor(s):</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Procesoare:</translation>
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
