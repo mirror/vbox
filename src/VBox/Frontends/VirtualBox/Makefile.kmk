@@ -477,7 +477,7 @@ ifdef VBOX_WITH_COCOA_QT
  	src/darwin/VBoxCocoaApplication.m \
  	src/darwin/VBoxUtils-darwin-cocoa.mm \
 	src/darwin/VBoxCocoaSpecialControls.mm \
-	src/darwin/VBoxDockIconPreview-cocoa.m
+	src/darwin/VBoxDockIconPreview-cocoa.mm
  VirtualBox_QT_MOCHDRS.darwin = \
 	include/VBoxCocoaSpecialControls.h
 
