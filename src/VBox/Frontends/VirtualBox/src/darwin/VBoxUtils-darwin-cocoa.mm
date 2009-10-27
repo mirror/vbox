@@ -27,6 +27,7 @@
 
 #import <AppKit/NSEvent.h>
 #import <AppKit/NSColor.h>
+#import <AppKit/NSFont.h>
 
 NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView)
 {
@@ -35,7 +36,7 @@ NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView)
     NativeWindowRef window = NULL;
     if (aView)
         window = [aView window];
-
+    
     [pool release];
     return window;
 }
@@ -46,7 +47,7 @@ NativeViewRef darwinToNativeViewImpl (NativeWindowRef aWindow)
 
     NativeViewRef view = NULL;
     if (aWindow)
-        view = [aWindow contentView];
+        view = [aWindow contentView];   
 
     [pool release];
     return view;
@@ -153,5 +154,27 @@ void darwinWindowInvalidateShadowImpl (NativeWindowRef aWindow)
     [aWindow invalidateShadow];
 
     [pool release];
+}
+
+int darwinWindowToolBarHeight (NativeWindowRef aWindow)
+{
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
+    NSToolbar *toolbar = [aWindow toolbar];
+    NSRect windowFrame = [aWindow frame];
+    int toolbarHeight = 0;
+    int theight = (NSHeight([NSWindow contentRectForFrameRect:[aWindow frame] styleMask:[aWindow styleMask]]) - NSHeight([[aWindow contentView] frame]));
+    /* toolbar height: */
+    if(toolbar && [toolbar isVisible])
+        /* title bar height: */
+        toolbarHeight = NSHeight (windowFrame) - NSHeight ([[aWindow contentView] frame]) - theight;
+
+    [pool release];
+    return toolbarHeight;
+}
+
+float darwinSmallFontSize()
+{
+    return [NSFont systemFontSizeForControlSize: NSSmallControlSize];
 }
 
