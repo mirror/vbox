@@ -4039,7 +4039,7 @@ static int vmdkFindExtent(PVMDKIMAGE pImage, uint64_t offSector,
         if (offSector < pImage->pExtents[i].cNominalSectors)
         {
             pExtent = &pImage->pExtents[i];
-            *puSectorInExtent = offSector + pImage->pExtents[i].uSectorOffset;
+            *puSectorInExtent = offSector;
             break;
         }
         offSector -= pImage->pExtents[i].cNominalSectors;
@@ -5808,9 +5808,9 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
             goto out;
         }
 
-        /* Clip write range to remain in this extent. */
+        /* Clip read range to remain in this extent. */
         cbToRead = RT_MIN(cbRead, VMDK_SECTOR2BYTE(pExtent->uSectorOffset + pExtent->cNominalSectors - uSectorExtentRel));
-        /* Clip write range to remain into current data segment. */
+        /* Clip read range to remain into current data segment. */
         cbToRead = RT_MIN(cbToRead, cbLeftInCurrentSegment);
 
         switch (pExtent->enmType)
