@@ -2560,17 +2560,6 @@ typedef struct PDMISCSICONNECTOR
      */
      DECLR3CALLBACKMEMBER(int, pfnSCSIRequestSend, (PPDMISCSICONNECTOR pInterface, PPDMSCSIREQUEST pSCSIRequest));
 
-    /**
-     * Wait for all current requests to complete.
-     *
-     * This can only be called while the VM is running.
-     *
-     * @returns VINF_SUCCESS, VERR_NO_MEMORY, VERR_INVALID_STATE or VERR_TIMEOUT.
-     * @param   pInterface      Pointer to this interface.
-     * @param   cMillies        The timeout in milliseconds or RT_INDEFINITE_WAIT.
-     */
-     DECLR3CALLBACKMEMBER(int, pfnSyncronizeRequests, (PPDMISCSICONNECTOR pInterface, uint32_t cMillies));
-
 } PDMISCSICONNECTOR;
 
 typedef struct PDMDDISPLAYVBVACALLBACKS *PPDMDDISPLAYVBVACALLBACKS;
