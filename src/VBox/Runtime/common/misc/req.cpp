@@ -60,14 +60,17 @@ static int  rtReqProcessOne(PRTREQ pReq);
  */
 RTDECL(int) RTReqCreateQueue(PRTREQQUEUE *ppQueue)
 {
-    *ppQueue = (PRTREQQUEUE)RTMemAllocZ(sizeof(RTREQQUEUE));
-    if (!ppQueue)
+    PRTREQQUEUE pQueue = (PRTREQQUEUE)RTMemAllocZ(sizeof(RTREQQUEUE));
+    if (!pQueue)
         return VERR_NO_MEMORY;
-
-    int rc = RTSemEventCreate(&(*ppQueue)->EventSem);
+    int rc = RTSemEventCreate(&pQueue->EventSem);
     if (RT_SUCCESS(rc))
-        RTMemFree(*ppQueue);
+    {
+        *ppQueue = pQueue;
+        return VINF_SUCCESS;
+    }
 
+    RTMemFree(*ppQueue);
     return rc;
 }
 RT_EXPORT_SYMBOL(RTReqCreateQueue);
