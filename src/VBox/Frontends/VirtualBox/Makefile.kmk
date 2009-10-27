@@ -271,7 +271,6 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIListView.h \
 	include/QITreeWidget.h \
 	include/QIMainDialog.h \
-	include/QIHelpButton.h \
 	include/QIDialog.h \
 	include/QIFileDialog.h \
 	include/QIAdvancedSlider.h \
@@ -334,7 +333,8 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxImportApplianceWgt.h \
 	include/VBoxImportApplianceWzd.h \
 	include/VBoxExportApplianceWgt.h \
-	include/VBoxExportApplianceWzd.h
+	include/VBoxExportApplianceWzd.h \
+	include/VBoxSpecialControls.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
@@ -373,7 +373,6 @@ VirtualBox_SOURCES = \
 	src/QITreeWidget.cpp \
 	src/QIMainDialog.cpp \
 	src/QILineEdit.cpp \
-	src/QIHelpButton.cpp \
 	src/QISplitter.cpp \
 	src/QITreeView.cpp \
 	src/VBoxGuestRAMSlider.cpp \
@@ -434,7 +433,8 @@ VirtualBox_SOURCES = \
 	src/VBoxImportApplianceWgt.cpp \
 	src/VBoxImportApplianceWzd.cpp \
 	src/VBoxExportApplianceWgt.cpp \
-	src/VBoxExportApplianceWzd.cpp
+	src/VBoxExportApplianceWzd.cpp \
+	src/VBoxSpecialControls.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
  ifndef VBOX_OSE
@@ -472,10 +472,15 @@ ifdef VBOX_WITH_ICHAT_THEATER
 endif
 
 ifdef VBOX_WITH_COCOA_QT
+ VirtualBox_DEFS += VBOX_DARWIN_USE_NATIVE_CONTROLS
  VirtualBox_SOURCES.darwin += \
  	src/darwin/VBoxCocoaApplication.m \
- 	src/darwin/VBoxUtils-darwin-cocoa.m \
- 	src/darwin/VBoxDockIconPreview-cocoa.m
+ 	src/darwin/VBoxUtils-darwin-cocoa.mm \
+	src/darwin/VBoxCocoaSpecialControls.mm \
+	src/darwin/VBoxDockIconPreview-cocoa.m
+ VirtualBox_QT_MOCHDRS.darwin = \
+	include/VBoxCocoaSpecialControls.h
+
 else
  VirtualBox_SOURCES.darwin += \
  	src/darwin/VBoxUtils-darwin-carbon.cpp

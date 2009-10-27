@@ -31,7 +31,7 @@
 
 class QBoxLayout;
 
-class QIHelpButton;
+class VBoxHelpButton;
 
 class QIDialogButtonBox: public QIWithRetranslateUI<QDialogButtonBox>
 {
@@ -59,7 +59,7 @@ protected:
 
 private:
 
-    QPointer<QIHelpButton> mHelpButton;
+    QPointer<VBoxHelpButton> mHelpButton;
 };
 
 #endif /* __QIDialogButtonBox_h__ */

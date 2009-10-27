@@ -31,9 +31,11 @@
 class VBoxLogSearchPanel;
 class QTabWidget;
 class QTextEdit;
-class QLineEdit;
+class VBoxSearchField;
 class QLabel;
 class QIToolButton;
+class VBoxMiniCancelButton;
+class VBoxSegmentedButton;
 class QCheckBox;
 
 class VBoxVMLogViewer : public QIWithRetranslateUI2<QIMainDialog>,
@@ -103,6 +105,7 @@ protected:
 
 private slots:
 
+    void find (int aButton);
     void findNext() { search (true); }
     void findBack() { search (false); }
 
@@ -119,16 +122,15 @@ private:
 
     void toggleWarning (bool aHide);
 
-    VBoxVMLogViewer *mViewer;
-    QIToolButton    *mButtonClose;
-    QLabel          *mSearchName;
-    QLineEdit       *mSearchString;
-    QIToolButton    *mButtonPrev;
-    QIToolButton    *mButtonNext;
-    QCheckBox       *mCaseSensitive;
-    QSpacerItem     *mWarningSpacer;
-    QLabel          *mWarningIcon;
-    QLabel          *mWarningString;
+    VBoxVMLogViewer      *mViewer;
+    VBoxMiniCancelButton *mButtonClose;
+    QLabel               *mSearchName;
+    VBoxSearchField      *mSearchString;
+    VBoxSegmentedButton  *mButtonsNextPrev;
+    QCheckBox            *mCaseSensitive;
+    QSpacerItem          *mWarningSpacer;
+    QLabel               *mWarningIcon;
+    QLabel               *mWarningString;
 };
 
 #endif // __VBoxVMLogViewer_h__
