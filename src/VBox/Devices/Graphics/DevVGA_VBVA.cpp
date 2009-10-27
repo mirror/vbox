@@ -956,7 +956,7 @@ int vbvaVHWAReset (PVGASTATE pVGAState)
         if(RT_SUCCESS(rc))
         {
             rc = pCmd->rc;
-#ifdef DEBUG_bird /** @todo the assertion below hits when booting dsl here and resetting during early boot... */
+#ifndef DEBUG_misha /** @todo the assertion below hits when booting dsl here and resetting during early boot... */
             AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
             if (rc == VERR_NOT_IMPLEMENTED)
                 rc = VINF_SUCCESS;
