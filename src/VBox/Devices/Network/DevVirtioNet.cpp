@@ -113,7 +113,7 @@ struct VQueue
     VRING    VRing;
     uint16_t uNextAvailIndex;
     uint16_t uNextUsedIndex;
-    uint16_t uPageNumber;
+    uint32_t uPageNumber;
     void   (*pfnCallback)(void *pvState, struct VQueue *pQueue);
 };
 typedef struct VQueue VQUEUE;
@@ -496,21 +496,6 @@ void vpciReset(PVPCISTATE pState)
 
     for (unsigned i = 0; i < g_VPCIDevices[pState->enmDevType].nQueues; i++)
         vqueueReset(&pState->pQueues[i]);
-}
-
-/**
- * Arm a timer.
- *
- * @param   pState      Pointer to the device state structure.
- * @param   pTimer      Pointer to the timer.
- * @param   uExpireIn   Expiration interval in microseconds.
- */
-DECLINLINE(void) vpciArmTimer(VPCISTATE *pState, PTMTIMER pTimer, uint32_t uExpireIn)
-{
-    Log2(("%s Arming timer to fire in %d usec...\n",
-          INSTANCE(pState), uExpireIn));
-    TMTimerSet(pTimer, TMTimerFromMicro(pTimer, uExpireIn) +
-               TMTimerGet(pTimer));
 }
 
 
@@ -903,6 +888,129 @@ DECLINLINE(void) vpciCfgSetU32(PCIDEVICE& refPciDev, uint32_t uOffset, uint32_t 
 }
 
 
+#ifdef DEBUG
+static void vpciDumpState(PVPCISTATE pState, const char *pcszCaller)
+{
+    Log2(("vpciDumpState: (called from %s)\n"
+          "  uGuestFeatures = 0x%08x\n"
+          "  uQueueSelector = 0x%04x\n"
+          "  uStatus        = 0x%02x\n"
+          "  uISR           = 0x%02x\n",
+          pcszCaller,
+          pState->uGuestFeatures,
+          pState->uQueueSelector,
+          pState->uStatus,
+          pState->uISR));
+
+    for (unsigned i = 0; i < g_VPCIDevices[pState->enmDevType].nQueues; i++)
+        Log2((" %s queue:\n"
+              "  VRing.uSize           = %u\n"
+              "  VRing.addrDescriptors = %p\n"
+              "  VRing.addrAvail       = %p\n"
+              "  VRing.addrUsed        = %p\n"
+              "  uNextAvailIndex       = %u\n"
+              "  uNextUsedIndex        = %u\n"
+              "  uPageNumber           = %x\n",
+              g_VPCIDevices[pState->enmDevType].pfnGetQueueName(pState, &pState->pQueues[i]),
+              pState->pQueues[i].VRing.uSize,
+              pState->pQueues[i].VRing.addrDescriptors,
+              pState->pQueues[i].VRing.addrAvail,
+              pState->pQueues[i].VRing.addrUsed,
+              pState->pQueues[i].uNextAvailIndex,
+              pState->pQueues[i].uNextUsedIndex,
+              pState->pQueues[i].uPageNumber));
+              
+}
+#else
+#define vpciDumpState(x, s)
+#endif
+
+/**
+ * Saves the state of device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pSSM        The handle to the saved state.
+ */
+static DECLCALLBACK(int) vpciSaveExec(PVPCISTATE pState, PSSMHANDLE pSSM)
+{
+    int rc;
+
+    vpciDumpState(pState, "vpciSaveExec");
+
+    rc = SSMR3PutU32(pSSM, pState->uGuestFeatures);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU16(pSSM, pState->uQueueSelector);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU8( pSSM, pState->uStatus);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU8( pSSM, pState->uISR);
+    AssertRCReturn(rc, rc);
+
+    /* Save queue states */
+    for (unsigned i = 0; i < g_VPCIDevices[pState->enmDevType].nQueues; i++)
+    {
+        rc = SSMR3PutU16(pSSM, pState->pQueues[i].VRing.uSize);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutU32(pSSM, pState->pQueues[i].uPageNumber);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutU16(pSSM, pState->pQueues[i].uNextAvailIndex);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutU16(pSSM, pState->pQueues[i].uNextUsedIndex);
+        AssertRCReturn(rc, rc);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Loads a saved device state.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pSSM        The handle to the saved state.
+ * @param   uVersion    The data unit version number.
+ * @param   uPass       The data pass.
+ */
+static DECLCALLBACK(int) vpciLoadExec(PVPCISTATE pState, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    int rc;
+
+    if (uPass == SSM_PASS_FINAL)
+    {
+        /* Restore state data */
+        rc = SSMR3GetU32(pSSM, &pState->uGuestFeatures);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3GetU16(pSSM, &pState->uQueueSelector);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3GetU8( pSSM, &pState->uStatus);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3GetU8( pSSM, &pState->uISR);
+        AssertRCReturn(rc, rc);
+
+        /* Restore queues */
+        for (unsigned i = 0; i < g_VPCIDevices[pState->enmDevType].nQueues; i++)
+        {
+            rc = SSMR3GetU16(pSSM, &pState->pQueues[i].VRing.uSize);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3GetU32(pSSM, &pState->pQueues[i].uPageNumber);
+            AssertRCReturn(rc, rc);
+
+            if (pState->pQueues[i].uPageNumber)
+                vqueueInit(&pState->pQueues[i], pState->pQueues[i].uPageNumber);
+
+            rc = SSMR3GetU16(pSSM, &pState->pQueues[i].uNextAvailIndex);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3GetU16(pSSM, &pState->pQueues[i].uNextUsedIndex);
+            AssertRCReturn(rc, rc);
+        }
+    }
+
+    vpciDumpState(pState, "vpciLoadExec");
+
+    return VINF_SUCCESS;
+}
+
 /**
  * Set PCI configuration space registers.
  *
@@ -1124,6 +1232,8 @@ struct VNetState_st
 
     /** PCI config area holding MAC address as well as TBD. */
     struct VNetPCIConfig config;
+    /** MAC address obtained from the configuration. */
+    RTMAC       macConfigured;
     /** True if physical cable is attached in configuration. */
     bool        fCableConnected;
 
@@ -1196,6 +1306,17 @@ static const char *vnetGetQueueName(void *pvState, PVQUEUE pQueue)
     return "Invalid";
 }
 #endif /* DEBUG */
+
+DECLINLINE(int) vnetCsEnter(PVNETSTATE pState, int rcBusy)
+{
+    return vpciCsEnter(&pState->VPCI, rcBusy);
+}
+
+DECLINLINE(void) vnetCsLeave(PVNETSTATE pState)
+{
+    vpciCsLeave(&pState->VPCI);
+}
+
 
 PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pvState)
 {
@@ -1282,6 +1403,7 @@ static DECLCALLBACK(void) vnetLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
 
     STATUS |= VNET_S_LINK_UP;
     vpciRaiseInterrupt(&pState->VPCI, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
+    vnetWakeupReceive(pDevIns);
 }
 
 
@@ -1329,11 +1451,11 @@ PDMBOTHCBDECL(void) vnetReady(void *pvState)
  *
  * @returns VERR_NET_NO_BUFFER_SPACE if it cannot.
  * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @thread  EMT
+ * @thread  RX
  */
 static int vnetCanReceive(VNETSTATE *pState)
 {
-    int rc;
+    int rc = vpciCsEnter(&pState->VPCI, VERR_SEM_BUSY);
     LogFlow(("%s vnetCanReceive\n", INSTANCE(pState)));
     if (!(pState->VPCI.uStatus & VPCI_STATUS_DRV_OK))
         rc = VERR_NET_NO_BUFFER_SPACE;
@@ -1351,6 +1473,7 @@ static int vnetCanReceive(VNETSTATE *pState)
     }
 
     LogFlow(("%s vnetCanReceive -> %Vrc\n", INSTANCE(pState), rc));
+    vpciCsLeave(&pState->VPCI);
     return rc;
 }
 
@@ -1439,6 +1562,7 @@ static bool vnetAddressFilter(PVNETSTATE pState, const void *pvBuf, size_t cb)
  * @param   pState          The device state structure.
  * @param   pvBuf           The available data.
  * @param   cb              Number of bytes available in the buffer.
+ * @thread  RX
  */
 static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb)
 {
@@ -1499,7 +1623,7 @@ static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb)
  * @param   pInterface      Pointer to the interface structure containing the called function pointer.
  * @param   pvBuf           The available data.
  * @param   cb              Number of bytes available in the buffer.
- * @thread  ???
+ * @thread  RX
  */
 static DECLCALLBACK(int) vnetReceive(PPDMINETWORKPORT pInterface, const void *pvBuf, size_t cb)
 {
@@ -1656,6 +1780,153 @@ static DECLCALLBACK(void) vnetQueueControl(void *pvState, PVQUEUE pQueue)
     Log(("%s Pending control message\n", INSTANCE(pState)));
 }
 
+/**
+ * Saves the configuration.
+ *
+ * @param   pState      The VNET state.
+ * @param   pSSM        The handle to the saved state.
+ */
+static void vnetSaveConfig(VNETSTATE *pState, PSSMHANDLE pSSM)
+{
+    SSMR3PutMem(pSSM, &pState->macConfigured, sizeof(pState->macConfigured));
+}
+
+/**
+ * Live save - save basic configuration.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pSSM        The handle to the saved state.
+ * @param   uPass
+ */
+static DECLCALLBACK(int) vnetLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    VNETSTATE *pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
+    vnetSaveConfig(pState, pSSM);
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
+
+/**
+ * Prepares for state saving.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pSSM        The handle to the saved state.
+ */
+static DECLCALLBACK(int) vnetSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    VNETSTATE* pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
+
+    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+        return rc;
+    vnetCsLeave(pState);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Saves the state of device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pSSM        The handle to the saved state.
+ */
+static DECLCALLBACK(int) vnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    VNETSTATE* pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
+
+    /* Save config first */
+    vnetSaveConfig(pState, pSSM);
+
+    /* Save the common part */
+    int rc = vpciSaveExec(&pState->VPCI, pSSM);
+    AssertRCReturn(rc, rc);
+    /* Save device-specific part */
+    rc = SSMR3PutMem( pSSM, pState->config.mac.au8, sizeof(pState->config.mac));
+    AssertRCReturn(rc, rc);
+    Log(("%s State has been saved\n", INSTANCE(pState)));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Serializes the receive thread, it may be working inside the critsect.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pSSM        The handle to the saved state.
+ */
+static DECLCALLBACK(int) vnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    VNETSTATE* pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
+
+    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+        return rc;
+    vnetCsLeave(pState);
+    return VINF_SUCCESS;
+}
+
+/* Takes down the link temporarily if it's current status is up.
+ *
+ * This is used during restore and when replumbing the network link.
+ *
+ * The temporary link outage is supposed to indicate to the OS that all network
+ * connections have been lost and that it for instance is appropriate to
+ * renegotiate any DHCP lease.
+ *
+ * @param  pThis        The PCNet instance data.
+ */
+static void vnetTempLinkDown(PVNETSTATE pState)
+{
+    if (STATUS & VNET_S_LINK_UP)
+    {
+        STATUS &= ~VNET_S_LINK_UP;
+        vpciRaiseInterrupt(&pState->VPCI, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
+        /* Restore the link back in 5 seconds. */
+        int rc = TMTimerSetMillies(pState->pLinkUpTimer, 5000);
+        AssertRC(rc);
+    }
+}
+
+
+/**
+ * Restore previously saved state of device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pSSM        The handle to the saved state.
+ * @param   uVersion    The data unit version number.
+ * @param   uPass       The data pass.
+ */
+static DECLCALLBACK(int) vnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    VNETSTATE *pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
+    int       rc;
+
+    /* config checks */
+    RTMAC macConfigured;
+    rc = SSMR3GetMem(pSSM, &macConfigured, sizeof(macConfigured));
+    AssertRCReturn(rc, rc);
+    if (   memcmp(&macConfigured, &pState->macConfigured, sizeof(macConfigured))
+           && (uPass == 0 || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)) )
+        LogRel(("%s: The mac address differs: config=%RTmac saved=%RTmac\n", INSTANCE(pState), &pState->macConfigured, &macConfigured));
+
+    rc = vpciLoadExec(&pState->VPCI, pSSM, uVersion, uPass);
+    AssertRCReturn(rc, rc);
+
+    if (uPass == SSM_PASS_FINAL)
+    {
+        rc = SSMR3GetMem( pSSM, pState->config.mac.au8, sizeof(pState->config.mac));
+        AssertRCReturn(rc, rc);
+        /* Indicate link down to the guest OS that all network connections have
+           been lost, unless we've been teleported here. */
+        if (!PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns))
+            vnetTempLinkDown(pState);
+    }
+
+    return rc;
+}
 
 /**
  * Construct a device instance for a VM.
@@ -1695,8 +1966,8 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                             N_("Invalid configuration for VirtioNet device"));
 
     /* Get config params */
-    rc = CFGMR3QueryBytes(pCfgHandle, "MAC", pState->config.mac.au8,
-                          sizeof(pState->config.mac.au8));
+    rc = CFGMR3QueryBytes(pCfgHandle, "MAC", pState->macConfigured.au8,
+                          sizeof(pState->macConfigured));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get MAC address"));
@@ -1704,6 +1975,10 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'CableConnected'"));
+
+    /* Initialize PCI config space */
+    memcpy(pState->config.mac.au8, pState->macConfigured.au8, sizeof(pState->config.mac.au8));
+    pState->config.uStatus = 0;
 
     /* Initialize state structure */
     pState->fLocked      = false;
@@ -1717,14 +1992,12 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pState->INetworkConfig.pfnSetLinkState   = vnetSetLinkState;
 
     /* Register save/restore state handlers. */
-    // TODO:
-    /*
-    rc = PDMDevHlpSSMRegisterEx(pDevIns, VVNET_SAVEDSTATE_VERSION, sizeof(VNETSTATE), NULL,
-                                NULL, NULL, NULL,
-                                NULL, vnetSaveExec, NULL,
-                                NULL, vnetLoadExec, vnetLoadDone);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, VNET_SAVEDSTATE_VERSION, sizeof(VNETSTATE), NULL,
+                                NULL,         vnetLiveExec, NULL,
+                                vnetSavePrep, vnetSaveExec, NULL,
+                                vnetLoadPrep, vnetLoadExec, NULL);
     if (RT_FAILURE(rc))
-    return rc;*/
+    return rc;
 
     /* Create the RX notifier signaller. */
     rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
@@ -1923,13 +2196,8 @@ static DECLCALLBACK(int) vnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
      * will know that we have change the configuration of the
      * network card
      */
-    if ((STATUS & VNET_S_LINK_UP) && RT_SUCCESS(rc))
-    {
-        STATUS &= ~VNET_S_LINK_UP;
-        vpciRaiseInterrupt(&pState->VPCI, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
-        /* Restore the link back in 5 seconds. */
-        vpciArmTimer(&pState->VPCI, pState->pLinkUpTimer, 5000000);
-    }
+    if (RT_SUCCESS(rc))
+        vnetTempLinkDown(pState);
 
     vpciCsLeave(&pState->VPCI);
     return rc;
