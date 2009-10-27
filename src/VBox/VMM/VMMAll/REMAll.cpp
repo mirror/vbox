@@ -99,7 +99,8 @@ static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
         {
             do
             {
-                Assert(cFlushes++ != 128);
+                cFlushes++;
+                Assert(cFlushes != 128);
                 AssertFatal(cFlushes < _1M);
                 VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_REM_REPLAY_HANDLER_NOTIFICATIONS, 0);
                 idxFree = ASMAtomicUoReadU32(&pVM->rem.s.idxFreeList);
@@ -224,6 +225,8 @@ VMMDECL(void) REMNotifyHandlerPhysicalFlushIfAlmostFull(PVM pVM, PVMCPU pVCpu)
         if (++cFree >= 48)
             return;
     }
+    Assert(VM_FF_ISSET(pVM, VM_FF_REM_HANDLER_NOTIFY));
+    Assert(pVM->rem.s.idxPendingList != UINT32_MAX);
 
     /* Ok, we gotta flush them. */
     VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_REM_REPLAY_HANDLER_NOTIFICATIONS, 0);
