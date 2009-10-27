@@ -7879,7 +7879,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, activates support for the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if activated..</source>
-        <translation>Si cette case est cochée, la machine virtuelle supportera l&apos;Interface étendue de logiciels intermédiaires (EFI), que nécéssitent certains systèmes invités pour pouvoir démarrer. Ceci empêchera cependant les invités qui ne le supportent pas de démarrer.</translation>
+        <translation>Si cette case est cochée, la machine virtuelle supportera l&apos;Interface étendue de micrologiciels (EFI), que nécéssitent certains systèmes invités pour pouvoir démarrer. Ceci empêchera cependant les invités qui ne le supportent pas de démarrer.</translation>
     </message>
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
