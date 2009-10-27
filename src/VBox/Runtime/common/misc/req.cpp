@@ -70,7 +70,7 @@ RTDECL(int) RTReqCreateQueue(PRTREQQUEUE *ppQueue)
         return VINF_SUCCESS;
     }
 
-    RTMemFree(*ppQueue);
+    RTMemFree(pQueue);
     return rc;
 }
 RT_EXPORT_SYMBOL(RTReqCreateQueue);
