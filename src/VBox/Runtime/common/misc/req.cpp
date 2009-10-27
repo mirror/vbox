@@ -65,7 +65,7 @@ RTDECL(int) RTReqCreateQueue(PRTREQQUEUE *ppQueue)
         return VERR_NO_MEMORY;
 
     int rc = RTSemEventCreate(&(*ppQueue)->EventSem);
-    if (rc != VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
         RTMemFree(*ppQueue);
 
     return rc;
@@ -85,15 +85,15 @@ RTDECL(int) RTReqDestroyQueue(PRTREQQUEUE pQueue)
      * Check input.
      */
     if (!pQueue)
-    {
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
+        return VINF_SUCCESS;
+    AssertPtr(pQueue);
     RTSemEventDestroy(pQueue->EventSem);
+    pQueue->EventSem = NIL_RTSEMEVENT;
     RTMemFree(pQueue);
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTReqDestroyQueue);
+
 
 /**
  * Process one or more request packets
@@ -132,12 +132,15 @@ RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, unsigned cMillies)
         PRTREQ pReqs = (PRTREQ)ASMAtomicXchgPtr((void * volatile *)&pQueue->pReqs, NULL);
         if (!pReqs)
         {
-            /** @note We currently don't care if the entire time wasted here is larger than cMillies */
+            ASMAtomicWriteBool(&pQueue->fBusy, false); /* this aint 100% perfect, but it's good enough for now... */
+            /** @todo We currently don't care if the entire time wasted here is larger than
+             *        cMillies */
             rc = RTSemEventWait(pQueue->EventSem, cMillies);
             if (rc != VINF_SUCCESS)
                 break;
             continue;
         }
+        ASMAtomicWriteBool(&pQueue->fBusy, true);
 
         /*
          * Reverse the list to process it in FIFO order.
@@ -676,6 +679,7 @@ RTDECL(int) RTReqQueue(PRTREQ pReq, unsigned cMillies)
     {
         pNext = pQueue->pReqs;
         pReq->pNext = pNext;
+        ASMAtomicWriteBool(&pQueue->fBusy, true);
     } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pQueue->pReqs, (void *)pReq, (void *)pNext));
 
     /*
@@ -901,3 +905,25 @@ static int  rtReqProcessOne(PRTREQ pReq)
     return rcRet;
 }
 
+
+/**
+ * Checks if the queue is busy or not.
+ *
+ * The caller is responsible for dealing with any concurrent submitts.
+ *
+ * @returns true if busy, false if idle.
+ * @param   pQueue              The queue.
+ */
+RTDECL(bool) RTReqIsBusy(PRTREQQUEUE pQueue)
+{
+    AssertPtrReturn(pQueue, false);
+
+    if (ASMAtomicReadBool(&pQueue->fBusy))
+        return true;
+    if (ASMAtomicReadPtr((void * volatile *)&pQueue->pReqs) != NULL)
+        return true;
+    if (ASMAtomicReadBool(&pQueue->fBusy))
+        return true;
+    return false;
+}
+RT_EXPORT_SYMBOL(RTReqIsBusy);

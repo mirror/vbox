@@ -151,6 +151,8 @@ typedef struct RTREQQUEUE
      * The request can use this event semaphore to wait/poll for new requests.
      */
     RTSEMEVENT              EventSem;
+    /** Set if busy (pending or processing requests). */
+    bool volatile           fBusy;
 } RTREQQUEUE;
 
 #ifdef IN_RING3
@@ -362,6 +364,15 @@ RTDECL(int) RTReqQueue(PRTREQ pReq, unsigned cMillies);
  */
 RTDECL(int) RTReqWait(PRTREQ pReq, unsigned cMillies);
 
+/**
+ * Checks if the queue is busy or not.
+ *
+ * The caller is responsible for dealing with any concurrent submitts.
+ *
+ * @returns true if busy, false if idle.
+ * @param   pQueue              The queue.
+ */
+RTDECL(bool) RTReqIsBusy(PRTREQQUEUE pQueue);
 
 #endif /* IN_RING3 */
 
