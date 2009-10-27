@@ -23,14 +23,14 @@ SUB_DEPTH = ../../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += tstSessionHack
-tstSessionHack_TEMPLATE = VBOXW32GUESTR3
+tstSessionHack_TEMPLATE = VBOXGUESTR3EXE
 tstSessionHack_DEFS     = VBOX_WITH_HGCM
 tstSessionHack_INCS     = ../../include
 tstSessionHack_SOURCES  = \
 	tstSessionHack.cpp
 
 tstSessionHack_LIBS     = \
-	$(PATH_LIB)/additions/RuntimeW32GuestR3.lib
+	$(VBOX_LIB_VBGL_R3)
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
