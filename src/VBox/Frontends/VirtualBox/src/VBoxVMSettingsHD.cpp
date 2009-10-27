@@ -2598,6 +2598,6 @@ QString VBoxVMSettingsHD::generateUniqueName (const QString &aTemplate) const
                 maxNumber = number;
         }
     }
-    return QString ("%1 %2").arg (aTemplate).arg (++ maxNumber);
+    return maxNumber ? QString ("%1 %2").arg (aTemplate).arg (++ maxNumber) : aTemplate;
 }
 
