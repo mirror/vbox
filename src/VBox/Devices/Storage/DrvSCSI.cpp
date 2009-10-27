@@ -802,13 +802,13 @@ static DECLCALLBACK(void *)  drvscsiQueryInterface(PPDMIBASE pInterface, PDMINTE
 }
 
 /**
- * @copydoc FNPDMDRVRESET
+ * Worker for drvscsiReset, drvscsiSuspend and drvscsiPowerOff.
+ *
+ * @param   pThis               The instance data.
+ * @param   pszEvent            The notification event (for logging).
  */
-static DECLCALLBACK(void) drvscsiReset(PPDMDRVINS pDrvIns)
+static void drvscsiWaitForPendingRequests(PDRVSCSI pThis, const char *pszEvent)
 {
-    PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
-    int rc;
-
     /*
      * Try make sure any pending I/O has completed now.
      */
@@ -816,20 +816,20 @@ static DECLCALLBACK(void) drvscsiReset(PPDMDRVINS pDrvIns)
     {
         if (!drvscsiAsyncIOLoopNoPendingDummy(pThis, 20000 /*ms*/))
         {
-            LogRel(("drvscsiReset#%u: previous dummy request is still pending\n", pDrvIns->iInstance));
+            LogRel(("drvscsi%s#%u: previous dummy request is still pending\n", pszEvent, pThis->pDrvIns->iInstance));
             return;
         }
 
         if (RTReqIsBusy(pThis->pQueueRequests))
         {
             PRTREQ pReq;
-            rc = RTReqCall(pThis->pQueueRequests, &pReq, 20000 /*ms*/, (PFNRT)drvscsiAsyncIOLoopSyncCallback, 0);
+            int rc = RTReqCall(pThis->pQueueRequests, &pReq, 20000 /*ms*/, (PFNRT)drvscsiAsyncIOLoopSyncCallback, 0);
             if (RT_SUCCESS(rc))
                 RTReqFree(pReq);
             else
             {
                 pThis->pPendingDummyReq = pReq;
-                LogRel(("drvscsiReset#%u: %Rrc pReq=%p\n", pDrvIns->iInstance, rc, pReq));
+                LogRel(("drvscsi%s#%u: %Rrc pReq=%p\n", pszEvent, pThis->pDrvIns->iInstance, rc, pReq));
             }
         }
     }
@@ -846,6 +846,33 @@ static DECLCALLBACK(void) drvscsiReset(PPDMDRVINS pDrvIns)
  *        in the I/O controllers and reduce the time it takes to suspend a VM a
  *        wee bit...
  */
+}
+
+/**
+ * @copydoc FNPDMDRVPOWEROFF
+ */
+static DECLCALLBACK(void) drvscsiPowerOff(PPDMDRVINS pDrvIns)
+{
+    PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
+    drvscsiWaitForPendingRequests(pThis, "PowerOff");
+}
+
+/**
+ * @copydoc FNPDMDRVSUSPEND
+ */
+static DECLCALLBACK(void) drvscsiSuspend(PPDMDRVINS pDrvIns)
+{
+    PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
+    drvscsiWaitForPendingRequests(pThis, "Suspend");
+}
+
+/**
+ * @copydoc FNPDMDRVRESET
+ */
+static DECLCALLBACK(void) drvscsiReset(PPDMDRVINS pDrvIns)
+{
+    PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
+    drvscsiWaitForPendingRequests(pThis, "Reset");
 }
 
 /**
@@ -989,7 +1016,7 @@ const PDMDRVREG g_DrvSCSI =
     /* pfnReset */
     drvscsiReset,
     /* pfnSuspend */
-    NULL,
+    drvscsiSuspend,
     /* pfnResume */
     NULL,
     /* pfnAttach */
@@ -997,7 +1024,7 @@ const PDMDRVREG g_DrvSCSI =
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
-    NULL,
+    drvscsiPowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
