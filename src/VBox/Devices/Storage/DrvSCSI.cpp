@@ -890,6 +890,9 @@ static DECLCALLBACK(void) drvscsiDestruct(PPDMDRVINS pDrvIns)
 
     if (pThis->pQueueRequests)
     {
+        if (!drvscsiAsyncIOLoopNoPendingDummy(pThis, 100 /*ms*/))
+            LogRel(("drvscsiDestruct#%u: previous dummy request is still pending\n", pDrvIns->iInstance));
+
         rc = RTReqDestroyQueue(pThis->pQueueRequests);
         AssertMsgRC(rc, ("Failed to destroy queue rc=%Rrc\n", rc));
     }
