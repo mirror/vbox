@@ -66,7 +66,7 @@ CGContextRef darwinBeginCGContextForApplicationDockTile (void)
     [gDockIconImage lockFocus];
 
     NSGraphicsContext *nsContext = [NSGraphicsContext currentContext];
-    CGContextRef pCGContext = [nsContext graphicsPort];
+    CGContextRef pCGContext = (CGContextRef)[nsContext graphicsPort];
 
     [pool release];
     return pCGContext;
