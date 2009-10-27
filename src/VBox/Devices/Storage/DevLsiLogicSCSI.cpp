@@ -4780,42 +4780,6 @@ static DECLCALLBACK(int) lsilogicMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegio
     return rc;
 }
 
-/**
- * Waits until all I/O operations on all devices are complete.
- *
- * @retruns Flag which indicates if all I/O completed in the given timeout.
- * @param   pLsiLogic    Pointer to the dveice instance to check.
- * @param   cMillis      Timeout in milliseconds to wait per device.
- */
-static bool lsilogicWaitForAsyncIOFinished(PLSILOGICSCSI pLsiLogic, unsigned cMillies)
-{
-    uint64_t u64Start;
-    unsigned i;
-
-    /*
-     * Wait for any pending async operation to finish
-     */
-    u64Start = RTTimeMilliTS();
-    for (;;)
-    {
-        /* Check every port. */
-        for (i = 0; i < RT_ELEMENTS(pLsiLogic->aDeviceStates); i++)
-            if (ASMAtomicReadU32(&pLsiLogic->aDeviceStates[i].cOutstandingRequests))
-                break;
-        if (i >= RT_ELEMENTS(pLsiLogic->aDeviceStates))
-            return true;
-
-        uint64_t cMsElapsed = RTTimeMilliTS() - u64Start;
-        if (cMsElapsed >= cMillies)
-            return false;
-
-        /* Try synchronize the request queue for this device. */
-        PPDMISCSICONNECTOR pDrvSCSIConnector = pLsiLogic->aDeviceStates[i].pDrvSCSIConnector;
-        uint32_t cMsLeft = cMillies - (uint32_t)cMsElapsed;
-        pDrvSCSIConnector->pfnSyncronizeRequests(pDrvSCSIConnector, RT_MAX(cMsLeft, 100));
-    }
-}
-
 static DECLCALLBACK(int) lsilogicLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
@@ -5158,26 +5122,6 @@ static DECLCALLBACK(void) lsilogicReset(PPDMDEVINS pDevIns)
 {
     PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     int rc;
-
-/** @todo r=bird: this is a deadlock trap. We're EMT(0), if there are
- *        outstanding requests they may require EMT interaction because of
- *        physical write backs around lsilogicDeviceSCSIRequestCompleted...
- *
- *        I have some more generic solution for delayed suspend, reset and
- *        poweroff handling that I'm considering.  The idea is that the
- *        notification callback returns a status indicating that it didn't
- *        complete and needs to be called again or something.  EMT continues on
- *        the next device and when it's done, it processes incoming requests and
- *        does another notification round... This way we could combine the waits
- *        in the I/O controllers and reduce the time it takes to suspend a VM a
- *        wee bit...
- *
- * DrvSCSI should implement the reset notification, then we could retire this
- * fun lsilogicWaitForAsyncIOFinished code.  (The drivers are reset before the
- * device.)  The deadlock trap is still there though.
- */
-    bool fIdle = lsilogicWaitForAsyncIOFinished(pLsiLogic, 20000);
-    Assert(fIdle);
 
     rc = lsilogicHardReset(pLsiLogic);
     AssertRC(rc);

@@ -88,6 +88,8 @@ typedef struct DRVSCSI
     PPDMTHREAD              pAsyncIOThread;
     /** Queue for passing the requests to the thread. */
     PRTREQQUEUE             pQueueRequests;
+    /** Request that we've left pending on wakeup or reset. */
+    PRTREQ                  pPendingDummyReq;
     /** Release statistics: number of bytes written. */
     STAMCOUNTER             StatBytesWritten;
     /** Release statistics: number of bytes read. */
@@ -670,7 +672,8 @@ static int drvscsiProcessRequestOne(PDRVSCSI pThis, PPDMSCSIREQUEST pRequest)
 }
 
 /**
- * Request function to syncronize the request execution.
+ * Dummy request function used by drvscsiReset to wait for all pending requests
+ * to complete prior to the device reset.
  *
  * @returns VINF_SUCCESS.
  */
@@ -715,19 +718,48 @@ static int drvscsiAsyncIOLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
     return VINF_SUCCESS;
 }
 
+/**
+ * Deals with any pending dummy request
+ *
+ * @returns true if no pending dummy request, false if still pending.
+ * @param   pThis               The instance data.
+ * @param   cMillies            The number of milliseconds to wait for any
+ *                              pending request to finish.
+ */
+static bool drvscsiAsyncIOLoopNoPendingDummy(PDRVSCSI pThis, uint32_t cMillies)
+{
+    if (!pThis->pPendingDummyReq)
+        return false;
+    int rc = RTReqWait(pThis->pPendingDummyReq, cMillies);
+    if (RT_FAILURE(rc))
+        return false;
+    RTReqFree(pThis->pPendingDummyReq);
+    pThis->pPendingDummyReq = NULL;
+    return true;
+}
+
 static int drvscsiAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    int rc;
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
     PRTREQ pReq;
+    int rc;
 
     AssertMsgReturn(pThis->pQueueRequests, ("pQueueRequests is NULL\n"), VERR_INVALID_STATE);
 
+    if (!drvscsiAsyncIOLoopNoPendingDummy(pThis, 10000 /* 10 sec */))
+    {
+        LogRel(("drvscsiAsyncIOLoopWakeup#%u: previous dummy request is still pending\n", pDrvIns->iInstance));
+        return VERR_TIMEOUT;
+    }
+
     rc = RTReqCall(pThis->pQueueRequests, &pReq, 10000 /* 10 sec. */, (PFNRT)drvscsiAsyncIOLoopWakeupFunc, 0);
-    AssertMsgRC(rc, ("Inserting request into queue failed rc=%Rrc\n", rc));
     if (RT_SUCCESS(rc))
         RTReqFree(pReq);
-    /*else: leak it */
+    else
+    {
+        pThis->pPendingDummyReq = pReq;
+        LogRel(("drvscsiAsyncIOLoopWakeup#%u: %Rrc pReq=%p\n", pDrvIns->iInstance, rc, pReq));
+    }
 
     return rc;
 }
@@ -749,25 +781,6 @@ static DECLCALLBACK(int) drvscsiRequestSend(PPDMISCSICONNECTOR pInterface, PPDMS
     return VINF_SUCCESS;
 }
 
-/** @copydoc PDMISCSICONNECTOR::pfnSyncronizeRequests. */
-static DECLCALLBACK(int) drvscsiSyncronizeRequests(PPDMISCSICONNECTOR pInterface, uint32_t cMillies)
-{
-    int rc;
-    PDRVSCSI pThis = PDMISCSICONNECTOR_2_DRVSCSI(pInterface);
-    PRTREQ pReq;
-
-    Assert(cMillies > 100);
-    AssertReturn(pThis->pQueueRequests, VERR_INVALID_STATE);
-
-    rc = RTReqCall(pThis->pQueueRequests, &pReq, cMillies, (PFNRT)drvscsiAsyncIOLoopSyncCallback, 0);
-    AssertMsgRC(rc, ("Inserting request into queue failed rc=%Rrc\n", rc));
-    if (RT_SUCCESS(rc))
-        RTReqFree(pReq);
-    /*else: leak it */
-
-    return rc;
-}
-
 /* -=-=-=-=- IBase -=-=-=-=- */
 
 /** @copydoc PDMIBASE::pfnQueryInterface. */
@@ -786,6 +799,53 @@ static DECLCALLBACK(void *)  drvscsiQueryInterface(PPDMIBASE pInterface, PDMINTE
         default:
             return NULL;
     }
+}
+
+/**
+ * @copydoc FNPDMDRVRESET
+ */
+static DECLCALLBACK(void) drvscsiReset(PPDMDRVINS pDrvIns)
+{
+    PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
+    int rc;
+
+    /*
+     * Try make sure any pending I/O has completed now.
+     */
+    if (pThis->pQueueRequests)
+    {
+        if (!drvscsiAsyncIOLoopNoPendingDummy(pThis, 20000 /*ms*/))
+        {
+            LogRel(("drvscsiReset#%u: previous dummy request is still pending\n", pDrvIns->iInstance));
+            return;
+        }
+
+        if (RTReqIsBusy(pThis->pQueueRequests))
+        {
+            PRTREQ pReq;
+            rc = RTReqCall(pThis->pQueueRequests, &pReq, 20000 /*ms*/, (PFNRT)drvscsiAsyncIOLoopSyncCallback, 0);
+            if (RT_SUCCESS(rc))
+                RTReqFree(pReq);
+            else
+            {
+                pThis->pPendingDummyReq = pReq;
+                LogRel(("drvscsiReset#%u: %Rrc pReq=%p\n", pDrvIns->iInstance, rc, pReq));
+            }
+        }
+    }
+/** @todo r=bird: this is a deadlock trap. We're EMT(0), if there are
+ *        outstanding requests they may require EMT interaction because of
+ *        physical write backs around lsilogicDeviceSCSIRequestCompleted...
+ *
+ *        I have some more generic solution for delayed suspend, reset and
+ *        poweroff handling that I'm considering.  The idea is that the
+ *        notification callback returns a status indicating that it didn't
+ *        complete and needs to be called again or something.  EMT continues on
+ *        the next device and when it's done, it processes incoming requests and
+ *        does another notification round... This way we could combine the waits
+ *        in the I/O controllers and reduce the time it takes to suspend a VM a
+ *        wee bit...
+ */
 }
 
 /**
@@ -825,7 +885,6 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
      */
     pDrvIns->IBase.pfnQueryInterface                    = drvscsiQueryInterface;
     pThis->ISCSIConnector.pfnSCSIRequestSend            = drvscsiRequestSend;
-    pThis->ISCSIConnector.pfnSyncronizeRequests         = drvscsiSyncronizeRequests;
 
     /*
      * Try attach driver below and query it's block interface.
@@ -928,7 +987,7 @@ const PDMDRVREG g_DrvSCSI =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    NULL,
+    drvscsiReset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */
