@@ -988,12 +988,9 @@ PDMBOTHCBDECL(int) apicLocalInterrupt(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t
     }
 
     /* If LAPIC is enabled, interrupts are subject to LVT programming. */
-    if (u8Pin > 1)
-    {
-        /* There are only two local interrupt pins. */
-        AssertMsgFailed(("Invalid LAPIC pin %d\n", u8Pin));
-        return VERR_INVALID_PARAMETER;
-    }
+
+    /* There are only two local interrupt pins. */
+    AssertMsgReturn(u8Pin <= 1, ("Invalid LAPIC pin %d\n", u8Pin), VERR_INVALID_PARAMETER);
 
     /* NB: We currently only deliver local interrupts to the first CPU. In theory they
      * should be delivered to all CPUs and it is the guest's responsibility to ensure
@@ -1008,20 +1005,26 @@ PDMBOTHCBDECL(int) apicLocalInterrupt(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t
         PDMAPICIRQ  enmType;
 
         u8Delivery = (u32Lvec >> 8) & 7;
-        switch (u8Delivery) 
+        switch (u8Delivery)
         {
-        case APIC_DM_EXTINT:
-            Assert(u8Pin == 0); /* PIC should be wired to LINT0. */
-            enmType = PDMAPICIRQ_EXTINT;
-            break;
-        case APIC_DM_NMI:
-            Assert(u8Pin == 0); /* NMI should be wired to LINT1. */
-            enmType = PDMAPICIRQ_NMI;
-            break;
-        case APIC_DM_SMI:
-            enmType = PDMAPICIRQ_SMI;
-            break;
-
+            case APIC_DM_EXTINT:
+                Assert(u8Pin == 0); /* PIC should be wired to LINT0. */
+                enmType = PDMAPICIRQ_EXTINT;
+                break;
+            case APIC_DM_NMI:
+                Assert(u8Pin == 1); /* NMI should be wired to LINT1. */
+                enmType = PDMAPICIRQ_NMI;
+                break;
+            case APIC_DM_SMI:
+                enmType = PDMAPICIRQ_SMI;
+                break;
+            case APIC_DM_FIXED:
+                /** @todo implement APIC_DM_FIXED! */
+            case APIC_DM_INIT:
+                /** @todo implement APIC_DM_INIT? */
+            default:
+                AssertLogRelMsgFailedReturn(("delivery type %d not implemented. u8Pin=%d u8Level=%d", u8Delivery, u8Pin, u8Level),
+                                            VERR_INTERNAL_ERROR_4);
         }
         LogFlow(("apicLocalInterrupt: setting local interrupt type %d\n", enmType));
         cpuSetInterrupt(dev, s, enmType);
