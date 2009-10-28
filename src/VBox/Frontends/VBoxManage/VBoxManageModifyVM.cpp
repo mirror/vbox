@@ -260,25 +260,21 @@ int handleModifyVM(HandlerArg *a)
         {
             case MODIFYVM_NAME:
             {
-                if (ValueUnion.psz)
-                    CHECK_ERROR(machine, COMSETTER(Name)(Bstr(ValueUnion.psz)));
+                CHECK_ERROR(machine, COMSETTER(Name)(Bstr(ValueUnion.psz)));
                 break;
             }
             case MODIFYVM_OSTYPE:
             {
-                if (ValueUnion.psz)
+                ComPtr<IGuestOSType> guestOSType;
+                CHECK_ERROR(a->virtualBox, GetGuestOSType(Bstr(ValueUnion.psz), guestOSType.asOutParam()));
+                if (SUCCEEDED(rc) && guestOSType)
                 {
-                    ComPtr<IGuestOSType> guestOSType;
-                    CHECK_ERROR(a->virtualBox, GetGuestOSType(Bstr(ValueUnion.psz), guestOSType.asOutParam()));
-                    if (SUCCEEDED(rc) && guestOSType)
-                    {
-                        CHECK_ERROR(machine, COMSETTER(OSTypeId)(Bstr(ValueUnion.psz)));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid guest OS type '%s'", Utf8Str(ValueUnion.psz).raw());
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(machine, COMSETTER(OSTypeId)(Bstr(ValueUnion.psz)));
+                }
+                else
+                {
+                    errorArgument("Invalid guest OS type '%s'", Utf8Str(ValueUnion.psz).raw());
+                    rc = E_FAIL;
                 }
                 break;
             }
@@ -299,189 +295,162 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_FIRMWARE:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "efi"))
                 {
-                    if (!strcmp(ValueUnion.psz, "efi"))
-                    {
-                        CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_EFI));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "bios"))
-                    {
-                        CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_BIOS));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --firmware argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_EFI));
+                }
+                else if (!strcmp(ValueUnion.psz, "bios"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_BIOS));
+                }
+                else
+                {
+                    errorArgument("Invalid --firmware argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
             case MODIFYVM_ACPI:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(biosSettings, COMSETTER(ACPIEnabled)(true));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(biosSettings, COMSETTER(ACPIEnabled)(false));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --acpi argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(biosSettings, COMSETTER(ACPIEnabled)(true));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(biosSettings, COMSETTER(ACPIEnabled)(false));
+                }
+                else
+                {
+                    errorArgument("Invalid --acpi argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
             case MODIFYVM_IOAPIC:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(biosSettings, COMSETTER(IOAPICEnabled)(true));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(biosSettings, COMSETTER(IOAPICEnabled)(false));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --ioapic argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(biosSettings, COMSETTER(IOAPICEnabled)(true));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(biosSettings, COMSETTER(IOAPICEnabled)(false));
+                }
+                else
+                {
+                    errorArgument("Invalid --ioapic argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
             case MODIFYVM_PAE:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_PAE, true));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_PAE, false));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --pae argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_PAE, true));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_PAE, false));
+                }
+                else
+                {
+                    errorArgument("Invalid --pae argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
             case MODIFYVM_SYNTHCPU:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_Synthetic, true));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_Synthetic, false));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --synthcpu argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_Synthetic, true));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_Synthetic, false));
+                }
+                else
+                {
+                    errorArgument("Invalid --synthcpu argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
             case MODIFYVM_HWVIRTEX:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, TRUE));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, FALSE));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --hwvirtex argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, TRUE));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, FALSE));
+                }
+                else
+                {
+                    errorArgument("Invalid --hwvirtex argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
             case MODIFYVM_HWVIRTEXEXCLUSIVE:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, TRUE));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, FALSE));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --hwvirtex argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, TRUE));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, FALSE));
+                }
+                else
+                {
+                    errorArgument("Invalid --hwvirtex argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
             case MODIFYVM_NESTEDPAGING:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, TRUE));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, FALSE));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --nestedpaging argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, TRUE));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, FALSE));
+                }
+                else
+                {
+                    errorArgument("Invalid --nestedpaging argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
             case MODIFYVM_VTXVPID:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_VPID, TRUE));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_VPID, FALSE));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --vtxvpid argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_VPID, TRUE));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_VPID, FALSE));
+                }
+                else
+                {
+                    errorArgument("Invalid --vtxvpid argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
@@ -502,87 +471,75 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_ACCELERATE3D:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(machine, COMSETTER(Accelerate3DEnabled)(true));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(machine, COMSETTER(Accelerate3DEnabled)(false));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --accelerate3d argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(machine, COMSETTER(Accelerate3DEnabled)(true));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(Accelerate3DEnabled)(false));
+                }
+                else
+                {
+                    errorArgument("Invalid --accelerate3d argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
             case MODIFYVM_ACCELERATE2DVIDEO:
             {
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(machine, COMSETTER(Accelerate2DVideoEnabled)(true));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(machine, COMSETTER(Accelerate2DVideoEnabled)(false));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --accelerate2dvideo argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(machine, COMSETTER(Accelerate2DVideoEnabled)(true));
                 }
-#endif
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(Accelerate2DVideoEnabled)(false));
+                }
+                else
+                {
+                    errorArgument("Invalid --accelerate2dvideo argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
                 break;
             }
+#endif
 
             case MODIFYVM_BIOSLOGOFADEIN:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(biosSettings, COMSETTER(LogoFadeIn)(true));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(biosSettings, COMSETTER(LogoFadeIn)(false));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --bioslogofadein argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(biosSettings, COMSETTER(LogoFadeIn)(true));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(biosSettings, COMSETTER(LogoFadeIn)(false));
+                }
+                else
+                {
+                    errorArgument("Invalid --bioslogofadein argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
             case MODIFYVM_BIOSLOGOFADEOUT:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(biosSettings, COMSETTER(LogoFadeOut)(true));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(biosSettings, COMSETTER(LogoFadeOut)(false));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --bioslogofadeout argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                        break;
-                    }
+                    CHECK_ERROR(biosSettings, COMSETTER(LogoFadeOut)(true));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(biosSettings, COMSETTER(LogoFadeOut)(false));
+                }
+                else
+                {
+                    errorArgument("Invalid --bioslogofadeout argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
+                    break;
                 }
                 break;
             }
@@ -596,26 +553,28 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_BIOSLOGOIMAGEPATH:
             {
-                if (ValueUnion.psz)
-                    CHECK_ERROR(biosSettings, COMSETTER(LogoImagePath)(Bstr(ValueUnion.psz)));
+                CHECK_ERROR(biosSettings, COMSETTER(LogoImagePath)(Bstr(ValueUnion.psz)));
                 break;
             }
 
             case MODIFYVM_BIOSBOOTMENU:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "disabled"))
                 {
-                    if (!strcmp(ValueUnion.psz, "disabled"))
-                        CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_Disabled));
-                    else if (!strcmp(ValueUnion.psz, "menuonly"))
-                        CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_MenuOnly));
-                    else if (!strcmp(ValueUnion.psz, "messageandmenu"))
-                        CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_MessageAndMenu));
-                    else
-                    {
-                        errorArgument("Invalid --biosbootmenu argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_Disabled));
+                }
+                else if (!strcmp(ValueUnion.psz, "menuonly"))
+                {
+                    CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_MenuOnly));
+                }
+                else if (!strcmp(ValueUnion.psz, "messageandmenu"))
+                {
+                    CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_MessageAndMenu));
+                }
+                else
+                {
+                    errorArgument("Invalid --biosbootmenu argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
@@ -629,21 +588,18 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_BIOSPXEDEBUG:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "on"))
                 {
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(true));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(false));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --biospxedebug argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(true));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(false));
+                }
+                else
+                {
+                    errorArgument("Invalid --biospxedebug argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
@@ -1546,136 +1502,127 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_AUDIOCONTROLLER:
             {
-                if (ValueUnion.psz)
-                {
-                    ComPtr<IAudioAdapter> audioAdapter;
-                    machine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
-                    ASSERT(audioAdapter);
+                ComPtr<IAudioAdapter> audioAdapter;
+                machine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+                ASSERT(audioAdapter);
 
-                    if (!strcmp(ValueUnion.psz, "sb16"))
-                        CHECK_ERROR(audioAdapter, COMSETTER(AudioController)(AudioControllerType_SB16));
-                    else if (!strcmp(ValueUnion.psz, "ac97"))
-                        CHECK_ERROR(audioAdapter, COMSETTER(AudioController)(AudioControllerType_AC97));
-                    else
-                    {
-                        errorArgument("Invalid --audiocontroller argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                if (!strcmp(ValueUnion.psz, "sb16"))
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioController)(AudioControllerType_SB16));
+                else if (!strcmp(ValueUnion.psz, "ac97"))
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioController)(AudioControllerType_AC97));
+                else
+                {
+                    errorArgument("Invalid --audiocontroller argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
             case MODIFYVM_AUDIO:
             {
-                if (ValueUnion.psz)
-                {
-                    ComPtr<IAudioAdapter> audioAdapter;
-                    machine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
-                    ASSERT(audioAdapter);
+                ComPtr<IAudioAdapter> audioAdapter;
+                machine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+                ASSERT(audioAdapter);
 
-                    /* disable? */
-                    if (!strcmp(ValueUnion.psz, "none"))
-                    {
-                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(false));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "null"))
-                    {
-                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Null));
-                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                    }
+                /* disable? */
+                if (!strcmp(ValueUnion.psz, "none"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(false));
+                }
+                else if (!strcmp(ValueUnion.psz, "null"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Null));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+                }
 #ifdef RT_OS_WINDOWS
 #ifdef VBOX_WITH_WINMM
-                    else if (!strcmp(ValueUnion.psz, "winmm"))
-                    {
-                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WinMM));
-                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                    }
+                else if (!strcmp(ValueUnion.psz, "winmm"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WinMM));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+                }
 #endif
-                    else if (!strcmp(ValueUnion.psz, "dsound"))
-                    {
-                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DirectSound));
-                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                    }
+                else if (!strcmp(ValueUnion.psz, "dsound"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DirectSound));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+                }
 #endif /* RT_OS_WINDOWS */
 #ifdef RT_OS_LINUX
-                    else if (!strcmp(ValueUnion.psz, "oss"))
-                    {
-                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
-                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                    }
+                else if (!strcmp(ValueUnion.psz, "oss"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+                }
 # ifdef VBOX_WITH_ALSA
-                    else if (!strcmp(ValueUnion.psz, "alsa"))
-                    {
-                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_ALSA));
-                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                    }
+                else if (!strcmp(ValueUnion.psz, "alsa"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_ALSA));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+                }
 # endif
 # ifdef VBOX_WITH_PULSE
-                    else if (!strcmp(ValueUnion.psz, "pulse"))
-                    {
-                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Pulse));
-                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                    }
+                else if (!strcmp(ValueUnion.psz, "pulse"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Pulse));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+                }
 # endif
 #endif /* !RT_OS_LINUX */
 #ifdef RT_OS_SOLARIS
-                    else if (!strcmp(ValueUnion.psz, "solaudio"))
-                    {
-                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_SolAudio));
-                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                    }
+                else if (!strcmp(ValueUnion.psz, "solaudio"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_SolAudio));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+                }
 
 # ifdef VBOX_WITH_SOLARIS_OSS
-                    else if (!strcmp(ValueUnion.psz, "oss"))
-                    {
-                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
-                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                    }
+                else if (!strcmp(ValueUnion.psz, "oss"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+                }
 # endif
 
 #endif /* !RT_OS_SOLARIS */
 #ifdef RT_OS_DARWIN
-                    else if (!strcmp(ValueUnion.psz, "coreaudio"))
-                    {
-                        CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_CoreAudio));
-                        CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                    }
+                else if (!strcmp(ValueUnion.psz, "coreaudio"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_CoreAudio));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+                }
 
 #endif /* !RT_OS_DARWIN */
-                    else
-                    {
-                        errorArgument("Invalid --audio argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                else
+                {
+                    errorArgument("Invalid --audio argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
             case MODIFYVM_CLIPBOARD:
             {
-                if (ValueUnion.psz)
+                if (!strcmp(ValueUnion.psz, "disabled"))
                 {
-                    if (!strcmp(ValueUnion.psz, "disabled"))
-                    {
-                        CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_Disabled));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "hosttoguest"))
-                    {
-                        CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_HostToGuest));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "guesttohost"))
-                    {
-                        CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_GuestToHost));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "bidirectional"))
-                    {
-                        CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_Bidirectional));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --clipboard argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                    CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_Disabled));
+                }
+                else if (!strcmp(ValueUnion.psz, "hosttoguest"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_HostToGuest));
+                }
+                else if (!strcmp(ValueUnion.psz, "guesttohost"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_GuestToHost));
+                }
+                else if (!strcmp(ValueUnion.psz, "bidirectional"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_Bidirectional));
+                }
+                else
+                {
+                    errorArgument("Invalid --clipboard argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
@@ -1683,133 +1630,115 @@ int handleModifyVM(HandlerArg *a)
 #ifdef VBOX_WITH_VRDP
             case MODIFYVM_VRDPPORT:
             {
-                if (ValueUnion.psz)
-                {
-                    ComPtr<IVRDPServer> vrdpServer;
-                    machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                    ASSERT(vrdpServer);
+                ComPtr<IVRDPServer> vrdpServer;
+                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
+                ASSERT(vrdpServer);
 
-                    if (!strcmp(ValueUnion.psz, "default"))
-                        CHECK_ERROR(vrdpServer, COMSETTER(Ports)(Bstr("0")));
-                    else
-                        CHECK_ERROR(vrdpServer, COMSETTER(Ports)(Bstr(ValueUnion.psz)));
-                }
+                if (!strcmp(ValueUnion.psz, "default"))
+                    CHECK_ERROR(vrdpServer, COMSETTER(Ports)(Bstr("0")));
+                else
+                    CHECK_ERROR(vrdpServer, COMSETTER(Ports)(Bstr(ValueUnion.psz)));
                 break;
             }
 
             case MODIFYVM_VRDPADDRESS:
             {
-                if (ValueUnion.psz)
-                {
-                    ComPtr<IVRDPServer> vrdpServer;
-                    machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                    ASSERT(vrdpServer);
+                ComPtr<IVRDPServer> vrdpServer;
+                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
+                ASSERT(vrdpServer);
 
-                    CHECK_ERROR(vrdpServer, COMSETTER(NetAddress)(Bstr(ValueUnion.psz)));
-                }
+                CHECK_ERROR(vrdpServer, COMSETTER(NetAddress)(Bstr(ValueUnion.psz)));
                 break;
             }
 
             case MODIFYVM_VRDPAUTHTYPE:
             {
-                if (ValueUnion.psz)
-                {
-                    ComPtr<IVRDPServer> vrdpServer;
-                    machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                    ASSERT(vrdpServer);
+                ComPtr<IVRDPServer> vrdpServer;
+                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
+                ASSERT(vrdpServer);
 
-                    if (!strcmp(ValueUnion.psz, "null"))
-                    {
-                        CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_Null));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "external"))
-                    {
-                        CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_External));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "guest"))
-                    {
-                        CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_Guest));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --vrdpauthtype argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                if (!strcmp(ValueUnion.psz, "null"))
+                {
+                    CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_Null));
+                }
+                else if (!strcmp(ValueUnion.psz, "external"))
+                {
+                    CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_External));
+                }
+                else if (!strcmp(ValueUnion.psz, "guest"))
+                {
+                    CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_Guest));
+                }
+                else
+                {
+                    errorArgument("Invalid --vrdpauthtype argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
             case MODIFYVM_VRDPMULTICON:
             {
-                if (ValueUnion.psz)
-                {
-                    ComPtr<IVRDPServer> vrdpServer;
-                    machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                    ASSERT(vrdpServer);
+                ComPtr<IVRDPServer> vrdpServer;
+                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
+                ASSERT(vrdpServer);
 
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(vrdpServer, COMSETTER(AllowMultiConnection)(true));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(vrdpServer, COMSETTER(AllowMultiConnection)(false));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --vrdpmulticon argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                if (!strcmp(ValueUnion.psz, "on"))
+                {
+                    CHECK_ERROR(vrdpServer, COMSETTER(AllowMultiConnection)(true));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(vrdpServer, COMSETTER(AllowMultiConnection)(false));
+                }
+                else
+                {
+                    errorArgument("Invalid --vrdpmulticon argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
             case MODIFYVM_VRDPREUSECON:
             {
-                if (ValueUnion.psz)
-                {
-                    ComPtr<IVRDPServer> vrdpServer;
-                    machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                    ASSERT(vrdpServer);
+                ComPtr<IVRDPServer> vrdpServer;
+                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
+                ASSERT(vrdpServer);
 
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(true));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(false));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --vrdpreusecon argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                if (!strcmp(ValueUnion.psz, "on"))
+                {
+                    CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(true));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(false));
+                }
+                else
+                {
+                    errorArgument("Invalid --vrdpreusecon argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
 
             case MODIFYVM_VRDP:
             {
-                if (ValueUnion.psz)
-                {
-                    ComPtr<IVRDPServer> vrdpServer;
-                    machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                    ASSERT(vrdpServer);
+                ComPtr<IVRDPServer> vrdpServer;
+                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
+                ASSERT(vrdpServer);
 
-                    if (!strcmp(ValueUnion.psz, "on"))
-                    {
-                        CHECK_ERROR(vrdpServer, COMSETTER(Enabled)(true));
-                    }
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                    {
-                        CHECK_ERROR(vrdpServer, COMSETTER(Enabled)(false));
-                    }
-                    else
-                    {
-                        errorArgument("Invalid --vrdp argument '%s'", ValueUnion.psz);
-                        rc = E_FAIL;
-                    }
+                if (!strcmp(ValueUnion.psz, "on"))
+                {
+                    CHECK_ERROR(vrdpServer, COMSETTER(Enabled)(true));
+                }
+                else if (!strcmp(ValueUnion.psz, "off"))
+                {
+                    CHECK_ERROR(vrdpServer, COMSETTER(Enabled)(false));
+                }
+                else
+                {
+                    errorArgument("Invalid --vrdp argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
@@ -1817,65 +1746,53 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_USBEHCI:
             {
-                if (ValueUnion.psz)
+                ComPtr<IUSBController> UsbCtl;
+                CHECK_ERROR(machine, COMGETTER(USBController)(UsbCtl.asOutParam()));
+                if (SUCCEEDED(rc))
                 {
-                    ComPtr<IUSBController> UsbCtl;
-                    CHECK_ERROR(machine, COMGETTER(USBController)(UsbCtl.asOutParam()));
-                    if (SUCCEEDED(rc))
-                    {
-                        if (!strcmp(ValueUnion.psz, "on") || !strcmp(ValueUnion.psz, "enable"))
-                            CHECK_ERROR(UsbCtl, COMSETTER(EnabledEhci)(true));
-                        else if (!strcmp(ValueUnion.psz, "off") || !strcmp(ValueUnion.psz, "disable"))
-                            CHECK_ERROR(UsbCtl, COMSETTER(EnabledEhci)(false));
-                        else
-                            return errorArgument("Invalid --usbehci argument '%s'", ValueUnion.psz);
-                    }
+                    if (!strcmp(ValueUnion.psz, "on") || !strcmp(ValueUnion.psz, "enable"))
+                        CHECK_ERROR(UsbCtl, COMSETTER(EnabledEhci)(true));
+                    else if (!strcmp(ValueUnion.psz, "off") || !strcmp(ValueUnion.psz, "disable"))
+                        CHECK_ERROR(UsbCtl, COMSETTER(EnabledEhci)(false));
+                    else
+                        return errorArgument("Invalid --usbehci argument '%s'", ValueUnion.psz);
                 }
                 break;
             }
 
             case MODIFYVM_USB:
             {
-                if (ValueUnion.psz)
+                ComPtr<IUSBController> UsbCtl;
+                CHECK_ERROR(machine, COMGETTER(USBController)(UsbCtl.asOutParam()));
+                if (SUCCEEDED(rc))
                 {
-                    ComPtr<IUSBController> UsbCtl;
-                    CHECK_ERROR(machine, COMGETTER(USBController)(UsbCtl.asOutParam()));
-                    if (SUCCEEDED(rc))
-                    {
-                        if (!strcmp(ValueUnion.psz, "on") || !strcmp(ValueUnion.psz, "enable"))
-                            CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(true));
-                        else if (!strcmp(ValueUnion.psz, "off") || !strcmp(ValueUnion.psz, "disable"))
-                            CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(false));
-                        else
-                            return errorArgument("Invalid --usb argument '%s'", ValueUnion.psz);
-                    }
+                    if (!strcmp(ValueUnion.psz, "on") || !strcmp(ValueUnion.psz, "enable"))
+                        CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(true));
+                    else if (!strcmp(ValueUnion.psz, "off") || !strcmp(ValueUnion.psz, "disable"))
+                        CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(false));
+                    else
+                        return errorArgument("Invalid --usb argument '%s'", ValueUnion.psz);
                 }
                 break;
             }
 
             case MODIFYVM_SNAPSHOTFOLDER:
             {
-                if (ValueUnion.psz)
-                {
-                    if (!strcmp(ValueUnion.psz, "default"))
-                        CHECK_ERROR(machine, COMSETTER(SnapshotFolder)(NULL));
-                    else
-                        CHECK_ERROR(machine, COMSETTER(SnapshotFolder)(Bstr(ValueUnion.psz)));
-                }
+                if (!strcmp(ValueUnion.psz, "default"))
+                    CHECK_ERROR(machine, COMSETTER(SnapshotFolder)(NULL));
+                else
+                    CHECK_ERROR(machine, COMSETTER(SnapshotFolder)(Bstr(ValueUnion.psz)));
                 break;
             }
 
             case MODIFYVM_TELEPORTER_ENABLED:
             {
-                if (ValueUnion.psz)
-                {
-                    if (!strcmp(ValueUnion.psz, "on"))
-                        CHECK_ERROR(machine, COMSETTER(TeleporterEnabled)(1));
-                    else if (!strcmp(ValueUnion.psz, "off"))
-                        CHECK_ERROR(machine, COMSETTER(TeleporterEnabled)(0));
-                    else
-                        return errorArgument("Invalid --teleporterenabled value '%s'", ValueUnion.psz);
-                }
+                if (!strcmp(ValueUnion.psz, "on"))
+                    CHECK_ERROR(machine, COMSETTER(TeleporterEnabled)(1));
+                else if (!strcmp(ValueUnion.psz, "off"))
+                    CHECK_ERROR(machine, COMSETTER(TeleporterEnabled)(0));
+                else
+                    return errorArgument("Invalid --teleporterenabled value '%s'", ValueUnion.psz);
                 break;
             }
 
@@ -1888,15 +1805,13 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_TELEPORTER_ADDRESS:
             {
-                if (ValueUnion.psz)
-                    CHECK_ERROR(machine, COMSETTER(TeleporterAddress)(Bstr(ValueUnion.psz)));
+                CHECK_ERROR(machine, COMSETTER(TeleporterAddress)(Bstr(ValueUnion.psz)));
                 break;
             }
 
             case MODIFYVM_TELEPORTER_PASSWORD:
             {
-                if (ValueUnion.psz)
-                    CHECK_ERROR(machine, COMSETTER(TeleporterPassword)(Bstr(ValueUnion.psz)));
+                CHECK_ERROR(machine, COMSETTER(TeleporterPassword)(Bstr(ValueUnion.psz)));
                 break;
             }
 
