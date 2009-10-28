@@ -1222,7 +1222,7 @@ Versione %1</translation>
         <translation>&lt;b&gt;&lt;nobr&gt;&lt;b&gt;Nessun media montato&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indica l&apos;attività dei dischi rigidi virtuali:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>

@@ -869,7 +869,7 @@
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Geen media gekoppeld&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Geeft de activiteit van de viruele harde schijf weer:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>

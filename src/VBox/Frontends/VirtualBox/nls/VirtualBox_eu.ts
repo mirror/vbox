@@ -1058,7 +1058,7 @@
         <translation>&lt;qt&gt;&lt;nobr&gt;CD/DVD-ROM medioaren aktibitatea erakusten du:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Disko gogor birtualen aktibitatea erakusten du:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
