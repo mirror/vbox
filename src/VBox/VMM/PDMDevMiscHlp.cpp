@@ -47,6 +47,16 @@ static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
+
+    if (pVM->pdm.s.Apic.pfnLocalInterruptR3)
+    {
+        LogFlow(("pdmR3PicHlp_SetInterruptFF: caller='%s'/%d: Setting local interrupt on LAPIC\n",
+                 pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+        /* Raise the LAPIC's LINT0 line instead of signaling the CPU directly. */
+        pVM->pdm.s.Apic.pfnLocalInterruptR3(pVM->pdm.s.Apic.pDevInsR3, 0, 1);
+        return;
+    }
+ 
     PVMCPU pVCpu = &pVM->aCpus[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
 
     LogFlow(("pdmR3PicHlp_SetInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT_PIC %d -> 1\n",
@@ -64,6 +74,16 @@ static DECLCALLBACK(void) pdmR3PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
     PVMCPU pVCpu = &pVM->aCpus[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
+
+    if (pVM->pdm.s.Apic.pfnLocalInterruptR3)
+    {
+        /* Raise the LAPIC's LINT0 line instead of signaling the CPU directly. */
+        LogFlow(("pdmR3PicHlp_ClearInterruptFF: caller='%s'/%d: Clearing local interrupt on LAPIC\n",
+                 pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+        /* Lower the LAPIC's LINT0 line instead of signaling the CPU directly. */
+        pVM->pdm.s.Apic.pfnLocalInterruptR3(pVM->pdm.s.Apic.pDevInsR3, 0, 0);
+        return;
+    }
 
     LogFlow(("pdmR3PicHlp_ClearInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT_PIC %d -> 0\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC)));
@@ -166,6 +186,9 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
         case PDMAPICIRQ_SMI:
             VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
             break;
+        case PDMAPICIRQ_EXTINT:
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+            break;
         default:
             AssertMsgFailed(("enmType=%d\n", enmType));
             break;
@@ -176,7 +199,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
 
 
 /** @copydoc PDMAPICHLPR3::pfnClearInterruptFF */
-static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu)
+static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
@@ -187,7 +210,19 @@ static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCP
     LogFlow(("pdmR3ApicHlp_ClearInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT(%d) %d -> 0\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, idCpu, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC)));
 
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+    /* Note: NMI/SMI can't be cleared. */
+    switch (enmType)
+    {
+        case PDMAPICIRQ_HARDWARE:
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+            break;
+        case PDMAPICIRQ_EXTINT:
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+            break;
+        default:
+            AssertMsgFailed(("enmType=%d\n", enmType));
+            break;
+    }
     REMR3NotifyInterruptClear(pVM, pVCpu);
 }
 

@@ -1042,6 +1042,16 @@ typedef struct PDMAPICREG
     DECLR3CALLBACKMEMBER(int,  pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                 uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
+    /**
+     * Deliver a signal to CPU's local interrupt pins (LINT0/LINT1). Used for
+     * virtual wire mode when interrupts from the PIC are passed through LAPIC.
+     *
+     * @returns status code.
+     * @param   pDevIns         Device instance of the APIC.
+     * @param   u8Pin           Local pin number (0 or 1 for current CPUs).
+     */
+    DECLR3CALLBACKMEMBER(int,  pfnLocalInterruptR3,(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t u8Level));
+
     /** The name of the RC GetInterrupt entry point. */
     const char         *pszGetInterruptRC;
     /** The name of the RC HasPendingIrq entry point. */
@@ -1060,6 +1070,8 @@ typedef struct PDMAPICREG
     const char         *pszReadMSRRC;
     /** The name of the RC BusDeliver entry point. */
     const char         *pszBusDeliverRC;
+    /** The name of the RC LocalInterrupt entry point. */
+    const char         *pszLocalInterruptRC;
 
     /** The name of the R0 GetInterrupt entry point. */
     const char         *pszGetInterruptR0;
@@ -1079,6 +1091,8 @@ typedef struct PDMAPICREG
     const char         *pszReadMSRR0;
     /** The name of the R0 BusDeliver entry point. */
     const char         *pszBusDeliverR0;
+    /** The name of the R0 LocalInterrupt entry point. */
+    const char         *pszLocalInterruptR0;
 
 } PDMAPICREG;
 /** Pointer to an APIC registration structure. */
@@ -1118,6 +1132,8 @@ typedef enum PDMAPICIRQ
     PDMAPICIRQ_NMI,
     /** SMI. */
     PDMAPICIRQ_SMI,
+    /** ExtINT (HW interrupt via PIC). */
+    PDMAPICIRQ_EXTINT,
     /** The usual 32-bit paranoia. */
     PDMAPICIRQ_32BIT_HACK = 0x7fffffff
 } PDMAPICIRQ;
@@ -1144,9 +1160,10 @@ typedef struct PDMAPICHLPRC
      * Clear the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
+     * @param   enmType         IRQ type.
      * @param   idCpu           Virtual CPU to clear flag upon.
      */
-    DECLRCCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+    DECLRCCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu));
 
     /**
      * Modifies APIC-related bits in the CPUID feature mask.
@@ -1213,9 +1230,10 @@ typedef struct PDMAPICHLPR0
      * Clear the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
+     * @param   enmType         IRQ type.
      * @param   idCpu           Virtual CPU to clear flag upon.
      */
-    DECLR0CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+    DECLR0CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu));
 
     /**
      * Modifies APIC-related bits in the CPUID feature mask.
@@ -1281,9 +1299,10 @@ typedef struct PDMAPICHLPR3
      * Clear the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
+     * @param   enmType         IRQ type.
      * @param   idCpu           Virtual CPU to clear flag upon.
      */
-    DECLR3CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+    DECLR3CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu));
 
     /**
      * Modifies APIC-related bits in the CPUID feature mask.
