@@ -884,7 +884,7 @@ typedef struct VM
 #ifdef ___PDMInternal_h
         struct PDM s;
 #endif
-        uint8_t     padding[1536];      /* multiple of 64 */
+        uint8_t     padding[1600];      /* multiple of 64 */
     } pdm;
 
     /** IOM part. */
