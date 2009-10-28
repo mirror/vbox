@@ -1622,7 +1622,6 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     PPCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
     PPCIBUS     pBus  = &pThis->PciBus;
     uint32_t    u32;
-    uint32_t    i;
     int         rc;
 
     /*
@@ -1905,7 +1904,6 @@ static DECLCALLBACK(void) pciSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE p
  */
 static DECLCALLBACK(int) pciFakePCIBIOS(PPDMDEVINS pDevIns)
 {
-    int         rc;
     unsigned    i;
     uint8_t     elcr[2] = {0, 0};
     PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
