@@ -136,25 +136,25 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--memory",                   MODIFYVM_MEMORY,                    RTGETOPT_REQ_UINT32 },
     { "--vram",                     MODIFYVM_VRAM,                      RTGETOPT_REQ_UINT32 },
     { "--firmware",                 MODIFYVM_FIRMWARE,                  RTGETOPT_REQ_STRING },
-    { "--acpi",                     MODIFYVM_ACPI,                      RTGETOPT_REQ_STRING },
-    { "--ioapic",                   MODIFYVM_IOAPIC,                    RTGETOPT_REQ_STRING },
-    { "--pae",                      MODIFYVM_PAE,                       RTGETOPT_REQ_STRING },
-    { "--synthcpu",                 MODIFYVM_SYNTHCPU,                  RTGETOPT_REQ_STRING },
-    { "--hwvirtex",                 MODIFYVM_HWVIRTEX,                  RTGETOPT_REQ_STRING },
-    { "--hwvirtexexcl",             MODIFYVM_HWVIRTEXEXCLUSIVE,         RTGETOPT_REQ_STRING },
-    { "--nestedpaging",             MODIFYVM_NESTEDPAGING,              RTGETOPT_REQ_STRING },
-    { "--vtxvpid",                  MODIFYVM_VTXVPID,                   RTGETOPT_REQ_STRING },
+    { "--acpi",                     MODIFYVM_ACPI,                      RTGETOPT_REQ_BOOL_ONOFF },
+    { "--ioapic",                   MODIFYVM_IOAPIC,                    RTGETOPT_REQ_BOOL_ONOFF },
+    { "--pae",                      MODIFYVM_PAE,                       RTGETOPT_REQ_BOOL_ONOFF },
+    { "--synthcpu",                 MODIFYVM_SYNTHCPU,                  RTGETOPT_REQ_BOOL_ONOFF },
+    { "--hwvirtex",                 MODIFYVM_HWVIRTEX,                  RTGETOPT_REQ_BOOL_ONOFF },
+    { "--hwvirtexexcl",             MODIFYVM_HWVIRTEXEXCLUSIVE,         RTGETOPT_REQ_BOOL_ONOFF },
+    { "--nestedpaging",             MODIFYVM_NESTEDPAGING,              RTGETOPT_REQ_BOOL_ONOFF },
+    { "--vtxvpid",                  MODIFYVM_VTXVPID,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--cpus",                     MODIFYVM_CPUS,                      RTGETOPT_REQ_UINT32 },
     { "--monitorcount",             MODIFYVM_MONITORCOUNT,              RTGETOPT_REQ_UINT32 },
-    { "--accelerate3d",             MODIFYVM_ACCELERATE3D,              RTGETOPT_REQ_STRING },
-    { "--accelerate2dvideo",        MODIFYVM_ACCELERATE2DVIDEO,         RTGETOPT_REQ_STRING },
-    { "--bioslogofadein",           MODIFYVM_BIOSLOGOFADEIN,            RTGETOPT_REQ_STRING },
-    { "--bioslogofadeout",          MODIFYVM_BIOSLOGOFADEOUT,           RTGETOPT_REQ_STRING },
+    { "--accelerate3d",             MODIFYVM_ACCELERATE3D,              RTGETOPT_REQ_BOOL_ONOFF },
+    { "--accelerate2dvideo",        MODIFYVM_ACCELERATE2DVIDEO,         RTGETOPT_REQ_BOOL_ONOFF },
+    { "--bioslogofadein",           MODIFYVM_BIOSLOGOFADEIN,            RTGETOPT_REQ_BOOL_ONOFF },
+    { "--bioslogofadeout",          MODIFYVM_BIOSLOGOFADEOUT,           RTGETOPT_REQ_BOOL_ONOFF },
     { "--bioslogodisplaytime",      MODIFYVM_BIOSLOGODISPLAYTIME,       RTGETOPT_REQ_UINT64 },
     { "--bioslogoimagepath",        MODIFYVM_BIOSLOGOIMAGEPATH,         RTGETOPT_REQ_STRING },
     { "--biosbootmenu",             MODIFYVM_BIOSBOOTMENU,              RTGETOPT_REQ_STRING },
     { "--biossystemtimeoffset",     MODIFYVM_BIOSSYSTEMTIMEOFFSET,      RTGETOPT_REQ_UINT64 },
-    { "--biospxedebug",             MODIFYVM_BIOSPXEDEBUG,              RTGETOPT_REQ_STRING },
+    { "--biospxedebug",             MODIFYVM_BIOSPXEDEBUG,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--boot",                     MODIFYVM_BOOT,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--hda",                      MODIFYVM_HDA,                       RTGETOPT_REQ_STRING },
     { "--hdb",                      MODIFYVM_HDB,                       RTGETOPT_REQ_STRING },
@@ -171,11 +171,11 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--dvd",                      MODIFYVM_DVD,                       RTGETOPT_REQ_STRING },
     { "--floppy",                   MODIFYVM_FLOPPY,                    RTGETOPT_REQ_STRING },
     { "--nictracefile",             MODIFYVM_NICTRACEFILE,              RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nictrace",                 MODIFYVM_NICTRACE,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--nictrace",                 MODIFYVM_NICTRACE,                  RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
     { "--nictype",                  MODIFYVM_NICTYPE,                   RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nicspeed",                 MODIFYVM_NICSPEED,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
     { "--nic",                      MODIFYVM_NIC,                       RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--cableconnected",           MODIFYVM_CABLECONNECTED,            RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--cableconnected",           MODIFYVM_CABLECONNECTED,            RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
     { "--bridgeadapter",            MODIFYVM_BRIDGEADAPTER,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--hostonlyadapter",          MODIFYVM_HOSTONLYADAPTER,           RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--intnet",                   MODIFYVM_INTNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
@@ -191,13 +191,13 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vrdpport",                 MODIFYVM_VRDPPORT,                  RTGETOPT_REQ_STRING },
     { "--vrdpaddress",              MODIFYVM_VRDPADDRESS,               RTGETOPT_REQ_STRING },
     { "--vrdpauthtype",             MODIFYVM_VRDPAUTHTYPE,              RTGETOPT_REQ_STRING },
-    { "--vrdpmulticon",             MODIFYVM_VRDPMULTICON,              RTGETOPT_REQ_STRING },
-    { "--vrdpreusecon",             MODIFYVM_VRDPREUSECON,              RTGETOPT_REQ_STRING },
-    { "--vrdp",                     MODIFYVM_VRDP,                      RTGETOPT_REQ_STRING },
-    { "--usbehci",                  MODIFYVM_USBEHCI,                   RTGETOPT_REQ_STRING },
-    { "--usb",                      MODIFYVM_USB,                       RTGETOPT_REQ_STRING },
+    { "--vrdpmulticon",             MODIFYVM_VRDPMULTICON,              RTGETOPT_REQ_BOOL_ONOFF },
+    { "--vrdpreusecon",             MODIFYVM_VRDPREUSECON,              RTGETOPT_REQ_BOOL_ONOFF },
+    { "--vrdp",                     MODIFYVM_VRDP,                      RTGETOPT_REQ_BOOL_ONOFF },
+    { "--usbehci",                  MODIFYVM_USBEHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
+    { "--usb",                      MODIFYVM_USB,                       RTGETOPT_REQ_BOOL_ONOFF },
     { "--snapshotfolder",           MODIFYVM_SNAPSHOTFOLDER,            RTGETOPT_REQ_STRING },
-    { "--teleporterenabled",        MODIFYVM_TELEPORTER_ENABLED,        RTGETOPT_REQ_STRING },
+    { "--teleporterenabled",        MODIFYVM_TELEPORTER_ENABLED,        RTGETOPT_REQ_BOOL_ONOFF },
     { "--teleporterport",           MODIFYVM_TELEPORTER_PORT,           RTGETOPT_REQ_UINT32 },
     { "--teleporteraddress",        MODIFYVM_TELEPORTER_ADDRESS,        RTGETOPT_REQ_STRING },
     { "--teleporterpassword",       MODIFYVM_TELEPORTER_PASSWORD,       RTGETOPT_REQ_STRING },
@@ -313,145 +313,49 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_ACPI:
             {
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(biosSettings, COMSETTER(ACPIEnabled)(true));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(biosSettings, COMSETTER(ACPIEnabled)(false));
-                }
-                else
-                {
-                    errorArgument("Invalid --acpi argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(biosSettings, COMSETTER(ACPIEnabled)(ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_IOAPIC:
             {
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(biosSettings, COMSETTER(IOAPICEnabled)(true));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(biosSettings, COMSETTER(IOAPICEnabled)(false));
-                }
-                else
-                {
-                    errorArgument("Invalid --ioapic argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(biosSettings, COMSETTER(IOAPICEnabled)(ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_PAE:
             {
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_PAE, true));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_PAE, false));
-                }
-                else
-                {
-                    errorArgument("Invalid --pae argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_PAE, ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_SYNTHCPU:
             {
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_Synthetic, true));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_Synthetic, false));
-                }
-                else
-                {
-                    errorArgument("Invalid --synthcpu argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_Synthetic, ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_HWVIRTEX:
             {
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, TRUE));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, FALSE));
-                }
-                else
-                {
-                    errorArgument("Invalid --hwvirtex argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_HWVIRTEXEXCLUSIVE:
             {
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, TRUE));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, FALSE));
-                }
-                else
-                {
-                    errorArgument("Invalid --hwvirtex argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_NESTEDPAGING:
             {
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, TRUE));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, FALSE));
-                }
-                else
-                {
-                    errorArgument("Invalid --nestedpaging argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_VTXVPID:
             {
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_VPID, TRUE));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_VPID, FALSE));
-                }
-                else
-                {
-                    errorArgument("Invalid --vtxvpid argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_VPID, ValueUnion.f));
                 break;
             }
 
@@ -469,76 +373,27 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_ACCELERATE3D:
             {
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(machine, COMSETTER(Accelerate3DEnabled)(true));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(machine, COMSETTER(Accelerate3DEnabled)(false));
-                }
-                else
-                {
-                    errorArgument("Invalid --accelerate3d argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(machine, COMSETTER(Accelerate3DEnabled)(ValueUnion.f));
                 break;
             }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
             case MODIFYVM_ACCELERATE2DVIDEO:
             {
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(machine, COMSETTER(Accelerate2DVideoEnabled)(true));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(machine, COMSETTER(Accelerate2DVideoEnabled)(false));
-                }
-                else
-                {
-                    errorArgument("Invalid --accelerate2dvideo argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(machine, COMSETTER(Accelerate2DVideoEnabled)(ValueUnion.f));
                 break;
             }
 #endif
 
             case MODIFYVM_BIOSLOGOFADEIN:
             {
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(biosSettings, COMSETTER(LogoFadeIn)(true));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(biosSettings, COMSETTER(LogoFadeIn)(false));
-                }
-                else
-                {
-                    errorArgument("Invalid --bioslogofadein argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(biosSettings, COMSETTER(LogoFadeIn)(ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_BIOSLOGOFADEOUT:
             {
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(biosSettings, COMSETTER(LogoFadeOut)(true));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(biosSettings, COMSETTER(LogoFadeOut)(false));
-                }
-                else
-                {
-                    errorArgument("Invalid --bioslogofadeout argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                    break;
-                }
+                CHECK_ERROR(biosSettings, COMSETTER(LogoFadeOut)(ValueUnion.f));
                 break;
             }
 
@@ -584,19 +439,7 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_BIOSPXEDEBUG:
             {
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(true));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(false));
-                }
-                else
-                {
-                    errorArgument("Invalid --biospxedebug argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(ValueUnion.f));
                 break;
             }
 
@@ -1131,19 +974,7 @@ int handleModifyVM(HandlerArg *a)
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(nic, COMSETTER(TraceEnabled)(TRUE));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(nic, COMSETTER(TraceEnabled)(FALSE));
-                }
-                else
-                {
-                    errorArgument("Invalid --nictrace%lu argument '%s'", GetOptState.uIndex, ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(nic, COMSETTER(TraceEnabled)(ValueUnion.f));
                 break;
             }
 
@@ -1283,19 +1114,7 @@ int handleModifyVM(HandlerArg *a)
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(nic, COMSETTER(CableConnected)(TRUE));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(nic, COMSETTER(CableConnected)(FALSE));
-                }
-                else
-                {
-                    errorArgument("Invalid --cableconnected%lu argument '%s'", GetOptState.uIndex, ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(nic, COMSETTER(CableConnected)(ValueUnion.f));
                 break;
             }
 
@@ -1677,19 +1496,7 @@ int handleModifyVM(HandlerArg *a)
                 machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
                 ASSERT(vrdpServer);
 
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(vrdpServer, COMSETTER(AllowMultiConnection)(true));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(vrdpServer, COMSETTER(AllowMultiConnection)(false));
-                }
-                else
-                {
-                    errorArgument("Invalid --vrdpmulticon argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(vrdpServer, COMSETTER(AllowMultiConnection)(ValueUnion.f));
                 break;
             }
 
@@ -1699,19 +1506,7 @@ int handleModifyVM(HandlerArg *a)
                 machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
                 ASSERT(vrdpServer);
 
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(true));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(false));
-                }
-                else
-                {
-                    errorArgument("Invalid --vrdpreusecon argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(ValueUnion.f));
                 break;
             }
 
@@ -1721,19 +1516,7 @@ int handleModifyVM(HandlerArg *a)
                 machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
                 ASSERT(vrdpServer);
 
-                if (!strcmp(ValueUnion.psz, "on"))
-                {
-                    CHECK_ERROR(vrdpServer, COMSETTER(Enabled)(true));
-                }
-                else if (!strcmp(ValueUnion.psz, "off"))
-                {
-                    CHECK_ERROR(vrdpServer, COMSETTER(Enabled)(false));
-                }
-                else
-                {
-                    errorArgument("Invalid --vrdp argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(vrdpServer, COMSETTER(Enabled)(ValueUnion.f));
                 break;
             }
 #endif /* VBOX_WITH_VRDP */
@@ -1743,14 +1526,7 @@ int handleModifyVM(HandlerArg *a)
                 ComPtr<IUSBController> UsbCtl;
                 CHECK_ERROR(machine, COMGETTER(USBController)(UsbCtl.asOutParam()));
                 if (SUCCEEDED(rc))
-                {
-                    if (!strcmp(ValueUnion.psz, "on") || !strcmp(ValueUnion.psz, "enable"))
-                        CHECK_ERROR(UsbCtl, COMSETTER(EnabledEhci)(true));
-                    else if (!strcmp(ValueUnion.psz, "off") || !strcmp(ValueUnion.psz, "disable"))
-                        CHECK_ERROR(UsbCtl, COMSETTER(EnabledEhci)(false));
-                    else
-                        return errorArgument("Invalid --usbehci argument '%s'", ValueUnion.psz);
-                }
+                    CHECK_ERROR(UsbCtl, COMSETTER(EnabledEhci)(ValueUnion.f));
                 break;
             }
 
@@ -1759,14 +1535,7 @@ int handleModifyVM(HandlerArg *a)
                 ComPtr<IUSBController> UsbCtl;
                 CHECK_ERROR(machine, COMGETTER(USBController)(UsbCtl.asOutParam()));
                 if (SUCCEEDED(rc))
-                {
-                    if (!strcmp(ValueUnion.psz, "on") || !strcmp(ValueUnion.psz, "enable"))
-                        CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(true));
-                    else if (!strcmp(ValueUnion.psz, "off") || !strcmp(ValueUnion.psz, "disable"))
-                        CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(false));
-                    else
-                        return errorArgument("Invalid --usb argument '%s'", ValueUnion.psz);
-                }
+                    CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(ValueUnion.f));
                 break;
             }
 
@@ -1781,12 +1550,7 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_TELEPORTER_ENABLED:
             {
-                if (!strcmp(ValueUnion.psz, "on"))
-                    CHECK_ERROR(machine, COMSETTER(TeleporterEnabled)(1));
-                else if (!strcmp(ValueUnion.psz, "off"))
-                    CHECK_ERROR(machine, COMSETTER(TeleporterEnabled)(0));
-                else
-                    return errorArgument("Invalid --teleporterenabled value '%s'", ValueUnion.psz);
+                CHECK_ERROR(machine, COMSETTER(TeleporterEnabled)(ValueUnion.f));
                 break;
             }
 
