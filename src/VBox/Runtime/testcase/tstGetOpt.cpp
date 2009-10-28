@@ -96,6 +96,8 @@ int main()
         { "--twovalues",        405, RTGETOPT_REQ_STRING },
         { "--twovaluesindex",   406, RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
         { "--threevalues",      407, RTGETOPT_REQ_UINT32 },
+        { "--boolean",          408, RTGETOPT_REQ_BOOL_ONOFF },
+        { "--booleanindex",     409, RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
     };
 
     const char *argv2[] =
@@ -153,6 +155,13 @@ int main()
         "--twovaluesindex4", "1",          "0xA",
         "--twovaluesindex5=2",             "0xB",
         "--threevalues",     "1",          "0xC",          "thirdvalue",
+
+        "--boolean",         "on",
+        "--boolean",         "off",
+        "--boolean",         "invalid",
+        "--booleanindex2",   "on",
+        "--booleanindex7",   "off",
+        "--booleanindex9",   "invalid",
 
         NULL
     };
@@ -331,6 +340,24 @@ int main()
     CHECK_GETOPT(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_STRING), VINF_SUCCESS, 1);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "thirdvalue"));
     CHECK(GetState.uIndex == UINT64_MAX);
+
+    /* bool on/off tests */
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 408, 2);
+    CHECK(Val.f);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 408, 2);
+    CHECK(!Val.f);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), VERR_GETOPT_UNKNOWN_OPTION, 2);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "invalid"));
+
+    /* bool on/off with indexed argument */
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 409, 2);
+    CHECK(Val.f);
+    CHECK(GetState.uIndex == 2);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 409, 2);
+    CHECK(!Val.f);
+    CHECK(GetState.uIndex == 7);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), VERR_GETOPT_UNKNOWN_OPTION, 2);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "invalid"));
 
     /* the end */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 0, 0);

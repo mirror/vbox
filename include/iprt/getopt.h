@@ -83,8 +83,10 @@ RT_C_DECLS_BEGIN
 #define RTGETOPT_REQ_MACADDR                    14
 /** The value must be a valid UUID. */
 #define RTGETOPT_REQ_UUID                       15
+/** The value must be a string with value as "on" or "off". */
+#define RTGETOPT_REQ_BOOL_ONOFF                 16
 /** The mask of the valid required types. */
-#define RTGETOPT_REQ_MASK                       15
+#define RTGETOPT_REQ_MASK                       31
 /** Treat the value as hexadecimal - only applicable with the RTGETOPT_REQ_*INT*. */
 #define RTGETOPT_FLAG_HEX                       RT_BIT(16)
 /** Treat the value as octal - only applicable with the RTGETOPT_REQ_*INT*. */
@@ -171,6 +173,8 @@ typedef union RTGETOPTUNION
     int64_t         i;
     /** An unsigned integer value. */
     uint64_t        u;
+    /** A boolean flag. */
+    bool            f;
 } RTGETOPTUNION;
 /** Pointer to an option argument union. */
 typedef RTGETOPTUNION *PRTGETOPTUNION;

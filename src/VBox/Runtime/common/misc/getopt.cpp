@@ -281,6 +281,18 @@ static int rtGetOptProcessValue(uint32_t fFlags, const char *pszValue, PRTGETOPT
             pValueUnion->psz = pszValue;
             break;
 
+        case RTGETOPT_REQ_BOOL_ONOFF:
+            if (!RTStrICmp(pszValue, "on"))
+                pValueUnion->f = true;
+            else if (!RTStrICmp(pszValue, "off"))
+                pValueUnion->f = false;
+            else
+            {
+                pValueUnion->psz = pszValue;
+                return VERR_GETOPT_UNKNOWN_OPTION;
+            }
+            break;
+
 #define MY_INT_CASE(req,type,memb,convfn) \
             case req: \
             { \
