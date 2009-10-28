@@ -308,10 +308,10 @@ typedef struct ISCSIIMAGE
     unsigned            uOpenFlags;
     /** Number of re-login retries when a connection fails. */
     uint32_t            cISCSIRetries;
-    /** Size of volume in sectors. */
-    uint32_t            cVolume;
     /** Sector size on volume. */
     uint32_t            cbSector;
+    /** Size of volume in sectors. */
+    uint64_t            cVolume;
     /** Total volume size in bytes. Easiert that multiplying the above values all the time. */
     uint64_t            cbSize;
 
@@ -2462,6 +2462,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     SCSIREQ sr;
     uint8_t sense[32];
     uint8_t data8[8];
+    uint8_t data12[12];
 
     /*
      * Inquire available LUNs - purely dummy request.
@@ -2587,36 +2588,29 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     /*
      * Determine sector size and capacity of the volume immediately.
      */
-    uint8_t cdb_cap[10];
+    uint8_t cdb_cap[16];
 
-    cdb_cap[0] = SCSI_READ_CAPACITY;
-    cdb_cap[1] = 0;         /* reserved */
-    cdb_cap[2] = 0;         /* reserved */
-    cdb_cap[3] = 0;         /* reserved */
-    cdb_cap[4] = 0;         /* reserved */
-    cdb_cap[5] = 0;         /* reserved */
-    cdb_cap[6] = 0;         /* reserved */
-    cdb_cap[7] = 0;         /* reserved */
-    cdb_cap[8] = 0;         /* reserved */
-    cdb_cap[9] = 0;         /* control */
+    memset(cdb_cap, '\0', sizeof(cdb_cap));
+    cdb_cap[0] = SCSI_SERVICE_ACTION_IN_16;
+    cdb_cap[1] = SCSI_SVC_ACTION_IN_READ_CAPACITY_16;   /* subcommand */
 
     sr.enmXfer = SCSIXFER_FROM_TARGET;
     sr.cbCmd = sizeof(cdb_cap);
     sr.pvCmd = cdb_cap;
     sr.cbI2TData = 0;
     sr.pcvI2TData = NULL;
-    sr.cbT2IData = sizeof(data8);
-    sr.pvT2IData = data8;
+    sr.cbT2IData = sizeof(data12);
+    sr.pvT2IData = data12;
     sr.cbSense = sizeof(sense);
     sr.pvSense = sense;
 
     rc = iscsiCommand(pImage, &sr);
     if (RT_SUCCESS(rc))
     {
-        pImage->cVolume = (data8[0] << 24) | (data8[1] << 16) | (data8[2] << 8) | data8[3];
+        pImage->cVolume = RT_BE2H_U64(*(uint64_t *)&data12[0]);
         pImage->cVolume++;
-        pImage->cbSector = (data8[4] << 24) | (data8[5] << 16) | (data8[6] << 8) | data8[7];
-        pImage->cbSize = (uint64_t)(pImage->cVolume) * pImage->cbSector;
+        pImage->cbSector = RT_BE2H_U32(*(uint32_t *)&data12[8]);
+        pImage->cbSize = pImage->cVolume * pImage->cbSector;
         if (pImage->cVolume == 0 || pImage->cbSector == 0)
         {
             rc = iscsiError(pImage, VERR_VD_ISCSI_INVALID_TYPE,
@@ -2627,8 +2621,49 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     }
     else
     {
-        LogRel(("iSCSI: Could not determine capacity of target %s, rc=%Rrc\n", pImage->pszTargetName, rc));
-        goto out;
+        uint8_t cdb_capfb[10];
+
+        cdb_capfb[0] = SCSI_READ_CAPACITY;
+        cdb_capfb[1] = 0;   /* reserved */
+        cdb_capfb[2] = 0;   /* reserved */
+        cdb_capfb[3] = 0;   /* reserved */
+        cdb_capfb[4] = 0;   /* reserved */
+        cdb_capfb[5] = 0;   /* reserved */
+        cdb_capfb[6] = 0;   /* reserved */
+        cdb_capfb[7] = 0;   /* reserved */
+        cdb_capfb[8] = 0;   /* reserved */
+        cdb_capfb[9] = 0;   /* control */
+
+        sr.enmXfer = SCSIXFER_FROM_TARGET;
+        sr.cbCmd = sizeof(cdb_capfb);
+        sr.pvCmd = cdb_capfb;
+        sr.cbI2TData = 0;
+        sr.pcvI2TData = NULL;
+        sr.cbT2IData = sizeof(data8);
+        sr.pvT2IData = data8;
+        sr.cbSense = sizeof(sense);
+        sr.pvSense = sense;
+
+        rc = iscsiCommand(pImage, &sr);
+        if (RT_SUCCESS(rc))
+        {
+            pImage->cVolume = (data8[0] << 24) | (data8[1] << 16) | (data8[2] << 8) | data8[3];
+            pImage->cVolume++;
+            pImage->cbSector = (data8[4] << 24) | (data8[5] << 16) | (data8[6] << 8) | data8[7];
+            pImage->cbSize = pImage->cVolume * pImage->cbSector;
+            if (pImage->cVolume == 0 || pImage->cbSector == 0)
+            {
+                rc = iscsiError(pImage, VERR_VD_ISCSI_INVALID_TYPE,
+                                RT_SRC_POS, N_("iSCSI: fallback capacity detectio for target address %s, target name %s, SCSI LUN %lld reports media sector count=%lu sector size=%lu"),
+                                pImage->pszTargetAddress, pImage->pszTargetName,
+                                pImage->LUN, pImage->cVolume, pImage->cbSector);
+            }
+        }
+        else
+        {
+            LogRel(("iSCSI: Could not determine capacity of target %s, rc=%Rrc\n", pImage->pszTargetName, rc));
+            goto out;
+        }
     }
 
     /*
