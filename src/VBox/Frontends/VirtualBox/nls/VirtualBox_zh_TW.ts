@@ -1222,7 +1222,7 @@
         <translation>分享資料夾(&amp;S)…</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>開啟操作分享資料夾的對話框</translation>
     </message>
     <message>

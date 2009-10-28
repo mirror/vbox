@@ -729,7 +729,7 @@
         <translation>&amp;Дељене фасцикле...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Отвори дијалог за рад са дељене фасцикле</translation>
     </message>
     <message>

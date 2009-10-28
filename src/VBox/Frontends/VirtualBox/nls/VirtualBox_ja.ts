@@ -897,7 +897,7 @@ Version %1</source>
         <translation>共有フォルダ(&amp;S)...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>共有フォルダ設定ダイアログを開く</translation>
     </message>
     <message>

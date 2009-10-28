@@ -937,7 +937,7 @@ Wersja %1</translation>
         <translation>W&amp;spółdzielone katalogi...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Otwiera okno ustawień współdzielonych katalogów</translation>
     </message>
     <message>

@@ -925,7 +925,7 @@ Verzió %1</translation>
         <translation>&amp;Osztott mappák...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Ablak megnyitása az osztott mappák beállításához</translation>
     </message>
     <message>

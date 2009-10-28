@@ -937,7 +937,7 @@ Versione %1</translation>
         <translation>Cartelle condivi&amp;se...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Apri la finestra per gestire le cartelle condivise</translation>
     </message>
     <message>

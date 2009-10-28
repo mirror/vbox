@@ -882,7 +882,7 @@ Version %1</source>
         <translation>&amp;Jaetut kansiot...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Avaa jaettujen kansioiden käsittelyikkuna</translation>
     </message>
     <message>

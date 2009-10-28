@@ -555,7 +555,7 @@
       <translation>ថត​ដែល​បានចែករំលែក...</translation>
     </message>
     <message>
-      <source>Open the dialog to operate on shared folders</source>
+      <source>Create or modify shared folders</source>
       <translation>បើក​ប្រអប់​ដើម្បី​ប្រតិបត្តិ​លើ​ថត​ដែល​បានចែករំលែក</translation>
     </message>
     <message>

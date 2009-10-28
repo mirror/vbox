@@ -922,7 +922,7 @@ Versão %1</translation>
         <translation>Pa&amp;stas Partilhadas...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Abre o diálogo de pastas partilhadas</translation>
     </message>
     <message>

@@ -969,7 +969,7 @@ Versión %1</translation>
         <translation>Car&amp;petas compartidas...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Abrir un diálogo para modificar las carpetas compartidas</translation>
     </message>
     <message>

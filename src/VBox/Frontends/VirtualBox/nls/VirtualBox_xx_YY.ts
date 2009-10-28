@@ -706,7 +706,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

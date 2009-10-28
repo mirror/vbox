@@ -706,7 +706,7 @@
         <translation>&amp;Споделени папки...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Отваряне на диалог за опериране със споделени папки</translation>
     </message>
     <message>

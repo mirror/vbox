@@ -866,7 +866,7 @@
         <translation>&amp;Partekatutako Karpetak...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Partekatutako karpetekin aritzeko leihoa ireki</translation>
     </message>
     <message>

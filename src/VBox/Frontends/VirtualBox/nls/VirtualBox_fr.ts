@@ -883,8 +883,8 @@ Version %1</source>
         <translation>&amp;Répertoires partagés...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
-        <translation>Ouvrir la boîte de dialogue pour opérer sur les répertoires partagés</translation>
+        <source>Create or modify shared folders</source>
+        <translation>Créer ou modifier des répertoires partagés</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
@@ -1183,8 +1183,8 @@ Version %1</source>
         <translation>Cartes &amp;réseau...</translation>
     </message>
     <message>
-        <source>Open the dialog to change settings of the network adapters</source>
-        <translation>Ouvrir une boîte de dialogue pour changer les paramètres des cartes réseau virtuelles</translation>
+        <source>Change the settings of network adapters</source>
+        <translation>Changer les paramètres des cartes réseau virtuelles</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>

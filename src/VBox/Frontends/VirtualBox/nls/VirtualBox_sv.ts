@@ -934,7 +934,7 @@ Version %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1739"/>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Öppna dialogrutan för att hantera delade mappar</translation>
     </message>
     <message>

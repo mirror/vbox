@@ -898,7 +898,7 @@ Versi %1</translation>
         <translation>Folder yang di &amp;Share...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Buka dialog untuk beroperasi pada folder yang di share</translation>
     </message>
     <message>
