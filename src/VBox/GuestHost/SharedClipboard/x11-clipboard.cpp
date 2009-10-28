@@ -639,7 +639,11 @@ static int clipInit(CLIPBACKEND *pCtx)
     }
 #ifndef TESTCASE
     if (RT_SUCCESS(rc))
+    {
         rc = clipLoadXFixes(pDisplay, pCtx);
+        if (RT_FAILURE(rc))
+           LogRel(("Shared clipboard: failed to load the XFIXES extension.\n"));
+    }
 #endif
     if (RT_SUCCESS(rc))
     {
@@ -681,11 +685,15 @@ static int clipInit(CLIPBACKEND *pCtx)
         if (   RT_SUCCESS(rc)
             && (fcntl(pCtx->wakeupPipeRead, F_SETFL, O_NONBLOCK) != 0))
             rc = RTErrConvertFromErrno(errno);
+        if (RT_FAILURE(rc))
+            LogRel(("Shared clipboard: failed to setup the termination mechanism.\n"));
     }
     else
         rc = RTErrConvertFromErrno(errno);
     if (RT_FAILURE(rc))
         clipUninit(pCtx);
+    if (RT_FAILURE(rc))
+        LogRel(("Shared clipboard: initialisation failed: %Rrc\n", rc));
     return rc;
 }
 
@@ -764,7 +772,10 @@ int ClipStartX11(CLIPBACKEND *pCtx, bool grab)
         rc = RTThreadCreate(&pCtx->thread, clipEventThread, pCtx, 0,
                             RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
         if (RT_FAILURE(rc))
-            LogRel(("Failed to initialise the shared clipboard X11 backend.\n"));
+        {
+            LogRel(("Failed to start the shared clipboard thread.\n"));
+            clipUninit(pCtx);
+        }
     }
 #endif
     return rc;
