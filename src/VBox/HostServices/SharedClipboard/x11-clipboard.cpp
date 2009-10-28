@@ -124,8 +124,6 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
             pCtx->pClient = pClient;
             rc = ClipStartX11(pBackend, true /* grab shared clipboard */);
         }
-        if (RT_FAILURE(rc) && pBackend)
-            ClipStopX11(pCtx->pBackend);
         if (RT_FAILURE(rc))
             RTCritSectDelete(&pCtx->clipboardMutex);
     }
