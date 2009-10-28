@@ -502,7 +502,6 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
                           unsigned uPercentStart, unsigned uPercentSpan)
 {
     int rc;
-    RTFILE File;
     uint64_t cbTotal;
     uint64_t cbFill;
     uint64_t uOff;
