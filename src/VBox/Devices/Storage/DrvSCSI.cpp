@@ -911,10 +911,12 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     LogFlowFunc(("pDrvIns=%#p pCfgHandle=%#p\n", pDrvIns, pCfgHandle));
 
     /*
-     * Initialize interfaces.
+     * Initialize the instance data.
      */
-    pDrvIns->IBase.pfnQueryInterface                    = drvscsiQueryInterface;
-    pThis->ISCSIConnector.pfnSCSIRequestSend            = drvscsiRequestSend;
+    pThis->pDrvIns                           = pDrvIns;
+    pThis->ISCSIConnector.pfnSCSIRequestSend = drvscsiRequestSend;
+
+    pDrvIns->IBase.pfnQueryInterface         = drvscsiQueryInterface;
 
     /*
      * Try attach driver below and query it's block interface.
