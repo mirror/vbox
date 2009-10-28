@@ -396,6 +396,7 @@ struct Hardware
     Hardware();
 
     com::Utf8Str        strVersion;             // hardware version, optional
+    com::Guid           uuid;                   // hardware uuid, optional (null).
 
     bool                fHardwareVirt,
                         fHardwareVirtExclusive,

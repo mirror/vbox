@@ -236,7 +236,9 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--teleporterenabled on|off]\n"
                  "                            [--teleporterport <port>]\n"
                  "                            [--teleporteraddress <address|empty>\n"
-                 "                            [--teleporterpassword <password>]\n");
+                 "                            [--teleporterpassword <password>]\n"
+                 "                            [--hardwareuuid <uuid>]\n"
+                );
         RTPrintf("\n");
     }
 

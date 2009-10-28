@@ -212,6 +212,7 @@ bool Machine::HWData::operator==(const HWData &that) const
         return true;
 
     if (mHWVersion != that.mHWVersion ||
+        mHardwareUUID != that.mHardwareUUID ||
         mMemorySize != that.mMemorySize ||
         mMemoryBalloonSize != that.mMemoryBalloonSize ||
         mStatisticsUpdateInterval != that.mStatisticsUpdateInterval ||
@@ -987,6 +988,46 @@ STDMETHODIMP Machine::COMSETTER(HardwareVersion) (IN_BSTR aHWVersion)
 
     mHWData.backup();
     mHWData->mHWVersion = hwVersion;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(HardwareUUID)(BSTR *aUUID)
+{
+    CheckComArgOutPointerValid(aUUID);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    if (!mHWData->mHardwareUUID.isEmpty())
+        mHWData->mHardwareUUID.toUtf16().cloneTo(aUUID);
+    else
+        mData->mUuid.toUtf16().cloneTo(aUUID);
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(HardwareUUID) (IN_BSTR aUUID)
+{
+    Guid hardwareUUID(aUUID);
+    if (hardwareUUID.isEmpty())
+        return E_INVALIDARG;
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    CheckComRCReturnRC(rc);
+
+    mHWData.backup();
+    if (hardwareUUID == mData->mUuid)
+        mHWData->mHardwareUUID.clear();
+    else
+        mHWData->mHardwareUUID = hardwareUUID;
 
     return S_OK;
 }
@@ -5303,6 +5344,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
     {
         /* The hardware version attribute (optional). */
         mHWData->mHWVersion = data.strVersion;
+        mHWData->mHardwareUUID = data.uuid;
 
         mHWData->mHWVirtExEnabled             = data.fHardwareVirt;
         mHWData->mHWVirtExExclusive           = data.fHardwareVirtExclusive;
@@ -6250,6 +6292,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
             mHWData->mHWVersion = "2";  /** @todo Is this safe, to update mHWVersion here? If not some other point needs to be found where this can be done. */
 
         data.strVersion = mHWData->mHWVersion;
+        data.uuid = mHWData->mHardwareUUID;
 
         // CPU
         data.fHardwareVirt          = !!mHWData->mHWVirtExEnabled;

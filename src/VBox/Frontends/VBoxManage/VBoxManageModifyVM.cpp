@@ -125,7 +125,8 @@ enum
     MODIFYVM_TELEPORTER_ENABLED,
     MODIFYVM_TELEPORTER_PORT,
     MODIFYVM_TELEPORTER_ADDRESS,
-    MODIFYVM_TELEPORTER_PASSWORD
+    MODIFYVM_TELEPORTER_PASSWORD,
+    MODIFYVM_HARDWARE_UUID
 };
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
@@ -200,6 +201,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--teleporterport",           MODIFYVM_TELEPORTER_PORT,           RTGETOPT_REQ_UINT32 },
     { "--teleporteraddress",        MODIFYVM_TELEPORTER_ADDRESS,        RTGETOPT_REQ_STRING },
     { "--teleporterpassword",       MODIFYVM_TELEPORTER_PASSWORD,       RTGETOPT_REQ_STRING },
+    { "--hardwareuuid",             MODIFYVM_HARDWARE_UUID,             RTGETOPT_REQ_STRING },
 };
 
 int handleModifyVM(HandlerArg *a)
@@ -1812,6 +1814,12 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_TELEPORTER_PASSWORD:
             {
                 CHECK_ERROR(machine, COMSETTER(TeleporterPassword)(Bstr(ValueUnion.psz)));
+                break;
+            }
+
+            case MODIFYVM_HARDWARE_UUID:
+            {
+                CHECK_ERROR(machine, COMSETTER(HardwareUUID)(Bstr(ValueUnion.psz)));
                 break;
             }
 

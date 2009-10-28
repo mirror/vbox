@@ -4058,7 +4058,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="db35f17a-179f-4332-91b2-a49d5cfb678c"
+     uuid="37642E74-969A-4590-BD52-390E541F904D"
      wsmap="managed"
      >
     <desc>
@@ -4233,6 +4233,16 @@
 
     <attribute name="HardwareVersion" type="wstring">
       <desc>Hardware version identifier. Internal use only for now.</desc>
+    </attribute>
+
+    <attribute name="hardwareUUID" type="uuid" mod="string">
+      <desc>
+        The UUID presented to the guest via memory tables, hardware and guest
+        properties.  For most VMs this is the same as the @a id, but for VMs
+        which have been cloned or teleported it may be the same as the source
+        VM.  This latter is because the guest shouldn't notice that it was
+        cloned or teleported.
+      </desc>
     </attribute>
 
     <attribute name="CPUCount" type="unsigned long">
@@ -11946,7 +11956,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="ports" type="wstring">
       <desc>
-        VRDP server port numbers. The server will try to bind to one of free ports from the list. 
+        VRDP server port numbers. The server will try to bind to one of free ports from the list.
         <note>
           This is a string of comma separated TCP port numbers or port number ranges.
           Example <tt>5000,5010-5012,5015</tt>

@@ -145,11 +145,11 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     /** @todo error checking! */
 
     BOOL accessible = FALSE;
-    CHECK_ERROR (machine, COMGETTER(Accessible) (&accessible));
-    CheckComRCReturnRC (rc);
+    CHECK_ERROR(machine, COMGETTER(Accessible)(&accessible));
+    CheckComRCReturnRC(rc);
 
     Bstr uuid;
-    rc = machine->COMGETTER(Id) (uuid.asOutParam());
+    rc = machine->COMGETTER(Id)(uuid.asOutParam());
 
     if (!accessible)
     {
@@ -160,22 +160,22 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
             if (details == VMINFO_MACHINEREADABLE)
                 RTPrintf("name=\"<inaccessible>\"\n");
             else
-                RTPrintf ("Name:            <inaccessible!>\n");
+                RTPrintf("Name:            <inaccessible!>\n");
             if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf ("UUID=\"%s\"\n", Utf8Str(uuid).raw());
+                RTPrintf("UUID=\"%s\"\n", Utf8Str(uuid).raw());
             else
-                RTPrintf ("UUID:            %s\n", Utf8Str(uuid).raw());
+                RTPrintf("UUID:            %s\n", Utf8Str(uuid).raw());
             if (details != VMINFO_MACHINEREADABLE)
             {
                 Bstr settingsFilePath;
-                rc = machine->COMGETTER(SettingsFilePath) (settingsFilePath.asOutParam());
-                RTPrintf ("Config file:     %lS\n", settingsFilePath.raw());
+                rc = machine->COMGETTER(SettingsFilePath)(settingsFilePath.asOutParam());
+                RTPrintf("Config file:     %lS\n", settingsFilePath.raw());
                 ComPtr<IVirtualBoxErrorInfo> accessError;
-                rc = machine->COMGETTER(AccessError) (accessError.asOutParam());
-                RTPrintf ("Access error details:\n");
-                ErrorInfo ei (accessError);
+                rc = machine->COMGETTER(AccessError)(accessError.asOutParam());
+                RTPrintf("Access error details:\n");
+                ErrorInfo ei(accessError);
                 GluePrintErrorInfo(ei);
-                RTPrintf ("\n");
+                RTPrintf("\n");
             }
         }
         return S_OK;
@@ -217,6 +217,13 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         RTPrintf("CfgFile=\"%lS\"\n", settingsFilePath.raw());
     else
         RTPrintf("Config file:     %lS\n", settingsFilePath.raw());
+
+    Bstr strHardwareUuid;
+    rc = machine->COMGETTER(HardwareUUID)(strHardwareUuid.asOutParam());
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("HardwareUUID=\"%s\"\n", strHardwareUuid.raw());
+    else
+        RTPrintf("Hardware UUID:   %lS\n", strHardwareUuid.raw());
 
     ULONG memorySize;
     rc = machine->COMGETTER(MemorySize)(&memorySize);

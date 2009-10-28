@@ -1446,6 +1446,12 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
     elmHardware.getAttributeValue("version", hw.strVersion);
             // defaults to 2 and is only written if != 2
 
+    Utf8Str strUUID;
+    if (elmHardware.getAttributeValue("uuid", strUUID))
+        parseUUID(hw.uuid, strUUID);
+    else
+        hw.uuid.clear();
+
     xml::NodesLoop nl1(elmHardware);
     const xml::ElementNode *pelmHwChild;
     while ((pelmHwChild = nl1.forAllNodes()))
@@ -2329,6 +2335,8 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
 
     if (hw.strVersion != "2")
         pelmHardware->setAttribute("version", hw.strVersion);
+    if (!hw.uuid.isEmpty())
+        pelmHardware->setAttribute("uuid", makeString(hw.uuid));
 
     xml::ElementNode *pelmCPU      = pelmHardware->createChild("CPU");
     xml::ElementNode *pelmHwVirtEx = pelmCPU->createChild("HardwareVirtEx");
@@ -2895,6 +2903,10 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
              || !strTeleporterPassword.isEmpty()
             )
        )
+        m->sv = SettingsVersion_v1_9;
+
+    if (    m->sv < SettingsVersion_v1_9
+        &&  !hardwareMachine.uuid.isEmpty())
         m->sv = SettingsVersion_v1_9;
 }
 
