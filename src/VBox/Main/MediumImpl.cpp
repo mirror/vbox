@@ -996,6 +996,9 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     /* there must be a storage unit */
     m->state = MediumState_Created;
 
+    /* remember device type for correct unregistering later */
+    m->devType = aDeviceType;
+
     /* cannot be a host drive */
     m->hostDrive = FALSE;
 
