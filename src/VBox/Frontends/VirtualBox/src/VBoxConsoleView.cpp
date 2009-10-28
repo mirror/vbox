@@ -1952,8 +1952,18 @@ bool VBoxConsoleView::winLowKeyboardEvent (UINT msg, const KBDLLHOOKSTRUCT &even
      * the VK_LCONTROL vkey with curious 0x21D scan code (seems to be necessary
      * to specially treat ALT_GR to enter additional chars to regular apps).
      * These events are definitely unwanted in VM, so filter them out. */
+    /* Note (michael): it also sometimes sends the VK_CAPITAL vkey with scan
+     * code 0x23a. If this is not passed through then it is impossible to
+     * cancel CapsLock on a French keyboard.  I didn't find any other examples
+     * of these strange events.  Let's hope we are not missing anything else
+     * of importance! */
     if (hasFocus() && (event.scanCode & ~0xFF))
-        return true;
+    {
+        if (event.vkCode == VK_CAPITAL)
+            return false;
+        else
+            return true;
+    }
 
     if (!mKbdCaptured)
         return false;
@@ -2093,7 +2103,7 @@ bool VBoxConsoleView::winEvent (MSG *aMsg, long* /* aResult */)
 
     /* These special keys have to be handled by Windows as well to update the
      * internal modifier state and to enable/disable the keyboard LED */
-    if (vkey == VK_NUMLOCK || vkey == VK_CAPITAL || vkey == VK_SHIFT)
+    if (vkey == VK_NUMLOCK || vkey == VK_CAPITAL || vkey == VK_LSHIFT || vkey == VK_RSHIFT)
         return false;
 
     return result;
