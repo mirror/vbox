@@ -487,6 +487,7 @@ typedef struct PDMAPIC
                                                      uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
     /** @copydoc PDMAPICREG::pfnLocalInterruptR3 */
     DECLRCCALLBACKMEMBER(int,       pfnLocalInterruptRC,(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t u8Level));
+    RTRCPTR                         RCPtrAlignment;
 
 } PDMAPIC;
 
