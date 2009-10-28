@@ -389,6 +389,7 @@ PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu);
 PDMBOTHCBDECL(int)  apicBusDeliverCallback(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode,
                                            uint8_t u8DeliveryMode, uint8_t iVector, uint8_t u8Polarity,
                                            uint8_t u8TriggerMode);
+PDMBOTHCBDECL(int)  apicLocalInterrupt(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t u8Level);
 PDMBOTHCBDECL(int)  apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value);
 PDMBOTHCBDECL(int)  apicReadMSR(PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value);
 PDMBOTHCBDECL(int)  ioapicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
@@ -445,10 +446,10 @@ DECLINLINE(void) cpuSetInterrupt(APICDeviceInfo* dev, APICState *s, PDMAPICIRQ e
                                                getCpuFromLapic(dev, s));
 }
 
-DECLINLINE(void) cpuClearInterrupt(APICDeviceInfo* dev, APICState *s)
+DECLINLINE(void) cpuClearInterrupt(APICDeviceInfo* dev, APICState *s, PDMAPICIRQ enmType = PDMAPICIRQ_HARDWARE)
 {
     LogFlow(("apic: clear interrupt flag\n"));
-    dev->CTX_SUFF(pApicHlp)->pfnClearInterruptFF(dev->CTX_SUFF(pDevIns),
+    dev->CTX_SUFF(pApicHlp)->pfnClearInterruptFF(dev->CTX_SUFF(pDevIns), enmType,
                                                  getCpuFromLapic(dev, s));
 }
 
@@ -960,6 +961,72 @@ PDMBOTHCBDECL(int) apicBusDeliverCallback(PPDMDEVINS pDevIns, uint8_t u8Dest, ui
              pDevIns, u8Dest, u8DestMode, u8DeliveryMode, iVector, u8Polarity, u8TriggerMode));
     return apic_bus_deliver(dev, apic_get_delivery_bitmask(dev, u8Dest, u8DestMode),
                             u8DeliveryMode, iVector, u8Polarity, u8TriggerMode);
+}
+
+/**
+ * Local interrupt delivery, for devices attached to the CPU's LINT0/LINT1 pin.
+ * Normally used for 8259A PIC and NMI.
+ */
+PDMBOTHCBDECL(int) apicLocalInterrupt(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t u8Level)
+{
+    APICDeviceInfo  *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    APICState       *s = getLapicById(dev, 0);
+
+    Assert(PDMCritSectIsOwner(dev->CTX_SUFF(pCritSect)));
+    LogFlow(("apicLocalInterrupt: pDevIns=%p u8Pin=%x\n", pDevIns, u8Pin));
+
+    /* If LAPIC is disabled, go straight to the CPU. */
+    if (!(s->spurious_vec & APIC_SV_ENABLE))
+    {
+        LogFlow(("apicLocalInterrupt: LAPIC disabled, delivering directly to CPU core.\n"));
+        if (u8Level)
+            cpuSetInterrupt(dev, s, PDMAPICIRQ_EXTINT);
+        else
+            cpuClearInterrupt(dev, s, PDMAPICIRQ_EXTINT);
+
+        return VINF_SUCCESS;
+    }
+
+    /* If LAPIC is enabled, interrupts are subject to LVT programming. */
+    if (u8Pin > 1)
+    {
+        /* There are only two local interrupt pins. */
+        AssertMsgFailed(("Invalid LAPIC pin %d\n", u8Pin));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /* NB: We currently only deliver local interrupts to the first CPU. In theory they
+     * should be delivered to all CPUs and it is the guest's responsibility to ensure
+     * no more than one CPU has the interrupt unmasked.
+     */
+    uint32_t    u32Lvec;
+
+    u32Lvec = s->lvt[APIC_LVT_LINT0 + u8Pin];   /* Fetch corresponding LVT entry. */
+    /* Drop int if entry is masked. May not be correct for level-triggered interrupts. */
+    if (!(u32Lvec & APIC_LVT_MASKED))
+    {   uint8_t     u8Delivery;
+        PDMAPICIRQ  enmType;
+
+        u8Delivery = (u32Lvec >> 8) & 7;
+        switch (u8Delivery) 
+        {
+        case APIC_DM_EXTINT:
+            Assert(u8Pin == 0); /* PIC should be wired to LINT0. */
+            enmType = PDMAPICIRQ_EXTINT;
+            break;
+        case APIC_DM_NMI:
+            Assert(u8Pin == 0); /* NMI should be wired to LINT1. */
+            enmType = PDMAPICIRQ_NMI;
+            break;
+        case APIC_DM_SMI:
+            enmType = PDMAPICIRQ_SMI;
+            break;
+
+        }
+        LogFlow(("apicLocalInterrupt: setting local interrupt type %d\n", enmType));
+        cpuSetInterrupt(dev, s, enmType);
+    }
+    return VINF_SUCCESS;
 }
 
 #endif /* VBOX */
@@ -2743,6 +2810,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     ApicReg.pfnWriteMSRR3           = apicWriteMSR;
     ApicReg.pfnReadMSRR3            = apicReadMSR;
     ApicReg.pfnBusDeliverR3         = apicBusDeliverCallback;
+    ApicReg.pfnLocalInterruptR3     = apicLocalInterrupt;
     if (fGCEnabled) {
         ApicReg.pszGetInterruptRC   = "apicGetInterrupt";
         ApicReg.pszHasPendingIrqRC  = "apicHasPendingIrq";
@@ -2753,6 +2821,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         ApicReg.pszWriteMSRRC       = "apicWriteMSR";
         ApicReg.pszReadMSRRC        = "apicReadMSR";
         ApicReg.pszBusDeliverRC     = "apicBusDeliverCallback";
+        ApicReg.pszLocalInterruptRC = "apicLocalInterrupt";
     } else {
         ApicReg.pszGetInterruptRC   = NULL;
         ApicReg.pszHasPendingIrqRC  = NULL;
@@ -2763,6 +2832,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         ApicReg.pszWriteMSRRC       = NULL;
         ApicReg.pszReadMSRRC        = NULL;
         ApicReg.pszBusDeliverRC     = NULL;
+        ApicReg.pszLocalInterruptRC = NULL;
     }
     if (fR0Enabled) {
         ApicReg.pszGetInterruptR0   = "apicGetInterrupt";
@@ -2774,6 +2844,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         ApicReg.pszWriteMSRR0       = "apicWriteMSR";
         ApicReg.pszReadMSRR0        = "apicReadMSR";
         ApicReg.pszBusDeliverR0     = "apicBusDeliverCallback";
+        ApicReg.pszLocalInterruptR0 = "apicLocalInterrupt";
     } else {
         ApicReg.pszGetInterruptR0   = NULL;
         ApicReg.pszHasPendingIrqR0  = NULL;
@@ -2784,6 +2855,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         ApicReg.pszWriteMSRR0       = NULL;
         ApicReg.pszReadMSRR0        = NULL;
         ApicReg.pszBusDeliverR0     = NULL;
+        ApicReg.pszLocalInterruptR0 = NULL;
     }
 
     Assert(pDevIns->pDevHlpR3->pfnAPICRegister);
