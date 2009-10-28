@@ -385,6 +385,16 @@ static DECLCALLBACK(void) pdmR0PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM    pVM   = pDevIns->Internal.s.pVMR0;
+
+    if (pVM->pdm.s.Apic.pfnLocalInterruptR0)
+    {
+        LogFlow(("pdmR0PicHlp_SetInterruptFF: caller='%p'/%d: Setting local interrupt on LAPIC\n",
+                 pDevIns, pDevIns->iInstance));
+        /* Raise the LAPIC's LINT0 line instead of signaling the CPU directly. */
+        pVM->pdm.s.Apic.pfnLocalInterruptR0(pVM->pdm.s.Apic.pDevInsR0, 0, 1);
+        return;
+    }
+
     PVMCPU pVCpu = &pVM->aCpus[0];      /* for PIC we always deliver to CPU 0, MP use APIC */
 
     LogFlow(("pdmR0PicHlp_SetInterruptFF: caller=%p/%d: VMCPU_FF_INTERRUPT_PIC %d -> 1\n",
@@ -399,6 +409,17 @@ static DECLCALLBACK(void) pdmR0PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM    pVM   = pDevIns->Internal.s.pVMR0;
+
+    if (pVM->pdm.s.Apic.pfnLocalInterruptR0)
+    {
+        /* Raise the LAPIC's LINT0 line instead of signaling the CPU directly. */
+        LogFlow(("pdmR0PicHlp_ClearInterruptFF: caller='%s'/%d: Clearing local interrupt on LAPIC\n",
+                 pDevIns, pDevIns->iInstance));
+        /* Lower the LAPIC's LINT0 line instead of signaling the CPU directly. */
+        pVM->pdm.s.Apic.pfnLocalInterruptR0(pVM->pdm.s.Apic.pDevInsR0, 0, 0);
+        return;
+    }
+
     PVMCPU pVCpu = &pVM->aCpus[0];      /* for PIC we always deliver to CPU 0, MP use APIC */
 
     LogFlow(("pdmR0PicHlp_ClearInterruptFF: caller=%p/%d: VMCPU_FF_INTERRUPT_PIC %d -> 0\n",
