@@ -283,15 +283,13 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_MEMORY:
             {
-                if (ValueUnion.u32 > 0)
-                    CHECK_ERROR(machine, COMSETTER(MemorySize)(ValueUnion.u32));
+                CHECK_ERROR(machine, COMSETTER(MemorySize)(ValueUnion.u32));
                 break;
             }
 
             case MODIFYVM_VRAM:
             {
-                if (ValueUnion.u32 > 0)
-                    CHECK_ERROR(machine, COMSETTER(VRAMSize)(ValueUnion.u32));
+                CHECK_ERROR(machine, COMSETTER(VRAMSize)(ValueUnion.u32));
                 break;
             }
 
@@ -459,15 +457,13 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_CPUS:
             {
-                if (ValueUnion.u32 > 0)
-                    CHECK_ERROR(machine, COMSETTER(CPUCount)(ValueUnion.u32));
+                CHECK_ERROR(machine, COMSETTER(CPUCount)(ValueUnion.u32));
                 break;
             }
 
             case MODIFYVM_MONITORCOUNT:
             {
-                if (ValueUnion.u32 > 0)
-                    CHECK_ERROR(machine, COMSETTER(MonitorCount)(ValueUnion.u32));
+                CHECK_ERROR(machine, COMSETTER(MonitorCount)(ValueUnion.u32));
                 break;
             }
 
@@ -548,8 +544,7 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_BIOSLOGODISPLAYTIME:
             {
-                if (ValueUnion.u64 > 0)
-                    CHECK_ERROR(biosSettings, COMSETTER(LogoDisplayTime)(ValueUnion.u64));
+                CHECK_ERROR(biosSettings, COMSETTER(LogoDisplayTime)(ValueUnion.u64));
                 break;
             }
 
@@ -583,8 +578,7 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_BIOSSYSTEMTIMEOFFSET:
             {
-                if (ValueUnion.u64 > 0)
-                    CHECK_ERROR(biosSettings, COMSETTER(TimeOffset)(ValueUnion.u64));
+                CHECK_ERROR(biosSettings, COMSETTER(TimeOffset)(ValueUnion.u64));
                 break;
             }
 
@@ -1488,16 +1482,14 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_GUESTSTATISTICSINTERVAL:
             {
-                if (ValueUnion.u32 > 0)
-                    CHECK_ERROR(machine, COMSETTER(StatisticsUpdateInterval)(ValueUnion.u32));
+                CHECK_ERROR(machine, COMSETTER(StatisticsUpdateInterval)(ValueUnion.u32));
                 break;
             }
 
 #ifdef VBOX_WITH_MEM_BALLOONING
             case MODIFYVM_GUESTMEMORYBALLOON:
             {
-                if (ValueUnion.u32 > 0)
-                    CHECK_ERROR(machine, COMSETTER(MemoryBalloonSize)(ValueUnion.u32));
+                CHECK_ERROR(machine, COMSETTER(MemoryBalloonSize)(ValueUnion.u32));
                 break;
             }
 #endif
@@ -1800,8 +1792,7 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_TELEPORTER_PORT:
             {
-                if (ValueUnion.u32 > 0)
-                    CHECK_ERROR(machine, COMSETTER(TeleporterPort)(ValueUnion.u32));
+                CHECK_ERROR(machine, COMSETTER(TeleporterPort)(ValueUnion.u32));
                 break;
             }
 
