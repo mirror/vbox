@@ -1325,50 +1325,6 @@ static DECLCALLBACK(int) pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 
 
 /**
- * Disables all PCI devices prior to state loading.
- *
- * @returns VINF_SUCCESS.
- * @param   pBus                The PCI bus instance.
- */
-static int pciR3CommonLoadPrep(PPCIBUS pBus)
-{
-    /*
-     * Iterate thru all the devices and write 0 to the COMMAND register.
-     * The register value is restored afterwards so we can do proper
-     * LogRels in pciR3CommonRestoreConfig.
-     */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->devices); i++)
-    {
-        PPCIDEVICE pDev = pBus->devices[i];
-        if (pDev)
-        {
-            uint16_t u16 = PCIDevGetCommand(pDev);
-            pDev->Int.s.pfnConfigWrite(pDev, VBOX_PCI_COMMAND, 0, 2);
-            PCIDevSetCommand(pDev, u16);
-            Assert(PCIDevGetCommand(pDev) == u16);
-        }
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Prepares a state load.
- *
- * This will disable all the device so that the I/O regions gets unmapped.
- *
- * @returns VINF_SUCCESS
- * @param   pDevIns             The device instance.
- * @param   pSSMHandle          The saved state handle.
- */
-static DECLCALLBACK(int) pciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
-{
-    PPCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
-    return pciR3CommonLoadPrep(&pThis->PciBus);
-}
-
-
-/**
  * Common routine for restoring the config registers of a PCI device.
  *
  * @param   pDev                The PCI device.
@@ -1512,7 +1468,7 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
                                 pDev->name, pDev->pDevIns->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
                 }
                 if (off == VBOX_PCI_COMMAND)
-                    PCIDevSetCommand(pDev, 0); /* For remapping, see pciR3CommonLoadPrep. */
+                    PCIDevSetCommand(pDev, 0); /* For remapping, see pciR3CommonLoadExec. */
                 pDev->Int.s.pfnConfigWrite(pDev, off, u32Src, cb);
             }
         }
@@ -1550,6 +1506,26 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSMHandle
     int         rc;
 
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+
+    /*
+     * Iterate thru all the devices and write 0 to the COMMAND register so
+     * that all the memory is unmapped before we start restoring the saved
+     * mapping locations.
+     *
+     * The register value is restored afterwards so we can do proper
+     * LogRels in pciR3CommonRestoreConfig.
+     */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->devices); i++)
+    {
+        PPCIDEVICE pDev = pBus->devices[i];
+        if (pDev)
+        {
+            uint16_t u16 = PCIDevGetCommand(pDev);
+            pDev->Int.s.pfnConfigWrite(pDev, VBOX_PCI_COMMAND, 0, 2);
+            PCIDevSetCommand(pDev, u16);
+            Assert(PCIDevGetCommand(pDev) == u16);
+        }
+    }
 
     /*
      * Iterate all the devices.
@@ -2151,7 +2127,7 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpSSMRegisterEx(pDevIns, VBOX_PCI_SAVED_STATE_VERSION, sizeof(*pBus) + 16*128, "pgm",
                                 NULL, NULL, NULL,
                                 NULL, pciR3SaveExec, NULL,
-                                pciR3LoadPrep, pciR3LoadExec, NULL);
+                                NULL, pciR3LoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2323,22 +2299,6 @@ static DECLCALLBACK(int) pcibridgeR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
 {
     PPCIBUS pThis = PDMINS_2_DATA(pDevIns, PPCIBUS);
     return pciR3CommonSaveExec(pThis, pSSMHandle);
-}
-
-
-/**
- * Prepares a state load.
- *
- * This will disable all the device so that the I/O regions gets unmapped.
- *
- * @returns VINF_SUCCESS
- * @param   pDevIns             The device instance.
- * @param   pSSMHandle          The saved state handle.
- */
-static DECLCALLBACK(int) pcibridgeR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
-{
-    PPCIBUS pThis = PDMINS_2_DATA(pDevIns, PPCIBUS);
-    return pciR3CommonLoadPrep(pThis);
 }
 
 
@@ -2540,7 +2500,7 @@ static DECLCALLBACK(int)   pcibridgeConstruct(PPDMDEVINS pDevIns, int iInstance,
     rc = PDMDevHlpSSMRegisterEx(pDevIns, VBOX_PCI_SAVED_STATE_VERSION, sizeof(*pBus) + 16*128, "pgm",
                                 NULL, NULL, NULL,
                                 NULL, pcibridgeR3SaveExec, NULL,
-                                pcibridgeR3LoadPrep, pcibridgeR3LoadExec, NULL);
+                                NULL, pcibridgeR3LoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
