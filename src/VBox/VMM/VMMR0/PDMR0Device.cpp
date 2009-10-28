@@ -469,6 +469,9 @@ static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
         case PDMAPICIRQ_SMI:
             VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
             break;
+        case PDMAPICIRQ_EXTINT:
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+            break;
         default:
             AssertMsgFailed(("enmType=%d\n", enmType));
             break;
