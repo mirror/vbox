@@ -902,7 +902,7 @@ Versió %1</translation>
         <translation>&amp;Carpetes compartides...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Obre el diàleg per operar amb les carpetes compartides</translation>
     </message>
     <message>

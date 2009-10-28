@@ -963,7 +963,7 @@ Version %1</translation>
         <translation>分配数据空间(&amp;S)...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>打开数据空间对话框</translation>
     </message>
     <message>

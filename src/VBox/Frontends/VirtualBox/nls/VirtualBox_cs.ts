@@ -897,7 +897,7 @@ Verze %1</translation>
         <translation>Sdílené &amp;složky...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Otevře dialog pro správu sdílených složek</translation>
     </message>
     <message>

@@ -888,7 +888,7 @@ verzia %1</translation>
         <translation>&amp;Zdieľané priečinky...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Otvorí dialóg operácií so zdieľanými priečinkami</translation>
     </message>
     <message>

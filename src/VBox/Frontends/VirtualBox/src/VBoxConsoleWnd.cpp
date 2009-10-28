@@ -1635,10 +1635,10 @@ void VBoxConsoleWnd::retranslateUi()
     mDevicesFDMenu->setTitle (tr ("&Floppy Devices"));
 
     mDevicesNetworkDialogAction->setText (tr ("&Network Adapters..."));
-    mDevicesNetworkDialogAction->setStatusTip (tr ("Open the dialog to change settings of the network adapters"));
+    mDevicesNetworkDialogAction->setStatusTip (tr ("Change the settings of network adapters"));
 
     mDevicesSFDialogAction->setText (tr ("&Shared Folders..."));
-    mDevicesSFDialogAction->setStatusTip (tr ("Open the dialog to operate on shared folders"));
+    mDevicesSFDialogAction->setStatusTip (tr ("Create or modify shared folders"));
 
     mDevicesSwitchVrdpAction->setText (tr ("&Remote Display"));
     mDevicesSwitchVrdpAction->setStatusTip (tr ("Enable or disable remote desktop (RDP) connections to this machine"));

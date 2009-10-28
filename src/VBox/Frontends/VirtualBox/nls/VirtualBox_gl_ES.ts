@@ -706,7 +706,7 @@
         <translation>Cartafole&amp;s compartidos...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Abrir o diálogo para manexar nos cartafoles compartidos</translation>
     </message>
     <message>

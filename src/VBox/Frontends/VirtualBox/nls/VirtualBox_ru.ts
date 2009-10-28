@@ -729,7 +729,7 @@
         <translation>О&amp;бщие папки...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Открыть диалог для настройки общих папок</translation>
     </message>
     <message>

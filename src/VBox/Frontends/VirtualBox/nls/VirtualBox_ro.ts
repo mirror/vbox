@@ -968,7 +968,7 @@ Versiunea %1</translation>
         <translation>Directoare &amp;partajate...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Deschide dialogul directoare partajate</translation>
     </message>
     <message>

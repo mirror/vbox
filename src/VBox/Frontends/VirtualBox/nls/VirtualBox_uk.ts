@@ -897,7 +897,7 @@
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1739"/>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Відкрити діалог для керування спільними теками</translation>
     </message>
     <message>

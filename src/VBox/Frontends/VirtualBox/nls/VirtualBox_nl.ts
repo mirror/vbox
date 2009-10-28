@@ -705,7 +705,7 @@
         <translation>&amp;Gedeelde mappen...</translation>
     </message>
     <message>
-        <source>Open the dialog to operate on shared folders</source>
+        <source>Create or modify shared folders</source>
         <translation>Open de dialoog om met de gedeelde mappen te bewerken</translation>
     </message>
     <message>
