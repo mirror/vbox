@@ -2285,7 +2285,7 @@ void VBoxConsoleWnd::prepareStorageMenu()
             default:
                 break;
         }
-        emptyMenuAction->setIcon (VBoxGlobal::iconSet (":/delete_16px.png", ":/delete_disabled_16px.png"));
+        emptyMenuAction->setIcon (VBoxGlobal::iconSet (":/delete_16px.png", ":/delete_dis_16px.png"));
         menu->addAction (emptyMenuAction);
     }
 }
