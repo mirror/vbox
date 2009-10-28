@@ -993,7 +993,7 @@ typedef struct VM
     } parav;
 
     /** Padding for aligning the cpu array on a page boundrary. */
-    uint8_t         abAlignment2[2120];
+    uint8_t         abAlignment2[2056];
 
     /* ---- end small stuff ---- */
 
