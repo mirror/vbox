@@ -1207,7 +1207,7 @@ Versão %1</translation>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nenhum CD/DVD montado&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade dos discos rígidos virtuais:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>

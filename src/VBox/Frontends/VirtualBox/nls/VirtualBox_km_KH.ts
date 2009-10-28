@@ -714,7 +714,7 @@
       <translation>&lt;br>&lt;nobr>&lt;b>គ្មាន​មេឌៀ​បានម៉ោន​ទេ&lt;/b>&lt;/nobr></translation>
     </message>
     <message>
-      <source>&lt;qt>&lt;nobr>Indicates the activity of virtual hard disks:&lt;/nobr>%1&lt;/qt></source>
+      <source>&lt;qt>&lt;nobr>Indicates activity on the virtual hard disks:&lt;/nobr>%1&lt;/qt></source>
       <comment>HDD tooltip</comment>
       <translation>&lt;qt>&lt;nobr>បង្ហាញ​សកម្មភាព​របស់​ថាសរឹង​និម្មិត ៖&lt;/nobr>%1&lt;/qt></translation>
     </message>

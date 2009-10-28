@@ -1135,7 +1135,7 @@ Version %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1937"/>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indikerar aktiviteten för virtuella hårddiskar:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>

@@ -1058,7 +1058,7 @@ Version %1</source>
         <translation type="obsolete">&lt;b&gt;&lt;nobr&gt;&lt;b&gt;Support optique non inséré&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité du disque dur virtuel&amp;nbsp;: &lt;/nbr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1192,7 +1192,7 @@ Version %1</source>
         <translation>Serveur d&apos;affichage distant (RDP)</translation>
     </message>
     <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indique l&apos;activité sur les disques durs virtuels :&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
@@ -3159,7 +3159,7 @@ p, li { white-space: pre-wrap; }
         <translation>Stockage</translation>
     </message>
     <message>
-        <source>Teleporting From</source>
+        <source>Teleporting</source>
         <comment>MachineState</comment>
         <translation>En téléportation</translation>
     </message>
