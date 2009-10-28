@@ -949,18 +949,19 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 }
 
 /**
- * Initializes the hard disk object by opening the storage unit at the specified
+ * Initializes the medium object by opening the storage unit at the specified
  * location. The enOpenMode parameter defines whether the image will be opened
  * read/write or read-only.
  *
- * Note that the UUID, format and the parent of this hard disk will be
- * determined when reading the hard disk storage unit, unless new values are
+ * Note that the UUID, format and the parent of this medium will be
+ * determined when reading the medium storage unit, unless new values are
  * specified by the parameters. If the detected or set parent is
  * not known to VirtualBox, then this method will fail.
  *
  * @param aVirtualBox   VirtualBox object.
  * @param aLocation     Storage unit location.
  * @param enOpenMode    Whether to open the image read/write or read-only.
+ * @param aDeviceType   Device type of medium.
  * @param aSetImageId   Whether to set the image UUID or not.
  * @param aImageId      New image UUID if @aSetId is true. Empty string means
  *                      create a new UUID, and a zero UUID is invalid.
