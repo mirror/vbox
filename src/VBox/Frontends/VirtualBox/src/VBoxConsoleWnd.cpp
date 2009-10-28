@@ -196,6 +196,23 @@ private:
     QAction *mAction;
 };
 
+struct MountTarget
+{
+    MountTarget() : name (QString ("")), port (0), device (0), id (QString ("")), type (VBoxDefs::MediumType_Invalid) {}
+    MountTarget (const QString &aName, LONG aPort, LONG aDevice)
+        : name (aName), port (aPort), device (aDevice), id (QString ("")), type (VBoxDefs::MediumType_Invalid) {}
+    MountTarget (const QString &aName, LONG aPort, LONG aDevice, const QString &aId)
+        : name (aName), port (aPort), device (aDevice), id (aId), type (VBoxDefs::MediumType_Invalid) {}
+    MountTarget (const QString &aName, LONG aPort, LONG aDevice, const QString &aId, VBoxDefs::MediumType aType)
+        : name (aName), port (aPort), device (aDevice), id (aId), type (aType) {}
+    QString name;
+    LONG port;
+    LONG device;
+    QString id;
+    VBoxDefs::MediumType type;
+};
+Q_DECLARE_METATYPE (MountTarget);
+
 /** \class VBoxConsoleWnd
  *
  *  The VBoxConsoleWnd class is a VM console window, one of two main VBox
@@ -224,7 +241,8 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
     , mVMMenu (0)
     , mVMMenuMini (0)
     , mDevicesMenu (0)
-    , mDevicesStorageMenu (0)
+    , mDevicesCDMenu (0)
+    , mDevicesFDMenu (0)
     , mDevicesNetworkMenu (0)
     , mDevicesSFMenu (0)
     , mDevicesUSBMenu (0)
@@ -257,7 +275,6 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
     , mVmACPIShutdownAction (0)
     , mVmCloseAction (0)
     /* Device Menu Actions */
-    , mDevicesStorageDialogAction (0)
     , mDevicesNetworkDialogAction (0)
     , mDevicesSFDialogAction (0)
     , mDevicesSwitchVrdpSeparator (0)
@@ -401,10 +418,6 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
     mVmCloseAction->setIcon (VBoxGlobal::iconSet (":/exit_16px.png"));
 
     /* Devices menu actions */
-    mDevicesStorageDialogAction = new QAction (mRunningOrPausedActions);
-    mDevicesStorageDialogAction->setIcon (VBoxGlobal::iconSet (
-        ":/attachment_16px.png", ":/attachment_disabled_16px.png"));
-
     mDevicesNetworkDialogAction = new QAction (mRunningOrPausedActions);
     mDevicesNetworkDialogAction->setIcon (VBoxGlobal::iconSet (
         ":/nw_16px.png", ":/nw_disabled_16px.png"));
@@ -450,9 +463,11 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
 
     /* Menu Items */
     mMainMenu = new QIMenu (this);
-    mDevicesStorageMenu = new QMenu (this);
+    mDevicesCDMenu = new QMenu (this);
+    mDevicesFDMenu = new QMenu (this);
     mDevicesNetworkMenu = new QMenu (this);
     mDevicesSFMenu = new QMenu (this);
+    mDevicesUSBMenu = new VBoxUSBMenu (this);
 
     /* Machine submenu */
     mVMMenu = menuBar()->addMenu (QString::null);
@@ -490,11 +505,12 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
     mDevicesMenu = menuBar()->addMenu (QString::null);
     mMainMenu->addMenu (mDevicesMenu);
 
-    mDevicesUSBMenu = new VBoxUSBMenu (mDevicesMenu);
-    mDevicesUSBMenu->setIcon (VBoxGlobal::iconSet (
-        ":/usb_16px.png", ":/usb_disabled_16px.png"));
+    mDevicesCDMenu->setIcon (VBoxGlobal::iconSet (":/cd_16px.png", ":/cd_disabled_16px.png"));
+    mDevicesFDMenu->setIcon (VBoxGlobal::iconSet (":/fd_16px.png", ":/fd_disabled_16px.png"));
+    mDevicesUSBMenu->setIcon (VBoxGlobal::iconSet (":/usb_16px.png", ":/usb_disabled_16px.png"));
 
-    mDevicesMenu->addAction (mDevicesStorageDialogAction);
+    mDevicesMenu->addMenu (mDevicesCDMenu);
+    mDevicesMenu->addMenu (mDevicesFDMenu);
     mDevicesMenu->addAction (mDevicesNetworkDialogAction);
     mDevicesMenu->addAction (mDevicesSFDialogAction);
     mDevicesMenu->addMenu (mDevicesUSBMenu);
@@ -507,9 +523,6 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
 
     mDevicesMenu->addSeparator();
     mDevicesMenu->addAction (mDevicesInstallGuestToolsAction);
-
-    /* Reset the "context menu" flag */
-    mDevicesUSBMenu->menuAction()->setData (false);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Debug submenu */
@@ -664,19 +677,17 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
     connect (mVmACPIShutdownAction, SIGNAL (triggered()), this, SLOT (vmACPIShutdown()));
     connect (mVmCloseAction, SIGNAL (triggered()), this, SLOT (vmClose()));
 
-    connect (mDevicesStorageMenu, SIGNAL (aboutToShow()), this, SLOT (prepareStorageMenu()));
+    connect (mDevicesCDMenu, SIGNAL (aboutToShow()), this, SLOT (prepareStorageMenu()));
+    connect (mDevicesFDMenu, SIGNAL (aboutToShow()), this, SLOT (prepareStorageMenu()));
     connect (mDevicesNetworkMenu, SIGNAL (aboutToShow()), this, SLOT (prepareNetworkMenu()));
     connect (mDevicesSFMenu, SIGNAL (aboutToShow()), this, SLOT (prepareSFMenu()));
     connect (mDevicesUSBMenu, SIGNAL(triggered (QAction *)), this, SLOT(switchUSB (QAction *)));
 
-    connect (mDevicesStorageDialogAction, SIGNAL (triggered()), this, SLOT (devicesOpenStorageDialog()));
     connect (mDevicesNetworkDialogAction, SIGNAL (triggered()), this, SLOT (devicesOpenNetworkDialog()));
     connect (mDevicesSFDialogAction, SIGNAL (triggered()), this, SLOT (devicesOpenSFDialog()));
     connect (mDevicesSwitchVrdpAction, SIGNAL (toggled (bool)), this, SLOT (devicesSwitchVrdp (bool)));
     connect (mDevicesInstallGuestToolsAction, SIGNAL (triggered()), this, SLOT (devicesInstallGuestAdditions()));
 
-    connect (mHDLed, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
-             this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
     connect (mCDLed, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
 #if 0 /* TODO: Allow to setup status-bar! */
@@ -900,6 +911,22 @@ bool VBoxConsoleWnd::openView (const CSession &aSession)
         if (extendedMode)
             mConsole->requestToResize (QSize (w, h - menuBar()->height() - statusBar()->height()));
     }
+
+    /* initialize storage stuff */
+    int cdDevicesCount = 0;
+    int fdDevicesCount = 0;
+    const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
+    foreach (const CMediumAttachment &attachment, attachments)
+    {
+        if (attachment.GetType() == KDeviceType_DVD)
+            ++ cdDevicesCount;
+        if (attachment.GetType() == KDeviceType_Floppy)
+            ++ fdDevicesCount;
+    }
+    mDevicesCDMenu->menuAction()->setData (cdDevicesCount);
+    mDevicesFDMenu->menuAction()->setData (fdDevicesCount);
+    mDevicesCDMenu->menuAction()->setVisible (cdDevicesCount);
+    mDevicesFDMenu->menuAction()->setVisible (fdDevicesCount);
 
     /* initialize usb stuff */
     CUSBController usbctl = machine.GetUSBController();
@@ -1604,8 +1631,8 @@ void VBoxConsoleWnd::retranslateUi()
     mVmCloseAction->setMenuRole (QAction::QuitRole);
 
     /* Devices actions */
-    mDevicesStorageDialogAction->setText (tr ("&Storage Devices..."));
-    mDevicesStorageDialogAction->setStatusTip (tr ("Open the dialog to change settings of the storage devices"));
+    mDevicesCDMenu->setTitle (tr ("&CD/DVD Devices"));
+    mDevicesFDMenu->setTitle (tr ("&Floppy Devices"));
 
     mDevicesNetworkDialogAction->setText (tr ("&Network Adapters..."));
     mDevicesNetworkDialogAction->setStatusTip (tr ("Open the dialog to change settings of the network adapters"));
@@ -1613,7 +1640,7 @@ void VBoxConsoleWnd::retranslateUi()
     mDevicesSFDialogAction->setText (tr ("&Shared Folders..."));
     mDevicesSFDialogAction->setStatusTip (tr ("Open the dialog to operate on shared folders"));
 
-    mDevicesSwitchVrdpAction->setText (tr ("Remote Dis&play"));
+    mDevicesSwitchVrdpAction->setText (tr ("&Remote Display"));
     mDevicesSwitchVrdpAction->setStatusTip (tr ("Enable or disable remote desktop (RDP) connections to this machine"));
 #if 0 /* TODO: Allow to setup status-bar! */
     mDevicesVRDPMenu->setToolTip (tr ("Remote Desktop (RDP) Server", "enable/disable..."));
@@ -2046,14 +2073,6 @@ void VBoxConsoleWnd::devicesSwitchVrdp (bool aOn)
     updateAppearanceOf (VRDPStuff);
 }
 
-void VBoxConsoleWnd::devicesOpenStorageDialog()
-{
-    if (!mConsole) return;
-
-    VBoxStorageDialog dlg (mConsole, mSession);
-    dlg.exec();
-}
-
 void VBoxConsoleWnd::devicesOpenNetworkDialog()
 {
     if (!mConsole) return;
@@ -2118,8 +2137,157 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
 
 void VBoxConsoleWnd::prepareStorageMenu()
 {
-    mDevicesStorageMenu->clear();
-    mDevicesStorageMenu->addAction (mDevicesStorageDialogAction);
+    QMenu *menu = qobject_cast <QMenu*> (sender());
+    Assert (menu);
+    menu->clear();
+
+    KDeviceType deviceType = menu == mDevicesCDMenu ? KDeviceType_DVD :
+                             menu == mDevicesFDMenu ? KDeviceType_Floppy :
+                                                      KDeviceType_Null;
+    Assert (deviceType != KDeviceType_Null);
+
+    VBoxDefs::MediumType mediumType = menu == mDevicesCDMenu ? VBoxDefs::MediumType_DVD :
+                                      menu == mDevicesFDMenu ? VBoxDefs::MediumType_Floppy :
+                                                               VBoxDefs::MediumType_Invalid;
+    Assert (mediumType != VBoxDefs::MediumType_Invalid);
+
+    const CMediumAttachmentVector &attachments = mSession.GetMachine().GetMediumAttachments();
+    foreach (const CMediumAttachment &attachment, attachments)
+    {
+        if (attachment.GetType() == deviceType)
+        {
+            /* Attachment menu item */
+            QMenu *attachmentMenu = 0;
+            if (menu->menuAction()->data().toInt() > 1)
+            {
+                attachmentMenu = new QMenu (menu);
+                attachmentMenu->setTitle (QString ("%1 (%2)").arg (attachment.GetController().GetName())
+                                          .arg (vboxGlobal().toString (StorageSlot (attachment.GetController().GetBus(),
+                                                                                    attachment.GetPort(),
+                                                                                    attachment.GetDevice()))));
+                switch (attachment.GetController().GetBus())
+                {
+                    case KStorageBus_IDE:
+                        attachmentMenu->setIcon (QIcon (":/ide_16px.png")); break;
+                    case KStorageBus_SATA:
+                        attachmentMenu->setIcon (QIcon (":/sata_16px.png")); break;
+                    case KStorageBus_SCSI:
+                        attachmentMenu->setIcon (QIcon (":/scsi_16px.png")); break;
+                    case KStorageBus_Floppy:
+                        attachmentMenu->setIcon (QIcon (":/floppy_16px.png")); break;
+                    default:
+                        break;
+                }
+                menu->addMenu (attachmentMenu);
+            }
+            else attachmentMenu = menu;
+
+            /* Related VBoxMedium item */
+            VBoxMedium vboxMediumCurrent;
+            vboxGlobal().findMedium (attachment.GetMedium(), vboxMediumCurrent);
+
+            /* Mount Medium actions */
+            int addedIntoList = 0;
+            const VBoxMediaList &vboxMediums = vboxGlobal().currentMediaList();
+            foreach (const VBoxMedium &vboxMedium, vboxMediums)
+            {
+                if (vboxMedium.type() == mediumType)
+                {
+                    bool isMediumUsed = false;
+                    foreach (const CMediumAttachment &otherAttachment, attachments)
+                    {
+                        if (otherAttachment != attachment)
+                        {
+                            CMedium otherMedium = otherAttachment.GetMedium();
+                            if (!otherMedium.isNull() && otherMedium.GetId() == vboxMedium.id())
+                            {
+                                isMediumUsed = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!isMediumUsed)
+                    {
+                        QAction *mountMediumAction = new QAction (vboxMedium.name(), attachmentMenu);
+                        mountMediumAction->setCheckable (true);
+                        mountMediumAction->setChecked (vboxMedium.id() == vboxMediumCurrent.id());
+                        mountMediumAction->setData (QVariant::fromValue (MountTarget (attachment.GetController().GetName(),
+                                                                                      attachment.GetPort(),
+                                                                                      attachment.GetDevice(),
+                                                                                      vboxMedium.id())));
+                        connect (mountMediumAction, SIGNAL (triggered (bool)), this, SLOT (mountMedium()));
+                        attachmentMenu->addAction (mountMediumAction);
+                        ++ addedIntoList;
+                        if (addedIntoList == 5)
+                            break;
+                    }
+                }
+            }
+
+            /* Virtual Media Manager action */
+            QAction *callVMMAction = new QAction (attachmentMenu);
+            callVMMAction->setIcon (QIcon (":/diskimage_16px.png"));
+            callVMMAction->setData (QVariant::fromValue (MountTarget (attachment.GetController().GetName(),
+                                                                      attachment.GetPort(),
+                                                                      attachment.GetDevice(),
+                                                                      QString (""),
+                                                                      mediumType)));
+            connect (callVMMAction, SIGNAL (triggered (bool)), this, SLOT (mountMedium()));
+            attachmentMenu->addAction (callVMMAction);
+
+            /* Separator */
+            attachmentMenu->addSeparator();
+
+            /* Unmount Medium action */
+            QAction *unmountMediumAction = new QAction (attachmentMenu);
+            unmountMediumAction->setEnabled (!vboxMediumCurrent.isNull());
+            unmountMediumAction->setData (QVariant::fromValue (MountTarget (attachment.GetController().GetName(),
+                                                                            attachment.GetPort(),
+                                                                            attachment.GetDevice())));
+            connect (unmountMediumAction, SIGNAL (triggered (bool)), this, SLOT (mountMedium()));
+            attachmentMenu->addAction (unmountMediumAction);
+
+            /* Switch CD/FD naming */
+            switch (deviceType)
+            {
+                case KDeviceType_DVD:
+                    callVMMAction->setText (tr ("More CD/DVD Images..."));
+                    unmountMediumAction->setText (tr ("Unmount CD/DVD Device"));
+                    unmountMediumAction->setIcon (VBoxGlobal::iconSet (":/cd_unmount_16px.png",
+                                                                       ":/cd_unmount_disabled_16px.png"));
+                    break;
+                case KDeviceType_Floppy:
+                    callVMMAction->setText (tr ("More Floppy Images..."));
+                    unmountMediumAction->setText (tr ("Unmount Floppy Device"));
+                    unmountMediumAction->setIcon (VBoxGlobal::iconSet (":/fd_unmount_16px.png",
+                                                                       ":/fd_unmount_disabled_16px.png"));
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    if (menu->menuAction()->data().toInt() == 0)
+    {
+        /* Empty menu item */
+        Assert (menu->isEmpty());
+        QAction *emptyMenuAction = new QAction (menu);
+        emptyMenuAction->setEnabled (false);
+        switch (deviceType)
+        {
+            case KDeviceType_DVD:
+                emptyMenuAction->setText (tr ("No CD/DVD Devices Attached"));
+                break;
+            case KDeviceType_Floppy:
+                emptyMenuAction->setText (tr ("No Floppy Devices Attached"));
+                break;
+            default:
+                break;
+        }
+        emptyMenuAction->setIcon (VBoxGlobal::iconSet (":/delete_16px.png", ":/delete_disabled_16px.png"));
+        menu->addAction (emptyMenuAction);
+    }
 }
 
 void VBoxConsoleWnd::prepareNetworkMenu()
@@ -2132,6 +2300,40 @@ void VBoxConsoleWnd::prepareSFMenu()
 {
     mDevicesSFMenu->clear();
     mDevicesSFMenu->addAction (mDevicesSFDialogAction);
+}
+
+void VBoxConsoleWnd::mountMedium()
+{
+    QAction *action = qobject_cast <QAction*> (sender());
+    Assert (action);
+
+    MountTarget target = action->data().value <MountTarget>();
+    CMachine machine = mSession.GetMachine();
+    CMediumAttachment attachment = machine.GetMediumAttachment (target.name, target.port, target.device);
+    CMedium medium = attachment.GetMedium();
+
+    if (target.type != VBoxDefs::MediumType_Invalid)
+    {
+        /* Search for already used images */
+        QStringList usedImages;
+        const CMediumAttachmentVector &attachments = mSession.GetMachine().GetMediumAttachments();
+        foreach (const CMediumAttachment &index, attachments)
+        {
+            if (index != attachment && !index.GetMedium().isNull() && !index.GetMedium().GetHostDrive())
+                usedImages << index.GetMedium().GetId();
+        }
+        /* Open VMM Dialog */
+        VBoxMediaManagerDlg dlg (this);
+        dlg.setup (target.type, true /* do select? */, false /* do refresh? */,
+                   mSession.GetMachine(), QString(), true, usedImages);
+        if (dlg.exec() == QDialog::Accepted)
+            target.id = dlg.selectedId();
+        else return;
+    }
+
+    machine.MountMedium (target.name, target.port, target.device,
+                         target.id.isEmpty() || medium.isNull() || medium.GetId() != target.id ||
+                         target.type != VBoxDefs::MediumType_Invalid ? target.id : QString (""));
 }
 
 /**
@@ -2173,65 +2375,30 @@ void VBoxConsoleWnd::switchUSB (QAction *aAction)
 
 void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *aInd, QContextMenuEvent *aEvent)
 {
-    if (aInd == mHDLed)
+    if (aInd == mCDLed)
     {
-        if (mDevicesStorageMenu->isEnabled())
-        {
-            /* set "this is a context menu" flag */
-            mDevicesStorageMenu->menuAction()->setData (true);
-            mDevicesStorageMenu->exec (aEvent->globalPos());
-            mDevicesStorageMenu->menuAction()->setData (false);
-        }
-    }
-    else if (aInd == mCDLed)
-    {
-        if (mDevicesStorageMenu->isEnabled())
-        {
-            /* set "this is a context menu" flag */
-            mDevicesStorageMenu->menuAction()->setData (true);
-            mDevicesStorageMenu->exec (aEvent->globalPos());
-            mDevicesStorageMenu->menuAction()->setData (false);
-        }
+        mDevicesCDMenu->exec (aEvent->globalPos());
     }
 #if 0 /* TODO: Allow to setup status-bar! */
     else if (aInd == mFDLed)
     {
-        if (mDevicesStorageMenu->isEnabled())
-        {
-            /* set "this is a context menu" flag */
-            mDevicesStorageMenu->menuAction()->setData (true);
-            mDevicesStorageMenu->exec (aEvent->globalPos());
-            mDevicesStorageMenu->menuAction()->setData (false);
-        }
+        mDevicesFDMenu->exec (aEvent->globalPos());
     }
 #endif
     else if (aInd == mNetLed)
     {
         if (mDevicesNetworkMenu->isEnabled())
-        {
-            mDevicesNetworkMenu->menuAction()->setData (true);
             mDevicesNetworkMenu->exec (aEvent->globalPos());
-            mDevicesNetworkMenu->menuAction()->setData (false);
-        }
     }
     else if (aInd == mUSBLed)
     {
         if (mDevicesUSBMenu->isEnabled())
-        {
-            /* set "this is a context menu" flag */
-            mDevicesUSBMenu->menuAction()->setData (true);
             mDevicesUSBMenu->exec (aEvent->globalPos());
-            mDevicesUSBMenu->menuAction()->setData (false);
-        }
     }
     else if (aInd == mSFLed)
     {
         if (mDevicesSFMenu->isEnabled())
-        {
-            mDevicesSFMenu->menuAction()->setData (true);
             mDevicesSFMenu->exec (aEvent->globalPos());
-            mDevicesSFMenu->menuAction()->setData (false);
-        }
     }
     else if (aInd == mMouseLed)
     {
@@ -3412,82 +3579,6 @@ void VBoxConsoleWnd::dbgAdjustRelativePos()
 }
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-
-VBoxStorageDialog::VBoxStorageDialog (QWidget *aParent, CSession &aSession)
-    : QIWithRetranslateUI <QDialog> (aParent)
-    , mSettings (0)
-    , mButtonBox (0)
-    , mSession (aSession)
-{
-    setModal (true);
-    /* Setup Dialog's options */
-    setWindowIcon (QIcon (":/attachment_16px.png"));
-    setSizeGripEnabled (true);
-
-    /* Setup main dialog's layout */
-    QVBoxLayout *mainLayout = new QVBoxLayout (this);
-    VBoxGlobal::setLayoutMargin (mainLayout, 10);
-    mainLayout->setSpacing (10);
-
-    /* Setup settings layout */
-    mSettings = new VBoxVMSettingsHD (true);
-    VBoxGlobal::setLayoutMargin (mSettings->layout(), 0);
-    mainLayout->addWidget (mSettings);
-    mSettings->getFrom (aSession.GetMachine());
-
-    /* Setup validation */
-    QIWidgetValidator *validator = new QIWidgetValidator (mSettings, this);
-    mSettings->setValidator (validator);
-
-    /* Setup button's layout */
-    mButtonBox = new QIDialogButtonBox (QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
-    mainLayout->addWidget (mButtonBox);
-
-    connect (mButtonBox, SIGNAL (helpRequested()), &vboxProblem(), SLOT (showHelpHelpDialog()));
-    connect (mButtonBox, SIGNAL (accepted()), this, SLOT (accept()));
-    connect (mButtonBox, SIGNAL (rejected()), this, SLOT (reject()));
-    connect (validator, SIGNAL (isValidRequested (QIWidgetValidator*)),
-             this, SLOT (revalidate (QIWidgetValidator*)));
-    connect (validator, SIGNAL (validityChanged (const QIWidgetValidator*)),
-             this, SLOT (enableOk (const QIWidgetValidator*)));
-
-    retranslateUi();
-}
-
-void VBoxStorageDialog::retranslateUi()
-{
-    setWindowTitle (tr ("Storage Devices"));
-}
-
-void VBoxStorageDialog::accept()
-{
-    mSettings->putBackTo();
-    CMachine machine = mSession.GetMachine();
-    machine.SaveSettings();
-    if (!machine.isOk())
-        vboxProblem().cannotSaveMachineSettings (machine);
-    QDialog::accept();
-}
-
-void VBoxStorageDialog::revalidate (QIWidgetValidator *aValidator)
-{
-    QString warning, title;
-    bool valid = mSettings->revalidate (warning, title);
-    aValidator->setOtherValid (valid);
-}
-
-void VBoxStorageDialog::enableOk (const QIWidgetValidator *aValidator)
-{
-    mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (aValidator->isValid());
-}
-
-void VBoxStorageDialog::showEvent (QShowEvent *aEvent)
-{
-    resize (450, 300);
-    VBoxGlobal::centerWidget (this, parentWidget());
-    setMinimumWidth (400);
-    QDialog::showEvent (aEvent);
-}
 
 VBoxNetworkDialog::VBoxNetworkDialog (QWidget *aParent, CSession &aSession)
     : QIWithRetranslateUI <QDialog> (aParent)
