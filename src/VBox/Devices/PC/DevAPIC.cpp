@@ -1023,8 +1023,12 @@ PDMBOTHCBDECL(int) apicLocalInterrupt(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t
             case APIC_DM_INIT:
                 /** @todo implement APIC_DM_INIT? */
             default:
-                AssertLogRelMsgFailedReturn(("delivery type %d not implemented. u8Pin=%d u8Level=%d", u8Delivery, u8Pin, u8Level),
-                                            VERR_INTERNAL_ERROR_4);
+            {
+                static unsigned s_c = 0;
+                if (s_c++ < 100)
+                    AssertLogRelMsgFailedReturn(("delivery type %d not implemented. u8Pin=%d u8Level=%d", u8Delivery, u8Pin, u8Level),
+                                                VERR_INTERNAL_ERROR_4);
+            }
         }
         LogFlow(("apicLocalInterrupt: setting local interrupt type %d\n", enmType));
         cpuSetInterrupt(dev, s, enmType);
