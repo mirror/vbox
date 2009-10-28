@@ -281,6 +281,7 @@ public:
         bool operator==(const HWData &that) const;
 
         Bstr           mHWVersion;
+        Guid           mHardwareUUID;   /**< If Null, use mData.mUuid. */
         ULONG          mMemorySize;
         ULONG          mMemoryBalloonSize;
         ULONG          mStatisticsUpdateInterval;
@@ -520,6 +521,8 @@ public:
     STDMETHOD(COMSETTER(OSTypeId))(IN_BSTR aOSTypeId);
     STDMETHOD(COMGETTER(HardwareVersion))(BSTR *aVersion);
     STDMETHOD(COMSETTER(HardwareVersion))(IN_BSTR aVersion);
+    STDMETHOD(COMGETTER(HardwareUUID))(BSTR *aUUID);
+    STDMETHOD(COMSETTER(HardwareUUID))(IN_BSTR aUUID);
     STDMETHOD(COMGETTER(MemorySize))(ULONG *memorySize);
     STDMETHOD(COMSETTER(MemorySize))(ULONG memorySize);
     STDMETHOD(COMGETTER(CPUCount))(ULONG *cpuCount);

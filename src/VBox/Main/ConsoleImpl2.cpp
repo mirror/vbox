@@ -198,9 +198,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     ComPtr<IBIOSSettings> biosSettings;
     hrc = pMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());             H();
 
-    hrc = pMachine->COMGETTER(Id)(&str);                                            H();
-    Guid MachineUuid(str);
-    PCRTUUID pUuid = MachineUuid.raw();
+    hrc = pMachine->COMGETTER(HardwareUUID)(&str);                                  H();
+    RTUUID HardwareUuid;
+    rc = RTUuidFromUtf16(&HardwareUuid, str);                                       RC_CHECK();
     STR_FREE();
 
     ULONG cRamMBs;
@@ -233,7 +233,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      */
     hrc = pMachine->COMGETTER(Name)(&str);                                          H();
     rc = CFGMR3InsertStringW(pRoot, "Name",                 str);                   RC_CHECK();
-    rc = CFGMR3InsertBytes(pRoot,   "UUID", pUuid, sizeof(*pUuid));                 RC_CHECK();
+    rc = CFGMR3InsertBytes(pRoot,   "UUID", &HardwareUuid, sizeof(HardwareUuid));   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RamSize",              cbRam);                 RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RamHoleSize",          cbRamHole);             RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "NumCPUs",              cCpus);                 RC_CHECK();
@@ -704,7 +704,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertString(pBiosCfg,   "FloppyDevice",         "i82078");          RC_CHECK();
         rc = CFGMR3InsertInteger(pBiosCfg,  "IOAPIC",               fIOAPIC);           RC_CHECK();
         rc = CFGMR3InsertInteger(pBiosCfg,  "PXEDebug",             fPXEDebug);         RC_CHECK();
-        rc = CFGMR3InsertBytes(pBiosCfg,    "UUID", pUuid, sizeof(*pUuid));             RC_CHECK();
+        rc = CFGMR3InsertBytes(pBiosCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));RC_CHECK();
 
         DeviceType_T bootDevice;
         if (SchemaDefs::MaxBootPosition > 9)
