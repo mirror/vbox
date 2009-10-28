@@ -393,12 +393,15 @@ VBoxMediaManagerDlg::~VBoxMediaManagerDlg()
  * @param aShowDiffs        @c true to show differencing hard disks initially
  *                          (ignored if @a aSessionMachine is null assuming
  *                          @c true).
+ * @param aUsedMediaIds     List containing IDs of mediums used in other
+ *                          attachments to restrict selection.
  */
 void VBoxMediaManagerDlg::setup (VBoxDefs::MediumType aType, bool aDoSelect,
                                  bool aRefresh /* = true */,
                                  const CMachine &aSessionMachine /* = CMachine() */,
                                  const QString &aSelectId /* = QString() */,
-                                 bool aShowDiffs /* = true */)
+                                 bool aShowDiffs /* = true */,
+                                 const QStringList &aUsedMediaIds /* = QStringList() */)
 {
     mSetupMode = true;
 
@@ -431,6 +434,7 @@ void VBoxMediaManagerDlg::setup (VBoxDefs::MediumType aType, bool aDoSelect,
                                aType == VBoxDefs::MediumType_Floppy);
 
     mDoSelect = aDoSelect;
+    mUsedMediaIds = aUsedMediaIds;
 
     mButtonBox->button (QDialogButtonBox::Cancel)->setVisible (mDoSelect);
 
@@ -1665,9 +1669,9 @@ bool VBoxMediaManagerDlg::checkMediumFor (MediaItem *aItem, Action aAction)
     {
         case Action_Select:
         {
-            /* In the current implementation, any known media can be attached
-             * (either directly, or indirectly), so always return true */
-            return true;
+            /* Restrict selecting mediums
+             * already used by other attachments */
+            return !mUsedMediaIds.contains (aItem->id());
         }
         case Action_Edit:
         {

@@ -146,7 +146,6 @@ private slots:
     void vmClose();
 
     void devicesSwitchVrdp (bool aOn);
-    void devicesOpenStorageDialog();
     void devicesOpenNetworkDialog();
     void devicesOpenSFDialog();
     void devicesInstallGuestAdditions();
@@ -155,6 +154,7 @@ private slots:
     void prepareNetworkMenu();
     void prepareSFMenu();
 
+    void mountMedium();
     void switchUSB (QAction *aAction);
 
     void showIndicatorContextMenu (QIStateIndicator *aInd, QContextMenuEvent *aEvent);
@@ -236,7 +236,8 @@ private:
     QMenu *mVMMenu;
     QMenu *mVMMenuMini;
     QMenu *mDevicesMenu;
-    QMenu *mDevicesStorageMenu;
+    QMenu *mDevicesCDMenu;
+    QMenu *mDevicesFDMenu;
     QMenu *mDevicesNetworkMenu;
     QMenu *mDevicesSFMenu;
     VBoxUSBMenu *mDevicesUSBMenu;
@@ -271,7 +272,6 @@ private:
     QAction *mVmCloseAction;
 
     /* Devices actions */
-    QAction *mDevicesStorageDialogAction;
     QAction *mDevicesNetworkDialogAction;
     QAction *mDevicesSFDialogAction;
     QAction *mDevicesSwitchVrdpSeparator;
@@ -378,36 +378,6 @@ public:
 };
 
 class VBoxSettingsPage;
-class VBoxStorageDialog : public QIWithRetranslateUI <QDialog>
-{
-    Q_OBJECT;
-
-public:
-
-    VBoxStorageDialog (QWidget *aParent, CSession &aSession);
-
-protected:
-
-    void retranslateUi();
-
-protected slots:
-
-    virtual void accept();
-
-    void revalidate (QIWidgetValidator *aValidator);
-    void enableOk (const QIWidgetValidator *aValidator);
-
-protected:
-
-    void showEvent (QShowEvent *aEvent);
-
-private:
-
-    VBoxSettingsPage *mSettings;
-    QIDialogButtonBox *mButtonBox;
-    CSession &mSession;
-};
-
 class VBoxNetworkDialog : public QIWithRetranslateUI <QDialog>
 {
     Q_OBJECT;

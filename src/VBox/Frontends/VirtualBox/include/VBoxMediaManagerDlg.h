@@ -55,7 +55,8 @@ public:
                 bool aRefresh = true,
                 const CMachine &aSessionMachine = CMachine(),
                 const QString &aSelectId = QString::null,
-                bool aShowDiffs = true);
+                bool aShowDiffs = true,
+                const QStringList &aUsedMediaIds = QStringList());
 
     static void showModeless (QWidget *aParent = NULL, bool aRefresh = true);
 
@@ -170,6 +171,7 @@ private:
     QString mHDSelectedId;
     QString mCDSelectedId;
     QString mFDSelectedId;
+    QStringList mUsedMediaIds;
 };
 
 #endif /* __VBoxMediaManagerDlg_h__ */
