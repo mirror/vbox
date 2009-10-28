@@ -154,6 +154,13 @@ int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser)
                     if (pAioMgr->pEndpointsHead)
                         pAioMgr->pEndpointsHead->AioMgr.pEndpointPrev = pEndpointNew;
                     pAioMgr->pEndpointsHead = pEndpointNew;
+
+                    /*
+                     * Process the task list the first time. There might be pending requests
+                     * if the endpoint was migrated from another endpoint.
+                     */
+                    rc = pdmacFileAioMgrFailsafeProcessEndpoint(pEndpointNew);
+                    AssertRC(rc);
                     break;
                 }
                 case PDMACEPFILEAIOMGRBLOCKINGEVENT_REMOVE_ENDPOINT:
