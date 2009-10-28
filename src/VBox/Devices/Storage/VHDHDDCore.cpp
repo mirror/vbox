@@ -685,7 +685,7 @@ static int vhdOpen(const char *pszFilename, unsigned uOpenFlags,
 #ifndef VBOX_WITH_NEW_IO_CODE
     pImage->File = NIL_RTFILE;
 #else
-    pImage->pvStorage != NULL;
+    pImage->pvStorage = NULL;
 #endif
     pImage->pVDIfsDisk = pVDIfsDisk;
 
@@ -1790,7 +1790,6 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
                           unsigned uPercentStart, unsigned uPercentSpan)
 {
     int rc;
-    RTFILE File;
     VHDFooter Footer;
     RTTIMESPEC now;
 
