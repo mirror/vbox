@@ -2254,13 +2254,13 @@ void VBoxConsoleWnd::prepareStorageMenu()
                     callVMMAction->setText (tr ("More CD/DVD Images..."));
                     unmountMediumAction->setText (tr ("Unmount CD/DVD Device"));
                     unmountMediumAction->setIcon (VBoxGlobal::iconSet (":/cd_unmount_16px.png",
-                                                                       ":/cd_unmount_disabled_16px.png"));
+                                                                       ":/cd_unmount_dis_16px.png"));
                     break;
                 case KDeviceType_Floppy:
                     callVMMAction->setText (tr ("More Floppy Images..."));
                     unmountMediumAction->setText (tr ("Unmount Floppy Device"));
                     unmountMediumAction->setIcon (VBoxGlobal::iconSet (":/fd_unmount_16px.png",
-                                                                       ":/fd_unmount_disabled_16px.png"));
+                                                                       ":/fd_unmount_dis_16px.png"));
                     break;
                 default:
                     break;
