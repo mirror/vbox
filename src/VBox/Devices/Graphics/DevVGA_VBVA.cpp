@@ -931,7 +931,6 @@ int vbvaVHWAConstruct (PVGASTATE pVGAState)
         {
             rc = pCmd->rc;
             AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
-            vbvaVHWAHHCommandRelease(pCmd);
             if(rc == VERR_NOT_IMPLEMENTED)
             {
                 /* @todo: set some flag in pVGAState indicating VHWA is not supported */
@@ -939,6 +938,9 @@ int vbvaVHWAConstruct (PVGASTATE pVGAState)
                 rc = VINF_SUCCESS;
             }
         }
+
+        vbvaVHWAHHCommandRelease(pCmd);
+
         return rc;
     }
     return VERR_OUT_OF_RESOURCES;
@@ -963,8 +965,10 @@ int vbvaVHWAReset (PVGASTATE pVGAState)
 #else
             AssertRC(rc);
 #endif
-            vbvaVHWAHHCommandRelease(pCmd);
         }
+
+        vbvaVHWAHHCommandRelease(pCmd);
+
         return rc;
     }
     return VERR_OUT_OF_RESOURCES;
@@ -983,12 +987,14 @@ int vbvaVHWADisable (PVGASTATE pVGAState)
         {
             rc = pCmd->rc;
             AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
-            vbvaVHWAHHCommandRelease(pCmd);
             if(rc == VERR_NOT_IMPLEMENTED)
             {
                 rc = VINF_SUCCESS;
             }
         }
+
+        vbvaVHWAHHCommandRelease(pCmd);
+
         return rc;
     }
     return VERR_OUT_OF_RESOURCES;
