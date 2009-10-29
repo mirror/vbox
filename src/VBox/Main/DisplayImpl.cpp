@@ -2339,7 +2339,7 @@ void Display::handleVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVH
     {
         IFramebuffer *pFramebuffer = maFramebuffers[id].pFramebuffer;
 
-        if (pFramebuffer == NULL)
+        if (pFramebuffer != NULL)
         {
             pFramebuffer->Lock();
 
