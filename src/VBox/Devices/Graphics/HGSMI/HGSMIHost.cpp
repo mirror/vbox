@@ -1539,6 +1539,13 @@ int HGSMICreate (PHGSMIINSTANCE *ppIns,
 
 void HGSMIReset (PHGSMIINSTANCE pIns)
 {
+    if(pIns->pHGFlags)
+    {
+        /* treat the abandoned commands as read.. */
+        while(HGSMIHostRead (pIns) != HGSMIOFFSET_VOID)  {}
+    }
+
+    /* .. and complete them */
     while(hgsmiProcessHostCmdCompletion (pIns, 0, true)) {}
 
     HGSMIHeapSetupUnitialized (&pIns->hostHeap);
