@@ -327,9 +327,6 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
     if (aSelf)
         *aSelf = this;
 
-    /* Enumerate mediums to work with cached data */
-    vboxGlobal().startEnumeratingMedia();
-
 #if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
     /* The default application icon (will change to the VM-specific icon in
      * openView()). On Win32, it's built-in to the executable. On Mac OS X the
@@ -2182,45 +2179,52 @@ void VBoxConsoleWnd::prepareStorageMenu()
             }
             else attachmentMenu = menu;
 
-            /* Related VBoxMedium item */
-            VBoxMedium vboxMediumCurrent;
-            vboxGlobal().findMedium (attachment.GetMedium(), vboxMediumCurrent);
-
             /* Mount Medium actions */
             int addedIntoList = 0;
-            const VBoxMediaList &vboxMediums = vboxGlobal().currentMediaList();
-            foreach (const VBoxMedium &vboxMedium, vboxMediums)
+            CMediumVector mediums;
+            switch (mediumType)
             {
-                if (vboxMedium.type() == mediumType)
+                case VBoxDefs::MediumType_DVD:
+                    mediums += vboxGlobal().virtualBox().GetHost().GetDVDDrives();
+                    mediums += vboxGlobal().virtualBox().GetDVDImages();
+                    break;
+                case VBoxDefs::MediumType_Floppy:
+                    mediums += vboxGlobal().virtualBox().GetHost().GetFloppyDrives();
+                    mediums += vboxGlobal().virtualBox().GetFloppyImages();
+                    break;
+                default:
+                    break;
+            }
+
+            foreach (const CMedium &medium, mediums)
+            {
+                bool isMediumUsed = false;
+                foreach (const CMediumAttachment &otherAttachment, attachments)
                 {
-                    bool isMediumUsed = false;
-                    foreach (const CMediumAttachment &otherAttachment, attachments)
+                    if (otherAttachment != attachment)
                     {
-                        if (otherAttachment != attachment)
+                        CMedium otherMedium = otherAttachment.GetMedium();
+                        if (!otherMedium.isNull() && otherMedium.GetId() == medium.GetId())
                         {
-                            CMedium otherMedium = otherAttachment.GetMedium();
-                            if (!otherMedium.isNull() && otherMedium.GetId() == vboxMedium.id())
-                            {
-                                isMediumUsed = true;
-                                break;
-                            }
+                            isMediumUsed = true;
+                            break;
                         }
                     }
-                    if (!isMediumUsed)
-                    {
-                        QAction *mountMediumAction = new QAction (vboxMedium.name(), attachmentMenu);
-                        mountMediumAction->setCheckable (true);
-                        mountMediumAction->setChecked (vboxMedium.id() == vboxMediumCurrent.id());
-                        mountMediumAction->setData (QVariant::fromValue (MountTarget (attachment.GetController().GetName(),
-                                                                                      attachment.GetPort(),
-                                                                                      attachment.GetDevice(),
-                                                                                      vboxMedium.id())));
-                        connect (mountMediumAction, SIGNAL (triggered (bool)), this, SLOT (mountMedium()));
-                        attachmentMenu->addAction (mountMediumAction);
-                        ++ addedIntoList;
-                        if (addedIntoList == 5)
-                            break;
-                    }
+                }
+                if (!isMediumUsed)
+                {
+                    QAction *mountMediumAction = new QAction (VBoxMedium (medium, mediumType).name(), attachmentMenu);
+                    mountMediumAction->setCheckable (true);
+                    mountMediumAction->setChecked (medium.GetId() == attachment.GetMedium().GetId());
+                    mountMediumAction->setData (QVariant::fromValue (MountTarget (attachment.GetController().GetName(),
+                                                                                  attachment.GetPort(),
+                                                                                  attachment.GetDevice(),
+                                                                                  medium.GetId())));
+                    connect (mountMediumAction, SIGNAL (triggered (bool)), this, SLOT (mountMedium()));
+                    attachmentMenu->addAction (mountMediumAction);
+                    ++ addedIntoList;
+                    if (addedIntoList == 5)
+                        break;
                 }
             }
 
@@ -2240,7 +2244,7 @@ void VBoxConsoleWnd::prepareStorageMenu()
 
             /* Unmount Medium action */
             QAction *unmountMediumAction = new QAction (attachmentMenu);
-            unmountMediumAction->setEnabled (!vboxMediumCurrent.isNull());
+            unmountMediumAction->setEnabled (!attachment.GetMedium().isNull());
             unmountMediumAction->setData (QVariant::fromValue (MountTarget (attachment.GetController().GetName(),
                                                                             attachment.GetPort(),
                                                                             attachment.GetDevice())));
@@ -2248,15 +2252,15 @@ void VBoxConsoleWnd::prepareStorageMenu()
             attachmentMenu->addAction (unmountMediumAction);
 
             /* Switch CD/FD naming */
-            switch (deviceType)
+            switch (mediumType)
             {
-                case KDeviceType_DVD:
+                case VBoxDefs::MediumType_DVD:
                     callVMMAction->setText (tr ("More CD/DVD Images..."));
                     unmountMediumAction->setText (tr ("Unmount CD/DVD Device"));
                     unmountMediumAction->setIcon (VBoxGlobal::iconSet (":/cd_unmount_16px.png",
                                                                        ":/cd_unmount_dis_16px.png"));
                     break;
-                case KDeviceType_Floppy:
+                case VBoxDefs::MediumType_Floppy:
                     callVMMAction->setText (tr ("More Floppy Images..."));
                     unmountMediumAction->setText (tr ("Unmount Floppy Device"));
                     unmountMediumAction->setIcon (VBoxGlobal::iconSet (":/fd_unmount_16px.png",
@@ -2274,12 +2278,12 @@ void VBoxConsoleWnd::prepareStorageMenu()
         Assert (menu->isEmpty());
         QAction *emptyMenuAction = new QAction (menu);
         emptyMenuAction->setEnabled (false);
-        switch (deviceType)
+        switch (mediumType)
         {
-            case KDeviceType_DVD:
+            case VBoxDefs::MediumType_DVD:
                 emptyMenuAction->setText (tr ("No CD/DVD Devices Attached"));
                 break;
-            case KDeviceType_Floppy:
+            case VBoxDefs::MediumType_Floppy:
                 emptyMenuAction->setText (tr ("No Floppy Devices Attached"));
                 break;
             default:
@@ -2324,7 +2328,7 @@ void VBoxConsoleWnd::mountMedium()
         }
         /* Open VMM Dialog */
         VBoxMediaManagerDlg dlg (this);
-        dlg.setup (target.type, true /* do select? */, false /* do refresh? */,
+        dlg.setup (target.type, true /* do select? */, true /* do refresh? */,
                    mSession.GetMachine(), QString(), true, usedImages);
         if (dlg.exec() == QDialog::Accepted)
             target.id = dlg.selectedId();
@@ -2800,7 +2804,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
                     continue;
                 attData += QString ("<br>&nbsp;<nobr>%1:&nbsp;%2</nobr>")
                     .arg (vboxGlobal().toString (StorageSlot (controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
-                    .arg (vboxGlobal().findMedium (attachment.GetMedium().GetId()).location());
+                    .arg (VBoxMedium (attachment.GetMedium(), VBoxDefs::MediumType_HardDisk).location());
                 attachmentsPresent = true;
             }
             if (!attData.isNull())
@@ -2829,8 +2833,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
             {
                 if (attachment.GetType() != KDeviceType_DVD)
                     continue;
-                QString id (attachment.GetMedium().isNull() ? QString() : attachment.GetMedium().GetId());
-                VBoxMedium vboxMedium = vboxGlobal().findMedium (id);
+                VBoxMedium vboxMedium (attachment.GetMedium(), VBoxDefs::MediumType_DVD);
                 attData += QString ("<br>&nbsp;<nobr>%1:&nbsp;%2</nobr>")
                     .arg (vboxGlobal().toString (StorageSlot (controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
                     .arg (vboxMedium.isNull() || vboxMedium.isHostDrive() ? vboxMedium.name() : vboxMedium.location());
@@ -2864,8 +2867,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
             {
                 if (attachment.GetType() != KDeviceType_Floppy)
                     continue;
-                QString id (attachment.GetMedium().isNull() ? QString() : attachment.GetMedium().GetId());
-                VBoxMedium vboxMedium = vboxGlobal().findMedium (id);
+                VBoxMedium vboxMedium (attachment.GetMedium(), VBoxDefs::MediumType_Floppy);
                 attData += QString ("<br>&nbsp;<nobr>%1:&nbsp;%2</nobr>")
                     .arg (vboxGlobal().toString (StorageSlot (controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
                     .arg (vboxMedium.isNull() || vboxMedium.isHostDrive() ? vboxMedium.name() : vboxMedium.location());
