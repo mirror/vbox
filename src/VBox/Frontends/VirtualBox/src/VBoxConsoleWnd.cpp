@@ -2215,7 +2215,8 @@ void VBoxConsoleWnd::prepareStorageMenu()
                 {
                     QAction *mountMediumAction = new QAction (VBoxMedium (medium, mediumType).name(), attachmentMenu);
                     mountMediumAction->setCheckable (true);
-                    mountMediumAction->setChecked (medium.GetId() == attachment.GetMedium().GetId());
+                    mountMediumAction->setChecked (!attachment.GetMedium().isNull() &&
+                                                   medium.GetId() == attachment.GetMedium().GetId());
                     mountMediumAction->setData (QVariant::fromValue (MountTarget (attachment.GetController().GetName(),
                                                                                   attachment.GetPort(),
                                                                                   attachment.GetDevice(),
