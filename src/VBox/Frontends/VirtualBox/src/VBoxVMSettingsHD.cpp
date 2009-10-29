@@ -2339,22 +2339,19 @@ void VBoxVMSettingsHD::onDrawItemBranches (QPainter *aPainter, const QRect &aRec
     if (!aIndex.parent().isValid() || !aIndex.parent().parent().isValid()) return;
 
     aPainter->save();
-    aPainter->translate (aRect.x(), aRect.y());
-
-    int rows = mStorageModel->rowCount (aIndex.parent());
-
-    // TODO Draw Correct Braches!
-
-    if (aIndex.row() == 0)
-        aPainter->drawLine (QPoint (aRect.width() / 2, 2), QPoint (aRect.width() / 2, aRect.height() / 2));
-    else
-        aPainter->drawLine (QPoint (aRect.width() / 2, 0), QPoint (aRect.width() / 2, aRect.height() / 2));
-
-    if (aIndex.row() < rows - 1)
-        aPainter->drawLine (QPoint (aRect.width() / 2, aRect.height() / 2), QPoint (aRect.width() / 2, aRect.height()));
-
-    aPainter->drawLine (QPoint (aRect.width() / 2, aRect.height() / 2), QPoint (aRect.width() - 2, aRect.height() / 2));
-
+    QStyleOption options;
+    options.initFrom (mTwStorageTree);
+    options.rect = aRect;
+    options.state |= QStyle::State_Item;
+    if (aIndex.row() < mStorageModel->rowCount (aIndex.parent()) - 1)
+        options.state |= QStyle::State_Sibling;
+    /* This pen is commonly used by different
+     * look and feel styles to paint tree-view branches. */
+    QPen pen (QBrush (options.palette.dark().color(), Qt::Dense4Pattern), 0);
+    aPainter->setPen (pen);
+    /* If we want tree-view branches to be always painted we have to use QCommonStyle::drawPrimitive()
+     * because QCommonStyle performs branch painting as opposed to particular inherited sub-classing styles. */
+    qobject_cast <QCommonStyle*> (style())->QCommonStyle::drawPrimitive (QStyle::PE_IndicatorBranch, &options, aPainter);
     aPainter->restore();
 }
 
