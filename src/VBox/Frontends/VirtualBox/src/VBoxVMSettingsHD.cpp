@@ -601,7 +601,7 @@ void ControllerItem::delChild (AbstractItem *aItem)
 }
 
 /* Attachment Item */
-AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType)
+AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType, bool aVerbose)
     : AbstractItem (aParent)
     , mAttDeviceType (aDeviceType)
     , mAttIsShowDiffs (false)
@@ -627,7 +627,7 @@ AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType)
         case KDeviceType_Floppy:
             if (freeMediumIds.size() > 1)
                 setAttMediumId (freeMediumIds [1]);
-            else if (freeMediumIds.size() > 0)
+            else if (!aVerbose && freeMediumIds.size() > 0)
                 setAttMediumId (freeMediumIds [0]);
             break;
         default:
@@ -1401,7 +1401,7 @@ QModelIndex StorageModel::addAttachment (const QUuid &aCtrId, KDeviceType aDevic
         int parentPosition = mRootItem->posOfChild (parent);
         QModelIndex parentIndex = index (parentPosition, 0, root());
         beginInsertRows (parentIndex, parent->childCount(), parent->childCount());
-        new AttachmentItem (parent, aDeviceType);
+        new AttachmentItem (parent, aDeviceType, qobject_cast <QWidget*> (QObject::parent())->isVisible());
         endInsertRows();
         return index (parent->childCount() - 1, 0, parentIndex);
     }
@@ -2087,6 +2087,7 @@ void VBoxVMSettingsHD::getInformation()
                 StorageSlot slt = mStorageModel->data (index, StorageModel::R_AttSlot).value <StorageSlot>();
                 int attSlotPos = mCbSlot->findText (vboxGlobal().toString (slt));
                 mCbSlot->setCurrentIndex (attSlotPos == -1 ? 0 : attSlotPos);
+                mCbSlot->setToolTip (mCbSlot->itemText (mCbSlot->currentIndex()));
                 mLbSlot->setEnabled (!mDisableStaticControls);
                 mCbSlot->setEnabled (!mDisableStaticControls);
 

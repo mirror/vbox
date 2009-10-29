@@ -328,7 +328,7 @@ class AttachmentItem : public AbstractItem
 {
 public:
 
-    AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType);
+    AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType, bool aVerbose);
 
     StorageSlot attSlot() const;
     SlotsList attSlots() const;
