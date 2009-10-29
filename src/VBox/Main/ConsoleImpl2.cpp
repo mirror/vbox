@@ -1775,7 +1775,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     for (i = 0; i < aMachineExtraDataKeys.size(); ++i)
         llExtraDataKeys.push_back(Utf8Str(aMachineExtraDataKeys[i]));
 
-    for (i = 0, std::list<Utf8Str>::const_iterator it = llExtraDataKeys.begin();
+    i = 0;
+    for (std::list<Utf8Str>::const_iterator it = llExtraDataKeys.begin();
          it != llExtraDataKeys.end();
          ++it, ++i)
     {
