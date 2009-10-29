@@ -423,7 +423,8 @@ VMMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         pVM->pdm.s.Apic.pfnSetTPRRC         += offDelta;
         pVM->pdm.s.Apic.pfnGetTPRRC         += offDelta;
         pVM->pdm.s.Apic.pfnBusDeliverRC     += offDelta;
-        pVM->pdm.s.Apic.pfnLocalInterruptRC += offDelta;
+        if (pVM->pdm.s.Apic.pfnLocalInterruptRC)
+            pVM->pdm.s.Apic.pfnLocalInterruptRC += offDelta;
         pVM->pdm.s.Apic.pfnWriteMSRRC       += offDelta;
         pVM->pdm.s.Apic.pfnReadMSRRC        += offDelta;
     }
