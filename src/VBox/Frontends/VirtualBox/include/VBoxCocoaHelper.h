@@ -39,7 +39,7 @@ typedef CocoaClass *Native##CocoaClass##Ref
 #ifdef __OBJC__
 
 /* System includes */
-#import <Appkit/NSImage.h>
+#import <AppKit/NSImage.h>
 #import <Foundation/NSAutoreleasePool.h>
 #import <CoreFoundation/CFString.h>
 
