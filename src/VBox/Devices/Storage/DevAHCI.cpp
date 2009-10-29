@@ -439,7 +439,7 @@ typedef struct AHCIPort
      */
     R3PTRTYPE(PAHCIPORTTASKSTATE)   aCachedTasks[AHCI_NR_COMMAND_SLOTS];
 
-    uint32_t                        u32Alignment5;
+    uint32_t                        u32Alignment5[2];
 
     /** Release statistics: number of DMA commands. */
     STAMCOUNTER                     StatDMA;
