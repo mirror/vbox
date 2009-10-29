@@ -2557,14 +2557,6 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
     mMediaData.backup();
 
-    /* if a cd/dvd was attached to the atachment then better update it */
-    do
-    {
-        ComObjPtr<Medium> medium;
-        AutoWriteLock attLock(pAttach);
-        pAttach->updateMedium(medium, false /* aImplicit */, mData->mUuid);
-    } while (0);
-
     /* we cannot use erase (it) below because backup() above will create
      * a copy of the list and make this copy active, but the iterator
      * still refers to the original and is not valid for the copy */
@@ -2718,7 +2710,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
         AutoWriteLock attLock(pAttach);
         if (!medium.isNull())
             medium->attachTo(mData->mUuid);
-        pAttach->updateMedium(medium, false /* aImplicit */, mData->mUuid);
+        pAttach->updateMedium(medium, false /* aImplicit */);
     }
 
     alock.unlock();
@@ -7014,65 +7006,62 @@ void Machine::fixupMedia(bool aCommit, bool aOnline /*= false*/)
         {
             MediumAttachment *pAttach = *it;
 
-            if (pAttach->type() == DeviceType_HardDisk)
+            pAttach->commit();
+
+            Medium* pMedium = pAttach->medium();
+
+            /** @todo convert all this Machine-based voodoo to MediumAttachment
+            * based commit logic. */
+            if (pAttach->isImplicit())
             {
-                pAttach->commit();
+                /* convert implicit attachment to normal */
+                pAttach->setImplicit(false);
 
-                Medium* pMedium = pAttach->medium();
-
-                /** @todo convert all this Machine-based voodoo to MediumAttachment
-                * based commit logic. */
-                if (pAttach->isImplicit())
+                if (aOnline && pMedium && pAttach->type() == DeviceType_HardDisk)
                 {
-                    /* convert implicit attachment to normal */
-                    pAttach->setImplicit(false);
+                    rc = pMedium->LockWrite(NULL);
+                    AssertComRC(rc);
 
-                    if (aOnline)
-                    {
-                        rc = pMedium->LockWrite(NULL);
-                        AssertComRC(rc);
+                    mData->mSession.mLockedMedia.push_back(
+                        Data::Session::LockedMedia::value_type(
+                            ComPtr<IMedium>(pMedium), true));
 
-                        mData->mSession.mLockedMedia.push_back(
-                            Data::Session::LockedMedia::value_type(
-                                ComPtr<IMedium>(pMedium), true));
+                    /* also, relock the old hard disk which is a base for the
+                    * new diff for reading if the VM is online */
 
-                        /* also, relock the old hard disk which is a base for the
-                        * new diff for reading if the VM is online */
+                    ComObjPtr<Medium> parent = pMedium->parent();
+                    /* make the relock atomic */
+                    AutoWriteLock parentLock (parent);
+                    rc = parent->UnlockWrite(NULL);
+                    AssertComRC(rc);
+                    rc = parent->LockRead(NULL);
+                    AssertComRC(rc);
 
-                        ComObjPtr<Medium> parent = pMedium->parent();
-                        /* make the relock atomic */
-                        AutoWriteLock parentLock (parent);
-                        rc = parent->UnlockWrite(NULL);
-                        AssertComRC(rc);
-                        rc = parent->LockRead(NULL);
-                        AssertComRC(rc);
-
-                        /* XXX actually we should replace the old entry in that
-                        * vector (write lock => read lock) but this would take
-                        * some effort. So lets just ignore the error code in
-                        * SessionMachine::unlockMedia(). */
-                        mData->mSession.mLockedMedia.push_back(
-                            Data::Session::LockedMedia::value_type (
-                                ComPtr<IMedium>(parent), false));
-                    }
-
-                    continue;
+                    /* XXX actually we should replace the old entry in that
+                    * vector (write lock => read lock) but this would take
+                    * some effort. So lets just ignore the error code in
+                    * SessionMachine::unlockMedia(). */
+                    mData->mSession.mLockedMedia.push_back(
+                        Data::Session::LockedMedia::value_type (
+                            ComPtr<IMedium>(parent), false));
                 }
 
-                if (pMedium)
+                continue;
+            }
+
+            if (pMedium)
+            {
+                /* was this medium attached before? */
+                for (MediaData::AttachmentList::iterator oldIt = oldAtts.begin();
+                     oldIt != oldAtts.end();
+                     ++oldIt)
                 {
-                    /* was this hard disk attached before? */
-                    for (MediaData::AttachmentList::iterator oldIt = oldAtts.begin();
-                         oldIt != oldAtts.end();
-                         ++oldIt)
+                    MediumAttachment *pOldAttach = *it;
+                    if (pOldAttach->medium().equalsTo(pMedium))
                     {
-                        MediumAttachment *pOldAttach = *it;
-                        if (pOldAttach->medium().equalsTo(pMedium))
-                        {
-                            /* yes: remove from old to avoid de-association */
-                            oldAtts.erase(oldIt);
-                            break;
-                        }
+                        /* yes: remove from old to avoid de-association */
+                        oldAtts.erase(oldIt);
+                        break;
                     }
                 }
             }
@@ -7086,24 +7075,21 @@ void Machine::fixupMedia(bool aCommit, bool aOnline /*= false*/)
         {
             MediumAttachment *pAttach = *it;
 
-            if (pAttach->type() == DeviceType_HardDisk)
+            Medium* pMedium = pAttach->medium();
+
+            if (pMedium)
             {
-                Medium* pMedium = pAttach->medium();
+                /* now de-associate from the current machine state */
+                rc = pMedium->detachFrom(mData->mUuid);
+                AssertComRC(rc);
 
-                if (pMedium)
+                if (aOnline && pAttach->type() == DeviceType_HardDisk)
                 {
-                    /* now de-associate from the current machine state */
-                    rc = pMedium->detachFrom(mData->mUuid);
-                    AssertComRC(rc);
-
-                    if (aOnline)
-                    {
-                        /* unlock since not used anymore */
-                        MediumState_T state;
-                        rc = pMedium->UnlockWrite(&state);
-                        /* the disk may be alredy relocked for reading above */
-                        Assert (SUCCEEDED(rc) || state == MediumState_LockedRead);
-                    }
+                    /* unlock since not used anymore */
+                    MediumState_T state;
+                    rc = pMedium->UnlockWrite(&state);
+                    /* the disk may be alredy relocked for reading above */
+                    Assert (SUCCEEDED(rc) || state == MediumState_LockedRead);
                 }
             }
         }
