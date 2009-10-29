@@ -635,7 +635,7 @@ static int iscsiTransportWrite(PISCSIIMAGE pImage, PISCSIREQ paRequest, unsigned
     uint32_t pad = 0;
     unsigned int i;
 
-    LogFlow(("drvISCSITransportTcpWrite: cnRequest=%d (%s:%d)\n", cnRequest, pImage->pszHostname, pImage->uPort));
+    LogFlow(("iscsiTransportWrite: cnRequest=%d (%s:%d)\n", cnRequest, pImage->pszHostname, pImage->uPort));
     if (pImage->Socket == NIL_RTSOCKET)
     {
         /* Attempt to reconnect if the connection was previously broken. */
@@ -691,7 +691,7 @@ static int iscsiTransportWrite(PISCSIIMAGE pImage, PISCSIREQ paRequest, unsigned
         rc = VERR_BROKEN_PIPE;
     }
 
-    LogFlow(("drvISCSITransportTcpWrite: returns %Rrc\n", rc));
+    LogFlow(("iscsiTransportWrite: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -980,7 +980,12 @@ restart:
         aReqBHS[4] = itt;
         aReqBHS[5] = RT_H2N_U32(1 << 16);   /* CID=1,reserved */
         aReqBHS[6] = RT_H2N_U32(pImage->CmdSN);
+#if 0 /** @todo This ExpStatSN hack is required to make the netbsd-iscsi target working. Could be a bug in the target,
+       * but they claim a bunch of other initiators works fine with it... Needs looking into. */
+        aReqBHS[7] = RT_H2N_U32(RT_MIN(pImage->ExpCmdSN, pImage->MaxCmdSN));
+#else
         aReqBHS[7] = RT_H2N_U32(pImage->ExpStatSN);
+#endif
         aReqBHS[8] = 0;             /* reserved */
         aReqBHS[9] = 0;             /* reserved */
         aReqBHS[10] = 0;            /* reserved */
@@ -2605,7 +2610,8 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     sr.pvSense = sense;
 
     rc = iscsiCommand(pImage, &sr);
-    if (RT_SUCCESS(rc))
+    if (   RT_SUCCESS(rc)
+        && sr.status == SCSI_STATUS_OK)
     {
         pImage->cVolume = RT_BE2H_U64(*(uint64_t *)&data12[0]);
         pImage->cVolume++;
