@@ -280,7 +280,7 @@ typedef enum
     VBOXVHWACMD_TYPE_ENABLE,
     VBOXVHWACMD_TYPE_DISABLE,
     VBOXVHWACMD_TYPE_HH_CONSTRUCT,
-    VBOXVHWACMD_TYPE_HH_RESET,
+    VBOXVHWACMD_TYPE_HH_RESET
 } VBOXVHWACMD_TYPE;
 
 /* the command processing was asynch, set by the host to indicate asynch command completion
