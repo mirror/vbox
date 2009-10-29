@@ -4723,6 +4723,47 @@ VBoxQGLOverlay::VBoxQGLOverlay (VBoxConsoleView *aView, VBoxFrameBuffer * aConta
 //                                      NULL, 0, 0, 640, 480));
 }
 
+int VBoxQGLOverlay::reset()
+{
+    VBoxVHWACommandElement * pHead, * pTail;
+    mCmdPipe.reset(&pHead, &pTail);
+    if(pHead)
+    {
+        CDisplay display = mView->console().GetDisplay();
+        Assert (!display.isNull());
+
+        /* complete aborted commands */
+        for(VBoxVHWACommandElement * pCur = pHead; pCur; pCur = pCur->mpNext)
+        {
+            switch(pCur->type())
+            {
+#ifdef VBOX_WITH_VIDEOHWACCEL
+            case VBOXVHWA_PIPECMD_VHWA:
+                {
+                    struct _VBOXVHWACMD * pCmd = pCur->vhwaCmd();
+                    pCmd->rc = VERR_INVALID_STATE;
+                    display.CompleteVHWACommand((BYTE*)pCmd);
+                }
+                break;
+            case VBOXVHWA_PIPECMD_OP:
+                /* should not happen, don't handle this for now */
+                Assert(0);
+                break;
+            case VBOXVHWA_PIPECMD_FUNC:
+                /* should not happen, don't handle this for now */
+                Assert(0);
+                break;
+#endif
+            }
+        }
+
+        VBoxVHWACommandElement *pTest = mCmdPipe.detachCmdList(pHead, pTail);
+        Assert(!pTest);
+        NOREF(pTest);
+    }
+    return VINF_SUCCESS;
+}
+
 int VBoxQGLOverlay::onVHWACommand(struct _VBOXVHWACMD * pCmd)
 {
     uint32_t flags = 0;
@@ -4733,6 +4774,14 @@ int VBoxQGLOverlay::onVHWACommand(struct _VBOXVHWACMD * pCmd)
         case VBOXVHWACMD_TYPE_SURF_OVERLAY_SETPOSITION:
             flags |= VBOXVHWACMDPIPEC_COMPLETEEVENT;
             break;
+        case VBOXVHWACMD_TYPE_HH_RESET:
+        {
+            /* we do not post a reset command to the gui thread since this may lead to a deadlock
+             * when reset is initiated by the gui thread*/
+            pCmd->Flags &= ~VBOXVHWACMD_FLAG_HG_ASYNCH;
+            pCmd->rc = reset();
+            return VINF_SUCCESS;
+        }
         default:
             break;
     }//    Assert(0);
@@ -5300,15 +5349,17 @@ VBoxVHWACommandElement * VBoxQGLOverlay::processCmdList(VBoxVHWACommandElement *
 }
 
 
-VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor(VBoxConsoleView *aView)
+VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor(VBoxConsoleView *aView) :
+    mpFirstEvent (NULL),
+    mpLastEvent (NULL),
+    mbNewEvent (false),
+    mbProcessingList (false)
 {
     int rc = RTCritSectInit(&mCritSect);
     AssertRC(rc);
 
-    mpFirstEvent = NULL;
-    mpLastEvent = NULL;
-    mbNewEvent = false;
     mView = aView;
+
     for(int i = RT_ELEMENTS(mElementsBuffer) - 1; i >= 0; i--)
     {
         mFreeElements.push(&mElementsBuffer[i]);
@@ -5407,7 +5458,14 @@ VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::detachCmdList(VBoxVHWA
     if(mpFirstEvent)
     {
         pList = mpFirstEvent->pipe().detachList();
-        if(!pList)
+        if(pList)
+        {
+            /* assume the caller atimically calls detachCmdList to free the elements obtained now those and reset the state */
+            mbProcessingList = true;
+            RTCritSectLeave(&mCritSect);
+            return pList;
+        }
+        else
         {
             VBoxVHWACommandProcessEvent *pNext = mpFirstEvent->mpNext;
             if(pNext)
@@ -5421,11 +5479,76 @@ VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::detachCmdList(VBoxVHWA
             }
         }
     }
-    RTCritSectLeave(&mCritSect);
 
-    return pList;
+    /* assume the caller atimically calls detachCmdList to free the elements obtained now those and reset the state */
+    mbProcessingList = false;
+    RTCritSectLeave(&mCritSect);
+    return NULL;
 }
 
+/* it is currently assumed no one sends any new commands while reset is in progress */
+void VBoxVHWACommandElementProcessor::reset(VBoxVHWACommandElement ** ppHead, VBoxVHWACommandElement ** ppTail)
+{
+    VBoxVHWACommandElement * pHead = NULL;
+    VBoxVHWACommandElement * pTail = NULL;
+    VBoxVHWACommandProcessEvent * pFirst;
+    VBoxVHWACommandProcessEvent * pLast;
+    RTCritSectEnter(&mCritSect);
+    pFirst = mpFirstEvent;
+    pLast = mpLastEvent;
+    mpFirstEvent = NULL;
+    mpLastEvent = NULL;
+
+    if(mbProcessingList)
+    {
+        for(;;)
+        {
+            RTCritSectLeave(&mCritSect);
+            RTThreadSleep(2000); /* 2 ms */
+            RTCritSectEnter(&mCritSect);
+            /* it is assumed no one sends any new commands while reset is in progress */
+            Assert(!mpFirstEvent);
+            Assert(!mpLastEvent);
+            if(!mbProcessingList)
+            {
+                break;
+            }
+        }
+    }
+
+    if(pFirst)
+    {
+        Assert(pLast);
+        pHead = pFirst->pipe().detachList();
+        VBoxVHWACommandElement * pCurHead;
+        for(VBoxVHWACommandProcessEvent * pCur = pFirst; pCur ; pCur = pCur->mpNext)
+        {
+            pCurHead = pCur->pipe().detachList();
+            if(!pCurHead)
+                continue;
+            if(!pHead)
+                pHead = pCurHead;
+            if(pTail)
+                pTail->mpNext = pCurHead;
+
+            for(VBoxVHWACommandElement * pCurEl = pCurHead; pCurEl; pCurEl = pCurEl->mpNext)
+            {
+                pTail = pCurEl;
+            }
+        }
+
+        if(!pTail)
+            pTail = pHead;
+    }
+
+    if(pHead)
+        mbProcessingList = true;
+
+    RTCritSectLeave(&mCritSect);
+
+    *ppHead = pHead;
+    *ppTail = pTail;
+}
 
 void VBoxVHWACommandsQueue::enqueue(PFNVBOXQGLFUNC pfn, void* pContext1, void* pContext2)
 {

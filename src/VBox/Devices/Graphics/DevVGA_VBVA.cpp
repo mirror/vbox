@@ -947,7 +947,7 @@ int vbvaVHWAConstruct (PVGASTATE pVGAState)
 int vbvaVHWAReset (PVGASTATE pVGAState)
 {
     /* ensure we have all pending cmds processed and h->g cmds disabled */
-    VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_DISABLE, 0);
+    VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_HH_RESET, 0);
     Assert(pCmd);
     if(pCmd)
     {

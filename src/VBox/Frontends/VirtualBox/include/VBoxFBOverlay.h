@@ -918,13 +918,14 @@ public:
     void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData, uint32_t flags);
     void completeCurrentEvent();
     class VBoxVHWACommandElement * detachCmdList(class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
-
+    void reset(class VBoxVHWACommandElement ** ppHead, class VBoxVHWACommandElement ** ppTail);
 private:
     RTCRITSECT mCritSect;
     class VBoxVHWACommandProcessEvent *mpFirstEvent;
     class VBoxVHWACommandProcessEvent *mpLastEvent;
     class VBoxConsoleView *mView;
     bool mbNewEvent;
+    bool mbProcessingList;
     VBoxVHWACommandElementStack mFreeElements;
     VBoxVHWACommandElement mElementsBuffer[2048];
 };
@@ -1246,6 +1247,8 @@ private:
     VBoxVHWACommandElement * processCmdList(VBoxVHWACommandElement * pCmd);
 
     int vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd);
+
+    int reset();
 
     VBoxGLWidget *mpOverlayWidget;
     class VBoxConsoleView *mView;
