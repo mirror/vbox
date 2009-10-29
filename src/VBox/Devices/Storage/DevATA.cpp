@@ -104,12 +104,12 @@
 /**
  * Length of the configurable VPD data (without termination)
  */
-#define ATA_SERIAL_NUMBER_LENGTH     20
-#define ATA_FIRMWARE_REVISION_LENGTH  8
-#define ATA_MODEL_NUMBER_LENGTH      40
-#define ATAPI_INQUIRY_VENDOR_ID      16
-#define ATAPI_INQUIRY_PRODUCT_ID     16
-#define ATAPI_INQUIRY_REVISION        4
+#define ATA_SERIAL_NUMBER_LENGTH        20
+#define ATA_FIRMWARE_REVISION_LENGTH     8
+#define ATA_MODEL_NUMBER_LENGTH         40
+#define ATAPI_INQUIRY_VENDOR_ID_LENGTH   8
+#define ATAPI_INQUIRY_PRODUCT_ID_LENGTH 16
+#define ATAPI_INQUIRY_REVISION_LENGTH    4
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -293,11 +293,11 @@ typedef struct ATADevState {
     /** The model number to use for IDENTIFY DEVICE commands. */
     char                                szModelNumber[ATA_MODEL_NUMBER_LENGTH+1];
     /** The vendor identification string for SCSI INQUIRY commands. */
-    char                                szInquiryVendorId[ATAPI_INQUIRY_VENDOR_ID+1];
+    char                                szInquiryVendorId[ATAPI_INQUIRY_VENDOR_ID_LENGTH+1];
     /** The product identification string for SCSI INQUIRY commands. */
-    char                                szInquiryProductId[ATAPI_INQUIRY_PRODUCT_ID+1];
+    char                                szInquiryProductId[ATAPI_INQUIRY_PRODUCT_ID_LENGTH+1];
     /** The revision string for SCSI INQUIRY commands. */
-    char                                szInquiryRevision[ATAPI_INQUIRY_REVISION+1];
+    char                                szInquiryRevision[ATAPI_INQUIRY_REVISION_LENGTH+1];
 
     uint8_t                             abAlignment3[7];
 } ATADevState;
