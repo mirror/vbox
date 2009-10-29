@@ -2557,6 +2557,14 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
     mMediaData.backup();
 
+    /* if a cd/dvd was attached to the atachment then better update it */
+    do
+    {
+        ComObjPtr<Medium> medium;
+        AutoWriteLock attLock(pAttach);
+        pAttach->updateMedium(medium, false /* aImplicit */, mData->mUuid);
+    } while (0);
+
     /* we cannot use erase (it) below because backup() above will create
      * a copy of the list and make this copy active, but the iterator
      * still refers to the original and is not valid for the copy */
@@ -2710,7 +2718,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
         AutoWriteLock attLock(pAttach);
         if (!medium.isNull())
             medium->attachTo(mData->mUuid);
-        pAttach->updateMedium(medium, false /* aImplicit */);
+        pAttach->updateMedium(medium, false /* aImplicit */, mData->mUuid);
     }
 
     alock.unlock();

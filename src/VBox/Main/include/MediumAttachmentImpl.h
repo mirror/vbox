@@ -95,9 +95,13 @@ public:
     }
 
     /** Must be called from under this object's write lock. */
-    void updateMedium(const ComObjPtr<Medium> &aMedium, bool aImplicit)
+    void updateMedium(const ComObjPtr<Medium> &aMedium,
+                      bool aImplicit,
+                      const Guid &aMachineId = Guid::Empty)
     {
         m.backup();
+        if (m->medium && aMachineId)
+            m->medium->detachFrom(aMachineId);
         m->medium = aMedium;
         m->implicit = aImplicit;
     }
