@@ -1834,12 +1834,14 @@ STDMETHODIMP Medium::LockRead(MediumState_T *aState)
             else if (m->state == MediumState_Inaccessible)
                 m->accessibleInLock = false;
 
+            LogFlowThisFunc(("Okay - prev state=%d readers=%d\n", m->state, m->readers));
             m->state = MediumState_LockedRead;
 
             break;
         }
         default:
         {
+            LogFlowThisFunc(("Failing - state=%d\n", m->state));
             rc = setStateError();
             break;
         }
@@ -1879,6 +1881,7 @@ STDMETHODIMP Medium::UnlockRead(MediumState_T *aState)
                         m->state = MediumState_Inaccessible;
                 }
 
+                LogFlowThisFunc(("new state=%d\n", m->state));
                 break;
             }
 
@@ -1886,6 +1889,7 @@ STDMETHODIMP Medium::UnlockRead(MediumState_T *aState)
         }
         default:
         {
+            LogFlowThisFunc(("Failing - state=%d\n", m->state));
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
                           tr ("Medium '%ls' is not locked for reading"),
                           m->locationFull.raw());
@@ -1927,11 +1931,13 @@ STDMETHODIMP Medium::LockWrite(MediumState_T *aState)
             else if (m->state == MediumState_Inaccessible)
                 m->accessibleInLock = false;
 
+            LogFlowThisFunc(("Okay - prev state=%d\n", m->state));
             m->state = MediumState_LockedWrite;
             break;
         }
         default:
         {
+            LogFlowThisFunc(("Failing - state=%d\n", m->state));
             rc = setStateError();
             break;
         }
@@ -1961,10 +1967,12 @@ STDMETHODIMP Medium::UnlockWrite(MediumState_T *aState)
                 m->state = MediumState_Created;
             else
                 m->state = MediumState_Inaccessible;
+            LogFlowThisFunc(("new state=%d\n", m->state));
             break;
         }
         default:
         {
+            LogFlowThisFunc(("Failing - state=%d\n", m->state));
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
                           tr ("Medium '%ls' is not locked for writing"),
                           m->locationFull.raw());
@@ -3600,6 +3608,7 @@ HRESULT Medium::queryInfo()
          * lock. Note that clients will never see this temporary state change
          * since any COMGETTER(State) is (or will be) blocked until we finish
          * and restore the actual state. */
+        LogFlowThisFunc(("read locking - prev state=%d - %ls\n", m->state, m->locationFull.raw()));
         m->state = MediumState_LockedRead;
         tempStateSet = true;
     }
@@ -3848,6 +3857,7 @@ HRESULT Medium::queryInfo()
             m->state = MediumState_Created;
         else
             m->state = MediumState_Inaccessible;
+        LogFlowThisFunc(("restored state=%d\n", m->state));
     }
     else
     {
