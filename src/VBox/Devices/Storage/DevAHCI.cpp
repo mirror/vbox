@@ -96,9 +96,12 @@
 /**
  * Length of the configurable VPD data (without termination)
  */
-#define AHCI_SERIAL_NUMBER_LENGTH     20
-#define AHCI_FIRMWARE_REVISION_LENGTH  8
-#define AHCI_MODEL_NUMBER_LENGTH      40
+#define AHCI_SERIAL_NUMBER_LENGTH            20
+#define AHCI_FIRMWARE_REVISION_LENGTH         8
+#define AHCI_MODEL_NUMBER_LENGTH             40
+#define AHCI_ATAPI_INQUIRY_VENDOR_ID_LENGTH   8
+#define AHCI_ATAPI_INQUIRY_PRODUCT_ID_LENGTH 16
+#define AHCI_ATAPI_INQUIRY_REVISION_LENGTH    4
 
 /* Command Header. */
 typedef struct
@@ -436,6 +439,8 @@ typedef struct AHCIPort
      */
     R3PTRTYPE(PAHCIPORTTASKSTATE)   aCachedTasks[AHCI_NR_COMMAND_SLOTS];
 
+    uint32_t                        u32Alignment5;
+
     /** Release statistics: number of DMA commands. */
     STAMCOUNTER                     StatDMA;
     /** Release statistics: number of bytes written. */
@@ -467,10 +472,14 @@ typedef struct AHCIPort
     char                            szFirmwareRevision[AHCI_FIRMWARE_REVISION_LENGTH+1]; /** < one extra byte for termination */
     /** The model number to use for IDENTIFY DEVICE commands. */
     char                            szModelNumber[AHCI_MODEL_NUMBER_LENGTH+1]; /** < one extra byte for termination */
+    /** The vendor identification string for SCSI INQUIRY commands. */
+    char                            szInquiryVendorId[AHCI_ATAPI_INQUIRY_VENDOR_ID_LENGTH+1];
+    /** The product identification string for SCSI INQUIRY commands. */
+    char                            szInquiryProductId[AHCI_ATAPI_INQUIRY_PRODUCT_ID_LENGTH+1];
+    /** The revision string for SCSI INQUIRY commands. */
+    char                            szInquiryRevision[AHCI_ATAPI_INQUIRY_REVISION_LENGTH+1];
 
-#if HC_ARCH_BITS == 64
-    uint32_t                        Alignment5;
-#endif
+    uint32_t                        Alignment6;
 
 } AHCIPort, *PAHCIPort;
 
@@ -2893,28 +2902,17 @@ static const PAtapiFunc g_apfnAtapiFuncs[ATAFN_SS_MAX] =
 static int atapiIdentifySS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort pAhciPort, int *pcbData)
 {
     uint16_t p[256];
-    char aSerial[20];
     RTUUID Uuid;
     int rc;
-
-    rc = pAhciPort->pDrvBlock ? pAhciPort->pDrvBlock->pfnGetUuid(pAhciPort->pDrvBlock, &Uuid) : RTUuidClear(&Uuid);
-    if (RT_FAILURE(rc) || RTUuidIsNull(&Uuid))
-    {
-        /* Generate a predictable serial for drives which don't have a UUID. */
-        RTStrPrintf(aSerial, sizeof(aSerial), "VB%x-1a2b3c4d",
-                    pAhciPort->iLUN);
-    }
-    else
-        RTStrPrintf(aSerial, sizeof(aSerial), "VB%08x-%08x", Uuid.au32[0], Uuid.au32[3]);
 
     memset(p, 0, 512);
     /* Removable CDROM, 50us response, 12 byte packets */
     p[0] = RT_H2LE_U16(2 << 14 | 5 << 8 | 1 << 7 | 2 << 5 | 0 << 0);
-    ataPadString((uint8_t *)(p + 10), aSerial, 20); /* serial number */
+    ataPadString((uint8_t *)(p + 10), pAhciPort->szSerialNumber, AHCI_SERIAL_NUMBER_LENGTH); /* serial number */
     p[20] = RT_H2LE_U16(3); /* XXX: retired, cache type */
     p[21] = RT_H2LE_U16(512); /* XXX: retired, cache size in sectors */
-    ataPadString((uint8_t *)(p + 23), "1.0", 8); /* firmware version */
-    ataPadString((uint8_t *)(p + 27), "VBOX CD-ROM", 40); /* model */
+    ataPadString((uint8_t *)(p + 23), pAhciPort->szFirmwareRevision, AHCI_FIRMWARE_REVISION_LENGTH); /* firmware version */
+    ataPadString((uint8_t *)(p + 27), pAhciPort->szModelNumber, AHCI_MODEL_NUMBER_LENGTH); /* model */
     p[49] = RT_H2LE_U16(1 << 11 | 1 << 9 | 1 << 8); /* DMA and LBA supported */
     p[50] = RT_H2LE_U16(1 << 14);  /* No drive specific standby timer minimum */
     p[51] = RT_H2LE_U16(240); /* PIO transfer cycle */
@@ -3070,9 +3068,9 @@ static int atapiInquirySS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort pAhci
     aBuf[5] = 0; /* reserved */
     aBuf[6] = 0; /* reserved */
     aBuf[7] = 0; /* reserved */
-    ataSCSIPadStr(aBuf + 8, "VBOX", 8);
-    ataSCSIPadStr(aBuf + 16, "CD-ROM", 16);
-    ataSCSIPadStr(aBuf + 32, "1.0", 4);
+    ataSCSIPadStr(aBuf +  8, pAhciPort->szInquiryVendorId, 8);
+    ataSCSIPadStr(aBuf + 16, pAhciPort->szInquiryProductId, 16);
+    ataSCSIPadStr(aBuf + 32, pAhciPort->szInquiryRevision, 4);
 
     /* Copy the buffer in to the scatter gather list. */
     *pcbData = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
@@ -6755,7 +6753,7 @@ static DECLCALLBACK(int) ahciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             }
 
             rc = CFGMR3QueryStringDef(pCfgNode, "ModelNumber", pAhciPort->szModelNumber, sizeof(pAhciPort->szModelNumber),
-                                      "VBOX HARDDISK");
+                                      pAhciPort->fATAPI ? "VBOX CD-ROM" : "VBOX HARDDISK");
             if (RT_FAILURE(rc))
             {
                 if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
@@ -6763,6 +6761,43 @@ static DECLCALLBACK(int) ahciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                N_("AHCI configuration error: \"ModelNumber\" is longer than 40 bytes"));
                 return PDMDEV_SET_ERROR(pDevIns, rc,
                             N_("AHCI configuration error: failed to read \"ModelNumber\" as string"));
+            }
+
+            /* There are three other identification strings for CD drives used for INQUIRY */
+            if (pAhciPort->fATAPI)
+            {
+                rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIVendorId", pAhciPort->szInquiryVendorId, sizeof(pAhciPort->szInquiryVendorId),
+                                          "VBOX");
+                if (RT_FAILURE(rc))
+                {
+                        if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
+                        return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                        N_("PIIX3 configuration error: \"ATAPIVendorId\" is longer than 16 bytes"));
+                        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("PIIX3 configuration error: failed to read \"ATAPIVendorId\" as string"));
+                }
+
+                rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIProductId", pAhciPort->szInquiryProductId, sizeof(pAhciPort->szInquiryProductId),
+                                          "CD-ROM");
+                if (RT_FAILURE(rc))
+                {
+                        if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
+                        return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                        N_("PIIX3 configuration error: \"ATAPIProductId\" is longer than 16 bytes"));
+                        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("PIIX3 configuration error: failed to read \"ATAPIProductId\" as string"));
+                }
+
+                rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIRevision", pAhciPort->szInquiryRevision, sizeof(pAhciPort->szInquiryRevision),
+                                          "1.0");
+                if (RT_FAILURE(rc))
+                {
+                        if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
+                        return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                        N_("PIIX3 configuration error: \"ATAPIRevision\" is longer than 4 bytes"));
+                        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("PIIX3 configuration error: failed to read \"ATAPIRevision\" as string"));
+                }
             }
 
             /*
