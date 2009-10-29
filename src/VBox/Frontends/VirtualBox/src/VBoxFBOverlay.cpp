@@ -3672,7 +3672,7 @@ int VBoxGLWidget::vhwaSaveSurface(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *
     return rc;
 }
 
-int VBoxGLWidget::vhwaLoadSurface(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t u32Version)
+int VBoxGLWidget::vhwaLoadSurface(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t cBackBuffers, uint32_t u32Version)
 {
     Q_UNUSED(u32Version);
 
@@ -3733,6 +3733,12 @@ int VBoxGLWidget::vhwaLoadSurface(VHWACommandList * pCmdList, struct SSMHANDLE *
         else
         {
             Assert(0);
+        }
+
+        if(cBackBuffers)
+        {
+            pCreateSurf->SurfInfo.cBackBuffers = cBackBuffers;
+            pCreateSurf->SurfInfo.surfCaps |= VBOXVHWA_SCAPS_COMPLEX;
         }
 
         pCmdList->push_back(pCmd);
@@ -4007,7 +4013,7 @@ int VBoxGLWidget::vhwaLoadExec(VHWACommandList * pCmdList, struct SSMHANDLE * pS
     {
         for(uint32_t i = 0; i < u32; ++i)
         {
-            rc = vhwaLoadSurface(pCmdList, pSSM, u32Version);  AssertRC(rc);
+            rc = vhwaLoadSurface(pCmdList, pSSM, 0, u32Version);  AssertRC(rc);
             if(RT_FAILURE(rc))
                 break;
         }
@@ -4023,7 +4029,7 @@ int VBoxGLWidget::vhwaLoadExec(VHWACommandList * pCmdList, struct SSMHANDLE * pS
                     rc = SSMR3GetU32(pSSM, &cSurfs); AssertRC(rc);
                     for(uint32_t j = 0; j < cSurfs; ++j)
                     {
-                        rc = vhwaLoadSurface(pCmdList, pSSM, u32Version);  AssertRC(rc);
+                        rc = vhwaLoadSurface(pCmdList, pSSM, cSurfs - 1, u32Version);  AssertRC(rc);
                         if(RT_FAILURE(rc))
                             break;
                     }
