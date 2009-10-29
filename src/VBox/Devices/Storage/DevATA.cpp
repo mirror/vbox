@@ -107,6 +107,9 @@
 #define ATA_SERIAL_NUMBER_LENGTH     20
 #define ATA_FIRMWARE_REVISION_LENGTH  8
 #define ATA_MODEL_NUMBER_LENGTH      40
+#define ATAPI_INQUIRY_VENDOR_ID      16
+#define ATAPI_INQUIRY_PRODUCT_ID     16
+#define ATAPI_INQUIRY_REVISION        4
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -289,8 +292,14 @@ typedef struct ATADevState {
     char                                szFirmwareRevision[ATA_FIRMWARE_REVISION_LENGTH+1];
     /** The model number to use for IDENTIFY DEVICE commands. */
     char                                szModelNumber[ATA_MODEL_NUMBER_LENGTH+1];
+    /** The vendor identification string for SCSI INQUIRY commands. */
+    char                                szInquiryVendorId[ATAPI_INQUIRY_VENDOR_ID+1];
+    /** The product identification string for SCSI INQUIRY commands. */
+    char                                szInquiryProductId[ATAPI_INQUIRY_PRODUCT_ID+1];
+    /** The revision string for SCSI INQUIRY commands. */
+    char                                szInquiryRevision[ATAPI_INQUIRY_REVISION+1];
 
-    uint8_t                             abAlignment3[HC_ARCH_BITS == 32 ? 7 : 7];
+    uint8_t                             abAlignment3[7];
 } ATADevState;
 AssertCompileMemberAlignment(ATADevState, cTotalSectors, 8);
 AssertCompileMemberAlignment(ATADevState, StatATADMA, 8);
@@ -2371,9 +2380,9 @@ static bool atapiInquirySS(ATADevState *s)
     pbBuf[5] = 0; /* reserved */
     pbBuf[6] = 0; /* reserved */
     pbBuf[7] = 0; /* reserved */
-    ataSCSIPadStr(pbBuf + 8, "VBOX", 8);
-    ataSCSIPadStr(pbBuf + 16, "CD-ROM", 16);
-    ataSCSIPadStr(pbBuf + 32, "1.0", 4);
+    ataSCSIPadStr(pbBuf + 8, s->szInquiryVendorId, 8);
+    ataSCSIPadStr(pbBuf + 16, s->szInquiryProductId, 16);
+    ataSCSIPadStr(pbBuf + 32, s->szInquiryRevision, 4);
     s->iSourceSink = ATAFN_SS_NULL;
     atapiCmdOK(s);
     return false;
@@ -6787,6 +6796,43 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                        N_("PIIX3 configuration error: \"ModelNumber\" is longer than 40 bytes"));
                         return PDMDEV_SET_ERROR(pDevIns, rc,
                                     N_("PIIX3 configuration error: failed to read \"ModelNumber\" as string"));
+                    }
+
+                    /* There are three other identification strings for CD drives used for INQUIRY */
+                    if (pIf->fATAPI)
+                    {
+                        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIVendorId", pIf->szInquiryVendorId, sizeof(pIf->szInquiryVendorId),
+                                                  "VBOX");
+                        if (RT_FAILURE(rc))
+                        {
+                            if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
+                                return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                           N_("PIIX3 configuration error: \"ATAPIVendorId\" is longer than 16 bytes"));
+                            return PDMDEV_SET_ERROR(pDevIns, rc,
+                                        N_("PIIX3 configuration error: failed to read \"ATAPIVendorId\" as string"));
+                        }
+
+                        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIProductId", pIf->szInquiryProductId, sizeof(pIf->szInquiryProductId),
+                                                  "CD-ROM");
+                        if (RT_FAILURE(rc))
+                        {
+                            if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
+                                return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                           N_("PIIX3 configuration error: \"ATAPIProductId\" is longer than 16 bytes"));
+                            return PDMDEV_SET_ERROR(pDevIns, rc,
+                                        N_("PIIX3 configuration error: failed to read \"ATAPIProductId\" as string"));
+                        }
+
+                        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIRevision", pIf->szInquiryRevision, sizeof(pIf->szInquiryRevision),
+                                                  "1.0");
+                        if (RT_FAILURE(rc))
+                        {
+                            if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
+                                return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                           N_("PIIX3 configuration error: \"ATAPIRevision\" is longer than 4 bytes"));
+                            return PDMDEV_SET_ERROR(pDevIns, rc,
+                                        N_("PIIX3 configuration error: failed to read \"ATAPIRevision\" as string"));
+                        }
                     }
                 }
 

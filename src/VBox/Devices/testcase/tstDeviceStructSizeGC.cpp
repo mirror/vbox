@@ -739,6 +739,12 @@ int main()
     GEN_CHECK_OFF(ATADevState, szFirmwareRevision[ATA_FIRMWARE_REVISION_LENGTH]);
     GEN_CHECK_OFF(ATADevState, szModelNumber);
     GEN_CHECK_OFF(ATADevState, szModelNumber[ATA_MODEL_NUMBER_LENGTH]);
+    GEN_CHECK_OFF(ATADevState, szInquiryVendorId);
+    GEN_CHECK_OFF(ATADevState, szInquiryVendorId[ATAPI_INQUIRY_VENDOR_ID]);
+    GEN_CHECK_OFF(ATADevState, szInquiryProductId);
+    GEN_CHECK_OFF(ATADevState, szInquiryProductId[ATAPI_INQUIRY_PRODUCT_ID]);
+    GEN_CHECK_OFF(ATADevState, szInquiryRevision);
+    GEN_CHECK_OFF(ATADevState, szInquiryRevision[ATAPI_INQUIRY_REVISION]);
     GEN_CHECK_SIZE(ATATransferRequest);
     GEN_CHECK_OFF(ATATransferRequest, iIf);
     GEN_CHECK_OFF(ATATransferRequest, iBeginTransfer);
