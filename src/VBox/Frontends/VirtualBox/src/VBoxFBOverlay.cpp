@@ -4964,6 +4964,10 @@ void VBoxQGLOverlay::vboxSetGlOn(bool on)
 
     if(on)
     {
+        /* need to ensure we have gl functions initialized */
+        mpOverlayWidget->makeCurrent();
+        vboxVHWAGetSupportInfo(mpOverlayWidget->context());
+
         VBOXQGLLOGREL(("Switching Gl mode on\n"));
         Assert(!mpOverlayWidget->isVisible());
         /* just to ensure */
