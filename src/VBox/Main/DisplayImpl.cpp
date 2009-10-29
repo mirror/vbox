@@ -2339,20 +2339,22 @@ void Display::handleVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVH
     {
         IFramebuffer *pFramebuffer = maFramebuffers[id].pFramebuffer;
 
-        // if there is no framebuffer, this call is not interesting
         if (pFramebuffer == NULL)
-            return;
-
-        pFramebuffer->Lock();
-
-        HRESULT hr = pFramebuffer->ProcessVHWACommand((BYTE*)pCommand);
-        if(FAILED(hr))
         {
-            rc = (hr == E_NOTIMPL) ? VERR_NOT_IMPLEMENTED : VERR_GENERAL_FAILURE;
+            pFramebuffer->Lock();
+
+            HRESULT hr = pFramebuffer->ProcessVHWACommand((BYTE*)pCommand);
+            if(FAILED(hr))
+            {
+                rc = (hr == E_NOTIMPL) ? VERR_NOT_IMPLEMENTED : VERR_GENERAL_FAILURE;
+            }
+
+            pFramebuffer->Unlock();
         }
-
-        pFramebuffer->Unlock();
-
+        else
+        {
+            rc = VERR_NOT_IMPLEMENTED;
+        }
     }
     else
     {
