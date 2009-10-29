@@ -930,7 +930,11 @@ int vbvaVHWAConstruct (PVGASTATE pVGAState)
         if(RT_SUCCESS(rc))
         {
             rc = pCmd->rc;
+#ifdef DEBUG_misha
+            AssertMsg(RT_SUCCESS(rc), ("%Rrc\n", rc));
+#else
             AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
+#endif
             if(rc == VERR_NOT_IMPLEMENTED)
             {
                 /* @todo: set some flag in pVGAState indicating VHWA is not supported */
@@ -958,13 +962,13 @@ int vbvaVHWAReset (PVGASTATE pVGAState)
         if(RT_SUCCESS(rc))
         {
             rc = pCmd->rc;
-#ifndef DEBUG_misha /** @todo the assertion below hits when booting dsl here and resetting during early boot... */
+#ifdef DEBUG_misha
+            AssertMsg(RT_SUCCESS(rc), ("%Rrc\n", rc));
+#else
             AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
+#endif
             if (rc == VERR_NOT_IMPLEMENTED)
                 rc = VINF_SUCCESS;
-#else
-            AssertRC(rc);
-#endif
         }
 
         vbvaVHWAHHCommandRelease(pCmd);
@@ -986,7 +990,11 @@ int vbvaVHWADisable (PVGASTATE pVGAState)
         if(RT_SUCCESS(rc))
         {
             rc = pCmd->rc;
+#ifdef DEBUG_misha
+            AssertMsg(RT_SUCCESS(rc), ("%Rrc\n", rc));
+#else
             AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
+#endif
             if(rc == VERR_NOT_IMPLEMENTED)
             {
                 rc = VINF_SUCCESS;
