@@ -3074,7 +3074,7 @@ STDMETHODIMP Machine::FindSnapshot (IN_BSTR aName, ISnapshot **aSnapshot)
 
     ComObjPtr<Snapshot> snapshot;
 
-    HRESULT rc = findSnapshot (aName, snapshot, true /* aSetError */);
+    HRESULT rc = findSnapshot(aName, snapshot, true /* aSetError */);
     snapshot.queryInterfaceTo(aSnapshot);
 
     return rc;
@@ -5228,13 +5228,13 @@ HRESULT Machine::loadSettings(bool aRegistered)
         /* set the machine state to Aborted or Saved when appropriate */
         if (mData->m_pMachineConfigFile->fAborted)
         {
-            Assert(!mSSData->mStateFilePath);
+            Assert(!mSSData->mStateFilePath.isEmpty());
             mSSData->mStateFilePath.setNull();
 
             /* no need to use setMachineState() during init() */
             mData->mMachineState = MachineState_Aborted;
         }
-        else if (mSSData->mStateFilePath)
+        else if (!mSSData->mStateFilePath.isEmpty())
         {
             /* no need to use setMachineState() during init() */
             mData->mMachineState = MachineState_Saved;
@@ -6159,14 +6159,11 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
         {
             Assert(!mSSData->mStateFilePath.isEmpty());
             /* try to make the file name relative to the settings file dir */
-            Utf8Str stateFilePath = mSSData->mStateFilePath;
-            calculateRelativePath(stateFilePath, stateFilePath);
-
-            mData->m_pMachineConfigFile->strStateFile = stateFilePath;
+            calculateRelativePath(mSSData->mStateFilePath, mData->m_pMachineConfigFile->strStateFile);
         }
         else
         {
-            Assert(mSSData->mStateFilePath.isNull());
+            Assert(mSSData->mStateFilePath.isEmpty());
             mData->m_pMachineConfigFile->strStateFile.setNull();
         }
 
@@ -6558,13 +6555,9 @@ HRESULT Machine::saveStateSettings(int aFlags)
 
         if (aFlags & SaveSTS_StateFilePath)
         {
-            if (mSSData->mStateFilePath)
-            {
+            if (!mSSData->mStateFilePath.isEmpty())
                 /* try to make the file name relative to the settings file dir */
-                Utf8Str stateFilePath = mSSData->mStateFilePath;
-                calculateRelativePath(stateFilePath, stateFilePath);
-                mData->m_pMachineConfigFile->strStateFile = stateFilePath;
-            }
+                calculateRelativePath(mSSData->mStateFilePath, mData->m_pMachineConfigFile->strStateFile);
             else
                 mData->m_pMachineConfigFile->strStateFile.setNull();
         }
@@ -6572,7 +6565,7 @@ HRESULT Machine::saveStateSettings(int aFlags)
         if (aFlags & SaveSTS_StateTimeStamp)
         {
             Assert(    mData->mMachineState != MachineState_Aborted
-                    || mSSData->mStateFilePath.isNull());
+                    || mSSData->mStateFilePath.isEmpty());
 
             mData->m_pMachineConfigFile->timeLastStateChange = mData->mLastStateChange;
 
@@ -7701,9 +7694,13 @@ struct SessionMachine::DeleteSnapshotTask
 struct SessionMachine::RestoreSnapshotTask
     : public SessionMachine::Task
 {
-    RestoreSnapshotTask(SessionMachine *m, ComObjPtr<Snapshot> &aSnapshot, Progress *p)
+    RestoreSnapshotTask(SessionMachine *m,
+                        ComObjPtr<Snapshot> &aSnapshot,
+                        Progress *p,
+                        ULONG ulStateFileSizeMB)
         : Task(m, p),
-          pSnapshot(aSnapshot)
+          m_pSnapshot(aSnapshot),
+          m_ulStateFileSizeMB(ulStateFileSizeMB)
     {}
 
     void handler()
@@ -7711,7 +7708,8 @@ struct SessionMachine::RestoreSnapshotTask
         machine->restoreSnapshotHandler(*this);
     }
 
-    ComObjPtr<Snapshot> pSnapshot;
+    ComObjPtr<Snapshot> m_pSnapshot;
+    ULONG m_ulStateFileSizeMB;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -8011,8 +8009,8 @@ void SessionMachine::uninit (Uninit::Reason aReason)
         rollback (false /* aNotify */);
     }
 
-    Assert (!mSnapshotData.mStateFilePath || !mSnapshotData.mSnapshot);
-    if (mSnapshotData.mStateFilePath)
+    Assert(mSnapshotData.mStateFilePath.isEmpty() || !mSnapshotData.mSnapshot);
+    if (!mSnapshotData.mStateFilePath.isEmpty())
     {
         LogWarningThisFunc(("canceling failed save state request!\n"));
         endSavingState (FALSE /* aSuccess  */);
@@ -8447,11 +8445,11 @@ STDMETHODIMP SessionMachine::BeginSavingState (IProgress *aProgress, BSTR *aStat
 
     AutoWriteLock alock(this);
 
-    AssertReturn(mData->mMachineState == MachineState_Paused &&
-                  mSnapshotData.mLastState == MachineState_Null &&
-                  mSnapshotData.mProgressId.isEmpty() &&
-                  mSnapshotData.mStateFilePath.isNull(),
-                  E_FAIL);
+    AssertReturn(    mData->mMachineState == MachineState_Paused
+                  && mSnapshotData.mLastState == MachineState_Null
+                  && mSnapshotData.mProgressId.isEmpty()
+                  && mSnapshotData.mStateFilePath.isEmpty(),
+                 E_FAIL);
 
     /* memorize the progress ID and add it to the global collection */
     Bstr progressId;
@@ -8495,11 +8493,11 @@ STDMETHODIMP SessionMachine::EndSavingState (BOOL aSuccess)
     /* endSavingState() need mParent lock */
     AutoMultiWriteLock2 alock (mParent, this);
 
-    AssertReturn(mData->mMachineState == MachineState_Saving &&
-                  mSnapshotData.mLastState != MachineState_Null &&
-                  !mSnapshotData.mProgressId.isEmpty() &&
-                  !mSnapshotData.mStateFilePath.isNull(),
-                  E_FAIL);
+    AssertReturn(    mData->mMachineState == MachineState_Saving
+                  && mSnapshotData.mLastState != MachineState_Null
+                  && !mSnapshotData.mProgressId.isEmpty()
+                  && !mSnapshotData.mStateFilePath.isEmpty(),
+                 E_FAIL);
 
     /*
      *  on success, set the state to Saved;
@@ -8758,7 +8756,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     size_t childrenCount = snapshot->getChildrenCount();
     if (childrenCount > 1)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Snapshot '%s' of the machine '%ls' has more than one child snapshot (%d)"),
+                        tr("Snapshot '%s' of the machine '%ls' cannot be deleted because it has has more than one child snapshot (%d)"),
                         snapshot->getName().c_str(),
                         mUserData->mName.raw(),
                         childrenCount);
@@ -8784,9 +8782,9 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
                         BstrFmt(tr("Discarding snapshot '%s'"),
                                 snapshot->getName().c_str()),
                         FALSE /* aCancelable */,
-                        1 + (ULONG)snapshot->getSnapshotMachine()->mMediaData->mAttachments.size() +
-                        (snapshot->stateFilePath().isNull() ? 0 : 1),
-                        Bstr (tr ("Preparing to discard snapshot")));
+                        1 + (ULONG)snapshot->getSnapshotMachine()->mMediaData->mAttachments.size()
+                          + (snapshot->stateFilePath().length() ? 1 : 0),
+                        Bstr(tr("Preparing to discard snapshot")));
     AssertComRCReturn(rc, rc);
 
     /* create and start the task on a separate thread */
@@ -8799,8 +8797,10 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
                              0,
                              "DeleteSnapshot");
     if (RT_FAILURE(vrc))
+    {
         delete task;
-    ComAssertRCRet (vrc, E_FAIL);
+        return E_FAIL;
+    }
 
     /* set the proper machine state (note: after creating a Task instance) */
     setMachineState(MachineState_DeletingSnapshot);
@@ -8841,20 +8841,57 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
      * of hard disks + 1 (if we need to copy the saved state file) */
     ComObjPtr<Progress> progress;
     progress.createObject();
+
+    LogFlowThisFunc(("Going thru snapshot machine attachments to determine progress setup\n"));
+
+    ULONG ulOpCount = 1;            // one for preparations
+    ULONG ulTotalWeight = 1;        // one for preparations
+    for (MediaData::AttachmentList::iterator it = pSnapshot->getSnapshotMachine()->mMediaData->mAttachments.begin();
+         it != pSnapshot->getSnapshotMachine()->mMediaData->mAttachments.end();
+         ++it)
     {
-        ULONG opCount =   1     // preparing
-                        + (ULONG)pSnapshot->getSnapshotMachine()->mMediaData->mAttachments.size();  // one for each attachment @todo only for HDs!
-        if (pSnapshot->stateFilePath())
-            ++opCount;      // one for the saved state
-        progress->init(mParent, aInitiator,
-                       Bstr(tr("Restoring snapshot")),
-                       FALSE /* aCancelable */, opCount,
-                       Bstr(tr("Preparing to restore machine state from snapshot")));
+        ComObjPtr<MediumAttachment> &pAttach = *it;
+        AutoReadLock attachLock(pAttach);
+        if (pAttach->type() == DeviceType_HardDisk)
+        {
+            ++ulOpCount;
+            ++ulTotalWeight;         // assume one MB weight for each differencing hard disk to manage
+            Assert(pAttach->medium());
+            LogFlowThisFunc(("op %d: considering hard disk attachment %s\n", ulOpCount, pAttach->medium()->name().c_str()));
+        }
     }
+
+    ULONG ulStateFileSizeMB = 0;
+    if (pSnapshot->stateFilePath().length())
+    {
+        ++ulOpCount;      // one for the saved state
+
+        uint64_t ullSize;
+        int irc = RTFileQuerySize(pSnapshot->stateFilePath().c_str(), &ullSize);
+        if (!RT_SUCCESS(irc))
+            // if we can't access the file here, then we'll be doomed later also, so fail right away
+            setError(E_FAIL, tr("Cannot access state file '%s', runtime error, %Rra"), pSnapshot->stateFilePath().c_str(), irc);
+        if (ullSize == 0)
+            ullSize = 1;
+
+        ulStateFileSizeMB = (ULONG)(ullSize / _1M);
+        LogFlowThisFunc(("op %d: saved state file '%s' has %RI64 bytes (%d MB)\n",
+                        ulOpCount, pSnapshot->stateFilePath().raw(), ullSize, ulStateFileSizeMB));
+
+        ulTotalWeight += ulStateFileSizeMB;
+    }
+
+    progress->init(mParent, aInitiator,
+                   Bstr(tr("Restoring snapshot")),
+                   FALSE /* aCancelable */,
+                   ulOpCount,
+                   ulTotalWeight,
+                   Bstr(tr("Restoring machine settings")),
+                   1);
 
     /* create and start the task on a separate thread (note that it will not
      * start working until we release alock) */
-    RestoreSnapshotTask *task = new RestoreSnapshotTask(this, pSnapshot, progress);
+    RestoreSnapshotTask *task = new RestoreSnapshotTask(this, pSnapshot, progress, ulStateFileSizeMB);
     int vrc = RTThreadCreate(NULL,
                              taskHandler,
                              (void*)task,
@@ -9473,11 +9510,11 @@ HRESULT SessionMachine::endSavingState (BOOL aSuccess)
     else
     {
         /* delete the saved state file (it might have been already created) */
-        RTFileDelete(Utf8Str(mSnapshotData.mStateFilePath).c_str());
+        RTFileDelete(mSnapshotData.mStateFilePath.c_str());
     }
 
     /* remove the completed progress object */
-    mParent->removeProgress (mSnapshotData.mProgressId);
+    mParent->removeProgress(mSnapshotData.mProgressId);
 
     /* clear out the temporary saved state data */
     mSnapshotData.mLastState = MachineState_Null;
@@ -9555,8 +9592,8 @@ HRESULT SessionMachine::endTakingSnapshot(BOOL aSuccess)
         mData->mCurrentSnapshot = pOldCurrentSnap;      // might have been changed above
 
         /* delete the saved state file (it might have been already created) */
-        if (mSnapshotData.mSnapshot->stateFilePath())
-            RTFileDelete(Utf8Str(mSnapshotData.mSnapshot->stateFilePath()).c_str());
+        if (mSnapshotData.mSnapshot->stateFilePath().length())
+            RTFileDelete(mSnapshotData.mSnapshot->stateFilePath().c_str());
 
         mSnapshotData.mSnapshot->uninit();
     }
@@ -9939,7 +9976,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         if (aTask.state == MachineState_Saved)
         {
             Assert(!mSSData->mStateFilePath.isEmpty());
-            RTFileDelete(Utf8Str(mSSData->mStateFilePath).c_str());
+            RTFileDelete(mSSData->mStateFilePath.c_str());
             mSSData->mStateFilePath.setNull();
             aTask.modifyLastState(MachineState_PoweredOff);
             rc = saveStateSettings(SaveSTS_StateFilePath);
@@ -9950,12 +9987,12 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         RTTimeSpecSetMilli(&snapshotTimeStamp, 0);
 
         {
-            AutoReadLock snapshotLock(aTask.pSnapshot);
+            AutoReadLock snapshotLock(aTask.m_pSnapshot);
 
             /* remember the timestamp of the snapshot we're restoring from */
-            snapshotTimeStamp = aTask.pSnapshot->getTimeStamp();
+            snapshotTimeStamp = aTask.m_pSnapshot->getTimeStamp();
 
-            ComPtr<SnapshotMachine> pSnapshotMachine(aTask.pSnapshot->getSnapshotMachine());
+            ComPtr<SnapshotMachine> pSnapshotMachine(aTask.m_pSnapshot->getSnapshotMachine());
 
             /* copy all hardware data from the snapshot */
             copyFrom(pSnapshotMachine);
@@ -9986,11 +10023,11 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
              * deleted by #rollback() at the end. */
 
             /* should not have a saved state file associated at this point */
-            Assert(mSSData->mStateFilePath.isNull());
+            Assert(mSSData->mStateFilePath.isEmpty());
 
-            if (aTask.pSnapshot->stateFilePath())
+            if (!aTask.m_pSnapshot->stateFilePath().isEmpty())
             {
-                Utf8Str snapStateFilePath = aTask.pSnapshot->stateFilePath();
+                Utf8Str snapStateFilePath = aTask.m_pSnapshot->stateFilePath();
 
                 Utf8Str stateFilePath = Utf8StrFmt("%ls%c{%RTuuid}.sav",
                                                    mUserData->mSnapshotFolderFull.raw(),
@@ -10001,7 +10038,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                                   snapStateFilePath.raw(), stateFilePath.raw()));
 
                 aTask.progress->SetNextOperation(Bstr(tr("Restoring the execution state")),
-                                                 1);        // weight
+                                                 aTask.m_ulStateFileSizeMB);        // weight
 
                 /* leave the lock before the potentially lengthy operation */
                 snapshotLock.unlock();
@@ -10022,7 +10059,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                     mSSData->mStateFilePath = stateFilePath;
 
                     /* make the snapshot we restored from the current snapshot */
-                    mData->mCurrentSnapshot = aTask.pSnapshot;
+                    mData->mCurrentSnapshot = aTask.m_pSnapshot;
                 }
                 else
                 {
@@ -10064,7 +10101,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 
         /* we have already discarded the current state, so set the execution
          * state accordingly no matter of the discard snapshot result */
-        if (mSSData->mStateFilePath)
+        if (!mSSData->mStateFilePath.isEmpty())
             setMachineState(MachineState_Saved);
         else
             setMachineState(MachineState_PoweredOff);
@@ -10446,8 +10483,8 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
     {
         if (mRemoveSavedState)
         {
-            Assert (!mSSData->mStateFilePath.isEmpty());
-            RTFileDelete(Utf8Str(mSSData->mStateFilePath).c_str());
+            Assert(!mSSData->mStateFilePath.isEmpty());
+            RTFileDelete(mSSData->mStateFilePath.c_str());
         }
         mSSData->mStateFilePath.setNull();
         stsFlags |= SaveSTS_StateFilePath;
@@ -10470,7 +10507,7 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
         aMachineState == MachineState_Saved)
     {
         /* the saved state file was adopted */
-        Assert (!mSSData->mStateFilePath.isNull());
+        Assert(!mSSData->mStateFilePath.isEmpty());
         stsFlags |= SaveSTS_StateFilePath;
     }
 

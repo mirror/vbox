@@ -205,7 +205,7 @@ public:
      */
     struct SSData
     {
-        Bstr mStateFilePath;
+        Utf8Str mStateFilePath;
     };
 
     /**
@@ -1018,7 +1018,7 @@ private:
 
         // used when saving state
         Guid mProgressId;
-        Bstr mStateFilePath;
+        Utf8Str mStateFilePath;
     };
 
     struct Uninit
