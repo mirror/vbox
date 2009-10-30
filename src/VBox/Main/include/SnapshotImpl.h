@@ -88,7 +88,7 @@ public:
 
     // public methods only for internal purposes
 
-    const Bstr& stateFilePath() const;
+    const Utf8Str& stateFilePath() const;
 
     ComObjPtr<Snapshot> parent() const
     {

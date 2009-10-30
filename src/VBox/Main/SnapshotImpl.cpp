@@ -363,7 +363,7 @@ STDMETHODIMP Snapshot::COMGETTER(Online)(BOOL *aOnline)
 
     AutoReadLock alock(this);
 
-    *aOnline = !stateFilePath().isNull();
+    *aOnline = !stateFilePath().isEmpty();
     return S_OK;
 }
 
@@ -416,7 +416,7 @@ STDMETHODIMP Snapshot::COMGETTER(Children) (ComSafeArrayOut(ISnapshot *, aChildr
  *  @note
  *      Must be called from under the object's lock!
  */
-const Bstr& Snapshot::stateFilePath() const
+const Utf8Str& Snapshot::stateFilePath() const
 {
     return m->pMachine->mSSData->mStateFilePath;
 }
@@ -583,7 +583,7 @@ void Snapshot::updateSavedStatePathsImpl(const char *aOldPath, const char *aNewP
 {
     AutoWriteLock alock(this);
 
-    Utf8Str path = m->pMachine->mSSData->mStateFilePath;
+    const Utf8Str &path = m->pMachine->mSSData->mStateFilePath;
     LogFlowThisFunc(("Snap[%s].statePath={%s}\n", m->strName.c_str(), path.c_str()));
 
     /* state file may be NULL (for offline snapshots) */
@@ -591,8 +591,7 @@ void Snapshot::updateSavedStatePathsImpl(const char *aOldPath, const char *aNewP
          && RTPathStartsWith(path.c_str(), aOldPath)
        )
     {
-        path = Utf8StrFmt ("%s%s", aNewPath, path.raw() + strlen (aOldPath));
-        m->pMachine->mSSData->mStateFilePath = path;
+        m->pMachine->mSSData->mStateFilePath = Utf8StrFmt("%s%s", aNewPath, path.raw() + strlen(aOldPath));
 
         LogFlowThisFunc(("-> updated: {%s}\n", path.raw()));
     }
@@ -651,13 +650,9 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
         return S_OK;
 
     /* stateFile (optional) */
-    if (stateFilePath())
-    {
+    if (!stateFilePath().isEmpty())
         /* try to make the file name relative to the settings file dir */
-        Utf8Str strStateFilePath = stateFilePath();
-        m->pMachine->calculateRelativePath(strStateFilePath, strStateFilePath);
-        data.strStateFile = strStateFilePath;
-    }
+        m->pMachine->calculateRelativePath(stateFilePath(), data.strStateFile);
     else
         data.strStateFile.setNull();
 
