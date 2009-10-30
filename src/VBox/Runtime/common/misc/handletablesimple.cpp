@@ -60,7 +60,7 @@ RTDECL(int)     RTHandleTableAlloc(RTHANDLETABLE hHandleTable, void *pvObj, uint
     /*
      * Allocation loop.
      */
-    RTSPINLOCKTMP Tmp;
+    RTSPINLOCKTMP Tmp /*= no init */;
     rtHandleTableLock(pThis, &Tmp);
 
     int rc;
@@ -216,7 +216,7 @@ RTDECL(void *)  RTHandleTableLookup(RTHANDLETABLE hHandleTable, uint32_t h)
     void *pvObj = NULL;
 
     /* acquire the lock */
-    RTSPINLOCKTMP Tmp;
+    RTSPINLOCKTMP Tmp /*= no init */;
     rtHandleTableLock(pThis, &Tmp);
 
     /*
@@ -257,7 +257,7 @@ RTDECL(void *)  RTHandleTableFree(RTHANDLETABLE hHandleTable, uint32_t h)
     void *pvObj = NULL;
 
     /* acquire the lock */
-    RTSPINLOCKTMP Tmp;
+    RTSPINLOCKTMP Tmp /*= no init */;
     rtHandleTableLock(pThis, &Tmp);
 
     /*

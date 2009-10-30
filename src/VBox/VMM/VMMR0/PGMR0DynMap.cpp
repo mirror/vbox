@@ -1287,9 +1287,9 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
 DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, int32_t iRealCpu, PVM pVM, void **ppvPage)
 {
 #ifdef VBOX_WITH_STATISTICS
-    PVMCPU pVCpu = VMMGetCpu(pVM);
+    PVMCPU              pVCpu   = VMMGetCpu(pVM);
 #endif
-    RTSPINLOCKTMP   Tmp       = RTSPINLOCKTMP_INITIALIZER;
+    RTSPINLOCKTMP       Tmp     = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
     AssertMsg(!(HCPhys & PAGE_OFFSET_MASK), ("HCPhys=%RHp\n", HCPhys));
     STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapPage);
@@ -1389,7 +1389,7 @@ VMMR0DECL(int) PGMR0DynMapAssertIntegrity(void)
     /*
      * Basic pool stuff that doesn't require any lock, just assumes we're a user.
      */
-    PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
+    PPGMR0DYNMAP        pThis       = g_pPGMR0DynMap;
     if (!pThis)
         return VINF_SUCCESS;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
@@ -1398,8 +1398,8 @@ VMMR0DECL(int) PGMR0DynMapAssertIntegrity(void)
         return VERR_INVALID_PARAMETER;
 
 
-    int             rc = VINF_SUCCESS;
-    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+    int                 rc          = VINF_SUCCESS;
+    RTSPINLOCKTMP       Tmp         = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
 
 #define CHECK_RET(expr, a) \
@@ -1529,8 +1529,8 @@ DECLINLINE(void) pgmDynMapFlushAutoSetWorker(PPGMMAPSET pSet, uint32_t cEntries)
     if (    cEntries != 0
         &&  RT_LIKELY(cEntries <= RT_ELEMENTS(pSet->aEntries)))
     {
-        PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
-        RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+        PPGMR0DYNMAP    pThis   = g_pPGMR0DynMap;
+        RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
         RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
 
         uint32_t i = cEntries;
@@ -1634,8 +1634,8 @@ VMMDECL(void) PGMDynMapMigrateAutoSet(PVMCPU pVCpu)
             AssertMsg(i <= RT_ELEMENTS(pSet->aEntries), ("%#x (%u)\n", i, i));
             if (i != 0 && RT_LIKELY(i <= RT_ELEMENTS(pSet->aEntries)))
             {
-                PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
-                RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+                PPGMR0DYNMAP    pThis  = g_pPGMR0DynMap;
+                RTSPINLOCKTMP   Tmp    = RTSPINLOCKTMP_INITIALIZER;
                 RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
 
                 while (i-- > 0)

@@ -456,7 +456,7 @@ static DECLCALLBACK(void) rtTimerLnxStartAllOnCpu(RTCPUID idCpu, void *pvUser1, 
  */
 static int rtTimerLnxStartAll(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArgs)
 {
-    RTSPINLOCKTMP   Tmp;
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
     RTCPUID         iCpu;
     RTCPUSET        OnlineSet;
     RTCPUSET        OnlineSet2;
@@ -524,8 +524,8 @@ static int rtTimerLnxStartAll(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArgs
  */
 static int rtTimerLnxStopAll(PRTTIMER pTimer)
 {
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
     RTCPUID         iCpu;
-    RTSPINLOCKTMP   Tmp;
 
 
     /*
@@ -586,7 +586,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpStartOnCpu(RTCPUID idCpu, void *pvUser1,
     if (    hSpinlock != NIL_RTSPINLOCK
         &&  pTimer->u32Magic == RTTIMER_MAGIC)
     {
-        RTSPINLOCKTMP Tmp;
+        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
         RTSpinlockAcquire(hSpinlock, &Tmp);
 
         if (    !ASMAtomicUoReadBool(&pTimer->fSuspended)
@@ -612,10 +612,10 @@ static DECLCALLBACK(void) rtTimerLinuxMpStartOnCpu(RTCPUID idCpu, void *pvUser1,
  */
 static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser)
 {
-    PRTTIMER pTimer = (PRTTIMER)pvUser;
+    PRTTIMER            pTimer = (PRTTIMER)pvUser;
     PRTTIMERLNXSUBTIMER pSubTimer = &pTimer->aSubTimers[idCpu];
-    RTSPINLOCK hSpinlock;
-    RTSPINLOCKTMP Tmp;
+    RTSPINLOCK          hSpinlock;
+    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     Assert(idCpu < pTimer->cCpus);
 

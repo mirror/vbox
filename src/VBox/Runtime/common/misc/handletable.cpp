@@ -130,7 +130,7 @@ RT_EXPORT_SYMBOL(RTHandleTableCreate);
 RTDECL(int) RTHandleTableDestroy(RTHANDLETABLE hHandleTable, PFNRTHANDLETABLEDELETE pfnDelete, void *pvUser)
 {
     PRTHANDLETABLEINT   pThis;
-    RTSPINLOCKTMP       Tmp;
+    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
     uint32_t            i1;
     uint32_t            i;
 
