@@ -101,6 +101,8 @@ __FBSDID("$FreeBSD: src/sys/netinet/libalias/alias_ftp.c,v 1.29.2.1.4.1 2009/04/
 # include <slirp.h>
 # include "alias_local.h"
 # include "alias_mod.h"
+# define isspace(ch)    RT_C_IS_SPACE(ch)
+# define isdigit(ch)    RT_C_IS_DIGIT(ch)
 #endif /* VBOX */
 
 #define FTP_CONTROL_PORT_NUMBER 21
