@@ -69,11 +69,11 @@
 /**
  * Optimization for PAE page tables that are modified often
  */
-#if 0 /* disabled again while debugging */
+//#if 0 /* disabled again while debugging */
 #ifndef IN_RC
 # define PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
 #endif
-#endif
+//#endif
 
 /**
  * Sync N pages instead of a whole page table
