@@ -10235,114 +10235,103 @@ HRESULT SessionMachine::lockMedia()
                  || mData->mMachineState == MachineState_TeleportingFrom, E_FAIL);
 
     typedef std::list <ComPtr<IMedium> > MediaList;
-    MediaList mediaToCheck;
-    MediumState_T mediaState;
 
     try
     {
         HRESULT rc = S_OK;
 
-        /* lock all medium objects attached to the VM */
+        ErrorInfoKeeper eik(true /* aIsNull */);
+        MultiResult mrc(S_OK);
+
+        /* Lock all medium objects attached to the VM.
+         * Get status for inaccessible media as well. */
         for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
              it != mMediaData->mAttachments.end();
              ++it)
         {
             DeviceType_T devType = (*it)->type();
-            ComObjPtr<Medium> hd = (*it)->medium();
+            ComObjPtr<Medium> medium = (*it)->medium();
 
             bool first = true;
 
             /** @todo split out the media locking, and put it into
              * MediumImpl.cpp, as it needs this functionality too. */
-            while (!hd.isNull())
+            while (!medium.isNull())
             {
+                MediumState_T mediumState = medium->state();
+
+                /* accessibility check must be first, otherwise locking
+                 * interferes with getting the medium state. */
+                if (mediumState == MediumState_Inaccessible)
+                {
+                    rc = medium->COMGETTER(State)(&mediumState);
+                    CheckComRCThrowRC(rc);
+
+                    if (mediumState == MediumState_Inaccessible)
+                    {
+                        Bstr error;
+                        rc = medium->COMGETTER(LastAccessError)(error.asOutParam());
+                        CheckComRCThrowRC(rc);
+
+                        Bstr loc;
+                        rc = medium->COMGETTER(Location)(loc.asOutParam());
+                        CheckComRCThrowRC(rc);
+
+                        /* collect multiple errors */
+                        eik.restore();
+
+                        /* be in sync with MediumBase::setStateError() */
+                        Assert(!error.isEmpty());
+                        mrc = setError(E_FAIL,
+                                       tr("Medium '%ls' is not accessible. %ls"),
+                                       loc.raw(),
+                                       error.raw());
+
+                        eik.fetch();
+                    }
+                }
+
                 if (first)
                 {
                     if (devType != DeviceType_DVD)
                     {
                         /* HardDisk and Floppy medium must be locked for writing */
-                        rc = hd->LockWrite(&mediaState);
+                        rc = medium->LockWrite(NULL);
                         CheckComRCThrowRC(rc);
                     }
                     else
                     {
                         /* DVD medium must be locked for reading */
-                        rc = hd->LockRead(&mediaState);
+                        rc = medium->LockRead(NULL);
                         CheckComRCThrowRC(rc);
                     }
 
-                    mData->mSession.mLockedMedia.push_back (
-                        Data::Session::LockedMedia::value_type (
-                            ComPtr<IMedium> (hd), true));
+                    mData->mSession.mLockedMedia.push_back(
+                        Data::Session::LockedMedia::value_type(
+                            ComPtr<IMedium>(medium), true));
 
                     first = false;
                 }
                 else
                 {
-                    rc = hd->LockRead (&mediaState);
+                    rc = medium->LockRead(NULL);
                     CheckComRCThrowRC(rc);
 
-                    mData->mSession.mLockedMedia.push_back (
-                        Data::Session::LockedMedia::value_type (
-                            ComPtr<IMedium> (hd), false));
+                    mData->mSession.mLockedMedia.push_back(
+                        Data::Session::LockedMedia::value_type(
+                            ComPtr<IMedium>(medium), false));
                 }
 
-                if (mediaState == MediumState_Inaccessible)
-                    mediaToCheck.push_back (ComPtr<IMedium> (hd));
 
                 /* no locks or callers here since there should be no way to
                  * change the hard disk parent at this point (as it is still
                  * attached to the machine) */
-                hd = hd->parent();
-            }
-        }
-
-        /* SUCCEEDED locking all media, now check accessibility */
-
-        ErrorInfoKeeper eik (true /* aIsNull */);
-        MultiResult mrc (S_OK);
-
-        /* perform a check of inaccessible media deferred above */
-        for (MediaList::const_iterator
-             it = mediaToCheck.begin();
-             it != mediaToCheck.end(); ++it)
-        {
-            MediumState_T mediaState;
-            rc = (*it)->COMGETTER(State) (&mediaState);
-            CheckComRCThrowRC(rc);
-
-            Assert (mediaState == MediumState_LockedRead ||
-                    mediaState == MediumState_LockedWrite);
-
-            /* Note that we locked the medium already, so use the error
-             * value to see if there was an accessibility failure */
-
-            Bstr error;
-            rc = (*it)->COMGETTER(LastAccessError) (error.asOutParam());
-            CheckComRCThrowRC(rc);
-
-            if (!error.isEmpty())
-            {
-                Bstr loc;
-                rc = (*it)->COMGETTER(Location) (loc.asOutParam());
-                CheckComRCThrowRC(rc);
-
-                /* collect multiple errors */
-                eik.restore();
-
-                /* be in sync with MediumBase::setStateError() */
-                Assert (!error.isEmpty());
-                mrc = setError(E_FAIL,
-                               tr("Medium '%ls' is not accessible. %ls"),
-                               loc.raw(),
-                               error.raw());
-
-                eik.fetch();
+                medium = medium->parent();
             }
         }
 
         eik.restore();
-        CheckComRCThrowRC((HRESULT) mrc);
+        CheckComRCThrowRC((HRESULT)mrc);
     }
     catch (HRESULT aRC)
     {
