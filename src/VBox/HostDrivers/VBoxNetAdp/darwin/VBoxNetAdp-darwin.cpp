@@ -400,7 +400,7 @@ static int VBoxNetAdpDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFla
         }
 
         default:
-            OSDBGPRINT(("VBoxNetAdpDarwinIOCtl: unknown command %x.\n", IOCBASECMD(iCmd)));
+            OSDBGPRINT(("VBoxNetAdpDarwinIOCtl: unknown command %lx.\n", IOCBASECMD(iCmd)));
             return EINVAL;
     }
 
