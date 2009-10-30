@@ -6982,6 +6982,8 @@ void Machine::fixupMedia(bool aCommit, bool aOnline /*= false*/)
 
     AutoWriteLock alock(this);
 
+    LogFlowThisFunc(("Entering, aCommit=%d, aOnline=%d\n", aCommit, aOnline));
+
     HRESULT rc = S_OK;
 
     /* no attach/detach operations -- nothing to do */
@@ -7002,15 +7004,23 @@ void Machine::fixupMedia(bool aCommit, bool aOnline /*= false*/)
             pAttach->commit();
 
             Medium* pMedium = pAttach->medium();
+            bool fImplicit = pAttach->isImplicit();
+
+            LogFlowThisFunc(("Examining current medium '%s' (implicit: %d)\n",
+                             (pMedium) ? pMedium->name().raw() : "NULL",
+                             fImplicit));
 
             /** @todo convert all this Machine-based voodoo to MediumAttachment
             * based commit logic. */
-            if (pAttach->isImplicit())
+            if (fImplicit)
             {
                 /* convert implicit attachment to normal */
                 pAttach->setImplicit(false);
 
-                if (aOnline && pMedium && pAttach->type() == DeviceType_HardDisk)
+                if (    aOnline
+                     && pMedium
+                     && pAttach->type() == DeviceType_HardDisk
+                   )
                 {
                     rc = pMedium->LockWrite(NULL);
                     AssertComRC(rc);
@@ -7052,6 +7062,8 @@ void Machine::fixupMedia(bool aCommit, bool aOnline /*= false*/)
                     MediumAttachment *pOldAttach = *it;
                     if (pOldAttach->medium().equalsTo(pMedium))
                     {
+                        LogFlowThisFunc(("--> medium '%s' was attached before, will not remove\n", pMedium->name().raw()));
+
                         /* yes: remove from old to avoid de-association */
                         oldAtts.erase(oldIt);
                         break;
@@ -7072,11 +7084,14 @@ void Machine::fixupMedia(bool aCommit, bool aOnline /*= false*/)
 
             if (pMedium)
             {
+                LogFlowThisFunc(("detaching medium '%s' from machine\n", pMedium->name().raw()));
+
                 /* now de-associate from the current machine state */
                 rc = pMedium->detachFrom(mData->mUuid);
                 AssertComRC(rc);
 
-                if (aOnline && pAttach->type() == DeviceType_HardDisk)
+                if (    aOnline
+                     && pAttach->type() == DeviceType_HardDisk)
                 {
                     /* unlock since not used anymore */
                     MediumState_T state;
@@ -9966,7 +9981,6 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 
     HRESULT rc = S_OK;
 
-    bool errorInSubtask = false;
     bool stateRestored = false;
 
     try
@@ -10062,31 +10076,38 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                     mData->mCurrentSnapshot = aTask.m_pSnapshot;
                 }
                 else
-                {
                     throw setError(E_FAIL,
                                    tr("Could not copy the state file '%s' to '%s' (%Rrc)"),
                                    snapStateFilePath.raw(),
                                    stateFilePath.raw(),
                                    vrc);
-                }
             }
         }
 
         /* grab differencing hard disks from the old attachments that will
          * become unused and need to be auto-deleted */
 
-        std::list< ComObjPtr<Medium> > diffs;
+        std::list< ComObjPtr<MediumAttachment> > llDiffAttachmentsToDelete;
 
         for (MediaData::AttachmentList::const_iterator it = mMediaData.backedUpData()->mAttachments.begin();
              it != mMediaData.backedUpData()->mAttachments.end();
              ++it)
         {
-            ComObjPtr<Medium> hd = (*it)->medium();
+            ComObjPtr<MediumAttachment> pAttach = *it;
+            ComObjPtr<Medium> pMedium = pAttach->medium();
 
             /* while the hard disk is attached, the number of children or the
              * parent cannot change, so no lock */
-            if (!hd.isNull() && !hd->parent().isNull() && hd->children().size() == 0)
-                diffs.push_back (hd);
+            if (    !pMedium.isNull()
+                 && pAttach->type() == DeviceType_HardDisk
+                 && !pMedium->parent().isNull()
+                 && pMedium->children().size() == 0
+               )
+            {
+                LogFlowThisFunc(("Picked differencing image '%s' for deletion\n", pMedium->name().raw()));
+
+                llDiffAttachmentsToDelete.push_back(pAttach);
+            }
         }
 
         int saveFlags = 0;
@@ -10113,46 +10134,55 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         Assert(RTTimeSpecGetMilli (&snapshotTimeStamp) != 0);
         mData->mLastStateChange = snapshotTimeStamp;
 
-        /* save all settings, reset the modified flag and commit. Note that we
-         * do so even if the subtask failed (errorInSubtask=true) because we've
-         * already committed machine data and deleted old diffs before
-         * discarding the snapshot so there is no way to rollback */
-        HRESULT rc2 = saveSettings(SaveS_ResetCurStateModified | saveFlags);
+        // detach the current-state diffs that we detected above and build a list of
+        // images to delete _after_ saveSettings()
 
-        /// @todo NEWMEDIA return multiple errors
-        if (errorInSubtask)
-            throw rc;
+        std::list< ComObjPtr<Medium> > llDiffsToDelete;
 
-        rc = rc2;
-
-        if (SUCCEEDED(rc))
+        for (std::list< ComObjPtr<MediumAttachment> >::iterator it = llDiffAttachmentsToDelete.begin();
+             it != llDiffAttachmentsToDelete.end();
+             ++it)
         {
-            /* now, delete the unused diffs (only on success!) and uninit them*/
-            for (std::list< ComObjPtr<Medium> >::const_iterator it = diffs.begin();
-                 it != diffs.end();
-                 ++it)
-            {
-                /// @todo for now, we ignore errors since we've already
-                /// discarded and therefore cannot fail. Later, we may want to
-                /// report a warning through the Progress object
-                HRESULT rc2 = (*it)->deleteStorageAndWait();
-                if (SUCCEEDED(rc2))
-                    (*it)->uninit();
-            }
+            ComObjPtr<MediumAttachment> pAttach = *it;        // guaranteed to have only attachments where medium != NULL
+            ComObjPtr<Medium> pMedium = pAttach->medium();
+
+            AutoWriteLock mlock(pMedium);
+
+            LogFlowThisFunc(("Detaching old current state in differencing image '%s'\n", pMedium->name().raw()));
+
+            mMediaData->mAttachments.remove(pAttach);
+            pMedium->detachFrom(mData->mUuid);
+
+            llDiffsToDelete.push_back(pMedium);
+        }
+
+        /* save all settings, reset the modified flag and commit */
+        rc = saveSettings(SaveS_ResetCurStateModified | saveFlags);
+
+        for (std::list< ComObjPtr<Medium> >::iterator it = llDiffsToDelete.begin();
+             it != llDiffsToDelete.end();
+             ++it)
+        {
+            ComObjPtr<Medium> &pMedium = *it;
+            LogFlowThisFunc(("Deleting old current state in differencing image '%s'\n", pMedium->name().raw()));
+
+            HRESULT rc2 = pMedium->deleteStorageAndWait();
+            if (SUCCEEDED(rc2))
+                pMedium->uninit();
         }
     }
-    catch (HRESULT aRC) { rc = aRC; }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+    }
 
-    if (FAILED (rc))
+    if (FAILED(rc))
     {
         /* preserve existing error info */
         ErrorInfoKeeper eik;
 
-        if (!errorInSubtask)
-        {
-            /* undo all changes on failure unless the subtask has done so */
-            rollback (false /* aNotify */);
-        }
+        /* undo all changes on failure unless the subtask has done so */
+        rollback(false /* aNotify */);
 
         if (!stateRestored)
         {
@@ -10162,11 +10192,8 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         }
     }
 
-    if (!errorInSubtask)
-    {
-        /* set the result (this will try to fetch current error info on failure) */
-        aTask.progress->notifyComplete (rc);
-    }
+    /* set the result (this will try to fetch current error info on failure) */
+    aTask.progress->notifyComplete(rc);
 
     if (SUCCEEDED(rc))
         mParent->onSnapshotDiscarded(mData->mUuid, Guid());

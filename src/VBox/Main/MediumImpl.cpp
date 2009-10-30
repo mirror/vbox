@@ -3983,16 +3983,15 @@ HRESULT Medium::deleteStorage(ComObjPtr <Progress> *aProgress, bool aWait)
 
     AutoWriteLock alock(this);
 
-    if (!(m->formatObj->capabilities() &
-          (MediumFormatCapabilities_CreateDynamic |
-           MediumFormatCapabilities_CreateFixed)))
+    if (    !(m->formatObj->capabilities() & (   MediumFormatCapabilities_CreateDynamic
+                                               | MediumFormatCapabilities_CreateFixed)))
         return setError(VBOX_E_NOT_SUPPORTED,
                         tr("Hard disk format '%ls' does not support storage deletion"),
                         m->format.raw());
 
     /* Note that we are fine with Inaccessible state too: a) for symmetry with
      * create calls and b) because it doesn't really harm to try, if it is
-     * really inaccessibke, the delete operation will fail anyway. Accepting
+     * really inaccessible, the delete operation will fail anyway. Accepting
      * Inaccessible state is especially important because all registered hard
      * disks are initially Inaccessible upon VBoxSVC startup until
      * COMGETTER(State) is called. */
