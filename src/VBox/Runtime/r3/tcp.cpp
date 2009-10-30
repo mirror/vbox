@@ -998,7 +998,7 @@ static int rtTcpClose(RTSOCKET Sock, const char *pszMsg, bool fTryGracefulShutdo
                 else if (rc != VINF_SUCCESS)
                     break;
                 {
-                    uint8_t abBitBucket[16*_1KB];
+                    uint8_t abBitBucket[16*_1K];
                     ssize_t cbBytesRead = recv(Sock, abBitBucket, sizeof(abBitBucket), MSG_NOSIGNAL);
                     if (cbBytesRead == 0)
                         break; /* orderly shutdown in progress */
