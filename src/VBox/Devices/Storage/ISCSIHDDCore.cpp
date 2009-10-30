@@ -489,6 +489,12 @@ DECLINLINE(int) iscsiError(PISCSIIMAGE pImage, int rc, RT_SRC_POS_DECL,
         pImage->pInterfaceErrorCallbacks->pfnError(pImage->pInterfaceError->pvUser, rc, RT_SRC_POS_ARGS,
                                                    pszFormat, va);
     va_end(va);
+
+#ifdef LOG_ENABLED
+    va_start(va, pszFormat);
+    Log(("iscsiError(%d/%s): %N\n", iLine, pszFunction, pszFormat, &va));
+    va_end(va);
+#endif
     return rc;
 }
 
@@ -2595,9 +2601,11 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
      */
     uint8_t cdb_cap[16];
 
-    memset(cdb_cap, '\0', sizeof(cdb_cap));
+    RT_ZERO(data12);
+    RT_ZERO(cdb_cap);
     cdb_cap[0] = SCSI_SERVICE_ACTION_IN_16;
     cdb_cap[1] = SCSI_SVC_ACTION_IN_READ_CAPACITY_16;   /* subcommand */
+    cdb_cap[10+3] = sizeof(data12);                     /* allocation length (dword) */
 
     sr.enmXfer = SCSIXFER_FROM_TARGET;
     sr.cbCmd = sizeof(cdb_cap);
@@ -2617,10 +2625,10 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
         pImage->cVolume++;
         pImage->cbSector = RT_BE2H_U32(*(uint32_t *)&data12[8]);
         pImage->cbSize = pImage->cVolume * pImage->cbSector;
-        if (pImage->cVolume == 0 || pImage->cbSector == 0)
+        if (pImage->cVolume == 0 || pImage->cbSector != 512 || pImage->cbSize < pImage->cVolume)
         {
             rc = iscsiError(pImage, VERR_VD_ISCSI_INVALID_TYPE,
-                            RT_SRC_POS, N_("iSCSI: target address %s, target name %s, SCSI LUN %lld reports media sector count=%lu sector size=%lu"),
+                            RT_SRC_POS, N_("iSCSI: target address %s, target name %s, SCSI LUN %lld reports media sector count=%llu sector size=%u"),
                             pImage->pszTargetAddress, pImage->pszTargetName,
                             pImage->LUN, pImage->cVolume, pImage->cbSector);
         }
@@ -2629,6 +2637,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     {
         uint8_t cdb_capfb[10];
 
+        RT_ZERO(data8);
         cdb_capfb[0] = SCSI_READ_CAPACITY;
         cdb_capfb[1] = 0;   /* reserved */
         cdb_capfb[2] = 0;   /* reserved */
@@ -2657,10 +2666,10 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
             pImage->cVolume++;
             pImage->cbSector = (data8[4] << 24) | (data8[5] << 16) | (data8[6] << 8) | data8[7];
             pImage->cbSize = pImage->cVolume * pImage->cbSector;
-            if (pImage->cVolume == 0 || pImage->cbSector == 0)
+            if (pImage->cVolume == 0 || pImage->cbSector != 512)
             {
                 rc = iscsiError(pImage, VERR_VD_ISCSI_INVALID_TYPE,
-                                RT_SRC_POS, N_("iSCSI: fallback capacity detectio for target address %s, target name %s, SCSI LUN %lld reports media sector count=%lu sector size=%lu"),
+                                RT_SRC_POS, N_("iSCSI: fallback capacity detectio for target address %s, target name %s, SCSI LUN %lld reports media sector count=%llu sector size=%u"),
                                 pImage->pszTargetAddress, pImage->pszTargetName,
                                 pImage->LUN, pImage->cVolume, pImage->cbSector);
             }
