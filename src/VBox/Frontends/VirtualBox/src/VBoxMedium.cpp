@@ -117,7 +117,8 @@ void VBoxMedium::refresh()
                 }
             }
 
-            Assert (mParent != NULL && mParent->mMedium == parent);
+//             Assert(mParent != NULL);
+//             Assert(mParent->mMedium == parent);
         }
     }
     else
