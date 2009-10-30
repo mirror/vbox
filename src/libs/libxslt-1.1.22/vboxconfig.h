@@ -1,7 +1,5 @@
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
-#if defined(RT_OS_LINUX)
-
 /* #undef HAVE_ISINF */
 /* #undef HAVE_ISNAN */
 #define HAVE_POW 1
@@ -16,7 +14,9 @@
 #define HAVE_ASCTIME 1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
+#if defined(RT_OS_LINUX)
 #define HAVE_DLFCN_H 1
+#endif 
 
 /* Define to 1 if you have the <float.h> header file. */
 #define HAVE_FLOAT_H 1
@@ -31,7 +31,9 @@
 #define HAVE_FTIME 1
 
 /* Define if gcrypt library is available. */
+#if defined(RT_OS_LINUX)
 #define HAVE_GCRYPT 1
+#endif 
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
@@ -88,7 +90,9 @@
 #define HAVE_STDLIB_H 1
 
 /* Define to 1 if you have the <strings.h> header file. */
+#if defined(RT_OS_LINUX)
 #define HAVE_STRINGS_H 1
+#endif 
 
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
@@ -162,4 +166,3 @@
 /* Win32 Std C name mangling work-around */
 /* #undef vsnprintf */
 
-#endif
