@@ -2859,6 +2859,9 @@ DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, un
             fResume = false;
             break;
 
+        case VMSTATE_RUNNING_LS:
+            return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot change drive during live migration"));
+
         default:
             AssertMsgFailedReturn(("enmVMState=%d\n", enmVMState), VERR_ACCESS_DENIED);
     }
@@ -3078,33 +3081,42 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
              * Find the pcnet instance, get the config interface and update
              * the link state.
              */
-            PPDMIBASE pBase;
-            const char *pszAdapterName = "pcnet";
-#ifdef VBOX_WITH_E1000
-            /*
-             * Perhaps it would be much wiser to wrap both 'pcnet' and 'e1000'
-             * into generic 'net' device.
-             */
             NetworkAdapterType_T adapterType;
             rc = aNetworkAdapter->COMGETTER(AdapterType)(&adapterType);
             AssertComRC(rc);
-            if (adapterType == NetworkAdapterType_I82540EM ||
-                adapterType == NetworkAdapterType_I82543GC ||
-                adapterType == NetworkAdapterType_I82545EM)
-                pszAdapterName = "e1000";
-#ifdef VBOX_WITH_VIRTIO
-            if (adapterType == NetworkAdapterType_Virtio)
-                pszAdapterName = "virtio";
-#endif /* VBOX_WITH_VIRTIO */
+            const char *pszAdapterName = NULL;
+            switch (adapterType)
+            {
+                case NetworkAdapterType_Am79C970A:
+                case NetworkAdapterType_Am79C973:
+                    pszAdapterName = "e1000";
+                    break;
+#ifdef VBOX_WITH_E1000
+                case NetworkAdapterType_I82540EM:
+                case NetworkAdapterType_I82543GC:
+                case NetworkAdapterType_I82545EM:
+                    pszAdapterName = "e1000";
+                    break;
 #endif
-            int vrc = PDMR3QueryDeviceLun(mpVM, pszAdapterName,
-                                          (unsigned) ulInstance, 0, &pBase);
+#ifdef VBOX_WITH_VIRTIO
+                case NetworkAdapterType_Virtio:
+                    pszAdapterName = "virtio";
+                    break;
+#endif
+                default:
+                    AssertFailed();
+                    pszAdapterName = "unknown";
+                    break;
+            }
+
+            PPDMIBASE pBase;
+            int vrc = PDMR3QueryDeviceLun(mpVM, pszAdapterName, ulInstance, 0, &pBase);
             ComAssertRC(vrc);
             if (RT_SUCCESS(vrc))
             {
                 Assert(pBase);
-                PPDMINETWORKCONFIG pINetCfg = (PPDMINETWORKCONFIG) pBase->
-                    pfnQueryInterface(pBase, PDMINTERFACE_NETWORK_CONFIG);
+                PPDMINETWORKCONFIG pINetCfg;
+                pINetCfg = (PPDMINETWORKCONFIG)pBase->pfnQueryInterface(pBase, PDMINTERFACE_NETWORK_CONFIG);
                 if (pINetCfg)
                 {
                     Log(("Console::onNetworkAdapterChange: setting link state to %d\n",
@@ -3118,9 +3130,8 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
                 if (RT_SUCCESS(vrc) && changeAdapter)
                 {
                     VMSTATE enmVMState = VMR3GetState(mpVM);
-
-                    if (   enmVMState == VMSTATE_RUNNING
-                        || enmVMState == VMSTATE_SUSPENDED)
+                    if (    enmVMState == VMSTATE_RUNNING    /** @todo LiveMigration: Forbit or deal correctly with the _LS variants */
+                        ||  enmVMState == VMSTATE_SUSPENDED)
                     {
                         if (fTraceEnabled && fCableConnected && pINetCfg)
                         {
@@ -3292,7 +3303,7 @@ DECLCALLBACK(int) Console::changeNetworkAttachment(Console *pThis,
             break;
 
         default:
-            AssertMsgFailedReturn(("enmVMState=%d\n", enmVMState), VERR_ACCESS_DENIED);
+            AssertLogRelMsgFailedReturn(("enmVMState=%d\n", enmVMState), VERR_ACCESS_DENIED);
     }
 
     int rc = VINF_SUCCESS;
