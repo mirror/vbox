@@ -114,6 +114,14 @@ RTR0DECL(int) RTR0Init(unsigned fReserved);
  * Terminates the ring-0 driver runtime library.
  */
 RTR0DECL(void) RTR0Term(void);
+
+/**
+ * Forcibily terminates the ring-0 driver runtime library.
+ *
+ * This should be used when statically linking the IPRT.  Module using dynamic
+ * linking shall use RTR0Term.  If you're not sure, use RTR0Term!
+ */
+RTR0DECL(void) RTR0TermForced(void);
 #endif
 
 #ifdef IN_RC

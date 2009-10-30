@@ -82,7 +82,7 @@ RTR0DECL(int) RTR0Init(unsigned fReserved)
     rc = rtR0InitNative();
     if (RT_SUCCESS(rc))
     {
-#if !defined(RT_OS_LINUX)
+#if !defined(RT_OS_LINUX) /** @todo implement thread2-r0drv-linux.c */
         rc = rtThreadInit();
 #endif
         if (RT_SUCCESS(rc))
@@ -90,17 +90,38 @@ RTR0DECL(int) RTR0Init(unsigned fReserved)
 #ifndef IN_GUEST /* play safe for now */
             rc = rtR0MpNotificationInit();
             if (RT_SUCCESS(rc))
+            {
                 rc = rtR0PowerNotificationInit();
-#endif
+                if (RT_SUCCESS(rc))
+                    return rc;
+                rtR0MpNotificationTerm();
+            }
+#else
             if (RT_SUCCESS(rc))
                 return rc;
+#endif
+#if !defined(RT_OS_LINUX) /** @todo implement thread2-r0drv-linux.c */
+            rtThreadTerm();
+#endif
         }
-
         rtR0TermNative();
     }
     return rc;
 }
 RT_EXPORT_SYMBOL(RTR0Init);
+
+
+static void rtR0Term(void)
+{
+#if !defined(RT_OS_LINUX) /** @todo implement thread2-r0drv-linux.c */
+    rtThreadTerm();
+#endif
+#ifndef IN_GUEST /* play safe for now */
+    rtR0PowerNotificationTerm();
+    rtR0MpNotificationTerm();
+#endif
+    rtR0TermNative();
+}
 
 
 /**
@@ -111,22 +132,20 @@ RTR0DECL(void) RTR0Term(void)
     int32_t cNewUsers;
     RT_ASSERT_PREEMPTIBLE();
 
-    /*
-     * Last user does the cleanup.
-     */
     cNewUsers = ASMAtomicDecS32(&g_crtR0Users);
     Assert(cNewUsers >= 0);
-    if (cNewUsers != 0)
-        return;
-
-#if !defined(RT_OS_LINUX)
-    rtThreadTerm();
-#endif
-#ifndef IN_GUEST /* play safe for now */
-    rtR0PowerNotificationTerm();
-    rtR0MpNotificationTerm();
-#endif
-    rtR0TermNative();
+    if (cNewUsers == 0)
+        rtR0Term();
 }
 RT_EXPORT_SYMBOL(RTR0Term);
+
+
+/* Note! Should *not* be exported since it's only for static linking. */
+RTR0DECL(void) RTR0TermForced(void)
+{
+    RT_ASSERT_PREEMPTIBLE();
+    AssertMsg(g_crtR0Users == 1, ("%d\n", g_crtR0Users));
+
+    rtR0Term();
+}
 
