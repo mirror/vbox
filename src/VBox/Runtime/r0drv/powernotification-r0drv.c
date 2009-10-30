@@ -81,9 +81,6 @@ static uint32_t volatile g_iRTPowerDoneBit;
  * This is increased whenever the list has been modified. The callback routine
  * make use of this to avoid having restart at the list head after each callback. */
 static uint32_t volatile g_iRTPowerGeneration;
-/** The number of RTPowerNotification users.
- * This is incremented on init and decremented on termination. */
-static uint32_t volatile g_cRTPowerUsers = 0;
 
 
 
@@ -91,8 +88,8 @@ static uint32_t volatile g_cRTPowerUsers = 0;
 RTDECL(int) RTPowerSignalEvent(RTPOWEREVENT enmEvent)
 {
     PRTPOWERNOTIFYREG pCur;
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSPINLOCK hSpinlock;
+    RTSPINLOCK        hSpinlock;
+    RTSPINLOCKTMP     Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     /*
      * This is a little bit tricky as we cannot be holding the spinlock
@@ -161,9 +158,9 @@ RT_EXPORT_SYMBOL(RTPowerSignalEvent);
 
 RTDECL(int) RTPowerNotificationRegister(PFNRTPOWERNOTIFICATION pfnCallback, void *pvUser)
 {
-    PRTPOWERNOTIFYREG pCur;
-    PRTPOWERNOTIFYREG pNew;
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    PRTPOWERNOTIFYREG   pCur;
+    PRTPOWERNOTIFYREG   pNew;
+    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     /*
      * Validation.
@@ -229,9 +226,9 @@ RT_EXPORT_SYMBOL(RTPowerNotificationRegister);
 
 RTDECL(int) RTPowerNotificationDeregister(PFNRTPOWERNOTIFICATION pfnCallback, void *pvUser)
 {
-    PRTPOWERNOTIFYREG pPrev;
-    PRTPOWERNOTIFYREG pCur;
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    PRTPOWERNOTIFYREG   pPrev;
+    PRTPOWERNOTIFYREG   pCur;
+    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     /*
      * Validation.
@@ -279,21 +276,15 @@ RT_EXPORT_SYMBOL(RTPowerNotificationDeregister);
 
 int rtR0PowerNotificationInit(void)
 {
-    int rc = VINF_SUCCESS;
-
-    if (ASMAtomicIncU32(&g_cRTPowerUsers) == 1)
+    int rc = RTSpinlockCreate((PRTSPINLOCK)&g_hRTPowerNotifySpinLock);
+    if (RT_SUCCESS(rc))
     {
-        rc = RTSpinlockCreate((PRTSPINLOCK)&g_hRTPowerNotifySpinLock);
-        if (RT_SUCCESS(rc))
-        {
-            /** @todo OS specific init here */
-            return rc;
+        /** @todo OS specific init here */
+        return rc;
 #if 0
-            RTSpinlockDestroy(g_hRTPowerNotifySpinLock);
-            g_hRTPowerNotifySpinLock = NIL_RTSPINLOCK;
+        RTSpinlockDestroy(g_hRTPowerNotifySpinLock);
+        g_hRTPowerNotifySpinLock = NIL_RTSPINLOCK;
 #endif
-        }
-        ASMAtomicDecU32(&g_cRTPowerUsers);
     }
     return rc;
 }
@@ -301,38 +292,32 @@ int rtR0PowerNotificationInit(void)
 
 void rtR0PowerNotificationTerm(void)
 {
-    RTSPINLOCK hSpinlock = g_hRTPowerNotifySpinLock;
-    if (hSpinlock != NIL_RTSPINLOCK)
+    PRTPOWERNOTIFYREG   pHead;
+    RTSPINLOCKTMP       Tmp       = RTSPINLOCKTMP_INITIALIZER;
+    RTSPINLOCK          hSpinlock = g_hRTPowerNotifySpinLock;
+    AssertReturnVoid(hSpinlock != NIL_RTSPINLOCK);
+
+    /** @todo OS specific term here */
+
+    /* pick up the list and the spinlock. */
+    RTSpinlockAcquire(hSpinlock, &Tmp);
+    ASMAtomicWriteSize(&g_hRTPowerNotifySpinLock, NIL_RTSPINLOCK);
+    pHead = g_pRTPowerCallbackHead;
+    g_pRTPowerCallbackHead = NULL;
+    ASMAtomicIncU32(&g_iRTPowerGeneration);
+    RTSpinlockRelease(hSpinlock, &Tmp);
+
+    /* free the list. */
+    while (pHead)
     {
-        AssertMsg(g_cRTPowerUsers > 0, ("%d\n", g_cRTPowerUsers));
-        if (ASMAtomicDecU32(&g_cRTPowerUsers) == 0)
-        {
-            PRTPOWERNOTIFYREG pHead;
-            RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+        PRTPOWERNOTIFYREG pFree = pHead;
+        pHead = pHead->pNext;
 
-            /** @todo OS specific term here */
-
-            /* pick up the list and the spinlock. */
-            RTSpinlockAcquire(hSpinlock, &Tmp);
-            ASMAtomicWriteSize(&g_hRTPowerNotifySpinLock, NIL_RTSPINLOCK);
-            pHead = g_pRTPowerCallbackHead;
-            g_pRTPowerCallbackHead = NULL;
-            ASMAtomicIncU32(&g_iRTPowerGeneration);
-            RTSpinlockRelease(hSpinlock, &Tmp);
-
-            /* free the list. */
-            while (pHead)
-            {
-                PRTPOWERNOTIFYREG pFree = pHead;
-                pHead = pHead->pNext;
-
-                pFree->pNext = NULL;
-                pFree->pfnCallback = NULL;
-                RTMemFree(pFree);
-            }
-
-            RTSpinlockDestroy(hSpinlock);
-        }
+        pFree->pNext = NULL;
+        pFree->pfnCallback = NULL;
+        RTMemFree(pFree);
     }
+
+    RTSpinlockDestroy(hSpinlock);
 }
 
