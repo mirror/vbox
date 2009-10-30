@@ -285,7 +285,7 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
         }
         else
             printf("VBoxDrv: failed to initialize device extension (rc=%d)\n", rc);
-        RTR0Term();
+        RTR0TermForced();
     }
     else
         printf("VBoxDrv: failed to initialize IPRT (rc=%d)\n", rc);
@@ -328,7 +328,7 @@ static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvD
     AssertRC(rc);
     g_Spinlock = NIL_RTSPINLOCK;
 
-    RTR0Term();
+    RTR0TermForced();
 
     memset(&g_DevExt, 0, sizeof(g_DevExt));
 #ifdef DEBUG
