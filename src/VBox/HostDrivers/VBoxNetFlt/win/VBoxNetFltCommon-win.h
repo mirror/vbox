@@ -470,19 +470,10 @@ typedef struct _RECV_RSVD
     PVOID           pBufToFree;
 } RECV_RSVD, *PRECV_RSVD;
 
-typedef struct _PT_RSVD
-{
-    union
-    {
-        RECV_RSVD RecvRsvd;
-        TRANSFERDATA_RSVD TransferDataRsvd;
-    } u;
-} PT_RSVD, *PPT_RSVD;
-
-
 #ifndef VBOX_NETFLT_ONDEMAND_BIND
 
 C_ASSERT(sizeof(RECV_RSVD) <= sizeof(((PNDIS_PACKET)0)->MiniportReserved));
+C_ASSERT(sizeof(TRANSFERDATA_RSVD) <= PROTOCOL_RESERVED_SIZE_IN_PACKET);
 #endif
 
 C_ASSERT(sizeof(NDIS_DEVICE_POWER_STATE) == sizeof(uint32_t));

@@ -2364,7 +2364,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinPtInitPADAPT(IN  PADAPT pAdapt)
                                    &pAdapt->hSendPacketPoolHandle,
                                    MIN_PACKET_POOL_SIZE,
                                    MAX_PACKET_POOL_SIZE - MIN_PACKET_POOL_SIZE,
-                                   sizeof(PT_RSVD));
+                                   sizeof(SEND_RSVD));
 
         if (Status != NDIS_STATUS_SUCCESS)
         {
