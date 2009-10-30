@@ -290,6 +290,7 @@ vboxNetFltWinPtDoUnbinding(PADAPT pAdapt, bool bOnUnbind)
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     uint64_t NanoTS = RTTimeSystemNanoTS();
 #endif
+    int cPPUsage;
 
     LogFlow(("==> vboxNetFltWinPtDoUnbinding: Adapt %p\n", pAdapt));
 
@@ -354,6 +355,14 @@ vboxNetFltWinPtDoUnbinding(PADAPT pAdapt, bool bOnUnbind)
     vboxNetFltWinWaitDereference(&pAdapt->MPState);
 
     vboxNetFltWinWaitDereference(&pAdapt->PTState);
+
+    /* check packet pool is empty */
+    cPPUsage = NdisPacketPoolUsage(pAdapt->hSendPacketPoolHandle);
+    Assert(cPPUsage == 0);
+    cPPUsage = NdisPacketPoolUsage(pAdapt->hRecvPacketPoolHandle);
+    Assert(cPPUsage == 0);
+    /* for debugging only, ignore the err in release */
+    NOREF(cPPUsage);
 
     while (ASMAtomicUoReadBool((volatile bool *)&pAdapt->bOutstandingRequests))
     {
@@ -1406,9 +1415,13 @@ vboxNetFltWinPtReceiveActive(
                 break;
             }
 
+            VBOXNETFLT_OOB_INIT(pPacket);
+
 #ifdef VBOX_LOOPBACK_USEFLAGS
             /* set "don't loopback" flags */
             NdisSetPacketFlags(pPacket, g_fPacketDontLoopBack);
+#else
+            NdisSetPacketFlags(pPacket, 0);
 #endif
 
             Status = vboxNetFltWinMemAlloc(&pMemBuf, cbBuf);
@@ -2158,6 +2171,7 @@ vboxNetFltWinPtPnPNetEventSetPower(
     NDIS_STATUS                    ReturnStatus;
     PVBOXNETFLTINS pNetFlt = PADAPT_2_PVBOXNETFLTINS(pAdapt);
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    int cPPUsage;
 
     ReturnStatus = NDIS_STATUS_SUCCESS;
 
@@ -2218,9 +2232,15 @@ vboxNetFltWinPtPnPNetEventSetPower(
         }
 #endif
 
-        Assert(NdisPacketPoolUsage(pAdapt->hSendPacketPoolHandle) == 0);
+        /* check packet pool is empty */
+        cPPUsage = NdisPacketPoolUsage(pAdapt->hSendPacketPoolHandle);
+        Assert(cPPUsage == 0);
+        cPPUsage = NdisPacketPoolUsage(pAdapt->hRecvPacketPoolHandle);
+        Assert(cPPUsage == 0);
+        /* for debugging only, ignore the err in release */
+        NOREF(cPPUsage);
+
 #ifndef VBOX_NETFLT_ONDEMAND_BIND
-        Assert(NdisPacketPoolUsage(pAdapt->hRecvPacketPoolHandle) == 0);
         Assert(pAdapt->bOutstandingRequests == FALSE);
 #endif
     }

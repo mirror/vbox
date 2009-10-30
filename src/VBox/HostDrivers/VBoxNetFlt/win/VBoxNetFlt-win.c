@@ -1715,6 +1715,11 @@ DECLHIDDEN(PNDIS_PACKET) vboxNetFltWinNdisPacketFromSG(PADAPT pAdapt, PINTNETSG 
         PNDIS_BUFFER pBuffer;
         PVOID pMemBuf;
 
+        /* @todo: generally we do not always need to zero-initialize the complete OOB data here, reinitialize only when/what we need,
+         * however we DO need to reset the status for the packets we indicate via NdisMIndicateReceivePacket to avoid packet loss
+         * in case the status contains NDIS_STATUS_RESOURCES */
+        VBOXNETFLT_OOB_INIT(pPacket);
+
         if(bCopyMemory)
         {
             fStatus = vboxNetFltWinMemAlloc(&pMemBuf, pSG->cbTotal);

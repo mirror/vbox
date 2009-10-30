@@ -478,6 +478,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinMpDoDeinitialization(PADAPT pAdapt)
     PVBOXNETFLTINS pNetFlt = PADAPT_2_PVBOXNETFLTINS(pAdapt);
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     uint64_t NanoTS = RTTimeSystemNanoTS();
+    int cPPUsage;
 
     Assert(vboxNetFltWinGetOpState(&pAdapt->MPState) == kVBoxNetDevOpState_Initialized);
     /*
@@ -495,6 +496,12 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinMpDoDeinitialization(PADAPT pAdapt)
     RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
 
     vboxNetFltWinWaitDereference(&pAdapt->MPState);
+
+    /* check packet pool is empty */
+    cPPUsage = NdisPacketPoolUsage(pAdapt->hRecvPacketPoolHandle);
+    Assert(cPPUsage == 0);
+    /* for debugging only, ignore the err in release */
+    NOREF(cPPUsage);
 
     vboxNetFltWinSetOpState(&pAdapt->MPState, kVBoxNetDevOpState_Deinitialized);
 
