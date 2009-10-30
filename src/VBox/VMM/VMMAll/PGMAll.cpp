@@ -2065,7 +2065,6 @@ VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
 }
 
 
-#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
 /**
  * Check if any pgm pool pages are marked dirty (not monitored)
  *
@@ -2076,7 +2075,6 @@ VMMDECL(bool) PGMHasDirtyPages(PVM pVM)
 {
     return pVM->pgm.s.CTX_SUFF(pPool)->cDirtyPages != 0;
 }
-#endif
 
 /**
  * Check if the PGM lock is currently taken.
