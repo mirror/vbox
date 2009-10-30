@@ -967,8 +967,10 @@ static bool vboxNetFltWinPtTransferDataCompleteActive(IN PADAPT pAdapt,
             PNDIS_PACKET pLb = vboxNetFltWinLbSearchLoopBack(pAdapt, pPacket, false);
             if(pLb)
             {
+#ifndef DEBUG_NETFLT_RECV_TRANSFERDATA
                 /* should not be here */
                 Assert(0);
+#endif
                 if(!vboxNetFltWinLbIsFromIntNet(pLb))
                 {
                     /* the packet is not from int net, need to pass it up to the host */

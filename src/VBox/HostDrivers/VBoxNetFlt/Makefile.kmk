@@ -50,9 +50,9 @@ else
  VBoxNetFlt_DEFS.win += VBOXNETFLT_STATIC_CONFIG
  VBoxNetFlt_SOURCES.win += win/VBoxNetFltMp-win.c
 endif
-#ifdef VBOX_LOOPBACK_USEFLAGS
+ifdef VBOX_LOOPBACK_USEFLAGS
  VBoxNetFlt_DEFS.win += VBOX_LOOPBACK_USEFLAGS
-#endif
+endif
 VBoxNetFlt_SOURCES = VBoxNetFlt.c
 VBoxNetFlt_LDFLAGS.darwin = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
 VBoxNetFlt_LDFLAGS.win.x86 = -Entry:DriverEntry@8
