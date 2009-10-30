@@ -964,6 +964,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 #if    PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)   \
     && PGM_SHW_TYPE != PGM_TYPE_NESTED \
     && PGM_SHW_TYPE != PGM_TYPE_EPT
+    int rc;
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
@@ -975,14 +976,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     if (pPool->cDirtyPages)
         pgmPoolResetDirtyPages(pVM);
 # endif
-
-# ifdef IN_RING0
-    /* No need to do anything else here as we monitor all page tables and invalidate on demand.
-     * This also applies to RC, but let's first eliminate it for VT-x/AMD-V only.
-     */
-    return VINF_SUCCESS;
-# else
-    int rc;
 
     /*
      * Get the shadow PD entry and skip out if this PD isn't present.
@@ -1366,7 +1359,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
     return rc;
-# endif /* !IN_RING0 */
 
 #else /* guest real and protected mode */
     /* There's no such thing as InvalidatePage when paging is disabled, so just ignore. */
