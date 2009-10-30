@@ -289,6 +289,7 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
 
                     pdmacFileCacheEntryRemoveFromList(pCurr);
                     pCache->cbCached -= pCurr->cbData;
+
                     RTMemFree(pCurr);
                 }
             }
@@ -1136,7 +1137,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
             size_t cbRemoved = pdmacFileCacheEvict(pCache, cbToReadAligned);
             RTCritSectLeave(&pCache->CritSect);
 
-            if (cbRemoved >= cbToRead)
+            if (cbRemoved >= cbToReadAligned)
             {
                 LogFlow(("Evicted %u bytes (%u requested). Creating new cache entry\n", cbRemoved, cbToReadAligned));
                 PPDMACFILECACHEENTRY pEntryNew = pdmacFileCacheEntryAlloc(pCache, pEndpoint, off, cbToReadAligned);
@@ -1144,12 +1145,11 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
 
                 RTCritSectEnter(&pCache->CritSect);
                 pdmacFileCacheEntryAddToList(&pCache->LruRecentlyUsed, pEntryNew);
+                pCache->cbCached += cbToReadAligned;
                 RTCritSectLeave(&pCache->CritSect);
 
                 pdmacFileEpCacheInsertEntry(pEndpointCache, pEntryNew);
                 uint32_t uBufOffset = 0;
-
-                pCache->cbCached += cbToReadAligned;
 
                 while (cbToRead)
                 {
@@ -1463,12 +1463,13 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
         else
         {
             /*
-             * No entry found. Write directly into file.
+             * No entry found. Try to create a new cache entry to store the data in and if that fails
+             * write directly to the file.
              */
             PPDMACFILECACHEENTRY pEntryBestFit = pdmacFileEpCacheGetCacheBestFitEntryByOffset(pEndpointCache, off);
 
-            LogFlow(("%sbest fit entry for off=%RTfoff (BestFit=%RTfoff BestFitEnd=%RTfoff BestFitSize=%u)\n",
-                     pEntryBestFit ? "" : "No ",
+            LogFlow(("%sest fit entry for off=%RTfoff (BestFit=%RTfoff BestFitEnd=%RTfoff BestFitSize=%u)\n",
+                     pEntryBestFit ? "B" : "No b",
                      off,
                      pEntryBestFit ? pEntryBestFit->Core.Key : 0,
                      pEntryBestFit ? pEntryBestFit->Core.KeyLast : 0,
@@ -1484,26 +1485,78 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
 
             cbWrite -= cbToWrite;
 
-            while (cbToWrite)
+            STAM_COUNTER_INC(&pCache->cMisses);
+            STAM_COUNTER_ADD(&pCache->StatWritten, cbToWrite);
+
+            RTCritSectEnter(&pCache->CritSect);
+            size_t cbRemoved = pdmacFileCacheEvict(pCache, cbToWrite);
+            RTCritSectLeave(&pCache->CritSect);
+
+            if (cbRemoved >= cbToWrite)
             {
-                PPDMACTASKFILE pIoTask = pdmacFileTaskAlloc(pEndpoint);
-                AssertPtr(pIoTask);
+                uint8_t *pbBuf;
+                PPDMACFILECACHEENTRY pEntryNew;
 
-                pIoTask->pEndpoint       = pEndpoint;
-                pIoTask->enmTransferType = PDMACTASKFILETRANSFER_WRITE;
-                pIoTask->Off             = off;
-                pIoTask->DataSeg.cbSeg   = RT_MIN(cbToWrite, cbSegLeft);
-                pIoTask->DataSeg.pvSeg   = pbSegBuf;
-                pIoTask->pvUser          = pTask;
-                pIoTask->pfnCompleted    = pdmacFileEpTaskCompleted;
+                LogFlow(("Evicted %u bytes (%u requested). Creating new cache entry\n", cbRemoved, cbToWrite));
 
-                off       += pIoTask->DataSeg.cbSeg;
-                cbToWrite -= pIoTask->DataSeg.cbSeg;
+                pEntryNew = pdmacFileCacheEntryAlloc(pCache, pEndpoint, off, cbToWrite);
+                AssertPtr(pEntryNew);
 
-                ADVANCE_SEGMENT_BUFFER(pIoTask->DataSeg.cbSeg);
+                RTCritSectEnter(&pCache->CritSect);
+                pdmacFileCacheEntryAddToList(&pCache->LruRecentlyUsed, pEntryNew);
+                pCache->cbCached += cbToWrite;
+                RTCritSectLeave(&pCache->CritSect);
 
-                /* Send it off to the I/O manager. */
-                pdmacFileEpAddTask(pEndpoint, pIoTask);
+                pdmacFileEpCacheInsertEntry(pEndpointCache, pEntryNew);
+
+                off   += cbToWrite;
+                pbBuf  = pEntryNew->pbData;
+
+                while (cbToWrite)
+                {
+                    size_t cbCopy = RT_MIN(cbSegLeft, cbToWrite);
+
+                    memcpy(pbBuf, pbSegBuf, cbCopy);
+
+                    ADVANCE_SEGMENT_BUFFER(cbCopy);
+
+                    cbToWrite -= cbCopy;
+                    pbBuf     += cbCopy;
+                    ASMAtomicSubS32(&pTask->cbTransferLeft, cbCopy);
+                }
+
+                pdmacFileCacheWriteToEndpoint(pEntryNew);
+                pdmacFileEpCacheEntryRelease(pEntryNew); /* it is protected by the I/O in progress flag now. */
+            }
+            else
+            {
+                /*
+                 * There is not enough free space in the cache.
+                 * Pass the request directly to the I/O manager.
+                 */
+                LogFlow(("Couldn't evict %u bytes from the cache (%u actually removed). Remaining request will be passed through\n", cbToWrite, cbRemoved));
+
+                while (cbToWrite)
+                {
+                    PPDMACTASKFILE pIoTask = pdmacFileTaskAlloc(pEndpoint);
+                    AssertPtr(pIoTask);
+
+                    pIoTask->pEndpoint       = pEndpoint;
+                    pIoTask->enmTransferType = PDMACTASKFILETRANSFER_WRITE;
+                    pIoTask->Off             = off;
+                    pIoTask->DataSeg.cbSeg   = RT_MIN(cbToWrite, cbSegLeft);
+                    pIoTask->DataSeg.pvSeg   = pbSegBuf;
+                    pIoTask->pvUser          = pTask;
+                    pIoTask->pfnCompleted    = pdmacFileEpTaskCompleted;
+
+                    off       += pIoTask->DataSeg.cbSeg;
+                    cbToWrite -= pIoTask->DataSeg.cbSeg;
+
+                    ADVANCE_SEGMENT_BUFFER(pIoTask->DataSeg.cbSeg);
+
+                    /* Send it off to the I/O manager. */
+                    pdmacFileEpAddTask(pEndpoint, pIoTask);
+                }
             }
         }
     }
