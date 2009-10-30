@@ -941,6 +941,12 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pVMCB->ctrl.u32InterceptException &= ~RT_BIT(X86_XCPT_DB);
 #endif
 
+    /* Check if we need to intercept invlpg; we catch all page table updates, so there's no need unless there are dirty (unmonitored) pages. */
+    if (PGMHasDirtyPages(pVM))
+        pVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_INVLPG;
+    else
+        pVMCB->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_INVLPG;
+
     /* Done. */
     pVCpu->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
 
