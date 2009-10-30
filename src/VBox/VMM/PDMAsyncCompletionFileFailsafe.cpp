@@ -57,7 +57,7 @@ static int pdmacFileAioMgrFailsafeProcessEndpointTaskList(PPDMASYNCCOMPLETIONEND
                 }
                 else
                 {
-                    if (RT_UNLIKELY((pCurr->Off + pCurr->DataSeg.cbSeg) > pEndpoint->cbFile))
+                    if (RT_UNLIKELY(pCurr->Off + pCurr->DataSeg.cbSeg > (RTFOFF)pEndpoint->cbFile))
                     {
                         ASMAtomicWriteU64(&pEndpoint->cbFile, pCurr->Off + pCurr->DataSeg.cbSeg);
                         RTFileSetSize(pEndpoint->File, pCurr->Off + pCurr->DataSeg.cbSeg);
@@ -66,7 +66,7 @@ static int pdmacFileAioMgrFailsafeProcessEndpointTaskList(PPDMASYNCCOMPLETIONEND
                     rc = RTFileWriteAt(pEndpoint->File, pCurr->Off,
                                        pCurr->DataSeg.pvSeg,
                                        pCurr->DataSeg.cbSeg,
-                                        NULL);
+                                       NULL);
                 }
 
                 break;
