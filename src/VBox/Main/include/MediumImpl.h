@@ -165,7 +165,6 @@ public:
     MediumState_T state() const;
     const Bstr& location() const;
     const Bstr& locationFull() const;
-//     const BackRefList& backRefs() const;
 
     const Guid* getFirstMachineBackrefId() const;
     const Guid* getFirstMachineBackrefSnapshotId() const;
@@ -260,13 +259,13 @@ public:
 
 protected:
 
-    // protected initializer/uninitializer for internal purposes only
-    HRESULT protectedInit(VirtualBox *aVirtualBox,
-                          CBSTR aLocation,
-                          const Guid &aId);
-    HRESULT protectedInit(VirtualBox *aVirtualBox,
-                          const settings::Medium &data);
-    void protectedUninit();
+    RWLockHandle* treeLock();
+
+    /** Reimplements VirtualBoxWithTypedChildren::childrenLock() to return
+     *  treeLock(). */
+    RWLockHandle *childrenLock() { return treeLock(); }
+
+private:
 
     HRESULT queryInfo();
 
@@ -277,15 +276,6 @@ protected:
      * mVirtualBox write lock.
      */
     HRESULT canClose();
-
-    /**
-     * Performs extra checks if the medium can be attached to the specified
-     * VM and shapshot at the given time and returns S_OK in this case.
-     * Otherwise, returns a respective error message. Called by attachTo() from
-     * within this object's AutoWriteLock.
-     */
-    HRESULT canAttach(const Guid & /* aMachineId */,
-                      const Guid & /* aSnapshotId */);
 
     /**
      * Unregisters this medium with mVirtualBox. Called by Close() from within
@@ -308,14 +298,6 @@ protected:
     HRESULT mergeTo(MergeChain *aChain,
                     ComObjPtr<Progress> *aProgress,
                     bool aWait);
-
-    RWLockHandle* treeLock();
-
-    /** Reimplements VirtualBoxWithTypedChildren::childrenLock() to return
-     *  treeLock(). */
-    RWLockHandle *childrenLock() { return treeLock(); }
-
-private:
 
     HRESULT setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat = Utf8Str());
     HRESULT setFormat(CBSTR aFormat);
