@@ -66,6 +66,19 @@ RT_C_DECLS_BEGIN
  */
 RTDECL(bool) RTFileExists(const char *pszPath);
 
+/**
+ * Queries the size of a file, given the path to it.
+ *
+ * Symbolic links will be resolved.
+ *
+ * @returns IPRT status code.
+ * @param   pszPath         The path to the file.
+ * @param   pcbFile         Where to return the file size (bytes).
+ *
+ * @sa      RTFileGetSize, RTPathQueryInfoEx.
+ */
+RTDECL(int) RTFileQuerySize(const char *pszPath, uint64_t *pcbFile);
+
 
 /** @name Open flags
  * @{ */
