@@ -34,6 +34,7 @@
 *******************************************************************************/
 #ifdef RT_OS_WINDOWS
 # include <winsock.h>
+# include <limits.h>
 #else /* !RT_OS_WINDOWS */
 # include <errno.h>
 # include <sys/stat.h>
