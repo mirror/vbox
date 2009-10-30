@@ -624,7 +624,7 @@ no_error:
             }
 
             rc = -EINVAL;
-            RTR0Term();
+            RTR0TermForced();
         }
         else
             rc = -EINVAL;
@@ -685,7 +685,7 @@ static void __exit VBoxDrvLinuxUnload(void)
      * Destroy GIP, delete the device extension and terminate IPRT.
      */
     supdrvDeleteDevExt(&g_DevExt);
-    RTR0Term();
+    RTR0TermForced();
 }
 
 
