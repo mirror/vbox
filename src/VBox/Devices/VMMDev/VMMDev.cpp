@@ -249,7 +249,9 @@ void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask)
     /*
      * Drop notifications if the VM is not running yet/anymore.
      */
-    if (PDMDevHlpVMState(pDevIns) != VMSTATE_RUNNING)
+    VMSTATE enmVMState = PDMDevHlpVMState(pDevIns);
+    if (    enmVMState != VMSTATE_RUNNING
+        &&  enmVMState != VMSTATE_RUNNING_LS)
         return;
 
     PDMCritSectEnter(&pVMMDevState->CritSect, VERR_SEM_BUSY);

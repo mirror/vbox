@@ -1843,7 +1843,9 @@ static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t cbT
     /*
      * Drop packets if the VM is not running yet/anymore.
      */
-    if (PDMDevHlpVMState(pDevIns) != VMSTATE_RUNNING)
+    VMSTATE enmVMState = PDMDevHlpVMState(pDevIns);
+    if (    enmVMState != VMSTATE_RUNNING
+        &&  enmVMState != VMSTATE_RUNNING_LS)
         return;
 
     Log(("#%d pcnetReceiveNoSync: size=%d\n", PCNET_INST_NR, cbToRecv));
@@ -4547,7 +4549,9 @@ static DECLCALLBACK(int) pcnetWaitReceiveAvail(PPDMINETWORKPORT pInterface, unsi
     rc = VERR_INTERRUPTED;
     ASMAtomicXchgBool(&pThis->fMaybeOutOfSpace, true);
     STAM_PROFILE_START(&pThis->StatRxOverflow, a);
-    while (RT_LIKELY(PDMDevHlpVMState(pThis->CTX_SUFF(pDevIns)) == VMSTATE_RUNNING))
+    VMSTATE enmVMState;
+    while (RT_LIKELY(   (enmVMState = PDMDevHlpVMState(pThis->CTX_SUFF(pDevIns))) == VMSTATE_RUNNING
+                     || enmVMState == VMSTATE_RUNNING_LS))
     {
         int rc2 = pcnetCanReceive(pThis);
         if (RT_SUCCESS(rc2))
