@@ -7,6 +7,8 @@
 # include "alias.h"
 # include "alias_local.h"
 # include "alias_mod.h"
+# define isdigit(ch)    RT_C_IS_DIGIT(ch)
+# define isalpha(ch)    RT_C_IS_ALPHA(ch)
 
 #define DNS_CONTROL_PORT_NUMBER 53
 /* see RFC 1035(4.1.1) */
