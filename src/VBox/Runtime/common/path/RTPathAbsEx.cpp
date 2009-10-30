@@ -56,52 +56,50 @@
  */
 RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
 {
-    if (pszBase && pszPath && !rtPathVolumeSpecLen(pszPath))
+    if (    pszBase 
+        &&  pszPath 
+        &&  !rtPathVolumeSpecLen(pszPath)
+       )
     {
 #if defined(RT_OS_WINDOWS)
         /* The format for very long paths is not supported. */
-        if (    (pszBase[0] == '/' || pszBase[0] == '\\')
-            &&  (pszBase[1] == '/' || pszBase[1] == '\\')
-            &&   pszBase[2] == '?'
-            &&  (pszBase[3] == '/' || pszBase[3] == '\\'))
+        if (    RTPATH_IS_SLASH(pszBase[0])
+            &&  RTPATH_IS_SLASH(pszBase[1])
+            &&  pszBase[2] == '?'
+            &&  RTPATH_IS_SLASH(pszBase[3])
+           )
             return VERR_INVALID_NAME;
 #endif
 
         /** @todo there are a couple of things which isn't 100% correct, although the
-         * current code will have to work for now - I don't have time to fix it right now.
+         * current code will have to do for now, no time to fix.
          *
          * 1) On Windows & OS/2 we confuse '/' with an abspath spec and will
          *    not necessarily resolve it on the right drive.
          * 2) A trailing slash in the base might cause UNC names to be created.
-         * 3) The lengths total doesn't have to be less than max length
-         *    if the pszPath starts with a slash.
          */
-        size_t cchBase = strlen(pszBase);
-        size_t cchPath = strlen(pszPath);
-        if (cchBase + cchPath >= RTPATH_MAX)
-            return VERR_FILENAME_TOO_LONG;
-
-        bool fRootSpec = pszPath[0] == '/'
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-            || pszPath[0] == '\\'
-#endif
-            ;
-        size_t cchVolSpec = rtPathVolumeSpecLen(pszBase);
-        char szPath[RTPATH_MAX];
-        if (fRootSpec)
+        size_t const cchPath = strlen(pszPath);
+        char         szTmpPath[RTPATH_MAX];
+        if (RTPATH_IS_SLASH(pszPath[0]))
         {
-            /* join the disk name from base and the path */
-            memcpy(szPath, pszBase, cchVolSpec);
-            strcpy(&szPath[cchVolSpec], pszPath);
+            /* join the disk name from base and the path (DOS systems only) */
+            size_t const cchVolSpec = rtPathVolumeSpecLen(pszBase);
+            if (cchVolSpec + cchPath + 1 > sizeof(szTmpPath))
+                return VERR_FILENAME_TOO_LONG;
+            memcpy(szTmpPath, pszBase, cchVolSpec);
+            memcpy(&szTmpPath[cchVolSpec], pszPath, cchPath + 1);
         }
         else
         {
             /* join the base path and the path */
-            strcpy(szPath, pszBase);
-            szPath[cchBase] = RTPATH_DELIMITER;
-            strcpy(&szPath[cchBase + 1], pszPath);
+            size_t const cchBase = strlen(pszBase);
+            if (cchBase + 1 + cchPath + 1 > sizeof(szTmpPath))
+                return VERR_FILENAME_TOO_LONG;
+            memcpy(szTmpPath, pszBase, cchBase);
+            szTmpPath[cchBase] = RTPATH_DELIMITER;
+            memcpy(&szTmpPath[cchBase + 1], pszPath, cchPath + 1);
         }
-        return RTPathAbs(szPath, pszAbsPath, cchAbsPath);
+        return RTPathAbs(szTmpPath, pszAbsPath, cchAbsPath);
     }
 
     /* Fallback to the non *Ex version */
