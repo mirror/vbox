@@ -60,9 +60,15 @@ int main(int argc, char *argv[])
             rc = 2;
             break;
         }
-        fseek(pFileIn, 0, SEEK_END);
+        int rc2 = fseek(pFileIn, 0, SEEK_END);
         long cbFileIn = ftell(pFileIn);
-        rewind(pFileIn);
+        int rc3 = fseek(pFileIn, 0, SEEK_SET);
+        if (rc3 == -1 || rc2 == -1 || cbFileIn < 0)
+        {
+            fprintf(stderr, "split-soapC: Seek failure.\n");
+            rc = 2;
+            break;
+        }
 
         if (!(pBuffer = (char*)malloc(cbFileIn + 1)))
         {
@@ -71,7 +77,7 @@ int main(int argc, char *argv[])
             break;
         }
 
-        if (fread(pBuffer, 1, cbFileIn, pFileIn) != cbFileIn)
+        if (fread(pBuffer, 1, cbFileIn, pFileIn) != (size_t)cbFileIn)
         {
             fprintf(stderr, "split-soapC: Failed to read %ld bytes from input file.\n", cbFileIn);
             rc = 2;
@@ -95,9 +101,9 @@ int main(int argc, char *argv[])
             {
                 /* construct output filename */
                 char szFilename[1024];
-                sprintf(szFilename, "%s/soapC-%u.cpp", argv[2], ++cFiles);
+                sprintf(szFilename, "%s/soapC-%lu.cpp", argv[2], ++cFiles);
                 szFilename[sizeof(szFilename)-1] = '\0';
-                printf("info: soapC-%u.cpp\n", cFiles);
+                printf("info: soapC-%lu.cpp\n", cFiles);
 
                 /* create output file */
                 if (!(pFileOut = fopen(szFilename, "wb")))
