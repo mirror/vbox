@@ -1503,7 +1503,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoStep1Cleanup(PVM pVM, PVMCPU pVCpu, 
     LogFlow(("vmR3LiveDoStep1Cleanup: pVM=%p pVCpu=%p/#%u\n", pVM, pVCpu, pVCpu->idCpu));
     NOREF(pvUser); NOREF(pVCpu);
 
-    int rc = vmR3TrySetState(pVM, "vmR3LiveDoStep1Cleanup", 8,
+    int rc = vmR3TrySetState(pVM, "vmR3LiveDoStep1Cleanup", 6,
                              VMSTATE_OFF,               VMSTATE_OFF_LS,
                              VMSTATE_FATAL_ERROR,       VMSTATE_FATAL_ERROR_LS,
                              VMSTATE_GURU_MEDITATION,   VMSTATE_GURU_MEDITATION_LS,
@@ -1685,11 +1685,14 @@ static int vmR3SaveTeleport(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStre
             if (RT_SUCCESS(rc))
                 rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3LiveDoStep2, 2, pVM, pSSM);
             else
-                SSMR3LiveDone(pSSM);
+            {
+                int rc2 = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)SSMR3LiveDone, 1, pSSM);
+                AssertMsg(rc2 == rc, ("%Rrc != %Rrc\n", rc2, rc));
+            }
         }
         else
         {
-            int rc2 = SSMR3LiveDone(pSSM);
+            int rc2 = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)SSMR3LiveDone, 1, pSSM);
             AssertMsg(rc2 == rc, ("%Rrc != %Rrc\n", rc2, rc));
 
             rc2 = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, vmR3LiveDoStep1Cleanup, NULL);
@@ -2807,6 +2810,7 @@ VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
         case VMSTATE_GURU_MEDITATION_LS:return "GURU_MEDITATION_LS";
         case VMSTATE_LOAD_FAILURE:      return "LOAD_FAILURE";
         case VMSTATE_OFF:               return "OFF";
+        case VMSTATE_OFF_LS:            return "OFF_LS";
         case VMSTATE_DESTROYING:        return "DESTROYING";
         case VMSTATE_TERMINATED:        return "TERMINATED";
 
