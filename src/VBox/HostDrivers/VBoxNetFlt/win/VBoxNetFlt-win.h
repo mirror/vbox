@@ -463,12 +463,12 @@ extern RTMAC g_vboxNetFltWinVerifyMACGuest;
 
 
 /** obtains the PTRANSFERDATA_RSVD given a single list entry it contains */
-#define PT_SLE_2_TRANSFERDATA_RSVD(_pl) \
-    ( (PTRANSFERDATA_RSVD)((uint8_t *)(_pl) - RT_OFFSETOF(TRANSFERDATA_RSVD, ListEntry)))
+//#define PT_SLE_2_TRANSFERDATA_RSVD(_pl) \
+//    ( (PTRANSFERDATA_RSVD)((uint8_t *)(_pl) - RT_OFFSETOF(TRANSFERDATA_RSVD, ListEntry)))
 
-/** obtains the ndis packet given a single list entry assuming it is stored in ProtocolReserved field of the packet */
-#define PT_SLE_2_NDIS_PACKET(_pl) \
-   ( (PNDIS_PACKET)((uint8_t *)PT_SLE_2_TRANSFERDATA_RSVD(_pl) - RT_OFFSETOF(NDIS_PACKET, ProtocolReserved)))
+///** obtains the ndis packet given a single list entry assuming it is stored in ProtocolReserved field of the packet */
+//#define PT_SLE_2_NDIS_PACKET(_pl) \
+//   ( (PNDIS_PACKET)((uint8_t *)PT_SLE_2_TRANSFERDATA_RSVD(_pl) - RT_OFFSETOF(NDIS_PACKET, ProtocolReserved)))
 
 /**************************************************************************
  * PADAPT, PVBOXNETFLTINS reference/dereference (i.e. retain/release) API *
