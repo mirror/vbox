@@ -796,7 +796,7 @@ QStringList QIFileDialog::getOpenFileNames (const QString &aStartWith,
     QFileDialog dlg (aParent, Qt::Sheet);
     dlg.setWindowTitle (aCaption);
     dlg.setDirectory (aStartWith);
-    dlg.setFilter (aFilters);
+    dlg.setNameFilter (aFilters);
     if (aSingleFile)
         dlg.setFileMode (QFileDialog::ExistingFile);
     else
