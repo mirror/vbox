@@ -33,6 +33,7 @@ print """
 # ifndef VBOX_WITH_COCOA_QT
 #  define SYSTEM_AGL "AGL"
 # endif
+#include <string.h> /* VBOX */
 #elif defined(IRIX) || defined(IRIX64) || defined(Linux) || defined(FreeBSD) || defined(AIX) || defined(SunOS) || defined(OSF1)
 #if defined(Linux)
 #include <string.h>
