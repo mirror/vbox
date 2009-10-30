@@ -74,8 +74,11 @@ VBoxMiniCancelButton::VBoxMiniCancelButton (QWidget *aParent /* = 0 */)
     setAutoRaise (true);
     setFocusPolicy (Qt::TabFocus);
     setShortcut (QKeySequence (Qt::Key_Escape));
-    setIcon (VBoxGlobal::iconSet (":/delete_16px.png",
-                                  ":/delete_dis_16px.png"));
+    QIcon cancelIcon = style()->standardIcon (QStyle::SP_DialogCancelButton);
+    if (cancelIcon.isNull())
+        cancelIcon = VBoxGlobal::iconSet (":/delete_16px.png",
+                                          ":/delete_dis_16px.png");
+    setIcon (cancelIcon);
 }
 
 /********************************************************************************

@@ -29,9 +29,9 @@
 /* VBox forward declarations */
 class CProgress;
 class QILabel;
+class VBoxMiniCancelButton;
 
 /* Qt forward declarations */
-class QEventLoop;
 class QProgressBar;
 
 /**
@@ -52,7 +52,6 @@ class VBoxProgressDialog: protected QIDialog
     Q_OBJECT;
 
 public:
-
     VBoxProgressDialog (CProgress &aProgress, const QString &aTitle,
                         int aMinDuration = 2000, QWidget *aParent = 0);
 
@@ -60,7 +59,6 @@ public:
     bool cancelEnabled() const { return mCancelEnabled; }
 
 protected:
-
     virtual void retranslateUi();
 
     virtual void reject();
@@ -69,19 +67,18 @@ protected:
     virtual void closeEvent (QCloseEvent *aEvent);
 
 private slots:
-
     void showDialog();
     void cancelOperation();
 
 private:
-
     /* Private member vars */
     CProgress &mProgress;
     QILabel *mLabel;
     QILabel *mETA;
-    QString mETAText;
+    QString mETAText[14];
+    QString mCancelText;
     QProgressBar *mProgressBar;
-    QEventLoop *mEventLoop;
+    VBoxMiniCancelButton *mCancelBtn;
     bool mCancelEnabled;
     const ulong mOpCount;
     ulong mCurOp;
