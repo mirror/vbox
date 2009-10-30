@@ -2074,7 +2074,7 @@ VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
  */
 VMMDECL(bool) PGMHasDirtyPages(PVM pVM)
 {
-    return pPool->cDirtyPages != 0;
+    return pVM->pgm.s.CTX_SUFF(pPool)->cDirtyPages != 0;
 }
 #endif
 
