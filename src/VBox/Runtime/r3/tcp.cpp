@@ -55,6 +55,7 @@
 #include <iprt/mempool.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
+#include <iprt/time.h>
 
 #include "internal/magics.h"
 
@@ -71,6 +72,13 @@
 #  define SHUT_RDWR             SD_BOTH
 # else
 #  define SHUT_RDWR             2
+# endif
+#endif
+#ifndef SHUT_WR
+# ifdef SD_SEND
+#  define SHUT_WR               SD_SEND
+# else
+#  define SHUT_WR               1
 # endif
 #endif
 
@@ -139,7 +147,7 @@ static DECLCALLBACK(int)  rtTcpServerThread(RTTHREAD ThreadSelf, void *pvServer)
 static int  rtTcpServerListen(PRTTCPSERVER pServer);
 static int  rcTcpServerListenCleanup(PRTTCPSERVER pServer);
 static int  rtTcpServerDestroySocket(RTSOCKET volatile *pSockClient, const char *pszMsg);
-static int  rtTcpClose(RTSOCKET Sock, const char *pszMsg);
+static int  rtTcpClose(RTSOCKET Sock, const char *pszMsg, bool fTryGracefulShutdown);
 
 
 
@@ -242,13 +250,14 @@ DECLINLINE(void) rtTcpServerSetState(PRTTCPSERVER pServer, RTTCPSERVERSTATE enmS
  *
  * @returns IPRT status code.
  */
-static int rtTcpServerDestroySocket(RTSOCKET volatile *pSock, const char *pszMsg)
+static int rtTcpServerDestroySocket(RTSOCKET volatile *pSock, const char *pszMsg, bool fTryGracefulShutdown)
 {
     RTSOCKET Sock = rtTcpAtomicXchgSock(pSock, NIL_RTSOCKET);
     if (Sock != NIL_RTSOCKET)
     {
-        shutdown(Sock, SHUT_RDWR);
-        return rtTcpClose(Sock, pszMsg);
+        if (!fTryGracefulShutdown)
+            shutdown(Sock, SHUT_RDWR);
+        return rtTcpClose(Sock, pszMsg, fTryGracefulShutdown);
     }
     return VINF_TCP_SERVER_NO_CLIENT;
 }
@@ -466,7 +475,7 @@ RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTC
             rc = rtTcpError();
             AssertMsgFailed(("setsockopt() %Rrc\n", rc));
         }
-        rtTcpClose(WaitSock, "RTServerCreateEx");
+        rtTcpClose(WaitSock, "RTServerCreateEx", false /*fTryGracefulShutdown*/);
     }
     else
     {
@@ -574,12 +583,12 @@ static int rtTcpServerListen(PRTTCPSERVER pServer)
          */
         if (!rtTcpServerTrySetState(pServer, RTTCPSERVERSTATE_SERVING, RTTCPSERVERSTATE_ACCEPTING))
         {
-            rtTcpClose(Socket, "rtTcpServerListen");
+            rtTcpClose(Socket, "rtTcpServerListen", true /*fTryGracefulShutdown*/);
             return rcTcpServerListenCleanup(pServer);
         }
         rtTcpAtomicXchgSock(&pServer->SockClient, Socket);
         int rc = pServer->pfnServe(Socket, pServer->pvUser);
-        rtTcpServerDestroySocket(&pServer->SockClient, "Listener: client");
+        rtTcpServerDestroySocket(&pServer->SockClient, "Listener: client", true /*fTryGracefulShutdown*/);
 
         /*
          * Stop the server?
@@ -594,7 +603,7 @@ static int rtTcpServerListen(PRTTCPSERVER pServer)
                  */
                 RTSOCKET SockServer = rtTcpAtomicXchgSock(&pServer->SockServer, NIL_RTSOCKET);
                 rtTcpServerSetState(pServer, RTTCPSERVERSTATE_STOPPED, RTTCPSERVERSTATE_STOPPING);
-                rtTcpClose(SockServer, "Listener: server stopped");
+                rtTcpClose(SockServer, "Listener: server stopped", false /*fTryGracefulShutdown*/);
             }
             else
                 rcTcpServerListenCleanup(pServer); /* ignore rc */
@@ -612,7 +621,7 @@ static int rcTcpServerListenCleanup(PRTTCPSERVER pServer)
     /*
      * Close the server socket, the client one shouldn't be set.
      */
-    rtTcpServerDestroySocket(&pServer->SockServer, "ListenCleanup");
+    rtTcpServerDestroySocket(&pServer->SockServer, "ListenCleanup", false /*fTryGracefulShutdown*/);
     Assert(pServer->SockClient == NIL_RTSOCKET);
 
     /*
@@ -655,7 +664,7 @@ RTR3DECL(int) RTTcpServerDisconnectClient(PRTTCPSERVER pServer)
     AssertReturn(pServer->u32Magic == RTTCPSERVER_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(RTMemPoolRetain(pServer) != UINT32_MAX, VERR_INVALID_HANDLE);
 
-    int rc = rtTcpServerDestroySocket(&pServer->SockClient, "DisconnectClient: client");
+    int rc = rtTcpServerDestroySocket(&pServer->SockClient, "DisconnectClient: client", true /*fTryGracefulShutdown*/);
 
     RTMemPoolRelease(RTMEMPOOL_DEFAULT, pServer);
     return rc;
@@ -705,7 +714,7 @@ RTR3DECL(int) RTTcpServerShutdown(PRTTCPSERVER pServer)
         }
         if (rtTcpServerTrySetState(pServer, RTTCPSERVERSTATE_STOPPING, enmState))
         {
-            rtTcpServerDestroySocket(&pServer->SockServer, "RTTcpServerShutdown");
+            rtTcpServerDestroySocket(&pServer->SockServer, "RTTcpServerShutdown", false /*fTryGracefulShutdown*/);
             rtTcpServerSetState(pServer, RTTCPSERVERSTATE_STOPPED, RTTCPSERVERSTATE_STOPPING);
 
             RTMemPoolRelease(RTMEMPOOL_DEFAULT, pServer);
@@ -769,8 +778,8 @@ RTR3DECL(int) RTTcpServerDestroy(PRTTCPSERVER pServer)
      * Destroy it.
      */
     ASMAtomicWriteU32(&pServer->u32Magic, ~RTTCPSERVER_MAGIC);
-    rtTcpServerDestroySocket(&pServer->SockServer, "Destroyer: server");
-    rtTcpServerDestroySocket(&pServer->SockClient, "Destroyer: client");
+    rtTcpServerDestroySocket(&pServer->SockServer, "Destroyer: server", false /*fTryGracefulShutdown*/);
+    rtTcpServerDestroySocket(&pServer->SockClient, "Destroyer: client", true  /*fTryGracefulShutdown*/);
 
     /*
      * Release it.
@@ -944,7 +953,7 @@ RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCK
             return VINF_SUCCESS;
         }
         rc = rtTcpError();
-        rtTcpClose(Sock, "RTTcpClientConnect");
+        rtTcpClose(Sock, "RTTcpClientConnect", false /*fTryGracefulShutdown*/);
     }
     else
         rc = rtTcpError();
@@ -954,26 +963,59 @@ RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCK
 
 RTR3DECL(int) RTTcpClientClose(RTSOCKET Sock)
 {
-    return rtTcpClose(Sock, "RTTcpClientClose");
+    return rtTcpClose(Sock, "RTTcpClientClose", true /*fTryGracefulShutdown*/);
 }
 
 
 /**
  * Internal close function which does all the proper bitching.
  */
-static int rtTcpClose(RTSOCKET Sock, const char *pszMsg)
+static int rtTcpClose(RTSOCKET Sock, const char *pszMsg, bool fTryGracefulShutdown)
 {
+    int rc;
+
     /* ignore nil handles. */
     if (Sock == NIL_RTSOCKET)
         return VINF_SUCCESS;
 
     /*
+     * Try to gracefully shut it down.
+     */
+    if (fTryGracefulShutdown)
+    {
+        rc = shutdown(Sock, SHUT_WR);
+        if (!rc)
+        {
+            uint64_t u64Start = RTTimeMilliTS();
+            for (;;)
+            {
+                rc = RTTcpSelectOne(Sock, 1000);
+                if (rc == VERR_TIMEOUT)
+                {
+                    if (RTTimeMilliTS() - u64Start > 30000)
+                        break;
+                }
+                else if (rc != VINF_SUCCESS)
+                    break;
+                {
+                    uint8_t abBitBucket[16*_1KB];
+                    ssize_t cbBytesRead = recv(Sock, abBitBucket, sizeof(abBitBucket), MSG_NOSIGNAL);
+                    if (cbBytesRead == 0)
+                        break; /* orderly shutdown in progress */
+                    if (cbBytesRead < 0)
+                        break; /* some kind of error, never mind which... */
+                }
+            }  /* forever */
+        }
+    }
+
+    /*
      * Attempt to close it.
      */
 #ifdef RT_OS_WINDOWS
-    int rc = closesocket(Sock);
+    rc = closesocket(Sock);
 #else
-    int rc = close(Sock);
+    rc = close(Sock);
 #endif
     if (!rc)
         return VINF_SUCCESS;
