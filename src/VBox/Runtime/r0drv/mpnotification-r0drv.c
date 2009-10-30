@@ -80,9 +80,6 @@ static uint32_t volatile g_iRTMpDoneBit;
  * This is increased whenever the list has been modified. The callback routine
  * make use of this to avoid having restart at the list head after each callback. */
 static uint32_t volatile g_iRTMpGeneration;
-/** The number of RTMpNotification users.
- * This is incremented on init and decremented on termination. */
-static uint32_t volatile g_cRTMpUsers = 0;
 
 
 
@@ -95,9 +92,9 @@ static uint32_t volatile g_cRTMpUsers = 0;
  */
 void rtMpNotificationDoCallbacks(RTMPEVENT enmEvent, RTCPUID idCpu)
 {
-    PRTMPNOTIFYREG pCur;
-    RTSPINLOCKTMP Tmp;
-    RTSPINLOCK hSpinlock;
+    PRTMPNOTIFYREG  pCur;
+    RTSPINLOCK      hSpinlock;
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     /*
      * This is a little bit tricky as we cannot be holding the spinlock
@@ -165,9 +162,9 @@ void rtMpNotificationDoCallbacks(RTMPEVENT enmEvent, RTCPUID idCpu)
 
 RTDECL(int) RTMpNotificationRegister(PFNRTMPNOTIFICATION pfnCallback, void *pvUser)
 {
-    PRTMPNOTIFYREG pCur;
-    PRTMPNOTIFYREG pNew;
-    RTSPINLOCKTMP Tmp;
+    PRTMPNOTIFYREG  pCur;
+    PRTMPNOTIFYREG  pNew;
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     /*
      * Validation.
@@ -233,9 +230,9 @@ RT_EXPORT_SYMBOL(RTMpNotificationRegister);
 
 RTDECL(int) RTMpNotificationDeregister(PFNRTMPNOTIFICATION pfnCallback, void *pvUser)
 {
-    PRTMPNOTIFYREG pPrev;
-    PRTMPNOTIFYREG pCur;
-    RTSPINLOCKTMP Tmp;
+    PRTMPNOTIFYREG  pPrev;
+    PRTMPNOTIFYREG  pCur;
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     /*
      * Validation.
@@ -283,21 +280,15 @@ RT_EXPORT_SYMBOL(RTMpNotificationDeregister);
 
 int rtR0MpNotificationInit(void)
 {
-    int rc = VINF_SUCCESS;
-
-    if (ASMAtomicIncS32(&g_cRTMpUsers) == 1)
+    int rc = RTSpinlockCreate((PRTSPINLOCK)&g_hRTMpNotifySpinLock);
+    if (RT_SUCCESS(rc))
     {
-        rc = RTSpinlockCreate((PRTSPINLOCK)&g_hRTMpNotifySpinLock);
+        rc = rtR0MpNotificationNativeInit();
         if (RT_SUCCESS(rc))
-        {
-            rc = rtR0MpNotificationNativeInit();
-            if (RT_SUCCESS(rc))
-                return rc;
+            return rc;
 
-            RTSpinlockDestroy(g_hRTMpNotifySpinLock);
-            g_hRTMpNotifySpinLock = NIL_RTSPINLOCK;
-        }
-        ASMAtomicDecS32(&g_cRTMpUsers);
+        RTSpinlockDestroy(g_hRTMpNotifySpinLock);
+        g_hRTMpNotifySpinLock = NIL_RTSPINLOCK;
     }
     return rc;
 }
@@ -305,39 +296,32 @@ int rtR0MpNotificationInit(void)
 
 void rtR0MpNotificationTerm(void)
 {
-    RTSPINLOCK hSpinlock = g_hRTMpNotifySpinLock;
-    if (hSpinlock != NIL_RTSPINLOCK)
+    PRTMPNOTIFYREG  pHead;
+    RTSPINLOCKTMP   Tmp       = RTSPINLOCKTMP_INITIALIZER;
+    RTSPINLOCK      hSpinlock = g_hRTMpNotifySpinLock;
+    AssertReturnVoid(hSpinlock != NIL_RTSPINLOCK);
+
+    rtR0MpNotificationNativeTerm();
+
+    /* pick up the list and the spinlock. */
+    RTSpinlockAcquire(hSpinlock, &Tmp);
+    ASMAtomicWriteSize(&g_hRTMpNotifySpinLock, NIL_RTSPINLOCK);
+    pHead = g_pRTMpCallbackHead;
+    g_pRTMpCallbackHead = NULL;
+    ASMAtomicIncU32(&g_iRTMpGeneration);
+    RTSpinlockRelease(hSpinlock, &Tmp);
+
+    /* free the list. */
+    while (pHead)
     {
-        AssertMsg(g_cRTMpUsers > 0, ("%d\n", g_cRTMpUsers));
-        if (ASMAtomicDecS32(&g_cRTMpUsers) == 0)
-        {
+        PRTMPNOTIFYREG pFree = pHead;
+        pHead = pHead->pNext;
 
-            PRTMPNOTIFYREG pHead;
-            RTSPINLOCKTMP Tmp;
-
-            rtR0MpNotificationNativeTerm();
-
-            /* pick up the list and the spinlock. */
-            RTSpinlockAcquire(hSpinlock, &Tmp);
-            ASMAtomicWriteSize(&g_hRTMpNotifySpinLock, NIL_RTSPINLOCK);
-            pHead = g_pRTMpCallbackHead;
-            g_pRTMpCallbackHead = NULL;
-            ASMAtomicIncU32(&g_iRTMpGeneration);
-            RTSpinlockRelease(hSpinlock, &Tmp);
-
-            /* free the list. */
-            while (pHead)
-            {
-                PRTMPNOTIFYREG pFree = pHead;
-                pHead = pHead->pNext;
-
-                pFree->pNext = NULL;
-                pFree->pfnCallback = NULL;
-                RTMemFree(pFree);
-            }
-
-            RTSpinlockDestroy(hSpinlock);
-        }
+        pFree->pNext = NULL;
+        pFree->pfnCallback = NULL;
+        RTMemFree(pFree);
     }
+
+    RTSpinlockDestroy(hSpinlock);
 }
 
