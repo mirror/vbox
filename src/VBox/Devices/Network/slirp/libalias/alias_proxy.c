@@ -80,12 +80,14 @@ __FBSDID("$FreeBSD: src/sys/netinet/libalias/alias_proxy.c,v 1.31.8.1 2009/04/15
 #include "alias.h"      /* Public API functions for libalias */
 #include "alias_local.h"    /* Functions used by alias*.c */
 #endif
-#else /* !VBOX */
+#else /* VBOX */
 # include <iprt/ctype.h>
 # include <iprt/string.h>
 # include <slirp.h>
 # include "alias.h"     /* Public API functions for libalias */
 # include "alias_local.h"   /* Functions used by alias*.c */
+# define isspace(ch)    RT_C_IS_SPACE(ch)
+# define tolower(ch)    RT_C_TO_LOWER(ch)
 #endif /* VBOX */
 
 /*
