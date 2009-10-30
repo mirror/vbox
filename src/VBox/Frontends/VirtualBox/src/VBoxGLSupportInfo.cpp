@@ -96,21 +96,21 @@ PFNVBOXVHWA_UNMAP_BUFFER vboxglUnmapBuffer = NULL;
 #endif
 #endif
 
-#define VBOXVHWA_GETPROCADDRESS(_c, _t, _n) ((_t)(_c).getProcAddress(QString(_n)))
+#define VBOXVHWA_GETPROCADDRESS(_c, _t, _n) ((_t)(uintptr_t)(_c).getProcAddress(QString(_n)))
 
 #define VBOXVHWA_PFNINIT_SAME(_c, _t, _v, _rc) \
     do { \
         if((vboxgl##_v = VBOXVHWA_GETPROCADDRESS(_c, _t, "gl"#_v)) == NULL) \
         { \
-            VBOXQGLLOG(("ERROR: '%s' function is not found\n", "gl"#_v));\
+            VBOXQGLLOG(("ERROR: '%s' function not found\n", "gl"#_v));\
             AssertBreakpoint(); \
             if((vboxgl##_v = VBOXVHWA_GETPROCADDRESS(_c, _t, "gl"#_v"ARB")) == NULL) \
             { \
-                VBOXQGLLOG(("ERROR: '%s' function is not found\n", "gl"#_v"ARB"));\
+                VBOXQGLLOG(("ERROR: '%s' function not found\n", "gl"#_v"ARB"));\
                 AssertBreakpoint(); \
                 if((vboxgl##_v = VBOXVHWA_GETPROCADDRESS(_c, _t, "gl"#_v"EXT")) == NULL) \
                 { \
-                    VBOXQGLLOG(("ERROR: '%s' function is not found\n", "gl"#_v"EXT"));\
+                    VBOXQGLLOG(("ERROR: '%s' function not found\n", "gl"#_v"EXT"));\
                     AssertBreakpoint(); \
                     (_rc)++; \
                 } \
