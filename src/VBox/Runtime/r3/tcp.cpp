@@ -807,7 +807,12 @@ RTR3DECL(int) RTTcpRead(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *
     for (;;)
     {
         rtTcpErrorReset();
-        ssize_t cbBytesRead = recv(Sock, (char *)pvBuffer + cbRead, cbToRead, MSG_NOSIGNAL);
+#ifdef RT_OS_WINDOWS
+        int    cbNow = cbToRead >= INT_MAX/2 ? INT_MAX/2 : (int)cbToRead;
+#else
+        size_t cbNow = cbToRead;
+#endif
+        ssize_t cbBytesRead = recv(Sock, (char *)pvBuffer + cbRead, cbNow, MSG_NOSIGNAL);
         if (cbBytesRead <= 0)
         {
             int rc = rtTcpError();
@@ -843,9 +848,15 @@ RTR3DECL(int) RTTcpRead(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *
 
 RTR3DECL(int)  RTTcpWrite(RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer)
 {
+
     do
     {
-        ssize_t cbWritten = send(Sock, (const char *)pvBuffer, cbBuffer, MSG_NOSIGNAL);
+#ifdef RT_OS_WINDOWS
+        int    cbNow = cbBuffer >= INT_MAX/2 ? INT_MAX/2 : (int)cbBuffer;
+#else
+        size_t cbNow = cbBuffer;
+#endif
+        ssize_t cbWritten = send(Sock, (const char *)pvBuffer, cbNow, MSG_NOSIGNAL);
         if (cbWritten < 0)
             return rtTcpError();
         AssertMsg(cbBuffer >= (size_t)cbWritten, ("Wrote more than we requested!!! cbWritten=%d cbBuffer=%d rtTcpError()=%d\n",
@@ -998,8 +1009,8 @@ static int rtTcpClose(RTSOCKET Sock, const char *pszMsg, bool fTryGracefulShutdo
                 else if (rc != VINF_SUCCESS)
                     break;
                 {
-                    uint8_t abBitBucket[16*_1K];
-                    ssize_t cbBytesRead = recv(Sock, abBitBucket, sizeof(abBitBucket), MSG_NOSIGNAL);
+                    char abBitBucket[16*_1K];
+                    ssize_t cbBytesRead = recv(Sock, &abBitBucket[0], sizeof(abBitBucket), MSG_NOSIGNAL);
                     if (cbBytesRead == 0)
                         break; /* orderly shutdown in progress */
                     if (cbBytesRead < 0)
