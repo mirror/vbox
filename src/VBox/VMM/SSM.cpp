@@ -3962,100 +3962,6 @@ VMMR3DECL(int) SSMR3PutStrZ(PSSMHANDLE pSSM, const char *psz)
 
 
 /**
- * Worker for SSMR3LiveDone and SSMR3Save that closes the handle and deletes the
- * saved state file on failure.
- *
- * @returns VBox status code (pSSM->rc).
- * @param   pVM                 The VM handle.
- * @param   pSSM                The saved state handle.
- */
-static int ssmR3SaveDoClose(PVM pVM, PSSMHANDLE pSSM)
-{
-    VM_ASSERT_EMT0(pVM);
-
-    /*
-     * Make it non-cancellable, close the stream and delete the file on failure.
-     */
-    ssmR3SetCancellable(pVM, pSSM, false);
-    int rc = ssmR3StrmClose(&pSSM->Strm);
-    if (RT_SUCCESS(rc))
-        rc = pSSM->rc;
-    if (RT_SUCCESS(rc))
-    {
-        if (pSSM->pfnProgress)
-            pSSM->pfnProgress(pVM, 100, pSSM->pvUser);
-        LogRel(("SSM: Successfully saved the VM state to '%s'\n",
-                pSSM->pszFilename ? pSSM->pszFilename : "<remote-machine>"));
-    }
-    else
-    {
-        if (pSSM->pszFilename)
-        {
-            int rc2 = RTFileDelete(pSSM->pszFilename);
-            AssertRC(rc2);
-            if (RT_SUCCESS(rc2))
-                LogRel(("SSM: Failed to save the VM state to '%s' (file deleted): %Rrc\n",
-                        pSSM->pszFilename, rc));
-            else
-                LogRel(("SSM: Failed to save the VM state to '%s' (file deletion failed, rc2=%Rrc): %Rrc\n",
-                        pSSM->pszFilename, rc2, rc));
-        }
-        else
-            LogRel(("SSM: Failed to save the VM state.\n"));
-    }
-
-    /*
-     * Trash the handle before freeing it.
-     */
-    ASMAtomicWriteU32(&pSSM->fCancelled, 0);
-    pSSM->pVM = NULL;
-    pSSM->enmAfter = SSMAFTER_INVALID;
-    pSSM->enmOp = SSMSTATE_INVALID;
-    RTMemFree(pSSM);
-
-    return rc;
-}
-
-
-/**
- * Closes the SSM handle.
- *
- * This must always be called on a handled returned by SSMR3LiveSave.
- *
- * @returns VBox status.
- *
- * @param   pSSM            The SSM handle returned by SSMR3LiveSave.
- *
- * @thread  EMT(0).
- */
-VMMR3_INT_DECL(int) SSMR3LiveDone(PSSMHANDLE pSSM)
-{
-    LogFlow(("SSMR3LiveDone: pSSM=%p\n", pSSM));
-
-    /*
-     * Validate input.
-     */
-    AssertPtrReturn(pSSM, VERR_INVALID_POINTER);
-    PVM pVM = pSSM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    VM_ASSERT_EMT0(pVM);
-    AssertMsgReturn(   pSSM->enmAfter == SSMAFTER_DESTROY
-                    || pSSM->enmAfter == SSMAFTER_CONTINUE
-                    || pSSM->enmAfter == SSMAFTER_TELEPORT,
-                    ("%d\n", pSSM->enmAfter),
-                    VERR_INVALID_PARAMETER);
-    AssertMsgReturn(    pSSM->enmOp >= SSMSTATE_LIVE_PREP
-                    &&  pSSM->enmOp <= SSMSTATE_SAVE_DONE,
-                    ("%d\n", pSSM->enmOp), VERR_INVALID_STATE);
-
-    /*
-     * Join paths with SSMR3Save again.
-     */
-    return ssmR3SaveDoClose(pVM, pSSM);
-}
-
-
-/**
  * Do the pfnSaveDone run.
  *
  * @returns VBox status code (pSSM->rc).
@@ -4107,6 +4013,106 @@ static int ssmR3SaveDoDoneRun(PVM pVM, PSSMHANDLE pSSM)
         }
     }
     return pSSM->rc;
+}
+
+
+/**
+ * Worker for SSMR3LiveDone and SSMR3Save that closes the handle and deletes the
+ * saved state file on failure.
+ *
+ * @returns VBox status code (pSSM->rc).
+ * @param   pVM                 The VM handle.
+ * @param   pSSM                The saved state handle.
+ */
+static int ssmR3SaveDoClose(PVM pVM, PSSMHANDLE pSSM)
+{
+    VM_ASSERT_EMT0(pVM);
+
+
+    /*
+     * Make it non-cancellable, close the stream and delete the file on failure.
+     */
+    ssmR3SetCancellable(pVM, pSSM, false);
+    int rc = ssmR3StrmClose(&pSSM->Strm);
+    if (RT_SUCCESS(rc))
+        rc = pSSM->rc;
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pSSM->enmOp == SSMSTATE_SAVE_DONE);
+        if (pSSM->pfnProgress)
+            pSSM->pfnProgress(pVM, 100, pSSM->pvUser);
+        LogRel(("SSM: Successfully saved the VM state to '%s'\n",
+                pSSM->pszFilename ? pSSM->pszFilename : "<remote-machine>"));
+    }
+    else
+    {
+        if (pSSM->pszFilename)
+        {
+            int rc2 = RTFileDelete(pSSM->pszFilename);
+            AssertRC(rc2);
+            if (RT_SUCCESS(rc2))
+                LogRel(("SSM: Failed to save the VM state to '%s' (file deleted): %Rrc\n",
+                        pSSM->pszFilename, rc));
+            else
+                LogRel(("SSM: Failed to save the VM state to '%s' (file deletion failed, rc2=%Rrc): %Rrc\n",
+                        pSSM->pszFilename, rc2, rc));
+        }
+        else
+            LogRel(("SSM: Failed to save the VM state.\n"));
+
+        Assert(pSSM->enmOp <= SSMSTATE_SAVE_DONE);
+        if (pSSM->enmOp != SSMSTATE_SAVE_DONE)
+            ssmR3SaveDoDoneRun(pVM, pSSM);
+    }
+
+    /*
+     * Trash the handle before freeing it.
+     */
+    ASMAtomicWriteU32(&pSSM->fCancelled, 0);
+    pSSM->pVM = NULL;
+    pSSM->enmAfter = SSMAFTER_INVALID;
+    pSSM->enmOp = SSMSTATE_INVALID;
+    RTMemFree(pSSM);
+
+    return rc;
+}
+
+
+/**
+ * Closes the SSM handle.
+ *
+ * This must always be called on a handled returned by SSMR3LiveSave.
+ *
+ * @returns VBox status.
+ *
+ * @param   pSSM            The SSM handle returned by SSMR3LiveSave.
+ *
+ * @thread  EMT(0).
+ */
+VMMR3_INT_DECL(int) SSMR3LiveDone(PSSMHANDLE pSSM)
+{
+    LogFlow(("SSMR3LiveDone: pSSM=%p\n", pSSM));
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pSSM, VERR_INVALID_POINTER);
+    PVM pVM = pSSM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_EMT0(pVM);
+    AssertMsgReturn(   pSSM->enmAfter == SSMAFTER_DESTROY
+                    || pSSM->enmAfter == SSMAFTER_CONTINUE
+                    || pSSM->enmAfter == SSMAFTER_TELEPORT,
+                    ("%d\n", pSSM->enmAfter),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(    pSSM->enmOp >= SSMSTATE_LIVE_PREP
+                    &&  pSSM->enmOp <= SSMSTATE_SAVE_DONE,
+                    ("%d\n", pSSM->enmOp), VERR_INVALID_STATE);
+
+    /*
+     * Join paths with SSMR3Save again.
+     */
+    return ssmR3SaveDoClose(pVM, pSSM);
 }
 
 
