@@ -46,6 +46,7 @@ class VBoxMiniCancelButton: public QAbstractButton
 public:
     VBoxMiniCancelButton (QWidget *aParent = 0);
 
+    void setText (const QString &aText) { mButton->setText (aText); }
     void setToolTip (const QString &aTip) { mButton->setToolTip (aTip); }
 
 protected:

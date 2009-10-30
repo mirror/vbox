@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,16 +20,20 @@
  * additional information or have any questions.
  */
 
-
+/* VBox includes */
 #include "QIDialog.h"
 #include "VBoxGlobal.h"
 #ifdef Q_WS_MAC
-#include "VBoxUtils.h"
+# include "VBoxUtils.h"
 #endif /* Q_WS_MAC */
 
-QIDialog::QIDialog (QWidget *aParent, Qt::WindowFlags aFlags)
+/* Qt includes */
+#include <QPointer>
+
+QIDialog::QIDialog (QWidget *aParent /* = 0 */, Qt::WindowFlags aFlags /* = 0 */)
     : QDialog (aParent, aFlags)
     , mPolished (false)
+    , mEventLoop (0)
 {
 }
 
@@ -60,24 +64,72 @@ void QIDialog::showEvent (QShowEvent * /* aEvent */)
     VBoxGlobal::centerWidget (this, parentWidget(), false);
 }
 
-int QIDialog::exec()
+int QIDialog::exec (bool aShow /* = true */)
 {
-#if QT_VERSION >= 0x040500
-    /* After 4.5 exec ignores the Qt::Sheet flag. See "New Ways of Using
-     * Dialogs" in http://doc.trolltech.com/qq/QtQuarterly30.pdf why. Because
-     * we are lazy, we recreate the old behavior. */
+    /* Reset the result code */
+    setResult (QDialog::Rejected);
+
+    bool wasDeleteOnClose = testAttribute (Qt::WA_DeleteOnClose);
+    setAttribute (Qt::WA_DeleteOnClose, false);
+#if defined(Q_WS_MAC) && QT_VERSION >= 0x040500
+    /* After 4.5 Qt changed the behavior of Sheets for the window/application
+     * modal case. See "New Ways of Using Dialogs" in
+     * http://doc.trolltech.com/qq/QtQuarterly30.pdf why. We want the old
+     * behavior back, where all modal windows where shown as sheets. So make
+     * the modal mode window, but be application modal in any case. */
+    Qt::WindowModality winModality = windowModality();
+    bool wasSetWinModality = testAttribute (Qt::WA_SetWindowModality);
     if ((windowFlags() & Qt::Sheet) == Qt::Sheet)
     {
-        QEventLoop eventLoop;
-        connect(this, SIGNAL(finished(int)),
-                &eventLoop, SLOT(quit()));
-        /* Use the new open call. */
-        open();
-        eventLoop.exec();
-
-        return result();
+        setWindowModality (Qt::WindowModal);
+        setAttribute (Qt::WA_SetWindowModality, false);
     }
-    else
-#endif /* QT_VERSION >= 0x040500 */
-        return QDialog::exec();
+#endif /* defined(Q_WS_MAC) && QT_VERSION >= 0x040500 */
+    /* The dialog has to modal in any case. Save the current modality to
+     * restore it later. */
+    bool wasShowModal = testAttribute (Qt::WA_ShowModal);
+    setAttribute (Qt::WA_ShowModal, true);
+
+    /* Create a local event loop */
+    mEventLoop = new QEventLoop();
+    /* Show the window if requested */
+    if (aShow)
+        show();
+    /* A guard to ourself for the case we destroy ourself. */
+    QPointer<QIDialog> guard = this;
+    /* Start the event loop. This blocks. */
+    mEventLoop->exec();
+    /* Delete the event loop */
+    delete mEventLoop;
+    mEventLoop = 0;
+    /* Are we valid anymore? */
+    if (guard.isNull())
+        return QDialog::Rejected;
+    /* Save the result code in case we delete ourself */
+    QDialog::DialogCode res = (QDialog::DialogCode)result();
+#if defined(Q_WS_MAC) && QT_VERSION >= 0x040500
+    /* Restore old modality mode */
+    if ((windowFlags() & Qt::Sheet) == Qt::Sheet)
+    {
+        setWindowModality (winModality);
+        setAttribute (Qt::WA_SetWindowModality, wasSetWinModality);
+    }
+#endif /* defined(Q_WS_MAC) && QT_VERSION >= 0x040500 */
+    /* Set the old show modal attribute */
+    setAttribute (Qt::WA_ShowModal, wasShowModal);
+    /* Delete us in the case we should do so on close */
+    if (wasDeleteOnClose)
+        delete this;
+    /* Return the final result */
+    return res;
 }
+
+void QIDialog::setVisible (bool aVisible)
+{
+    QDialog::setVisible (aVisible);
+    /* Exit from the event loop if there is any and we are changing our state
+     * from visible to invisible. */
+    if (mEventLoop && !aVisible)
+        mEventLoop->exit();
+}
+

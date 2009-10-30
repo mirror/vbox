@@ -26,7 +26,7 @@
 #include "QILabel.h"
 #include "VBoxGlobal.h"
 #include "VBoxProgressDialog.h"
-
+#include "VBoxSpecialControls.h"
 #ifdef Q_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -39,15 +39,21 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#define VBOX_SECOND 1
+#define VBOX_MINUTE VBOX_SECOND * 60
+#define VBOX_HOUR VBOX_MINUTE * 60
+#define VBOX_DAY VBOX_HOUR * 24
+
 const char *VBoxProgressDialog::sOpDescTpl = "%1... (%2/%3)";
 
 VBoxProgressDialog::VBoxProgressDialog (CProgress &aProgress,
                                         const QString &aTitle,
                                         int aMinDuration /* = 2000 */,
                                         QWidget *aParent /* = 0 */)
+//  : QIDialog (aParent, Qt::Sheet | Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint)
   : QIDialog (aParent, Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint)
   , mProgress (aProgress)
-  , mEventLoop (new QEventLoop (this))
+  , mCancelBtn (0)
   , mCancelEnabled (false)
   , mOpCount (mProgress.GetOperationCount())
   , mCurOp (mProgress.GetOperation() + 1)
@@ -55,26 +61,23 @@ VBoxProgressDialog::VBoxProgressDialog (CProgress &aProgress,
 {
     setModal (true);
 
-    QVBoxLayout *pMainLayout = new QVBoxLayout (this);
+    QVBoxLayout *pLayout1 = new QVBoxLayout (this);
 
 #ifdef Q_WS_MAC
     ::darwinSetHidesAllTitleButtons (this);
     ::darwinSetShowsResizeIndicator (this, false);
-    VBoxGlobal::setLayoutMargin (pMainLayout, 6);
+    VBoxGlobal::setLayoutMargin (pLayout1, 6);
 #endif /* Q_WS_MAC */
 
     mLabel = new QILabel (this);
-    pMainLayout->addWidget (mLabel);
-    pMainLayout->setAlignment (mLabel, Qt::AlignHCenter);
+    pLayout1->addWidget (mLabel, 0, Qt::AlignHCenter);
+
+    QHBoxLayout *pLayout2 = new QHBoxLayout();
+    pLayout2->setMargin (0);
+    pLayout1->addLayout (pLayout2);
 
     mProgressBar = new QProgressBar (this);
-    pMainLayout->addWidget (mProgressBar);
-
-    QHBoxLayout *pLayout1 = new QHBoxLayout();
-    pLayout1->setMargin (0);
-    mETA = new QILabel (this);
-    pLayout1->addWidget (mETA);
-    pMainLayout->addLayout (pLayout1);
+    pLayout2->addWidget (mProgressBar, 0, Qt::AlignVCenter);
 
     if (mOpCount > 1)
         mLabel->setText (QString (sOpDescTpl)
@@ -89,11 +92,16 @@ VBoxProgressDialog::VBoxProgressDialog (CProgress &aProgress,
     mCancelEnabled = aProgress.GetCancelable();
     if (mCancelEnabled)
     {
-        QDialogButtonBox *pBtnBox = new QDialogButtonBox (QDialogButtonBox::Cancel,
-                                                          Qt::Horizontal, this);
-        pLayout1->addWidget (pBtnBox);
-        connect (pBtnBox, SIGNAL (rejected()), this, SLOT (cancelOperation()));
+        mCancelBtn = new VBoxMiniCancelButton (this);
+        mCancelBtn->setFocusPolicy (Qt::ClickFocus);
+        pLayout2->addWidget (mCancelBtn, 0, Qt::AlignVCenter);
+        connect (mCancelBtn, SIGNAL (clicked()), this, SLOT (cancelOperation()));
     }
+
+    mETA = new QILabel (this);
+    pLayout1->addWidget (mETA, 0, Qt::AlignLeft | Qt::AlignVCenter);
+
+    setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     retranslateUi();
 
@@ -104,7 +112,27 @@ VBoxProgressDialog::VBoxProgressDialog (CProgress &aProgress,
 
 void VBoxProgressDialog::retranslateUi()
 {
-    mETAText = tr ("Time remaining: %1");
+    mETAText[ 0] = tr ("%1 days, %2 hours remaining");
+    mETAText[ 1] = tr ("%1 days, %2 minutes remaining");
+    mETAText[ 2] = tr ("%1 days remaining");
+    mETAText[ 3] = tr ("1 day, %1 hours remaining");
+    mETAText[ 4] = tr ("1 day, %1 minutes remaining");
+    mETAText[ 5] = tr ("1 day remaining");
+    mETAText[ 6] = tr ("%1 hours, %2 minutes remaining");
+    mETAText[ 7] = tr ("1 hour, %1 minutes remaining");
+    mETAText[ 8] = tr ("1 hour remaining");
+    mETAText[ 9] = tr ("%1 minutes remaining");
+    mETAText[10] = tr ("1 minute, %2 seconds remaining");
+    mETAText[11] = tr ("1 minute remaining");
+    mETAText[12] = tr ("%1 seconds remaining");
+    mETAText[13] = tr ("A few seconds remaining");
+
+    mCancelText = tr ("Canceling...");
+    if (mCancelBtn)
+    {
+        mCancelBtn->setText (tr ("&Cancel"));
+        mCancelBtn->setToolTip (tr ("Cancel the current operation"));
+    }
 }
 
 int VBoxProgressDialog::run (int aRefreshInterval)
@@ -117,11 +145,13 @@ int VBoxProgressDialog::run (int aRefreshInterval)
         /* Set busy cursor */
         QApplication::setOverrideCursor (QCursor (Qt::WaitCursor));
 
-        /* Enter the modal loop */
-        mEventLoop->exec();
+        /* Enter the modal loop, but don't show the window immediately */
+        exec (false);
 
         /* Kill refresh timer */
         killTimer (id);
+
+        QApplication::restoreOverrideCursor();
 
         return result();
     }
@@ -141,6 +171,8 @@ void VBoxProgressDialog::showDialog()
 
 void VBoxProgressDialog::cancelOperation()
 {
+    if (mCancelBtn)
+        mCancelBtn->setEnabled (false);
     mProgress.Cancel();
 }
 
@@ -152,7 +184,12 @@ void VBoxProgressDialog::timerEvent (QTimerEvent * /* aEvent */)
      * modal dialog prevents our event-loop from
      * being exit overlapping 'this'. */
     if (mEnded && !isHidden())
+    {
         hide();
+        return;
+    }
+    else if (mEnded)
+        return;
 
     if (!mEnded && (!mProgress.isOk() || mProgress.GetCompleted()))
     {
@@ -160,30 +197,14 @@ void VBoxProgressDialog::timerEvent (QTimerEvent * /* aEvent */)
         if (mProgress.isOk())
         {
             mProgressBar->setValue (100);
-            setResult (Accepted);
+            done (Accepted);
         }
         /* Progress is not valid */
         else
-            setResult (Rejected);
+            done (Rejected);
 
         /* Request to exit loop */
         mEnded = true;
-
-        /* The progress will be finalized
-         * on next timer iteration. */
-        return;
-    }
-
-    if (mEnded)
-    {
-        if (mEventLoop->isRunning())
-        {
-            /* Exit loop if it is running */
-            mEventLoop->quit();
-
-            /* Restore normal cursor */
-            QApplication::restoreOverrideCursor();
-        }
         return;
     }
 
@@ -192,14 +213,46 @@ void VBoxProgressDialog::timerEvent (QTimerEvent * /* aEvent */)
         /* Update the progress dialog */
         /* First ETA */
         long newTime = mProgress.GetTimeRemaining();
-        if (newTime >= 0)
-        {
-            QTime time (0, 0);
-            time = time.addSecs (newTime);
-            mETA->setText (mETAText.arg (time.toString()));
-        }
+        QDateTime time;
+        time.setTime_t (newTime);
+        QDateTime refTime;
+        refTime.setTime_t (0);
+
+        int days = refTime.daysTo (time);
+        int hours = time.addDays (-days).time().hour();
+        int minutes = time.addDays (-days).time().minute();
+        int seconds = time.addDays (-days).time().second();
+        if (newTime > VBOX_DAY * 2 + VBOX_HOUR)
+            mETA->setText (mETAText[ 0].arg (days).arg (hours));
+        else if (newTime > VBOX_DAY * 2 + VBOX_MINUTE * 5)
+            mETA->setText (mETAText[ 1].arg (days).arg (minutes));
+        else if (newTime > VBOX_DAY * 2)
+            mETA->setText (mETAText[ 2].arg (days));
+        else if (newTime > VBOX_DAY + VBOX_HOUR)
+            mETA->setText (mETAText[ 3].arg (hours));
+        else if (newTime > VBOX_DAY + VBOX_MINUTE * 5)
+            mETA->setText (mETAText[ 4].arg (minutes));
+        else if (newTime > VBOX_HOUR * 23 + VBOX_MINUTE * 55)
+            mETA->setText (mETAText[ 5]);
+        else if (newTime > VBOX_HOUR * 2)
+            mETA->setText (mETAText[ 6].arg (hours).arg (minutes));
+        else if (newTime > VBOX_HOUR + VBOX_MINUTE * 5)
+            mETA->setText (mETAText[ 7].arg (hours).arg (minutes));
+        else if (newTime > VBOX_MINUTE * 55)
+            mETA->setText (mETAText[ 8]);
+        else if (newTime > VBOX_MINUTE * 2)
+            mETA->setText (mETAText[ 9].arg (minutes));
+        else if (newTime > VBOX_MINUTE + VBOX_SECOND * 5)
+            mETA->setText (mETAText[10].arg (seconds));
+        else if (newTime > VBOX_SECOND * 55)
+            mETA->setText (mETAText[11]);
+        else if (newTime > VBOX_SECOND * 5)
+            mETA->setText (mETAText[12].arg (seconds));
+        else if (newTime >= 0)
+            mETA->setText (mETAText[13]);
         else
             mETA->clear();
+
         /* Then operation text if changed */
         ulong newOp = mProgress.GetOperation() + 1;
         if (newOp != mCurOp)
@@ -210,19 +263,20 @@ void VBoxProgressDialog::timerEvent (QTimerEvent * /* aEvent */)
                              .arg (mCurOp).arg (mOpCount));
         }
         mProgressBar->setValue (mProgress.GetPercent());
-    }
+    }else
+        mETA->setText (mCancelText);
 }
 
 void VBoxProgressDialog::reject()
 {
     if (mCancelEnabled)
-        QIDialog::reject();
+        cancelOperation();
 }
 
 void VBoxProgressDialog::closeEvent (QCloseEvent *aEvent)
 {
     if (mCancelEnabled)
-        QIDialog::closeEvent (aEvent);
+        cancelOperation();
     else
         aEvent->ignore();
 }

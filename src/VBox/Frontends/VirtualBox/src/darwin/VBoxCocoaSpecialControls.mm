@@ -247,6 +247,13 @@ QSize VBoxCocoaButton::sizeHint() const
     return QSize (frame.size.width, frame.size.height);
 }
 
+void VBoxCocoaButton::setText (const QString& aText)
+{
+    QString s (aText);
+    /* Set it for accessibility reasons as alternative title */
+    [mNativeRef setAlternateTitle: ::darwinQStringToNSString (s.remove ('&'))];
+}
+
 void VBoxCocoaButton::setToolTip (const QString& aTip)
 {
     [mNativeRef setToolTip: ::darwinQStringToNSString (aTip)];

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,22 +26,28 @@
 /* Qt includes */
 #include <QDialog>
 
+/* Qt forwards declarations */
+class QEventLoop;
+
 class QIDialog: public QDialog
 {
     Q_OBJECT;
 
 public:
-
     QIDialog (QWidget *aParent = 0, Qt::WindowFlags aFlags = 0);
+    void setVisible (bool aVisible);
 
 public slots:
-    int exec();
+    int exec (bool aShow = true);
 
 protected:
-
     void showEvent (QShowEvent *aEvent);
 
+private:
+    /* Private member vars */
     bool mPolished;
+    QEventLoop *mEventLoop;
 };
 
 #endif /* __QIDialog_h__ */
+

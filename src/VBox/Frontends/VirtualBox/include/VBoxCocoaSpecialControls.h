@@ -48,6 +48,7 @@ public:
     VBoxCocoaButton (CocoaButtonType aType, QWidget *aParent = 0);
     QSize sizeHint() const;
 
+    void setText (const QString& aText);
     void setToolTip (const QString& aTip);
 
     void onClicked();
