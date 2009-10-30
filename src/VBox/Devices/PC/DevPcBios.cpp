@@ -1316,7 +1316,7 @@ static void pcbiosPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t nu
     floatPtr.u8SpecRev             = 4; /* MPS revision 1.4 */
     floatPtr.u8Checksum            = 0;
     floatPtr.au8Feature[0]         = 0;
-    floatPtr.au8Feature[1]         = 0;
+    floatPtr.au8Feature[1]         = 0x80;
     floatPtr.au8Feature[2]         = 0;
     floatPtr.au8Feature[3]         = 0;
     floatPtr.au8Feature[4]         = 0;

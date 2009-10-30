@@ -201,9 +201,9 @@ typedef struct APICState {
 #ifdef VBOX
     /* Task priority register (interrupt level) */
     uint32_t   tpr;
-    /* Logical APIC id */
+    /* Logical APIC id - user programmable */
     LogApicId  id;
-    /* Physical APIC id */
+    /* Physical APIC id - not visible to user, constant */
     PhysApicId phys_id;
     /** @todo: is it logical or physical? Not really used anyway now. */
     PhysApicId arb_id;
@@ -410,6 +410,7 @@ static int apic_get_ppr(APICState *s);
 static uint32_t apic_get_current_count(APICDeviceInfo* dev, APICState *s);
 static void apicTimerSetInitialCount(APICDeviceInfo *dev, APICState *s, uint32_t initial_count);
 static void apicTimerSetLvt(APICDeviceInfo *dev, APICState *pThis, uint32_t fNew);
+static void apicSendInitIpi(APICDeviceInfo* dev, APICState *s);
 
 #endif /* VBOX */
 
@@ -556,7 +557,7 @@ static int apic_bus_deliver(APICDeviceInfo* dev,
 #ifdef VBOX
 #ifdef IN_RING3
             foreach_apic(dev, deliver_bitmask,
-                         apic_init_ipi(dev, apic));
+                         apicSendInitIpi(dev, apic));
             return VINF_SUCCESS;
 #else
             /* We shall send init IPI only in R3, R0 calls should be
@@ -1248,11 +1249,16 @@ static void apic_init_ipi(APICDeviceInfo* dev, APICState *s)
     s->initial_count = 0;
     s->initial_count_load_time = 0;
     s->next_time = 0;
+}
+
 
 #ifdef VBOX
+static void apicSendInitIpi(APICDeviceInfo* dev, APICState *s)
+{
+    apic_init_ipi(dev, s);
     cpuSendInitIpi(dev, s);
-#endif
 }
+#endif
 
 /* send a SIPI message to the CPU to start it */
 static void apic_startup(APICDeviceInfo* dev, APICState *s, int vector_num)
@@ -2672,14 +2678,11 @@ static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
         APICState *pApic = &dev->CTX_SUFF(paLapics)[i];
         TMTimerStop(pApic->CTX_SUFF(pTimer));
 
-        /* Do not send an init ipi to the VCPU; we take
-        * care of the proper init ourselves.
+        /* Clear LAPIC state as if an INIT IPI was sent. */
         apic_init_ipi(dev, pApic);
-        */
-
-        /* malc, I've removed the initing duplicated in apic_init_ipi(). This
-        * arb_id was left over.. */
-        pApic->arb_id = 0;
+        /* The IDs are not touched by apic_init_ipi() and must be reset now. */
+        pApic->arb_id = pApic->id = i;
+        Assert(pApic->id == pApic->phys_id);    /* The two should match again. */
         /* Reset should re-enable the APIC. */
         pApic->apicbase = 0xfee00000 | MSR_IA32_APICBASE_ENABLE;
         if (pApic->phys_id == 0)
