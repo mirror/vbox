@@ -825,10 +825,10 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
 
     int32_t cRequestsWaiting = ASMAtomicReadS32(&pCtxInt->cRequests);
 
-    if (RT_UNLIKELY(cRequestsWaiting == 0))
+    if (RT_UNLIKELY(cRequestsWaiting <= 0))
         return VERR_FILE_AIO_NO_REQUEST;
 
-    if (RT_UNLIKELY(cMinReqs > cRequestsWaiting))
+    if (RT_UNLIKELY(cMinReqs > (uint32_t)cRequestsWaiting))
         return VERR_INVALID_PARAMETER;
 
     if (cMillisTimeout != RT_INDEFINITE_WAIT)
