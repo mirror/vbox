@@ -89,8 +89,8 @@ struct Medium::Data
     Data()
         : state(MediumState_NotCreated),
           size(0),
-          preLockState(MediumState_NotCreated),
           readers(0),
+          preLockState(MediumState_NotCreated),
           queryInfoSem(NIL_RTSEMEVENTMULTI),
           queryInfoRunning(false),
           type(MediumType_Normal),
