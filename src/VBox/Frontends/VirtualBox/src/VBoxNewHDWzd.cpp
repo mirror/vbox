@@ -407,6 +407,9 @@ bool VBoxNewHDWzd::createHardDisk()
 
     vboxProblem().showModalProgressDialog (progress, windowTitle(), parentWidget());
 
+    if (progress.GetCanceled())
+        return false;
+
     if (!progress.isOk() || progress.GetResultCode() != 0)
     {
         vboxProblem().cannotCreateHardDiskStorage (this, vbox, loc, hd,
