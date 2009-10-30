@@ -1819,6 +1819,14 @@ STDMETHODIMP Medium::LockRead(MediumState_T *aState)
 
     AutoWriteLock alock(this);
 
+    /* Wait for a concurrently running queryInfo() to complete */
+    while (m->queryInfoRunning)
+    {
+        alock.leave();
+        RTSemEventMultiWait(m->queryInfoSem, RT_INDEFINITE_WAIT);
+        alock.enter();
+    }
+
     /* return the current state before */
     if (aState)
         *aState = m->state;
@@ -1909,6 +1917,14 @@ STDMETHODIMP Medium::LockWrite(MediumState_T *aState)
     CheckComRCReturnRC(autoCaller.rc());
 
     AutoWriteLock alock(this);
+
+    /* Wait for a concurrently running queryInfo() to complete */
+    while (m->queryInfoRunning)
+    {
+        alock.leave();
+        RTSemEventMultiWait(m->queryInfoSem, RT_INDEFINITE_WAIT);
+        alock.enter();
+    }
 
     /* return the current state before */
     if (aState)
