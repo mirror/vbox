@@ -707,7 +707,6 @@ static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
             if (cb > pMmio2->RamRange.cb) /* bad idea? */
                 return VERR_SSM_LOAD_CONFIG_MISMATCH;
         }
-
     } /* forever */
 }
 
