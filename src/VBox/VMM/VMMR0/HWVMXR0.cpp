@@ -2277,7 +2277,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     /* Check if we need to use TPR shadowing. */
     if (    CPUMIsGuestInLongModeEx(pCtx)
-        || (   (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
+        || (   ((pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC) || pVM->hwaccm.s.fTRPPatchingAllowed)
             &&  pVM->hwaccm.s.fHasIoApic)
        )
     {
@@ -2489,6 +2489,22 @@ ResumeExecution:
          */
         rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, (fPending) ? (u8LastTPR >> 4) : 0);     /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
         AssertRC(rc);
+
+        if (pVM->hwaccm.s.fTPRPatchingActive)
+        {
+            Assert(!CPUMIsGuestInLongModeEx(pCtx));
+            /* Our patch code uses LSTAR for TPR caching. */
+            pCtx->msrLSTAR = u8LastTPR;
+
+            if (fPending)
+                /* A TPR change could activate a pending interrupt, so catch lstar writes. */
+                vmxR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, false);
+            else
+                /* No interrupts are pending, so we don't need to be explicitely notified.
+                 * There are enough world switches for detecting pending interrupts.
+                 */
+                vmxR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
+        }
     }
 
 #if defined(HWACCM_VTX_WITH_EPT) && defined(LOG_ENABLED)
@@ -2697,11 +2713,23 @@ ResumeExecution:
     Log2(("IntInfo = %08x\n", (uint32_t)intInfo));
 
     /* Sync back the TPR if it was changed. */
-    if (    fSetupTPRCaching
-        &&  u8LastTPR != pVCpu->hwaccm.s.vmx.pVAPIC[0x80])
+    if (fSetupTPRCaching)
     {
-        rc = PDMApicSetTPR(pVCpu, pVCpu->hwaccm.s.vmx.pVAPIC[0x80]);
-        AssertRC(rc);
+        if (pVM->hwaccm.s.fTPRPatchingActive)
+        {
+            if ((pCtx->msrLSTAR & 0xff) != u8LastTPR)
+            {
+                /* Our patch code uses LSTAR for TPR caching. */
+                rc = PDMApicSetTPR(pVCpu, pCtx->msrLSTAR & 0xff);
+                AssertRC(rc);
+            }
+        }
+        else
+        if (u8LastTPR != pVCpu->hwaccm.s.vmx.pVAPIC[0x80])
+        {
+            rc = PDMApicSetTPR(pVCpu, pVCpu->hwaccm.s.vmx.pVAPIC[0x80]);
+            AssertRC(rc);
+        }
     }
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, v);
@@ -2793,6 +2821,35 @@ ResumeExecution:
                 }
 #endif
                 Assert(!pVM->hwaccm.s.fNestedPaging);
+
+#ifdef VBOX_HWACCM_WITH_GUEST_PATCHING
+                /* Shortcut for APIC TPR reads and writes; 32 bits guests only */
+                if (    pVM->hwaccm.s.fTRPPatchingAllowed
+                    &&  pVM->hwaccm.s.pGuestPatchMem
+                    &&  (exitQualification & 0xfff) == 0x080
+                    &&  !(errCode & X86_TRAP_PF_P)  /* not present */
+                    &&  CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)) == 0
+                    &&  !CPUMIsGuestInLongModeEx(pCtx)
+                    &&  pVM->hwaccm.s.cPatches < RT_ELEMENTS(pVM->hwaccm.s.aPatches))
+                {
+                    RTGCPHYS GCPhysApicBase, GCPhys;
+                    PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
+                    GCPhysApicBase &= PAGE_BASE_GC_MASK;
+
+                    rc = PGMGstGetPage(pVCpu, (RTGCPTR)exitQualification, NULL, &GCPhys);
+                    if (    rc == VINF_SUCCESS
+                        &&  GCPhys == GCPhysApicBase)
+                    {
+                        /* Only attempt to patch the instruction once. */
+                        PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
+                        if (!pPatch)
+                        {
+                            rc = VINF_EM_HWACCM_PATCH_TPR_INSTR;
+                            break;
+                        }
+                    }
+                }
+#endif
 
                 Log2(("Page fault at %RGv error code %x\n", exitQualification, errCode));
                 /* Exit qualification contains the linear address of the page fault. */
@@ -3426,8 +3483,30 @@ ResumeExecution:
         break;
     }
 
-    case VMX_EXIT_RDMSR:                /* 31 RDMSR. Guest software attempted to execute RDMSR. */
     case VMX_EXIT_WRMSR:                /* 32 WRMSR. Guest software attempted to execute WRMSR. */
+        /* When an interrupt is pending, we'll let MSR_K8_LSTAR writes fault in our TPR patch code. */
+        if (    pVM->hwaccm.s.fTPRPatchingActive
+            &&  pCtx->ecx == MSR_K8_LSTAR)
+        {
+            Assert(!CPUMIsGuestInLongModeEx(pCtx));
+            if ((pCtx->eax & 0xff) != u8LastTPR)
+            {
+                Log(("VMX: Faulting MSR_K8_LSTAR write with new TPR value %x\n", pCtx->eax & 0xff));
+
+                /* Our patch code uses LSTAR for TPR caching. */
+                rc = PDMApicSetTPR(pVCpu, pCtx->eax & 0xff);
+                AssertRC(rc);
+            }
+
+            /* Skip the instruction and continue. */
+            pCtx->rip += cbInstr;     /* wrmsr = [0F 30] */
+
+            /* Only resume if successful. */
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
+            goto ResumeExecution;
+        }
+        /* no break */
+    case VMX_EXIT_RDMSR:                /* 31 RDMSR. Guest software attempted to execute RDMSR. */
     {
         uint32_t cbSize;
 
