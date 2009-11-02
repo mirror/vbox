@@ -3607,7 +3607,8 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
                 ulInstance = ulCurInst;
         }
     }
-    ulInstance++;
+    if (ulInstance)
+        ulInstance++;
 
     rc = ctrl->init(this, aName, aConnectionType, ulInstance);
     CheckComRCReturnRC(rc);
