@@ -41,6 +41,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
+#include <iprt/path.h>
 
 #include "PDMAsyncCompletionFileInternal.h"
 
@@ -692,6 +693,21 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
             RTFileClose(pEpFile->File);
     }
 
+#ifdef VBOX_WITH_STATISTICS
+    if (RT_SUCCESS(rc))
+    {
+        STAMR3RegisterF(pEpClassFile->Core.pVM, &pEpFile->StatRead,
+                       STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS,
+                       STAMUNIT_TICKS_PER_CALL, "Time taken to read from the endpoint",
+                       "/PDM/AsyncCompletion/File/%s/Read", RTPathFilename(pEpFile->Core.pszUri));
+
+        STAMR3RegisterF(pEpClassFile->Core.pVM, &pEpFile->StatWrite,
+                       STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS,
+                       STAMUNIT_TICKS_PER_CALL, "Time taken to write to the endpoint",
+                       "/PDM/AsyncCompletion/File/%s/Write", RTPathFilename(pEpFile->Core.pszUri));
+    }
+#endif
+
     return rc;
 }
 
@@ -727,6 +743,11 @@ static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
 
     RTFileClose(pEpFile->File);
 
+#ifdef VBOX_WITH_STATISTICS
+    STAMR3Deregister(pEpClassFile->Core.pVM, &pEpFile->StatRead);
+    STAMR3Deregister(pEpClassFile->Core.pVM, &pEpFile->StatWrite);
+#endif
+
     return VINF_SUCCESS;
 }
 
@@ -735,14 +756,21 @@ static int pdmacFileEpRead(PPDMASYNCCOMPLETIONTASK pTask,
                            PCPDMDATASEG paSegments, size_t cSegments,
                            size_t cbRead)
 {
+    int rc = VINF_SUCCESS;
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
 
+    STAM_PROFILE_ADV_START(&pEpFile->StatRead, Read);
+
     if (pEpFile->fCaching)
-        return pdmacFileEpCacheRead(pEpFile, (PPDMASYNCCOMPLETIONTASKFILE)pTask,
-                                    off, paSegments, cSegments, cbRead);
+        rc = pdmacFileEpCacheRead(pEpFile, (PPDMASYNCCOMPLETIONTASKFILE)pTask,
+                                  off, paSegments, cSegments, cbRead);
     else
-        return pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbRead,
-                                       PDMACTASKFILETRANSFER_READ);
+        rc = pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbRead,
+                                     PDMACTASKFILETRANSFER_READ);
+
+    STAM_PROFILE_ADV_STOP(&pEpFile->StatRead, Read);
+
+    return rc;
 }
 
 static int pdmacFileEpWrite(PPDMASYNCCOMPLETIONTASK pTask,
@@ -750,17 +778,24 @@ static int pdmacFileEpWrite(PPDMASYNCCOMPLETIONTASK pTask,
                             PCPDMDATASEG paSegments, size_t cSegments,
                             size_t cbWrite)
 {
+    int rc = VINF_SUCCESS;
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
 
     if (RT_UNLIKELY(pEpFile->fReadonly))
         return VERR_NOT_SUPPORTED;
 
+    STAM_PROFILE_ADV_START(&pEpFile->StatWrite, Write);
+
     if (pEpFile->fCaching)
-        return pdmacFileEpCacheWrite(pEpFile, (PPDMASYNCCOMPLETIONTASKFILE)pTask,
-                                     off, paSegments, cSegments, cbWrite);
+        rc = pdmacFileEpCacheWrite(pEpFile, (PPDMASYNCCOMPLETIONTASKFILE)pTask,
+                                   off, paSegments, cSegments, cbWrite);
     else
-        return pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbWrite,
-                                       PDMACTASKFILETRANSFER_WRITE);
+        rc = pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbWrite,
+                                     PDMACTASKFILETRANSFER_WRITE);
+
+    STAM_PROFILE_ADV_STOP(&pEpFile->StatWrite, Write);
+
+    return rc;
 }
 
 static int pdmacFileEpFlush(PPDMASYNCCOMPLETIONTASK pTask,
