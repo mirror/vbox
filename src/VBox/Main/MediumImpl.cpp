@@ -3567,10 +3567,10 @@ HRESULT Medium::queryInfo()
 {
     AutoWriteLock alock(this);
 
-    AssertReturn(m->state == MediumState_Created ||
-                 m->state == MediumState_Inaccessible ||
-                 m->state == MediumState_LockedRead,
-                 E_FAIL);
+    if (   m->state != MediumState_Created
+        && m->state != MediumState_Inaccessible
+        && m->state != MediumState_LockedRead)
+        return E_FAIL;
 
     HRESULT rc = S_OK;
 
