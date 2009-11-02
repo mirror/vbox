@@ -495,7 +495,7 @@ VBGLR3DECL(int)     VbglR3HostVersionLastCheckedStore(uint32_t u32ClientId, cons
 
 /** @name User credentials handling
  * @{ */
-VBGLR3DECL(bool)    VbglR3CredentialsAvailable(void);
+VBGLR3DECL(bool)    VbglR3CredentialsAreAvailable(void);
 VBGLR3DECL(int)     VbglR3CredentialsRetrieve(char **ppszUser, char **ppszPassword, char **ppszDomain);
 /** @}  */
 

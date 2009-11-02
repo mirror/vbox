@@ -23,8 +23,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <stdlib.h>
-#include <stdio.h>
 #include <iprt/string.h>
 #include <VBox/log.h>
 
@@ -37,7 +35,7 @@
  * @returns true if credentials are available, false if not (or error occured).
  *
  */
-VBGLR3DECL(bool) VbglR3CredentialsAvailable(void)
+VBGLR3DECL(bool) VbglR3CredentialsAreAvailable(void)
 {
     int rc;
     VMMDevCredentials vmmreqCredentials;
