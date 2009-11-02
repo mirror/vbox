@@ -793,34 +793,34 @@
     uuid="ce81dfdd-d2b8-4a90-bbea-40ee8b7ffcee"
   >
     <desc>
-      HWVirtEx property type. This enumeration represents possible values of the
-      IMachine get- and setHWVirtExProperty methods.
+      Hardware virtualization property type. This enumeration represents possible values
+      for the <link to="IMachine::getHWVirtExProperty"/> and
+      <link to="IMachine::setHWVirtExProperty"/> methods.
     </desc>
     <const name="Null"                value="0">
       <desc>Null value (never used by the API).</desc>
     </const>
     <const name="Enabled"             value="1">
       <desc>
-        HWVirtEx (VT-x/AMD-V) boolean property. Note that in case such extensions are not available,
-        they will not be used.
+        Whether hardware virtualization (VT-x/AMD-V) is enabled at all. If
+        such extensions are not available, they will not be used.
       </desc>
     </const>
     <const name="Exclusive"           value="2">
       <desc>
-        Exclusive use of the VT extensions boolean property. When enabled VirtualBox assumes it can acquire full and exclusive access
-        to the VT-x or AMD-V feature of the host. To share these with other hypervisors you must disable this property.
+        Whether hardware virtualization is used exclusively by VirtualBox. When enabled,
+        VirtualBox assumes it can acquire full and exclusive access to the VT-x or AMD-V
+        feature of the host. To share these with other hypervisors, you must disable this property.
       </desc>
     </const>
     <const name="VPID"                value="3">
       <desc>
-        VT-x VPID boolean property. Note that in case this extension is not available,
-        it will not be used.
+        Whether VT-x VPID is enabled. If this extension is not available, it will not be used.
       </desc>
     </const>
     <const name="NestedPaging"        value="4">
       <desc>
-        Nested Paging boolean property. Note that in case this extension is not available,
-        it will not be used.
+        Whether Nested Paging is enabled. If this extension is not available, it will not be used.
       </desc>
     </const>
   </enum>
@@ -5137,7 +5137,7 @@
 
     <method name="getHWVirtExProperty" const="yes">
       <desc>
-        Returns the HWVirtEx boolean value of the specified property.
+        Returns the value of the specified hardware virtualization boolean property.
 
         <result name="E_INVALIDARG">
           Invalid property.
@@ -5158,7 +5158,7 @@
 
     <method name="setHWVirtExProperty">
       <desc>
-        Sets the HWVirtEx boolean value of the specified property.
+        Sets a new value for the specified hardware virtualization boolean property.
 
         <result name="E_INVALIDARG">
           Invalid property.
@@ -5167,12 +5167,12 @@
       </desc>
       <param name="property" type="HWVirtExPropertyType" dir="in">
         <desc>
-          Property type to query.
+          Property type to set.
         </desc>
       </param>
       <param name="value" type="boolean" dir="in">
         <desc>
-          Property value.
+          New property value.
         </desc>
       </param>
     </method>
