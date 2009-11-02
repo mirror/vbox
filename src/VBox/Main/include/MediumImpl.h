@@ -164,8 +164,8 @@ public:
 
     const Guid& id() const;
     MediumState_T state() const;
-    const Bstr& location() const;
-    const Bstr& locationFull() const;
+    const Utf8Str& location() const;
+    const Utf8Str& locationFull() const;
 
     const Guid* getFirstMachineBackrefId() const;
     const Guid* getFirstMachineBackrefSnapshotId() const;

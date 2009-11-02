@@ -276,7 +276,7 @@ public:
 
 private:
 
-    HRESULT checkMediaForConflicts2(const Guid &aId, const Bstr &aLocation,
+    HRESULT checkMediaForConflicts2(const Guid &aId, const Utf8Str &aLocation,
                                     Utf8Str &aConflictType);
 
     HRESULT registerMachine (Machine *aMachine);

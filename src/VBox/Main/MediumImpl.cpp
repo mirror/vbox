@@ -108,12 +108,12 @@ struct Medium::Data
     {}
 
     const Guid id;
-    Bstr description;
+    Utf8Str strDescription;
     MediumState_T state;
-    Bstr location;
-    Bstr locationFull;
+    Utf8Str strLocation;
+    Utf8Str strLocationFull;
     uint64_t size;
-    Bstr lastAccessError;
+    Utf8Str strLastAccessError;
 
     BackRefList backRefs;
 
@@ -123,7 +123,7 @@ struct Medium::Data
     RTSEMEVENTMULTI queryInfoSem;
     bool queryInfoRunning : 1;
 
-    const Bstr format;
+    const Utf8Str strFormat;
     ComObjPtr<MediumFormat> formatObj;
 
     MediumType_T type;
@@ -552,8 +552,8 @@ private:
             if (aMedium->children().size() > 1)
             {
                 return setError(E_FAIL,
-                                tr("Medium '%ls' involved in the merge operation has more than one child medium (%d)"),
-                                aMedium->m->locationFull.raw(),
+                                tr("Medium '%s' involved in the merge operation has more than one child medium (%d)"),
+                                aMedium->m->strLocationFull.raw(),
                                 aMedium->children().size());
             }
         }
@@ -562,8 +562,8 @@ private:
         {
             if (aMedium->m->backRefs.size() != 0)
                 return setError(E_FAIL,
-                                tr("Medium '%ls' is attached to %d virtual machines"),
-                                aMedium->m->locationFull.raw(),
+                                tr("Medium '%s' is attached to %d virtual machines"),
+                                aMedium->m->strLocationFull.raw(),
                                 aMedium->m->backRefs.size());
         }
 
@@ -571,8 +571,8 @@ private:
         {
             if (aMedium->m->type == MediumType_Immutable)
                 return setError(E_FAIL,
-                                tr("Medium '%ls' is immutable"),
-                                aMedium->m->locationFull.raw());
+                                tr("Medium '%s' is immutable"),
+                                aMedium->m->strLocationFull.raw());
         }
 
         return S_OK;
@@ -1029,15 +1029,15 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
          * newly opened media so convert this into an error */
         if (m->state == MediumState_Inaccessible)
         {
-            Assert(!m->lastAccessError.isEmpty());
-            rc = setError(E_FAIL, Utf8Str(m->lastAccessError));
+            Assert(!m->strLastAccessError.isEmpty());
+            rc = setError(E_FAIL, m->strLastAccessError);
         }
         else
         {
             AssertReturn(!m->id.isEmpty(), E_FAIL);
 
             /* storage format must be detected by queryInfo() if the medium is accessible */
-            AssertReturn(!m->format.isNull(), E_FAIL);
+            AssertReturn(!m->strFormat.isEmpty(), E_FAIL);
         }
     }
 
@@ -1093,7 +1093,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     /* see below why we don't call queryInfo() (and therefore treat the medium
      * as inaccessible for now */
     m->state = MediumState_Inaccessible;
-    m->lastAccessError = tr("Accessibility check was not yet performed");
+    m->strLastAccessError = tr("Accessibility check was not yet performed");
 
     /* required */
     unconst(m->id) = data.uuid;
@@ -1102,7 +1102,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     m->hostDrive = FALSE;
 
     /* optional */
-    m->description = data.strDescription;
+    m->strDescription = data.strDescription;
 
     /* required */
     if (aDeviceType == DeviceType_HardDisk)
@@ -1156,8 +1156,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     /* remember device type for correct unregistering later */
     m->devType = aDeviceType;
 
-    LogFlowThisFunc(("m->locationFull='%ls', m->format=%ls, m->id={%RTuuid}\n",
-                     m->locationFull.raw(), m->format.raw(), m->id.raw()));
+    LogFlowThisFunc(("m->locationFull='%s', m->format=%s, m->id={%RTuuid}\n",
+                     m->strLocationFull.raw(), m->strFormat.raw(), m->id.raw()));
 
     /* Don't call queryInfo() for registered media to prevent the calling
      * thread (i.e. the VirtualBox server startup thread) from an unexpected
@@ -1246,7 +1246,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     CheckComRCReturnRC(rc);
     rc = setLocation(aLocation);
     CheckComRCReturnRC(rc);
-    m->description = aDescription;
+    m->strDescription = aDescription;
 
 /// @todo generate uuid (similarly to host network interface uuid) from location and device type
 
@@ -1339,10 +1339,10 @@ STDMETHODIMP Medium::COMGETTER(Description)(BSTR *aDescription)
 
     AutoReadLock alock(this);
 
-    if (m->description.isEmpty())
+    if (m->strDescription.isEmpty())
         Bstr("").cloneTo(aDescription);
     else
-        m->description.cloneTo(aDescription);
+        m->strDescription.cloneTo(aDescription);
 
     return S_OK;
 }
@@ -1386,7 +1386,7 @@ STDMETHODIMP Medium::COMGETTER(Location)(BSTR *aLocation)
 
     AutoReadLock alock(this);
 
-    m->locationFull.cloneTo(aLocation);
+    m->strLocationFull.cloneTo(aLocation);
 
     return S_OK;
 }
@@ -1477,7 +1477,7 @@ STDMETHODIMP Medium::COMGETTER(Format)(BSTR *aFormat)
     CheckComRCReturnRC(autoCaller.rc());
 
     /* no need to lock, m->format is const */
-    m->format.cloneTo(aFormat);
+    m->strFormat.cloneTo(aFormat);
 
     return S_OK;
 }
@@ -1526,14 +1526,14 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
     /* cannot change the type of a differencing hard disk */
     if (!mParent.isNull())
         return setError(E_FAIL,
-                        tr("Hard disk '%ls' is a differencing hard disk"),
-                m->locationFull.raw());
+                        tr("Hard disk '%s' is a differencing hard disk"),
+                        m->strLocationFull.raw());
 
     /* cannot change the type of a hard disk being in use */
     if (m->backRefs.size() != 0)
         return setError(E_FAIL,
-                        tr("Hard disk '%ls' is attached to %d virtual machines"),
-                        m->locationFull.raw(), m->backRefs.size());
+                        tr("Hard disk '%s' is attached to %d virtual machines"),
+                        m->strLocationFull.raw(), m->backRefs.size());
 
     switch (aType)
     {
@@ -1682,8 +1682,8 @@ STDMETHODIMP Medium::COMSETTER(AutoReset)(BOOL aAutoReset)
 
     if (mParent.isNull())
         return setError(VBOX_E_NOT_SUPPORTED,
-                        tr("Hard disk '%ls' is not differencing"),
-                        m->locationFull.raw());
+                        tr("Hard disk '%s' is not differencing"),
+                        m->strLocationFull.raw());
 
     if (m->autoReset != aAutoReset)
     {
@@ -1703,10 +1703,10 @@ STDMETHODIMP Medium::COMGETTER(LastAccessError)(BSTR *aLastAccessError)
 
     AutoReadLock alock(this);
 
-    if (m->lastAccessError.isEmpty())
+    if (m->strLastAccessError.isEmpty())
         Bstr("").cloneTo(aLastAccessError);
     else
-        m->lastAccessError.cloneTo(aLastAccessError);
+        m->strLastAccessError.cloneTo(aLastAccessError);
 
     return S_OK;
 }
@@ -1907,8 +1907,8 @@ STDMETHODIMP Medium::UnlockRead(MediumState_T *aState)
         {
             LogFlowThisFunc(("Failing - state=%d\n", m->state));
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr ("Medium '%ls' is not locked for reading"),
-                          m->locationFull.raw());
+                          tr ("Medium '%s' is not locked for reading"),
+                          m->strLocationFull.raw());
             break;
         }
     }
@@ -1992,8 +1992,8 @@ STDMETHODIMP Medium::UnlockWrite(MediumState_T *aState)
         {
             LogFlowThisFunc(("Failing - state=%d\n", m->state));
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr ("Medium '%ls' is not locked for writing"),
-                          m->locationFull.raw());
+                          tr ("Medium '%s' is not locked for writing"),
+                          m->strLocationFull.raw());
             break;
         }
     }
@@ -2038,8 +2038,8 @@ STDMETHODIMP Medium::Close()
 
     if (m->backRefs.size() != 0)
         return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("Medium '%ls' is attached to %d virtual machines"),
-                        m->locationFull.raw(), m->backRefs.size());
+                        tr("Medium '%s' is attached to %d virtual machines"),
+                        m->strLocationFull.raw(), m->backRefs.size());
 
     /* perform extra media-dependent close checks */
     HRESULT rc = canClose();
@@ -2214,13 +2214,13 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
     if (    !(aVariant & MediumVariant_Fixed)
         &&  !(m->formatObj->capabilities() & MediumFormatCapabilities_CreateDynamic))
         return setError(VBOX_E_NOT_SUPPORTED,
-                        tr("Hard disk format '%ls' does not support dynamic storage creation"),
-                        m->format.raw());
+                        tr("Hard disk format '%s' does not support dynamic storage creation"),
+                        m->strFormat.raw());
     if (    (aVariant & MediumVariant_Fixed)
         &&  !(m->formatObj->capabilities() & MediumFormatCapabilities_CreateDynamic))
         return setError(VBOX_E_NOT_SUPPORTED,
-                        tr("Hard disk format '%ls' does not support fixed storage creation"),
-                        m->format.raw());
+                        tr("Hard disk format '%s' does not support fixed storage creation"),
+                        m->strFormat.raw());
 
     switch (m->state)
     {
@@ -2235,8 +2235,8 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
     /// @todo include fixed/dynamic
     HRESULT rc = progress->init(mVirtualBox, static_cast<IMedium*>(this),
         (aVariant & MediumVariant_Fixed)
-          ? BstrFmt(tr("Creating fixed hard disk storage unit '%ls'"), m->locationFull.raw())
-          : BstrFmt(tr("Creating dynamic hard disk storage unit '%ls'"), m->locationFull.raw()),
+          ? BstrFmt(tr("Creating fixed hard disk storage unit '%s'"), m->strLocationFull.raw())
+          : BstrFmt(tr("Creating dynamic hard disk storage unit '%s'"), m->strLocationFull.raw()),
         TRUE /* aCancelable */);
     CheckComRCReturnRC(rc);
 
@@ -2301,8 +2301,8 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
 
     if (m->type == MediumType_Writethrough)
         return setError(E_FAIL,
-                        tr("Hard disk '%ls' is Writethrough"),
-                        m->locationFull.raw());
+                        tr("Hard disk '%s' is Writethrough"),
+                        m->strLocationFull.raw());
 
     /* We want to be locked for reading as long as our diff child is being
      * created */
@@ -2412,8 +2412,8 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
 
         progress.createObject();
         rc = progress->init(mVirtualBox, static_cast <IMedium *>(this),
-            BstrFmt(tr("Creating clone hard disk '%ls'"),
-                    target->m->locationFull.raw()),
+            BstrFmt(tr("Creating clone hard disk '%s'"),
+                    target->m->strLocationFull.raw()),
             TRUE /* aCancelable */);
         CheckComRCThrowRC(rc);
 
@@ -2487,7 +2487,7 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
 
         progress.createObject();
         rc = progress->init(mVirtualBox, static_cast <IMedium *>(this),
-             BstrFmt(tr("Compacting hard disk '%ls'"), m->locationFull.raw()),
+             BstrFmt(tr("Compacting hard disk '%s'"), m->strLocationFull.raw()),
              TRUE /* aCancelable */);
         CheckComRCThrowRC(rc);
 
@@ -2542,8 +2542,8 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
 
     if (mParent.isNull())
         return setError(VBOX_E_NOT_SUPPORTED,
-                        tr ("Hard disk '%ls' is not differencing"),
-                        m->locationFull.raw());
+                        tr ("Hard disk '%s' is not differencing"),
+                        m->strLocationFull.raw());
 
     HRESULT rc = canClose();
     CheckComRCReturnRC(rc);
@@ -2557,8 +2557,8 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
     {
         progress.createObject();
         rc = progress->init(mVirtualBox, static_cast <IMedium *>(this),
-            BstrFmt(tr("Resetting differencing hard disk '%ls'"),
-                     m->locationFull.raw()),
+            BstrFmt(tr("Resetting differencing hard disk '%s'"),
+                     m->strLocationFull.raw()),
             FALSE /* aCancelable */);
         CheckComRCThrowRC(rc);
 
@@ -2619,9 +2619,9 @@ HRESULT Medium::updatePath(const char *aOldPath, const char *aNewPath)
 
     AutoWriteLock alock(this);
 
-    LogFlowThisFunc(("locationFull.before='%s'\n", m->locationFull.raw()));
+    LogFlowThisFunc(("locationFull.before='%s'\n", m->strLocationFull.raw()));
 
-    Utf8Str path = m->locationFull;
+    Utf8Str path = m->strLocationFull;
 
     if (RTPathStartsWith(path.c_str(), aOldPath))
     {
@@ -2631,10 +2631,10 @@ HRESULT Medium::updatePath(const char *aOldPath, const char *aNewPath)
 
         mVirtualBox->calculateRelativePath(path, path);
 
-        unconst(m->locationFull) = newPath;
-        unconst(m->location) = path;
+        unconst(m->strLocationFull) = newPath;
+        unconst(m->strLocation) = path;
 
-        LogFlowThisFunc(("locationFull.after='%s'\n", m->locationFull.raw()));
+        LogFlowThisFunc(("locationFull.after='%s'\n", m->strLocationFull.raw()));
     }
 
     return S_OK;
@@ -2671,8 +2671,8 @@ HRESULT Medium::attachTo(const Guid &aMachineId,
 
     if (m->numCreateDiffTasks > 0)
         return setError(E_FAIL,
-                        tr("One or more differencing child hard disks are being created for the hard disk '%ls' (%u)"),
-                        m->locationFull.raw(), m->numCreateDiffTasks);
+                        tr("One or more differencing child hard disks are being created for the hard disk '%s' (%u)"),
+                        m->strLocationFull.raw(), m->numCreateDiffTasks);
 
     BackRefList::iterator it =
         std::find_if(m->backRefs.begin(), m->backRefs.end(),
@@ -2771,18 +2771,18 @@ MediumState_T Medium::state() const
  * Internal method to return the medium's location. Must have caller + locking!
  * @return
  */
-const Bstr& Medium::location() const
+const Utf8Str& Medium::location() const
 {
-    return m->location;
+    return m->strLocation;
 }
 
 /**
  * Internal method to return the medium's full location. Must have caller + locking!
  * @return
  */
-const Bstr& Medium::locationFull() const
+const Utf8Str& Medium::locationFull() const
 {
-    return m->locationFull;
+    return m->strLocationFull;
 }
 
 /**
@@ -2972,8 +2972,8 @@ HRESULT Medium::saveSettings(settings::Medium &data)
     AutoReadLock treeLock(this->treeLock());
 
     data.uuid = m->id;
-    data.strLocation = m->location;
-    data.strFormat = m->format;
+    data.strLocation = m->strLocation;
+    data.strFormat = m->strFormat;
 
     /* optional, only for diffs, default is false */
     if (!mParent.isNull())
@@ -2982,7 +2982,7 @@ HRESULT Medium::saveSettings(settings::Medium &data)
         data.fAutoReset = false;
 
     /* optional */
-    data.strDescription = m->description;
+    data.strDescription = m->strDescription;
 
     /* optional properties */
     data.properties.clear();
@@ -3036,7 +3036,7 @@ HRESULT Medium::compareLocationTo(const char *aLocation, int &aResult)
 
     AutoReadLock alock(this);
 
-    Utf8Str locationFull(m->locationFull);
+    Utf8Str locationFull(m->strLocationFull);
 
     /// @todo NEWMEDIA delegate the comparison to the backend?
 
@@ -3130,8 +3130,8 @@ HRESULT Medium::prepareDiscard(MergeChain * &aChain)
     /* not going multi-merge as it's too expensive */
     if (children().size() > 1)
         return setError(E_FAIL,
-                        tr ("Hard disk '%ls' has more than one child hard disk (%d)"),
-                        m->locationFull.raw(), children().size());
+                        tr ("Hard disk '%s' has more than one child hard disk (%d)"),
+                        m->strLocationFull.raw(), children().size());
 
     /* this is a read-only hard disk with children; it must be associated with
      * exactly one snapshot (when the snapshot is being taken, none of the
@@ -3328,23 +3328,23 @@ void Medium::cancelDiscard(MergeChain *aChain)
  */
 Bstr Medium::preferredDiffFormat()
 {
-    Bstr format;
+    Utf8Str strFormat;
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), format);
+    AssertComRCReturn(autoCaller.rc(), strFormat);
 
     /* m->format is const, no need to lock */
-    format = m->format;
+    strFormat = m->strFormat;
 
     /* check that our own format supports diffs */
     if (!(m->formatObj->capabilities() & MediumFormatCapabilities_Differencing))
     {
         /* use the default format if not */
         AutoReadLock propsLock(mVirtualBox->systemProperties());
-        format = mVirtualBox->getDefaultHardDiskFormat();
+        strFormat = mVirtualBox->getDefaultHardDiskFormat();
     }
 
-    return format;
+    return strFormat;
 }
 
 /**
@@ -3383,14 +3383,14 @@ RWLockHandle* Medium::treeLock()
  */
 Utf8Str Medium::name()
 {
-    Utf8Str location(m->locationFull);
+    Utf8Str location(m->strLocationFull);
 
     Utf8Str name = RTPathFilename(location.c_str());
     return name;
 }
 
 /**
- * Sets the value of m->location and calculates the value of m->locationFull.
+ * Sets the value of m->strLocation and calculates the value of m->strLocationFull.
  *
  * Treats non-FS-path locations specially, and prepends the default hard disk
  * folder if the given location string does not contain any path information
@@ -3419,15 +3419,17 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
 
     /* formatObj may be null only when initializing from an existing path and
      * no format is known yet */
-    AssertReturn((!m->format.isNull() && !m->formatObj.isNull()) ||
-                 (autoCaller.state() == InInit &&
-                  m->state != MediumState_NotCreated && m->id.isEmpty() &&
-                  m->format.isNull() && m->formatObj.isNull()),
+    AssertReturn(    (!m->strFormat.isEmpty() && !m->formatObj.isNull())
+                  || (    autoCaller.state() == InInit
+                       && m->state != MediumState_NotCreated
+                       && m->id.isEmpty()
+                       && m->strFormat.isEmpty()
+                       && m->formatObj.isNull()),
                  E_FAIL);
 
     /* are we dealing with a new medium constructed using the existing
      * location? */
-    bool isImport = m->format.isNull();
+    bool isImport = m->strFormat.isEmpty();
 
     if (   isImport
         || (   (m->formatObj->capabilities() & MediumFormatCapabilities_File)
@@ -3536,8 +3538,8 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
         /* is it still a file? */
         if (m->formatObj->capabilities() & MediumFormatCapabilities_File)
         {
-            m->location = location;
-            m->locationFull = locationFull;
+            m->strLocation = location;
+            m->strLocationFull = locationFull;
 
             if (m->state == MediumState_NotCreated)
             {
@@ -3550,14 +3552,14 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
         }
         else
         {
-            m->location = locationFull;
-            m->locationFull = locationFull;
+            m->strLocation = locationFull;
+            m->strLocationFull = locationFull;
         }
     }
     else
     {
-        m->location = aLocation;
-        m->locationFull = aLocation;
+        m->strLocation = aLocation;
+        m->strLocationFull = aLocation;
     }
 
     return S_OK;
@@ -3636,8 +3638,8 @@ HRESULT Medium::queryInfo()
      * as we're dropping the lock. CAUTION: be extremely careful what
      * you do with the contents of this medium object, as you will
      * create races if there are concurrent changes. */
-    Utf8Str format(m->format);
-    Utf8Str location(m->locationFull);
+    Utf8Str format(m->strFormat);
+    Utf8Str location(m->strLocationFull);
     ComObjPtr<MediumFormat> formatObj = m->formatObj;
 
     /* "Output" values which can't be set because the lock isn't held
@@ -3721,9 +3723,11 @@ HRESULT Medium::queryInfo()
                     if (mediumId != uuid)
                     {
                         lastAccessError = Utf8StrFmt(
-                            tr("UUID {%RTuuid} of the medium '%s' does not match the value {%RTuuid} stored in the media registry ('%ls')"),
-                            &uuid, location.c_str(), mediumId.raw(),
-                            mVirtualBox->settingsFilePath().raw());
+                            tr("UUID {%RTuuid} of the medium '%s' does not match the value {%RTuuid} stored in the media registry ('%s')"),
+                            &uuid,
+                            location.c_str(),
+                            mediumId.raw(),
+                            mVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
                     }
                 }
@@ -3771,9 +3775,9 @@ HRESULT Medium::queryInfo()
                     if (FAILED(rc))
                     {
                         lastAccessError = Utf8StrFmt(
-                            tr("Parent hard disk with UUID {%RTuuid} of the hard disk '%s' is not found in the media registry ('%ls')"),
+                            tr("Parent hard disk with UUID {%RTuuid} of the hard disk '%s' is not found in the media registry ('%s')"),
                             &parentId, location.c_str(),
-                            mVirtualBox->settingsFilePath().raw());
+                            mVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
                     }
 
@@ -3800,9 +3804,9 @@ HRESULT Medium::queryInfo()
                     if (mParent.isNull())
                     {
                         lastAccessError = Utf8StrFmt(
-                            tr("Hard disk '%s' is differencing but it is not associated with any parent hard disk in the media registry ('%ls')"),
+                            tr("Hard disk '%s' is differencing but it is not associated with any parent hard disk in the media registry ('%s')"),
                             location.c_str(),
-                            mVirtualBox->settingsFilePath().raw());
+                            mVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
                     }
 
@@ -3811,10 +3815,10 @@ HRESULT Medium::queryInfo()
                         mParent->id() != parentId)
                     {
                         lastAccessError = Utf8StrFmt(
-                            tr ("Parent UUID {%RTuuid} of the hard disk '%s' does not match UUID {%RTuuid} of its parent hard disk stored in the media registry ('%ls')"),
+                            tr ("Parent UUID {%RTuuid} of the hard disk '%s' does not match UUID {%RTuuid} of its parent hard disk stored in the media registry ('%s')"),
                             &parentId, location.c_str(),
                             mParent->id().raw(),
-                            mVirtualBox->settingsFilePath().raw());
+                            mVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
                     }
 
@@ -3851,13 +3855,13 @@ HRESULT Medium::queryInfo()
     {
         m->size = mediumSize;
         m->logicalSize = mediumLogicalSize;
-        m->lastAccessError.setNull();
+        m->strLastAccessError.setNull();
     }
     else
     {
-        m->lastAccessError = lastAccessError;
-        LogWarningFunc(("'%s' is not accessible (error='%ls', rc=%Rhrc, vrc=%Rrc)\n",
-                         location.c_str(), m->lastAccessError.raw(),
+        m->strLastAccessError = lastAccessError;
+        LogWarningFunc(("'%s' is not accessible (error='%s', rc=%Rhrc, vrc=%Rrc)\n",
+                         location.c_str(), m->strLastAccessError.c_str(),
                          rc, vrc));
     }
 
@@ -3894,59 +3898,56 @@ HRESULT Medium::setStateError()
         case MediumState_NotCreated:
         {
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr("Storage for the medium '%ls' is not created"),
-                          m->locationFull.raw());
+                          tr("Storage for the medium '%s' is not created"),
+                          m->strLocationFull.raw());
             break;
         }
         case MediumState_Created:
         {
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr("Storage for the medium '%ls' is already created"),
-                          m->locationFull.raw());
+                          tr("Storage for the medium '%s' is already created"),
+                          m->strLocationFull.raw());
             break;
         }
         case MediumState_LockedRead:
         {
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr("Medium '%ls' is locked for reading by another task"),
-                          m->locationFull.raw());
+                          tr("Medium '%s' is locked for reading by another task"),
+                          m->strLocationFull.raw());
             break;
         }
         case MediumState_LockedWrite:
         {
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr("Medium '%ls' is locked for writing by another task"),
-                          m->locationFull.raw());
+                          tr("Medium '%s' is locked for writing by another task"),
+                          m->strLocationFull.raw());
             break;
         }
         case MediumState_Inaccessible:
         {
-            AssertMsg(!m->lastAccessError.isEmpty(),
-                      ("There must always be a reason for Inaccessible"));
-
             /* be in sync with Console::powerUpThread() */
-            if (!m->lastAccessError.isEmpty())
+            if (!m->strLastAccessError.isEmpty())
                 rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                              tr("Medium '%ls' is not accessible. %ls"),
-                              m->locationFull.raw(), m->lastAccessError.raw());
+                              tr("Medium '%s' is not accessible. %s"),
+                              m->strLocationFull.raw(), m->strLastAccessError.c_str());
             else
                 rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                              tr("Medium '%ls' is not accessible"),
-                              m->locationFull.raw());
+                              tr("Medium '%s' is not accessible"),
+                              m->strLocationFull.raw());
             break;
         }
         case MediumState_Creating:
         {
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr("Storage for the medium '%ls' is being created"),
-                          m->locationFull.raw(), m->lastAccessError.raw());
+                          tr("Storage for the medium '%s' is being created"),
+                          m->strLocationFull.raw());
             break;
         }
         case MediumState_Deleting:
         {
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr("Storage for the medium '%ls' is being deleted"),
-                          m->locationFull.raw(), m->lastAccessError.raw());
+                          tr("Storage for the medium '%s' is being deleted"),
+                          m->strLocationFull.raw());
             break;
         }
         default:
@@ -3998,8 +3999,8 @@ HRESULT Medium::deleteStorage(ComObjPtr <Progress> *aProgress, bool aWait)
     if (    !(m->formatObj->capabilities() & (   MediumFormatCapabilities_CreateDynamic
                                                | MediumFormatCapabilities_CreateFixed)))
         return setError(VBOX_E_NOT_SUPPORTED,
-                        tr("Hard disk format '%ls' does not support storage deletion"),
-                        m->format.raw());
+                        tr("Hard disk format '%s' does not support storage deletion"),
+                        m->strFormat.raw());
 
     /* Note that we are fine with Inaccessible state too: a) for symmetry with
      * create calls and b) because it doesn't really harm to try, if it is
@@ -4019,8 +4020,8 @@ HRESULT Medium::deleteStorage(ComObjPtr <Progress> *aProgress, bool aWait)
 
     if (m->backRefs.size() != 0)
         return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("Hard disk '%ls' is attached to %d virtual machines"),
-                        m->locationFull.raw(), m->backRefs.size());
+                        tr("Hard disk '%s' is attached to %d virtual machines"),
+                        m->strLocationFull.raw(), m->backRefs.size());
 
     HRESULT rc = canClose();
     CheckComRCReturnRC(rc);
@@ -4058,8 +4059,8 @@ HRESULT Medium::deleteStorage(ComObjPtr <Progress> *aProgress, bool aWait)
         {
             progress.createObject();
             rc = progress->init(mVirtualBox, static_cast<IMedium*>(this),
-                BstrFmt(tr("Deleting hard disk storage unit '%ls'"),
-                         m->locationFull.raw()),
+                BstrFmt(tr("Deleting hard disk storage unit '%s'"),
+                         m->strLocationFull.raw()),
                 FALSE /* aCancelable */);
             CheckComRCReturnRC(rc);
         }
@@ -4176,8 +4177,8 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
             if (it->snapshotIds.size() == 0)
             {
                 return setError(VBOX_E_INVALID_OBJECT_STATE,
-                                tr("Hard disk '%ls' is attached to a virtual machine with UUID {%RTuuid}. No differencing hard disks based on it may be created until it is detached"),
-                                m->locationFull.raw(), it->machineId.raw());
+                                tr("Hard disk '%s' is attached to a virtual machine with UUID {%RTuuid}. No differencing hard disks based on it may be created until it is detached"),
+                                m->strLocationFull.raw(), it->machineId.raw());
             }
 
             Assert(it->snapshotIds.size() == 1);
@@ -4196,8 +4197,8 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
         {
             progress.createObject();
             rc = progress->init(mVirtualBox, static_cast<IMedium*>(this),
-                BstrFmt(tr("Creating differencing hard disk storage unit '%ls'"),
-                         aTarget->m->locationFull.raw()),
+                BstrFmt(tr("Creating differencing hard disk storage unit '%s'"),
+                         aTarget->m->strLocationFull.raw()),
                 TRUE /* aCancelable */);
             CheckComRCReturnRC(rc);
         }
@@ -4303,7 +4304,7 @@ HRESULT Medium::prepareMergeTo(Medium *aTarget,
                 forward = true;
             else
             {
-                Bstr tgtLoc;
+                Utf8Str tgtLoc;
                 {
                     AutoReadLock alock(this);
                     tgtLoc = aTarget->locationFull();
@@ -4311,8 +4312,8 @@ HRESULT Medium::prepareMergeTo(Medium *aTarget,
 
                 AutoReadLock alock(this);
                 return setError(E_FAIL,
-                                tr("Hard disks '%ls' and '%ls' are unrelated"),
-                                m->locationFull.raw(), tgtLoc.raw());
+                                tr("Hard disks '%s' and '%s' are unrelated"),
+                                m->strLocationFull.raw(), tgtLoc.raw());
             }
         }
     }
@@ -4544,7 +4545,7 @@ HRESULT Medium::setFormat(CBSTR aFormat)
         }
     }
 
-    unconst(m->format) = aFormat;
+    unconst(m->strFormat) = aFormat;
 
     return S_OK;
 }
@@ -4845,8 +4846,8 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 int vrc = VDCreate(that->m->vdDiskIfaces, &hdd);
                 ComAssertRCThrow(vrc, E_FAIL);
 
-                Utf8Str format(that->m->format);
-                Utf8Str location(that->m->locationFull);
+                Utf8Str format(that->m->strFormat);
+                Utf8Str location(that->m->strLocationFull);
                 /* uint64_t capabilities = */ that->m->formatObj->capabilities();
 
                 /* unlock before the potentially lengthy operation */
@@ -4948,11 +4949,11 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 ComAssertRCThrow(vrc, E_FAIL);
 
                 Guid id = that->m->id;
-                Utf8Str format(that->m->format);
-                Utf8Str location(that->m->locationFull);
+                Utf8Str format(that->m->strFormat);
+                Utf8Str location(that->m->strLocationFull);
 
-                Utf8Str targetFormat(target->m->format);
-                Utf8Str targetLocation(target->m->locationFull);
+                Utf8Str targetFormat(target->m->strFormat);
+                Utf8Str targetLocation(target->m->strLocationFull);
 
                 Assert(target->m->state == MediumState_Creating);
 
@@ -5141,15 +5142,15 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
 
                         /* open the first image with VDOPEN_FLAGS_INFO because
                          * it's not necessarily the base one */
-                        vrc = VDOpen(hdd, Utf8Str((*it)->m->format).c_str(),
-                                      Utf8Str((*it)->m->locationFull).c_str(),
+                        vrc = VDOpen(hdd, (*it)->m->strFormat.c_str(),
+                                      (*it)->m->strLocationFull.c_str(),
                                       it == chain->begin() ?
                                           VD_OPEN_FLAGS_INFO : 0,
                                       (*it)->m->vdDiskIfaces);
                         if (RT_FAILURE(vrc))
                             throw vrc;
 #if 0
-                        LogFlow(("*** MERGE disk = %ls\n", (*it)->m->locationFull.raw()));
+                        LogFlow(("*** MERGE disk = %s\n", (*it)->m->strLocationFull.raw()));
 #endif
                     }
 
@@ -5192,8 +5193,8 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                                  it != chain->children().end(); ++ it)
                             {
                                 /* VD_OPEN_FLAGS_INFO since UUID is wrong yet */
-                                vrc = VDOpen(hdd, Utf8Str((*it)->m->format).c_str(),
-                                             Utf8Str((*it)->m->locationFull).c_str(),
+                                vrc = VDOpen(hdd, (*it)->m->strFormat.c_str(),
+                                             (*it)->m->strLocationFull.c_str(),
                                              VD_OPEN_FLAGS_INFO,
                                              (*it)->m->vdDiskIfaces);
                                 if (RT_FAILURE(vrc))
@@ -5215,9 +5216,9 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 catch (int aVRC)
                 {
                     throw setError(E_FAIL,
-                                   tr("Could not merge the hard disk '%ls' to '%ls'%s"),
-                                   chain->source()->m->locationFull.raw(),
-                                   chain->target()->m->locationFull.raw(),
+                                   tr("Could not merge the hard disk '%s' to '%s'%s"),
+                                   chain->source()->m->strLocationFull.raw(),
+                                   chain->target()->m->strLocationFull.raw(),
                                    that->vdError(aVRC).raw());
                 }
 
@@ -5432,15 +5433,15 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                         Assert((*it)->m->state == MediumState_LockedRead);
 
                         /** Open all images in read-only mode. */
-                        vrc = VDOpen(hdd, Utf8Str((*it)->m->format).c_str(),
-                                     Utf8Str((*it)->m->locationFull).c_str(),
+                        vrc = VDOpen(hdd, (*it)->m->strFormat.c_str(),
+                                     (*it)->m->strLocationFull.c_str(),
                                      VD_OPEN_FLAGS_READONLY,
                                      (*it)->m->vdDiskIfaces);
                         if (RT_FAILURE(vrc))
                         {
                             throw setError(E_FAIL,
                                            tr("Could not open the hard disk storage unit '%s'%s"),
-                                           Utf8Str((*it)->m->locationFull).raw(),
+                                           (*it)->m->strLocationFull.raw(),
                                            that->vdError(vrc).raw());
                         }
                     }
@@ -5448,8 +5449,8 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                     /* unlock before the potentially lengthy operation */
                     thatLock.leave();
 
-                    Utf8Str targetFormat(target->m->format);
-                    Utf8Str targetLocation(target->m->locationFull);
+                    Utf8Str targetFormat(target->m->strFormat);
+                    Utf8Str targetLocation(target->m->strLocationFull);
 
                     Assert(    target->m->state == MediumState_Creating
                            ||  target->m->state == MediumState_LockedWrite);
@@ -5478,15 +5479,15 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                                    ||  (*it)->m->state == MediumState_LockedWrite);
 
                             /* Open all images in appropriate mode. */
-                            vrc = VDOpen(targetHdd, Utf8Str((*it)->m->format).c_str(),
-                                         Utf8Str((*it)->m->locationFull).c_str(),
+                            vrc = VDOpen(targetHdd, (*it)->m->strFormat.c_str(),
+                                         (*it)->m->strLocationFull.c_str(),
                                          ((*it)->m->state == MediumState_LockedWrite) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
                                          (*it)->m->vdDiskIfaces);
                             if (RT_FAILURE(vrc))
                             {
                                 throw setError(E_FAIL,
                                                tr("Could not open the hard disk storage unit '%s'%s"),
-                                               Utf8Str((*it)->m->locationFull).raw(),
+                                               (*it)->m->strLocationFull.raw(),
                                                that->vdError(vrc).raw());
                             }
                         }
@@ -5607,8 +5608,8 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 int vrc = VDCreate(that->m->vdDiskIfaces, &hdd);
                 ComAssertRCThrow(vrc, E_FAIL);
 
-                Utf8Str format(that->m->format);
-                Utf8Str location(that->m->locationFull);
+                Utf8Str format(that->m->strFormat);
+                Utf8Str location(that->m->strLocationFull);
 
                 /* unlock before the potentially lengthy operation */
                 Assert(that->m->state == MediumState_Deleting);
@@ -5669,12 +5670,12 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 ComAssertRCThrow(vrc, E_FAIL);
 
                 Guid id = that->m->id;
-                Utf8Str format(that->m->format);
-                Utf8Str location(that->m->locationFull);
+                Utf8Str format(that->m->strFormat);
+                Utf8Str location(that->m->strLocationFull);
 
                 Guid parentId = that->mParent->m->id;
-                Utf8Str parentFormat(that->mParent->m->format);
-                Utf8Str parentLocation(that->mParent->m->locationFull);
+                Utf8Str parentFormat(that->mParent->m->strFormat);
+                Utf8Str parentLocation(that->mParent->m->strLocationFull);
 
                 Assert(that->m->state == MediumState_LockedWrite);
 
@@ -5788,15 +5789,15 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                             Assert((*it)->m->state == MediumState_LockedRead);
 
                         /** Open all images but last in read-only mode. */
-                        vrc = VDOpen(hdd, Utf8Str((*it)->m->format).c_str(),
-                                     Utf8Str((*it)->m->locationFull).c_str(),
+                        vrc = VDOpen(hdd, (*it)->m->strFormat.c_str(),
+                                     (*it)->m->strLocationFull.c_str(),
                                      (it == last) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
                                      (*it)->m->vdDiskIfaces);
                         if (RT_FAILURE(vrc))
                         {
                             throw setError(E_FAIL,
                                            tr("Could not open the hard disk storage unit '%s'%s"),
-                                           Utf8Str((*it)->m->locationFull).raw(),
+                                           (*it)->m->strLocationFull.raw(),
                                            that->vdError(vrc).raw());
                         }
                     }
@@ -5817,16 +5818,16 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                     {
                         if (vrc == VERR_NOT_SUPPORTED)
                             throw setError(VBOX_E_NOT_SUPPORTED,
-                                           tr("Compacting is not supported yet for hard disk '%s'"),
-                                           Utf8Str(that->m->locationFull).raw());
+                                           tr("Compacting is not yet supported for hard disk '%s'"),
+                                           that->m->strLocationFull.raw());
                         else if (vrc == VERR_NOT_IMPLEMENTED)
                             throw setError(E_NOTIMPL,
                                            tr("Compacting is not implemented, hard disk '%s'"),
-                                           Utf8Str(that->m->locationFull).raw());
+                                           that->m->strLocationFull.raw());
                         else
                             throw setError(E_FAIL,
                                            tr("Could not compact hard disk '%s'%s"),
-                                           Utf8Str(that->m->locationFull).raw(),
+                                           that->m->strLocationFull.raw(),
                                            that->vdError(vrc).raw());
                     }
                 }
