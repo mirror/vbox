@@ -75,7 +75,7 @@ GetExtensions(void)
     extensions = return_value;
     ext = crStateMergeExtensions(1, &extensions);
 
-    sprintf(gpszExtensions, "%s", ext);
+    sprintf((char*)gpszExtensions, "%s", ext);
 
     return gpszExtensions;
 }

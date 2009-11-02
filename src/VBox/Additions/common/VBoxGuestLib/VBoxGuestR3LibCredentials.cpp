@@ -40,7 +40,9 @@
 VBGLR3DECL(bool) VbglR3CredentialsAvailable(void)
 {
     int rc;
-    VMMDevCredentials vmmreqCredentials = {0};
+    VMMDevCredentials vmmreqCredentials;
+
+    memset(&vmmreqCredentials, 0, sizeof(vmmreqCredentials));
 
     vmmdevInitRequest((VMMDevRequestHeader*)&vmmreqCredentials, VMMDevReq_QueryCredentials);
     vmmreqCredentials.u32Flags |= VMMDEV_CREDENTIALS_QUERYPRESENCE;
@@ -70,7 +72,9 @@ VBGLR3DECL(bool) VbglR3CredentialsAvailable(void)
 VBGLR3DECL(int) VbglR3CredentialsRetrieve(char **ppszUser, char **ppszPassword, char **ppszDomain)
 {
     int rc;
-    VMMDevCredentials vmmreqCredentials = {0};
+    VMMDevCredentials vmmreqCredentials;
+
+    memset(&vmmreqCredentials, 0, sizeof(vmmreqCredentials));
 
     vmmdevInitRequest((VMMDevRequestHeader*)&vmmreqCredentials, VMMDevReq_QueryCredentials);
     vmmreqCredentials.u32Flags |= VMMDEV_CREDENTIALS_READ;
