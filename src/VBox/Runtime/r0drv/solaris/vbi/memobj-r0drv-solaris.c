@@ -229,6 +229,7 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
     if (rc != 0)
     {
         cmn_err(CE_NOTE,"rtR0MemObjNativeLockUser: vbi_lock_va failed rc=%d\n", rc);
+        rtR0MemObjDelete(&pMemSolaris->Core);
         return VERR_LOCK_FAILED;
     }
 
@@ -252,6 +253,7 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, 
     if (rc != 0)
     {
         cmn_err(CE_NOTE,"rtR0MemObjNativeLockKernel: vbi_lock_va failed rc=%d\n", rc);
+        rtR0MemObjDelete(&pMemSolaris->Core);
         return VERR_LOCK_FAILED;
     }
 
