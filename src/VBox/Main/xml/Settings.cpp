@@ -1861,6 +1861,10 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
             else if (sctl.strName == "SATA")
                 sctl.strName = "SATA Controller";
         }
+
+        if (!pelmController->getAttributeValue("Instance", sctl.ulInstance))
+            sctl.ulInstance = 0;
+
         Utf8Str strType;
         if (!pelmController->getAttributeValue("type", strType))
             throw ConfigFileError(this, pelmController, N_("Required StorageController/@type attribute is missing"));
@@ -2733,6 +2737,8 @@ void MachineConfigFile::writeStorageControllers(xml::ElementNode &elmParent,
         pelmController->setAttribute("type", pcszType);
 
         pelmController->setAttribute("PortCount", sc.ulPortCount);
+
+        pelmController->setAttribute("Instance", sc.ulInstance);
 
         if (sc.controllerType == StorageControllerType_IntelAhci)
         {

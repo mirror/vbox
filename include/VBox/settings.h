@@ -476,6 +476,7 @@ struct StorageController
         : storageBus(StorageBus_IDE),
           controllerType(StorageControllerType_PIIX3),
           ulPortCount(2),
+          ulInstance(0),
           lIDE0MasterEmulationPort(0),
           lIDE0SlaveEmulationPort(0),
           lIDE1MasterEmulationPort(0),
@@ -486,6 +487,7 @@ struct StorageController
     StorageBus_T        storageBus;             // _SATA, _SCSI, _IDE
     StorageControllerType_T controllerType;
     uint32_t            ulPortCount;
+    uint32_t            ulInstance;
 
     // only for when controllerType == StorageControllerType_IntelAhci:
     int32_t             lIDE0MasterEmulationPort,

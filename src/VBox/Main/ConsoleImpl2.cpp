@@ -765,6 +765,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * Storage controllers.
      */
     com::SafeIfaceArray<IStorageController> ctrls;
+    bool afNodePresent[StorageControllerType_I82078 + 1] = {};
     hrc = pMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));   H();
 
     for (size_t i = 0; i < ctrls.size(); ++ i)
@@ -774,16 +775,27 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         StorageBus_T            enmBus;
         bool                    fSCSI = false;
         Bstr                    controllerName;
+        ULONG                   ulInstance;
 
         rc = ctrls[i]->COMGETTER(ControllerType)(&enmCtrlType);                     H();
         rc = ctrls[i]->COMGETTER(Bus)(&enmBus);                                     H();
         rc = ctrls[i]->COMGETTER(Name)(controllerName.asOutParam());                H();
+        rc = ctrls[i]->COMGETTER(Instance)(&ulInstance);                            H();
 
         const char *pszCtrlDev = pConsole->controllerTypeToDev(enmCtrlType);
 
-        rc = CFGMR3InsertNode(pDevices, pszCtrlDev, &pDev);                         RC_CHECK();
-        /** @todo support multiple instances of a controller */
-        rc = CFGMR3InsertNode(pDev,     "0", &pCtlInst);                            RC_CHECK();
+        if (!afNodePresent[enmCtrlType])
+        {
+            rc = CFGMR3InsertNode(pDevices, pszCtrlDev, &pDev);                     RC_CHECK();
+            pConsole->controllerDevToBool(pszCtrlDev, afNodePresent);
+        }
+        else
+        {
+            pDev = CFGMR3GetChildF(pDevices, pszCtrlDev);
+            if (!pDev)
+                rc = VERR_CFGM_CHILD_NOT_FOUND;                                     RC_CHECK();
+        }
+        rc = CFGMR3InsertNodeF(pDev, &pCtlInst, "%u", ulInstance);                  RC_CHECK();
 
         switch (enmCtrlType)
         {
@@ -923,9 +935,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             default:
                 AssertMsgFailedReturn(("invalid storage controller type: %d\n", enmCtrlType), VERR_GENERAL_FAILURE);
         }
-
-        /* At the moment we only support one controller per type. So the instance id is always 0. */
-        rc = ctrls[i]->COMSETTER(Instance)(0);                                  H();
 
         /* Attach the hard disks. */
         com::SafeIfaceArray<IMediumAttachment> atts;
