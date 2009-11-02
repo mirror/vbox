@@ -1104,6 +1104,27 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                     LogRel(("HWACCM: enmFlushPage    %d\n", pVM->hwaccm.s.vmx.enmFlushPage));
                     LogRel(("HWACCM: enmFlushContext %d\n", pVM->hwaccm.s.vmx.enmFlushContext));
                 }
+
+                /* TPR patching status logging. */
+                if (pVM->hwaccm.s.fTRPPatchingAllowed)
+                {
+                    if (    (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+                        &&  (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC))
+                    {
+                        pVM->hwaccm.s.fTRPPatchingAllowed = false;  /* not necessary as we have a hardware solution. */
+                        LogRel(("HWACCM: TPR Patching not required (VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC).\n"));
+                    }
+                    else
+                    {
+                        /* TPR patching needs access to the MSR_K8_LSTAR msr. */
+                        if (!CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE))
+                        {
+                            pVM->hwaccm.s.fTRPPatchingAllowed = false;
+                            LogRel(("HWACCM: TPR patching disabled (long mode not supported).\n"));
+                        }
+                    }
+                }
+                LogRel(("HWACCM: TPR Patching %s.\n", (pVM->hwaccm.s.fTRPPatchingAllowed) ? "enabled" : "disabled"));
             }
             else
             {
@@ -1454,10 +1475,10 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
     pVM->hwaccm.s.pGuestPatchMem         = 0;
     pVM->hwaccm.s.pFreeGuestPatchMem     = 0;
     pVM->hwaccm.s.cbGuestPatchMem        = 0;
-    pVM->hwaccm.s.svm.cPatches           = 0;
-    pVM->hwaccm.s.svm.PatchTree          = 0;
-    pVM->hwaccm.s.svm.fTPRPatchingActive = false;
-    ASMMemZero32(pVM->hwaccm.s.svm.aPatches, sizeof(pVM->hwaccm.s.svm.aPatches));
+    pVM->hwaccm.s.cPatches           = 0;
+    pVM->hwaccm.s.PatchTree          = 0;
+    pVM->hwaccm.s.fTPRPatchingActive = false;
+    ASMMemZero32(pVM->hwaccm.s.aPatches, sizeof(pVM->hwaccm.s.aPatches));
 }
 
 /**
@@ -1478,10 +1499,10 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pv
         return VINF_SUCCESS;
 
     Log(("hwaccmR3RemovePatches\n"));
-    for (unsigned i = 0; i < pVM->hwaccm.s.svm.cPatches; i++)
+    for (unsigned i = 0; i < pVM->hwaccm.s.cPatches; i++)
     {
         uint8_t         szInstr[15];
-        PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[i];
+        PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.aPatches[i];
         RTGCPTR         pInstrGC = (RTGCPTR)pPatch->Core.Key;
         int             rc;
 
@@ -1516,10 +1537,10 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pv
             Log(("Original instr: %s\n", szOutput));
 #endif
     }
-    pVM->hwaccm.s.svm.cPatches        = 0;
-    pVM->hwaccm.s.svm.PatchTree       = 0;
-    pVM->hwaccm.s.pFreeGuestPatchMem  = pVM->hwaccm.s.pGuestPatchMem;
-    pVM->hwaccm.s.svm.fTPRPatchingActive = false;
+    pVM->hwaccm.s.cPatches           = 0;
+    pVM->hwaccm.s.PatchTree          = 0;
+    pVM->hwaccm.s.pFreeGuestPatchMem = pVM->hwaccm.s.pGuestPatchMem;
+    pVM->hwaccm.s.fTPRPatchingActive = false;
     return VINF_SUCCESS;
 }
 
@@ -1554,13 +1575,6 @@ int hwaccmR3EnablePatching(PVM pVM, VMCPUID idCpu, RTRCPTR pPatchMem, unsigned c
 VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
     Log(("HWACMMR3EnablePatching %RGv size %x\n", pPatchMem, cbPatchMem));
-
-    /* Current TPR patching only applies to AMD cpus.
-     * Needs to be extended to Intel CPUs without the APIC TPR hardware optimization.
-     */
-    if (CPUMGetHostCpuVendor(pVM) != CPUMCPUVENDOR_AMD)
-        return VERR_NOT_SUPPORTED;
-
     if (pVM->cCpus > 1)
     {
         /* We own the IOM lock here and could cause a deadlock by waiting for a VCPU that is blocking on the IOM lock. */
@@ -1594,7 +1608,7 @@ VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
     pVM->hwaccm.s.pGuestPatchMem      = 0;
     pVM->hwaccm.s.pFreeGuestPatchMem  = 0;
     pVM->hwaccm.s.cbGuestPatchMem     = 0;
-    pVM->hwaccm.s.svm.fTPRPatchingActive = false;
+    pVM->hwaccm.s.fTPRPatchingActive = false;
     return VINF_SUCCESS;
 }
 
@@ -1623,11 +1637,11 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
     Log(("hwaccmR3ReplaceTprInstr: %RGv\n", pCtx->rip));
 
     /* Two or more VCPUs were racing to patch this instruction. */
-    PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.svm.PatchTree, (AVLOU32KEY)pCtx->eip);
+    PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
     if (pPatch)
         return VINF_SUCCESS;
 
-    Assert(pVM->hwaccm.s.svm.cPatches < RT_ELEMENTS(pVM->hwaccm.s.svm.aPatches));
+    Assert(pVM->hwaccm.s.cPatches < RT_ELEMENTS(pVM->hwaccm.s.aPatches));
 
     int rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
     AssertRC(rc);
@@ -1636,8 +1650,8 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
         &&  cbOp >= 3)
     {
         uint8_t         aVMMCall[3] = { 0xf, 0x1, 0xd9};
-        uint32_t        idx = pVM->hwaccm.s.svm.cPatches;
-        PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[idx];
+        uint32_t        idx = pVM->hwaccm.s.cPatches;
+        PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.aPatches[idx];
 
         rc = PGMPhysSimpleReadGCPtr(pVCpu, pPatch->aOpcode, pCtx->rip, cbOp);
         AssertRC(rc);
@@ -1687,7 +1701,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
                 &&  pDis->param1.base.reg_gen == uMmioReg
                 &&  pDis->param2.flags == USE_IMMEDIATE8
                 &&  pDis->param2.parval == 4
-                &&  oldcbOp + cbOp < sizeof(pVM->hwaccm.s.svm.aPatches[idx].aOpcode))
+                &&  oldcbOp + cbOp < sizeof(pVM->hwaccm.s.aPatches[idx].aOpcode))
             {
                 uint8_t szInstr[15];
 
@@ -1728,16 +1742,16 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
         }
 
         pPatch->Core.Key = pCtx->eip;
-        rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
+        rc = RTAvloU32Insert(&pVM->hwaccm.s.PatchTree, &pPatch->Core);
         AssertRC(rc);
 
-        pVM->hwaccm.s.svm.cPatches++;
+        pVM->hwaccm.s.cPatches++;
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatTPRReplaceSuccess);
         return VINF_SUCCESS;
     }
 
     /* Save invalid patch, so we will not try again. */
-    uint32_t  idx = pVM->hwaccm.s.svm.cPatches;
+    uint32_t  idx = pVM->hwaccm.s.cPatches;
 
 #ifdef LOG_ENABLED
     char      szOutput[256];
@@ -1746,12 +1760,12 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
         Log(("Failed to patch instr: %s\n", szOutput));
 #endif
 
-    pPatch = &pVM->hwaccm.s.svm.aPatches[idx];
+    pPatch = &pVM->hwaccm.s.aPatches[idx];
     pPatch->Core.Key = pCtx->eip;
     pPatch->enmType  = HWACCMTPRINSTR_INVALID;
-    rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
+    rc = RTAvloU32Insert(&pVM->hwaccm.s.PatchTree, &pPatch->Core);
     AssertRC(rc);
-    pVM->hwaccm.s.svm.cPatches++;
+    pVM->hwaccm.s.cPatches++;
     STAM_COUNTER_INC(&pVM->hwaccm.s.StatTPRReplaceFailure);
     return VINF_SUCCESS;
 }
@@ -1781,10 +1795,10 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
     if (pVCpu->idCpu != idCpu)
         return VINF_SUCCESS;
 
-    Assert(pVM->hwaccm.s.svm.cPatches < RT_ELEMENTS(pVM->hwaccm.s.svm.aPatches));
+    Assert(pVM->hwaccm.s.cPatches < RT_ELEMENTS(pVM->hwaccm.s.aPatches));
 
     /* Two or more VCPUs were racing to patch this instruction. */
-    PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.svm.PatchTree, (AVLOU32KEY)pCtx->eip);
+    PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
     if (pPatch)
     {
         Log(("hwaccmR3PatchTprInstr: already patched %RGv\n", pCtx->rip));
@@ -1799,8 +1813,8 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
         &&  pDis->pCurInstr->opcode == OP_MOV
         &&  cbOp >= 5)
     {
-        uint32_t        idx = pVM->hwaccm.s.svm.cPatches;
-        PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[idx];
+        uint32_t        idx = pVM->hwaccm.s.cPatches;
+        PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.aPatches[idx];
         uint8_t         aPatch[64];
         uint32_t        off = 0;
 
@@ -1962,11 +1976,11 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
             pPatch->cbNewOp = 5;
 
             pPatch->Core.Key = pCtx->eip;
-            rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
+            rc = RTAvloU32Insert(&pVM->hwaccm.s.PatchTree, &pPatch->Core);
             AssertRC(rc);
 
-            pVM->hwaccm.s.svm.cPatches++;
-            pVM->hwaccm.s.svm.fTPRPatchingActive = true;
+            pVM->hwaccm.s.cPatches++;
+            pVM->hwaccm.s.fTPRPatchingActive = true;
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatTPRPatchSuccess);
             return VINF_SUCCESS;
         }
@@ -1975,7 +1989,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
     }
 
     /* Save invalid patch, so we will not try again. */
-    uint32_t  idx = pVM->hwaccm.s.svm.cPatches;
+    uint32_t  idx = pVM->hwaccm.s.cPatches;
 
 #ifdef LOG_ENABLED
     rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
@@ -1983,12 +1997,12 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
         Log(("Failed to patch instr: %s\n", szOutput));
 #endif
 
-    pPatch = &pVM->hwaccm.s.svm.aPatches[idx];
+    pPatch = &pVM->hwaccm.s.aPatches[idx];
     pPatch->Core.Key = pCtx->eip;
     pPatch->enmType  = HWACCMTPRINSTR_INVALID;
-    rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
+    rc = RTAvloU32Insert(&pVM->hwaccm.s.PatchTree, &pPatch->Core);
     AssertRC(rc);
-    pVM->hwaccm.s.svm.cPatches++;
+    pVM->hwaccm.s.cPatches++;
     STAM_COUNTER_INC(&pVM->hwaccm.s.StatTPRPatchFailure);
     return VINF_SUCCESS;
 }
@@ -2419,12 +2433,12 @@ static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
 
     /* Store all the guest patch records too. */
-    rc = SSMR3PutU32(pSSM, pVM->hwaccm.s.svm.cPatches);
+    rc = SSMR3PutU32(pSSM, pVM->hwaccm.s.cPatches);
     AssertRCReturn(rc, rc);
 
-    for (unsigned i = 0; i < pVM->hwaccm.s.svm.cPatches; i++)
+    for (unsigned i = 0; i < pVM->hwaccm.s.cPatches; i++)
     {
-        PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[i];
+        PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.aPatches[i];
 
         rc = SSMR3PutU32(pSSM, pPatch->Core.Key);
         AssertRCReturn(rc, rc);
@@ -2524,12 +2538,12 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersio
         AssertRCReturn(rc, rc);
 
         /* Fetch all TPR patch records. */
-        rc = SSMR3GetU32(pSSM, &pVM->hwaccm.s.svm.cPatches);
+        rc = SSMR3GetU32(pSSM, &pVM->hwaccm.s.cPatches);
         AssertRCReturn(rc, rc);
 
-        for (unsigned i = 0; i < pVM->hwaccm.s.svm.cPatches; i++)
+        for (unsigned i = 0; i < pVM->hwaccm.s.cPatches; i++)
         {
-            PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[i];
+            PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.aPatches[i];
 
             rc = SSMR3GetU32(pSSM, &pPatch->Core.Key);
             AssertRCReturn(rc, rc);
@@ -2550,9 +2564,9 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersio
             AssertRCReturn(rc, rc);
 
             if (pPatch->enmType == HWACCMTPRINSTR_JUMP_REPLACEMENT)
-                pVM->hwaccm.s.svm.fTPRPatchingActive = true;
+                pVM->hwaccm.s.fTPRPatchingActive = true;
 
-            Assert(pPatch->enmType == HWACCMTPRINSTR_JUMP_REPLACEMENT || pVM->hwaccm.s.svm.fTPRPatchingActive == false);
+            Assert(pPatch->enmType == HWACCMTPRINSTR_JUMP_REPLACEMENT || pVM->hwaccm.s.fTPRPatchingActive == false);
 
             rc = SSMR3GetU32(pSSM, &pPatch->uSrcOperand);
             AssertRCReturn(rc, rc);
@@ -2575,7 +2589,7 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersio
             Log(("dstop     = %d\n", pPatch->uDstOperand));
             Log(("cFaults   = %d\n", pPatch->cFaults));
             Log(("target    = %x\n", pPatch->pJumpTarget));
-            rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
+            rc = RTAvloU32Insert(&pVM->hwaccm.s.PatchTree, &pPatch->Core);
             AssertRC(rc);
         }
     }

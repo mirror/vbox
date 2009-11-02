@@ -1094,7 +1094,7 @@ ResumeExecution:
         int rc = PDMApicGetTPR(pVCpu, &u8LastTPR, &fPending);
         AssertRC(rc);
 
-        if (pVM->hwaccm.s.svm.fTPRPatchingActive)
+        if (pVM->hwaccm.s.fTPRPatchingActive)
         {
             /* Our patch code uses LSTAR for TPR caching. */
             pCtx->msrLSTAR = u8LastTPR;
@@ -1518,7 +1518,7 @@ ResumeExecution:
     /* Sync back the TPR if it was changed. */
     if (fSyncTPR)
     {
-        if (pVM->hwaccm.s.svm.fTPRPatchingActive)
+        if (pVM->hwaccm.s.fTPRPatchingActive)
         {
             if ((pCtx->msrLSTAR & 0xff) != u8LastTPR)
             {
@@ -1654,7 +1654,7 @@ ResumeExecution:
                 &&  !(errCode & X86_TRAP_PF_P)  /* not present */
                 &&  CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)) == 0
                 &&  !CPUMIsGuestInLongModeEx(pCtx)
-                &&  pVM->hwaccm.s.svm.cPatches < RT_ELEMENTS(pVM->hwaccm.s.svm.aPatches))
+                &&  pVM->hwaccm.s.cPatches < RT_ELEMENTS(pVM->hwaccm.s.aPatches))
             {
                 RTGCPHYS GCPhysApicBase, GCPhys;
                 PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
@@ -1665,7 +1665,7 @@ ResumeExecution:
                     &&  GCPhys == GCPhysApicBase)
                 {
                     /* Only attempt to patch the instruction once. */
-                    PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.svm.PatchTree, (AVLOU32KEY)pCtx->eip);
+                    PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
                     if (!pPatch)
                     {
                         rc = VINF_EM_HWACCM_PATCH_TPR_INSTR;
@@ -1822,7 +1822,7 @@ ResumeExecution:
             &&  !(errCode & X86_TRAP_PF_P)  /* not present */
             &&  CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)) == 0
             &&  !CPUMIsGuestInLongModeEx(pCtx)
-            &&  pVM->hwaccm.s.svm.cPatches < RT_ELEMENTS(pVM->hwaccm.s.svm.aPatches))
+            &&  pVM->hwaccm.s.cPatches < RT_ELEMENTS(pVM->hwaccm.s.aPatches))
         {
             RTGCPHYS GCPhysApicBase;
             PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
@@ -1831,7 +1831,7 @@ ResumeExecution:
             if (uFaultAddress == GCPhysApicBase + 0x80)
             {
                 /* Only attempt to patch the instruction once. */
-                PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.svm.PatchTree, (AVLOU32KEY)pCtx->eip);
+                PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
                 if (!pPatch)
                 {
                     rc = VINF_EM_HWACCM_PATCH_TPR_INSTR;
@@ -2379,7 +2379,7 @@ ResumeExecution:
         uint32_t cbSize;
 
         /* When an interrupt is pending, we'll let MSR_K8_LSTAR writes fault in our TPR patch code. */
-        if (    pVM->hwaccm.s.svm.fTPRPatchingActive
+        if (    pVM->hwaccm.s.fTPRPatchingActive
             &&  pCtx->ecx == MSR_K8_LSTAR
             &&  pVMCB->ctrl.u64ExitInfo1 == 1 /* wrmsr */)
         {
@@ -2528,7 +2528,7 @@ static int svmR0EmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         bool    fPending;
         uint8_t u8Tpr;
 
-        PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.svm.PatchTree, (AVLOU32KEY)pCtx->eip);
+        PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
         if (!pPatch)
             break;
 
