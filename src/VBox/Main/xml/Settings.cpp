@@ -1,5 +1,39 @@
 /** @file
  * Settings File Manipulation API.
+ *
+ * Two classes, MainConfigFile and MachineConfigFile, represent the VirtualBox.xml and
+ * machine XML files. They share a common ancestor class, ConfigFileBase, which shares
+ * functionality such as talking to the XML back-end classes and settings version management.
+ *
+ * Rules for introducing new settings: If an element or attribute is introduced that was not
+ * present before VirtualBox 3.1, then settings version checks need to be introduced. The
+ * settings version for VirtualBox 3.1 is 1.9; see the SettingsVersion enumeration in
+ * src/VBox/Main/idl/VirtualBox.xidl for details about which version was used when.
+ *
+ * The settings versions checks are necessary because VirtualBox 3.1 no longer automatically
+ * converts XML settings files but only if necessary, that is, if settings are present that
+ * the old format does not support. If we write an element or attribute to a settings file
+ * of an older version, then an old VirtualBox (before 3.1) will attempt to validate it
+ * with XML schema, and that will certainly fail.
+ *
+ * So, to introduce a new setting:
+ *
+ *   1) Make sure the constructor of corresponding settings structure has a proper default.
+ *
+ *   2) In the settings reader method, try to read the setting; if it's there, great, if not,
+ *      the default value will have been set by the constructor.
+ *
+ *   3) In the settings writer method, write the setting _only_ if the current settings
+ *      version (stored in m->sv) is high enough. That is, for VirtualBox 3.1, write it
+ *      only if (m->sv >= SettingsVersion_v1_9).
+ *
+ *   4) In MachineConfigFile::bumpSettingsVersionIfNeeded(), check if the new setting has
+ *      a non-default value (i.e. that differs from the constructor). If so, bump the
+ *      settings version to the current version so the settings writer (3) can write out
+ *      the non-default value properly.
+ *
+ *      So far a corresponding method for MainConfigFile has not been necessary since there
+ *      have been no incompatible changes yet.
  */
 
 /*
@@ -1195,17 +1229,22 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     clearDocument();
 }
 
+// use a define for the platform-dependent default value of
+// hwvirt exclusivity, since we'll need to check that value
+// in bumpSettingsVersionIfNeeded()
+#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
+    #define HWVIRTEXCLUSIVEDEFAULT false
+#else
+    #define HWVIRTEXCLUSIVEDEFAULT true
+#endif
+
 /**
  * Hardware struct constructor.
  */
 Hardware::Hardware()
         : strVersion("2"),
           fHardwareVirt(true),
-#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
-          fHardwareVirtExclusive(false),
-#else
-          fHardwareVirtExclusive(true),
-#endif
+          fHardwareVirtExclusive(HWVIRTEXCLUSIVEDEFAULT),
           fNestedPaging(false),
           fVPID(false),
           fSyntheticCpu(false),
@@ -1468,7 +1507,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtEx")))
             {
                 pelmCPUChild->getAttributeValue("enabled", hw.fHardwareVirt);
-                pelmCPUChild->getAttributeValue("exclusive", hw.fHardwareVirtExclusive);
+                pelmCPUChild->getAttributeValue("exclusive", hw.fHardwareVirtExclusive);        // settings version 1.9
             }
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExNestedPaging")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fNestedPaging);
@@ -2343,9 +2382,12 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
         pelmHardware->setAttribute("uuid", makeString(hw.uuid));
 
     xml::ElementNode *pelmCPU      = pelmHardware->createChild("CPU");
+
     xml::ElementNode *pelmHwVirtEx = pelmCPU->createChild("HardwareVirtEx");
     pelmHwVirtEx->setAttribute("enabled", hw.fHardwareVirt);
-    pelmHwVirtEx->setAttribute("exclusive", hw.fHardwareVirtExclusive);
+    if (m->sv >= SettingsVersion_v1_9)
+        pelmHwVirtEx->setAttribute("exclusive", hw.fHardwareVirtExclusive);
+
     if (hw.fNestedPaging)
         pelmCPU->createChild("HardwareVirtExNestedPaging")->setAttribute("enabled", hw.fNestedPaging);
     if (hw.fVPID)
@@ -2846,20 +2888,34 @@ void MachineConfigFile::writeSnapshot(xml::ElementNode &elmParent,
  */
 void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
-    if (m->sv < SettingsVersion_v1_8)
-    {
-        // "accelerate 2d video" requires settings version 1.8
-        if (hardwareMachine.fAccelerate2DVideo)
-            m->sv = SettingsVersion_v1_8;
-    }
+    // "accelerate 2d video" requires settings version 1.8
+    if (    (m->sv < SettingsVersion_v1_8)
+         && (hardwareMachine.fAccelerate2DVideo)
+       )
+        m->sv = SettingsVersion_v1_8;
 
+    // all the following require settings version 1.9
+    if (    (m->sv < SettingsVersion_v1_9)
+         && (    (hardwareMachine.firmwareType == FirmwareType_EFI)
+              || (hardwareMachine.fHardwareVirtExclusive != HWVIRTEXCLUSIVEDEFAULT)
+              || fTeleporterEnabled
+              || uTeleporterPort
+              || !strTeleporterAddress.isEmpty()
+              || !strTeleporterPassword.isEmpty()
+              || !hardwareMachine.uuid.isEmpty()
+            )
+        )
+        m->sv = SettingsVersion_v1_9;
+
+    // settings version 1.9 is also required if there is not exactly one DVD
+    // or more than one floppy drive present or the DVD is not at the secondary
+    // master; this check is a bit more complicated
     if (m->sv < SettingsVersion_v1_9)
     {
         size_t cDVDs = 0;
         size_t cFloppies = 0;
 
-        // if there is more than one DVD or floppy or the DVD attachment is not
-        // at the old IDE default, then we need 1.9
+        // need to run thru all the storage controllers to figure this out
         for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
              it != storageMachine.llStorageControllers.end()
                 && m->sv < SettingsVersion_v1_9;
@@ -2904,26 +2960,6 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
            )
             m->sv = SettingsVersion_v1_9;
     }
-
-    if (    (m->sv < SettingsVersion_v1_9)
-         && (hardwareMachine.firmwareType == FirmwareType_EFI)
-       )
-    {
-        m->sv = SettingsVersion_v1_9;
-    }
-
-    if (    m->sv < SettingsVersion_v1_9
-        &&  (   fTeleporterEnabled
-             || uTeleporterPort
-             || !strTeleporterAddress.isEmpty()
-             || !strTeleporterPassword.isEmpty()
-            )
-       )
-        m->sv = SettingsVersion_v1_9;
-
-    if (    m->sv < SettingsVersion_v1_9
-        &&  !hardwareMachine.uuid.isEmpty())
-        m->sv = SettingsVersion_v1_9;
 }
 
 /**
