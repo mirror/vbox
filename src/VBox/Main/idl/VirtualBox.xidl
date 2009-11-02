@@ -8317,23 +8317,35 @@
     </const>
     <const name="Created" value="1">
       <desc>
-        Associated storage exists and accessible.
+        Associated storage exists and accessible; this gets set if the
+        accessibility check performed by <link to="IMedium::refreshState" />
+        was successful.
       </desc>
     </const>
     <const name="LockedRead" value="2">
       <desc>
-        Medium is locked for reading, no data modification is possible.
+        Medium is locked for reading, no data modification is possible. A
+        medium is typically locked for reading if has a depending differencing
+        image that receives write operations; this way one base medium
+        can have multiple child differencing images which can be written to
+        simultaneously.
       </desc>
     </const>
     <const name="LockedWrite" value="3">
       <desc>
         Medium is locked for writing, no concurrent data reading or modification
-        is possible.
+        is possible. A medium is typically locked for writing when it receives
+        write operations from a running virtual machine. If a medium has
+        differencing images, then only the last ("leaf") differencing image
+        is locked for writing, whereas its parents are locked for reading only.
       </desc>
     </const>
     <const name="Inaccessible" value="4">
       <desc>
-        Associated medium storage is not accessible.
+        Medium accessiblity check (see <link to="IMedium::refreshState" />) has
+        not yet been performed, or else, associated medium storage is not
+        accessible. In the first case, <link to="IMedium::lastAccessError"/>
+        is empty, in the second case, it describes the error that occured.
       </desc>
     </const>
     <const name="Creating" value="5">
@@ -9090,11 +9102,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="refreshState">
       <desc>
-        If the current medium state (see <link to="MediumState"/>
-        and <link to="#state" /> is one of "Created", "Inaccessible"
-        or "LockedRead", then this performs an accessibility check on the
-        medium and sets the value of the <link to="#state"/> attribute
-        accordingly; that value is also returned for convenience.
+        If the current medium state (see <link to="MediumState"/>) is one of
+        "Created", "Inaccessible" or "LockedRead", then this performs an
+        accessibility check on the medium and sets the value of the <link to="#state"/>
+        attribute accordingly; that value is also returned for convenience.
 
         For all other state values, this does not perform a refresh but returns
         the state only.
