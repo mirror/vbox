@@ -896,6 +896,12 @@ VMMR3DECL(int) PDMR3ThreadSuspend(PPDMTHREAD pThread)
     Assert(pThread->Thread != RTThreadSelf());
 
     /*
+     * This is a noop if the thread is already suspended.
+     */
+    if (pThread->enmState == PDMTHREADSTATE_SUSPENDED)
+        return VINF_SUCCESS;
+
+    /*
      * Change the state to resuming and kick the thread.
      */
     int rc = RTSemEventMultiReset(pThread->Internal.s.BlockEvent);
