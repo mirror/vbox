@@ -2513,7 +2513,6 @@ ResumeExecution:
 
                 /* Must save the host LSTAR msr to restore it later. */
                 fRestoreLSTAR = true;
-                u64LSTAR = ASMRdMsr(MSR_K8_LSTAR);
             }
         }
     }
@@ -2613,6 +2612,14 @@ ResumeExecution:
     pVCpu->hwaccm.s.vmx.VMCSCache.u64TimeSwitch = RTTimeNanoTS();
 #endif
 
+    /* Save the current TPR value in the LSTAR msr so our patches can access it. */
+    if (fRestoreLSTAR)
+    {
+        Assert(pVM->hwaccm.s.fTPRPatchingActive);
+        u64LSTAR = ASMRdMsr(MSR_K8_LSTAR);
+        ASMWrMsr(MSR_K8_LSTAR, u8LastTPR);
+    }
+
     TMNotifyStartOfExecution(pVCpu);
 #ifdef VBOX_WITH_KERNEL_USING_XMM
     rc = hwaccmR0VMXStartVMWrapXMM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu, pVCpu->hwaccm.s.vmx.pfnStartVM);
@@ -2633,6 +2640,7 @@ ResumeExecution:
     if (fRestoreLSTAR)
     {
         Assert(pVM->hwaccm.s.fTPRPatchingActive);
+        pCtx->msrLSTAR = ASMRdMsr(MSR_K8_LSTAR);
         ASMWrMsr(MSR_K8_LSTAR, u64LSTAR);
     }
 
