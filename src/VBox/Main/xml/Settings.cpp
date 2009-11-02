@@ -1449,8 +1449,6 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
     Utf8Str strUUID;
     if (elmHardware.getAttributeValue("uuid", strUUID))
         parseUUID(hw.uuid, strUUID);
-    else
-        hw.uuid.clear();
 
     xml::NodesLoop nl1(elmHardware);
     const xml::ElementNode *pelmHwChild;
@@ -1862,8 +1860,8 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
                 sctl.strName = "SATA Controller";
         }
 
-        if (!pelmController->getAttributeValue("Instance", sctl.ulInstance))
-            sctl.ulInstance = 0;
+        pelmController->getAttributeValue("Instance", sctl.ulInstance);
+            // default from constructor is 0
 
         Utf8Str strType;
         if (!pelmController->getAttributeValue("type", strType))
@@ -2339,7 +2337,9 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
 
     if (hw.strVersion != "2")
         pelmHardware->setAttribute("version", hw.strVersion);
-    if (!hw.uuid.isEmpty())
+    if (    (m->sv >= SettingsVersion_v1_9)
+         && (!hw.uuid.isEmpty())
+       )
         pelmHardware->setAttribute("uuid", makeString(hw.uuid));
 
     xml::ElementNode *pelmCPU      = pelmHardware->createChild("CPU");
@@ -2738,7 +2738,9 @@ void MachineConfigFile::writeStorageControllers(xml::ElementNode &elmParent,
 
         pelmController->setAttribute("PortCount", sc.ulPortCount);
 
-        pelmController->setAttribute("Instance", sc.ulInstance);
+        if (m->sv >= SettingsVersion_v1_9)
+            if (sc.ulInstance)
+                pelmController->setAttribute("Instance", sc.ulInstance);
 
         if (sc.controllerType == StorageControllerType_IntelAhci)
         {
@@ -2754,9 +2756,12 @@ void MachineConfigFile::writeStorageControllers(xml::ElementNode &elmParent,
         {
             const AttachedDevice &att = *it2;
 
-            /* DVD/Floppy is handled already for settings version before 1.8 */
+            // For settings version before 1.9, DVDs and floppies are in hardware, not storage controllers,
+            // so we shouldn't write them here; we only get here for DVDs though because we ruled out
+            // the floppy controller at the top of the loop
             if (    att.deviceType == DeviceType_DVD
-                &&  m->sv <= SettingsVersion_v1_8)
+                 && m->sv < SettingsVersion_v1_9
+               )
                 continue;
 
             xml::ElementNode *pelmDevice = pelmController->createChild("AttachedDevice");
@@ -2862,10 +2867,15 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         {
             const StorageController &sctl = *it;
             for (AttachedDevicesList::const_iterator it2 = sctl.llAttachedDevices.begin();
-                    it2 != sctl.llAttachedDevices.end()
-                        && m->sv < SettingsVersion_v1_9;
-                    ++it2)
+                 it2 != sctl.llAttachedDevices.end();
+                 ++it2)
             {
+                if (sctl.ulInstance != 0)       // we can only write the StorageController/@Instance attribute with v1.9
+                {
+                    m->sv = SettingsVersion_v1_9;
+                    break;
+                }
+
                 const AttachedDevice &att = *it2;
                 if (att.deviceType == DeviceType_DVD)
                 {
@@ -2885,7 +2895,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             }
         }
 
-        // VirtualBox before 3.1 had exactly one floppy and exactly one DVD,
+        // VirtualBox before 3.1 had zero or one floppy and exactly one DVD,
         // so any deviation from that will require settings version 1.9
         if (    (m->sv < SettingsVersion_v1_9)
              && (    (cDVDs != 1)
