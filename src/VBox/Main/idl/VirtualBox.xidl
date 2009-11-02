@@ -8548,27 +8548,25 @@
 
       <h3>Accessibility checks</h3>
 
-      The given medium (with the created storage unit) is considered to be
-      <i>accessible</i> when its storage unit can be read. In that case, the
-      <link to="#state"/> attribute has a value of "Created".
-      When the storage unit cannot be read (for example, because it is located on
-      a disconnected network resource, or was accidentally deleted outside VirtualBox),
+      VirtualBox defers media accessibility checks until the <link to="#refreshState" />
+      method is called explicitly on a medium. This is done to make the VirtualBox object
+      ready for serving requests as fast as possible and let the end-user
+      application decide if it needs to check media accessibility right away or not.
+
+      As a result, when VirtualBox starts up (e.g. the VirtualBox
+      object gets created for the first time), all known media are in the
+      "Inaccessible" state, but the value of the <link to="#lastAccessError"/>
+      attribute is an empty string because no actual accessibility check has
+      been made yet.
+
+      After calling <link to="#refreshState" />, a medium is considered
+      <i>accessible</i> if its storage unit can be read. In that case, the
+      <link to="#state"/> attribute has a value of "Created". If the storage
+      unit cannot be read (for example, because it is located on a disconnected
+      network resource, or was accidentally deleted outside VirtualBox),
       the medium is considered <i>inaccessible</i>, which is indicated by the
       "Inaccessible" state. The exact reason why the medium is inaccessible can be
       obtained by reading the <link to="#lastAccessError"/> attribute.
-
-      A new accessibility check is performed when <link to="#refreshState"/>
-      is called; otherwise the <link to="#state"/> attribute returns the state
-      from the last refresh.
-
-      Note that when VirtualBox starts up (e.g. the VirtualBox object gets
-      created for the first time), all known media are in the
-      <link to="MediumState_Inaccessible"/> state but the value of the <link
-      to="#lastAccessError"/> attribute is an empty string because no actual
-      accessibility check is made on startup. This is done to make the
-      VirtualBox object ready for serving requests as
-      fast as possible and let the end-user application decide if it needs to
-      check media accessibility right away or not.
 
       <h3>Medium types</h3>
 
