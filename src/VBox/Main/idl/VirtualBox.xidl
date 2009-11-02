@@ -4058,7 +4058,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="37642E74-969A-4590-BD52-390E541F904D"
+     uuid="59080235-41e1-41ca-aa28-33f6992d1646"
      wsmap="managed"
      >
     <desc>
@@ -4930,6 +4930,7 @@
 
         @a name identifies the controller for subsequent calls such as
         <link to="#getStorageControllerByName" />,
+        <link to="#getStorageControllerByInstance" />,
         <link to="#removeStorageController" />,
         <link to="#attachDevice" /> or <link to="#mountMedium" />.
 
@@ -4960,7 +4961,19 @@
       <param name="storageController" type="IStorageController" dir="return"/>
     </method>
 
-    <method name="removeStorageController">
+    <method name="getStorageControllerByInstance" const="yes">
+      <desc>
+        Returns a storage controller with the given instance number.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          A storage controller with given instance number doesn't exist.
+        </result>
+      </desc>
+      <param name="instance" type="unsigned long" dir="in"/>
+      <param name="storageController" type="IStorageController" dir="return"/>
+    </method>
+
+   <method name="removeStorageController">
       <desc>
         Removes a storage controller from the machine.
 

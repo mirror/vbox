@@ -3592,7 +3592,24 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
             tr ("Storage controller named '%ls' already exists"), aName);
 
     ctrl.createObject();
-    rc = ctrl->init (this, aName, aConnectionType);
+
+    /* get a new instance number for the storage controller */
+    ULONG ulInstance = 0;
+    for (StorageControllerList::const_iterator it = mStorageControllers->begin();
+         it != mStorageControllers->end();
+         ++it)
+    {
+        if ((*it)->storageBus() == aConnectionType)
+        {
+            ULONG ulCurInst = (*it)->instance();
+
+            if (ulCurInst > ulInstance)
+                ulInstance = ulCurInst;
+        }
+    }
+    ulInstance++;
+
+    rc = ctrl->init(this, aName, aConnectionType, ulInstance);
     CheckComRCReturnRC(rc);
 
     mStorageControllers.backup();
@@ -3624,6 +3641,30 @@ STDMETHODIMP Machine::GetStorageControllerByName(IN_BSTR aName,
         ctrl.queryInterfaceTo(aStorageController);
 
     return rc;
+}
+
+STDMETHODIMP Machine::GetStorageControllerByInstance(ULONG aInstance,
+                                                     IStorageController **aStorageController)
+{
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    for (StorageControllerList::const_iterator it = mStorageControllers->begin();
+         it != mStorageControllers->end();
+         ++it)
+    {
+        if ((*it)->instance() == aInstance)
+        {
+            (*it).queryInterfaceTo(aStorageController);
+            return S_OK;
+        }
+    }
+
+    return setError(VBOX_E_OBJECT_NOT_FOUND,
+                    tr("Could not find a storage controller with instance number '%lu'"),
+                    aInstance);
 }
 
 STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
@@ -5505,7 +5546,8 @@ HRESULT Machine::loadStorageControllers(const settings::Storage &data,
         pCtl.createObject();
         rc = pCtl->init(this,
                         ctlData.strName,
-                        ctlData.storageBus);
+                        ctlData.storageBus,
+                        ctlData.ulInstance);
         CheckComRCReturnRC (rc);
 
         mStorageControllers->push_back(pCtl);
@@ -6454,6 +6496,7 @@ HRESULT Machine::saveStorageControllers(settings::Storage &data)
         ctl.strName = pCtl->name();
         ctl.controllerType = pCtl->controllerType();
         ctl.storageBus = pCtl->storageBus();
+        ctl.ulInstance = pCtl->instance();
 
         /* Save the port count. */
         ULONG portCount;

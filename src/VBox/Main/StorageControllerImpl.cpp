@@ -61,12 +61,15 @@ void StorageController::FinalRelease()
  * @returns COM result indicator.
  * @param aParent       Pointer to our parent object.
  * @param aName         Name of the storage controller.
+ * @param aInstance     Instance number of the storage controller.
  */
 HRESULT StorageController::init(Machine *aParent,
                                 const Utf8Str &aName,
-                                StorageBus_T aStorageBus)
+                                StorageBus_T aStorageBus,
+                                ULONG aInstance)
 {
-    LogFlowThisFunc(("aParent=%p aName=\"%s\"\n", aParent, aName.raw()));
+    LogFlowThisFunc(("aParent=%p aName=\"%s\" aInstance=%u\n",
+                     aParent, aName.raw(), aInstance));
 
     ComAssertRet(aParent && !aName.isEmpty(), E_INVALIDARG);
     if (   (aStorageBus <= StorageBus_Null)
@@ -88,6 +91,7 @@ HRESULT StorageController::init(Machine *aParent,
     mData.allocate();
 
     mData->strName = aName;
+    mData->mInstance = aInstance;
     mData->mStorageBus = aStorageBus;
 
     switch (aStorageBus)
@@ -500,7 +504,7 @@ STDMETHODIMP StorageController::COMGETTER(Instance) (ULONG *aInstance)
 
     AutoReadLock alock(this);
 
-    *aInstance = mInstance;
+    *aInstance = mData->mInstance;
 
     return S_OK;
 }
@@ -514,7 +518,7 @@ STDMETHODIMP StorageController::COMSETTER(Instance) (ULONG aInstance)
 
     AutoWriteLock alock(this);
 
-    mInstance = aInstance;
+    mData->mInstance = aInstance;
 
     return S_OK;
 }

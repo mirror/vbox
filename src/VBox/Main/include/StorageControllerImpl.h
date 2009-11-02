@@ -43,6 +43,7 @@ private:
         /* Constructor. */
         Data() : mStorageBus (StorageBus_IDE),
                  mStorageControllerType (StorageControllerType_PIIX4),
+                 mInstance (0),
                  mPortCount (2),
                  mPortIde0Master (0),
                  mPortIde0Slave (1),
@@ -67,6 +68,8 @@ private:
         StorageBus_T mStorageBus;
         /** Type of the Storage controller. */
         StorageControllerType_T mStorageControllerType;
+        /** Instance number of the storage controller. */
+        ULONG mInstance;
         /** Number of usable ports. */
         ULONG mPortCount;
 
@@ -103,7 +106,8 @@ public:
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *aParent,
                  const Utf8Str &aName,
-                 StorageBus_T aBus);
+                 StorageBus_T aBus,
+                 ULONG aInstance);
     HRESULT init(Machine *aParent,
                  StorageController *aThat,
                  bool aReshare = false);
@@ -133,6 +137,7 @@ public:
     const Utf8Str &name() const { return mData->strName; }
     StorageControllerType_T controllerType() const { return mData->mStorageControllerType; }
     StorageBus_T storageBus() const { return mData->mStorageBus; }
+    ULONG instance() const { return mData->mInstance; }
 
     bool isModified() { AutoWriteLock alock (this); return mData.isBackedUp(); }
     bool isReallyModified() { AutoWriteLock alock (this); return mData.hasActualChanges(); }
@@ -163,9 +168,6 @@ private:
     const ComObjPtr<StorageController> mPeer;
     /** Data. */
     Backupable<Data> mData;
-
-    /* Instance number of the device in the running VM. */
-    ULONG mInstance;
 };
 
 #endif //!____H_STORAGECONTROLLERIMPL
