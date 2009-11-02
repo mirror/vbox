@@ -442,7 +442,6 @@ private:
                                           bool fHostDrive, const char *pszPath,
                                           const char *pszFormat, bool fPassthrough);
     const char *controllerTypeToDev(StorageControllerType_T enmCtrlType);
-    void controllerDevToBool(const char *pszCtrlDev, bool *afBool);
     HRESULT convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG device, unsigned &uLun);
     HRESULT doMediumChange(IMediumAttachment *aMediumAttachment);
 

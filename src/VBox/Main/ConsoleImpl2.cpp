@@ -765,7 +765,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * Storage controllers.
      */
     com::SafeIfaceArray<IStorageController> ctrls;
-    bool afNodePresent[StorageControllerType_I82078 + 1] = {};
+    PCFGMNODE aCtrlNodes[StorageControllerType_I82078 + 1] = {};
     hrc = pMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));   H();
 
     for (size_t i = 0; i < ctrls.size(); ++ i)
@@ -784,17 +784,24 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         const char *pszCtrlDev = pConsole->controllerTypeToDev(enmCtrlType);
 
-        if (!afNodePresent[enmCtrlType])
-        {
-            rc = CFGMR3InsertNode(pDevices, pszCtrlDev, &pDev);                     RC_CHECK();
-            pConsole->controllerDevToBool(pszCtrlDev, afNodePresent);
-        }
+        if (aCtrlNodes[enmCtrlType])
+            pDev = aCtrlNodes[enmCtrlType];
         else
         {
-            pDev = CFGMR3GetChildF(pDevices, pszCtrlDev);
-            if (!pDev)
-                rc = VERR_CFGM_CHILD_NOT_FOUND;                                     RC_CHECK();
+            rc = CFGMR3InsertNode(pDevices, pszCtrlDev, &pDev);                     RC_CHECK();
+
+            if (   (enmCtrlType == StorageControllerType_PIIX3)
+                || (enmCtrlType == StorageControllerType_PIIX4)
+                || (enmCtrlType == StorageControllerType_ICH6))
+            {
+                aCtrlNodes[StorageControllerType_PIIX3] = pDev;
+                aCtrlNodes[StorageControllerType_PIIX4] = pDev;
+                aCtrlNodes[StorageControllerType_ICH6]  = pDev;
+            }
+            else
+                aCtrlNodes[enmCtrlType] = pDev;
         }
+
         rc = CFGMR3InsertNodeF(pDev, &pCtlInst, "%u", ulInstance);                  RC_CHECK();
 
         switch (enmCtrlType)
