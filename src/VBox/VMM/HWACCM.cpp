@@ -1116,8 +1116,12 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                     }
                     else
                     {
+                        uint32_t u32Eax, u32Dummy;
+
                         /* TPR patching needs access to the MSR_K8_LSTAR msr. */
-                        if (!CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE))
+                        ASMCpuId(0x80000000, &u32Eax, &u32Dummy, &u32Dummy, &u32Dummy);
+                        if (    u32Eax < 0x80000001
+                            ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE))
                         {
                             pVM->hwaccm.s.fTRPPatchingAllowed = false;
                             LogRel(("HWACCM: TPR patching disabled (long mode not supported).\n"));
