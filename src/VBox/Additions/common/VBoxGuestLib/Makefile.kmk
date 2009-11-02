@@ -83,6 +83,7 @@ VBoxGuestR3Lib_DEFS        = \
 VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3Lib.cpp \
 	VBoxGuestR3LibClipboard.cpp \
+	VBoxGuestR3LibCredentials.cpp \
 	VBoxGuestR3LibDaemonize.cpp \
 	VBoxGuestR3LibGR.cpp \
 	$(if $(VBOX_WITH_GUEST_PROPS), \
@@ -96,6 +97,7 @@ VBoxGuestR3Lib_SOURCES     = \
 ifeq ($(KBUILD_TARGET),win) ## @todo get rid of this hack (as soon as it's all implemented / #defined).
  VBoxGuestR3Lib_SOURCES   = \
 	VBoxGuestR3Lib.cpp \
+	VBoxGuestR3LibCredentials.cpp \
 	VBoxGuestR3LibGR.cpp \
 	$(if $(VBOX_WITH_GUEST_PROPS), \
 		VBoxGuestR3LibGuestProp.cpp \

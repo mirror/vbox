@@ -493,6 +493,12 @@ VBGLR3DECL(int)     VbglR3HostVersionLastCheckedStore(uint32_t u32ClientId, cons
 /** @}  */
 # endif /* VBOX_WITH_GUEST_PROPS defined */
 
+/** @name User credentials handling
+ * @{ */
+VBGLR3DECL(bool)    VbglR3CredentialsAvailable(void);
+VBGLR3DECL(int)     VbglR3CredentialsRetrieve(char **ppszUser, char **ppszPassword, char **ppszDomain);
+/** @}  */
+
 #endif /* IN_RING3 */
 /** @} */
 
