@@ -46,7 +46,7 @@ void VBoxMedium::blockAndQueryState()
 {
     if (mMedium.isNull()) return;
 
-    mState = mMedium.GetState();
+    mState = mMedium.RefreshState();
 
     /* Save the result to distinguish between inaccessible and e.g. uninitialized objects */
     mResult = COMResult (mMedium);

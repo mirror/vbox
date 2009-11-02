@@ -526,7 +526,7 @@ int handleList(HandlerArg *a)
                 MediumState_T enmState;
                 /// @todo NEWMEDIA check accessibility of all parents
                 /// @todo NEWMEDIA print the full state value
-                hdd->COMGETTER(State)(&enmState);
+                hdd->RefreshState(&enmState);
                 RTPrintf("Accessible:   %s\n", enmState != MediumState_Inaccessible ? "yes" : "no");
 
                 MediumType_T type;
@@ -582,7 +582,7 @@ int handleList(HandlerArg *a)
                 dvdImage->COMGETTER(Location)(filePath.asOutParam());
                 RTPrintf("Path:       %lS\n", filePath.raw());
                 MediumState_T enmState;
-                dvdImage->COMGETTER(State)(&enmState);
+                dvdImage->RefreshState(&enmState);
                 RTPrintf("Accessible: %s\n", enmState != MediumState_Inaccessible ? "yes" : "no");
                 /** @todo usage */
                 RTPrintf("\n");
@@ -604,7 +604,7 @@ int handleList(HandlerArg *a)
                 floppyImage->COMGETTER(Location)(filePath.asOutParam());
                 RTPrintf("Path:       %lS\n", filePath.raw());
                 MediumState_T enmState;
-                floppyImage->COMGETTER(State)(&enmState);
+                floppyImage->RefreshState(&enmState);
                 RTPrintf("Accessible: %s\n", enmState != MediumState_Inaccessible ? "yes" : "no");
                 /** @todo usage */
                 RTPrintf("\n");

@@ -8553,16 +8553,13 @@
       <link to="#state"/> attribute has a value of "Created".
       When the storage unit cannot be read (for example, because it is located on
       a disconnected network resource, or was accidentally deleted outside VirtualBox),
-      the medium is considered to be <i>inaccessible</i>, which is indicated by the
+      the medium is considered <i>inaccessible</i>, which is indicated by the
       "Inaccessible" state. The exact reason why the medium is inaccessible can be
       obtained by reading the <link to="#lastAccessError"/> attribute.
 
-      A new accessibility check is performed each time the <link to="#state"/>
-      attribute is read. This check may take long time (several seconds or even
-      minutes, depending on the storage unit location and format), and will
-      block the calling thread until finished. For this reason, it is recommended
-      to never read this attribute on the main UI thread to avoid making the UI
-      unresponsive.
+      A new accessibility check is performed when <link to="#refreshState"/>
+      is called; otherwise the <link to="#state"/> attribute returns the state
+      from the last refresh.
 
       Note that when VirtualBox starts up (e.g. the VirtualBox object gets
       created for the first time), all known media are in the
@@ -8843,26 +8840,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="state" type="MediumState" readonly="yes">
       <desc>
-        Current medium state. Inspect <link to="MediumState"/> values for details.
+        Returns the current medium state, which is the last state set by
+        the accessibility check performed by <link to="#refreshState"/>.
+        If that method has not yet been called on the medium, the state
+        is "Inaccessible"; as opposed to truly inaccessible media, the
+        value of <link to="#lastAccessError"/> will be an empty string in
+        that case.
 
-        Reading this attribute may take a long time because an accessibility
-        check of the storage unit is performed each time the attribute is read.
-        This check may cause a significant delay if the storage unit of the
-        given medium is, for example, a file located on a network share which is
-        not currently accessible due to connectivity problems -- the call will
-        not return until a timeout interval defined by the host OS for this
-        operation expires.
-
-        If the last known state of the medium is <link to="MediumState_Created"/>
-        and the accessibility check fails then the state would be set to
-        <link to="MediumState_Inaccessible"/> and <link to="#lastAccessError"/>
-        may be used to get more details about the failure. If the state of the
-        medium is <link to="MediumState_LockedRead"/> or
-        <link to="MediumState_LockedWrite"/> then it remains the same, and a
-        non-empty value of <link to="#lastAccessError"/> will indicate a failed
-        accessibility check in this case.
-
-        Note that not all medium states are applicable to all medium types.
+        <note>As of version 3.1, this no longer performs an accessibility check
+          automatically; call <link to="#refreshState"/> for that.
+        </note>
       </desc>
     </attribute>
 
@@ -9075,13 +9062,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="lastAccessError" type="wstring" readonly="yes">
       <desc>
         Text message that represents the result of the last accessibility
-        check.
+        check performed by <link to="#refreshState"/>.
 
-        Accessibility checks are performed each time the <link to="#state"/>
-        attribute is read. An empty string is returned if the last
-        accessibility check was successful. A non-empty string indicates a
-        failure and should normally describe a reason of the failure (for
-        example, a file read error).
+        An empty string is returned if the last accessibility check
+        was successful or has not yet been called. As a result, if
+        <link to="#state" /> is "Inaccessible" and this attribute is empty,
+        then <link to="#refreshState"/> has yet to be called; this is the
+        default value of media after VirtualBox initialization.
+        A non-empty string indicates a failure and should normally describe
+        a reason of the failure (for example, a file read error).
       </desc>
     </attribute>
 
@@ -9100,6 +9089,43 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </note>
       </desc>
     </attribute>
+
+    <method name="refreshState">
+      <desc>
+        If the current medium state (see <link to="MediumState"/>
+        and <link to="#state" /> is one of "Created", "Inaccessible"
+        or "LockedRead", then this performs an accessibility check on the
+        medium and sets the value of the <link to="#state"/> attribute
+        accordingly; that value is also returned for convenience.
+
+        For all other state values, this does not perform a refresh but returns
+        the state only.
+
+        The refresh, if performed, may take a long time (several seconds or even
+        minutes, depending on the storage unit location and format) because it performs an
+        accessibility check of the storage unit. This check may cause a significant
+        delay if the storage unit of the given medium is, for example, a file located
+        on a network share which is not currently accessible due to connectivity
+        problems. In that case, the call will not return until a timeout
+        interval defined by the host OS for this operation expires. For this reason,
+        it is recommended to never read this attribute on the main UI thread to avoid
+        making the UI unresponsive.
+
+        If the last known state of the medium is "Created" and the accessibility
+        check fails, then the state would be set to "Inaccessible", and
+        <link to="#lastAccessError"/> may be used to get more details about the
+        failure. If the state of the medium is "LockedRead", then it remains the
+        same, and a non-empty value of <link to="#lastAccessError"/> will
+        indicate a failed accessibility check in this case.
+
+        Note that not all medium states are applicable to all medium types.
+      </desc>
+      <param name="state" type="MediumState" dir="return">
+        <desc>
+          New medium state.
+        </desc>
+      </param>
+    </method>
 
     <method name="getSnapshotIds">
       <desc>

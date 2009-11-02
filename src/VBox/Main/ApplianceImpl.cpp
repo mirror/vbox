@@ -4476,7 +4476,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 
                 // force reading state, or else size will be returned as 0
                 MediumState_T ms;
-                rc = pMedium->COMGETTER(State)(&ms);
+                rc = pMedium->RefreshState(&ms);
                 if (FAILED(rc)) throw rc;
 
                 ULONG64 ullSize;
