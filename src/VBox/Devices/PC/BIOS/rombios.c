@@ -11140,6 +11140,69 @@ rom_scan_increment:
   mov  ds, ax
   ret
 
+#define LVT0    0xFEE00350
+#define LVT1    0xFEE00360
+
+;; Program LVT0/LVT1 entries in the local APIC. Some Linux kernels (e.g., RHEL4
+;; SMP 32-bit) expect the entries to be unmasked in virtual wire mode.
+
+setup_lapic:
+  pushf
+  cli               ;; Interrupts would kill us!
+  call pmode_enter
+  mov  esi, #LVT0   ;; Program LVT0 to ExtINT and unmask
+  mov  eax, [esi]
+  and  eax, #0xfffe00ff
+  or   ah,  #0x07
+  mov  [esi], eax
+  mov  esi, #LVT1   ;; Program LVT1 to NMI and unmask
+  mov  eax, [esi]
+  and  eax, #0xfffe00ff
+  or   ah,  #0x04
+  mov  [esi], eax
+  call pmode_exit
+  popf
+  ret
+
+;; Enter and exit minimal protected-mode environment. May only be called from
+;; the F000 segment (16-bit). Does not switch stacks. Must be run with disabled
+;; interrupts(!). On return from pmode_enter, DS contains a selector which can
+;;  address the entire 4GB address space.
+
+pmode_enter:
+  push cs
+  pop  ds
+  lgdt [pmbios_gdt_desc]
+  mov  eax, cr0
+  or   al, #0x1
+  mov  cr0, eax
+  JMP_AP(0x20, really_enter_pm)
+really_enter_pm:
+  mov  ax, #0x18
+  mov  ds, ax
+  ret
+
+pmode_exit:
+  mov  eax, cr0
+  and  al, #0xfe
+  mov  cr0, eax
+  JMP_AP(0xF000, really_exit_pm)
+really_exit_pm:
+  ret
+
+pmbios_gdt_desc:
+  dw 0x30
+  dw pmbios_gdt
+  dw 0x000f
+
+pmbios_gdt:
+  dw 0, 0, 0, 0
+  dw 0, 0, 0, 0
+  dw 0xffff, 0, 0x9b00, 0x00cf ; 32 bit flat code segment (0x10)
+  dw 0xffff, 0, 0x9300, 0x00cf ; 32 bit flat data segment (0x18)
+  dw 0xffff, 0, 0x9b0f, 0x0000 ; 16 bit code segment base=0xf0000 limit=0xffff
+  dw 0xffff, 0, 0x9300, 0x0000 ; 16 bit data segment base=0x0 limit=0xffff
+
 ;; for 'C' strings and other data, insert them here with
 ;; a the following hack:
 ;; DATA_SEG_DEFS_HERE
@@ -11468,6 +11531,7 @@ post_default_ints:
   call pcibios_init_iomem_bases
   call pcibios_init_irqs
 #endif
+  call setup_lapic
   call rom_scan
 
 #if BX_USE_ATADRV
