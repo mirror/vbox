@@ -323,7 +323,8 @@ static int pgmR3LoadRomRanges(PVM pVM, PSSMHANDLE pSSM)
                 break;
             }
         }
-        AssertLogRelMsgReturn(pRom, ("GCPhys=%RGp %s\n", GCPhys, szDesc), VERR_SSM_LOAD_CONFIG_MISMATCH);
+        if (!pRom)
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("ROM at %RGp by the name '%s' was not found"), GCPhys, szDesc);
     } /* forever */
 }
 
@@ -694,7 +695,9 @@ static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
                 break;
             }
         }
-        AssertLogRelMsgReturn(pMmio2, ("%s/%u/%u: %s\n", szDevName, uInstance, iRegion, szDesc), VERR_SSM_LOAD_CONFIG_MISMATCH);
+        if (!pMmio2)
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Failed to locate a MMIO2 range called '%s' owned by %s/%u, region %d"),
+                                    szDesc, szDevName, uInstance, iRegion);
 
         /*
          * Validate the configuration, the size of the MMIO2 region should be
@@ -705,7 +708,8 @@ static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
             LogRel(("PGM: MMIO2 region \"%s\" size mismatch: saved=%RGp config=%RGp\n",
                     pMmio2->RamRange.pszDesc, cb, pMmio2->RamRange.cb));
             if (cb > pMmio2->RamRange.cb) /* bad idea? */
-                return VERR_SSM_LOAD_CONFIG_MISMATCH;
+                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("MMIO2 region \"%s\" size mismatch: saved=%RGp config=%RGp"),
+                                        pMmio2->RamRange.pszDesc, cb, pMmio2->RamRange.cb);
         }
     } /* forever */
 }
@@ -2166,7 +2170,10 @@ static int pgmR3LoadMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
              */
             if (    SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT
                 ||  GCPhys < 8 * _1M)
-                AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
+                return SSMR3SetCfgError(pSSM, RT_SRC_POS,
+                                        N_("RAM range mismatch; saved={%RGp-%RGp %RGp bytes %s %s} config={%RGp-%RGp %RGp bytes %s %s}"),
+                                        GCPhys, GCPhysLast, cb, fHaveBits ? "bits" : "nobits", szDesc,
+                                        pRam->GCPhys, pRam->GCPhysLast, pRam->cb, pRam->pvR3 ? "bits" : "nobits", pRam->pszDesc);
 
             AssertMsgFailed(("debug skipping not implemented, sorry\n"));
             continue;
@@ -2496,9 +2503,10 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 
                 if (enmProt != pRomPage->enmProt)
                 {
-                    AssertLogRelMsgReturn(pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED,
-                                          ("GCPhys=%RGp enmProt=%d %s\n", GCPhys, enmProt, pRom->pszDesc),
-                                          VERR_SSM_LOAD_CONFIG_MISMATCH);
+                    if (RT_UNLIKELY(!(pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)))
+                        return SSMR3SetCfgError(pSSM, RT_SRC_POS,
+                                                N_("Protection change of unshadowed ROM page: GCPhys=%RGp enmProt=%d %s"),
+                                                GCPhys, enmProt, pRom->pszDesc);
                     rc = PGMR3PhysRomProtect(pVM, GCPhys, PAGE_SIZE, enmProt);
                     AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp rc=%Rrc\n", GCPhys, rc), rc);
                     AssertLogRelReturn(pRomPage->enmProt == enmProt, VERR_INTERNAL_ERROR);
@@ -2521,9 +2529,10 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 
                     case PGM_STATE_REC_ROM_SHW_RAW:
                     case PGM_STATE_REC_ROM_SHW_ZERO:
-                        AssertLogRelMsgReturn(pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED,
-                                              ("GCPhys=%RGp enmProt=%d %s\n", GCPhys, enmProt, pRom->pszDesc),
-                                              VERR_SSM_LOAD_CONFIG_MISMATCH);
+                        if (RT_UNLIKELY(!(pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)))
+                            return SSMR3SetCfgError(pSSM, RT_SRC_POS,
+                                                    N_("Shadowed / non-shadowed page type mismatch: GCPhys=%RGp enmProt=%d %s"),
+                                                    GCPhys, enmProt, pRom->pszDesc);
                         if (PGMROMPROT_IS_ROM(enmProt))
                             pRealPage = &pRomPage->Shadow;
                         else
@@ -2704,9 +2713,9 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
             if (    pMapping->cPTs == cPTs
                 &&  !strcmp(pMapping->pszDesc, szDesc))
                 break;
-        AssertLogRelMsgReturn(pMapping, ("Couldn't find mapping: cPTs=%#x szDesc=%s (GCPtr=%RGv)\n",
-                                         cPTs, szDesc, GCPtr),
-                              VERR_SSM_LOAD_CONFIG_MISMATCH);
+        if (!pMapping)
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Couldn't find mapping: cPTs=%#x szDesc=%s (GCPtr=%RGv)"),
+                                    cPTs, szDesc, GCPtr);
 
         /* relocate it. */
         if (pMapping->GCPtr != GCPtr)

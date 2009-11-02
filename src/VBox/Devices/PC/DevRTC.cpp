@@ -664,18 +664,12 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         uint8_t u8Irq;
         rc = SSMR3GetU8(pSSM, &u8Irq);          AssertRCReturn(rc, rc);
         if (u8Irq != pThis->irq)
-        {
-            LogRel(("RTC: Config mismatch - u8Irq: saved=%#x config=%#x\n", u8Irq, pThis->irq));
-            return VERR_SSM_LOAD_CONFIG_MISMATCH;
-        }
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - u8Irq: saved=%#x config=%#x"), u8Irq, pThis->irq);
 
         RTIOPORT IOPortBase;
         rc = SSMR3GetIOPort(pSSM, &IOPortBase); AssertRCReturn(rc, rc);
         if (IOPortBase != pThis->IOPortBase)
-        {
-            LogRel(("RTC: Config mismatch - IOPortBase: saved=%RTiop config=%RTiop\n", IOPortBase, pThis->IOPortBase));
-            return VERR_SSM_LOAD_CONFIG_MISMATCH;
-        }
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - IOPortBase: saved=%RTiop config=%RTiop"), IOPortBase, pThis->IOPortBase);
 
         bool fUTC;
         rc = SSMR3GetBool(pSSM, &fUTC);         AssertRCReturn(rc, rc);

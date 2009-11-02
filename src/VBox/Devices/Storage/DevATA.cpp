@@ -6178,10 +6178,7 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         rc = SSMR3GetU8(pSSM, &u8Type);
         AssertRCReturn(rc, rc);
         if (u8Type != pThis->u8Type)
-        {
-            LogRel(("PIIX3 ATA: Config mismatch: u8Type - saved=%u config=%u\n", u8Type, pThis->u8Type));
-            return VERR_SSM_LOAD_CONFIG_MISMATCH;
-        }
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: u8Type - saved=%u config=%u"), u8Type, pThis->u8Type);
 
         for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
         {
@@ -6189,10 +6186,7 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
             rc = SSMR3GetBool(pSSM, &fEnabled);
             AssertRCReturn(rc, rc);
             if (!fEnabled)
-            {
-                LogRel(("PIIX3 ATA: Ctr#%u onfig mismatch: fEnabled != true\n", i));
-                return VERR_SSM_LOAD_CONFIG_MISMATCH;
-            }
+                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Ctr#%u onfig mismatch: fEnabled != true"), i);
 
             for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
             {
@@ -6202,11 +6196,8 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
                 rc = SSMR3GetBool(pSSM, &fInUse);
                 AssertRCReturn(rc, rc);
                 if (fInUse != (pIf->pDrvBase != NULL))
-                {
-                    LogRel(("PIIX3 ATA: LUN#%u config mismatch: fInUse - saved=%RTbool config=%RTbool\n",
-                            pIf->iLUN, fInUse, (pIf->pDrvBase != NULL)));
-                    return VERR_SSM_LOAD_CONFIG_MISMATCH;
-                }
+                    return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("LUN#%u config mismatch: fInUse - saved=%RTbool config=%RTbool"),
+                                             pIf->iLUN, fInUse, (pIf->pDrvBase != NULL));
 
                 char szSerialNumber[ATA_SERIAL_NUMBER_LENGTH+1];
                 rc = SSMR3GetStrZ(pSSM, szSerialNumber,     sizeof(szSerialNumber));
@@ -6332,7 +6323,7 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
                 {
                     LogRel(("ATA: No buffer for %d/%d\n", i, j));
                     if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
-                        return VERR_SSM_LOAD_CONFIG_MISMATCH;
+                        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("No buffer for %d/%d"), i, j);
 
                     /* skip the buffer if we're loading for the debugger / animator. */
                     uint8_t u8Ignored;

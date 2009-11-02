@@ -4597,10 +4597,7 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         rc = SSMR3GetU32(pSSM, &eChip);
         AssertRCReturn(rc, rc);
         if (eChip != pState->eChip)
-        {
-            LogRel(("%s: The mac address differs: config=%u saved=%u\n", INSTANCE(pState), pState->eChip, eChip));
-            return VERR_SSM_LOAD_CONFIG_MISMATCH;
-        }
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("The chip type differs: config=%u saved=%u"), pState->eChip, eChip);
     }
 
     if (uPass == SSM_PASS_FINAL)

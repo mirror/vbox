@@ -661,11 +661,8 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
 
     if (    pThis->irq  != iIrq
         ||  pThis->base != IOBase)
-    {
-        LogRel(("Serial#%u: Config mismatch - saved irq=%#x iobase=%#x; configured irq=%#x iobase=%#x\n",
-                pDevIns->iInstance, iIrq, IOBase, pThis->irq, pThis->base));
-        return VERR_SSM_LOAD_CONFIG_MISMATCH;
-    }
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - saved irq=%#x iobase=%#x; configured irq=%#x iobase=%#x"),
+                                iIrq, IOBase, pThis->irq, pThis->base);
 
     if (uPass == SSM_PASS_FINAL)
     {

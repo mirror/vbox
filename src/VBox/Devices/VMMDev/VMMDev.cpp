@@ -2195,16 +2195,12 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 
         rc = SSMR3GetBool(pSSM, &f); AssertRCReturn(rc, rc);
         if (pThis->fKeepCredentials != f)
-        {
-            LogRel(("VMMDev: Config mismatch - fKeepCredentials: config=%RTbool saved=%RTbool\n", pThis->fKeepCredentials, f));
-            return VERR_SSM_LOAD_CONFIG_MISMATCH;
-        }
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - fKeepCredentials: config=%RTbool saved=%RTbool"),
+                                     pThis->fKeepCredentials, f);
         rc = SSMR3GetBool(pSSM, &f); AssertRCReturn(rc, rc);
         if (pThis->fHeapEnabled != f)
-        {
-            LogRel(("VMMDev: Config mismatch - fHeapEnabled: config=%RTbool saved=%RTbool\n", pThis->fHeapEnabled, f));
-            return VERR_SSM_LOAD_CONFIG_MISMATCH;
-        }
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - fHeapEnabled: config=%RTbool saved=%RTbool"),
+                                    pThis->fHeapEnabled, f);
     }
 
     if (uPass != SSM_PASS_FINAL)
