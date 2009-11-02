@@ -8324,21 +8324,14 @@
     </const>
     <const name="LockedRead" value="2">
       <desc>
-        Medium is locked for reading, no data modification is possible. A
-        medium is typically locked for reading while it is used by a running
-        virtual machine but has a depending differencing image that receives
-        the actual write operations. This way one base medium can have multiple
-        child differencing images which can be written to simultaneously.
+        Medium is locked for reading (see <link to="IMedium::lockRead"/>),
+        no data modification is possible.
       </desc>
     </const>
     <const name="LockedWrite" value="3">
       <desc>
-        Medium is locked for writing, no concurrent data reading or modification
-        is possible. A medium is typically locked for writing when it receives
-        write operations from a running virtual machine. If a medium has
-        differencing images, then while the machine is running, only the last
-        ("leaf") differencing image is locked for writing, whereas its parents
-        are locked for reading only.
+        Medium is locked for writing (see <link to="IMedium::lockWrite"/>),
+        no concurrent data reading or modification is possible.
       </desc>
     </const>
     <const name="Inaccessible" value="4">
@@ -9170,38 +9163,47 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Locks this medium for reading.
 
-        The read lock is shared: many clients can simultaneously lock the
+        A read lock is shared: many clients can simultaneously lock the
         same medium for reading unless it is already locked for writing (see
         <link to="#lockWrite"/>) in which case an error is returned.
 
         When the medium is locked for reading, it cannot be modified
         from within VirtualBox. This means that any method that changes
         the properties of this medium or contents of the storage unit
-        will return an error (unless explicitly stated otherwise) and
-        that an attempt to start a virtual machine that wants to modify
-        the medium will also fail.
+        will return an error (unless explicitly stated otherwise). That
+        includes an attempt to start a virtual machine that wants to
+        write to the the medium.
 
         When the virtual machine is started up, it locks for reading all
         media it uses in read-only mode. If some medium cannot be locked
         for reading, the startup procedure will fail.
+        A medium is typically locked for reading while it is used by a running
+        virtual machine but has a depending differencing image that receives
+        the actual write operations. This way one base medium can have
+        multiple child differencing images which can be written to
+        simultaneously. Read-only media such as DVD and floppy images are
+        also locked for reading only (so they can be in use by multiple
+        machines simultaneously).
+
+        A medium is also locked for reading when it is the source of a
+        write operation such as <link to="#cloneTo"/> or <link to="#mergeTo"/>.
 
         The medium locked for reading must be unlocked using the <link
         to="#unlockRead"/> method. Calls to <link to="#lockRead"/>
         can be nested and must be followed by the same number of paired
         <link to="#unlockRead"/> calls.
 
-        This method sets the medium state to <link
-        to="MediumState_LockedRead" /> on success. The state prior to
-        this call must be <link to="MediumState_Created" />,
-        <link to="MediumState_Inaccessible" /> or
-        <link to="MediumState_LockedRead" />.
-        As you can see, an inaccessible medium can be locked too. This is
-        not an error; this method performs a logical lock that prevents
-        modifications of this medium through the VirtualBox API, not a
-        physical lock of the underlying storage unit.
+        This method sets the medium state (see <link to="#state"/>) to
+        "LockedRead" on success. The medium's previous state must be
+        one of "Created", "Inaccessible" or "LockedRead".
+
+        Locking an inaccessible medium is not an error; this method performs
+        a logical lock that prevents modifications of this medium through
+        the VirtualBox API, not a physical file-system lock of the underlying
+        storage unit.
 
         This method returns the current state of the medium
-        <b>before</b> the operation.
+        <i>before</i> the operation.
 
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Invalid medium state (e.g. not created, locked, inaccessible,
@@ -9220,8 +9222,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Cancels the read lock previously set by <link to="#lockRead"/>.
 
-        For both, success and failure, this method returns the current state
-        of the medium <b>after</b> the operation.
+        For both success and failure, this method returns the current state
+        of the medium <i>after</i> the operation.
 
         See <link to="#lockRead"/> for more details.
 
@@ -9241,37 +9243,42 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Locks this medium for writing.
 
-        The write lock, as opposed to <link to="#lockRead"/>, is
-        exclusive: there may be only one client holding a write lock
+        A write lock, as opposed to <link to="#lockRead"/>, is
+        exclusive: there may be only one client holding a write lock,
         and there may be no read locks while the write lock is held.
+        As a result, read-locking fails if a write lock is held, and
+        write-locking fails if either a read or another write lock is held.
 
-        When the medium is locked for writing, it cannot be modified
-        from within VirtualBox and it is not guaranteed that the values
+        When a medium is locked for writing, it cannot be modified
+        from within VirtualBox, and it is not guaranteed that the values
         of its properties are up-to-date. Any method that changes the
         properties of this medium or contents of the storage unit will
-        return an error (unless explicitly stated otherwise) and an
-        attempt to start a virtual machine wanting to modify or to
-        read the medium will fail.
+        return an error (unless explicitly stated otherwise).
 
-        When the virtual machine is started up, it locks for writing all
+        When a virtual machine is started up, it locks for writing all
         media it uses to write data to. If any medium could not be locked
-        for writing, the startup procedure will fail.
+        for writing, the startup procedure will fail. If a medium has
+        differencing images, then while the machine is running, only
+        the last ("leaf") differencing image is locked for writing,
+        whereas its parents are locked for reading only.
+
+        A medium is also locked for writing when it is the target of a
+        write operation such as <link to="#cloneTo"/> or <link to="#mergeTo"/>.
 
         The medium locked for writing must be unlocked using the <link
-        to="#unlockWrite"/> method. Calls to <link to="#lockWrite"/>
-        can <b>not</b> be nested and must be followed by a<link
-        to="#unlockWrite"/> call before the next lockWrite call.
+        to="#unlockWrite"/> method. Write locks <i>cannot</i> be nested.
 
-        This method sets the medium state to <link to="MediumState_LockedWrite" />
-        on success. The state prior to this call must be <link to="MediumState_Created"/>
-        or <link to="MediumState_Inaccessible"/>. As you can see, an inaccessible
-        medium can be locked too. This is not an error; this method
-        performs a logical lock preventing modifications of this
-        medium through the VirtualBox API, not a physical lock of the
-        underlying storage unit.
+        This method sets the medium state (see <link to="#state"/>) to
+        "LockedWrite" on success. The medium's previous state must be
+        either "Created" or "Inaccessible".
+
+        Locking an inaccessible medium is not an error; this method performs
+        a logical lock that prevents modifications of this medium through
+        the VirtualBox API, not a physical file-system lock of the underlying
+        storage unit.
 
         For both, success and failure, this method returns the current
-        state of the medium <b>before</b> the operation.
+        state of the medium <i>before</i> the operation.
 
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Invalid medium state (e.g. not created, locked, inaccessible,
@@ -9290,8 +9297,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Cancels the write lock previously set by <link to="#lockWrite"/>.
 
-        For both, success and failure, this method returns the current
-        state of the medium <b>after</b> the operation.
+        For both success and failure, this method returns the current
+        state of the medium <i>after</i> the operation.
 
         See <link to="#lockWrite"/> for more details.
 
