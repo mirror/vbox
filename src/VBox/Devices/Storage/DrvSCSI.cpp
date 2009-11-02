@@ -854,7 +854,7 @@ static void drvscsiWaitForPendingRequests(PDRVSCSI pThis, const char *pszEvent)
 static DECLCALLBACK(void) drvscsiPowerOff(PPDMDRVINS pDrvIns)
 {
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
-    drvscsiWaitForPendingRequests(pThis, "PowerOff");
+    PDMR3ThreadSuspend(pThis->pAsyncIOThread);
 }
 
 /**
@@ -863,7 +863,7 @@ static DECLCALLBACK(void) drvscsiPowerOff(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void) drvscsiSuspend(PPDMDRVINS pDrvIns)
 {
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
-    drvscsiWaitForPendingRequests(pThis, "Suspend");
+    PDMR3ThreadSuspend(pThis->pAsyncIOThread);
 }
 
 /**
