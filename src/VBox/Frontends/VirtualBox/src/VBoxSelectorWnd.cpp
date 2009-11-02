@@ -502,7 +502,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     /* Make non-possible to activate list elements by single click,
      * this hack should disable the current possibility to do it if present */
     if (mVMListView->style()->styleHint (QStyle::SH_ItemView_ActivateItemOnSingleClick, 0, mVMListView))
-        mVMListView->setStyleSheet ("activate-on-singleclick");
+        mVMListView->setStyleSheet ("activate-on-singleclick : 0");
 
     leftVLayout->addWidget (mVMListView);
 
