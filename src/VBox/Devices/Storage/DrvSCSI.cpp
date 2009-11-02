@@ -729,7 +729,7 @@ static int drvscsiAsyncIOLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 static bool drvscsiAsyncIOLoopNoPendingDummy(PDRVSCSI pThis, uint32_t cMillies)
 {
     if (!pThis->pPendingDummyReq)
-        return false;
+        return true;
     int rc = RTReqWait(pThis->pPendingDummyReq, cMillies);
     if (RT_FAILURE(rc))
         return false;
