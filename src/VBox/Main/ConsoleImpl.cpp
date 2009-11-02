@@ -2657,32 +2657,6 @@ const char *Console::controllerTypeToDev(StorageControllerType_T enmCtrlType)
     }
 }
 
-void Console::controllerDevToBool(const char *pszCtrlDev, bool *afBool)
-{
-    if (!strcmp("lsilogicscsi", pszCtrlDev))
-    {
-        afBool[StorageControllerType_LsiLogic] = true;
-    }
-    else if (!strcmp("buslogic", pszCtrlDev))
-    {
-        afBool[StorageControllerType_BusLogic] = true;
-    }
-    else if (!strcmp("ahci", pszCtrlDev))
-    {
-        afBool[StorageControllerType_IntelAhci] = true;
-    }
-    else if (!strcmp("piix3ide", pszCtrlDev))
-    {
-        afBool[StorageControllerType_PIIX3] = true;
-        afBool[StorageControllerType_PIIX4] = true;
-        afBool[StorageControllerType_ICH6]  = true;
-    }
-    else if (!strcmp("i82078", pszCtrlDev))
-    {
-        afBool[StorageControllerType_I82078] = true;
-    }
-}
-
 HRESULT Console::convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG device, unsigned &uLun)
 {
     switch (enmBus)
