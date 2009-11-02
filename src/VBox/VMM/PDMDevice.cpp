@@ -208,6 +208,7 @@ int pdmR3DevInit(PVM pVM)
             AssertMsgRCReturn(rc, ("Configuration error: reading \"Priority\" for the '%s' device failed rc=%Rrc!\n", szName, rc), rc);
 
         /* Enumerate the device instances. */
+        uint32_t const iStart = i;
         for (pInstanceNode = CFGMR3GetFirstChild(pCur); pInstanceNode; pInstanceNode = CFGMR3GetNextChild(pInstanceNode))
         {
             paDevs[i].pNode = pInstanceNode;
@@ -226,6 +227,12 @@ int pdmR3DevInit(PVM pVM)
             /* next instance */
             i++;
         }
+
+        /* check the number of instances */
+        if (i - iStart > pDev->pDevReg->cMaxInstances)
+            AssertLogRelMsgFailedReturn(("Configuration error: Too many instances of %s was configured: %u, max %u\n",
+                                         szName, i - iStart, pDev->pDevReg->cMaxInstances),
+                                        VERR_PDM_TOO_MANY_DEVICE_INSTANCES);
     } /* devices */
     Assert(i == cDevs);
 
@@ -284,6 +291,7 @@ int pdmR3DevInit(PVM pVM)
         /*
          * Allocate the device instance.
          */
+        AssertReturn(paDevs[i].pDev->cInstances < paDevs[i].pDev->pDevReg->cMaxInstances, VERR_PDM_TOO_MANY_DEVICE_INSTANCES);
         size_t cb = RT_OFFSETOF(PDMDEVINS, achInstanceData[paDevs[i].pDev->pDevReg->cbInstance]);
         cb = RT_ALIGN_Z(cb, 16);
         PPDMDEVINS pDevIns;
@@ -356,11 +364,13 @@ int pdmR3DevInit(PVM pVM)
         /*
          * Call the constructor.
          */
+        paDevs[i].pDev->cInstances++;
         Log(("PDM: Constructing device '%s' instance %d...\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
         rc = pDevIns->pDevReg->pfnConstruct(pDevIns, pDevIns->iInstance, pDevIns->pCfgHandle);
         if (RT_FAILURE(rc))
         {
             LogRel(("PDM: Failed to construct '%s'/%d! %Rra\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+            paDevs[i].pDev->cInstances--;
             /* because we're damn lazy right now, we'll say that the destructor will be called even if the constructor fails. */
             return rc;
         }
