@@ -4667,11 +4667,11 @@ void VBoxGlobal::init()
     while (i < argc)
     {
         const char *arg = qApp->argv() [i];
-        if (    !::strcmp (arg, "--startvm")
-            ||  !::strcmp (arg, "-startvm")
-            ||  !::strcmp (arg, "-s")
-            ||  !::strcmp (arg, "--vm")
-            ||  !::strcmp (arg, "-vm"))
+        /* NOTE: the check here must match the corresponding check for the
+         * options to start a VM in main.cpp and hardenedmain.cpp exactly,
+         * otherwise there will be weird error messages. */
+        if (   !::strcmp (arg, "--startvm")
+            || !::strcmp (arg, "-startvm"))
         {
             if (++i < argc)
             {
