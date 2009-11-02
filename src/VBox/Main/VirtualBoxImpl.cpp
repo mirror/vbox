@@ -2781,7 +2781,7 @@ HRESULT VirtualBox::findDVDImage(const Guid *aId,
         found = (aId && (*it)->id() == *aId) ||
                 (aLocation != NULL &&
                  RTPathCompare(location.c_str(),
-                               Utf8Str((*it)->locationFull()).c_str()
+                               (*it)->locationFull().c_str()
                               ) == 0);
         if (found)
         {
@@ -2857,7 +2857,7 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId, CBSTR aLocation,
         found = (aId && (*it)->id() == *aId) ||
                 (aLocation != NULL &&
                  RTPathCompare(location.c_str(),
-                               Utf8Str((*it)->locationFull()).c_str()
+                               (*it)->locationFull().c_str()
                               ) == 0);
         if (found)
         {
@@ -3047,7 +3047,7 @@ void VirtualBox::calculateRelativePath(const Utf8Str &strPath, Utf8Str &aResult)
  * @note Locks this object and media objects for reading.
  */
 HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
-                                             const Bstr &aLocation,
+                                             const Utf8Str &aLocation,
                                              Utf8Str &aConflict)
 {
     aConflict.setNull();
@@ -3058,15 +3058,17 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
 
     HRESULT rc = S_OK;
 
+    Bstr bstrLocation(aLocation);
+
     {
         ComObjPtr<Medium> hardDisk;
-        rc = findHardDisk(&aId, aLocation, false /* aSetError */, &hardDisk);
+        rc = findHardDisk(&aId, bstrLocation, false /* aSetError */, &hardDisk);
         if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
             AutoReadLock mediaLock (hardDisk);
             aConflict = Utf8StrFmt (
-                tr ("hard disk '%ls' with UUID {%RTuuid}"),
+                tr ("hard disk '%s' with UUID {%RTuuid}"),
                 hardDisk->locationFull().raw(), hardDisk->id().raw());
             return S_OK;
         }
@@ -3074,13 +3076,13 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
 
     {
         ComObjPtr<Medium> image;
-        rc = findDVDImage (&aId, aLocation, false /* aSetError */, &image);
+        rc = findDVDImage (&aId, bstrLocation, false /* aSetError */, &image);
         if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
             AutoReadLock mediaLock (image);
             aConflict = Utf8StrFmt (
-                tr ("CD/DVD image '%ls' with UUID {%RTuuid}"),
+                tr ("CD/DVD image '%s' with UUID {%RTuuid}"),
                 image->locationFull().raw(), image->id().raw());
             return S_OK;
         }
@@ -3088,13 +3090,13 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
 
     {
         ComObjPtr<Medium> image;
-        rc = findFloppyImage(&aId, aLocation, false /* aSetError */, &image);
+        rc = findFloppyImage(&aId, bstrLocation, false /* aSetError */, &image);
         if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
             AutoReadLock mediaLock (image);
             aConflict = Utf8StrFmt (
-                tr ("floppy image '%ls' with UUID {%RTuuid}"),
+                tr ("floppy image '%s' with UUID {%RTuuid}"),
                 image->locationFull().raw(), image->id().raw());
             return S_OK;
         }

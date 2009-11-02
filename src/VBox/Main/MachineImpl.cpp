@@ -1500,7 +1500,7 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder) (IN_BSTR aSnapshotFolder)
 
     if (!mData->mCurrentSnapshot.isNull())
         return setError(E_FAIL,
-                        tr("The snapshot folder of a machine with snapshots cannot be changed (please discard all snapshots first)"));
+                        tr("The snapshot folder of a machine with snapshots cannot be changed (please delete all snapshots first)"));
 
     Utf8Str snapshotFolder = aSnapshotFolder;
 
@@ -2154,7 +2154,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         {
             AutoReadLock mediumLock(pMedium);
             return setError(VBOX_E_OBJECT_IN_USE,
-                            tr("Medium '%ls' is already attached to device slot %d on port %d of controller '%ls' of this virtual machine"),
+                            tr("Medium '%s' is already attached to device slot %d on port %d of controller '%ls' of this virtual machine"),
                             pMedium->locationFull().raw(), aDevice, aControllerPort, aControllerName);
         }
         else
@@ -2255,7 +2255,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         && !medium.isNull())
     {
         return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("Medium '%ls' is already attached to this virtual machine"),
+                        tr("Medium '%s' is already attached to this virtual machine"),
                         medium->locationFull().raw());
     }
 
@@ -5654,11 +5654,10 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                     {
                         for (size_t i = 0; i < drivevec.size(); ++i)
                         {
-                            Bstr hostDriveSrc(dev.strHostDriveSrc);
                             /// @todo eliminate this conversion
                             ComObjPtr<Medium> med = (Medium *)drivevec[i];
-                            if (    hostDriveSrc == med->name()
-                                ||  hostDriveSrc == med->location())
+                            if (    dev.strHostDriveSrc == med->name()
+                                ||  dev.strHostDriveSrc == med->location())
                             {
                                 medium = med;
                                 break;
@@ -5707,7 +5706,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                 {
                     if (mType == IsSnapshotMachine)
                         return setError(E_FAIL,
-                                        tr("Immutable hard disk '%ls' with UUID {%RTuuid} cannot be directly attached to snapshot with UUID {%RTuuid} "
+                                        tr("Immutable hard disk '%s' with UUID {%RTuuid} cannot be directly attached to snapshot with UUID {%RTuuid} "
                                            "of the virtual machine '%ls' ('%s')"),
                                         medium->locationFull().raw(),
                                         dev.uuid.raw(),
@@ -5716,7 +5715,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                         mData->m_strConfigFileFull.raw());
 
                     return setError(E_FAIL,
-                                    tr("Immutable hard disk '%ls' with UUID {%RTuuid} cannot be directly attached to the virtual machine '%ls' ('%s')"),
+                                    tr("Immutable hard disk '%s' with UUID {%RTuuid} cannot be directly attached to the virtual machine '%ls' ('%s')"),
                                     medium->locationFull().raw(),
                                     dev.uuid.raw(),
                                     mUserData->mName.raw(),
@@ -5727,7 +5726,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                      && medium->children().size() != 0
                    )
                     return setError(E_FAIL,
-                                    tr("Hard disk '%ls' with UUID {%RTuuid} cannot be directly attached to the virtual machine '%ls' ('%s') "
+                                    tr("Hard disk '%s' with UUID {%RTuuid} cannot be directly attached to the virtual machine '%ls' ('%s') "
                                        "because it has %d differencing child hard disks"),
                                     medium->locationFull().raw(),
                                     dev.uuid.raw(),
@@ -5738,7 +5737,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                 if (findAttachment(mMediaData->mAttachments,
                                    medium))
                     return setError(E_FAIL,
-                                    tr("Hard disk '%ls' with UUID {%RTuuid} is already attached to the virtual machine '%ls' ('%s')"),
+                                    tr("Hard disk '%s' with UUID {%RTuuid} is already attached to the virtual machine '%ls' ('%s')"),
                                     medium->locationFull().raw(),
                                     dev.uuid.raw(),
                                     mUserData->mName.raw(),
@@ -5749,7 +5748,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
 
             default:
                 return setError(E_FAIL,
-                                tr("Device with unknown type is attached to the virtual machine '%ls' ('%s')"),
+                                tr("Device with unknown type is attached to the virtual machine '%s' ('%s')"),
                                 medium->locationFull().raw(),
                                 mUserData->mName.raw(),
                                 mData->m_strConfigFileFull.raw());
@@ -6532,8 +6531,6 @@ HRESULT Machine::saveStorageControllers(settings::Storage &data)
 HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageController,
                                     settings::StorageController &data)
 {
-    using namespace settings;
-
     MediaData::AttachmentList atts;
 
     HRESULT rc = getMediumAttachmentsOfController(Bstr(aStorageController->name()), atts);
@@ -6546,20 +6543,23 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
     {
         settings::AttachedDevice dev;
 
-        dev.deviceType = (*it)->type();
-        dev.lPort = (*it)->port();
-        dev.lDevice = (*it)->device();
-        if (!(*it)->medium().isNull())
+        MediumAttachment *pAttach = *it;
+        Medium *pMedium = pAttach->medium();
+
+        dev.deviceType = pAttach->type();
+        dev.lPort = pAttach->port();
+        dev.lDevice = pAttach->device();
+        if (pMedium)
         {
             BOOL fHostDrive = false;
-            rc = (*it)->medium()->COMGETTER(HostDrive)(&fHostDrive);
+            rc = pMedium->COMGETTER(HostDrive)(&fHostDrive);
             if (FAILED(rc))
                 return rc;
             if (fHostDrive)
-                dev.strHostDriveSrc = (*it)->medium()->location();
+                dev.strHostDriveSrc = pMedium->location();
             else
-                dev.uuid = (*it)->medium()->id();
-            dev.fPassThrough = (*it)->passthrough();
+                dev.uuid = pMedium->id();
+            dev.fPassThrough = pAttach->passthrough();
         }
 
         data.llAttachedDevices.push_back(dev);
@@ -8932,12 +8932,12 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
         if (!RT_SUCCESS(irc))
             // if we can't access the file here, then we'll be doomed later also, so fail right away
             setError(E_FAIL, tr("Cannot access state file '%s', runtime error, %Rra"), pSnapshot->stateFilePath().c_str(), irc);
-        if (ullSize == 0)
-            ullSize = 1;
+        if (ullSize == 0) // avoid division by zero
+            ullSize = _1M;
 
         ulStateFileSizeMB = (ULONG)(ullSize / _1M);
         LogFlowThisFunc(("op %d: saved state file '%s' has %RI64 bytes (%d MB)\n",
-                        ulOpCount, pSnapshot->stateFilePath().raw(), ullSize, ulStateFileSizeMB));
+                         ulOpCount, pSnapshot->stateFilePath().raw(), ullSize, ulStateFileSizeMB));
 
         ulTotalWeight += ulStateFileSizeMB;
     }
@@ -9622,6 +9622,7 @@ HRESULT SessionMachine::endTakingSnapshot(BOOL aSuccess)
 
     if (aSuccess)
     {
+        // new snapshot becomes the current one
         mData->mCurrentSnapshot = mSnapshotData.mSnapshot;
 
         /* memorize the first snapshot if necessary */
