@@ -1079,6 +1079,8 @@
 /** The driver properties were invalid, and as a consequence construction
  * failed. Caused my unusable media or similar problems. */
 #define VERR_PDM_DRIVER_INVALID_PROPERTIES          (-2866)
+/** Too many instances of a device. */
+#define VERR_PDM_TOO_MANY_DEVICE_INSTANCES          (-2867)
 /** @} */
 
 
