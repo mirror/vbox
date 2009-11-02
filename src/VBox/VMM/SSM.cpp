@@ -534,8 +534,9 @@ typedef struct SSMHANDLE
             uint32_t        uCurUnitVer;
             /** The pass number of the current unit if in the load exec stage. */
             uint32_t        uCurUnitPass;
-            /** Whether SSMR3SetLoadError[V] has been called. */
-            bool            fHaveSetError;
+            /** Whether SSMR3SetLoadError[V] has been called.
+             * @note Using ASMAtomicXchgBool because I'm very lazy. */
+            bool volatile   fHaveSetError;
             /** @} */
 
             /** RTGCPHYS size in bytes. (Only applicable when loading/reading.) */
@@ -7631,7 +7632,7 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                             else if (i64Diff > 0)
                             {
                                 LogRel(("SSM: Unit '%s' read %lld bytes too much!\n", pszName, i64Diff));
-                                if (!pSSM->u.Read.fHaveSetError)
+                                if (!ASMAtomicXchgBool(&pSSM->u.Read.fHaveSetError, true))
                                     rc = VMSetError(pVM, VERR_SSM_LOADED_TOO_MUCH, RT_SRC_POS,
                                                     N_("Unit '%s' read %lld bytes too much"), pszName, i64Diff);
                                 break;
@@ -7643,7 +7644,7 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                         {
                             LogRel(("SSM: Load exec failed for '%s' instance #%u ! (version %u)\n",
                                     pszName, UnitHdr.u32Instance, UnitHdr.u32Version));
-                            if (!pSSM->u.Read.fHaveSetError)
+                            if (!ASMAtomicXchgBool(&pSSM->u.Read.fHaveSetError, true))
                                 VMSetError(pVM, rc, RT_SRC_POS, N_("Load exec failed for '%s' instance #%u (version %u)"),
                                            pszName, UnitHdr.u32Instance, UnitHdr.u32Version);
                             break;
@@ -7810,6 +7811,7 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
         {
             LogRel(("SSM: Unit at %#llx (%lld): Invalid unit magic: %.*Rhxs!\n",
                     offUnit, offUnit, sizeof(UnitHdr.szMagic) - 1, &UnitHdr.szMagic[0]));
+            pSSM->u.Read.fHaveSetError = true;
             return VMSetError(pVM, VERR_SSM_INTEGRITY_UNIT_MAGIC, RT_SRC_POS,
                               N_("Unit at %#llx (%lld): Invalid unit magic"), offUnit, offUnit);
         }
@@ -7903,7 +7905,7 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
             {
                 LogRel(("SSM: LoadExec failed for '%s' instance #%u (version %u, pass %#x): %Rrc\n",
                         UnitHdr.szName, UnitHdr.u32Instance, UnitHdr.u32Version, UnitHdr.u32Pass, rc));
-                if (!pSSM->u.Read.fHaveSetError)
+                if (!ASMAtomicXchgBool(&pSSM->u.Read.fHaveSetError, true))
                     rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to load unit '%s'"), UnitHdr.szName);
                 return rc;
             }
@@ -7915,8 +7917,11 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
              */
             LogRel(("SSM: Found no handler for unit '%s' instance #%u!\n", UnitHdr.szName, UnitHdr.u32Instance));
             if (pSSM->enmAfter != SSMAFTER_DEBUG_IT)
+            {
+                pSSM->u.Read.fHaveSetError = true;
                 return VMSetError(pVM, VERR_SSM_INTEGRITY_UNIT_NOT_FOUND, RT_SRC_POS,
                                   N_("Found no handler for unit '%s' instance #%u"), UnitHdr.szName, UnitHdr.u32Instance);
+            }
             SSMR3SkipToEndOfUnit(pSSM);
             ssmR3DataReadFinishV2(pSSM);
         }
@@ -8126,6 +8131,9 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
                 {
                     LogRel(("SSM: LoadDone failed with rc=%Rrc for data unit '%s' instance #%u.\n",
                             rc, pUnit->szName, pUnit->u32Instance));
+                    if (!ASMAtomicXchgBool(&Handle.u.Read.fHaveSetError, true))
+                        VMSetError(pVM, rc, RT_SRC_POS, N_("LoadDone failed with rc=%Rrc for data unit '%s' instance #%u."),
+                                   rc, pUnit->szName, pUnit->u32Instance);
                     if (RT_SUCCESS_NP(Handle.rc))
                         Handle.rc = rc;
                 }
