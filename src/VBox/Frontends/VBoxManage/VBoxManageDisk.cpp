@@ -683,7 +683,7 @@ int handleCloneHardDisk(HandlerArg *a)
             {
                 /* Perform accessibility check now. */
                 MediumState_T state;
-                CHECK_ERROR_BREAK(dstDisk, COMGETTER(State)(&state));
+                CHECK_ERROR_BREAK(dstDisk, RefreshState(&state));
             }
             CHECK_ERROR_BREAK(dstDisk, COMGETTER(Format) (format.asOutParam()));
         }
@@ -1215,7 +1215,7 @@ int handleShowHardDiskInfo(HandlerArg *a)
         /// @todo NEWMEDIA check accessibility of all parents
         /// @todo NEWMEDIA print the full state value
         MediumState_T state;
-        CHECK_ERROR_BREAK (hardDisk, COMGETTER(State)(&state));
+        CHECK_ERROR_BREAK (hardDisk, RefreshState(&state));
         RTPrintf("Accessible:           %s\n", state != MediumState_Inaccessible ? "yes" : "no");
 
         if (state == MediumState_Inaccessible)

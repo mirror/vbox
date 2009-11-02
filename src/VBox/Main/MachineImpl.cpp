@@ -8789,7 +8789,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
                                             MachineState_T *aMachineState,
                                             IProgress **aProgress)
 {
-    LogFlowThisFunc(("\n"));
+    LogFlowThisFuncEnter();
 
     Guid id(aId);
     AssertReturn(aInitiator && !id.isEmpty(), E_INVALIDARG);
@@ -8869,6 +8869,8 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     /* return the new state to the caller */
     *aMachineState = mData->mMachineState;
 
+    LogFlowThisFuncLeave();
+
     return S_OK;
 }
 
@@ -8880,7 +8882,7 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
                                              MachineState_T *aMachineState,
                                              IProgress **aProgress)
 {
-    LogFlowThisFunc(("\n"));
+    LogFlowThisFuncEnter();
 
     AssertReturn(aInitiator, E_INVALIDARG);
     AssertReturn(aSnapshot && aMachineState && aProgress, E_POINTER);
@@ -8956,7 +8958,7 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
                              0,
                              RTTHREADTYPE_MAIN_WORKER,
                              0,
-                             "DiscardCurState");
+                             "RestoreSnap");
     if (RT_FAILURE(vrc))
     {
         delete task;
@@ -8971,6 +8973,8 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
 
     /* return the new state to the caller */
     *aMachineState = mData->mMachineState;
+
+    LogFlowThisFuncLeave();
 
     return S_OK;
 }
@@ -10307,7 +10311,7 @@ HRESULT SessionMachine::lockMedia()
                  * interferes with getting the medium state. */
                 if (mediumState == MediumState_Inaccessible)
                 {
-                    rc = medium->COMGETTER(State)(&mediumState);
+                    rc = medium->RefreshState(&mediumState);
                     CheckComRCThrowRC(rc);
 
                     if (mediumState == MediumState_Inaccessible)

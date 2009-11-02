@@ -121,6 +121,7 @@ public:
     STDMETHOD(COMGETTER(MachineIds))(ComSafeArrayOut(BSTR, aMachineIds));
 
     // IMedium methods
+    STDMETHOD(RefreshState)(MediumState_T *aState);
     STDMETHOD(GetSnapshotIds)(IN_BSTR aMachineId,
                               ComSafeArrayOut(BSTR, aSnapshotIds));
     STDMETHOD(LockRead)(MediumState_T *aState);
