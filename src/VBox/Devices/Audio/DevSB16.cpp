@@ -1754,15 +1754,13 @@ static DECLCALLBACK(int) sb16LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
             || hdma != pThis->hdmaCfg
             || port != pThis->portCfg
             || ver  != pThis->verCfg )
-        {
-            LogRel(("SB16: config changed: irq=%x/%x dma=%x/%x hdma=%x/%x port=%x/%x ver=%x/%x (saved/config)\n",
-                    irq,  pThis->irqCfg,
-                    dma,  pThis->dmaCfg,
-                    hdma, pThis->hdmaCfg,
-                    port, pThis->portCfg,
-                    ver,  pThis->verCfg));
-            return VERR_SSM_LOAD_CONFIG_MISMATCH;
-        }
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS,
+                                    N_("config changed: irq=%x/%x dma=%x/%x hdma=%x/%x port=%x/%x ver=%x/%x (saved/config)"),
+                                    irq,  pThis->irqCfg,
+                                    dma,  pThis->dmaCfg,
+                                    hdma, pThis->hdmaCfg,
+                                    port, pThis->portCfg,
+                                    ver,  pThis->verCfg);
     }
     if (uPass != SSM_PASS_FINAL)
         return VINF_SUCCESS;

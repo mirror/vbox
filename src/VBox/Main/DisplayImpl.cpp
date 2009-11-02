@@ -140,11 +140,7 @@ Display::displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32
     uint32_t cMonitors;
     int rc = SSMR3GetU32(pSSM, &cMonitors);
     if (cMonitors != that->mcMonitors)
-    {
-        LogRel(("Display: Number of monitors changed (%d->%d)!\n",
-                cMonitors, that->mcMonitors));
-        return VERR_SSM_LOAD_CONFIG_MISMATCH;
-    }
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Number of monitors changed (%d->%d)!"), cMonitors, that->mcMonitors);
 
     for (uint32_t i = 0; i < cMonitors; i++)
     {

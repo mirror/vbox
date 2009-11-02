@@ -5421,19 +5421,13 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         rc = SSMR3GetU32(pSSM, &cbVRam);
         AssertRCReturn(rc, rc);
         if (pThis->vram_size != cbVRam)
-        {
-            LogRel(("DevVGA: VRAM size changed: config=%#x state=%#x\n", pThis->vram_size, cbVRam));
-            return VERR_SSM_LOAD_CONFIG_MISMATCH;
-        }
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("VRAM size changed: config=%#x state=%#x"), pThis->vram_size, cbVRam);
 
         uint32_t cMonitors;
         rc = SSMR3GetU32(pSSM, &cMonitors);
         AssertRCReturn(rc, rc);
         if (pThis->cMonitors != cMonitors)
-        {
-            LogRel(("DevVGA: Monitor count changed: config=%u state=%u\n", pThis->cMonitors, cMonitors));
-            return VERR_SSM_LOAD_CONFIG_MISMATCH;
-        }
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Monitor count changed: config=%u state=%u"), pThis->cMonitors, cMonitors);
     }
 
     if (uPass == SSM_PASS_FINAL)
@@ -5453,7 +5447,7 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             rc = vboxVBVALoadStateExec(pDevIns, pSSM, uVersion);
             AssertRCReturn(rc, rc);
 #else
-            AssertLogRelFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("HGSMI is not compiled in, but it is present in the saved state"));
 #endif
         }
     }

@@ -6149,7 +6149,8 @@ static DECLCALLBACK(int) ahciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
             LogRel(("AHCI: Config mismatch: cPortsImpl - saved=%u config=%u\n", u32, pThis->cPortsImpl));
             if (    u32 < pThis->cPortsImpl
                 ||  u32 > AHCI_MAX_NR_PORTS_IMPL)
-                return VERR_SSM_LOAD_CONFIG_MISMATCH;
+                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: cPortsImpl - saved=%u config=%u"),
+                                        u32, pThis->cPortsImpl);
         }
 
         for (uint32_t i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
@@ -6158,11 +6159,8 @@ static DECLCALLBACK(int) ahciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
             rc = SSMR3GetBool(pSSM, &fInUse);
             AssertRCReturn(rc, rc);
             if (fInUse != (pThis->ahciPort[i].pDrvBase != NULL))
-            {
-                LogRel(("AHCI: Port %u config mismatch: fInUse - saved=%RTbool config=%RTbool\n",
-                        i, fInUse, (pThis->ahciPort[i].pDrvBase != NULL)));
-                return VERR_SSM_LOAD_CONFIG_MISMATCH;
-            }
+                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Port %u config mismatch: fInUse - saved=%RTbool config=%RTbool"),
+                                        i, fInUse, (pThis->ahciPort[i].pDrvBase != NULL));
 
             char szSerialNumber[AHCI_SERIAL_NUMBER_LENGTH+1];
             rc = SSMR3GetStrZ(pSSM, szSerialNumber,     sizeof(szSerialNumber));
@@ -6198,11 +6196,8 @@ static DECLCALLBACK(int) ahciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
             AssertRCReturn(rc, rc);
 
             if (iPortSaved != iPort)
-            {
-                LogRel(("AHCI: IDE %s config mismatch: saved=%u config=%u\n",
-                        s_apszIdeEmuPortNames[i], iPortSaved, iPort));
-                return VERR_SSM_LOAD_CONFIG_MISMATCH;
-            }
+                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("IDE %s config mismatch: saved=%u config=%u"),
+                                        s_apszIdeEmuPortNames[i], iPortSaved, iPort);
         }
     }
 

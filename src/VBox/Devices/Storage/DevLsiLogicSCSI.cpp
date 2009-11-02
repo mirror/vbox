@@ -4872,11 +4872,8 @@ static DECLCALLBACK(int) lsilogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
             rc = SSMR3GetBool(pSSM, &fPresent);
             AssertRCReturn(rc, rc);
             if (fPresent != (pLsiLogic->aDeviceStates[i].pDrvBase != NULL))
-            {
-                LogRel(("LsiLogic: Target %u config mismatch: config=%RTbool state=%RTbool\n",
-                        i, pLsiLogic->aDeviceStates[i].pDrvBase != NULL, fPresent));
-                return VERR_SSM_LOAD_CONFIG_MISMATCH;
-            }
+                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Target %u config mismatch: config=%RTbool state=%RTbool"),
+                                         i, pLsiLogic->aDeviceStates[i].pDrvBase != NULL, fPresent);
         }
     }
     if (uPass != SSM_PASS_FINAL)
