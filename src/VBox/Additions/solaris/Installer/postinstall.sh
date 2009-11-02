@@ -66,9 +66,11 @@ uncompress_files()
 }
 
 solaris64dir="amd64"
-vboxadditions_path="/opt/VirtualBoxAdditions"
+vboxadditions_path="$BASEDIR/opt/VirtualBoxAdditions"
 vboxadditions64_path=$vboxadditions_path/$solaris64dir
 
+# get the current zone
+currentzone=`zonename`
 # get what ISA the guest is running
 cputype=`isainfo -k`
 if test "$cputype" = "amd64"; then
@@ -76,6 +78,7 @@ if test "$cputype" = "amd64"; then
 else
     isadir=""
 fi
+
 vboxadditionsisa_path=$vboxadditions_path/$isadir
 
 
@@ -90,18 +93,21 @@ if test -f "$vboxadditions_path/VBoxClient.Z" || test -f "$vboxadditions64_path/
     fi
 fi
 
-# vboxguest.sh would've been installed, we just need to call it.
-echo "Configuring VirtualBox guest kernel module..."
-$vboxadditions_path/vboxguest.sh restartall silentunload
 
-sed -e '
-/name=vboxguest/d' /etc/devlink.tab > /etc/devlink.vbox
-echo "type=ddi_pseudo;name=vboxguest	\D" >> /etc/devlink.vbox
-mv -f /etc/devlink.vbox /etc/devlink.tab
+if test "$currentzone" = "global"; then
+    # vboxguest.sh would've been installed, we just need to call it.
+    echo "Configuring VirtualBox guest kernel module..."
+    $vboxadditions_path/vboxguest.sh restartall silentunload
 
-# create the device link
-/usr/sbin/devfsadm -i vboxguest
-sync
+    sed -e '/name=vboxguest/d' /etc/devlink.tab > /etc/devlink.vbox
+    echo "type=ddi_pseudo;name=vboxguest	\D" >> /etc/devlink.vbox
+    mv -f /etc/devlink.vbox /etc/devlink.tab
+
+    # create the device link
+    /usr/sbin/devfsadm -i vboxguest
+    sync
+fi
+
 
 # check if Xorg exists
 if test -f "/usr/X11/bin/Xorg"; then
@@ -113,7 +119,9 @@ fi
 
 # create links
 echo "Creating links..."
-/usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
+if test "$currentzone" = "global"; then
+    /usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
+fi
 if test ! -z "$xorgbin"; then
     /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxClient=$vboxadditions_path/VBox.sh s
     /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxRandR=$vboxadditions_path/VBoxRandR.sh s
@@ -304,26 +312,29 @@ fi
 /usr/sbin/installf -f $PKGINST
 
 
-# Setup our VBoxService SMF service
-echo "Configuring service..."
+if test "$currentzone" = "global"; then
+    # Setup our VBoxService SMF service
+    echo "Configuring service..."
 
-/usr/sbin/svccfg import /var/svc/manifest/system/virtualbox/vboxservice.xml
-/usr/sbin/svcadm enable svc:/system/virtualbox/vboxservice
+    /usr/sbin/svccfg import /var/svc/manifest/system/virtualbox/vboxservice.xml
+    /usr/sbin/svcadm enable svc:/system/virtualbox/vboxservice
 
-/usr/sbin/devfsadm -i vboxguest
+    /usr/sbin/devfsadm -i vboxguest
 
-# Update boot archive
-BOOTADMBIN=/sbin/bootadm
-if test -x "$BOOTADMBIN"; then
-    if test -h "/dev/vboxguest"; then
-        echo "Updating boot archive..."
-        $BOOTADMBIN update-archive > /dev/null
+    # Update boot archive
+    BOOTADMBIN=/sbin/bootadm
+    if test -x "$BOOTADMBIN"; then
+        if test -h "/dev/vboxguest"; then
+            echo "Updating boot archive..."
+            $BOOTADMBIN update-archive > /dev/null
+        else
+            echo "## Guest kernel module doesn't seem to be up. Skipped explicit boot-archive update."
+        fi
     else
-        echo "## Guest kernel module doesn't seem to be up. Skipped explicit boot-archive update."
+        echo "## $BOOTADMBIN not found/executable. Skipped explicit boot-archive update."
     fi
-else
-    echo "## $BOOTADMBIN not found/executable. Skipped explicit boot-archive update."
 fi
+
 
 echo "Done."
 if test $retval -eq 0; then
