@@ -526,6 +526,18 @@ typedef struct SSMHANDLE
             /** V2: The type and flags byte fo the current record. */
             uint8_t         u8TypeAndFlags;
 
+            /** @name Context info for SSMR3SetLoadError.
+             * @{  */
+            /** Pointer to the header for the current unit. */
+            PSSMUNIT        pCurUnit;
+            /** The version of the current unit if in the load exec stage. */
+            uint32_t        uCurUnitVer;
+            /** The pass number of the current unit if in the load exec stage. */
+            uint32_t        uCurUnitPass;
+            /** Whether SSMR3SetLoadError[V] has been called. */
+            bool            fHaveSetError;
+            /** @} */
+
             /** RTGCPHYS size in bytes. (Only applicable when loading/reading.) */
             unsigned        cbGCPhys;
             /** RTGCPTR size in bytes. (Only applicable when loading/reading.) */
@@ -6829,6 +6841,103 @@ VMMR3DECL(int) SSMR3SkipToEndOfUnit(PSSMHANDLE pSSM)
 
 
 /**
+ * VMSetError wrapper for load errors that inserts the saved state details.
+ *
+ * @returns rc.
+ * @param   pSSM                The saved state handle.
+ * @param   rc                  The status code of the error. Use RT_SRC_POS.
+ * @param   RT_SRC_POS_DECL     The source location.
+ * @param   pszFormat           The message format string.
+ * @param   ...                 Variable argument list.
+ */
+VMMR3DECL(int) SSMR3SetLoadError(PSSMHANDLE pSSM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    rc = SSMR3SetLoadErrorV(pSSM, rc, RT_SRC_POS_ARGS, pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+
+/**
+ * VMSetError wrapper for load errors that inserts the saved state details.
+ *
+ * @returns rc.
+ * @param   pSSM                The saved state handle.
+ * @param   rc                  The status code of the error.
+ * @param   RT_SRC_POS_DECL     The error location, use RT_SRC_POS.
+ * @param   pszFormat           The message format string.
+ * @param   va                  Variable argument list.
+ */
+VMMR3DECL(int) SSMR3SetLoadErrorV(PSSMHANDLE pSSM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
+{
+    /*
+     * Input validations.
+     */
+    SSM_ASSERT_READABLE_RET(pSSM);
+    AssertPtr(pszFormat);
+    Assert(RT_FAILURE_NP(rc));
+
+    /*
+     * Forward to VMSetError with the additional info.
+     */
+    PSSMUNIT    pUnit       = pSSM->u.Read.pCurUnit;
+    const char *pszName     = pUnit ? pUnit->szName      : "unknown";
+    uint32_t    uInstance   = pUnit ? pUnit->u32Instance : 0;
+    va_list     vaCopy;
+    va_copy(vaCopy, va);
+    if (   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+        && pSSM->u.Read.uCurUnitPass == SSM_PASS_FINAL)
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#u: %N [ver=%u pass=final]"),
+                        pszName, uInstance,
+                        pszFormat, &vaCopy,
+                        pSSM->u.Read.uCurUnitVer);
+    else if (pSSM->enmOp == SSMSTATE_LOAD_EXEC)
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#u: %N [ver=%u pass=#%u]"),
+                        pszName, uInstance,
+                        pszFormat, &vaCopy,
+                        pSSM->u.Read.uCurUnitVer, pSSM->u.Read.uCurUnitPass);
+    else if (pSSM->enmOp == SSMSTATE_LOAD_PREP)
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#u: %N [prep]"),
+                        pszName, uInstance,
+                        pszFormat, &vaCopy);
+    else if (pSSM->enmOp == SSMSTATE_LOAD_DONE)
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#u: %N [done]"),
+                        pszName, uInstance,
+                        pszFormat, &vaCopy);
+    else if (pSSM->enmOp == SSMSTATE_OPEN_READ)
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#u: %N [read]"),
+                        pszName, uInstance,
+                        pszFormat, &vaCopy);
+    else
+        AssertFailed();
+    va_end(vaCopy);
+    pSSM->u.Read.fHaveSetError = true;
+    return rc;
+}
+
+
+/**
+ * SSMR3SetLoadError wrapper that returns VERR_SSM_LOAD_CONFIG_MISMATCH.
+ *
+ * @returns VERR_SSM_LOAD_CONFIG_MISMATCH.
+ * @param   pSSM                The saved state handle.
+ * @param   RT_SRC_POS_DECL     The error location, use RT_SRC_POS.
+ * @param   pszFormat           The message format string.
+ * @param   va                  Variable argument list.
+ */
+VMMR3DECL(int) SSMR3SetCfgError(PSSMHANDLE pSSM, RT_SRC_POS_DECL, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = SSMR3SetLoadErrorV(pSSM, VERR_SSM_LOAD_CONFIG_MISMATCH, RT_SRC_POS_ARGS, pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+
+/**
  * Calculate the checksum of a file portion.
  *
  * @returns VBox status.
@@ -7340,6 +7449,11 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
     pSSM->u.Read.fEndOfData     = 0;
     pSSM->u.Read.u8TypeAndFlags = 0;
 
+    pSSM->u.Read.pCurUnit       = NULL;
+    pSSM->u.Read.uCurUnitVer    = UINT32_MAX;
+    pSSM->u.Read.uCurUnitPass   = 0;
+    pSSM->u.Read.fHaveSetError  = false;
+
     /*
      * Try open and validate the file.
      */
@@ -7462,6 +7576,9 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                          */
                         pSSM->cbUnitLeftV1 = UnitHdr.cbUnit - RT_OFFSETOF(SSMFILEUNITHDRV1, szName[UnitHdr.cchName]);
                         pSSM->offUnit = 0;
+                        pSSM->u.Read.uCurUnitVer  = UnitHdr.u32Version;
+                        pSSM->u.Read.uCurUnitPass = SSM_PASS_FINAL;
+                        pSSM->u.Read.pCurUnit     = pUnit;
                         if (!pUnit->u.Common.pfnLoadExec)
                         {
                             LogRel(("SSM: No load exec callback for unit '%s'!\n", pszName));
@@ -7514,8 +7631,9 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                             else if (i64Diff > 0)
                             {
                                 LogRel(("SSM: Unit '%s' read %lld bytes too much!\n", pszName, i64Diff));
-                                rc = VMSetError(pVM, VERR_SSM_LOADED_TOO_MUCH, RT_SRC_POS,
-                                                N_("Unit '%s' read %lld bytes too much"), pszName, i64Diff);
+                                if (!pSSM->u.Read.fHaveSetError)
+                                    rc = VMSetError(pVM, VERR_SSM_LOADED_TOO_MUCH, RT_SRC_POS,
+                                                    N_("Unit '%s' read %lld bytes too much"), pszName, i64Diff);
                                 break;
                             }
 
@@ -7525,10 +7643,15 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                         {
                             LogRel(("SSM: Load exec failed for '%s' instance #%u ! (version %u)\n",
                                     pszName, UnitHdr.u32Instance, UnitHdr.u32Version));
-                            VMSetError(pVM, rc, RT_SRC_POS, N_("Load exec failed for '%s' instance #%u (version %u)"),
-                                       pszName, UnitHdr.u32Instance, UnitHdr.u32Version);
+                            if (!pSSM->u.Read.fHaveSetError)
+                                VMSetError(pVM, rc, RT_SRC_POS, N_("Load exec failed for '%s' instance #%u (version %u)"),
+                                           pszName, UnitHdr.u32Instance, UnitHdr.u32Version);
                             break;
                         }
+
+                        pSSM->u.Read.pCurUnit       = NULL;
+                        pSSM->u.Read.uCurUnitVer    = UINT32_MAX;
+                        pSSM->u.Read.uCurUnitPass   = 0;
                     }
                     else
                     {
@@ -7748,6 +7871,9 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
             AssertLogRelMsgReturn(pUnit->u.Common.pfnLoadExec,
                                   ("SSM: No load exec callback for unit '%s'!\n", UnitHdr.szName),
                                   VERR_SSM_NO_LOAD_EXEC);
+            pSSM->u.Read.uCurUnitVer  = UnitHdr.u32Version;
+            pSSM->u.Read.uCurUnitPass = UnitHdr.u32Pass;
+            pSSM->u.Read.pCurUnit     = pUnit;
             ssmR3DataReadBeginV2(pSSM);
             switch (pUnit->enmType)
             {
@@ -7777,7 +7903,9 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
             {
                 LogRel(("SSM: LoadExec failed for '%s' instance #%u (version %u, pass %#x): %Rrc\n",
                         UnitHdr.szName, UnitHdr.u32Instance, UnitHdr.u32Version, UnitHdr.u32Pass, rc));
-                return VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to load unit '%s'"), UnitHdr.szName);
+                if (!pSSM->u.Read.fHaveSetError)
+                    rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to load unit '%s'"), UnitHdr.szName);
+                return rc;
             }
         }
         else
@@ -7900,6 +8028,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
         {
             if (pUnit->u.Common.pfnLoadPrep)
             {
+                Handle.u.Read.pCurUnit = pUnit;
                 pUnit->fCalled = true;
                 switch (pUnit->enmType)
                 {
@@ -7919,6 +8048,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
                         rc = VERR_INTERNAL_ERROR;
                         break;
                 }
+                Handle.u.Read.pCurUnit = NULL;
                 if (RT_FAILURE(rc) && RT_SUCCESS_NP(Handle.rc))
                     Handle.rc = rc;
                 else
@@ -7947,6 +8077,9 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
                 rc = ssmR3LoadExecV2(pVM, &Handle);
             else
                 rc = ssmR3LoadExecV1(pVM, &Handle);
+            Handle.u.Read.pCurUnit       = NULL;
+            Handle.u.Read.uCurUnitVer    = UINT32_MAX;
+            Handle.u.Read.uCurUnitPass   = 0;
 
             /* (progress should be pending 99% now) */
             AssertMsg(   Handle.fLiveSave
@@ -7965,6 +8098,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
                 && (   pUnit->fCalled
                     || (!pUnit->u.Common.pfnLoadPrep && !pUnit->u.Common.pfnLoadExec)))
             {
+                Handle.u.Read.pCurUnit = pUnit;
                 int const rcOld = Handle.rc;
                 rc = VINF_SUCCESS;
                 switch (pUnit->enmType)
@@ -7985,6 +8119,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
                         rc = VERR_INTERNAL_ERROR;
                         break;
                 }
+                Handle.u.Read.pCurUnit = NULL;
                 if (RT_SUCCESS(rc) && Handle.rc != rcOld)
                     rc = Handle.rc;
                 if (RT_FAILURE(rc))
