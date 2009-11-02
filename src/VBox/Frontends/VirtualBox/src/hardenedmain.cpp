@@ -30,8 +30,11 @@ int main(int argc, char **argv, char **envp)
      */
     uint32_t fFlags = SUPSECMAIN_FLAGS_DONT_OPEN_DEV;
     for (int i = 1; i < argc; i++)
-        if (    !strcmp(argv[i], "--startvm")
-            ||  !strcmp(argv[i], "-startvm"))
+        /* NOTE: the check here must match the corresponding check for the
+         * options to start a VM in main.cpp and VBoxGlobal.cpp exactly,
+         * otherwise there will be weird error messages. */
+        if (   !::strcmp(argv[i], "--startvm")
+            || !::strcmp(argv[i], "-startvm"))
         {
             fFlags &= ~SUPSECMAIN_FLAGS_DONT_OPEN_DEV;
             break;
