@@ -6168,21 +6168,21 @@ static DECLCALLBACK(int) ahciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
             rc = SSMR3GetStrZ(pSSM, szSerialNumber,     sizeof(szSerialNumber));
             AssertRCReturn(rc, rc);
             if (strcmp(szSerialNumber, pThis->ahciPort[i].szSerialNumber))
-                LogRel(("ACHI: Port %u config mismatch: Serial number - saved='%s' config='%s'\n",
+                LogRel(("AHCI: Port %u config mismatch: Serial number - saved='%s' config='%s'\n",
                         i, szSerialNumber, pThis->ahciPort[i].szSerialNumber));
 
             char szFirmwareRevision[AHCI_FIRMWARE_REVISION_LENGTH+1];
             rc = SSMR3GetStrZ(pSSM, szFirmwareRevision, sizeof(szFirmwareRevision));
             AssertRCReturn(rc, rc);
             if (strcmp(szFirmwareRevision, pThis->ahciPort[i].szFirmwareRevision))
-                LogRel(("ACHI: Port %u config mismatch: Firmware revision - saved='%s' config='%s'\n",
+                LogRel(("AHCI: Port %u config mismatch: Firmware revision - saved='%s' config='%s'\n",
                         i, szFirmwareRevision, pThis->ahciPort[i].szFirmwareRevision));
 
             char szModelNumber[AHCI_MODEL_NUMBER_LENGTH+1];
             rc = SSMR3GetStrZ(pSSM, szModelNumber,      sizeof(szModelNumber));
             AssertRCReturn(rc, rc);
             if (strcmp(szModelNumber, pThis->ahciPort[i].szModelNumber))
-                LogRel(("ACHI: Port %u config mismatch: Model number - saved='%s' config='%s'\n",
+                LogRel(("AHCI: Port %u config mismatch: Model number - saved='%s' config='%s'\n",
                         i, szModelNumber, pThis->ahciPort[i].szModelNumber));
         }
 
@@ -6199,7 +6199,7 @@ static DECLCALLBACK(int) ahciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
 
             if (iPortSaved != iPort)
             {
-                LogRel(("ACHI: IDE %s config mismatch: saved=%u config=%u\n",
+                LogRel(("AHCI: IDE %s config mismatch: saved=%u config=%u\n",
                         s_apszIdeEmuPortNames[i], iPortSaved, iPort));
                 return VERR_SSM_LOAD_CONFIG_MISMATCH;
             }
