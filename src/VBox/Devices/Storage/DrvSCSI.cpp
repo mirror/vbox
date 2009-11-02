@@ -963,10 +963,9 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
 
     PDMBLOCKTYPE enmType = pThis->pDrvBlock->pfnGetType(pThis->pDrvBlock);
     if (enmType != PDMBLOCKTYPE_HARD_DISK)
-    {
-        AssertMsgFailed(("Configuration error: Not a disk or cd/dvd-rom. enmType=%d\n", enmType));
-        return VERR_PDM_UNSUPPORTED_BLOCK_TYPE;
-    }
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_UNSUPPORTED_BLOCK_TYPE, RT_SRC_POS,
+                                   N_("Only hard disks are currently supported as SCSI devices (enmType=%d)"),
+                                   enmType);
     pThis->enmType = enmType;
     pThis->cSectors = pThis->pDrvBlock->pfnGetSize(pThis->pDrvBlock) / 512;
 
@@ -975,9 +974,9 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create request queue rc=%Rrc\n"), rc);
 
     /* Register statistics counter. */
-    /** @odo r=aeichner: Find a way to put the instance number of the attached controller device
-     * when we support more than one controller of the same type. At the moment we have the
-     * 0 hardcoded. */
+    /** @todo aeichner: Find a way to put the instance number of the attached
+     * controller device when we support more than one controller of the same type.
+     * At the moment we have the 0 hardcoded. */
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
                             "Amount of data read.", "/Devices/SCSI0/%d/ReadBytes", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
