@@ -8325,10 +8325,10 @@
     <const name="LockedRead" value="2">
       <desc>
         Medium is locked for reading, no data modification is possible. A
-        medium is typically locked for reading if has a depending differencing
-        image that receives write operations; this way one base medium
-        can have multiple child differencing images which can be written to
-        simultaneously.
+        medium is typically locked for reading while it is used by a running
+        virtual machine but has a depending differencing image that receives
+        the actual write operations. This way one base medium can have multiple
+        child differencing images which can be written to simultaneously.
       </desc>
     </const>
     <const name="LockedWrite" value="3">
@@ -8336,8 +8336,9 @@
         Medium is locked for writing, no concurrent data reading or modification
         is possible. A medium is typically locked for writing when it receives
         write operations from a running virtual machine. If a medium has
-        differencing images, then only the last ("leaf") differencing image
-        is locked for writing, whereas its parents are locked for reading only.
+        differencing images, then while the machine is running, only the last
+        ("leaf") differencing image is locked for writing, whereas its parents
+        are locked for reading only.
       </desc>
     </const>
     <const name="Inaccessible" value="4">
