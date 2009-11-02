@@ -2258,6 +2258,8 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     RTGCUINTPTR intInfo = 0; /* shut up buggy gcc 4 */
     RTGCUINTPTR errCode, instrInfo;
     bool        fSetupTPRCaching = false;
+    bool        fRestoreLSTAR = false;
+    uint64_t    u64LSTAR = 0;
     uint8_t     u8LastTPR = 0;
     RTCCUINTREG uOldEFlags = ~(RTCCUINTREG)0;
     unsigned    cResume = 0;
@@ -2497,13 +2499,22 @@ ResumeExecution:
             pCtx->msrLSTAR = u8LastTPR;
 
             if (fPending)
+            {
                 /* A TPR change could activate a pending interrupt, so catch lstar writes. */
                 vmxR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, false);
+                fRestoreLSTAR = false;
+            }
             else
+            {
                 /* No interrupts are pending, so we don't need to be explicitely notified.
                  * There are enough world switches for detecting pending interrupts.
                  */
                 vmxR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
+
+                /* Must save the host LSTAR msr to restore it later. */
+                fRestoreLSTAR = true;
+                u64LSTAR = ASMRdMsr(MSR_K8_LSTAR);
+            }
         }
     }
 
@@ -2617,6 +2628,14 @@ ResumeExecution:
     TMNotifyEndOfExecution(pVCpu);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
     Assert(!(ASMGetFlags() & X86_EFL_IF));
+
+    /* Restore the host LSTAR msr if the guest could have changed it. */
+    if (fRestoreLSTAR)
+    {
+        Assert(pVM->hwaccm.s.fTPRPatchingActive);
+        ASMWrMsr(MSR_K8_LSTAR, u64LSTAR);
+    }
+
     ASMSetFlags(uOldEFlags);
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     uOldEFlags = ~(RTCCUINTREG)0;
