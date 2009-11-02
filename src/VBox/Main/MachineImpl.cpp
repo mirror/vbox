@@ -9615,8 +9615,8 @@ HRESULT SessionMachine::endTakingSnapshot(BOOL aSuccess)
 
     MultiResult rc(S_OK);
 
-    Snapshot *pOldFirstSnap = mData->mFirstSnapshot;
-    Snapshot *pOldCurrentSnap = mData->mCurrentSnapshot;
+    ComObjPtr<Snapshot> pOldFirstSnap = mData->mFirstSnapshot;
+    ComObjPtr<Snapshot> pOldCurrentSnap = mData->mCurrentSnapshot;
 
     bool fOnline = Global::IsOnline(mSnapshotData.mLastState);
 
@@ -10118,12 +10118,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                 snapshotLock.lock();
 
                 if (RT_SUCCESS(vrc))
-                {
                     mSSData->mStateFilePath = stateFilePath;
-
-                    /* make the snapshot we restored from the current snapshot */
-                    mData->mCurrentSnapshot = aTask.m_pSnapshot;
-                }
                 else
                     throw setError(E_FAIL,
                                    tr("Could not copy the state file '%s' to '%s' (%Rrc)"),
@@ -10131,6 +10126,10 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                                    stateFilePath.raw(),
                                    vrc);
             }
+
+            LogFlowThisFunc(("Setting new current snapshot {%RTuuid}\n", aTask.m_pSnapshot->getId().raw()));
+            /* make the snapshot we restored from the current snapshot */
+            mData->mCurrentSnapshot = aTask.m_pSnapshot;
         }
 
         /* grab differencing hard disks from the old attachments that will
@@ -10205,7 +10204,8 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             llDiffsToDelete.push_back(pMedium);
         }
 
-        /* save all settings, reset the modified flag and commit */
+        // save all settings, reset the modified flag and commit;
+        // from here on we cannot roll back on failure any more
         rc = saveSettings(SaveS_ResetCurStateModified | saveFlags);
 
         for (std::list< ComObjPtr<Medium> >::iterator it = llDiffsToDelete.begin();
@@ -10216,6 +10216,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             LogFlowThisFunc(("Deleting old current state in differencing image '%s'\n", pMedium->name().raw()));
 
             HRESULT rc2 = pMedium->deleteStorageAndWait();
+            // ignore errors here because we cannot roll back after saveSettings() above
             if (SUCCEEDED(rc2))
                 pMedium->uninit();
         }
@@ -10230,7 +10231,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         /* preserve existing error info */
         ErrorInfoKeeper eik;
 
-        /* undo all changes on failure unless the subtask has done so */
+        /* undo all changes on failure */
         rollback(false /* aNotify */);
 
         if (!stateRestored)
