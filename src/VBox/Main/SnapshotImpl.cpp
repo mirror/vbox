@@ -1796,7 +1796,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
         {
             ComObjPtr<Snapshot> parentSnapshot = aTask.snapshot->parent();
-            Bstr stateFilePath = aTask.snapshot->stateFilePath();
+            Utf8Str stateFilePath = aTask.snapshot->stateFilePath();
 
             /* Note that discarding the snapshot will deassociate it from the
              * hard disks which will allow the merge+delete operation for them*/
@@ -1809,12 +1809,12 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             /// @todo (dmik)
             //  if we implement some warning mechanism later, we'll have
             //  to return a warning if the state file path cannot be deleted
-            if (stateFilePath)
+            if (!stateFilePath.isEmpty())
             {
                 aTask.progress->SetNextOperation(Bstr(tr("Discarding the execution state")),
                                                  1);        // weight
 
-                RTFileDelete(Utf8Str(stateFilePath).c_str());
+                RTFileDelete(stateFilePath.c_str());
             }
 
             /// @todo NEWMEDIA to provide a good level of fauilt tolerance, we
