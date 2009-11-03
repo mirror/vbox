@@ -4058,7 +4058,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="59080235-41e1-41ca-aa28-33f6992d1646"
+     uuid="c9e6bf40-f415-4a59-bb86-5190d93e49f6"
      wsmap="managed"
      >
     <desc>
@@ -5131,6 +5131,78 @@
       <param name="value" type="boolean" dir="in">
         <desc>
           Property value.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getCpuIdLeaf" const="yes">
+      <desc>
+        Returns the virtual CPU cpuid leaf for the specified index
+
+        <result name="E_INVALIDARG">
+          Invalid id.
+        </result>
+
+      </desc>
+      <param name="id" type="unsigned long" dir="in">
+        <desc>
+          Cpuid leaf index.
+        </desc>
+      </param>
+      <param name="valEax" type="unsigned long" dir="out">
+        <desc>
+          Cpuid leaf value for register eax.
+        </desc>
+      </param>
+      <param name="valEbx" type="unsigned long" dir="out">
+        <desc>
+          Cpuid leaf value for register ebx.
+        </desc>
+      </param>
+      <param name="valEcx" type="unsigned long" dir="out">
+        <desc>
+          Cpuid leaf value for register ecx.
+        </desc>
+      </param>
+      <param name="valEdx" type="unsigned long" dir="out">
+        <desc>
+          Cpuid leaf value for register edx.
+        </desc>
+      </param>
+    </method>
+
+    <method name="setCpuIdLeaf" const="yes">
+      <desc>
+        Sets the virtual CPU cpuid leaf for the specified index
+
+        <result name="E_INVALIDARG">
+          Invalid id.
+        </result>
+
+      </desc>
+      <param name="id" type="unsigned long" dir="in">
+        <desc>
+          Cpuid leaf index.
+        </desc>
+      </param>
+      <param name="valEax" type="unsigned long" dir="in">
+        <desc>
+          Cpuid leaf value for register eax.
+        </desc>
+      </param>
+      <param name="valEbx" type="unsigned long" dir="in">
+        <desc>
+          Cpuid leaf value for register ebx.
+        </desc>
+      </param>
+      <param name="valEcx" type="unsigned long" dir="in">
+        <desc>
+          Cpuid leaf value for register ecx.
+        </desc>
+      </param>
+      <param name="valEdx" type="unsigned long" dir="in">
+        <desc>
+          Cpuid leaf value for register edx.
         </desc>
       </param>
     </method>

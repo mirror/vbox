@@ -81,6 +81,12 @@
   </xsd:union>
 </xsd:simpleType>
 
+<xsd:simpleType name="TUInt32Hex">
+  <xsd:restriction base="xsd:string">
+    <xsd:pattern value="0x[A-Fa-f0-9]{1,8}"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
 <xsd:simpleType name="TUInt64Hex">
   <xsd:restriction base="xsd:string">
     <xsd:pattern value="0x[A-Fa-f0-9]{1,16}"/>
@@ -460,6 +466,21 @@
   </xsd:restriction>
 </xsd:simpleType>
 
+<xsd:complexType name="TCpuIdLeaf">
+  <xsd:attribute name="id"        type="TUInt32Hex"       use="required"/>
+  <xsd:attribute name="eax"       type="TUInt32Hex"       use="required"/>
+  <xsd:attribute name="ebx"       type="TUInt32Hex"       use="required"/>
+  <xsd:attribute name="ecx"       type="TUInt32Hex"       use="required"/>
+  <xsd:attribute name="edx"       type="TUInt32Hex"       use="required"/>
+</xsd:complexType>
+
+<xsd:complexType name="TCpuIdTree">
+  <xsd:sequence>
+    <xsd:element name="CpuIdLeaf" type="TCpuIdLeaf"
+                 minOccurs="0" maxOccurs="unbounded"/>
+  </xsd:sequence>
+</xsd:complexType>
+
 <xsd:complexType name="TCPU">
   <xsd:sequence>
     <xsd:element name="HardwareVirtEx" type="THWVirtExType" minOccurs="0"/>
@@ -467,6 +488,7 @@
     <xsd:element name="HardwareVirtExVPID" type="THWVirtExVPIDType" minOccurs="0"/>
     <xsd:element name="PAE" type="TPAEType" minOccurs="0"/>
     <xsd:element name="SyntheticCpu" type="TSyntheticCpuType" minOccurs="0"/>
+    <xsd:element name="CpuIdTree" type="TCpuIdTree" minOccurs="0"/>
   </xsd:sequence>
   <xsd:attribute name="count" type="TCPUCount" default="1"/>
 </xsd:complexType>
