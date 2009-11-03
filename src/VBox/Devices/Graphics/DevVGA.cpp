@@ -4970,6 +4970,9 @@ static DECLCALLBACK(int) vgaPortSnapshot(PPDMIDISPLAYPORT pInterface, void *pvDa
      */
     pInterface->pfnUpdateDisplayAll(pInterface);
 
+    int rc = PDMCritSectEnter(&pThis->lock, VERR_SEM_BUSY);
+    AssertRC(rc);
+
     /*
      * Validate the buffer size.
      */
@@ -4977,6 +4980,7 @@ static DECLCALLBACK(int) vgaPortSnapshot(PPDMIDISPLAYPORT pInterface, void *pvDa
     if (cbRequired > cbData)
     {
         Log(("vgaPortSnapshot: %d bytes are required, a buffer of %d bytes is profiled.\n", cbRequired, cbData));
+        PDMCritSectLeave(&pThis->lock);
         return VERR_BUFFER_OVERFLOW;
     }
 
@@ -5005,12 +5009,13 @@ static DECLCALLBACK(int) vgaPortSnapshot(PPDMIDISPLAYPORT pInterface, void *pvDa
      * pfnUpdateDisplayAll call above, is being rendered to an external buffer using a fake connector.
      * That is if display is blanked, we expect a black screen in the external buffer.
      */
-    int rc = vga_update_display(pThis, false);
+    rc = vga_update_display(pThis, false);
 
     /* restore */
     pThis->pDrv = pConnector;
     pThis->graphic_mode = graphic_mode;
     pThis->fRenderVRAM = fRenderVRAM;
+    PDMCritSectLeave(&pThis->lock);
 
     if (rc != VINF_SUCCESS)
         return rc;
@@ -5046,6 +5051,9 @@ static DECLCALLBACK(int) vgaPortDisplayBlt(PPDMIDISPLAYPORT pInterface, const vo
     int             rc = VINF_SUCCESS;
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pThis));
     LogFlow(("vgaPortDisplayBlt: pvData=%p x=%d y=%d cx=%d cy=%d\n", pvData, x, y, cx, cy));
+
+    rc = PDMCritSectEnter(&pThis->lock, VERR_SEM_BUSY);
+    AssertRC(rc);
 
     /*
      * Validate input.
@@ -5109,6 +5117,8 @@ static DECLCALLBACK(int) vgaPortDisplayBlt(PPDMIDISPLAYPORT pInterface, const vo
     else
         rc = VERR_INVALID_PARAMETER;
 
+    PDMCritSectLeave(&pThis->lock);
+
     LogFlow(("vgaPortDisplayBlt: returns %Rrc\n", rc));
     return rc;
 }
@@ -5147,6 +5157,9 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
 #endif /* DEBUG_sunlover */
         return;
     }
+
+    int rc = PDMCritSectEnter(&s->lock, VERR_SEM_BUSY);
+    AssertRC(rc);
 
     /* Correct negative x and y coordinates. */
     if (x < 0)
@@ -5195,6 +5208,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
 #ifdef DEBUG_sunlover
         LogFlow(("vgaPortUpdateDisplayRect: nothing to do: %dx%d\n", w, h));
 #endif /* DEBUG_sunlover */
+        PDMCritSectLeave(&s->lock);
         return;
     }
 
@@ -5258,6 +5272,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
         pu8Dst += cbLineDst;
         pu8Src += cbLineSrc;
     }
+    PDMCritSectLeave(&s->lock);
 
 #ifdef DEBUG_sunlover
     LogFlow(("vgaPortUpdateDisplayRect: completed.\n"));
