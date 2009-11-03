@@ -2490,38 +2490,41 @@ struct SnapshotEvent : public VirtualBox::CallbackEvent
  */
 void VirtualBox::onSnapshotTaken (const Guid &aMachineId, const Guid &aSnapshotId)
 {
-    postEvent (new SnapshotEvent (this, aMachineId, aSnapshotId, SnapshotEvent::Taken));
+    postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId, SnapshotEvent::Taken));
 }
 
 /**
  *  @note Doesn't lock any object.
  */
-void VirtualBox::onSnapshotDiscarded (const Guid &aMachineId, const Guid &aSnapshotId)
+void VirtualBox::onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapshotId)
 {
-    postEvent (new SnapshotEvent (this, aMachineId, aSnapshotId, SnapshotEvent::Discarded));
+    postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId, SnapshotEvent::Discarded));
 }
 
 /**
  *  @note Doesn't lock any object.
  */
-void VirtualBox::onSnapshotChange (const Guid &aMachineId, const Guid &aSnapshotId)
+void VirtualBox::onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId)
 {
-    postEvent (new SnapshotEvent (this, aMachineId, aSnapshotId, SnapshotEvent::Changed));
+    postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId, SnapshotEvent::Changed));
 }
 
 /** Event for onGuestPropertyChange() */
 struct GuestPropertyEvent : public VirtualBox::CallbackEvent
 {
-    GuestPropertyEvent (VirtualBox *aVBox, const Guid &aMachineId,
-                        IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
-        : CallbackEvent (aVBox), machineId (aMachineId)
-        , name (aName), value (aValue), flags(aFlags)
-        {}
+    GuestPropertyEvent(VirtualBox *aVBox, const Guid &aMachineId,
+                       IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
+        : CallbackEvent(aVBox),
+          machineId(aMachineId),
+          name(aName),
+          value(aValue),
+          flags(aFlags)
+    {}
 
-    void handleCallback (const ComPtr<IVirtualBoxCallback> &aCallback)
+    void handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
     {
-        LogFlow (("OnGuestPropertyChange: machineId={%RTuuid}, name='%ls', value='%ls', flags='%ls'\n",
-                  machineId.ptr(), name.raw(), value.raw(), flags.raw()));
+        LogFlow(("OnGuestPropertyChange: machineId={%RTuuid}, name='%ls', value='%ls', flags='%ls'\n",
+                 machineId.ptr(), name.raw(), value.raw(), flags.raw()));
         aCallback->OnGuestPropertyChange (machineId.toUtf16(), name, value, flags);
     }
 
@@ -2532,10 +2535,10 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
 /**
  *  @note Doesn't lock any object.
  */
-void VirtualBox::onGuestPropertyChange (const Guid &aMachineId, IN_BSTR aName,
-                                        IN_BSTR aValue, IN_BSTR aFlags)
+void VirtualBox::onGuestPropertyChange(const Guid &aMachineId, IN_BSTR aName,
+                                       IN_BSTR aValue, IN_BSTR aFlags)
 {
-    postEvent (new GuestPropertyEvent (this, aMachineId, aName, aValue, aFlags));
+    postEvent(new GuestPropertyEvent(this, aMachineId, aName, aValue, aFlags));
 }
 
 /**

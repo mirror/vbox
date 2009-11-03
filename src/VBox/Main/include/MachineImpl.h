@@ -1033,7 +1033,7 @@ private:
         enum Reason { Unexpected, Abnormal, Normal };
     };
 
-    struct Task;
+    struct SnapshotTask;
     struct DeleteSnapshotTask;
     struct RestoreSnapshotTask;
 
