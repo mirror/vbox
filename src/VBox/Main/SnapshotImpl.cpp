@@ -1054,71 +1054,77 @@ HRESULT SnapshotMachine::onSnapshotChange (Snapshot *aSnapshot)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-/** Task structure for asynchronous VM operations */
-struct SessionMachine::Task
+/**
+ * Abstract base class for SessionMachine::DeleteSnapshotTask and
+ * SessionMachine::RestoreSnapshotTask. This is necessary since
+ * RTThreadCreate cannot call a method as its thread function, so
+ * instead we have it call the static SessionMachine::taskHandler,
+ * which can then call the handler() method in here (implemented
+ * by the children).
+ */
+struct SessionMachine::SnapshotTask
 {
-    Task (SessionMachine *m, Progress *p)
-        : machine (m), progress (p)
-        , state (m->mData->mMachineState) // save the current machine state
-        , subTask (false)
+    SnapshotTask(SessionMachine *m,
+                 Progress *p,
+                 Snapshot *s)
+        : pMachine(m),
+          pProgress(p),
+          machineStateBackup(m->mData->mMachineState), // save the current machine state
+          pSnapshot(s)
     {}
 
-    void modifyLastState (MachineState_T s)
+    void modifyBackedUpState(MachineState_T s)
     {
-        *const_cast <MachineState_T *> (&state) = s;
+        *const_cast<MachineState_T*>(&machineStateBackup) = s;
     }
 
     virtual void handler() = 0;
 
-    ComObjPtr<SessionMachine> machine;
-    ComObjPtr<Progress> progress;
-    const MachineState_T state;
-
-    bool subTask : 1;
+    ComObjPtr<SessionMachine>       pMachine;
+    ComObjPtr<Progress>             pProgress;
+    const MachineState_T            machineStateBackup;
+    ComObjPtr<Snapshot>             pSnapshot;
 };
 
 /** Discard snapshot task */
 struct SessionMachine::DeleteSnapshotTask
-    : public SessionMachine::Task
+    : public SessionMachine::SnapshotTask
 {
-    DeleteSnapshotTask(SessionMachine *m, Progress *p, Snapshot *s)
-        : Task(m, p),
-          snapshot(s)
-    {}
-
-    DeleteSnapshotTask (const Task &task, Snapshot *s)
-        : Task(task)
-        , snapshot(s)
+    DeleteSnapshotTask(SessionMachine *m,
+                       Progress *p,
+                       Snapshot *s)
+        : SnapshotTask(m, p, s)
     {}
 
     void handler()
     {
-        machine->deleteSnapshotHandler(*this);
+        pMachine->deleteSnapshotHandler(*this);
     }
 
-    ComObjPtr<Snapshot> snapshot;
+private:
+    DeleteSnapshotTask(const SnapshotTask &task)
+        : SnapshotTask(task)
+    {}
 };
 
 /** Restore snapshot state task */
 struct SessionMachine::RestoreSnapshotTask
-    : public SessionMachine::Task
+    : public SessionMachine::SnapshotTask
 {
     RestoreSnapshotTask(SessionMachine *m,
-                        ComObjPtr<Snapshot> &aSnapshot,
                         Progress *p,
+                        Snapshot *s,
                         ULONG ulStateFileSizeMB)
-        : Task(m, p),
-          m_pSnapshot(aSnapshot),
+        : SnapshotTask(m, p, s),
           m_ulStateFileSizeMB(ulStateFileSizeMB)
     {}
 
     void handler()
     {
-        machine->restoreSnapshotHandler(*this);
+        pMachine->restoreSnapshotHandler(*this);
     }
 
-    ComObjPtr<Snapshot> m_pSnapshot;
-    ULONG m_ulStateFileSizeMB;
+    ULONG       m_ulStateFileSizeMB;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1473,7 +1479,10 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
 
     /* create and start the task on a separate thread (note that it will not
      * start working until we release alock) */
-    RestoreSnapshotTask *task = new RestoreSnapshotTask(this, pSnapshot, progress, ulStateFileSizeMB);
+    RestoreSnapshotTask *task = new RestoreSnapshotTask(this,
+                                                        progress,
+                                                        pSnapshot,
+                                                        ulStateFileSizeMB);
     int vrc = RTThreadCreate(NULL,
                              taskHandler,
                              (void*)task,
@@ -1508,11 +1517,11 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
 ////////////////////////////////////////////////////////////////////////////////
 
 /* static */
-DECLCALLBACK(int) SessionMachine::taskHandler (RTTHREAD /* thread */, void *pvUser)
+DECLCALLBACK(int) SessionMachine::taskHandler(RTTHREAD /* thread */, void *pvUser)
 {
     AssertReturn(pvUser, VERR_INVALID_POINTER);
 
-    Task *task = static_cast <Task *> (pvUser);
+    SnapshotTask *task = static_cast<SnapshotTask*>(pvUser);
     task->handler();
 
     // it's our responsibility to delete the task
@@ -1608,20 +1617,27 @@ HRESULT SessionMachine::endTakingSnapshot(BOOL aSuccess)
  */
 struct MediumDiscardRec
 {
-    MediumDiscardRec() : chain (NULL) {}
+    MediumDiscardRec()
+        : chain(NULL)
+    {}
 
-    MediumDiscardRec (const ComObjPtr<Medium> &aHd,
-                      Medium::MergeChain *aChain = NULL)
-        : hd (aHd), chain (aChain) {}
+    MediumDiscardRec(const ComObjPtr<Medium> &aHd,
+                     Medium::MergeChain *aChain = NULL)
+        : hd(aHd),
+          chain(aChain)
+    {}
 
-    MediumDiscardRec (const ComObjPtr<Medium> &aHd,
-                      Medium::MergeChain *aChain,
-                      const ComObjPtr<Medium> &aReplaceHd,
-                      const ComObjPtr<MediumAttachment> &aReplaceHda,
-                      const Guid &aSnapshotId)
-        : hd (aHd), chain (aChain)
-        , replaceHd (aReplaceHd), replaceHda (aReplaceHda)
-        , snapshotId (aSnapshotId) {}
+    MediumDiscardRec(const ComObjPtr<Medium> &aHd,
+                     Medium::MergeChain *aChain,
+                     const ComObjPtr<Medium> &aReplaceHd,
+                     const ComObjPtr<MediumAttachment> &aReplaceHda,
+                     const Guid &aSnapshotId)
+        : hd(aHd),
+          chain (aChain),
+          replaceHd(aReplaceHd),
+          replaceHda(aReplaceHda),
+          snapshotId(aSnapshotId)
+    {}
 
     ComObjPtr<Medium> hd;
     Medium::MergeChain *chain;
@@ -1654,10 +1670,10 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
     {
         /* we might have been uninitialized because the session was accidentally
          * closed by the client, so don't assert */
-        aTask.progress->notifyComplete(E_FAIL,
-                                       COM_IIDOF(IMachine),
-                                       getComponentName(),
-                                       tr("The session has been accidentally closed"));
+        aTask.pProgress->notifyComplete(E_FAIL,
+                                        COM_IIDOF(IMachine),
+                                        getComponentName(),
+                                        tr("The session has been accidentally closed"));
         LogFlowThisFuncLeave();
         return;
     }
@@ -1665,15 +1681,15 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
     /* Locking order:  */
     AutoMultiWriteLock3 alock(this->lockHandle(),
                               this->snapshotsTreeLockHandle(),
-                              aTask.snapshot->lockHandle());
+                              aTask.pSnapshot->lockHandle());
 
-    ComPtr<SnapshotMachine> sm = aTask.snapshot->getSnapshotMachine();
+    ComPtr<SnapshotMachine> sm = aTask.pSnapshot->getSnapshotMachine();
     /* no need to lock the snapshot machine since it is const by definiton */
 
     HRESULT rc = S_OK;
 
     /* save the snapshot ID (for callbacks) */
-    Guid snapshotId = aTask.snapshot->getId();
+    Guid snapshotId = aTask.pSnapshot->getId();
 
     MediumDiscardRecList toDiscard;
 
@@ -1704,9 +1720,9 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             {
                 /* skip writethrough hard disks */
                 Assert(hd->type() == MediumType_Writethrough);
-                rc = aTask.progress->SetNextOperation(BstrFmt(tr("Skipping writethrough hard disk '%s'"),
-                                                              hd->base()->name().raw()),
-                                                      1); // weight
+                rc = aTask.pProgress->SetNextOperation(BstrFmt(tr("Skipping writethrough hard disk '%s'"),
+                                                               hd->base()->name().raw()),
+                                                       1); // weight
                 CheckComRCThrowRC(rc);
                 continue;
             }
@@ -1795,13 +1811,13 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         LogFlowThisFunc(("2: Discarding snapshot...\n"));
 
         {
-            ComObjPtr<Snapshot> parentSnapshot = aTask.snapshot->parent();
-            Utf8Str stateFilePath = aTask.snapshot->stateFilePath();
+            ComObjPtr<Snapshot> parentSnapshot = aTask.pSnapshot->parent();
+            Utf8Str stateFilePath = aTask.pSnapshot->stateFilePath();
 
             /* Note that discarding the snapshot will deassociate it from the
              * hard disks which will allow the merge+delete operation for them*/
-            aTask.snapshot->beginDiscard();
-            aTask.snapshot->uninit();
+            aTask.pSnapshot->beginDiscard();
+            aTask.pSnapshot->uninit();
 
             rc = saveAllSnapshots();
             CheckComRCThrowRC(rc);
@@ -1811,8 +1827,8 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             //  to return a warning if the state file path cannot be deleted
             if (!stateFilePath.isEmpty())
             {
-                aTask.progress->SetNextOperation(Bstr(tr("Discarding the execution state")),
-                                                 1);        // weight
+                aTask.pProgress->SetNextOperation(Bstr(tr("Discarding the execution state")),
+                                                  1);        // weight
 
                 RTFileDelete(stateFilePath.c_str());
             }
@@ -1845,7 +1861,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         for (MediumDiscardRecList::iterator it = toDiscard.begin();
              it != toDiscard.end();)
         {
-            rc = it->hd->discard (aTask.progress, it->chain);
+            rc = it->hd->discard(aTask.pProgress, it->chain);
             CheckComRCBreakRC(rc);
 
             /* prevent from calling cancelDiscard() */
@@ -1884,38 +1900,35 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         }
     }
 
-    if (!aTask.subTask || FAILED(rc))
+    if (FAILED(rc))
     {
-        if (!aTask.subTask)
-        {
-            /* saveSettings() below needs a VirtualBox write lock and we need to
-             * leave this object's lock to do this to follow the {parent-child}
-             * locking rule. This is the last chance to do that while we are
-             * still in a protective state which allows us to temporarily leave
-             * the lock */
-            alock.unlock();
-            AutoWriteLock vboxLock(mParent);
-            alock.lock();
+        /* saveSettings() below needs a VirtualBox write lock and we need to
+         * leave this object's lock to do this to follow the {parent-child}
+         * locking rule. This is the last chance to do that while we are
+         * still in a protective state which allows us to temporarily leave
+         * the lock */
+        alock.unlock();
+        AutoWriteLock vboxLock(mParent);
+        alock.lock();
 
-            /* preserve existing error info */
-            ErrorInfoKeeper eik;
+        /* preserve existing error info */
+        ErrorInfoKeeper eik;
 
-            /* restore the machine state */
-            setMachineState(aTask.state);
-            updateMachineStateOnClient();
+        /* restore the machine state */
+        setMachineState(aTask.machineStateBackup);
+        updateMachineStateOnClient();
 
-            if (settingsChanged)
-                saveSettings(SaveS_InformCallbacksAnyway);
-        }
+        if (settingsChanged)
+            saveSettings(SaveS_InformCallbacksAnyway);
 
         /* set the result (this will try to fetch current error info on failure) */
-        aTask.progress->notifyComplete (rc);
+        aTask.pProgress->notifyComplete(rc);
     }
 
     if (SUCCEEDED(rc))
-        mParent->onSnapshotDiscarded (mData->mUuid, snapshotId);
+        mParent->onSnapshotDeleted(mData->mUuid, snapshotId);
 
-    LogFlowThisFunc(("Done discarding snapshot (rc=%08X)\n", rc));
+    LogFlowThisFunc(("Done deleting snapshot (rc=%08X)\n", rc));
     LogFlowThisFuncLeave();
 }
 
@@ -1936,10 +1949,10 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
     {
         /* we might have been uninitialized because the session was accidentally
          * closed by the client, so don't assert */
-        aTask.progress->notifyComplete(E_FAIL,
-                                       COM_IIDOF(IMachine),
-                                       getComponentName(),
-                                       tr("The session has been accidentally closed"));
+        aTask.pProgress->notifyComplete(E_FAIL,
+                                        COM_IIDOF(IMachine),
+                                        getComponentName(),
+                                        tr("The session has been accidentally closed"));
 
         LogFlowThisFuncLeave();
         return;
@@ -1969,12 +1982,12 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
     {
         /* discard the saved state file if the machine was Saved prior to this
          * operation */
-        if (aTask.state == MachineState_Saved)
+        if (aTask.machineStateBackup == MachineState_Saved)
         {
             Assert(!mSSData->mStateFilePath.isEmpty());
             RTFileDelete(mSSData->mStateFilePath.c_str());
             mSSData->mStateFilePath.setNull();
-            aTask.modifyLastState(MachineState_PoweredOff);
+            aTask.modifyBackedUpState(MachineState_PoweredOff);
             rc = saveStateSettings(SaveSTS_StateFilePath);
             CheckComRCThrowRC(rc);
         }
@@ -1983,12 +1996,12 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         RTTimeSpecSetMilli(&snapshotTimeStamp, 0);
 
         {
-            AutoReadLock snapshotLock(aTask.m_pSnapshot);
+            AutoReadLock snapshotLock(aTask.pSnapshot);
 
             /* remember the timestamp of the snapshot we're restoring from */
-            snapshotTimeStamp = aTask.m_pSnapshot->getTimeStamp();
+            snapshotTimeStamp = aTask.pSnapshot->getTimeStamp();
 
-            ComPtr<SnapshotMachine> pSnapshotMachine(aTask.m_pSnapshot->getSnapshotMachine());
+            ComPtr<SnapshotMachine> pSnapshotMachine(aTask.pSnapshot->getSnapshotMachine());
 
             /* copy all hardware data from the snapshot */
             copyFrom(pSnapshotMachine);
@@ -2004,7 +2017,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             alock.leave();
 
             rc = createImplicitDiffs(mUserData->mSnapshotFolderFull,
-                                     aTask.progress,
+                                     aTask.pProgress,
                                      1,
                                      false /* aOnline */);
 
@@ -2021,9 +2034,9 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             /* should not have a saved state file associated at this point */
             Assert(mSSData->mStateFilePath.isEmpty());
 
-            if (!aTask.m_pSnapshot->stateFilePath().isEmpty())
+            if (!aTask.pSnapshot->stateFilePath().isEmpty())
             {
-                Utf8Str snapStateFilePath = aTask.m_pSnapshot->stateFilePath();
+                Utf8Str snapStateFilePath = aTask.pSnapshot->stateFilePath();
 
                 Utf8Str stateFilePath = Utf8StrFmt("%ls%c{%RTuuid}.sav",
                                                    mUserData->mSnapshotFolderFull.raw(),
@@ -2033,8 +2046,8 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                 LogFlowThisFunc(("Copying saved state file from '%s' to '%s'...\n",
                                   snapStateFilePath.raw(), stateFilePath.raw()));
 
-                aTask.progress->SetNextOperation(Bstr(tr("Restoring the execution state")),
-                                                 aTask.m_ulStateFileSizeMB);        // weight
+                aTask.pProgress->SetNextOperation(Bstr(tr("Restoring the execution state")),
+                                                  aTask.m_ulStateFileSizeMB);        // weight
 
                 /* leave the lock before the potentially lengthy operation */
                 snapshotLock.unlock();
@@ -2045,7 +2058,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                                        stateFilePath.c_str(),
                                        0,
                                        progressCallback,
-                                       aTask.progress);
+                                       aTask.pProgress);
 
                 alock.enter();
                 snapshotLock.lock();
@@ -2060,9 +2073,9 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                                    vrc);
             }
 
-            LogFlowThisFunc(("Setting new current snapshot {%RTuuid}\n", aTask.m_pSnapshot->getId().raw()));
+            LogFlowThisFunc(("Setting new current snapshot {%RTuuid}\n", aTask.pSnapshot->getId().raw()));
             /* make the snapshot we restored from the current snapshot */
-            mData->mCurrentSnapshot = aTask.m_pSnapshot;
+            mData->mCurrentSnapshot = aTask.pSnapshot;
         }
 
         /* grab differencing hard disks from the old attachments that will
@@ -2171,16 +2184,16 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         if (!stateRestored)
         {
             /* restore the machine state */
-            setMachineState(aTask.state);
+            setMachineState(aTask.machineStateBackup);
             updateMachineStateOnClient();
         }
     }
 
     /* set the result (this will try to fetch current error info on failure) */
-    aTask.progress->notifyComplete(rc);
+    aTask.pProgress->notifyComplete(rc);
 
     if (SUCCEEDED(rc))
-        mParent->onSnapshotDiscarded(mData->mUuid, Guid());
+        mParent->onSnapshotDeleted(mData->mUuid, Guid());
 
     LogFlowThisFunc(("Done restoring snapshot (rc=%08X)\n", rc));
 
