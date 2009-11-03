@@ -979,8 +979,11 @@ void VBoxSelectorWnd::vmStart (const QString &aUuid /*= QUuid_null*/)
         return;
     }
 
-    AssertMsg (item->state() < KMachineState_Running,
-               ("Machine must be PoweredOff/Saved/Aborted"));
+    AssertMsg (   item->state() == KMachineState_PoweredOff
+               || item->state() == KMachineState_Saved
+               || item->state() == KMachineState_Teleported
+               || item->state() == KMachineState_Aborted
+               , ("Machine must be PoweredOff/Saved/Aborted (%d)", item->state()));
 
     QString id = item->id();
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -1454,19 +1457,19 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         mVmConfigAction->setEnabled (modifyEnabled);
         mVmDeleteAction->setEnabled (modifyEnabled);
         mVmDiscardAction->setEnabled (state == KMachineState_Saved && !running);
-        mVmPauseAction->setEnabled (state == KMachineState_Running ||
-                                   state == KMachineState_Paused);
+        mVmPauseAction->setEnabled (   state == KMachineState_Running
+                                    || state == KMachineState_Teleporting
+                                    || state == KMachineState_LiveSnapshotting
+                                    || state == KMachineState_Paused
+                                    || state == KMachineState_TeleportingPausedVM /** @todo Live Migration: does this make sense? */
+                                   );
 
         /* change the Start button text accordingly */
-        if (state >= KMachineState_Running)
-        {
-            mVmStartAction->setText (tr ("S&how"));
-            mVmStartAction->setStatusTip (
-                tr ("Switch to the window of the selected virtual machine"));
-
-            mVmStartAction->setEnabled (item->canSwitchTo());
-        }
-        else
+        if (   state == KMachineState_PoweredOff
+            || state == KMachineState_Saved
+            || state == KMachineState_Teleported
+            || state == KMachineState_Aborted
+           )
         {
             mVmStartAction->setText (tr ("S&tart"));
             mVmStartAction->setStatusTip (
@@ -1474,9 +1477,19 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
 
             mVmStartAction->setEnabled (!running);
         }
+        else
+        {
+            mVmStartAction->setText (tr ("S&how"));
+            mVmStartAction->setStatusTip (
+                tr ("Switch to the window of the selected virtual machine"));
+
+            mVmStartAction->setEnabled (item->canSwitchTo());
+        }
 
         /* change the Pause/Resume button text accordingly */
-        if (state == KMachineState_Paused)
+        if (   state == KMachineState_Paused
+            || state == KMachineState_TeleportingPausedVM /*?*/
+           )
         {
             mVmPauseAction->setText (tr ("R&esume"));
             mVmPauseAction->setShortcut (QKeySequence ("Ctrl+P"));
@@ -1864,26 +1877,36 @@ void VBoxTrayIcon::showSubMenu ()
         mVmDiscardAction->setEnabled (s == KMachineState_Saved && !running);
 
         /* Change the Start button text accordingly */
-        if (s >= KMachineState_Running)
-        {
-            mVmStartAction->setText (VBoxVMListView::tr ("S&how"));
-            mVmStartAction->setStatusTip (
-                  VBoxVMListView::tr ("Switch to the window of the selected virtual machine"));
-            mVmStartAction->setEnabled (pItem->canSwitchTo());
-        }
-        else
+        if (   s == KMachineState_PoweredOff
+            || s == KMachineState_Saved
+            || s == KMachineState_Teleported
+            || s == KMachineState_Aborted
+           )
         {
             mVmStartAction->setText (VBoxVMListView::tr ("S&tart"));
             mVmStartAction->setStatusTip (
                   VBoxVMListView::tr ("Start the selected virtual machine"));
             mVmStartAction->setEnabled (!running);
         }
+        else
+        {
+            mVmStartAction->setText (VBoxVMListView::tr ("S&how"));
+            mVmStartAction->setStatusTip (
+                  VBoxVMListView::tr ("Switch to the window of the selected virtual machine"));
+            mVmStartAction->setEnabled (pItem->canSwitchTo());
+        }
 
         /* Change the Pause/Resume button text accordingly */
-        mVmPauseAction->setEnabled (s == KMachineState_Running ||
-                                    s == KMachineState_Paused);
+        mVmPauseAction->setEnabled (   s == KMachineState_Running
+                                    || s == KMachineState_Teleporting
+                                    || s == KMachineState_LiveSnapshotting
+                                    || s == KMachineState_Paused
+                                    || s == KMachineState_TeleportingPausedVM
+                                   );
 
-        if (s == KMachineState_Paused)
+        if (   s == KMachineState_Paused
+            || s == KMachineState_TeleportingPausedVM /*?*/
+           )
         {
             mVmPauseAction->setText (VBoxVMListView::tr ("R&esume"));
             mVmPauseAction->setStatusTip (

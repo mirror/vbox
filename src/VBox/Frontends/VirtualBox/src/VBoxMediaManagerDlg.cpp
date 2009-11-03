@@ -1436,9 +1436,10 @@ void VBoxMediaManagerDlg::machineStateChanged (const VBoxMachineStateChangeEvent
         case KMachineState_PoweredOff:
         case KMachineState_Aborted:
         case KMachineState_Saved:
+        case KMachineState_Teleported:
         case KMachineState_Starting:
         case KMachineState_Restoring:
-        case KMachineState_TeleportingFrom:
+        case KMachineState_TeleportingIn:
         {
             refreshAll();
             break;

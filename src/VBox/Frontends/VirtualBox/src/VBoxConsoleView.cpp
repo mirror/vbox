@@ -3293,6 +3293,7 @@ void VBoxConsoleView::onStateChange (KMachineState state)
     switch (state)
     {
         case KMachineState_Paused:
+        case KMachineState_TeleportingPausedVM: /** @todo Live Migration: Check out this */
         {
             if (mode != VBoxDefs::TimerMode && mFrameBuf)
             {
@@ -3327,7 +3328,9 @@ void VBoxConsoleView::onStateChange (KMachineState state)
         }
         case KMachineState_Running:
         {
-            if (mLastState == KMachineState_Paused)
+            if (   mLastState == KMachineState_Paused
+                || mLastState == KMachineState_TeleportingPausedVM
+               )
             {
                 if (mode != VBoxDefs::TimerMode && mFrameBuf)
                 {
@@ -4226,8 +4229,11 @@ void VBoxConsoleView::updateDockOverlay()
     if (mDockIconEnabled &&
         (mLastState == KMachineState_Running ||
          mLastState == KMachineState_Paused ||
+         mLastState == KMachineState_Teleporting ||
+         mLastState == KMachineState_LiveSnapshotting ||
          mLastState == KMachineState_Restoring ||
-         mLastState == KMachineState_TeleportingFrom ||
+         mLastState == KMachineState_TeleportingPausedVM ||
+         mLastState == KMachineState_TeleportingIn ||
          mLastState == KMachineState_Saving))
         updateDockIcon();
     else

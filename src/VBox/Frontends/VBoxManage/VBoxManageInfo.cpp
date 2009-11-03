@@ -402,10 +402,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     switch (machineState)
     {
         case MachineState_PoweredOff:
-            if (details == VMINFO_MACHINEREADABLE)
-                pszState = "poweroff";
-            else
-                pszState = "powered off";
+            pszState = details == VMINFO_MACHINEREADABLE ? "poweroff"            : "powered off";
             break;
         case MachineState_Saved:
             pszState = "saved";
@@ -413,11 +410,23 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         case MachineState_Aborted:
             pszState = "aborted";
             break;
+        case MachineState_Teleported:
+            pszState = "teleported";
+            break;
         case MachineState_Running:
             pszState = "running";
             break;
         case MachineState_Paused:
             pszState = "paused";
+            break;
+        case MachineState_Stuck:
+            pszState = details == VMINFO_MACHINEREADABLE ? "gurumeditation"      : "guru meditation";
+            break;
+        case MachineState_LiveSnapshotting:
+            pszState = details == VMINFO_MACHINEREADABLE ? "livesnapshotting"    : "live snapshotting";
+            break;
+        case MachineState_Teleporting:
+            pszState = "teleporting";
             break;
         case MachineState_Starting:
             pszState = "starting";
@@ -431,11 +440,18 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         case MachineState_Restoring:
             pszState = "restoring";
             break;
-        case MachineState_TeleportingFrom:
-            if (details == VMINFO_MACHINEREADABLE)
-                pszState = "teleportingfrom";
-            else
-                pszState = "teleporting from";
+        case MachineState_TeleportingPausedVM:
+            pszState = details == VMINFO_MACHINEREADABLE ? "teleportingpausedvm" : "teleporting paused vm";
+            break;
+        case MachineState_TeleportingIn:
+            pszState = details == VMINFO_MACHINEREADABLE ? "teleportingin"       : "teleporting (incoming)";
+            break;
+        case MachineState_RestoringSnapshot:
+            pszState = details == VMINFO_MACHINEREADABLE ? "restoringsnapshot"   : "restoring snapshot";
+        case MachineState_DeletingSnapshot:
+            pszState = details == VMINFO_MACHINEREADABLE ? "deletingsnapshot"    : "deleting snapshot";
+        case MachineState_SettingUp:
+            pszState = details == VMINFO_MACHINEREADABLE ? "settingup"           : "setting up";
             break;
         default:
             pszState = "unknown";

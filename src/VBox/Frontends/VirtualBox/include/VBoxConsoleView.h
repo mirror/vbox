@@ -87,7 +87,11 @@ public:
     CConsole &console() { return mConsole; }
 
     bool pause (bool on);
-    bool isPaused() { return mLastState == KMachineState_Paused; }
+    bool isPaused()
+    {
+        return mLastState == KMachineState_Paused
+            || mLastState == KMachineState_TeleportingPausedVM;
+    }
     const QPixmap& pauseShot() const { return mPausedShot; }
 
     void setMouseIntegrationEnabled (bool enabled);
@@ -230,7 +234,12 @@ private:
 
     void setPointerShape (MousePointerChangeEvent *me);
 
-    bool isRunning() { return mLastState == KMachineState_Running; }
+    bool isRunning()
+    {
+        return mLastState == KMachineState_Running
+            || mLastState == KMachineState_Teleporting
+            || mLastState == KMachineState_LiveSnapshotting;
+    }
 
     static void dimImage (QImage &img);
 

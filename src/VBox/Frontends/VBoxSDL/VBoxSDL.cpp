@@ -462,8 +462,10 @@ public:
         SDL_Event event = {0};
 
         if (     machineState == MachineState_Aborted
+            ||   machineState == MachineState_Teleported
             ||  (machineState == MachineState_Saved      && !m_fIgnorePowerOffEvents)
-            ||  (machineState == MachineState_PoweredOff && !m_fIgnorePowerOffEvents))
+            ||  (machineState == MachineState_PoweredOff && !m_fIgnorePowerOffEvents)
+           )
         {
             /*
              * We have to inform the SDL thread that the application has be terminated
@@ -471,8 +473,8 @@ public:
             event.type      = SDL_USEREVENT;
             event.user.type = SDL_USER_EVENT_TERMINATE;
             event.user.code = machineState == MachineState_Aborted
-                                           ? VBOXSDL_TERM_ABEND
-                                           : VBOXSDL_TERM_NORMAL;
+                            ? VBOXSDL_TERM_ABEND
+                            : VBOXSDL_TERM_NORMAL;
         }
         else
         {
@@ -604,15 +606,19 @@ public:
             case MachineState_Null:                 return "<null>";
             case MachineState_PoweredOff:           return "PoweredOff";
             case MachineState_Saved:                return "Saved";
+            case MachineState_Teleported:           return "Teleported";
             case MachineState_Aborted:              return "Aborted";
             case MachineState_Running:              return "Running";
+            case MachineState_Teleporting:          return "Teleporting";
+            case MachineState_LiveSnapshotting:     return "LiveSnapshotting";
             case MachineState_Paused:               return "Paused";
             case MachineState_Stuck:                return "GuruMeditation";
             case MachineState_Starting:             return "Starting";
             case MachineState_Stopping:             return "Stopping";
             case MachineState_Saving:               return "Saving";
             case MachineState_Restoring:            return "Restoring";
-            case MachineState_TeleportingFrom:      return "TeleportingFrom";
+            case MachineState_TeleportingPausedVM:  return "TeleportingPausedVM";
+            case MachineState_TeleportingIn:        return "TeleportingIn";
             case MachineState_RestoringSnapshot:    return "RestoringSnapshot";
             case MachineState_DeletingSnapshot:     return "DeletingSnapshot";
             case MachineState_SettingUp:            return "SettingUp";
@@ -2142,7 +2148,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         if (    rc == S_OK
             &&  (   machineState == MachineState_Starting
                  || machineState == MachineState_Restoring
-                 || machineState == MachineState_TeleportingFrom)
+                 || machineState == MachineState_TeleportingIn
+                )
             )
         {
             /*
@@ -2238,7 +2245,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     } while (   rc == S_OK
              && (   machineState == MachineState_Starting
                  || machineState == MachineState_Restoring
-                 || machineState == MachineState_TeleportingFrom)
+                 || machineState == MachineState_TeleportingIn
+                )
             );
 
     /* kill the timer again */
@@ -2773,7 +2781,12 @@ leave:
      * Turn off the VM if it's running
      */
     if (   gConsole
-        && machineState == MachineState_Running)
+        && (   machineState == MachineState_Running
+            || machineState == MachineState_Teleporting
+            || machineState == MachineState_LiveSnapshotting
+            /** @todo power off paused VMs too? */
+           )
+       )
     {
         cbConsoleImpl->ignorePowerOffEvents(true);
         ComPtr <IProgress> progress;
@@ -4337,7 +4350,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
                     RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                                 " - Restoring...");
             }
-            else if (machineState == MachineState_TeleportingFrom)
+            else if (machineState == MachineState_TeleportingIn)
             {
                 ULONG cPercentNow;
                 HRESULT rc = gProgress->COMGETTER(Percent)(&cPercentNow);
@@ -4769,10 +4782,13 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
              */
             MachineState_T machineState;
             gMachine->COMGETTER(State)(&machineState);
-            if (machineState == MachineState_Running)
+            bool fPauseIt = machineState == MachineState_Running
+                         || machineState == MachineState_Teleporting
+                         || machineState == MachineState_LiveSnapshotting;
+            if (fPauseIt)
                 gConsole->Pause();
             SetFullscreen(!gpFramebuffer[0]->getFullscreen());
-            if (machineState == MachineState_Running)
+            if (fPauseIt)
                 gConsole->Resume();
 
             /*
@@ -4793,7 +4809,10 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
 
             MachineState_T machineState;
             gMachine->COMGETTER(State)(&machineState);
-            if (machineState == MachineState_Running)
+            if (   machineState == MachineState_Running
+                || machineState == MachineState_Teleporting
+                || machineState == MachineState_LiveSnapshotting
+               )
             {
                 if (gfGrabbed)
                     InputGrabEnd();

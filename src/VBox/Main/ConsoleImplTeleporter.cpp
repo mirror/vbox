@@ -683,13 +683,16 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
      * Deal with the state machinery after taking the console object lock.
      */
     AutoWriteLock autoLock(pState->mptrConsole);
-    if (pState->mptrConsole->mMachineState == MachineState_Saving)
+    if (   pState->mptrConsole->mMachineState == MachineState_Teleporting
+        || pState->mptrConsole->mMachineState == MachineState_TeleportingPausedVM
+       )
     {
+/** @todo shut down the VM and deal with Pause() and PowerDown() calls!! */
         VMSTATE enmVMState = VMR3GetState(pState->mpVM);
         if (SUCCEEDED(hrc))
         {
             if (enmVMState == VMSTATE_SUSPENDED)
-                pState->mptrConsole->setMachineState(MachineState_Paused);
+                pState->mptrConsole->setMachineState(MachineState_TeleportingPausedVM);
         }
         else
         {
@@ -778,7 +781,7 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress *
 
         default:
             return setError(VBOX_E_INVALID_VM_STATE,
-                tr("Invalid machine state: %s (must be Running, Paused or Stuck)"),
+                tr("Invalid machine state: %s (must be Running or Paused)"),
                 Global::stringifyMachineState(mMachineState));
     }
 
@@ -809,7 +812,10 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress *
                              RTTHREADTYPE_EMULATION, 0 /*fFlags*/, "Teleport");
     if (RT_SUCCESS(vrc))
     {
-        hrc = setMachineState(MachineState_Saving);
+        if (mMachineState == MachineState_Running)
+            hrc = setMachineState(MachineState_Teleporting);
+        else
+            hrc = setMachineState(MachineState_TeleportingPausedVM);
         if (SUCCEEDED(hrc))
             ptrProgress.queryInterfaceTo(aProgress);
         else

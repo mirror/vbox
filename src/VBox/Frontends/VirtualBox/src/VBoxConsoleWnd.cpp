@@ -1272,206 +1272,222 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *aEvent)
         return;
     }
 
-    if (mMachineState > KMachineState_Paused && mMachineState != KMachineState_Stuck)
+    switch (mMachineState)
     {
-        /* The machine is in some temporary state like Saving or Stopping.
-         * Ignore the close event. When it is Stopping, it will be soon closed anyway from updateMachineState().
-         * In all other cases, an appropriate progress dialog will be shown within a few seconds. */
-        aEvent->ignore();
-    }
-    else if (mMachineState < KMachineState_Running)
-    {
-        /* The machine has been already powered off or saved or aborted -- close the window immediately. */
-        aEvent->accept();
-    }
-    else
-    {
-        /* Start with ignore the close event */
-        aEvent->ignore();
+        case KMachineState_PoweredOff:
+        case KMachineState_Saved:
+        case KMachineState_Teleported:
+        case KMachineState_Aborted:
+            /* The machine has been already powered off or saved or aborted -- close the window immediately. */
+            aEvent->accept();
+            break;
 
-        bool isACPIEnabled = mSession.GetConsole().GetGuestEnteredACPIMode();
+        default:
+            /* The machine is in some temporary state like Saving or Stopping.
+             * Ignore the close event. When it is Stopping, it will be soon closed anyway from updateMachineState().
+             * In all other cases, an appropriate progress dialog will be shown within a few seconds. */
+            aEvent->ignore();
+            break;
 
-        bool success = true;
+        case KMachineState_Teleporting:      /** @todo Live Migration: Test closing a VM that's being teleported or snapshotted. */
+        case KMachineState_LiveSnapshotting:
+        case KMachineState_Running:
+        case KMachineState_Paused:
+        case KMachineState_TeleportingPausedVM: /** @todo Live Migration: Check out this. */
+        case KMachineState_Stuck:
+            /* Start with ignoring the close event */
+            aEvent->ignore();
 
-        bool wasPaused = mMachineState == KMachineState_Paused || mMachineState == KMachineState_Stuck;
-        if (!wasPaused)
-        {
-            /* Suspend the VM and ignore the close event if failed to do so.
-             * pause() will show the error message to the user. */
-            success = mConsole->pause (true);
-        }
+            bool isACPIEnabled = mSession.GetConsole().GetGuestEnteredACPIMode();
 
-        if (success)
-        {
-            success = false;
+            bool success = true;
 
-            CMachine machine = mSession.GetMachine();
-            VBoxCloseVMDlg dlg (this);
-            QString typeId = machine.GetOSTypeId();
-            dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
-
-            /* Make the Discard checkbox invisible if there are no snapshots */
-            dlg.mCbDiscardCurState->setVisible (machine.GetSnapshotCount() > 0);
-
-            if (mMachineState != KMachineState_Stuck)
+            bool wasPaused = mMachineState == KMachineState_Paused
+                          || mMachineState == KMachineState_Stuck
+                          || mMachineState == KMachineState_TeleportingPausedVM;
+            if (!wasPaused)
             {
-                /* Read the last user's choice for the given VM */
-                QStringList lastAction = machine.GetExtraData (VBoxDefs::GUI_LastCloseAction).split (',');
-                AssertWrapperOk (machine);
-                if (lastAction [0] == kSave)
+                /* Suspend the VM and ignore the close event if failed to do so.
+                 * pause() will show the error message to the user. */
+                success = mConsole->pause (true);
+            }
+
+            if (success)
+            {
+                success = false;
+
+                CMachine machine = mSession.GetMachine();
+                VBoxCloseVMDlg dlg (this);
+                QString typeId = machine.GetOSTypeId();
+                dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
+
+                /* Make the Discard checkbox invisible if there are no snapshots */
+                dlg.mCbDiscardCurState->setVisible (machine.GetSnapshotCount() > 0);
+
+                if (mMachineState != KMachineState_Stuck)
                 {
-                    dlg.mRbSave->setChecked (true);
-                    dlg.mRbSave->setFocus();
+                    /* Read the last user's choice for the given VM */
+                    QStringList lastAction = machine.GetExtraData (VBoxDefs::GUI_LastCloseAction).split (',');
+                    AssertWrapperOk (machine);
+                    if (lastAction [0] == kSave)
+                    {
+                        dlg.mRbSave->setChecked (true);
+                        dlg.mRbSave->setFocus();
+                    }
+                    else if (lastAction [0] == kPowerOff || !isACPIEnabled)
+                    {
+                        dlg.mRbShutdown->setEnabled (isACPIEnabled);
+                        dlg.mRbPowerOff->setChecked (true);
+                        dlg.mRbPowerOff->setFocus();
+                    }
+                    else /* The default is ACPI Shutdown */
+                    {
+                        dlg.mRbShutdown->setChecked (true);
+                        dlg.mRbShutdown->setFocus();
+                    }
+                    dlg.mCbDiscardCurState->setChecked (lastAction.count() > 1 && lastAction [1] == kDiscardCurState);
                 }
-                else if (lastAction [0] == kPowerOff || !isACPIEnabled)
+                else
                 {
-                    dlg.mRbShutdown->setEnabled (isACPIEnabled);
+                    /* The stuck VM can only be powered off; disable anything else and choose PowerOff */
+                    dlg.mRbSave->setEnabled (false);
+                    dlg.mRbShutdown->setEnabled (false);
                     dlg.mRbPowerOff->setChecked (true);
-                    dlg.mRbPowerOff->setFocus();
                 }
-                else /* The default is ACPI Shutdown */
+
+                bool wasShutdown = false;
+
+                if (dlg.exec() == QDialog::Accepted)
                 {
-                    dlg.mRbShutdown->setChecked (true);
-                    dlg.mRbShutdown->setFocus();
-                }
-                dlg.mCbDiscardCurState->setChecked (lastAction.count() > 1 && lastAction [1] == kDiscardCurState);
-            }
-            else
-            {
-                /* The stuck VM can only be powered off; disable anything else and choose PowerOff */
-                dlg.mRbSave->setEnabled (false);
-                dlg.mRbShutdown->setEnabled (false);
-                dlg.mRbPowerOff->setChecked (true);
-            }
+                    /* Disable auto closure because we want to have a chance to show
+                     * the error dialog on save state / power off failure. */
+                    mNoAutoClose = true;
 
-            bool wasShutdown = false;
+                    CConsole console = mConsole->console();
 
-            if (dlg.exec() == QDialog::Accepted)
-            {
-                /* Disable auto closure because we want to have a chance to show
-                 * the error dialog on save state / power off failure. */
-                mNoAutoClose = true;
-
-                CConsole console = mConsole->console();
-
-                if (dlg.mRbSave->isChecked())
-                {
-                    CProgress progress = console.SaveState();
-
-                    if (console.isOk())
+                    if (dlg.mRbSave->isChecked())
                     {
-                        /* Show the "VM saving" progress dialog */
-                        vboxProblem().showModalProgressDialog (progress, machine.GetName(), this, 0);
-                        if (progress.GetResultCode() != 0)
-                            vboxProblem().cannotSaveMachineState (progress);
-                        else
-                            success = true;
-                    }
-                    else
-                        vboxProblem().cannotSaveMachineState (console);
-                }
-                else if (dlg.mRbShutdown->isChecked())
-                {
-                    /* Unpause the VM to let it grab the ACPI shutdown event */
-                    mConsole->pause (false);
-                    /* Prevent the subsequent unpause request */
-                    wasPaused = true;
-                    /* Signal ACPI shutdown (if there is no ACPI device, the
-                     * operation will fail) */
-                    console.PowerButton();
-                    wasShutdown = console.isOk();
-                    if (!wasShutdown)
-                        vboxProblem().cannotACPIShutdownMachine (console);
-                    /* Success is always false because we never accept the close
-                     * window action when doing ACPI shutdown */
-                    success = false;
-                }
-                else if (dlg.mRbPowerOff->isChecked())
-                {
-                    CProgress progress = console.PowerDown();
+                        CProgress progress = console.SaveState();
 
-                    if (console.isOk())
-                    {
-                        /* Show the power down progress dialog */
-                        vboxProblem().showModalProgressDialog (progress, machine.GetName(), this, 0);
-                        if (progress.GetResultCode() != 0)
-                            vboxProblem().cannotStopMachine (progress);
+                        if (console.isOk())
+                        {
+                            /* Show the "VM saving" progress dialog */
+                            vboxProblem().showModalProgressDialog (progress, machine.GetName(), this, 0);
+                            if (progress.GetResultCode() != 0)
+                                vboxProblem().cannotSaveMachineState (progress);
+                            else
+                                success = true;
+                        }
                         else
-                            success = true;
+                            vboxProblem().cannotSaveMachineState (console);
                     }
-                    else
-                        vboxProblem().cannotStopMachine (console);
+                    else if (dlg.mRbShutdown->isChecked())
+                    {
+                        /* Unpause the VM to let it grab the ACPI shutdown event */
+                        mConsole->pause (false);
+                        /* Prevent the subsequent unpause request */
+                        wasPaused = true;
+                        /* Signal ACPI shutdown (if there is no ACPI device, the
+                         * operation will fail) */
+                        console.PowerButton();
+                        wasShutdown = console.isOk();
+                        if (!wasShutdown)
+                            vboxProblem().cannotACPIShutdownMachine (console);
+                        /* Success is always false because we never accept the close
+                         * window action when doing ACPI shutdown */
+                        success = false;
+                    }
+                    else if (dlg.mRbPowerOff->isChecked())
+                    {
+                        CProgress progress = console.PowerDown();
+
+                        if (console.isOk())
+                        {
+                            /* Show the power down progress dialog */
+                            vboxProblem().showModalProgressDialog (progress, machine.GetName(), this, 0);
+                            if (progress.GetResultCode() != 0)
+                                vboxProblem().cannotStopMachine (progress);
+                            else
+                                success = true;
+                        }
+                        else
+                            vboxProblem().cannotStopMachine (console);
+
+                        if (success)
+                        {
+                            /* Note: leave success = true even if we fail to
+                             * discard the current state later -- the console window
+                             * will closed anyway */
+
+                            /* Discard the current state if requested */
+                            if (dlg.mCbDiscardCurState->isChecked() && dlg.mCbDiscardCurState->isVisibleTo (&dlg))
+                            {
+                                CSnapshot snapshot = machine.GetCurrentSnapshot();
+                                CProgress progress = console.RestoreSnapshot (snapshot);
+                                if (console.isOk())
+                                {
+                                    /* Show the progress dialog */
+                                    vboxProblem().showModalProgressDialog (progress, machine.GetName(), this);
+                                    if (progress.GetResultCode() != 0)
+                                        vboxProblem().cannotRestoreSnapshot (progress, snapshot.GetName());
+                                }
+                                else
+                                    vboxProblem().cannotRestoreSnapshot (console, snapshot.GetName());
+                            }
+                        }
+                    }
 
                     if (success)
                     {
-                        /* Note: leave success = true even if we fail to
-                         * discard the current state later -- the console window
-                         * will closed anyway */
+                        /* Accept the close action on success */
+                        aEvent->accept();
+                    }
 
-                        /* Discard the current state if requested */
-                        if (dlg.mCbDiscardCurState->isChecked() && dlg.mCbDiscardCurState->isVisibleTo (&dlg))
-                        {
-                            CSnapshot snapshot = machine.GetCurrentSnapshot();
-                            CProgress progress = console.RestoreSnapshot (snapshot);
-                            if (console.isOk())
-                            {
-                                /* Show the progress dialog */
-                                vboxProblem().showModalProgressDialog (progress, machine.GetName(), this);
-                                if (progress.GetResultCode() != 0)
-                                    vboxProblem().cannotRestoreSnapshot (progress, snapshot.GetName());
-                            }
-                            else
-                                vboxProblem().cannotRestoreSnapshot (console, snapshot.GetName());
-                        }
+                    if (success || wasShutdown)
+                    {
+                        /* Read the last user's choice for the given VM */
+                        QStringList prevAction = machine.GetExtraData (VBoxDefs::GUI_LastCloseAction).split (',');
+                        /* Memorize the last user's choice for the given VM */
+                        QString lastAction = kPowerOff;
+                        if (dlg.mRbSave->isChecked())
+                            lastAction = kSave;
+                        else if (dlg.mRbShutdown->isChecked() ||
+                                 (dlg.mRbPowerOff->isChecked() && prevAction [0] == kShutdown && !isACPIEnabled))
+                            lastAction = kShutdown;
+                        else if (dlg.mRbPowerOff->isChecked())
+                            lastAction = kPowerOff;
+                        else
+                            AssertFailed();
+                        if (dlg.mCbDiscardCurState->isChecked())
+                            (lastAction += ",") += kDiscardCurState;
+                        machine.SetExtraData (VBoxDefs::GUI_LastCloseAction, lastAction);
+                        AssertWrapperOk (machine);
                     }
                 }
-
-                if (success)
-                {
-                    /* Accept the close action on success */
-                    aEvent->accept();
-                }
-
-                if (success || wasShutdown)
-                {
-                    /* Read the last user's choice for the given VM */
-                    QStringList prevAction = machine.GetExtraData (VBoxDefs::GUI_LastCloseAction).split (',');
-                    /* Memorize the last user's choice for the given VM */
-                    QString lastAction = kPowerOff;
-                    if (dlg.mRbSave->isChecked())
-                        lastAction = kSave;
-                    else if (dlg.mRbShutdown->isChecked() ||
-                             (dlg.mRbPowerOff->isChecked() && prevAction [0] == kShutdown && !isACPIEnabled))
-                        lastAction = kShutdown;
-                    else if (dlg.mRbPowerOff->isChecked())
-                        lastAction = kPowerOff;
-                    else
-                        AssertFailed();
-                    if (dlg.mCbDiscardCurState->isChecked())
-                        (lastAction += ",") += kDiscardCurState;
-                    machine.SetExtraData (VBoxDefs::GUI_LastCloseAction, lastAction);
-                    AssertWrapperOk (machine);
-                }
             }
-        }
 
-        mNoAutoClose = false;
+            mNoAutoClose = false;
 
-        if (mMachineState < KMachineState_Running)
-        {
-            /* The machine has been stopped while showing the Close or the Pause
-             * failure dialog -- accept the close event immediately. */
-            aEvent->accept();
-        }
-        else
-        {
-            if (!success)
+            if (   mMachineState == KMachineState_PoweredOff
+                || mMachineState == KMachineState_Saved
+                || mMachineState == KMachineState_Teleported
+                || mMachineState == KMachineState_Aborted
+               )
             {
-                /* Restore the running state if needed */
-                if (!wasPaused && mMachineState == KMachineState_Paused)
-                    mConsole->pause (false);
+                /* The machine has been stopped while showing the Close or the Pause
+                 * failure dialog -- accept the close event immediately. */
+                aEvent->accept();
             }
-        }
+            else
+            {
+                if (!success)
+                {
+                    /* Restore the running state if needed */
+                    if (!wasPaused && mMachineState == KMachineState_Paused)
+                        mConsole->pause (false);
+                }
+            }
+            break;
     }
 
     if (aEvent->isAccepted())
@@ -1772,7 +1788,11 @@ void VBoxConsoleWnd::finalizeOpenView()
 
     /* Check if we missed a really quick termination after successful
      * startup, and process it if we did. */
-    if (mMachineState < KMachineState_Running)
+    if (   mMachineState == KMachineState_PoweredOff
+        || mMachineState == KMachineState_Saved
+        || mMachineState == KMachineState_Teleported
+        || mMachineState == KMachineState_Aborted
+       )
     {
         close();
         LogFlowFuncLeave();
@@ -2474,46 +2494,56 @@ void VBoxConsoleWnd::updateMachineState (KMachineState aState)
 
     if (mConsole && mMachineState != aState)
     {
-        if (aState >= KMachineState_Running)
+        switch (aState)
         {
-            switch (aState)
+            case KMachineState_Stuck:
             {
-                case KMachineState_Stuck:
-                {
-                    guruMeditation = true;
-                    break;
-                }
-                case KMachineState_Paused:
-                {
-                    if (!mVmPauseAction->isChecked())
-                        mVmPauseAction->setChecked (true);
-                    break;
-                }
-                case KMachineState_Running:
-                {
-                    if (mMachineState == KMachineState_Paused && mVmPauseAction->isChecked())
-                        mVmPauseAction->setChecked (false);
-                    break;
-                }
-#ifdef Q_WS_X11
-                case KMachineState_Starting:
-                {
-                    /* The keyboard handler may wish to do some release logging
-                       on startup.  Tell it that the logger is now active. */
-                    doXKeyboardLogging (QX11Info::display());
-                    break;
-                }
-#endif
-                default:
-                    break;
+                guruMeditation = true;
+                break;
             }
+            case KMachineState_Paused:
+            {
+                if (!mVmPauseAction->isChecked())
+                    mVmPauseAction->setChecked (true);
+                break;
+            }
+            case KMachineState_Running:
+            case KMachineState_Teleporting:         /** @todo Live Migration: Check out this. */
+            case KMachineState_LiveSnapshotting:
+            {
+                if (   (   mMachineState == KMachineState_Paused
+                        || mMachineState == KMachineState_TeleportingPausedVM)
+                    && mVmPauseAction->isChecked()
+                   )
+                    mVmPauseAction->setChecked (false);
+                break;
+            }
+#ifdef Q_WS_X11
+            case KMachineState_Starting:
+            case KMachineState_Restoring:
+            case KMachineState_TeleportingIn:
+            {
+                /* The keyboard handler may wish to do some release logging
+                   on startup.  Tell it that the logger is now active. */
+                doXKeyboardLogging (QX11Info::display());
+                break;
+            }
+#endif
+            default:
+                break;
         }
 
-        bool isRunningOrPaused = aState == KMachineState_Running || aState == KMachineState_Paused;
+        bool isRunningOrPaused = aState == KMachineState_Running
+                              || aState == KMachineState_Teleporting
+                              || aState == KMachineState_LiveSnapshotting /** @todo Live Migration: Check out this. */
+                              || aState == KMachineState_Paused;
 
         /* Enable/Disable actions that are not managed by updateAppearanceOf() */
 
-        mRunningActions->setEnabled (aState == KMachineState_Running);
+        mRunningActions->setEnabled (   aState == KMachineState_Running
+                                     || aState == KMachineState_Teleporting
+                                     || aState == KMachineState_LiveSnapshotting  /** @todo Live Migration: Check out this. */
+                                    );
         mRunningOrPausedActions->setEnabled (isRunningOrPaused);
 
         mMachineState = aState;
@@ -2523,7 +2553,11 @@ void VBoxConsoleWnd::updateMachineState (KMachineState aState)
                             NetworkStuff | USBStuff | VRDPStuff |
                             PauseAction | DisableMouseIntegrAction);
 
-        if (aState < KMachineState_Running)
+        if (   aState == KMachineState_PoweredOff
+            || aState == KMachineState_Saved
+            || aState == KMachineState_Teleported
+            || aState == KMachineState_Aborted
+           )
         {
             /* VM has been powered off or saved or aborted, no matter
              * internally or externally -- we must *safely* close the console
@@ -2772,7 +2806,11 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
     CMachine machine = mSession.GetMachine();
     CConsole console = mConsole->console();
 
-    bool isRunningOrPaused = mMachineState == KMachineState_Running || mMachineState == KMachineState_Paused;
+    bool isStrictRunningOrPaused = mMachineState == KMachineState_Running
+                                || mMachineState == KMachineState_Paused;
+    bool isRunningOrPaused = isStrictRunningOrPaused
+                          || mMachineState == KMachineState_Teleporting
+                          || mMachineState == KMachineState_LiveSnapshotting;
 
     if (aElement & Caption)
     {
@@ -2895,8 +2933,8 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
                 ++ count;
         mNetLed->setState (count > 0 ? KDeviceActivity_Idle : KDeviceActivity_Null);
 
-        mDevicesNetworkDialogAction->setEnabled (isRunningOrPaused && count > 0);
-        mDevicesNetworkMenu->setEnabled (isRunningOrPaused && count > 0);
+        mDevicesNetworkDialogAction->setEnabled (isStrictRunningOrPaused && count > 0);
+        mDevicesNetworkMenu->setEnabled (isStrictRunningOrPaused && count > 0);
 
         QString tip = tr ("<p style='white-space:pre'><nobr>Indicates the activity of the "
                            "network interfaces:</nobr>%1</p>", "Network adapters tooltip");
@@ -2930,7 +2968,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
             CUSBController usbctl = machine.GetUSBController();
             if (!usbctl.isNull() && usbctl.GetEnabled())
             {
-                mDevicesUSBMenu->setEnabled (isRunningOrPaused);
+                mDevicesUSBMenu->setEnabled (isStrictRunningOrPaused);
 
                 CUSBDeviceVector devsvec = console.GetUSBDevices();
                 for (int i = 0; i < devsvec.size(); ++ i)
@@ -3068,7 +3106,10 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
             mVmDisableMouseIntegrAction->setText (VBoxGlobal::insertKeyToActionText (tr ("Enable &Mouse Integration"), "I"));
             mVmDisableMouseIntegrAction->setStatusTip (tr ("Enable temporarily disabled host mouse pointer integration"));
         }
-        if (mMachineState == KMachineState_Running)
+        if (   mMachineState == KMachineState_Running
+            || mMachineState == KMachineState_Teleporting
+            || mMachineState == KMachineState_LiveSnapshotting
+           )
             mVmDisableMouseIntegrAction->setEnabled (mConsole->isMouseAbsolute());
         else
             mVmDisableMouseIntegrAction->setEnabled (false);
