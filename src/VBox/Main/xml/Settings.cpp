@@ -1265,6 +1265,31 @@ Hardware::Hardware()
     mapBootOrder[2] = DeviceType_HardDisk;
 }
 
+/**
+ * Called from MachineConfigFile::readHardware() to cpuid information.
+ * @param elmCpuid
+ * @param ll
+ */
+void MachineConfigFile::readCpuIdTree(const xml::ElementNode &elmCpuid,
+                                      CpuIdLeafsList &ll)
+{
+    xml::NodesLoop nl1(elmCpuid, "CpuId");
+    const xml::ElementNode *pelmCpuIdLeaf;
+    while ((pelmCpuIdLeaf = nl1.forAllNodes()))
+    {
+        CpuIdLeaf leaf;
+
+        if (!pelmCpuIdLeaf->getAttributeValue("id", leaf.ulId))
+            throw ConfigFileError(this, pelmCpuIdLeaf, N_("Required CpuId/@id attribute is missing"));
+
+        pelmCpuIdLeaf->getAttributeValue("eax", leaf.ulEax);
+        pelmCpuIdLeaf->getAttributeValue("ebx", leaf.ulEbx);
+        pelmCpuIdLeaf->getAttributeValue("ecx", leaf.ulEcx);
+        pelmCpuIdLeaf->getAttributeValue("edx", leaf.ulEdx);
+
+        ll.push_back(leaf);
+    }
+}
 
 /**
  * Called from MachineConfigFile::readHardware() to network information.
@@ -1517,6 +1542,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmCPUChild->getAttributeValue("enabled", hw.fPAE);
             if ((pelmCPUChild = pelmHwChild->findChildElement("SyntheticCpu")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fSyntheticCpu);
+            if ((pelmCPUChild = pelmHwChild->findChildElement("CpuIdTree")))
+                readCpuIdTree(*pelmHwChild, hw.llCpuIdLeafs);
         }
         else if (pelmHwChild->nameEquals("Memory"))
             pelmHwChild->getAttributeValue("RAMSize", hw.ulMemorySizeMB);
@@ -2397,6 +2424,21 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
     if (hw.fSyntheticCpu)
         pelmCPU->createChild("SyntheticCpu")->setAttribute("enabled", hw.fSyntheticCpu);
     pelmCPU->setAttribute("count", hw.cCPUs);
+
+    xml::ElementNode *pelmCpuIdTree = pelmHardware->createChild("CpuId");
+    for (CpuIdLeafsList::const_iterator it = hw.llCpuIdLeafs.begin();
+         it != hw.llCpuIdLeafs.end();
+         ++it)
+    {
+        const CpuIdLeaf &leaf = *it;
+
+        xml::ElementNode *pelmCpuIdLeaf = pelmCpuIdTree->createChild("CpuIdLeaf");
+        pelmCpuIdLeaf->setAttribute("id",  leaf.ulId);
+        pelmCpuIdLeaf->setAttribute("eax", leaf.ulEax);
+        pelmCpuIdLeaf->setAttribute("ebx", leaf.ulEbx);
+        pelmCpuIdLeaf->setAttribute("ecx", leaf.ulEcx);
+        pelmCpuIdLeaf->setAttribute("edx", leaf.ulEdx);
+    }
 
     xml::ElementNode *pelmMemory = pelmHardware->createChild("Memory");
     pelmMemory->setAttribute("RAMSize", hw.ulMemorySizeMB);

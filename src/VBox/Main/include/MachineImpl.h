@@ -35,6 +35,7 @@
 #include "ParallelPortImpl.h"
 #include "BIOSSettingsImpl.h"
 #include "StorageControllerImpl.h"          // required for MachineImpl.h to compile on Windows
+#include "VBox/settings.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 #include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
@@ -296,6 +297,9 @@ public:
         BOOL           mSyntheticCpu;
         ULONG          mCPUCount;
         BOOL           mAccelerate3DEnabled;
+
+        settings::CpuIdLeaf mCpuIdStdLeafs[0x10];
+        settings::CpuIdLeaf mCpuIdExtLeafs[0x10];
 
         DeviceType_T   mBootOrder[SchemaDefs::MaxBootPosition];
 
@@ -592,6 +596,8 @@ public:
     STDMETHOD(SetExtraData)(IN_BSTR aKey, IN_BSTR aValue);
     STDMETHOD(GetCpuProperty)(CpuPropertyType_T property, BOOL *aVal);
     STDMETHOD(SetCpuProperty)(CpuPropertyType_T property, BOOL aVal);
+    STDMETHOD(GetCpuIdLeaf)(ULONG id, ULONG *aValEax, ULONG *aValEbx, ULONG *aValEcx, ULONG *aValEdx);
+    STDMETHOD(SetCpuIdLeaf)(ULONG id, ULONG aValEax, ULONG aValEbx, ULONG aValEcx, ULONG aValEdx);
     STDMETHOD(GetHWVirtExProperty)(HWVirtExPropertyType_T property, BOOL *aVal);
     STDMETHOD(SetHWVirtExProperty)(HWVirtExPropertyType_T property, BOOL aVal);
     STDMETHOD(SaveSettings)();

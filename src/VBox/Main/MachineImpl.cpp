@@ -1346,9 +1346,6 @@ STDMETHODIMP Machine::GetCpuProperty(CpuPropertyType_T property, BOOL *aVal)
 
 STDMETHODIMP Machine::SetCpuProperty(CpuPropertyType_T property, BOOL aVal)
 {
-    if (!aVal)
-        return E_POINTER;
-
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
@@ -1372,6 +1369,121 @@ STDMETHODIMP Machine::SetCpuProperty(CpuPropertyType_T property, BOOL aVal)
     }
     return S_OK;
 }
+
+STDMETHODIMP Machine::GetCpuIdLeaf(ULONG id, ULONG *aValEax, ULONG *aValEbx, ULONG *aValEcx, ULONG *aValEdx)
+{
+    if (!aValEax || !aValEbx || !aValEcx || !aValEdx)
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    switch(id)
+    {
+    case 0x0:
+    case 0x1:
+    case 0x2:
+    case 0x3:
+    case 0x4:
+    case 0x5:
+    case 0x6:
+    case 0x7:
+    case 0x8:
+    case 0x9:
+    case 0xA:
+        if (mHWData->mCpuIdStdLeafs[id].ulId != id)
+            return E_INVALIDARG;    /* not set */
+
+        *aValEax = mHWData->mCpuIdStdLeafs[id].ulEax;
+        *aValEbx = mHWData->mCpuIdStdLeafs[id].ulEbx;
+        *aValEcx = mHWData->mCpuIdStdLeafs[id].ulEcx;
+        *aValEdx = mHWData->mCpuIdStdLeafs[id].ulEdx;
+        break;
+
+    case 0x80000000:
+    case 0x80000001:
+    case 0x80000002:
+    case 0x80000003:
+    case 0x80000004:
+    case 0x80000005:
+    case 0x80000006:
+    case 0x80000007:
+    case 0x80000008:
+    case 0x80000009:
+    case 0x8000000A:
+        if (mHWData->mCpuIdExtLeafs[id - 0x80000000].ulId != id)
+            return E_INVALIDARG;    /* not set */
+
+        *aValEax = mHWData->mCpuIdExtLeafs[id - 0x80000000].ulEax;
+        *aValEbx = mHWData->mCpuIdExtLeafs[id - 0x80000000].ulEbx;
+        *aValEcx = mHWData->mCpuIdExtLeafs[id - 0x80000000].ulEcx;
+        *aValEdx = mHWData->mCpuIdExtLeafs[id - 0x80000000].ulEdx;
+        break;
+
+    default:
+        return E_INVALIDARG;
+    }
+    return S_OK;
+}
+
+STDMETHODIMP Machine::SetCpuIdLeaf(ULONG id, ULONG aValEax, ULONG aValEbx, ULONG aValEcx, ULONG aValEdx)
+{
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    CheckComRCReturnRC(rc);
+
+    switch(id)
+    {
+    case 0x0:
+    case 0x1:
+    case 0x2:
+    case 0x3:
+    case 0x4:
+    case 0x5:
+    case 0x6:
+    case 0x7:
+    case 0x8:
+    case 0x9:
+    case 0xA:
+        AssertRelease(id < RT_ELEMENTS(mHWData->mCpuIdStdLeafs));
+        mHWData->mCpuIdStdLeafs[id].ulId  = id;
+        mHWData->mCpuIdStdLeafs[id].ulEax = aValEax;
+        mHWData->mCpuIdStdLeafs[id].ulEbx = aValEbx;
+        mHWData->mCpuIdStdLeafs[id].ulEcx = aValEcx;
+        mHWData->mCpuIdStdLeafs[id].ulEdx = aValEdx;
+        break;
+
+    case 0x80000000:
+    case 0x80000001:
+    case 0x80000002:
+    case 0x80000003:
+    case 0x80000004:
+    case 0x80000005:
+    case 0x80000006:
+    case 0x80000007:
+    case 0x80000008:
+    case 0x80000009:
+    case 0x8000000A:
+        AssertRelease(id - 0x80000000 < RT_ELEMENTS(mHWData->mCpuIdExtLeafs));
+        mHWData->mCpuIdExtLeafs[id - 0x80000000].ulId  = id;
+        mHWData->mCpuIdExtLeafs[id - 0x80000000].ulEax = aValEax;
+        mHWData->mCpuIdExtLeafs[id - 0x80000000].ulEbx = aValEbx;
+        mHWData->mCpuIdExtLeafs[id - 0x80000000].ulEcx = aValEcx;
+        mHWData->mCpuIdExtLeafs[id - 0x80000000].ulEdx = aValEdx;
+        break;
+
+    default:
+        return E_INVALIDARG;
+    }
+    return S_OK;
+}
+
 
 STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL *aVal)
 {
@@ -5376,6 +5488,49 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
 
         mHWData->mCPUCount = data.cCPUs;
 
+        // cpuid leafs
+        for (settings::CpuIdLeafsList::const_iterator it = data.llCpuIdLeafs.begin();
+            it != data.llCpuIdLeafs.end();
+            ++it)
+        {
+            const settings::CpuIdLeaf &leaf = *it;
+
+            switch (leaf.ulId)
+            {
+            case 0x0:
+            case 0x1:
+            case 0x2:
+            case 0x3:
+            case 0x4:
+            case 0x5:
+            case 0x6:
+            case 0x7:
+            case 0x8:
+            case 0x9:
+            case 0xA:
+                mHWData->mCpuIdStdLeafs[leaf.ulId] = leaf;
+                break;
+
+            case 0x80000000:
+            case 0x80000001:
+            case 0x80000002:
+            case 0x80000003:
+            case 0x80000004:
+            case 0x80000005:
+            case 0x80000006:
+            case 0x80000007:
+            case 0x80000008:
+            case 0x80000009:
+            case 0x8000000A:
+                mHWData->mCpuIdExtLeafs[leaf.ulId - 0x80000000] = leaf;
+                break;
+
+            default:
+                /* just ignore */
+                break;
+            }
+        }
+
         mHWData->mMemorySize = data.ulMemorySizeMB;
 
         // boot order
@@ -6319,6 +6474,18 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         data.fVPID                  = !!mHWData->mHWVirtExVPIDEnabled;
         data.fPAE                   = !!mHWData->mPAEEnabled;
         data.fSyntheticCpu          = !!mHWData->mSyntheticCpu;
+
+        /* Standard and Extended CPUID leafs. */
+        for (unsigned idx = 0; idx < RT_ELEMENTS(mHWData->mCpuIdStdLeafs); idx++)
+        {
+            if (mHWData->mCpuIdStdLeafs[idx].ulId != -1)
+                data.llCpuIdLeafs.push_back(mHWData->mCpuIdStdLeafs[idx]);
+        }
+        for (unsigned idx = 0; idx < RT_ELEMENTS(mHWData->mCpuIdExtLeafs); idx++)
+        {
+            if (mHWData->mCpuIdExtLeafs[idx].ulId != -1)
+                data.llCpuIdLeafs.push_back(mHWData->mCpuIdExtLeafs[idx]);
+        }
 
         data.cCPUs = mHWData->mCPUCount;
 
