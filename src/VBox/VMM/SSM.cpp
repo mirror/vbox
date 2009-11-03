@@ -6881,40 +6881,43 @@ VMMR3DECL(int) SSMR3SetLoadErrorV(PSSMHANDLE pSSM, int rc, RT_SRC_POS_DECL, cons
     Assert(RT_FAILURE_NP(rc));
 
     /*
+     * Format the incoming error.
+     */
+    char *pszMsg;
+    RTStrAPrintfV(&pszMsg, pszFormat, va);
+    if (!pszMsg)
+    {
+        VMSetError(pSSM->pVM, VERR_NO_MEMORY, RT_SRC_POS,
+                   N_("SSMR3SetLoadErrorV ran out of memory formatting: %s\n"), pszFormat);
+        return rc;
+    }
+
+    /*
      * Forward to VMSetError with the additional info.
      */
     PSSMUNIT    pUnit       = pSSM->u.Read.pCurUnit;
     const char *pszName     = pUnit ? pUnit->szName      : "unknown";
     uint32_t    uInstance   = pUnit ? pUnit->u32Instance : 0;
-    va_list     vaCopy;
-    va_copy(vaCopy, va);
     if (   pSSM->enmOp == SSMSTATE_LOAD_EXEC
         && pSSM->u.Read.uCurUnitPass == SSM_PASS_FINAL)
-        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#u: %N [ver=%u pass=final]"),
-                        pszName, uInstance,
-                        pszFormat, &vaCopy,
-                        pSSM->u.Read.uCurUnitVer);
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [ver=%u pass=final]"),
+                        pszName, uInstance, pszMsg, pSSM->u.Read.uCurUnitVer);
     else if (pSSM->enmOp == SSMSTATE_LOAD_EXEC)
-        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#u: %N [ver=%u pass=#%u]"),
-                        pszName, uInstance,
-                        pszFormat, &vaCopy,
-                        pSSM->u.Read.uCurUnitVer, pSSM->u.Read.uCurUnitPass);
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [ver=%u pass=#%u]"),
+                        pszName, uInstance, pszMsg, pSSM->u.Read.uCurUnitVer, pSSM->u.Read.uCurUnitPass);
     else if (pSSM->enmOp == SSMSTATE_LOAD_PREP)
-        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#u: %N [prep]"),
-                        pszName, uInstance,
-                        pszFormat, &vaCopy);
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [prep]"),
+                        pszName, uInstance, pszMsg);
     else if (pSSM->enmOp == SSMSTATE_LOAD_DONE)
-        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#u: %N [done]"),
-                        pszName, uInstance,
-                        pszFormat, &vaCopy);
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [done]"),
+                        pszName, uInstance, pszMsg);
     else if (pSSM->enmOp == SSMSTATE_OPEN_READ)
-        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#u: %N [read]"),
-                        pszName, uInstance,
-                        pszFormat, &vaCopy);
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [read]"),
+                        pszName, uInstance, pszMsg);
     else
         AssertFailed();
-    va_end(vaCopy);
     pSSM->u.Read.fHaveSetError = true;
+    RTStrFree(pszMsg);
     return rc;
 }
 
