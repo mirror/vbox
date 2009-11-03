@@ -1682,20 +1682,21 @@ static BOOL vboxNetCfgWinRemoveAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, PSP_
             else
             {
                 winEr = GetLastError();
-                Log(L"vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: SetupDiCallClassInstaller failed (0x%08X)\n", winEr);
+                Log(L"vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: SetupDiCallClassInstaller failed winErr(%d)\n", winEr);
                 hr = HRESULT_FROM_WIN32(winEr);
             }
         }
         else
         {
             winEr = GetLastError();
-            Log(L"vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: SetupDiSetSelectedDevice failed (0x%08X)\n", winEr);
+            Log(L"vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: SetupDiSetSelectedDevice failed winErr(%d)\n", winEr);
             hr = HRESULT_FROM_WIN32(winEr);
         }
     }
     else
     {
         winEr = GetLastError();
+        Log(L"vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: SetupDiSetClassInstallParams failed winErr(%d)\n", winEr);
         hr = HRESULT_FROM_WIN32(winEr);
     }
 
@@ -1746,6 +1747,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPWSTR pPnPId, VBOXNETCF
                 winEr = GetLastError();
                 if(winEr != ERROR_INSUFFICIENT_BUFFER)
                 {
+                	Log(L"VBoxNetCfgWinEnumNetDevices: SetupDiGetDeviceRegistryPropertyW (1) failed winErr(%d)\n", winEr);
                     hr = HRESULT_FROM_WIN32(winEr);
                     break;
                 }
@@ -1767,6 +1769,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPWSTR pPnPId, VBOXNETCF
                         ))
                 {
                     winEr = GetLastError();
+                	Log(L"VBoxNetCfgWinEnumNetDevices: SetupDiGetDeviceRegistryPropertyW (2) failed winErr(%d)\n", winEr);
                     hr = HRESULT_FROM_WIN32(winEr);
                     break;
                 }
@@ -1798,6 +1801,13 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPWSTR pPnPId, VBOXNETCF
 
         SetupDiDestroyDeviceInfoList(hDevInfo);
     }
+    else
+    {
+    	DWORD winEr = GetLastError();
+    	Log(L"VBoxNetCfgWinEnumNetDevices: SetupDiGetClassDevsExW failed winErr(%d)\n", winEr);
+    	hr = HRESULT_FROM_WIN32(winEr);
+    }
+
     return hr;
 }
 
