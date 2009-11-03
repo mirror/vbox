@@ -2258,7 +2258,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     RTGCUINTPTR intInfo = 0; /* shut up buggy gcc 4 */
     RTGCUINTPTR errCode, instrInfo;
     bool        fSetupTPRCaching = false;
-    uint64_t    u64LSTAR = 0;
+    uint64_t    u64OldLSTAR = 0;
     uint8_t     u8LastTPR = 0;
     RTCCUINTREG uOldEFlags = ~(RTCCUINTREG)0;
     unsigned    cResume = 0;
@@ -2611,7 +2611,7 @@ ResumeExecution:
     if (pVM->hwaccm.s.fTPRPatchingActive)
     {
         Assert(pVM->hwaccm.s.fTPRPatchingActive);
-        u64LSTAR = ASMRdMsr(MSR_K8_LSTAR);
+        u64OldLSTAR = ASMRdMsr(MSR_K8_LSTAR);
         ASMWrMsr(MSR_K8_LSTAR, u8LastTPR);
     }
 
@@ -2635,8 +2635,8 @@ ResumeExecution:
     if (pVM->hwaccm.s.fTPRPatchingActive)
     {
         Assert(pVM->hwaccm.s.fTPRPatchingActive);
-        pCtx->msrLSTAR = ASMRdMsr(MSR_K8_LSTAR);
-        ASMWrMsr(MSR_K8_LSTAR, u64LSTAR);
+        pVCpu->hwaccm.s.vmx.pVAPIC[0x80] = pCtx->msrLSTAR = ASMRdMsr(MSR_K8_LSTAR);
+        ASMWrMsr(MSR_K8_LSTAR, u64OldLSTAR);
     }
 
     ASMSetFlags(uOldEFlags);
@@ -2735,23 +2735,11 @@ ResumeExecution:
     Log2(("IntInfo = %08x\n", (uint32_t)intInfo));
 
     /* Sync back the TPR if it was changed. */
-    if (fSetupTPRCaching)
+    if (    fSetupTPRCaching
+        &&  u8LastTPR != pVCpu->hwaccm.s.vmx.pVAPIC[0x80]
     {
-        if (pVM->hwaccm.s.fTPRPatchingActive)
-        {
-            if ((pCtx->msrLSTAR & 0xff) != u8LastTPR)
-            {
-                /* Our patch code uses LSTAR for TPR caching. */
-                rc = PDMApicSetTPR(pVCpu, pCtx->msrLSTAR & 0xff);
-                AssertRC(rc);
-            }
-        }
-        else
-        if (u8LastTPR != pVCpu->hwaccm.s.vmx.pVAPIC[0x80])
-        {
-            rc = PDMApicSetTPR(pVCpu, pVCpu->hwaccm.s.vmx.pVAPIC[0x80]);
-            AssertRC(rc);
-        }
+        rc = PDMApicSetTPR(pVCpu, pVCpu->hwaccm.s.vmx.pVAPIC[0x80]);
+        AssertRC(rc);
     }
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, v);
