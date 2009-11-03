@@ -8567,17 +8567,18 @@
           these are instances of <link to="IStorageController"/>).</li>
         <li><link to="IMachine::mediumAttachments"/> contains an array of
           medium attachments (instances of <link to="IMediumAttachment"/>),
-          each containing the name of a storage controller from the above
-          array, a port/device specification, and an instance of
-          IMedium representing the medium storage (image file). For removable
-          media, the storage medium is optional; a medium attachment with no
-          medium represents a CD/DVD or floppy drive with no medium inserted.
-          By contrast, hard disk attachments will always have an IMedium
-          object attached.</li>
-        <li>Each IMedium in turn points to a storage unit (such as a file on the host
-          computer or a network resource) that holds actual data. The location of
-          the storage unit is represented by the <link to="#location"/> attribute.
-          The value of this attribute is medium type dependent.</li>
+          each containing a storage controller from the above array, a
+          port/device specification, and an instance of IMedium representing
+          the medium storage (image file).
+
+          For removable media, the storage medium is optional; a medium
+          attachment with no medium represents a CD/DVD or floppy drive
+          with no medium inserted. By contrast, hard disk attachments
+          will always have an IMedium object attached.</li>
+        <li>Each IMedium in turn points to a storage unit (such as a file
+          on the host computer or a network resource) that holds actual
+          data. This location is represented by the <link to="#location"/>
+          attribute.</li>
       </ul>
 
       Existing media are opened using the following methods, depending on the
