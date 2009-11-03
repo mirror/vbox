@@ -391,6 +391,24 @@ typedef std::list<GuestProperty> GuestPropertiesList;
 
 typedef std::map<uint32_t, DeviceType_T> BootOrderMap;
 
+struct CpuIdLeaf
+{
+    CpuIdLeaf()
+        : ulId(-1),
+          ulEax(0),
+          ulEbx(0),
+          ulEcx(0),
+          ulEdx(0)
+    {}
+
+    uint32_t                ulId;
+    uint32_t                ulEax;
+    uint32_t                ulEbx;
+    uint32_t                ulEcx;
+    uint32_t                ulEdx;
+};
+typedef std::list<CpuIdLeaf> CpuIdLeafsList;
+
 struct Hardware
 {
     Hardware();
@@ -405,6 +423,7 @@ struct Hardware
                         fSyntheticCpu,
                         fPAE;
     uint32_t            cCPUs;
+    CpuIdLeafsList      llCpuIdLeafs;
 
     uint32_t            ulMemorySizeMB;
 
@@ -531,6 +550,7 @@ public:
     MachineConfigFile(const com::Utf8Str *pstrFilename);
 
     void readNetworkAdapters(const xml::ElementNode &elmHardware, NetworkAdaptersList &ll);
+    void readCpuIdTree(const xml::ElementNode &elmCpuid, CpuIdLeafsList &ll);
     void readSerialPorts(const xml::ElementNode &elmUART, SerialPortsList &ll);
     void readParallelPorts(const xml::ElementNode &elmLPT, ParallelPortsList &ll);
     void readGuestProperties(const xml::ElementNode &elmGuestProperties, Hardware &hw);
