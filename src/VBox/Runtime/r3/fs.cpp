@@ -36,6 +36,10 @@
 # define RTTIME_INCL_TIMESPEC
 # include <sys/time.h>
 # include <sys/param.h>
+# ifndef DEV_BSIZE
+#  include <sys/stat.h>
+#  define DEV_BSIZE S_BLKSIZE /** @todo bird: add DEV_BSIZE to sys/param.h on OS/2. */
+# endif
 #endif
 
 #include <iprt/fs.h>

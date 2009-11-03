@@ -650,6 +650,13 @@ DECLASM(bool) VBoxGuestOS2ISR(void)
 }
 
 
+void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
+{
+    /* No polling on OS/2 */
+    NOREF(pDevExt);
+}
+
+
 #ifdef DEBUG_READ /** @todo figure out this one once and for all... */
 
 /**

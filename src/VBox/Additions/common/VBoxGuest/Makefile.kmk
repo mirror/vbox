@@ -23,11 +23,7 @@ SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 
-if1of ($(KBUILD_TARGET), \
-	freebsd \
-	$(if $(defined VBOX_WITH_OS2_ADDITIONS),os2,) \
-	$(if $(defined VBOX_WITH_ADDITION_DRIVERS),linux,) \
-	solaris)
+if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linux,) os2 solaris)
  #
  # VBoxGuest - The Guest Additions Driver (mixed case).
  #
