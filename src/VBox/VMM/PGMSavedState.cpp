@@ -2714,7 +2714,7 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
                 &&  !strcmp(pMapping->pszDesc, szDesc))
                 break;
         if (!pMapping)
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Couldn't find mapping: cPTs=%#x szDesc=%s (GCPtr=%RGv)"),
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Couldn't find mapping: cPTs=%x szDesc=%s (GCPtr=%RGv)"),
                                     cPTs, szDesc, GCPtr);
 
         /* relocate it. */
