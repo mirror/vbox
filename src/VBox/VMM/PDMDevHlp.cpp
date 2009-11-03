@@ -846,9 +846,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
      * Get the attached driver configuration.
      */
     int rc;
-    char szNode[48];
-    RTStrPrintf(szNode, sizeof(szNode), "LUN#%d", iLun);
-    PCFGMNODE   pNode = CFGMR3GetChild(pDevIns->Internal.s.pCfgHandle, szNode);
+    PCFGMNODE pNode = CFGMR3GetChildF(pDevIns->Internal.s.pCfgHandle, "LUN#%u", iLun);
     if (pNode)
     {
         char *pszName;
@@ -859,7 +857,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
              * Find the driver.
              */
             PPDMDRV pDrv = pdmR3DrvLookup(pVM, pszName);
-            if (pDrv)
+            if (    pDrv
+                &&  pDrv->cInstances < pDrv->pDrvReg->cMaxInstances)
             {
                 /* config node */
                 PCFGMNODE pConfigNode = CFGMR3GetChild(pNode, "Config");
@@ -929,6 +928,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
                 }
                 else
                     AssertMsgFailed(("Failed to create Config node! rc=%Rrc\n", rc));
+            }
+            else if (pDrv)
+            {
+                AssertMsgFailed(("Too many instances of driver '%s', max is %u\n", pszName, pDrv->pDrvReg->cMaxInstances));
+                rc = VERR_PDM_TOO_MANY_DRIVER_INSTANCES;
             }
             else
             {

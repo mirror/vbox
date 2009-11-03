@@ -1081,6 +1081,10 @@
 #define VERR_PDM_DRIVER_INVALID_PROPERTIES          (-2866)
 /** Too many instances of a device. */
 #define VERR_PDM_TOO_MANY_DEVICE_INSTANCES          (-2867)
+/** Too many instances of a driver. */
+#define VERR_PDM_TOO_MANY_DRIVER_INSTANCES          (-2868)
+/** Too many instances of a usb device. */
+#define VERR_PDM_TOO_MANY_USB_DEVICE_INSTANCES      (-2869)
 /** @} */
 
 
