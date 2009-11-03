@@ -825,6 +825,9 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Machine Check Global Control Register. */
 #define MSR_IA32_MCP_CTRL                   0x17B
 
+/** Trace/Profile Resource Control (R/W) */
+#define MSR_IA32_DEBUGCTL                   0x1D9
+
 /* Page Attribute Table. */
 #define MSR_IA32_CR_PAT                     0x277
 
@@ -866,6 +869,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_IA32_VMX_PROCBASED_CTLS2        0x48B
 /** EPT capabilities. */
 #define MSR_IA32_VMX_EPT_CAPS               0x48C
+/** DS Save Area (R/W). */
+#define MSR_IA32_DS_AREA                    0x600
 /** X2APIC MSR ranges. */
 #define MSR_IA32_APIC_START                 0x800
 #define MSR_IA32_APIC_END                   0x900
