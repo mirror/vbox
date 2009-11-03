@@ -2016,7 +2016,9 @@ Machine::COMSETTER(TeleporterEnabled)(BOOL aEnabled)
         &&  mData->mRegistered
         &&  (   mType != IsSessionMachine
              || (   mData->mMachineState != MachineState_PoweredOff
-                 && mData->mMachineState != MachineState_Aborted)
+                 && mData->mMachineState != MachineState_Teleported
+                 && mData->mMachineState != MachineState_Aborted
+                )
             )
        )
         return setError(VBOX_E_INVALID_VM_STATE,
@@ -4907,10 +4909,16 @@ HRESULT Machine::checkStateDependency(StateDependency aDepType)
         }
         case MutableStateDep:
         {
-            if (mData->mRegistered &&
-                (mType != IsSessionMachine ||
-                 mData->mMachineState > MachineState_Paused ||
-                 mData->mMachineState == MachineState_Saved))
+            if (   mData->mRegistered
+                && (   mType != IsSessionMachine  /** @todo This was just convered raw; Check if Running and Paused should actually be included here... (Live Migration) */
+                    || (   mData->mMachineState != MachineState_Paused
+                        && mData->mMachineState != MachineState_Running
+                        && mData->mMachineState != MachineState_Aborted
+                        && mData->mMachineState != MachineState_Teleported
+                        && mData->mMachineState != MachineState_PoweredOff
+                       )
+                   )
+               )
                 return setError(VBOX_E_INVALID_VM_STATE,
                                 tr("The machine is not mutable (state is %s)"),
                                 Global::stringifyMachineState(mData->mMachineState));
@@ -4918,9 +4926,17 @@ HRESULT Machine::checkStateDependency(StateDependency aDepType)
         }
         case MutableOrSavedStateDep:
         {
-            if (mData->mRegistered &&
-                (mType != IsSessionMachine ||
-                 mData->mMachineState > MachineState_Paused))
+            if (   mData->mRegistered
+                && (   mType != IsSessionMachine  /** @todo This was just convered raw; Check if Running and Paused should actually be included here... (Live Migration) */
+                    || (   mData->mMachineState != MachineState_Paused
+                        && mData->mMachineState != MachineState_Running
+                        && mData->mMachineState != MachineState_Aborted
+                        && mData->mMachineState != MachineState_Teleported
+                        && mData->mMachineState != MachineState_Saved
+                        && mData->mMachineState != MachineState_PoweredOff
+                       )
+                   )
+               )
                 return setError(VBOX_E_INVALID_VM_STATE,
                                 tr("The machine is not mutable (state is %s)"),
                                 Global::stringifyMachineState(mData->mMachineState));
@@ -6352,6 +6368,7 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
         mData->m_pMachineConfigFile->fCurrentStateModified = !!currentStateModified;
         mData->m_pMachineConfigFile->timeLastStateChange = mData->mLastStateChange;
         mData->m_pMachineConfigFile->fAborted = (mData->mMachineState == MachineState_Aborted);
+/// @todo Live Migration:        mData->m_pMachineConfigFile->fTeleported = (mData->mMachineState == MachineState_Teleported);
 
         mData->m_pMachineConfigFile->fTeleporterEnabled    = !!mUserData->mTeleporterEnabled;
         mData->m_pMachineConfigFile->uTeleporterPort       = mUserData->mTeleporterPort;
@@ -6760,6 +6777,7 @@ HRESULT Machine::saveStateSettings(int aFlags)
             mData->m_pMachineConfigFile->timeLastStateChange = mData->mLastStateChange;
 
             mData->m_pMachineConfigFile->fAborted = (mData->mMachineState == MachineState_Aborted);
+//@todo live migration             mData->m_pMachineConfigFile->fTeleported = (mData->mMachineState == MachineState_Teleported);
         }
 
         mData->m_pMachineConfigFile->write(mData->m_strConfigFileFull);
@@ -6818,10 +6836,11 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
     AutoWriteLock alock(this);
 
     /* must be in a protective state because we leave the lock below */
-    AssertReturn(    mData->mMachineState == MachineState_Saving
-                  || mData->mMachineState == MachineState_RestoringSnapshot
-                  || mData->mMachineState == MachineState_DeletingSnapshot,
-                 E_FAIL);
+    AssertReturn(   mData->mMachineState == MachineState_Saving
+                 || mData->mMachineState == MachineState_LiveSnapshotting
+                 || mData->mMachineState == MachineState_RestoringSnapshot
+                 || mData->mMachineState == MachineState_DeletingSnapshot
+                 , E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -7037,6 +7056,7 @@ HRESULT Machine::deleteImplicitDiffs()
          * protected) */
         MachineState_T oldState = mData->mMachineState;
         if (    oldState != MachineState_Saving
+             && oldState != MachineState_LiveSnapshotting
              && oldState != MachineState_RestoringSnapshot
              && oldState != MachineState_DeletingSnapshot
            )
@@ -8661,9 +8681,10 @@ STDMETHODIMP SessionMachine::AdoptSavedState (IN_BSTR aSavedStateFile)
 
     AutoWriteLock alock(this);
 
-    AssertReturn(mData->mMachineState == MachineState_PoweredOff ||
-                  mData->mMachineState == MachineState_Aborted,
-                  E_FAIL);
+    AssertReturn(   mData->mMachineState == MachineState_PoweredOff
+                 || mData->mMachineState == MachineState_Teleported
+                 || mData->mMachineState == MachineState_Aborted
+                 , E_FAIL); /** @todo setError. */
 
     Utf8Str stateFilePathFull = aSavedStateFile;
     int vrc = calculateFullPath(stateFilePathFull, stateFilePathFull);
@@ -9162,9 +9183,11 @@ bool SessionMachine::hasMatchingUSBFilter (const ComObjPtr<HostUSBDevice> &aDevi
     {
         case MachineState_Starting:
         case MachineState_Restoring:
-        case MachineState_TeleportingFrom:
+        case MachineState_TeleportingIn:
         case MachineState_Paused:
         case MachineState_Running:
+        /** @todo Live Migration: snapshoting & teleporting. Need to fend things of
+         *        elsewhere... */
             return mUSBController->hasMatchingFilter (aDevice, aMaskedIfs);
         default: break;
     }
@@ -9318,7 +9341,7 @@ HRESULT SessionMachine::lockMedia()
 
     AssertReturn(   mData->mMachineState == MachineState_Starting
                  || mData->mMachineState == MachineState_Restoring
-                 || mData->mMachineState == MachineState_TeleportingFrom, E_FAIL);
+                 || mData->mMachineState == MachineState_TeleportingIn, E_FAIL);
 
     typedef std::list <ComPtr<IMedium> > MediaList;
 
@@ -9494,10 +9517,14 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
 
     if (   (   oldMachineState == MachineState_Saved
             && aMachineState   == MachineState_Restoring)
-        || (   oldMachineState == MachineState_PoweredOff
-            && aMachineState   == MachineState_TeleportingFrom)
-        || (   oldMachineState <  MachineState_Running /* any other OFF state */
-            && aMachineState   == MachineState_Starting)
+        || (   (   oldMachineState == MachineState_PoweredOff
+                || oldMachineState == MachineState_Teleported
+                || oldMachineState == MachineState_Aborted
+               )
+            && (   aMachineState   == MachineState_TeleportingIn
+                || aMachineState   == MachineState_Starting
+               )
+           )
        )
     {
         /* The EMT thread is about to start */
@@ -9507,15 +9534,28 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
         /// @todo NEWMEDIA don't let mDVDDrive and other children
         /// change anything when in the Starting/Restoring state
     }
-    else if (   oldMachineState >= MachineState_Running
-             && oldMachineState != MachineState_RestoringSnapshot
-             && oldMachineState != MachineState_DeletingSnapshot
-             && oldMachineState != MachineState_SettingUp
-             && aMachineState < MachineState_Running
+    else if (   (   oldMachineState == MachineState_Running
+                 || oldMachineState == MachineState_Paused
+                 || oldMachineState == MachineState_Teleporting
+                 || oldMachineState == MachineState_LiveSnapshotting
+                 || oldMachineState == MachineState_Stuck
+                 || oldMachineState == MachineState_Starting
+                 || oldMachineState == MachineState_Stopping
+                 || oldMachineState == MachineState_Saving
+                 || oldMachineState == MachineState_Restoring
+                 || oldMachineState == MachineState_TeleportingPausedVM
+                 || oldMachineState == MachineState_TeleportingIn
+                 )
+             && (   aMachineState == MachineState_PoweredOff
+                 || aMachineState == MachineState_Saved
+                 || aMachineState == MachineState_Teleported
+                 || aMachineState == MachineState_Aborted
+                )
              /* ignore PoweredOff->Saving->PoweredOff transition when taking a
               * snapshot */
              && (   mSnapshotData.mSnapshot.isNull()
-                 || mSnapshotData.mLastState >= MachineState_Running)
+                 || mSnapshotData.mLastState >= MachineState_Running /** @todo Live Migration: clean up (lazy bird) */
+                )
             )
     {
         /* The EMT thread has just stopped, unlock attached media. Note that as
@@ -9542,7 +9582,9 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
     }
     else if (   oldMachineState == MachineState_Saved
              && (   aMachineState == MachineState_PoweredOff
-                 || aMachineState == MachineState_Aborted)
+                 || aMachineState == MachineState_Aborted
+                 || aMachineState == MachineState_Teleported
+                )
             )
     {
         /*
@@ -9568,7 +9610,7 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
 
     if (   aMachineState == MachineState_Starting
         || aMachineState == MachineState_Restoring
-        || aMachineState == MachineState_TeleportingFrom
+        || aMachineState == MachineState_TeleportingIn
        )
     {
         /* set the current state modified flag to indicate that the current
@@ -9595,18 +9637,21 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
     /* redirect to the underlying peer machine */
     mPeer->setMachineState (aMachineState);
 
-    if (aMachineState == MachineState_PoweredOff ||
-        aMachineState == MachineState_Aborted ||
-        aMachineState == MachineState_Saved)
+    if (   aMachineState == MachineState_PoweredOff
+        || aMachineState == MachineState_Teleported
+        || aMachineState == MachineState_Aborted
+        || aMachineState == MachineState_Saved)
     {
         /* the machine has stopped execution
          * (or the saved state file was adopted) */
         stsFlags |= SaveSTS_StateTimeStamp;
     }
 
-    if ((oldMachineState == MachineState_PoweredOff ||
-         oldMachineState == MachineState_Aborted) &&
-        aMachineState == MachineState_Saved)
+    if (   (   oldMachineState == MachineState_PoweredOff
+            || oldMachineState == MachineState_Aborted
+            || oldMachineState == MachineState_Teleported
+           )
+        && aMachineState == MachineState_Saved)
     {
         /* the saved state file was adopted */
         Assert(!mSSData->mStateFilePath.isEmpty());
@@ -9615,10 +9660,15 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
 
     rc = saveStateSettings (stsFlags);
 
-    if ((oldMachineState != MachineState_PoweredOff &&
-         oldMachineState != MachineState_Aborted) &&
-        (aMachineState == MachineState_PoweredOff ||
-         aMachineState == MachineState_Aborted))
+    if (   (   oldMachineState != MachineState_PoweredOff
+            && oldMachineState != MachineState_Aborted
+            && oldMachineState != MachineState_Teleported
+           )
+        && (   aMachineState == MachineState_PoweredOff
+            || aMachineState == MachineState_Aborted
+            || aMachineState == MachineState_Teleported
+           )
+       )
     {
         /* we've been shut down for any reason */
         /* no special action so far */

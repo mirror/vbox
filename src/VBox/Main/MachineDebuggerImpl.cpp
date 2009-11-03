@@ -788,9 +788,19 @@ bool MachineDebugger::queueSettings() const
         // check if the machine is running
         MachineState_T machineState;
         mParent->COMGETTER(State) (&machineState);
-        if (!Global::IsActive (machineState))
+        switch (machineState)
+        {
             // queue the request
-            return true;
+            default:
+                return true;
+
+            case MachineState_Running:
+            case MachineState_Paused:
+            case MachineState_Stuck:
+            case MachineState_LiveSnapshotting:
+            case MachineState_Teleporting:
+                break;
+        }
     }
     return false;
 }

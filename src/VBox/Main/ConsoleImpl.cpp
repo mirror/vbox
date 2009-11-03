@@ -1503,19 +1503,25 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
 
     AutoWriteLock alock(this);
 
-    if (!Global::IsActive(mMachineState))
+    /** @todo Live Migration: Support powering down while teleporting. Maybe also
+     *        while taking a live snapshot.  (In case they never finish and you
+     *        or some other operator wish to shut down the VM.) */
+    switch (mMachineState)
     {
+        case MachineState_Running:
+        case MachineState_Paused:
+        case MachineState_Stuck:
+            break;
+
         /* extra nice error message for a common case */
-        if (mMachineState == MachineState_Saved)
+        case MachineState_Saved:
+            return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot power down a saved virtual machine"));
+        case MachineState_Stopping:
+            return setError(VBOX_E_INVALID_VM_STATE, tr("Virtual machine is being powered down."));
+        default:
             return setError(VBOX_E_INVALID_VM_STATE,
-                tr("Cannot power down a saved virtual machine"));
-        else if (mMachineState == MachineState_Stopping)
-            return setError(VBOX_E_INVALID_VM_STATE,
-                tr("Virtual machine is being powered down."));
-        else
-            return setError(VBOX_E_INVALID_VM_STATE,
-                tr("Invalid machine state: %s (must be Running, Paused or Stuck)"),
-                Global::stringifyMachineState(mMachineState));
+                            tr("Invalid machine state: %s (must be Running, Paused or Stuck)"),
+                            Global::stringifyMachineState(mMachineState));
     }
 
     LogFlowThisFunc(("Initiating SHUTDOWN request...\n"));
@@ -1563,7 +1569,11 @@ STDMETHODIMP Console::Reset()
 
     AutoWriteLock alock(this);
 
-    if (mMachineState != MachineState_Running)
+    if (   mMachineState != MachineState_Running
+        && mMachineState != MachineState_Teleporting
+        && mMachineState != MachineState_LiveSnapshotting
+        /** @todo r=bird: This should be allowed on paused VMs as well. Later.  */
+       )
         return setError(VBOX_E_INVALID_VM_STATE,
             tr("Invalid machine state: %s"),
             Global::stringifyMachineState(mMachineState));
@@ -1596,7 +1606,10 @@ STDMETHODIMP Console::Pause()
 
     AutoWriteLock alock(this);
 
-    if (mMachineState != MachineState_Running)
+    if (   mMachineState != MachineState_Running
+        && mMachineState != MachineState_Teleporting
+        && mMachineState != MachineState_LiveSnapshotting
+       )
         return setError(VBOX_E_INVALID_VM_STATE,
             tr("Invalid machine state: %s"),
             Global::stringifyMachineState(mMachineState));
@@ -1670,7 +1683,10 @@ STDMETHODIMP Console::PowerButton()
 
     AutoWriteLock alock(this);
 
-    if (mMachineState != MachineState_Running)
+    if (   mMachineState != MachineState_Running
+        && mMachineState != MachineState_Teleporting
+        && mMachineState != MachineState_LiveSnapshotting
+       )
         return setError(VBOX_E_INVALID_VM_STATE,
             tr("Invalid machine state: %s"),
             Global::stringifyMachineState(mMachineState));
@@ -1711,7 +1727,10 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
 
     AutoWriteLock alock(this);
 
-    if (mMachineState != MachineState_Running)
+    if (   mMachineState != MachineState_Running
+        && mMachineState != MachineState_Teleporting
+        && mMachineState != MachineState_LiveSnapshotting
+       )
         return setError(VBOX_E_INVALID_VM_STATE,
             tr("Invalid machine state: %s"),
             Global::stringifyMachineState(mMachineState));
@@ -1755,7 +1774,10 @@ STDMETHODIMP Console::GetGuestEnteredACPIMode(BOOL *aEntered)
 
     AutoWriteLock alock(this);
 
-    if (mMachineState != MachineState_Running)
+    if (   mMachineState != MachineState_Running
+        && mMachineState != MachineState_Teleporting
+        && mMachineState != MachineState_LiveSnapshotting
+       )
         return setError(VBOX_E_INVALID_VM_STATE,
             tr("Invalid machine state %s when checking if the guest entered the ACPI mode)"),
             Global::stringifyMachineState(mMachineState));
@@ -1790,7 +1812,7 @@ STDMETHODIMP Console::SleepButton()
 
     AutoWriteLock alock(this);
 
-    if (mMachineState != MachineState_Running)
+    if (mMachineState != MachineState_Running) /** @todo Live Migration: ??? */
         return setError(VBOX_E_INVALID_VM_STATE,
             tr("Invalid machine state: %s)"),
             Global::stringifyMachineState(mMachineState));
@@ -1831,8 +1853,8 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
 
     AutoWriteLock alock(this);
 
-    if (mMachineState != MachineState_Running &&
-        mMachineState != MachineState_Paused)
+    if (   mMachineState != MachineState_Running
+        && mMachineState != MachineState_Paused)
     {
         return setError(VBOX_E_INVALID_VM_STATE,
             tr("Cannot save the execution state as the machine is not running or paused (machine state: %s)"),
@@ -1969,10 +1991,12 @@ STDMETHODIMP Console::AdoptSavedState(IN_BSTR aSavedStateFile)
 
     AutoWriteLock alock(this);
 
-    if (mMachineState != MachineState_PoweredOff &&
-        mMachineState != MachineState_Aborted)
+    if (   mMachineState != MachineState_PoweredOff
+        && mMachineState != MachineState_Teleported
+        && mMachineState != MachineState_Aborted
+       )
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot adopt the saved machine state as the machine is not in Powered Off or Aborted state (machine state: %s)"),
+            tr("Cannot adopt the saved machine state as the machine is not in Powered Off, Teleported or Aborted state (machine state: %s)"),
             Global::stringifyMachineState(mMachineState));
 
     return mControl->AdoptSavedState(aSavedStateFile);
@@ -2108,8 +2132,8 @@ STDMETHODIMP Console::AttachUSBDevice(IN_BSTR aId)
 
     AutoWriteLock alock(this);
 
-    if (mMachineState != MachineState_Running &&
-        mMachineState != MachineState_Paused)
+    if (   mMachineState != MachineState_Running
+        && mMachineState != MachineState_Paused)
         return setError(VBOX_E_INVALID_VM_STATE,
             tr("Cannot attach a USB device to the machine which is not running or paused (machine state: %s)"),
             Global::stringifyMachineState(mMachineState));
@@ -2287,7 +2311,12 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
     if (mMachineState == MachineState_Saved)
         return setError(VBOX_E_INVALID_VM_STATE,
             tr("Cannot create a transient shared folder on the machine in the saved state"));
-    if (mMachineState > MachineState_Paused)
+    if (   mMachineState != MachineState_PoweredOff
+        && mMachineState != MachineState_Teleported
+        && mMachineState != MachineState_Aborted
+        && mMachineState != MachineState_Running
+        && mMachineState != MachineState_Paused
+       )
         return setError(VBOX_E_INVALID_VM_STATE,
             tr("Cannot create a transient shared folder on the machine while it is changing the state (machine state: %s)"),
             Global::stringifyMachineState(mMachineState));
@@ -2349,7 +2378,12 @@ STDMETHODIMP Console::RemoveSharedFolder(IN_BSTR aName)
     if (mMachineState == MachineState_Saved)
         return setError(VBOX_E_INVALID_VM_STATE,
             tr("Cannot remove a transient shared folder from the machine in the saved state"));
-    if (mMachineState > MachineState_Paused)
+    if (   mMachineState != MachineState_PoweredOff
+        && mMachineState != MachineState_Teleported
+        && mMachineState != MachineState_Aborted
+        && mMachineState != MachineState_Running
+        && mMachineState != MachineState_Paused
+       )
         return setError(VBOX_E_INVALID_VM_STATE,
             tr("Cannot remove a transient shared folder from the machine while it is changing the state (machine state: %s)"),
             Global::stringifyMachineState(mMachineState));
@@ -3513,7 +3547,12 @@ HRESULT Console::onVRDPServerChange()
 
     HRESULT rc = S_OK;
 
-    if (mVRDPServer && mMachineState == MachineState_Running)
+    if (    mVRDPServer
+        &&  (   mMachineState == MachineState_Running
+             || mMachineState == MachineState_Teleporting
+             || mMachineState == MachineState_LiveSnapshotting
+            )
+       )
     {
         BOOL vrdpEnabled = FALSE;
 
@@ -4007,10 +4046,11 @@ HRESULT Console::updateMachineState(MachineState_T aMachineState)
 
     AutoWriteLock alock(this);
 
-    AssertReturn(    mMachineState == MachineState_Saving
-                  || mMachineState == MachineState_RestoringSnapshot
-                  || mMachineState == MachineState_DeletingSnapshot,
-                 E_FAIL);
+    AssertReturn(   mMachineState == MachineState_Saving
+                 || mMachineState == MachineState_LiveSnapshotting
+                 || mMachineState == MachineState_RestoringSnapshot
+                 || mMachineState == MachineState_DeletingSnapshot
+                 , E_FAIL);
 
     return setMachineStateLocally(aMachineState);
 }
@@ -4711,7 +4751,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     if (mMachineState == MachineState_Saved)
         setMachineState(MachineState_Restoring);
     else if (fTeleporterEnabled)
-        setMachineState(MachineState_TeleportingFrom);
+        setMachineState(MachineState_TeleportingIn);
     else
         setMachineState(MachineState_Starting);
 
@@ -4771,15 +4811,18 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
 
     Assert(mpVM != NULL);
 
-    AssertMsg(mMachineState == MachineState_Running ||
-              mMachineState == MachineState_Paused ||
-              mMachineState == MachineState_Stuck ||
-              mMachineState == MachineState_Saving ||
-              mMachineState == MachineState_Starting ||
-              mMachineState == MachineState_Restoring ||
-              mMachineState == MachineState_TeleportingFrom || /** @todo Teleportation ???*/
-              mMachineState == MachineState_Stopping,
-              ("Invalid machine state: %s\n", Global::stringifyMachineState(mMachineState)));
+    AssertMsg(   mMachineState == MachineState_Running
+              || mMachineState == MachineState_Paused
+              || mMachineState == MachineState_Teleporting           /** @todo Live Migration: ???*/
+              || mMachineState == MachineState_LiveSnapshotting      /** @todo Live Migration: ???*/
+              || mMachineState == MachineState_Stuck
+              || mMachineState == MachineState_Starting
+              || mMachineState == MachineState_Stopping
+              || mMachineState == MachineState_Saving
+              || mMachineState == MachineState_Restoring
+              || mMachineState == MachineState_TeleportingPausedVM   /** @todo Teleportation ???*/
+              || mMachineState == MachineState_TeleportingIn         /** @todo Teleportation ???*/
+              , ("Invalid machine state: %s\n", Global::stringifyMachineState(mMachineState)));
 
     LogRel(("Console::powerDown(): A request to power off the VM has been issued (mMachineState=%d, InUninit=%d)\n",
              mMachineState, autoCaller.state() == InUninit));
@@ -4792,7 +4835,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
     if (   !mVMPoweredOff
         && (   mMachineState == MachineState_Starting
             || mMachineState == MachineState_Restoring
-            || mMachineState == MachineState_TeleportingFrom)
+            || mMachineState == MachineState_TeleportingIn)
        )
         mVMPoweredOff = true;
 
@@ -4800,11 +4843,14 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
      * Saving/Restoring to Stopping because vmstateChangeCallback() needs it to
      * set the state to Saved on VMSTATE_TERMINATED. In terms of protecting from
      * inappropriate operations while leaving the lock below, Saving or
-     * Restoring should be fine too */
+     * Restoring should be fine too.  Ditto for Teleporting* -> Teleported. */
     if (   mMachineState != MachineState_Saving
         && mMachineState != MachineState_Restoring
-        && mMachineState != MachineState_TeleportingFrom
         && mMachineState != MachineState_Stopping
+        && mMachineState != MachineState_TeleportingIn
+        && mMachineState != MachineState_Teleporting /** @todo Live Migration: what should really happen here? */
+        && mMachineState != MachineState_TeleportingPausedVM
+        && mMachineState != MachineState_LiveSnapshotting /** @todo Live Migration: what should really happen here? */
        )
         setMachineState(MachineState_Stopping);
 
@@ -4861,8 +4907,9 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
             {
                 uint32_t fFlags;
                 guestProp::validateFlags(Utf8Str(flagsOut[i]).raw(), &fFlags);
-                if (   !( fFlags & guestProp::TRANSIENT)
-                    || (mMachineState == MachineState_Saving)
+                if (   !(fFlags & guestProp::TRANSIENT)
+                    || mMachineState == MachineState_Saving
+                    || mMachineState == MachineState_LiveSnapshotting
                   )
                 {
                     names.push_back(namesOut[i]);
@@ -5489,7 +5536,10 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
             if (   that->mMachineState != MachineState_Stopping
                 && that->mMachineState != MachineState_Saving
                 && that->mMachineState != MachineState_Restoring
-                && that->mMachineState != MachineState_TeleportingFrom
+                && that->mMachineState != MachineState_TeleportingIn
+                && that->mMachineState != MachineState_LiveSnapshotting
+                && that->mMachineState != MachineState_Teleporting
+                && that->mMachineState != MachineState_TeleportingPausedVM
                )
             {
                 LogFlowFunc(("VM has powered itself off but Console still thinks it is running. Notifying.\n"));
@@ -5584,9 +5634,14 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                      * back to Saved (to preserve the saved state file) */
                     that->setMachineState(MachineState_Saved);
                     break;
-                case MachineState_TeleportingFrom:
+                case MachineState_TeleportingIn:
                     /* Teleportation failed or was cancelled.  Back to powered off. */
                     that->setMachineState(MachineState_PoweredOff);
+                    break;
+                case MachineState_Teleporting:
+                case MachineState_TeleportingPausedVM:
+                    /* Successfully teleported the VM. */
+                    that->setMachineState(MachineState_Teleported);
                     break;
             }
             break;
@@ -5594,7 +5649,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
 
         case VMSTATE_SUSPENDED:
         {
-            /** @todo state/live VMSTATE_SUSPENDING_LS. */
+            /** @todo Live Migration: state/live VMSTATE_SUSPENDING_LS. */
             if (aOldState == VMSTATE_SUSPENDING)
             {
                 AutoWriteLock alock(that);
@@ -5625,7 +5680,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                                || that->mMachineState == MachineState_Paused)
                            && aOldState == VMSTATE_POWERING_ON)
                        || (   (   that->mMachineState == MachineState_Restoring
-                               || that->mMachineState == MachineState_TeleportingFrom
+                               || that->mMachineState == MachineState_TeleportingIn
                                || that->mMachineState == MachineState_Paused)
                            && aOldState == VMSTATE_RESUMING));
 
@@ -6820,7 +6875,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
 
     if (   console->mMachineState == MachineState_Starting
         || console->mMachineState == MachineState_Restoring
-        || console->mMachineState == MachineState_TeleportingFrom
+        || console->mMachineState == MachineState_TeleportingIn
        )
     {
         /* We are still in the Starting/Restoring state. This means one of:

@@ -212,20 +212,24 @@ bool VBoxVMItem::recache()
         mOSTypeId = mMachine.GetOSTypeId();
         mSnapshotCount = mMachine.GetSnapshotCount();
 
-        if (mState >= KMachineState_Running)
-        {
-            mPid = mMachine.GetSessionPid();
-    /// @todo Remove. See @c todo in #switchTo() below.
-#if 0
-            mWinId = FindWindowIdFromPid (mPid);
-#endif
-        }
-        else
+        if (   mState == KMachineState_PoweredOff
+            || mState == KMachineState_Saved
+            || mState == KMachineState_Teleported
+            || mState == KMachineState_Aborted
+           )
         {
             mPid = (ULONG) ~0;
     /// @todo Remove. See @c todo in #switchTo() below.
 #if 0
             mWinId = (WId) ~0;
+#endif
+        }
+        else
+        {
+            mPid = mMachine.GetSessionPid();
+    /// @todo Remove. See @c todo in #switchTo() below.
+#if 0
+            mWinId = FindWindowIdFromPid (mPid);
 #endif
         }
     }

@@ -1271,8 +1271,11 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         // the matching commit() is in fixupMedia() during endSnapshot()
         mMediaData.backup();
 
-        /* set the state to Saving (this is expected by Console::TakeSnapshot()) */
-        setMachineState(MachineState_Saving);
+        /* Console::fntTakeSnapshotWorker and friends expects this. */
+        if (mSnapshotData.mLastState == MachineState_Running)
+            setMachineState(MachineState_LiveSnapshotting);
+        else
+            setMachineState(MachineState_Saving); /** @todo Confusing! Saving is used for both online and offline snapshots. */
 
         /* create new differencing hard disks and attach them to this machine */
         rc = createImplicitDiffs(mUserData->mSnapshotFolderFull,
@@ -1350,11 +1353,13 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
 
     AutoWriteLock alock(this);
 
-    AssertReturn(!aSuccess ||
-                  (mData->mMachineState == MachineState_Saving &&
-                   mSnapshotData.mLastState != MachineState_Null &&
-                   !mSnapshotData.mSnapshot.isNull()),
-                  E_FAIL);
+    AssertReturn(   !aSuccess
+                 || (    (    mData->mMachineState == MachineState_Saving
+                          ||  mData->mMachineState == MachineState_LiveSnapshotting)
+                     &&  mSnapshotData.mLastState != MachineState_Null
+                     &&  !mSnapshotData.mSnapshot.isNull()
+                    )
+                 , E_FAIL);
 
     /*
      * Restore the state we had when BeginTakingSnapshot() was called,

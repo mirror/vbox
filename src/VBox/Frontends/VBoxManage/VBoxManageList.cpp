@@ -229,7 +229,10 @@ int handleList(HandlerArg *a)
                             switch (machineState)
                             {
                                 case MachineState_Running:
+                                case MachineState_Teleporting:
+                                case MachineState_LiveSnapshotting:
                                 case MachineState_Paused:
+                                case MachineState_TeleportingPausedVM:
                                     rc = showVMInfo(a->virtualBox,
                                                     machines[i],
                                                     (fOptLong) ? VMINFO_STANDARD : VMINFO_COMPACT);

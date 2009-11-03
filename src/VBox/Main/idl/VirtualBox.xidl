@@ -472,7 +472,7 @@
 
   <enum
     name="MachineState"
-    uuid="0f4cc50c-e1cc-4cde-ae7a-e6164bac5ba2"
+    uuid="36518cf6-cdf0-4d0d-ad2a-5ee9c60c7494"
   >
     <desc>
       Virtual machine execution state.
@@ -615,102 +615,140 @@
         it can be resumed.
       </desc>
     </const>
-    <const name="Aborted"               value="3">
+    <const name="Teleported"            value="3">
+      <desc>
+        The machine was teleported to a different host (or process) and then
+        powered off.  Take care when powering it on again may corrupt resources
+        it shares with the teleportation target (e.g. disk and network).
+      </desc>
+    </const>
+    <const name="Aborted"               value="4">
       <desc>
         The process running the machine has terminated abnormally. This may
         indicate a crash of the VM process in host execution context, or
         the VM process has been terminated externally.
       </desc>
     </const>
-    <const name="Running"               value="4">
+    <const name="Running"               value="5">
       <desc>
         The machine is currently being executed.
         <note internal="yes">
           For whoever decides to touch this enum: In order to keep the
           comparisons in the old source code valid, this state must immediately
           precede the Paused state.
+          TODO: Lift this spectacularly wonderful restriction.
         </note>
       </desc>
     </const>
-    <const name="Paused"                value="5">
+    <const name="Paused"                value="6">
       <desc>
         Execution of the machine has been paused.
         <note internal="yes">
           For whoever decides to touch this enum: In order to keep the
           comparisons in the old source code valid, this state must immediately
           follow the Running state.
+          TODO: Lift this spectacularly wonderful restriction.
         </note>
       </desc>
     </const>
-    <const name="Stuck"                 value="6">
+    <const name="Stuck"                 value="7">
       <desc>
         Execution of the machine has reached the "Guru Meditation"
         condition. This indicates a severe error in the hypervisor itself.
+        <note internal="yes">
+          bird: Why this uncool name? Could we rename it to "GuruMeditation" or
+                "Guru", perhaps? Or are there some other VMM states that are
+                intended to be lumped in here as well?
+        </note>
       </desc>
     </const>
-    <const name="Starting"              value="7">
+    <const name="Teleporting"           value="8">
+      <desc>
+        The machine is about to be teleported to a different host or process.
+        It is possible to pause a machine in this state, but it will go to the
+        <link to="MachineState::PausedTeleporting"/> state and it will not be
+        possible to resume it again unless the teleportation fails.
+      </desc>
+    </const>
+    <const name="LiveSnapshotting"      value="9">
+      <desc>
+        A live snapshot is being taken.  The machine is running normally, but
+        some of the runtime configuration options are inaccessible.  Also, if
+        paused while in this state it will transition to
+        <link to="MachineState::Saving"/> and it will not be resume the
+        execution until the snapshot operation has completed.
+      </desc>
+    </const>
+    <const name="Starting"              value="10">
       <desc>
         Machine is being started after powering it on from a
         zero execution state.
       </desc>
     </const>
-    <const name="Stopping"              value="8">
+    <const name="Stopping"              value="11">
       <desc>
         Machine is being normally stopped powering it off, or after the guest OS
         has initiated a shutdown sequence.
       </desc>
     </const>
-    <const name="Saving"                value="9">
+    <const name="Saving"                value="12">
       <desc>
         Machine is saving its execution state to a file, or an online
         snapshot of the machine is being taken.
       </desc>
     </const>
-    <const name="Restoring"             value="10">
+    <const name="Restoring"             value="13">
       <desc>
         Execution state of the machine is being restored from a file
         after powering it on from the saved execution state.
       </desc>
     </const>
-    <const name="TeleportingFrom"       value="11">
+    <const name="TeleportingPausedVM"   value="14">
       <desc>
-        Teleporting the machine state from another host or process.
+        The machine is being teleported to another host or process, but it is
+        not running.  This is the paused variant of the
+        <link to="MachineState::Teleporting"/> state.
       </desc>
     </const>
-    <const name="RestoringSnapshot"     value="12">
+    <const name="TeleportingIn"         value="15">
+      <desc>
+        Teleporting the machine state in from another host or process.
+      </desc>
+    </const>
+    <const name="RestoringSnapshot"     value="16">
       <desc>
         A machine snapshot is being restored; this typically does not take long.
       </desc>
     </const>
-    <const name="DeletingSnapshot"      value="13">
+    <const name="DeletingSnapshot"      value="17">
       <desc>
         A machine snapshot is being deleted; this can take a long time since this
         may require merging differencing media.
       </desc>
     </const>
-    <const name="SettingUp"             value="14">
+    <const name="SettingUp"             value="18">
       <desc>
         Lengthy setup operation is in progress.
       </desc>
     </const>
 
-    <const name="FirstOnline" value="4" wsmap="suppress"> <!-- Running -->
+    <const name="FirstOnline" value="5" wsmap="suppress"> <!-- Running -->
       <desc>
         Pseudo-state: first online state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastOnline"  value="11" wsmap="suppress"> <!-- Restoring -->
+    <const name="LastOnline"  value="13" wsmap="suppress"> <!-- TeleportingIn -->
       <desc>
         Pseudo-state: last online state (for use in relational expressions).
       </desc>
     </const>
 
-    <const name="FirstTransient" value="7" wsmap="suppress"> <!-- Starting -->
+    <const name="FirstTransient" value="8" wsmap="suppress"> <!-- Teleporting -->
       <desc>
         Pseudo-state: first transient state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastTransient"  value="14" wsmap="suppress"> <!-- SettingUp -->
+    <const name="LastTransient"  value="18" wsmap="suppress"> <!-- SettingUp -->
       <desc>
         Pseudo-state: last transient state (for use in relational expressions).
       </desc>

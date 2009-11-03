@@ -280,9 +280,12 @@ int Display::registerSSM(PVM pVM)
 // IConsoleCallback method
 STDMETHODIMP Display::OnStateChange(MachineState_T machineState)
 {
-    if (machineState == MachineState_Running)
+    if (   machineState == MachineState_Running
+        || machineState == MachineState_Teleporting
+        || machineState == MachineState_LiveSnapshotting
+       )
     {
-        LogFlowFunc (("Machine is running.\n"));
+        LogFlowFunc(("Machine is running.\n"));
 
         mfMachineRunning = true;
     }

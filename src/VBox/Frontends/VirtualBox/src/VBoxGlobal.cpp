@@ -2633,15 +2633,19 @@ void VBoxGlobal::retranslateUi()
 {
     mMachineStates [KMachineState_PoweredOff] = tr ("Powered Off", "MachineState");
     mMachineStates [KMachineState_Saved] =      tr ("Saved", "MachineState");
+    mMachineStates [KMachineState_Teleported] = tr ("Teleported", "MachineState");
     mMachineStates [KMachineState_Aborted] =    tr ("Aborted", "MachineState");
     mMachineStates [KMachineState_Running] =    tr ("Running", "MachineState");
     mMachineStates [KMachineState_Paused] =     tr ("Paused", "MachineState");
-    mMachineStates [KMachineState_Stuck] =      tr ("Stuck", "MachineState");
+    mMachineStates [KMachineState_Stuck] =      tr ("Guru Meditation", "MachineState");
+    mMachineStates [KMachineState_Teleporting] = tr ("Teleporting", "MachineState");
+    mMachineStates [KMachineState_LiveSnapshotting] = tr ("Live Snapshotting", "MachineState");
     mMachineStates [KMachineState_Starting] =   tr ("Starting", "MachineState");
     mMachineStates [KMachineState_Stopping] =   tr ("Stopping", "MachineState");
     mMachineStates [KMachineState_Saving] =     tr ("Saving", "MachineState");
     mMachineStates [KMachineState_Restoring] =  tr ("Restoring", "MachineState");
-    mMachineStates [KMachineState_TeleportingFrom] = tr ("Teleporting", "MachineState");
+    mMachineStates [KMachineState_TeleportingPausedVM] = tr ("Teleporting Paused VM", "MachineState");
+    mMachineStates [KMachineState_TeleportingIn] = tr ("Teleporting", "MachineState");
     mMachineStates [KMachineState_RestoringSnapshot] = tr ("Restoring Snapshot", "MachineState");
     mMachineStates [KMachineState_DeletingSnapshot] = tr ("Deleting Snapshot", "MachineState");
     mMachineStates [KMachineState_SettingUp] =  tr ("Setting Up", "MachineState");
@@ -4605,14 +4609,18 @@ void VBoxGlobal::init()
         {KMachineState_PoweredOff, ":/state_powered_off_16px.png"},
         {KMachineState_Saved, ":/state_saved_16px.png"},
         {KMachineState_Aborted, ":/state_aborted_16px.png"},
+        {KMachineState_Teleported, ":/state_saved_16px.png"},           /** @todo Live Migration: New icon? (not really important) */
         {KMachineState_Running, ":/state_running_16px.png"},
         {KMachineState_Paused, ":/state_paused_16px.png"},
+        {KMachineState_Teleporting, ":/state_running_16px.png"},        /** @todo Live Migration: New icon? (not really important) */
+        {KMachineState_LiveSnapshotting, ":/state_running_16px.png"},   /** @todo Live Migration: New icon? (not really important) */
         {KMachineState_Stuck, ":/state_stuck_16px.png"},
         {KMachineState_Starting, ":/state_running_16px.png"}, /// @todo (dmik) separate icon?
         {KMachineState_Stopping, ":/state_running_16px.png"}, /// @todo (dmik) separate icon?
         {KMachineState_Saving, ":/state_saving_16px.png"},
         {KMachineState_Restoring, ":/state_restoring_16px.png"},
-        {KMachineState_TeleportingFrom, ":/state_restoring_16px.png"}, /** @todo Live Migration: New icon? (not really important) */
+        {KMachineState_TeleportingPausedVM, ":/state_saving_16px.png"}, /** @todo Live Migration: New icon? (not really important) */
+        {KMachineState_TeleportingIn, ":/state_restoring_16px.png"},    /** @todo Live Migration: New icon? (not really important) */
         {KMachineState_RestoringSnapshot, ":/state_discarding_16px.png"},
         {KMachineState_DeletingSnapshot, ":/state_discarding_16px.png"},
         {KMachineState_SettingUp, ":/settings_16px.png"},
@@ -4628,14 +4636,18 @@ void VBoxGlobal::init()
     mVMStateColors.insert (KMachineState_PoweredOff,    new QColor (Qt::gray));
     mVMStateColors.insert (KMachineState_Saved,         new QColor (Qt::yellow));
     mVMStateColors.insert (KMachineState_Aborted,       new QColor (Qt::darkRed));
+    mVMStateColors.insert (KMachineState_Teleported,    new QColor (Qt::red));
     mVMStateColors.insert (KMachineState_Running,       new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_Paused,        new QColor (Qt::darkGreen));
     mVMStateColors.insert (KMachineState_Stuck,         new QColor (Qt::darkMagenta));
+    mVMStateColors.insert (KMachineState_Teleporting,   new QColor (Qt::blue));
+    mVMStateColors.insert (KMachineState_LiveSnapshotting, new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_Starting,      new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_Stopping,      new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_Saving,        new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_Restoring,     new QColor (Qt::green));
-    mVMStateColors.insert (KMachineState_TeleportingFrom, new QColor (Qt::green));
+    mVMStateColors.insert (KMachineState_TeleportingPausedVM, new QColor (Qt::blue));
+    mVMStateColors.insert (KMachineState_TeleportingIn, new QColor (Qt::blue));
     mVMStateColors.insert (KMachineState_RestoringSnapshot, new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_DeletingSnapshot, new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_SettingUp,     new QColor (Qt::green));
