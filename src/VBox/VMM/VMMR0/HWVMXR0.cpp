@@ -2736,7 +2736,7 @@ ResumeExecution:
 
     /* Sync back the TPR if it was changed. */
     if (    fSetupTPRCaching
-        &&  u8LastTPR != pVCpu->hwaccm.s.vmx.pVAPIC[0x80]
+        &&  u8LastTPR != pVCpu->hwaccm.s.vmx.pVAPIC[0x80])
     {
         rc = PDMApicSetTPR(pVCpu, pVCpu->hwaccm.s.vmx.pVAPIC[0x80]);
         AssertRC(rc);
