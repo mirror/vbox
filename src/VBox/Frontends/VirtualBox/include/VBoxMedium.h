@@ -31,6 +31,28 @@
 #include "COMDefs.h"
 
 /**
+ * Cache used to override some attributes in the user-friendly "don't show diffs" mode.
+ */
+struct NoDiffsCache
+{
+    NoDiffsCache() : isSet (false), state (KMediumState_NotCreated) {}
+    NoDiffsCache& operator= (const NoDiffsCache &aOther)
+    {
+        isSet = aOther.isSet;
+        state = aOther.state;
+        result = aOther.result;
+        toolTip = aOther.toolTip;
+        return *this;
+    }
+
+    bool isSet : 1;
+
+    KMediumState state;
+    COMResult result;
+    QString toolTip;
+};
+
+/**
  * Media descriptor for the GUI.
  *
  * Maintains the results of the last state (accessibility) check and precomposes
@@ -99,6 +121,8 @@ public:
         , mIsUsedInSnapshots (false)
         , mParent (0) { refresh(); }
 
+    VBoxMedium& operator= (const VBoxMedium &aOther);
+
     void blockAndQueryState();
     void refresh();
 
@@ -137,11 +161,17 @@ public:
     QString id() const { return mId; }
     QString name (bool aNoDiffs = false) const { return aNoDiffs ? root().mName : mName; }
     QString location (bool aNoDiffs = false) const { return aNoDiffs ? root().mLocation : mLocation; }
+
     QString size (bool aNoDiffs = false) const { return aNoDiffs ? root().mSize : mSize; }
     QString logicalSize (bool aNoDiffs = false) const { return aNoDiffs ? root().mLogicalSize : mLogicalSize; }
+
     QString hardDiskFormat (bool aNoDiffs = false) const { return aNoDiffs ? root().mHardDiskFormat : mHardDiskFormat; }
     QString hardDiskType (bool aNoDiffs = false) const { return aNoDiffs ? root().mHardDiskType : mHardDiskType; }
+
     QString usage (bool aNoDiffs = false) const { return aNoDiffs ? root().mUsage : mUsage; }
+    QString tip() const { return mToolTip; }
+
+    const NoDiffsCache& cache() const { return mNoDiffs; }
 
     /**
      * Returns @c true if this medium is read-only (either because it is
@@ -181,9 +211,9 @@ public:
     /**
      * Returns a parent medium. For non-hard disk media, this is always NULL.
      */
-    VBoxMedium *parent() const { return mParent; }
+    VBoxMedium* parent() const { return mParent; }
 
-    VBoxMedium &root() const;
+    VBoxMedium& root() const;
 
     QString toolTip (bool aNoDiffs = false, bool aCheckRO = false, bool aNullAllowed = false) const;
     QPixmap icon (bool aNoDiffs = false, bool aCheckRO = false) const;
@@ -215,13 +245,14 @@ private:
     COMResult mResult;
 
     QString mId;
-    QString mLocation;
     QString mName;
+    QString mLocation;
+
     QString mSize;
+    QString mLogicalSize;
 
     QString mHardDiskFormat;
     QString mHardDiskType;
-    QString mLogicalSize;
 
     QString mUsage;
     QString mToolTip;
@@ -234,21 +265,10 @@ private:
 
     VBoxMedium *mParent;
 
-    /**
-     * Used to override some attributes in the user-friendly "don't show diffs"
-     * mode.
-     */
-    struct NoDiffs
-    {
-        NoDiffs() : isSet (false), state (KMediumState_NotCreated) {}
+    NoDiffsCache mNoDiffs;
 
-        bool isSet : 1;
-
-        KMediumState state;
-        COMResult result;
-        QString toolTip;
-    }
-    mNoDiffs;
+    static QString mTable;
+    static QString mRow;
 };
 
 typedef QLinkedList <VBoxMedium> VBoxMediaList;
