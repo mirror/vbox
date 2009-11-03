@@ -158,11 +158,21 @@ static void rtR3ForkChildCallback(void)
 #endif /* RT_OS_WINDOWS */
 
 #ifdef RT_OS_OS2
+/** Fork completion callback for OS/2.  Only called in the child. */
+static void rtR3ForkOs2ChildCompletionCallback(void *pvArg, int rc, __LIBC_FORKCTX enmCtx)
+{
+    Assert(enmCtx == __LIBC_FORK_CTX_CHILD); NOREF(enmCtx);
+    NOREF(pvArg);
+
+    if (!rc)
+        rtR3ForkChildCallback();
+}
+
 /** Low-level fork callback for OS/2.  */
 int rtR3ForkOs2Child(__LIBC_PFORKHANDLE pForkHandle, __LIBC_FORKOP enmOperation)
 {
-    if (enmOperation == __LIBC_FORK_STAGE_COMPLETION_CHILD)
-        rtR3ForkChildCallback();
+    if (enmOperation == __LIBC_FORK_OP_EXEC_CHILD)
+        return pForkHandle->pfnCompletionCallback(pForkHandle, rtR3ForkOs2ChildCompletionCallback, NULL, __LIBC_FORK_CTX_CHILD);
     return 0;
 }
 

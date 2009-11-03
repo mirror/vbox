@@ -172,6 +172,6 @@ RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread)
     int rc = RTR0Os2DHQueryDOSVar(DHGETDOSV_INTERRUPTLEV, 0, &u.fp);
     AssertReturn(rc == 0, true);
 
-    return cInterruptLevel > 0;
+    return u.cInterruptLevel > 0;
 }
 

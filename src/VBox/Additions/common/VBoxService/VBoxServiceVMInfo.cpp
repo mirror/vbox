@@ -236,7 +236,9 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         ::LsaFreeReturnBuffer(pSessions);
  #endif /* TARGET_NT4 */
 #elif defined(RT_OS_FREEBSD)
-        /* TODO: Port me */
+        /** @todo FreeBSD: Port logged on user info retrival. */
+#elif defined(RT_OS_OS2)
+        /** @todo OS/2: Port logged on (LAN/local/whatever) user info retrival. */
 #else
         utmp* ut_user;
         rc = utmpname(UTMP_FILE);
@@ -382,7 +384,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
                 VBoxServiceError("Failed to ioctl(SIOCGIFBRDADDR) on socket: Error %d\n", errno);
                 return -1;
             }
- #if defined(RT_OS_SOLARIS)  || defined(RT_OS_FREEBSD)
+ #if defined(RT_OS_FREEBSD) || defined(RT_OS_OS2) || defined(RT_OS_SOLARIS)
             pAddress = (sockaddr_in *)&ifrequest[i].ifr_addr;
  #else
             pAddress = (sockaddr_in *)&ifrequest[i].ifr_netmask;

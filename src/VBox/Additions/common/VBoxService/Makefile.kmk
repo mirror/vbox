@@ -21,7 +21,6 @@
 
 SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
-if "$(KBUILD_HOST)" != "os2" || defined(VBOX_WITH_OS2_ADDITIONS)
 
 #
 # Target lists.
@@ -98,6 +97,5 @@ $$(PATH_VBoxService)/VBoxService-win-icon.rc: $(VBOX_WINDOWS_ADDITIONS_ICON_FILE
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))"'
 
-endif # os2 || with os2 additions
 include	$(KBUILD_PATH)/subfooter.kmk
 
