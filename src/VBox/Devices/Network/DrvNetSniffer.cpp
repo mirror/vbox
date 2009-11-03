@@ -398,7 +398,13 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      */
     int rc = CFGMR3QueryString(pCfgHandle, "File", pThis->szFilename, sizeof(pThis->szFilename));
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        RTStrPrintf(pThis->szFilename, sizeof(pThis->szFilename), "./VBox-%x.pcap", RTProcSelf());
+    {
+        if (pDrvIns->iInstance > 0)
+            RTStrPrintf(pThis->szFilename, sizeof(pThis->szFilename), "./VBox-%x-%u.pcap", RTProcSelf(), pDrvIns->iInstance);
+        else
+            RTStrPrintf(pThis->szFilename, sizeof(pThis->szFilename), "./VBox-%x.pcap", RTProcSelf());
+    }
+
     else if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to query \"File\", rc=%Rrc.\n", rc));
@@ -490,7 +496,7 @@ const PDMDRVREG g_DrvNetSniffer =
     /* fClass. */
     PDM_DRVREG_CLASS_NETWORK,
     /* cMaxInstances */
-    1,
+    UINT32_MAX,
     /* cbInstance */
     sizeof(DRVNETSNIFFER),
     /* pfnConstruct */
