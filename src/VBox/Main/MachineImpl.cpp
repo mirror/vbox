@@ -709,6 +709,8 @@ STDMETHODIMP Machine::COMGETTER(Accessible) (BOOL *aAccessible)
     AutoLimitedCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
+    LogFlowThisFunc(("ENTER\n"));
+
     AutoWriteLock alock(this);
 
     HRESULT rc = S_OK;
@@ -719,6 +721,11 @@ STDMETHODIMP Machine::COMGETTER(Accessible) (BOOL *aAccessible)
 
         AutoReinitSpan autoReinitSpan(this);
         AssertReturn(autoReinitSpan.isOk(), E_FAIL);
+
+#ifdef DEBUG
+        LogFlowThisFunc(("Dumping media backreferences\n"));
+        mParent->dumpAllBackRefs();
+#endif
 
         if (mData->m_pMachineConfigFile)
         {
@@ -743,6 +750,8 @@ STDMETHODIMP Machine::COMGETTER(Accessible) (BOOL *aAccessible)
 
     if (SUCCEEDED(rc))
         *aAccessible = mData->mAccessible;
+
+    LogFlowThisFuncLeave();
 
     return rc;
 }
@@ -5507,7 +5516,7 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
                                 data.storage,
                                 data.uuid,
                                 strStateFile);
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     /* create a snapshot object */
     ComObjPtr<Snapshot> pSnapshot;
@@ -5542,7 +5551,7 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
         rc = loadSnapshot(childData,
                           aCurSnapshotId,
                           pSnapshot);       // parent = the one we created above
-        CheckComRCBreakRC(rc);
+        CheckComRCReturnRC(rc);
     }
 
     return rc;
@@ -5972,7 +5981,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                 mData->m_strConfigFileFull.raw());
         }
 
-        if (rc)
+        if (FAILED(rc))
             break;
 
         ComObjPtr<MediumAttachment> pAttachment;
@@ -5993,7 +6002,8 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             else
                 rc = medium->attachTo(mData->mUuid);
         }
-        AssertComRCBreakRC (rc);
+        if (FAILED(rc))
+            break;
 
         /* backup mMediaData to let registeredInit() properly rollback on failure
          * (= limited accessibility) */
