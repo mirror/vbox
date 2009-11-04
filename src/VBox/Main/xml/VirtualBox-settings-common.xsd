@@ -488,7 +488,12 @@
     <xsd:element name="HardwareVirtExVPID" type="THWVirtExVPIDType" minOccurs="0"/>
     <xsd:element name="PAE" type="TPAEType" minOccurs="0"/>
     <xsd:element name="SyntheticCpu" type="TSyntheticCpuType" minOccurs="0"/>
-    <xsd:element name="CpuIdTree" type="TCpuIdTree" minOccurs="0"/>
+    <xsd:element name="CpuIdTree" type="TCpuIdTree" minOccurs="0">
+      <xsd:unique name="TCPU-CpuIdTree-CpuIdLeaf">
+        <xsd:selector xpath="vb:CpuIdLeaf"/>
+        <xsd:field xpath="@id"/>
+      </xsd:unique>
+    </xsd:element>
   </xsd:sequence>
   <xsd:attribute name="count" type="TCPUCount" default="1"/>
 </xsd:complexType>
