@@ -85,6 +85,9 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *bUpd
     Assert(ppszHostVersion);
     Assert(ppszGuestVersion);
 
+    *ppszHostVersion = NULL;
+    *ppszGuestVersion = NULL;
+
     /* We assume we have an update initially.
        Every block down below is allowed to veto */
     *bUpdate = true;
@@ -170,8 +173,10 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *bUpd
     /* Cleanup on failure */
     if (RT_FAILURE(rc))
     {
-        VbglR3GuestPropReadValueFree(*ppszHostVersion);
-        VbglR3GuestPropReadValueFree(*ppszGuestVersion);
+        if (*ppszHostVersion)
+            VbglR3GuestPropReadValueFree(*ppszHostVersion);
+        if (*ppszGuestVersion)
+            VbglR3GuestPropReadValueFree(*ppszGuestVersion);
     }
     return rc;
 }
