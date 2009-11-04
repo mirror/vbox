@@ -5175,8 +5175,14 @@
 
     <method name="getCpuIdLeaf" const="yes">
       <desc>
-        Returns the virtual CPU cpuid leaf for the specified index
+        Returns the virtual CPU cpuid information for the specified leaf.
 
+        Currently supported index values for cpuid:
+        Standard CPUID leafs: 0 - 0xA
+        Extended CPUID leafs: 0x80000000 - 0x8000000A
+
+        See the Intel and AMD programmer's manuals for detailed information
+        about the cpuid instruction and its leafs.        
         <result name="E_INVALIDARG">
           Invalid id.
         </result>
@@ -5211,9 +5217,18 @@
 
     <method name="setCpuIdLeaf" const="yes">
       <desc>
-        Sets the virtual CPU cpuid leaf for the specified index. Note that these values
+        Sets the virtual CPU cpuid information for the specified leaf. Note that these values
         are not passed unmodified. VirtualBox clears features that it doesn't support.
 
+        Currently supported index values for cpuid:
+        Standard CPUID leafs: 0 - 0xA
+        Extended CPUID leafs: 0x80000000 - 0x8000000A
+
+        See the Intel and AMD programmer's manuals for detailed information
+        about the cpuid instruction and its leafs.
+
+        Do not use this method unless you know exactly what you're doing. Misuse can lead to
+        random crashes inside VMs.
         <result name="E_INVALIDARG">
           Invalid id.
         </result>
