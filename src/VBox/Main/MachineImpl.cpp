@@ -8604,7 +8604,9 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
 
     ComAssertRet (!control.isNull(), E_INVALIDARG);
 
-    AutoWriteLock alock(this);
+    /* Creating a Progress object requires the VirtualBox children lock, and
+     * thus locking it here is required by the lock order rules. */
+    AutoMultiWriteLock2 alock(mParent->childrenLock(), this->lockHandle());
 
     if (control.equalsTo (mData->mSession.mDirectControl))
     {
