@@ -598,6 +598,8 @@ public:
     STDMETHOD(SetCpuProperty)(CpuPropertyType_T property, BOOL aVal);
     STDMETHOD(GetCpuIdLeaf)(ULONG id, ULONG *aValEax, ULONG *aValEbx, ULONG *aValEcx, ULONG *aValEdx);
     STDMETHOD(SetCpuIdLeaf)(ULONG id, ULONG aValEax, ULONG aValEbx, ULONG aValEcx, ULONG aValEdx);
+    STDMETHOD(RemoveCpuIdLeaf)(ULONG id);
+    STDMETHOD(RemoveAllCpuIdLeafs)();
     STDMETHOD(GetHWVirtExProperty)(HWVirtExPropertyType_T property, BOOL *aVal);
     STDMETHOD(SetHWVirtExProperty)(HWVirtExPropertyType_T property, BOOL aVal);
     STDMETHOD(SaveSettings)();

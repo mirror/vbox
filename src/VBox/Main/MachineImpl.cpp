@@ -1484,6 +1484,76 @@ STDMETHODIMP Machine::SetCpuIdLeaf(ULONG id, ULONG aValEax, ULONG aValEbx, ULONG
     return S_OK;
 }
 
+STDMETHODIMP Machine::RemoveCpuIdLeaf(ULONG id)
+{
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    CheckComRCReturnRC(rc);
+
+    switch(id)
+    {
+    case 0x0:
+    case 0x1:
+    case 0x2:
+    case 0x3:
+    case 0x4:
+    case 0x5:
+    case 0x6:
+    case 0x7:
+    case 0x8:
+    case 0x9:
+    case 0xA:
+        AssertRelease(id < RT_ELEMENTS(mHWData->mCpuIdStdLeafs));
+        /* Invalidate leaf. */
+        mHWData->mCpuIdStdLeafs[id].ulId = -1
+        break;
+
+    case 0x80000000:
+    case 0x80000001:
+    case 0x80000002:
+    case 0x80000003:
+    case 0x80000004:
+    case 0x80000005:
+    case 0x80000006:
+    case 0x80000007:
+    case 0x80000008:
+    case 0x80000009:
+    case 0x8000000A:
+        AssertRelease(id - 0x80000000 < RT_ELEMENTS(mHWData->mCpuIdExtLeafs));
+        /* Invalidate leaf. */
+        mHWData->mCpuIdExtLeafs[id - 0x80000000].ulId  = -1;
+        break;
+
+    default:
+        return E_INVALIDARG;
+    }
+    return S_OK;
+}
+
+STDMETHODIMP Machine::removeAllCpuIdLeafs()
+{
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    CheckComRCReturnRC(rc);
+
+    /* Invalidate all standard leafs. */
+    for (unsigned i = 0; i < RT_ELEMENTS(mHWData->mCpuIdStdLeafs); i++)
+        mHWData->mCpuIdStdLeafs[id].ulId  = -1;
+
+    /* Invalidate all extended leafs. */
+    for (unsigned i = 0; i < RT_ELEMENTS(mHWData->mCpuIdExtLeafs); i++)
+        mHWData->mCpuIdExtLeafs[id].ulId = -1;
+
+    return S_OK;
+}
 
 STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL *aVal)
 {
