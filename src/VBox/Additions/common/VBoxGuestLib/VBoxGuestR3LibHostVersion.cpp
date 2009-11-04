@@ -88,9 +88,9 @@ VBGLR3DECL(int) VbglR3HostVersionCompare(const char *pszVer1, const char *pszVer
 VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUpdate, char **ppszHostVersion, char **ppszGuestVersion)
 {
     Assert(u32ClientId > 0);
-    Assert(bUpdate);
-    Assert(ppszHostVersion);
-    Assert(ppszGuestVersion);
+    AssertPtr(pfUpdate);
+    AssertPtr(ppszHostVersion);
+    AssertPtr(ppszGuestVersion);
 
     *ppszHostVersion = NULL;
     *ppszGuestVersion = NULL;
