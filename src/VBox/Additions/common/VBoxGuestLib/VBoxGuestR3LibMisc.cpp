@@ -222,7 +222,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
 # endif
 
     /* Still no luck? Then try the old xVM paths ... */
-    if (FAILED(r))
+    if (r != ERROR_SUCCESS)
     {
         r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, &hKey);
 # ifdef RT_ARCH_AMD64
@@ -235,7 +235,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
     }
 
     /* Did we get something worth looking at? */
-    if (SUCCEEDED(r))
+    if (r == ERROR_SUCCESS)
     {
         /* Version. */
         DWORD dwType;
@@ -261,10 +261,19 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
             }
         }
     }
-    rc = RTErrConvertFromWin32(r);
+    else
+    {
+        /* No registry entries found, return the compile-time version string atm. */
+        /* Version. */
+        if (ppszVer)
+            rc = RTStrAPrintf(ppszVer, "%s", VBOX_VERSION_STRING);
+        /* Revision. */
+        if (ppszRev)
+            rc = RTStrAPrintf(ppszRev, "%s", VBOX_SVN_REV);
+    }
     if (NULL != hKey)
         RegCloseKey(hKey);
-#else /* !RT_OS_WINDOWS */
+# else /* !RT_OS_WINDOWS */
     /* On non-Windows platforms just return the compile-time version string atm. */
     /* Version. */
     if (ppszVer)
@@ -272,6 +281,6 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
     /* Revision. */
     if (ppszRev)
         rc = RTStrAPrintf(ppszRev, "%s", VBOX_SVN_REV);
-#endif /* !RT_OS_WINDOWS */
+# endif /* !RT_OS_WINDOWS */
     return rc;
 }
