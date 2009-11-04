@@ -358,7 +358,7 @@ int handleStorageAttach(HandlerArg *a)
 
         /* check if the device type is supported by the controller */
         {
-            ULONG storageBus = StorageBus_Null;
+            StorageBus_T storageBus = StorageBus_Null;
             com::SafeArray <DeviceType_T> saDeviceTypes;
 
             CHECK_ERROR(storageCtl, COMGETTER(Bus)(&storageBus));
