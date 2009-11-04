@@ -3766,12 +3766,10 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
         {
             ULONG ulCurInst = (*it)->instance();
 
-            if (ulCurInst > ulInstance)
-                ulInstance = ulCurInst;
+            if (ulCurInst >= ulInstance)
+                ulInstance = ulCurInst + 1;
         }
     }
-    if (ulInstance)
-        ulInstance++;
 
     rc = ctrl->init(this, aName, aConnectionType, ulInstance);
     CheckComRCReturnRC(rc);
