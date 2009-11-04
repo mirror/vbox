@@ -336,6 +336,9 @@ typedef enum _SHFLCREATERESULT
 /** Read/Write access requested. */
 #define SHFL_CF_ACCESS_ATTR_READWRITE   (SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_WRITE)
 
+/** The file is opened in append mode. Ignored if SHFL_CF_ACCESS_WRITE is not set. */
+#define SHFL_CF_ACCESS_APPEND           (0x00040000)
+
 /** @} */
 
 #pragma pack(1)
