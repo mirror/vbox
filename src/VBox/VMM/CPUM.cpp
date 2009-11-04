@@ -706,6 +706,7 @@ static int cpumR3CpuIdInit(PVM pVM)
 
     /*
      * Load CPUID overrides from configuration.
+     * @note Kind of redundant now, but allows unchanged overrides
      */
     /** @cfgm{CPUM/CPUID/[000000xx|800000xx|c000000x]/[eax|ebx|ecx|edx],32-bit}
      * Overloads the CPUID leaf values. */
