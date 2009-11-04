@@ -2110,7 +2110,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             {
                 Assert(pAttach->medium());
                 ComObjPtr<Medium> pHD = pAttach->medium();
-                AutoReadLock mlock(pHD);
+                // do not lock, prepareDiscared() has a write lock which will hang otherwise
 
                 Medium::MergeChain *chain = NULL;
 
@@ -2291,30 +2291,33 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         }
     }
 
-    if (FAILED(rc))
-    {
-        /* saveSettings() below needs a VirtualBox write lock and we need to
-         * leave this object's lock to do this to follow the {parent-child}
-         * locking rule. This is the last chance to do that while we are
-         * still in a protective state which allows us to temporarily leave
-         * the lock */
-        alock.unlock();
-        AutoWriteLock vboxLock(mParent);
-        alock.lock();
+    alock.unlock();
 
-        /* preserve existing error info */
+    // whether we were successful or not, we need to set the machine
+    // state and save the machine settings;
+    {
+        // preserve existing error info so that the result can
+        // be properly reported to the progress object below
         ErrorInfoKeeper eik;
 
-        /* restore the machine state */
+        // restore the machine state that was saved when the
+        // task was started
         setMachineState(aTask.machineStateBackup);
         updateMachineStateOnClient();
 
         if (settingsChanged)
-            saveSettings(SaveS_InformCallbacksAnyway);
+        {
+            // saveSettings needs VirtualBox write lock in addition to our own
+            // (parent -> child locking order!)
+            AutoWriteLock vboxLock(mParent);
+            alock.lock();
 
-        /* set the result (this will try to fetch current error info on failure) */
-        aTask.pProgress->notifyComplete(rc);
+            saveSettings(SaveS_InformCallbacksAnyway);
+        }
     }
+
+    // report the result (this will try to fetch current error info on failure)
+    aTask.pProgress->notifyComplete(rc);
 
     if (SUCCEEDED(rc))
         mParent->onSnapshotDeleted(mData->mUuid, snapshotId);
