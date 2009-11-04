@@ -5175,7 +5175,7 @@ void Machine::uninitDataAndChildObjects()
              ++it)
         {
             ComObjPtr<Medium> hd = (*it)->medium();
-            if (hd.isNull() || (*it)->type() != DeviceType_HardDisk)
+            if (hd.isNull())
                 continue;
             HRESULT rc = hd->detachFrom(mData->mUuid, snapshotId());
             AssertComRC (rc);
