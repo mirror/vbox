@@ -41,7 +41,7 @@ VBGLR3DECL(int) VbglR3ClipboardConnect(uint32_t *pu32ClientId)
     VBoxGuestHGCMConnectInfo Info;
     Info.result = VERR_WRONG_ORDER;
     Info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
-    memset(&Info.Loc.u, 0, sizeof(Info.Loc.u));
+    RT_ZERO(Info.Loc.u);
     strcpy(Info.Loc.u.host.achName, "VBoxSharedClipboard");
     Info.u32ClientID = UINT32_MAX;  /* try make valgrid shut up. */
 

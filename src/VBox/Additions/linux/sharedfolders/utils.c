@@ -168,7 +168,7 @@ sf_stat (const char *caller, struct sf_glob_info *sf_g,
 
         TRACE ();
 
-        memset(&params, 0, sizeof(params));
+        RT_ZERO(params);
         params.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
         LogFunc(("calling vboxCallCreate, file %s, flags %#x\n",
                  path->String.utf8, params.CreateFlags));
@@ -293,7 +293,7 @@ sf_setattr (struct dentry *dentry, struct iattr *iattr)
         sf_i = GET_INODE_INFO (dentry->d_inode);
         err  = 0;
 
-        memset(&params, 0, sizeof(params));
+        RT_ZERO(params);
 
         params.CreateFlags = SHFL_CF_ACT_OPEN_IF_EXISTS
                            | SHFL_CF_ACT_FAIL_IF_NEW
@@ -323,7 +323,7 @@ sf_setattr (struct dentry *dentry, struct iattr *iattr)
         {
 #define mode_set(r) ((iattr->ia_mode & (S_##r)) ? RTFS_UNIX_##r : 0)
 
-            memset(&info, 0, sizeof(info));
+            RT_ZERO(info);
             if (iattr->ia_valid & ATTR_MODE)
             {
                 info.Attr.fMode  = mode_set (ISUID);
@@ -364,7 +364,7 @@ sf_setattr (struct dentry *dentry, struct iattr *iattr)
 
         if (iattr->ia_valid & ATTR_SIZE)
         {
-            memset(&info, 0, sizeof(info));
+            RT_ZERO(info);
             info.cbObject = iattr->ia_size;
             cbBuffer = sizeof(info);
             rc = vboxCallFSInfo(&client_handle, &sf_g->map, params.Handle,

@@ -404,7 +404,7 @@ void WINAPI VBoxServiceStart(void)
 
     /* prepare the system tray icon */
     NOTIFYICONDATA ndata;
-    memset (&ndata, 0, sizeof (ndata));
+    RT_ZERO (ndata);
     ndata.cbSize           = NOTIFYICONDATA_V1_SIZE; // sizeof(NOTIFYICONDATA);
     ndata.hWnd             = gToolWindow;
     ndata.uID              = ID_TRAYICON;

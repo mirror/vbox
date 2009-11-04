@@ -487,7 +487,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
 
                                 /* Single monitor NT. */
                                 DEVMODE devMode;
-                                memset (&devMode, 0, sizeof (devMode));
+                                RT_ZERO(devMode);
                                 devMode.dmSize = sizeof(DEVMODE);
 
                                 /* get the current screen setup */
