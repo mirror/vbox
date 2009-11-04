@@ -70,7 +70,9 @@ enum
     MODIFYVM_NESTEDPAGING,
     MODIFYVM_VTXVPID,
     MODIFYVM_CPUS,
-    MODIFYVM_CPUID,
+    MODIFYVM_SETCPUID,
+    MODIFYVM_DELCPUID,
+    MODIFYVM_DELALLCPUID,
     MODIFYVM_MONITORCOUNT,
     MODIFYVM_ACCELERATE3D,
     MODIFYVM_ACCELERATE2DVIDEO,
@@ -145,7 +147,9 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--hwvirtexexcl",             MODIFYVM_HWVIRTEXEXCLUSIVE,         RTGETOPT_REQ_BOOL_ONOFF },
     { "--nestedpaging",             MODIFYVM_NESTEDPAGING,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--vtxvpid",                  MODIFYVM_VTXVPID,                   RTGETOPT_REQ_BOOL_ONOFF },
-    { "--cpuid",                    MODIFYVM_CPUID,                     RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX},
+    { "--cpuidset",                 MODIFYVM_SETCPUID,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX},
+    { "--cpuidremove",              MODIFYVM_DELCPUID,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX},
+    { "--cpuidremoveall",           MODIFYVM_DELALLCPUID,               RTGETOPT_REQ_NOTHING},
     { "--cpus",                     MODIFYVM_CPUS,                      RTGETOPT_REQ_UINT32 },
     { "--monitorcount",             MODIFYVM_MONITORCOUNT,              RTGETOPT_REQ_UINT32 },
     { "--accelerate3d",             MODIFYVM_ACCELERATE3D,              RTGETOPT_REQ_BOOL_ONOFF },
@@ -349,7 +353,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_CPUID:
+            case MODIFYVM_SETCPUID:
             {
                 uint32_t id = ValueUnion.u32;
                 uint32_t aValue[4];
@@ -364,6 +368,18 @@ int handleModifyVM(HandlerArg *a)
                     aValue[i] = ValueUnion.u32;
                 }
                 CHECK_ERROR(machine, SetCpuIdLeaf(id, aValue[0], aValue[1], aValue[2], aValue[3]));
+                break;
+            }
+
+            case MODIFYVM_DELCPUID:
+            {
+                CHECK_ERROR(machine, RemoveCpuIdLeaf(ValueUnion.u32));
+                break;
+            }
+
+            case MODIFYVM_DELALLCPUID:
+            {
+                CHECK_ERROR(machine, RemoveAllCpuIdLeafs());
                 break;
             }
 
