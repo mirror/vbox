@@ -35,18 +35,20 @@
 
 #include "VBGLR3Internal.h"
 
-/** Compares two VirtualBox version strings and returns the result.
- *  Requires strings in form of "majorVer.minorVer.build".
+/**
+ * Compares two VirtualBox version strings and returns the result.
+ *
+ * Requires strings in form of "majorVer.minorVer.build".
  *
  * @returns 0 if equal, 1 if Ver1 is greater, 2 if Ver2 is greater.
  *
  * @param   pszVer1     First version string to compare.
  * @param   pszVer2     First version string to compare.
  *
+ * @todo Move this to IPRT and add support for more dots, suffixes and whatnot.
  */
 VBGLR3DECL(int) VbglR3HostVersionCompare(const char *pszVer1, const char *pszVer2)
 {
-    int rc = 0;
     int iVer1Major, iVer1Minor, iVer1Build;
     sscanf(pszVer1, "%d.%d.%d", &iVer1Major, &iVer1Minor, &iVer1Build);
     int iVer2Major, iVer2Minor, iVer2Build;
@@ -55,6 +57,7 @@ VBGLR3DECL(int) VbglR3HostVersionCompare(const char *pszVer1, const char *pszVer
     int iVer1Final = (iVer1Major * 10000) + (iVer1Minor * 100) + iVer1Build;
     int iVer2Final = (iVer2Major * 10000) + (iVer2Minor * 100) + iVer2Build;
 
+    int rc = 0;
     if (iVer1Final > iVer2Final)
         rc = 1;
     else if (iVer2Final > iVer1Final)
@@ -63,23 +66,25 @@ VBGLR3DECL(int) VbglR3HostVersionCompare(const char *pszVer1, const char *pszVer
 }
 
 
-/** Checks for a Guest Additions update by comparing the installed version on
- *  the guest and the reported host version.
+/**
+ * Checks for a Guest Additions update by comparing the installed version on the
+ * guest and the reported host version.
  *
  * @returns VBox status code
  *
- * @param   u32ClientId          The client id returned by VbglR3InfoSvcConnect().
- * @param   bUpdate              Receives pointer to boolean flag indicating whether
-                                 an update was found or not.
- * @param   ppszHostVersion      Receives pointer of allocated version string.
- *                               The returned pointer must be freed using RTStrFree().
- * @param   ppszGuestVersion     Receives pointer of allocated revision string.
- *                               The returned pointer must be freed using RTStrFree().
+ * @param   u32ClientId         The client id returned by
+ *                              VbglR3InfoSvcConnect().
+ * @param   pfUpdate            Receives pointer to boolean flag indicating
+ *                              whether an update was found or not.
+ * @param   ppszHostVersion     Receives pointer of allocated version string.
+ *                              The returned pointer must be freed using
+ *                              RTStrFree().
+ * @param   ppszGuestVersion    Receives pointer of allocated revision string.
+ *                              The returned pointer must be freed using
+ *                              RTStrFree().  Always set to zero.
  */
-VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *bUpdate, char **ppszHostVersion, char **ppszGuestVersion)
+VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUpdate, char **ppszHostVersion, char **ppszGuestVersion)
 {
-    int rc;
-
     Assert(u32ClientId > 0);
     Assert(bUpdate);
     Assert(ppszHostVersion);
@@ -90,26 +95,26 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *bUpd
 
     /* We assume we have an update initially.
        Every block down below is allowed to veto */
-    *bUpdate = true;
+    *pfUpdate = true;
 
     /* Do we need to do all this stuff? */
     char *pszCheckHostVersion;
-    rc = VbglR3GuestPropReadValueAlloc(u32ClientId, "/VirtualBox/GuestAdd/CheckHostVersion", &pszCheckHostVersion);
+    int rc = VbglR3GuestPropReadValueAlloc(u32ClientId, "/VirtualBox/GuestAdd/CheckHostVersion", &pszCheckHostVersion);
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_NOT_FOUND)
             rc = VINF_SUCCESS; /* If we don't find the value above we do the check by default */
         else
-            LogFlow(("Could not read check host version flag! rc = %d\n", rc));
+            LogFlow(("Could not read check host version flag! rc = %Rrc\n", rc));
     }
     else
     {
         /* Only don't do the check if we have a valid "0" in it */
-        if (   atoi(pszCheckHostVersion) == 0
-            && strlen(pszCheckHostVersion))
+        if (   *pszCheckHostVersion
+            && atoi(pszCheckHostVersion) == 0) /** @todo r=bird: don't use atoi, use RTStrToXX. avoid std*.h! */
         {
             LogRel(("No host version update check performed (disabled)."));
-            *bUpdate = false;
+            *pfUpdate = false;
         }
         VbglR3GuestPropReadValueFree(pszCheckHostVersion);
     }
@@ -117,13 +122,13 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *bUpd
     /* Collect all needed information */
     /* Make sure we only notify the user once by comparing the host version with
      * the last checked host version (if any) */
-    if (RT_SUCCESS(rc) && *bUpdate)
+    if (RT_SUCCESS(rc) && *pfUpdate)
     {
         /* Look up host version */
         rc = VbglR3GuestPropReadValueAlloc(u32ClientId, "/VirtualBox/HostInfo/VBoxVer", ppszHostVersion);
         if (RT_FAILURE(rc))
         {
-            LogFlow(("Could not read VBox host version! rc = %d\n", rc));
+            LogFlow(("Could not read VBox host version! rc = %Rrc\n", rc));
         }
         else
         {
@@ -136,7 +141,7 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *bUpd
             {
                 LogFlow(("Last checked host version: %s\n", pszLastCheckedHostVersion));
                 if (strcmp(*ppszHostVersion, pszLastCheckedHostVersion) == 0)
-                    *bUpdate = false; /* We already notified this version, skip */
+                    *pfUpdate = false; /* We already notified this version, skip */
                 VbglR3GuestPropReadValueFree(pszLastCheckedHostVersion);
             }
             else if (rc == VERR_NOT_FOUND) /* Never wrote a last checked host version before */
@@ -151,12 +156,12 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *bUpd
         {
             rc = VbglR3GetAdditionsVersion(ppszGuestVersion, NULL /* Revision not needed here */);
             if (RT_FAILURE(rc))
-                LogFlow(("Could not read VBox guest version! rc = %d\n", rc));
+                LogFlow(("Could not read VBox guest version! rc = %Rrc\n", rc));
         }
     }
 
     /* Do the actual version comparison (if needed, see block(s) above) */
-    if (RT_SUCCESS(rc) && *bUpdate)
+    if (RT_SUCCESS(rc) && *pfUpdate)
     {
         if (VbglR3HostVersionCompare(*ppszHostVersion, *ppszGuestVersion) == 1) /* Is host version greater than guest add version? */
         {
@@ -166,7 +171,7 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *bUpd
         else
         {
             /* How sad ... */
-            *bUpdate = false;
+            *pfUpdate = false;
         }
     }
 
@@ -174,9 +179,15 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *bUpd
     if (RT_FAILURE(rc))
     {
         if (*ppszHostVersion)
+        {
             VbglR3GuestPropReadValueFree(*ppszHostVersion);
+            *ppszHostVersion = NULL;
+        }
         if (*ppszGuestVersion)
+        {
             VbglR3GuestPropReadValueFree(*ppszGuestVersion);
+            *ppszGuestVersion = NULL;
+        }
     }
     return rc;
 }
