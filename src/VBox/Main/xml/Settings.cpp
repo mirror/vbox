@@ -1273,7 +1273,7 @@ Hardware::Hardware()
 void MachineConfigFile::readCpuIdTree(const xml::ElementNode &elmCpuid,
                                       CpuIdLeafsList &ll)
 {
-    xml::NodesLoop nl1(elmCpuid, "CpuId");
+    xml::NodesLoop nl1(elmCpuid, "CpuIdLeaf");
     const xml::ElementNode *pelmCpuIdLeaf;
     while ((pelmCpuIdLeaf = nl1.forAllNodes()))
     {
@@ -1543,7 +1543,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             if ((pelmCPUChild = pelmHwChild->findChildElement("SyntheticCpu")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fSyntheticCpu);
             if ((pelmCPUChild = pelmHwChild->findChildElement("CpuIdTree")))
-                readCpuIdTree(*pelmHwChild, hw.llCpuIdLeafs);
+                readCpuIdTree(*pelmCPUChild, hw.llCpuIdLeafs);
         }
         else if (pelmHwChild->nameEquals("Memory"))
             pelmHwChild->getAttributeValue("RAMSize", hw.ulMemorySizeMB);
@@ -2424,8 +2424,7 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
     if (hw.fSyntheticCpu)
         pelmCPU->createChild("SyntheticCpu")->setAttribute("enabled", hw.fSyntheticCpu);
     pelmCPU->setAttribute("count", hw.cCPUs);
-
-    xml::ElementNode *pelmCpuIdTree = pelmHardware->createChild("CpuId");
+    xml::ElementNode *pelmCpuIdTree = pelmCPU->createChild("CpuIdTree");
     for (CpuIdLeafsList::const_iterator it = hw.llCpuIdLeafs.begin();
          it != hw.llCpuIdLeafs.end();
          ++it)
