@@ -240,7 +240,7 @@ void VBoxSeamlessCheckWindows()
             LPRGNDATA lpRgnData = (LPRGNDATA)malloc(cbSize);
             if (lpRgnData)
             {
-				memset(lpRgnData, 0, cbSize);
+                memset(lpRgnData, 0, cbSize);
                 cbSize = GetRegionData(param.hrgn, cbSize, lpRgnData);
                 if (cbSize)
                 {
