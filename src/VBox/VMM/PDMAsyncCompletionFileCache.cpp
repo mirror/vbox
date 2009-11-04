@@ -44,6 +44,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM_ASYNC_COMPLETION
+#define RT_STRICT
 #include <iprt/types.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
@@ -268,7 +269,12 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
             if (!(pCurr->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS)
                 && (ASMAtomicReadU32(&pCurr->cRefs) == 0))
             {
+                AssertMsg(!(pCurr->fFlags & PDMACFILECACHE_ENTRY_IS_DEPRECATED),
+                          ("This entry is deprecated so it should have the I/O in progress flag set\n"));
+                Assert(!pCurr->pbDataReplace);
+
                 LogFlow(("Evicting entry %#p (%u bytes)\n", pCurr, pCurr->cbData));
+
                 if (pCurr->pbData)
                 {
                     RTMemPageFree(pCurr->pbData);
@@ -501,25 +507,37 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
 
     if (pTask->enmTransferType == PDMACTASKFILETRANSFER_WRITE)
     {
-        pEntry->fFlags &= ~PDMACFILECACHE_ENTRY_IS_DIRTY;
-
-        while (pCurr)
+        if (pEntry->fFlags & PDMACFILECACHE_ENTRY_IS_DEPRECATED)
         {
-            AssertMsg(pCurr->fWrite, ("Completed write entries should never have read tasks attached\n"));
+            AssertMsg(!pCurr, ("The entry is deprecated but has waiting write segments attached\n"));
 
-            memcpy(pEntry->pbData + pCurr->uBufOffset, pCurr->pvBuf, pCurr->cbTransfer);
-            pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
+            RTMemPageFree(pEntry->pbData);
+            pEntry->pbData = pEntry->pbDataReplace;
+            pEntry->pbDataReplace = NULL;
+            pEntry->fFlags &= ~PDMACFILECACHE_ENTRY_IS_DEPRECATED;
+        }
+        else
+        {
+            pEntry->fFlags &= ~PDMACFILECACHE_ENTRY_IS_DIRTY;
 
-            uint32_t uOld = ASMAtomicSubU32(&pCurr->pTask->cbTransferLeft, pCurr->cbTransfer);
-            AssertMsg(uOld >= pCurr->cbTransfer, ("New value would overflow\n"));
-            if (!(uOld - pCurr->cbTransfer)
-                && !ASMAtomicXchgBool(&pCurr->pTask->fCompleted, true))
-                pdmR3AsyncCompletionCompleteTask(&pCurr->pTask->Core);
+            while (pCurr)
+            {
+                AssertMsg(pCurr->fWrite, ("Completed write entries should never have read tasks attached\n"));
 
-            PPDMACFILETASKSEG pFree = pCurr;
-            pCurr = pCurr->pNext;
+                memcpy(pEntry->pbData + pCurr->uBufOffset, pCurr->pvBuf, pCurr->cbTransfer);
+                pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
 
-            RTMemFree(pFree);
+                uint32_t uOld = ASMAtomicSubU32(&pCurr->pTask->cbTransferLeft, pCurr->cbTransfer);
+                AssertMsg(uOld >= pCurr->cbTransfer, ("New value would overflow\n"));
+                if (!(uOld - pCurr->cbTransfer)
+                    && !ASMAtomicXchgBool(&pCurr->pTask->fCompleted, true))
+                    pdmR3AsyncCompletionCompleteTask(&pCurr->pTask->Core);
+
+                PPDMACFILETASKSEG pFree = pCurr;
+                pCurr = pCurr->pNext;
+
+                RTMemFree(pFree);
+            }
         }
     }
     else
@@ -853,17 +871,18 @@ static PPDMACFILECACHEENTRY pdmacFileCacheEntryAlloc(PPDMACFILECACHEGLOBAL pCach
     if (RT_UNLIKELY(!pEntryNew))
         return NULL;
 
-    pEntryNew->Core.Key     = off;
-    pEntryNew->Core.KeyLast = off + cbData - 1;
-    pEntryNew->pEndpoint    = pEndpoint;
-    pEntryNew->pCache       = pCache;
-    pEntryNew->fFlags       = 0;
-    pEntryNew->cRefs        = 1; /* We are using it now. */
-    pEntryNew->pList        = NULL;
-    pEntryNew->cbData       = cbData;
-    pEntryNew->pWaitingHead = NULL;
-    pEntryNew->pWaitingTail = NULL;
-    pEntryNew->pbData       = (uint8_t *)RTMemPageAlloc(cbData);
+    pEntryNew->Core.Key      = off;
+    pEntryNew->Core.KeyLast  = off + cbData - 1;
+    pEntryNew->pEndpoint     = pEndpoint;
+    pEntryNew->pCache        = pCache;
+    pEntryNew->fFlags        = 0;
+    pEntryNew->cRefs         = 1; /* We are using it now. */
+    pEntryNew->pList         = NULL;
+    pEntryNew->cbData        = cbData;
+    pEntryNew->pWaitingHead  = NULL;
+    pEntryNew->pWaitingTail  = NULL;
+    pEntryNew->pbDataReplace = NULL;
+    pEntryNew->pbData        = (uint8_t *)RTMemPageAlloc(cbData);
 
     if (RT_UNLIKELY(!pEntryNew->pbData))
     {
@@ -953,7 +972,7 @@ DECLINLINE(bool) pdmacFileEpCacheEntryFlagIsSetClearAcquireLock(PPDMACFILEENDPOI
         else \
             pbSegBuf += BytesTransfered; \
     } \
-    while (0);
+    while (0)
 
 /**
  * Reads the specified data from the endpoint using the cache if possible.
@@ -1027,41 +1046,16 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
             if (   (pEntry->pList == &pCache->LruRecentlyUsed)
                 || (pEntry->pList == &pCache->LruFrequentlyUsed))
             {
-                LogFlow(("Fetching data for ghost entry %#p from file\n", pEntry));
-
-                if (pdmacFileEpCacheEntryFlagIsSetClearAcquireLock(pEndpointCache, pEntry,
-                                                                   PDMACFILECACHE_ENTRY_IO_IN_PROGRESS,
-                                                                   PDMACFILECACHE_ENTRY_IS_DIRTY))
+                if(pdmacFileEpCacheEntryFlagIsSetClearAcquireLock(pEndpointCache, pEntry,
+                                                                  PDMACFILECACHE_ENTRY_IS_DEPRECATED,
+                                                                  0))
                 {
-                    /* Entry didn't completed yet. Append to the list */
-                    while (cbToRead)
-                    {
-                        PPDMACFILETASKSEG pSeg = (PPDMACFILETASKSEG)RTMemAllocZ(sizeof(PDMACFILETASKSEG));
-
-                        pSeg->pTask      = pTask;
-                        pSeg->uBufOffset = OffDiff;
-                        pSeg->cbTransfer = RT_MIN(cbToRead, cbSegLeft);
-                        pSeg->pvBuf      = pbSegBuf;
-                        pSeg->fWrite     = false;
-
-                        ADVANCE_SEGMENT_BUFFER(pSeg->cbTransfer);
-
-                        pdmacFileEpCacheEntryAddWaitingSegment(pEntry, pSeg);
-
-                        off      += pSeg->cbTransfer;
-                        cbToRead -= pSeg->cbTransfer;
-                        OffDiff  += pSeg->cbTransfer;
-                    }
-                    RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
-                }
-                else
-                {
-                    /* Read as much as we can from the entry. */
+                    /* Entry is deprecated. Read data from the new buffer. */
                     while (cbToRead)
                     {
                         size_t cbCopy = RT_MIN(cbSegLeft, cbToRead);
 
-                        memcpy(pbSegBuf, pEntry->pbData + OffDiff, cbCopy);
+                        memcpy(pbSegBuf, pEntry->pbDataReplace + OffDiff, cbCopy);
 
                         ADVANCE_SEGMENT_BUFFER(cbCopy);
 
@@ -1069,6 +1063,51 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
                         off      += cbCopy;
                         OffDiff  += cbCopy;
                         ASMAtomicSubS32(&pTask->cbTransferLeft, cbCopy);
+                    }
+                }
+                else
+                {
+                    if (pdmacFileEpCacheEntryFlagIsSetClearAcquireLock(pEndpointCache, pEntry,
+                                                                       PDMACFILECACHE_ENTRY_IO_IN_PROGRESS,
+                                                                       PDMACFILECACHE_ENTRY_IS_DIRTY))
+                    {
+                        /* Entry didn't completed yet. Append to the list */
+                        while (cbToRead)
+                        {
+                            PPDMACFILETASKSEG pSeg = (PPDMACFILETASKSEG)RTMemAllocZ(sizeof(PDMACFILETASKSEG));
+
+                            pSeg->pTask      = pTask;
+                            pSeg->uBufOffset = OffDiff;
+                            pSeg->cbTransfer = RT_MIN(cbToRead, cbSegLeft);
+                            pSeg->pvBuf      = pbSegBuf;
+                            pSeg->fWrite     = false;
+
+                            ADVANCE_SEGMENT_BUFFER(pSeg->cbTransfer);
+
+                            pdmacFileEpCacheEntryAddWaitingSegment(pEntry, pSeg);
+
+                            off      += pSeg->cbTransfer;
+                            cbToRead -= pSeg->cbTransfer;
+                            OffDiff  += pSeg->cbTransfer;
+                        }
+                        RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
+                    }
+                    else
+                    {
+                        /* Read as much as we can from the entry. */
+                        while (cbToRead)
+                        {
+                            size_t cbCopy = RT_MIN(cbSegLeft, cbToRead);
+
+                            memcpy(pbSegBuf, pEntry->pbData + OffDiff, cbCopy);
+
+                            ADVANCE_SEGMENT_BUFFER(cbCopy);
+
+                            cbToRead -= cbCopy;
+                            off      += cbCopy;
+                            OffDiff  += cbCopy;
+                            ASMAtomicSubS32(&pTask->cbTransferLeft, cbCopy);
+                        }
                     }
                 }
 
@@ -1079,6 +1118,8 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
             }
             else
             {
+                LogFlow(("Fetching data for ghost entry %#p from file\n", pEntry));
+
                 RTCritSectEnter(&pCache->CritSect);
                 pdmacFileCacheUpdate(pCache, pEntry);
                 pdmacFileCacheReplace(pCache, pEntry->cbData, pEntry->pList);
@@ -1302,94 +1343,171 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
             if (   (pEntry->pList == &pCache->LruRecentlyUsed)
                 || (pEntry->pList == &pCache->LruFrequentlyUsed))
             {
-
-                /* If the entry is dirty it must be also in progress now and we have to defer updating it again. */
+                /* Check if the buffer is deprecated. */
                 if(pdmacFileEpCacheEntryFlagIsSetClearAcquireLock(pEndpointCache, pEntry,
-                                                                  PDMACFILECACHE_ENTRY_IS_DIRTY,
+                                                                  PDMACFILECACHE_ENTRY_IS_DEPRECATED,
                                                                   0))
                 {
                     AssertMsg(pEntry->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS,
-                                ("Entry is dirty but not in progress\n"));
+                                ("Entry is deprecated but not in progress\n"));
+                    AssertPtr(pEntry->pbDataReplace);
 
-                    /* The data isn't written to the file yet */
+                    LogFlow(("Writing to deprecated buffer of entry %#p\n", pEntry));
+
+                    /* Update the data from the write. */
                     while (cbToWrite)
                     {
-                        PPDMACFILETASKSEG pSeg = (PPDMACFILETASKSEG)RTMemAllocZ(sizeof(PDMACFILETASKSEG));
+                        size_t cbCopy = RT_MIN(cbSegLeft, cbToWrite);
 
-                        pSeg->pTask      = pTask;
-                        pSeg->uBufOffset = OffDiff;
-                        pSeg->cbTransfer = RT_MIN(cbToWrite, cbSegLeft);
-                        pSeg->pvBuf      = pbSegBuf;
-                        pSeg->fWrite     = true;
+                        memcpy(pEntry->pbDataReplace + OffDiff, pbSegBuf, cbCopy);
 
-                        ADVANCE_SEGMENT_BUFFER(pSeg->cbTransfer);
+                        ADVANCE_SEGMENT_BUFFER(cbCopy);
 
-                        pdmacFileEpCacheEntryAddWaitingSegment(pEntry, pSeg);
-
-                        off       += pSeg->cbTransfer;
-                        OffDiff   += pSeg->cbTransfer;
-                        cbToWrite -= pSeg->cbTransfer;
+                        cbToWrite-= cbCopy;
+                        off      += cbCopy;
+                        OffDiff  += cbCopy;
+                        ASMAtomicSubS32(&pTask->cbTransferLeft, cbCopy);
                     }
-                    STAM_COUNTER_INC(&pEndpointCache->StatWriteDeferred);
                     RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
                 }
                 else
                 {
-                    /*
-                     * Check if a read is in progress for this entry.
-                     * We have to defer processing in that case.
-                     */
+                    /* If the entry is dirty it must be also in progress now and we have to defer updating it again. */
                     if(pdmacFileEpCacheEntryFlagIsSetClearAcquireLock(pEndpointCache, pEntry,
-                                                                      PDMACFILECACHE_ENTRY_IO_IN_PROGRESS,
+                                                                      PDMACFILECACHE_ENTRY_IS_DIRTY,
                                                                       0))
                     {
-                        while (cbToWrite)
+                        AssertMsg(pEntry->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS,
+                                    ("Entry is dirty but not in progress\n"));
+                        Assert(!pEntry->pbDataReplace);
+
+                        /* Deprecate the current buffer. */
+                        if (!pEntry->pWaitingHead)
+                            pEntry->pbDataReplace = (uint8_t *)RTMemPageAlloc(pEntry->cbData);
+
+                        /* If we are out of memory or have waiting segments
+                         * defer the write. */
+                        if (!pEntry->pbDataReplace || pEntry->pWaitingHead)
                         {
-                            PPDMACFILETASKSEG pSeg = (PPDMACFILETASKSEG)RTMemAllocZ(sizeof(PDMACFILETASKSEG));
+                            /* The data isn't written to the file yet */
+                            while (cbToWrite)
+                            {
+                                PPDMACFILETASKSEG pSeg = (PPDMACFILETASKSEG)RTMemAllocZ(sizeof(PDMACFILETASKSEG));
 
-                            pSeg->pTask      = pTask;
-                            pSeg->uBufOffset = OffDiff;
-                            pSeg->cbTransfer = RT_MIN(cbToWrite, cbSegLeft);
-                            pSeg->pvBuf      = pbSegBuf;
-                            pSeg->fWrite     = true;
+                                pSeg->pTask      = pTask;
+                                pSeg->uBufOffset = OffDiff;
+                                pSeg->cbTransfer = RT_MIN(cbToWrite, cbSegLeft);
+                                pSeg->pvBuf      = pbSegBuf;
+                                pSeg->fWrite     = true;
 
-                            ADVANCE_SEGMENT_BUFFER(pSeg->cbTransfer);
+                                ADVANCE_SEGMENT_BUFFER(pSeg->cbTransfer);
 
-                            pdmacFileEpCacheEntryAddWaitingSegment(pEntry, pSeg);
+                                pdmacFileEpCacheEntryAddWaitingSegment(pEntry, pSeg);
 
-                            off       += pSeg->cbTransfer;
-                            OffDiff   += pSeg->cbTransfer;
-                            cbToWrite -= pSeg->cbTransfer;
+                                off       += pSeg->cbTransfer;
+                                OffDiff   += pSeg->cbTransfer;
+                                cbToWrite -= pSeg->cbTransfer;
+                            }
+                            STAM_COUNTER_INC(&pEndpointCache->StatWriteDeferred);
                         }
-                        STAM_COUNTER_INC(&pEndpointCache->StatWriteDeferred);
+                        else
+                        {
+                            LogFlow(("Deprecating buffer for entry %#p\n", pEntry));
+                            pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DEPRECATED;
+
+#if 1
+                            /* Copy the data before the update. */
+                            if (OffDiff)
+                                memcpy(pEntry->pbDataReplace, pEntry->pbData, OffDiff);
+
+                            /* Copy data behind the update. */
+                            if ((pEntry->cbData - OffDiff - cbToWrite) > 0)
+                                memcpy(pEntry->pbDataReplace + OffDiff + cbToWrite,
+                                       pEntry->pbData + OffDiff + cbToWrite,
+                                       (pEntry->cbData - OffDiff - cbToWrite));
+#else
+                            /* A safer method but probably slower. */
+                            memcpy(pEntry->pbDataReplace, pEntry->pbData, pEntry->cbData);
+#endif
+
+                            /* Update the data from the write. */
+                            while (cbToWrite)
+                            {
+                                size_t cbCopy = RT_MIN(cbSegLeft, cbToWrite);
+
+                                memcpy(pEntry->pbDataReplace + OffDiff, pbSegBuf, cbCopy);
+
+                                ADVANCE_SEGMENT_BUFFER(cbCopy);
+
+                                cbToWrite-= cbCopy;
+                                off      += cbCopy;
+                                OffDiff  += cbCopy;
+                                ASMAtomicSubS32(&pTask->cbTransferLeft, cbCopy);
+                            }
+
+                            /* We are done here. A new write is initiated if the current request completes. */
+                        }
+
                         RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
                     }
                     else
                     {
-                        /* Write as much as we can into the entry and update the file. */
-                        while (cbToWrite)
+                        /*
+                         * Check if a read is in progress for this entry.
+                         * We have to defer processing in that case.
+                         */
+                        if(pdmacFileEpCacheEntryFlagIsSetClearAcquireLock(pEndpointCache, pEntry,
+                                                                          PDMACFILECACHE_ENTRY_IO_IN_PROGRESS,
+                                                                          0))
                         {
-                            size_t cbCopy = RT_MIN(cbSegLeft, cbToWrite);
+                            while (cbToWrite)
+                            {
+                                PPDMACFILETASKSEG pSeg = (PPDMACFILETASKSEG)RTMemAllocZ(sizeof(PDMACFILETASKSEG));
 
-                            memcpy(pEntry->pbData + OffDiff, pbSegBuf, cbCopy);
+                                pSeg->pTask      = pTask;
+                                pSeg->uBufOffset = OffDiff;
+                                pSeg->cbTransfer = RT_MIN(cbToWrite, cbSegLeft);
+                                pSeg->pvBuf      = pbSegBuf;
+                                pSeg->fWrite     = true;
 
-                            ADVANCE_SEGMENT_BUFFER(cbCopy);
+                                ADVANCE_SEGMENT_BUFFER(pSeg->cbTransfer);
 
-                            cbToWrite-= cbCopy;
-                            off      += cbCopy;
-                            OffDiff  += cbCopy;
-                            ASMAtomicSubS32(&pTask->cbTransferLeft, cbCopy);
+                                pdmacFileEpCacheEntryAddWaitingSegment(pEntry, pSeg);
+
+                                off       += pSeg->cbTransfer;
+                                OffDiff   += pSeg->cbTransfer;
+                                cbToWrite -= pSeg->cbTransfer;
+                            }
+                            STAM_COUNTER_INC(&pEndpointCache->StatWriteDeferred);
+                            RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
                         }
+                        else
+                        {
+                            /* Write as much as we can into the entry and update the file. */
+                            while (cbToWrite)
+                            {
+                                size_t cbCopy = RT_MIN(cbSegLeft, cbToWrite);
 
-                        pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
-                        pdmacFileCacheWriteToEndpoint(pEntry);
+                                memcpy(pEntry->pbData + OffDiff, pbSegBuf, cbCopy);
+
+                                ADVANCE_SEGMENT_BUFFER(cbCopy);
+
+                                cbToWrite-= cbCopy;
+                                off      += cbCopy;
+                                OffDiff  += cbCopy;
+                                ASMAtomicSubS32(&pTask->cbTransferLeft, cbCopy);
+                            }
+
+                            pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
+                            pdmacFileCacheWriteToEndpoint(pEntry);
+                        }
                     }
-                }
 
-                /* Move this entry to the top position */
-                RTCritSectEnter(&pCache->CritSect);
-                pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
-                RTCritSectLeave(&pCache->CritSect);
+                    /* Move this entry to the top position */
+                    RTCritSectEnter(&pCache->CritSect);
+                    pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
+                    RTCritSectLeave(&pCache->CritSect);
+                }
             }
             else
             {

@@ -228,6 +228,9 @@ typedef struct PDMACFILECACHEENTRY
     size_t                          cbData;
     /** Pointer to the memory containing the data. */
     uint8_t                        *pbData;
+    /** Pointer to the buffer replacing the current one
+     * if the deprecated flag is set. */
+    uint8_t                        *pbDataReplace;
     /** Head of list of tasks waiting for this one to finish. */
     PPDMACFILETASKSEG               pWaitingHead;
     /** Tail of list of tasks waiting for this one to finish. */
@@ -236,9 +239,14 @@ typedef struct PDMACFILECACHEENTRY
 /** I/O is still in progress for this entry. This entry is not evictable. */
 #define PDMACFILECACHE_ENTRY_IO_IN_PROGRESS RT_BIT(0)
 /** Entry is locked and thus not evictable. */
-#define PDMACFILECACHE_ENTRY_LOCKED   RT_BIT(1)
+#define PDMACFILECACHE_ENTRY_LOCKED         RT_BIT(1)
 /** Entry is dirty */
-#define PDMACFILECACHE_ENTRY_IS_DIRTY RT_BIT(2)
+#define PDMACFILECACHE_ENTRY_IS_DIRTY       RT_BIT(2)
+/** The current buffer used for the entry is deprecated.
+ * The new one is available and will be replaced as soon as the file update
+ * completed.
+ */
+#define PDMACFILECACHE_ENTRY_IS_DEPRECATED  RT_BIT(3)
 /** Entry is not evictable. */
 #define PDMACFILECACHE_NOT_EVICTABLE  (PDMACFILECACHE_ENTRY_LOCKED | PDMACFILECACHE_IO_IN_PROGRESS)
 
