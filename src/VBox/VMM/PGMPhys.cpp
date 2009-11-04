@@ -232,14 +232,18 @@ static DECLCALLBACK(int) pgmR3PhysWriteExternalEMT(PVM pVM, PRTGCPHYS pGCPhys, c
  * @param   GCPhys          Physical address to write to.
  * @param   pvBuf           What to write.
  * @param   cbWrite         How many bytes to write.
+ * @param   pszWho          Who is writing.  For tracking down who is writing
+ *                          after we've saved the state.
  *
  * @thread  Any but EMTs.
  */
-VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, const char *pszWho)
 {
     VM_ASSERT_OTHER_THREAD(pVM);
 
-    AssertMsg(!pVM->pgm.s.fNoMorePhysWrites, ("Calling PGMR3PhysWriteExternal after pgmR3Save()!\n"));
+    AssertMsg(!pVM->pgm.s.fNoMorePhysWrites,
+              ("Calling PGMR3PhysWriteExternal after pgmR3Save()! GCPhys=%RGp cbWrite=%#x pszWho=%s\n",
+               GCPhys, cbWrite, pszWho));
     AssertMsgReturn(cbWrite > 0, ("don't even think about writing zero bytes!\n"), VINF_SUCCESS);
     LogFlow(("PGMR3PhysWriteExternal: %RGp %d\n", GCPhys, cbWrite));
 
