@@ -240,9 +240,41 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);                    RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         1);     /* boolean */   RC_CHECK();
-    /** @todo Config: RawR0, PATMEnabled and CASMEnabled needs attention later. */
+    /** @todo Config: RawR0, PATMEnabled and CSAMEnabled needs attention later. */
     rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          1);     /* boolean */   RC_CHECK();
+
+    /* Standard leaf cpuid overrides. */
+    for (unsigned leaf = 0; leaf < 0xA; leaf++)
+    {
+        ULONG ulEax, ulEbx, ulEcx, ulEdx;
+        if (pMachine->GetCpuIdLeaf(leaf, &ulEax, &ulEbx, &ulEcx, &ulEdx) == S_OK)
+        {
+            PCFGMNODE pLeaf;
+            rc = CFGMR3InsertNodeF(pRoot, &pLeaf, "CPUM/CPUID/%x", leaf);               RC_CHECK();
+
+            rc = CFGMR3InsertInteger(pLeaf, "eax", ulEax);                      RC_CHECK();
+            rc = CFGMR3InsertInteger(pLeaf, "ebx", ulEax);                      RC_CHECK();
+            rc = CFGMR3InsertInteger(pLeaf, "ecx", ulEax);                      RC_CHECK();
+            rc = CFGMR3InsertInteger(pLeaf, "edx", ulEax);                      RC_CHECK();
+        }
+    }
+
+    /* Extended leaf cpuid overrides. */
+    for (unsigned leaf = 0x80000000; leaf < 0x8000000A; leaf++)
+    {
+        ULONG ulEax, ulEbx, ulEcx, ulEdx;
+        if (pMachine->GetCpuIdLeaf(leaf, &ulEax, &ulEbx, &ulEcx, &ulEdx) == S_OK)
+        {
+            PCFGMNODE pLeaf;
+            rc = CFGMR3InsertNodeF(pRoot, &pLeaf, "CPUM/CPUID/%x", leaf);               RC_CHECK();
+
+            rc = CFGMR3InsertInteger(pLeaf, "eax", ulEax);                      RC_CHECK();
+            rc = CFGMR3InsertInteger(pLeaf, "ebx", ulEax);                      RC_CHECK();
+            rc = CFGMR3InsertInteger(pLeaf, "ecx", ulEax);                      RC_CHECK();
+            rc = CFGMR3InsertInteger(pLeaf, "edx", ulEax);                      RC_CHECK();
+        }
+    }
 
     if (osTypeId == "WindowsNT4")
     {
