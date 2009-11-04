@@ -162,10 +162,15 @@ public:
     HRESULT detachFrom(const Guid &aMachineId,
                        const Guid &aSnapshotId = Guid::Empty);
 
+#ifdef DEBUG
+    void dumpBackRefs();
+#endif
+
     const Guid& id() const;
     MediumState_T state() const;
     const Utf8Str& location() const;
     const Utf8Str& locationFull() const;
+    uint64_t size() const;
 
     const Guid* getFirstMachineBackrefId() const;
     const Guid* getFirstMachineBackrefSnapshotId() const;
@@ -243,7 +248,7 @@ public:
     Utf8Str name();
 
     HRESULT prepareDiscard(MergeChain * &aChain);
-    HRESULT discard(ComObjPtr<Progress> &aProgress, MergeChain *aChain);
+    HRESULT discard(ComObjPtr<Progress> &aProgress, ULONG ulWeight, MergeChain *aChain);
     void cancelDiscard(MergeChain *aChain);
 
     /** Returns a preferred format for a differencing hard disk. */

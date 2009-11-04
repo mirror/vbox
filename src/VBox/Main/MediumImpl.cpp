@@ -67,19 +67,18 @@ struct BackRef
 
     typedef std::list<Guid> GuidList;
 
-    BackRef() : inCurState(false) {}
-
-    BackRef(const Guid &aMachineId, const Guid &aSnapshotId = Guid::Empty)
-        : machineId(aMachineId)
-        , inCurState(aSnapshotId.isEmpty())
+    BackRef(const Guid &aMachineId,
+            const Guid &aSnapshotId = Guid::Empty)
+        : machineId(aMachineId),
+          inCurState(aSnapshotId.isEmpty())
     {
         if (!aSnapshotId.isEmpty())
-            snapshotIds.push_back(aSnapshotId);
+            llSnapshotIds.push_back(aSnapshotId);
     }
 
     Guid machineId;
     bool inCurState : 1;
-    GuidList snapshotIds;
+    GuidList llSnapshotIds;
 };
 
 typedef std::list<BackRef> BackRefList;
@@ -1789,7 +1788,7 @@ STDMETHODIMP Medium::GetSnapshotIds(IN_BSTR aMachineId,
     {
         if (it->machineId == id)
         {
-            size_t size = it->snapshotIds.size();
+            size_t size = it->llSnapshotIds.size();
 
             /* if the medium is attached to the machine in the current state, we
              * return its ID as the first element of the array */
@@ -1804,9 +1803,9 @@ STDMETHODIMP Medium::GetSnapshotIds(IN_BSTR aMachineId,
                 if (it->inCurState)
                     it->machineId.toUtf16().detachTo(&snapshotIds [j ++]);
 
-                for (BackRef::GuidList::const_iterator jt =
-                        it->snapshotIds.begin();
-                     jt != it->snapshotIds.end(); ++ jt, ++ j)
+                for (BackRef::GuidList::const_iterator jt = it->llSnapshotIds.begin();
+                     jt != it->llSnapshotIds.end();
+                     ++jt, ++j)
                 {
                      (*jt).toUtf16().detachTo(&snapshotIds [j]);
                 }
@@ -2652,6 +2651,8 @@ HRESULT Medium::attachTo(const Guid &aMachineId,
 {
     AssertReturn(!aMachineId.isEmpty(), E_FAIL);
 
+    LogFlowThisFunc(("ENTER, aMachineId: {%RTuuid}, aSnapshotId: {%RTuuid}\n", aMachineId.raw(), aSnapshotId.raw()));
+
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
@@ -2671,8 +2672,10 @@ HRESULT Medium::attachTo(const Guid &aMachineId,
 
     if (m->numCreateDiffTasks > 0)
         return setError(E_FAIL,
-                        tr("One or more differencing child hard disks are being created for the hard disk '%s' (%u)"),
-                        m->strLocationFull.raw(), m->numCreateDiffTasks);
+                        tr("Cannot attach hard disk '%s' {%RTuuid}: %u differencing child hard disk(s) are being created"),
+                        m->strLocationFull.raw(),
+                        m->id.raw(),
+                        m->numCreateDiffTasks);
 
     BackRefList::iterator it =
         std::find_if(m->backRefs.begin(), m->backRefs.end(),
@@ -2695,11 +2698,24 @@ HRESULT Medium::attachTo(const Guid &aMachineId,
     }
 
     /* sanity: no duplicate attachments */
-    BackRef::GuidList::const_iterator jt =
-        std::find(it->snapshotIds.begin(), it->snapshotIds.end(), aSnapshotId);
-    AssertReturn(jt == it->snapshotIds.end(), E_FAIL);
+    for (BackRef::GuidList::const_iterator jt = it->llSnapshotIds.begin();
+         jt != it->llSnapshotIds.end();
+         ++jt)
+    {
+        const Guid &idOldSnapshot = *jt;
 
-    it->snapshotIds.push_back(aSnapshotId);
+        if (idOldSnapshot == aSnapshotId)
+            return setError(E_FAIL,
+                            tr("Cannot attach medium '%s' {%RTuuid} from snapshot '%RTuuid': medium is already in use by snapshot '%RTuuid'"),
+                            m->strLocationFull.raw(),
+                            m->id.raw(),
+                            aSnapshotId.raw(),
+                            idOldSnapshot.raw());
+    }
+
+    it->llSnapshotIds.push_back(aSnapshotId);
+
+    LogFlowThisFuncLeave();
 
     return S_OK;
 }
@@ -2736,18 +2752,48 @@ HRESULT Medium::detachFrom(const Guid &aMachineId,
     {
         /* remove the snapshot attachment */
         BackRef::GuidList::iterator jt =
-            std::find(it->snapshotIds.begin(), it->snapshotIds.end(), aSnapshotId);
+            std::find(it->llSnapshotIds.begin(), it->llSnapshotIds.end(), aSnapshotId);
 
-        AssertReturn(jt != it->snapshotIds.end(), E_FAIL);
-        it->snapshotIds.erase(jt);
+        AssertReturn(jt != it->llSnapshotIds.end(), E_FAIL);
+        it->llSnapshotIds.erase(jt);
     }
 
     /* if the backref becomes empty, remove it */
-    if (it->inCurState == false && it->snapshotIds.size() == 0)
+    if (it->inCurState == false && it->llSnapshotIds.size() == 0)
         m->backRefs.erase(it);
 
     return S_OK;
 }
+
+#ifdef DEBUG
+/**
+ * Debugging helper that gets called after VirtualBox initialization that writes all
+ * machine backreferences to the debug log.
+ */
+void Medium::dumpBackRefs()
+{
+    AutoCaller autoCaller(this);
+    AutoReadLock(this);
+
+    LogFlowThisFunc(("Dumping backrefs for medium '%s':\n", m->strLocationFull.raw()));
+
+    for (BackRefList::iterator it2 = m->backRefs.begin();
+         it2 != m->backRefs.end();
+         ++it2)
+    {
+        const BackRef &ref = *it2;
+        LogFlowThisFunc(("  Backref from machine {%RTuuid}\n", ref.machineId.raw()));
+
+        for (BackRef::GuidList::const_iterator jt2 = it2->llSnapshotIds.begin();
+             jt2 != it2->llSnapshotIds.end();
+             ++jt2)
+        {
+            const Guid &id = *jt2;
+            LogFlowThisFunc(("  Backref from snapshot {%RTuuid}\n", id.raw()));
+        }
+    }
+}
+#endif
 
 /**
  * Internal method to return the medium's GUID. Must have caller + locking!
@@ -2786,14 +2832,18 @@ const Utf8Str& Medium::locationFull() const
 }
 
 /**
+ * Internal method to return the medium's size. Must have caller + locking!
+ * @return
+ */
+uint64_t Medium::size() const
+{
+    return m->size;
+}
+
+/**
  * Internal method to return the medium's list of backrefs. Must have caller + locking!
  * @return
  */
-// const Medium::BackRefList& Medium::backRefs() const
-// {
-//     return m->backRefs;
-// }
-
 const Guid* Medium::getFirstMachineBackrefId() const
 {
     if (!m->backRefs.size())
@@ -2808,10 +2858,10 @@ const Guid* Medium::getFirstMachineBackrefSnapshotId() const
         return NULL;
 
     const BackRef &ref = m->backRefs.front();
-    if (!ref.snapshotIds.size())
+    if (!ref.llSnapshotIds.size())
         return NULL;
 
-    return &ref.snapshotIds.front();
+    return &ref.llSnapshotIds.front();
 }
 
 /**
@@ -2933,7 +2983,7 @@ bool Medium::isReadOnly()
 
             for (BackRefList::const_iterator it = m->backRefs.begin();
                  it != m->backRefs.end(); ++ it)
-                if (it->snapshotIds.size() != 0)
+                if (it->llSnapshotIds.size() != 0)
                     return true;
 
             return false;
@@ -3138,9 +3188,10 @@ HRESULT Medium::prepareDiscard(MergeChain * &aChain)
      * current VM's hard disks may be attached to other VMs). Note that by the
      * time when discard() is called, there must be no any attachments at all
      * (the code calling prepareDiscard() should detach). */
-    AssertReturn(m->backRefs.size() == 1 &&
-                  !m->backRefs.front().inCurState &&
-                  m->backRefs.front().snapshotIds.size() == 1, E_FAIL);
+    AssertReturn(    m->backRefs.size() == 1
+                  && !m->backRefs.front().inCurState
+                  && m->backRefs.front().llSnapshotIds.size() == 1,
+                 E_FAIL);
 
     ComObjPtr<Medium> child = children().front();
 
@@ -3214,7 +3265,7 @@ HRESULT Medium::prepareDiscard(MergeChain * &aChain)
  *       object when the backward merge takes place. Locks treeLock() lock for
  *       reading or writing.
  */
-HRESULT Medium::discard(ComObjPtr<Progress> &aProgress, MergeChain *aChain)
+HRESULT Medium::discard(ComObjPtr<Progress> &aProgress, ULONG ulWeight, MergeChain *aChain)
 {
     AssertReturn(!aProgress.isNull(), E_FAIL);
 
@@ -3227,7 +3278,7 @@ HRESULT Medium::discard(ComObjPtr<Progress> &aProgress, MergeChain *aChain)
         AssertComRCReturnRC(autoCaller.rc());
 
         aProgress->SetNextOperation(BstrFmt(tr("Discarding hard disk '%s'"), name().raw()),
-                                    1);        // weight
+                                    ulWeight);        // weight
 
         if (aChain == NULL)
         {
@@ -4174,14 +4225,14 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
              * will be 1 in this case. The given condition is used to filter out
              * this legal situatinon and do not report an error. */
 
-            if (it->snapshotIds.size() == 0)
+            if (it->llSnapshotIds.size() == 0)
             {
                 return setError(VBOX_E_INVALID_OBJECT_STATE,
                                 tr("Hard disk '%s' is attached to a virtual machine with UUID {%RTuuid}. No differencing hard disks based on it may be created until it is detached"),
                                 m->strLocationFull.raw(), it->machineId.raw());
             }
 
-            Assert(it->snapshotIds.size() == 1);
+            Assert(it->llSnapshotIds.size() == 1);
         }
     }
 

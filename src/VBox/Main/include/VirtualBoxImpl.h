@@ -77,7 +77,7 @@ public:
     class CallbackEvent;
     friend class CallbackEvent;
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (VirtualBox)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VirtualBox)
 
     DECLARE_CLASSFACTORY_SINGLETON(VirtualBox)
 
@@ -178,6 +178,9 @@ public:
     STDMETHOD(RemoveDHCPServer) (IDHCPServer * aServer);
 
     /* public methods only for internal purposes */
+#ifdef DEBUG
+    void dumpAllBackRefs();
+#endif
 
     HRESULT postEvent(Event *event);
 

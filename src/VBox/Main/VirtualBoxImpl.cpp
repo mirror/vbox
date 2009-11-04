@@ -388,6 +388,12 @@ HRESULT VirtualBox::init()
         if (FAILED(rc = initMachines()))
             throw rc;
 
+
+#ifdef DEBUG
+        LogFlowThisFunc(("Dumping media backreferences\n"));
+        dumpAllBackRefs();
+#endif
+
         /* net services */
         for (settings::DHCPServersList::const_iterator it = m->pMainConfigFile->llDhcpServers.begin();
              it != m->pMainConfigFile->llDhcpServers.end();
@@ -1908,6 +1914,26 @@ STDMETHODIMP VirtualBox::WaitForPropertyChange(IN_BSTR /* aWhat */,
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
+#ifdef DEBUG
+void VirtualBox::dumpAllBackRefs()
+{
+    for (HardDiskList::const_iterator mt = m->llHardDisks.begin();
+         mt != m->llHardDisks.end();
+         ++mt)
+    {
+        ComObjPtr<Medium> pMedium = *mt;
+        pMedium->dumpBackRefs();
+    }
+    for (DVDImageList::const_iterator mt = m->llDVDImages.begin();
+         mt != m->llDVDImages.end();
+         ++mt)
+    {
+        ComObjPtr<Medium> pMedium = *mt;
+        pMedium->dumpBackRefs();
+    }
+}
+#endif
+
 /**
  *  Posts an event to the event queue that is processed asynchronously
  *  on a dedicated thread.
@@ -3273,7 +3299,7 @@ HRESULT VirtualBox::registerMachine (Machine *aMachine)
  * Remembers the given hard disk by storing it in the hard disk registry.
  *
  * @param aHardDisk     Hard disk object to remember.
- * @param aSaveRegistry @c true to save hard disk registry to disk (default).
+ * @param aSaveRegistry Whether to save the registry after adding the new disk; this is @c false when this gets called during VirtualBox initialization.
  *
  * When @a aSaveRegistry is @c true, this operation may fail because of the
  * failed #saveSettings() method it calls. In this case, the hard disk object
