@@ -15,9 +15,9 @@ LangString VBOX_INNOTEK_REBOOT ${LANG_FRENCH}            "Nous vous conseillons 
 
 LangString VBOX_COMPONENT_MAIN ${LANG_FRENCH}                       "Additions invité VirtualBox"
 LangString VBOX_COMPONENT_MAIN_DESC ${LANG_FRENCH}                  "Fichiers prinipaux des Additions invité VirtualBox"
-LangString VBOX_COMPONENT_AUTOLOGON ${LANG_FRENCH}                  "Auto-Logon Support"
-LangString VBOX_COMPONENT_AUTOLOGON_DESC ${LANG_FRENCH}             "Enables auto-logon support for guests"
-LangString VBOX_COMPONENT_AUTOLOGON_WARN_3RDPARTY ${LANG_FRENCH}    "There already is a component installed for providing auto-logon support.$\r$\nIf you replace this component with the one from VirtualBox, the system could become unstable.$\r$\nReplace it anyway?"
+LangString VBOX_COMPONENT_AUTOLOGON ${LANG_FRENCH}                  "Support identification automatique"
+LangString VBOX_COMPONENT_AUTOLOGON_DESC ${LANG_FRENCH}             "Active l'identification automatique dans l'invité"
+LangString VBOX_COMPONENT_AUTOLOGON_WARN_3RDPARTY ${LANG_FRENCH}    "Un composant permettant l'identification automatique est déjà installé.$\r$\nSi vous le remplacé avec le composant issue de VirtualBox, cela pourrait déstabiliser le système.$\r$\nDésirez-vous cepandant continuer?"
 LangString VBOX_COMPONENT_D3D  ${LANG_FRENCH}                       "Support Direct3D pour invités (experimental)"
 LangString VBOX_COMPONENT_D3D_DESC  ${LANG_FRENCH}                  "Active le support Direct3D pour invités (experimental)"
 LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_FRENCH}                  "Windows ne fonctionne pas en mode sans échec.$\r$\nDe ce fait, le support D3D ne peut être installé."
