@@ -26,14 +26,20 @@
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
 #ifdef RT_OS_WINDOWS
-#include <Windows.h>
+# include <Windows.h>
+#endif
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
+# include <sys/resource.h>
+# include <fcntl.h>
+# include <unistd.h>
 #endif
 
 #include <string.h>
 
 #ifdef VBOX_WITH_CROGL
 
-extern "C" {
+extern "C"
+{
   extern void * crSPULoad(void *, int, char *, char *, void *);
   extern void crSPUUnloadChain(void *);
 }
@@ -78,9 +84,22 @@ static int vboxCheck2DVideoAccelerationSupported()
 
 int main(int argc, char **argv)
 {
-    int rc=0;
+    int rc = 0;
 
     RTR3Init();
+
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
+    /* This small test application might crash on some hosts. Do never
+     * generate a core dump as most likely some OpenGL library is
+     * responsible. */
+    struct rlimit lim = { 0, 0 };
+    setrlimit(RLIMIT_CORE, &lim);
+
+    /* Redirect stderr to /dev/null */
+    int fd = open("/dev/null", O_WRONLY);
+    if (fd != -1)
+        dup2(fd, STDERR_FILENO);
+#endif
 
     if(argc < 2)
     {
