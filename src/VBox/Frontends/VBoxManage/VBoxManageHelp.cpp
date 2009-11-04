@@ -135,6 +135,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--hwvirtex on|off]\n"
                  "                            [--nestedpaging on|off]\n"
                  "                            [--vtxvpid on|off]\n"
+                 "                            [--cpuid <leaf> <eax> <ebx> <ecx> <edx>]\n"
                  "                            [--cpus <number>]\n"
                  "                            [--monitorcount <number>]\n"
                  "                            [--accelerate3d <on|off>]\n"
