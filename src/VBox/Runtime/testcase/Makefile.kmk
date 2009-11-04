@@ -89,6 +89,7 @@ PROGRAMS += \
 	tstR0ThreadPreemptionDriver \
 	tstRTS3 \
 	tstSems \
+	tstSemEvent \
 	tstSemPingPong \
 	tstRTStrCache \
 	tstRTStrFormat \
@@ -354,6 +355,8 @@ tstRTProcIsRunningByName_SOURCES = tstRTProcIsRunningByName.cpp
 tstRTS3_SOURCES = tstRTS3.cpp
 
 tstSemMutex_SOURCES = tstSemMutex.cpp
+
+tstSemEvent_SOURCES = tstSemEvent.cpp
 
 tstSemRW_SOURCES = tstSemRW.cpp
 
