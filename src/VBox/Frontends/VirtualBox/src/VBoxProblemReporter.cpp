@@ -844,7 +844,8 @@ bool VBoxProblemReporter::askAboutSnapshotDeleting (const QString &aSnapshotName
     return messageOkCancel (mainWindowShown(), Question,
         tr ("<p>Are you sure you wish to delete the selected snapshot <b>%1</b>?</p>")
             .arg (aSnapshotName),
-        "confirmSnapshotDeleting" /* aAutoConfirmId */,
+        /* Do NOT allow this message to be disabled! */
+        null /* aAutoConfirmId */,
         tr ("Delete"), tr ("Cancel"));
 }
 
