@@ -1509,7 +1509,7 @@ STDMETHODIMP Machine::RemoveCpuIdLeaf(ULONG id)
     case 0xA:
         AssertRelease(id < RT_ELEMENTS(mHWData->mCpuIdStdLeafs));
         /* Invalidate leaf. */
-        mHWData->mCpuIdStdLeafs[id].ulId = -1
+        mHWData->mCpuIdStdLeafs[id].ulId = -1;
         break;
 
     case 0x80000000:
@@ -1534,7 +1534,7 @@ STDMETHODIMP Machine::RemoveCpuIdLeaf(ULONG id)
     return S_OK;
 }
 
-STDMETHODIMP Machine::removeAllCpuIdLeafs()
+STDMETHODIMP Machine::RemoveAllCpuIdLeafs()
 {
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
@@ -1546,11 +1546,11 @@ STDMETHODIMP Machine::removeAllCpuIdLeafs()
 
     /* Invalidate all standard leafs. */
     for (unsigned i = 0; i < RT_ELEMENTS(mHWData->mCpuIdStdLeafs); i++)
-        mHWData->mCpuIdStdLeafs[id].ulId  = -1;
+        mHWData->mCpuIdStdLeafs[i].ulId  = -1;
 
     /* Invalidate all extended leafs. */
     for (unsigned i = 0; i < RT_ELEMENTS(mHWData->mCpuIdExtLeafs); i++)
-        mHWData->mCpuIdExtLeafs[id].ulId = -1;
+        mHWData->mCpuIdExtLeafs[i].ulId = -1;
 
     return S_OK;
 }
