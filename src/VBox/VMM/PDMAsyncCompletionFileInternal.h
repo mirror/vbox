@@ -331,6 +331,8 @@ typedef struct PDMASYNCCOMPLETIONEPCLASSFILE
     PDMASYNCCOMPLETIONEPCLASS           Core;
     /** Flag whether we use the failsafe method. */
     bool                                fFailsafe;
+    /** Flag whether the file data cache is enabled. */
+    bool                                fCacheEnabled;
     /** Critical section protecting the list of async I/O managers. */
     RTCRITSECT                          CritSect;
     /** Pointer to the head of the async I/O managers. */

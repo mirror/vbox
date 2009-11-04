@@ -680,6 +680,10 @@ int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfg
 
     /* Initialize the critical section */
     rc = RTCritSectInit(&pCache->CritSect);
+
+    if (RT_SUCCESS(rc))
+        LogRel(("AIOMgr: Cache successfully initialised. Cache size is %u bytes\n", pCache->cbMax));
+
     return rc;
 }
 

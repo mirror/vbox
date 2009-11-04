@@ -526,10 +526,23 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
     rc = RTCritSectInit(&pEpClassFile->CritSect);
     if (RT_SUCCESS(rc))
     {
-        /* Init cache structure */
-        rc = pdmacFileCacheInit(pEpClassFile, pCfgNode);
-        if (RT_FAILURE(rc))
-            RTCritSectDelete(&pEpClassFile->CritSect);
+        /* Check if the cache was disabled by the user. */
+        rc = CFGMR3QueryBoolDef(pCfgNode, "CacheEnabled", &pEpClassFile->fCacheEnabled, true);
+        AssertLogRelRCReturn(rc, rc);
+
+        if (pEpClassFile->fCacheEnabled)
+        {
+            /* Init cache structure */
+            rc = pdmacFileCacheInit(pEpClassFile, pCfgNode);
+            if (RT_FAILURE(rc))
+            {
+                RTCritSectDelete(&pEpClassFile->CritSect);
+                pEpClassFile->fCacheEnabled = false;
+                LogRel(("AIOMgr: Failed to initialise the cache (rc=%Rrc), disabled caching\n"));
+            }
+        }
+        else
+            LogRel(("AIOMgr: Cache was globally disabled\n"));
     }
 
     return rc;
@@ -545,6 +558,10 @@ static void pdmacFileTerminate(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals)
     /* Destroy all left async I/O managers. */
     while (pEpClassFile->pAioMgrHead)
         pdmacFileAioMgrDestroy(pEpClassFile, pEpClassFile->pAioMgrHead);
+
+    /* Destroy the cache. */
+    if (pEpClassFile->fCacheEnabled)
+        pdmacFileCacheDestroy(pEpClassFile);
 
     RTCritSectDelete(&pEpClassFile->CritSect);
 }
@@ -656,7 +673,8 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                 }
                 else
                 {
-                    if (fFlags & PDMACEP_FILE_FLAGS_CACHING)
+                    if (   (fFlags & PDMACEP_FILE_FLAGS_CACHING)
+                        && (pEpClassFile->fCacheEnabled))
                     {
                         pEpFile->fCaching = true;
                         rc = pdmacFileEpCacheInit(pEpFile, pEpClassFile);
