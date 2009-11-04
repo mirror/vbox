@@ -78,10 +78,12 @@ VBGLR3DECL(int) VbglR3HostVersionCompare(const char *pszVer1, const char *pszVer
  *                              whether an update was found or not.
  * @param   ppszHostVersion     Receives pointer of allocated version string.
  *                              The returned pointer must be freed using
- *                              RTStrFree().
+ *                              VbglR3GuestPropReadValueFree().  Always set to
+ *                              NULL.
  * @param   ppszGuestVersion    Receives pointer of allocated revision string.
  *                              The returned pointer must be freed using
- *                              RTStrFree().  Always set to zero.
+ *                              VbglR3GuestPropReadValueFree().  Always set to
+ *                              NULL.
  */
 VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUpdate, char **ppszHostVersion, char **ppszGuestVersion)
 {
@@ -113,7 +115,7 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
         if (   *pszCheckHostVersion
             && atoi(pszCheckHostVersion) == 0) /** @todo r=bird: don't use atoi, use RTStrToXX. avoid std*.h! */
         {
-            LogRel(("No host version update check performed (disabled)."));
+            LogRel(("No host version update check performed (disabled).\n"));
             *pfUpdate = false;
         }
         VbglR3GuestPropReadValueFree(pszCheckHostVersion);
@@ -146,7 +148,7 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
             }
             else if (rc == VERR_NOT_FOUND) /* Never wrote a last checked host version before */
             {
-                LogFlow(("Never checked a host version before."));
+                LogFlow(("Never checked a host version before.\n"));
                 rc = VINF_SUCCESS;
             }
         }
@@ -166,7 +168,7 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
         if (VbglR3HostVersionCompare(*ppszHostVersion, *ppszGuestVersion) == 1) /* Is host version greater than guest add version? */
         {
             /* Yay, we have an update! */
-            LogRel(("Guest Additions update found! Please upgrade this machine to the latest Guest Additions."));
+            LogRel(("Guest Additions update found! Please upgrade this machine to the latest Guest Additions.\n"));
         }
         else
         {
