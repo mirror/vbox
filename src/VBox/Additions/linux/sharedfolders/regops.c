@@ -270,7 +270,7 @@ sf_reg_open (struct inode *inode, struct file *file)
                 return -ENOMEM;
         }
 
-        memset(&params, 0, sizeof(params));
+        RT_ZERO(params);
         params.Handle = SHFL_HANDLE_NIL;
         /* We check the value of params.Handle afterwards to find out if
          * the call succeeded or failed, as the API does not seem to cleanly

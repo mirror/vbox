@@ -80,7 +80,7 @@ sf_glob_alloc (struct vbsf_mount_info_new *info, struct sf_glob_info **sf_gp)
                 goto fail0;
         }
 
-        memset(sf_g, 0, sizeof(*sf_g));
+        RT_ZERO(*sf_g);
 
         if (   info->nullchar     != '\0'
             || info->signature[0] != VBSF_MOUNT_SIGNATURE_BYTE_0

@@ -650,7 +650,7 @@ void getCustomModes(HKEY hkeyVideo)
     int curMode = 0;
 
     /* null out the table */
-    memset(customModes, 0, sizeof(customModes));
+    RT_ZERO(customModes);
 
     do
     {
@@ -857,7 +857,7 @@ int handleRemoveCustomMode(int argc, char *argv[])
                 && (customModes[i].bpp  == bpp))
             {
                 RTPrintf("found mode at index %d\n", i);
-                memset(&customModes[i], 0, sizeof(customModes[i]));
+                RZ_ZERO(customModes[i]);
                 break;
             }
         }

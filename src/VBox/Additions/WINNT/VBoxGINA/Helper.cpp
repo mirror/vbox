@@ -52,9 +52,9 @@ HANDLE getVBoxDriver(void)
 
 void credentialsReset(void)
 {
-    memset(g_Username, '\0', sizeof(g_Username));
-    memset(g_Password, '\0', sizeof(g_Password));
-    memset(g_Domain, '\0', sizeof(g_Domain));
+    RT_ZERO(g_Username);
+    RT_ZERO(g_Password);
+    RT_ZERO(g_Domain);
 }
 
 bool credentialsAvailable(void)

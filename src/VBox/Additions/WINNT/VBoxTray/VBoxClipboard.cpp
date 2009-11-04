@@ -78,7 +78,7 @@ static int vboxClipboardConnect (VBOXCLIPBOARDCONTEXT *pCtx)
 {
     VBoxGuestHGCMConnectInfo info;
 
-    memset (&info, 0, sizeof (info));
+    RT_ZERO (info);
 
     info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
 
@@ -115,7 +115,7 @@ static void vboxClipboardDisconnect (VBOXCLIPBOARDCONTEXT *pCtx)
 
     VBoxGuestHGCMDisconnectInfo info;
 
-    memset (&info, 0, sizeof (info));
+    RT_ZERO (info);
 
     info.u32ClientID = pCtx->u32ClientID;
 
@@ -786,7 +786,7 @@ int VBoxClipboardInit (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfSt
         return VERR_NOT_SUPPORTED;
     }
 
-    memset (&gCtx, 0, sizeof (gCtx));
+    RT_ZERO (gCtx);
 
     gCtx.pEnv = pEnv;
 

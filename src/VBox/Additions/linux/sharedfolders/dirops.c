@@ -42,7 +42,7 @@ sf_dir_open (struct inode *inode, struct file *file)
                 return 0;
         }
 
-        memset(&params, 0, sizeof(params));
+        RT_ZERO(params);
 
         sf_d = sf_dir_info_alloc ();
 
@@ -408,7 +408,7 @@ sf_create_aux (struct inode *parent, struct dentry *dentry, int mode, int dirop)
                 dentry->d_name.name);
 #endif
 
-        memset(&params, 0, sizeof(params));
+        RT_ZERO(params);
         /* Ensure that the shared folders host service is using our fMode
          * paramter */
         params.Handle = SHFL_HANDLE_NIL;

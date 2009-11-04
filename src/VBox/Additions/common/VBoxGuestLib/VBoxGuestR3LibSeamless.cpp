@@ -46,7 +46,7 @@ VBGLR3DECL(int) VbglR3SeamlessSetCap(bool fState)
     VMMDevReqGuestCapabilities vmmreqGuestCaps;
     int rc = VINF_SUCCESS;
 
-    memset(&vmmreqGuestCaps, 0, sizeof(vmmreqGuestCaps));
+    RT_ZERO(vmmreqGuestCaps);
     vmmdevInitRequest(&vmmreqGuestCaps.header, VMMDevReq_ReportGuestCapabilities);
     vmmreqGuestCaps.caps = fState ? VMMDEV_GUEST_SUPPORTS_SEAMLESS : 0;
     rc = vbglR3GRPerform(&vmmreqGuestCaps.header);
