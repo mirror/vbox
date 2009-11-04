@@ -5211,7 +5211,8 @@
 
     <method name="setCpuIdLeaf" const="yes">
       <desc>
-        Sets the virtual CPU cpuid leaf for the specified index
+        Sets the virtual CPU cpuid leaf for the specified index. Note that these values
+        are not passed unmodified. VirtualBox clears features that it doesn't support.
 
         <result name="E_INVALIDARG">
           Invalid id.
