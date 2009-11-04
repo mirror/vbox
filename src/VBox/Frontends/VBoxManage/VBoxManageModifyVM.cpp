@@ -70,6 +70,7 @@ enum
     MODIFYVM_NESTEDPAGING,
     MODIFYVM_VTXVPID,
     MODIFYVM_CPUS,
+    MODIFYVM_CPUID,
     MODIFYVM_MONITORCOUNT,
     MODIFYVM_ACCELERATE3D,
     MODIFYVM_ACCELERATE2DVIDEO,
@@ -142,6 +143,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--synthcpu",                 MODIFYVM_SYNTHCPU,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--hwvirtex",                 MODIFYVM_HWVIRTEX,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--hwvirtexexcl",             MODIFYVM_HWVIRTEXEXCLUSIVE,         RTGETOPT_REQ_BOOL_ONOFF },
+    { "--cpuid",                    MODIFYVM_CPUID,                     RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX},
     { "--nestedpaging",             MODIFYVM_NESTEDPAGING,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--vtxvpid",                  MODIFYVM_VTXVPID,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--cpus",                     MODIFYVM_CPUS,                      RTGETOPT_REQ_UINT32 },
@@ -344,6 +346,24 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_HWVIRTEXEXCLUSIVE:
             {
                 CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_CPUID:
+            {
+                uint32_t id = ValueUnion.u32;
+                uint32_t aValue[4];
+
+                for (unsigned i = 0 ; i < 4 ; i++)
+                {
+                    int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX);
+                    if (RT_FAILURE(vrc))
+                        return errorSyntax(USAGE_MODIFYVM,
+                                           "Missing or Invalid argument to '%s'",
+                                           GetOptState.pDef->pszLong);
+                    aValue[i] = ValueUnion.u32;
+                }
+                CHECK_ERROR(machine, SetCpuIdLeaf(id, aValue[0], aValue[1], aValue[2], aValue[3]));
                 break;
             }
 
