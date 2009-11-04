@@ -298,8 +298,8 @@ public:
         ULONG          mCPUCount;
         BOOL           mAccelerate3DEnabled;
 
-        settings::CpuIdLeaf mCpuIdStdLeafs[0x10];
-        settings::CpuIdLeaf mCpuIdExtLeafs[0x10];
+        settings::CpuIdLeaf mCpuIdStdLeafs[10];
+        settings::CpuIdLeaf mCpuIdExtLeafs[10];
 
         DeviceType_T   mBootOrder[SchemaDefs::MaxBootPosition];
 
