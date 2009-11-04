@@ -5925,7 +5925,21 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             {
                 /* find a hard disk by UUID */
                 rc = mParent->findHardDisk(&dev.uuid, NULL, true /* aDoSetError */, &medium);
-                CheckComRCReturnRC(rc);
+                if (FAILED(rc))
+                {
+                    if (mType == IsSnapshotMachine)
+                    {
+                        // wrap another error message around the "cannot find hard disk" set by findHardDisk
+                        // so the user knows that the bad disk is in a snapshot somewhere
+                        com::ErrorInfo info;
+                        return setError(E_FAIL,
+                                        tr("A differencing image of snapshot {%RTuuid} could not be found. %ls"),
+                                        aSnapshotId->raw(),
+                                        info.getText().raw());
+                    }
+                    else
+                        return rc;
+                }
 
                 AutoWriteLock hdLock(medium);
 
