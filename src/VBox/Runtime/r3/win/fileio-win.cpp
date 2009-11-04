@@ -219,7 +219,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
             return VERR_INVALID_PARAMETER;
     }
     if (dwCreationDisposition == TRUNCATE_EXISTING)
-        /* The calling process must open the file with the GENERIC_WRITE bit set as part of the dwDesiredAccess parameter. */
+        /* Required for truncating the file (see MSDN), it is *NOT* part of FILE_GENERIC_WRITE. */
         dwDesiredAccess |= GENERIC_WRITE;
 
     /* RTFileSetMode needs following rights as well. */
