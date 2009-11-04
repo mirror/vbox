@@ -244,7 +244,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          1);     /* boolean */   RC_CHECK();
 
-    /* Standard leaf cpuid overrides. */
+    /* Standard cpuid leaf overrides. */
     for (unsigned leaf = 0; leaf < 0xA; leaf++)
     {
         ULONG ulEax, ulEbx, ulEcx, ulEdx;
@@ -260,7 +260,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         }
     }
 
-    /* Extended leaf cpuid overrides. */
+    /* Extended cpuid leaf overrides. */
     for (unsigned leaf = 0x80000000; leaf < 0x8000000A; leaf++)
     {
         ULONG ulEax, ulEbx, ulEcx, ulEdx;
