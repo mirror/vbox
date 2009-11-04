@@ -118,7 +118,10 @@ static void pdmacFileAioMgrNormalEndpointsSortByLoad(PPDMACEPFILEMGR pAioMgr)
 
         pEpCurr->AioMgr.pEndpointNext = pNext;
         pEpCurr->AioMgr.pEndpointPrev = pEpPrev;
-        pNext->AioMgr.pEndpointPrev = pEpCurr;
+
+        if (pNext)
+            pNext->AioMgr.pEndpointPrev = pEpCurr;
+
         if (pEpPrev)
             pEpPrev->AioMgr.pEndpointNext = pEpCurr;
         else
