@@ -494,6 +494,47 @@ STDMETHODIMP SystemProperties::GetMaxInstancesOfStorageBus(StorageBus_T aBus, UL
     return S_OK;
 }
 
+STDMETHODIMP SystemProperties::GetDeviceTypesForStorageBus(StorageBus_T aBus,
+                                 ComSafeArrayOut(DeviceType_T, aDeviceTypes))
+{
+    CheckComArgOutSafeArrayPointerValid(aDeviceTypes);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    /* no need to lock, this is const */
+    switch (aBus)
+    {
+        case StorageBus_SATA:
+        case StorageBus_IDE:
+        {
+            com::SafeArray<DeviceType_T> saDeviceTypes(2);
+            saDeviceTypes[0] = DeviceType_DVD;
+            saDeviceTypes[1] = DeviceType_HardDisk;
+            saDeviceTypes.detachTo(ComSafeArrayOutArg(aDeviceTypes));
+            break;
+        }
+        case StorageBus_SCSI:
+        {
+            com::SafeArray<DeviceType_T> saDeviceTypes(1);
+            saDeviceTypes[0] = DeviceType_HardDisk;
+            saDeviceTypes.detachTo(ComSafeArrayOutArg(aDeviceTypes));
+            break;
+        }
+        case StorageBus_Floppy:
+        {
+            com::SafeArray<DeviceType_T> saDeviceTypes(1);
+            saDeviceTypes[0] = DeviceType_Floppy;
+            saDeviceTypes.detachTo(ComSafeArrayOutArg(aDeviceTypes));
+            break;
+        }
+        default:
+            AssertMsgFailed(("Invalid bus type %d\n", aBus));
+    }
+
+    return S_OK;
+}
+
 STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMachineFolder)
 {
     CheckComArgOutPointerValid(aDefaultMachineFolder);
