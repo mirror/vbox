@@ -835,7 +835,8 @@ bool VBoxProblemReporter::askAboutSnapshotRestoring (const QString &aSnapshotNam
         tr ("<p>Are you sure you want to restore snapshot <b>%1</b>? "
             "This will cause you to lose your current machine state, which cannot be recovered.</p>")
             .arg (aSnapshotName),
-        "confirmSnapshotRestoring" /* aAutoConfirmId */,
+        /* Do NOT allow this message to be disabled! */
+        NULL /* aAutoConfirmId */,
         tr ("Restore"), tr ("Cancel"));
 }
 
