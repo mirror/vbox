@@ -7586,7 +7586,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="4b78105a-d066-4eab-ae48-ccb2c0ba5057"
+     uuid="8030645c-8fef-4320-bb7b-c829f00069dc"
      wsmap="managed"
      >
     <desc>
@@ -7901,6 +7901,20 @@
 
       <param name="maxInstances" type="unsigned long" dir="return">
         <desc>The maximum number of instances for the given storage bus.</desc>
+      </param>
+    </method>
+
+    <method name="getDeviceTypesForStorageBus">
+      <desc>Returns list of all the supported device types
+        (<link to="DeviceType"/>) for the given type of storage
+        bus.</desc>
+
+      <param name="bus" type="StorageBus" dir="in">
+        <desc>The storage bus type to get the value for.</desc>
+      </param>
+
+      <param name="deviceTypes" type="DeviceType" safearray="yes" dir="return">
+        <desc>The list of all supported device types for the given storage bus.</desc>
       </param>
     </method>
   </interface>

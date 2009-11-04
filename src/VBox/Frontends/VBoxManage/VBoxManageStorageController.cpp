@@ -72,6 +72,7 @@ int handleStorageAttach(HandlerArg *a)
     RTGETOPTSTATE GetState;
     ComPtr<IMachine> machine;
     ComPtr<IStorageController> storageCtl;
+    ComPtr<ISystemProperties> systemProperties;
 
     if (a->argc < 9)
         return errorSyntax(USAGE_STORAGEATTACH, "Too few parameters");
@@ -151,6 +152,9 @@ int handleStorageAttach(HandlerArg *a)
         errorGetOpt(USAGE_STORAGEATTACH, c, &ValueUnion);
         return 1;
     }
+
+    /* get the virtualbox system properties */
+    CHECK_ERROR_RET(a->virtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), 1);
 
     /* try to find the given machine */
     if (!Guid(machineuuid).isEmpty())
@@ -237,8 +241,24 @@ int handleStorageAttach(HandlerArg *a)
         {
             StorageBus_T storageBus = StorageBus_Null;
             DeviceType_T deviceType = DeviceType_Null;
+            com::SafeArray <DeviceType_T> saDeviceTypes;
+            ULONG driveCheck = 0;
 
+            /* check if the device type is supported by the controller */
             CHECK_ERROR(storageCtl, COMGETTER(Bus)(&storageBus));
+            CHECK_ERROR(systemProperties, GetDeviceTypesForStorageBus(storageBus, ComSafeArrayAsOutParam(saDeviceTypes)));
+            for (size_t i = 0; i < saDeviceTypes.size(); ++ i)
+            {
+                if (   (saDeviceTypes[i] == DeviceType_DVD)
+                    || (saDeviceTypes[i] == DeviceType_Floppy))
+                    driveCheck++;
+            }
+
+            if (!driveCheck)
+            {
+                errorArgument("The Attachment is not supported by the Storage Controller: '%s'", pszCtl);
+                goto leave;
+            }
 
             if (storageBus == StorageBus_Floppy)
                 deviceType = DeviceType_Floppy;
@@ -334,6 +354,40 @@ int handleStorageAttach(HandlerArg *a)
         {
             errorSyntax(USAGE_STORAGEATTACH, "Argument --type not specified\n");
             goto leave;
+        }
+
+        /* check if the device type is supported by the controller */
+        {
+            ULONG storageBus = StorageBus_Null;
+            com::SafeArray <DeviceType_T> saDeviceTypes;
+
+            CHECK_ERROR(storageCtl, COMGETTER(Bus)(&storageBus));
+            CHECK_ERROR(systemProperties, GetDeviceTypesForStorageBus(storageBus, ComSafeArrayAsOutParam(saDeviceTypes)));
+            if (SUCCEEDED(rc))
+            {
+                ULONG driveCheck = 0;
+                for (size_t i = 0; i < saDeviceTypes.size(); ++ i)
+                {
+                    if (   !RTStrICmp(pszType, "dvddrive")
+                        && (saDeviceTypes[i] == DeviceType_DVD))
+                        driveCheck++;
+
+                    if (   !RTStrICmp(pszType, "hdd")
+                        && (saDeviceTypes[i] == DeviceType_HardDisk))
+                        driveCheck++;
+
+                    if (   !RTStrICmp(pszType, "fdd")
+                        && (saDeviceTypes[i] == DeviceType_Floppy))
+                        driveCheck++;
+                }
+                if (!driveCheck)
+                {
+                    errorArgument("The Attachment is not supported by the Storage Controller: '%s'", pszCtl);
+                    goto leave;
+                }
+            }
+            else
+                goto leave;
         }
 
         if (!RTStrICmp(pszType, "dvddrive"))
