@@ -6493,6 +6493,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         data.fSyntheticCpu          = !!mHWData->mSyntheticCpu;
 
         /* Standard and Extended CPUID leafs. */
+        data.llCpuIdLeafs.clear();
         for (unsigned idx = 0; idx < RT_ELEMENTS(mHWData->mCpuIdStdLeafs); idx++)
         {
             if (mHWData->mCpuIdStdLeafs[idx].ulId != -1)
