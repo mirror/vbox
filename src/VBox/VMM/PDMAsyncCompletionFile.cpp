@@ -519,7 +519,13 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
     {
         pEpClassFile->uBitmaskAlignment   = AioLimits.cbBufferAlignment ? ~((RTR3UINTPTR)AioLimits.cbBufferAlignment - 1) : RTR3UINTPTR_MAX;
         pEpClassFile->cReqsOutstandingMax = AioLimits.cReqsOutstandingMax;
-        pEpClassFile->fFailsafe = false;
+
+        /* The user can force the failsafe manager. */
+        rc = CFGMR3QueryBoolDef(pCfgNode, "UseFailsafeIo", &pEpClassFile->fFailsafe, false);
+        AssertLogRelRCReturn(rc, rc);
+
+        if (pEpClassFile->fFailsafe)
+            LogRel(("AIOMgr: Failsafe I/O was requested by user\n"));
     }
 
     /* Init critical section. */
