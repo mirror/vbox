@@ -6439,6 +6439,11 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
 
         if (    mData->mMachineState == MachineState_Saved
              || mData->mMachineState == MachineState_Restoring
+                // when deleting a snapshot we may or may not have a saved state in the current state,
+                // so let's not assert here please
+             || (    (mData->mMachineState == MachineState_DeletingSnapshot)
+                  && (!mSSData->mStateFilePath.isEmpty())
+                )
            )
         {
             Assert(!mSSData->mStateFilePath.isEmpty());
