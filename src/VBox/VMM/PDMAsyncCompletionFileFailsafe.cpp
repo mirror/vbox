@@ -155,6 +155,8 @@ int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser)
                         pAioMgr->pEndpointsHead->AioMgr.pEndpointPrev = pEndpointNew;
                     pAioMgr->pEndpointsHead = pEndpointNew;
 
+                    pAioMgr->cEndpoints++;
+
                     /*
                      * Process the task list the first time. There might be pending requests
                      * if the endpoint was migrated from another endpoint.
@@ -180,6 +182,8 @@ int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser)
 
                     if (pNext)
                         pNext->AioMgr.pEndpointPrev = pPrev;
+
+                    pAioMgr->cEndpoints--;
                     break;
                 }
                 case PDMACEPFILEAIOMGRBLOCKINGEVENT_CLOSE_ENDPOINT:

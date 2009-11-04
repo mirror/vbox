@@ -741,7 +741,9 @@ static int pdmacFileAioMgrNormalCheckEndpoints(PPDMACEPFILEMGR pAioMgr)
 
     while (pEndpoint)
     {
-        if (!pEndpoint->pFlushReq && (pEndpoint->enmState == PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE))
+        if (!pEndpoint->pFlushReq
+            && (pEndpoint->enmState == PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE)
+            && !pEndpoint->AioMgr.fMoving)
         {
             rc = pdmacFileAioMgrNormalQueueReqs(pAioMgr, pEndpoint);
             if (RT_FAILURE(rc))
