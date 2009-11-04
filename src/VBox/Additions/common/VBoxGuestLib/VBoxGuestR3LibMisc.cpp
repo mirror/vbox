@@ -176,38 +176,72 @@ VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
  */
 VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
 {
-    VMMDevReqGuestCapabilities2 vmmreqGuestCaps;
-    int rc;
+    VMMDevReqGuestCapabilities2 Req;
 
-    vmmdevInitRequest(&vmmreqGuestCaps.header, VMMDevReq_SetGuestCapabilities);
-    vmmreqGuestCaps.u32OrMask = fOr;
-    vmmreqGuestCaps.u32NotMask = fNot;
-    rc = vbglR3GRPerform(&vmmreqGuestCaps.header);
+    vmmdevInitRequest(&Req.header, VMMDevReq_SetGuestCapabilities);
+    Req.u32OrMask = fOr;
+    Req.u32NotMask = fNot;
+    int rc = vbglR3GRPerform(&Req.header);
 #ifdef DEBUG
     if (RT_SUCCESS(rc))
-        LogRel(("Successfully changed guest capabilities: or mask 0x%x, not mask 0x%x.\n",
-                fOr, fNot));
+        LogRel(("Successfully changed guest capabilities: or mask 0x%x, not mask 0x%x.\n", fOr, fNot));
     else
-        LogRel(("Failed to change guest capabilities: or mask 0x%x, not mask 0x%x.  rc = %Rrc.\n",
-                fOr, fNot, rc));
+        LogRel(("Failed to change guest capabilities: or mask 0x%x, not mask 0x%x.  rc=%Rrc.\n", fOr, fNot, rc));
 #endif
     return rc;
 }
 
 
 /**
- * Retrieves the installed Guest Additions version/revision.
+ * Fallback for vbglR3GetAdditionsVersion.
+ */
+static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszRev)
+{
+    if (ppszVer)
+    {
+        *ppszVer = RTStrDup(VBOX_VERSION_STRING);
+        if (!*ppszVer)
+            return VERR_NO_STR_MEMORY;
+    }
+
+    if (ppszRev)
+    {
+        char szRev[64];
+        RTStrPrintf(szRev, sizeof(szRev), "%d", VBOX_SVN_REV);
+        *ppszRev = RTStrDup(szRev);
+        if (!*ppszRev)
+        {
+            if (ppszVer)
+            {
+                RTStrFree(*ppszVer);
+                *ppszVer = NULL;
+            }
+            return VERR_NO_STR_MEMORY;
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Retrieves the installed Guest Additions version and/or revision.
  *
  * @returns IPRT status value
- * @param   ppszVer    Receives pointer of allocated version string. NULL is accepted.
- *                     The returned pointer must be freed using RTStrFree().
- * @param   ppszRev    Receives pointer of allocated revision string. NULL is accepted.
- *                     The returned pointer must be freed using RTStrFree().
+ * @param   ppszVer     Receives pointer of allocated version string. NULL is
+ *                      accepted. The returned pointer must be freed using
+ *                      RTStrFree().
+ * @param   ppszRev     Receives pointer of allocated revision string. NULL is
+ *                      accepted. The returned pointer must be freed using
+ *                      RTStrFree().
  */
 VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
 {
-    int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
+    /*
+     * Try get the *installed* version first.
+     */
+    int rc = VINF_SUCCESS;
     HKEY hKey;
     LONG r;
 
@@ -237,6 +271,15 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
     /* Did we get something worth looking at? */
     if (r == ERROR_SUCCESS)
     {
+/** @todo r=bird: If anything fails here, this code will end up returning
+ *        rc=VINF_SUCCESS and uninitialized output pointers.  It will also
+ *        leak memory in some cases.  Iff the value type isn't string,
+ *        garbage is returned.
+ *
+ *        RTMemAlloc shall be freed by RTMemFree not RTStrFree.  Don't ever mix
+ *        because it will blow up in an annoying way when using the eletrical
+ *        fences and stuff.  Use a temporary buffer and RTStrDupEx.
+ */
         /* Version. */
         DWORD dwType;
         DWORD dwSize = 32;
@@ -263,24 +306,20 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
     }
     else
     {
-        /* No registry entries found, return the compile-time version string atm. */
-        /* Version. */
-        if (ppszVer)
-            rc = RTStrAPrintf(ppszVer, "%s", VBOX_VERSION_STRING);
-        /* Revision. */
-        if (ppszRev)
-            rc = RTStrAPrintf(ppszRev, "%s", VBOX_SVN_REV);
+        /*
+         * No registry entries found, return the version string compiled
+         * into this binary.
+         */
+        rc = vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszRev);
     }
-    if (NULL != hKey)
+    if (hKey != NULL) /** @todo r=bird: This looks kind of wrong for the failure case... */
         RegCloseKey(hKey);
-# else /* !RT_OS_WINDOWS */
-    /* On non-Windows platforms just return the compile-time version string atm. */
-    /* Version. */
-    if (ppszVer)
-        rc = RTStrAPrintf(ppszVer, "%s", VBOX_VERSION_STRING);
-    /* Revision. */
-    if (ppszRev)
-        rc = RTStrAPrintf(ppszRev, "%s", VBOX_SVN_REV);
-# endif /* !RT_OS_WINDOWS */
     return rc;
+
+#else /* !RT_OS_WINDOWS */
+    /*
+     * On non-Windows platforms just return the compile-time version string.
+     */
+    return vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszRev);
+#endif /* !RT_OS_WINDOWS */
 }
