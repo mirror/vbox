@@ -92,11 +92,13 @@ public:
     Utf8Str             mstrHostname;
     uint32_t            muPort;
     MachineState_T      menmOldMachineState;
+    bool                mfSuspendedByUs;
 
     TeleporterStateSrc(Console *pConsole, PVM pVM, Progress *pProgress, MachineState_T enmOldMachineState)
         : TeleporterState(pConsole, pVM, pProgress, true /*fIsSource*/)
         , muPort(UINT32_MAX)
         , menmOldMachineState(enmOldMachineState)
+        , mfSuspendedByUs(false)
     {
     }
 };
@@ -605,21 +607,18 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
         return hrc;
 
     /*
-     * Do compatability checks of the VM config and the host hardware.
-     */
-    /** @todo later
-     * Update: As much as possible will be taken care of by the first snapshot
-     *         pass. */
-
-    /*
      * Start loading the state.
+     *
+     * Note! The saved state includes vital configuration data which will be
+     *       verified against the VM config on the other end.  This is all done
+     *       in the first pass, so we should fail pretty promptly on misconfig.
      */
     hrc = teleporterSrcSubmitCommand(pState, "load");
     if (FAILED(hrc))
         return hrc;
 
     void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(pState));
-    vrc = VMR3Teleport(pState->mpVM, &g_teleporterTcpOps, pvUser, teleporterProgressCallback, pvUser);
+    vrc = VMR3Teleport(pState->mpVM, &g_teleporterTcpOps, pvUser, teleporterProgressCallback, pvUser, &pState->mfSuspendedByUs);
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("VMR3Teleport -> %Rrc"), vrc);
 
@@ -642,7 +641,7 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
     }
 
     /*
-     * State fun? Automatic power off?
+     * We're at the point of no return.
      */
     if (!pState->mptrProgress->notifyPointOfNoReturn())
     {
@@ -653,6 +652,10 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
     if (FAILED(hrc))
         return hrc;
 
+    /*
+     * teleporterSrcThreadWrapper will do the automatic power off because it
+     * has to release the AutoVMCaller.
+     */
     return S_OK;
 }
 
@@ -669,32 +672,51 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
 {
     TeleporterStateSrc *pState = (TeleporterStateSrc *)pvUser;
 
+    /*
+     * Console::teleporterSrc does the work, we just grab onto the VM handle
+     * and do the cleanups afterwards.
+     */
     AutoVMCaller autoVMCaller(pState->mptrConsole);
     HRESULT hrc = autoVMCaller.rc();
 
     if (SUCCEEDED(hrc))
         hrc = pState->mptrConsole->teleporterSrc(pState);
 
-    /* (Ignore the return here as teleporterSrc deals with cancellation.) */
-    pState->mptrProgress->notifyComplete(hrc);
+    /* We can no longer be cancelled (success), or it doesn't matter any longer (failure). */
     pState->mptrProgress->setCancelCallback(NULL, NULL);
 
-    /*
-     * Deal with the state machinery after taking the console object lock.
-     */
+    /* Write lock the console before resetting mptrCancelableProgress and fixing the state.  */
     AutoWriteLock autoLock(pState->mptrConsole);
-    if (   pState->mptrConsole->mMachineState == MachineState_Teleporting
-        || pState->mptrConsole->mMachineState == MachineState_TeleportingPausedVM
-       )
+    pState->mptrConsole->mptrCancelableProgress.setNull();
+
+    VMSTATE const        enmVMState      = VMR3GetState(pState->mpVM);
+    MachineState_T const enmMachineState = pState->mptrConsole->mMachineState;
+    if (SUCCEEDED(hrc))
     {
-/** @todo shut down the VM and deal with Pause() and PowerDown() calls!! */
-        VMSTATE enmVMState = VMR3GetState(pState->mpVM);
-        if (SUCCEEDED(hrc))
-        {
-            if (enmVMState == VMSTATE_SUSPENDED)
-                pState->mptrConsole->setMachineState(MachineState_TeleportingPausedVM);
-        }
-        else
+        /*
+         * Automatically shut down the VM on success.
+         *
+         * Note! We have to release the VM caller object or we'll deadlock in
+         *       powerDown.
+         */
+        AssertLogRelMsg(enmVMState == VMSTATE_SUSPENDED, ("%s\n", VMR3GetStateName(enmVMState)));
+        AssertLogRelMsg(enmMachineState == MachineState_TeleportingPausedVM, ("%s\n", Global::stringifyMachineState(enmMachineState)));
+
+        autoVMCaller.release();
+        hrc = pState->mptrConsole->powerDown();
+    }
+    else
+    {
+        /*
+         * Work the state machinery on failure.
+         *
+         * If the state is no longer 'Teleporting*', some other operation has
+         * canceled us and there is nothing we need to do here.  In all other
+         * cases, we've failed one way or another.
+         */
+        if (   enmMachineState == MachineState_Teleporting
+            || enmMachineState == MachineState_TeleportingPausedVM
+           )
         {
             switch (enmVMState)
             {
@@ -706,15 +728,20 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
                 case VMSTATE_POWERING_OFF_LS:
                 case VMSTATE_RESETTING:
                 case VMSTATE_RESETTING_LS:
-                    if (pState->menmOldMachineState == MachineState_Running)
-                        pState->mptrConsole->setMachineState(MachineState_Running);
-                    else
-                        pState->mptrConsole->setMachineState(MachineState_Paused);
+                    Assert(!pState->mfSuspendedByUs);
+                    pState->mptrConsole->setMachineState(MachineState_Running);
                     break;
+
                 case VMSTATE_GURU_MEDITATION:
                 case VMSTATE_GURU_MEDITATION_LS:
                     pState->mptrConsole->setMachineState(MachineState_Stuck);
                     break;
+
+                case VMSTATE_FATAL_ERROR:
+                case VMSTATE_FATAL_ERROR_LS:
+                    pState->mptrConsole->setMachineState(MachineState_Paused);
+                    break;
+
                 default:
                     AssertMsgFailed(("%s\n", VMR3GetStateName(enmVMState)));
                 case VMSTATE_SUSPENDED:
@@ -723,13 +750,20 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
                 case VMSTATE_SUSPENDING_LS:
                 case VMSTATE_SUSPENDING_EXT_LS:
                     pState->mptrConsole->setMachineState(MachineState_Paused);
-                    /** @todo somehow make the VMM report back external pause even on error. */
-                    autoLock.leave();
-                    VMR3Resume(pState->mpVM);
+                    if (pState->mfSuspendedByUs)
+                    {
+                        autoLock.leave();
+                        int rc = VMR3Resume(pState->mpVM);
+                        AssertLogRelMsgRC(rc, ("VMR3Resume -> %Rrc\n", rc));
+                        autoLock.enter();
+                    }
                     break;
             }
         }
     }
+    autoLock.leave();
+
+    pState->mptrProgress->notifyComplete(hrc);
 
     /*
      * Cleanup.
@@ -790,14 +824,12 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress *
      * Create a progress object, spawn a worker thread and change the state.
      * Note! The thread won't start working until we release the lock.
      */
-    LogFlowThisFunc(("Initiating TELEPORTER request...\n"));
+    LogFlowThisFunc(("Initiating TELEPORT request...\n"));
 
     ComObjPtr<Progress> ptrProgress;
     HRESULT hrc = ptrProgress.createObject();
     CheckComRCReturnRC(hrc);
-    hrc = ptrProgress->init(static_cast<IConsole *>(this),
-                                        Bstr(tr("Teleporter")),
-                                        TRUE /*aCancelable*/);
+    hrc = ptrProgress->init(static_cast<IConsole *>(this), Bstr(tr("Teleporter")), TRUE /*aCancelable*/);
     CheckComRCReturnRC(hrc);
 
     TeleporterStateSrc *pState = new TeleporterStateSrc(this, mpVM, ptrProgress, mMachineState);
@@ -817,7 +849,10 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress *
         else
             hrc = setMachineState(MachineState_TeleportingPausedVM);
         if (SUCCEEDED(hrc))
+        {
             ptrProgress.queryInterfaceTo(aProgress);
+            mptrCancelableProgress = ptrProgress;
+        }
         else
             ptrProgress->Cancel();
     }

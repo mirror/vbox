@@ -1398,12 +1398,12 @@ VMMR3DECL(int) VMR3Resume(PVM pVM)
  *
  * @param   pVM             The VM handle.
  * @param   pVCpu           The VMCPU handle of the EMT.
- * @param   pvUser          Ignored.
+ * @param   pvUser          The pfSuspended argument of vmR3SaveTeleport.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoSuspend(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     LogFlow(("vmR3LiveDoSuspend: pVM=%p pVCpu=%p/#%u\n", pVM, pVCpu, pVCpu->idCpu));
-    Assert(!pvUser); NOREF(pvUser);
+    bool *pfSuspended = (bool *)pvUser;
 
     /*
      * The first thread thru here tries to change the state.  We shouldn't be
@@ -1478,6 +1478,8 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoSuspend(PVM pVM, PVMCPU pVCpu, void 
                                  VMSTATE_SUSPENDED_LS, VMSTATE_SUSPENDING_LS);
         if (RT_FAILURE(rc))
             return VERR_INTERNAL_ERROR_3;
+
+        *pfSuspended = true;
     }
 
     return VINF_EM_SUSPEND;
@@ -1645,11 +1647,12 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
  * @param   enmAfter        What to do afterwards.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvProgressUser  User argument for the progress callback.
+ * @param   pfSuspended     Set if we suspended the VM.
  *
  * @thread  Non-EMT
  */
 static int vmR3SaveTeleport(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
-                            SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser)
+                            SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool *pfSuspended)
 {
     /*
      * Request the operation in EMT(0).
@@ -1675,12 +1678,12 @@ static int vmR3SaveTeleport(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStre
                 {
                     /* Try suspend the VM. */
                     rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
-                                            vmR3LiveDoSuspend, NULL);
+                                            vmR3LiveDoSuspend, pfSuspended);
                     if (rc != VERR_TRY_AGAIN)
                         break;
 
                     /* Wait for the state to change. */
-                    RTThreadSleep(250); /** @todo LS: fix this polling wait by some smart use of multiple release event  semaphores.. */
+                    RTThreadSleep(250); /** @todo Live Migration: fix this polling wait by some smart use of multiple release event  semaphores.. */
                 }
             if (RT_SUCCESS(rc))
                 rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3LiveDoStep2, 2, pVM, pSSM);
@@ -1747,9 +1750,10 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwar
     /*
      * Join paths with VMR3Teleport.
      */
+    bool fSuspended = false; /** @todo need this for live snapshots. */
     SSMAFTER enmAfter = fContinueAfterwards ? SSMAFTER_CONTINUE : SSMAFTER_DESTROY;
     int rc = vmR3SaveTeleport(pVM, pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOpsUser*/,
-                              enmAfter, pfnProgress, pvUser);
+                              enmAfter, pfnProgress, pvUser, &fSuspended);
     LogFlow(("VMR3Save: returns %Rrc\n", rc));
     return rc;
 }
@@ -1765,13 +1769,15 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwar
  * @param   pvStreamOpsUser     The user argument to the stream methods.
  * @param   pfnProgress         Progress callback. Optional.
  * @param   pvProgressUser      User argument for the progress callback.
+ * @param   pfSuspended         Set if we suspended the VM.
  *
  * @thread      Non-EMT.
  * @vmstate     Suspended or Running
  * @vmstateto   Saving+Suspended or
  *              RunningLS+SuspeningLS+SuspendedLS+Saving+Suspended.
  */
-VMMR3DECL(int) VMR3Teleport(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, PFNVMPROGRESS pfnProgress, void *pvProgressUser)
+VMMR3DECL(int) VMR3Teleport(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
+                            PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool *pfSuspended)
 {
     LogFlow(("VMR3Teleport: pVM=%p pStreamOps=%p pvStreamOps=%p pfnProgress=%p pvProgressUser=%p\n",
              pVM, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser));
@@ -1779,6 +1785,8 @@ VMMR3DECL(int) VMR3Teleport(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsU
     /*
      * Validate input.
      */
+    AssertPtr(pfSuspended);
+    *pfSuspended = false;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_OTHER_THREAD(pVM);
     AssertPtrReturn(pStreamOps, VERR_INVALID_POINTER);
@@ -1788,8 +1796,8 @@ VMMR3DECL(int) VMR3Teleport(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsU
      * Join paths with VMR3Save.
      */
     int rc = vmR3SaveTeleport(pVM, NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser,
-                              SSMAFTER_TELEPORT, pfnProgress, pvProgressUser);
-    LogFlow(("VMR3Teleport: returns %Rrc\n", rc));
+                              SSMAFTER_TELEPORT, pfnProgress, pvProgressUser, pfSuspended);
+    LogFlow(("VMR3Teleport: returns %Rrc (*pfSuspended=%RTbool)\n", rc, *pfSuspended));
     return rc;
 }
 

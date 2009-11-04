@@ -1503,9 +1503,6 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
 
     AutoWriteLock alock(this);
 
-    /** @todo Live Migration: Support powering down while teleporting. Maybe also
-     *        while taking a live snapshot.  (In case they never finish and you
-     *        or some other operator wish to shut down the VM.) */
     switch (mMachineState)
     {
         case MachineState_Running:
@@ -1513,11 +1510,32 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
         case MachineState_Stuck:
             break;
 
+        /* Try cancel the teleportation. */
+        case MachineState_Teleporting:
+        case MachineState_TeleportingPausedVM:
+            if (!mptrCancelableProgress.isNull())
+            {
+                HRESULT hrc = mptrCancelableProgress->Cancel();
+                if (SUCCEEDED(hrc))
+                    break;
+            }
+            return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot power down at this point in a teleportation"));
+
+        /* Try cancel the live snapshot. */
+        case MachineState_LiveSnapshotting:
+            if (!mptrCancelableProgress.isNull())
+            {
+                HRESULT hrc = mptrCancelableProgress->Cancel();
+                if (SUCCEEDED(hrc))
+                    break;
+            }
+            return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot power down at this point in a live snapshot"));
+
         /* extra nice error message for a common case */
         case MachineState_Saved:
             return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot power down a saved virtual machine"));
         case MachineState_Stopping:
-            return setError(VBOX_E_INVALID_VM_STATE, tr("Virtual machine is being powered down."));
+            return setError(VBOX_E_INVALID_VM_STATE, tr("Virtual machine is being powered down"));
         default:
             return setError(VBOX_E_INVALID_VM_STATE,
                             tr("Invalid machine state: %s (must be Running, Paused or Stuck)"),
@@ -1534,16 +1552,14 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
                    FALSE /* aCancelable */);
 
     /* setup task object and thread to carry out the operation asynchronously */
-    std::auto_ptr <VMProgressTask> task(
-        new VMProgressTask(this, progress, true /* aUsesVMPtr */));
+    std::auto_ptr<VMProgressTask> task(new VMProgressTask(this, progress, true /* aUsesVMPtr */));
     AssertReturn(task->isOk(), E_FAIL);
 
     int vrc = RTThreadCreate(NULL, Console::powerDownThread,
                              (void *) task.get(), 0,
                              RTTHREADTYPE_MAIN_WORKER, 0,
                              "VMPowerDown");
-    ComAssertMsgRCRet(vrc,
-         ("Could not create VMPowerDown thread (%Rrc)", vrc), E_FAIL);
+    ComAssertMsgRCRet(vrc, ("Could not create VMPowerDown thread (%Rrc)", vrc), E_FAIL);
 
     /* task is now owned by powerDownThread(), so release it */
     task.release();
@@ -1606,13 +1622,22 @@ STDMETHODIMP Console::Pause()
 
     AutoWriteLock alock(this);
 
-    if (   mMachineState != MachineState_Running
-        && mMachineState != MachineState_Teleporting
-        && mMachineState != MachineState_LiveSnapshotting
-       )
-        return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Invalid machine state: %s"),
-            Global::stringifyMachineState(mMachineState));
+    switch (mMachineState)
+    {
+        case MachineState_Running:
+        case MachineState_Teleporting:
+        case MachineState_LiveSnapshotting:
+            break;
+
+        case MachineState_Paused:
+        case MachineState_TeleportingPausedVM:
+            return setError(VBOX_E_INVALID_VM_STATE, tr("Already paused"));
+
+        default:
+            return setError(VBOX_E_INVALID_VM_STATE,
+                            tr("Invalid machine state: %s"),
+                            Global::stringifyMachineState(mMachineState));
+    }
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -1625,14 +1650,13 @@ STDMETHODIMP Console::Pause()
 
     int vrc = VMR3Suspend(mpVM);
 
-    HRESULT rc = RT_SUCCESS(vrc) ? S_OK :
-        setError(VBOX_E_VM_ERROR,
-            tr("Could not suspend the machine execution (%Rrc)"),
-            vrc);
+    HRESULT hrc = S_OK;
+    if (RT_FAILURE(vrc))
+        hrc = setError(VBOX_E_VM_ERROR, tr("Could not suspend the machine execution (%Rrc)"), vrc);
 
-    LogFlowThisFunc(("rc=%08X\n", rc));
+    LogFlowThisFunc(("hrc=%Rhrc\n", hrc));
     LogFlowThisFuncLeave();
-    return rc;
+    return hrc;
 }
 
 STDMETHODIMP Console::Resume()
@@ -4813,19 +4837,17 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
 
     AssertMsg(   mMachineState == MachineState_Running
               || mMachineState == MachineState_Paused
-              || mMachineState == MachineState_Teleporting           /** @todo Live Migration: ???*/
-              || mMachineState == MachineState_LiveSnapshotting      /** @todo Live Migration: ???*/
               || mMachineState == MachineState_Stuck
               || mMachineState == MachineState_Starting
               || mMachineState == MachineState_Stopping
               || mMachineState == MachineState_Saving
               || mMachineState == MachineState_Restoring
-              || mMachineState == MachineState_TeleportingPausedVM   /** @todo Teleportation ???*/
+              || mMachineState == MachineState_TeleportingPausedVM
               || mMachineState == MachineState_TeleportingIn         /** @todo Teleportation ???*/
               , ("Invalid machine state: %s\n", Global::stringifyMachineState(mMachineState)));
 
-    LogRel(("Console::powerDown(): A request to power off the VM has been issued (mMachineState=%d, InUninit=%d)\n",
-             mMachineState, autoCaller.state() == InUninit));
+    LogRel(("Console::powerDown(): A request to power off the VM has been issued (mMachineState=%s, InUninit=%d)\n",
+            Global::stringifyMachineState(mMachineState), autoCaller.state() == InUninit));
 
     /* Check if we need to power off the VM. In case of mVMPoweredOff=true, the
      * VM has already powered itself off in vmstateChangeCallback() and is just
@@ -4848,9 +4870,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
         && mMachineState != MachineState_Restoring
         && mMachineState != MachineState_Stopping
         && mMachineState != MachineState_TeleportingIn
-        && mMachineState != MachineState_Teleporting /** @todo Live Migration: what should really happen here? */
         && mMachineState != MachineState_TeleportingPausedVM
-        && mMachineState != MachineState_LiveSnapshotting /** @todo Live Migration: what should really happen here? */
        )
         setMachineState(MachineState_Stopping);
 
@@ -4880,7 +4900,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
 
 #ifdef VBOX_WITH_HGCM
 
-# ifdef VBOX_WITH_GUEST_PROPS
+# ifdef VBOX_WITH_GUEST_PROPS  /** @todo r=bird: This may be premature, the VM may still be running at this point! */
 
     /* Save all guest property store entries to the machine XML file */
     com::SafeArray<BSTR> namesOut;
@@ -4888,7 +4908,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
     com::SafeArray<ULONG64> timestampsOut;
     com::SafeArray<BSTR> flagsOut;
     Bstr pattern("");
-    if (pattern.isNull())
+    if (pattern.isNull()) /** @todo r=bird: What is pattern actually used for?  And, again, what's is the out-of-memory policy in main? */
         rc = E_OUTOFMEMORY;
     else
         rc = doEnumerateGuestProperties(Bstr(""), ComSafeArrayAsOutParam(namesOut),
