@@ -59,8 +59,6 @@ static void svmR0SetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bool
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/* IO operation lookup arrays. */
-static uint32_t const g_aIOSize[4] = {1, 2, 0, 4};
 
 /**
  * Sets up and activates AMD-V on the current CPU
@@ -2241,10 +2239,13 @@ ResumeExecution:
                 /* If any IO breakpoints are armed, then we should check if a debug trap needs to be generated. */
                 if (pCtx->dr[7] & X86_DR7_ENABLED_MASK)
                 {
+                    /* IO operation lookup arrays. */
+                    static uint32_t const aIOSize[4] = {1, 2, 0, 4};
+
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatDRxIOCheck);
                     for (unsigned i=0;i<4;i++)
                     {
-                        unsigned uBPLen = g_aIOSize[X86_DR7_GET_LEN(pCtx->dr[7], i)];
+                        unsigned uBPLen = aIOSize[X86_DR7_GET_LEN(pCtx->dr[7], i)];
 
                         if (    (IoExitInfo.n.u16Port >= pCtx->dr[i] && IoExitInfo.n.u16Port < pCtx->dr[i] + uBPLen)
                             &&  (pCtx->dr[7] & (X86_DR7_L(i) | X86_DR7_G(i)))
