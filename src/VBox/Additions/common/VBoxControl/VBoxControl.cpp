@@ -857,7 +857,7 @@ int handleRemoveCustomMode(int argc, char *argv[])
                 && (customModes[i].bpp  == bpp))
             {
                 RTPrintf("found mode at index %d\n", i);
-                RZ_ZERO(customModes[i]);
+                RT_ZERO(customModes[i]);
                 break;
             }
         }
