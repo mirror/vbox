@@ -684,6 +684,11 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, SHFLHAND
         }
     }
 
+    if (fShflFlags & SHFL_CF_ACCESS_APPEND)
+    {
+        fOpen |= RTFILE_O_APPEND;
+    }
+
     switch (BIT_FLAG(fShflFlags, SHFL_CF_ACCESS_MASK_ATTR))
     {
         default:

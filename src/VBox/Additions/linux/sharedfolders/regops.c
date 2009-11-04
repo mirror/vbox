@@ -321,6 +321,11 @@ sf_reg_open (struct inode *inode, struct file *file)
                 }
         }
 
+        if (file->f_flags & O_APPEND) {
+                LogFunc(("O_APPEND set\n"));
+                params.CreateFlags |= SHFL_CF_ACCESS_APPEND;
+        }
+
         params.Info.Attr.fMode = inode->i_mode;
         LogFunc(("sf_reg_open: calling vboxCallCreate, file %s, flags=%d, %#x\n",
                  sf_i->path->String.utf8 , file->f_flags, params.CreateFlags));
