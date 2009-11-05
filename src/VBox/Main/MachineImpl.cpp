@@ -1381,8 +1381,10 @@ STDMETHODIMP Machine::SetCpuProperty(CpuPropertyType_T property, BOOL aVal)
 
 STDMETHODIMP Machine::GetCpuIdLeaf(ULONG id, ULONG *aValEax, ULONG *aValEbx, ULONG *aValEcx, ULONG *aValEdx)
 {
-    if (!aValEax || !aValEbx || !aValEcx || !aValEdx)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aValEax);
+    CheckComArgOutPointerValid(aValEbx);
+    CheckComArgOutPointerValid(aValEcx);
+    CheckComArgOutPointerValid(aValEdx);
 
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
@@ -1403,7 +1405,7 @@ STDMETHODIMP Machine::GetCpuIdLeaf(ULONG id, ULONG *aValEax, ULONG *aValEbx, ULO
     case 0x9:
     case 0xA:
         if (mHWData->mCpuIdStdLeafs[id].ulId != id)
-            return E_INVALIDARG;    /* not set */
+            return setError(E_INVALIDARG, tr("CpuId override leaf %#x is not set"), id);
 
         *aValEax = mHWData->mCpuIdStdLeafs[id].ulEax;
         *aValEbx = mHWData->mCpuIdStdLeafs[id].ulEbx;
@@ -1423,7 +1425,7 @@ STDMETHODIMP Machine::GetCpuIdLeaf(ULONG id, ULONG *aValEax, ULONG *aValEbx, ULO
     case 0x80000009:
     case 0x8000000A:
         if (mHWData->mCpuIdExtLeafs[id - 0x80000000].ulId != id)
-            return E_INVALIDARG;    /* not set */
+            return setError(E_INVALIDARG, tr("CpuId override leaf %#x is not set"), id);
 
         *aValEax = mHWData->mCpuIdExtLeafs[id - 0x80000000].ulEax;
         *aValEbx = mHWData->mCpuIdExtLeafs[id - 0x80000000].ulEbx;
@@ -1432,7 +1434,7 @@ STDMETHODIMP Machine::GetCpuIdLeaf(ULONG id, ULONG *aValEax, ULONG *aValEbx, ULO
         break;
 
     default:
-        return E_INVALIDARG;
+        return setError(E_INVALIDARG, tr("CpuId override leaf %#x is out of range"), id);
     }
     return S_OK;
 }
@@ -1460,6 +1462,7 @@ STDMETHODIMP Machine::SetCpuIdLeaf(ULONG id, ULONG aValEax, ULONG aValEbx, ULONG
     case 0x8:
     case 0x9:
     case 0xA:
+        AssertCompile(RT_ELEMENTS(mHWData->mCpuIdStdLeafs) == 0xA);
         AssertRelease(id < RT_ELEMENTS(mHWData->mCpuIdStdLeafs));
         mHWData->mCpuIdStdLeafs[id].ulId  = id;
         mHWData->mCpuIdStdLeafs[id].ulEax = aValEax;
@@ -1479,6 +1482,7 @@ STDMETHODIMP Machine::SetCpuIdLeaf(ULONG id, ULONG aValEax, ULONG aValEbx, ULONG
     case 0x80000008:
     case 0x80000009:
     case 0x8000000A:
+        AssertCompile(RT_ELEMENTS(mHWData->mCpuIdExtLeafs) == 0xA);
         AssertRelease(id - 0x80000000 < RT_ELEMENTS(mHWData->mCpuIdExtLeafs));
         mHWData->mCpuIdExtLeafs[id - 0x80000000].ulId  = id;
         mHWData->mCpuIdExtLeafs[id - 0x80000000].ulEax = aValEax;
@@ -1488,7 +1492,7 @@ STDMETHODIMP Machine::SetCpuIdLeaf(ULONG id, ULONG aValEax, ULONG aValEbx, ULONG
         break;
 
     default:
-        return E_INVALIDARG;
+        return setError(E_INVALIDARG, tr("CpuId override leaf %#x is out of range"), id);
     }
     return S_OK;
 }
@@ -1516,9 +1520,10 @@ STDMETHODIMP Machine::RemoveCpuIdLeaf(ULONG id)
     case 0x8:
     case 0x9:
     case 0xA:
+        AssertCompile(RT_ELEMENTS(mHWData->mCpuIdStdLeafs) == 0xA);
         AssertRelease(id < RT_ELEMENTS(mHWData->mCpuIdStdLeafs));
         /* Invalidate leaf. */
-        mHWData->mCpuIdStdLeafs[id].ulId = -1;
+        mHWData->mCpuIdStdLeafs[id].ulId = UINT32_MAX;
         break;
 
     case 0x80000000:
@@ -1532,13 +1537,14 @@ STDMETHODIMP Machine::RemoveCpuIdLeaf(ULONG id)
     case 0x80000008:
     case 0x80000009:
     case 0x8000000A:
+        AssertCompile(RT_ELEMENTS(mHWData->mCpuIdExtLeafs) == 0xA);
         AssertRelease(id - 0x80000000 < RT_ELEMENTS(mHWData->mCpuIdExtLeafs));
         /* Invalidate leaf. */
-        mHWData->mCpuIdExtLeafs[id - 0x80000000].ulId  = -1;
+        mHWData->mCpuIdExtLeafs[id - 0x80000000].ulId = UINT32_MAX;
         break;
 
     default:
-        return E_INVALIDARG;
+        return setError(E_INVALIDARG, tr("CpuId override leaf %#x is out of range"), id);
     }
     return S_OK;
 }
@@ -1555,11 +1561,11 @@ STDMETHODIMP Machine::RemoveAllCpuIdLeafs()
 
     /* Invalidate all standard leafs. */
     for (unsigned i = 0; i < RT_ELEMENTS(mHWData->mCpuIdStdLeafs); i++)
-        mHWData->mCpuIdStdLeafs[i].ulId  = -1;
+        mHWData->mCpuIdStdLeafs[i].ulId = UINT32_MAX;
 
     /* Invalidate all extended leafs. */
     for (unsigned i = 0; i < RT_ELEMENTS(mHWData->mCpuIdExtLeafs); i++)
-        mHWData->mCpuIdExtLeafs[i].ulId = -1;
+        mHWData->mCpuIdExtLeafs[i].ulId = UINT32_MAX;
 
     return S_OK;
 }
@@ -6593,12 +6599,12 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         data.llCpuIdLeafs.clear();
         for (unsigned idx = 0; idx < RT_ELEMENTS(mHWData->mCpuIdStdLeafs); idx++)
         {
-            if (mHWData->mCpuIdStdLeafs[idx].ulId != -1)
+            if (mHWData->mCpuIdStdLeafs[idx].ulId != UINT32_MAX)
                 data.llCpuIdLeafs.push_back(mHWData->mCpuIdStdLeafs[idx]);
         }
         for (unsigned idx = 0; idx < RT_ELEMENTS(mHWData->mCpuIdExtLeafs); idx++)
         {
-            if (mHWData->mCpuIdExtLeafs[idx].ulId != -1)
+            if (mHWData->mCpuIdExtLeafs[idx].ulId != UINT32_MAX)
                 data.llCpuIdLeafs.push_back(mHWData->mCpuIdExtLeafs[idx]);
         }
 

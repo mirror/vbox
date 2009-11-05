@@ -394,7 +394,7 @@ typedef std::map<uint32_t, DeviceType_T> BootOrderMap;
 struct CpuIdLeaf
 {
     CpuIdLeaf()
-        : ulId(-1),
+        : ulId(UINT32_MAX),
           ulEax(0),
           ulEbx(0),
           ulEcx(0),
