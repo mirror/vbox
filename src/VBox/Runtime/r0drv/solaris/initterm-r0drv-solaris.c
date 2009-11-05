@@ -51,19 +51,28 @@ bool g_frtSolarisSplSetsEIF = false;
 int rtR0InitNative(void)
 {
     /*
-     * Detech whether spl*() is preserving the interrupt flag or not.
-     * This is a problem on S10.
+     * Initialize vbi (keeping it separate for now)
      */
-    RTCCUINTREG uOldFlags = ASMIntDisableFlags();
-    int iOld = splr(DISP_LEVEL);
-    if (ASMIntAreEnabled())
-        g_frtSolarisSplSetsEIF = true;
-    splx(iOld);
-    if (ASMIntAreEnabled())
-        g_frtSolarisSplSetsEIF = true;
-    ASMSetFlags(uOldFlags);
+    int rc = vbi_init();
+    if (!rc)
+    {
+        /*
+         * Detech whether spl*() is preserving the interrupt flag or not.
+         * This is a problem on S10.
+         */
+        RTCCUINTREG uOldFlags = ASMIntDisableFlags();
+        int iOld = splr(DISP_LEVEL);
+        if (ASMIntAreEnabled())
+            g_frtSolarisSplSetsEIF = true;
+        splx(iOld);
+        if (ASMIntAreEnabled())
+            g_frtSolarisSplSetsEIF = true;
+        ASMSetFlags(uOldFlags);
 
-    return VINF_SUCCESS;
+        return VINF_SUCCESS;
+    }
+    cmn_err(CE_NOTE, "vbi_init failed. rc=%d\n", rc);
+    return VERR_GENERAL_FAILURE;
 }
 
 

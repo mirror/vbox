@@ -186,9 +186,19 @@ static int off_t_preempt        = -1;
 
 /* End of v6 intro */
 
-
+#if 0
 int
 _init(void)
+{
+    int err = vbi_init();
+    if (!err)
+        err = mod_install(&vbi_modlinkage);
+	return (err);
+}
+#endif
+
+int
+vbi_init(void)
 {
 	int err;
 
@@ -265,14 +275,10 @@ _init(void)
 		cmn_err(CE_NOTE, ":Thread structure sanity check failed! OS version mismatch.\n");
 		return EINVAL;
 	}
-
-	err = mod_install(&vbi_modlinkage);
-	if (err != 0)
-		return (err);
-
 	return (0);
 }
 
+#if 0
 int
 _fini(void)
 {
@@ -288,6 +294,8 @@ _info(struct modinfo *modinfop)
 {
 	return (mod_info(&vbi_modlinkage, modinfop));
 }
+#endif
+
 
 static ddi_dma_attr_t base_attr = {
 	DMA_ATTR_V0,		/* Version Number */

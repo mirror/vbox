@@ -33,7 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define RTTIME_INCL_TIMESPEC
-#include "the-solaris-kernel.h"
+#include "../the-solaris-kernel.h"
 #include "internal/iprt.h"
 #include <iprt/time.h>
 

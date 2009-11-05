@@ -392,15 +392,15 @@ VBOX_WITH_PDM_ASYNC_COMPLETION = 1
 # Temporary switch for enabling / disabling the new USB code on Darwin.
 VBOX_WITH_NEW_USB_CODE_ON_DARWIN=1
 # Enable USB code that relies on USBA driver election callback & our own USB client driver on Solaris.
-#ifdef VBOX_WITH_USB
-# VBOX_WITH_NEW_USB_CODE_ON_SOLARIS=1
-#endif
+ifdef VBOX_WITH_USB
+VBOX_WITH_NEW_USB_CODE_ON_SOLARIS=1
+endif
 # Enable the hal/sysfs USB code on Linux.  This depends on VBOX_WITH_DBUS.
 ifdef VBOX_WITH_DBUS
  VBOX_USB_WITH_SYSFS=1
 endif
 # Use the new VBI module on Solaris.
-VBOX_WITH_SOLARIS_VBI = 1
+#VBOX_WITH_SOLARIS_VBI = 1
 # Enable 64 bits guest pointers.
 VBOX_WITH_64_BITS_GUESTS = 1
 # Enable multi-core VCPUs.
@@ -2316,9 +2316,6 @@ TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS                = _KERNEL _STRICT_STDC IN_RING0 IN_RT_R0
 TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_SOLARIS_SYS_INCS)
 TEMPLATE_VBOXR0DRV_LDFLAGS             = -r -dy
-ifdef VBOX_WITH_SOLARIS_VBI
- TEMPLATE_VBOXR0DRV_LDFLAGS           += -N misc/vbi
-endif
 TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -64
 # Exclude -Wall because of solaris headers' pragma ident warnings that gcc refuses to supress.
 TEMPLATE_VBOXR0DRV_CFLAGS              = -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
@@ -3624,9 +3621,6 @@ TEMPLATE_VBOXGUESTR0_LIBS.win.x86   = \
 TEMPLATE_VBOXGUESTR0_DEFS        = $(TEMPLATE_VBOXR0DRV_DEFS) IN_GUEST IN_GUEST_R0
 ifeq ($(KBUILD_TARGET),solaris) # No VBI for the guest additions yet.
  TEMPLATE_VBOXGUESTR0_LDFLAGS    = -r -dy
-# ifdef VBOX_WITH_SOLARIS_VBI
-#  TEMPLATE_VBOXGUESTR0DRV_LDFLAGS += -N misc/vbi
-# endif
 endif
 
 #
