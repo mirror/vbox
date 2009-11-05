@@ -50,11 +50,6 @@
      <property name="allColumnsShowFocus" >
       <bool>true</bool>
      </property>
-     <column>
-      <property name="text" >
-       <string>[snapshot]</string>
-      </property>
-     </column>
     </widget>
    </item>
   </layout>
