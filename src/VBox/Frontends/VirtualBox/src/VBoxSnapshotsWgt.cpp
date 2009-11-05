@@ -259,6 +259,7 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
 
     mTreeWidget->header()->hide();
 
+#if 0
     /* We want to draw nodes & branches for the
      * snapshots QTreeWidget independent of Look&Feel
      * style. Unfortunately, Qt is not draws branches
@@ -270,6 +271,7 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     QWindowsStyle *treeWidgetStyle = new QWindowsStyle;
     mTreeWidget->setStyle (treeWidgetStyle);
     connect (mTreeWidget, SIGNAL (destroyed (QObject *)), treeWidgetStyle, SLOT (deleteLater()));
+#endif
 
     /* ToolBar creation */
     VBoxToolBar *toolBar = new VBoxToolBar (this);
