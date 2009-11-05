@@ -242,7 +242,8 @@ static int vbsfPathCheck(const char *pUtf8Path, size_t cbPath)
 }
 
 static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING pPath,
-                              uint32_t cbPath, char **ppszFullPath, uint32_t *pcbFullPathRoot, bool fWildCard = false)
+                              uint32_t cbPath, char **ppszFullPath, uint32_t *pcbFullPathRoot,
+                              bool fWildCard = false, bool fPreserveLastComponent = false)
 {
     int rc = VINF_SUCCESS;
 
@@ -457,11 +458,11 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
             &&  !vbsfIsGuestMappingCaseSensitive(root))
         {
             RTFSOBJINFO info;
-            char *pszWildCardComponent = NULL;
+            char *pszLastComponent = NULL;
 
-            if (fWildCard)
+            if (fWildCard || fPreserveLastComponent)
             {
-                /* strip off the last path component, that contains the wildcard(s) */
+                /* strip off the last path component, that has to be preserved: contains the wildcard(s) or a 'rename' target. */
                 uint32_t len = (uint32_t)strlen(pszFullPath);
                 char    *src = pszFullPath + len - 1;
 
@@ -487,10 +488,10 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
                         temp++;
                     }
 
-                    if (fHaveWildcards)
+                    if (fHaveWildcards || fPreserveLastComponent)
                     {
-                        pszWildCardComponent = src;
-                        *pszWildCardComponent = 0;
+                        pszLastComponent = src;
+                        *pszLastComponent = 0;
                     }
                 }
             }
@@ -580,8 +581,8 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
                     rc = VERR_FILE_NOT_FOUND;
 
             }
-            if (pszWildCardComponent)
-                *pszWildCardComponent = RTPATH_DELIMITER;
+            if (pszLastComponent)
+                *pszLastComponent = RTPATH_DELIMITER;
 
             /* might be a new file so don't fail here! */
             rc = VINF_SUCCESS;
@@ -2073,7 +2074,7 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
     if (rc != VINF_SUCCESS)
         return rc;
 
-    rc = vbsfBuildFullPath (pClient, root, pDest, pDest->u16Size, &pszFullPathDest, NULL);
+    rc = vbsfBuildFullPath (pClient, root, pDest, pDest->u16Size, &pszFullPathDest, NULL, false, true);
     if (RT_SUCCESS (rc))
     {
         Log(("Rename %s to %s\n", pszFullPathSrc, pszFullPathDest));
