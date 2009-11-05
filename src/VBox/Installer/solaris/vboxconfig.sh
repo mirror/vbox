@@ -50,8 +50,9 @@ DESC_VBOXNET="NetAdapter"
 MOD_VBOXFLT=vboxflt
 DESC_VBOXFLT="NetFilter"
 
-MOD_VBI=vbi
-DESC_VBI="Kernel Interface"
+# No Separate VBI since (3.1)
+#MOD_VBI=vbi
+#DESC_VBI="Kernel Interface"
 
 MOD_VBOXUSBMON=vboxusbmon
 DESC_VBOXUSBMON="USBMonitor"
@@ -441,7 +442,8 @@ remove_drivers()
     unload_module "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$fatal"
     rem_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$fatal"
 
-    unload_module "$MOD_VBI" "$DESC_VBI" "$fatal"
+# No separate VBI since 3.1
+#    unload_module "$MOD_VBI" "$DESC_VBI" "$fatal"
 
     # remove devlinks
     if test -h "/dev/vboxdrv" || test -f "/dev/vboxdrv"; then
