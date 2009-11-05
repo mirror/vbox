@@ -241,7 +241,6 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
     /*
      * Try get the *installed* version first.
      */
-    int rc = VINF_SUCCESS;
     HKEY hKey;
     LONG r;
 
@@ -269,6 +268,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
     }
 
     /* Did we get something worth looking at? */
+    int rc;
     if (r == ERROR_SUCCESS)
     {
 /** @todo r=bird: If anything fails here, this code will end up returning
@@ -283,25 +283,38 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
         /* Version. */
         DWORD dwType;
         DWORD dwSize = 32;
+        char *pszTmp;
         if (ppszVer)
         {
-            char *pszVer = (char*)RTMemAlloc(dwSize);
-            if (pszVer)
+            pszTmp = (char*)RTMemAlloc(dwSize);
+            if (pszTmp)
             {
-                if (ERROR_SUCCESS == RegQueryValueEx(hKey, "Version", NULL, &dwType, (BYTE*)(LPCTSTR)pszVer, &dwSize))
-                    *ppszVer = pszVer;
+                r = RegQueryValueEx(hKey, "Version", NULL, &dwType, (BYTE*)(LPCTSTR)pszTmp, &dwSize);
+                if (r == ERROR_SUCCESS)
+                    rc = RTStrDupEx(ppszVer, pszTmp);
+                else
+                    rc = RTErrConvertFromNtStatus(r);
+                RTMemFree(pszTmp);
             }
+            else
+                rc = VERR_NO_MEMORY;
         }
         /* Revision. */
         if (ppszRev)
         {
             dwSize = 32; /* Reset */
-            char *pszRev = (char*)RTMemAlloc(dwSize);
-            if (pszRev)
+            pszTmp = (char*)RTMemAlloc(dwSize);
+            if (pszTmp)
             {
-                if (ERROR_SUCCESS == RegQueryValueEx(hKey, "Revision", NULL, &dwType, (BYTE*)(LPCTSTR)pszRev, &dwSize))
-                    *ppszRev = pszRev;
+                r = RegQueryValueEx(hKey, "Revision", NULL, &dwType, (BYTE*)(LPCTSTR)pszTmp, &dwSize);
+                if (r == ERROR_SUCCESS)
+                    rc = RTStrDupEx(ppszRev, pszTmp);
+                else
+                    rc = RTErrConvertFromNtStatus(r);
+                RTMemFree(pszTmp);
             }
+            else
+                rc = VERR_NO_MEMORY;
         }
     }
     else
