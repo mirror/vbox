@@ -253,6 +253,35 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     else
         RTPrintf("Synthetic Cpu:   %s\n", fSyntheticCpu ? "on" : "off");
 
+    if (details != VMINFO_MACHINEREADABLE)
+        RTPrintf("CPUID overrides: ");
+    ULONG cFound = 0;
+    static uint32_t const s_auCpuIdRanges[4] =
+    {
+        UINT32_C(0x00000000), UINT32_C(0x0000000a),
+        UINT32_C(0x80000000), UINT32_C(0x0000000a)
+    };
+    for (unsigned i = 0; i < RT_ELEMENTS(s_auCpuIdRanges); i += 2)
+        for (uint32_t uLeaf = s_auCpuIdRanges[i]; uLeaf < s_auCpuIdRanges[i + 1]; uLeaf++)
+        {
+            ULONG uEAX, uEBX, uECX, uEDX;
+            rc = machine->GetCpuIdLeaf(uLeaf, &uEAX, &uEBX, &uECX, &uEDX);
+            if (SUCCEEDED(rc))
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("cpuid=%08x,%08x,%08x,%08x,%08x", uLeaf, uEAX, uEBX, uECX, uEDX);
+                else
+                {
+                    if (!cFound)
+                        RTPrintf("Leaf no.  EAX      EBX      ECX      EDX\n");
+                    RTPrintf("                 %08x  %08x %08x %08x %08x\n", uLeaf, uEAX, uEBX, uECX, uEDX);
+                }
+                cFound++;
+            }
+        }
+    if (!cFound && details != VMINFO_MACHINEREADABLE)
+        RTPrintf("None\n");
+
     ComPtr <IBIOSSettings> biosSettings;
     machine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
 
