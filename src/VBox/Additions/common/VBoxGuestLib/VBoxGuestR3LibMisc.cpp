@@ -237,11 +237,11 @@ static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszRev)
  */
 VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
 {
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
     /*
      * Try get the *installed* version first.
      */
-    HKEY hKey;
+    HKEY hKey = NULL;
     LONG r;
 
     /* Check the new path first. */
@@ -271,15 +271,6 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
     int rc;
     if (r == ERROR_SUCCESS)
     {
-/** @todo r=bird: If anything fails here, this code will end up returning
- *        rc=VINF_SUCCESS and uninitialized output pointers.  It will also
- *        leak memory in some cases.  Iff the value type isn't string,
- *        garbage is returned.
- *
- *        RTMemAlloc shall be freed by RTMemFree not RTStrFree.  Don't ever mix
- *        because it will blow up in an annoying way when using the eletrical
- *        fences and stuff.  Use a temporary buffer and RTStrDupEx.
- */
         /* Version. */
         DWORD dwType;
         DWORD dwSize = 32;
@@ -291,9 +282,16 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
             {
                 r = RegQueryValueEx(hKey, "Version", NULL, &dwType, (BYTE*)(LPCTSTR)pszTmp, &dwSize);
                 if (r == ERROR_SUCCESS)
-                    rc = RTStrDupEx(ppszVer, pszTmp);
+                {
+                    if (dwType == REG_SZ)
+                        rc = RTStrDupEx(ppszVer, pszTmp);
+                    else
+                        rc = VERR_INVALID_PARAMETER;
+                }
                 else
+                {
                     rc = RTErrConvertFromNtStatus(r);
+                }
                 RTMemFree(pszTmp);
             }
             else
@@ -308,14 +306,23 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
             {
                 r = RegQueryValueEx(hKey, "Revision", NULL, &dwType, (BYTE*)(LPCTSTR)pszTmp, &dwSize);
                 if (r == ERROR_SUCCESS)
-                    rc = RTStrDupEx(ppszRev, pszTmp);
+                {
+                    if (dwType == REG_SZ)
+                        rc = RTStrDupEx(ppszRev, pszTmp);
+                    else
+                        rc = VERR_INVALID_PARAMETER;
+                }
                 else
+                {
                     rc = RTErrConvertFromNtStatus(r);
+                }
                 RTMemFree(pszTmp);
             }
             else
                 rc = VERR_NO_MEMORY;
         }
+        if (hKey != NULL)
+            RegCloseKey(hKey);
     }
     else
     {
@@ -325,14 +332,12 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
          */
         rc = vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszRev);
     }
-    if (hKey != NULL) /** @todo r=bird: This looks kind of wrong for the failure case... */
-        RegCloseKey(hKey);
     return rc;
 
-#else /* !RT_OS_WINDOWS */
+# else /* !RT_OS_WINDOWS */
     /*
      * On non-Windows platforms just return the compile-time version string.
      */
     return vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszRev);
-#endif /* !RT_OS_WINDOWS */
+# endif /* !RT_OS_WINDOWS */
 }
