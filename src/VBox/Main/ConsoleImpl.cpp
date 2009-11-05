@@ -6838,7 +6838,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                 {
                     /* -> ConsoleImplTeleporter.cpp */
                     vrc = console->teleporterTrg(pVM, pMachine, task->mStartPaused, task->mProgress);
-                    if (RT_FAILURE(vrc))
+                    if (RT_FAILURE(vrc) && !task->mErrorMsg.length())
                         rc = E_FAIL;    /* Avoid the "Missing error message..." assertion. */
                 }
                 else if (task->mStartPaused)
