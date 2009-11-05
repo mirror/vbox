@@ -124,7 +124,7 @@ static int displayMakeThumbnail(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
     int rc = VINF_SUCCESS;
 
     uint8_t *pu8Thumbnail = NULL;
-    size_t cbThumbnail = 0;
+    uint32_t cbThumbnail = 0;
     uint32_t cxThumbnail = 0;
     uint32_t cyThumbnail = 0;
 
@@ -189,13 +189,13 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
 
     /* 32bpp small image with maximum dimension = 64 pixels. */
     uint8_t *pu8Thumbnail = NULL;
-    size_t cbThumbnail = 0;
+    uint32_t cbThumbnail = 0;
     uint32_t cxThumbnail = 0;
     uint32_t cyThumbnail = 0;
 
     /* PNG screenshot with maximum dimension = 1024 pixels. */
     uint8_t *pu8PNG = NULL;
-    size_t cbPNG = 0;
+    uint32_t cbPNG = 0;
     uint32_t cxPNG = 0;
     uint32_t cyPNG = 0;
 
