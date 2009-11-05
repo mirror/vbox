@@ -81,8 +81,11 @@ static DECLCALLBACK(int) drvRawFileWrite(PPDMISTREAM pInterface, const void *pvB
     {
         size_t cbWritten;
         rc = RTFileWrite(pThis->OutputFile, pvBuf, *pcbWrite, &cbWritten);
+#if 0
+        /* don't flush here, takes too long and we will loose characters */
         if (RT_SUCCESS(rc))
             RTFileFlush(pThis->OutputFile);
+#endif
         *pcbWrite = cbWritten;
     }
 
