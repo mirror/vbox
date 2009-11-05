@@ -463,7 +463,7 @@ VirtualBox_SOURCES.win += \
 VirtualBox_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
 	src/darwin/VBoxUtils-darwin.cpp \
-	src/darwin/VBoxDockIconPreview.cpp \
+	src/darwin/AbstractDockIconPreview.cpp \
 	src/VBoxFBQuartz2D.cpp
 
 ifdef VBOX_WITH_ICHAT_THEATER
@@ -477,13 +477,14 @@ ifdef VBOX_WITH_COCOA_QT
  	src/darwin/VBoxCocoaApplication.m \
  	src/darwin/VBoxUtils-darwin-cocoa.mm \
 	src/darwin/VBoxCocoaSpecialControls.mm \
-	src/darwin/VBoxDockIconPreview-cocoa.mm
+	src/darwin/CocoaDockIconPreview.mm
  VirtualBox_QT_MOCHDRS.darwin = \
 	include/VBoxCocoaSpecialControls.h
 
 else
  VirtualBox_SOURCES.darwin += \
- 	src/darwin/VBoxUtils-darwin-carbon.cpp
+ 	src/darwin/VBoxUtils-darwin-carbon.cpp \
+	src/darwin/CarbonDockIconPreview.cpp
 endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)

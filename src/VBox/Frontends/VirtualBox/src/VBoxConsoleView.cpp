@@ -81,7 +81,7 @@ const int XKeyRelease = KeyRelease;
 #endif // Q_WS_X11
 
 #if defined (Q_WS_MAC)
-# include "VBoxDockIconPreview.h"
+# include "DockIconPreview.h"
 # include "DarwinKeyboard.h"
 # ifdef QT_MAC_USE_COCOA
 #  include "darwin/VBoxCocoaApplication.h"
@@ -1282,6 +1282,10 @@ bool VBoxConsoleView::event (QEvent *e)
                 else
                     viewport()->unsetCursor();
 #endif
+
+#ifdef Q_WS_MAC
+                mDockIconPreview->setOriginalSize (re->width(), re->height());
+#endif /* Q_WS_MAC */
 
                 /* This event appears in case of guest video was changed
                  * for somehow even without video resolution change.

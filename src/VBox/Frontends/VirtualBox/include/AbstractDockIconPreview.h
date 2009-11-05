@@ -1,7 +1,8 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VBoxDockIconPreview class declaration
+ * Abstract class for the dock icon preview
  */
 
 /*
@@ -20,41 +21,39 @@
  * additional information or have any questions.
  */
 
-#ifndef ___VBoxDockIconPreview_h___
-#define ___VBoxDockIconPreview_h___
+#ifndef ___AbstractVBoxDockIconPreview_h___
+#define ___AbstractVBoxDockIconPreview_h___
 
+/* System includes */
+#include <ApplicationServices/ApplicationServices.h>
+
+/* VBox includes */
 #include "VBoxUtils-darwin.h"
 
-RT_C_DECLS_BEGIN
-void darwinCreateVBoxDockIconTileView (void);
-void darwinDestroyVBoxDockIconTileView (void);
-
-CGContextRef darwinBeginCGContextForApplicationDockTile (void);
-void darwinEndCGContextForApplicationDockTile (CGContextRef aContext);
-
-void darwinOverlayApplicationDockTileImage (CGImageRef pImage);
-void darwinRestoreApplicationDockTileImage (void);
-RT_C_DECLS_END
-
-#ifndef __OBJC__
 class VBoxConsoleWnd;
 class VBoxFrameBuffer;
 
 class QPixmap;
 
-class VBoxDockIconPreview
+class AbstractDockIconPreview
 {
 public:
-    VBoxDockIconPreview (VBoxConsoleWnd *aMainWnd, const QPixmap& aOverlayImage);
-    ~VBoxDockIconPreview();
+    AbstractDockIconPreview (VBoxConsoleWnd *aMainWnd, const QPixmap& aOverlayImage);
+    virtual ~AbstractDockIconPreview() {};
 
-    void updateDockOverlay();
-    void updateDockPreview (CGImageRef aVMImage);
-    void updateDockPreview (VBoxFrameBuffer *aFrameBuffer);
+    virtual void updateDockOverlay() = 0;
+    virtual void updateDockPreview (CGImageRef aVMImage) = 0;
+    virtual void updateDockPreview (VBoxFrameBuffer *aFrameBuffer);
 
-private:
-    inline void initPreviewImages();
-    inline void initOverlayData (int aBitmapByteCount);
+    virtual void setOriginalSize (int /* aWidth */, int /* aHeight */) {}
+};
+
+class AbstractDockIconPreviewHelper
+{
+public:
+    AbstractDockIconPreviewHelper (VBoxConsoleWnd *aMainWnd, const QPixmap& aOverlayImage);
+    virtual ~AbstractDockIconPreviewHelper();
+    void initPreviewImages();
     inline CGImageRef stateImage() const;
     void drawOverlayIcons (CGContextRef aContext);
 
@@ -62,8 +61,6 @@ private:
     inline CGRect flipRect (CGRect aRect) const { return ::darwinFlipCGRect (aRect, mDockIconRect); }
     inline CGRect centerRect (CGRect aRect) const { return ::darwinCenterRectTo (aRect, mDockIconRect); }
     inline CGRect centerRectTo (CGRect aRect, const CGRect& aToRect) const { return ::darwinCenterRectTo (aRect, aToRect); }
-
-    void updateDockPreviewImpl (CGContextRef aContext, CGImageRef aVMImage);
 
     /* Private member vars */
     VBoxConsoleWnd *mMainWnd;
@@ -73,8 +70,6 @@ private:
     CGImageRef mDockMonitor;
     CGImageRef mDockMonitorGlossy;
 
-    void *mBitmapData;
-
     CGImageRef mStatePaused;
     CGImageRef mStateSaving;
     CGImageRef mStateRestoring;
@@ -82,7 +77,6 @@ private:
     CGRect mUpdateRect;
     CGRect mMonitorRect;
 };
-#endif /* !__OBJC__ */
 
-#endif /* !___VBoxDockIconPreview_h___ */
+#endif /* ___AbstractVBoxDockIconPreview_h___ */
 
