@@ -192,7 +192,10 @@ STDMETHODIMP MediumAttachment::COMGETTER(Controller)(IStorageController **aContr
     /** @todo ugly hack, MediumAttachment should have a direct reference
      * to the storage controller, but can't have that right now due to
      * how objects are created for settings rollback support. */
-    HRESULT rc = mParent->GetStorageControllerByName(m->controllerName, aController);
+    HRESULT rc = E_FAIL;
+
+    if (mParent)
+        rc = mParent->GetStorageControllerByName(m->controllerName, aController);
 
     LogFlowThisFuncLeave();
     return rc;
