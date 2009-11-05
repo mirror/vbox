@@ -23,8 +23,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <stdlib.h>
-#include <stdio.h>
+#include <stdio.h>          /* Required for sscanf */
 #include <iprt/string.h>
 #include <VBox/log.h>
 
@@ -113,7 +112,7 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
     {
         /* Only don't do the check if we have a valid "0" in it */
         if (   *pszCheckHostVersion
-            && atoi(pszCheckHostVersion) == 0) /** @todo r=bird: don't use atoi, use RTStrToXX. avoid std*.h! */
+            && RTStrToInt16(pszCheckHostVersion) == 0) /* Either string conversion failed or we really did disable it */
         {
             LogRel(("No host version update check performed (disabled).\n"));
             *pfUpdate = false;
