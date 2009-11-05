@@ -47,7 +47,10 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** Saved state data unit version. */
-#define PGM_SAVED_STATE_VERSION                 10
+#define PGM_SAVED_STATE_VERSION                 11
+/** Saved state data unit version used during 3.1 development, misses the RAM
+ *  config. */
+#define PGM_SAVED_STATE_VERSION_NO_RAM_CFG      10
 /** Saved state data unit version for 3.0 (pre teleportation). */
 #define PGM_SAVED_STATE_VERSION_3_0_0           9
 /** Saved state data unit version for 2.2.2 and later. */
@@ -1128,6 +1131,60 @@ static int pgmR3PrepRamPages(PVM pVM)
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Saves the RAM configuration. 
+ *  
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   pSSM                The saved state handle.
+ */
+static int pgmR3SaveRamConfig(PVM pVM, PSSMHANDLE pSSM)
+{
+    uint32_t cbRamHole = 0;
+    int rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "RamHoleSize", &cbRamHole, MM_RAM_HOLE_SIZE_DEFAULT);
+    AssertRCReturn(rc, rc);
+
+    uint64_t cbRam     = 0;
+    rc = CFGMR3QueryU64Def(CFGMR3GetRoot(pVM), "RamSize", &cbRam, 0);
+    AssertRCReturn(rc, rc);
+
+    SSMR3PutU32(pSSM, cbRamHole);
+    return SSMR3PutU64(pSSM, cbRam);
+}
+
+
+/**
+ * Loads and verifies the RAM configuration.
+ *  
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   pSSM                The saved state handle.
+ */
+static int pgmR3LoadRamConfig(PVM pVM, PSSMHANDLE pSSM)
+{
+    uint32_t cbRamHoleCfg = 0;
+    int rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "RamHoleSize", &cbRamHoleCfg, MM_RAM_HOLE_SIZE_DEFAULT);
+    AssertRCReturn(rc, rc);
+
+    uint64_t cbRamCfg     = 0;
+    rc = CFGMR3QueryU64Def(CFGMR3GetRoot(pVM), "RamSize", &cbRamCfg, 0);
+    AssertRCReturn(rc, rc);
+
+    uint32_t cbRamHoleSaved;
+    SSMR3GetU32(pSSM, &cbRamHoleSaved);
+
+    uint64_t cbRamSaved;
+    rc = SSMR3GetU64(pSSM, &cbRamSaved);
+    AssertRCReturn(rc, rc);
+
+    if (   cbRamHoleCfg != cbRamHoleSaved
+        || cbRamCfg     != cbRamSaved)
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Ram config mismatch: saved=%RX64/%RX32 config=%RX64/%RX32 (RAM/Hole)"), 
+                                cbRamSaved, cbRamHoleSaved, cbRamCfg, cbRamHoleCfg);
+    return VINF_SUCCESS;
+}
+
 #ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
 
 /**
@@ -1655,6 +1712,9 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
      */
     if (uPass == 0)
     {
+        rc = pgmR3SaveRamConfig(pVM, pSSM);
+        if (RT_FAILURE(rc))
+            return rc;
         rc = pgmR3SaveRomRanges(pVM, pSSM);
         if (RT_FAILURE(rc))
             return rc;
@@ -1846,7 +1906,9 @@ static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
         }
         else
         {
-            rc = pgmR3SaveRomRanges(pVM, pSSM);
+            rc = pgmR3SaveRamConfig(pVM, pSSM);
+            if (RT_SUCCESS(rc))
+                rc = pgmR3SaveRomRanges(pVM, pSSM);
             if (RT_SUCCESS(rc))
                 rc = pgmR3SaveMmio2Ranges(pVM, pSSM);
             if (RT_SUCCESS(rc))
@@ -2714,7 +2776,7 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
                 &&  !strcmp(pMapping->pszDesc, szDesc))
                 break;
         if (!pMapping)
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Couldn't find mapping: cPTs=%x szDesc=%s (GCPtr=%RGv)"),
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Couldn't find mapping: cPTs=%#x szDesc=%s (GCPtr=%RGv)"),
                                     cPTs, szDesc, GCPtr);
 
         /* relocate it. */
@@ -2734,6 +2796,12 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     {
         if (!pVM->pgm.s.LiveSave.fActive)
         {
+            if (uVersion > PGM_SAVED_STATE_VERSION_NO_RAM_CFG)
+            {
+                rc = pgmR3LoadRamConfig(pVM, pSSM);
+                if (RT_FAILURE(rc))
+                    return rc;
+            }
             rc = pgmR3LoadRomRanges(pVM, pSSM);
             if (RT_FAILURE(rc))
                 return rc;
@@ -2766,8 +2834,10 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
      * Validate version.
      */
     if (   (   uPass != SSM_PASS_FINAL
-            && uVersion != PGM_SAVED_STATE_VERSION)
+            && uVersion != PGM_SAVED_STATE_VERSION
+            && uVersion != PGM_SAVED_STATE_VERSION_NO_RAM_CFG)
         || (   uVersion != PGM_SAVED_STATE_VERSION
+            && uVersion != PGM_SAVED_STATE_VERSION_NO_RAM_CFG
             && uVersion != PGM_SAVED_STATE_VERSION_3_0_0
             && uVersion != PGM_SAVED_STATE_VERSION_2_2_2
             && uVersion != PGM_SAVED_STATE_VERSION_RR_DESC
@@ -2790,7 +2860,12 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
         else
         {
             pVM->pgm.s.LiveSave.fActive = true;
-            rc = pgmR3LoadRomRanges(pVM, pSSM);
+            if (uVersion > PGM_SAVED_STATE_VERSION_NO_RAM_CFG)
+                rc = pgmR3LoadRamConfig(pVM, pSSM);
+            else
+                rc = VINF_SUCCESS;
+            if (RT_SUCCESS(rc))
+                rc = pgmR3LoadRomRanges(pVM, pSSM);
             if (RT_SUCCESS(rc))
                 rc = pgmR3LoadMmio2Ranges(pVM, pSSM);
             if (RT_SUCCESS(rc))
