@@ -53,6 +53,7 @@ vboxvideo_drm-sh_CLEAN      += $(PATH_vboxvideo_drm-sh)/build_in_tmp
 
 #
 # The module (for syntax checking).
+# The DEBUG_HASH* stuff is for  CONFIG_DYNAMIC_DEBUG-enabled kernels
 #
 vboxvideo_drm_TEMPLATE        = VBOXGUESTR0
 vboxvideo_drm_NOINST          = 1
@@ -60,7 +61,8 @@ vboxvideo_drm_CFLAGS          = -fshort-wchar
 vboxvideo_drm_DEFS            = \
 	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
 	KBUILD_MODNAME=KBUILD_STR\(vboxvideo\) \
-        KBUILD_BASENAME=KBUILD_STR\(vboxvideo\)
+        KBUILD_BASENAME=KBUILD_STR\(vboxvideo\) \
+	DEBUG_HASH=2 DEBUG_HASH2=3
 vboxvideo_drm_SOURCES         = vboxvideo_drm.c
 
 # detect fc6 2.6.18
