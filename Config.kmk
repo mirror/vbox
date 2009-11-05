@@ -511,9 +511,9 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win freebsd)
  endif
 endif
 # Enable the new I/O path
-if1of ($(KBUILD_TARGET), linux solaris win freebsd darwin)
- VBOX_WITH_NEW_IO_CODE = 1
-endif
+#if1of ($(KBUILD_TARGET), linux solaris win freebsd darwin)
+# VBOX_WITH_NEW_IO_CODE = 1
+#endif
 
 #
 # Config items for enabling work in progress.
