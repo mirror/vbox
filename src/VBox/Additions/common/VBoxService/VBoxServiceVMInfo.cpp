@@ -244,7 +244,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         rc = utmpname(UTMP_FILE);
         if (rc != 0)
         {
-            VBoxServiceError("Could not set  UTMP file! Error: %ld", errno);
+            VBoxServiceError("Could not set UTMP file! Error: %ld", errno);
         }
         setutent();
         while ((ut_user=getutent()))
