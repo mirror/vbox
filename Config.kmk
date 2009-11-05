@@ -1356,7 +1356,7 @@ endif
 VBOX_BIN2C     ?= $(PATH_OBJ)/bin2c/bin2c$(HOSTSUFF_EXE)
 
 # biossums (set BIOS checksums)
-VBOX_BIOSSUMS  ?= $(PATH_OBJ)/biossums/biossums$(HOSTSUFF_EXE)
+VBOX_BIOSSUMS  ?= $(PATH_OBJ)/biVBOX_WITH_SOLARIS_OSSossums/biossums$(HOSTSUFF_EXE)
 
 # mkisofs
 ifeq ($(KBUILD_HOST),win)
@@ -2012,7 +2012,7 @@ ifeq ($(KBUILD_TARGET),solaris)
   $(eval export VBOX_SOLARIS_SNV_VERSION := $(shell uname -v | cut -f2 -d'_'))
 
   # OSS audio support for Solaris
-#VBOX_WITH_SOLARIS_OSS := $(if-expr $(VBOX_SOLARIS_SNV_VERSION) >= 115,1,)
+ VBOX_WITH_SOLARIS_OSS := $(if-expr $(VBOX_SOLARIS_SNV_VERSION) >= 115,1,)
  endif
 endif
 
