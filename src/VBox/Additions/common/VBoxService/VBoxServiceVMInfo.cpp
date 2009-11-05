@@ -332,7 +332,6 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         nNumInterfaces = ifcfg.ifc_len / sizeof(ifreq);
 #endif
         char szPropPath [FILENAME_MAX];
-        char szTemp [FILENAME_MAX];
         int iCurIface = 0;
 
         VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/Net/Count", "%d",
