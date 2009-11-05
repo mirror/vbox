@@ -1316,7 +1316,7 @@ static int handleControlVM(HandlerArg *a)
                     case 'p': uPort         = Value.u32; break;
                     case 'P': bstrPassword  = Value.psz; break;
                     default:
-                        errorGetOpt(USAGE_SNAPSHOT, ch, &Value);
+                        errorGetOpt(USAGE_CONTROLVM, ch, &Value);
                         rc = E_FAIL;
                         break;
                 }
