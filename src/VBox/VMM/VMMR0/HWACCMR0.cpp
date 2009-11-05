@@ -555,22 +555,28 @@ static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pv
         {
             /* Turn on SVM in the EFER MSR. */
             val = ASMRdMsr(MSR_K6_EFER);
-            if (!(val & MSR_K6_EFER_SVME))
-                ASMWrMsr(MSR_K6_EFER, val | MSR_K6_EFER_SVME);
-
-            /* Paranoia. */
-            val = ASMRdMsr(MSR_K6_EFER);
             if (val & MSR_K6_EFER_SVME)
             {
-                /* Restore previous value. */
-                ASMWrMsr(MSR_K6_EFER, val & ~MSR_K6_EFER_SVME);
-                paRc[idCpu] = VINF_SUCCESS;
+                paRc[idCpu] = VERR_SVM_IN_USE;
             }
             else
-                paRc[idCpu] = VERR_SVM_ILLEGAL_EFER_MSR;
+            {
+                ASMWrMsr(MSR_K6_EFER, val | MSR_K6_EFER_SVME);
+
+                /* Paranoia. */
+                val = ASMRdMsr(MSR_K6_EFER);
+                if (val & MSR_K6_EFER_SVME)
+                {
+                    /* Restore previous value. */
+                    ASMWrMsr(MSR_K6_EFER, val & ~MSR_K6_EFER_SVME);
+                    paRc[idCpu] = VINF_SUCCESS;
+                }
+                else
+                    paRc[idCpu] = VERR_SVM_ILLEGAL_EFER_MSR;
+            }
         }
         else
-            paRc[idCpu] = HWACCMR0Globals.lLastError = VERR_SVM_DISABLED;
+            paRc[idCpu] = VERR_SVM_DISABLED;
     }
     else
         AssertFailed(); /* can't happen */
