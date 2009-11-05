@@ -48,6 +48,8 @@
  */
 VBGLR3DECL(int) VbglR3HostVersionCompare(const char *pszVer1, const char *pszVer2)
 {
+    /** @todo r=bird: not checking the return code, may be using uninitialized
+     *        variables... I'll fix this when moving into the runtime.  */
     int iVer1Major, iVer1Minor, iVer1Build;
     sscanf(pszVer1, "%d.%d.%d", &iVer1Major, &iVer1Minor, &iVer1Build);
     int iVer2Major, iVer2Minor, iVer2Build;
@@ -111,8 +113,7 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
     else
     {
         /* Only don't do the check if we have a valid "0" in it */
-        if (   *pszCheckHostVersion
-            && RTStrToInt16(pszCheckHostVersion) == 0) /* Either string conversion failed or we really did disable it */
+        if (!strcmp(pszCheckHostVersion, "0"));
         {
             LogRel(("No host version update check performed (disabled).\n"));
             *pfUpdate = false;
