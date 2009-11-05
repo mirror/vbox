@@ -245,35 +245,39 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          1);     /* boolean */   RC_CHECK();
 
     /* Standard cpuid leaf overrides. */
-    for (unsigned leaf = 0; leaf < 0xA; leaf++)
+    for (uint32_t leaf = 0; leaf < 0xA; leaf++)
     {
         ULONG ulEax, ulEbx, ulEcx, ulEdx;
-        if (pMachine->GetCpuIdLeaf(leaf, &ulEax, &ulEbx, &ulEcx, &ulEdx) == S_OK)
+        hrc = pMachine->GetCpuIdLeaf(leaf, &ulEax, &ulEbx, &ulEcx, &ulEdx);
+        if (SUCCEEDED(rc))
         {
             PCFGMNODE pLeaf;
-            rc = CFGMR3InsertNodeF(pRoot, &pLeaf, "CPUM/CPUID/%x", leaf);               RC_CHECK();
+            rc = CFGMR3InsertNodeF(pRoot, &pLeaf, "CPUM/HostCPUID/%RX32", leaf);    RC_CHECK();
 
-            rc = CFGMR3InsertInteger(pLeaf, "eax", ulEax);                      RC_CHECK();
-            rc = CFGMR3InsertInteger(pLeaf, "ebx", ulEbx);                      RC_CHECK();
-            rc = CFGMR3InsertInteger(pLeaf, "ecx", ulEcx);                      RC_CHECK();
-            rc = CFGMR3InsertInteger(pLeaf, "edx", ulEdx);                      RC_CHECK();
+            rc = CFGMR3InsertInteger(pLeaf, "eax", ulEax);                          RC_CHECK();
+            rc = CFGMR3InsertInteger(pLeaf, "ebx", ulEbx);                          RC_CHECK();
+            rc = CFGMR3InsertInteger(pLeaf, "ecx", ulEcx);                          RC_CHECK();
+            rc = CFGMR3InsertInteger(pLeaf, "edx", ulEdx);                          RC_CHECK();
         }
+        else if (hrc != E_INVALIDARG)                                               H();
     }
 
     /* Extended cpuid leaf overrides. */
-    for (unsigned leaf = 0x80000000; leaf < 0x8000000A; leaf++)
+    for (uint32_t leaf = 0x80000000; leaf < 0x8000000A; leaf++)
     {
         ULONG ulEax, ulEbx, ulEcx, ulEdx;
-        if (pMachine->GetCpuIdLeaf(leaf, &ulEax, &ulEbx, &ulEcx, &ulEdx) == S_OK)
+        hrc = pMachine->GetCpuIdLeaf(leaf, &ulEax, &ulEbx, &ulEcx, &ulEdx);
+        if (SUCCEEDED(rc))
         {
             PCFGMNODE pLeaf;
-            rc = CFGMR3InsertNodeF(pRoot, &pLeaf, "CPUM/CPUID/%x", leaf);               RC_CHECK();
+            rc = CFGMR3InsertNodeF(pRoot, &pLeaf, "CPUM/HostCPUID/%RX32", leaf);    RC_CHECK();
 
-            rc = CFGMR3InsertInteger(pLeaf, "eax", ulEax);                      RC_CHECK();
-            rc = CFGMR3InsertInteger(pLeaf, "ebx", ulEbx);                      RC_CHECK();
-            rc = CFGMR3InsertInteger(pLeaf, "ecx", ulEcx);                      RC_CHECK();
-            rc = CFGMR3InsertInteger(pLeaf, "edx", ulEdx);                      RC_CHECK();
+            rc = CFGMR3InsertInteger(pLeaf, "eax", ulEax);                          RC_CHECK();
+            rc = CFGMR3InsertInteger(pLeaf, "ebx", ulEbx);                          RC_CHECK();
+            rc = CFGMR3InsertInteger(pLeaf, "ecx", ulEcx);                          RC_CHECK();
+            rc = CFGMR3InsertInteger(pLeaf, "edx", ulEdx);                          RC_CHECK();
         }
+        else if (hrc != E_INVALIDARG)                                               H();
     }
 
     if (osTypeId == "WindowsNT4")
@@ -290,7 +294,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     /* hardware virtualization extensions */
     BOOL fHWVirtExEnabled;
-    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Enabled, &fHWVirtExEnabled);                  H();
+    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Enabled, &fHWVirtExEnabled); H();
     if (cCpus > 1) /** @todo SMP: This isn't nice, but things won't work on mac otherwise. */
         fHWVirtExEnabled = TRUE;
 
