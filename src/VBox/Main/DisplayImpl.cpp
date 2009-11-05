@@ -112,7 +112,144 @@ void Display::FinalRelease()
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
+#define sSSMDisplayScreenshotVer 0x00010001
 #define sSSMDisplayVer 0x00010001
+
+/**
+ * Save thumbnail and screenshot of the guest screen.
+ */
+static int displayMakeThumbnail(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
+                                uint8_t **ppu8Thumbnail, uint32_t *pcbThumbnail, uint32_t *pcxThumbnail, uint32_t *pcyThumbnail)
+{
+    int rc = VINF_SUCCESS;
+
+    uint8_t *pu8Thumbnail = NULL;
+    size_t cbThumbnail = 0;
+    uint32_t cxThumbnail = 0;
+    uint32_t cyThumbnail = 0;
+
+    if (cx > cy)
+    {
+        cxThumbnail = 64;
+        cyThumbnail = (64 * cy) / cx;
+    }
+    else
+    {
+        cyThumbnail = 64;
+        cxThumbnail = (64 * cx) / cy;
+    }
+
+    LogFlowFunc(("%dx%d -> %dx%d\n", cx, cy, cxThumbnail, cyThumbnail));
+
+    cbThumbnail = cxThumbnail * 4 * cyThumbnail;
+    pu8Thumbnail = (uint8_t *)RTMemAlloc(cbThumbnail);
+
+    if (pu8Thumbnail)
+    {
+        uint8_t *dst = pu8Thumbnail;
+        uint8_t *src = pu8Data;
+        int dstX = 0;
+        int dstY = 0;
+        int srcX = 0;
+        int srcY = 0;
+        int dstW = cxThumbnail;
+        int dstH = cyThumbnail;
+        int srcW = cx;
+        int srcH = cy;
+        gdImageCopyResampled (dst,
+                              src,
+                              dstX, dstY,
+                              srcX, srcY,
+                              dstW, dstH, srcW, srcH);
+
+        *ppu8Thumbnail = pu8Thumbnail;
+        *pcbThumbnail = cbThumbnail;
+        *pcxThumbnail = cxThumbnail;
+        *pcyThumbnail = cyThumbnail;
+    }
+    else
+    {
+        rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
+}
+
+static int displayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
+                          uint8_t **ppu8PNG, uint32_t *pcbPNG, uint32_t *pcxPNG, uint32_t *pcyPNG)
+{
+    int rc = VINF_SUCCESS;
+    return rc;
+}
+
+DECLCALLBACK(void)
+Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
+{
+    Display *that = static_cast<Display*>(pvUser);
+
+    /* 32bpp small image with maximum dimension = 64 pixels. */
+    uint8_t *pu8Thumbnail = NULL;
+    size_t cbThumbnail = 0;
+    uint32_t cxThumbnail = 0;
+    uint32_t cyThumbnail = 0;
+
+    /* PNG screenshot with maximum dimension = 1024 pixels. */
+    uint8_t *pu8PNG = NULL;
+    size_t cbPNG = 0;
+    uint32_t cxPNG = 0;
+    uint32_t cyPNG = 0;
+
+    Console::SafeVMPtr pVM (that->mParent);
+    if (SUCCEEDED(pVM.rc()))
+    {
+        /* Query RGB bitmap. */
+        uint8_t *pu8Data = NULL;
+        size_t cbData = 0;
+        uint32_t cx = 0;
+        uint32_t cy = 0;
+
+        /* @todo pfnTakeScreenshot is probably callable from any thread, because it uses the VGA device lock. */
+        int rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)that->mpDrv->pUpPort->pfnTakeScreenshot, 5,
+                                 that->mpDrv->pUpPort, &pu8Data, &cbData, &cx, &cy);
+
+        if (RT_SUCCESS(rc))
+        {
+            /* Prepare a small thumbnail and a PNG screenshot. */
+            displayMakeThumbnail(pu8Data, cx, cy, &pu8Thumbnail, &cbThumbnail, &cxThumbnail, &cyThumbnail);
+            displayMakePNG(pu8Data, cx, cy, &pu8PNG, &cbPNG, &cxPNG, &cyPNG);
+
+            /* This can be called from any thread. */
+            that->mpDrv->pUpPort->pfnFreeScreenshot (that->mpDrv->pUpPort, pu8Data);
+        }
+    }
+    else
+    {
+        LogFunc(("Failed to get VM pointer 0x%x\n", pVM.rc()));
+    }
+
+    /* Regardless of rc, save what is available */
+
+    SSMR3PutU32(pSSM, cbThumbnail);
+
+    if (cbThumbnail)
+    {
+        SSMR3PutU32(pSSM, cxThumbnail);
+        SSMR3PutU32(pSSM, cyThumbnail);
+        SSMR3PutMem(pSSM, pu8Thumbnail, cbThumbnail);
+    }
+
+    SSMR3PutU32(pSSM, cbPNG);
+
+    if (cbPNG)
+    {
+        SSMR3PutU32(pSSM, cxPNG);
+        SSMR3PutU32(pSSM, cyPNG);
+        SSMR3PutMem(pSSM, pu8PNG, cbPNG);
+    }
+
+    RTMemFree(pu8PNG);
+    RTMemFree(pu8Thumbnail);
+}
 
 /**
  * Save/Load some important guest state
@@ -277,6 +414,16 @@ int Display::registerSSM(PVM pVM)
                                NULL, NULL, NULL,
                                NULL, displaySSMLoad, NULL, this);
     AssertRCReturn(rc, rc);
+
+#if 0
+    rc = SSMR3RegisterExternal(pVM, "DisplayScreenshot", 0 /*uInstance*/, sSSMDisplayScreenshotVer, 0 /*cbGuess*/,
+                               NULL, NULL, NULL,
+                               NULL, displaySSMSaveScreenshot, NULL,
+                               NULL, NULL, NULL, this);
+
+    AssertRCReturn(rc, rc);
+#endif
+
     return VINF_SUCCESS;
 }
 
