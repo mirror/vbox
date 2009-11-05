@@ -503,7 +503,11 @@ QStringList ControllerItem::ctrUsedMediumIds() const
 {
     QStringList usedImages;
     for (int i = 0; i < mAttachments.size(); ++ i)
-        usedImages << static_cast <AttachmentItem*> (mAttachments [i])->attMediumId();
+    {
+        QString usedMediumId = static_cast <AttachmentItem*> (mAttachments [i])->attMediumId();
+        if (!vboxGlobal().findMedium (usedMediumId).isNull())
+            usedImages << usedMediumId;
+    }
     return usedImages;
 }
 
@@ -1351,14 +1355,14 @@ void StorageModel::delController (const QUuid &aCtrId)
     }
 }
 
-QModelIndex StorageModel::addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType)
+QModelIndex StorageModel::addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType, bool aVerbose)
 {
     if (AbstractItem *parent = mRootItem->childById (aCtrId))
     {
         int parentPosition = mRootItem->posOfChild (parent);
         QModelIndex parentIndex = index (parentPosition, 0, root());
         beginInsertRows (parentIndex, parent->childCount(), parent->childCount());
-        new AttachmentItem (parent, aDeviceType, qobject_cast <QWidget*> (QObject::parent())->isVisible());
+        new AttachmentItem (parent, aDeviceType, aVerbose);
         endInsertRows();
         return index (parent->childCount() - 1, 0, parentIndex);
     }
@@ -1672,7 +1676,7 @@ void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
         CMediumAttachmentVector attachments = mMachine.GetMediumAttachmentsOfController (controllerName);
         foreach (const CMediumAttachment &attachment, attachments)
         {
-            QModelIndex attIndex = mStorageModel->addAttachment (ctrId, attachment.GetType());
+            QModelIndex attIndex = mStorageModel->addAttachment (ctrId, attachment.GetType(), false);
             mStorageModel->setData (attIndex, QVariant::fromValue (StorageSlot (controller.GetBus(), attachment.GetPort(), attachment.GetDevice())), StorageModel::R_AttSlot);
             CMedium medium (attachment.GetMedium());
             VBoxMedium vboxMedium;
@@ -2467,7 +2471,7 @@ void VBoxVMSettingsHD::addAttachmentWrapper (KDeviceType aDevice)
     Assert (mStorageModel->data (index, StorageModel::R_IsController).toBool());
     Assert (mStorageModel->data (index, StorageModel::R_IsMoreAttachmentsPossible).toBool());
 
-    mStorageModel->addAttachment (QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()), aDevice);
+    mStorageModel->addAttachment (QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()), aDevice, true);
     emit storageChanged();
     if (mValidator) mValidator->revalidate();
 }

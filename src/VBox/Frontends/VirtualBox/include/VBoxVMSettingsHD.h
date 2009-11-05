@@ -466,7 +466,7 @@ public:
     QModelIndex addController (const QString &aCtrName, KStorageBus aBusType, KStorageControllerType aCtrType);
     void delController (const QUuid &aCtrId);
 
-    QModelIndex addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType);
+    QModelIndex addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType, bool aVerbose);
     void delAttachment (const QUuid &aCtrId, const QUuid &aAttId);
 
     void setMachineId (const QString &aMachineId);
