@@ -50,7 +50,7 @@ WARNING: The character device /dev/vboxdrv does not exist. Try
 
          and if that is not successful, try to re-install the package.
 
-	 You will not be able to start VMs until this problem is fixed.
+         You will not be able to start VMs until this problem is fixed.
 EOF
 fi
 
