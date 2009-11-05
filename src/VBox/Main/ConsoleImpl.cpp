@@ -2570,9 +2570,10 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
     catch (HRESULT rc)
     {
         delete pTask;
+        NOREF(rc);
     }
 
-    LogFlowThisFunc(("rc=%08X\n", rc));
+    LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
     return rc;
 }
@@ -5669,7 +5670,6 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
 
         case VMSTATE_SUSPENDED:
         {
-            /** @todo Live Migration: state/live VMSTATE_SUSPENDING_LS. */
             if (aOldState == VMSTATE_SUSPENDING)
             {
                 AutoWriteLock alock(that);
@@ -5681,6 +5681,21 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                 AssertBreak(that->mMachineState == MachineState_Running);
                 that->setMachineState(MachineState_Paused);
             }
+            break;
+        }
+
+        case VMSTATE_SUSPENDED_LS:
+        case VMSTATE_SUSPENDED_EXT_LS:
+        {
+            AutoWriteLock alock(that);
+            if (that->mVMStateChangeCallbackDisabled)
+                break;
+            if (that->mMachineState == MachineState_Teleporting)
+                that->setMachineState(MachineState_TeleportingPausedVM);
+            else if (that->mMachineState == MachineState_LiveSnapshotting)
+                that->setMachineState(MachineState_Saving);
+            else
+                AssertMsgFailed(("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(aOldState),  VMR3GetStateName(aState) ));
             break;
         }
 
@@ -5709,6 +5724,12 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
 
             break;
         }
+
+        case VMSTATE_RUNNING_LS:
+            AssertMsg(   that->mMachineState == MachineState_LiveSnapshotting
+                      || that->mMachineState == MachineState_Teleporting,
+                      ("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(aOldState),  VMR3GetStateName(aState) ));
+            break;
 
         case VMSTATE_FATAL_ERROR:
         {
