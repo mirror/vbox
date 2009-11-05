@@ -1068,6 +1068,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
                         OffDiff  += cbCopy;
                         ASMAtomicSubS32(&pTask->cbTransferLeft, cbCopy);
                     }
+                    RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
                 }
                 else
                 {
