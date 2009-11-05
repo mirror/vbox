@@ -64,27 +64,6 @@ VBoxDefs::MediumType typeToLocal (KDeviceType aType)
 }
 
 
-KDeviceType typeToGlobal (VBoxDefs::MediumType aType)
-{
-    KDeviceType result = KDeviceType_Null;
-    switch (aType)
-    {
-        case VBoxDefs::MediumType_HardDisk:
-            result = KDeviceType_HardDisk;
-            break;
-        case VBoxDefs::MediumType_DVD:
-            result = KDeviceType_DVD;
-            break;
-        case VBoxDefs::MediumType_Floppy:
-            result = KDeviceType_Floppy;
-            break;
-        default:
-            AssertMsgFailed (("Incorrect device type!\n"));
-            break;
-    }
-    return result;
-}
-
 QString compressText (const QString &aText)
 {
     return QString ("<nobr><compact elipsis=\"end\">%1</compact></nobr>").arg (aText);
@@ -322,9 +301,9 @@ QString AbstractItem::machineId() const
     return mMachineId;
 }
 
-void AbstractItem::setMachineId (const QString &aMchineId)
+void AbstractItem::setMachineId (const QString &aMachineId)
 {
-    mMachineId = aMchineId;
+    mMachineId = aMachineId;
 }
 
 /* Root Item */
@@ -497,26 +476,27 @@ DeviceTypeList ControllerItem::ctrDeviceTypeList() const
 
 QStringList ControllerItem::ctrAllMediumIds (bool aShowDiffs) const
 {
-    QStringList allImages;
-    for (VBoxMediaList::const_iterator it = vboxGlobal().currentMediaList().begin();
-         it != vboxGlobal().currentMediaList().end(); ++ it)
+    QStringList allMediums;
+    foreach (const VBoxMedium &medium, vboxGlobal().currentMediaList())
     {
-         foreach (KDeviceType deviceType, mCtrType->deviceTypeList())
+         foreach (const KDeviceType &deviceType, mCtrType->deviceTypeList())
          {
-             if ((*it).isNull() || typeToGlobal ((*it).type()) == deviceType)
+             if (medium.isNull() || medium.medium().GetDeviceType() == deviceType)
              {
-                 /* We should filter out the base hard-disk of diff-disks,
-                  * as we want to insert here a diff-disks and want
-                  * to avoid duplicates in !aShowDiffs mode. */
-                 if (!aShowDiffs && (*it).parent() && !parent()->machineId().isNull() &&
-                     (*it).isAttachedInCurStateTo (parent()->machineId()))
-                     allImages.removeAll ((*it).root().id());
-                 allImages << (*it).id();
+                 /* In 'don't show diffs' mode we should filter out all the mediums
+                  * which are already attached to some snapshot of current VM. */
+                 if (!aShowDiffs && medium.type() == VBoxDefs::MediumType_HardDisk)
+                 {
+                     if (!medium.medium().GetMachineIds().contains (parent()->machineId()) ||
+                         medium.isAttachedInCurStateTo (parent()->machineId()))
+                         allMediums << medium.id();
+                 }
+                 else allMediums << medium.id();
                  break;
              }
          }
     }
-    return allImages;
+    return allMediums;
 }
 
 QStringList ControllerItem::ctrUsedMediumIds() const
@@ -664,7 +644,7 @@ QStringList AttachmentItem::attMediumIds (bool aFilter) const
     {
         VBoxMedium medium = vboxGlobal().findMedium (mediumId);
         if ((medium.isNull() && mAttDeviceType != KDeviceType_HardDisk) ||
-            (!medium.isNull() && typeToGlobal (medium.type()) == mAttDeviceType))
+            (!medium.isNull() && medium.medium().GetDeviceType() == mAttDeviceType))
             allMediumIds << mediumId;
     }
 
