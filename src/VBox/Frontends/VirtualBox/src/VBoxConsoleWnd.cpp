@@ -2216,7 +2216,11 @@ void VBoxConsoleWnd::prepareStorageMenu()
                     break;
             }
 
-            foreach (const CMedium &medium, mediums)
+            const int maxMediumsToBeShown = 5;
+            CMedium currentMedium = attachment.GetMedium();
+            QString currentId = currentMedium.isNull() ? QString::null : currentMedium.GetId();
+            bool currentUsed = false;
+            foreach (CMedium medium, mediums)
             {
                 bool isMediumUsed = false;
                 foreach (const CMediumAttachment &otherAttachment, attachments)
@@ -2233,10 +2237,18 @@ void VBoxConsoleWnd::prepareStorageMenu()
                 }
                 if (!isMediumUsed)
                 {
+                    if (   !currentUsed
+                        && !currentMedium.isNull()
+                        && addedIntoList == maxMediumsToBeShown-1)
+                        medium = currentMedium;
+
+                    if (medium.GetId() == currentId)
+                        currentUsed = true;
+
                     QAction *mountMediumAction = new QAction (VBoxMedium (medium, mediumType).name(), attachmentMenu);
                     mountMediumAction->setCheckable (true);
                     mountMediumAction->setChecked (!attachment.GetMedium().isNull() &&
-                                                   medium.GetId() == attachment.GetMedium().GetId());
+                                                   medium.GetId() == currentId);
                     mountMediumAction->setData (QVariant::fromValue (MountTarget (attachment.GetController().GetName(),
                                                                                   attachment.GetPort(),
                                                                                   attachment.GetDevice(),
@@ -2244,7 +2256,7 @@ void VBoxConsoleWnd::prepareStorageMenu()
                     connect (mountMediumAction, SIGNAL (triggered (bool)), this, SLOT (mountMedium()));
                     attachmentMenu->addAction (mountMediumAction);
                     ++ addedIntoList;
-                    if (addedIntoList == 5)
+                    if (addedIntoList == maxMediumsToBeShown)
                         break;
                 }
             }
