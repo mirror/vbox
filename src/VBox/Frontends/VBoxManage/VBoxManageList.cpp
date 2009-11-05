@@ -443,26 +443,25 @@ int handleList(HandlerArg *a)
 
             RTPrintf("Host CPUIDs:\n\nLeaf no.  EAX      EBX      ECX      EDX\n");
             ULONG uCpuNo = 0; /* ASSUMES that CPU#0 is online. */
-            ULONG uEAX, uEBX, uECX, uEDX;
-            ULONG cLeafs;
-
-            /* Standard */
-            CHECK_ERROR(Host, GetProcessorCpuIdLeaf(uCpuNo, 0, 0, &cLeafs, &uEBX, &uECX, &uEDX));
-            if (cLeafs > UINT32_C(0x00000000) && cLeafs <= UINT32_C(0x0000007f))
-                for (ULONG iLeaf = 0; iLeaf < cLeafs; iLeaf++)
+            static uint32_t const s_auCpuIdRanges[] =
+            {
+                UINT32_C(0x00000000), UINT32_C(0x0000007f),
+                UINT32_C(0x80000000), UINT32_C(0x8000007f),
+                UINT32_C(0xc0000000), UINT32_C(0xc000007f)
+            };
+            for (unsigned i = 0; i < RT_ELEMENTS(s_auCpuIdRanges); i += 2)
+            {
+                ULONG uEAX, uEBX, uECX, uEDX, cLeafs;
+                CHECK_ERROR(Host, GetProcessorCpuIdLeaf(uCpuNo, s_auCpuIdRanges[i], 0, &cLeafs, &uEBX, &uECX, &uEDX));
+                if (cLeafs < s_auCpuIdRanges[i] || cLeafs > s_auCpuIdRanges[i+1])
+                    continue;
+                cLeafs++;
+                for (ULONG iLeaf = s_auCpuIdRanges[i]; iLeaf <= cLeafs; iLeaf++)
                 {
                     CHECK_ERROR(Host, GetProcessorCpuIdLeaf(uCpuNo, iLeaf, 0, &uEAX, &uEBX, &uECX, &uEDX));
                     RTPrintf("%08x  %08x %08x %08x %08x\n", iLeaf, uEAX, uEBX, uECX, uEDX);
                 }
-
-            /* Extended */
-            CHECK_ERROR(Host, GetProcessorCpuIdLeaf(uCpuNo, UINT32_C(0x80000000), 0, &cLeafs, &uEBX, &uECX, &uEDX));
-            if (cLeafs > UINT32_C(0x80000000) && cLeafs <= UINT32_C(0x8000007f))
-                for (ULONG iLeaf = UINT32_C(0x80000000); iLeaf < cLeafs; iLeaf++)
-                {
-                    CHECK_ERROR(Host, GetProcessorCpuIdLeaf(uCpuNo, iLeaf, 0, &uEAX, &uEBX, &uECX, &uEDX));
-                    RTPrintf("%08x  %08x %08x %08x %08x\n", iLeaf, uEAX, uEBX, uECX, uEDX);
-                }
+            }
         }
         break;
 

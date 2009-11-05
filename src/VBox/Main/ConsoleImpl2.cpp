@@ -244,41 +244,29 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          1);     /* boolean */   RC_CHECK();
 
-    /* Standard cpuid leaf overrides. */
-    for (uint32_t leaf = 0; leaf < 0xA; leaf++)
+    /* cpuid leaf overrides. */
+    static uint32_t const s_auCpuIdRanges[] =
     {
-        ULONG ulEax, ulEbx, ulEcx, ulEdx;
-        hrc = pMachine->GetCpuIdLeaf(leaf, &ulEax, &ulEbx, &ulEcx, &ulEdx);
-        if (SUCCEEDED(hrc))
+        UINT32_C(0x00000000), UINT32_C(0x0000000a),
+        UINT32_C(0x80000000), UINT32_C(0x8000000a)
+    };
+    for (unsigned i = 0; i < RT_ELEMENTS(s_auCpuIdRanges); i += 2)
+        for (uint32_t uLeaf = s_auCpuIdRanges[i]; uLeaf < s_auCpuIdRanges[i + 1]; uLeaf++)
         {
-            PCFGMNODE pLeaf;
-            rc = CFGMR3InsertNodeF(pRoot, &pLeaf, "CPUM/HostCPUID/%RX32", leaf);    RC_CHECK();
+            ULONG ulEax, ulEbx, ulEcx, ulEdx;
+            hrc = pMachine->GetCpuIdLeaf(uLeaf, &ulEax, &ulEbx, &ulEcx, &ulEdx);
+            if (SUCCEEDED(hrc))
+            {
+                PCFGMNODE pLeaf;
+                rc = CFGMR3InsertNodeF(pRoot, &pLeaf, "CPUM/HostCPUID/%RX32", uLeaf);   RC_CHECK();
 
-            rc = CFGMR3InsertInteger(pLeaf, "eax", ulEax);                          RC_CHECK();
-            rc = CFGMR3InsertInteger(pLeaf, "ebx", ulEbx);                          RC_CHECK();
-            rc = CFGMR3InsertInteger(pLeaf, "ecx", ulEcx);                          RC_CHECK();
-            rc = CFGMR3InsertInteger(pLeaf, "edx", ulEdx);                          RC_CHECK();
+                rc = CFGMR3InsertInteger(pLeaf, "eax", ulEax);                          RC_CHECK();
+                rc = CFGMR3InsertInteger(pLeaf, "ebx", ulEbx);                          RC_CHECK();
+                rc = CFGMR3InsertInteger(pLeaf, "ecx", ulEcx);                          RC_CHECK();
+                rc = CFGMR3InsertInteger(pLeaf, "edx", ulEdx);                          RC_CHECK();
+            }
+            else if (hrc != E_INVALIDARG)                                               H();
         }
-        else if (hrc != E_INVALIDARG)                                               H();
-    }
-
-    /* Extended cpuid leaf overrides. */
-    for (uint32_t leaf = 0x80000000; leaf < 0x8000000A; leaf++)
-    {
-        ULONG ulEax, ulEbx, ulEcx, ulEdx;
-        hrc = pMachine->GetCpuIdLeaf(leaf, &ulEax, &ulEbx, &ulEcx, &ulEdx);
-        if (SUCCEEDED(hrc))
-        {
-            PCFGMNODE pLeaf;
-            rc = CFGMR3InsertNodeF(pRoot, &pLeaf, "CPUM/HostCPUID/%RX32", leaf);    RC_CHECK();
-
-            rc = CFGMR3InsertInteger(pLeaf, "eax", ulEax);                          RC_CHECK();
-            rc = CFGMR3InsertInteger(pLeaf, "ebx", ulEbx);                          RC_CHECK();
-            rc = CFGMR3InsertInteger(pLeaf, "ecx", ulEcx);                          RC_CHECK();
-            rc = CFGMR3InsertInteger(pLeaf, "edx", ulEdx);                          RC_CHECK();
-        }
-        else if (hrc != E_INVALIDARG)                                               H();
-    }
 
     if (osTypeId == "WindowsNT4")
     {

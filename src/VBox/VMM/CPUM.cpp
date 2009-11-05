@@ -1382,6 +1382,11 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
     }
 
 #ifdef VBOX_WITH_LIVE_MIGRATION
+    /*
+     * Guest CPU config and CPUID.
+     */
+    /** @todo config. */
+
     if (uVersion > CPUM_SAVED_STATE_VERSION_VER3_0)
         return cpumR3LoadCpuId(pVM, pSSM, uVersion);
 
