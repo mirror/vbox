@@ -483,12 +483,13 @@ QStringList ControllerItem::ctrAllMediumIds (bool aShowDiffs) const
          {
              if (medium.isNull() || medium.medium().GetDeviceType() == deviceType)
              {
-                 /* In 'don't show diffs' mode we should filter out all the mediums
-                  * which are already attached to some snapshot of current VM. */
+                 /* In 'don't show diffs' mode we should only show hard-disks which are:
+                  * 1. Attached to 'current state' of this VM even if these are differencing disks.
+                  * 2. Not attached to this VM at all only if they are not differencing disks. */
                  if (!aShowDiffs && medium.type() == VBoxDefs::MediumType_HardDisk)
                  {
-                     if (!medium.medium().GetMachineIds().contains (parent()->machineId()) ||
-                         medium.isAttachedInCurStateTo (parent()->machineId()))
+                     if (medium.isAttachedInCurStateTo (parent()->machineId()) ||
+                         (!medium.medium().GetMachineIds().contains (parent()->machineId()) && !medium.parent()))
                          allMediums << medium.id();
                  }
                  else allMediums << medium.id();
