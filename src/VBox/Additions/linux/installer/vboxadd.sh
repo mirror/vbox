@@ -33,6 +33,7 @@
 ### END INIT INFO
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
+PACKAGE=VBoxGuestAdditions
 BUILDVBOXGUEST=`/bin/ls /usr/src/vboxguest*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
 BUILDVBOXVFS=`/bin/ls /usr/src/vboxvfs*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
 BUILDVBOXVIDEO=`/bin/ls /usr/src/vboxvideo*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
@@ -171,7 +172,7 @@ running_vboxvfs()
 
 start()
 {
-    begin "Starting VirtualBox Additions ";
+    begin "Starting the VirtualBox Guest Additions ";
     running_vboxguest || {
         rm -f $dev || {
             fail "Cannot remove $dev"
@@ -283,6 +284,11 @@ restart()
 setup()
 {
     # don't stop the old modules here -- they might be in use
+    if find /lib/modules/`uname -r` -name "vboxvideo\.*" 2>/dev/null|grep -q vboxvideo; then
+        begin "Removing old VirtualBox vboxvideo kernel module"
+        find /lib/modules/`uname -r` -name "vboxvideo\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+        succ_msg
+    fi
     if find /lib/modules/`uname -r` -name "vboxvfs\.*" 2>/dev/null|grep -q vboxvfs; then
         begin "Removing old VirtualBox vboxvfs kernel module"
         find /lib/modules/`uname -r` -name "vboxvfs\.*" 2>/dev/null|xargs rm -f 2>/dev/null
@@ -293,7 +299,17 @@ setup()
         find /lib/modules/`uname -r` -name "vboxguest\.*" 2>/dev/null|xargs rm -f 2>/dev/null
         succ_msg
     fi
-    echo "Building VirtualBox kernel modules"
+    begin "Building the VirtualBox kernel modules"
+    if ! sh /usr/share/$PACKAGE/test/build_in_tmp \
+        --no-print-directory > $LOG 2>&1; then
+        fail "`printf "Your system does not seem to be set up to build kernel modules.\nLook at $LOG to find out what went wrong"`"
+    fi
+    echo
+    if ! sh /usr/share/$PACKAGE/test_drm/build_in_tmp \
+        --no-print-directory > $LOG 2>&1; then
+        printf "Your system does not seem to support OpenGL in the kernel (this requires\nLinux 2.6.27 or later).  The OpenGL support will not be built.\n"
+        BUILDVBOXVIDEO=""
+    fi
     begin "Building the main VirtualBox module"
     if ! $BUILDVBOXGUEST \
         --save-module-symvers /tmp/vboxguest-Module.symvers \
@@ -356,7 +372,7 @@ setup()
     fi
 
     # Put mount.vboxsf in the right place
-    ln -s /usr/lib/VBoxGuestAdditions/mount.vboxsf /sbin
+    ln -s /usr/lib/$PACKAGE/mount.vboxsf /sbin
 
     succ_msg
     start
@@ -394,6 +410,7 @@ cleanup()
 
     # Remove other files
     rm /sbin/mount.vboxsf 2>/dev/null
+    rm /etc/udev/rules.d/60-vboxadd.rules 2>/dev/null
 }
 
 dmnstatus()

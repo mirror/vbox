@@ -411,12 +411,12 @@ $(VBOX_LNX_ADD_INST_STAGE_DIR)/VBoxGuestAdditions.tar.bz2: \
 ifdef VBOX_USE_PBZIP2
  	$(QUIET)tar --owner 0 --group 0 -cRf $(patsubst %.bz2,%,$@) \
  		-C $(VBOX_LNX_ADD_INST_OUT_DIR) \
- 		$(subst $(VBOX_LNX_ADD_INST_OUT_DIR)/,,$(VBOX_LNX_ADD_ARCH_FILES))
+ 		bin debug init lib sbin share src
 	$(QUIET)pbzip2 $(patsubst %.bz2,%,$@)
 else
 	$(QUIET)tar --owner 0 --group 0 -cjRf $@ \
  		-C $(VBOX_LNX_ADD_INST_OUT_DIR) \
- 		$(subst $(VBOX_LNX_ADD_INST_OUT_DIR)/,,$(VBOX_LNX_ADD_ARCH_FILES))
+ 		bin debug init lib sbin share src
 endif
 	$(QUIET)$(CHMOD) 0644 $@
 
