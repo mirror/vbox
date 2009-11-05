@@ -52,6 +52,7 @@ vboxvfs-sh_CLEAN      += $(PATH_vboxvfs-sh)/build_in_tmp
 
 #
 # The module (for syntax checking).
+# The DEBUG_HASH* stuff is for CONFIG_DYNAMIC_DEBUG-enabled kernels
 #
 vboxvfs_TEMPLATE        = VBOXGUESTR0
 vboxvfs_NOINST          = 1
@@ -59,7 +60,8 @@ vboxvfs_CFLAGS          = -fshort-wchar
 vboxvfs_DEFS            = \
 	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
 	KBUILD_MODNAME=KBUILD_STR\(vboxvfs\) \
-        KBUILD_BASENAME=KBUILD_STR\(vboxvfs\)
+        KBUILD_BASENAME=KBUILD_STR\(vboxvfs\) \
+	DEBUG_HASH=2 DEBUG_HASH2=3
 vboxvfs_INCS            = \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
