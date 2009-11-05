@@ -102,6 +102,7 @@ RT_C_DECLS_END
 /* Keyboard Commands */
 #define KBD_CMD_SET_LEDS        0xED    /* Set keyboard leds */
 #define KBD_CMD_ECHO            0xEE
+#define KBD_CMD_SCANCODE        0xF0    /* Get/set scancode set */
 #define KBD_CMD_GET_ID          0xF2    /* get keyboard ID */
 #define KBD_CMD_SET_RATE        0xF3    /* Set typematic rate */
 #define KBD_CMD_ENABLE          0xF4    /* Enable scanning */
@@ -192,6 +193,8 @@ typedef struct KBDState {
     /* keyboard state */
     int32_t kbd_write_cmd;
     int32_t scan_enabled;
+    int32_t translate;
+    int32_t scancode_set;   /* 1=XT, 2=AT, 3=PS/2 */
     /* mouse state */
     int32_t mouse_write_cmd;
     uint8_t mouse_status;
@@ -247,6 +250,18 @@ typedef struct KBDState {
         R3PTRTYPE(PPDMIMOUSECONNECTOR)      pDrv;
     } Mouse;
 } KBDState;
+
+/* Table to convert from PC scancodes to raw scancodes.  */
+static const unsigned char ps2_raw_keycode[128] = {
+      0,118, 22, 30, 38, 37, 46, 54, 61, 62, 70, 69, 78, 85,102, 13,
+     21, 29, 36, 45, 44, 53, 60, 67, 68, 77, 84, 91, 90, 20, 28, 27,
+     35, 43, 52, 51, 59, 66, 75, 76, 82, 14, 18, 93, 26, 34, 33, 42,
+     50, 49, 58, 65, 73, 74, 89,124, 17, 41, 88,  5,  6,  4, 12,  3,
+     11,  2, 10,  1,  9,119,126,108,117,125,123,107,115,116,121,105,
+    114,122,112,113,127, 96, 97,120,  7, 15, 23, 31, 39, 47, 55, 63,
+     71, 79, 86, 94,  8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 87,111,
+     19, 25, 57, 81, 83, 92, 95, 98, 99,100,101,103,104,106,109,110
+};
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -331,6 +346,14 @@ static void kbd_queue(KBDState *s, int b, int aux)
 static void pc_kbd_put_keycode(void *opaque, int keycode)
 {
     KBDState *s = (KBDState*)opaque;
+
+    /* XXX: add support for scancode sets 1 and 3 */
+    if (!s->translate && keycode < 0xe0 && s->scancode_set == 2)
+    {
+        if (keycode & 0x80)
+           kbd_queue(s, 0xf0, 0);
+        keycode = ps2_raw_keycode[keycode & 0x7f];
+    }
     kbd_queue(s, keycode, 0);
 }
 #endif /* IN_RING3 */
@@ -519,6 +542,7 @@ static uint32_t kbd_read_data(void *opaque, uint32_t addr)
 static void kbd_reset_keyboard(KBDState *s)
 {
     s->scan_enabled = 1;
+    s->scancode_set = 2;
 }
 
 static int  kbd_write_keyboard(KBDState *s, int val)
@@ -545,6 +569,7 @@ static int  kbd_write_keyboard(KBDState *s, int val)
             s->scan_enabled = 1;
             kbd_queue(s, KBD_REPLY_ACK, 0);
             break;
+        case KBD_CMD_SCANCODE:
         case KBD_CMD_SET_LEDS:
         case KBD_CMD_SET_RATE:
             s->kbd_write_cmd = val;
@@ -570,6 +595,23 @@ static int  kbd_write_keyboard(KBDState *s, int val)
             break;
         }
         break;
+    case KBD_CMD_SCANCODE:
+#ifdef IN_RING3
+        if (val == 0) {
+            if (s->scancode_set == 1)
+                pc_kbd_put_keycode(s, 0x43);
+            else if (s->scancode_set == 2)
+                pc_kbd_put_keycode(s, 0x41);
+            else if (s->scancode_set == 3)
+                pc_kbd_put_keycode(s, 0x3f);
+        } else {
+            if (val >= 1 && val <= 3) 
+                s->scancode_set = val;
+            kbd_queue(s, KBD_REPLY_ACK, 0);
+        }
+#else
+        return VINF_IOM_HC_IOPORT_WRITE;
+#endif
     case KBD_CMD_SET_LEDS:
         {
 #ifdef IN_RING3
@@ -886,6 +928,7 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
         break;
     case KBD_CCMD_WRITE_MODE:
         s->mode = val;
+        s->translate = (s->mode & KBD_MODE_KCC) == KBD_MODE_KCC;
         kbd_update_irq(s);
         break;
     case KBD_CCMD_WRITE_OBUF:
@@ -937,6 +980,8 @@ static void kbd_reset(void *opaque)
     /* Resetting everything, keyword was not working right on NT4 reboot. */
     s->write_cmd = 0;
     s->scan_enabled = 0;
+    s->translate = 0;
+    s->scancode_set = 2;
     s->mouse_status = 0;
     s->mouse_resolution = 0;
     s->mouse_sample_rate = 0;
@@ -987,6 +1032,10 @@ static void kbd_save(QEMUFile* f, void* opaque)
     qemu_put_be32s(f, &s->mouse_dw);
     qemu_put_be32s(f, &s->mouse_flags);
     qemu_put_8s(f, &s->mouse_buttons);
+
+    /* XXX: s->scancode_set isn't being saved, but we only really support set 2,
+     * so no real harm done.
+     */
 
     /*
      * We have to save the queues too.
@@ -1051,6 +1100,10 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     s->mouse_event_queue.count = 0;
     s->mouse_event_queue.rptr = 0;
     s->mouse_event_queue.wptr = 0;
+
+    /* Determine the translation state. */
+    s->translate = (s->mode & KBD_MODE_KCC) == KBD_MODE_KCC;
+    s->scancode_set = 2;    /* XXX: See comment in kbd_save(). */
 
     /*
      * Load the queues
