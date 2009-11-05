@@ -256,10 +256,10 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("CPUID overrides: ");
     ULONG cFound = 0;
-    static uint32_t const s_auCpuIdRanges[4] =
+    static uint32_t const s_auCpuIdRanges[] =
     {
         UINT32_C(0x00000000), UINT32_C(0x0000000a),
-        UINT32_C(0x80000000), UINT32_C(0x0000000a)
+        UINT32_C(0x80000000), UINT32_C(0x8000000a)
     };
     for (unsigned i = 0; i < RT_ELEMENTS(s_auCpuIdRanges); i += 2)
         for (uint32_t uLeaf = s_auCpuIdRanges[i]; uLeaf < s_auCpuIdRanges[i + 1]; uLeaf++)
