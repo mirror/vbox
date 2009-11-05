@@ -438,6 +438,7 @@ int VBoxServiceWinGetComponentVersions(uint32_t uiClientID)
         { szSysDir, "VBoxService.exe", },
         { szSysDir, "VBoxTray.exe", },
         { szSysDir, "VBoxGINA.dll", },
+        { szSysDir, "VBoxCredProv.dll", },
 
  /* On 64-bit we don't yet have the OpenGL DLLs in native format.
     So just enumerate the 32-bit files in the SYSWOW directory. */
@@ -499,4 +500,3 @@ int VBoxServiceWinGetComponentVersions(uint32_t uiClientID)
 
     return VINF_SUCCESS;
 }
-
