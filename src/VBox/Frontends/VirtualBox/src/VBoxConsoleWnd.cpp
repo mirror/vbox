@@ -2200,7 +2200,6 @@ void VBoxConsoleWnd::prepareStorageMenu()
             else attachmentMenu = menu;
 
             /* Mount Medium actions */
-            int addedIntoList = 0;
             CMediumVector mediums;
             switch (mediumType)
             {
@@ -2216,6 +2215,7 @@ void VBoxConsoleWnd::prepareStorageMenu()
                     break;
             }
 
+            int mediumsToBeShown = 0;
             const int maxMediumsToBeShown = 5;
             CMedium currentMedium = attachment.GetMedium();
             QString currentId = currentMedium.isNull() ? QString::null : currentMedium.GetId();
@@ -2237,9 +2237,7 @@ void VBoxConsoleWnd::prepareStorageMenu()
                 }
                 if (!isMediumUsed)
                 {
-                    if (   !currentUsed
-                        && !currentMedium.isNull()
-                        && addedIntoList == maxMediumsToBeShown-1)
+                    if (!currentUsed && !currentMedium.isNull() && mediumsToBeShown == maxMediumsToBeShown - 1)
                         medium = currentMedium;
 
                     if (medium.GetId() == currentId)
@@ -2247,16 +2245,15 @@ void VBoxConsoleWnd::prepareStorageMenu()
 
                     QAction *mountMediumAction = new QAction (VBoxMedium (medium, mediumType).name(), attachmentMenu);
                     mountMediumAction->setCheckable (true);
-                    mountMediumAction->setChecked (!attachment.GetMedium().isNull() &&
-                                                   medium.GetId() == currentId);
+                    mountMediumAction->setChecked (!currentMedium.isNull() && medium.GetId() == currentId);
                     mountMediumAction->setData (QVariant::fromValue (MountTarget (attachment.GetController().GetName(),
                                                                                   attachment.GetPort(),
                                                                                   attachment.GetDevice(),
                                                                                   medium.GetId())));
                     connect (mountMediumAction, SIGNAL (triggered (bool)), this, SLOT (mountMedium()));
                     attachmentMenu->addAction (mountMediumAction);
-                    ++ addedIntoList;
-                    if (addedIntoList == maxMediumsToBeShown)
+                    ++ mediumsToBeShown;
+                    if (mediumsToBeShown == maxMediumsToBeShown)
                         break;
                 }
             }
@@ -2277,7 +2274,7 @@ void VBoxConsoleWnd::prepareStorageMenu()
 
             /* Unmount Medium action */
             QAction *unmountMediumAction = new QAction (attachmentMenu);
-            unmountMediumAction->setEnabled (!attachment.GetMedium().isNull());
+            unmountMediumAction->setEnabled (!currentMedium.isNull());
             unmountMediumAction->setData (QVariant::fromValue (MountTarget (attachment.GetController().GetName(),
                                                                             attachment.GetPort(),
                                                                             attachment.GetDevice())));
