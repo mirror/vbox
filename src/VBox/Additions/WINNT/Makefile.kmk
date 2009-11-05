@@ -28,7 +28,9 @@ include $(PATH_SUB_CURRENT)/MouseFilter/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxGuest/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxTray/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxGINA/Makefile.kmk
-include $(PATH_SUB_CURRENT)/VBoxCredProv/Makefile.kmk
+ifndef VBOX_OSE
+ include $(PATH_SUB_CURRENT)/VBoxCredProv/Makefile.kmk
+endif
 include $(PATH_SUB_CURRENT)/VBoxHook/Makefile.kmk
 ifndef VBOX_OSE
  include $(PATH_SUB_CURRENT)/Network/Makefile.kmk
