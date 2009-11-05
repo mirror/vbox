@@ -1134,10 +1134,9 @@ RuntimeR0Drv_INCS.freebsd = \
 	$(PATH_INS)/gen-sys-hdrs
 RuntimeR0Drv_INCS.linux = \
 	r0drv/linux
-ifdef VBOX_WITH_SOLARIS_VBI
- RuntimeR0Drv_INCS.solaris = \
- 	r0drv/solaris/vbi/i86pc
-endif
+RuntimeR0Drv_INCS.solaris = \
+	r0drv/solaris/vbi/i86pc \
+	r0drv/solaris/vbi/i86pc/sys
 
 RuntimeR0Drv_SOURCES    = \
 	common/alloc/alloc.cpp \
@@ -1422,7 +1421,7 @@ RuntimeR0Drv_SOURCES.solaris = \
  	r0drv/solaris/semfastmutex-r0drv-solaris.c \
  	r0drv/solaris/spinlock-r0drv-solaris.c
 
-ifdef VBOX_WITH_SOLARIS_VBI
+ # VBI is now compiled into IPRT
  RuntimeR0Drv_SOURCES.solaris += \
 	r0drv/solaris/vbi/RTMpPokeCpu-r0drv-solaris.c \
 	r0drv/solaris/vbi/mpnotification-r0drv-solaris.c \
@@ -1433,43 +1432,9 @@ ifdef VBOX_WITH_SOLARIS_VBI
  	r0drv/solaris/vbi/thread-r0drv-solaris.c \
  	r0drv/solaris/vbi/thread2-r0drv-solaris.c \
  	r0drv/solaris/vbi/time-r0drv-solaris.c \
- 	r0drv/solaris/vbi/timer-r0drv-solaris.c
-else  # !VBOX_WITH_SOLARIS_VBI
- RuntimeR0Drv_SOURCES.solaris += \
-	r0drv/solaris/mpnotification-r0drv-solaris.c \
- 	r0drv/solaris/alloc-r0drv-solaris.c \
- 	r0drv/solaris/memobj-r0drv-solaris.c \
- 	r0drv/solaris/process-r0drv-solaris.c \
- 	r0drv/solaris/thread-r0drv-solaris.c \
- 	r0drv/solaris/thread2-r0drv-solaris.c \
- 	r0drv/solaris/time-r0drv-solaris.c \
- 	r0drv/solaris/timer-r0drv-solaris.c
- # Don't use mp-r0drv-solaris.c because it will cause crashes due to incorrect memobj-r0drv-solaris.c code.
- ifeq (0,0)
-  # Stub it. ## @todo limit the stubbing to RTMpOn*.
-  RuntimeR0Drv_SOURCES.solaris += \
-  	generic/RTMpCpuId-generic.cpp \
-  	generic/RTMpCpuIdFromSetIndex-generic.cpp \
-  	generic/RTMpCpuIdToSetIndex-generic.cpp \
-  	generic/RTMpIsCpuPossible-generic.cpp \
-  	generic/RTMpGetCount-generic.cpp \
-  	generic/RTMpGetMaxCpuId-generic.cpp \
-  	generic/RTMpGetOnlineCount-generic.cpp \
-  	generic/RTMpGetOnlineSet-generic.cpp \
-  	generic/RTMpGetSet-generic.cpp \
-  	generic/RTMpIsCpuOnline-generic.cpp \
-	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
-  	r0drv/generic/RTMpOn-r0drv-generic.cpp \
-	r0drv/solaris/RTMpPokeCpu-r0drv-solaris.c
- else
-  # Use mp-r0drv-solaris.c.
-  RuntimeR0Drv_SOURCES.solaris += \
- 	r0drv/solaris/mp-r0drv-solaris.c \
-	r0drv/solaris/RTMpPokeCpu-r0drv-solaris.c
-# 	r0drv/solaris/mpnotification-r0drv-solaris.c
- endif
+ 	r0drv/solaris/vbi/timer-r0drv-solaris.c \
+ 	r0drv/solaris/vbi/i86pc/os/vbi.c
 
-endif # !VBOX_WITH_SOLARIS_VBI
 
 ## PORTME: Porters create and add their selection of platform specific Ring-0 Driver files here.
 
@@ -1490,45 +1455,6 @@ RuntimeGuestR0_SOURCES   += \
 	VBox/logbackdoor.cpp
 RuntimeGuestR0_EXTENDS    = RuntimeR0Drv
 
-# HACK: no vbi for the solaris guest additions - yet.
-RuntimeGuestR0_SOURCES.solaris = \
-	common/err/RTErrConvertFromErrno.cpp \
-	common/err/RTErrConvertToErrno.cpp \
-	common/misc/thread.cpp \
-	common/string/memchr.asm \
-	generic/RTAssertShouldPanic-generic.cpp \
-	generic/RTTimerCreate-generic.cpp \
-	r0drv/memobj-r0drv.cpp \
- 	generic/RTMpCpuId-generic.cpp \
- 	generic/RTMpCpuIdFromSetIndex-generic.cpp \
- 	generic/RTMpCpuIdToSetIndex-generic.cpp \
- 	generic/RTMpIsCpuPossible-generic.cpp \
- 	generic/RTMpGetCount-generic.cpp \
- 	generic/RTMpGetMaxCpuId-generic.cpp \
- 	generic/RTMpGetOnlineCount-generic.cpp \
- 	generic/RTMpGetOnlineSet-generic.cpp \
- 	generic/RTMpGetSet-generic.cpp \
- 	generic/RTMpIsCpuOnline-generic.cpp \
-	generic/RTLogWriteStdOut-stub-generic.cpp \
-	generic/mppresent-generic.cpp \
-	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
-	r0drv/generic/RTMpOn-r0drv-generic.cpp \
-	r0drv/generic/RTMpPokeCpu-r0drv-generic.cpp \
-	r0drv/generic/mpnotification-r0drv-generic.cpp \
- 	r0drv/solaris/alloc-r0drv-solaris.c \
- 	r0drv/solaris/assert-r0drv-solaris.c \
- 	r0drv/solaris/initterm-r0drv-solaris.c \
- 	r0drv/solaris/memobj-r0drv-solaris.c \
- 	r0drv/solaris/process-r0drv-solaris.c \
- 	r0drv/solaris/RTLogWriteDebugger-r0drv-solaris.c \
- 	r0drv/solaris/semevent-r0drv-solaris.c \
- 	r0drv/solaris/semeventmulti-r0drv-solaris.c \
- 	r0drv/solaris/semfastmutex-r0drv-solaris.c \
- 	r0drv/solaris/spinlock-r0drv-solaris.c \
- 	r0drv/solaris/thread-r0drv-solaris.c \
- 	r0drv/solaris/thread2-r0drv-solaris.c \
- 	r0drv/solaris/time-r0drv-solaris.c \
- 	r0drv/solaris/timer-r0drv-solaris.c
 
 #
 # RuntimeGuestR0NT4 - Win32 NT4 guest driver runtime.

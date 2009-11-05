@@ -31,13 +31,13 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "the-solaris-kernel.h"
+#include "../the-solaris-kernel.h"
 #include "internal/iprt.h"
 
 #include <iprt/err.h>
 #include <iprt/mp.h>
+#include <iprt/cpuset.h>
 #include "r0drv/mp-r0drv.h"
-#include "internal-r0drv-solaris.h"
 
 
 /*******************************************************************************

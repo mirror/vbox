@@ -58,6 +58,7 @@
 #include <sys/sunddi.h>
 #include <sys/spl.h>
 #include <sys/archsystm.h>
+#include "vbi.h"
 
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
@@ -65,9 +66,10 @@
 #include <iprt/types.h>
 
 RT_C_DECLS_BEGIN
-extern bool                 g_frtSolarisSplSetsEIF;
-extern struct ddi_dma_attr  g_SolarisX86PhysMemLimits;
+extern bool g_frtSolarisSplSetsEIF;
+extern struct ddi_dma_attr g_SolarisX86PhysMemLimits;
 extern uintptr_t kernelbase;
+extern RTCPUSET g_rtMpSolarisCpuSet;
 RT_C_DECLS_END
 
 #endif
