@@ -201,6 +201,23 @@ int handleStorageAttach(HandlerArg *a)
         goto leave;
     }
 
+    /* for sata controller check if the port count is big enough
+     * to accomodate the current port which is being assigned
+     * else just increase the port count
+     */
+    {
+        ULONG ulPortCount = 0;
+        ULONG ulMaxPortCount = 0;
+
+        CHECK_ERROR(storageCtl, COMGETTER(MaxPortCount)(&ulMaxPortCount));
+        CHECK_ERROR(storageCtl, COMGETTER(PortCount)(&ulPortCount));
+
+        if (   (ulPortCount != ulMaxPortCount)
+            && (port >= ulPortCount)
+            && (port < ulMaxPortCount))
+            CHECK_ERROR(storageCtl, COMSETTER(PortCount)(port + 1));
+    }
+
     if (!RTStrICmp(pszMedium, "none"))
     {
         CHECK_ERROR(machine, DetachDevice(Bstr(pszCtl), port, device));
