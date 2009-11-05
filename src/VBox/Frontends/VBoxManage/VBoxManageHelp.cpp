@@ -86,9 +86,9 @@ void printUsage(USAGECATEGORY u64Cmd)
 #if defined(VBOX_WITH_NETFLT)
                  "                            bridgedifs|hostonlyifs|dhcpservers|hostinfo|\n"
 #else
-                 "                            bridgedifs|hostinfo|dhcpservers|\n"
+                 "                            bridgedifs|dhcpservers|hostinfo|\n"
 #endif
-                 "                            hddbackends|hdds|dvds|floppies|\n"
+                 "                            hostcpuids|hddbackends|hdds|dvds|floppies|\n"
                  "                            usbhost|usbfilters|systemproperties\n"
                  "\n");
     }

@@ -77,6 +77,7 @@ enum enOptionCodes
 #if defined(VBOX_WITH_NETFLT)
     LISTHOSTONLYIFS,
 #endif
+    LISTHOSTCPUIDS,
     LISTHOSTINFO,
     LISTHDDBACKENDS,
     LISTHDDS,
@@ -90,26 +91,27 @@ enum enOptionCodes
 
 static const RTGETOPTDEF g_aListOptions[]
     = {
-        { "--long",             'l', RTGETOPT_REQ_NOTHING },
-        { "vms",                LISTVMS, RTGETOPT_REQ_NOTHING },
-        { "runningvms",         LISTRUNNINGVMS, RTGETOPT_REQ_NOTHING },
-        { "ostypes",            LISTOSTYPES, RTGETOPT_REQ_NOTHING },
-        { "hostdvds",           LISTHOSTDVDS, RTGETOPT_REQ_NOTHING },
-        { "hostfloppies",       LISTHOSTFLOPPIES, RTGETOPT_REQ_NOTHING },
-        { "hostifs",            LISTBRIDGEDIFS, RTGETOPT_REQ_NOTHING }, /* backward compatibility */
-        { "bridgedifs",         LISTBRIDGEDIFS, RTGETOPT_REQ_NOTHING },
+        { "--long",             'l',                    RTGETOPT_REQ_NOTHING },
+        { "vms",                LISTVMS,                RTGETOPT_REQ_NOTHING },
+        { "runningvms",         LISTRUNNINGVMS,         RTGETOPT_REQ_NOTHING },
+        { "ostypes",            LISTOSTYPES,            RTGETOPT_REQ_NOTHING },
+        { "hostdvds",           LISTHOSTDVDS,           RTGETOPT_REQ_NOTHING },
+        { "hostfloppies",       LISTHOSTFLOPPIES,       RTGETOPT_REQ_NOTHING },
+        { "hostifs",            LISTBRIDGEDIFS,         RTGETOPT_REQ_NOTHING }, /* backward compatibility */
+        { "bridgedifs",         LISTBRIDGEDIFS,         RTGETOPT_REQ_NOTHING },
 #if defined(VBOX_WITH_NETFLT)
-        { "hostonlyifs",        LISTHOSTONLYIFS, RTGETOPT_REQ_NOTHING },
+        { "hostonlyifs",        LISTHOSTONLYIFS,        RTGETOPT_REQ_NOTHING },
 #endif
-        { "hostinfo",           LISTHOSTINFO, RTGETOPT_REQ_NOTHING },
-        { "hddbackends",        LISTHDDBACKENDS, RTGETOPT_REQ_NOTHING },
-        { "hdds",               LISTHDDS, RTGETOPT_REQ_NOTHING },
-        { "dvds",               LISTDVDS, RTGETOPT_REQ_NOTHING },
-        { "floppies",           LISTFLOPPIES, RTGETOPT_REQ_NOTHING },
-        { "usbhost",            LISTUSBHOST, RTGETOPT_REQ_NOTHING },
-        { "usbfilters",         LISTUSBFILTERS, RTGETOPT_REQ_NOTHING },
-        { "systemproperties",   LISTSYSTEMPROPERTIES, RTGETOPT_REQ_NOTHING },
-        { "dhcpservers",        LISTDHCPSERVERS, RTGETOPT_REQ_NOTHING }
+        { "hostinfo",           LISTHOSTINFO,           RTGETOPT_REQ_NOTHING },
+        { "hostcpuids",         LISTHOSTCPUIDS,         RTGETOPT_REQ_NOTHING },
+        { "hddbackends",        LISTHDDBACKENDS,        RTGETOPT_REQ_NOTHING },
+        { "hdds",               LISTHDDS,               RTGETOPT_REQ_NOTHING },
+        { "dvds",               LISTDVDS,               RTGETOPT_REQ_NOTHING },
+        { "floppies",           LISTFLOPPIES,           RTGETOPT_REQ_NOTHING },
+        { "usbhost",            LISTUSBHOST,            RTGETOPT_REQ_NOTHING },
+        { "usbfilters",         LISTUSBFILTERS,         RTGETOPT_REQ_NOTHING },
+        { "systemproperties",   LISTSYSTEMPROPERTIES,   RTGETOPT_REQ_NOTHING },
+        { "dhcpservers",        LISTDHCPSERVERS,        RTGETOPT_REQ_NOTHING }
       };
 
 int handleList(HandlerArg *a)
@@ -142,6 +144,7 @@ int handleList(HandlerArg *a)
             case LISTHOSTONLYIFS:
 #endif
             case LISTHOSTINFO:
+            case LISTHOSTCPUIDS:
             case LISTHDDBACKENDS:
             case LISTHDDS:
             case LISTDVDS:
@@ -430,6 +433,36 @@ int handleList(HandlerArg *a)
             Bstr oSVersion;
             CHECK_ERROR (Host, COMGETTER(OSVersion)(oSVersion.asOutParam()));
             RTPrintf("Operating system version: %lS\n", oSVersion.raw());
+        }
+        break;
+
+        case LISTHOSTCPUIDS:
+        {
+            ComPtr<IHost> Host;
+            CHECK_ERROR(a->virtualBox, COMGETTER(Host)(Host.asOutParam()));
+
+            RTPrintf("Host CPUIDs:\n\nLeaf no.  EAX      EBX      ECX      EDX\n");
+            ULONG uCpuNo = 0; /* ASSUMES that CPU#0 is online. */
+            ULONG uEAX, uEBX, uECX, uEDX;
+            ULONG cLeafs;
+
+            /* Standard */
+            CHECK_ERROR(Host, GetProcessorCpuIdLeaf(uCpuNo, 0, 0, &cLeafs, &uEBX, &uECX, &uEDX));
+            if (cLeafs > UINT32_C(0x00000000) && cLeafs <= UINT32_C(0x0000007f))
+                for (ULONG iLeaf = 0; iLeaf < cLeafs; iLeaf++)
+                {
+                    CHECK_ERROR(Host, GetProcessorCpuIdLeaf(uCpuNo, iLeaf, 0, &uEAX, &uEBX, &uECX, &uEDX));
+                    RTPrintf("%08x  %08x %08x %08x %08x\n", iLeaf, uEAX, uEBX, uECX, uEDX);
+                }
+
+            /* Extended */
+            CHECK_ERROR(Host, GetProcessorCpuIdLeaf(uCpuNo, UINT32_C(0x80000000), 0, &cLeafs, &uEBX, &uECX, &uEDX));
+            if (cLeafs > UINT32_C(0x80000000) && cLeafs <= UINT32_C(0x8000007f))
+                for (ULONG iLeaf = UINT32_C(0x80000000); iLeaf < cLeafs; iLeaf++)
+                {
+                    CHECK_ERROR(Host, GetProcessorCpuIdLeaf(uCpuNo, iLeaf, 0, &uEAX, &uEBX, &uECX, &uEDX));
+                    RTPrintf("%08x  %08x %08x %08x %08x\n", iLeaf, uEAX, uEBX, uECX, uEDX);
+                }
         }
         break;
 
