@@ -274,6 +274,7 @@ static DECLCALLBACK(int) teleporterTcpOpWrite(void *pvUser, uint64_t offStream, 
     TeleporterState *pState = (TeleporterState *)pvUser;
 
     AssertReturn(cbToWrite > 0, VINF_SUCCESS);
+    AssertReturn(cbToWrite < UINT32_MAX, VERR_OUT_OF_RANGE);
     AssertReturn(pState->mfIsSource, VERR_INVALID_HANDLE);
 
     for (;;)
@@ -281,7 +282,7 @@ static DECLCALLBACK(int) teleporterTcpOpWrite(void *pvUser, uint64_t offStream, 
         /* Write block header. */
         TELEPORTERTCPHDR Hdr;
         Hdr.u32Magic = TELEPORTERTCPHDR_MAGIC;
-        Hdr.cb       = RT_MIN(cbToWrite, TELEPORTERTCPHDR_MAX_SIZE);
+        Hdr.cb       = RT_MIN((uint32_t)cbToWrite, TELEPORTERTCPHDR_MAX_SIZE);
         int rc = RTTcpWrite(pState->mhSocket, &Hdr, sizeof(Hdr));
         if (RT_FAILURE(rc))
         {
@@ -404,7 +405,7 @@ static DECLCALLBACK(int) teleporterTcpOpRead(void *pvUser, uint64_t offStream, v
         rc = teleporterTcpReadSelect(pState);
         if (RT_FAILURE(rc))
             return rc;
-        size_t cb = RT_MIN(pState->mcbReadBlock, cbToRead);
+        uint32_t cb = (uint32_t)RT_MIN(pState->mcbReadBlock, cbToRead);
         rc = RTTcpRead(pState->mhSocket, pvBuf, cb, pcbRead);
         if (RT_FAILURE(rc))
         {
@@ -414,8 +415,9 @@ static DECLCALLBACK(int) teleporterTcpOpRead(void *pvUser, uint64_t offStream, v
         }
         if (pcbRead)
         {
-            pState->moffStream   += *pcbRead;
-            pState->mcbReadBlock -= *pcbRead;
+            cb = (uint32_t)*pcbRead;
+            pState->moffStream   += cb;
+            pState->mcbReadBlock -= cb;
             return VINF_SUCCESS;
         }
         pState->moffStream   += cb;
@@ -568,7 +570,7 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
     /*
      * Wait for Console::Teleport to change the state.
      */
-    { AutoWriteLock autoLock(); }
+    { AutoWriteLock autoLock(this); }
 
     BOOL fCancelled = TRUE;
     HRESULT hrc = pState->mptrProgress->COMGETTER(Canceled)(&fCancelled);
@@ -682,6 +684,11 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
     if (SUCCEEDED(hrc))
         hrc = pState->mptrConsole->teleporterSrc(pState);
 
+    /* Aaarg! setMachineState trashes error info on Windows, so we have to
+       complete things here on failure instead of right before cleanup. */
+    if (FAILED(hrc))
+        pState->mptrProgress->notifyComplete(hrc);
+
     /* We can no longer be cancelled (success), or it doesn't matter any longer (failure). */
     pState->mptrProgress->setCancelCallback(NULL, NULL);
 
@@ -704,6 +711,7 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
 
         autoVMCaller.release();
         hrc = pState->mptrConsole->powerDown();
+        pState->mptrProgress->notifyComplete(hrc);
     }
     else
     {
@@ -762,8 +770,6 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
         }
     }
     autoLock.leave();
-
-    pState->mptrProgress->notifyComplete(hrc);
 
     /*
      * Cleanup.
