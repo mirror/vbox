@@ -103,6 +103,7 @@ typedef CPUMDUMPTYPE *PCPUMDUMPTYPE;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+static CPUMCPUVENDOR cpumR3DetectVendor(uint32_t uEAX, uint32_t uEBX, uint32_t uECX, uint32_t uEDX);
 static int cpumR3CpuIdInit(PVM pVM);
 #ifdef VBOX_WITH_LIVE_MIGRATION
 static DECLCALLBACK(int)  cpumR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass);
@@ -200,6 +201,15 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         Log(("The CPU doesn't support SYSENTER/SYSEXIT!\n"));
 
     /*
+     * Detech the host CPU vendor.
+     * (The guest CPU vendor is re-detected later on.)
+     */
+    uint32_t uEAX, uEBX, uECX, uEDX;
+    ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
+    pVM->cpum.s.enmHostCpuVendor = cpumR3DetectVendor(uEAX, uEBX, uECX, uEDX);
+    pVM->cpum.s.enmGuestCpuVendor = pVM->cpum.s.enmHostCpuVendor;
+
+    /*
      * Setup hypervisor startup values.
      */
 
@@ -220,28 +230,6 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Query the CPU manufacturer. */
-    uint32_t uEAX, uEBX, uECX, uEDX;
-    ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
-    if (    uEAX >= 1
-        &&  uEBX == X86_CPUID_VENDOR_AMD_EBX
-        &&  uECX == X86_CPUID_VENDOR_AMD_ECX
-        &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
-    {
-        pVM->cpum.s.enmGuestCpuVendor = pVM->cpum.s.enmHostCpuVendor = CPUMCPUVENDOR_AMD;
-    }
-    else if (    uEAX >= 1
-             &&  uEBX == X86_CPUID_VENDOR_INTEL_EBX
-             &&  uECX == X86_CPUID_VENDOR_INTEL_ECX
-             &&  uEDX == X86_CPUID_VENDOR_INTEL_EDX)
-    {
-        pVM->cpum.s.enmGuestCpuVendor = pVM->cpum.s.enmHostCpuVendor = CPUMCPUVENDOR_INTEL;
-    }
-    else /** @todo Via */
-    {
-        pVM->cpum.s.enmGuestCpuVendor = pVM->cpum.s.enmHostCpuVendor = CPUMCPUVENDOR_UNKNOWN;
-    }
-
     /*
      * Register info handlers.
      */
@@ -253,7 +241,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     DBGFR3InfoRegisterInternal(pVM, "cpumguestinstr",   "Displays the current guest instruction.",  &cpumR3InfoGuestInstr);
 
     /*
-     * Initialize the Guest CPU state.
+     * Initialize the Guest CPUID state.
      */
     rc = cpumR3CpuIdInit(pVM);
     if (RT_FAILURE(rc))
@@ -277,6 +265,121 @@ VMMR3DECL(int) CPUMR3InitCPU(PVM pVM)
 
 
 /**
+ * Detect the CPU vendor give n the
+ *
+ * @returns The vendor.
+ * @param   uEAX                EAX from CPUID(0).
+ * @param   uEBX                EBX from CPUID(0).
+ * @param   uECX                ECX from CPUID(0).
+ * @param   uEDX                EDX from CPUID(0).
+ */
+static CPUMCPUVENDOR cpumR3DetectVendor(uint32_t uEAX, uint32_t uEBX, uint32_t uECX, uint32_t uEDX)
+{
+    if (    uEAX >= 1
+        &&  uEBX == X86_CPUID_VENDOR_AMD_EBX
+        &&  uECX == X86_CPUID_VENDOR_AMD_ECX
+        &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
+        return CPUMCPUVENDOR_AMD;
+
+    if (    uEAX >= 1
+        &&  uEBX == X86_CPUID_VENDOR_INTEL_EBX
+        &&  uECX == X86_CPUID_VENDOR_INTEL_ECX
+        &&  uEDX == X86_CPUID_VENDOR_INTEL_EDX)
+        return CPUMCPUVENDOR_INTEL;
+
+    /** @todo detect the other buggers... */
+    return CPUMCPUVENDOR_UNKNOWN;
+}
+
+
+/**
+ * Fetches overrides for a CPUID leaf.
+ *
+ * @returns VBox status code.
+ * @param   pLeaf               The leaf to load the overrides into.
+ * @param   pCfgNode            The CFGM node containing the overrides
+ *                              (/CPUM/HostCPUID/ or /CPUM/CPUID/).
+ * @param   iLeaf               The CPUID leaf number.
+ */
+static int cpumR3CpuIdFetchLeafOverride(PCPUMCPUID pLeaf, PCFGMNODE pCfgNode, uint32_t iLeaf)
+{
+    PCFGMNODE pLeafNode = CFGMR3GetChildF(pCfgNode, "%RX32", iLeaf);
+    if (pLeafNode)
+    {
+        uint32_t u32;
+        int rc = CFGMR3QueryU32(pLeafNode, "eax", &u32);
+        if (RT_SUCCESS(rc))
+            pLeaf->eax = u32;
+        else
+            AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
+
+        rc = CFGMR3QueryU32(pLeafNode, "ebx", &u32);
+        if (RT_SUCCESS(rc))
+            pLeaf->ebx = u32;
+        else
+            AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
+
+        rc = CFGMR3QueryU32(pLeafNode, "ecx", &u32);
+        if (RT_SUCCESS(rc))
+            pLeaf->ecx = u32;
+        else
+            AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
+
+        rc = CFGMR3QueryU32(pLeafNode, "edx", &u32);
+        if (RT_SUCCESS(rc))
+            pLeaf->edx = u32;
+        else
+            AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
+
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Load the overrides for a set of CPUID leafs.
+ *
+ * @returns VBox status code.
+ * @param   paLeafs             The leaf array.
+ * @param   cLeafs              The number of leafs.
+ * @param   uStart              The start leaf number.
+ * @param   pCfgNode            The CFGM node containing the overrides
+ *                              (/CPUM/HostCPUID/ or /CPUM/CPUID/).
+ */
+static int cpumR3CpuIdInitLoadOverrideSet(uint32_t uStart, PCPUMCPUID paLeafs, uint32_t cLeafs, PCFGMNODE pCfgNode)
+{
+    for (uint32_t i = 0; i < cLeafs; i++)
+    {
+        int rc = cpumR3CpuIdFetchLeafOverride(&paLeafs[i], pCfgNode, uStart + i);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Init a set of host CPUID leafs.
+ *
+ * @returns VBox status code.
+ * @param   paLeafs             The leaf array.
+ * @param   cLeafs              The number of leafs.
+ * @param   uStart              The start leaf number.
+ * @param   pCfgNode            The /CPUM/HostCPUID/ node.
+ */
+static int cpumR3CpuIdInitHostSet(uint32_t uStart, PCPUMCPUID paLeafs, uint32_t cLeafs, PCFGMNODE pCfgNode)
+{
+    /* Using the ECX variant for all of them can't hurt... */
+    for (uint32_t i = 0; i < cLeafs; i++)
+        ASMCpuId_Idx_ECX(uStart + i, 0, &paLeafs[i].eax, &paLeafs[i].ebx, &paLeafs[i].ecx, &paLeafs[i].edx);
+
+    /* Load CPUID leaf override; we currently don't care if the caller
+       specifies features the host CPU doesn't support. */
+    return cpumR3CpuIdInitLoadOverrideSet(uStart, paLeafs, cLeafs, pCfgNode);
+}
+
+
+/**
  * Initializes the emulated CPU's cpuid information.
  *
  * @returns VBox status code.
@@ -284,60 +387,29 @@ VMMR3DECL(int) CPUMR3InitCPU(PVM pVM)
  */
 static int cpumR3CpuIdInit(PVM pVM)
 {
-    PCPUM    pCPUM = &pVM->cpum.s;
-    uint32_t i;
+    PCPUM       pCPUM    = &pVM->cpum.s;
+    PCFGMNODE   pCpumCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM");
+    uint32_t    i;
+    int         rc;
 
     /*
-     * Get the host CPUIDs.
+     * Get the host CPUIDs and redetect the guest CPU vendor (could've been overridden).
      */
-    for (i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd); i++)
-    {
-        ASMCpuId_Idx_ECX(i, 0,
-                         &pCPUM->aGuestCpuIdStd[i].eax, &pCPUM->aGuestCpuIdStd[i].ebx,
-                         &pCPUM->aGuestCpuIdStd[i].ecx, &pCPUM->aGuestCpuIdStd[i].edx);
+    /** @cfgm{CPUM/HostCPUID/[000000xx|800000xx|c000000x]/[eax|ebx|ecx|edx],32-bit}
+     * Overrides the host CPUID leaf values used for calculating the guest CPUID
+     * leafs.  This can be used to preserve the CPUID values when moving a VM to
+     * a different machine.  Another use is restricting (or extending) the
+     * feature set exposed to the guest. */
+    PCFGMNODE pHostOverrideCfg = CFGMR3GetChild(pCpumCfg, "HostCPUID");
+    rc = cpumR3CpuIdInitHostSet(UINT32_C(0x00000000), &pCPUM->aGuestCpuIdStd[0],     RT_ELEMENTS(pCPUM->aGuestCpuIdStd),     pHostOverrideCfg);
+    AssertRCReturn(rc, rc);
+    rc = cpumR3CpuIdInitHostSet(UINT32_C(0x80000000), &pCPUM->aGuestCpuIdExt[0],     RT_ELEMENTS(pCPUM->aGuestCpuIdExt),     pHostOverrideCfg);
+    AssertRCReturn(rc, rc);
+    rc = cpumR3CpuIdInitHostSet(UINT32_C(0xc0000000), &pCPUM->aGuestCpuIdCentaur[0], RT_ELEMENTS(pCPUM->aGuestCpuIdCentaur), pHostOverrideCfg);
+    AssertRCReturn(rc, rc);
 
-        /* Load standard CPUID leaf override; we currently don't care if the caller specifies features the host CPU doesn't support. */
-        PCFGMNODE pLeaf = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "CPUM/CPUID/%x", i);
-        if (pLeaf)
-        {
-            CFGMR3QueryU32(pLeaf, "eax", &pCPUM->aGuestCpuIdStd[i].eax);
-            CFGMR3QueryU32(pLeaf, "ebx", &pCPUM->aGuestCpuIdStd[i].ebx);
-            CFGMR3QueryU32(pLeaf, "ecx", &pCPUM->aGuestCpuIdStd[i].ecx);
-            CFGMR3QueryU32(pLeaf, "edx", &pCPUM->aGuestCpuIdStd[i].edx);
-        }
-    }
-    for (i = 0; i < RT_ELEMENTS(pCPUM->aGuestCpuIdExt); i++)
-    {
-        ASMCpuId(0x80000000 + i,
-                 &pCPUM->aGuestCpuIdExt[i].eax, &pCPUM->aGuestCpuIdExt[i].ebx,
-                 &pCPUM->aGuestCpuIdExt[i].ecx, &pCPUM->aGuestCpuIdExt[i].edx);
-
-        /* Load extended CPUID leaf override; we currently don't care if the caller specifies features the host CPU doesn't support. */
-        PCFGMNODE pLeaf = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "CPUM/CPUID/%x", i);
-        if (pLeaf)
-        {
-            CFGMR3QueryU32(pLeaf, "eax", &pCPUM->aGuestCpuIdExt[i].eax);
-            CFGMR3QueryU32(pLeaf, "ebx", &pCPUM->aGuestCpuIdExt[i].ebx);
-            CFGMR3QueryU32(pLeaf, "ecx", &pCPUM->aGuestCpuIdExt[i].ecx);
-            CFGMR3QueryU32(pLeaf, "edx", &pCPUM->aGuestCpuIdExt[i].edx);
-        }
-    }
-    for (i = 0; i < RT_ELEMENTS(pCPUM->aGuestCpuIdCentaur); i++)
-    {
-        ASMCpuId(0xc0000000 + i,
-                 &pCPUM->aGuestCpuIdCentaur[i].eax, &pCPUM->aGuestCpuIdCentaur[i].ebx,
-                 &pCPUM->aGuestCpuIdCentaur[i].ecx, &pCPUM->aGuestCpuIdCentaur[i].edx);
-
-        /* Load Centaur CPUID leaf override; we currently don't care if the caller specifies features the host CPU doesn't support. */
-        PCFGMNODE pLeaf = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "CPUM/CPUID/%x", i);
-        if (pLeaf)
-        {
-            CFGMR3QueryU32(pLeaf, "eax", &pCPUM->aGuestCpuIdCentaur[i].eax);
-            CFGMR3QueryU32(pLeaf, "ebx", &pCPUM->aGuestCpuIdCentaur[i].ebx);
-            CFGMR3QueryU32(pLeaf, "ecx", &pCPUM->aGuestCpuIdCentaur[i].ecx);
-            CFGMR3QueryU32(pLeaf, "edx", &pCPUM->aGuestCpuIdCentaur[i].edx);
-        }
-    }
+    pCPUM->enmGuestCpuVendor = cpumR3DetectVendor(pCPUM->aGuestCpuIdStd[0].eax, pCPUM->aGuestCpuIdStd[0].ebx,
+                                                  pCPUM->aGuestCpuIdStd[0].ecx, pCPUM->aGuestCpuIdStd[0].edx);
 
     /*
      * Only report features we can support.
@@ -352,7 +424,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | X86_CPUID_FEATURE_EDX_MCE
                                        | X86_CPUID_FEATURE_EDX_CX8
                                        //| X86_CPUID_FEATURE_EDX_APIC  - set by the APIC device if present.
-                                       /** @note we don't report sysenter/sysexit support due to our inability to keep the IOPL part of eflags in sync while in ring 1 (see #1757) */
+                                       /* Note! we don't report sysenter/sysexit support due to our inability to keep the IOPL part of eflags in sync while in ring 1 (see #1757) */
                                        //| X86_CPUID_FEATURE_EDX_SEP
                                        | X86_CPUID_FEATURE_EDX_MTRR
                                        | X86_CPUID_FEATURE_EDX_PGE
@@ -371,7 +443,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        //| X86_CPUID_FEATURE_EDX_SS    - no self snoop.
                                        //| X86_CPUID_FEATURE_EDX_HTT   - no hyperthreading.
                                        //| X86_CPUID_FEATURE_EDX_TM    - no thermal monitor.
-                                       //| X86_CPUID_FEATURE_EDX_PBE   - no pneding break enabled.
+                                       //| X86_CPUID_FEATURE_EDX_PBE   - no pending break enabled.
                                        | 0;
     pCPUM->aGuestCpuIdStd[1].ecx      &= 0
                                        | X86_CPUID_FEATURE_ECX_SSE3
@@ -403,7 +475,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        //| X86_CPUID_AMD_FEATURE_EDX_MCE    - not virtualized yet.
                                        | X86_CPUID_AMD_FEATURE_EDX_CX8
                                        //| X86_CPUID_AMD_FEATURE_EDX_APIC   - set by the APIC device if present.
-                                       /** @note we don't report sysenter/sysexit support due to our inability to keep the IOPL part of eflags in sync while in ring 1 (see #1757) */
+                                       /* Note! we don't report sysenter/sysexit support due to our inability to keep the IOPL part of eflags in sync while in ring 1 (see #1757) */
                                        //| X86_CPUID_AMD_FEATURE_EDX_SEP
                                        | X86_CPUID_AMD_FEATURE_EDX_MTRR
                                        | X86_CPUID_AMD_FEATURE_EDX_PGE
@@ -438,7 +510,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        //| X86_CPUID_AMD_FEATURE_ECX_WDT
                                        | 0;
 
-    CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "SyntheticCpu", &pCPUM->fSyntheticCpu, false);
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "SyntheticCpu", &pCPUM->fSyntheticCpu, false); AssertRCReturn(rc, rc);
     if (pCPUM->fSyntheticCpu)
     {
         const char szVendor[13]    = "VirtualBox  ";
@@ -532,7 +604,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * Safe to expose, except for EAX:
      *      Bits 25-14: Maximum number of addressable IDs for logical processors sharing this cache (see note)**
      *      Bits 31-26: Maximum number of processor cores in this physical package**
-     * @Note These SMP values are constant regardless of ECX
+     * Note: These SMP values are constant regardless of ECX
      */
     pCPUM->aGuestCpuIdStd[4].ecx = pCPUM->aGuestCpuIdStd[4].edx = 0;
     pCPUM->aGuestCpuIdStd[4].eax = pCPUM->aGuestCpuIdStd[4].ebx = 0;
@@ -648,7 +720,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * This option corrsponds somewhat to IA32_MISC_ENABLES.BOOT_NT4[bit 22].
      */
     bool fNt4LeafLimit;
-    CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "NT4LeafLimit", &fNt4LeafLimit, false);
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "NT4LeafLimit", &fNt4LeafLimit, false); AssertRCReturn(rc, rc);
     if (fNt4LeafLimit)
         pCPUM->aGuestCpuIdStd[0].eax = 3;
 
@@ -706,69 +778,24 @@ static int cpumR3CpuIdInit(PVM pVM)
 
     /*
      * Load CPUID overrides from configuration.
-     * @note Kind of redundant now, but allows unchanged overrides
+     * Note: Kind of redundant now, but allows unchanged overrides
      */
     /** @cfgm{CPUM/CPUID/[000000xx|800000xx|c000000x]/[eax|ebx|ecx|edx],32-bit}
-     * Overloads the CPUID leaf values. */
-    PCPUMCPUID  pCpuId = &pCPUM->aGuestCpuIdStd[0];
-    uint32_t    cElements = RT_ELEMENTS(pCPUM->aGuestCpuIdStd);
-    for (i=0;; )
-    {
-        while (cElements-- > 0)
-        {
-            PCFGMNODE pNode = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "CPUM/CPUID/%RX32", i);
-            if (pNode)
-            {
-                uint32_t u32;
-                int rc = CFGMR3QueryU32(pNode, "eax", &u32);
-                if (RT_SUCCESS(rc))
-                    pCpuId->eax = u32;
-                else
-                    AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
+     * Overrides the CPUID leaf values. */
+    PCFGMNODE pOverrideCfg = CFGMR3GetChild(pCpumCfg, "CPUID");
+    rc = cpumR3CpuIdInitLoadOverrideSet(UINT32_C(0x00000000), &pCPUM->aGuestCpuIdStd[0],     RT_ELEMENTS(pCPUM->aGuestCpuIdStd),     pOverrideCfg);
+    AssertRCReturn(rc, rc);
+    rc = cpumR3CpuIdInitLoadOverrideSet(UINT32_C(0x80000000), &pCPUM->aGuestCpuIdExt[0],     RT_ELEMENTS(pCPUM->aGuestCpuIdExt),     pOverrideCfg);
+    AssertRCReturn(rc, rc);
+    rc = cpumR3CpuIdInitLoadOverrideSet(UINT32_C(0xc0000000), &pCPUM->aGuestCpuIdCentaur[0], RT_ELEMENTS(pCPUM->aGuestCpuIdCentaur), pOverrideCfg);
+    AssertRCReturn(rc, rc);
 
-                rc = CFGMR3QueryU32(pNode, "ebx", &u32);
-                if (RT_SUCCESS(rc))
-                    pCpuId->ebx = u32;
-                else
-                    AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
-
-                rc = CFGMR3QueryU32(pNode, "ecx", &u32);
-                if (RT_SUCCESS(rc))
-                    pCpuId->ecx = u32;
-                else
-                    AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
-
-                rc = CFGMR3QueryU32(pNode, "edx", &u32);
-                if (RT_SUCCESS(rc))
-                    pCpuId->edx = u32;
-                else
-                    AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
-            }
-            pCpuId++;
-            i++;
-        }
-
-        /* next */
-        if ((i & UINT32_C(0xc0000000)) == 0)
-        {
-            pCpuId = &pCPUM->aGuestCpuIdExt[0];
-            cElements = RT_ELEMENTS(pCPUM->aGuestCpuIdExt);
-            i = UINT32_C(0x80000000);
-        }
-        else if ((i & UINT32_C(0xc0000000)) == UINT32_C(0x80000000))
-        {
-            pCpuId = &pCPUM->aGuestCpuIdCentaur[0];
-            cElements = RT_ELEMENTS(pCPUM->aGuestCpuIdCentaur);
-            i = UINT32_C(0xc0000000);
-        }
-        else
-            break;
-    }
-
-    /* Check if PAE was explicitely enabled by the user. */
-    bool fEnable = false;
-    int rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "EnablePAE", &fEnable);
-    if (RT_SUCCESS(rc) && fEnable)
+    /*
+     * Check if PAE was explicitely enabled by the user.
+     */
+    bool fEnable;
+    rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "EnablePAE", &fEnable, false);    AssertRCReturn(rc, rc);
+    if (fEnable)
         CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
 
     /*
