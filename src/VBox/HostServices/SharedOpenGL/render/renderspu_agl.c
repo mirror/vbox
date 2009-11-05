@@ -793,11 +793,14 @@ void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *window)
     if (window->hVisibleRegion)
         SectRgn(rgn, window->hVisibleRegion, rgn);
 
-    /* Set the clip region to the context */
-    result = render_spu.ws.aglSetInteger(c->context, AGL_CLIP_REGION, (const GLint*)rgn);
-    CHECK_AGL_RC (result, "Render SPU (renderspu_SystemWindowVisibleRegion): SetInteger Failed");
-    result = render_spu.ws.aglEnable(c->context, AGL_CLIP_REGION);
-    CHECK_AGL_RC (result, "Render SPU (renderspu_SystemWindowVisibleRegion): Enable Failed");
+    if (rgn && !EmptyRgn(rgn))
+    {
+        /* Set the clip region to the context */
+        result = render_spu.ws.aglSetInteger(c->context, AGL_CLIP_REGION, (const GLint*)rgn);
+        CHECK_AGL_RC (result, "Render SPU (renderspu_SystemWindowVisibleRegion): SetInteger Failed");
+        result = render_spu.ws.aglEnable(c->context, AGL_CLIP_REGION);
+        CHECK_AGL_RC (result, "Render SPU (renderspu_SystemWindowVisibleRegion): Enable Failed");
+    }
     /* Clear the region structure */
     DisposeRgn (rgn);
 }
