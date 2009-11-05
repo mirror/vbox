@@ -338,5 +338,11 @@ private:
     void handleResizeCompletedEMT (void);
 };
 
+void gdImageCopyResampled (uint8_t *dst, uint8_t *src,
+                           int dstX, int dstY,
+                           int srcX, int srcY,
+                           int dstW, int dstH, int srcW, int srcH);
+
+
 #endif // ____H_DISPLAYIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

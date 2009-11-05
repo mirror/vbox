@@ -40,6 +40,9 @@
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include <VBox/VBoxVideo.h>
 #endif
+
+#include <VBox/com/array.h>
+
 /**
  * Display driver instance data.
  */
@@ -1532,6 +1535,53 @@ STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
     return S_OK;
 }
 
+static int displayTakeScreenshot(PVM pVM, struct DRVMAINDISPLAY *pDrv, BYTE *address, ULONG width, ULONG height)
+{
+    uint8_t *pu8Data = NULL;
+    size_t cbData = 0;
+    uint32_t cx = 0;
+    uint32_t cy = 0;
+
+    /* @todo pfnTakeScreenshot is probably callable from any thread, because it uses the VGA device lock. */
+    int vrc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)pDrv->pUpPort->pfnTakeScreenshot, 5,
+                              pDrv->pUpPort, &pu8Data, &cbData, &cx, &cy);
+
+    if (RT_SUCCESS(vrc))
+    {
+        if (cx == width && cy == height)
+        {
+            /* No scaling required. */
+            memcpy(address, pu8Data, cbData);
+        }
+        else
+        {
+            /* Scale. */
+            LogFlowFunc(("SCALE: %dx%d -> %dx%d\n", cx, cy, width, height));
+
+            uint8_t *dst = address;
+            uint8_t *src = pu8Data;
+            int dstX = 0;
+            int dstY = 0;
+            int srcX = 0;
+            int srcY = 0;
+            int dstW = width;
+            int dstH = height;
+            int srcW = cx;
+            int srcH = cy;
+            gdImageCopyResampled (dst,
+                                  src,
+                                  dstX, dstY,
+                                  srcX, srcY,
+                                  dstW, dstH, srcW, srcH);
+        }
+
+        /* This can be called from any thread. */
+        pDrv->pUpPort->pfnFreeScreenshot (pDrv->pUpPort, pu8Data);
+    }
+
+    return vrc;
+}
+
 STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
 {
     /// @todo (r=dmik) this function may take too long to complete if the VM
@@ -1562,34 +1612,21 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
 
     LogFlowFunc (("Sending SCREENSHOT request\n"));
 
-    /*
-     * First try use the graphics device features for making a snapshot.
-     * This does not support stretching, is an optional feature (returns
-     * not supported).
+    /* Leave lock because other thread (EMT) is called and it may initiate a resize
+     * which also needs lock.
      *
-     * Note: It may cause a display resize. Watch out for deadlocks.
+     * This method does not need the lock anymore.
      */
-    int rcVBox = VERR_NOT_SUPPORTED;
-    if (    mpDrv->Connector.cx == width
-        &&  mpDrv->Connector.cy == height)
-    {
-        size_t cbData = RT_ALIGN_Z(width, 4) * 4 * height;
-        rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY,  (PFNRT)mpDrv->pUpPort->pfnSnapshot, 6, mpDrv->pUpPort,
-                                 address, cbData, (uintptr_t)NULL, (uintptr_t)NULL, (uintptr_t)NULL);
-    }
+    alock.leave();
 
-    /*
-     * If the function returns not supported, or if stretching is requested,
-     * we'll have to do all the work ourselves using the framebuffer data.
-     */
-    if (rcVBox == VERR_NOT_SUPPORTED || rcVBox == VERR_NOT_IMPLEMENTED)
-    {
-        /** @todo implement snapshot stretching & generic snapshot fallback. */
-        rc = setError (E_NOTIMPL, tr ("This feature is not implemented"));
-    }
-    else if (RT_FAILURE(rcVBox))
+    int vrc = displayTakeScreenshot(pVM, mpDrv, address, width, height);
+
+    if (vrc == VERR_NOT_IMPLEMENTED)
+        rc = setError (E_NOTIMPL,
+                       tr ("This feature is not implemented"));
+    else if (RT_FAILURE(vrc))
         rc = setError (VBOX_E_IPRT_ERROR,
-            tr ("Could not take a screenshot (%Rrc)"), rcVBox);
+                       tr ("Could not take a screenshot (%Rrc)"), vrc);
 
     LogFlowFunc (("rc=%08X\n", rc));
     LogFlowFuncLeave();
@@ -1599,11 +1636,60 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
 STDMETHODIMP Display::TakeScreenShotSlow (ULONG width, ULONG height,
                                           ComSafeArrayOut(BYTE, aScreenData))
 {
-     HRESULT rc = S_OK;
+    LogFlowFuncEnter();
+    LogFlowFunc (("width=%d, height=%d\n",
+                  width, height));
 
-     rc = setError (E_NOTIMPL, tr ("This feature is not implemented"));
+    CheckComArgSafeArrayNotNull(aScreenData);
+    CheckComArgExpr(width, width != 0);
+    CheckComArgExpr(height, height != 0);
 
-     return rc;
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    CHECK_CONSOLE_DRV (mpDrv);
+
+    Console::SafeVMPtr pVM (mParent);
+    CheckComRCReturnRC(pVM.rc());
+
+    HRESULT rc = S_OK;
+
+    LogFlowFunc (("Sending SCREENSHOT request\n"));
+
+    /* Leave lock because other thread (EMT) is called and it may initiate a resize
+     * which also needs lock.
+     *
+     * This method does not need the lock anymore.
+     */
+    alock.leave();
+
+    size_t cbData = width * 4 * height;
+    uint8_t *pu8Data = (uint8_t *)RTMemAlloc(cbData);
+
+    if (!pu8Data)
+        return E_OUTOFMEMORY;
+
+    int vrc = displayTakeScreenshot(pVM, mpDrv, pu8Data, width, height);
+
+    if (RT_SUCCESS(vrc))
+    {
+        com::SafeArray<BYTE> screenData (cbData);
+        for (unsigned i = 0; i < cbData; i++)
+            screenData[i] = pu8Data[i];
+        screenData.detachTo(ComSafeArrayOutArg(aScreenData));
+    }
+    else if (vrc == VERR_NOT_IMPLEMENTED)
+        rc = setError (E_NOTIMPL,
+                       tr ("This feature is not implemented"));
+    else
+        rc = setError (VBOX_E_IPRT_ERROR,
+                       tr ("Could not take a screenshot (%Rrc)"), vrc);
+
+    LogFlowFunc (("rc=%08X\n", rc));
+    LogFlowFuncLeave();
+    return rc;
 }
 
 
