@@ -1003,6 +1003,7 @@ STDMETHODIMP Host::GetProcessorSpeed(ULONG aCpuId, ULONG *aSpeed)
     *aSpeed = RTMpGetMaxFrequency(aCpuId);
     return S_OK;
 }
+
 /**
  * Returns a description string for the host CPU
  *
@@ -1059,6 +1060,44 @@ STDMETHODIMP Host::GetProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSuppo
         default:
             ReturnComNotImplemented();
     }
+    return S_OK;
+}
+
+/**
+ * Returns the specific CPUID leaf.
+ *
+ * @returns COM status code
+ * @param   aCpuId              The CPU number. Mostly ignored.
+ * @param   aLeaf               The leaf number.
+ * @param   aSubLeaf            The sub-leaf number.
+ * @param   aValEAX             Where to return EAX.
+ * @param   aValEBX             Where to return EBX.
+ * @param   aValECX             Where to return ECX.
+ * @param   aValEDX             Where to return EDX.
+ */
+STDMETHODIMP Host::GetProcessorCpuIdLeaf(ULONG aCpuId, ULONG aLeaf, ULONG aSubLeaf,
+                                         ULONG *aValEAX, ULONG *aValEBX, ULONG *aValECX, ULONG *aValEDX)
+{
+    CheckComArgOutPointerValid(aValEAX);
+    CheckComArgOutPointerValid(aValEBX);
+    CheckComArgOutPointerValid(aValECX);
+    CheckComArgOutPointerValid(aValEDX);
+    // no locking required
+
+    /* Check that the CPU is online. */
+    /** @todo later use RTMpOnSpecific. */
+    if (!RTMpIsCpuOnline(aCpuId))
+        return RTMpIsCpuPresent(aCpuId)
+             ? setError(E_FAIL, tr("CPU no.%u is not present"), aCpuId)
+             : setError(E_FAIL, tr("CPU no.%u is not online"), aCpuId);
+
+    uint32_t uEAX, uEBX, uECX, uEDX;
+    ASMCpuId_Idx_ECX(aLeaf, aSubLeaf, &uEAX, &uEBX, &uECX, &uEDX);
+    *aValEAX = uEAX;
+    *aValEBX = uEBX;
+    *aValECX = uECX;
+    *aValEDX = uEDX;
+
     return S_OK;
 }
 

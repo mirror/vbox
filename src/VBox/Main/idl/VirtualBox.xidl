@@ -5182,7 +5182,7 @@
         Extended CPUID leafs: 0x80000000 - 0x8000000A
 
         See the Intel and AMD programmer's manuals for detailed information
-        about the cpuid instruction and its leafs.        
+        about the cpuid instruction and its leafs.
         <result name="E_INVALIDARG">
           Invalid id.
         </result>
@@ -7196,7 +7196,7 @@
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="95522f11-1ecc-443b-9242-3af6b24d430c"
+     uuid="e380cbfc-ae65-4fa6-899e-45ded6b3132a"
      wsmap="managed"
      >
     <desc>
@@ -7303,12 +7303,63 @@
       <param name="cpuId" type="unsigned long" dir="in">
         <desc>
           Identifier of the CPU.
+          <note>
+            The current implementation might not necessarily return the
+            description for this exact CPU.
+          </note>
         </desc>
       </param>
       <param name="description" type="wstring" dir="return">
         <desc>
           Model string. An empty string is returned if value is not known or
           @a cpuId is invalid.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getProcessorCpuIdLeaf">
+      <desc>
+        Returns the CPU cpuid information for the specified leaf.
+      </desc>
+      <param name="cpuId" type="unsigned long" dir="in">
+        <desc>
+          Identifier of the CPU.  The CPU most be online.
+          <note>
+            The current implementation might not necessarily return the
+            description for this exact CPU.
+          </note>
+        </desc>
+      </param>
+      <param name="leaf" type="unsigned long" dir="in">
+        <desc>
+          Cpuid leaf index (eax).
+        </desc>
+      </param>
+      <param name="subLeaf" type="unsigned long" dir="in">
+        <desc>
+          Cpuid leaf sub index (ecx).  This currently only applies to cache
+          information on Intel CPUs.  Use 0 if retriving values for
+          <link to="IMachine::setCpuIdLeaf"/>.
+        </desc>
+      </param>
+      <param name="valEax" type="unsigned long" dir="out">
+        <desc>
+          Cpuid leaf value for register eax.
+        </desc>
+      </param>
+      <param name="valEbx" type="unsigned long" dir="out">
+        <desc>
+          Cpuid leaf value for register ebx.
+        </desc>
+      </param>
+      <param name="valEcx" type="unsigned long" dir="out">
+        <desc>
+          Cpuid leaf value for register ecx.
+        </desc>
+      </param>
+      <param name="valEdx" type="unsigned long" dir="out">
+        <desc>
+          Cpuid leaf value for register edx.
         </desc>
       </param>
     </method>
