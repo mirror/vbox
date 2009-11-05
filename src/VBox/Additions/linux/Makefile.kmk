@@ -414,43 +414,17 @@ $(VBOX_LNX_ADD_INST_STAGE_DIR)/VBoxGuestAdditions.tar.bz2: \
 	$(call MSG_L1,Packing $@)
 	$(QUIET)$(RM) -f -- $@ $(patsubst %.bz2,%,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
-# .run-specific debug symbol stuff
-	$(QUIET)$(MKDIR) $(VBOX_LNX_ADD_INST_BIN_DIR)/.debug
-	$(QUIET)$(LN) -s $(addprefix ../../debug/bin/,$(VBOX_LNX_ADD_STRIP_BIN)) \
-		$(VBOX_LNX_ADD_INST_BIN_DIR)/.debug
-	$(QUIET)$(MKDIR) $(VBOX_LNX_ADD_INST_SBIN_DIR)/.debug
-	$(QUIET)$(LN) -s $(addprefix ../../debug/sbin/,$(VBOX_LNX_ADD_STRIP_SBIN)) \
-		$(VBOX_LNX_ADD_INST_SBIN_DIR)/.debug
-	$(QUIET)$(MKDIR) $(VBOX_LNX_ADD_INST_LIB_DIR)/.debug
-	$(QUIET)$(LN) -s $(addprefix ../../debug/lib/,$(VBOX_LNX_ADD_STRIP_LIB)) \
-		$(VBOX_LNX_ADD_INST_LIB_DIR)/.debug
-	$(QUIET)$(MKDIR) $(VBOX_LNX_ADD_INST_MOD_DIR)/.debug
-	$(QUIET)$(LN) -s $(addprefix ../../../debug/lib/$(VBOX_LNX_ADD_PACKAGE_NAME)/,$(VBOX_LNX_ADD_STRIP_MOD)) \
-		$(VBOX_LNX_ADD_INST_MOD_DIR)/.debug
 ifdef VBOX_USE_PBZIP2
  	$(QUIET)tar --owner 0 --group 0 -cRf $(patsubst %.bz2,%,$@) \
  		-C $(VBOX_LNX_ADD_INST_OUT_DIR) \
- 		$(subst $(VBOX_LNX_ADD_INST_OUT_DIR)/,,$(VBOX_LNX_ADD_ARCH_FILES) \
- 		$(VBOX_LNX_ADD_INST_BIN_DIR)/.debug \
- 		$(VBOX_LNX_ADD_INST_SBIN_DIR)/.debug \
- 		$(VBOX_LNX_ADD_INST_LIB_DIR)/.debug \
- 		$(VBOX_LNX_ADD_INST_MOD_DIR)/.debug)
+ 		$(subst $(VBOX_LNX_ADD_INST_OUT_DIR)/,,$(VBOX_LNX_ADD_ARCH_FILES))
 	$(QUIET)pbzip2 $(patsubst %.bz2,%,$@)
 else
 	$(QUIET)tar --owner 0 --group 0 -cjRf $@ \
  		-C $(VBOX_LNX_ADD_INST_OUT_DIR) \
- 		$(subst $(VBOX_LNX_ADD_INST_OUT_DIR)/,,$(VBOX_LNX_ADD_ARCH_FILES) \
- 		$(VBOX_LNX_ADD_INST_BIN_DIR)/.debug \
- 		$(VBOX_LNX_ADD_INST_SBIN_DIR)/.debug \
- 		$(VBOX_LNX_ADD_INST_LIB_DIR)/.debug \
- 		$(VBOX_LNX_ADD_INST_MOD_DIR)/.debug)
+ 		$(subst $(VBOX_LNX_ADD_INST_OUT_DIR)/,,$(VBOX_LNX_ADD_ARCH_FILES))
 endif
 	$(QUIET)$(CHMOD) 0644 $@
-# .run-specific debug symbol stuff
-	$(QUIET)$(RM) -Rf $(VBOX_LNX_ADD_INST_BIN_DIR)/.debug
-	$(QUIET)$(RM) -Rf $(VBOX_LNX_ADD_INST_SBIN_DIR)/.debug
-	$(QUIET)$(RM) -Rf $(VBOX_LNX_ADD_INST_LIB_DIR)/.debug
-	$(QUIET)$(RM) -Rf $(VBOX_LNX_ADD_INST_MOD_DIR)/.debug
 
 
 #
