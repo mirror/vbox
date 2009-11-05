@@ -53,7 +53,6 @@
 #include "VBoxProblemReporter.h"
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxVMFirstRunWzd.h"
-#include "VBoxVMSettingsHD.h"
 #include "VBoxVMSettingsNetwork.h"
 #include "VBoxVMSettingsSF.h"
 #include "VBoxVMInformationDlg.h"

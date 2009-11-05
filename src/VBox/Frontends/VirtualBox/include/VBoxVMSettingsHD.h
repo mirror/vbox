@@ -142,7 +142,7 @@ public:
 
     void setCtrType (KStorageControllerType aCtrType);
 
-    virtual DeviceTypeList deviceTypeList() const = 0;
+    DeviceTypeList deviceTypeList() const;
 
 protected:
 
@@ -163,8 +163,6 @@ public:
 
 private:
 
-    DeviceTypeList deviceTypeList() const;
-
     KStorageControllerType first() const;
     uint size() const;
 };
@@ -177,8 +175,6 @@ public:
     SATAControllerType (KStorageControllerType aSubType);
 
 private:
-
-    DeviceTypeList deviceTypeList() const;
 
     KStorageControllerType first() const;
     uint size() const;
@@ -193,8 +189,6 @@ public:
 
 private:
 
-    DeviceTypeList deviceTypeList() const;
-
     KStorageControllerType first() const;
     uint size() const;
 };
@@ -207,8 +201,6 @@ public:
     FloppyControllerType (KStorageControllerType aSubType);
 
 private:
-
-    DeviceTypeList deviceTypeList() const;
 
     KStorageControllerType first() const;
     uint size() const;
@@ -420,7 +412,6 @@ public:
         R_AttSlot,
         R_AttSlots,
         R_AttDevice,
-        R_AttDevices,
         R_AttMediumId,
         R_AttIsShowDiffs,
         R_AttIsHostDrive,
@@ -503,7 +494,7 @@ class StorageDelegate : public QItemDelegate
 
 public:
 
-    StorageDelegate (QObject *aParent, bool aDisableStaticControls);
+    StorageDelegate (QObject *aParent);
 
 private:
 
@@ -523,7 +514,7 @@ class VBoxVMSettingsHD : public VBoxSettingsPage,
 
 public:
 
-    VBoxVMSettingsHD (bool aDisableStaticControls = false);
+    VBoxVMSettingsHD();
 
 signals:
 
