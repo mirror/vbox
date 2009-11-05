@@ -691,6 +691,7 @@ $(addprefix $(SOLARIS_USRBIN_DIR)/,$(SOLARIS_USRBIN_LINKS)): \
 #
 #  -=-=-=-=-=-=-=- VBI package -=-=-=-=-=-=-=-
 #
+ifdef VBOX_WITH_SOLARIS_VBI
 $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 		$(VBOX_VERSION_STAMP) \
 		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
@@ -718,6 +719,7 @@ $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/vbi/preremove.sh                                   $(SOLARIS_VBI_DIR)/preremove.sh
 	$(call MSG_L1,Creating install package: $(VBIPKG_FILENAME).pkg)
 	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_SOL_INST_SRC) -- $(SOLARIS_VBI_DIR)/makepackage.sh $(SOLARIS_VBI_DIR) $(VBIPKG_FILENAME)
+endif
 
 
 #
