@@ -364,21 +364,31 @@ typedef struct PDMIDISPLAYPORT
     DECLR3CALLBACKMEMBER(int, pfnSetRefreshRate,(PPDMIDISPLAYPORT pInterface, uint32_t cMilliesInterval));
 
     /**
-     * Create a 32-bbp snapshot of the display.
+     * Create a 32-bbp screenshot of the display.
      *
-     * This will create a 32-bbp bitmap with dword aligned scanline length. Because
-     * of a wish for no locks in the graphics device, this must be called from the
-     * emulation thread.
+     * This will allocate and return a 32-bbp bitmap. Size of the bitmap scanline in bytes is 4*width.
+     *
+     * The allocated bitmap buffer must be freed with pfnFreeScreenshot.
      *
      * @param   pInterface          Pointer to this interface.
-     * @param   pvData              Pointer the buffer to copy the bits to.
-     * @param   cbData              Size of the buffer.
-     * @param   pcx                 Where to store the width of the bitmap. (optional)
-     * @param   pcy                 Where to store the height of the bitmap. (optional)
-     * @param   pcbData             Where to store the actual size of the bitmap. (optional)
+     * @param   ppu8Data            Where to store the pointer to the allocated buffer.
+     * @param   pcbData             Where to store the actual size of the bitmap.
+     * @param   pcx                 Where to store the width of the bitmap.
+     * @param   pcy                 Where to store the height of the bitmap.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSnapshot,(PPDMIDISPLAYPORT pInterface, void *pvData, size_t cbData, uint32_t *pcx, uint32_t *pcy, size_t *pcbData));
+    DECLR3CALLBACKMEMBER(int, pfnTakeScreenshot,(PPDMIDISPLAYPORT pInterface, uint8_t **ppu8Data, size_t *pcbData, uint32_t *pcx, uint32_t *pcy));
+
+    /**
+     * Free screenshot buffer.
+     *
+     * This will free the memory buffer allocated by pfnTakeScreenshot.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   ppu8Data            Pointer to the buffer returned by pfnTakeScreenshot.
+     * @thread  Any.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnFreeScreenshot,(PPDMIDISPLAYPORT pInterface, uint8_t *pu8Data));
 
     /**
      * Copy bitmap to the display.

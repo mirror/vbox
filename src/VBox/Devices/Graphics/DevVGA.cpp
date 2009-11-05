@@ -125,6 +125,9 @@
 #define LOG_GROUP LOG_GROUP_DEV_VGA
 #include <VBox/pdmdev.h>
 #include <VBox/pgm.h>
+#ifdef IN_RING3
+#include <iprt/alloc.h>
+#endif /* IN_RING3 */
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/file.h>
@@ -4859,6 +4862,27 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     return VINF_SUCCESS;
 }
 
+/* Internal worker called under pThis->lock. */
+static int updateDisplayAll(PVGASTATE pThis)
+{
+    PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
+
+    /* The dirty bits array has been just cleared, reset handlers as well. */
+    if (pThis->GCPhysVRAM && pThis->GCPhysVRAM != NIL_RTGCPHYS32)
+    {
+        PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
+    }
+    if (pThis->fRemappedVGA)
+    {
+        IOMMMIOResetRegion(PDMDevHlpGetVM(pDevIns), 0x000a0000);
+        pThis->fRemappedVGA = false;
+    }
+
+    pThis->graphic_mode = -1; /* force full update */
+
+    return vga_update_display(pThis, true);
+}
+
 
 /**
  * Update the entire display.
@@ -4881,20 +4905,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface)
     int rc = PDMCritSectEnter(&pThis->lock, VERR_SEM_BUSY);
     AssertRC(rc);
 
-    /* The dirty bits array has been just cleared, reset handlers as well. */
-    if (pThis->GCPhysVRAM && pThis->GCPhysVRAM != NIL_RTGCPHYS32)
-    {
-        PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
-    }
-    if (pThis->fRemappedVGA)
-    {
-        IOMMMIOResetRegion(PDMDevHlpGetVM(pDevIns), 0x000a0000);
-        pThis->fRemappedVGA = false;
-    }
-
-    pThis->graphic_mode = -1; /* force full update */
-
-    rc = vga_update_display(pThis, true);
+    rc = updateDisplayAll(pThis);
 
     PDMCritSectLeave(&pThis->lock);
     return rc;
@@ -4932,107 +4943,123 @@ static DECLCALLBACK(int) vgaPortQueryColorDepth(PPDMIDISPLAYPORT pInterface, uin
 }
 
 /**
- * Create a 32-bbp snapshot of the display.
+ * Create a 32-bbp screenshot of the display. Size of the bitmap scanline in bytes is 4*width.
  *
  * @param   pInterface          Pointer to this interface.
- * @param   pvData              Pointer the buffer to copy the bits to.
- * @param   cbData              Size of the buffer.
- * @param   pcx                 Where to store the width of the bitmap. (optional)
- * @param   pcy                 Where to store the height of the bitmap. (optional)
- * @param   pcbData             Where to store the actual size of the bitmap. (optional)
- * @see     PDMIKEYBOARDPORT::pfnSnapshot() for details.
+ * @param   ppu8Data            Where to store the pointer to the allocated buffer.
+ * @param   pcbData             Where to store the actual size of the bitmap.
+ * @param   pcx                 Where to store the width of the bitmap.
+ * @param   pcy                 Where to store the height of the bitmap.
+ * @see     PDMIDISPLAYPORT::pfnTakeScreenshot() for details.
  */
-static DECLCALLBACK(int) vgaPortSnapshot(PPDMIDISPLAYPORT pInterface, void *pvData, size_t cbData, uint32_t *pcx, uint32_t *pcy, size_t *pcbData)
+static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint8_t **ppu8Data, size_t *pcbData, uint32_t *pcx, uint32_t *pcy)
 {
-    /* @todo r=sunlover: replace the method with a direct VRAM rendering like in vgaPortUpdateDisplayRect.  */
-    PPDMIDISPLAYCONNECTOR   pConnector;
-    PDMIDISPLAYCONNECTOR    Connector;
-    int32_t                 graphic_mode;
-    bool                    fRenderVRAM;
-    size_t                  cbRequired;
-    PVGASTATE               pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
+    PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pThis));
-    LogFlow(("vgaPortSnapshot: pvData=%p cbData=%d pcx=%p pcy=%p pcbData=%p\n", pvData, cbData, pcx, pcy, pcbData));
+
+    LogFlow(("vgaPortTakeScreenshot: ppu8Data=%p pcbData=%p pcx=%p pcy=%p\n", ppu8Data, pcbData, pcx, pcy));
 
     /*
      * Validate input.
      */
-    if (!pvData)
+    if (!RT_VALID_PTR(ppu8Data) || !RT_VALID_PTR(pcbData) || !RT_VALID_PTR(pcx) || !RT_VALID_PTR(pcy))
         return VERR_INVALID_PARAMETER;
 
-    /*
-     * Do a regular refresh first to resolve any pending resize issues.
-     *
-     * 20060317 It used to be pfnUpdateDisplay, but by VBVA design
-     * only pfnUpdateDisplayAll is allowed to be called in VBVA mode.
-     * Also since the goal here is to have updated display for screenshot,
-     * the UpdateDisplayAll is even more logical to call. (sunlover)
-     */
-    pInterface->pfnUpdateDisplayAll(pInterface);
-
     int rc = PDMCritSectEnter(&pThis->lock, VERR_SEM_BUSY);
-    AssertRC(rc);
+    AssertRCReturn(rc, rc);
 
     /*
-     * Validate the buffer size.
+     * Do a complete screen update first to resolve any pending resize issues.
      */
-    cbRequired = RT_ALIGN_Z(pThis->last_scr_width, 4) * pThis->last_scr_height * 4;
-    if (cbRequired > cbData)
+    updateDisplayAll(pThis);
+
+    /*
+     * The display connector interface is temporarily replaced with the fake one.
+     */
+    PDMIDISPLAYCONNECTOR Connector;
+    memset(&Connector, 0, sizeof (PDMIDISPLAYCONNECTOR));
+
+    /*
+     * Allocate the buffer for 32 bits per pixel bitmap.
+     */
+    size_t cbRequired = pThis->last_scr_width * 4 * pThis->last_scr_height;
+
+    uint8_t *pu8Data = (uint8_t *)RTMemAlloc(cbRequired);
+    if (pu8Data == NULL)
     {
-        Log(("vgaPortSnapshot: %d bytes are required, a buffer of %d bytes is profiled.\n", cbRequired, cbData));
-        PDMCritSectLeave(&pThis->lock);
-        return VERR_BUFFER_OVERFLOW;
+        rc = VERR_NO_MEMORY;
+    }
+    else
+    {
+        /*
+         * Only 3 methods, assigned below, will be called during the screenshot update.
+         * All other are already set to NULL.
+         */
+
+        Connector.pu8Data       = pu8Data;
+        Connector.cBits         = 32;
+        Connector.cx            = pThis->last_scr_width;
+        Connector.cy            = pThis->last_scr_height;
+        Connector.cbScanline    = Connector.cx * 4;
+        Connector.pfnRefresh    = vgaDummyRefresh;
+        Connector.pfnResize     = vgaDummyResize;
+        Connector.pfnUpdateRect = vgaDummyUpdateRect;
+
+        /* Save & replace state data. */
+        PPDMIDISPLAYCONNECTOR pConnectorSaved = pThis->pDrv;
+        int32_t graphic_mode_saved = pThis->graphic_mode;
+        bool fRenderVRAMSaved = pThis->fRenderVRAM;
+
+        pThis->pDrv = &Connector;
+        pThis->graphic_mode = -1;           /* force a full refresh. */
+        pThis->fRenderVRAM = 1;             /* force the guest VRAM rendering to the given buffer. */
+
+        /* Make the screenshot.
+         *
+         * The second parameter is 'false' because the current display state, already updated by the
+         * pfnUpdateDisplayAll call above, is being rendered to an external buffer using a fake connector.
+         * That is if display is blanked, we expect a black screen in the external buffer.
+         */
+        rc = vga_update_display(pThis, false);
+
+        /* Restore. */
+        pThis->pDrv = pConnectorSaved;
+        pThis->graphic_mode = graphic_mode_saved;
+        pThis->fRenderVRAM = fRenderVRAMSaved;
+
+        if (rc == VINF_SUCCESS)
+        {
+            /*
+             * Return the result.
+             */
+            *ppu8Data = pu8Data;
+            *pcbData = cbRequired;
+            *pcx = Connector.cx;
+            *pcy = Connector.cy;
+        }
     }
 
-    /*
-     * Temporarily replace the display connector interface with a fake one.
-     */
-    Connector.pu8Data       = (uint8_t*)pvData;
-    Connector.cBits         = 32;
-    Connector.cx            = pThis->pDrv->cx;
-    Connector.cy            = pThis->pDrv->cy;
-    Connector.cbScanline    = RT_ALIGN_32(Connector.cx, 4) * 4;
-    Connector.pfnRefresh    = vgaDummyRefresh;
-    Connector.pfnResize     = vgaDummyResize;
-    Connector.pfnUpdateRect = vgaDummyUpdateRect;
-
-    /* save & replace state data. */
-    pConnector = pThis->pDrv;
-    pThis->pDrv = &Connector;
-    graphic_mode = pThis->graphic_mode;
-    pThis->graphic_mode = -1;           /* force a full refresh. */
-    fRenderVRAM = pThis->fRenderVRAM;
-    pThis->fRenderVRAM = 1;             /* force the guest VRAM rendering to the given buffer. */
-
-    /* make the snapshot.
-     * The second parameter is 'false' because the current display state, already updated by the
-     * pfnUpdateDisplayAll call above, is being rendered to an external buffer using a fake connector.
-     * That is if display is blanked, we expect a black screen in the external buffer.
-     */
-    rc = vga_update_display(pThis, false);
-
-    /* restore */
-    pThis->pDrv = pConnector;
-    pThis->graphic_mode = graphic_mode;
-    pThis->fRenderVRAM = fRenderVRAM;
     PDMCritSectLeave(&pThis->lock);
 
-    if (rc != VINF_SUCCESS)
-        return rc;
-
-    /*
-     * Return the result.
-     */
-    if (pcx)
-        *pcx = Connector.cx;
-    if (pcy)
-        *pcy = Connector.cy;
-    if (pcbData)
-        *pcbData = cbRequired;
-    LogFlow(("vgaPortSnapshot: returns VINF_SUCCESS (cx=%d cy=%d cbData=%d)\n", Connector.cx, Connector.cy, cbRequired));
-    return VINF_SUCCESS;
+    LogFlow(("vgaPortTakeScreenshot: returns %Rrc (cbData=%d cx=%d cy=%d)\n", rc, cbRequired, Connector.cx, Connector.cy));
+    return rc;
 }
 
+/**
+ * Free a screenshot buffer allocated in vgaPortTakeScreenshot.
+ *
+ * @param   pInterface          Pointer to this interface.
+ * @param   pu8Data             Pointer returned by vgaPortTakeScreenshot.
+ * @see     PDMIDISPLAYPORT::pfnFreeScreenshot() for details.
+ */
+static DECLCALLBACK(void) vgaPortFreeScreenshot(PPDMIDISPLAYPORT pInterface, uint8_t *pu8Data)
+{
+    NOREF(pInterface);
+
+    LogFlow(("vgaPortFreeScreenshot: pu8Data=%p\n", pu8Data));
+
+    RTMemFree(pu8Data);
+}
 
 /**
  * Copy bitmap to the display.
@@ -5916,7 +5943,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThis->Port.pfnUpdateDisplayAll     = vgaPortUpdateDisplayAll;
     pThis->Port.pfnQueryColorDepth      = vgaPortQueryColorDepth;
     pThis->Port.pfnSetRefreshRate       = vgaPortSetRefreshRate;
-    pThis->Port.pfnSnapshot             = vgaPortSnapshot;
+    pThis->Port.pfnTakeScreenshot       = vgaPortTakeScreenshot;
+    pThis->Port.pfnFreeScreenshot       = vgaPortFreeScreenshot;
     pThis->Port.pfnDisplayBlt           = vgaPortDisplayBlt;
     pThis->Port.pfnUpdateDisplayRect    = vgaPortUpdateDisplayRect;
     pThis->Port.pfnSetRenderVRAM        = vgaPortSetRenderVRAM;
