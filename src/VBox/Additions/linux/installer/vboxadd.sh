@@ -279,6 +279,7 @@ restart()
     return 0
 }
 
+# setup_script
 setup()
 {
     # don't stop the old modules here -- they might be in use
@@ -292,30 +293,107 @@ setup()
         find /lib/modules/`uname -r` -name "vboxguest\.*" 2>/dev/null|xargs rm -f 2>/dev/null
         succ_msg
     fi
-    begin "Recompiling VirtualBox kernel modules"
+    echo "Building VirtualBox kernel modules"
+    begin "Building the main VirtualBox module"
     if ! $BUILDVBOXGUEST \
         --save-module-symvers /tmp/vboxguest-Module.symvers \
         --no-print-directory install > $LOG 2>&1; then
         fail "Look at $LOG to find out what went wrong"
     fi
+    succ_msg
     if [ -n "$BUILDVBOXVFS" ]; then
+        begin "Building the shared folder support module"
         if ! $BUILDVBOXVFS \
             --use-module-symvers /tmp/vboxguest-Module.symvers \
             --no-print-directory install >> $LOG 2>&1; then
             fail "Look at $LOG to find out what went wrong"
         fi
+        succ_msg
     fi
     if [ -n "$BUILDVBOXVIDEO" ]; then
+        begin "Building the OpenGL support module"
         if ! $BUILDVBOXVIDEO \
             --use-module-symvers /tmp/vboxguest-Module.symvers \
             --no-print-directory install >> $LOG 2>&1; then
             fail "Look at $LOG to find out what went wrong"
         fi
+        succ_msg
     fi
+    depmod
+
+    begin "Doing non-kernel setup of the Guest Additions"
+    echo "Creating user for the Guest Additions." >> $LOG
+    # This is the LSB version of useradd and should work on recent
+    # distributions
+    useradd -d /var/run/vboxadd -g 1 -r -s /bin/false vboxadd >/dev/null 2>&1
+    # And for the others, we choose a UID ourselves
+    useradd -d /var/run/vboxadd -g 1 -u 501 -o -s /bin/false vboxadd >/dev/null 2>&1
+
+    # Create udev description file
+    if [ -d /etc/udev/rules.d ]; then
+        echo "Creating udev rule for the Guest Additions kernel module." >> $LOG
+        udev_call=""
+        udev_app=`which udevadm 2> /dev/null`
+        if [ $? -eq 0 ]; then
+            udev_call="${udev_app} version 2> /dev/null"
+        else
+            udev_app=`which udevinfo 2> /dev/null`
+            if [ $? -eq 0 ]; then
+                udev_call="${udev_app} -V 2> /dev/null"
+            fi
+        fi
+        udev_fix="="
+        if [ "${udev_call}" != "" ]; then
+            udev_out=`${udev_call}`
+            udev_ver=`expr "$udev_out" : '[^0-9]*\([0-9]*\)'`
+            if [ "$udev_ver" = "" -o "$udev_ver" -lt 55 ]; then
+               udev_fix=""
+            fi
+        fi
+        ## @todo 60-vboxadd.rules -> 60-vboxguest.rules ?
+        echo "KERNEL=${udev_fix}\"vboxguest\", NAME=\"vboxguest\", OWNER=\"vboxadd\", MODE=\"0660\"" > /etc/udev/rules.d/60-vboxadd.rules
+        echo "KERNEL=${udev_fix}\"vboxuser\", NAME=\"vboxuser\", OWNER=\"vboxadd\", MODE=\"0666\"" >> /etc/udev/rules.d/60-vboxadd.rules
+    fi
+
+    # Put mount.vboxsf in the right place
+    ln -s /usr/lib/VBoxGuestAdditions/mount.vboxsf /sbin
+
     succ_msg
     start
     echo
     echo "You should reboot your guest to make sure the new modules are actually used"
+}
+
+# cleanup_script
+cleanup()
+{
+    # Delete old versions of VBox modules.
+    DKMS=`which dkms 2>/dev/null`
+    if [ -n "$DKMS" ]; then
+      info "Attempt to remove old DKMS modules..."
+      for mod in vboxadd vboxguest vboxvfs vboxvideo; do
+        $DKMS status -m $mod | while read line; do
+          if echo "$line" | grep -q added > /dev/null ||
+             echo "$line" | grep -q built > /dev/null ||
+             echo "$line" | grep -q installed > /dev/null; then
+            version=`echo "$line" | sed "s/$mod,\([^,]*\)[,:].*/\1/;t;d"`
+            info "  removing module $mod version $version"
+            $DKMS remove -m $mod -v $version --all
+          fi
+        done
+      done
+      info "Done."
+    fi
+
+    # Remove old installed modules
+    find /lib/modules -name vboxadd\* | xargs rm 2>/dev/null
+    find /lib/modules -name vboxguest\* | xargs rm 2>/dev/null
+    find /lib/modules -name vboxvfs\* | xargs rm 2>/dev/null
+    find /lib/modules -name vboxvideo\* | xargs rm 2>/dev/null
+    depmod
+
+    # Remove other files
+    rm /sbin/mount.vboxsf 2>/dev/null
 }
 
 dmnstatus()
@@ -339,6 +417,9 @@ restart)
     ;;
 setup)
     setup
+    ;;
+cleanup)
+    cleanup
     ;;
 status)
     dmnstatus
