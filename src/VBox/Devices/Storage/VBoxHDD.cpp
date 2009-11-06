@@ -2243,6 +2243,21 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                 if (!RTStrICmp(pszBackend, "RAW"))
                     uImageFlags |= VD_IMAGE_FLAGS_FIXED;
 
+                /* Fix broken PCHS geometry. Can happen for two reasons: either
+                 * the backend mixes up PCHS and LCHS, or the application used
+                 * to create the source image has put garbage in it. */
+                /** @todo double-check if the VHD backend correctly handles
+                 * PCHS and LCHS geometry. also reconsider our current paranoia
+                 * level when it comes to geometry settings here and in the
+                 * backends. */
+                if (PCHSGeometryFrom.cHeads > 16 || PCHSGeometryFrom.cSectors > 63)
+                {
+                    Assert(RT_MIN(cbSize / 512 / 16 / 63, 16383) - (uint32_t)RT_MIN(cbSize / 512 / 16 / 63, 16383));
+                    PCHSGeometryFrom.cCylinders = (uint32_t)RT_MIN(cbSize / 512 / 16 / 63, 16383);
+                    PCHSGeometryFrom.cHeads = 16;
+                    PCHSGeometryFrom.cSectors = 63;
+                }
+
                 rc = VDCreateBase(pDiskTo, pszBackend, pszFilename, cbSize,
                                   uImageFlags, szComment,
                                   &PCHSGeometryFrom, &LCHSGeometryFrom,
@@ -2326,7 +2341,10 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 
         if (RT_SUCCESS(rc))
         {
-            pImageTo->Backend->pfnSetModificationUuid(pImageTo->pvBackendData, &ImageModificationUuid);
+            /* Only set modification UUID if it is non-null, since the source
+             * backend might not provide a valid modification UUID. */
+            if (!RTUuidIsNull(&ImageModificationUuid))
+                pImageTo->Backend->pfnSetModificationUuid(pImageTo->pvBackendData, &ImageModificationUuid);
             /** @todo double-check this - it makes little sense to copy over the parent modification uuid,
              * as the destination image can have a totally different parent. */
 #if 0
