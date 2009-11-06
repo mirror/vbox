@@ -71,8 +71,9 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
  * @param   fFlags          A combination of the VMREQFLAGS values.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
+ *
+ * @remarks See remarks on VMR3ReqCallVU.
  */
 VMMR3DECL(int) VMR3ReqCall(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, uint32_t fFlags,
                            PFNRT pfnFunction, unsigned cArgs, ...)
@@ -102,8 +103,9 @@ VMMR3DECL(int) VMR3ReqCall(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cM
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
+ *
+ * @remarks See remarks on VMR3ReqCallVU.
  */
 VMMR3DECL(int) VMR3ReqCallWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
 {
@@ -137,8 +139,9 @@ VMMR3DECL(int) VMR3ReqCallWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, uns
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
+ *
+ * @remarks See remarks on VMR3ReqCallVU.
  */
 VMMR3DECL(int) VMR3ReqCallWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
 {
@@ -169,8 +172,9 @@ VMMR3DECL(int) VMR3ReqCallWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, 
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
+ *
+ * @remarks See remarks on VMR3ReqCallVU.
  */
 VMMR3DECL(int) VMR3ReqCallNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
 {
@@ -197,8 +201,9 @@ VMMR3DECL(int) VMR3ReqCallNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, u
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
+ *
+ * @remarks See remarks on VMR3ReqCallVU.
  */
 VMMR3DECL(int) VMR3ReqCallNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
 {
@@ -225,8 +230,9 @@ VMMR3DECL(int) VMR3ReqCallNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
+ *
+ * @remarks See remarks on VMR3ReqCallVU.
  */
 VMMR3DECL(int) VMR3ReqCallVoidWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
 {
@@ -255,8 +261,9 @@ VMMR3DECL(int) VMR3ReqCallVoidWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction,
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
+ *
+ * @remarks See remarks on VMR3ReqCallVU.
  */
 VMMR3DECL(int) VMR3ReqCallVoidWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
 {
@@ -285,8 +292,9 @@ VMMR3DECL(int) VMR3ReqCallVoidWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFuncti
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
+ *
+ * @remarks See remarks on VMR3ReqCallVU.
  */
 VMMR3DECL(int) VMR3ReqCallVoidNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
 {
@@ -315,8 +323,9 @@ VMMR3DECL(int) VMR3ReqCallVoidNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunctio
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
+ *
+ * @remarks See remarks on VMR3ReqCallVU.
  */
 VMMR3DECL(int) VMR3ReqCallVoidNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
 {
@@ -356,8 +365,9 @@ VMMR3DECL(int) VMR3ReqCallVoidNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunc
  * @param   fFlags          A combination of the VMREQFLAGS values.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
+ *
+ * @remarks See remarks on VMR3ReqCallVU.
  */
 VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
 {
@@ -396,6 +406,15 @@ VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned
  * @param   cArgs           Number of arguments following in the ellipsis.
  *                          Stuff which differs in size from uintptr_t is gonna make trouble, so don't try!
  * @param   Args            Argument vector.
+ *
+ * @remarks Caveats:
+ *              - Do not pass anything which is larger than an uintptr_t.
+ *              - 64-bit integers are larger than uintptr_t on 32-bit hosts.
+ *                Pass integers > 32-bit by reference (pointers).
+ *              - Don't use NULL since it should be the integer 0 in C++ and may
+ *                therefore end up with garbage in the bits 63:32 on 64-bit
+ *                hosts because 'int' is 32-bit.
+ *                Use (void *)NULL or (uintptr_t)0 instead of NULL.
  */
 VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
 {
