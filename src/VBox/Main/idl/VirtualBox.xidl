@@ -8490,18 +8490,13 @@
     <attribute name="parent" type="ISnapshot" readonly="yes">
       <desc>
         Parent snapshot (a snapshot this one is based on), or
-        @c null if the snapshot has no parent.
+        @c null if the snapshot has no parent (i.e. is the first snapshot).
       </desc>
     </attribute>
 
     <attribute name="children" type="ISnapshot" readonly="yes" safearray="yes">
       <desc>
         Child snapshots (all snapshots having this one as a parent).
-        <note>
-          In the current implementation, there can be only one
-          child snapshot, or no children at all, meaning this is the
-          last (head) snapshot.
-        </note>
       </desc>
     </attribute>
 
