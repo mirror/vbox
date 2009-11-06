@@ -67,11 +67,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The current saved state version. */
-#ifdef VBOX_WITH_LIVE_MIGRATION
 #define CPUM_SAVED_STATE_VERSION                11
-#else
-#define CPUM_SAVED_STATE_VERSION                10
-#endif
 /** The saved state version of 3.0 and 3.1 trunk before the teleportation
  * changes. */
 #define CPUM_SAVED_STATE_VERSION_VER3_0         10
@@ -105,9 +101,7 @@ typedef CPUMDUMPTYPE *PCPUMDUMPTYPE;
 *******************************************************************************/
 static CPUMCPUVENDOR cpumR3DetectVendor(uint32_t uEAX, uint32_t uEBX, uint32_t uECX, uint32_t uEDX);
 static int cpumR3CpuIdInit(PVM pVM);
-#ifdef VBOX_WITH_LIVE_MIGRATION
 static DECLCALLBACK(int)  cpumR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass);
-#endif
 static DECLCALLBACK(int)  cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)  cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 static DECLCALLBACK(void) cpumR3InfoAll(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -216,17 +210,10 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     /*
      * Register saved state data item.
      */
-#ifdef VBOX_WITH_LIVE_MIGRATION
     int rc = SSMR3RegisterInternal(pVM, "cpum", 1, CPUM_SAVED_STATE_VERSION, sizeof(CPUM),
                                    NULL, cpumR3LiveExec, NULL,
                                    NULL, cpumR3SaveExec, NULL,
                                    NULL, cpumR3LoadExec, NULL);
-#else
-    int rc = SSMR3RegisterInternal(pVM, "cpum", 1, CPUM_SAVED_STATE_VERSION, sizeof(CPUM),
-                                   NULL, NULL, NULL,
-                                   NULL, cpumR3SaveExec, NULL,
-                                   NULL, cpumR3LoadExec, NULL);
-#endif
     if (RT_FAILURE(rc))
         return rc;
 
@@ -983,7 +970,6 @@ VMMR3DECL(void) CPUMR3Reset(PVM pVM)
     }
 }
 
-#ifdef VBOX_WITH_LIVE_MIGRATION
 
 /**
  * Called both in pass 0 and the final pass.
@@ -1748,7 +1734,6 @@ static DECLCALLBACK(int) cpumR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass
     return VINF_SSM_DONT_CALL_AGAIN;
 }
 
-#endif /* VBOX_WITH_LIVE_MIGRATION */
 
 /**
  * Execute state save operation.
@@ -1780,28 +1765,8 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutMem(pSSM, &pVCpu->cpum.s.GuestMsr, sizeof(pVCpu->cpum.s.GuestMsr));
     }
 
-#ifdef VBOX_WITH_LIVE_MIGRATION
     cpumR3SaveCpuId(pVM, pSSM);
     return VINF_SUCCESS;
-#else
-
-    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd));
-    SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdStd[0], sizeof(pVM->cpum.s.aGuestCpuIdStd));
-
-    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt));
-    SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdExt[0], sizeof(pVM->cpum.s.aGuestCpuIdExt));
-
-    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur));
-    SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdCentaur[0], sizeof(pVM->cpum.s.aGuestCpuIdCentaur));
-
-    SSMR3PutMem(pSSM, &pVM->cpum.s.GuestCpuIdDef, sizeof(pVM->cpum.s.GuestCpuIdDef));
-
-    /* Add the cpuid for checking that the cpu is unchanged. */
-    uint32_t au32CpuId[8] = {0};
-    ASMCpuId(0, &au32CpuId[0], &au32CpuId[1], &au32CpuId[2], &au32CpuId[3]);
-    ASMCpuId(1, &au32CpuId[4], &au32CpuId[5], &au32CpuId[6], &au32CpuId[7]);
-    return SSMR3PutMem(pSSM, &au32CpuId[0], sizeof(au32CpuId));
-#endif
 }
 
 
@@ -1986,7 +1951,6 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
         }
     }
 
-#ifdef VBOX_WITH_LIVE_MIGRATION
     /*
      * Guest CPUIDs.
      */
@@ -1995,7 +1959,6 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
 
     /** @todo Merge the code below into cpumR3LoadCpuId when we've found out what is
      *        actually required. */
-#endif
 
     /*
      * Restore the CPUID leaves.
