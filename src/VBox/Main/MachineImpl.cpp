@@ -164,7 +164,11 @@ Machine::HWData::HWData()
     mHWVirtExNestedPagingEnabled = false;
     mHWVirtExVPIDEnabled = false;
     mHWVirtExExclusive = true;
+#if HC_ARCH_BITS == 64 || defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
+    mPAEEnabled = true;
+#else
     mPAEEnabled = false;
+#endif
     mSyntheticCpu = false;
     mPropertyServiceActive = false;
 
