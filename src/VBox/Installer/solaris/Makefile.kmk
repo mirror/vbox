@@ -181,13 +181,18 @@ SOLARIS_STRIP_EXES = \
 	VBoxManage \
 	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE,) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
-	$(if $(VBOX_WITH_USB),VBoxUSBHelper,) \
 	$(if $(VBOX_WITH_NETADP),VBoxNetAdpCtl,) \
 	VBoxNetDHCP \
 	VBoxSVC \
 	$(if $(VBOX_WITH_CROGL),VBoxTestOGL,) \
 	VBoxXPCOMIPCD \
 	kchmviewer
+
+ifdef VBOX_WITH_USB
+ ifndef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
+	SOLARIS_STRIP_EXES += VBoxUSBHelper
+ endif
+endif
 
 SOLARIS_DRIVER_BINS = \
 	vboxdrv \
