@@ -206,8 +206,9 @@ RT_EXPORT_SYMBOL(RTReqProcess);
  *                          wait till it's completed.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
+ *
+ * @remarks See remarks on RTReqCallV.
  */
 RTDECL(int) RTReqCall(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
@@ -240,8 +241,9 @@ RT_EXPORT_SYMBOL(RTReqCall);
  *                          wait till it's completed.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
+ *
+ * @remarks See remarks on RTReqCallV.
  */
 RTDECL(int) RTReqCallVoid(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
@@ -276,8 +278,9 @@ RT_EXPORT_SYMBOL(RTReqCallVoid);
  * @param   fFlags          A combination of the RTREQFLAGS values.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
+ *
+ * @remarks See remarks on RTReqCallV.
  */
 RTDECL(int) RTReqCallEx(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
 {
@@ -312,8 +315,16 @@ RT_EXPORT_SYMBOL(RTReqCallEx);
  * @param   fFlags          A combination of the RTREQFLAGS values.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
  * @param   Args            Variable argument vector.
+ *
+ * @remarks Caveats:
+ *              - Do not pass anything which is larger than an uintptr_t.
+ *              - 64-bit integers are larger than uintptr_t on 32-bit hosts.
+ *                Pass integers > 32-bit by reference (pointers).
+ *              - Don't use NULL since it should be the integer 0 in C++ and may
+ *                therefore end up with garbage in the bits 63:32 on 64-bit
+ *                hosts because 'int' is 32-bit.
+ *                Use (void *)NULL or (uintptr_t)0 instead of NULL.
  */
 RTDECL(int) RTReqCallV(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
 {
