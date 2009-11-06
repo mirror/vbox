@@ -333,6 +333,30 @@ def monitorVBox(ctx, dur):
         pass
     vbox.unregisterCallback(cb)
 
+
+def takeScreenshot(ctx,console,args):
+    from PIL import Image
+    display = console.display
+    if len(args) > 0:
+        f = args[0]
+    else:
+        f = "/tmp/screenshot.png"
+    if len(args) > 1:
+        w = args[1]
+    else:
+        w = console.display.width
+    if len(args) > 2:
+        h = args[2]
+    else:
+        h = console.display.height
+    print "Saving screenshot (%d x %d) in %s..." %(w,h,f)
+    data = display.takeScreenShotSlow(w,h)
+    size = (w,h)
+    mode = "RGBA"    
+    im = Image.frombuffer(mode, size, data, "raw", mode, 0, 1)
+    im.save(f, "PNG")
+
+
 def cmdExistingVm(ctx,mach,cmd,args):
     mgr=ctx['mgr']
     vb=ctx['vb']
@@ -361,7 +385,8 @@ def cmdExistingVm(ctx,mach,cmd,args):
          'stats':           lambda: guestStats(ctx, mach),
          'guest':           lambda: guestExec(ctx, mach, console, args),
          'monitorGuest':    lambda: monitorGuest(ctx, mach, console, args),
-         'save':            lambda: progressBar(ctx,console.saveState())
+         'save':            lambda: progressBar(ctx,console.saveState()),
+         'screenshot':      lambda: takeScreenshot(ctx,console,args)
          }
     try:
         ops[cmd]()
@@ -613,6 +638,16 @@ def guestCmd(ctx, args):
     if mach == None:
         return 0
     cmdExistingVm(ctx, mach, 'guest', ' '.join(args[2:]))
+    return 0
+
+def screenshotCmd(ctx, args):
+    if (len(args) < 3):
+        print "usage: screenshot name file <width> <height>"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    cmdExistingVm(ctx, mach, 'screenshot', args[2:])
     return 0
 
 def setvarCmd(ctx, args):
@@ -970,7 +1005,8 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'runScript':['Run VBox script: runScript script.vbox', runScriptCmd, 0],
             'sleep':['Sleep for specified number of seconds: sleep 3.14159', sleepCmd, 0],
             'shell':['Execute external shell command: shell "ls /etc/rc*"', shellCmd, 0],
-            'exportVm':['Export VM in OVF format: export Win /tmp/win.ovf', exportVMCmd, 0]
+            'exportVm':['Export VM in OVF format: export Win /tmp/win.ovf', exportVMCmd, 0],
+            'screenshot':['Take VM screenshot to a file: screenshot Win /tmp/win.png 1024 768', screenshotCmd, 0]
             }
 
 def runCommandArgs(ctx, args):
