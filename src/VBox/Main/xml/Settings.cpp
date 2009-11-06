@@ -1546,8 +1546,16 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmCPUChild->getAttributeValue("enabled", hw.fNestedPaging);
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExVPID")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fVPID);
-            if ((pelmCPUChild = pelmHwChild->findChildElement("PAE")))
+
+            if (!(pelmCPUChild = pelmHwChild->findChildElement("PAE")))
+            {
+                /* The default for pre 3.1 was false, so we must respect that. */
+                if (m->sv < SettingsVersion_v1_9)
+                    hw.fPAE = false;
+            }
+            else
                 pelmCPUChild->getAttributeValue("enabled", hw.fPAE);
+
             if ((pelmCPUChild = pelmHwChild->findChildElement("SyntheticCpu")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fSyntheticCpu);
             if ((pelmCPUChild = pelmHwChild->findChildElement("CpuIdTree")))
@@ -2423,12 +2431,10 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
     if (m->sv >= SettingsVersion_v1_9)
         pelmHwVirtEx->setAttribute("exclusive", hw.fHardwareVirtExclusive);
 
-    if (hw.fNestedPaging)
-        pelmCPU->createChild("HardwareVirtExNestedPaging")->setAttribute("enabled", hw.fNestedPaging);
-    if (hw.fVPID)
-        pelmCPU->createChild("HardwareVirtExVPID")->setAttribute("enabled", hw.fVPID);
-    if (hw.fPAE)
-        pelmCPU->createChild("PAE")->setAttribute("enabled", hw.fPAE);
+    pelmCPU->createChild("HardwareVirtExNestedPaging")->setAttribute("enabled", hw.fNestedPaging);
+    pelmCPU->createChild("HardwareVirtExVPID")->setAttribute("enabled", hw.fVPID);
+    pelmCPU->createChild("PAE")->setAttribute("enabled", hw.fPAE);
+
     if (hw.fSyntheticCpu)
         pelmCPU->createChild("SyntheticCpu")->setAttribute("enabled", hw.fSyntheticCpu);
     pelmCPU->setAttribute("count", hw.cCPUs);
