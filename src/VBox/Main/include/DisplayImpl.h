@@ -295,9 +295,10 @@ private:
 #endif
 
 
+    static DECLCALLBACK(void)   displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser);
+    static DECLCALLBACK(int)    displaySSMLoadScreenshot(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPass);
     static DECLCALLBACK(void)   displaySSMSave(PSSMHANDLE pSSM, void *pvUser);
     static DECLCALLBACK(int)    displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPass);
-    static DECLCALLBACK(void)   displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser);
 
     const ComObjPtr<Console, ComWeakRef> mParent;
     /** Pointer to the associated display driver. */
