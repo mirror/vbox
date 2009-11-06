@@ -1251,6 +1251,8 @@ private:
     int vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd);
 
     int reset();
+	
+    void initGl();
 
     VBoxGLWidget *mpOverlayWidget;
     class VBoxConsoleView *mView;
