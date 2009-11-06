@@ -299,18 +299,18 @@ setup()
         find /lib/modules/`uname -r` -name "vboxguest\.*" 2>/dev/null|xargs rm -f 2>/dev/null
         succ_msg
     fi
-    begin "Building the VirtualBox kernel modules"
+    begin "Building the VirtualBox Guest Additions kernel modules"
     if ! sh /usr/share/$PACKAGE/test/build_in_tmp \
-        --no-print-directory > $LOG 2>&1; then
+        --no-dkms --no-print-directory > $LOG 2>&1; then
         fail "`printf "Your system does not seem to be set up to build kernel modules.\nLook at $LOG to find out what went wrong"`"
     fi
     echo
     if ! sh /usr/share/$PACKAGE/test_drm/build_in_tmp \
-        --no-print-directory > $LOG 2>&1; then
+        --no-dkms --no-print-directory > $LOG 2>&1; then
         printf "Your system does not seem to support OpenGL in the kernel (this requires\nLinux 2.6.27 or later).  The OpenGL support will not be built.\n"
         BUILDVBOXVIDEO=""
     fi
-    begin "Building the main VirtualBox module"
+    begin "Building the main Guest Additions module"
     if ! $BUILDVBOXGUEST \
         --save-module-symvers /tmp/vboxguest-Module.symvers \
         --no-print-directory install > $LOG 2>&1; then
