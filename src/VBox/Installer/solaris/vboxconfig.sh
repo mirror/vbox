@@ -23,7 +23,10 @@
 # Never use exit 2 or exit 20 etc., the return codes are used in
 # SRv4 postinstall procedures which carry special meaning. Just use exit 1 for failure.
 
-HOST_OS_VERSION=`uname -r`
+# S10 or OpenSoalris
+HOST_OS_MAJORVERSION=`uname -r`
+# Which OpenSolaris version (snv_xxx)?
+HOST_OS_MINORVERSION=`uname -v | cut -f2 -d'_'`
 
 DIR_VBOXBASE=/opt/VirtualBox
 DIR_MOD_32="/platform/i86pc/kernel/drv"
@@ -375,28 +378,33 @@ install_drivers()
             load_module "drv/$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
         fi
 
-        if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$HOST_OS_VERSION" != "5.10"; then
-            add_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
-            load_module "drv/$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
+        if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$HOST_OS_MAJORVERSION" != "5.10"; then
+            # For VirtualBox 3.1 the new USB code requires Nevada >= 124
+            if test "$HOST_OS_MINORVERSION" -gt 123; then
+                add_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
+                load_module "drv/$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
 
-            # Add vboxusbmon to devlink.tab
-            sed -e '/name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
-            echo "type=ddi_pseudo;name=vboxusbmon	\D" >> /etc/devlink.vbox
-            mv -f /etc/devlink.vbox /etc/devlink.tab
+                # Add vboxusbmon to devlink.tab
+                sed -e '/name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
+                echo "type=ddi_pseudo;name=vboxusbmon	\D" >> /etc/devlink.vbox
+                mv -f /etc/devlink.vbox /etc/devlink.tab
 
-            # Create the device link
-            /usr/sbin/devfsadm -i  "$MOD_VBOXUSBMON"
-            if test $? -ne 0; then
-                errorprint "Failed to create device link for $MOD_VBOXUSBMON."
-                exit 1
-            fi
-            
-            # Add vboxusb if present
-            # This driver is special, we need it in the boot-archive but since there is no
-            # USB device to attach to now (it's done at runtime) it will fail to attach so
-            # redirect attaching failure output to /dev/null
-            if test -f /platform/i86pc/kernel/drv/vboxusb.conf; then
-                add_driver "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP" "$NULLOP"
+                # Create the device link
+                /usr/sbin/devfsadm -i  "$MOD_VBOXUSBMON"
+                if test $? -ne 0; then
+                    errorprint "Failed to create device link for $MOD_VBOXUSBMON."
+                    exit 1
+                fi
+                
+                # Add vboxusb if present
+                # This driver is special, we need it in the boot-archive but since there is no
+                # USB device to attach to now (it's done at runtime) it will fail to attach so
+                # redirect attaching failure output to /dev/null
+                if test -f /platform/i86pc/kernel/drv/vboxusb.conf; then
+                    add_driver "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP" "$NULLOP"
+                fi
+            else
+                warnprint "Solaris Nevada 124 or higher required for USB support. Skipped installing USB support."
             fi
         fi
     else
