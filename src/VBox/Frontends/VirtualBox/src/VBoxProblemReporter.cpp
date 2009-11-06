@@ -1179,7 +1179,7 @@ void VBoxProblemReporter::cannotDetachDevice (QWidget *aParent, const CMachine &
         what += QString (" (<nobr><b>%1</b></nobr>)").arg (aLocation);
 
     message (aParent, Error,
-             tr ("Failed to detach the $1 from the slot <i>%2</i> of the machine <b>%3</b>.")
+             tr ("Failed to detach the %1 from the slot <i>%2</i> of the machine <b>%3</b>.")
                  .arg (what)
                  .arg (vboxGlobal().toString (StorageSlot (aBus, aChannel, aDevice)))
                  .arg (CMachine (aMachine).GetName()),
