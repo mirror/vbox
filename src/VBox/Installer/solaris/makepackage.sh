@@ -163,6 +163,10 @@ filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxnet"'      
 filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/vboxusbmon"'                                '$6 = "sys"'
 filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxusbmon"'                          '$6 = "sys"'
 
+# USB Client vboxusb
+filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/vboxusb"'                                   '$6 = "sys"'
+filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxusb"'                             '$6 = "sys"'
+
 # hardening requires some executables to be marked setuid.
 if test -n "$HARDENED"; then
     $VBOX_AWK 'NF == 6 \
