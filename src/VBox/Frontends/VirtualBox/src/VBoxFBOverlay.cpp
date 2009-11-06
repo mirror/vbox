@@ -976,7 +976,7 @@ VBoxVHWAGlProgramVHWA * VBoxVHWAGlProgramMngr::createProgram(uint32_t type, uint
         }
         else if(fourcc == FOURCC_YV12)
         {
-            apShaders[cShaders++] = &mShaderSplitBGRA;
+//            apShaders[cShaders++] = &mShaderSplitBGRA;
             apShaders[cShaders++] = &mShaderCConvYV12;
             bFound = true;
         }

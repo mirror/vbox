@@ -2,21 +2,59 @@
 uniform sampler2DRect uSrcTex;
 uniform sampler2DRect uVTex;
 uniform sampler2DRect uUTex;
-float vboxSplitBGRA(vec4 color, float coord);
 void vboxCConvApplyAYUV(vec4 color);
 void vboxCConv()
 {
     vec2 clrCoordY = vec2(gl_TexCoord[0]);
     vec2 clrCoordV = vec2(gl_TexCoord[1]);
-    int ix = int(clrCoordY.x);
-    vec2 coordY = vec2(float(ix), clrCoordY.y);
-    ix = int(clrCoordV.x);
-    vec2 coordV = vec2(float(ix), clrCoordV.y);
-    vec4 clrY = texture2DRect(uSrcTex, vec2(coordY));
-    vec4 clrV = texture2DRect(uVTex, vec2(coordV));
-    vec4 clrU = texture2DRect(uUTex, vec2(coordV));
-    float y = vboxSplitBGRA(clrY, clrCoordY.x);
-    float v = vboxSplitBGRA(clrV, clrCoordV.x);
-    float u = vboxSplitBGRA(clrU, clrCoordV.x);
+    int ixY = int(clrCoordY.x);
+    vec2 coordY = vec2(float(ixY), clrCoordY.y);
+    int ixV = int(clrCoordV.x);
+    vec2 coordV = vec2(float(ixV), clrCoordV.y);
+    vec4 clrY = texture2DRect(uSrcTex, coordY);
+    vec4 clrV = texture2DRect(uVTex, coordV);
+    vec4 clrU = texture2DRect(uUTex, coordV);
+    float partY = clrCoordY.x - float(ixY);
+    float partVU = clrCoordV.x - float(ixV);
+    float y;
+    float v;
+    float u;
+    if(partY < 0.25)
+    {
+        y = clrY.b;
+    }
+    else if(partY < 0.5)
+    {
+        y = clrY.g;
+    }
+    else if(partY < 0.75)
+    {
+        y = clrY.r;
+    }
+    else
+    {
+        y = clrY.a;
+    }
+
+    if(partVU < 0.25)
+    {
+        v = clrV.b;
+        u = clrU.b;
+    }
+    else if(partVU < 0.5)
+    {
+        v = clrV.g;
+        u = clrU.g;
+    }
+    else if(partVU < 0.75)
+    {
+        v = clrV.r;
+        u = clrU.r;
+    }
+    else
+    {
+        v = clrV.a;
+        u = clrU.a;
+    }
     vboxCConvApplyAYUV(vec4(u, y, 0.0, v));
 }
