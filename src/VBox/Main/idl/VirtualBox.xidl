@@ -10942,6 +10942,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Takes a screen shot of the requested size and copies it to the
         32-bpp buffer allocated by the caller and pointed to by @a address.
+        A pixel consists of 4 bytes in order: B, G, R, 0.
 
         <note>This API can be used only by the COM/XPCOM C++ API as it
             requires pointer support. Use <link to="#takeScreenShotSlow" />
@@ -10964,7 +10965,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="takeScreenShotSlow">
       <desc>
         Takes a guest screen shot of the requested size and returns it as
-        an array of bytes in uncompressed 32-bit ARGB format.
+        an array of bytes in uncompressed 32-bit RGBA format.
+        A pixel consists of 4 bytes in order: R, G, B, 0xFF.
+
         This API is slow, but could be the only option to get guest screenshot
         for scriptable languages not allowed to manipulate with addresses
         directly.
