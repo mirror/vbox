@@ -34,31 +34,31 @@ include $(PATH_SUB_CURRENT)/drm/Makefile.kmk
 
 # Basic path components
 VBOX_LNX_ADD_PACKAGE_NAME         := VBoxGuestAdditions
-VBOX_LNX_ADD_INST_OUT_DIR         := $(PATH_TARGET)/Additions/Installer/linux
-VBOX_LNX_ADD_INST_DBG_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)/debug
-VBOX_LNX_ADD_INST_STAGE_DIR       := $(VBOX_LNX_ADD_INST_OUT_DIR)/install
+VBOX_LNX_ADD_INST_OUT_DIR         := $(PATH_TARGET)/Additions/Installer/linux/
+VBOX_LNX_ADD_INST_DBG_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)debug/
+VBOX_LNX_ADD_INST_STAGE_DIR       := $(VBOX_LNX_ADD_INST_OUT_DIR)install/
 
 # Installation paths for binaries and files
-VBOX_LNX_ADD_INST_BIN_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)/bin
-VBOX_LNX_ADD_INST_SBIN_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)/sbin
-VBOX_LNX_ADD_INST_LIB_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)/lib
-VBOX_LNX_ADD_INST_SHARE_DIR       := $(VBOX_LNX_ADD_INST_OUT_DIR)/share
-VBOX_LNX_ADD_INST_MOD_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)/lib/$(VBOX_LNX_ADD_PACKAGE_NAME)
-VBOX_LNX_ADD_INST_KMOD_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)/src
-VBOX_LNX_ADD_INST_INIT_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)/init
+VBOX_LNX_ADD_INST_BIN_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)bin/
+VBOX_LNX_ADD_INST_SBIN_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)sbin/
+VBOX_LNX_ADD_INST_LIB_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)lib/
+VBOX_LNX_ADD_INST_SHARE_DIR       := $(VBOX_LNX_ADD_INST_OUT_DIR)share/
+VBOX_LNX_ADD_INST_MOD_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)lib/$(VBOX_LNX_ADD_PACKAGE_NAME)/
+VBOX_LNX_ADD_INST_KMOD_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)src/
+VBOX_LNX_ADD_INST_INIT_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)init/
 
 # Installation paths for debug symbols
-VBOX_LNX_ADD_INST_BIN_DBG_DIR     := $(VBOX_LNX_ADD_INST_DBG_DIR)/bin
-VBOX_LNX_ADD_INST_SBIN_DBG_DIR    := $(VBOX_LNX_ADD_INST_DBG_DIR)/sbin
-VBOX_LNX_ADD_INST_LIB_DBG_DIR     := $(VBOX_LNX_ADD_INST_DBG_DIR)/lib
-VBOX_LNX_ADD_INST_MOD_DBG_DIR     := $(VBOX_LNX_ADD_INST_DBG_DIR)/lib/$(VBOX_LNX_ADD_PACKAGE_NAME)
+VBOX_LNX_ADD_INST_BIN_DBG_DIR     := $(VBOX_LNX_ADD_INST_DBG_DIR)bin/
+VBOX_LNX_ADD_INST_SBIN_DBG_DIR    := $(VBOX_LNX_ADD_INST_DBG_DIR)sbin/
+VBOX_LNX_ADD_INST_LIB_DBG_DIR     := $(VBOX_LNX_ADD_INST_DBG_DIR)lib/
+VBOX_LNX_ADD_INST_MOD_DBG_DIR     := $(VBOX_LNX_ADD_INST_DBG_DIR)lib/$(VBOX_LNX_ADD_PACKAGE_NAME)/
 
 # Script source directories
-VBOX_PATH_LNX_ADD_INST            := $(PATH_SUB_CURRENT)/installer
+VBOX_PATH_LNX_ADD_INST            := $(PATH_SUB_CURRENT)/installer/
 VBOX_REL_LNX_ADD_INST             := $(subst $(PATH_ROOT)/src/VBox, ../..,$(VBOX_PATH_LNX_ADD_INST))
-VBOX_PATH_X11_ADD_INST            := $(PATH_ROOT)/src/VBox/Additions/x11/Installer
+VBOX_PATH_X11_ADD_INST            := $(PATH_ROOT)/src/VBox/Additions/x11/Installer/
 VBOX_REL_X11_ADD_INST             := $(subst $(PATH_ROOT)/src/VBox, ../..,$(VBOX_PATH_X11_ADD_INST))
-VBOX_PATH_LNX_INST_SRC            := $(PATH_ROOT)/src/VBox/Installer/linux
+VBOX_PATH_LNX_INST_SRC            := $(PATH_ROOT)/src/VBox/Installer/linux/
 VBOX_REL_LNX_INST_SRC             := $(subst $(PATH_ROOT)/src/VBox, ../..,$(VBOX_PATH_LNX_INST_SRC))
 
 # Unset this to speed up things during makefile hacking.
@@ -85,7 +85,7 @@ ifndef VBOX_OSE
  	$(VBOX_LNX_ADD_INST_STAGE_DIR)
  PACKING     += \
  	$(PATH_BIN)/additions/VBoxLinuxAdditions.run \
- 	$(VBOX_LNX_ADD_INST_STAGE_DIR)/VBoxGuestAdditions.tar.bz2
+ 	$(VBOX_LNX_ADD_INST_STAGE_DIR)VBoxGuestAdditions.tar.bz2
  OTHER_CLEAN += $(PACKING)
  # OSE only contains the source code for this
  VBOX_SELINUX_CMPLD := $(PATH_SUB_CURRENT)/selinux-fedora/vbox_x11.pp
@@ -164,82 +164,82 @@ VBOX_LNX_ADD_KMOD_VERSIONED := $(addsuffix -$(VBOX_VERSION_STRING),$(VBOX_LNX_AD
 # All the files that go into the archive
 #
 VBOX_LNX_ADD_INST_FILES := \
-	$(addprefix $(VBOX_LNX_ADD_INST_BIN_DIR)/,$(VBOX_LNX_ADD_STRIP_BIN)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_BIN_DIR)/,$(VBOX_LNX_ADD_BIN)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR)/,$(VBOX_LNX_ADD_STRIP_SBIN)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_LIB_DIR)/,$(VBOX_LNX_ADD_STRIP_LIB)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR)/,$(VBOX_LNX_ADD_STRIP_MOD)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR)/,$(VBOX_LNX_ADD_STRIP_OBJ)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR)/,$(VBOX_LNX_ADD_KMOD_VERSIONED)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR)/,$(VBOX_LNX_ADD_INIT)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_BIN_DBG_DIR)/,$(VBOX_LNX_ADD_STRIP_BIN)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DBG_DIR)/,$(VBOX_LNX_ADD_STRIP_SBIN)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_LIB_DBG_DIR)/,$(VBOX_LNX_ADD_STRIP_LIB)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DBG_DIR)/,$(VBOX_LNX_ADD_STRIP_MOD))
+	$(addprefix $(VBOX_LNX_ADD_INST_BIN_DIR),$(VBOX_LNX_ADD_STRIP_BIN)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_BIN_DIR),$(VBOX_LNX_ADD_BIN)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),$(VBOX_LNX_ADD_STRIP_SBIN)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_LIB_DIR),$(VBOX_LNX_ADD_STRIP_LIB)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_MOD)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_OBJ)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_VERSIONED)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_BIN_DBG_DIR),$(VBOX_LNX_ADD_STRIP_BIN)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DBG_DIR),$(VBOX_LNX_ADD_STRIP_SBIN)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_LIB_DBG_DIR),$(VBOX_LNX_ADD_STRIP_LIB)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DBG_DIR),$(VBOX_LNX_ADD_STRIP_MOD))
 
 # Cleanup of the the installer directory files
 OTHER_CLEAN += $(VBOX_LNX_ADD_INST_FILES)
 
 # pattern rules for copying the debug info from the VBOX_LNX_ADD_STRIP_* files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_BIN_DBG_DIR)/,$(VBOX_LNX_ADD_STRIP_BIN)): \
-		$(VBOX_LNX_ADD_INST_BIN_DBG_DIR)/% : $(PATH_BIN)/additions/% | $$(dir $$@)
+$(addprefix $(VBOX_LNX_ADD_INST_BIN_DBG_DIR),$(VBOX_LNX_ADD_STRIP_BIN)): \
+		$(VBOX_LNX_ADD_INST_BIN_DBG_DIR)% : $(PATH_BIN)/additions/% | $$(dir $$@)
 	$(call MSG_TOOL,copydbg,$<,$@)
 	$(QUIET)objcopy --only-keep-debug $< $@
 
-$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DBG_DIR)/,$(VBOX_LNX_ADD_STRIP_SBIN)): \
-		$(VBOX_LNX_ADD_INST_SBIN_DBG_DIR)/% : $(PATH_BIN)/additions/% | $$(dir $$@)
+$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DBG_DIR),$(VBOX_LNX_ADD_STRIP_SBIN)): \
+		$(VBOX_LNX_ADD_INST_SBIN_DBG_DIR)% : $(PATH_BIN)/additions/% | $$(dir $$@)
 	$(call MSG_TOOL,copydbg,$<,$@)
 	$(QUIET)objcopy --only-keep-debug $< $@
 
-$(addprefix $(VBOX_LNX_ADD_INST_LIB_DBG_DIR)/,$(VBOX_LNX_ADD_STRIP_LIB)): \
-		$(VBOX_LNX_ADD_INST_LIB_DBG_DIR)/% : $(PATH_BIN)/additions/% | $$(dir $$@)
+$(addprefix $(VBOX_LNX_ADD_INST_LIB_DBG_DIR),$(VBOX_LNX_ADD_STRIP_LIB)): \
+		$(VBOX_LNX_ADD_INST_LIB_DBG_DIR)% : $(PATH_BIN)/additions/% | $$(dir $$@)
 	$(call MSG_TOOL,copydbg,$<,$@)
 	$(QUIET)objcopy --only-keep-debug $< $@
 
-$(addprefix $(VBOX_LNX_ADD_INST_MOD_DBG_DIR)/,$(VBOX_LNX_ADD_STRIP_MOD)): \
-		$(VBOX_LNX_ADD_INST_MOD_DBG_DIR)/% : $(PATH_BIN)/additions/% | $$(dir $$@)
+$(addprefix $(VBOX_LNX_ADD_INST_MOD_DBG_DIR),$(VBOX_LNX_ADD_STRIP_MOD)): \
+		$(VBOX_LNX_ADD_INST_MOD_DBG_DIR)% : $(PATH_BIN)/additions/% | $$(dir $$@)
 	$(call MSG_TOOL,copydbg,$<,$@)
 	$(QUIET)objcopy --only-keep-debug $< $@
 
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_BIN files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_BIN_DIR)/,$(VBOX_LNX_ADD_STRIP_BIN)): \
-		$(VBOX_LNX_ADD_INST_BIN_DIR)/% : $(PATH_BIN)/additions/% \
-		$(VBOX_LNX_ADD_INST_BIN_DBG_DIR)/% \
+$(addprefix $(VBOX_LNX_ADD_INST_BIN_DIR),$(VBOX_LNX_ADD_STRIP_BIN)): \
+		$(VBOX_LNX_ADD_INST_BIN_DIR)% : $(PATH_BIN)/additions/% \
+		$(VBOX_LNX_ADD_INST_BIN_DBG_DIR)% \
 		| $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
 	$(QUIET)objcopy --add-gnu-debuglink=$@ $@
 
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_SBIN files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR)/,$(VBOX_LNX_ADD_STRIP_SBIN)): \
-		$(VBOX_LNX_ADD_INST_SBIN_DIR)/% : $(PATH_BIN)/additions/% \
-		$(VBOX_LNX_ADD_INST_SBIN_DBG_DIR)/% \
+$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),$(VBOX_LNX_ADD_STRIP_SBIN)): \
+		$(VBOX_LNX_ADD_INST_SBIN_DIR)% : $(PATH_BIN)/additions/% \
+		$(VBOX_LNX_ADD_INST_SBIN_DBG_DIR)% \
 		| $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
 	$(QUIET)objcopy --add-gnu-debuglink=$@ $@
 
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_LIB files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_LIB_DIR)/,$(VBOX_LNX_ADD_STRIP_LIB)): \
-		$(VBOX_LNX_ADD_INST_LIB_DIR)/% : $(PATH_BIN)/additions/% \
-		$(VBOX_LNX_ADD_INST_LIB_DBG_DIR)/% \
+$(addprefix $(VBOX_LNX_ADD_INST_LIB_DIR),$(VBOX_LNX_ADD_STRIP_LIB)): \
+		$(VBOX_LNX_ADD_INST_LIB_DIR)% : $(PATH_BIN)/additions/% \
+		$(VBOX_LNX_ADD_INST_LIB_DBG_DIR)% \
 		| $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
 	$(QUIET)objcopy --add-gnu-debuglink=$@ $@
 
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_MOD files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR)/,$(VBOX_LNX_ADD_STRIP_MOD)): \
-		$(VBOX_LNX_ADD_INST_MOD_DIR)/% : $(PATH_BIN)/additions/% \
-		$(VBOX_LNX_ADD_INST_MOD_DBG_DIR)/% \
+$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_MOD)): \
+		$(VBOX_LNX_ADD_INST_MOD_DIR)% : $(PATH_BIN)/additions/% \
+		$(VBOX_LNX_ADD_INST_MOD_DBG_DIR)% \
 		| $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
 	$(QUIET)objcopy --add-gnu-debuglink=$@ $@
 
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_OBJ files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR)/,$(VBOX_LNX_ADD_STRIP_OBJ)): \
-		$(VBOX_LNX_ADD_INST_MOD_DIR)/% : $(PATH_BIN)/additions/% | $$(dir $$@)
+$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_OBJ)): \
+		$(VBOX_LNX_ADD_INST_MOD_DIR)% : $(PATH_BIN)/additions/% | $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 ifeq ($(VBOX_DO_STRIP),)
 	$(QUIET)$(INSTALL) -m 0644 $< $@
@@ -249,49 +249,23 @@ else # strip to temp file because of umask.
 	$(QUIET)$(RM) -f -- $@.tmp
 endif
 
-## @todo r=bird: "files"? isn't this also copying directory trees (-a implies -R)?
 # pattern rule for copying the VBOX_LNX_ADD_KMOD files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR)/,$(VBOX_LNX_ADD_KMOD_VERSIONED)): \
-		$(VBOX_LNX_ADD_INST_KMOD_DIR)/%-$(VBOX_VERSION_STRING) : $(PATH_BIN)/additions/src/% | $(VBOX_LNX_ADD_INST_KMOD_DIR)/
-	$(call MSG_INST_FILE,$<,$@)
+$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_VERSIONED)): \
+		$(VBOX_LNX_ADD_INST_KMOD_DIR)%-$(VBOX_VERSION_STRING) : $(PATH_BIN)/additions/src/% | $(VBOX_LNX_ADD_INST_KMOD_DIR)
+	$(call MSG_INST_DIR,$<,$@)
 # Remove target directories first, otherwise the behaviour of cp will not be
 # what we want if it already exists. See the cp manual page for more details.
 	$(QUIET)$(RM) -Rf $@
 	$(QUIET)cp -af $< $@
 
 # pattern rule for copying the VBOX_LNX_ADD_INIT files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR)/,$(VBOX_LNX_ADD_INIT)): \
-		$(VBOX_LNX_ADD_INST_INIT_DIR)/% : $(PATH_BIN)/additions/% | $$(dir $$@)
+$(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT)): \
+		$(VBOX_LNX_ADD_INST_INIT_DIR)% : $(PATH_BIN)/additions/% | $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 # Remove target directories first, otherwise the behaviour of cp will not be
 # what we want if it already exists. See the cp manual page for more details.
 	$(QUIET)$(RM) -Rf $@
 	$(QUIET)cp -af $< $@
-
-
-## @todo r=bird: Please, do not use VBOX_OSE test for 50 targets like this. use a big ifdef around the whole block!
-INSTALLS += $(if $(VBOX_OSE),, lnx_add_inst-exec)
-## @todo r=bird: INST values ends with a slash.
-lnx_add_inst-exec_INST = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_MOD_DIR))
-lnx_add_inst-exec_MODE = a+rx,u+w
-lnx_add_inst-exec_SOURCES = \
-	$(VBOX_REL_LNX_ADD_INST)/vboxadd-service.sh \
-	$(VBOX_REL_X11_ADD_INST)/98vboxadd-xclient \
-	$(VBOX_REL_LNX_ADD_INST)/vboxadd.sh \
-	$(VBOX_REL_X11_ADD_INST)/x11config.pl \
-	$(VBOX_REL_X11_ADD_INST)/x11config15.pl \
-	$(VBOX_REL_LNX_INST_SRC)/routines.sh
-
-
-INSTALLS += $(if $(VBOX_OSE),, lnx_add_inst-noexec)
-lnx_add_inst-noexec_INST = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_SHARE_DIR)/$(VBOX_LNX_ADD_PACKAGE_NAME))
-lnx_add_inst-noexec_MODE = a+r,u+w
-lnx_add_inst-noexec_SOURCES = \
-	$(VBOX_REL_X11_ADD_INST)/vboxclient.desktop \
-	$(VBOX_REL_X11_ADD_INST)/vboxvideo.ids \
-	$(VBOX_REL_X11_ADD_INST)/linux_xorg_suse11.conf \
-	$(VBOX_REL_LNX_ADD_INST)/90-vboxguest.fdi \
-	selinux-fedora/vbox_x11.pp
 
 
 INSTALLS += GuestDrivers-src
@@ -300,41 +274,104 @@ GuestDrivers-src_MODE = a+r,u+w
 GuestDrivers-src_SOURCES = Makefile
 
 
-INSTALLS += $(if $(VBOX_OSE),, AutoRun-sh)
-AutoRun-sh_INST = bin/additions/
-AutoRun-sh_MODE = a+rx,u+w
-AutoRun-sh_SOURCES = $(VBOX_REL_LNX_ADD_INST)/autorun.sh
+## @todo r=bird: Please, do not use VBOX_OSE test for 50 targets like this. use a big ifdef around the whole block!
+ifndef VBOX_OSE
+ INSTALLS += lnx_add_inst-exec
+ lnx_add_inst-exec_INST = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_MOD_DIR))
+ lnx_add_inst-exec_MODE = a+rx,u+w
+ lnx_add_inst-exec_SOURCES = \
+	$(VBOX_REL_LNX_ADD_INST)vboxadd-service.sh \
+	$(VBOX_REL_X11_ADD_INST)98vboxadd-xclient \
+	$(VBOX_REL_LNX_ADD_INST)vboxadd.sh \
+	$(VBOX_REL_X11_ADD_INST)x11config.pl \
+	$(VBOX_REL_X11_ADD_INST)x11config15.pl \
+	$(VBOX_REL_LNX_INST_SRC)routines.sh
 
 
-#
-# Install the sources of our (sanity) test kernel module
-#
-INSTALLS += $(if $(VBOX_OSE),, LnxAddTest-src)
-LnxAddTest-src_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_SHARE_DIR)/$(VBOX_LNX_ADD_PACKAGE_NAME))/test
-LnxAddTest-src_MODE    = a+r,u+w
-LnxAddTest-src_SOURCES = \
-	$(VBOX_REL_LNX_ADD_INST)/Makefile.test=>Makefile \
+ INSTALLS += lnx_add_inst-noexec
+ lnx_add_inst-noexec_INST = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_SHARE_DIR)$(VBOX_LNX_ADD_PACKAGE_NAME))/
+ lnx_add_inst-noexec_MODE = a+r,u+w
+ lnx_add_inst-noexec_SOURCES = \
+	$(VBOX_REL_X11_ADD_INST)vboxclient.desktop \
+	$(VBOX_REL_X11_ADD_INST)vboxvideo.ids \
+	$(VBOX_REL_X11_ADD_INST)linux_xorg_suse11.conf \
+	$(VBOX_REL_LNX_ADD_INST)90-vboxguest.fdi \
+	selinux-fedora/vbox_x11.pp
+
+
+ INSTALLS += AutoRun-sh
+ AutoRun-sh_INST = bin/additions/
+ AutoRun-sh_MODE = a+rx,u+w
+ AutoRun-sh_SOURCES = $(VBOX_REL_LNX_ADD_INST)autorun.sh
+
+
+ #
+ # Install the sources of our (sanity) test kernel module
+ #
+ INSTALLS += LnxAddTest-src
+ LnxAddTest-src_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_SHARE_DIR)$(VBOX_LNX_ADD_PACKAGE_NAME))/test/
+ LnxAddTest-src_MODE    = a+r,u+w
+ LnxAddTest-src_SOURCES = \
+	$(VBOX_REL_LNX_ADD_INST)Makefile.test=>Makefile \
 	../../HostDrivers/linux/build_in_tmp \
-	$(VBOX_REL_LNX_ADD_INST)/test.c
+	$(VBOX_REL_LNX_ADD_INST)test.c
 
 
-#
-# Install the sources of our (sanity) test kernel rendering (DRM) module
-#
-INSTALLS += $(if $(VBOX_OSE),, LnxAddDRM-src)
-LnxAddDRM-src_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_SHARE_DIR)/$(VBOX_LNX_ADD_PACKAGE_NAME))/test_drm
-LnxAddDRM-src_MODE    = a+r,u+w
-LnxAddDRM-src_SOURCES = \
-	$(VBOX_REL_LNX_ADD_INST)/Makefile.include.header \
-	$(VBOX_REL_LNX_ADD_INST)/Makefile.include.footer \
-	$(VBOX_REL_LNX_ADD_INST)/Makefile.test.drm=>Makefile \
+ #
+ # Install the sources of our (sanity) test kernel rendering (DRM) module
+ #
+ INSTALLS += LnxAddDRM-src
+ LnxAddDRM-src_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_SHARE_DIR)$(VBOX_LNX_ADD_PACKAGE_NAME))/test_drm/
+ LnxAddDRM-src_MODE    = a+r,u+w
+ LnxAddDRM-src_SOURCES = \
+	$(VBOX_REL_LNX_ADD_INST)Makefile.include.header \
+	$(VBOX_REL_LNX_ADD_INST)Makefile.include.footer \
+	$(VBOX_REL_LNX_ADD_INST)Makefile.test.drm=>Makefile \
 	../../HostDrivers/linux/build_in_tmp \
-	$(VBOX_REL_LNX_ADD_INST)/test_drm.c
+	$(VBOX_REL_LNX_ADD_INST)test_drm.c
+
+
+ #
+ # We need our routines.sh and the uninstallation scripts in the staging
+ # directory too
+ #
+ INSTALLS += LnxAdd-scripts
+ LnxAdd-scripts_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_STAGE_DIR))
+ LnxAdd-scripts_MODE    = a+r,u+wx
+ LnxAdd-scripts_SOURCES = \
+	$(VBOX_REL_LNX_INST_SRC)routines.sh \
+	$(VBOX_REL_LNX_ADD_INST)uninstall.sh \
+	$(VBOX_REL_LNX_ADD_INST)vboxadd.sh=>vboxadd \
+	$(VBOX_REL_LNX_ADD_INST)vboxadd-service.sh=>vboxadd-service \
+	$(VBOX_REL_LNX_ADD_INST)vboxadd-x11.sh=>vboxadd-x11 \
+	$(VBOX_REL_LNX_ADD_INST)deffiles
+
+
+ #
+ # VBoxClient-all
+ #
+ INSTALLS += LnxAdd-Nostrip-Bin
+ LnxAdd-Nostrip-Bin_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_BIN_DIR))
+ LnxAdd-Nostrip-Bin_MODE    = a+r,u+wx
+ LnxAdd-Nostrip-Bin_SOURCES = \
+	$(VBOX_REL_X11_ADD_INST)VBoxRandR.sh=>VBoxRandR \
+	$(VBOX_REL_X11_ADD_INST)98vboxadd-xclient=>VBoxClient-all
+
+
+ #
+ # And the init scripts
+ #
+ INSTALLS += LnxAdd-init-scripts
+ LnxAdd-init-scripts_INST    = bin/additions
+ LnxAdd-init-scripts_MODE    = a+r,u+wx
+ LnxAdd-init-scripts_SOURCES = \
+	$(foreach i,$(VBOX_LNX_ADD_INIT), installer/$(i).sh=>$(i))
+endif  # ! VBOX_OSE
 
 
 # this file needs editing before it can be included in the generic installer.
-$(VBOX_LNX_ADD_INST_STAGE_DIR)/install.sh: \
-	$(VBOX_PATH_LNX_INST_SRC)/run-inst.sh | $$(dir $$@)
+$(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh: \
+	$(VBOX_PATH_LNX_INST_SRC)run-inst.sh | $$(dir $$@)
 	$(QUIET)$(SED) \
 	    -e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
 	    -e "s;_PACKAGE_NAME_;VirtualBox Guest Additions;g" \
@@ -344,47 +381,14 @@ $(VBOX_LNX_ADD_INST_STAGE_DIR)/install.sh: \
 	    -e "s;_OSE_;$(VBOX_OSE);g" \
 	    -e "s;_BUILDTYPE_;$(KBUILD_TYPE);g" \
 	    -e "s;_ARCH_;$(KBUILD_TARGET_ARCH);g" \
-	    --output $(VBOX_LNX_ADD_INST_OUT_DIR)/install.sh \
+	    -e "s;_UNINSTALL_SCRIPTS_;vboxadd-x11 vboxadd-timesync vboxadd-service vboxadd;g" \
+	    --output $(VBOX_LNX_ADD_INST_OUT_DIR)install.sh \
 	    $<
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_ADD_INST_OUT_DIR)/install.sh $@
-	$(QUIET)$(RM) $(VBOX_LNX_ADD_INST_OUT_DIR)/install.sh
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_ADD_INST_OUT_DIR)install.sh $@
+	$(QUIET)$(RM) $(VBOX_LNX_ADD_INST_OUT_DIR)install.sh
 OTHERS_CLEAN += \
-	$(VBOX_LNX_ADD_INST_OUT_DIR)/install.sh \
-	$(VBOX_LNX_ADD_INST_STAGE_DIR)/install.sh
-
-
-#
-# We need our routines.sh and the uninstallation scripts in the staging
-# directory too
-#
-INSTALLS += $(if $(VBOX_OSE),, LnxAdd-scripts)
-LnxAdd-scripts_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_STAGE_DIR))
-LnxAdd-scripts_MODE    = a+r,u+wx
-LnxAdd-scripts_SOURCES = \
-	$(VBOX_REL_LNX_INST_SRC)/routines.sh \
-	$(VBOX_REL_LNX_ADD_INST)/uninstall.sh \
-	$(VBOX_REL_LNX_ADD_INST)/deffiles
-
-
-#
-# VBoxClient-all
-#
-INSTALLS += $(if $(VBOX_OSE),, LnxAdd-Nostrip-Bin)
-LnxAdd-Nostrip-Bin_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_BIN_DIR))
-LnxAdd-Nostrip-Bin_MODE    = a+r,u+wx
-LnxAdd-Nostrip-Bin_SOURCES = \
-	$(VBOX_REL_X11_ADD_INST)/VBoxRandR.sh=>VBoxRandR \
-	$(VBOX_REL_X11_ADD_INST)/98vboxadd-xclient=>VBoxClient-all
-
-
-#
-# And the init scripts
-#
-INSTALLS += $(if $(VBOX_OSE),, LnxAdd-init-scripts)
-LnxAdd-init-scripts_INST    = bin/additions
-LnxAdd-init-scripts_MODE    = a+r,u+wx
-LnxAdd-init-scripts_SOURCES = \
-	$(foreach i,$(VBOX_LNX_ADD_INIT), installer/$(i).sh=>$(i))
+	$(VBOX_LNX_ADD_INST_OUT_DIR)install.sh \
+	$(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh
 
 
 include	$(KBUILD_PATH)/subfooter.kmk
@@ -401,7 +405,7 @@ VBOX_LNX_ADD_ARCH_FILES = \
 #
 # .tar.bz2 for converting into .run
 #
-$(VBOX_LNX_ADD_INST_STAGE_DIR)/VBoxGuestAdditions.tar.bz2: \
+$(VBOX_LNX_ADD_INST_STAGE_DIR)VBoxGuestAdditions.tar.bz2: \
 		$(VBOX_LNX_ADD_ARCH_FILES) \
 		$(VBOX_LNX_ADD_INST_DEP_ON_MAKEFILE) \
 		$(VBOX_VERSION_STAMP)
@@ -428,8 +432,8 @@ endif
 # any references should be made via variables assigned a know value via := .
 #
 $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
-		$(VBOX_LNX_ADD_INST_STAGE_DIR)/VBoxGuestAdditions.tar.bz2 \
-		$(VBOX_LNX_ADD_INST_STAGE_DIR)/install.sh \
+		$(VBOX_LNX_ADD_INST_STAGE_DIR)VBoxGuestAdditions.tar.bz2 \
+		$(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh \
 		$$(INSTARGET_LnxAdd-scripts) \
 		$(VBOX_VERSION_STAMP)
 	$(QUIET)$(VBOX_MAKESELF) --nocomp $(VBOX_LNX_ADD_INST_STAGE_DIR) $@ \
