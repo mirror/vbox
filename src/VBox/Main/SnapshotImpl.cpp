@@ -1809,11 +1809,18 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 
             LogFlowThisFunc(("Detaching old current state in differencing image '%s'\n", pMedium->name().raw()));
 
-            // we "detach" the medium by removing the attachment object
-            // from the current machine data; saveSettings() below will then
+            // Normally we "detach" the medium by removing the attachment object
+            // from the current machine data; saveSettings() below would then
             // compare the current machine data with the one in the backup
-            // and actually call Medium::detachFrom()
+            // and actually call Medium::detachFrom(). But that works only half
+            // the time in our case so instead we force a detachment here:
+            // remove from machine data
             mMediaData->mAttachments.remove(pAttach);
+            // remove it from the backup or else saveSettings will try to detach
+            // it again and assert
+            mMediaData.backedUpData()->mAttachments.remove(pAttach);
+            // then clean up backrefs
+            pMedium->detachFrom(mData->mUuid);
 
             llDiffsToDelete.push_back(pMedium);
         }
