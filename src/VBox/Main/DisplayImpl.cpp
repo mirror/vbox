@@ -2073,6 +2073,19 @@ STDMETHODIMP Display::TakeScreenShotSlow (ULONG width, ULONG height,
 
     if (RT_SUCCESS(vrc))
     {
+        /* Convert pixels to format expected by Python: [0] R, [1] G, [2] B, [3] A. */
+        uint8_t *pu8 = pu8Data;
+        unsigned cPixels = width * height;
+        while (cPixels)
+        {
+            uint8_t u8 = pu8[0];
+            pu8[0] = pu8[2];
+            pu8[2] = u8;
+            pu8[3] = 0xff;
+            cPixels--;
+            pu8 += 4;
+        }
+
         com::SafeArray<BYTE> screenData (cbData);
         for (unsigned i = 0; i < cbData; i++)
             screenData[i] = pu8Data[i];
