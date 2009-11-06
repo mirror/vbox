@@ -33,11 +33,11 @@ After extracting the contents of the tar.gz file perform the following steps:
 
 2. Install the VirtualBox package:
 
-        pkgadd -d VirtualBox-@VBOX_VERSION_STRING@-SunOS-r@VBOX_SVN_REV@.pkg
+      pkgadd -d VirtualBox-@VBOX_VERSION_STRING@-SunOS-r@VBOX_SVN_REV@.pkg
 
-    To perform an unattended (non-interactive) installation of this
-	package, add "-n -a autoresponse SUNWvbox" (without quotes)
-	to the end of the above pkgadd command.
+      To perform an unattended (non-interactive) installation of this
+      package, add "-n -a autoresponse SUNWvbox" (without quotes)
+      to the end of the above pkgadd command.
 
 3. For each package, the installer will ask you to "Select package(s) you
    wish to process". In response, type "1".
@@ -60,5 +60,5 @@ To remove VirtualBox from your system, perform the following steps:
 
 3. To remove the VirtualBox kernel interface module, run the command:
         pkgrm SUNWvboxkern
-    * Only required if you're uninstall VirtualBox versions 3.0.x or lower.
+    * Only required if you're uninstalling VirtualBox versions 3.0.x or lower.
 
