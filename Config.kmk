@@ -360,7 +360,7 @@ endif
 # Enable Host Guest Shared Memory Interface
 VBOX_WITH_HGSMI=1
 # Enable Video 2D Acceleration
-if1of ($(KBUILD_TARGET),win linux)
+if1of ($(KBUILD_TARGET),win linux darwin)
  VBOX_WITH_VIDEOHWACCEL = 1
 endif
 # Enable shared folders
