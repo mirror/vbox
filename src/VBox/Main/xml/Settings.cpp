@@ -1263,6 +1263,14 @@ Hardware::Hardware()
     mapBootOrder[0] = DeviceType_Floppy;
     mapBootOrder[1] = DeviceType_DVD;
     mapBootOrder[2] = DeviceType_HardDisk;
+
+    /* The default value for PAE depends on the host:
+     * - 64 bits host -> always true
+     * - 32 bits host -> true for Windows & Darwin (masked off if the host cpu doesn't support it anyway)
+     */
+#if HC_ARCH_BITS == 64 || defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
+    fPAE = true;
+#endif
 }
 
 /**
