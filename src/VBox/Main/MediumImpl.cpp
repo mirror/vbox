@@ -3188,10 +3188,9 @@ HRESULT Medium::prepareDiscard(MergeChain * &aChain)
      * current VM's hard disks may be attached to other VMs). Note that by the
      * time when discard() is called, there must be no any attachments at all
      * (the code calling prepareDiscard() should detach). */
-    AssertReturn(    m->backRefs.size() == 1
-                  && !m->backRefs.front().inCurState
-                  && m->backRefs.front().llSnapshotIds.size() == 1,
-                 E_FAIL);
+    AssertReturn(m->backRefs.size() == 1, E_FAIL);
+    AssertReturn(!m->backRefs.front().inCurState, E_FAIL);
+    AssertReturn(m->backRefs.front().llSnapshotIds.size() == 1, E_FAIL);
 
     ComObjPtr<Medium> child = children().front();
 
@@ -4070,9 +4069,26 @@ HRESULT Medium::deleteStorage(ComObjPtr <Progress> *aProgress, bool aWait)
     }
 
     if (m->backRefs.size() != 0)
+    {
+        Utf8Str strMachines;
+        for (BackRefList::const_iterator it = m->backRefs.begin();
+            it != m->backRefs.end();
+            ++it)
+        {
+            const BackRef &b = *it;
+            if (strMachines.length())
+                strMachines.append(", ");
+            strMachines.append(b.machineId.toString().c_str());
+        }
+#ifdef DEBUG
+        dumpBackRefs();
+#endif
         return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("Hard disk '%s' is attached to %d virtual machines"),
-                        m->strLocationFull.raw(), m->backRefs.size());
+                        tr("Cannot delete storage: hard disk '%s' is still attached to the following %d virtual machine(s): %s"),
+                        m->strLocationFull.c_str(),
+                        m->backRefs.size(),
+                        strMachines.c_str());
+    }
 
     HRESULT rc = canClose();
     CheckComRCReturnRC(rc);
