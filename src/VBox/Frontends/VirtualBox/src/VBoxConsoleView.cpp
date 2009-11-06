@@ -865,7 +865,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 # endif
             mFrameBuf =
 #if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
-                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxSDLFrameBuffer>(this) :
+                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxSDLFrameBuffer> (this) :
 #endif
                     new VBoxSDLFrameBuffer (this);
             /*
@@ -886,7 +886,11 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
             /* Indicate that we are doing all
              * drawing stuff ourself */
             pViewport->setAttribute (Qt::WA_PaintOnScreen);
-            mFrameBuf = new VBoxQuartz2DFrameBuffer (this);
+            mFrameBuf =
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer> (this) :
+#endif
+            	    new VBoxQuartz2DFrameBuffer (this);
             break;
 #endif
         default:
