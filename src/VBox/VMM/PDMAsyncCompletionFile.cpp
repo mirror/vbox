@@ -532,6 +532,23 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
     rc = RTCritSectInit(&pEpClassFile->CritSect);
     if (RT_SUCCESS(rc))
     {
+        /* Check if the host cache should be used too. */
+#ifndef RT_OS_LINUX
+        rc = CFGMR3QueryBoolDef(pCfgNode, "HostCacheEnabled", &pEpClassFile->fHostCacheEnabled, false);
+        AssertLogRelRCReturn(rc, rc);
+#else
+        /*
+         * Host cache + async I/O is not supported on Linux. Check if the user enabled the cache,
+         * leave a warning and disable it always.
+         */
+        bool fDummy;
+        rc = CFGMR3QueryBoolDef(pCfgNode, "HostCacheEnabled", &fDummy);
+        if (RT_SUCCESS(rc))
+            LogRel(("AIOMgr: The host cache is not supported with async I/O on Linux\n"));
+
+        pEpClassFile->fHostCacheEnabled = false;
+#endif
+
         /* Check if the cache was disabled by the user. */
         rc = CFGMR3QueryBoolDef(pCfgNode, "CacheEnabled", &pEpClassFile->fCacheEnabled, true);
         AssertLogRelRCReturn(rc, rc);
@@ -610,7 +627,14 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
             if (RT_SUCCESS(rc) && ((cbSize % 512) == 0))
             {
                 fFileFlags &= ~RTFILE_O_WRITE_THROUGH;
+
+#if defined(RT_OS_LINUX)
+                AssertMsg(!pEpClassFile->fHostCacheEnabled, ("Host cache + async I/O is not supported on Linux\n"));
                 fFileFlags |= RTFILE_O_NO_CACHE;
+#else
+                if (!pEpClassFile->fHostCacheEnabled)
+                    fFileFlags |= RTFILE_O_NO_CACHE;
+#endif
             }
 
             pEpFile->cbFile = cbSize;
