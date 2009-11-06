@@ -193,3 +193,26 @@ RTDECL(int) RTStrAPrintf(char **ppszBuffer, const char *pszFormat, ...)
 }
 RT_EXPORT_SYMBOL(RTStrAPrintf);
 
+
+RTDECL(char *) RTStrAPrintf2V(const char *pszFormat, va_list args)
+{
+    char *pszBuffer;
+    RTStrAPrintfV(&pszBuffer, pszFormat, args);
+    return pszBuffer;
+}
+RT_EXPORT_SYMBOL(RTStrAPrintf2V);
+
+
+RTDECL(char *) RTStrAPrintf2(const char *pszFormat, ...)
+{
+    va_list va;
+    char   *pszBuffer;
+
+    va_start(va, pszFormat);
+    RTStrAPrintfV(&pszBuffer, pszFormat, va);
+    va_end(va);
+
+    return pszBuffer;
+}
+RT_EXPORT_SYMBOL(RTStrAPrintf2);
+

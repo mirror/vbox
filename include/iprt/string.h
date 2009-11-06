@@ -796,6 +796,25 @@ RTDECL(int) RTStrAPrintfV(char **ppszBuffer, const char *pszFormat, va_list args
  */
 RTDECL(int) RTStrAPrintf(char **ppszBuffer, const char *pszFormat, ...);
 
+/**
+ * Allocating string printf, version 2.
+ *
+ * @returns Formatted string. Use RTStrFree() to free it. NULL when out of
+ *          memory.
+ * @param   pszFormat   The format string.
+ * @param   args        The format argument.
+ */
+RTDECL(char *) RTStrAPrintf2V(const char *pszFormat, va_list args);
+
+/**
+ * Allocating string printf, version2.
+ *
+ * @returns Formatted string. Use RTStrFree() to free it. NULL when out of
+ *          memory.
+ * @param   pszFormat   The format string.
+ * @param   ...         The format argument.
+ */
+RTDECL(char *) RTStrAPrintf2(const char *pszFormat, ...);
 
 /**
  * Strips blankspaces from both ends of the string.
