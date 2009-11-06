@@ -618,6 +618,16 @@ static int pcnetSyncTransmit(PCNetState *pThis);
 static void pcnetPollTimerStart(PCNetState *pThis);
 
 /**
+ * Checks if the link is up.
+ * @returns true if the link is up.
+ * @returns false if the link is down.
+ */
+DECLINLINE(bool) pcnetIsLinkUp(PCNetState *pThis)
+{
+    return pThis->pDrv && !pThis->fLinkTempDown && pThis->fLinkUp;
+}
+
+/**
  * Load transmit message descriptor
  * Make sure we read the own flag first.
  *
@@ -1848,6 +1858,12 @@ static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t cbT
         &&  enmVMState != VMSTATE_RUNNING_LS)
         return;
 
+    /*
+     * Drop packets if the cable is not connected
+     */
+    if (!pcnetIsLinkUp(pThis))
+        return;
+
     Log(("#%d pcnetReceiveNoSync: size=%d\n", PCNET_INST_NR, cbToRecv));
 
     /*
@@ -2036,17 +2052,6 @@ static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t cbT
      * ``transmit polling will take place following receive activities'' */
     pcnetPollRxTx(pThis);
     pcnetUpdateIrq(pThis);
-}
-
-
-/**
- * Checks if the link is up.
- * @returns true if the link is up.
- * @returns false if the link is down.
- */
-DECLINLINE(bool) pcnetIsLinkUp(PCNetState *pThis)
-{
-    return pThis->pDrv && !pThis->fLinkTempDown && pThis->fLinkUp;
 }
 
 
