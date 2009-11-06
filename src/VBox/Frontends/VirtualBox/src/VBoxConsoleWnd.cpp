@@ -797,7 +797,11 @@ bool VBoxConsoleWnd::openView (const CSession &aSession)
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* Need to force the QGL framebuffer in case 2D Video Acceleration is supported & enabled */
-    bool bAccelerate2DVideo = machine.GetAccelerate2DVideoEnabled() && VBoxGlobal::isAcceleration2DVideoAvailable();
+    bool bAccelerate2DVideo = machine.GetAccelerate2DVideoEnabled()
+# ifndef Q_WS_MAC /* @todo: fixme: temporary disable the check on Mac until we move it to a separate app */
+            && VBoxGlobal::isAcceleration2DVideoAvailable()
+# endif
+    ;
 #endif
 
     mConsole = new VBoxConsoleView (this, console, vboxGlobal().vmRenderMode(),
