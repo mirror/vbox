@@ -2073,7 +2073,7 @@ STDMETHODIMP Display::TakeScreenShotSlow (ULONG width, ULONG height,
 
     if (RT_SUCCESS(vrc))
     {
-        /* Convert pixels to format expected by Python: [0] R, [1] G, [2] B, [3] A. */
+        /* Convert pixels to format expected by the API caller: [0] R, [1] G, [2] B, [3] A. */
         uint8_t *pu8 = pu8Data;
         unsigned cPixels = width * height;
         while (cPixels)
