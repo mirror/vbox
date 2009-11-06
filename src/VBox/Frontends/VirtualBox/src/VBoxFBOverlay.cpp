@@ -2806,10 +2806,14 @@ int VBoxGLWidget::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
                     break;
                 }
             }
+#ifdef DEBUG_misha
             Assert(bFound);
+#endif
             if(!bFound)
             {
+#ifdef DEBUG_misha
                 Assert(0);
+#endif
                 pCmd->u.out.ErrInfo = -1;
                 return VINF_SUCCESS;
             }
