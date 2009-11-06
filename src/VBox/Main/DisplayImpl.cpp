@@ -42,6 +42,7 @@
 #endif
 
 #include <VBox/com/array.h>
+#include <png.h>
 
 /**
  * Display driver instance data.
@@ -115,6 +116,9 @@ void Display::FinalRelease()
 #define sSSMDisplayScreenshotVer 0x00010001
 #define sSSMDisplayVer 0x00010001
 
+#define kMaxSizePNG 1024
+#define kMaxSizeThumbnail 64
+
 /**
  * Save thumbnail and screenshot of the guest screen.
  */
@@ -130,13 +134,13 @@ static int displayMakeThumbnail(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
 
     if (cx > cy)
     {
-        cxThumbnail = 64;
-        cyThumbnail = (64 * cy) / cx;
+        cxThumbnail = kMaxSizeThumbnail;
+        cyThumbnail = (kMaxSizeThumbnail * cy) / cx;
     }
     else
     {
-        cyThumbnail = 64;
-        cxThumbnail = (64 * cx) / cy;
+        cyThumbnail = kMaxSizeThumbnail;
+        cxThumbnail = (kMaxSizeThumbnail * cx) / cy;
     }
 
     LogFlowFunc(("%dx%d -> %dx%d\n", cx, cy, cxThumbnail, cyThumbnail));
@@ -175,11 +179,203 @@ static int displayMakeThumbnail(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
     return rc;
 }
 
+typedef struct PNGWriteCtx
+{
+    uint8_t *pu8PNG;
+    uint32_t cbPNG;
+    uint32_t cbAllocated;
+    int rc;
+} PNGWriteCtx;
+
+static void PNGAPI png_write_data_fn(png_structp png_ptr, png_bytep p, png_size_t cb)
+{
+    PNGWriteCtx *pCtx = (PNGWriteCtx *)png_get_io_ptr(png_ptr);
+    LogFlowFunc(("png_ptr %p, p %p, cb %d, pCtx %p\n", png_ptr, p, cb, pCtx));
+
+    if (pCtx && RT_SUCCESS(pCtx->rc))
+    {
+        if (pCtx->cbAllocated - pCtx->cbPNG < cb)
+        {
+            uint32_t cbNew = pCtx->cbPNG + (uint32_t)cb;
+            cbNew = RT_ALIGN_32(cbNew, 4096) + 4096;
+
+            void *pNew = RTMemRealloc(pCtx->pu8PNG, cbNew);
+            if (!pNew)
+            {
+                pCtx->rc = VERR_NO_MEMORY;
+                return;
+            }
+            
+            pCtx->pu8PNG = (uint8_t *)pNew;
+            pCtx->cbAllocated = cbNew;
+        }
+
+        memcpy(pCtx->pu8PNG + pCtx->cbPNG, p, cb);
+        pCtx->cbPNG += cb;
+    }
+}
+
+static void PNGAPI png_output_flush_fn(png_structp png_ptr)
+{
+    NOREF(png_ptr);
+    /* Do nothing. */
+}
+
 static int displayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
                           uint8_t **ppu8PNG, uint32_t *pcbPNG, uint32_t *pcxPNG, uint32_t *pcyPNG)
 {
     int rc = VINF_SUCCESS;
+
+    uint8_t *pu8Bitmap = NULL;
+    uint32_t cbBitmap = 0;
+    uint32_t cxBitmap = 0;
+    uint32_t cyBitmap = 0;
+
+    if (cx < kMaxSizePNG && cy < kMaxSizePNG)
+    {
+        /* Save unscaled screenshot. */
+        pu8Bitmap = pu8Data;
+        cbBitmap = cx * 4 * cy;
+        cxBitmap = cx;
+        cyBitmap = cy;
+    }
+    else
+    {
+        /* Large screenshot, scale. */
+        if (cx > cy)
+        {
+            cxBitmap = kMaxSizePNG;
+            cyBitmap = (kMaxSizePNG * cy) / cx;
+        }
+        else
+        {
+            cyBitmap = kMaxSizePNG;
+            cxBitmap = (kMaxSizePNG * cx) / cy;
+        }
+
+        cbBitmap = cxBitmap * 4 * cyBitmap;
+
+        pu8Bitmap = (uint8_t *)RTMemAlloc(cbBitmap);
+
+        if (pu8Bitmap)
+        {
+            uint8_t *dst = pu8Bitmap;
+            uint8_t *src = pu8Data;
+            int dstX = 0;
+            int dstY = 0;
+            int srcX = 0;
+            int srcY = 0;
+            int dstW = cxBitmap;
+            int dstH = cyBitmap;
+            int srcW = cx;
+            int srcH = cy;
+            gdImageCopyResampled (dst,
+                                  src,
+                                  dstX, dstY,
+                                  srcX, srcY,
+                                  dstW, dstH, srcW, srcH);
+        }
+        else
+        {
+            rc = VERR_NO_MEMORY;
+        }
+    }
+
+    LogFlowFunc(("%dx%d -> %dx%d\n", cx, cy, cxBitmap, cyBitmap));
+
+    if (RT_SUCCESS(rc))
+    {
+        png_bytep *row_pointers = (png_bytep *)RTMemAlloc(cyBitmap * sizeof(png_bytep));
+        if (row_pointers)
+        {
+            png_infop info_ptr = NULL;
+            png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
+                                                          png_voidp_NULL, /* error/warning context pointer */
+                                                          png_error_ptr_NULL /* error function */,
+                                                          png_error_ptr_NULL /* warning function */);
+            if (png_ptr)
+            {
+                info_ptr = png_create_info_struct(png_ptr);
+                if (info_ptr)
+                {
+                    if (!setjmp(png_jmpbuf(png_ptr)))
+                    {
+                        PNGWriteCtx ctx;
+                        ctx.pu8PNG = NULL;
+                        ctx.cbPNG = 0;
+                        ctx.cbAllocated = 0;
+                        ctx.rc = VINF_SUCCESS;
+
+                        png_set_write_fn(png_ptr,
+                                         (voidp)&ctx,
+                                         png_write_data_fn,
+                                         png_output_flush_fn);
+
+                        png_set_IHDR(png_ptr, info_ptr,
+                                     cxBitmap, cyBitmap,
+                                     8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
+                                     PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+                        png_bytep row_pointer = (png_bytep)pu8Bitmap;
+                        unsigned i = 0;
+                        for (; i < cyBitmap; i++, row_pointer += cxBitmap * 4)
+                        {
+                            row_pointers[i] = row_pointer;
+                        }
+                        png_set_rows(png_ptr, info_ptr, &row_pointers[0]);
+
+                        png_write_info(png_ptr, info_ptr);
+                        png_set_filler(png_ptr, 0, PNG_FILLER_AFTER);
+                        png_set_bgr(png_ptr);
+
+                        if (info_ptr->valid & PNG_INFO_IDAT)
+                            png_write_image(png_ptr, info_ptr->row_pointers);
+
+                        png_write_end(png_ptr, info_ptr);
+
+                        rc = ctx.rc;
+
+                        if (RT_SUCCESS(rc))
+                        {
+                            *ppu8PNG = ctx.pu8PNG;
+                            *pcbPNG = ctx.cbPNG;
+                            *pcxPNG = cxBitmap;
+                            *pcyPNG = cyBitmap;
+                            LogFlowFunc(("PNG %d bytes, bitmap %d bytes\n", ctx.cbPNG, cbBitmap));
+                        }
+                    }
+                    else
+                    {
+                        rc = VERR_GENERAL_FAILURE; /* Something within libpng. */
+                    }
+                }
+                else
+                {
+                    rc = VERR_NO_MEMORY;
+                }
+
+                png_destroy_write_struct(&png_ptr, info_ptr? &info_ptr: png_infopp_NULL);
+            }
+            else
+            {
+                rc = VERR_NO_MEMORY;
+            }
+
+            RTMemFree(row_pointers);
+        }
+        else
+        {
+            rc = VERR_NO_MEMORY;
+        }
+    }
+
+    if (pu8Bitmap && pu8Bitmap != pu8Data)
+    {
+        RTMemFree(pu8Bitmap);
+    }
+
     return rc;
+
 }
 
 DECLCALLBACK(void)
@@ -187,13 +383,13 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
 {
     Display *that = static_cast<Display*>(pvUser);
 
-    /* 32bpp small image with maximum dimension = 64 pixels. */
+    /* 32bpp small RGB image. */
     uint8_t *pu8Thumbnail = NULL;
     uint32_t cbThumbnail = 0;
     uint32_t cxThumbnail = 0;
     uint32_t cyThumbnail = 0;
 
-    /* PNG screenshot with maximum dimension = 1024 pixels. */
+    /* PNG screenshot. */
     uint8_t *pu8PNG = NULL;
     uint32_t cbPNG = 0;
     uint32_t cxPNG = 0;
@@ -227,9 +423,26 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
         LogFunc(("Failed to get VM pointer 0x%x\n", pVM.rc()));
     }
 
-    /* Regardless of rc, save what is available */
+    /* Regardless of rc, save what is available:
+     * Data format:
+     *    uint32_t cBlocks;
+     *    [blocks]
+     *
+     *  Each block is:
+     *    uint32_t cbBlock;        if 0 - no 'block data'.
+     *    uint32_t typeOfBlock;    0 - 32bpp RGB bitmap, 1 - PNG, ignored if 'cbBlock' is 0.
+     *    [block data]
+     *
+     *  Block data for bitmap and PNG:
+     *    uint32_t cx;
+     *    uint32_t cy;
+     *    [image data]
+     */
+    SSMR3PutU32(pSSM, 2); /* Write thumbnail and PNG screenshot. */
 
-    SSMR3PutU32(pSSM, cbThumbnail);
+    /* First block. */
+    SSMR3PutU32(pSSM, cbThumbnail + 2 * sizeof (uint32_t));
+    SSMR3PutU32(pSSM, 0); /* Block type: thumbnail. */
 
     if (cbThumbnail)
     {
@@ -238,7 +451,9 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
         SSMR3PutMem(pSSM, pu8Thumbnail, cbThumbnail);
     }
 
-    SSMR3PutU32(pSSM, cbPNG);
+    /* Second block. */
+    SSMR3PutU32(pSSM, cbPNG + 2 * sizeof (uint32_t));
+    SSMR3PutU32(pSSM, 1); /* Block type: png. */
 
     if (cbPNG)
     {
@@ -249,6 +464,42 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
 
     RTMemFree(pu8PNG);
     RTMemFree(pu8Thumbnail);
+}
+
+DECLCALLBACK(int)
+Display::displaySSMLoadScreenshot(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPass)
+{
+    Display *that = static_cast<Display*>(pvUser);
+
+    if (uVersion != sSSMDisplayScreenshotVer)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+
+    /* Skip data. */
+    uint32_t cBlocks;
+    int rc = SSMR3GetU32(pSSM, &cBlocks);
+    AssertRCReturn(rc, rc);
+
+    for (uint32_t i = 0; i < cBlocks; i++)
+    {
+        uint32_t cbBlock;
+        rc = SSMR3GetU32(pSSM, &cbBlock);
+        AssertRCBreak(rc);
+
+        uint32_t typeOfBlock;
+        rc = SSMR3GetU32(pSSM, &typeOfBlock);
+        AssertRCBreak(rc);
+
+        LogFlowFunc(("[%d] type %d, size %d bytes\n", i, typeOfBlock, cbBlock));
+
+        if (cbBlock != 0)
+        {
+            rc = SSMR3Skip(pSSM, cbBlock);
+            AssertRCBreak(rc);
+        }
+    }
+
+    return rc;
 }
 
 /**
@@ -419,7 +670,7 @@ int Display::registerSSM(PVM pVM)
     rc = SSMR3RegisterExternal(pVM, "DisplayScreenshot", 0 /*uInstance*/, sSSMDisplayScreenshotVer, 0 /*cbGuess*/,
                                NULL, NULL, NULL,
                                NULL, displaySSMSaveScreenshot, NULL,
-                               NULL, NULL, NULL, this);
+                               NULL, displaySSMLoadScreenshot, NULL, this);
 
     AssertRCReturn(rc, rc);
 #endif
