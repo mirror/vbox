@@ -2171,18 +2171,20 @@ void VBoxConsoleWnd::prepareStorageMenu()
     const CMediumAttachmentVector &attachments = mSession.GetMachine().GetMediumAttachments();
     foreach (const CMediumAttachment &attachment, attachments)
     {
-        if (attachment.GetType() == deviceType)
+        CStorageController controller = attachment.GetController();
+        if (   !controller.isNull()
+            && (attachment.GetType() == deviceType))
         {
             /* Attachment menu item */
             QMenu *attachmentMenu = 0;
             if (menu->menuAction()->data().toInt() > 1)
             {
                 attachmentMenu = new QMenu (menu);
-                attachmentMenu->setTitle (QString ("%1 (%2)").arg (attachment.GetController().GetName())
-                                          .arg (vboxGlobal().toString (StorageSlot (attachment.GetController().GetBus(),
+                attachmentMenu->setTitle (QString ("%1 (%2)").arg (controller.GetName())
+                                          .arg (vboxGlobal().toString (StorageSlot (controller.GetBus(),
                                                                                     attachment.GetPort(),
                                                                                     attachment.GetDevice()))));
-                switch (attachment.GetController().GetBus())
+                switch (controller.GetBus())
                 {
                     case KStorageBus_IDE:
                         attachmentMenu->setIcon (QIcon (":/ide_16px.png")); break;
@@ -2246,7 +2248,7 @@ void VBoxConsoleWnd::prepareStorageMenu()
                     QAction *mountMediumAction = new QAction (VBoxMedium (medium, mediumType).name(), attachmentMenu);
                     mountMediumAction->setCheckable (true);
                     mountMediumAction->setChecked (!currentMedium.isNull() && medium.GetId() == currentId);
-                    mountMediumAction->setData (QVariant::fromValue (MountTarget (attachment.GetController().GetName(),
+                    mountMediumAction->setData (QVariant::fromValue (MountTarget (controller.GetName(),
                                                                                   attachment.GetPort(),
                                                                                   attachment.GetDevice(),
                                                                                   medium.GetId())));
@@ -2261,7 +2263,7 @@ void VBoxConsoleWnd::prepareStorageMenu()
             /* Virtual Media Manager action */
             QAction *callVMMAction = new QAction (attachmentMenu);
             callVMMAction->setIcon (QIcon (":/diskimage_16px.png"));
-            callVMMAction->setData (QVariant::fromValue (MountTarget (attachment.GetController().GetName(),
+            callVMMAction->setData (QVariant::fromValue (MountTarget (controller.GetName(),
                                                                       attachment.GetPort(),
                                                                       attachment.GetDevice(),
                                                                       QString (""),
@@ -2275,7 +2277,7 @@ void VBoxConsoleWnd::prepareStorageMenu()
             /* Unmount Medium action */
             QAction *unmountMediumAction = new QAction (attachmentMenu);
             unmountMediumAction->setEnabled (!currentMedium.isNull());
-            unmountMediumAction->setData (QVariant::fromValue (MountTarget (attachment.GetController().GetName(),
+            unmountMediumAction->setData (QVariant::fromValue (MountTarget (controller.GetName(),
                                                                             attachment.GetPort(),
                                                                             attachment.GetDevice())));
             connect (unmountMediumAction, SIGNAL (triggered (bool)), this, SLOT (mountMedium()));
