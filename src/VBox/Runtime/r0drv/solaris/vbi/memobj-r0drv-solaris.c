@@ -225,9 +225,9 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
         return VERR_NO_MEMORY;
 
     int fPageAccess = S_READ;
-    if (fPageAccess & RTMEM_PROT_WRITE)
+    if (fAccess & RTMEM_PROT_WRITE)
         fPageAccess = S_WRITE;
-    if (fPageAccess & RTMEM_PROT_EXEC)
+    if (fAccess & RTMEM_PROT_EXEC)
         fPageAccess = S_EXEC;
     void *pvPageList = NULL;
 
@@ -257,9 +257,9 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, 
         return VERR_NO_MEMORY;
 
     int fPageAccess = S_READ;
-    if (fPageAccess & RTMEM_PROT_WRITE)
+    if (fAccess & RTMEM_PROT_WRITE)
         fPageAccess = S_WRITE;
-    if (fPageAccess & RTMEM_PROT_EXEC)
+    if (fAccess & RTMEM_PROT_EXEC)
         fPageAccess = S_EXEC;
     void *pvPageList = NULL;
     int rc = vbi_lock_va((caddr_t)pv, cb, fPageAccess, &pvPageList);
