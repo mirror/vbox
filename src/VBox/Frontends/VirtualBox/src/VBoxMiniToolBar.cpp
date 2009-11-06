@@ -371,6 +371,9 @@ void VBoxMiniToolBar::recreateMask()
         default:
             break;
     }
+    /* Make sure any old mask is removed first */
+    clearMask();
+    /* Set the new mask */
     QPolygon polygon;
     polygon.setPoints (4, points);
     setMask (polygon);
