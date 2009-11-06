@@ -2100,6 +2100,11 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         /* first pass: */
         LogFlowThisFunc(("1: Checking hard disk merge prerequisites...\n"));
 
+        // go thru the attachments of the snapshot machine
+        // (the media in here point to the disk states _before_ the snapshot
+        // was taken, i.e. the state we're restoring to; for each such
+        // medium, we will need to merge it with its one and only child (the
+        // diff image holding the changes written after the snapshot was taken)
         for (MediaData::AttachmentList::iterator it = pSnapMachine->mMediaData->mAttachments.begin();
             it != pSnapMachine->mMediaData->mAttachments.end();
             ++it)
@@ -2110,46 +2115,59 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             {
                 Assert(pAttach->medium());
                 ComObjPtr<Medium> pHD = pAttach->medium();
-                // do not lock, prepareDiscared() has a write lock which will hang otherwise
+                        // do not lock, prepareDiscared() has a write lock which will hang otherwise
 
                 Medium::MergeChain *chain = NULL;
 
-                /* needs to be discarded (merged with the child if any), check
-                * prerequisites */
+                // needs to be discarded (merged with the child if any), check prerequisites
                 rc = pHD->prepareDiscard(chain);
                 CheckComRCThrowRC(rc);
 
-                if (pHD->parent().isNull() && chain != NULL)
+                // for simplicity, we merge pHd onto its child (forward merge), not the
+                // other way round, because that saves us from updating the attachments
+                // for the machine that follows the snapshot (next snapshot or real machine),
+                // unless it's a base image:
+
+                if (    pHD->parent().isNull()
+                     && chain != NULL
+                   )
                 {
-                    /* it's a base hard disk so it will be a backward merge of its
-                    * only child to it (prepareDiscard() does necessary checks). We
-                    * need then to update the attachment that refers to the child
-                    * to refer to the parent instead. Don't forget to detach the
-                    * child (otherwise mergeTo() called by discard() will assert
-                    * because it will be going to delete the child) */
+                    // parent is null -> this disk is a base hard disk: we will
+                    // then do a backward merge, i.e. merge its only child onto
+                    // the base disk; prepareDiscard() does necessary checks.
+                    // So here we need then to update the attachment that refers
+                    // to the child and have it point to the parent instead
 
                     /* The below assert would be nice but I don't want to move
-                    * Medium::MergeChain to the header just for that
-                    * Assert (!chain->isForward()); */
+                     * Medium::MergeChain to the header just for that
+                     * Assert (!chain->isForward()); */
 
+                    // prepareDiscard() should have raised an error already
+                    // if there was more than one child
                     Assert(pHD->children().size() == 1);
 
-                    ComObjPtr<Medium> replaceHd = pHD->children().front();
+                    ComObjPtr<Medium> pReplaceHD = pHD->children().front();
 
-                    const Guid *pReplaceMachineId = replaceHd->getFirstMachineBackrefId();
-                    Assert(pReplaceMachineId  && *pReplaceMachineId == mData->mUuid);
+                    const Guid *pReplaceMachineId = pReplaceHD->getFirstMachineBackrefId();
+                    Assert(pReplaceMachineId);
+                    Assert(*pReplaceMachineId == mData->mUuid);
 
                     Guid snapshotId;
-                    const Guid *pSnapshotId = replaceHd->getFirstMachineBackrefSnapshotId();
+                    const Guid *pSnapshotId = pReplaceHD->getFirstMachineBackrefSnapshotId();
                     if (pSnapshotId)
                         snapshotId = *pSnapshotId;
 
                     HRESULT rc2 = S_OK;
 
-                    /* adjust back references */
-                    rc2 = replaceHd->detachFrom(mData->mUuid, snapshotId);
-                    AssertComRC(rc2);
+                    attachLock.unlock();
 
+                    // First we must detach the child (otherwise mergeTo() called
+                    // by discard() will assert because it will be going to delete
+                    // the child), so adjust the backreferences:
+                    // 1) detach the first child hard disk
+                    rc2 = pReplaceHD->detachFrom(mData->mUuid, snapshotId);
+                    AssertComRC(rc2);
+                    // 2) attach to machine and snapshot
                     rc2 = pHD->attachTo(mData->mUuid, snapshotId);
                     AssertComRC(rc2);
 
@@ -2157,7 +2175,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                     if (snapshotId.isEmpty())
                     {
                         /* in current state */
-                        AssertBreak(pAttach = findAttachment(mMediaData->mAttachments, replaceHd));
+                        AssertBreak(pAttach = findAttachment(mMediaData->mAttachments, pReplaceHD));
                     }
                     else
                     {
@@ -2168,16 +2186,15 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
                         /* don't lock the snapshot; cannot be modified outside */
                         MediaData::AttachmentList &snapAtts = snapshot->getSnapshotMachine()->mMediaData->mAttachments;
-                        AssertBreak(pAttach = findAttachment(snapAtts, replaceHd));
+                        AssertBreak(pAttach = findAttachment(snapAtts, pReplaceHD));
                     }
 
-                    attachLock.unlock();
                     AutoWriteLock attLock(pAttach);
                     pAttach->updateMedium(pHD, false /* aImplicit */);
 
                     toDiscard.push_back(MediumDiscardRec(pHD,
                                                          chain,
-                                                         replaceHd,
+                                                         pReplaceHD,
                                                          pAttach,
                                                          snapshotId));
                     continue;
