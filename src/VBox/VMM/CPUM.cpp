@@ -460,8 +460,8 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        //| X86_CPUID_FEATURE_ECX_TPRUPDATE
                                        /* ECX Bit 21 - x2APIC support - not yet. */
                                        // | X86_CPUID_FEATURE_ECX_X2APIC
-                                       /* ECX Bit 23 - POPCOUNT instruction. */
-                                       //| X86_CPUID_FEATURE_ECX_POPCOUNT
+                                       /* ECX Bit 23 - POPCNT instruction. */
+                                       //| X86_CPUID_FEATURE_ECX_POPCNT
                                        | 0;
 
     /* ASSUMES that this is ALWAYS the AMD define feature set if present. */
@@ -506,6 +506,8 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        //| X86_CPUID_AMD_FEATURE_ECX_MISALNSSE
                                        //| X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF
                                        //| X86_CPUID_AMD_FEATURE_ECX_OSVW
+                                       //| X86_CPUID_AMD_FEATURE_ECX_IBS
+                                       //| X86_CPUID_AMD_FEATURE_ECX_SSE5
                                        //| X86_CPUID_AMD_FEATURE_ECX_SKINIT
                                        //| X86_CPUID_AMD_FEATURE_ECX_WDT
                                        | 0;
@@ -1010,13 +1012,13 @@ static void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
      * Save a good portion of the raw CPU IDs as well as they may come in
      * handy when validating features for raw mode.
      */
-    CPUMCPUID   aRawStd[8];
+    CPUMCPUID   aRawStd[16];
     for (unsigned i = 0; i < RT_ELEMENTS(aRawStd); i++)
         ASMCpuId(i, &aRawStd[i].eax, &aRawStd[i].ebx, &aRawStd[i].ecx, &aRawStd[i].edx);
     SSMR3PutU32(pSSM, RT_ELEMENTS(aRawStd));
     SSMR3PutMem(pSSM, &aRawStd[0], sizeof(aRawStd));
 
-    CPUMCPUID   aRawExt[16];
+    CPUMCPUID   aRawExt[32];
     for (unsigned i = 0; i < RT_ELEMENTS(aRawExt); i++)
         ASMCpuId(i | UINT32_C(0x80000000), &aRawExt[i].eax, &aRawExt[i].ebx, &aRawExt[i].ecx, &aRawExt[i].edx);
     SSMR3PutU32(pSSM, RT_ELEMENTS(aRawExt));
@@ -1035,6 +1037,184 @@ static void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
 static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
 {
     AssertMsgReturn(uVersion >= CPUM_SAVED_STATE_VERSION, ("%u\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+
+    /*
+     * Define a bunch of macros for simplifying the code.
+     */
+    /* Generic expression + failure message. */
+#define CPUID_CHECK_RET(expr, fmt) \
+    do { \
+        if (!(expr)) \
+        { \
+            char *pszMsg = RTStrAPrintf2 fmt; /* lack of variadict macros sucks */ \
+            if (fStrictCpuIdChecks) \
+            { \
+                int rc = SSMR3SetLoadError(pSSM, VERR_SSM_LOAD_CPUID_MISMATCH, RT_SRC_POS, "%s", pszMsg); \
+                RTStrFree(pszMsg); \
+                return rc; \
+            } \
+            LogRel(("CPUM: %s\n", pszMsg)); \
+            RTStrFree(pszMsg); \
+        } \
+    } while (0)
+#define CPUID_CHECK_WRN(expr, fmt) \
+    do { \
+        if (!(expr)) \
+            LogRel(fmt); \
+    } while (0)
+
+    /* For comparing two values and bitch if they differs. */
+#define CPUID_CHECK2_RET(what, host, saved) \
+    do { \
+        if ((host) != (saved)) \
+        { \
+            if (fStrictCpuIdChecks) \
+                return SSMR3SetLoadError(pSSM, VERR_SSM_LOAD_CPUID_MISMATCH, RT_SRC_POS, \
+                                         N_(#what " mismatch: host=%#x saved=%#x"), (host), (saved)); \
+            LogRel(("CPUM: " #what " differs: host=%#x saved=%#x\n", (host), (saved))); \
+        } \
+    } while (0)
+#define CPUID_CHECK2_WRN(what, host, saved) \
+    do { \
+        if ((host) != (saved)) \
+            LogRel(("CPUM: " #what " differs: host=%#x saved=%#x\n", (host), (saved))); \
+    } while (0)
+
+    /* For checking raw cpu features (raw mode). */
+#define CPUID_RAW_FEATURE_RET(set, reg, bit) \
+    do { \
+        if ((aHostRaw##set [1].reg & bit) != (aRaw##set [1].reg & bit)) \
+        { \
+            if (fStrictCpuIdChecks) \
+                return SSMR3SetLoadError(pSSM, VERR_SSM_LOAD_CPUID_MISMATCH, RT_SRC_POS, \
+                                         N_(#bit " mismatch: host=%d saved=%d"), \
+                                         aHostRaw##set [1].reg & (bit), aRaw##set [1].reg & (bit) ); \
+            LogRel(("CPUM: " #bit" differs: host=%d saved=%d\n", \
+                    aHostRaw##set [1].reg & (bit), aRaw##set [1].reg & (bit) )); \
+        } \
+    } while (0)
+#define CPUID_RAW_FEATURE_WRN(set, reg, bit) \
+    do { \
+        if ((aHostRaw##set [1].reg & bit) != (aRaw##set [1].reg & bit)) \
+            LogRel(("CPUM: " #bit" differs: host=%d saved=%d\n", \
+                    aHostRaw##set [1].reg & (bit), aRaw##set [1].reg & (bit) )); \
+    } while (0)
+#define CPUID_RAW_FEATURE_IGN(set, reg, bit) do { } while (0)
+
+    /* For checking guest features. */
+#define CPUID_GST_FEATURE_RET(set, reg, bit) \
+    do { \
+        if (    (aGuestCpuId##set [1].reg & bit) \
+            && !(aHostRaw##set [1].reg & bit) \
+            && !(aHostOverride##set [1].reg & bit) \
+            && !(aGuestOverride##set [1].reg & bit) \
+           ) \
+        { \
+            if (fStrictCpuIdChecks) \
+                return SSMR3SetLoadError(pSSM, VERR_SSM_LOAD_CPUID_MISMATCH, RT_SRC_POS, \
+                                         N_(#bit " is not supported by the host but has already exposed to the guest")); \
+            LogRel(("CPUM: " #bit " is not supported by the host but has already exposed to the guest\n")); \
+        } \
+    } while (0)
+#define CPUID_GST_FEATURE_WRN(set, reg, bit) \
+    do { \
+        if (    (aGuestCpuId##set [1].reg & bit) \
+            && !(aHostRaw##set [1].reg & bit) \
+            && !(aHostOverride##set [1].reg & bit) \
+            && !(aGuestOverride##set [1].reg & bit) \
+           ) \
+            LogRel(("CPUM: " #bit " is not supported by the host but has already exposed to the guest\n")); \
+    } while (0)
+#define CPUID_GST_FEATURE_EMU(set, reg, bit) \
+    do { \
+        if (    (aGuestCpuId##set [1].reg & bit) \
+            && !(aHostRaw##set [1].reg & bit) \
+            && !(aHostOverride##set [1].reg & bit) \
+            && !(aGuestOverride##set [1].reg & bit) \
+           ) \
+            LogRel(("CPUM: Warning - " #bit " is not supported by the host but already exposed to the guest. This may impact performance.\n")); \
+    } while (0)
+#define CPUID_GST_FEATURE_IGN(set, reg, bit) do { } while (0)
+
+    /* For checking guest features if AMD guest CPU. */
+#define CPUID_GST_AMD_FEATURE_RET(set, reg, bit) \
+    do { \
+        if (    (aGuestCpuId##set [1].reg & bit) \
+            &&  fGuestAmd \
+            && (!fGuestAmd || !(aHostRaw##set [1].reg & bit)) \
+            && !(aHostOverride##set [1].reg & bit) \
+            && !(aGuestOverride##set [1].reg & bit) \
+           ) \
+        { \
+            if (fStrictCpuIdChecks) \
+                return SSMR3SetLoadError(pSSM, VERR_SSM_LOAD_CPUID_MISMATCH, RT_SRC_POS, \
+                                         N_(#bit " is not supported by the host but has already exposed to the guest")); \
+            LogRel(("CPUM: " #bit " is not supported by the host but has already exposed to the guest\n")); \
+        } \
+    } while (0)
+#define CPUID_GST_AMD_FEATURE_WRN(set, reg, bit) \
+    do { \
+        if (    (aGuestCpuId##set [1].reg & bit) \
+            &&  fGuestAmd \
+            && (!fGuestAmd || !(aHostRaw##set [1].reg & bit)) \
+            && !(aHostOverride##set [1].reg & bit) \
+            && !(aGuestOverride##set [1].reg & bit) \
+           ) \
+            LogRel(("CPUM: " #bit " is not supported by the host but has already exposed to the guest\n")); \
+    } while (0)
+#define CPUID_GST_AMD_FEATURE_EMU(set, reg, bit) \
+    do { \
+        if (    (aGuestCpuId##set [1].reg & bit) \
+            &&  fGuestAmd \
+            && (!fGuestAmd || !(aHostRaw##set [1].reg & bit)) \
+            && !(aHostOverride##set [1].reg & bit) \
+            && !(aGuestOverride##set [1].reg & bit) \
+           ) \
+            LogRel(("CPUM: Warning - " #bit " is not supported by the host but already exposed to the guest. This may impact performance.\n")); \
+    } while (0)
+#define CPUID_GST_AMD_FEATURE_IGN(set, reg, bit) do { } while (0)
+
+    /* For checking AMD features which have a corresponding bit in the standard
+       range.  (Intel defines very few bits in the extended feature sets.) */
+#define CPUID_GST_FEATURE2_RET(reg, ExtBit, StdBit) \
+    do { \
+        if (    (aGuestCpuIdExt [1].reg    & (ExtBit)) \
+            && !(fHostAmd  \
+                 ? aHostRawExt[1].reg      & (ExtBit) \
+                 : aHostRawStd[1].reg      & (StdBit)) \
+            && !(aHostOverrideExt[1].reg   & (ExtBit)) \
+            && !(aGuestOverrideExt[1].reg  & (ExtBit)) \
+           ) \
+        { \
+            if (fStrictCpuIdChecks) \
+                return SSMR3SetLoadError(pSSM, VERR_SSM_LOAD_CPUID_MISMATCH, RT_SRC_POS, \
+                                         N_(#ExtBit " is not supported by the host but has already exposed to the guest")); \
+            LogRel(("CPUM: " #ExtBit " is not supported by the host but has already exposed to the guest\n")); \
+        } \
+    } while (0)
+#define CPUID_GST_FEATURE2_WRN(reg, ExtBit, StdBit) \
+    do { \
+        if (    (aGuestCpuIdExt [1].reg    & (ExtBit)) \
+            && !(fHostAmd  \
+                 ? aHostRawExt[1].reg      & (ExtBit) \
+                 : aHostRawStd[1].reg      & (StdBit)) \
+            && !(aHostOverrideExt[1].reg   & (ExtBit)) \
+            && !(aGuestOverrideExt[1].reg  & (ExtBit)) \
+           ) \
+            LogRel(("CPUM: " #ExtBit " is not supported by the host but has already exposed to the guest\n")); \
+    } while (0)
+#define CPUID_GST_FEATURE2_EMU(reg, ExtBit, StdBit) \
+    do { \
+        if (    (aGuestCpuIdExt [1].reg    & (ExtBit)) \
+            && !(fHostAmd  \
+                 ? aHostRawExt[1].reg      & (ExtBit) \
+                 : aHostRawStd[1].reg      & (StdBit)) \
+            && !(aHostOverrideExt[1].reg   & (ExtBit)) \
+            && !(aGuestOverrideExt[1].reg  & (ExtBit)) \
+           ) \
+            LogRel(("CPUM: Warning - " #ExtBit " is not supported by the host but already exposed to the guest. This may impact performance.\n")); \
+    } while (0)
+#define CPUID_GST_FEATURE2_IGN(reg, ExtBit, StdBit) do { } while (0)
 
     /*
      * Load them into stack buffers first.
@@ -1064,14 +1244,14 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     rc = SSMR3GetMem(pSSM, &GuestCpuIdDef, sizeof(GuestCpuIdDef));
     AssertRCReturn(rc, rc);
 
-    CPUMCPUID   aRawStd[8];
+    CPUMCPUID   aRawStd[16];
     uint32_t    cRawStd;
     rc = SSMR3GetU32(pSSM, &cRawStd); AssertRCReturn(rc, rc);
     if (cRawStd > RT_ELEMENTS(aRawStd))
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     SSMR3GetMem(pSSM, &aRawStd[0], cRawStd * sizeof(aRawStd[0]));
 
-    CPUMCPUID   aRawExt[16];
+    CPUMCPUID   aRawExt[32];
     uint32_t    cRawExt;
     rc = SSMR3GetU32(pSSM, &cRawExt); AssertRCReturn(rc, rc);
     if (cRawExt > RT_ELEMENTS(aRawExt))
@@ -1103,26 +1283,451 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     /*
      * Get the raw CPU IDs for the current host.
      */
-    CPUMCPUID   aHostRawStd[8];
+    CPUMCPUID   aHostRawStd[16];
     for (unsigned i = 0; i < RT_ELEMENTS(aHostRawStd); i++)
         ASMCpuId(i, &aHostRawStd[i].eax, &aHostRawStd[i].ebx, &aHostRawStd[i].ecx, &aHostRawStd[i].edx);
 
-    CPUMCPUID   aHostRawExt[16];
+    CPUMCPUID   aHostRawExt[32];
     for (unsigned i = 0; i < RT_ELEMENTS(aHostRawExt); i++)
         ASMCpuId(i | UINT32_C(0x80000000), &aHostRawExt[i].eax, &aHostRawExt[i].ebx, &aHostRawExt[i].ecx, &aHostRawExt[i].edx);
 
     /*
-     * Now for the fun part...
+     * Get the host and guest overrides so we don't reject the state because
+     * some feature was enabled thru these interfaces.
+     * Note! We currently only need the feature leafs, so skip rest.
      */
+    PCFGMNODE   pOverrideCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM/CPUID");
+    CPUMCPUID   aGuestOverrideStd[2];
+    memcpy(&aGuestOverrideStd[0], &aHostRawStd[0], sizeof(aGuestOverrideStd));
+    cpumR3CpuIdInitLoadOverrideSet(UINT32_C(0x00000000), &aGuestOverrideStd[0], RT_ELEMENTS(aGuestOverrideStd), pOverrideCfg);
 
+    CPUMCPUID   aGuestOverrideExt[2];
+    memcpy(&aGuestOverrideExt[0], &aHostRawExt[0], sizeof(aGuestOverrideExt));
+    cpumR3CpuIdInitLoadOverrideSet(UINT32_C(0x80000000), &aGuestOverrideExt[0], RT_ELEMENTS(aGuestOverrideExt), pOverrideCfg);
+
+    pOverrideCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM/HostCPUID");
+    CPUMCPUID   aHostOverrideStd[2];
+    memcpy(&aHostOverrideStd[0], &aHostRawStd[0], sizeof(aHostOverrideStd));
+    cpumR3CpuIdInitLoadOverrideSet(UINT32_C(0x00000000), &aHostOverrideStd[0], RT_ELEMENTS(aHostOverrideStd), pOverrideCfg);
+
+    CPUMCPUID   aHostOverrideExt[2];
+    memcpy(&aHostOverrideExt[0], &aHostRawExt[0], sizeof(aHostOverrideExt));
+    cpumR3CpuIdInitLoadOverrideSet(UINT32_C(0x80000000), &aHostOverrideExt[0], RT_ELEMENTS(aHostOverrideExt), pOverrideCfg);
+
+    /*
+     * This can be skipped.
+     */
+    bool fStrictCpuIdChecks;
+    CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "StrictCpuIdChecks", &fStrictCpuIdChecks, false);
+
+
+
+    /*
+     * For raw-mode we'll require that the CPUs are very similar since we don't
+     * intercept CPUID instructions for user mode applications.
+     */
+    if (!HWACCMIsEnabled(pVM))
+    {
+        /* CPUID(0) */
+        CPUID_CHECK_RET(   aHostRawStd[0].ebx == aRawStd[0].ebx
+                        && aHostRawStd[0].ecx == aRawStd[0].ecx
+                        && aHostRawStd[0].edx == aRawStd[0].edx,
+                        (N_("CPU vendor mismatch: host='%.4s%.4s%.4s' saved='%.4s%.4s%.4s'"),
+                         &aHostRawStd[0].ebx, &aHostRawStd[0].edx, &aHostRawStd[0].ecx,
+                         &aRawStd[0].ebx, &aRawStd[0].edx, &aRawStd[0].ecx));
+        CPUID_CHECK2_WRN("Std CPUID max leaf",   aHostRawStd[0].eax, aRawStd[0].eax);
+        CPUID_CHECK2_WRN("Reserved bits 15:14", (aHostRawExt[1].eax >> 14) & 3, (aRawExt[1].eax >> 14) & 3);
+        CPUID_CHECK2_WRN("Reserved bits 31:28",  aHostRawExt[1].eax >> 28,       aRawExt[1].eax >> 28);
+
+        bool const fIntel = ASMIsIntelCpuEx(aRawStd[0].ebx, aRawStd[0].ecx, aRawStd[0].edx);
+
+        /* CPUID(1).eax */
+        CPUID_CHECK2_RET("CPU family",          ASMGetCpuFamily(aHostRawStd[1].eax),        ASMGetCpuFamily(aRawStd[1].eax));
+        CPUID_CHECK2_RET("CPU model",           ASMGetCpuModel(aHostRawStd[1].eax, fIntel), ASMGetCpuModel(aRawStd[1].eax, fIntel));
+        CPUID_CHECK2_WRN("CPU type",            (aHostRawStd[1].eax >> 12) & 3,             (aRawStd[1].eax >> 12) & 3 );
+
+        /* CPUID(1).ebx - completely ignore CPU count and APIC ID. */
+        CPUID_CHECK2_RET("CPU brand ID",         aHostRawStd[1].ebx & 0xff,                 aRawStd[1].ebx & 0xff);
+        CPUID_CHECK2_WRN("CLFLUSH chunk count", (aHostRawStd[1].ebx >> 8) & 0xff,           (aRawStd[1].ebx >> 8) & 0xff);
+
+        /* CPUID(1).ecx */
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE3);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_PCLMUL);
+        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_DTES64);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_MONITOR);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_CPLDS);
+        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_VMX);
+        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_SMX);
+        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_EST);
+        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_TM2);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSSE3);
+        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_CNTXID);
+        CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(11) /*reserved*/ );
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_FMA);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_CX16);
+        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_TPRUPDATE);
+        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_PDCM);
+        CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(16) /*reserved*/);
+        CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(17) /*reserved*/);
+        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_DCA);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE4_1);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE4_2);
+        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_X2APIC);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_MOVBE);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_POPCNT);
+        CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(24) /*reserved*/);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_AES);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_XSAVE);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_OSXSAVE);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_AVX);
+        CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(29) /*reserved*/);
+        CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(30) /*reserved*/);
+        CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(31) /*reserved*/);
+
+        /* CPUID(1).edx */
+        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_FPU);
+        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_VME);
+        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_DE);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PSE);
+        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_TSC);
+        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_MSR);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PAE);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_MCE);
+        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_CX8);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_APIC);
+        CPUID_RAW_FEATURE_RET(Std, edx, RT_BIT_32(10) /*reserved*/);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_SEP);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_MTRR);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PGE);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_MCA);
+        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_CMOV);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PAT);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PSE36);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PSN);
+        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_CLFSH);
+        CPUID_RAW_FEATURE_RET(Std, edx, RT_BIT_32(20) /*reserved*/);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_DS);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_ACPI);
+        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_MMX);
+        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_FXSR);
+        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_SSE);
+        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_SSE2);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_SS);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_HTT);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_TM);
+        CPUID_RAW_FEATURE_RET(Std, edx, RT_BIT_32(30) /*JMPE/IA64*/);
+        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PBE);
+
+        /* CPUID(2) - config, mostly about caches. ignore. */
+        /* CPUID(3) - processor serial number. ignore. */
+        /* CPUID(4) - config, cache and topology - takes ECX as input. ignore. */
+        /* CPUID(5) - mwait/monitor config. ignore. */
+        /* CPUID(6) - power management. ignore. */
+        /* CPUID(7) - ???. ignore. */
+        /* CPUID(8) - ???. ignore. */
+        /* CPUID(9) - DCA. ignore for now. */
+        /* CPUID(a) - PeMo info. ignore for now. */
+        /* CPUID(b) - topology info - takes ECX as input. ignore. */
+
+        /* CPUID(d) - XCR0 stuff - takes ECX as input. We only warn about the main level (ECX=0) for now. */
+        CPUID_CHECK_WRN(   aRawStd[0].eax     <  UINT32_C(0x0000000d)
+                        || aHostRawStd[0].eax >= UINT32_C(0x0000000d),
+                        ("CPUM: Standard leaf D was present on saved state host, not present on current.\n"));
+        if (   aRawStd[0].eax     >= UINT32_C(0x0000000d)
+            && aHostRawStd[0].eax >= UINT32_C(0x0000000d))
+        {
+            CPUID_CHECK2_WRN("Valid low XCR0 bits",             aHostRawStd[0xd].eax, aRawStd[0xd].eax);
+            CPUID_CHECK2_WRN("Valid high XCR0 bits",            aHostRawStd[0xd].edx, aRawStd[0xd].edx);
+            CPUID_CHECK2_WRN("Current XSAVE/XRSTOR area size",  aHostRawStd[0xd].ebx, aRawStd[0xd].ebx);
+            CPUID_CHECK2_WRN("Max XSAVE/XRSTOR area size",      aHostRawStd[0xd].ecx, aRawStd[0xd].ecx);
+        }
+
+        /* CPUID(0x80000000) - same as CPUID(0) except for eax.
+           Note! Intel have/is marking many of the fields here as reserved. We
+                 will verify them as if it's an AMD CPU. */
+        CPUID_CHECK_RET(   (aHostRawExt[0].eax >= UINT32_C(0x80000001) && aHostRawExt[0].eax <= UINT32_C(0x8000007f))
+                        || !(aRawExt[0].eax    >= UINT32_C(0x80000001) && aRawExt[0].eax     <= UINT32_C(0x8000007f)),
+                        (N_("Extended leafs was present on saved state host, but is missing on the current\n")));
+        if (aRawExt[0].eax >= UINT32_C(0x80000001) && aRawExt[0].eax     <= UINT32_C(0x8000007f))
+        {
+            CPUID_CHECK_RET(   aHostRawExt[0].ebx == aRawExt[0].ebx
+                            && aHostRawExt[0].ecx == aRawExt[0].ecx
+                            && aHostRawExt[0].edx == aRawExt[0].edx,
+                            (N_("CPU vendor mismatch: host='%.4s%.4s%.4s' saved='%.4s%.4s%.4s'"),
+                             &aHostRawExt[0].ebx, &aHostRawExt[0].edx, &aHostRawExt[0].ecx,
+                             &aRawExt[0].ebx,     &aRawExt[0].edx,     &aRawExt[0].ecx));
+            CPUID_CHECK2_WRN("Ext CPUID max leaf",   aHostRawExt[0].eax, aRawExt[0].eax);
+
+            /* CPUID(0x80000001).eax - same as CPUID(0).eax. */
+            CPUID_CHECK2_RET("CPU family",          ASMGetCpuFamily(aHostRawExt[1].eax),        ASMGetCpuFamily(aRawExt[1].eax));
+            CPUID_CHECK2_RET("CPU model",           ASMGetCpuModel(aHostRawExt[1].eax, fIntel), ASMGetCpuModel(aRawExt[1].eax, fIntel));
+            CPUID_CHECK2_WRN("CPU type",            (aHostRawExt[1].eax >> 12) & 3, (aRawExt[1].eax >> 12) & 3 );
+            CPUID_CHECK2_WRN("Reserved bits 15:14", (aHostRawExt[1].eax >> 14) & 3, (aRawExt[1].eax >> 14) & 3 );
+            CPUID_CHECK2_WRN("Reserved bits 31:28",  aHostRawExt[1].eax >> 28, aRawExt[1].eax >> 28);
+
+            /* CPUID(0x80000001).ebx - Brand ID (maybe), just warn if things differs. */
+            CPUID_CHECK2_WRN("CPU BrandID",          aHostRawExt[1].ebx & 0xffff, aRawExt[1].ebx & 0xffff);
+            CPUID_CHECK2_WRN("Reserved bits 16:27", (aHostRawExt[1].ebx >> 16) & 0xfff, (aRawExt[1].ebx >> 16) & 0xfff);
+            CPUID_CHECK2_WRN("PkgType",             (aHostRawExt[1].ebx >> 28) &   0xf, (aRawExt[1].ebx >> 28) &   0xf);
+
+            /* CPUID(0x80000001).ecx */
+            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF);
+            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_CMPL);
+            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SVM);
+            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_EXT_APIC);
+            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_CR8L);
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_ABM);
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SSE4A);
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_MISALNSSE);
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF);
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_OSVW);
+            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_IBS);
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SSE5);
+            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SKINIT);
+            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_WDT);
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(14));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(15));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(16));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(17));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(18));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(19));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(20));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(21));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(22));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(23));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(24));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(25));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(26));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(27));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(28));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(29));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(30));
+            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(31));
+
+            /* CPUID(0x80000001).edx */
+            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_FPU);
+            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_VME);
+            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_DE);
+            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PSE);
+            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_TSC);
+            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_MSR);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PAE);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_MCE);
+            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_CX8);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_APIC);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(10) /*reserved*/);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_SEP);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_MTRR);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PGE);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_MCA);
+            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_CMOV);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PAT);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PSE36);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(18) /*reserved*/);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(19) /*reserved*/);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_NX);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(21) /*reserved*/);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_AXMMX);
+            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_MMX);
+            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_FXSR);
+            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_FFXSR);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PAGE1GB);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_RDTSCP);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(28) /*reserved*/);
+            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_LONG_MODE);
+            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX);
+            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_3DNOW);
+
+            /** @todo verify the rest as well. */
+        }
+    }
+
+
+
+    /*
+     * Verify that we can support the features already exposed to the guest on
+     * this host.
+     *
+     * Most of the features we're emulating requires intercepting instruction
+     * and doing it the slow way, so there is no need to warn when they aren't
+     * present in the host CPU.  Thus we use IGN instead of EMU on these.
+     *
+     * Trailing comments:
+     *      "EMU"  - Possible to emulate, could be lots of work and very slow.
+     *      "EMU?" - Can this be emulated?
+     */
+    /* CPUID(1).ecx */
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE3);    // -> EMU
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_PCLMUL);  // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_DTES64);  // -> EMU?
+    CPUID_GST_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_MONITOR);
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_CPLDS);   // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_VMX);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SMX);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_EST);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_TM2);     // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSSE3);   // -> EMU
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_CNTXID);  // -> EMU
+    CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(11) /*reserved*/ );
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_FMA);     // -> EMU? what's this?
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_CX16);    // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_TPRUPDATE);//-> EMU
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_PDCM);    // -> EMU
+    CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(16) /*reserved*/);
+    CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(17) /*reserved*/);
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_DCA);     // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE4_1);  // -> EMU
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE4_2);  // -> EMU
+    CPUID_GST_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_X2APIC);
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_MOVBE);   // -> EMU
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_POPCNT);  // -> EMU
+    CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(24) /*reserved*/);
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_AES);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_XSAVE);   // -> EMU
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_OSXSAVE); // -> EMU
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_AVX);     // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(29) /*reserved*/);
+    CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(30) /*reserved*/);
+    CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(31) /*reserved*/);
+
+    /* CPUID(1).edx */
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_FPU);
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_VME);
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_DE);      // -> EMU?
+    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PSE);
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_TSC);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_MSR);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_PAE);
+    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_MCE);
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_CX8);     // -> EMU?
+    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_APIC);
+    CPUID_GST_FEATURE_RET(Std, edx, RT_BIT_32(10) /*reserved*/);
+    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_SEP);
+    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_MTRR);
+    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PGE);
+    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_MCA);
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_CMOV);    // -> EMU
+    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PAT);
+    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PSE36);
+    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PSN);
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_CLFSH);   // -> EMU
+    CPUID_GST_FEATURE_RET(Std, edx, RT_BIT_32(20) /*reserved*/);
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_DS);      // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_ACPI);    // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_MMX);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_FXSR);    // -> EMU
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_SSE);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_SSE2);    // -> EMU
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_SS);      // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_HTT);     // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_TM);      // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, edx, RT_BIT_32(30) /*JMPE/IA64*/);   // -> EMU
+    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_PBE);     // -> EMU?
+
+    /* CPUID(0x80000000). */
+    if (    aGuestCpuIdExt[0].eax >= UINT32_C(0x80000001)
+        &&  aGuestCpuIdExt[0].eax <  UINT32_C(0x8000007f))
+    {
+        /** @todo deal with no 0x80000001 on the host. */
+        bool const fHostAmd  = ASMIsAmdCpuEx(aHostRawStd[0].ebx, aHostRawStd[0].ecx, aHostRawStd[0].edx);
+        bool const fGuestAmd = ASMIsAmdCpuEx(aGuestCpuIdExt[0].ebx, aGuestCpuIdExt[0].ecx, aGuestCpuIdExt[0].edx);
+
+        /* CPUID(0x80000001).ecx */
+        CPUID_GST_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF);   // -> EMU
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_CMPL);    // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SVM);     // -> EMU
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_EXT_APIC);// ???
+        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_CR8L);    // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_ABM);     // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SSE4A);   // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_MISALNSSE);//-> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF);// -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_OSVW);    // -> EMU?
+        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_IBS);     // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SSE5);    // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SKINIT);  // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_WDT);     // -> EMU
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(14));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(15));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(16));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(17));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(18));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(19));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(20));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(21));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(22));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(23));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(24));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(25));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(26));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(27));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(28));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(29));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(30));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(31));
+
+        /* CPUID(0x80000001).edx */
+        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_FPU,   X86_CPUID_FEATURE_EDX_FPU);     // -> EMU
+        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_VME,   X86_CPUID_FEATURE_EDX_VME);     // -> EMU
+        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_DE,    X86_CPUID_FEATURE_EDX_DE);      // -> EMU
+        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_PSE,   X86_CPUID_FEATURE_EDX_PSE);
+        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_TSC,   X86_CPUID_FEATURE_EDX_TSC);     // -> EMU
+        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_MSR,   X86_CPUID_FEATURE_EDX_MSR);     // -> EMU
+        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_PAE,   X86_CPUID_FEATURE_EDX_PAE);
+        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_MCE,   X86_CPUID_FEATURE_EDX_MCE);
+        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_CX8,   X86_CPUID_FEATURE_EDX_CX8);     // -> EMU?
+        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_APIC,  X86_CPUID_FEATURE_EDX_APIC);
+        CPUID_GST_AMD_FEATURE_WRN(Ext, edx, RT_BIT_32(10) /*reserved*/);
+        CPUID_GST_FEATURE_IGN(    Ext, edx, X86_CPUID_AMD_FEATURE_EDX_SEP);                                  // Intel: long mode only.
+        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_MTRR,  X86_CPUID_FEATURE_EDX_MTRR);
+        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_PGE,   X86_CPUID_FEATURE_EDX_PGE);
+        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_MCA,   X86_CPUID_FEATURE_EDX_MCA);
+        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_CMOV,  X86_CPUID_FEATURE_EDX_CMOV);    // -> EMU
+        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_PAT,   X86_CPUID_FEATURE_EDX_PAT);
+        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_PSE36, X86_CPUID_FEATURE_EDX_PSE36);
+        CPUID_GST_AMD_FEATURE_WRN(Ext, edx, RT_BIT_32(18) /*reserved*/);
+        CPUID_GST_AMD_FEATURE_WRN(Ext, edx, RT_BIT_32(19) /*reserved*/);
+        CPUID_GST_FEATURE_RET(    Ext, edx, X86_CPUID_AMD_FEATURE_EDX_NX);
+        CPUID_GST_FEATURE_WRN(    Ext, edx, RT_BIT_32(21) /*reserved*/);
+        CPUID_GST_FEATURE_RET(    Ext, edx, X86_CPUID_AMD_FEATURE_EDX_AXMMX);
+        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_MMX,   X86_CPUID_FEATURE_EDX_MMX);     // -> EMU
+        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_FXSR,  X86_CPUID_FEATURE_EDX_FXSR);    // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_FFXSR);
+        CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PAGE1GB);
+        CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_RDTSCP);
+        CPUID_GST_FEATURE_IGN(    Ext, edx, RT_BIT_32(28) /*reserved*/);
+        CPUID_GST_FEATURE_RET(    Ext, edx, X86_CPUID_AMD_FEATURE_EDX_LONG_MODE);
+        CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX);
+        CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_3DNOW);
+    }
 
     /*
      * We're good, commit the CPU ID leaves.
      */
-    memcmp(&pVM->cpum.s.aGuestCpuIdStd[0],     &aGuestCpuIdStd[0],     sizeof(aGuestCpuIdStd));
-    memcmp(&pVM->cpum.s.aGuestCpuIdExt[0],     &aGuestCpuIdExt[0],     sizeof(aGuestCpuIdExt));
-    memcmp(&pVM->cpum.s.aGuestCpuIdCentaur[0], &aGuestCpuIdCentaur[0], sizeof(aGuestCpuIdCentaur));
+    memcpy(&pVM->cpum.s.aGuestCpuIdStd[0],     &aGuestCpuIdStd[0],     sizeof(aGuestCpuIdStd));
+    memcpy(&pVM->cpum.s.aGuestCpuIdExt[0],     &aGuestCpuIdExt[0],     sizeof(aGuestCpuIdExt));
+    memcpy(&pVM->cpum.s.aGuestCpuIdCentaur[0], &aGuestCpuIdCentaur[0], sizeof(aGuestCpuIdCentaur));
     pVM->cpum.s.GuestCpuIdDef = GuestCpuIdDef;
+
+#undef CPUID_CHECK_RET
+#undef CPUID_CHECK_WRN
+#undef CPUID_CHECK2_RET
+#undef CPUID_CHECK2_WRN
+#undef CPUID_RAW_FEATURE_RET
+#undef CPUID_RAW_FEATURE_WRN
+#undef CPUID_RAW_FEATURE_IGN
+#undef CPUID_GST_FEATURE_RET
+#undef CPUID_GST_FEATURE_WRN
+#undef CPUID_GST_FEATURE_EMU
+#undef CPUID_GST_FEATURE_IGN
+#undef CPUID_GST_FEATURE2_RET
+#undef CPUID_GST_FEATURE2_WRN
+#undef CPUID_GST_FEATURE2_EMU
+#undef CPUID_GST_FEATURE2_IGN
+#undef CPUID_GST_AMD_FEATURE_RET
+#undef CPUID_GST_AMD_FEATURE_WRN
+#undef CPUID_GST_AMD_FEATURE_EMU
+#undef CPUID_GST_AMD_FEATURE_IGN
 
     return VINF_SUCCESS;
 }
@@ -1383,10 +1988,8 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
 
 #ifdef VBOX_WITH_LIVE_MIGRATION
     /*
-     * Guest CPU config and CPUID.
+     * Guest CPUIDs.
      */
-    /** @todo config. */
-
     if (uVersion > CPUM_SAVED_STATE_VERSION_VER3_0)
         return cpumR3LoadCpuId(pVM, pSSM, uVersion);
 
@@ -2070,6 +2673,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                         "Family:                          %d  \tExtended: %d \tEffective: %d\n"
                         "Model:                           %d  \tExtended: %d \tEffective: %d\n"
                         "Stepping:                        %d\n"
+                        "Type:                            %d\n"
                         "APIC ID:                         %#04x\n"
                         "Logical CPUs:                    %d\n"
                         "CLFLUSH Size:                    %d\n"
@@ -2077,6 +2681,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                         (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, ASMGetCpuFamily(uEAX),
                         (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ASMGetCpuModel(uEAX, fIntel),
                         ASMGetCpuStepping(uEAX),
+                        (uEAX >> 12) & 3,
                         (Guest.ebx >> 24) & 0xff,
                         (Guest.ebx >> 16) & 0xff,
                         (Guest.ebx >>  8) & 0xff,
@@ -2122,22 +2727,37 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
             uint32_t uECX = Guest.ecx;
             pHlp->pfnPrintf(pHlp, "Features ECX:                   ");
             if (uECX & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " SSE3");
-            if (uECX & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " 1");
-            if (uECX & RT_BIT(2))   pHlp->pfnPrintf(pHlp, " 2");
+            if (uECX & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " PCLMUL");
+            if (uECX & RT_BIT(2))   pHlp->pfnPrintf(pHlp, " DTES64");
             if (uECX & RT_BIT(3))   pHlp->pfnPrintf(pHlp, " MONITOR");
             if (uECX & RT_BIT(4))   pHlp->pfnPrintf(pHlp, " DS-CPL");
             if (uECX & RT_BIT(5))   pHlp->pfnPrintf(pHlp, " VMX");
-            if (uECX & RT_BIT(6))   pHlp->pfnPrintf(pHlp, " 6");
+            if (uECX & RT_BIT(6))   pHlp->pfnPrintf(pHlp, " SMX");
             if (uECX & RT_BIT(7))   pHlp->pfnPrintf(pHlp, " EST");
             if (uECX & RT_BIT(8))   pHlp->pfnPrintf(pHlp, " TM2");
-            if (uECX & RT_BIT(9))   pHlp->pfnPrintf(pHlp, " 9");
+            if (uECX & RT_BIT(9))   pHlp->pfnPrintf(pHlp, " SSSE3");
             if (uECX & RT_BIT(10))  pHlp->pfnPrintf(pHlp, " CNXT-ID");
             if (uECX & RT_BIT(11))  pHlp->pfnPrintf(pHlp, " 11");
-            if (uECX & RT_BIT(12))  pHlp->pfnPrintf(pHlp, " 12");
+            if (uECX & RT_BIT(12))  pHlp->pfnPrintf(pHlp, " FMA");
             if (uECX & RT_BIT(13))  pHlp->pfnPrintf(pHlp, " CX16");
-            for (unsigned iBit = 14; iBit < 32; iBit++)
-                if (uECX & RT_BIT(iBit))
-                    pHlp->pfnPrintf(pHlp, " %d", iBit);
+            if (uECX & RT_BIT(14))  pHlp->pfnPrintf(pHlp, " TPRUPDATE");
+            if (uECX & RT_BIT(15))  pHlp->pfnPrintf(pHlp, " PDCM");
+            if (uECX & RT_BIT(16))  pHlp->pfnPrintf(pHlp, " 16");
+            if (uECX & RT_BIT(17))  pHlp->pfnPrintf(pHlp, " 17");
+            if (uECX & RT_BIT(18))  pHlp->pfnPrintf(pHlp, " DCA");
+            if (uECX & RT_BIT(19))  pHlp->pfnPrintf(pHlp, " SSE4_1");
+            if (uECX & RT_BIT(20))  pHlp->pfnPrintf(pHlp, " SSE4_2");
+            if (uECX & RT_BIT(21))  pHlp->pfnPrintf(pHlp, " X2APIC");
+            if (uECX & RT_BIT(22))  pHlp->pfnPrintf(pHlp, " MOVBE");
+            if (uECX & RT_BIT(23))  pHlp->pfnPrintf(pHlp, " POPCNT");
+            if (uECX & RT_BIT(24))  pHlp->pfnPrintf(pHlp, " 24");
+            if (uECX & RT_BIT(25))  pHlp->pfnPrintf(pHlp, " AES");
+            if (uECX & RT_BIT(26))  pHlp->pfnPrintf(pHlp, " XSAVE");
+            if (uECX & RT_BIT(27))  pHlp->pfnPrintf(pHlp, " OSXSAVE");
+            if (uECX & RT_BIT(28))  pHlp->pfnPrintf(pHlp, " AVX");
+            if (uECX & RT_BIT(29))  pHlp->pfnPrintf(pHlp, " 29");
+            if (uECX & RT_BIT(30))  pHlp->pfnPrintf(pHlp, " 30");
+            if (uECX & RT_BIT(31))  pHlp->pfnPrintf(pHlp, " 31");
             pHlp->pfnPrintf(pHlp, "\n");
         }
         else
@@ -2194,7 +2814,8 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
             pHlp->pfnPrintf(pHlp, "Terminal Monitor 2                     = %d (%d)\n",  EcxGuest.u1TM2,        EcxHost.u1TM2);
             pHlp->pfnPrintf(pHlp, "Supports Supplemental SSE3 or not      = %d (%d)\n",  EcxGuest.u1SSSE3,      EcxHost.u1SSSE3);
             pHlp->pfnPrintf(pHlp, "L1 Context ID                          = %d (%d)\n",  EcxGuest.u1CNTXID,     EcxHost.u1CNTXID);
-            pHlp->pfnPrintf(pHlp, "Reserved                               = %#x (%#x)\n",EcxGuest.u2Reserved2,  EcxHost.u2Reserved2);
+            pHlp->pfnPrintf(pHlp, "FMA                                    = %d (%d)\n",  EcxGuest.u1FMA,        EcxHost.u1FMA);
+            pHlp->pfnPrintf(pHlp, "Reserved                               = %d (%d)\n",  EcxGuest.u1Reserved2,  EcxHost.u1Reserved2);
             pHlp->pfnPrintf(pHlp, "CMPXCHG16B                             = %d (%d)\n",  EcxGuest.u1CX16,       EcxHost.u1CX16);
             pHlp->pfnPrintf(pHlp, "xTPR Update Control                    = %d (%d)\n",  EcxGuest.u1TPRUpdate,  EcxHost.u1TPRUpdate);
             pHlp->pfnPrintf(pHlp, "Perf/Debug Capability MSR              = %d (%d)\n",  EcxGuest.u1PDCM,       EcxHost.u1PDCM);
@@ -2205,7 +2826,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
             pHlp->pfnPrintf(pHlp, "Supports the x2APIC extensions         = %d (%d)\n",  EcxGuest.u1x2APIC,     EcxHost.u1x2APIC);
             pHlp->pfnPrintf(pHlp, "Supports MOVBE                         = %d (%d)\n",  EcxGuest.u1MOVBE,      EcxHost.u1MOVBE);
             pHlp->pfnPrintf(pHlp, "Supports POPCNT                        = %d (%d)\n",  EcxGuest.u1POPCNT,     EcxHost.u1POPCNT);
-            pHlp->pfnPrintf(pHlp, "Reserved                               = %#x (%#x)\n",EcxGuest.u2Reserved4,  EcxHost.u2Reserved4);
+            pHlp->pfnPrintf(pHlp, "Reserved                               = %#x (%#x)\n",EcxGuest.u1Reserved4,  EcxHost.u1Reserved4);
             pHlp->pfnPrintf(pHlp, "Supports XSAVE                         = %d (%d)\n",  EcxGuest.u1XSAVE,      EcxHost.u1XSAVE);
             pHlp->pfnPrintf(pHlp, "Supports OSXSAVE                       = %d (%d)\n",  EcxGuest.u1OSXSAVE,    EcxHost.u1OSXSAVE);
             pHlp->pfnPrintf(pHlp, "Reserved                               = %#x (%#x)\n",EcxGuest.u4Reserved5,  EcxHost.u4Reserved5);
