@@ -1123,6 +1123,7 @@ void VBoxVHWASurfaceBase::globalInit()
 
 //    glEnable(GL_TEXTURE_2D);
     glEnable(GL_TEXTURE_RECTANGLE);
+    glDisable(GL_DEPTH_TEST);
 
     VBOXQGL_CHECKERR(
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -2509,7 +2510,7 @@ VBoxGLWidget::~VBoxGLWidget()
     delete mpMngr;
 }
 
-
+#ifdef VBOXVHWA_OLD_COORD
 void VBoxGLWidget::doSetupMatrix(const QSize & aSize, bool bInverted)
 {
     VBOXQGL_CHECKERR(
@@ -2535,17 +2536,28 @@ void VBoxGLWidget::doSetupMatrix(const QSize & aSize, bool bInverted)
                 );
     }
 }
+#endif
+
 void VBoxGLWidget::adjustViewport(const QSize &display, const QRect &viewport)
 {
+#ifdef VBOXVHWA_OLD_COORD
     /* viewport:  (viewport.x;viewport.y) (viewport.width;viewport.height)*/
     glViewport(-((int)display.width() + viewport.x()),
                 -((int)display.height() - viewport.y() + display.height() - viewport.height()),
                 2*display.width(),
                 2*display.height());
+#else
+    glViewport(-viewport.x(),
+    		   viewport.height() + viewport.y() - display.height(),
+               display.width(),
+               display.height());
+
+#endif
 }
 
 void VBoxGLWidget::setupMatricies(const QSize &display)
 {
+#ifdef VBOXVHWA_OLD_COORD
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glFrustum(0., (GLdouble)display.width(), 0., (GLdouble)display.height(), 0., 0.);
@@ -2553,6 +2565,14 @@ void VBoxGLWidget::setupMatricies(const QSize &display)
     glMatrixMode(GL_MODELVIEW);
     //    doSetupMatrix(bInverted ? &mRect.size() : &mTargSize.size(), bInverted);
     doSetupMatrix(display, false);
+#else
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0., (GLdouble)display.width(), (GLdouble)display.height(), 0., -1., 1.);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+#endif
 }
 
 VBoxVHWACommandElement * VBoxGLWidget::processCmdList(VBoxVHWACommandElement * pCmd)
