@@ -5,6 +5,10 @@
  * machine XML files. They share a common ancestor class, ConfigFileBase, which shares
  * functionality such as talking to the XML back-end classes and settings version management.
  *
+ * The code can read all VirtualBox settings files version 1.3 and higher. That version was
+ * written by VirtualBox 2.0. It can write settings version 1.7 (used by VirtualBox 2.2 and
+ * 3.0) and 1.9 (used by VirtualBox 3.1).
+ *
  * Rules for introducing new settings: If an element or attribute is introduced that was not
  * present before VirtualBox 3.1, then settings version checks need to be introduced. The
  * settings version for VirtualBox 3.1 is 1.9; see the SettingsVersion enumeration in
