@@ -666,7 +666,7 @@ vbi_execute_on_one(void *func, void *arg, int c)
 }
 
 int
-vbi_lock_va(void *addr, size_t len, void **handle)
+vbi_lock_va(void *addr, size_t len, int access, void **handle)
 {
 	faultcode_t err;
 
@@ -676,7 +676,7 @@ vbi_lock_va(void *addr, size_t len, void **handle)
 	*handle = NULL;
 	if (!IS_KERNEL(addr)) {
 		err = as_fault(VBIPROC()->p_as->a_hat, VBIPROC()->p_as,
-		    (caddr_t)addr, len, F_SOFTLOCK, S_WRITE);
+		    (caddr_t)addr, len, F_SOFTLOCK, access);
 		if (err != 0) {
 			VBI_VERBOSE("vbi_lock_va() failed to lock");
 			return (-1);
@@ -687,11 +687,11 @@ vbi_lock_va(void *addr, size_t len, void **handle)
 
 /*ARGSUSED*/
 void
-vbi_unlock_va(void *addr, size_t len, void *handle)
+vbi_unlock_va(void *addr, size_t len, int access, void *handle)
 {
 	if (!IS_KERNEL(addr))
 		as_fault(VBIPROC()->p_as->a_hat, VBIPROC()->p_as,
-		    (caddr_t)addr, len, F_SOFTUNLOCK, S_WRITE);
+		    (caddr_t)addr, len, F_SOFTUNLOCK, access);
 }
 
 uint64_t

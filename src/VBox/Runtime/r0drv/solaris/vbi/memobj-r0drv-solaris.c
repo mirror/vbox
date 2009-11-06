@@ -58,7 +58,9 @@ typedef struct RTR0MEMOBJSOLARIS
     /** Pointer to kernel memory cookie. */
     ddi_umem_cookie_t   Cookie;
     /** Shadow locked pages. */
-    void              *handle;
+    void               *pvHandle;
+    /** Access during locking. */
+    int                 fAccess;
 } RTR0MEMOBJSOLARIS, *PRTR0MEMOBJSOLARIS;
 
 
@@ -82,7 +84,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
 
         case RTR0MEMOBJTYPE_LOCK:
-            vbi_unlock_va(pMemSolaris->Core.pv, pMemSolaris->Core.cb, pMemSolaris->handle);
+            vbi_unlock_va(pMemSolaris->Core.pv, pMemSolaris->Core.cb, pMemSolaris->fAccess, pMemSolaris->pvHandle);
             break;
 
         case RTR0MEMOBJTYPE_MAPPING:
@@ -124,7 +126,7 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
     }
 
     pMemSolaris->Core.pv = virtAddr;
-    pMemSolaris->handle = NULL;
+    pMemSolaris->pvHandle = NULL;
     *ppMem = &pMemSolaris->Core;
     return VINF_SUCCESS;
 }
@@ -149,7 +151,7 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
         return VERR_NO_LOW_MEMORY;
     }
     pMemSolaris->Core.pv = virtAddr;
-    pMemSolaris->handle = NULL;
+    pMemSolaris->pvHandle = NULL;
     *ppMem = &pMemSolaris->Core;
     return VINF_SUCCESS;
 }
@@ -176,7 +178,7 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
     Assert(phys < (uint64_t)1 << 32);
     pMemSolaris->Core.pv = virtAddr;
     pMemSolaris->Core.u.Cont.Phys = phys;
-    pMemSolaris->handle = NULL;
+    pMemSolaris->pvHandle = NULL;
     *ppMem = &pMemSolaris->Core;
     return VINF_SUCCESS;
 }
@@ -222,10 +224,15 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
     if (!pMemSolaris)
         return VERR_NO_MEMORY;
 
-    void *ppl;
+    int fPageAccess = S_READ;
+    if (fPageAccess & RTMEM_PROT_WRITE)
+        fPageAccess = S_WRITE;
+    if (fPageAccess & RTMEM_PROT_EXEC)
+        fPageAccess = S_EXEC;
+    void *pvPageList = NULL;
 
     /* Lock down user pages */
-    int rc = vbi_lock_va((caddr_t)R3Ptr, cb, &ppl);
+    int rc = vbi_lock_va((caddr_t)R3Ptr, cb, fPageAccess, &pvPageList);
     if (rc != 0)
     {
         cmn_err(CE_NOTE,"rtR0MemObjNativeLockUser: vbi_lock_va failed rc=%d\n", rc);
@@ -234,7 +241,8 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
     }
 
     pMemSolaris->Core.u.Lock.R0Process = (RTR0PROCESS)vbi_proc();
-    pMemSolaris->handle = ppl;
+    pMemSolaris->pvHandle = pvPageList;
+    pMemSolaris->fAccess = fPageAccess;
     *ppMem = &pMemSolaris->Core;
     return VINF_SUCCESS;
 }
@@ -248,8 +256,13 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, 
     if (!pMemSolaris)
         return VERR_NO_MEMORY;
 
-    void *ppl;
-    int rc = vbi_lock_va((caddr_t)pv, cb, &ppl);
+    int fPageAccess = S_READ;
+    if (fPageAccess & RTMEM_PROT_WRITE)
+        fPageAccess = S_WRITE;
+    if (fPageAccess & RTMEM_PROT_EXEC)
+        fPageAccess = S_EXEC;
+    void *pvPageList = NULL;
+    int rc = vbi_lock_va((caddr_t)pv, cb, fPageAccess, &pvPageList);
     if (rc != 0)
     {
         cmn_err(CE_NOTE,"rtR0MemObjNativeLockKernel: vbi_lock_va failed rc=%d\n", rc);
@@ -258,7 +271,8 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, 
     }
 
     pMemSolaris->Core.u.Lock.R0Process = NIL_RTR0PROCESS;
-    pMemSolaris->handle = ppl;
+    pMemSolaris->pvHandle = pvPageList;
+    pMemSolaris->fAccess = fPageAccess;
     *ppMem = &pMemSolaris->Core;
     return VINF_SUCCESS;
 }

@@ -209,8 +209,8 @@ extern void vbi_execute_on_one(void *func, void *arg, int c);
  *
  * returns 0 for success, non-zero errno on failure
  */
-extern int vbi_lock_va(void *addr, size_t len, void **handle);
-extern void vbi_unlock_va(void *addr, size_t len, void *handle);
+extern int vbi_lock_va(void *addr, size_t len, int access, void **handle);
+extern void vbi_unlock_va(void *addr, size_t len, int access, void *handle);
 
 /*
  * Return the physical address of memory behind a VA. If the
