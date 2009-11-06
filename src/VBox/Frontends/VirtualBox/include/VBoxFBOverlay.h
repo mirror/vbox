@@ -998,7 +998,9 @@ public:
 
     VBoxVHWASurfaceBase * vboxGetVGASurface() { return mDisplay.getVGA(); }
 
+#ifdef VBOXVHWA_OLD_COORD
     static void doSetupMatrix(const QSize & aSize, bool bInverted);
+#endif
 
     void vboxDoUpdateViewport(const QRect & aRect);
     void vboxDoUpdateRect(const QRect * pRect);
