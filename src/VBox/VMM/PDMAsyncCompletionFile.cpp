@@ -542,7 +542,7 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
          * leave a warning and disable it always.
          */
         bool fDummy;
-        rc = CFGMR3QueryBoolDef(pCfgNode, "HostCacheEnabled", &fDummy);
+        rc = CFGMR3QueryBool(pCfgNode, "HostCacheEnabled", &fDummy);
         if (RT_SUCCESS(rc))
             LogRel(("AIOMgr: The host cache is not supported with async I/O on Linux\n"));
 
