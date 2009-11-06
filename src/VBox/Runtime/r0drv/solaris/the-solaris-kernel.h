@@ -31,8 +31,6 @@
 #ifndef ___the_solaris_kernel_h
 #define ___the_solaris_kernel_h
 
-#define _MACHDEP /* needed for cpuset_t and sys/x_call.h */
-
 #include <sys/kmem.h>
 #include <sys/types.h>
 #include <sys/mman.h>
