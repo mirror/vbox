@@ -759,7 +759,7 @@ static DECLCALLBACK(int) vpciMap(PPCIDEVICE pPciDev, int iRegion,
     pState->addrIOPort = (RTIOPORT)GCPhysAddress;
     rc = PDMDevHlpIOPortRegister(pPciDev->pDevIns, pState->addrIOPort, cb, 0,
                                  vpciIOPortOut, vpciIOPortIn, NULL, NULL, "VirtioNet");
-#if 0
+#ifdef VNET_GC_SUPPORT
     AssertRCReturn(rc, rc);
     rc = PDMDevHlpIOPortRegisterR0(pPciDev->pDevIns, pState->addrIOPort, cb, 0,
                                    "vpciIOPortOut", "vpciIOPortIn", NULL, NULL, "VirtioNet");
@@ -1371,6 +1371,10 @@ PDMBOTHCBDECL(void) vnetReset(void *pvState)
     Log(("%s Reset triggered\n", INSTANCE(pState)));
     vpciReset(&pState->VPCI);
     // TODO: Implement reset
+    if (pState->fCableConnected)
+        STATUS = VNET_S_LINK_UP;
+    else
+        STATUS = 0;
 }
 
 #ifdef IN_RING3
@@ -1455,7 +1459,7 @@ PDMBOTHCBDECL(void) vnetReady(void *pvState)
  */
 static int vnetCanReceive(VNETSTATE *pState)
 {
-    int rc = vpciCsEnter(&pState->VPCI, VERR_SEM_BUSY);
+    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
     LogFlow(("%s vnetCanReceive\n", INSTANCE(pState)));
     if (!(pState->VPCI.uStatus & VPCI_STATUS_DRV_OK))
         rc = VERR_NET_NO_BUFFER_SPACE;
@@ -1473,7 +1477,7 @@ static int vnetCanReceive(VNETSTATE *pState)
     }
 
     LogFlow(("%s vnetCanReceive -> %Vrc\n", INSTANCE(pState), rc));
-    vpciCsLeave(&pState->VPCI);
+    vnetCsLeave(pState);
     return rc;
 }
 
@@ -2134,7 +2138,7 @@ static DECLCALLBACK(void) vnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 
     AssertLogRelReturnVoid(iLUN == 0);
 
-    vpciCsEnter(&pState->VPCI, VERR_SEM_BUSY);
+    vnetCsEnter(pState, VERR_SEM_BUSY);
 
     /*
      * Zero some important members.
@@ -2142,7 +2146,7 @@ static DECLCALLBACK(void) vnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
     pState->pDrvBase = NULL;
     pState->pDrv = NULL;
 
-    vpciCsLeave(&pState->VPCI);
+    vnetCsLeave(pState);
 }
 
 
@@ -2165,7 +2169,7 @@ static DECLCALLBACK(int) vnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
 
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
-    vpciCsEnter(&pState->VPCI, VERR_SEM_BUSY);
+    vnetCsEnter(pState, VERR_SEM_BUSY);
 
     /*
      * Attach the driver.
@@ -2202,7 +2206,7 @@ static DECLCALLBACK(int) vnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
     if (RT_SUCCESS(rc))
         vnetTempLinkDown(pState);
 
-    vpciCsLeave(&pState->VPCI);
+    vnetCsLeave(pState);
     return rc;
 
 }
@@ -2238,7 +2242,11 @@ const PDMDEVREG g_DeviceVirtioNet =
     "Virtio Ethernet.\n",
 
     /* Flags, combination of the PDM_DEVREG_FLAGS_* \#defines. */
-    PDM_DEVREG_FLAGS_DEFAULT_BITS, // | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
+#ifdef VNET_GC_SUPPORT
+    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
+#else
+    PDM_DEVREG_FLAGS_DEFAULT_BITS,
+#endif
     /* Device class(es), combination of the PDM_DEVREG_CLASS_* \#defines. */
     PDM_DEVREG_CLASS_NETWORK,
     /* Maximum number of instances (per VM). */
