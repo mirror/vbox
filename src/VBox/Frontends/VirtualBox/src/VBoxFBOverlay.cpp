@@ -4282,9 +4282,11 @@ void VBoxGLWidget::vboxDoResize(void *resize)
     VBOXQGLLOG(("format().blueBufferSize()(%d)\n", format().blueBufferSize()));
     VBOXQGLLOG(("format().greenBufferSize()(%d)\n", format().greenBufferSize()));
     VBOXQGLLOG(("format().redBufferSize()(%d)\n", format().redBufferSize()));
+#ifdef DEBUG_misha
     Assert(format().blueBufferSize() == 8);
     Assert(format().greenBufferSize() == 8);
     Assert(format().redBufferSize() == 8);
+#endif
 
 //    Assert(!format().depth());
     Assert(format().directRendering());
