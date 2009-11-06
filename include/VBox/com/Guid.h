@@ -61,58 +61,87 @@ class Guid
 {
 public:
 
-    Guid () { ::RTUuidClear (&uuid); }
-    Guid (const Guid &that) { uuid = that.uuid; }
-    Guid (const RTUUID &that) { uuid = that; }
-
-    Guid (const GUID &that)
+    Guid()
     {
-        AssertCompileSize (GUID, sizeof (RTUUID));
-        ::memcpy (&uuid, &that, sizeof (GUID));
+        ::RTUuidClear(&uuid);
+        refresh();
     }
 
-    Guid (const char *that)
+    Guid(const Guid &that)
     {
-        ::RTUuidClear (&uuid);
-        ::RTUuidFromStr (&uuid, that);
+        uuid = that.uuid;
+        refresh();
     }
 
-    Guid (const Bstr &that)
+    Guid(const RTUUID &that)
+    {
+        uuid = that;
+        refresh();
+    }
+
+    Guid(const GUID &that)
+    {
+        AssertCompileSize(GUID, sizeof(RTUUID));
+        ::memcpy(&uuid, &that, sizeof(GUID));
+        refresh();
+    }
+
+    Guid(const char *that)
+    {
+        ::RTUuidClear(&uuid);
+        ::RTUuidFromStr(&uuid, that);
+        refresh();
+    }
+
+    Guid(const Bstr &that)
     {
         ::RTUuidClear (&uuid);
         if (!that.isNull())
            ::RTUuidFromUtf16(&uuid, that.raw());
+        refresh();
     }
 
-    Guid &operator= (const Guid &that)
+    Guid &operator=(const Guid &that)
     {
-        ::memcpy (&uuid, &that.uuid, sizeof (RTUUID));
+        ::memcpy(&uuid, &that.uuid, sizeof (RTUUID));
+        refresh();
         return *this;
     }
-    Guid &operator= (const GUID &guid)
+    Guid &operator=(const GUID &guid)
     {
-        ::memcpy (&uuid, &guid, sizeof (GUID));
+        ::memcpy(&uuid, &guid, sizeof (GUID));
+        refresh();
         return *this;
     }
-    Guid &operator= (const RTUUID &guid)
+    Guid &operator=(const RTUUID &guid)
     {
-        ::memcpy (&uuid, &guid, sizeof (RTUUID));
+        ::memcpy(&uuid, &guid, sizeof (RTUUID));
+        refresh();
         return *this;
     }
-    Guid &operator= (const char *str)
+    Guid &operator=(const char *str)
     {
-        ::RTUuidFromStr (&uuid, str);
+        ::RTUuidFromStr(&uuid, str);
+        refresh();
         return *this;
     }
 
-    void create() { ::RTUuidCreate (&uuid); }
-    void clear() { ::RTUuidClear (&uuid); }
-
-    Utf8Str toString () const
+    void create()
     {
-        char buf [RTUUID_STR_LENGTH];
-        ::RTUuidToStr (&uuid, buf, RTUUID_STR_LENGTH);
-        return Utf8Str (buf);
+        ::RTUuidCreate(&uuid);
+        refresh();
+    }
+    void clear()
+    {
+        ::RTUuidClear(&uuid);
+        refresh();
+    }
+
+    Utf8Str toString() const
+    {
+        char buf[RTUUID_STR_LENGTH];
+        ::RTUuidToStr(&uuid, buf, RTUUID_STR_LENGTH);
+        return Utf8Str(buf);
     }
 
     Bstr toUtf16 () const
@@ -120,32 +149,51 @@ public:
         if (isEmpty())
           return Bstr();
 
-        RTUTF16 buf [RTUUID_STR_LENGTH];
-        ::RTUuidToUtf16 (&uuid, buf, RTUUID_STR_LENGTH);
-        return Bstr (buf);
+        RTUTF16 buf[RTUUID_STR_LENGTH];
+        ::RTUuidToUtf16(&uuid, buf, RTUUID_STR_LENGTH);
+        return Bstr(buf);
     }
 
-    bool isEmpty() const { return ::RTUuidIsNull (&uuid); }
-    operator bool() const { return !isEmpty(); }
+    bool isEmpty() const
+    {
+        return ::RTUuidIsNull (&uuid);
+    }
 
-    bool operator== (const Guid &that) const { return ::RTUuidCompare (&uuid, &that.uuid) == 0; }
-    bool operator== (const GUID &guid) const { return ::RTUuidCompare (&uuid, (PRTUUID) &guid) == 0; }
-    bool operator!= (const Guid &that) const { return !operator==(that); }
-    bool operator!= (const GUID &guid) const { return !operator==(guid); }
-    bool operator< (const Guid &that) const { return ::RTUuidCompare (&uuid, &that.uuid) < 0; }
-    bool operator< (const GUID &guid) const { return ::RTUuidCompare (&uuid, (PRTUUID) &guid) < 0; }
+    operator bool() const
+    {
+        return !isEmpty();
+    }
+
+    bool operator==(const Guid &that) const { return ::RTUuidCompare (&uuid, &that.uuid) == 0; }
+    bool operator==(const GUID &guid) const { return ::RTUuidCompare (&uuid, (PRTUUID) &guid) == 0; }
+    bool operator!=(const Guid &that) const { return !operator==(that); }
+    bool operator!=(const GUID &guid) const { return !operator==(guid); }
+    bool operator<(const Guid &that) const { return ::RTUuidCompare (&uuid, &that.uuid) < 0; }
+    bool operator<(const GUID &guid) const { return ::RTUuidCompare (&uuid, (PRTUUID) &guid) < 0; }
 
     /* to pass instances as IN_GUID parameters to interface methods */
-    operator const GUID &() const { return *(GUID *) &uuid; }
+    operator const GUID&() const
+    {
+        return *(GUID *) &uuid;
+    }
 
     /* to directly pass instances to RTPrintf("%Vuuid") */
-    PRTUUID ptr() { return &uuid; }
+    PRTUUID ptr()
+    {
+        return &uuid;
+    }
 
     /* to pass instances to printf-like functions */
-    PCRTUUID raw() const { return &uuid; }
+    PCRTUUID raw() const
+    {
+        return &uuid;
+    }
 
     /* to pass instances to RTUuid*() as a constant argument */
-    operator const RTUUID * () const { return &uuid; }
+    operator const RTUUID*() const
+    {
+        return &uuid;
+    }
 
 #if !defined (VBOX_WITH_XPCOM)
 
@@ -153,12 +201,16 @@ public:
      *  interface method */
     const Guid &cloneTo (GUID *pguid) const
     {
-        if (pguid) { ::memcpy (pguid, &uuid, sizeof (GUID)); }
+        if (pguid)
+            ::memcpy(pguid, &uuid, sizeof(GUID));
         return *this;
     }
 
     /* to pass instances as OUT_GUID parameters to interface methods */
-    GUID *asOutParam() { return (GUID *) &uuid; }
+    GUID *asOutParam()
+    {
+        return (GUID*)&uuid;
+    }
 
 #else
 
@@ -170,32 +222,45 @@ public:
         return *this;
     }
 
-    /* internal helper class for asOutParam() */
+    // internal helper class for asOutParam(); this takes a GUID refrence
+    // in the constructor and copies the uuid from the method to that instance
+    // in its destructor
     class GuidOutParam
     {
-        GuidOutParam (Guid &guid) : ptr (0), outer (guid) { outer.clear(); }
+        GuidOutParam(Guid &guid)
+            : ptr(0),
+              outer(guid)
+        {
+            outer.clear();
+        }
+
         nsID *ptr;
         Guid &outer;
-        GuidOutParam (const GuidOutParam &that); // disabled
-        GuidOutParam &operator= (const GuidOutParam &that); // disabled
+        GuidOutParam(const GuidOutParam &that); // disabled
+        GuidOutParam &operator=(const GuidOutParam &that); // disabled
     public:
-        operator nsID **() { return &ptr; }
+        operator nsID**() { return &ptr; }
         ~GuidOutParam()
         {
-            if (ptr && outer.isEmpty()) { outer = *ptr; nsMemory::Free (ptr); }
+            if (ptr && outer.isEmpty())
+            {
+                outer = *ptr;
+                outer.refresh();
+                nsMemory::Free(ptr);
+            }
         }
         friend class Guid;
     };
 
     /* to pass instances as OUT_GUID parameters to interface methods */
-    GuidOutParam asOutParam() { return GuidOutParam (*this); }
+    GuidOutParam asOutParam() { return GuidOutParam(*this); }
 
 #endif
 
     /* to directly test IN_GUID interface method's parameters */
-    static bool isEmpty (const GUID &guid)
+    static bool isEmpty(const GUID &guid)
     {
-        return ::RTUuidIsNull ((PRTUUID) &guid);
+        return ::RTUuidIsNull((PRTUUID)&guid);
     }
 
     /**
@@ -204,8 +269,25 @@ public:
     static const Guid Empty;
 
 private:
+    // in debug code, refresh the UUID string representatino for
+    // debugging; must be called every time the internal uuid
+    // changes; compiles to nothing in release code
+    inline void refresh()
+    {
+#ifdef DEBUG
+        ::RTUuidToStr(&uuid, szUUID, RTUUID_STR_LENGTH);
+        pcszUUID = szUUID;
+#endif
+    }
 
     RTUUID uuid;
+
+#ifdef DEBUG
+    // in debug builds, have a Utf8Str representation of the UUID so we can look
+    // at it in the debugger more easily
+    char szUUID[RTUUID_STR_LENGTH];
+    const char *pcszUUID;
+#endif
 };
 
 inline Bstr asGuidStr(const Bstr& str)
