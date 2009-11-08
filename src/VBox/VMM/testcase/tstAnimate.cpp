@@ -837,8 +837,8 @@ int main(int argc, char **argv)
             rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)loadMem, 3, pVM, FileRawMem, &offRawMem);
         else
             rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)SSMR3Load,
-                                 7, pVM, pszSavedState, NULL /*pStreamOps*/, NULL /*pvUser*/,
-                                 SSMAFTER_DEBUG_IT, NULL /*pfnProgress*/, NULL /*pvProgressUser*/);
+                                 7, pVM, pszSavedState, (uintptr_t)NULL /*pStreamOps*/, (uintptr_t)NULL /*pvUser*/,
+                                 SSMAFTER_DEBUG_IT, (uintptr_t)NULL /*pfnProgress*/, (uintptr_t)NULL /*pvProgressUser*/);
         if (RT_SUCCESS(rc))
         {
             /*
