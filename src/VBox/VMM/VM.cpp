@@ -1897,7 +1897,7 @@ VMMR3DECL(int) VMR3LoadFromFile(PVM pVM, const char *pszFilename, PFNVMPROGRESS 
      * since there is no execution taking place when this call is allowed.
      */
     int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 7,
-                              pVM, pszFilename, (uintptr_t)0 /*pStreamOps*/, (uintptr_t)0 /*pvStreamOpsUser*/, pfnProgress, pvUser,
+                              pVM, pszFilename, (uintptr_t)NULL /*pStreamOps*/, (uintptr_t)NULL /*pvStreamOpsUser*/, pfnProgress, pvUser,
                               false /*fTeleporting*/);
     LogFlow(("VMR3LoadFromFile: returns %Rrc\n", rc));
     return rc;
@@ -1936,7 +1936,7 @@ VMMR3DECL(int) VMR3LoadFromStream(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStre
      * since there is no execution taking place when this call is allowed.
      */
     int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 7,
-                              pVM, NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser,
+                              pVM, (uintptr_t)NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser,
                               true /*fTeleporting*/);
     LogFlow(("VMR3LoadFromStream: returns %Rrc\n", rc));
     return rc;
