@@ -2744,10 +2744,11 @@ HRESULT Console::convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG 
  * Process a medium change.
  *
  * @param aMediumAttachment The medium attachment with the new medium state.
+ * @param fForce            Force medium chance, if it is locked or not.
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment)
+HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForce)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -2819,8 +2820,8 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment)
      */
     PVMREQ pReq;
     int vrc = VMR3ReqCall(mpVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                          (PFNRT)Console::changeDrive, 8,
-                          this, pszDevice, uInstance, uLun, !!fHostDrive, location.raw(), format.raw(), !!fPassthrough);
+                          (PFNRT)Console::changeDrive, 9,
+                          this, pszDevice, uInstance, uLun, !!fHostDrive, location.raw(), format.raw(), !!fPassthrough, fForce);
 
     /* leave the lock before waiting for a result (EMT will call us back!) */
     alock.leave();
@@ -2872,11 +2873,11 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment)
  * @todo the error handling in this method needs to be improved seriously - what if mounting fails...
  */
 DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, unsigned uInstance, unsigned uLun,
-                                       bool fHostDrive, const char *pszPath, const char *pszFormat, bool fPassthrough)
+                                       bool fHostDrive, const char *pszPath, const char *pszFormat, bool fPassthrough, bool fForce)
 {
 /// @todo change this to use the same code as in ConsoleImpl2.cpp
-    LogFlowFunc(("pThis=%p pszDevice=%p:{%s} uInstance=%u uLun=%u fHostDrive=%d pszPath=%p:{%s} pszFormat=%p:{%s} fPassthrough=%d\n",
-                 pThis, pszDevice, pszDevice, uInstance, uLun, fHostDrive, pszPath, pszPath, pszFormat, pszFormat, fPassthrough));
+    LogFlowFunc(("pThis=%p pszDevice=%p:{%s} uInstance=%u uLun=%u fHostDrive=%d pszPath=%p:{%s} pszFormat=%p:{%s} fPassthrough=%d fForce=%d\n",
+                 pThis, pszDevice, pszDevice, uInstance, uLun, fHostDrive, pszPath, pszPath, pszFormat, pszFormat, fPassthrough, fForce));
 
     AssertReturn(pThis, VERR_INVALID_PARAMETER);
 
@@ -2961,7 +2962,7 @@ DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, un
             /*
              * Unmount the media.
              */
-            rc = pIMount->pfnUnmount(pIMount, false);
+            rc = pIMount->pfnUnmount(pIMount, fForce);
             if (rc == VERR_PDM_MEDIA_NOT_MOUNTED)
                 rc = VINF_SUCCESS;
 
@@ -3525,7 +3526,7 @@ HRESULT Console::onStorageControllerChange()
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment)
+HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce)
 {
     LogFlowThisFunc(("\n"));
 
@@ -3544,7 +3545,7 @@ HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment)
     AutoVMCaller autoVMCaller(this);
     CheckComRCReturnRC(autoVMCaller.rc());
 
-    rc = doMediumChange(aMediumAttachment);
+    rc = doMediumChange(aMediumAttachment, !!aForce);
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))

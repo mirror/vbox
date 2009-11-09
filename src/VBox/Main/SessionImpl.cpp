@@ -557,7 +557,7 @@ STDMETHODIMP Session::OnStorageControllerChange()
     return mConsole->onStorageControllerChange();
 }
 
-STDMETHODIMP Session::OnMediumChange(IMediumAttachment *aMediumAttachment)
+STDMETHODIMP Session::OnMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce)
 {
     LogFlowThisFunc(("\n"));
 
@@ -568,7 +568,7 @@ STDMETHODIMP Session::OnMediumChange(IMediumAttachment *aMediumAttachment)
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onMediumChange(aMediumAttachment);
+    return mConsole->onMediumChange(aMediumAttachment, aForce);
 }
 
 STDMETHODIMP Session::OnVRDPServerChange()

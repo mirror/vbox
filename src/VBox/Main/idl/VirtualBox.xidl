@@ -4096,7 +4096,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="25472915-3da2-42f6-82f2-70a3bc74d73c"
+     uuid="c5669e1a-491a-4367-99c6-28110dd474c6"
      wsmap="managed"
      >
     <desc>
@@ -4882,6 +4882,10 @@
       <param name="medium" type="uuid" mod="string" dir="in">
         <desc>UUID of the medium to attach. A zero UUID means unmount the
           currently mounted medium.</desc>
+      </param>
+      <param name="force" type="boolean" dir="in">
+        <desc>Allows to force unmount/mount of a medium which is locked by
+          theDevice slot in the given port to attach the medium to.</desc>
       </param>
     </method>
 
@@ -12509,7 +12513,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IInternalSessionControl" extends="$unknown"
-     uuid="989e2c33-8dfa-437a-9a15-5ad441d50dbf"
+     uuid="f9aac6d0-41b3-46b7-bea4-6370b4036de6"
      internal="yes"
      wsmap="suppress"
      >
@@ -12674,6 +12678,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
 
       <param name="mediumAttachment" type="IMediumAttachment" dir="in"/>
+      <param name="force" type="boolean" dir="in"/>
     </method>
 
     <method name="onVRDPServerChange">

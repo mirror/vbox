@@ -1180,7 +1180,7 @@ static int handleControlVM(HandlerArg *a)
                 dvdMedium->COMGETTER(Id)(uuid.asOutParam());
             else
                 uuid = Guid().toString();
-            CHECK_ERROR(machine, MountMedium(Bstr("IDE Controller"), 1, 0, uuid));
+            CHECK_ERROR(machine, MountMedium(Bstr("IDE Controller"), 1, 0, uuid, FALSE /* aForce */));
         }
         else if (!strcmp(a->argv[1], "floppyattach"))
         {
@@ -1236,7 +1236,7 @@ static int handleControlVM(HandlerArg *a)
                 }
             }
             floppyMedium->COMGETTER(Id)(uuid.asOutParam());
-            CHECK_ERROR(machine, MountMedium(Bstr("Floppy Controller"), 0, 0, uuid));
+            CHECK_ERROR(machine, MountMedium(Bstr("Floppy Controller"), 0, 0, uuid, FALSE /* aForce */));
         }
 #ifdef VBOX_WITH_MEM_BALLOONING
         else if (   !strcmp(a->argv[1], "--guestmemoryballoon")

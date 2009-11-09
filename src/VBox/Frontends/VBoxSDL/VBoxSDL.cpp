@@ -1669,7 +1669,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
         }
 
-        CHECK_ERROR (gMachine, MountMedium(storageCtlName, 0, 0, id));
+        CHECK_ERROR (gMachine, MountMedium(storageCtlName, 0, 0, id, FALSE /* aForce */));
     }
     while (0);
     if (FAILED(rc))
@@ -1753,7 +1753,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
         }
 
-        CHECK_ERROR(gMachine, MountMedium(storageCtlName, 1, 0, id));
+        CHECK_ERROR(gMachine, MountMedium(storageCtlName, 1, 0, id, FALSE /*aForce */));
     }
     while (0);
     if (FAILED(rc))
