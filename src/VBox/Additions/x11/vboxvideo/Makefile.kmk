@@ -197,7 +197,10 @@ DLLS += vboxvideo_drv_15
 vboxvideo_drv_15_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxvideo_drv_15_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_15_DEFS := $(vboxvideo_drv_70_DEFS) NO_ANSIC PCIACCESS \
-                         VBOX_NO_LOW_COLOUR $(if $(VBOX_OPENGL) VBOX_DRI,)
+                         VBOX_NO_LOW_COLOUR
+if1of ($(KBUILD_TARGET), linux solaris)
+ vboxvideo_drv_15_DEFS += VBOX_DRI
+endif
 vboxvideo_drv_15_INCS = \
 	$(VBOX_PATH_X11_XORG_1_5) \
 	$(VBOX_PATH_X11_XORG_1_5)/X11 \
@@ -207,8 +210,11 @@ vboxvideo_drv_15_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.5.3
 vboxvideo_drv_15_SOURCES  = \
 	vboxvideo_13.c \
-	vboxutils.c \
-	$(if $(VBOX_OPENGL) vboxvideo_dri.c,)
+	vboxutils.c
+if1of ($(KBUILD_TARGET), linux solaris)
+ vboxvideo_drv_15_SOURCES += \
+	vboxvideo_dri.c
+endif
 
 
 #
