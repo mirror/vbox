@@ -896,14 +896,16 @@ while(0);
     DEBUG_MSG_1(("MakeCurrent called %X\n", self));
 
 #ifdef FBO
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_FBOId);
+    if([NSOpenGLContext currentContext] != 0)
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_FBOId);
 #endif
     if (m_pGLCtx)
     {
         if ([m_pGLCtx view] != self) 
         {
             /* We change the active view, so flush first */
-            glFlush();
+            if([NSOpenGLContext currentContext] != 0)
+                glFlush();
             [m_pGLCtx setView: self];
             CHECK_GL_ERROR();
         }
@@ -1365,9 +1367,6 @@ void cocoaViewGetGeometry(NativeViewRef pView, int *pX, int *pY, int *pW, int *p
 void cocoaViewMakeCurrentContext(NativeViewRef pView, NativeGLCtxRef pCtx)
 {
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
-
-    if ([NSOpenGLContext currentContext] != pCtx)
-        [pCtx makeCurrentContext];
 
     [(OverlayView*)pView setGLCtx:pCtx];
     [(OverlayView*)pView makeCurrentFBO];
