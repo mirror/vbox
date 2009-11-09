@@ -54,15 +54,17 @@ static int InstallNetFlt()
             hr = VBoxNetCfgWinQueryINetCfg(TRUE, VBOX_NETCFG_APP_NAME, &pnc, &lpszLockedBy);
             if(hr == S_OK)
             {
-                DWORD WinEr;
-                GetFullPathNameW(VBOX_NETFLT_PT_INF, sizeof(PtInf)/sizeof(PtInf[0]), PtInf, NULL);
-                WinEr = GetLastError();
-                if(WinEr == ERROR_SUCCESS)
+                DWORD dwSize;
+                dwSize = GetFullPathNameW(VBOX_NETFLT_PT_INF, sizeof(PtInf)/sizeof(PtInf[0]), PtInf, NULL);
+                if(dwSize > 0)
                 {
-                    GetFullPathNameW(VBOX_NETFLT_MP_INF, sizeof(MpInf)/sizeof(MpInf[0]), MpInf, NULL);
-                    WinEr = GetLastError();
-                    if(WinEr == ERROR_SUCCESS)
+                    /** @todo add size check for (sizeof(PtInf)/sizeof(PtInf[0])) == dwSize (string length in sizeof(PtInf[0])) */
+
+                    dwSize = GetFullPathNameW(VBOX_NETFLT_MP_INF, sizeof(MpInf)/sizeof(MpInf[0]), MpInf, NULL);
+                    if(dwSize > 0)
                     {
+                        /** @todo add size check for (sizeof(MpInf)/sizeof(MpInf[0])) == dwSize (string length in sizeof(MpInf[0])) */
+
                         LPCWSTR aInfs[] = {PtInf, MpInf};
                         hr = VBoxNetCfgWinNetFltInstall(pnc, aInfs, 2);
                         if(hr == S_OK)
@@ -77,13 +79,13 @@ static int InstallNetFlt()
                     }
                     else
                     {
-                        hr =  HRESULT_FROM_WIN32(WinEr);
+                        hr =  HRESULT_FROM_WIN32(GetLastError());
                         wprintf(L"error getting full inf path for VBoxNetFlt_m.inf (0x%x)\n", hr);
                     }
                 }
                 else
                 {
-                    hr =  HRESULT_FROM_WIN32(WinEr);
+                    hr =  HRESULT_FROM_WIN32(GetLastError());
                     wprintf(L"error getting full inf path for VBoxNetFlt.inf (0x%x)\n", hr);
                 }
 
