@@ -54,7 +54,7 @@ static const RTGETOPTDEF g_aStorageAttachOptions[] =
     { "--medium",         'm', RTGETOPT_REQ_STRING },
     { "--type",           't', RTGETOPT_REQ_STRING },
     { "--passthrough",    'h', RTGETOPT_REQ_STRING },
-    { "--forceunmount",   'f', RTGETOPT_REQ_BOOL_ONOFF },
+    { "--forceunmount",   'f', RTGETOPT_REQ_NOTHING },
 };
 
 int handleStorageAttach(HandlerArg *a)
@@ -137,9 +137,9 @@ int handleStorageAttach(HandlerArg *a)
                 break;
             }
 
-            case 'f':   // force unmount medium during runtime <on|off>
+            case 'f':   // force unmount medium during runtime
             {
-                fForceUnmount = ValueUnion.f;
+                fForceUnmount = true;
                 break;
             }
 
