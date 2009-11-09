@@ -1726,7 +1726,7 @@ static int vhdCreateDynamicImage(PVHDIMAGE pImage, uint64_t cbSize)
 
     /* Initialize BAT. */
     pImage->uBlockAllocationTableOffset = (uint64_t)sizeof(VHDFooter) + sizeof(VHDDynamicDiskHeader);
-    pImage->cBlockAllocationTableEntries = (uint32_t)(cbSize / pImage->cbDataBlock);
+    pImage->cBlockAllocationTableEntries = (uint32_t)((cbSize + pImage->cbDataBlock - 1) / pImage->cbDataBlock); /* Align table to the block size. */
     u32BlockAllocationTableSectors = (pImage->cBlockAllocationTableEntries * sizeof(uint32_t) + VHD_SECTOR_SIZE - 1) / VHD_SECTOR_SIZE;
     pImage->pBlockAllocationTable = (uint32_t *)RTMemAllocZ(pImage->cBlockAllocationTableEntries * sizeof(uint32_t));
     if (!pImage->pBlockAllocationTable)
@@ -1736,9 +1736,13 @@ static int vhdCreateDynamicImage(PVHDIMAGE pImage, uint64_t cbSize)
     {
         pImage->pBlockAllocationTable[i] = 0xFFFFFFFF; /* It is actually big endian. */
     }
+
     /* Round up to the sector size. */
-    pImage->uCurrentEndOfFile = vhdAllocateParentLocators(pImage, &DynamicDiskHeader,
-        pImage->uBlockAllocationTableOffset + u32BlockAllocationTableSectors * VHD_SECTOR_SIZE);
+    if (pImage->uImageFlags & VD_IMAGE_FLAGS_DIFF) /* fix hyper-v unreadable error */
+        pImage->uCurrentEndOfFile = vhdAllocateParentLocators(pImage, &DynamicDiskHeader,
+                                                              pImage->uBlockAllocationTableOffset + u32BlockAllocationTableSectors * VHD_SECTOR_SIZE);
+    else
+        pImage->uCurrentEndOfFile = pImage->uBlockAllocationTableOffset + u32BlockAllocationTableSectors * VHD_SECTOR_SIZE;
 
     /* Set dynamic image size. */
     pvTmp = RTMemTmpAllocZ(pImage->uCurrentEndOfFile + sizeof(VHDFooter));
