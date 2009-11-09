@@ -2771,15 +2771,26 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
         /* find matching range. */
         PPGMMAPPING pMapping;
         for (pMapping = pPGM->pMappingsR3; pMapping; pMapping = pMapping->pNextR3)
+        {
             if (    pMapping->cPTs == cPTs
                 &&  !strcmp(pMapping->pszDesc, szDesc))
                 break;
+#ifdef DEBUG_sandervl
+            if (    !strcmp(szDesc, "Hypervisor Memory Area")
+                &&  HWACCMIsEnabled(pVM))
+                break;
+#endif
+        }
         if (!pMapping)
             return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Couldn't find mapping: cPTs=%#x szDesc=%s (GCPtr=%RGv)"),
                                     cPTs, szDesc, GCPtr);
 
         /* relocate it. */
-        if (pMapping->GCPtr != GCPtr)
+        if (    pMapping->GCPtr != GCPtr
+#ifdef DEBUG_sandervl
+             && !(!strcmp(szDesc, "Hypervisor Memory Area") && HWACCMIsEnabled(pVM))
+#endif
+           )
         {
             AssertMsg((GCPtr >> X86_PD_SHIFT << X86_PD_SHIFT) == GCPtr, ("GCPtr=%RGv\n", GCPtr));
             pgmR3MapRelocate(pVM, pMapping, pMapping->GCPtr, GCPtr);
