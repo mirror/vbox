@@ -359,7 +359,9 @@ VMMR0DECL(int) HWACCMR0Init(void)
                 if (RT_SUCCESS(rc))
                     rc = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
 
+#if 0
                 AssertMsgRC(rc, ("HWACCMR0InitCPU failed for cpu %d with rc=%d\n", idCpu, rc));
+#endif
 
                 if (RT_SUCCESS(rc))
                 {
