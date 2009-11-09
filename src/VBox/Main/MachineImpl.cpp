@@ -2583,7 +2583,10 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                          * otherwise the attachment that has the youngest
                          * descendant of medium will be used
                          */
-                        if (pAttach->matches(aControllerName, aControllerPort, aDevice))
+                        if (    (*it)->device() == aDevice
+                             && (*it)->port() == aControllerPort
+                             && (*it)->controllerName() == aControllerName
+                           )
                         {
                             foundIt = it;
                             break;
@@ -3871,7 +3874,7 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
          it != mMediaData->mAttachments.end();
          ++it)
     {
-        if (Bstr((*it)->controllerName()) == aName)
+        if ((*it)->controllerName() == aName)
             return setError(VBOX_E_OBJECT_IN_USE,
                             tr("Storage controller named '%ls' has still devices attached"),
                             aName);
@@ -6039,11 +6042,12 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
         if (FAILED(rc))
             break;
 
+        const Bstr controllerName = aStorageController->name();
         ComObjPtr<MediumAttachment> pAttachment;
         pAttachment.createObject();
         rc = pAttachment->init(this,
                                medium,
-                               aStorageController->name(),
+                               controllerName,
                                dev.lPort,
                                dev.lDevice,
                                dev.deviceType);
@@ -6187,7 +6191,7 @@ HRESULT Machine::getMediumAttachmentsOfController(CBSTR aName,
          it != mMediaData->mAttachments.end();
          ++it)
     {
-        if (Bstr((*it)->controllerName()) == aName)
+        if ((*it)->controllerName() == aName)
             atts.push_back(*it);
     }
 

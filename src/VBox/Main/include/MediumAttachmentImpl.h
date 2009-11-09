@@ -25,7 +25,6 @@
 #include "VirtualBoxBase.h"
 
 #include "MediumImpl.h"
-#include "StorageControllerImpl.h"
 
 class Machine;
 class Medium;
@@ -68,7 +67,7 @@ public:
 
     // IMediumAttachment properties
     STDMETHOD(COMGETTER(Medium))(IMedium **aMedium);
-    STDMETHOD(COMGETTER(Controller))(IStorageController **aController);
+    STDMETHOD(COMGETTER(Controller))(BSTR *aController);
     STDMETHOD(COMGETTER(Port))(LONG *aPort);
     STDMETHOD(COMGETTER(Device))(LONG *aDevice);
     STDMETHOD(COMGETTER(Type))(DeviceType_T *aType);
@@ -135,7 +134,7 @@ private:
          * controller will not work - when settings are changed it will point
          * to the old, uninitialized instance. Changing this requires
          * substantial changes to MediumImpl.cpp. */
-        Bstr controllerName;
+        const Bstr controllerName;
         const LONG port;
         const LONG device;
         const DeviceType_T type;

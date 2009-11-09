@@ -8779,7 +8779,7 @@
 
   <interface
     name="IMediumAttachment" extends="$unknown"
-    uuid="7bb6ac41-8c03-4863-9eea-d9c76561b8d1"
+    uuid="e58eb3eb-8627-428b-bdf8-34487c848de5"
     wsmap="struct"
   >
     <desc>
@@ -8799,8 +8799,10 @@
         can be @c null for removable devices.</desc>
     </attribute>
 
-    <attribute name="controller" type="IStorageController" readonly="yes">
-      <desc>Storage controller object to which this attachment belongs.</desc>
+    <attribute name="controller" type="wstring" readonly="yes">
+      <desc>Name of the storage controller of this attachment; this
+        refers to one of the controllers in <link to="IMachine::storageControllers" />
+        by name.</desc>
     </attribute>
 
     <attribute name="port" type="long" readonly="yes">
