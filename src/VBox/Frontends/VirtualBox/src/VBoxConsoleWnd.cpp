@@ -1103,7 +1103,7 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
     }
     else
     {
-        /* TODO: Make warning about DVD is missing! */
+        vboxProblem().cannotMountGuestAdditions (m.GetName());
     }
 }
 
