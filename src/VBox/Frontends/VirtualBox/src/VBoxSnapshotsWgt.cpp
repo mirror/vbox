@@ -266,7 +266,7 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
      * So on platforms whose styles do not normally draw branches,
      * we use QWindowsStyle which is present on every platform and
      * draws required thing like we want. */
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
     QWindowsStyle *treeWidgetStyle = new QWindowsStyle;
     mTreeWidget->setStyle (treeWidgetStyle);
     connect (mTreeWidget, SIGNAL (destroyed (QObject *)), treeWidgetStyle, SLOT (deleteLater()));
