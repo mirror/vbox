@@ -296,8 +296,8 @@ public:
                                    const QString &, const QString &);
 
     int cannotFindGuestAdditions (const QString &aSrc1, const QString &aSrc2);
-    void cannotDownloadGuestAdditions (const QString &aURL,
-                                       const QString &aReason);
+    void cannotDownloadGuestAdditions (const QString &aURL, const QString &aReason);
+    void cannotMountGuestAdditions (const QString &aMachineName);
     bool confirmDownloadAdditions (const QString &aURL, ulong aSize);
     bool confirmMountAdditions (const QString &aURL, const QString &aSrc);
     void warnAboutTooOldAdditions (QWidget *, const QString &, const QString &);

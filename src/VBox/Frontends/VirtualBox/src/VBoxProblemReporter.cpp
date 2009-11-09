@@ -1488,6 +1488,16 @@ void VBoxProblemReporter::cannotDownloadGuestAdditions (const QString &aURL,
                  .arg (aURL).arg (aURL).arg (aReason));
 }
 
+void VBoxProblemReporter::cannotMountGuestAdditions (const QString &aMachineName)
+{
+    message (&vboxGlobal().consoleWnd(), Error,
+             tr ("<p>Could not attach the VirtualBox Guest Additions "
+                 "installer to the virtual machine <b>%1</b>, as the machine "
+                 "has no CD/DVD-ROM drives. Please add a drive using the "
+                 "storage page of the virtual machine settings dialog.</p>")
+                 .arg (aMachineName));
+}
+
 bool VBoxProblemReporter::confirmDownloadAdditions (const QString &aURL,
                                                     ulong aSize)
 {
