@@ -404,9 +404,8 @@ will not be installed."
     # hack the configuration file for them.
     test -f /etc/debian_version -a -d /usr/share/xserver-xorg/pci &&
     {
-        test -h -a ! -e "$lib_dir/vboxvideo.ids" &&
-            rm -f "$lib_dir/vboxvideo.ids"
-        ln -s "$lib_dir/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
+        rm -f "/usr/share/xserver-xorg/pci/vboxvideo.ids"
+        ln -s "$share_dir/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
         test "$useHalForMouse" -eq 1 && doX11Config=0
     }
 
@@ -452,18 +451,6 @@ EOF
             "$lib_dir/x11config.pl" >> $LOG 2>&1
         fi
     fi
-
-    # Certain Ubuntu/Debian versions use a special PCI-id file to identify
-    # video drivers.  Some versions have the directory and don't use it.
-    # Those versions can autoload vboxvideo though, so we don't need to
-    # hack the configuration file for them.
-    test -f /etc/debian_version -a -d /usr/share/xserver-xorg/pci &&
-    {
-        test -h -a ! -e "$share_dir/vboxvideo.ids" &&
-            rm -rf "$share_dir/vboxvideo.ids"
-        ln -s "$share_dir/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
-        test "$useHalForMouse" -eq 1 && doX11Config=0
-    }
 
     # X.Org Server versions starting with 1.5 can do mouse auto-detection,
     # to make our lives easier and spare us the nasty hacks.
