@@ -1845,6 +1845,7 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
         return rc;
     pVM->vm.s.fTeleportedAndNotFullyResumedYet = fTeleporting;
 
+    uint32_t cErrorsPriorToSave = VMR3GetErrorCount(pVM);
     rc = SSMR3Load(pVM, pszFilename, pStreamOps, pvStreamOpsUser, SSMAFTER_RESUME, pfnProgress, pvProgressUser);
     if (RT_SUCCESS(rc))
     {
@@ -1855,9 +1856,12 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
     {
         pVM->vm.s.fTeleportedAndNotFullyResumedYet = false;
         vmR3SetState(pVM, VMSTATE_LOAD_FAILURE, VMSTATE_LOADING);
-        rc = VMSetError(pVM, rc, RT_SRC_POS,
-                        N_("Unable to restore the virtual machine's saved state from '%s'.  It may be damaged or from an older version of VirtualBox.  Please discard the saved state before starting the virtual machine"),
-                        pszFilename);
+        if (cErrorsPriorToSave == VMR3GetErrorCount(pVM))
+            rc = VMSetError(pVM, rc, RT_SRC_POS,
+                            N_("Unable to restore the virtual machine's saved state from '%s'. "
+                               "It may be damaged or from an older version of VirtualBox.  "
+                               "Please discard the saved state before starting the virtual machine"),
+                            pszFilename);
     }
 
     return rc;
@@ -3519,9 +3523,24 @@ VMMR3DECL(void) VMR3SetErrorWorker(PVM pVM)
      */
     PUVM pUVM = pVM->pUVM;
     RTCritSectEnter(&pUVM->vm.s.AtErrorCritSect);
+    ASMAtomicIncU32(&pUVM->vm.s.cRuntimeErrors);
     for (PVMATERROR pCur = pUVM->vm.s.pAtError; pCur; pCur = pCur->pNext)
         vmR3SetErrorWorkerDoCall(pVM, pCur, rc, RT_SRC_POS_ARGS, "%s", pszMessage);
     RTCritSectLeave(&pUVM->vm.s.AtErrorCritSect);
+}
+
+
+/**
+ * Gets the number of errors raised via VMSetError.
+ *
+ * This can be used avoid double error messages.
+ *
+ * @returns The error count.
+ * @param   pVM             The VM handle.
+ */
+VMMR3DECL(uint32_t) VMR3GetErrorCount(PVM pVM)
+{
+    return pVM->pUVM->vm.s.cErrors;
 }
 
 
@@ -3579,6 +3598,7 @@ DECLCALLBACK(void) vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char
      */
     bool fCalledSomeone = false;
     RTCritSectEnter(&pUVM->vm.s.AtErrorCritSect);
+    ASMAtomicIncU32(&pUVM->vm.s.cErrors);
     for (PVMATERROR pCur = pUVM->vm.s.pAtError; pCur; pCur = pCur->pNext)
     {
         va_list va2;
@@ -3772,6 +3792,7 @@ static int vmR3SetRuntimeErrorCommon(PVM pVM, uint32_t fFlags, const char *pszEr
      */
     PUVM pUVM = pVM->pUVM;
     RTCritSectEnter(&pUVM->vm.s.AtErrorCritSect);
+    ASMAtomicIncU32(&pUVM->vm.s.cRuntimeErrors);
     for (PVMATRUNTIMEERROR pCur = pUVM->vm.s.pAtRuntimeError; pCur; pCur = pCur->pNext)
     {
         va_list va;
@@ -3897,6 +3918,20 @@ DECLCALLBACK(int) vmR3SetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *psz
      * Join paths with VMR3SetRuntimeErrorWorker.
      */
     return vmR3SetRuntimeErrorCommon(pVM, fFlags, pszErrorId, pszFormat, pVa);
+}
+
+
+/**
+ * Gets the number of runtime errors raised via VMR3SetRuntimeError.
+ *
+ * This can be used avoid double error messages.
+ *
+ * @returns The runtime error count.
+ * @param   pVM             The VM handle.
+ */
+VMMR3DECL(uint32_t) VMR3GetRuntimeErrorCount(PVM pVM)
+{
+    return pVM->pUVM->vm.s.cRuntimeErrors;
 }
 
 

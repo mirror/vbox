@@ -7648,8 +7648,12 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                             LogRel(("SSM: Load exec failed for '%s' instance #%u ! (version %u)\n",
                                     pszName, UnitHdr.u32Instance, UnitHdr.u32Version));
                             if (!ASMAtomicXchgBool(&pSSM->u.Read.fHaveSetError, true))
-                                VMSetError(pVM, rc, RT_SRC_POS, N_("Load exec failed for '%s' instance #%u (version %u)"),
-                                           pszName, UnitHdr.u32Instance, UnitHdr.u32Version);
+                                if (rc == VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION)
+                                    VMSetError(pVM, rc, RT_SRC_POS, N_("Unsupported version %u of data unit '%s' (instance #%u)"),
+                                               UnitHdr.u32Version, UnitHdr.szName, UnitHdr.u32Instance);
+                                else
+                                    VMSetError(pVM, rc, RT_SRC_POS, N_("Load exec failed for '%s' instance #%u (version %u)"),
+                                               pszName, UnitHdr.u32Instance, UnitHdr.u32Version);
                             break;
                         }
 
@@ -7909,7 +7913,11 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
                 LogRel(("SSM: LoadExec failed for '%s' instance #%u (version %u, pass %#x): %Rrc\n",
                         UnitHdr.szName, UnitHdr.u32Instance, UnitHdr.u32Version, UnitHdr.u32Pass, rc));
                 if (!ASMAtomicXchgBool(&pSSM->u.Read.fHaveSetError, true))
-                    rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to load unit '%s'"), UnitHdr.szName);
+                    if (rc == VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION)
+                        rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Unsupported version %u of data unit '%s' (instance #%u, pass %#x)"),
+                                        UnitHdr.u32Version, UnitHdr.szName, UnitHdr.u32Instance, UnitHdr.u32Pass);
+                    else
+                        rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to load unit '%s'"), UnitHdr.szName);
                 return rc;
             }
         }

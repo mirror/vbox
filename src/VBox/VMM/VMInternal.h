@@ -227,7 +227,13 @@ typedef struct VMINTUSERPERVM
     PVMATERROR                      pAtError;
     /** List of registered error callbacks. */
     PVMATERROR                     *ppAtErrorNext;
+    /** The error message count.
+     * This is incremented every time an error is raised.  */
+    uint32_t volatile               cErrors;
 
+    /** The runtime error message count.
+     * This is incremented every time a runtime error is raised.  */
+    uint32_t volatile               cRuntimeErrors;
     /** List of registered error callbacks. */
     PVMATRUNTIMEERROR               pAtRuntimeError;
     /** List of registered error callbacks. */
