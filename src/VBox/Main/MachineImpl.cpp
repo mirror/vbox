@@ -2823,6 +2823,11 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
                         tr("No drive attached to device slot %d on port %d of controller '%ls'"),
                         aDevice, aControllerPort, aControllerName);
 
+    /* Remember previously mounted medium. The medium before taking the
+     * backup is not necessarily the same thing. */
+    ComObjPtr<Medium> oldmedium;
+    oldmedium = pAttach->medium();
+
     Guid id(aId);
     ComObjPtr<Medium> medium;
     switch (pAttach->type())
@@ -2899,8 +2904,25 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
         pAttach->updateMedium(medium, false /* aImplicit */);
     }
 
-    alock.unlock();
-    onMediumChange(pAttach, aForce);
+    alock.leave();
+    rc = onMediumChange(pAttach, aForce);
+    alock.enter();
+
+    /* On error roll back this change only. */
+    if (FAILED(rc))
+    {
+        if (!medium.isNull())
+            medium->detachFrom(mData->mUuid);
+        pAttach = findAttachment(mMediaData->mAttachments,
+                                 aControllerName,
+                                 aControllerPort,
+                                 aDevice);
+        /* If the attachment is gone in the mean time, bail out. */
+        if (pAttach.isNull())
+            return rc;
+        AutoWriteLock attLock(pAttach);
+        pAttach->updateMedium(oldmedium, false /* aImplicit */);
+    }
 
     return rc;
 }
