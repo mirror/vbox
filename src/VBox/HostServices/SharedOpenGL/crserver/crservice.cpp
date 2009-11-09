@@ -241,8 +241,8 @@ static void svcClientVersionUnsupported(uint32_t minor, uint32_t major)
     if (g_pVM && !shown)
     {
         VMSetRuntimeError(g_pVM, VMSETRTERR_FLAGS_NO_WAIT, "3DSupportIncompatibleAdditions",
-        "Guest application attempt to use hardware 3D acceleration failed, because"
-        " guest additions version doesn't match VirtualBox host version."
+        "Guest application attempt to use hardware 3D acceleration failed, because "
+        "guest additions version doesn't match VirtualBox host version. "
         "Please install appropriate guest additions to fix this issue");
         shown = 1;
     }
