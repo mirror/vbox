@@ -1366,6 +1366,9 @@ void cocoaViewMakeCurrentContext(NativeViewRef pView, NativeGLCtxRef pCtx)
 {
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
+    if ([NSOpenGLContext currentContext] != pCtx)
+        [pCtx makeCurrentContext];
+
     [(OverlayView*)pView setGLCtx:pCtx];
     [(OverlayView*)pView makeCurrentFBO];
 
