@@ -386,19 +386,19 @@ cleanup()
     # Delete old versions of VBox modules.
     DKMS=`which dkms 2>/dev/null`
     if [ -n "$DKMS" ]; then
-      info "Attempt to remove old DKMS modules..."
+      echo "Attempt to remove old DKMS modules..."
       for mod in vboxadd vboxguest vboxvfs vboxvideo; do
         $DKMS status -m $mod | while read line; do
           if echo "$line" | grep -q added > /dev/null ||
              echo "$line" | grep -q built > /dev/null ||
              echo "$line" | grep -q installed > /dev/null; then
             version=`echo "$line" | sed "s/$mod,\([^,]*\)[,:].*/\1/;t;d"`
-            info "  removing module $mod version $version"
+            echo "  removing module $mod version $version"
             $DKMS remove -m $mod -v $version --all
           fi
         done
       done
-      info "Done."
+      echo "Done."
     fi
 
     # Remove old installed modules
