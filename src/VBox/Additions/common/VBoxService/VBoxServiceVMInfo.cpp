@@ -242,9 +242,13 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
 #else
         utmp* ut_user;
         rc = utmpname(UTMP_FILE);
+ #ifdef RT_OS_SOLARIS
+        if (rc == 0)
+ #else
         if (rc != 0)
+ #endif /* !RT_OS_SOLARIS */
         {
-            VBoxServiceError("Could not set UTMP file! Error: %ld", errno);
+            VBoxServiceError("Could not set UTMP file! Error: %ld\n", errno);
         }
         setutent();
         while ((ut_user=getutent()))
