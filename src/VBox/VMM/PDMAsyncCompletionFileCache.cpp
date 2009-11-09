@@ -699,6 +699,11 @@ int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfg
                    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
                    "/PDM/AsyncCompletion/File/CacheBuffersReused",
                    STAMUNIT_COUNT, "Number of times a buffer could be reused");
+    STAMR3Register(pClassFile->Core.pVM, &pCache->uAdaptVal,
+                   STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
+                   "/PDM/AsyncCompletion/File/CacheAdaptValue",
+                   STAMUNIT_COUNT,
+                   "Adaption value of the cache");
 #endif
 
     /* Initialize the critical section */
@@ -1217,6 +1222,9 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
             }
             else
             {
+                 if (pEntryBestFit)
+                    pdmacFileEpCacheEntryRelease(pEntryBestFit);
+
                 /*
                  * Align the size to a 4KB boundary.
                  * Memory size is aligned to a page boundary
@@ -1411,7 +1419,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                     }
                     RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
                 }
-                else
+                else /* Deprecated flag not set */
                 {
                     /* If the entry is dirty it must be also in progress now and we have to defer updating it again. */
                     if(pdmacFileEpCacheEntryFlagIsSetClearAcquireLock(pEndpointCache, pEntry,
@@ -1451,7 +1459,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                             }
                             STAM_COUNTER_INC(&pEndpointCache->StatWriteDeferred);
                         }
-                        else
+                        else /* Deprecate buffer */
                         {
                             LogFlow(("Deprecating buffer for entry %#p\n", pEntry));
                             pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DEPRECATED;
@@ -1491,7 +1499,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
 
                         RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
                     }
-                    else
+                    else /* Dirty bit not set */
                     {
                         /*
                          * Check if a read is in progress for this entry.
@@ -1522,7 +1530,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                             STAM_COUNTER_INC(&pEndpointCache->StatWriteDeferred);
                             RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
                         }
-                        else
+                        else /* I/O in progres flag not set */
                         {
                             /* Write as much as we can into the entry and update the file. */
                             while (cbToWrite)
@@ -1542,15 +1550,15 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                             pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
                             pdmacFileCacheWriteToEndpoint(pEntry);
                         }
-                    }
+                    } /* Dirty bit not set */
 
                     /* Move this entry to the top position */
                     RTCritSectEnter(&pCache->CritSect);
                     pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
                     RTCritSectLeave(&pCache->CritSect);
-                }
+                } /* Deprecated flag not set. */
             }
-            else
+            else /* Entry is on the ghost list */
             {
                 uint8_t *pbBuffer = NULL;
 
@@ -1598,7 +1606,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
             /* Release the reference. If it is still needed the I/O in progress flag should protect it now. */
             pdmacFileEpCacheEntryRelease(pEntry);
         }
-        else
+        else /* No entry found */
         {
             /*
              * No entry found. Try to create a new cache entry to store the data in and if that fails
@@ -1619,7 +1627,12 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                 pdmacFileEpCacheEntryRelease(pEntryBestFit);
             }
             else
+            {
+                if (pEntryBestFit)
+                    pdmacFileEpCacheEntryRelease(pEntryBestFit);
+
                 cbToWrite = cbWrite;
+            }
 
             cbWrite -= cbToWrite;
 
