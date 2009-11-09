@@ -179,7 +179,7 @@ STDMETHODIMP MediumAttachment::COMGETTER(Medium)(IMedium **aHardDisk)
     return S_OK;
 }
 
-STDMETHODIMP MediumAttachment::COMGETTER(Controller)(IStorageController **aController)
+STDMETHODIMP MediumAttachment::COMGETTER(Controller)(BSTR *aController)
 {
     LogFlowThisFuncEnter();
 
@@ -189,16 +189,10 @@ STDMETHODIMP MediumAttachment::COMGETTER(Controller)(IStorageController **aContr
     CheckComRCReturnRC(autoCaller.rc());
 
     /* m->controller is constant during life time, no need to lock */
-    /** @todo ugly hack, MediumAttachment should have a direct reference
-     * to the storage controller, but can't have that right now due to
-     * how objects are created for settings rollback support. */
-    HRESULT rc = E_FAIL;
-
-    if (mParent)
-        rc = mParent->GetStorageControllerByName(m->controllerName, aController);
+    m->controllerName.cloneTo(aController);
 
     LogFlowThisFuncLeave();
-    return rc;
+    return S_OK;
 }
 
 STDMETHODIMP MediumAttachment::COMGETTER(Port)(LONG *aPort)

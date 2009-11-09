@@ -2170,10 +2170,11 @@ void VBoxConsoleWnd::prepareStorageMenu()
                                                                VBoxDefs::MediumType_Invalid;
     Assert (mediumType != VBoxDefs::MediumType_Invalid);
 
-    const CMediumAttachmentVector &attachments = mSession.GetMachine().GetMediumAttachments();
+    CMachine machine = mSession.GetMachine();
+    const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
     foreach (const CMediumAttachment &attachment, attachments)
     {
-        CStorageController controller = attachment.GetController();
+        CStorageController controller = machine.GetStorageControllerByName (attachment.GetController());
         if (   !controller.isNull()
             && (attachment.GetType() == deviceType))
         {
