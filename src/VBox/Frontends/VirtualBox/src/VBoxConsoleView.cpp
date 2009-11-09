@@ -723,6 +723,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mIgnoreMainwndResize (true)
     , mAutoresizeGuest (false)
     , mIgnoreFrameBufferResize (false)
+    , mIgnoreGuestResize (false)
     , mDoResize (false)
     , mGuestSupportsGraphics (false)
     , mNumLock (false)
@@ -1258,6 +1259,12 @@ bool VBoxConsoleView::event (QEvent *e)
 
             case VBoxDefs::ResizeEventType:
             {
+                /* Some situations require initial VGA Resize Request
+                 * to be ignored at all, leaving previous framebuffer,
+                 * console widget and vm window size preserved. */
+                if (mIgnoreGuestResize)
+                    return true;
+
                 bool oldIgnoreMainwndResize = mIgnoreMainwndResize;
                 mIgnoreMainwndResize = true;
 

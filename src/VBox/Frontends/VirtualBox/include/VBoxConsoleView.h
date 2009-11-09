@@ -112,6 +112,7 @@ public:
     void toggleFSMode (const QSize &aSize = QSize());
 
     void setIgnoreMainwndResize (bool aYes) { mIgnoreMainwndResize = aYes; }
+    void setIgnoreGuestResize (bool aYes) { mIgnoreGuestResize = aYes; }
 
     QRect desktopGeometry();
 
@@ -292,6 +293,7 @@ private:
     bool mIgnoreMainwndResize : 1;
     bool mAutoresizeGuest : 1;
     bool mIgnoreFrameBufferResize : 1;
+    bool mIgnoreGuestResize : 1;
 
     /**
      * This flag indicates whether the last console resize should trigger
