@@ -731,6 +731,13 @@ static DECLCALLBACK(void) hwaccmR0EnableCpuCallback(RTCPUID idCpu, void *pvUser1
     PVM             pVM = (PVM)pvUser1;     /* can be NULL! */
     int            *paRc = (int *)pvUser2;
 
+    if (!HWACCMR0Globals.fGlobalInit)
+    {
+        paRc[idCpu] = VINF_SUCCESS;
+        AssertFailed();
+        return;
+    }
+
     paRc[idCpu] = hwaccmR0EnableCpu(pVM, idCpu);
 }
 
@@ -785,6 +792,13 @@ static DECLCALLBACK(void) hwaccmR0DisableCpuCallback(RTCPUID idCpu, void *pvUser
 {
     int            *paRc = (int *)pvUser1;
 
+    if (!HWACCMR0Globals.fGlobalInit)
+    {
+        paRc[idCpu] = VINF_SUCCESS;
+        AssertFailed();
+        return;
+    }
+
     paRc[idCpu] = hwaccmR0DisableCpu(idCpu);
 }
 
@@ -809,8 +823,7 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
     if (enmEvent == RTPOWEREVENT_SUSPEND)
         ASMAtomicWriteBool(&HWACCMR0Globals.fSuspended, true);
 
-    if (    HWACCMR0Globals.enmHwAccmState == HWACCMSTATE_ENABLED
-        &&  HWACCMR0Globals.fGlobalInit)
+    if (HWACCMR0Globals.enmHwAccmState == HWACCMSTATE_ENABLED)
     {
         int     aRc[RTCPUSET_MAX_CPUS];
         int     rc;
@@ -819,13 +832,17 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
         memset(aRc, 0, sizeof(aRc));
         if (enmEvent == RTPOWEREVENT_SUSPEND)
         {
-            /* Turn off VT-x or AMD-V on all CPUs. */
-            rc = RTMpOnAll(hwaccmR0DisableCpuCallback, aRc, NULL);
-            Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
+            if (HWACCMR0Globals.fGlobalInit)
+            {
+                /* Turn off VT-x or AMD-V on all CPUs. */
+                rc = RTMpOnAll(hwaccmR0DisableCpuCallback, aRc, NULL);
+                Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
+            }
+            /* else nothing to do here for the local init case */
         }
         else
         {
-            /* Reinit the CPUs from scratch as the suspend state has messed with the MSRs. */
+            /* Reinit the CPUs from scratch as the suspend state might have messed with the MSRs. (lousy BIOSes as usual) */
             rc = RTMpOnAll(HWACCMR0InitCPU, (void *)((HWACCMR0Globals.vmx.fSupported) ? X86_CPUID_VENDOR_INTEL_EBX : X86_CPUID_VENDOR_AMD_EBX), aRc);
             Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
 
@@ -836,9 +853,13 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
                 SUPR0Printf("hwaccmR0PowerCallback HWACCMR0InitCPU failed with %d\n", rc);
 #endif
 
-            /* Turn VT-x or AMD-V back on on all CPUs. */
-            rc = RTMpOnAll(hwaccmR0EnableCpuCallback, NULL, aRc);
-            Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
+            if (HWACCMR0Globals.fGlobalInit)
+            {
+                /* Turn VT-x or AMD-V back on on all CPUs. */
+                rc = RTMpOnAll(hwaccmR0EnableCpuCallback, NULL, aRc);
+                Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
+            }
+            /* else nothing to do here for the local init case */
         }
     }
     if (enmEvent == RTPOWEREVENT_RESUME)
