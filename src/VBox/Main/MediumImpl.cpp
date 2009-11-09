@@ -70,14 +70,14 @@ struct BackRef
     BackRef(const Guid &aMachineId,
             const Guid &aSnapshotId = Guid::Empty)
         : machineId(aMachineId),
-          inCurState(aSnapshotId.isEmpty())
+          fInCurState(aSnapshotId.isEmpty())
     {
         if (!aSnapshotId.isEmpty())
             llSnapshotIds.push_back(aSnapshotId);
     }
 
     Guid machineId;
-    bool inCurState : 1;
+    bool fInCurState : 1;
     GuidList llSnapshotIds;
 };
 
@@ -1792,22 +1792,22 @@ STDMETHODIMP Medium::GetSnapshotIds(IN_BSTR aMachineId,
 
             /* if the medium is attached to the machine in the current state, we
              * return its ID as the first element of the array */
-            if (it->inCurState)
-                ++ size;
+            if (it->fInCurState)
+                ++size;
 
             if (size > 0)
             {
                 snapshotIds.reset(size);
 
                 size_t j = 0;
-                if (it->inCurState)
-                    it->machineId.toUtf16().detachTo(&snapshotIds [j ++]);
+                if (it->fInCurState)
+                    it->machineId.toUtf16().detachTo(&snapshotIds[j++]);
 
                 for (BackRef::GuidList::const_iterator jt = it->llSnapshotIds.begin();
                      jt != it->llSnapshotIds.end();
                      ++jt, ++j)
                 {
-                     (*jt).toUtf16().detachTo(&snapshotIds [j]);
+                     (*jt).toUtf16().detachTo(&snapshotIds[j]);
                 }
             }
 
@@ -2688,14 +2688,19 @@ HRESULT Medium::attachTo(const Guid &aMachineId,
         return S_OK;
     }
 
+    // if the caller has not supplied a snapshot ID, then we're attaching
+    // to a machine a medium which represents the machine's current state,
+    // so set the flag
     if (aSnapshotId.isEmpty())
     {
         /* sanity: no duplicate attachments */
-        AssertReturn(!it->inCurState, E_FAIL);
-        it->inCurState = true;
+        AssertReturn(!it->fInCurState, E_FAIL);
+        it->fInCurState = true;
 
         return S_OK;
     }
+
+    // otherwise: a snapshot medium is being attached
 
     /* sanity: no duplicate attachments */
     for (BackRef::GuidList::const_iterator jt = it->llSnapshotIds.begin();
@@ -2714,6 +2719,7 @@ HRESULT Medium::attachTo(const Guid &aMachineId,
     }
 
     it->llSnapshotIds.push_back(aSnapshotId);
+    it->fInCurState = false;
 
     LogFlowThisFuncLeave();
 
@@ -2746,7 +2752,7 @@ HRESULT Medium::detachFrom(const Guid &aMachineId,
     if (aSnapshotId.isEmpty())
     {
         /* remove the current state attachment */
-        it->inCurState = false;
+        it->fInCurState = false;
     }
     else
     {
@@ -2759,7 +2765,7 @@ HRESULT Medium::detachFrom(const Guid &aMachineId,
     }
 
     /* if the backref becomes empty, remove it */
-    if (it->inCurState == false && it->llSnapshotIds.size() == 0)
+    if (it->fInCurState == false && it->llSnapshotIds.size() == 0)
         m->backRefs.erase(it);
 
     return S_OK;
@@ -2782,7 +2788,7 @@ void Medium::dumpBackRefs()
          ++it2)
     {
         const BackRef &ref = *it2;
-        LogFlowThisFunc(("  Backref from machine {%RTuuid}\n", ref.machineId.raw()));
+        LogFlowThisFunc(("  Backref from machine {%RTuuid} (fInCurState: %d)\n", ref.machineId.raw(), ref.fInCurState));
 
         for (BackRef::GuidList::const_iterator jt2 = it2->llSnapshotIds.begin();
              jt2 != it2->llSnapshotIds.end();
@@ -2873,7 +2879,7 @@ bool Medium::isAttachedTo(const Guid &aMachineId)
     BackRefList::iterator it =
         std::find_if(m->backRefs.begin(), m->backRefs.end(),
                         BackRef::EqualsTo(aMachineId));
-    return it != m->backRefs.end() && it->inCurState;
+    return it != m->backRefs.end() && it->fInCurState;
 }
 
 /**
@@ -3189,7 +3195,7 @@ HRESULT Medium::prepareDiscard(MergeChain * &aChain)
      * time when discard() is called, there must be no any attachments at all
      * (the code calling prepareDiscard() should detach). */
     AssertReturn(m->backRefs.size() == 1, E_FAIL);
-    AssertReturn(!m->backRefs.front().inCurState, E_FAIL);
+    AssertReturn(!m->backRefs.front().fInCurState, E_FAIL);
     AssertReturn(m->backRefs.front().llSnapshotIds.size() == 1, E_FAIL);
 
     ComObjPtr<Medium> child = children().front();
@@ -4233,7 +4239,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
     for (BackRefList::const_iterator it = m->backRefs.begin();
          it != m->backRefs.end(); ++ it)
     {
-        if (it->inCurState)
+        if (it->fInCurState)
         {
             /* Note: when a VM snapshot is being taken, all normal hard disks
              * attached to the VM in the current state will be, as an exception,
