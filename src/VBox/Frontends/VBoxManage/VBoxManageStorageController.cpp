@@ -54,6 +54,7 @@ static const RTGETOPTDEF g_aStorageAttachOptions[] =
     { "--medium",         'm', RTGETOPT_REQ_STRING },
     { "--type",           't', RTGETOPT_REQ_STRING },
     { "--passthrough",    'h', RTGETOPT_REQ_STRING },
+    { "--forceunmount",   'f', RTGETOPT_REQ_BOOL_ONOFF },
 };
 
 int handleStorageAttach(HandlerArg *a)
@@ -63,6 +64,7 @@ int handleStorageAttach(HandlerArg *a)
     ULONG port   = ~0U;
     ULONG device = ~0U;
     bool fRunTime = false;
+    bool fForceUnmount = false;
     const char *pszCtl  = NULL;
     const char *pszType = NULL;
     const char *pszMedium = NULL;
@@ -132,6 +134,12 @@ int handleStorageAttach(HandlerArg *a)
                     pszPassThrough = ValueUnion.psz;
                 else
                     rc = E_FAIL;
+                break;
+            }
+
+            case 'f':   // force unmount medium during runtime <on|off>
+            {
+                fForceUnmount = ValueUnion.f;
                 break;
             }
 
@@ -227,26 +235,23 @@ int handleStorageAttach(HandlerArg *a)
         if (fRunTime)
         {
             ComPtr<IMediumAttachment> mediumAttachment;
+            DeviceType_T deviceType = DeviceType_Null;
             rc = machine->GetMediumAttachment(Bstr(pszCtl), port, device, mediumAttachment.asOutParam());
             if (SUCCEEDED(rc))
             {
-                DeviceType_T deviceType;
                 mediumAttachment->COMGETTER(Type)(&deviceType);
 
                 if (   (deviceType == DeviceType_DVD)
                     || (deviceType == DeviceType_Floppy))
                 {
                     /* just unmount the floppy/dvd */
-                    CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, Bstr(""), FALSE /* aForce */));
-                }
-                else
-                {
-                    errorArgument("No DVD/Floppy Drive attached to the controller '%s'"
-                                  "at the port: %u, device: %u", pszCtl, port, device);
-                    goto leave;
+                    CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, Bstr(""), fForceUnmount));
                 }
             }
-            else
+
+            if (   FAILED(rc)
+                || !(   deviceType == DeviceType_DVD
+                     || deviceType == DeviceType_Floppy))
             {
                 errorArgument("No DVD/Floppy Drive attached to the controller '%s'"
                               "at the port: %u, device: %u", pszCtl, port, device);
@@ -492,7 +497,7 @@ int handleStorageAttach(HandlerArg *a)
             if (dvdMedium)
             {
                 dvdMedium->COMGETTER(Id)(uuid.asOutParam());
-                CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, uuid, FALSE /* aForce */));
+                CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, uuid, fForceUnmount));
             }
         }
         else if (   !RTStrICmp(pszType, "hdd")
@@ -587,7 +592,7 @@ int handleStorageAttach(HandlerArg *a)
             if (floppyMedium)
             {
                 floppyMedium->COMGETTER(Id)(uuid.asOutParam());
-                CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, uuid, FALSE /* aForce */));
+                CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, uuid, fForceUnmount));
             }
         }
         else

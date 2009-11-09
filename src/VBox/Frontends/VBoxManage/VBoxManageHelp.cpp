@@ -360,6 +360,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--type <dvddrive|hdd|fdd>\n"
                  "                             --medium <none|emptydrive|uuid|filename|host:<drive>>]\n"
                  "                            [--passthrough <on|off>]\n"
+                 "                            [--forceunmount <on|off>]\n"
                  "\n");
     }
 
