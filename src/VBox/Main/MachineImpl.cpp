@@ -72,6 +72,7 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/settings.h>
+#include <VBox/ssm.h>
 
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
@@ -3916,34 +3917,320 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
     return S_OK;
 }
 
+/* @todo where is the right place for this? */
+#define sSSMDisplayScreenshotVer 0x00010001
+
+static int readSavedDisplayScreenshot(Utf8Str *pStateFilePath, uint32_t u32Type, uint8_t **ppu8Data, uint32_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height)
+{
+    /* @todo cache read data */
+    if (pStateFilePath->isEmpty())
+    {
+        /* No saved state data. */
+        return VERR_NOT_SUPPORTED;
+    }
+
+    uint8_t *pu8Data = NULL;
+    uint32_t cbData = 0;
+    uint32_t u32Width = 0;
+    uint32_t u32Height = 0;
+
+    PSSMHANDLE pSSM;
+    int rc = SSMR3Open(pStateFilePath->raw(), 0 /*fFlags*/, &pSSM);
+    if (RT_SUCCESS(rc))
+    { 
+        uint32_t uVersion;
+        rc = SSMR3Seek(pSSM, "DisplayScreenshot", 1100 /*iInstance*/, &uVersion);
+        if (RT_SUCCESS(rc))
+        {
+            if (uVersion == sSSMDisplayScreenshotVer)
+            {
+                uint32_t cBlocks;
+                int rc = SSMR3GetU32(pSSM, &cBlocks);
+                AssertRCReturn(rc, rc);
+
+                for (uint32_t i = 0; i < cBlocks; i++)
+                {
+                    uint32_t cbBlock;
+                    rc = SSMR3GetU32(pSSM, &cbBlock);
+                    AssertRCBreak(rc);
+
+                    uint32_t typeOfBlock;
+                    rc = SSMR3GetU32(pSSM, &typeOfBlock);
+                    AssertRCBreak(rc);
+
+                    LogFlowFunc(("[%d] type %d, size %d bytes\n", i, typeOfBlock, cbBlock));
+
+                    if (typeOfBlock == u32Type)
+                    {
+                        if (cbBlock != 0)
+                        {
+                            pu8Data = (uint8_t *)RTMemAlloc(cbBlock);
+                            if (pu8Data == NULL)
+                            {
+                                rc = VERR_NO_MEMORY;
+                                break;
+                            }
+
+                            rc = SSMR3GetU32(pSSM, &u32Width);
+                            AssertRCBreak(rc);
+                            rc = SSMR3GetU32(pSSM, &u32Height);
+                            AssertRCBreak(rc);
+                            rc = SSMR3GetMem(pSSM, pu8Data, cbBlock);
+                            AssertRCBreak(rc);
+                            cbData = cbBlock;
+                        }
+                        else
+                        {
+                            /* No saved state data. */
+                            rc = VERR_NOT_SUPPORTED;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if (cbBlock != 0)
+                        {
+                            rc = SSMR3Skip(pSSM, cbBlock);
+                            AssertRCBreak(rc);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                rc = VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+            }
+        }
+
+        SSMR3Close(pSSM);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        if (u32Type == 0 && cbData % 4 != 0)
+        {
+            /* Bitmap is 32bpp, so data is invalid. */
+            rc = VERR_SSM_UNEXPECTED_DATA;
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        *ppu8Data = pu8Data;
+        *pcbData = cbData;
+        *pu32Width = u32Width;
+        *pu32Height = u32Height;
+    }
+
+    return rc;
+}
+
+static void freeSavedDisplayScreenshot(uint8_t *pu8Data)
+{
+    /* @todo not necessary when caching is implemented. */
+    RTMemFree(pu8Data);
+}
+
 STDMETHODIMP Machine::QuerySavedThumbnailSize(ULONG *aSize, ULONG *aWidth, ULONG *aHeight)
 {
-    return setError (E_NOTIMPL, tr ("This feature is not implemented"));
+    LogFlowThisFunc(("\n"));
+
+    CheckComArgNotNull(aSize);
+    CheckComArgNotNull(aWidth);
+    CheckComArgNotNull(aHeight);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    uint8_t *pu8Data = NULL;
+    uint32_t cbData = 0;
+    uint32_t u32Width = 0;
+    uint32_t u32Height = 0;
+
+    int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+
+    if (RT_FAILURE(vrc))
+        return setError (VBOX_E_IPRT_ERROR,
+                         tr("Saved screenshot data is not available (%Rrc)"), vrc);
+
+    freeSavedDisplayScreenshot(pu8Data);
+
+    return S_OK;
 }
 
 STDMETHODIMP Machine::ReadSavedThumbnail(BYTE *aAddress, ULONG aSize)
 {
-    return setError (E_NOTIMPL, tr ("This feature is not implemented"));
+    LogFlowThisFunc(("\n"));
+
+    CheckComArgNotNull(aAddress);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    uint8_t *pu8Data = NULL;
+    uint32_t cbData = 0;
+    uint32_t u32Width = 0;
+    uint32_t u32Height = 0;
+
+    int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+
+    if (RT_FAILURE(vrc))
+        return setError (VBOX_E_IPRT_ERROR,
+                         tr("Saved screenshot data is not available (%Rrc)"), vrc);
+    if (aSize != cbData)
+        return setError (E_INVALIDARG,
+                         tr("Invalid size of data buffer: %d"), aSize);
+
+    memcpy(aAddress, pu8Data, cbData);
+
+    freeSavedDisplayScreenshot(pu8Data);
+
+    return S_OK;
 }
 
 STDMETHODIMP Machine::ReadSavedThumbnailToArray(ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData))
 {
-    return setError (E_NOTIMPL, tr ("This feature is not implemented"));
+    LogFlowThisFunc(("\n"));
+
+    CheckComArgNotNull(aWidth);
+    CheckComArgNotNull(aHeight);
+    CheckComArgSafeArrayNotNull(aData);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    uint8_t *pu8Data = NULL;
+    uint32_t cbData = 0;
+    uint32_t u32Width = 0;
+    uint32_t u32Height = 0;
+
+    int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+
+    if (RT_FAILURE(vrc))
+        return setError (VBOX_E_IPRT_ERROR,
+                         tr("Saved screenshot data is not available (%Rrc)"), vrc);
+
+    *aWidth = u32Width;
+    *aHeight = u32Height;
+
+    com::SafeArray<BYTE> bitmap(cbData);
+    /* Convert pixels to format expected by the API caller: [0] R, [1] G, [2] B, [3] A. */
+    for (unsigned i = 0; i < cbData; i += 4)
+    {
+        bitmap[i]     = pu8Data[i + 2];
+        bitmap[i + 1] = pu8Data[i + 1];
+        bitmap[i + 2] = pu8Data[i];
+        bitmap[i + 3] = 0xff;
+    }
+    bitmap.detachTo(ComSafeArrayOutArg(aData));
+
+    freeSavedDisplayScreenshot(pu8Data);
+
+    return S_OK;
 }
 
 STDMETHODIMP Machine::QuerySavedScreenshotPNGSize(ULONG *aSize, ULONG *aWidth, ULONG *aHeight)
 {
-    return setError (E_NOTIMPL, tr ("This feature is not implemented"));
+    LogFlowThisFunc(("\n"));
+
+    CheckComArgNotNull(aSize);
+    CheckComArgNotNull(aWidth);
+    CheckComArgNotNull(aHeight);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    uint8_t *pu8Data = NULL;
+    uint32_t cbData = 0;
+    uint32_t u32Width = 0;
+    uint32_t u32Height = 0;
+
+    int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+
+    if (RT_FAILURE(vrc))
+        return setError (VBOX_E_IPRT_ERROR,
+                         tr("Saved screenshot data is not available (%Rrc)"), vrc);
+
+    freeSavedDisplayScreenshot(pu8Data);
+
+    return S_OK;
 }
 
 STDMETHODIMP Machine::ReadSavedScreenshotPNG(BYTE *aAddress, ULONG aSize)
 {
-    return setError (E_NOTIMPL, tr ("This feature is not implemented"));
+    LogFlowThisFunc(("\n"));
+
+    CheckComArgNotNull(aAddress);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    uint8_t *pu8Data = NULL;
+    uint32_t cbData = 0;
+    uint32_t u32Width = 0;
+    uint32_t u32Height = 0;
+
+    int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+
+    if (RT_FAILURE(vrc))
+        return setError (VBOX_E_IPRT_ERROR,
+                         tr("Saved screenshot data is not available (%Rrc)"), vrc);
+    if (aSize != cbData)
+        return setError (E_INVALIDARG,
+                         tr("Invalid size of data buffer: %d"), aSize);
+
+    memcpy(aAddress, pu8Data, cbData);
+
+    freeSavedDisplayScreenshot(pu8Data);
+
+    return S_OK;
 }
 
 STDMETHODIMP Machine::ReadSavedScreenshotPNGToArray(ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData))
 {
-    return setError (E_NOTIMPL, tr ("This feature is not implemented"));
+    LogFlowThisFunc(("\n"));
+
+    CheckComArgNotNull(aWidth);
+    CheckComArgNotNull(aHeight);
+    CheckComArgSafeArrayNotNull(aData);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    uint8_t *pu8Data = NULL;
+    uint32_t cbData = 0;
+    uint32_t u32Width = 0;
+    uint32_t u32Height = 0;
+
+    int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+
+    if (RT_FAILURE(vrc))
+        return setError (VBOX_E_IPRT_ERROR,
+                         tr("Saved screenshot data is not available (%Rrc)"), vrc);
+
+    *aWidth = u32Width;
+    *aHeight = u32Height;
+
+    com::SafeArray<BYTE> png(cbData);
+    for (unsigned i = 0; i < cbData; i++)
+        png[i] = pu8Data[i];
+    png.detachTo(ComSafeArrayOutArg(aData));
+
+    freeSavedDisplayScreenshot(pu8Data);
+
+    return S_OK;
 }
 
 // public methods for internal purposes
