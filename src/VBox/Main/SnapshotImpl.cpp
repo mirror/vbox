@@ -2127,6 +2127,10 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 ComObjPtr<Medium> pHD = pAttach->medium();
                         // do not lock, prepareDiscared() has a write lock which will hang otherwise
 
+#ifdef DEBUG
+                pHD->dumpBackRefs();
+#endif
+
                 Medium::MergeChain *chain = NULL;
 
                 // needs to be discarded (merged with the child if any), check prerequisites
