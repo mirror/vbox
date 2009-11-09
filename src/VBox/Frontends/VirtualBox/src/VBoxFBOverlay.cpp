@@ -388,9 +388,9 @@ private:
 int VBoxVHWAGlShader::init()
 {
     int rc;
-    int *length;
+    GLint *length;
     const char **sources;
-    length = new int[mcComponents];
+    length = new GLint[mcComponents];
     sources = new const char*[mcComponents];
     for(int i = 0; i < mcComponents; i++)
     {
