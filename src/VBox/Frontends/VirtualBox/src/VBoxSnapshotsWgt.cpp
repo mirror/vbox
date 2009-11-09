@@ -259,15 +259,14 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
 
     mTreeWidget->header()->hide();
 
-#if 0
-    /* We want to draw nodes & branches for the
-     * snapshots QTreeWidget independent of Look&Feel
-     * style. Unfortunately, Qt is not draws branches
-     * for a bunch of styles and moreover paints nodes
-     * of such style which is not consistent with
-     * branches at all. So we have to use QWindowsStyle
-     * which present under every platform and draws
-     * required thing like we want. */
+    /* The snapshots widget is not very useful if there are a lot
+     * of snapshots in a tree and the current Qt style decides not
+     * to draw lines (branches) between the snapshot nodes; it is
+     * then often unclear which snapshot is a child of another.
+     * So on platforms whose styles do not normally draw branches,
+     * we use QWindowsStyle which is present on every platform and
+     * draws required thing like we want. */
+#ifdef RT_OS_LINUX
     QWindowsStyle *treeWidgetStyle = new QWindowsStyle;
     mTreeWidget->setStyle (treeWidgetStyle);
     connect (mTreeWidget, SIGNAL (destroyed (QObject *)), treeWidgetStyle, SLOT (deleteLater()));
