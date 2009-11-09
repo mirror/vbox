@@ -3522,6 +3522,14 @@
         secondary slave. For SATA and SCSI controllers, the channel can range from 0-29.
       </li>
       <li>
+         "CDROM": a virtual CD-ROM drive. The matching item in aExtraConfigValue[] contains the same
+         attachment information as with "HardDiskImage" items.
+      </li>
+      <li>
+        "CDROM": a virtual floppy drive. The matching item in aExtraConfigValue[] contains the same
+        attachment information as with "HardDiskImage" items.
+      </li>
+      <li>
         "NetworkAdapter": a network adapter. The array item in aVBoxValues[] will specify the hardware
         for the network adapter, whereas the array item in aExtraConfigValues[] will have a string
         of the "type=&lt;X&gt;" format, where &lt;X&gt; must be either "NAT" or "Bridged".
@@ -5806,7 +5814,7 @@
       <param name="size" type="unsigned long" dir="in">
         <desc>
           Size of buffer allocated by caller. If the buffer is too small,
-          the method fails. 
+          the method fails.
         </desc>
       </param>
     </method>
@@ -5876,7 +5884,7 @@
       <param name="size" type="unsigned long" dir="in">
         <desc>
           Size of buffer allocated by caller. If the buffer is too small,
-          the method fails. 
+          the method fails.
         </desc>
       </param>
     </method>

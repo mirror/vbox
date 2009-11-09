@@ -28,8 +28,6 @@
 #include <iprt/sha.h>
 #include <iprt/manifest.h>
 
-#include "ovfreader.h"
-
 #include <VBox/param.h>
 #include <VBox/version.h>
 
@@ -758,11 +756,11 @@ struct Appliance::TaskExportOVF: Appliance::TaskOVF
 
 struct MyHardDiskAttachment
 {
-    Guid    uuid;
-    ComPtr<IMachine> pMachine;
-    Bstr    controllerType;
-    int32_t lChannel;
-    int32_t lDevice;
+    Guid                uuid;
+    ComPtr<IMachine>    pMachine;
+    Bstr                controllerType;
+    int32_t             lChannel;
+    int32_t             lDevice;
 };
 
 /* static */
@@ -1473,7 +1471,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
             std::list<VirtualSystemDescriptionEntry*> vsdeHDCSATA = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
             if (vsdeHDCSATA.size() > 1)
                 throw setError(VBOX_E_FILE_ERROR,
-                               tr("Too many SATA controllers in OVF; VirtualBox only supports one"));
+                               tr("Too many SATA controllers in OVF; import facility only supports one"));
             if (vsdeHDCSATA.size() > 0)
             {
                 ComPtr<IStorageController> pController;
@@ -1495,7 +1493,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
             std::list<VirtualSystemDescriptionEntry*> vsdeHDCSCSI = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
             if (vsdeHDCSCSI.size() > 1)
                 throw setError(VBOX_E_FILE_ERROR,
-                               tr("Too many SCSI controllers in OVF; VirtualBox only supports one"));
+                               tr("Too many SCSI controllers in OVF; import facility only supports one"));
             if (vsdeHDCSCSI.size() > 0)
             {
                 ComPtr<IStorageController> pController;
@@ -1681,53 +1679,11 @@ int Appliance::importFS(TaskImportOVF *pTask)
                         mhda.uuid = newMachineId;
                         mhda.pMachine = pNewMachine;
 
-                        switch (hdc.system)
-                        {
-                            case HardDiskController::IDE:
-                                // For the IDE bus, the channel parameter can be either 0 or 1, to specify the primary
-                                // or secondary IDE controller, respectively. For the primary controller of the IDE bus,
-                                // the device number can be either 0 or 1, to specify the master or the slave device,
-                                // respectively. For the secondary IDE controller, the device number is always 1 because
-                                // the master device is reserved for the CD-ROM drive.
-                                mhda.controllerType = Bstr("IDE Controller");
-                                switch (vd.ulAddressOnParent)
-                                {
-                                    case 0:     // interpret this as primary master
-                                        mhda.lChannel = (long)0;
-                                        mhda.lDevice = (long)0;
-                                    break;
-
-                                    case 1:     // interpret this as primary slave
-                                        mhda.lChannel = (long)0;
-                                        mhda.lDevice = (long)1;
-                                    break;
-
-                                    case 2:     // interpret this as secondary slave
-                                        mhda.lChannel = (long)1;
-                                        mhda.lDevice = (long)1;
-                                    break;
-
-                                    default:
-                                        throw setError(VBOX_E_NOT_SUPPORTED,
-                                                       tr("Invalid channel %RI16 specified; IDE controllers support only 0, 1 or 2"), vd.ulAddressOnParent);
-                                    break;
-                                }
-                            break;
-
-                            case HardDiskController::SATA:
-                                mhda.controllerType = Bstr("SATA Controller");
-                                mhda.lChannel = (long)vd.ulAddressOnParent;
-                                mhda.lDevice = (long)0;
-                            break;
-
-                            case HardDiskController::SCSI:
-                                mhda.controllerType = Bstr("SCSI Controller");
-                                mhda.lChannel = (long)vd.ulAddressOnParent;
-                                mhda.lDevice = (long)0;
-                            break;
-
-                            default: break;
-                        }
+                        ConvertDiskAttachmentValues(hdc,
+                                                    vd.ulAddressOnParent,
+                                                    mhda.controllerType,        // Bstr
+                                                    mhda.lChannel,
+                                                    mhda.lDevice);
 
                         Log(("Attaching disk %s to channel %d on device %d\n", vsdeHD->strVbox.c_str(), mhda.lChannel, mhda.lDevice));
 
@@ -1761,7 +1717,6 @@ int Appliance::importFS(TaskImportOVF *pTask)
                 }
             }
 
-#if 0  // @todo Implement CD-ROM import for 3.1 final
             // Add CD-ROMs to the appropriate controllers.
             std::list<VirtualSystemDescriptionEntry*> vsdeCDROM = vsdescThis->findByType(VirtualSystemDescriptionType_CDROM);
             if (avsdeHDs.size() > 0)
@@ -1783,9 +1738,54 @@ int Appliance::importFS(TaskImportOVF *pTask)
                         it != vsdeCDROM.end();
                         ++it)
                     {
-                        VirtualSystemDescriptionEntry *pVSDE = *it;
+                        // for now always attach to secondary master on IDE controller;
+                        // there seems to be no useful information in OVF where else to
+                        // attach it (@todo test with latest versions of OVF software)
 
-                        // @@todo
+                        // find the IDE controller
+                        const HardDiskController *pController = NULL;
+                        for (ControllersMap::const_iterator it = vsysThis.mapControllers.begin();
+                             it != vsysThis.mapControllers.end();
+                             ++it)
+                        {
+                            if (it->second.system == HardDiskController::IDE)
+                            {
+                                pController = &it->second;
+                            }
+                        }
+
+                        if (!pController)
+                            throw setError(VBOX_E_FILE_ERROR,
+                                           tr("OVF wants a CD-ROM drive but cannot find IDE controller, which is required in this version of VirtualBox"));
+
+                        // this is for rollback later
+                        MyHardDiskAttachment mhda;
+                        mhda.uuid = newMachineId;
+                        mhda.pMachine = pNewMachine;
+
+                        ConvertDiskAttachmentValues(*pController,
+                                                    2,     // interpreted as secondary master
+                                                    mhda.controllerType,        // Bstr
+                                                    mhda.lChannel,
+                                                    mhda.lDevice);
+
+                        Log(("Attaching CD-ROM to channel %d on device %d\n", mhda.lChannel, mhda.lDevice));
+
+                        ComPtr<IMachine> sMachine;
+                        rc = session->COMGETTER(Machine)(sMachine.asOutParam());
+                        if (FAILED(rc)) throw rc;
+
+                        rc = sMachine->AttachDevice(mhda.controllerType,
+                                                    mhda.lChannel,
+                                                    mhda.lDevice,
+                                                    DeviceType_DVD,
+                                                    Bstr(""));
+                        if (FAILED(rc)) throw rc;
+
+                        llHardDiskAttachments.push_back(mhda);
+
+                        rc = sMachine->SaveSettings();
+                        if (FAILED(rc)) throw rc;
 
                     } // end for (itHD = avsdeHDs.begin();
 
@@ -1805,7 +1805,6 @@ int Appliance::importFS(TaskImportOVF *pTask)
                     throw;
                 }
             }
-#endif
         }
         catch(HRESULT aRC)
         {
@@ -1880,6 +1879,74 @@ int Appliance::importFS(TaskImportOVF *pTask)
     LogFlowFuncLeave();
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Helper that converts VirtualSystem attachment values into VirtualBox attachment values.
+ * Throws HRESULT values on errors!
+ *
+ * @param hdc
+ * @param vd
+ * @param mhda
+ */
+void Appliance::ConvertDiskAttachmentValues(const HardDiskController &hdc,
+                                            uint32_t ulAddressOnParent,
+                                            Bstr &controllerType,
+                                            int32_t &lChannel,
+                                            int32_t &lDevice)
+{
+    switch (hdc.system)
+    {
+        case HardDiskController::IDE:
+            // For the IDE bus, the channel parameter can be either 0 or 1, to specify the primary
+            // or secondary IDE controller, respectively. For the primary controller of the IDE bus,
+            // the device number can be either 0 or 1, to specify the master or the slave device,
+            // respectively. For the secondary IDE controller, the device number is always 1 because
+            // the master device is reserved for the CD-ROM drive.
+            controllerType = Bstr("IDE Controller");
+            switch (ulAddressOnParent)
+            {
+                case 0:     // interpret this as primary master
+                    lChannel = (long)0;
+                    lDevice = (long)0;
+                break;
+
+                case 1:     // interpret this as primary slave
+                    lChannel = (long)0;
+                    lDevice = (long)1;
+                break;
+
+                case 2:     // interpret this as secondary master
+                    lChannel = (long)1;
+                    lDevice = (long)0;
+                break;
+
+                case 3:     // interpret this as secondary slave
+                    lChannel = (long)1;
+                    lDevice = (long)1;
+                break;
+
+                default:
+                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                    tr("Invalid channel %RI16 specified; IDE controllers support only 0, 1 or 2"), ulAddressOnParent);
+                break;
+            }
+        break;
+
+        case HardDiskController::SATA:
+            controllerType = Bstr("SATA Controller");
+            lChannel = (long)ulAddressOnParent;
+            lDevice = (long)0;
+        break;
+
+        case HardDiskController::SCSI:
+            controllerType = Bstr("SCSI Controller");
+            lChannel = (long)ulAddressOnParent;
+            lDevice = (long)0;
+        break;
+
+        default: break;
+    }
 }
 
 int Appliance::importS3(TaskImportOVF *pTask)
@@ -3567,10 +3634,8 @@ STDMETHODIMP Appliance::Interpret()
                 pNewDesc->addEntry(VirtualSystemDescriptionType_Floppy, "", "", "");
 
             /* CD Drive */
-            /* @todo: I can't disable the CDROM. So nothing to do for now */
-            /*
             if (vsysThis.fHasCdromDrive)
-                pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM, "", "", "");*/
+                pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM, "", "", "");
 
             /* Hard disk Controller */
             uint16_t cIDEused = 0;
@@ -4319,8 +4384,6 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         Bstr bstrGuestOSType;
         uint32_t cCPUs;
         uint32_t ulMemSizeMB;
-        BOOL fDVDEnabled = FALSE;
-        BOOL fFloppyEnabled = FALSE;
         BOOL fUSBEnabled;
         BOOL fAudioEnabled;
         AudioControllerType_T audioController;
@@ -4347,17 +4410,6 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         // PAEEnabled?
         // snapshotFolder?
         // VRDPServer?
-
-/// @todo FIXME // @todo mediumbranch
-#if 0
-        // floppy
-        rc = mFloppyDrive->COMGETTER(Enabled)(&fFloppyEnabled);
-        if (FAILED(rc)) throw rc;
-
-        // CD-ROM ?!?
-        // ComPtr<IDVDDrive> pDVDDrive;
-        fDVDEnabled = 1;
-#endif
 
         // this is more tricky so use the COM method
         rc = COMGETTER(USBController)(pUsbController.asOutParam());
@@ -4482,6 +4534,9 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 #endif // VBOX_WITH_LSILOGIC
 
 //     <const name="HardDiskImage" value="9" />
+//     <const name="Floppy" value="18" />
+//     <const name="CDROM" value="19" />
+
         MediaData::AttachmentList::iterator itA;
         for (itA = mMediaData->mAttachments.begin();
              itA != mMediaData->mAttachments.end();
@@ -4501,10 +4556,14 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
             if (FAILED(rc)) throw rc;
 
             StorageBus_T storageBus;
+            DeviceType_T deviceType;
             LONG lChannel;
             LONG lDevice;
 
             rc = ctl->COMGETTER(Bus)(&storageBus);
+            if (FAILED(rc)) throw rc;
+
+            rc = pHDA->COMGETTER(Type)(&deviceType);
             if (FAILED(rc)) throw rc;
 
             rc = pHDA->COMGETTER(Medium)(pMedium.asOutParam());
@@ -4516,83 +4575,125 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
             rc = pHDA->COMGETTER(Device)(&lDevice);
             if (FAILED(rc)) throw rc;
 
-            Bstr bstrLocation;
-            Bstr bstrName;
-            if (pMedium) // @todo mediumbranch only for hard disks
+            Utf8Str strTargetVmdkName;
+            Utf8Str strLocation;
+            ULONG64 ullSize = 0;
+
+            if (    deviceType == DeviceType_HardDisk
+                 && pMedium
+               )
             {
+                Bstr bstrLocation;
                 rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
                 if (FAILED(rc)) throw rc;
+                strLocation = bstrLocation;
+
+                Bstr bstrName;
                 rc = pMedium->COMGETTER(Name)(bstrName.asOutParam());
+                if (FAILED(rc)) throw rc;
+
+                strTargetVmdkName = bstrName;
+                strTargetVmdkName.stripExt();
+                strTargetVmdkName.append(".vmdk");
+
+                // we need the size of the image so we can give it to addEntry();
+                // later, on export, the progress weight will be based on this.
+                // pMedium can be a differencing image though; in that case, we
+                // need to use the size of the base instead.
+                ComPtr<IMedium> pBaseMedium;
+                rc = pMedium->COMGETTER(Base)(pBaseMedium.asOutParam());
+                        // returns pMedium if there are no diff images
                 if (FAILED(rc)) throw rc;
 
                 // force reading state, or else size will be returned as 0
                 MediumState_T ms;
-                rc = pMedium->RefreshState(&ms);
+                rc = pBaseMedium->RefreshState(&ms);
                 if (FAILED(rc)) throw rc;
 
-                ULONG64 ullSize;
-                rc = pMedium->COMGETTER(Size)(&ullSize);
+                rc = pBaseMedium->COMGETTER(Size)(&ullSize);
                 if (FAILED(rc)) throw rc;
+            }
 
-                // and how this translates to the virtual system
-                int32_t lControllerVsys = 0;
-                LONG lChannelVsys;
+            // and how this translates to the virtual system
+            int32_t lControllerVsys = 0;
+            LONG lChannelVsys;
 
-                switch (storageBus)
-                {
-                    case StorageBus_IDE:
-                        // this is the exact reverse to what we're doing in Appliance::taskThreadImportMachines,
-                        // and it must be updated when that is changed!
+            switch (storageBus)
+            {
+                case StorageBus_IDE:
+                    // this is the exact reverse to what we're doing in Appliance::taskThreadImportMachines,
+                    // and it must be updated when that is changed!
 
-                        if (lChannel == 0 && lDevice == 0)      // primary master
-                            lChannelVsys = 0;
-                        else if (lChannel == 0 && lDevice == 1) // primary slave
-                            lChannelVsys = 1;
-                        else if (lChannel == 1 && lDevice == 1) // secondary slave; secondary master is always CDROM
-                            lChannelVsys = 2;
-                        else
-                            throw setError(VBOX_E_NOT_SUPPORTED,
-                                        tr("Cannot handle hard disk attachment: channel is %d, device is %d"), lChannel, lDevice);
-
-                        lControllerVsys = lIDEControllerIndex;
-                    break;
-
-                    case StorageBus_SATA:
-                        lChannelVsys = lChannel;        // should be between 0 and 29
-                        lControllerVsys = lSATAControllerIndex;
-                    break;
-
-                    case StorageBus_SCSI:
-                        lChannelVsys = lChannel;        // should be between 0 and 15
-                        lControllerVsys = lSCSIControllerIndex;
-                    break;
-
-                    default:
+                    if (lChannel == 0 && lDevice == 0)      // primary master
+                        lChannelVsys = 0;
+                    else if (lChannel == 0 && lDevice == 1) // primary slave
+                        lChannelVsys = 1;
+                    else if (lChannel == 1 && lDevice == 0) // secondary master; by default this is the CD-ROM but as of VirtualBox 3.1 that can change
+                        lChannelVsys = 2;
+                    else if (lChannel == 1 && lDevice == 1) // secondary slave
+                        lChannelVsys = 3;
+                    else
                         throw setError(VBOX_E_NOT_SUPPORTED,
-                                    tr("Cannot handle hard disk attachment: storageBus is %d, channel is %d, device is %d"), storageBus, lChannel, lDevice);
-                    break;
-                }
+                                    tr("Cannot handle medium attachment: channel is %d, device is %d"), lChannel, lDevice);
 
-                Utf8Str strTargetVmdkName(bstrName);
-                strTargetVmdkName.stripExt();
-                strTargetVmdkName.append(".vmdk");
+                    lControllerVsys = lIDEControllerIndex;
+                break;
 
-                pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
-                                strTargetVmdkName,   // disk ID: let's use the name
-                                strTargetVmdkName,   // OVF value:
-                                Utf8Str(bstrLocation), // vbox value: media path
-                                (uint32_t)(ullSize / _1M),
-                                Utf8StrFmt("controller=%RI32;channel=%RI32", lControllerVsys, lChannelVsys));
+                case StorageBus_SATA:
+                    lChannelVsys = lChannel;        // should be between 0 and 29
+                    lControllerVsys = lSATAControllerIndex;
+                break;
+
+                case StorageBus_SCSI:
+                    lChannelVsys = lChannel;        // should be between 0 and 15
+                    lControllerVsys = lSCSIControllerIndex;
+                break;
+
+                case StorageBus_Floppy:
+                    lChannelVsys = 0;
+                    lControllerVsys = 0;
+                break;
+
+                default:
+                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                tr("Cannot handle medium attachment: storageBus is %d, channel is %d, device is %d"), storageBus, lChannel, lDevice);
+                break;
+            }
+
+            Utf8StrFmt strExtra("controller=%RI32;channel=%RI32", lControllerVsys, lChannelVsys);
+            Utf8Str strEmpty;
+
+            switch (deviceType)
+            {
+                case DeviceType_HardDisk:
+                    Log(("Adding VirtualSystemDescriptionType_HardDiskImage, disk size: %RI64\n", ullSize));
+                    pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
+                                       strTargetVmdkName,   // disk ID: let's use the name
+                                       strTargetVmdkName,   // OVF value:
+                                       strLocation, // vbox value: media path
+                                       (uint32_t)(ullSize / _1M),
+                                       strExtra);
+                break;
+
+                case DeviceType_DVD:
+                    pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM,
+                                       strEmpty,   // disk ID
+                                       strEmpty,   // OVF value
+                                       strEmpty, // vbox value
+                                       1,           // ulSize
+                                       strExtra);
+                break;
+
+                case DeviceType_Floppy:
+                    pNewDesc->addEntry(VirtualSystemDescriptionType_Floppy,
+                                       strEmpty,      // disk ID
+                                       strEmpty,      // OVF value
+                                       strEmpty,      // vbox value
+                                       1,       // ulSize
+                                       strExtra);
+                break;
             }
         }
-
-        /* Floppy Drive */
-        if (fFloppyEnabled)  // @todo mediumbranch
-            pNewDesc->addEntry(VirtualSystemDescriptionType_Floppy, "", "", "");
-
-        /* CD Drive */
-        if (fDVDEnabled) // @todo mediumbranch
-            pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM, "", "", "");
 
 //     <const name="NetworkAdapter" />
         size_t a;

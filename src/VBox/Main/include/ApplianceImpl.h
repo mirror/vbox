@@ -27,6 +27,8 @@
 /* VBox includes */
 #include "VirtualBoxBase.h"
 
+#include "ovfreader.h"
+
 /* VBox forward declarations */
 class VirtualBox;
 class Progress;
@@ -115,6 +117,12 @@ private:
 
     int importFS(TaskImportOVF *pTask);
     int importS3(TaskImportOVF *pTask);
+
+    void ConvertDiskAttachmentValues(const HardDiskController &hdc,
+                                     uint32_t ulAddressOnParent,
+                                     Bstr &controllerType,
+                                     int32_t &lChannel,
+                                     int32_t &lDevice);
 
     HRESULT writeImpl(int aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
