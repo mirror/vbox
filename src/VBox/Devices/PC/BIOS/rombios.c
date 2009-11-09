@@ -11262,10 +11262,15 @@ post:
   cmp al, #0x05
   je  eoi_jmp_post
 
+#ifdef VBOX
+  ;; just ignore all other CMOS shutdown status values (OpenSolaris sets it to 0xA for some reason in certain cases)
+  jmp normal_post
+#else
   ;; Examine CMOS shutdown status.
   ;;  0x01,0x02,0x03,0x04,0x06,0x07,0x08, 0x0a, 0x0b, 0x0c = Unimplemented shutdown status.
   push bx
   call _shutdown_status_panic
+#endif
 
 #if 0
   HALT(__LINE__)
