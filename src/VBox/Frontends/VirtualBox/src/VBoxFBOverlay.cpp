@@ -4799,6 +4799,10 @@ int VBoxQGLOverlay::reset()
                 Assert(0);
                 break;
 #endif
+            default:
+                /* should not happen, don't handle this for now */
+                Assert(0);
+                break;
             }
         }
 
