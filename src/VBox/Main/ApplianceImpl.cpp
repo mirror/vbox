@@ -1440,7 +1440,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                 rc = pController->COMGETTER(Name)(bstrName.asOutParam());
                 if (FAILED(rc)) throw rc;
 
-                rc = pNewMachine->AttachDevice(bstrName.raw(), (PRInt32)0, (PRInt32)0, (ULONG)DeviceType_Floppy, Bstr("").raw());
+                rc = pNewMachine->AttachDevice(bstrName, 0, 0, DeviceType_Floppy, Bstr(""));
                 if (FAILED(rc)) throw rc;
             }
 
