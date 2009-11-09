@@ -446,7 +446,7 @@ EOF
     then
         if [ -d /usr/share/xserver-xorg/pci ]
         then
-            ln -s "$lib_dir/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
+            ln -s "$share_dir/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
         fi
     fi
 
