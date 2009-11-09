@@ -1425,29 +1425,30 @@ int Appliance::importFS(TaskImportOVF *pTask)
                 }
             }
 
-/// @todo FIXME
-#if 0
-            /* Floppy drive */
+            // Floppy support
             std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy);
-            // Floppy support is enabled if there's at least one such entry; to disable floppy support,
-            // the type of the floppy item would have been changed to "ignore"
-            bool fFloppyEnabled = vsdeFloppy.size() > 0;
-            ComPtr<IMedium> floppyDrive;
-            rc = pNewMachine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
-            if (FAILED(rc)) throw rc;
-            rc = floppyDrive->COMSETTER(Enabled)(fFloppyEnabled);
-            if (FAILED(rc)) throw rc;
+            if (vsdeFloppy.size() > 1)
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Too many floppy controllers in OVF; import facility only supports one"));
+            if (vsdeFloppy.size() == 1)
+            {
+                ComPtr<IStorageController> pController;
+                rc = pNewMachine->AddStorageController(Bstr("Floppy Controller"), StorageBus_Floppy, pController.asOutParam());
+                if (FAILED(rc)) throw rc;
 
-            /* CDROM drive */
-            /* @todo: I can't disable the CDROM. So nothing to do for now */
-            // std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsd->findByType(VirtualSystemDescriptionType_CDROM);
-#endif
+                Bstr bstrName;
+                rc = pController->COMGETTER(Name)(bstrName.asOutParam());
+                if (FAILED(rc)) throw rc;
+
+                rc = pNewMachine->AttachDevice(bstrName.raw(), (PRInt32)0, (PRInt32)0, (ULONG)DeviceType_Floppy, Bstr("").raw());
+                if (FAILED(rc)) throw rc;
+            }
 
             /* Hard disk controller IDE */
             std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
             if (vsdeHDCIDE.size() > 1)
                 throw setError(VBOX_E_FILE_ERROR,
-                               tr("Too many IDE controllers in OVF; VirtualBox only supports one"));
+                               tr("Too many IDE controllers in OVF; import facility only supports one"));
             if (vsdeHDCIDE.size() == 1)
             {
                 ComPtr<IStorageController> pController;
@@ -1759,6 +1760,52 @@ int Appliance::importFS(TaskImportOVF *pTask)
                     throw;
                 }
             }
+
+#if 0  // @todo Implement CD-ROM import for 3.1 final
+            // Add CD-ROMs to the appropriate controllers.
+            std::list<VirtualSystemDescriptionEntry*> vsdeCDROM = vsdescThis->findByType(VirtualSystemDescriptionType_CDROM);
+            if (avsdeHDs.size() > 0)
+            {
+                /* If in the next block an error occur we have to deregister
+                   the machine, so make an extra try/catch block. */
+                ComPtr<IMedium> srcHdVBox;
+                bool fSourceHdNeedsClosing = false;
+
+                try
+                {
+                    /* In order to attach hard disks we need to open a session
+                     * for the new machine */
+                    rc = mVirtualBox->OpenSession(session, newMachineId_);
+                    if (FAILED(rc)) throw rc;
+                    fSessionOpen = true;
+
+                    for (std::list<VirtualSystemDescriptionEntry*>::const_iterator it = vsdeCDROM.begin();
+                        it != vsdeCDROM.end();
+                        ++it)
+                    {
+                        VirtualSystemDescriptionEntry *pVSDE = *it;
+
+                        // @@todo
+
+                    } // end for (itHD = avsdeHDs.begin();
+
+                    // only now that we're done with all disks, close the session
+                    rc = session->Close();
+                    if (FAILED(rc)) throw rc;
+                    fSessionOpen = false;
+                }
+                catch(HRESULT /* aRC */)
+                {
+                    if (fSourceHdNeedsClosing)
+                        srcHdVBox->Close();
+
+                    if (fSessionOpen)
+                        session->Close();
+
+                    throw;
+                }
+            }
+#endif
         }
         catch(HRESULT aRC)
         {
