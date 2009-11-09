@@ -11264,6 +11264,7 @@ post:
 
 #ifdef VBOX
   ;; just ignore all other CMOS shutdown status values (OpenSolaris sets it to 0xA for some reason in certain cases)
+  ;; (shutdown_status_panic just crashes the VM as it calls int 0x10 before the IDT table has been initialized)
   jmp normal_post
 #else
   ;; Examine CMOS shutdown status.
