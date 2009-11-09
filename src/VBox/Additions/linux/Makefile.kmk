@@ -340,7 +340,6 @@ ifndef VBOX_OSE
  LnxAdd-scripts_MODE    = a+r,u+wx
  LnxAdd-scripts_SOURCES = \
 	$(VBOX_REL_LNX_INST_SRC)routines.sh \
-	$(VBOX_REL_LNX_ADD_INST)uninstall.sh \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd.sh=>vboxadd \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd-service.sh=>vboxadd-service \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd-x11.sh=>vboxadd-x11 \
