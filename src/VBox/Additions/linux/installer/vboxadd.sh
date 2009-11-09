@@ -306,14 +306,14 @@ setup()
     fi
     echo
     if ! sh /usr/share/$PACKAGE/test_drm/build_in_tmp \
-        --no-dkms --no-print-directory > $LOG 2>&1; then
+        --no-dkms --no-print-directory >> $LOG 2>&1; then
         printf "Your system does not seem to support OpenGL in the kernel (this requires\nLinux 2.6.27 or later).  The OpenGL support will not be built.\n"
         BUILDVBOXVIDEO=""
     fi
     begin "Building the main Guest Additions module"
     if ! $BUILDVBOXGUEST \
         --save-module-symvers /tmp/vboxguest-Module.symvers \
-        --no-print-directory install > $LOG 2>&1; then
+        --no-print-directory install >> $LOG 2>&1; then
         fail "Look at $LOG to find out what went wrong"
     fi
     succ_msg
@@ -394,7 +394,7 @@ cleanup()
              echo "$line" | grep -q installed > /dev/null; then
             version=`echo "$line" | sed "s/$mod,\([^,]*\)[,:].*/\1/;t;d"`
             echo "  removing module $mod version $version"
-            $DKMS remove -m $mod -v $version --all
+            $DKMS remove -m $mod -v $version --all 2>/dev/null
           fi
         done
       done
@@ -407,6 +407,9 @@ cleanup()
     find /lib/modules -name vboxvfs\* | xargs rm 2>/dev/null
     find /lib/modules -name vboxvideo\* | xargs rm 2>/dev/null
     depmod
+
+    # Remove old module sources
+    rm -rf /usr/src/vboxadd-* /usr/src/vboxguest-* /usr/src/vboxvfs-* /usr/src/vboxvideo-*
 
     # Remove other files
     rm /sbin/mount.vboxsf 2>/dev/null

@@ -420,7 +420,7 @@ will not be installed."
         if [ $dox11config15suse -eq 1 ]
         then
             cp /etc/X11/xorg.conf /etc/X11/xorg.conf.bak 2> /dev/null
-            cp "$lib_dir/linux_xorg_suse11.conf" /etc/X11/xorg.conf 2> /dev/null
+            cp "$share_dir/linux_xorg_suse11.conf" /etc/X11/xorg.conf 2> /dev/null
         elif [ $dox11config15 -eq 1 ]
         then
             "$lib_dir/x11config15.pl" >> $LOG 2>&1
