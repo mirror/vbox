@@ -5453,7 +5453,8 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 
     if (    uVersion != VGA_SAVEDSTATE_VERSION
         &&  uVersion != VGA_SAVEDSTATE_VERSION_HGSMI
-        &&  uVersion != VGA_SAVEDSTATE_VERSION_PRE_HGSMI)
+        &&  uVersion != VGA_SAVEDSTATE_VERSION_PRE_HGSMI
+        &&  uVersion != VGA_SAVEDSTATE_VERSION_ANCIENT)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     if (uVersion > VGA_SAVEDSTATE_VERSION_HGSMI)
