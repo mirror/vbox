@@ -379,7 +379,8 @@ void createVM(IVirtualBox *virtualBox)
         rc = machine->MountMedium(NS_LITERAL_STRING("IDE Controller").get(), // controller identifier
                                   2,                              // channel number on the controller
                                   0,                              // device number on the controller
-                                  isoUUID);
+                                  isoUUID,
+				  FALSE);                         // aForce
         if (NS_FAILED(rc))
         {
             printf("Error: could not mount ISO image! rc=%08X\n", rc);
