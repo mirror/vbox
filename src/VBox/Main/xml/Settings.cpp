@@ -1944,6 +1944,8 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
                 sctl.strName = "IDE Controller";
             else if (sctl.strName == "SATA")
                 sctl.strName = "SATA Controller";
+            else if (sctl.strName == "SCSI")
+                sctl.strName = "SCSI Controller";
         }
 
         pelmController->getAttributeValue("Instance", sctl.ulInstance);
@@ -2821,6 +2823,8 @@ void MachineConfigFile::writeStorageControllers(xml::ElementNode &elmParent,
                 name = "IDE";
             else if (name == "SATA Controller")
                 name = "SATA";
+            else if (name == "SCSI Controller")
+                name = "SCSI";
         }
         pelmController->setAttribute("name", sc.strName);
 

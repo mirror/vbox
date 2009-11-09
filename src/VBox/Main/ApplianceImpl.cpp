@@ -1714,13 +1714,13 @@ int Appliance::importFS(TaskImportOVF *pTask)
                             break;
 
                             case HardDiskController::SATA:
-                                mhda.controllerType = Bstr("SATA");
+                                mhda.controllerType = Bstr("SATA Controller");
                                 mhda.lChannel = (long)vd.ulAddressOnParent;
                                 mhda.lDevice = (long)0;
                             break;
 
                             case HardDiskController::SCSI:
-                                mhda.controllerType = Bstr("SCSI");
+                                mhda.controllerType = Bstr("SCSI Controller");
                                 mhda.lChannel = (long)vd.ulAddressOnParent;
                                 mhda.lDevice = (long)0;
                             break;
@@ -2863,7 +2863,7 @@ int Appliance::writeFS(TaskExportOVF *pTask)
                 // upon error after registering, close the disk or
                 // it'll stick in the registry forever
                 pTargetDisk->Close();
-                throw;
+                throw rc3;
             }
             diskList.push_back(strTargetFilePath);
 
@@ -4397,7 +4397,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 
 #ifdef VBOX_WITH_AHCI
 //     <const name="HardDiskControllerSATA" value="7" />
-        rc = GetStorageControllerByName(Bstr("SATA"), pController.asOutParam());
+        rc = GetStorageControllerByName(Bstr("SATA Controller"), pController.asOutParam());
         if (SUCCEEDED(rc))
         {
             strVbox = "AHCI";
@@ -4411,7 +4411,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 
 #ifdef VBOX_WITH_LSILOGIC
 //     <const name="HardDiskControllerSCSI" value="8" />
-        rc = GetStorageControllerByName(Bstr("SCSI"), pController.asOutParam());
+        rc = GetStorageControllerByName(Bstr("SCSI Controller"), pController.asOutParam());
         if (SUCCEEDED(rc))
         {
             rc = pController->COMGETTER(ControllerType)(&ctlr);
