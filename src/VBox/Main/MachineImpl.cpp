@@ -3890,6 +3890,36 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
     return S_OK;
 }
 
+STDMETHODIMP Machine::QuerySavedThumbnailSize(ULONG *aSize, ULONG *aWidth, ULONG *aHeight)
+{
+    return setError (E_NOTIMPL, tr ("This feature is not implemented"));
+}
+
+STDMETHODIMP Machine::ReadSavedThumbnail(BYTE *aAddress, ULONG aSize)
+{
+    return setError (E_NOTIMPL, tr ("This feature is not implemented"));
+}
+
+STDMETHODIMP Machine::ReadSavedThumbnailToArray(ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData))
+{
+    return setError (E_NOTIMPL, tr ("This feature is not implemented"));
+}
+
+STDMETHODIMP Machine::QuerySavedScreenshotPNGSize(ULONG *aSize, ULONG *aWidth, ULONG *aHeight)
+{
+    return setError (E_NOTIMPL, tr ("This feature is not implemented"));
+}
+
+STDMETHODIMP Machine::ReadSavedScreenshotPNG(BYTE *aAddress, ULONG aSize)
+{
+    return setError (E_NOTIMPL, tr ("This feature is not implemented"));
+}
+
+STDMETHODIMP Machine::ReadSavedScreenshotPNGToArray(ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData))
+{
+    return setError (E_NOTIMPL, tr ("This feature is not implemented"));
+}
+
 // public methods for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 

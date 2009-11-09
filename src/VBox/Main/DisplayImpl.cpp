@@ -404,9 +404,8 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
         uint32_t cx = 0;
         uint32_t cy = 0;
 
-        /* @todo pfnTakeScreenshot is probably callable from any thread, because it uses the VGA device lock. */
-        int rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)that->mpDrv->pUpPort->pfnTakeScreenshot, 5,
-                                 that->mpDrv->pUpPort, &pu8Data, &cbData, &cx, &cy);
+        /* SSM code is executed on EMT(0), therefore no need to use VMR3ReqCallWait. */
+        int rc = that->mpDrv->pUpPort->pfnTakeScreenshot (that->mpDrv->pUpPort, &pu8Data, &cbData, &cx, &cy);
 
         if (RT_SUCCESS(rc))
         {
@@ -667,7 +666,8 @@ int Display::registerSSM(PVM pVM)
     AssertRCReturn(rc, rc);
 
 #if 0
-    rc = SSMR3RegisterExternal(pVM, "DisplayScreenshot", 0 /*uInstance*/, sSSMDisplayScreenshotVer, 0 /*cbGuess*/,
+    /* uInstance is an arbitrary value greater than 1024. Such a value will ensure a quick seek in saved state file. */
+    rc = SSMR3RegisterExternal(pVM, "DisplayScreenshot", 1100 /*uInstance*/, sSSMDisplayScreenshotVer, 0 /*cbGuess*/,
                                NULL, NULL, NULL,
                                NULL, displaySSMSaveScreenshot, NULL,
                                NULL, displaySSMLoadScreenshot, NULL, this);
