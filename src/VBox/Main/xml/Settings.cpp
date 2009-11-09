@@ -1246,7 +1246,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
  * Hardware struct constructor.
  */
 Hardware::Hardware()
-        : strVersion("2"),
+        : strVersion("1"),
           fHardwareVirt(true),
           fHardwareVirtExclusive(HWVIRTEXCLUSIVEDEFAULT),
           fNestedPaging(false),
@@ -1519,9 +1519,20 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                                      Hardware &hw,
                                      Storage &strg)
 {
-    elmHardware.getAttributeValue("version", hw.strVersion);
-            // defaults to 2 and is only written if != 2
-
+    if (!elmHardware.getAttributeValue("version", hw.strVersion))
+    {
+        /* KLUDGE ALERT!  For a while during the 3.1 development this was not
+           written because it was thought to have a default value of "2".  For
+           sv <= 1.3 it defaults to "1" because the attribute didn't exist,
+           while for 1.4+ it is sort of mandatory.  Now, the buggy XML writer
+           code only wrote 1.7 and later.  So, if it's a 1.7+ XML file and it's
+           missing the hardware version, then it probably should be "2" instead
+           of "1". */
+        if (m->sv < SettingsVersion_v1_7)
+            hw.strVersion = "1";
+        else
+            hw.strVersion = "2";
+    }
     Utf8Str strUUID;
     if (elmHardware.getAttributeValue("uuid", strUUID))
         parseUUID(hw.uuid, strUUID);
@@ -2423,7 +2434,7 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
 {
     xml::ElementNode *pelmHardware = elmParent.createChild("Hardware");
 
-    if (hw.strVersion != "2")
+    if (m->sv >= SettingsVersion_v1_4)
         pelmHardware->setAttribute("version", hw.strVersion);
     if (    (m->sv >= SettingsVersion_v1_9)
          && (!hw.uuid.isEmpty())
@@ -2951,6 +2962,11 @@ void MachineConfigFile::writeSnapshot(xml::ElementNode &elmParent,
  */
 void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
+    // The hardware versions other than "1" requires settings version 1.4 (2.1+).
+    if (    m->sv < SettingsVersion_v1_4
+         && hardwareMachine.strVersion != "1")
+        m->sv < SettingsVersion_v1_4;
+
     // "accelerate 2d video" requires settings version 1.8
     if (    (m->sv < SettingsVersion_v1_8)
          && (hardwareMachine.fAccelerate2DVideo)
