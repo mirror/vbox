@@ -628,6 +628,13 @@ public:
     STDMETHOD(COMGETTER(FirmwareType)) (FirmwareType_T *aFirmware);
     STDMETHOD(COMSETTER(FirmwareType)) (FirmwareType_T  aFirmware);
 
+    STDMETHOD(QuerySavedThumbnailSize)(ULONG *aSize, ULONG *aWidth, ULONG *aHeight);
+    STDMETHOD(ReadSavedThumbnail)(BYTE *aAddress, ULONG aSize);
+    STDMETHOD(ReadSavedThumbnailToArray)(ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData));
+    STDMETHOD(QuerySavedScreenshotPNGSize)(ULONG *aSize, ULONG *aWidth, ULONG *aHeight);
+    STDMETHOD(ReadSavedScreenshotPNG)(BYTE *aAddress, ULONG aSize);
+    STDMETHOD(ReadSavedScreenshotPNGToArray)(ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData));
+
     // public methods only for internal purposes
 
     InstanceType type() const { return mType; }
