@@ -2584,6 +2584,8 @@ void VBoxConsoleWnd::updateMachineState (KMachineState aState)
 
     if (guruMeditation)
     {
+        mConsole->setIgnoreGuestResize (true);
+
         CConsole console = mConsole->console();
         QString logFolder = console.GetMachine().GetLogFolder();
 
