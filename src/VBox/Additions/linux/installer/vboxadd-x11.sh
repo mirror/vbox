@@ -307,7 +307,7 @@ will not be installed."
             begin "Installing Xorg Server 1.6 modules"
             vboxvideo_src=vboxvideo_drv_16.so
             vboxmouse_src=vboxmouse_drv_16.so
-            dox11config=0
+            dox11config15=1
             ;;
         1.4.99.* | 1.5.* )
             # Fedora 9 shipped X.Org Server version 1.4.99.9x (1.5.0 RC)
@@ -384,7 +384,8 @@ will not be installed."
         echo "your guest system.  Seamless mode and dynamic resizing will not work in"
         echo "this guest."
     fi
-    # Install selinux policy for Fedora 7 and 8 to allow the X server to open device files
+    # Install selinux policy for Fedora 7 and 8 to allow the X server to
+    # open device files
     case "$redhat_release" in
         Fedora\ release\ 7* | Fedora\ release\ 8* )
             semodule -i vbox_x11.pp > /dev/null 2>&1
@@ -396,6 +397,18 @@ will not be installed."
     # completely irrelevant on the target system.
     chcon -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
     semanage fcontext -a -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
+
+    # Certain Ubuntu/Debian versions use a special PCI-id file to identify
+    # video drivers.  Some versions have the directory and don't use it.
+    # Those versions can autoload vboxvideo though, so we don't need to
+    # hack the configuration file for them.
+    test -f /etc/debian_version -a -d /usr/share/xserver-xorg/pci &&
+    {
+        test -h -a ! -e "$lib_dir/vboxvideo.ids" &&
+            rm -f "$lib_dir/vboxvideo.ids"
+        ln -s "$lib_dir/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
+        test "$useHalForMouse" -eq 1 && doX11Config=0
+    }
 
     # Do the XF86Config/xorg.conf hack for those versions that require it
     if [ $dox11config -eq 1 ]
@@ -441,16 +454,18 @@ EOF
     fi
 
     # Certain Ubuntu/Debian versions use a special PCI-id file to identify
-    # video drivers
-    if [ -f /etc/debian_version ]
-    then
-        if [ -d /usr/share/xserver-xorg/pci ]
-        then
-            ln -s "$share_dir/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
-        fi
-    fi
+    # video drivers.  Some versions have the directory and don't use it.
+    # Those versions can autoload vboxvideo though, so we don't need to
+    # hack the configuration file for them.
+    test -f /etc/debian_version -a -d /usr/share/xserver-xorg/pci &&
+    {
+        test -h -a ! -e "$share_dir/vboxvideo.ids" &&
+            rm -rf "$share_dir/vboxvideo.ids"
+        ln -s "$share_dir/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
+        test "$useHalForMouse" -eq 1 && doX11Config=0
+    }
 
-    # And X.Org Server versions starting with 1.5 can do mouse auto-detection,
+    # X.Org Server versions starting with 1.5 can do mouse auto-detection,
     # to make our lives easier and spare us the nasty hacks.
     if [ $useHalForMouse -eq 1 ]
     then
