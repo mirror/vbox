@@ -585,7 +585,7 @@ public:
     STDMETHOD(DetachDevice)(IN_BSTR aControllerName, LONG aControllerPort, LONG aDevice);
     STDMETHOD(PassthroughDevice)(IN_BSTR aControllerName, LONG aControllerPort, LONG aDevice, BOOL aPassthrough);
     STDMETHOD(MountMedium)(IN_BSTR aControllerName, LONG aControllerPort,
-                           LONG aDevice, IN_BSTR aId);
+                           LONG aDevice, IN_BSTR aId, BOOL aForce);
     STDMETHOD(GetMedium)(IN_BSTR aControllerName, LONG aControllerPort, LONG aDevice,
                          IMedium **aMedium);
     STDMETHOD(GetSerialPort)(ULONG slot, ISerialPort **port);
@@ -700,7 +700,7 @@ public:
     virtual HRESULT onVRDPServerChange() { return S_OK; }
     virtual HRESULT onUSBControllerChange() { return S_OK; }
     virtual HRESULT onStorageControllerChange() { return S_OK; }
-    virtual HRESULT onMediumChange(IMediumAttachment * /* mediumAttachment */) { return S_OK; }
+    virtual HRESULT onMediumChange(IMediumAttachment * /* mediumAttachment */, BOOL /* force */) { return S_OK; }
     virtual HRESULT onSharedFolderChange() { return S_OK; }
 
     HRESULT saveRegistryEntry(settings::MachineRegistryEntry &data);
@@ -1007,7 +1007,7 @@ public:
 
     HRESULT onNetworkAdapterChange(INetworkAdapter *networkAdapter, BOOL changeAdapter);
     HRESULT onStorageControllerChange();
-    HRESULT onMediumChange(IMediumAttachment *aMediumAttachment);
+    HRESULT onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce);
     HRESULT onSerialPortChange(ISerialPort *serialPort);
     HRESULT onParallelPortChange(IParallelPort *parallelPort);
     HRESULT onVRDPServerChange();

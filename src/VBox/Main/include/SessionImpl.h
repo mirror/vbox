@@ -94,7 +94,7 @@ public:
     STDMETHOD(OnSerialPortChange)(ISerialPort *serialPort);
     STDMETHOD(OnParallelPortChange)(IParallelPort *parallelPort);
     STDMETHOD(OnStorageControllerChange)();
-    STDMETHOD(OnMediumChange)(IMediumAttachment *aMediumAttachment);
+    STDMETHOD(OnMediumChange)(IMediumAttachment *aMediumAttachment, BOOL aForce);
     STDMETHOD(OnVRDPServerChange)();
     STDMETHOD(OnUSBControllerChange)();
     STDMETHOD(OnSharedFolderChange) (BOOL aGlobal);

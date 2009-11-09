@@ -237,7 +237,7 @@ int handleStorageAttach(HandlerArg *a)
                     || (deviceType == DeviceType_Floppy))
                 {
                     /* just unmount the floppy/dvd */
-                    CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, Bstr("")));
+                    CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, Bstr(""), FALSE /* aForce */));
                 }
                 else
                 {
@@ -492,7 +492,7 @@ int handleStorageAttach(HandlerArg *a)
             if (dvdMedium)
             {
                 dvdMedium->COMGETTER(Id)(uuid.asOutParam());
-                CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, uuid));
+                CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, uuid, FALSE /* aForce */));
             }
         }
         else if (   !RTStrICmp(pszType, "hdd")
@@ -587,7 +587,7 @@ int handleStorageAttach(HandlerArg *a)
             if (floppyMedium)
             {
                 floppyMedium->COMGETTER(Id)(uuid.asOutParam());
-                CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, uuid));
+                CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, uuid, FALSE /* aForce */));
             }
         }
         else

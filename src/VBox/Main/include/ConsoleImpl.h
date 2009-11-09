@@ -177,7 +177,7 @@ public:
     HRESULT onSerialPortChange (ISerialPort *aSerialPort);
     HRESULT onParallelPortChange (IParallelPort *aParallelPort);
     HRESULT onStorageControllerChange ();
-    HRESULT onMediumChange(IMediumAttachment *aMediumAttachment);
+    HRESULT onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce);
     HRESULT onVRDPServerChange();
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange (BOOL aGlobal);
@@ -440,10 +440,11 @@ private:
     static DECLCALLBACK(int) changeDrive (Console *pThis, const char *pszDevice,
                                           unsigned uInstance, unsigned uLun,
                                           bool fHostDrive, const char *pszPath,
-                                          const char *pszFormat, bool fPassthrough);
+                                          const char *pszFormat, bool fPassthrough,
+                                          bool fForce);
     const char *controllerTypeToDev(StorageControllerType_T enmCtrlType);
     HRESULT convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG device, unsigned &uLun);
-    HRESULT doMediumChange(IMediumAttachment *aMediumAttachment);
+    HRESULT doMediumChange(IMediumAttachment *aMediumAttachment, bool fForce);
 
 #ifdef VBOX_DYNAMIC_NET_ATTACH
     HRESULT doNetworkAdapterChange (const char *pszDevice, unsigned uInstance,

@@ -105,7 +105,7 @@ void VBoxVMFirstRunWzd::accept()
     CStorageController ctr = mMachine.GetStorageControllerByName (ctrName);
     Assert (!ctr.isNull());
     /* Mount medium to the predefined port/device */
-    mMachine.MountMedium (ctrName, ctrPort, ctrDevice, mCbMedia->id());
+    mMachine.MountMedium (ctrName, ctrPort, ctrDevice, mCbMedia->id(), false /* force */);
     if (mMachine.isOk())
         QIAbstractWizard::accept();
     else

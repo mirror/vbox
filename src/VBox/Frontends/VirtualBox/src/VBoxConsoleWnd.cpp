@@ -1089,7 +1089,7 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
 
     if (!ctrName.isNull())
     {
-        m.MountMedium (ctrName, ctrPort, ctrDevice, uuid);
+        m.MountMedium (ctrName, ctrPort, ctrDevice, uuid, false /* force */);
         AssertWrapperOk (m);
         if (m.isOk())
         {
@@ -2373,7 +2373,7 @@ void VBoxConsoleWnd::mountMedium()
 
     machine.MountMedium (target.name, target.port, target.device,
                          target.id.isEmpty() || medium.isNull() || medium.GetId() != target.id ||
-                         target.type != VBoxDefs::MediumType_Invalid ? target.id : QString (""));
+                         target.type != VBoxDefs::MediumType_Invalid ? target.id : QString (""), false /* force */);
 }
 
 /**

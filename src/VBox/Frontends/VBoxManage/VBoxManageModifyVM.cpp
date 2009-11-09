@@ -909,7 +909,7 @@ int handleModifyVM(HandlerArg *a)
                  * storage controllers. */
                 if (dvdMedium)
                     dvdMedium->COMGETTER(Id)(uuid.asOutParam());
-                CHECK_ERROR(machine, MountMedium(Bstr("IDE Controller"), 1, 0, uuid));
+                CHECK_ERROR(machine, MountMedium(Bstr("IDE Controller"), 1, 0, uuid, FALSE /* aForce */));
                 break;
             }
 
@@ -977,7 +977,7 @@ int handleModifyVM(HandlerArg *a)
                         }
                     }
                     floppyMedium->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, MountMedium(Bstr("Floppy Controller"), 0, 0, uuid));
+                    CHECK_ERROR(machine, MountMedium(Bstr("Floppy Controller"), 0, 0, uuid, FALSE /* aForce */));
                 }
                 break;
             }
