@@ -195,6 +195,9 @@ typedef SUPREQHDR *PSUPREQHDR;
  *
  * @todo Pending work on next major version change:
  *          - Nothing.
+ *
+ * @remarks Major version 0x0011YYYY was consumed by the 3.0.12 release. The
+ *          next major version used on the trunk will be 0x00120000!
  */
 #define SUPDRV_IOC_VERSION                              0x00100001
 
