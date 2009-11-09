@@ -1133,8 +1133,8 @@ static int pgmR3PrepRamPages(PVM pVM)
 
 
 /**
- * Saves the RAM configuration. 
- *  
+ * Saves the RAM configuration.
+ *
  * @returns VBox status code.
  * @param   pVM                 The VM handle.
  * @param   pSSM                The saved state handle.
@@ -1156,7 +1156,7 @@ static int pgmR3SaveRamConfig(PVM pVM, PSSMHANDLE pSSM)
 
 /**
  * Loads and verifies the RAM configuration.
- *  
+ *
  * @returns VBox status code.
  * @param   pVM                 The VM handle.
  * @param   pSSM                The saved state handle.
@@ -1180,7 +1180,7 @@ static int pgmR3LoadRamConfig(PVM pVM, PSSMHANDLE pSSM)
 
     if (   cbRamHoleCfg != cbRamHoleSaved
         || cbRamCfg     != cbRamSaved)
-        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Ram config mismatch: saved=%RX64/%RX32 config=%RX64/%RX32 (RAM/Hole)"), 
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Ram config mismatch: saved=%RX64/%RX32 config=%RX64/%RX32 (RAM/Hole)"),
                                 cbRamSaved, cbRamHoleSaved, cbRamCfg, cbRamHoleCfg);
     return VINF_SUCCESS;
 }
@@ -2266,7 +2266,6 @@ static int pgmR3LoadMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
             /*
              * Old format.
              */
-            AssertLogRelReturn(!pVM->pgm.s.fRamPreAlloc, VERR_NOT_SUPPORTED); /* can't be detected. */
 
             /* Of the page flags, pick up MMIO2 and ROM/RESERVED for the !fHaveBits case.
                The rest is generally irrelevant and wrong since the stuff have to match registrations. */
