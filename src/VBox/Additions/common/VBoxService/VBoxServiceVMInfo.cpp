@@ -191,7 +191,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         char szUserList[4096] = {0};
 
 #ifdef RT_OS_WINDOWS
- #ifndef TARGET_NT4
+# ifndef TARGET_NT4
         PLUID pSessions = NULL;
         ULONG ulCount = 0;
         NTSTATUS r = 0;
@@ -234,31 +234,34 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
             ::LocalFree (pLuid);
 
         ::LsaFreeReturnBuffer(pSessions);
- #endif /* TARGET_NT4 */
+# endif /* TARGET_NT4 */
 #elif defined(RT_OS_FREEBSD)
         /** @todo FreeBSD: Port logged on user info retrival. */
 #elif defined(RT_OS_OS2)
         /** @todo OS/2: Port logged on (LAN/local/whatever) user info retrival. */
 #else
-        utmp* ut_user;
         rc = utmpname(UTMP_FILE);
- #ifdef RT_OS_SOLARIS
-        if (rc == 0)
- #else
+# ifdef RT_OS_SOLARIS
+        if (rc != 1)
+# else
         if (rc != 0)
- #endif /* !RT_OS_SOLARIS */
+# endif
         {
             VBoxServiceError("Could not set UTMP file! Error: %ld\n", errno);
         }
         setutent();
-        while ((ut_user=getutent()))
+        utmp *ut_user;
+        while ((ut_user = getutent()))
         {
             /* Make sure we don't add user names which are not
              * part of type USER_PROCESS and don't add same users twice. */
-            if (   (ut_user->ut_type == USER_PROCESS)
-                && (strstr(szUserList, ut_user->ut_user) == NULL))
+            if (   ut_user->ut_type == USER_PROCESS
+                && strstr(szUserList, ut_user->ut_user) == NULL)
             {
-                /** @todo Do we really want to filter out double user names? (Same user logged in twice) */
+                /** @todo Do we really want to filter out double user names? (Same user logged in twice)
+                 *  bird: If we do, then we must add checks for buffer overflows here!  */
+                /** @todo r=bird: strstr will filtering out users with similar names. For
+                 *        example: smith, smithson, joesmith and bobsmith */
                 if (uiUserCount > 0)
                     strcat(szUserList, ",");
                 strcat(szUserList, ut_user->ut_user);
