@@ -231,12 +231,16 @@ static void pdmacFileCacheDestroyList(PPDMACFILELRULIST pList)
  * @param    pListSrc         The source list to evict data from.
  * @param    pGhostListSrc    The ghost list removed entries should be moved to
  *                            NULL if the entry should be freed.
+ * @param    fReuseBuffer     Flag whether a buffer should be reused if it has the same size
+ * @param    ppbBuf           Where to store the address of the buffer if an entry with the
+ *                            same size was found and fReuseBuffer is true.
  *
  * @notes This function may return fewer bytes than requested because entries
  *        may be marked as non evictable if they are used for I/O at the moment.
  */
 static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t cbData,
-                                           PPDMACFILELRULIST pListSrc, PPDMACFILELRULIST pGhostListDst)
+                                           PPDMACFILELRULIST pListSrc, PPDMACFILELRULIST pGhostListDst,
+                                           bool fReuseBuffer, uint8_t **ppbBuffer)
 {
     size_t cbEvicted = 0;
 
@@ -247,6 +251,12 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
               || (pGhostListDst == &pCache->LruRecentlyGhost)
               || (pGhostListDst == &pCache->LruFrequentlyGhost),
               ("Destination list must be NULL or one of the ghost lists\n"));
+
+    if (fReuseBuffer)
+    {
+        AssertPtr(ppbBuffer);
+        *ppbBuffer = NULL;
+    }
 
     /* Start deleting from the tail. */
     PPDMACFILECACHEENTRY pEntry = pListSrc->pTail;
@@ -275,12 +285,15 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
 
                 LogFlow(("Evicting entry %#p (%u bytes)\n", pCurr, pCurr->cbData));
 
-                if (pCurr->pbData)
+                if (fReuseBuffer && (pCurr->cbData == cbData))
                 {
-                    RTMemPageFree(pCurr->pbData);
-                    pCurr->pbData = NULL;
+                    STAM_COUNTER_INC(&pCache->StatBuffersReused);
+                    *ppbBuffer = pCurr->pbData;
                 }
+                else if (pCurr->pbData)
+                    RTMemPageFree(pCurr->pbData);
 
+                pCurr->pbData = NULL;
                 cbEvicted += pCurr->cbData;
 
                 if (pGhostListDst)
@@ -309,7 +322,8 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
     return cbEvicted;
 }
 
-static size_t pdmacFileCacheReplace(PPDMACFILECACHEGLOBAL pCache, size_t cbData, PPDMACFILELRULIST pEntryList)
+static size_t pdmacFileCacheReplace(PPDMACFILECACHEGLOBAL pCache, size_t cbData, PPDMACFILELRULIST pEntryList,
+                                    bool fReuseBuffer, uint8_t **ppbBuffer)
 {
     PDMACFILECACHE_IS_CRITSECT_OWNER(pCache);
 
@@ -321,14 +335,16 @@ static size_t pdmacFileCacheReplace(PPDMACFILECACHEGLOBAL pCache, size_t cbData,
         /* We need to remove entry size pages from T1 and move the entries to B1 */
         return pdmacFileCacheEvictPagesFrom(pCache, cbData,
                                             &pCache->LruRecentlyUsed,
-                                            &pCache->LruRecentlyGhost);
+                                            &pCache->LruRecentlyGhost,
+                                            fReuseBuffer, ppbBuffer);
     }
     else
     {
         /* We need to remove entry size pages from T2 and move the entries to B2 */
         return pdmacFileCacheEvictPagesFrom(pCache, cbData,
                                             &pCache->LruFrequentlyUsed,
-                                            &pCache->LruFrequentlyGhost);
+                                            &pCache->LruFrequentlyGhost,
+                                            fReuseBuffer, ppbBuffer);
     }
 }
 
@@ -339,7 +355,7 @@ static size_t pdmacFileCacheReplace(PPDMACFILECACHEGLOBAL pCache, size_t cbData,
  * @param    pCache    The global cache data.
  * @param    cbData    Number of bytes to evict.
  */
-static size_t pdmacFileCacheEvict(PPDMACFILECACHEGLOBAL pCache, size_t cbData)
+static size_t pdmacFileCacheEvict(PPDMACFILECACHEGLOBAL pCache, size_t cbData, bool fReuseBuffer, uint8_t **ppbBuffer)
 {
     size_t cbRemoved = ~0;
 
@@ -352,13 +368,15 @@ static size_t pdmacFileCacheEvict(PPDMACFILECACHEGLOBAL pCache, size_t cbData)
         {
             cbRemoved = pdmacFileCacheEvictPagesFrom(pCache, cbData,
                                                      &pCache->LruRecentlyGhost,
-                                                     NULL);
+                                                     NULL,
+                                                     fReuseBuffer, ppbBuffer);
         }
         else
         {
             cbRemoved = pdmacFileCacheEvictPagesFrom(pCache, cbData,
                                                      &pCache->LruRecentlyUsed,
-                                                     NULL);
+                                                     NULL,
+                                                     fReuseBuffer, ppbBuffer);
         }
     }
     else
@@ -371,10 +389,11 @@ static size_t pdmacFileCacheEvict(PPDMACFILECACHEGLOBAL pCache, size_t cbData)
             if (cbUsed == 2*pCache->cbMax)
                 cbRemoved = pdmacFileCacheEvictPagesFrom(pCache, cbData,
                                                          &pCache->LruFrequentlyGhost,
-                                                         NULL);
+                                                         NULL,
+                                                         fReuseBuffer, ppbBuffer);
 
             if (cbRemoved >= cbData)
-                cbRemoved = pdmacFileCacheReplace(pCache, cbData, NULL);
+                cbRemoved = pdmacFileCacheReplace(pCache, cbData, NULL, fReuseBuffer, ppbBuffer);
         }
     }
 
@@ -676,6 +695,10 @@ int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfg
                    STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS,
                    "/PDM/AsyncCompletion/File/CacheTreeRemove",
                    STAMUNIT_TICKS_PER_CALL, "Time taken to remove an entry an the tree");
+    STAMR3Register(pClassFile->Core.pVM, &pCache->StatBuffersReused,
+                   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                   "/PDM/AsyncCompletion/File/CacheBuffersReused",
+                   STAMUNIT_COUNT, "Number of times a buffer could be reused");
 #endif
 
     /* Initialize the critical section */
@@ -865,10 +888,13 @@ static void pdmacFileEpCacheInsertEntry(PPDMACFILEENDPOINTCACHE pEndpointCache, 
  * @param   pEndoint  The endpoint the entry holds data for.
  * @param   off       Start offset.
  * @param   cbData    Size of the cache entry.
+ * @param   pbBuffer  Pointer to the buffer to use.
+ *                    NULL if a new buffer should be allocated.
+ *                    The buffer needs to have the same size of the entry. 
  */
 static PPDMACFILECACHEENTRY pdmacFileCacheEntryAlloc(PPDMACFILECACHEGLOBAL pCache,
                                                      PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
-                                                     RTFOFF off, size_t cbData)
+                                                     RTFOFF off, size_t cbData, uint8_t *pbBuffer)
 {
     PPDMACFILECACHEENTRY pEntryNew = (PPDMACFILECACHEENTRY)RTMemAllocZ(sizeof(PDMACFILECACHEENTRY));
 
@@ -886,7 +912,10 @@ static PPDMACFILECACHEENTRY pdmacFileCacheEntryAlloc(PPDMACFILECACHEGLOBAL pCach
     pEntryNew->pWaitingHead  = NULL;
     pEntryNew->pWaitingTail  = NULL;
     pEntryNew->pbDataReplace = NULL;
-    pEntryNew->pbData        = (uint8_t *)RTMemPageAlloc(cbData);
+    if (pbBuffer)
+        pEntryNew->pbData    = pbBuffer;
+    else
+        pEntryNew->pbData    = (uint8_t *)RTMemPageAlloc(cbData);
 
     if (RT_UNLIKELY(!pEntryNew->pbData))
     {
@@ -1123,17 +1152,22 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
             }
             else
             {
+                uint8_t *pbBuffer = NULL;
+
                 LogFlow(("Fetching data for ghost entry %#p from file\n", pEntry));
 
                 RTCritSectEnter(&pCache->CritSect);
                 pdmacFileCacheUpdate(pCache, pEntry);
-                pdmacFileCacheReplace(pCache, pEntry->cbData, pEntry->pList);
+                pdmacFileCacheReplace(pCache, pEntry->cbData, pEntry->pList, true, &pbBuffer);
 
                 /* Move the entry to T2 and fetch it to the cache. */
                 pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
                 RTCritSectLeave(&pCache->CritSect);
 
-                pEntry->pbData  = (uint8_t *)RTMemPageAlloc(pEntry->cbData);
+                if (pbBuffer)
+                    pEntry->pbData = pbBuffer;
+                else
+                    pEntry->pbData = (uint8_t *)RTMemPageAlloc(pEntry->cbData);
                 AssertPtr(pEntry->pbData);
 
                 while (cbToRead)
@@ -1205,14 +1239,16 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
             else
                 STAM_COUNTER_INC(&pCache->cPartialHits);
 
+            uint8_t *pbBuffer = NULL;
+
             RTCritSectEnter(&pCache->CritSect);
-            size_t cbRemoved = pdmacFileCacheEvict(pCache, cbToReadAligned);
+            size_t cbRemoved = pdmacFileCacheEvict(pCache, cbToReadAligned, true, &pbBuffer);
             RTCritSectLeave(&pCache->CritSect);
 
             if (cbRemoved >= cbToReadAligned)
             {
                 LogFlow(("Evicted %u bytes (%u requested). Creating new cache entry\n", cbRemoved, cbToReadAligned));
-                PPDMACFILECACHEENTRY pEntryNew = pdmacFileCacheEntryAlloc(pCache, pEndpoint, off, cbToReadAligned);
+                PPDMACFILECACHEENTRY pEntryNew = pdmacFileCacheEntryAlloc(pCache, pEndpoint, off, cbToReadAligned, pbBuffer);
                 AssertPtr(pEntryNew);
 
                 RTCritSectEnter(&pCache->CritSect);
@@ -1516,15 +1552,20 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
             }
             else
             {
+                uint8_t *pbBuffer = NULL;
+
                 RTCritSectEnter(&pCache->CritSect);
                 pdmacFileCacheUpdate(pCache, pEntry);
-                pdmacFileCacheReplace(pCache, pEntry->cbData, pEntry->pList);
+                pdmacFileCacheReplace(pCache, pEntry->cbData, pEntry->pList, true, &pbBuffer);
 
                 /* Move the entry to T2 and fetch it to the cache. */
                 pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
                 RTCritSectLeave(&pCache->CritSect);
 
-                pEntry->pbData  = (uint8_t *)RTMemPageAlloc(pEntry->cbData);
+                if (pbBuffer)
+                    pEntry->pbData = pbBuffer;
+                else
+                    pEntry->pbData = (uint8_t *)RTMemPageAlloc(pEntry->cbData);
                 AssertPtr(pEntry->pbData);
 
                 while (cbToWrite)
@@ -1585,8 +1626,10 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
             STAM_COUNTER_INC(&pCache->cMisses);
             STAM_COUNTER_ADD(&pCache->StatWritten, cbToWrite);
 
+            uint8_t *pbBuffer = NULL;
+
             RTCritSectEnter(&pCache->CritSect);
-            size_t cbRemoved = pdmacFileCacheEvict(pCache, cbToWrite);
+            size_t cbRemoved = pdmacFileCacheEvict(pCache, cbToWrite, true, &pbBuffer);
             RTCritSectLeave(&pCache->CritSect);
 
             if (cbRemoved >= cbToWrite)
@@ -1596,7 +1639,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
 
                 LogFlow(("Evicted %u bytes (%u requested). Creating new cache entry\n", cbRemoved, cbToWrite));
 
-                pEntryNew = pdmacFileCacheEntryAlloc(pCache, pEndpoint, off, cbToWrite);
+                pEntryNew = pdmacFileCacheEntryAlloc(pCache, pEndpoint, off, cbToWrite, pbBuffer);
                 AssertPtr(pEntryNew);
 
                 RTCritSectEnter(&pCache->CritSect);
