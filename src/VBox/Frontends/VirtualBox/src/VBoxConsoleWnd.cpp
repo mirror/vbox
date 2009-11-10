@@ -2402,17 +2402,30 @@ void VBoxConsoleWnd::mountMedium()
     bool mount = !newId.isEmpty();
 
     /* Remount medium to the predefined port/device */
+    bool wasMounted = false;
     machine.MountMedium (target.name, target.port, target.device, newId, false /* force */);
-    if (!machine.isOk())
+    if (machine.isOk())
+        wasMounted = true;
+    else
     {
         /* Ask for force remounting */
         if (vboxProblem().cannotRemountMedium (this, machine, vboxGlobal().findMedium (mount ? newId : currentId), mount, true /* retry? */) == QIMessageBox::Ok)
         {
             /* Force remount medium to the predefined port/device. */
             machine.MountMedium (target.name, target.port, target.device, newId, true /* force */);
-            if (!machine.isOk())
+            if (machine.isOk())
+                wasMounted = true;
+            else
                 vboxProblem().cannotRemountMedium (this, machine, vboxGlobal().findMedium (mount ? newId : currentId), mount, false /* retry? */);
         }
+    }
+
+    /* Save medium mounted at runtime */
+    if (wasMounted && mIsAutoSaveMedia)
+    {
+        machine.SaveSettings();
+        if (!machine.isOk())
+            vboxProblem().cannotSaveMachineSettings (machine);
     }
 }
 
