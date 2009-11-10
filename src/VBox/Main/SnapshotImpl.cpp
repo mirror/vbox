@@ -53,7 +53,7 @@
  */
 static DECLCALLBACK(int) progressCallback(unsigned uPercentage, void *pvUser)
 {
-    IProgress *progress = static_cast<IProgress*>(pvUser);
+    Progress *progress = static_cast<Progress*>(pvUser);
 
     /* update the progress object */
     if (progress)
@@ -1303,7 +1303,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
                                    stateTo.c_str(),
                                    0,
                                    progressCallback,
-                                   aConsoleProgress);
+                                   static_cast<Progress*>(aConsoleProgress));
             alock.enter();
 
             if (RT_FAILURE(vrc))
