@@ -175,8 +175,6 @@ public:
     const Guid* getFirstMachineBackrefId() const;
     const Guid* getFirstMachineBackrefSnapshotId() const;
 
-    bool isAttachedTo(const Guid &aMachineId);
-
     /**
      * Shortcut to VirtualBoxBaseWithTypedChildrenNEXT::dependentChildren().
      */
