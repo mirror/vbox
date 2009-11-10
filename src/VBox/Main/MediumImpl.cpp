@@ -2871,18 +2871,6 @@ const Guid* Medium::getFirstMachineBackrefSnapshotId() const
 }
 
 /**
- * Internal method to check whether the medium is attached to the given machine. Must have caller + locking!
- * @return
- */
-bool Medium::isAttachedTo(const Guid &aMachineId)
-{
-    BackRefList::iterator it =
-        std::find_if(m->backRefs.begin(), m->backRefs.end(),
-                        BackRef::EqualsTo(aMachineId));
-    return it != m->backRefs.end() && it->fInCurState;
-}
-
-/**
  * Checks if the given change of \a aOldPath to \a aNewPath affects the location
  * of this hard disk or any its child and updates the paths if necessary to
  * reflect the new location.
