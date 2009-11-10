@@ -3577,11 +3577,15 @@ static int vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszForm
  */
 DECLCALLBACK(void) vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list *pArgs)
 {
-#ifdef LOG_ENABLED
     /*
      * Log the error.
      */
     va_list va3;
+    va_copy(va3, *pArgs);
+    RTLogRelPrintf("VMSetError: %s(%d) %s\nVMSetError: %N\n", pszFile, iLine, pszFunction, pszFormat, &va3);
+    va_end(va3);
+
+#ifdef LOG_ENABLED
     va_copy(va3, *pArgs);
     RTLogPrintf("VMSetError: %s(%d) %s\n%N\n", pszFile, iLine, pszFunction, pszFormat, &va3);
     va_end(va3);
@@ -3608,17 +3612,6 @@ DECLCALLBACK(void) vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char
         fCalledSomeone = true;
     }
     RTCritSectLeave(&pUVM->vm.s.AtErrorCritSect);
-
-    /*
-     * Write the error to the release log if there weren't anyone to callback.
-     */
-    if (!fCalledSomeone)
-    {
-        va_list va3;
-        va_copy(va3, *pArgs);
-        RTLogRelPrintf("VMSetError: %s(%d) %s\nVMSetError: %N\n", pszFile, iLine, pszFunction, pszFormat, &va3);
-        va_end(va3);
-    }
 }
 
 
