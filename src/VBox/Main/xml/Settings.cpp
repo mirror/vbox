@@ -1333,7 +1333,7 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
                 nic.type = NetworkAdapterType_I82543GC;
             else if (strTemp == "82545EM")
                 nic.type = NetworkAdapterType_I82545EM;
-            else if (strTemp == "virtio-net")
+            else if (strTemp == "virtio")
                 nic.type = NetworkAdapterType_Virtio;
             else
                 throw ConfigFileError(this, pelmAdapter, N_("Invalid value '%s' in Adapter/@type attribute"), strTemp.c_str());
@@ -2653,7 +2653,7 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
             case NetworkAdapterType_I82540EM:   pcszType = "82540EM"; break;
             case NetworkAdapterType_I82543GC:   pcszType = "82543GC"; break;
             case NetworkAdapterType_I82545EM:   pcszType = "82545EM"; break;
-            case NetworkAdapterType_Virtio:     pcszType = "virtio-net"; break;
+            case NetworkAdapterType_Virtio:     pcszType = "virtio"; break;
             default: /*case NetworkAdapterType_Am79C970A:*/  pcszType = "Am79C970A"; break;
         }
         pelmAdapter->setAttribute("type", pcszType);
