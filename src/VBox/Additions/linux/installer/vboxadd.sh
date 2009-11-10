@@ -375,7 +375,6 @@ setup()
     ln -sf /usr/lib/$PACKAGE/mount.vboxsf /sbin
 
     succ_msg
-    start
     echo
     echo "You should reboot your guest to make sure the new modules are actually used"
 }
