@@ -212,6 +212,27 @@ struct MountTarget
 };
 Q_DECLARE_METATYPE (MountTarget);
 
+int searchMaxSnapshotIndex (const CMachine &aMachine, const CSnapshot &aSnapshot, const QString &aNameTemplate)
+{
+    int maxIndex = 0;
+    QRegExp regExp (QString ("^") + aNameTemplate.arg ("([0-9]+)") + QString ("$"));
+    if (!aSnapshot.isNull())
+    {
+        /* Check the current snapshot name */
+        QString name = aSnapshot.GetName();
+        int pos = regExp.indexIn (name);
+        if (pos != -1)
+            maxIndex = regExp.cap (1).toInt() > maxIndex ? regExp.cap (1).toInt() : maxIndex;
+        /* Traversing all the snapshot children */
+        foreach (const CSnapshot &child, aSnapshot.GetChildren())
+        {
+            int maxIndexOfChildren = searchMaxSnapshotIndex (aMachine, child, aNameTemplate);
+            maxIndex = maxIndexOfChildren > maxIndex ? maxIndexOfChildren : maxIndex;
+        }
+    }
+    return maxIndex;
+}
+
 /** \class VBoxConsoleWnd
  *
  *  The VBoxConsoleWnd class is a VM console window, one of two main VBox
@@ -2009,26 +2030,9 @@ void VBoxConsoleWnd::vmTakeSnapshot()
     dlg.mLbIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
 
     /* search for the max available filter index */
-    int maxSnapShotIndex = 0;
-    QString snapShotName = tr ("Snapshot %1");
-    QRegExp regExp (QString ("^") + snapShotName.arg ("([0-9]+)") + QString ("$"));
-    CSnapshot index = machine.GetSnapshot (QString::null);
-    while (!index.isNull())
-    {
-        /* Check the current snapshot name */
-        QString name = index.GetName();
-        int pos = regExp.indexIn (name);
-        if (pos != -1)
-            maxSnapShotIndex = regExp.cap (1).toInt() > maxSnapShotIndex ?
-                               regExp.cap (1).toInt() : maxSnapShotIndex;
-        /* Traversing to the next child */
-        CSnapshotVector c = index.GetChildren();
-        if (c.size() > 0)
-            index = c [0];
-        else
-            break;
-    }
-    dlg.mLeName->setText (snapShotName.arg (maxSnapShotIndex + 1));
+    QString nameTemplate = tr ("Snapshot %1");
+    int maxSnapshotIndex = searchMaxSnapshotIndex (machine, machine.GetSnapshot (QString()), nameTemplate);
+    dlg.mLeName->setText (nameTemplate.arg (++ maxSnapshotIndex));
 
     if (dlg.exec() == QDialog::Accepted)
     {
