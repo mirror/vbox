@@ -221,7 +221,7 @@
     <xsd:enumeration value="82540EM"/>
     <xsd:enumeration value="82543GC"/>
     <xsd:enumeration value="82545EM"/>
-    <xsd:enumeration value="virtio"/>
+    <xsd:enumeration value="virtio-net"/>
   </xsd:restriction>
 </xsd:simpleType>
 
