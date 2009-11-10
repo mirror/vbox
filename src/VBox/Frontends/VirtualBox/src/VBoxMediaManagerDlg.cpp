@@ -1204,8 +1204,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium, const QS
                     machine.MountMedium (attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), QString(""), false /* force */);
                     if (!machine.isOk())
                     {
-                        CStorageController controller = machine.GetStorageControllerByName (attachment.GetController());
-                        vboxProblem().cannotUnmountMedium (this, machine, aMedium);
+                        vboxProblem().cannotRemountMedium (this, machine, aMedium, false /* mount? */, false /* retry? */);
                         success = false;
                         break;
                     }
@@ -1226,8 +1225,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium, const QS
                     machine.MountMedium (attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), QString(""), false /* force */);
                     if (!machine.isOk())
                     {
-                        CStorageController controller = machine.GetStorageControllerByName (attachment.GetController());
-                        vboxProblem().cannotUnmountMedium (this, machine, aMedium);
+                        vboxProblem().cannotRemountMedium (this, machine, aMedium, false /* mount? */, false /* retry? */);
                         success = false;
                         break;
                     }

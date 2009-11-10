@@ -109,7 +109,7 @@ void VBoxVMFirstRunWzd::accept()
     if (mMachine.isOk())
         QIAbstractWizard::accept();
     else
-        vboxProblem().cannotMountMedium (this, mMachine, vboxGlobal().findMedium (mCbMedia->id()));
+        vboxProblem().cannotRemountMedium (this, mMachine, vboxGlobal().findMedium (mCbMedia->id()), true /* mount? */, false /* retry? */);
 }
 
 void VBoxVMFirstRunWzd::revalidate (QIWidgetValidator *aValidator)

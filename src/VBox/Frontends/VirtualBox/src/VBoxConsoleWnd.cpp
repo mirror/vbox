@@ -197,13 +197,13 @@ private:
 
 struct MountTarget
 {
-    MountTarget() : name (QString ("")), port (0), device (0), id (QString ("")), type (VBoxDefs::MediumType_Invalid) {}
+    MountTarget() : name (QString ("")), port (0), device (0), id (QString()), type (VBoxDefs::MediumType_Invalid) {}
     MountTarget (const QString &aName, LONG aPort, LONG aDevice)
-        : name (aName), port (aPort), device (aDevice), id (QString ("")), type (VBoxDefs::MediumType_Invalid) {}
+        : name (aName), port (aPort), device (aDevice), id (QString()), type (VBoxDefs::MediumType_Invalid) {}
     MountTarget (const QString &aName, LONG aPort, LONG aDevice, const QString &aId)
         : name (aName), port (aPort), device (aDevice), id (aId), type (VBoxDefs::MediumType_Invalid) {}
-    MountTarget (const QString &aName, LONG aPort, LONG aDevice, const QString &aId, VBoxDefs::MediumType aType)
-        : name (aName), port (aPort), device (aDevice), id (aId), type (aType) {}
+    MountTarget (const QString &aName, LONG aPort, LONG aDevice, VBoxDefs::MediumType aType)
+        : name (aName), port (aPort), device (aDevice), id (QString()), type (aType) {}
     QString name;
     LONG port;
     LONG device;
@@ -325,6 +325,9 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
 {
     if (aSelf)
         *aSelf = this;
+
+    /* Cache IMedium data! */
+    vboxGlobal().startEnumeratingMedia();
 
 #if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
     /* The default application icon (will change to the VM-specific icon in
@@ -1053,8 +1056,7 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
         uuid = image.GetId();
 
     if (!vbox.isOk())
-        return vboxProblem().cannotOpenMedium (this, vbox,
-                                               VBoxDefs::MediumType_DVD, aSource);
+        return vboxProblem().cannotOpenMedium (this, vbox, VBoxDefs::MediumType_DVD, aSource);
 
     Assert (!uuid.isNull());
     CMachine m = mSession.GetMachine();
@@ -1087,22 +1089,36 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
 
     if (!ctrName.isNull())
     {
+        bool isMounted = false;
+
+        /* Mount medium to the predefined port/device */
         m.MountMedium (ctrName, ctrPort, ctrDevice, uuid, false /* force */);
-        AssertWrapperOk (m);
         if (m.isOk())
+            isMounted = true;
+        else
         {
-            if (mIsAutoSaveMedia)
+            /* Ask for force mounting */
+            if (vboxProblem().cannotRemountMedium (this, m, VBoxMedium (image, VBoxDefs::MediumType_DVD), true /* mount? */, true /* retry? */) == QIMessageBox::Ok)
             {
-                m.SaveSettings();
-                if (!m.isOk())
-                    vboxProblem().cannotSaveMachineSettings (m);
+                /* Force mount medium to the predefined port/device */
+                m.MountMedium (ctrName, ctrPort, ctrDevice, uuid, true /* force */);
+                if (m.isOk())
+                    isMounted = true;
+                else
+                    vboxProblem().cannotRemountMedium (this, m, VBoxMedium (image, VBoxDefs::MediumType_DVD), true /* mount? */, false /* retry? */);
             }
+        }
+
+        /* Save medium mounted at runtime */
+        if (isMounted && mIsAutoSaveMedia)
+        {
+            m.SaveSettings();
+            if (!m.isOk())
+                vboxProblem().cannotSaveMachineSettings (m);
         }
     }
     else
-    {
         vboxProblem().cannotMountGuestAdditions (m.GetName());
-    }
 }
 
 void VBoxConsoleWnd::setMask (const QRegion &aRegion)
@@ -2269,7 +2285,6 @@ void VBoxConsoleWnd::prepareStorageMenu()
             callVMMAction->setData (QVariant::fromValue (MountTarget (controller.GetName(),
                                                                       attachment.GetPort(),
                                                                       attachment.GetDevice(),
-                                                                      QString (""),
                                                                       mediumType)));
             connect (callVMMAction, SIGNAL (triggered (bool)), this, SLOT (mountMedium()));
             attachmentMenu->addAction (callVMMAction);
@@ -2343,36 +2358,62 @@ void VBoxConsoleWnd::prepareSFMenu()
 
 void VBoxConsoleWnd::mountMedium()
 {
+    /* Get sender action */
     QAction *action = qobject_cast <QAction*> (sender());
     Assert (action);
 
-    MountTarget target = action->data().value <MountTarget>();
+    /* Get current machine */
     CMachine machine = mSession.GetMachine();
-    CMediumAttachment attachment = machine.GetMediumAttachment (target.name, target.port, target.device);
-    CMedium medium = attachment.GetMedium();
 
-    if (target.type != VBoxDefs::MediumType_Invalid)
+    /* Get mount-target */
+    MountTarget target = action->data().value <MountTarget>();
+
+    /* Current mount-target attributes */
+    CMediumAttachment currentAttachment = machine.GetMediumAttachment (target.name, target.port, target.device);
+    CMedium currentMedium = currentAttachment.GetMedium();
+    QString currentId = currentMedium.isNull() ? QString ("") : currentMedium.GetId();
+
+    /* New mount-target attributes */
+    QString newId = QString ("");
+    bool selectWithMediaManager = target.type != VBoxDefs::MediumType_Invalid;
+
+    /* Open Virtual Media Manager to select image id */
+    if (selectWithMediaManager)
     {
         /* Search for already used images */
         QStringList usedImages;
-        const CMediumAttachmentVector &attachments = mSession.GetMachine().GetMediumAttachments();
-        foreach (const CMediumAttachment &index, attachments)
+        foreach (const CMediumAttachment &attachment, machine.GetMediumAttachments())
         {
-            if (index != attachment && !index.GetMedium().isNull() && !index.GetMedium().GetHostDrive())
-                usedImages << index.GetMedium().GetId();
+            CMedium medium = attachment.GetMedium();
+            if (attachment != currentAttachment && !medium.isNull() && !medium.GetHostDrive())
+                usedImages << medium.GetId();
         }
         /* Open VMM Dialog */
         VBoxMediaManagerDlg dlg (this);
-        dlg.setup (target.type, true /* do select? */, true /* do refresh? */,
-                   mSession.GetMachine(), QString(), true, usedImages);
+        dlg.setup (target.type, true /* select? */, true /* refresh? */, machine, currentId, true, usedImages);
         if (dlg.exec() == QDialog::Accepted)
-            target.id = dlg.selectedId();
+            newId = dlg.selectedId();
         else return;
     }
+    /* Use medium which was sent */
+    else if (!target.id.isNull() && target.id != currentId)
+        newId = target.id;
 
-    machine.MountMedium (target.name, target.port, target.device,
-                         target.id.isEmpty() || medium.isNull() || medium.GetId() != target.id ||
-                         target.type != VBoxDefs::MediumType_Invalid ? target.id : QString (""), false /* force */);
+    bool mount = !newId.isEmpty();
+
+    /* Remount medium to the predefined port/device */
+    machine.MountMedium (target.name, target.port, target.device, newId, false /* force */);
+    if (!machine.isOk())
+    {
+        /* Ask for force remounting */
+        if (vboxProblem().cannotRemountMedium (this, machine, vboxGlobal().findMedium (mount ? newId : currentId), mount, true /* retry? */) == QIMessageBox::Ok)
+        {
+            /* Force remount medium to the predefined port/device. */
+            machine.MountMedium (target.name, target.port, target.device, newId, true /* force */);
+            if (!machine.isOk())
+                vboxProblem().cannotRemountMedium (this, machine, vboxGlobal().findMedium (mount ? newId : currentId), mount, false /* retry? */);
+        }
+    }
 }
 
 /**
