@@ -113,7 +113,7 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
     else
     {
         /* Only don't do the check if we have a valid "0" in it */
-        if (!strcmp(pszCheckHostVersion, "0"));
+        if (!strcmp(pszCheckHostVersion, "0"))
         {
             LogRel(("No host version update check performed (disabled).\n"));
             *pfUpdate = false;
