@@ -2250,7 +2250,8 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
  */
 static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser)
 {
-    if (enmState == VMSTATE_RUNNING)
+    if (   enmState == VMSTATE_RUNNING
+        || enmState == VMSTATE_RESUMING)
         pVM->pgm.s.fNoMorePhysWrites = false;
 }
 #endif
@@ -3027,7 +3028,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
      */
 #if HC_ARCH_BITS == 32
     /* The nested shadow paging mode for AMD-V does change when running 64 bits guests on 32 bits hosts; typically PAE <-> AMD64 */
-    const bool fForceShwEnterExit = (    fIsOldGuestPagingMode64Bits != fIsNewGuestPagingMode64Bits 
+    const bool fForceShwEnterExit = (    fIsOldGuestPagingMode64Bits != fIsNewGuestPagingMode64Bits
                                      &&  enmShadowMode == PGMMODE_NESTED);
 #else
     const bool fForceShwEnterExit = false;
