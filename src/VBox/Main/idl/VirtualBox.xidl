@@ -3681,7 +3681,7 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="4e2b8f0f-6575-49d2-bb19-5cd15a6ca2f0"
+     uuid="35d8d838-d066-447d-927a-fd93afdbec90"
      internal="yes"
      wsmap="suppress"
      >
@@ -4039,6 +4039,15 @@
         This method is intended to be called when the machine is in Starting or
         Restoring state. The locked media will be automatically unlocked when
         the machine is powered off or crashed.
+      </desc>
+    </method>
+    <method name="unlockMedia">
+      <desc>
+        Unlocks all media previously locked using
+        <link to="IInternalMachineControl::lockMedia"/>.
+
+        This method is intended to be used with teleportation so that it is
+        possible to teleport between processes on the same machine.
       </desc>
     </method>
   </interface>
@@ -5802,7 +5811,7 @@
       <param name="BGR" type="boolean" dir="in">
         <desc>
           How to order bytes in the pixel. A pixel consists of 4 bytes. If this parameter is true, then
-          bytes order is: B, G, R, 0xFF. If this parameter is false, then bytes order is: R, G, B, 0xFF. 
+          bytes order is: B, G, R, 0xFF. If this parameter is false, then bytes order is: R, G, B, 0xFF.
         </desc>
       </param>
       <param name="width" type="unsigned long" dir="out">

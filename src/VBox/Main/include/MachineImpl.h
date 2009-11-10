@@ -997,7 +997,8 @@ public:
               ComSafeArrayIn(ULONG64, aTimestamps), ComSafeArrayIn(IN_BSTR, aFlags));
     STDMETHOD(PushGuestProperty)(IN_BSTR aName, IN_BSTR aValue,
                                   ULONG64 aTimestamp, IN_BSTR aFlags);
-    STDMETHOD(LockMedia)() { return lockMedia(); }
+    STDMETHOD(LockMedia)()   { return lockMedia(); }
+    STDMETHOD(UnlockMedia)() { unlockMedia(); return S_OK; }
 
     // public methods only for internal purposes
 

@@ -93,12 +93,14 @@ public:
     uint32_t            muPort;
     MachineState_T      menmOldMachineState;
     bool                mfSuspendedByUs;
+    bool                mfUnlockedMedia;
 
     TeleporterStateSrc(Console *pConsole, PVM pVM, Progress *pProgress, MachineState_T enmOldMachineState)
         : TeleporterState(pConsole, pVM, pProgress, true /*fIsSource*/)
         , muPort(UINT32_MAX)
         , menmOldMachineState(enmOldMachineState)
         , mfSuspendedByUs(false)
+        , mfUnlockedMedia(false)
     {
     }
 };
@@ -110,19 +112,24 @@ public:
 class TeleporterStateTrg : public TeleporterState
 {
 public:
-    IMachine           *mpMachine;
-    PRTTCPSERVER        mhServer;
-    PRTTIMERLR          mphTimerLR;
-    bool                mfStartPaused;
-    int                 mRc;
+    IMachine                   *mpMachine;
+    IInternalMachineControl    *mpControl;
+    PRTTCPSERVER                mhServer;
+    PRTTIMERLR                  mphTimerLR;
+    bool                        mfStartPaused;
+    bool                        mfLockedMedia;
+    int                         mRc;
 
     TeleporterStateTrg(Console *pConsole, PVM pVM, Progress *pProgress,
-                       IMachine *pMachine, PRTTIMERLR phTimerLR, bool fStartPaused)
+                       IMachine *pMachine, IInternalMachineControl *pControl,
+                       PRTTIMERLR phTimerLR, bool fStartPaused)
         : TeleporterState(pConsole, pVM, pProgress, false /*fIsSource*/)
         , mpMachine(pMachine)
+        , mpControl(pControl)
         , mhServer(NULL)
         , mphTimerLR(phTimerLR)
         , mfStartPaused(false)
+        , mfLockedMedia(false)
         , mRc(VINF_SUCCESS)
     {
     }
@@ -650,6 +657,20 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
         teleporterSrcSubmitCommand(pState, "cancel", false /*fWaitForAck*/);
         return E_FAIL;
     }
+
+    /*
+     * The last thing we do is to hand over any media we might have locked.
+     */
+    /** @todo Maybe we should only do this if it's a local teleportation... */
+    hrc = mControl->UnlockMedia();
+    if (FAILED(hrc))
+        return hrc;
+    pState->mfUnlockedMedia = true;
+
+    hrc = teleporterSrcSubmitCommand(pState, "lock-media");
+    if (FAILED(hrc))
+        return hrc;
+
     hrc = teleporterSrcSubmitCommand(pState, "done");
     if (FAILED(hrc))
         return hrc;
@@ -726,6 +747,26 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
             || enmMachineState == MachineState_TeleportingPausedVM
            )
         {
+            if (pState->mfUnlockedMedia)
+            {
+                ErrorInfoKeeper Oak;
+                HRESULT hrc2 = pState->mptrConsole->mControl->LockMedia();
+                if (FAILED(hrc2))
+                {
+                    uint64_t StartMS = RTTimeMilliTS();
+                    do
+                    {
+                        RTThreadSleep(2);
+                        hrc2 = pState->mptrConsole->mControl->LockMedia();
+                    } while (   FAILED(hrc2)
+                             && RTTimeMilliTS() - StartMS < 2000);
+                }
+                if (SUCCEEDED(hrc2))
+                    pState->mfUnlockedMedia = true;
+                else
+                    LogRel(("FATAL ERROR: Failed to re-take the media locks. hrc2=%Rhrc\n", hrc2));
+            }
+
             switch (enmVMState)
             {
                 case VMSTATE_RUNNING:
@@ -737,6 +778,7 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
                 case VMSTATE_RESETTING:
                 case VMSTATE_RESETTING_LS:
                     Assert(!pState->mfSuspendedByUs);
+                    Assert(!pState->mfUnlockedMedia);
                     pState->mptrConsole->setMachineState(MachineState_Running);
                     break;
 
@@ -757,13 +799,21 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
                 case VMSTATE_SUSPENDING:
                 case VMSTATE_SUSPENDING_LS:
                 case VMSTATE_SUSPENDING_EXT_LS:
-                    pState->mptrConsole->setMachineState(MachineState_Paused);
-                    if (pState->mfSuspendedByUs)
+                    if (!pState->mfUnlockedMedia)
                     {
-                        autoLock.leave();
-                        int rc = VMR3Resume(pState->mpVM);
-                        AssertLogRelMsgRC(rc, ("VMR3Resume -> %Rrc\n", rc));
-                        autoLock.enter();
+                        pState->mptrConsole->setMachineState(MachineState_Paused);
+                        if (pState->mfSuspendedByUs)
+                        {
+                            autoLock.leave();
+                            int rc = VMR3Resume(pState->mpVM);
+                            AssertLogRelMsgRC(rc, ("VMR3Resume -> %Rrc\n", rc));
+                            autoLock.enter();
+                        }
+                    }
+                    else
+                    {
+                        /* Faking a guru meditation is the best I can think of doing here... */
+                        pState->mptrConsole->setMachineState(MachineState_Stuck);
                     }
                     break;
             }
@@ -955,7 +1005,7 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
             /*
              * Do the job, when it returns we're done.
              */
-            TeleporterStateTrg State(this, pVM, pProgress, pMachine, &hTimerLR, fStartPaused);
+            TeleporterStateTrg State(this, pVM, pProgress, pMachine, mControl, &hTimerLR, fStartPaused);
             State.mstrPassword      = strPassword;
             State.mhServer          = hServer;
 
@@ -1035,11 +1085,31 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
 }
 
 
+/**
+ * Unlock the media.
+ *
+ * This is used in error paths.
+ *
+ * @param  pState           The teleporter state.
+ */
+static void teleporterTrgUnlockMedia(TeleporterStateTrg *pState)
+{
+    if (pState->mfLockedMedia)
+    {
+        pState->mpControl->UnlockMedia();
+        pState->mfLockedMedia = false;
+    }
+}
+
+
 static int teleporterTcpWriteACK(TeleporterStateTrg *pState)
 {
     int rc = RTTcpWrite(pState->mhSocket, "ACK\n", sizeof("ACK\n") - 1);
     if (RT_FAILURE(rc))
+    {
         LogRel(("Teleporter: RTTcpWrite(,ACK,) -> %Rrc\n", rc));
+        teleporterTrgUnlockMedia(pState);
+    }
     RTTcpFlush(pState->mhSocket);
     return rc;
 }
@@ -1047,6 +1117,12 @@ static int teleporterTcpWriteACK(TeleporterStateTrg *pState)
 
 static int teleporterTcpWriteNACK(TeleporterStateTrg *pState, int32_t rc2)
 {
+    /*
+     * Unlock media sending the NACK. That way the other doesn't have to spin
+     * waiting to regain the locks.
+     */
+    teleporterTrgUnlockMedia(pState);
+
     char    szMsg[64];
     size_t  cch = RTStrPrintf(szMsg, sizeof(szMsg), "NACK=%d\n", rc2);
     int rc = RTTcpWrite(pState->mhSocket, szMsg, cch);
@@ -1116,6 +1192,7 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
     /*
      * Command processing loop.
      */
+    bool fDone = false;
     for (;;)
     {
         char szCmd[128];
@@ -1153,9 +1230,6 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
 
             vrc = teleporterTcpWriteACK(pState);
         }
-        /** @todo implement config verification and hardware compatability checks. Or
-         *        maybe leave part of these to the saved state machinery?
-         * Update: We're doing as much as possible in the first SSM pass. */
         else if (!strcmp(szCmd, "cancel"))
         {
             /* Don't ACK this. */
@@ -1167,18 +1241,34 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
             pState->mfStartPaused = true;
             vrc = teleporterTcpWriteACK(pState);
         }
+        else if (!strcmp(szCmd, "lock-media"))
+        {
+            HRESULT hrc = pState->mpControl->LockMedia();
+            if (SUCCEEDED(hrc))
+            {
+                pState->mfLockedMedia = true;
+                vrc = teleporterTcpWriteACK(pState);
+            }
+            else
+            {
+                vrc = VERR_FILE_LOCK_FAILED;
+                teleporterTcpWriteNACK(pState, vrc);
+            }
+        }
         else if (!strcmp(szCmd, "done"))
         {
             /*
              * The ACK is the point of no return.
              */
-            if (pState->mptrProgress->notifyPointOfNoReturn())
+            if (   pState->mptrProgress->notifyPointOfNoReturn()
+                && pState->mfLockedMedia)
                 vrc = teleporterTcpWriteACK(pState);
             else
             {
-                vrc = VERR_SSM_CANCELLED;
+                vrc = pState->mfLockedMedia ? VERR_WRONG_ORDER : VERR_SSM_CANCELLED;
                 teleporterTcpWriteNACK(pState, vrc);
             }
+            fDone = true;
             break;
         }
         else
@@ -1192,6 +1282,11 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
         if (RT_FAILURE(vrc))
             break;
     }
+
+    if (RT_SUCCESS(vrc) && !fDone)
+        vrc = VERR_WRONG_ORDER;
+    if (RT_FAILURE(vrc))
+        teleporterTrgUnlockMedia(pState);
 
     pState->mRc = vrc;
     pState->mhSocket = NIL_RTSOCKET;
