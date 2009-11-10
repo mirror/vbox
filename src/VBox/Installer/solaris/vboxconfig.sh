@@ -379,8 +379,8 @@ install_drivers()
         fi
 
         if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$HOST_OS_MAJORVERSION" != "5.10"; then
-            # For VirtualBox 3.1 the new USB code requires Nevada >= 124
-            if test "$HOST_OS_MINORVERSION" -gt 115; then
+            # For VirtualBox 3.1 the new USB code requires Nevada > 123
+            if test "$HOST_OS_MINORVERSION" -gt 123; then
                 add_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
                 load_module "drv/$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
 
@@ -402,9 +402,10 @@ install_drivers()
                 # redirect attaching failure output to /dev/null
                 if test -f /platform/i86pc/kernel/drv/vboxusb.conf; then
                     add_driver "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP" "$NULLOP"
+                    # @todo - show indication of USB client driver success/failure.
                 fi
             else
-                warnprint "Solaris Nevada 124 or higher required for USB support. Skipped installing USB support."
+                warnprint "Solaris 5.11 snv_124 or higher required for USB support. Skipped installing USB support."
             fi
         fi
     else
