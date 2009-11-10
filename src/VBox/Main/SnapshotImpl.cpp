@@ -53,7 +53,7 @@
  */
 static DECLCALLBACK(int) progressCallback(unsigned uPercentage, void *pvUser)
 {
-    Progress *progress = static_cast<Progress*>(pvUser);
+    IProgress *progress = static_cast<IProgress*>(pvUser);
 
     /* update the progress object */
     if (progress)
