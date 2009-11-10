@@ -1186,32 +1186,40 @@ void VBoxProblemReporter::cannotDetachDevice (QWidget *aParent, const CMachine &
              formatErrorInfo (aMachine));
 }
 
-void VBoxProblemReporter::cannotMountMedium (QWidget *aParent, const CMachine &aMachine,
-                                             const VBoxMedium &aMedium)
+int VBoxProblemReporter::cannotRemountMedium (QWidget *aParent, const CMachine &aMachine,
+                                              const VBoxMedium &aMedium, bool aMount, bool aRetry)
 {
     /** @todo (translation-related): the gender of "the" in translations
      * will depend on the gender of aMedium.type(). */
-    message (aParent, Error,
-             tr ("Failed to mount the %1 <nobr><b>%2</b></nobr> "
-                 "to the machine <b>%3</b>.")
-                 .arg (mediumToAccusative (aMedium.type(), aMedium.isHostDrive()))
-                 .arg (aMedium.isHostDrive() ? aMedium.name() : aMedium.location())
-                 .arg (CMachine (aMachine).GetName()),
-             formatErrorInfo (aMachine));
-}
-
-void VBoxProblemReporter::cannotUnmountMedium (QWidget *aParent, const CMachine &aMachine,
-                                               const VBoxMedium &aMedium)
-{
-    /** @todo (translation-related): the gender of "the" in translations
-     * will depend on the gender of aMedium.type(). */
-    message (aParent, Error,
-             tr ("Failed to unmount the %1 <nobr><b>%2</b></nobr> "
-                 "from the machine <b>%3</b>.")
-                 .arg (mediumToAccusative (aMedium.type(), aMedium.isHostDrive()))
-                 .arg (aMedium.isHostDrive() ? aMedium.name() : aMedium.location())
-                 .arg (CMachine (aMachine).GetName()),
-             formatErrorInfo (aMachine));
+    QString text;
+    if (aMount)
+    {
+        text = tr ("Unable to mount the %1 <nobr><b>%2</b></nobr> to the machine <b>%3</b>.");
+        if (aRetry) text += tr (" Would you like to forcedly mount this medium?");
+    }
+    else
+    {
+        text = tr ("Unable to unmount the %1 <nobr><b>%2</b></nobr> from the machine <b>%3</b>.");
+        if (aRetry) text += tr (" Would you like to forcedly unmount this medium?");
+    }
+    if (aRetry)
+    {
+        return messageOkCancel (aParent, Question, text
+            .arg (mediumToAccusative (aMedium.type(), aMedium.isHostDrive()))
+            .arg (aMedium.isHostDrive() ? aMedium.name() : aMedium.location())
+            .arg (CMachine (aMachine).GetName()),
+            formatErrorInfo (aMachine),
+            0 /* Auto Confirm ID */,
+            tr ("Force Unmount"));
+    }
+    else
+    {
+        return message (aParent, Error, text
+            .arg (mediumToAccusative (aMedium.type(), aMedium.isHostDrive()))
+            .arg (aMedium.isHostDrive() ? aMedium.name() : aMedium.location())
+            .arg (CMachine (aMachine).GetName()),
+            formatErrorInfo (aMachine));
+    }
 }
 
 void VBoxProblemReporter::cannotOpenMedium (

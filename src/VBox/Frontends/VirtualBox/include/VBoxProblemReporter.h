@@ -255,8 +255,7 @@ public:
                              VBoxDefs::MediumType aType, const QString &aLocation,
                              KStorageBus aBus, LONG aChannel, LONG aDevice);
 
-    void cannotMountMedium (QWidget *aParent, const CMachine &aMachine, const VBoxMedium &aMedium);
-    void cannotUnmountMedium (QWidget *aParent, const CMachine &aMachine, const VBoxMedium &aMedium);
+    int cannotRemountMedium (QWidget *aParent, const CMachine &aMachine, const VBoxMedium &aMedium, bool aMount, bool aRetry);
     void cannotOpenMedium (QWidget *aParent, const CVirtualBox &aVBox,
                            VBoxDefs::MediumType aType, const QString &aLocation);
     void cannotCloseMedium (QWidget *aParent, const VBoxMedium &aMedium,
