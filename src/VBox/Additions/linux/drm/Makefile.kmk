@@ -34,14 +34,14 @@ endif
 #
 include $(PATH_SUB_CURRENT)/files_vboxvideo_drm
 
-vboxvideo_drm-mod_INST        = $(INST_ADDITIONS)src/vboxvideo_drm/
+vboxvideo_drm-mod_INST        = $(INST_ADDITIONS)src/vboxvideo/
 vboxvideo_drm-mod_MODE        = a+r,u+w
 vboxvideo_drm-mod_SOURCES     = $(subst ",,$(FILES_VBOXVIDEO_DRM_NOBIN))
 vboxvideo_drm-mod_SOURCES    += $(if $(VBOX_OSE),,\
 			    $(PATH_vboxvideo_drm-mod)/dkms.conf)
 vboxvideo_drm-mod_CLEAN      += $(PATH_vboxvideo_drm-mod)/dkms.conf
 
-vboxvideo_drm-sh_INST        = $(INST_ADDITIONS)src/vboxvideo_drm/
+vboxvideo_drm-sh_INST        = $(INST_ADDITIONS)src/vboxvideo/
 vboxvideo_drm-sh_MODE        = a+rx,u+w
 vboxvideo_drm-sh_SOURCES     = $(subst ",,$(FILES_VBOXVIDEO_DRM_BIN))
 vboxvideo_drm-sh_SOURCES    += \
