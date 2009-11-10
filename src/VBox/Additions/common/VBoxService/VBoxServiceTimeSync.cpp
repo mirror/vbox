@@ -1,4 +1,4 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
  * VBoxService - Guest Additions TimeSync Service.
  */
