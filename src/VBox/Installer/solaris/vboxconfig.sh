@@ -26,7 +26,7 @@
 # S10 or OpenSoalris
 HOST_OS_MAJORVERSION=`uname -r`
 # Which OpenSolaris version (snv_xxx)?
-HOST_OS_MINORVERSION=`uname -v | cut -f2 -d'_'`
+HOST_OS_MINORVERSION=`uname -v | sed -e "s/snv_//" -e "s/[^0-9]//"`
 
 DIR_VBOXBASE=/opt/VirtualBox
 DIR_MOD_32="/platform/i86pc/kernel/drv"
@@ -242,13 +242,13 @@ add_driver()
             $BIN_ADDDRV -m"$modperm" $modname  >/dev/null 2>&1
         else
             $BIN_ADDDRV -m"$modperm" $modname
-        fi    
+        fi
     else
-        if test "$nullop" = "$NULLOP"; then        
+        if test "$nullop" = "$NULLOP"; then
             $BIN_ADDDRV $modname >/dev/null 2>&1
         else
             $BIN_ADDDRV $modname
-        fi        
+        fi
     fi
 
     if test $? -ne 0; then
@@ -395,7 +395,7 @@ install_drivers()
                     errorprint "Failed to create device link for $MOD_VBOXUSBMON."
                     exit 1
                 fi
-                
+
                 # Add vboxusb if present
                 # This driver is special, we need it in the boot-archive but since there is no
                 # USB device to attach to now (it's done at runtime) it will fail to attach so
