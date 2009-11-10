@@ -2964,8 +2964,9 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     // The hardware versions other than "1" requires settings version 1.4 (2.1+).
     if (    m->sv < SettingsVersion_v1_4
-         && hardwareMachine.strVersion != "1")
-        m->sv < SettingsVersion_v1_4;
+         && hardwareMachine.strVersion != "1"
+       )
+        m->sv = SettingsVersion_v1_4;
 
     // "accelerate 2d video" requires settings version 1.8
     if (    (m->sv < SettingsVersion_v1_8)
