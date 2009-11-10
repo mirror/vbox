@@ -3334,7 +3334,7 @@ HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
     if (strConflict.length())
     {
         return setError(E_INVALIDARG,
-                        tr("Cannot register the hard disk '%ls' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
+                        tr("Cannot register the hard disk '%s' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
                         aHardDisk->locationFull().raw(),
                         aHardDisk->id().raw(),
                         strConflict.raw(),
@@ -3452,7 +3452,7 @@ HRESULT VirtualBox::registerDVDImage (Medium *aImage,
     if (strConflict.length())
     {
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot register the CD/DVD image '%ls' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
+                        tr("Cannot register the CD/DVD image '%s' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
                         aImage->locationFull().raw(),
                         aImage->id().raw(),
                         strConflict.raw(),
@@ -3555,7 +3555,7 @@ HRESULT VirtualBox::registerFloppyImage(Medium *aImage,
     if (strConflict.length())
     {
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot register the floppy image '%ls' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
+                        tr("Cannot register the floppy image '%s' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
                         aImage->locationFull().raw(),
                         aImage->id().raw(),
                         strConflict.raw(),
