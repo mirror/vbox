@@ -1161,6 +1161,21 @@ LONG VBoxGlobal::toStorageDevice (KStorageBus aBus, LONG aChannel, const QString
  */
 QString VBoxGlobal::toString (StorageSlot aSlot) const
 {
+    switch (aSlot.bus)
+    {
+        case KStorageBus_IDE:
+        case KStorageBus_SATA:
+        case KStorageBus_SCSI:
+        case KStorageBus_Floppy:
+            break;
+
+        default:
+        {
+            AssertMsgFailed (("Invalid bus type %d\n", aSlot.bus));
+            break;
+        }
+    }
+
     int maxPort = virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus (aSlot.bus);
     int maxDevice = virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus (aSlot.bus);
     if (aSlot.port < 0 || aSlot.port > maxPort)
