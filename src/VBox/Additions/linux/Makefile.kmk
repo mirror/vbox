@@ -337,7 +337,7 @@ ifndef VBOX_OSE
  #
  INSTALLS += LnxAdd-scripts
  LnxAdd-scripts_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_STAGE_DIR))
- LnxAdd-scripts_MODE    = a+r,u+wx
+ LnxAdd-scripts_MODE    = a+rx,u+w
  LnxAdd-scripts_SOURCES = \
 	$(VBOX_REL_LNX_INST_SRC)routines.sh \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd.sh=>vboxadd \
@@ -351,7 +351,7 @@ ifndef VBOX_OSE
  #
  INSTALLS += LnxAdd-Nostrip-Bin
  LnxAdd-Nostrip-Bin_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_BIN_DIR))
- LnxAdd-Nostrip-Bin_MODE    = a+r,u+wx
+ LnxAdd-Nostrip-Bin_MODE    = a+rx,u+w
  LnxAdd-Nostrip-Bin_SOURCES = \
 	$(VBOX_REL_X11_ADD_INST)VBoxRandR.sh=>VBoxRandR \
 	$(VBOX_REL_X11_ADD_INST)98vboxadd-xclient=>VBoxClient-all
@@ -362,7 +362,7 @@ ifndef VBOX_OSE
  #
  INSTALLS += LnxAdd-init-scripts
  LnxAdd-init-scripts_INST    = bin/additions
- LnxAdd-init-scripts_MODE    = a+r,u+wx
+ LnxAdd-init-scripts_MODE    = a+rx,u+w
  LnxAdd-init-scripts_SOURCES = \
 	$(foreach i,$(VBOX_LNX_ADD_INIT), installer/$(i).sh=>$(i))
 endif  # ! VBOX_OSE
