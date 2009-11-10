@@ -6685,11 +6685,19 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
             AssertComRC(rc2);
         }
 
-        /* lock attached media. This method will also check their
-         * accessibility. Note that the media will be unlocked automatically
-         * by SessionMachine::setMachineState() when the VM is powered down. */
-        rc = console->mControl->LockMedia();
-        CheckComRCThrowRC(rc);
+        /*
+         * Lock attached media. This method will also check their accessibility.
+         * If we're a teleporter, we'll have to postpone this action so we can
+         * migrate between local processes.
+         *
+         * Note! The media will be unlocked automatically by
+         *       SessionMachine::setMachineState() when the VM is powered down.
+         */
+        if (!task->mTeleporterEnabled)
+        {
+            rc = console->mControl->LockMedia();
+            CheckComRCThrowRC(rc);
+        }
 
 #ifdef VBOX_WITH_VRDP
 
