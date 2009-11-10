@@ -238,9 +238,11 @@ fi
 
 binary=/usr/sbin/VBoxService
 
-test -x "$binary" || {
-    echo "Cannot run $binary"
-    exit 1
+testbinary() {
+    test -x "$binary" || {
+        echo "Cannot run $binary"
+        exit 1
+    }
 }
 
 vboxaddrunning() {
@@ -254,6 +256,7 @@ start() {
             echo "VirtualBox Additions module not loaded!"
             exit 1
         }
+        testbinary
         daemon $binary
         RETVAL=$?
         test $RETVAL -eq 0 && echo `pidof VBoxService` > $PIDFILE

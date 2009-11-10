@@ -142,7 +142,7 @@ VBOX_ADD_KMOD = \
 
 VBOX_ADD_KMOD.linux = \
 	vboxvfs \
-	vboxvideo_drm
+	vboxvideo
 
 VBOX_ADD_INIT.linux = \
 	vboxadd \
@@ -437,5 +437,5 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(VBOX_VERSION_STAMP)
 	$(QUIET)$(VBOX_MAKESELF) --nocomp $(VBOX_LNX_ADD_INST_STAGE_DIR) $@ \
 		"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for Linux" \
-		/bin/sh ./install.sh "> /dev/null"
+		/bin/sh ./install.sh "\$$0 1> /dev/null"
 
