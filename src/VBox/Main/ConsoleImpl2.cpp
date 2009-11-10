@@ -1196,7 +1196,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #ifdef VBOX_WITH_VIRTIO
             case NetworkAdapterType_Virtio:
                 pDev = pDevVirtioNet;
-                pszAdapterName = "virtio";
+                pszAdapterName = "virtio-net";
                 break;
 #endif /* VBOX_WITH_VIRTIO */
             default:

@@ -3177,7 +3177,7 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
 #endif
 #ifdef VBOX_WITH_VIRTIO
                 case NetworkAdapterType_Virtio:
-                    pszAdapterName = "virtio";
+                    pszAdapterName = "virtio-net";
                     break;
 #endif
                 default:
