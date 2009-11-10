@@ -665,7 +665,6 @@ int Display::registerSSM(PVM pVM)
                                NULL, displaySSMLoad, NULL, this);
     AssertRCReturn(rc, rc);
 
-#if 0
     /* uInstance is an arbitrary value greater than 1024. Such a value will ensure a quick seek in saved state file. */
     rc = SSMR3RegisterExternal(pVM, "DisplayScreenshot", 1100 /*uInstance*/, sSSMDisplayScreenshotVer, 0 /*cbGuess*/,
                                NULL, NULL, NULL,
@@ -673,7 +672,6 @@ int Display::registerSSM(PVM pVM)
                                NULL, displaySSMLoadScreenshot, NULL, this);
 
     AssertRCReturn(rc, rc);
-#endif
 
     return VINF_SUCCESS;
 }

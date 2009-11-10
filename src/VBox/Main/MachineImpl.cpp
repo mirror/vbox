@@ -3922,6 +3922,8 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
 
 static int readSavedDisplayScreenshot(Utf8Str *pStateFilePath, uint32_t u32Type, uint8_t **ppu8Data, uint32_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height)
 {
+    LogFlowFunc(("u32Type = %d [%s]\n", u32Type, pStateFilePath->raw()));
+
     /* @todo cache read data */
     if (pStateFilePath->isEmpty())
     {
@@ -3983,8 +3985,9 @@ static int readSavedDisplayScreenshot(Utf8Str *pStateFilePath, uint32_t u32Type,
                         {
                             /* No saved state data. */
                             rc = VERR_NOT_SUPPORTED;
-                            break;
                         }
+
+                        break;
                     }
                     else
                     {
@@ -4020,8 +4023,10 @@ static int readSavedDisplayScreenshot(Utf8Str *pStateFilePath, uint32_t u32Type,
         *pcbData = cbData;
         *pu32Width = u32Width;
         *pu32Height = u32Height;
+        LogFlowFunc(("cbData %d, u32Width %d, u32Height %d\n", cbData, u32Width, u32Height));
     }
 
+    LogFlowFunc(("rc %Rrc\n", rc));
     return rc;
 }
 
@@ -4055,50 +4060,22 @@ STDMETHODIMP Machine::QuerySavedThumbnailSize(ULONG *aSize, ULONG *aWidth, ULONG
         return setError (VBOX_E_IPRT_ERROR,
                          tr("Saved screenshot data is not available (%Rrc)"), vrc);
 
-    freeSavedDisplayScreenshot(pu8Data);
-
-    return S_OK;
-}
-
-STDMETHODIMP Machine::ReadSavedThumbnail(BYTE *aAddress, ULONG aSize)
-{
-    LogFlowThisFunc(("\n"));
-
-    CheckComArgNotNull(aAddress);
-
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoReadLock alock(this);
-
-    uint8_t *pu8Data = NULL;
-    uint32_t cbData = 0;
-    uint32_t u32Width = 0;
-    uint32_t u32Height = 0;
-
-    int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
-
-    if (RT_FAILURE(vrc))
-        return setError (VBOX_E_IPRT_ERROR,
-                         tr("Saved screenshot data is not available (%Rrc)"), vrc);
-    if (aSize != cbData)
-        return setError (E_INVALIDARG,
-                         tr("Invalid size of data buffer: %d"), aSize);
-
-    memcpy(aAddress, pu8Data, cbData);
+    *aSize = cbData;
+    *aWidth = u32Width;
+    *aHeight = u32Height;
 
     freeSavedDisplayScreenshot(pu8Data);
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::ReadSavedThumbnailToArray(ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData))
+STDMETHODIMP Machine::ReadSavedThumbnailToArray(BOOL aBGR, ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData))
 {
     LogFlowThisFunc(("\n"));
 
     CheckComArgNotNull(aWidth);
     CheckComArgNotNull(aHeight);
-    CheckComArgSafeArrayNotNull(aData);
+    CheckComArgExpr(aData, !ComSafeArrayOutIsNull(aData));
 
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
@@ -4120,13 +4097,28 @@ STDMETHODIMP Machine::ReadSavedThumbnailToArray(ULONG *aWidth, ULONG *aHeight, C
     *aHeight = u32Height;
 
     com::SafeArray<BYTE> bitmap(cbData);
-    /* Convert pixels to format expected by the API caller: [0] R, [1] G, [2] B, [3] A. */
-    for (unsigned i = 0; i < cbData; i += 4)
+    /* Convert pixels to format expected by the API caller. */
+    if (aBGR)
     {
-        bitmap[i]     = pu8Data[i + 2];
-        bitmap[i + 1] = pu8Data[i + 1];
-        bitmap[i + 2] = pu8Data[i];
-        bitmap[i + 3] = 0xff;
+        /* [0] B, [1] G, [2] R, [3] A. */
+        for (unsigned i = 0; i < cbData; i += 4)
+        {
+            bitmap[i]     = pu8Data[i];
+            bitmap[i + 1] = pu8Data[i + 1];
+            bitmap[i + 2] = pu8Data[i + 2];
+            bitmap[i + 3] = 0xff;
+        }
+    }
+    else
+    {
+        /* [0] R, [1] G, [2] B, [3] A. */
+        for (unsigned i = 0; i < cbData; i += 4)
+        {
+            bitmap[i]     = pu8Data[i + 2];
+            bitmap[i + 1] = pu8Data[i + 1];
+            bitmap[i + 2] = pu8Data[i];
+            bitmap[i + 3] = 0xff;
+        }
     }
     bitmap.detachTo(ComSafeArrayOutArg(aData));
 
@@ -4159,37 +4151,9 @@ STDMETHODIMP Machine::QuerySavedScreenshotPNGSize(ULONG *aSize, ULONG *aWidth, U
         return setError (VBOX_E_IPRT_ERROR,
                          tr("Saved screenshot data is not available (%Rrc)"), vrc);
 
-    freeSavedDisplayScreenshot(pu8Data);
-
-    return S_OK;
-}
-
-STDMETHODIMP Machine::ReadSavedScreenshotPNG(BYTE *aAddress, ULONG aSize)
-{
-    LogFlowThisFunc(("\n"));
-
-    CheckComArgNotNull(aAddress);
-
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoReadLock alock(this);
-
-    uint8_t *pu8Data = NULL;
-    uint32_t cbData = 0;
-    uint32_t u32Width = 0;
-    uint32_t u32Height = 0;
-
-    int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
-
-    if (RT_FAILURE(vrc))
-        return setError (VBOX_E_IPRT_ERROR,
-                         tr("Saved screenshot data is not available (%Rrc)"), vrc);
-    if (aSize != cbData)
-        return setError (E_INVALIDARG,
-                         tr("Invalid size of data buffer: %d"), aSize);
-
-    memcpy(aAddress, pu8Data, cbData);
+    *aSize = cbData;
+    *aWidth = u32Width;
+    *aHeight = u32Height;
 
     freeSavedDisplayScreenshot(pu8Data);
 
@@ -4202,7 +4166,7 @@ STDMETHODIMP Machine::ReadSavedScreenshotPNGToArray(ULONG *aWidth, ULONG *aHeigh
 
     CheckComArgNotNull(aWidth);
     CheckComArgNotNull(aHeight);
-    CheckComArgSafeArrayNotNull(aData);
+    CheckComArgExpr(aData, !ComSafeArrayOutIsNull(aData));
 
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());

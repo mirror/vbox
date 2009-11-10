@@ -4104,7 +4104,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="c5669e1a-491a-4367-99c6-28110dd474c6"
+     uuid="99404f50-dd10-40d3-889b-dd2f79f1e95e"
      wsmap="managed"
      >
     <desc>
@@ -5795,39 +5795,16 @@
       </param>
     </method>
 
-    <method name="readSavedThumbnail">
-      <desc>
-        Reads a saved thumbnail bitmap from saved state.
-        A pixel consists of 4 bytes in order: B, G, R, 0.
-
-        <note>This API can be used only by the COM/XPCOM C++ API as it
-            requires pointer support. Use <link to="#readSavedThumbnailToArray" />
-            with other language bindings.
-        </note>
-      </desc>
-      <param name="address" type="octet" mod="ptr" dir="in">
-        <desc>
-          Buffer allocated by caller. Size must be at least equal
-          to value returned by querySavedThumbnailSize.
-        </desc>
-      </param>
-      <param name="size" type="unsigned long" dir="in">
-        <desc>
-          Size of buffer allocated by caller. If the buffer is too small,
-          the method fails.
-        </desc>
-      </param>
-    </method>
-
     <method name="readSavedThumbnailToArray">
       <desc>
-        Thumbnail is retrieved to an array of bytes in uncompressed 32-bit RGBA format.
-        A pixel consists of 4 bytes in order: R, G, B, 0xFF.
-
-        This API is slow, but could be the only option to get image
-        for scriptable languages not allowed to manipulate with addresses
-        directly.
+        Thumbnail is retrieved to an array of bytes in uncompressed 32-bit BGRA or RGBA format.
       </desc>
+      <param name="BGR" type="boolean" dir="in">
+        <desc>
+          How to order bytes in the pixel. A pixel consists of 4 bytes. If this parameter is true, then
+          bytes order is: B, G, R, 0xFF. If this parameter is false, then bytes order is: R, G, B, 0xFF. 
+        </desc>
+      </param>
       <param name="width" type="unsigned long" dir="out">
         <desc>
           Bitmap width.
@@ -5866,36 +5843,9 @@
       </param>
     </method>
 
-    <method name="readSavedScreenshotPNG">
-      <desc>
-        Reads a saved screenshot in PNG format from saved state.
-
-        <note>This API can be used only by the COM/XPCOM C++ API as it
-            requires pointer support. Use <link to="#readSavedScreenshotPNGToArray" />
-            with other language bindings.
-        </note>
-      </desc>
-      <param name="address" type="octet" mod="ptr" dir="in">
-        <desc>
-          Buffer allocated by caller. Size must be at least equal
-          to value returned by querySavedScreenshotPNGSize.
-        </desc>
-      </param>
-      <param name="size" type="unsigned long" dir="in">
-        <desc>
-          Size of buffer allocated by caller. If the buffer is too small,
-          the method fails.
-        </desc>
-      </param>
-    </method>
-
     <method name="readSavedScreenshotPNGToArray">
       <desc>
         Screenshot in PNG format is retrieved to an array of bytes.
-
-        This API is slow, but could be the only option to get image
-        for scriptable languages not allowed to manipulate with addresses
-        directly.
       </desc>
       <param name="width" type="unsigned long" dir="out">
         <desc>
