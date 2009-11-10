@@ -394,7 +394,7 @@ cleanup()
              echo "$line" | grep -q installed > /dev/null; then
             version=`echo "$line" | sed "s/$mod,\([^,]*\)[,:].*/\1/;t;d"`
             echo "  removing module $mod version $version"
-            $DKMS remove -m $mod -v $version --all 2>/dev/null
+            $DKMS remove -m $mod -v $version --all >/dev/null
           fi
         done
       done
