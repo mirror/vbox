@@ -205,6 +205,12 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
                     rc = NS_ERROR_FAILURE;
                     break;
                 }
+
+                /* need to wait for the pid to avoid zombie VBoxSVC.
+                 * ignore failure since it just means we'll have a zombie
+                 * VBoxSVC until we exit */
+                int vrc2 = RTProcWaitNoResume(pid, RTPROCWAIT_FLAGS_BLOCK, NULL);
+                AssertRC(vrc2);
 #endif
 
                 /* wait for the server process to establish a connection */
