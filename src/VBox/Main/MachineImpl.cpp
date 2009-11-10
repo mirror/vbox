@@ -2831,7 +2831,8 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
 
     Guid id(aId);
     ComObjPtr<Medium> medium;
-    switch (pAttach->type())
+    DeviceType_T mediumType = pAttach->type();
+    switch (mediumType)
     {
         case DeviceType_DVD:
             if (!id.isEmpty())
@@ -2900,6 +2901,9 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
                                  aControllerPort,
                                  aDevice);
         AutoWriteLock attLock(pAttach);
+        /* For non-hard disk media, detach straight away. */
+        if (mediumType != DeviceType_HardDisk && !oldmedium.isNull())
+            oldmedium->detachFrom(mData->mUuid);
         if (!medium.isNull())
             medium->attachTo(mData->mUuid);
         pAttach->updateMedium(medium, false /* aImplicit */);
@@ -2922,6 +2926,9 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
         if (pAttach.isNull())
             return rc;
         AutoWriteLock attLock(pAttach);
+        /* For non-hard disk media, re-attach straight away. */
+        if (mediumType != DeviceType_HardDisk && !oldmedium.isNull())
+            oldmedium->attachTo(mData->mUuid);
         pAttach->updateMedium(oldmedium, false /* aImplicit */);
     }
 
@@ -3939,7 +3946,7 @@ static int readSavedDisplayScreenshot(Utf8Str *pStateFilePath, uint32_t u32Type,
     PSSMHANDLE pSSM;
     int rc = SSMR3Open(pStateFilePath->raw(), 0 /*fFlags*/, &pSSM);
     if (RT_SUCCESS(rc))
-    { 
+    {
         uint32_t uVersion;
         rc = SSMR3Seek(pSSM, "DisplayScreenshot", 1100 /*iInstance*/, &uVersion);
         if (RT_SUCCESS(rc))
@@ -7705,10 +7712,11 @@ void Machine::fixupMedia(bool aCommit, bool aOnline /*= false*/)
              ++it)
         {
             MediumAttachment *pAttach = *it;
-
             Medium* pMedium = pAttach->medium();
 
-            if (pMedium)
+            /* Detach only hard disks, since DVD/floppy media is detached
+             * instantly in MountMedium. */
+            if (pAttach->type() == DeviceType_HardDisk && pMedium)
             {
                 LogFlowThisFunc(("detaching medium '%s' from machine\n", pMedium->name().raw()));
 
@@ -7744,7 +7752,31 @@ void Machine::fixupMedia(bool aCommit, bool aOnline /*= false*/)
              it != mMediaData->mAttachments.end();
              ++it)
         {
+            MediumAttachment *pAttach = *it;
+            /* Fix up the backrefs for DVD/floppy media. */
+            if (pAttach->type() != DeviceType_HardDisk)
+            {
+                Medium* pMedium = pAttach->medium();
+                if (pMedium)
+                {
+                    rc = pMedium->detachFrom(mData->mUuid);
+                    AssertComRC(rc);
+                }
+            }
+
             (*it)->rollback();
+
+            pAttach = *it;
+            /* Fix up the backrefs for DVD/floppy media. */
+            if (pAttach->type() != DeviceType_HardDisk)
+            {
+                Medium* pMedium = pAttach->medium();
+                if (pMedium)
+                {
+                    rc = pMedium->attachTo(mData->mUuid);
+                    AssertComRC(rc);
+                }
+            }
         }
 
         /** @todo convert all this Machine-based voodoo to MediumAttachment
