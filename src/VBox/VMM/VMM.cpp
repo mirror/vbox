@@ -447,50 +447,55 @@ VMMR3DECL(int) VMMR3InitCPU(PVM pVM)
  */
 VMMR3DECL(int) VMMR3InitFinalize(PVM pVM)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
 
+    /*
+     * Set page attributes to r/w for stack pages.
+     */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
-
-#ifdef VBOX_STRICT_VMM_STACK
-        /*
-         * Two inaccessible pages at each sides of the stack to catch over/under-flows.
-         */
-        memset(pVCpu->vmm.s.pbEMTStackR3 - PAGE_SIZE, 0xcc, PAGE_SIZE);
-        MMR3HyperSetGuard(pVM, pVCpu->vmm.s.pbEMTStackR3 - PAGE_SIZE, PAGE_SIZE, true /*fSet*/);
-
-        memset(pVCpu->vmm.s.pbEMTStackR3 + VMM_STACK_SIZE, 0xcc, PAGE_SIZE);
-        MMR3HyperSetGuard(pVM, pVCpu->vmm.s.pbEMTStackR3 + VMM_STACK_SIZE, PAGE_SIZE, true /*fSet*/);
-#endif
-
-        /*
-         * Set page attributes to r/w for stack pages.
-         */
-        rc = PGMMapSetPage(pVM, pVCpu->vmm.s.pbEMTStackRC, VMM_STACK_SIZE, X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
-        AssertRC(rc);
-        if (RT_FAILURE(rc))
-            break;
+        rc = PGMMapSetPage(pVM, pVM->aCpus[idCpu].vmm.s.pbEMTStackRC, VMM_STACK_SIZE,
+                           X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
+        AssertRCReturn(rc, rc);
     }
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Create the EMT yield timer.
-         */
-        rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, vmmR3YieldEMT, NULL, "EMT Yielder", &pVM->vmm.s.pYieldTimer);
-        if (RT_SUCCESS(rc))
-           rc = TMTimerSetMillies(pVM->vmm.s.pYieldTimer, pVM->vmm.s.cYieldEveryMillies);
-    }
+
+    /*
+     * Create the EMT yield timer.
+     */
+    rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, vmmR3YieldEMT, NULL, "EMT Yielder", &pVM->vmm.s.pYieldTimer);
+    AssertRCReturn(rc, rc);
+
+    rc = TMTimerSetMillies(pVM->vmm.s.pYieldTimer, pVM->vmm.s.cYieldEveryMillies);
+    AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_NMI
     /*
      * Map the host APIC into GC - This is AMD/Intel + Host OS specific!
      */
-    if (RT_SUCCESS(rc))
-        rc = PGMMap(pVM, pVM->vmm.s.GCPtrApicBase, 0xfee00000, PAGE_SIZE,
-                    X86_PTE_P | X86_PTE_RW | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A | X86_PTE_D);
+    rc = PGMMap(pVM, pVM->vmm.s.GCPtrApicBase, 0xfee00000, PAGE_SIZE,
+                X86_PTE_P | X86_PTE_RW | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A | X86_PTE_D);
+    AssertRCReturn(rc, rc);
 #endif
-    return rc;
+
+#ifdef VBOX_STRICT_VMM_STACK
+    /*
+     * Setup the stack guard pages: Two inaccessible pages at each sides of the
+     * stack to catch over/under-flows.
+     */
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        uint8_t *pbEMTStackR3 = pVM->aCpus[idCpu].vmm.s.pbEMTStackR3;
+
+        memset(pbEMTStackR3 - PAGE_SIZE, 0xcc, PAGE_SIZE);
+        MMR3HyperSetGuard(pVM, pbEMTStackR3 - PAGE_SIZE, PAGE_SIZE, true /*fSet*/);
+
+        memset(pbEMTStackR3 + VMM_STACK_SIZE, 0xcc, PAGE_SIZE);
+        MMR3HyperSetGuard(pVM, pbEMTStackR3 + VMM_STACK_SIZE, PAGE_SIZE, true /*fSet*/);
+    }
+    pVM->vmm.s.fStackGuardsStationed = true;
+#endif
+
+    return VINF_SUCCESS;
 }
 
 
@@ -698,10 +703,15 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
     /*
      * Make the two stack guard pages present again.
      */
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    if (pVM->vmm.s.fStackGuardsStationed)
     {
-        MMR3HyperSetGuard(pVM, pVM->aCpus[i].vmm.s.pbEMTStackR3 - PAGE_SIZE,      PAGE_SIZE, false /*fSet*/);
-        MMR3HyperSetGuard(pVM, pVM->aCpus[i].vmm.s.pbEMTStackR3 + VMM_STACK_SIZE, PAGE_SIZE, false /*fSet*/);
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        {
+            uint8_t *pbEMTStackR3 = pVM->aCpus[i].vmm.s.pbEMTStackR3;
+            MMR3HyperSetGuard(pVM, pbEMTStackR3 - PAGE_SIZE,      PAGE_SIZE, false /*fSet*/);
+            MMR3HyperSetGuard(pVM, pbEMTStackR3 + VMM_STACK_SIZE, PAGE_SIZE, false /*fSet*/);
+        }
+        pVM->vmm.s.fStackGuardsStationed = false;
     }
 #endif
     return rc;
