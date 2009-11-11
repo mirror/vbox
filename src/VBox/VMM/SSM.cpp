@@ -863,11 +863,13 @@ static uint8_t const    g_abZero[_1K] = {0};
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+#ifndef SSM_STANDALONE
 static int                  ssmR3LazyInit(PVM pVM);
 static DECLCALLBACK(int)    ssmR3SelfLiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass);
 static DECLCALLBACK(int)    ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)    ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 static int                  ssmR3Register(PVM pVM, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess, const char *pszBefore, PSSMUNIT *ppUnit);
+#endif
 
 static int                  ssmR3StrmWriteBuffers(PSSMSTRM pStrm);
 static int                  ssmR3StrmReadMore(PSSMSTRM pStrm);
@@ -876,6 +878,7 @@ static int                  ssmR3DataFlushBuffer(PSSMHANDLE pSSM);
 static int                  ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM);
 
 
+#ifndef SSM_STANDALONE
 
 /**
  * Cleans up resources allocated by SSM on VM termination.
@@ -1567,6 +1570,8 @@ VMMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName)
 {
     return ssmR3DeregisterByNameAndType(pVM, pszName, SSMUNITTYPE_EXTERNAL);
 }
+
+#endif /* !SSM_STANDALONE */
 
 
 /**
@@ -2898,6 +2903,7 @@ DECLINLINE(bool) ssmR3IsHostMsc32(PSSMHANDLE pSSM)
     return SSM_HOST_IS_MSC_32;
 }
 
+#ifndef SSM_STANDALONE
 
 /**
  * Finishes a data unit.
@@ -5157,6 +5163,7 @@ VMMR3_INT_DECL(int) SSMR3LiveSave(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
     return rc;
 }
 
+#endif /* !SSM_STANDALONE */
 
 
 /* ... Loading and reading starts here ... */
@@ -6840,6 +6847,7 @@ VMMR3DECL(int) SSMR3SkipToEndOfUnit(PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
+#ifndef SSM_STANDALONE
 
 /**
  * VMSetError wrapper for load errors that inserts the saved state details.
@@ -6940,6 +6948,7 @@ VMMR3DECL(int) SSMR3SetCfgError(PSSMHANDLE pSSM, RT_SRC_POS_DECL, const char *ps
     return rc;
 }
 
+#endif /* !SSM_STANDALONE */
 
 /**
  * Calculate the checksum of a file portion.
@@ -7480,6 +7489,7 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
     return rc;
 }
 
+#ifndef SSM_STANDALONE
 
 /**
  * Find a data unit by name.
@@ -7706,6 +7716,8 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
     return rc;
 }
 
+#endif /* !SSM_STANDALONE */
+
 
 /**
  * Verifies the directory.
@@ -7741,6 +7753,7 @@ static int ssmR3ValidateDirectory(PSSMFILEDIR pDir, size_t cbDir, uint64_t offDi
     return VINF_SUCCESS;
 }
 
+#ifndef SSM_STANDALONE
 
 /**
  * Reads and verifies the directory and footer.
@@ -8176,6 +8189,8 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
     }
     return rc;
 }
+
+#endif /* !SSM_STANDALONE */
 
 
 /**
@@ -8633,6 +8648,7 @@ VMMR3DECL(uint32_t) SSMR3HandleHostBits(PSSMHANDLE pSSM)
 }
 
 
+#ifndef SSM_STANDALONE
 /**
  * Asynchronously cancels the current SSM operation ASAP.
  *
@@ -8677,4 +8693,5 @@ VMMR3DECL(int) SSMR3Cancel(PVM pVM)
     RTCritSectLeave(&pVM->ssm.s.CancelCritSect);
     return rc;
 }
+#endif /* !SSM_STANDALONE */
 
