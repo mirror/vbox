@@ -813,5 +813,7 @@ DECLEXPORT(GLenum) STATE_APIENTRY crStateSetFramebufferStatus(GLenum target, GLe
     }
 
     if (pFBO) pFBO->status = status;
+
+    return status;
 }
 #endif
