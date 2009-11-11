@@ -258,6 +258,8 @@ endif
 VBoxSVC_LIBS += \
 	$(LIB_VMM) \
 	$(LIB_DDU)
+VBoxSVC_LIBS.linux = \
+	$(LIB_REM)
 VBoxSVC_LIBS.darwin = \
 	$(LIB_REM)
 VBoxSVC_LIBS.solaris = \
