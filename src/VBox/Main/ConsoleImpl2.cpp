@@ -1057,6 +1057,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     {
                         rc = CFGMR3InsertInteger(pCfg, "ReadOnly", 1);                          RC_CHECK();
                     }
+                    /* Start without exclusive write access to the images. */
+                    /** @todo Live Migration: I don't quite like this, we risk screwing up when
+                     *        we're resuming the VM if some 3rd dude have any of the VDIs open
+                     *        with write sharing denied.  However, if the two VMs are sharing a
+                     *        image it really is necessary....
+                     *
+                     *        So, on the "lock-media" command, the target teleporter should also
+                     *        make DrvVD undo TempReadOnly.  It gets interesting if we fail after
+                     *        that. Grumble. */
+                    else if (pConsole->mMachineState == MachineState_TeleportingIn)
+                    {
+                        rc = CFGMR3InsertInteger(pCfg, "TempReadOnly", 1);                      RC_CHECK();
+                    }
 
                     /* Pass all custom parameters. */
                     bool fHostIP = true;
