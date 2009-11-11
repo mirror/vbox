@@ -570,7 +570,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
         storageCtl->COMGETTER(Name)(storageCtlName.asOutParam());
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("storagecontrollername%u:\"%lS\"\n", i, storageCtlName.raw());
+            RTPrintf("storagecontrollername%u=\"%lS\"\n", i, storageCtlName.raw());
         else
             RTPrintf("Storage Controller Name (%u):            %lS\n", i, storageCtlName.raw());
 
@@ -603,25 +603,25 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 pszCtl = "unknown";
         }
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("storagecontrollertype%u:=\"%s\"\n", i, pszCtl);
+            RTPrintf("storagecontrollertype%u=\"%s\"\n", i, pszCtl);
         else
             RTPrintf("Storage Controller Type (%u):            %s\n", i, pszCtl);
 
         storageCtl->COMGETTER(Instance)(&ulValue);
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("storagecontrollerinstance%u:\"%lu\"\n", i, ulValue);
+            RTPrintf("storagecontrollerinstance%u=\"%lu\"\n", i, ulValue);
         else
             RTPrintf("Storage Controller Instance Number (%u): %lu\n", i, ulValue);
 
         storageCtl->COMGETTER(MaxPortCount)(&ulValue);
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("storagecontrollermaxportcount%u:\"%lu\"\n", i, ulValue);
+            RTPrintf("storagecontrollermaxportcount%u=\"%lu\"\n", i, ulValue);
         else
             RTPrintf("Storage Controller Max Port Count (%u):  %lu\n", i, ulValue);
 
         storageCtl->COMGETTER(PortCount)(&ulValue);
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("storagecontrollerportcount%u:\"%lu\"\n", i, ulValue);
+            RTPrintf("storagecontrollerportcount%u=\"%lu\"\n", i, ulValue);
         else
             RTPrintf("Storage Controller Port Count (%u):      %lu\n", i, ulValue);
     }
@@ -658,12 +658,12 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
                     if (details == VMINFO_MACHINEREADABLE)
                     {
-                        RTPrintf("\"%lS\"-%d-%d=\"%lS\"\n", storageCtlName.raw(),
+                        RTPrintf("\"%lS-%d-%d\"=\"%lS\"\n", storageCtlName.raw(),
                                  i, k, filePath.raw());
-                        RTPrintf("\"%lS\"-ImageUUID-%d-%d=\"%s\"\n",
+                        RTPrintf("\"%lS-ImageUUID-%d-%d\"=\"%s\"\n",
                                  storageCtlName.raw(), i, k, Utf8Str(uuid).raw());
                         if (fPassthrough)
-                            RTPrintf("\"%lS\"-dvdpassthrough=\"%s\"\n", storageCtlName.raw(),
+                            RTPrintf("\"%lS-dvdpassthrough\"=\"%s\"\n", storageCtlName.raw(),
                                      fPassthrough ? "on" : "off");
                     }
                     else
@@ -679,7 +679,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 else
                 {
                     if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("\"%lS\"-%d-%d=\"none\"\n", storageCtlName.raw(), i, k);
+                        RTPrintf("\"%lS-%d-%d\"=\"none\"\n", storageCtlName.raw(), i, k);
                 }
             }
         }
