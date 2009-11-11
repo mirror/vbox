@@ -6149,6 +6149,20 @@ static DECLCALLBACK(int) ataSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return SSMR3PutU32(pSSM, ~0); /* sanity/terminator */
 }
 
+/**
+ * Converts the LUN number into a message string.
+ */
+static const char *ataStringifyLun(unsigned iLun)
+{
+    switch (iLun)
+    {
+        case 0:  return "primary master";
+        case 1:  return "primary slave";
+        case 2:  return "secondary master";
+        case 3:  return "secondary slave";
+        default: AssertFailedReturn("unknown lun");
+    }
+}
 
 /**
  * FNSSMDEVLOADEXEC
@@ -6196,8 +6210,9 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
                 rc = SSMR3GetBool(pSSM, &fInUse);
                 AssertRCReturn(rc, rc);
                 if (fInUse != (pIf->pDrvBase != NULL))
-                    return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("LUN#%u config mismatch: fInUse - saved=%RTbool config=%RTbool"),
-                                             pIf->iLUN, fInUse, (pIf->pDrvBase != NULL));
+                    return SSMR3SetCfgError(pSSM, RT_SRC_POS,
+                                            N_("The %s VM is missing a %s device. Please make sure the source and target VMs have compatible storage configurations"),
+                                            fInUse ? "target" : "source", ataStringifyLun(pIf->iLUN) );
 
                 char szSerialNumber[ATA_SERIAL_NUMBER_LENGTH+1];
                 rc = SSMR3GetStrZ(pSSM, szSerialNumber,     sizeof(szSerialNumber));
