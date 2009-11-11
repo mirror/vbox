@@ -221,7 +221,7 @@
               <enum>Qt::StrongFocus</enum>
              </property>
              <property name="toolTip">
-              <string>Move Up (Ctrl-Down)</string>
+              <string>Move Up (Ctrl-Up)</string>
              </property>
              <property name="whatsThis">
               <string>Moves the selected boot device up.</string>
@@ -247,7 +247,7 @@
               <enum>Qt::StrongFocus</enum>
              </property>
              <property name="toolTip">
-              <string>Move Down (Ctrl-Up)</string>
+              <string>Move Down (Ctrl-Down)</string>
              </property>
              <property name="whatsThis">
               <string>Moves the selected boot device down.</string>
