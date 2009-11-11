@@ -1106,7 +1106,13 @@
       <desc>BIOS Firmware.</desc>
     </const>
     <const name="EFI"             value="2">
-      <desc>Efi firmware.</desc>
+      <desc>Efi firmware, 32-bit.</desc>
+    </const>
+    <const name="EFI64"           value="3">
+      <desc>Efi firmware, 64-bit.</desc>
+    </const>
+    <const name="EFIDUAL"         value="4">
+      <desc>Efi firmware, combined 32 and 64-bit.</desc>
     </const>
   </enum>
 
@@ -2999,6 +3005,33 @@
       </desc>
       <param name="server" type="IDHCPServer" dir="in">
         <desc>Dhcp server settings to be removed</desc>
+      </param>
+    </method>
+
+
+    <method name="checkFirmwarePresent">
+      <desc>
+        Check if this VirtualBox installation have firmware
+        of given type available, either system-wide, or per-user.
+        Optionally, may return a hint where this firmware can be
+        downloaded from.
+      </desc>
+      <param name="firmwareType" type="FirmwareType" dir="in">
+        <desc>
+          Type of firmware to check.
+        </desc>
+      </param>
+      <param name="version" type="wstring" dir="in">
+        <desc>Expected version number, usually empty string.</desc>
+      </param>
+
+      <param name="url" type="wstring" dir="out">
+        <desc>
+          Suggested url to download this firmware from.
+        </desc>
+      </param>
+      <param name="result" type="boolean" dir="return">
+        <desc>If firmware of this type and version is available.</desc>
       </param>
     </method>
 
