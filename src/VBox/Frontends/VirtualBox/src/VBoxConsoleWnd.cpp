@@ -347,10 +347,8 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
     if (aSelf)
         *aSelf = this;
 
-#ifndef DEBUG_bird /* this drives me nuts! */
     /* Cache IMedium data! */
     vboxGlobal().startEnumeratingMedia();
-#endif
 
 #if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
     /* The default application icon (will change to the VM-specific icon in
