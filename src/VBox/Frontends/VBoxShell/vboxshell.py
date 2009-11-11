@@ -692,9 +692,9 @@ def teleportCmd(ctx, args):
     cmdExistingVm(ctx, mach, 'teleport', args[2:])
     return 0
 
-def makeportalCmd(ctx, args):
+def openportalCmd(ctx, args):
     if (len(args) < 3):
-        print "usage: makeportal name port <password>"
+        print "usage: openportal name port <password>"
         return 0
     mach = argsToMach(ctx,args)
     if mach == None:
@@ -1088,9 +1088,9 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'shell':['Execute external shell command: shell "ls /etc/rc*"', shellCmd, 0],
             'exportVm':['Export VM in OVF format: export Win /tmp/win.ovf', exportVMCmd, 0],
             'screenshot':['Take VM screenshot to a file: screenshot Win /tmp/win.png 1024 768', screenshotCmd, 0],
-            'teleport':['Teleport VM to another box (see makeportal): teleport Win anotherhost:8000 <passwd>', teleportCmd, 0],
-            'makeportal':['Make portal for teleportation of VM from another box (see teleport): makeportal Win 8000 <passwd>', makeportalCmd, 0],
-            'closeportal':['Close portal for teleportation of VM from another box (see teleport): closeportal Win', closeportalCmd, 0]
+            'teleport':['Teleport VM to another box (see openportal): teleport Win anotherhost:8000 <passwd>', teleportCmd, 0],
+            'openportal':['Open portal for teleportation of VM from another box (see teleport): openportal Win 8000 <passwd>', openportalCmd, 0],
+            'closeportal':['Close teleportation portal (see openportal,teleport): closeportal Win', closeportalCmd, 0]
             }
 
 def runCommandArgs(ctx, args):
