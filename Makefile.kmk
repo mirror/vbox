@@ -288,9 +288,12 @@ endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
 
 
 #
-# Install EFI firmware image from the build server.
+# Install EFI firmware image 
 #
 ifdef VBOX_WITH_EFIFW_FROM_BUILD_SERVER
+#
+# Either from the build server.
+#
 INSTALLS += buildserver-efifw
 buildserver-efifw_INST = $(INST_BIN)
 buildserver-efifw_MODE = 0644
@@ -323,6 +326,15 @@ $$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip: $(VBOX_SVN_REV_KMK) $(PATH_D
 buildserver-efifw-affinity-hack:
 	$(SHELL) $(PATH_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename $(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip.tmp
  endif
+else
+#
+# Or from the local copy
+#
+INSTALLS += local-efifw
+local-efifw_INST = $(INST_BIN)
+local-efifw_MODE = 0644
+local-efifw_SOURCES = \
+	$(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareBin/vboxefi.fv=>vboxefi.fv
 endif # VBOX_WITH_EFIFW_FROM_BUILD_SERVER
 
 

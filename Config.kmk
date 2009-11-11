@@ -423,10 +423,8 @@ VBOX_WITH_LPC = 1
 VBOX_WITH_EFI = 1
 # Fetch EFI firmware image from the build server
 # VBOX_WITH_EFIFW_FROM_BUILD_SERVER = 1
-ifdef VBOX_WITH_EFIFW_FROM_BUILD_SERVER
- # Include the EFI firmware into the package
- VBOX_WITH_EFIFW_PACKING = 1
-endif
+# Include the EFI firmware into the package
+VBOX_WITH_EFIFW_PACKING = 1
 # Enable SCSI drivers
 VBOX_WITH_SCSI = 1
 # Enable changing network attachments dynamically.
