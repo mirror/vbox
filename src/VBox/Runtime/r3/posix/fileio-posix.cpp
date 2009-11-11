@@ -47,6 +47,9 @@
 # include <unistd.h>
 # include <sys/time.h>
 #endif
+#ifdef RT_OS_LINUX
+# include <sys/file.h>
+#endif
 #if defined(RT_OS_OS2) && (!defined(__INNOTEK_LIBC__) || __INNOTEK_LIBC__ < 0x006)
 # include <io.h>
 #endif
@@ -216,38 +219,115 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
 #endif
     if (fh >= 0)
     {
+        iErr = 0;
+
         /*
          * Mark the file handle close on exec, unless inherit is specified.
          */
-        if (    !(fOpen & RTFILE_O_INHERIT)
+        if (    (fOpen & RTFILE_O_INHERIT)
 #ifdef O_NOINHERIT
-            ||  (fOpenMode & O_NOINHERIT) /* careful since it could be a dummy. */
+            &&  !(fOpenMode & O_NOINHERIT)  /* Take care since it might be a zero value dummy. */
 #endif
-            ||  fcntl(fh, F_SETFD, FD_CLOEXEC) >= 0)
+            )
+            iErr = fcntl(fh, F_SETFD, FD_CLOEXEC) < 0 ? errno : 0;
+
+        /*
+         * Switch direct I/O on now if requested and required.
+         */
+#if defined(RT_OS_DARWIN) \
+ || (defined(RT_OS_SOLARIS) && !defined(IN_GUEST))
+        if (iErr == 0 && (fOpen & RTFILE_O_NO_CACHE))
         {
-#if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
-            iErr = 0;
-            /* Switch direct I/O on now if requested */
-# if defined(RT_OS_SOLARIS) && !defined(IN_GUEST)
-            if (fOpen & RTFILE_O_NO_CACHE)
-                iErr = directio(fh, DIRECTIO_ON);
-# elif defined(RT_OS_DARWIN)
-            if (fOpen & RTFILE_O_NO_CACHE)
-                iErr = fcntl(fh, F_NOCACHE, 1);
+# if defined(RT_OS_DARWIN)
+            iErr = fcntl(fh, F_NOCACHE, 1)   >= 0 : errno;
+# else
+            iErr = directio(fh, DIRECTIO_ON) >= 0 : errno;
 # endif
-            if (iErr < 0)
-                iErr = errno;
-            else
+        }
 #endif
+
+        /*
+         * Implement / emulate file sharing.
+         *
+         * We need another mode which allows skipping this stuff completely
+         * and do things the UNIX way. So for the present this is just a debug
+         * aid that can be enabled by developers too lazy to test on Windows.
+         */
+#if 0 && defined(RT_OS_LINUX)
+        if (iErr == 0)
+        {
+            /* This approach doesn't work because only knfsd checks for these
+               buggers. :-( */
+            int iLockOp;
+            switch (fOpen & RTFILE_O_DENY_MASK)
             {
-                *pFile = (RTFILE)fh;
-                Assert((int)*pFile == fh);
-                LogFlow(("RTFileOpen(%p:{%RTfile}, %p:{%s}, %#x): returns %Rrc\n",
-                         pFile, *pFile, pszFilename, pszFilename, fOpen, rc));
-                return VINF_SUCCESS;
+                default:
+                AssertFailed();
+                case RTFILE_O_DENY_NONE:
+                case RTFILE_O_DENY_NOT_DELETE:
+                    iLockOp = LOCK_MAND | LOCK_READ | LOCK_WRITE;
+                    break;
+                case RTFILE_O_DENY_READ:
+                case RTFILE_O_DENY_READ | RTFILE_O_DENY_NOT_DELETE:
+                    iLockOp = LOCK_MAND | LOCK_WRITE;
+                    break;
+                case RTFILE_O_DENY_WRITE:
+                case RTFILE_O_DENY_WRITE | RTFILE_O_DENY_NOT_DELETE:
+                    iLockOp = LOCK_MAND | LOCK_READ;
+                    break;
+                case RTFILE_O_DENY_WRITE | RTFILE_O_DENY_READ:
+                case RTFILE_O_DENY_WRITE | RTFILE_O_DENY_READ | RTFILE_O_DENY_NOT_DELETE:
+                    iLockOp = LOCK_MAND;
+                    break;
+            }
+            iErr = flock(fh, iLockOp | LOCK_NB);
+            if (iErr != 0)
+                iErr = errno == EAGAIN ? ETXTBSY : 0;
+        }
+#endif /* 0 && RT_OS_LINUX */
+#ifdef DEBUG_bird
+        if (iErr == 0)
+        {
+            /* This emulation is incomplete but useful. */
+            switch (fOpen & RTFILE_O_DENY_MASK)
+            {
+                default:
+                AssertFailed();
+                case RTFILE_O_DENY_NONE:
+                case RTFILE_O_DENY_NOT_DELETE:
+                case RTFILE_O_DENY_READ:
+                case RTFILE_O_DENY_READ | RTFILE_O_DENY_NOT_DELETE:
+                    break;
+                case RTFILE_O_DENY_WRITE:
+                case RTFILE_O_DENY_WRITE | RTFILE_O_DENY_NOT_DELETE:
+                case RTFILE_O_DENY_WRITE | RTFILE_O_DENY_READ:
+                case RTFILE_O_DENY_WRITE | RTFILE_O_DENY_READ | RTFILE_O_DENY_NOT_DELETE:
+                    if (fOpen & RTFILE_O_WRITE)
+                    {
+                        iErr = flock(fh, LOCK_EX | LOCK_NB);
+                        if (iErr != 0)
+                            iErr = errno == EAGAIN ? ETXTBSY : 0;
+                    }
+                    break;
             }
         }
-        iErr = errno;
+#endif
+#ifdef RT_OS_SOLARIS
+        /** @todo Use fshare_t and associates, it's a perfect match. see sys/fcntl.h */
+#endif
+
+        /*
+         * We're done.
+         */
+        if (iErr == 0)
+        {
+            *pFile = (RTFILE)fh;
+            Assert((int)*pFile == fh);
+            LogFlow(("RTFileOpen(%p:{%RTfile}, %p:{%s}, %#x): returns %Rrc\n",
+                     pFile, *pFile, pszFilename, pszFilename, fOpen, rc));
+            return VINF_SUCCESS;
+        }
+
         close(fh);
     }
     return RTErrConvertFromErrno(iErr);
