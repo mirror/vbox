@@ -82,6 +82,7 @@ private slots:
     void mupClicked();
     void mdnClicked();
     void showContextMenu (const QPoint &aPos);
+    void markSettingsChanged();
 
 private:
 

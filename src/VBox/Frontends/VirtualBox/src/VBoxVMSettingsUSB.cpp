@@ -106,7 +106,9 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (FilterType aType)
     connect (mTwFilters, SIGNAL (customContextMenuRequested (const QPoint &)),
              this, SLOT (showContextMenu (const QPoint &)));
     connect (mTwFilters, SIGNAL (itemDoubleClicked (QTreeWidgetItem *, int)),
-             this, SLOT (edtClicked ()));
+             this, SLOT (edtClicked()));
+    connect (mTwFilters, SIGNAL (itemChanged (QTreeWidgetItem *, int)),
+             this, SLOT (markSettingsChanged()));
 
     mUSBDevicesMenu = new VBoxUSBMenu (this);
     connect (mUSBDevicesMenu, SIGNAL (triggered (QAction*)),
@@ -146,6 +148,8 @@ void VBoxVMSettingsUSB::getFrom (const CSystemProperties &, const VBoxGlobalSett
 
     mTwFilters->setCurrentItem (mTwFilters->topLevelItem (0));
     currentChanged (mTwFilters->currentItem());
+
+    mUSBFilterListModified = false;
 }
 
 void VBoxVMSettingsUSB::putBackTo (CSystemProperties &, VBoxGlobalSettings &)
@@ -191,6 +195,8 @@ void VBoxVMSettingsUSB::getFrom (const CMachine &aMachine)
 
     mTwFilters->setCurrentItem (mTwFilters->topLevelItem (0));
     currentChanged (mTwFilters->currentItem());
+
+    mUSBFilterListModified = false;
 }
 
 void VBoxVMSettingsUSB::putBackTo()
@@ -539,6 +545,11 @@ void VBoxVMSettingsUSB::mdnClicked()
 void VBoxVMSettingsUSB::showContextMenu (const QPoint &aPos)
 {
     mMenu->exec (mTwFilters->mapToGlobal (aPos));
+}
+
+void VBoxVMSettingsUSB::markSettingsChanged()
+{
+    mUSBFilterListModified = true;
 }
 
 void VBoxVMSettingsUSB::addUSBFilter (const CUSBDeviceFilter &aFilter,
