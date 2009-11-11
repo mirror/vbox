@@ -229,7 +229,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
             &&  !(fOpenMode & O_NOINHERIT)  /* Take care since it might be a zero value dummy. */
 #endif
             )
-            iErr = fcntl(fh, F_SETFD, FD_CLOEXEC) < 0 ? errno : 0;
+            iErr = fcntl(fh, F_SETFD, FD_CLOEXEC) >= 0 ? 0 : errno;
 
         /*
          * Switch direct I/O on now if requested and required.
@@ -239,9 +239,9 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
         if (iErr == 0 && (fOpen & RTFILE_O_NO_CACHE))
         {
 # if defined(RT_OS_DARWIN)
-            iErr = fcntl(fh, F_NOCACHE, 1)   >= 0 : errno;
+            iErr = fcntl(fh, F_NOCACHE, 1)        >= 0 ? 0 : errno;
 # else
-            iErr = directio(fh, DIRECTIO_ON) >= 0 : errno;
+            iErr = directio(fh, DIRECTIO_ON)      >= 0 ? 0 : errno;
 # endif
         }
 #endif
