@@ -229,6 +229,17 @@ VBoxVMM_LDFLAGS.solaris = -mimpure-text
 # endif
 #endif
 
+
+
+#
+# SSMStandalone.lib/a for linking with VBoxSVC and other executables.
+#
+LIBRARIES += SSMStandalone
+SSMStandalone_TEMPLATE  = VBOXR3EXE
+SSMStandalone_DEFS      = IN_VMM_R3 SSM_STANDALONE
+SSMStandalone_SOURCES   = SSM.cpp
+
+
 if1of ($(VBOX_LDR_FMT32), pe lx)
 
 #
