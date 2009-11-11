@@ -902,7 +902,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
              * open flags. Some might be converted to per-image flags later. */
             fValid = CFGMR3AreValuesValid(pCurNode,
                                           "Format\0Path\0"
-                                          "ReadOnly\0HonorZeroWrites\0"
+                                          "ReadOnly\0TempReadOnly\0HonorZeroWrites\0"
                                           "HostIPStack\0");
         }
         else
@@ -920,42 +920,41 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 
         if (pCurNode == pCfgHandle)
         {
-            rc = CFGMR3QueryBool(pCurNode, "HostIPStack", &fHostIP);
-            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-            {
-                fHostIP = true;
-                rc = VINF_SUCCESS;
-            }
-            else if (RT_FAILURE(rc))
+            rc = CFGMR3QueryBoolDef(pCurNode, "HostIPStack", &fHostIP, true);
+            if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"HostIPStack\" as boolean failed"));
                 break;
             }
 
-            rc = CFGMR3QueryBool(pCurNode, "HonorZeroWrites", &fHonorZeroWrites);
-            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-            {
-                fHonorZeroWrites = false;
-                rc = VINF_SUCCESS;
-            }
-            else if (RT_FAILURE(rc))
+            rc = CFGMR3QueryBoolDef(pCurNode, "HonorZeroWrites", &fHonorZeroWrites, false);
+            if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"HonorZeroWrites\" as boolean failed"));
                 break;
             }
 
-            rc = CFGMR3QueryBool(pCurNode, "ReadOnly", &fReadOnly);
-            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-            {
-                fReadOnly = false;
-                rc = VINF_SUCCESS;
-            }
-            else if (RT_FAILURE(rc))
+            rc = CFGMR3QueryBoolDef(pCurNode, "ReadOnly", &fReadOnly, false);
+            if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"ReadOnly\" as boolean failed"));
+                break;
+            }
+
+            rc = CFGMR3QueryBoolDef(pCurNode, "TempReadOnly", &pThis->fTempReadOnly, false);
+            if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"TempReadOnly\" as boolean failed"));
+                break;
+            }
+            if (fReadOnly && pThis->fTempReadOnly)
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Both \"ReadOnly\" and \"TempReadOnly\" are set"));
                 break;
             }
         }
@@ -1057,7 +1056,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
          * Open the image.
          */
         unsigned uOpenFlags;
-        if (fReadOnly || iLevel != 0)
+        if (fReadOnly || pThis->fTempReadOnly || iLevel != 0)
             uOpenFlags = VD_OPEN_FLAGS_READONLY;
         else
             uOpenFlags = VD_OPEN_FLAGS_NORMAL;
@@ -1066,7 +1065,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         if (pThis->fAsyncIOSupported)
             uOpenFlags |= VD_OPEN_FLAGS_ASYNC_IO;
 
-        /* Try to open backend in asyc I/O mode first. */
+        /* Try to open backend in async I/O mode first. */
         rc = VDOpen(pThis->pDisk, pszFormat, pszName, uOpenFlags, pImage->pVDIfsImage);
         if (rc == VERR_NOT_SUPPORTED)
         {
@@ -1083,11 +1082,12 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                  VDIsReadOnly(pThis->pDisk) ? "read-only" : "read-write"));
             if (   VDIsReadOnly(pThis->pDisk)
                 && !fReadOnly
+                && !pThis->fTempReadOnly
                 && iLevel == 0)
             {
                 rc = PDMDrvHlpVMSetError(pDrvIns, VERR_VD_IMAGE_READ_ONLY, RT_SRC_POS,
-                                         N_("Failed to open image '%s' for writing due to wrong "
-                                            "permissions"), pszName);
+                                         N_("Failed to open image '%s' for writing due to wrong permissions"),
+                                         pszName);
                 break;
             }
         }
@@ -1181,7 +1181,7 @@ static DECLCALLBACK(void) drvvdSuspend(PPDMDRVINS pDrvIns)
  *
  * @param   pDrvIns     The driver instance data.
  */
-static DECLCALLBACK(void) drvvdResume(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvvdResumeOrPowerOn(PPDMDRVINS pDrvIns)
 {
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
@@ -1211,6 +1211,7 @@ static DECLCALLBACK(void) drvvdPowerOff(PPDMDRVINS pDrvIns)
     AssertRC(rc);
 }
 
+
 /**
  * VBox disk container media driver registration record.
  */
@@ -1237,13 +1238,13 @@ const PDMDRVREG g_DrvVD =
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
-    NULL,
+    drvvdResumeOrPowerOn,
     /* pfnReset */
     NULL,
     /* pfnSuspend */
     drvvdSuspend,
     /* pfnResume */
-    drvvdResume,
+    drvvdResumeOrPowerOn,
     /* pfnAttach */
     NULL,
     /* pfnDetach */
