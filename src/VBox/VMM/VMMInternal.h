@@ -268,8 +268,11 @@ typedef struct VMM
     uint32_t                    cbRCRelLogger;
     /** Whether log flushing has been disabled or not. */
     bool                        fRCLoggerFlushingDisabled;
-    bool                        afAlignment[7]; /**< Alignment padding. */
+    bool                        afAlignment[6]; /**< Alignment padding. */
     /** @} */
+
+    /** Whether the stack guard pages have been stationed or not. */
+    bool                        fStackGuardsStationed;
 
     /** The EMT yield timer. */
     PTMTIMERR3                  pYieldTimer;
