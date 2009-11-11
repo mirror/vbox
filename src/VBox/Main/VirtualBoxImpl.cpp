@@ -929,6 +929,16 @@ VirtualBox::COMGETTER(DHCPServers) (ComSafeArrayOut(IDHCPServer *, aDHCPServers)
     return S_OK;
 }
 
+
+
+STDMETHODIMP
+VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType, 
+                                 IN_BSTR        aVersion, 
+                                 BSTR           *aUrl, 
+                                 BOOL           *aResult)
+{
+    ReturnComNotImplemented();
+}
 // IVirtualBox methods
 /////////////////////////////////////////////////////////////////////////////
 

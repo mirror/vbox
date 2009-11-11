@@ -176,6 +176,8 @@ public:
     STDMETHOD(CreateDHCPServer) (IN_BSTR aName, IDHCPServer ** aServer);
     STDMETHOD(FindDHCPServerByNetworkName) (IN_BSTR aName, IDHCPServer ** aServer);
     STDMETHOD(RemoveDHCPServer) (IDHCPServer * aServer);
+    STDMETHOD(CheckFirmwarePresent)(FirmwareType_T aFirmwareType, IN_BSTR aVersion, 
+                                    BSTR * aUrl, BOOL * aResult);
 
     /* public methods only for internal purposes */
 #ifdef DEBUG

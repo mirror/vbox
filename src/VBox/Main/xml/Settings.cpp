@@ -1591,6 +1591,10 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                           || (strFirmwareType == "2")           // some trunk builds used the number here
                         )
                     hw.firmwareType = FirmwareType_EFI;
+                else if (    strFirmwareType == "EFI64")
+                    hw.firmwareType = FirmwareType_EFI64;
+                else if (    strFirmwareType == "EFIDUAL")
+                    hw.firmwareType = FirmwareType_EFIDUAL;
                 else
                     throw ConfigFileError(this,
                                           pelmHwChild,
@@ -2474,11 +2478,20 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
     pelmMemory->setAttribute("RAMSize", hw.ulMemorySizeMB);
 
     if (    (m->sv >= SettingsVersion_v1_9)
-         && (hw.firmwareType == FirmwareType_EFI)
+         && (hw.firmwareType >= FirmwareType_EFI)
        )
     {
          xml::ElementNode *pelmFirmware = pelmHardware->createChild("Firmware");
-         pelmFirmware->setAttribute("type", "EFI");
+         const char *pcszFirmware;
+
+         switch (hw.firmwareType)
+         {
+            case FirmwareType_EFI:      pcszFirmware = "EFI";   break;
+            case FirmwareType_EFI64:    pcszFirmware = "EFI64"; break;
+            case FirmwareType_EFIDUAL:  pcszFirmware = "EFIDUAL"; break;
+            default:                    pcszFirmware = "None"; break;
+         }
+         pelmFirmware->setAttribute("type", pcszFirmware);
     }
 
     xml::ElementNode *pelmBoot = pelmHardware->createChild("Boot");
@@ -2976,7 +2989,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 
     // all the following require settings version 1.9
     if (    (m->sv < SettingsVersion_v1_9)
-         && (    (hardwareMachine.firmwareType == FirmwareType_EFI)
+         && (    (hardwareMachine.firmwareType >= FirmwareType_EFI)
               || (hardwareMachine.fHardwareVirtExclusive != HWVIRTEXCLUSIVEDEFAULT)
               || fTeleporterEnabled
               || uTeleporterPort
