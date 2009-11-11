@@ -799,19 +799,7 @@ int handleConvertFromRaw(int argc, char *argv[])
                 break;
 
             default:
-                if (c > 0)
-                {
-                    if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_CONVERTFROMRAW, "Invalid option -%c", c);
-                    else
-                        return errorSyntax(USAGE_CONVERTFROMRAW, "Invalid option case %i", c);
-                }
-                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_CREATEHD, "unknown option: %s\n", ValueUnion.psz);
-                else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_CONVERTFROMRAW, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
-                else
-                    return errorSyntax(USAGE_CONVERTFROMRAW, "error: %Rrs", c);
+                return errorGetOpt(USAGE_CONVERTFROMRAW, c, &ValueUnion);
         }
     }
 
