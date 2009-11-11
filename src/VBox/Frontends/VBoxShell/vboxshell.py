@@ -218,6 +218,11 @@ def progressBar(ctx,p,wait=1000):
         print "Interrupted."
 
 
+def reportError(ctx,session,rc):
+    if not ctx['remote']:
+            print session.QueryErrorObject(rc)
+
+
 def createVm(ctx,name,kind,base):
     mgr = ctx['mgr']
     vb = ctx['vb']
@@ -273,9 +278,7 @@ def startVm(ctx,mach,type):
          # if session not opened, close doesn't make sense
         session.close()
     else:
-        # Not yet implemented error string query API for remote API
-        if not ctx['remote']:
-            print session.QueryErrorObject(rc)
+       reportError(ctx,session,rc)
 
 def getMachines(ctx, invalidate = False):
     if ctx['vb'] is not None:
@@ -352,10 +355,31 @@ def takeScreenshot(ctx,console,args):
     print "Saving screenshot (%d x %d) in %s..." %(w,h,f)
     data = display.takeScreenShotSlow(w,h)
     size = (w,h)
-    mode = "RGBA"    
+    mode = "RGBA"
     im = Image.frombuffer(mode, size, data, "raw", mode, 0, 1)
     im.save(f, "PNG")
 
+
+def teleport(ctx,session,console,args):
+    if args[0].find(":") == -1:
+        print "Use host:port format for teleport target"
+        return
+    (host,port) = args[0].split(":")
+    if len(args) > 1:
+        passwd = args[1]
+    else:
+        passwd = ""
+
+    port = int(port)
+    print "Teleporting to %s:%d..." %(host,port)
+    progress = console.teleport(host, port, passwd)
+    progressBar(ctx, progress, 100)
+    completed = progress.completed
+    rc = int(progress.resultCode)
+    if rc == 0:
+        print "Success!"
+    else:
+        reportError(ctx,session,rc)
 
 def cmdExistingVm(ctx,mach,cmd,args):
     mgr=ctx['mgr']
@@ -386,7 +410,8 @@ def cmdExistingVm(ctx,mach,cmd,args):
          'guest':           lambda: guestExec(ctx, mach, console, args),
          'monitorGuest':    lambda: monitorGuest(ctx, mach, console, args),
          'save':            lambda: progressBar(ctx,console.saveState()),
-         'screenshot':      lambda: takeScreenshot(ctx,console,args)
+         'screenshot':      lambda: takeScreenshot(ctx,console,args),
+         'teleport':        lambda: teleport(ctx,session,console,args)
          }
     try:
         ops[cmd]()
@@ -649,6 +674,54 @@ def screenshotCmd(ctx, args):
         return 0
     cmdExistingVm(ctx, mach, 'screenshot', args[2:])
     return 0
+
+def teleportCmd(ctx, args):
+    if (len(args) < 3):
+        print "usage: teleport name host:port <password>"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    cmdExistingVm(ctx, mach, 'teleport', args[2:])
+    return 0
+
+def makeportalCmd(ctx, args):
+    if (len(args) < 3):
+        print "usage: makeportal name port <password>"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    port = int(args[2])
+    if (len(args) > 3):
+        passwd = args[3]
+    else:
+        passwd = ""
+    if not mach.teleporterEnabled or mach.teleporterPort != port:
+        session = ctx['global'].openMachineSession(mach.id)
+        mach1 = session.machine
+        mach1.teleporterEnabled = True
+        mach1.teleporterPort = port
+        mach1.saveSettings()
+        session.close()
+    startVm(ctx, mach, "gui")
+    return 0
+
+def closeportalCmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: closeportal name"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    if mach.teleporterEnabled:
+        session = ctx['global'].openMachineSession(mach.id)
+        mach1 = session.machine
+        mach1.teleporterEnabled = False
+        mach1.saveSettings()
+        session.close()
+    return 0
+
 
 def setvarCmd(ctx, args):
     if (len(args) < 4):
@@ -1006,7 +1079,10 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'sleep':['Sleep for specified number of seconds: sleep 3.14159', sleepCmd, 0],
             'shell':['Execute external shell command: shell "ls /etc/rc*"', shellCmd, 0],
             'exportVm':['Export VM in OVF format: export Win /tmp/win.ovf', exportVMCmd, 0],
-            'screenshot':['Take VM screenshot to a file: screenshot Win /tmp/win.png 1024 768', screenshotCmd, 0]
+            'screenshot':['Take VM screenshot to a file: screenshot Win /tmp/win.png 1024 768', screenshotCmd, 0],
+            'teleport':['Teleport VM to another box (see makeportal): teleport Win anotherhost:8000 <passwd>', teleportCmd, 0],
+            'makeportal':['Make portal for teleportation of VM from another box (see teleport): makeportal Win 8000 <passwd>', makeportalCmd, 0],
+            'closeportal':['Close portal for teleportation of VM from another box (see teleport): closeportal Win', closeportalCmd, 0]
             }
 
 def runCommandArgs(ctx, args):
