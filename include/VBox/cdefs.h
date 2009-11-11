@@ -178,7 +178,12 @@
 #endif
 
 /** @def IN_SUP_R0
- * Used to indicate whether we're inside the same link module as the Ring 0 Support Library or not.
+ * Used to indicate whether we're inside the same link module as the Ring 0
+ * Support Library or not.
+ */
+/** @def IN_SUP_STATIC
+ * Used to indicate that the Support Library is built or used as a static
+ * library.
  */
 /** @def SUPR0DECL(type)
  * Support library export or import declaration.
@@ -243,6 +248,10 @@
 
 
 
+/** @def IN_VMM_STATIC
+ * Used to indicate that the virtual machine monitor is built or used as a
+ * static library.
+ */
 /** @def IN_VMM_R3
  * Used to indicate whether we're inside the same link module as the ring 3 part of the
  * virtual machine monitor or not.
@@ -252,9 +261,17 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_VMM_R3
-# define VMMR3DECL(type)            DECLEXPORT(type) VBOXCALL
+# ifdef IN_VMM_STATIC
+#  define VMMR3DECL(type)           DECLHIDDEN(type) VBOXCALL
+# else
+#  define VMMR3DECL(type)           DECLEXPORT(type) VBOXCALL
+# endif
 #elif defined(IN_RING3)
-# define VMMR3DECL(type)            DECLIMPORT(type) VBOXCALL
+# ifdef IN_VMM_STATIC
+#  define VMMR3DECL(type)           DECLHIDDEN(type) VBOXCALL
+# else
+#  define VMMR3DECL(type)           DECLIMPORT(type) VBOXCALL
+# endif
 #else
 # define VMMR3DECL(type)            DECL_INVALID(type)
 #endif
@@ -307,7 +324,9 @@
  * VMM export or import declaration.
  * @param   type    The return type of the function declaration.
  */
-#if defined(IN_VMM_R3) || defined(IN_VMM_R0) || defined(IN_VMM_RC)
+#ifdef IN_VMM_STATIC
+# define VMMDECL(type)              DECLHIDDEN(type) VBOXCALL
+#elif defined(IN_VMM_R3) || defined(IN_VMM_R0) || defined(IN_VMM_RC)
 # define VMMDECL(type)              DECLEXPORT(type) VBOXCALL
 #else
 # define VMMDECL(type)              DECLIMPORT(type) VBOXCALL
