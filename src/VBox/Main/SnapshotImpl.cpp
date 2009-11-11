@@ -2163,6 +2163,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                     ComObjPtr<Medium> pReplaceHD = pHD->children().front();
 
                     const Guid *pReplaceMachineId = pReplaceHD->getFirstMachineBackrefId();
+                    NOREF(pReplaceMachineId);
                     Assert(pReplaceMachineId);
                     Assert(*pReplaceMachineId == mData->mUuid);
 
