@@ -6847,108 +6847,6 @@ VMMR3DECL(int) SSMR3SkipToEndOfUnit(PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
-#ifndef SSM_STANDALONE
-
-/**
- * VMSetError wrapper for load errors that inserts the saved state details.
- *
- * @returns rc.
- * @param   pSSM                The saved state handle.
- * @param   rc                  The status code of the error. Use RT_SRC_POS.
- * @param   RT_SRC_POS_DECL     The source location.
- * @param   pszFormat           The message format string.
- * @param   ...                 Variable argument list.
- */
-VMMR3DECL(int) SSMR3SetLoadError(PSSMHANDLE pSSM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    rc = SSMR3SetLoadErrorV(pSSM, rc, RT_SRC_POS_ARGS, pszFormat, va);
-    va_end(va);
-    return rc;
-}
-
-
-/**
- * VMSetError wrapper for load errors that inserts the saved state details.
- *
- * @returns rc.
- * @param   pSSM                The saved state handle.
- * @param   rc                  The status code of the error.
- * @param   RT_SRC_POS_DECL     The error location, use RT_SRC_POS.
- * @param   pszFormat           The message format string.
- * @param   va                  Variable argument list.
- */
-VMMR3DECL(int) SSMR3SetLoadErrorV(PSSMHANDLE pSSM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
-{
-    /*
-     * Input validations.
-     */
-    SSM_ASSERT_READABLE_RET(pSSM);
-    AssertPtr(pszFormat);
-    Assert(RT_FAILURE_NP(rc));
-
-    /*
-     * Format the incoming error.
-     */
-    char *pszMsg;
-    RTStrAPrintfV(&pszMsg, pszFormat, va);
-    if (!pszMsg)
-    {
-        VMSetError(pSSM->pVM, VERR_NO_MEMORY, RT_SRC_POS,
-                   N_("SSMR3SetLoadErrorV ran out of memory formatting: %s\n"), pszFormat);
-        return rc;
-    }
-
-    /*
-     * Forward to VMSetError with the additional info.
-     */
-    PSSMUNIT    pUnit       = pSSM->u.Read.pCurUnit;
-    const char *pszName     = pUnit ? pUnit->szName      : "unknown";
-    uint32_t    uInstance   = pUnit ? pUnit->u32Instance : 0;
-    if (   pSSM->enmOp == SSMSTATE_LOAD_EXEC
-        && pSSM->u.Read.uCurUnitPass == SSM_PASS_FINAL)
-        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [ver=%u pass=final]"),
-                        pszName, uInstance, pszMsg, pSSM->u.Read.uCurUnitVer);
-    else if (pSSM->enmOp == SSMSTATE_LOAD_EXEC)
-        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [ver=%u pass=#%u]"),
-                        pszName, uInstance, pszMsg, pSSM->u.Read.uCurUnitVer, pSSM->u.Read.uCurUnitPass);
-    else if (pSSM->enmOp == SSMSTATE_LOAD_PREP)
-        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [prep]"),
-                        pszName, uInstance, pszMsg);
-    else if (pSSM->enmOp == SSMSTATE_LOAD_DONE)
-        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [done]"),
-                        pszName, uInstance, pszMsg);
-    else if (pSSM->enmOp == SSMSTATE_OPEN_READ)
-        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [read]"),
-                        pszName, uInstance, pszMsg);
-    else
-        AssertFailed();
-    pSSM->u.Read.fHaveSetError = true;
-    RTStrFree(pszMsg);
-    return rc;
-}
-
-
-/**
- * SSMR3SetLoadError wrapper that returns VERR_SSM_LOAD_CONFIG_MISMATCH.
- *
- * @returns VERR_SSM_LOAD_CONFIG_MISMATCH.
- * @param   pSSM                The saved state handle.
- * @param   RT_SRC_POS_DECL     The error location, use RT_SRC_POS.
- * @param   pszFormat           The message format string.
- * @param   va                  Variable argument list.
- */
-VMMR3DECL(int) SSMR3SetCfgError(PSSMHANDLE pSSM, RT_SRC_POS_DECL, const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    int rc = SSMR3SetLoadErrorV(pSSM, VERR_SSM_LOAD_CONFIG_MISMATCH, RT_SRC_POS_ARGS, pszFormat, va);
-    va_end(va);
-    return rc;
-}
-
-#endif /* !SSM_STANDALONE */
 
 /**
  * Calculate the checksum of a file portion.
@@ -7489,6 +7387,41 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
     return rc;
 }
 
+
+/**
+ * Verifies the directory.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDir        The full directory.
+ * @param   cbDir       The size of the directory.
+ * @param   offDir      The directory stream offset.
+ * @param   cDirEntries The directory entry count from the footer.
+ * @param   cbHdr       The header size.
+ * @param   uSvnRev     The SVN revision that saved the state. Bug detection.
+ */
+static int ssmR3ValidateDirectory(PSSMFILEDIR pDir, size_t cbDir, uint64_t offDir, uint32_t cDirEntries,
+                                  uint32_t cbHdr, uint32_t uSvnRev)
+{
+    AssertLogRelReturn(!memcmp(pDir->szMagic, SSMFILEDIR_MAGIC, sizeof(pDir->szMagic)), VERR_SSM_INTEGRITY_DIR_MAGIC);
+    SSM_CHECK_CRC32_RET(pDir, cbDir, ("Bad directory CRC: %08x, actual %08x\n", u32CRC, u32ActualCRC));
+    AssertLogRelMsgReturn(pDir->cEntries == cDirEntries,
+                          ("Bad directory entry count: %#x, expected %#x (from the footer)\n", pDir->cEntries, cDirEntries),
+                           VERR_SSM_INTEGRITY_DIR);
+    AssertLogRelReturn(RT_UOFFSETOF(SSMFILEDIR, aEntries[pDir->cEntries]) == cbDir, VERR_SSM_INTEGRITY_DIR);
+
+    for (uint32_t i = 0; i < pDir->cEntries; i++)
+    {
+        AssertLogRelMsgReturn(  (   pDir->aEntries[i].off >= cbHdr
+                                 && pDir->aEntries[i].off <  offDir)
+                              || (   pDir->aEntries[i].off == 0 /* bug in unreleased code */
+                                  && uSvnRev < 53365),
+                              ("off=%#llx cbHdr=%#x offDir=%#llx\n", pDir->aEntries[i].off, cbHdr, offDir),
+                              VERR_SSM_INTEGRITY_DIR);
+    }
+    return VINF_SUCCESS;
+}
+
 #ifndef SSM_STANDALONE
 
 /**
@@ -7716,44 +7649,6 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
     return rc;
 }
 
-#endif /* !SSM_STANDALONE */
-
-
-/**
- * Verifies the directory.
- *
- * @returns VBox status code.
- *
- * @param   pDir        The full directory.
- * @param   cbDir       The size of the directory.
- * @param   offDir      The directory stream offset.
- * @param   cDirEntries The directory entry count from the footer.
- * @param   cbHdr       The header size.
- * @param   uSvnRev     The SVN revision that saved the state. Bug detection.
- */
-static int ssmR3ValidateDirectory(PSSMFILEDIR pDir, size_t cbDir, uint64_t offDir, uint32_t cDirEntries,
-                                  uint32_t cbHdr, uint32_t uSvnRev)
-{
-    AssertLogRelReturn(!memcmp(pDir->szMagic, SSMFILEDIR_MAGIC, sizeof(pDir->szMagic)), VERR_SSM_INTEGRITY_DIR_MAGIC);
-    SSM_CHECK_CRC32_RET(pDir, cbDir, ("Bad directory CRC: %08x, actual %08x\n", u32CRC, u32ActualCRC));
-    AssertLogRelMsgReturn(pDir->cEntries == cDirEntries,
-                          ("Bad directory entry count: %#x, expected %#x (from the footer)\n", pDir->cEntries, cDirEntries),
-                           VERR_SSM_INTEGRITY_DIR);
-    AssertLogRelReturn(RT_UOFFSETOF(SSMFILEDIR, aEntries[pDir->cEntries]) == cbDir, VERR_SSM_INTEGRITY_DIR);
-
-    for (uint32_t i = 0; i < pDir->cEntries; i++)
-    {
-        AssertLogRelMsgReturn(  (   pDir->aEntries[i].off >= cbHdr
-                                 && pDir->aEntries[i].off <  offDir)
-                              || (   pDir->aEntries[i].off == 0 /* bug in unreleased code */
-                                  && uSvnRev < 53365),
-                              ("off=%#llx cbHdr=%#x offDir=%#llx\n", pDir->aEntries[i].off, cbHdr, offDir),
-                              VERR_SSM_INTEGRITY_DIR);
-    }
-    return VINF_SUCCESS;
-}
-
-#ifndef SSM_STANDALONE
 
 /**
  * Reads and verifies the directory and footer.
@@ -8190,8 +8085,107 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
     return rc;
 }
 
-#endif /* !SSM_STANDALONE */
 
+/**
+ * VMSetError wrapper for load errors that inserts the saved state details.
+ *
+ * @returns rc.
+ * @param   pSSM                The saved state handle.
+ * @param   rc                  The status code of the error. Use RT_SRC_POS.
+ * @param   RT_SRC_POS_DECL     The source location.
+ * @param   pszFormat           The message format string.
+ * @param   ...                 Variable argument list.
+ */
+VMMR3DECL(int) SSMR3SetLoadError(PSSMHANDLE pSSM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    rc = SSMR3SetLoadErrorV(pSSM, rc, RT_SRC_POS_ARGS, pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+
+/**
+ * VMSetError wrapper for load errors that inserts the saved state details.
+ *
+ * @returns rc.
+ * @param   pSSM                The saved state handle.
+ * @param   rc                  The status code of the error.
+ * @param   RT_SRC_POS_DECL     The error location, use RT_SRC_POS.
+ * @param   pszFormat           The message format string.
+ * @param   va                  Variable argument list.
+ */
+VMMR3DECL(int) SSMR3SetLoadErrorV(PSSMHANDLE pSSM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
+{
+    /*
+     * Input validations.
+     */
+    SSM_ASSERT_READABLE_RET(pSSM);
+    AssertPtr(pszFormat);
+    Assert(RT_FAILURE_NP(rc));
+
+    /*
+     * Format the incoming error.
+     */
+    char *pszMsg;
+    RTStrAPrintfV(&pszMsg, pszFormat, va);
+    if (!pszMsg)
+    {
+        VMSetError(pSSM->pVM, VERR_NO_MEMORY, RT_SRC_POS,
+                   N_("SSMR3SetLoadErrorV ran out of memory formatting: %s\n"), pszFormat);
+        return rc;
+    }
+
+    /*
+     * Forward to VMSetError with the additional info.
+     */
+    PSSMUNIT    pUnit       = pSSM->u.Read.pCurUnit;
+    const char *pszName     = pUnit ? pUnit->szName      : "unknown";
+    uint32_t    uInstance   = pUnit ? pUnit->u32Instance : 0;
+    if (   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+        && pSSM->u.Read.uCurUnitPass == SSM_PASS_FINAL)
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [ver=%u pass=final]"),
+                        pszName, uInstance, pszMsg, pSSM->u.Read.uCurUnitVer);
+    else if (pSSM->enmOp == SSMSTATE_LOAD_EXEC)
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [ver=%u pass=#%u]"),
+                        pszName, uInstance, pszMsg, pSSM->u.Read.uCurUnitVer, pSSM->u.Read.uCurUnitPass);
+    else if (pSSM->enmOp == SSMSTATE_LOAD_PREP)
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [prep]"),
+                        pszName, uInstance, pszMsg);
+    else if (pSSM->enmOp == SSMSTATE_LOAD_DONE)
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [done]"),
+                        pszName, uInstance, pszMsg);
+    else if (pSSM->enmOp == SSMSTATE_OPEN_READ)
+        rc = VMSetError(pSSM->pVM, rc, RT_SRC_POS_ARGS, N_("%s#%u: %s [read]"),
+                        pszName, uInstance, pszMsg);
+    else
+        AssertFailed();
+    pSSM->u.Read.fHaveSetError = true;
+    RTStrFree(pszMsg);
+    return rc;
+}
+
+
+/**
+ * SSMR3SetLoadError wrapper that returns VERR_SSM_LOAD_CONFIG_MISMATCH.
+ *
+ * @returns VERR_SSM_LOAD_CONFIG_MISMATCH.
+ * @param   pSSM                The saved state handle.
+ * @param   RT_SRC_POS_DECL     The error location, use RT_SRC_POS.
+ * @param   pszFormat           The message format string.
+ * @param   va                  Variable argument list.
+ */
+VMMR3DECL(int) SSMR3SetCfgError(PSSMHANDLE pSSM, RT_SRC_POS_DECL, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = SSMR3SetLoadErrorV(pSSM, VERR_SSM_LOAD_CONFIG_MISMATCH, RT_SRC_POS_ARGS, pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+#endif /* !SSM_STANDALONE */
 
 /**
  * Validates a file as a validate SSM saved state.
