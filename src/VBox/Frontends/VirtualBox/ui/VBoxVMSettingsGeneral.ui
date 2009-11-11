@@ -230,7 +230,7 @@
              </sizepolicy>
             </property>
             <property name="whatsThis" >
-             <string>If checked, show the Mini ToolBar at the top of the screen, rather than in it's default position at the bottom of the screen.</string>
+             <string>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</string>
             </property>
             <property name="text" >
              <string>Show At &amp;Top Of Screen</string>
