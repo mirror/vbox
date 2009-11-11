@@ -45,7 +45,6 @@ public:
         : QTreeWidgetItem (aTreeWidget)
         , mSnapshot (aSnapshot)
     {
-        recache();
     }
 
     /* Normal snapshot item (child of tree-widget-item) */
@@ -53,7 +52,6 @@ public:
         : QTreeWidgetItem (aRootItem)
         , mSnapshot (aSnapshot)
     {
-        recache();
     }
 
     /* Current state item (child of tree-widget) */
@@ -62,7 +60,6 @@ public:
         , mMachine (aMachine)
     {
         updateCurrentState (mMachine.GetState());
-        recache();
     }
 
     /* Current state item (child of tree-widget-item) */
@@ -71,7 +68,6 @@ public:
         , mMachine (aMachine)
     {
         updateCurrentState (mMachine.GetState());
-        recache();
     }
 
     bool isCurrentStateItem() const
@@ -155,6 +151,7 @@ private:
 
     void adjustText()
     {
+        if (!treeWidget()) return; /* only for initialised items */
         QFontMetrics metrics (font (0));
         int hei0 = (metrics.height() > 16 ?
                    metrics.height() /* text */ : 16 /* icon */) +
@@ -644,7 +641,8 @@ void VBoxSnapshotsWgt::refreshAll()
         Assert (mCurSnapshotItem);
 
         /* Add the "current state" item */
-        new SnapshotWgtItem (mCurSnapshotItem, mMachine);
+        SnapshotWgtItem *csi = new SnapshotWgtItem (mCurSnapshotItem, mMachine);
+        csi->recache();
 
         SnapshotWgtItem *cur = findItem (selectedItem);
         if (cur == 0)
@@ -662,6 +660,7 @@ void VBoxSnapshotsWgt::refreshAll()
 
         /* Add the "current state" item */
         SnapshotWgtItem *csi = new SnapshotWgtItem (mTreeWidget, mMachine);
+        csi->recache();
 
         mTreeWidget->setCurrentItem (csi);
         onCurrentChanged (csi);
@@ -697,6 +696,7 @@ void VBoxSnapshotsWgt::populateSnapshots (const CSnapshot &aSnapshot, QTreeWidge
 {
     SnapshotWgtItem *item = aItem ? new SnapshotWgtItem (aItem, aSnapshot) :
                                     new SnapshotWgtItem (mTreeWidget, aSnapshot);
+    item->recache();
 
     if (mMachine.GetCurrentSnapshot().GetId() == aSnapshot.GetId())
     {
