@@ -471,7 +471,11 @@ def helpCmd(ctx, args):
 
 def listCmd(ctx, args):
     for m in getMachines(ctx, True):
-        print "Machine '%s' [%s], state=%s" %(m.name,m.id,m.sessionState)
+        if m.teleporterEnabled:
+            tele = "[T] "
+        else:
+            tele = "    "
+        print "%sMachine '%s' [%s], state=%s" %(tele,m.name,m.id,m.sessionState)
     return 0
 
 def getControllerType(type):
@@ -513,6 +517,9 @@ def infoCmd(ctx,args):
     print
     print "  Clipboard mode [clipboardMode]: %d" %(mach.clipboardMode)
     print "  Machine status [n/a]: %d" % (mach.sessionState)
+    print
+    if mach.teleporterEnabled:
+        print "  Teleport target on port %d (%s)" %(mach.teleporterPort, mach.teleporterPassword)
     print
     bios = mach.BIOSSettings
     print "  ACPI [BIOSSettings.ACPIEnabled]: %s" %(asState(bios.ACPIEnabled))
@@ -697,11 +704,12 @@ def makeportalCmd(ctx, args):
         passwd = args[3]
     else:
         passwd = ""
-    if not mach.teleporterEnabled or mach.teleporterPort != port:
+    if not mach.teleporterEnabled or mach.teleporterPort != port or passwd:
         session = ctx['global'].openMachineSession(mach.id)
         mach1 = session.machine
         mach1.teleporterEnabled = True
         mach1.teleporterPort = port
+        mach1.teleporterPassword = passwd
         mach1.saveSettings()
         session.close()
     startVm(ctx, mach, "gui")
