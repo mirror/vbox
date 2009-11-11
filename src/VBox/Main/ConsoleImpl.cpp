@@ -2695,7 +2695,8 @@ STDMETHODIMP Console::UnregisterCallback(IConsoleCallback *aCallback)
 /////////////////////////////////////////////////////////////////////////////
 
 
-const char *Console::controllerTypeToDev(StorageControllerType_T enmCtrlType)
+/* static */
+const char *Console::convertControllerTypeToDev(StorageControllerType_T enmCtrlType)
 {
     switch (enmCtrlType)
     {
@@ -2791,7 +2792,7 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
     StorageControllerType_T enmCtrlType;
     rc = ctrl->COMGETTER(ControllerType)(&enmCtrlType);
     AssertComRC(rc);
-    pszDevice = controllerTypeToDev(enmCtrlType);
+    pszDevice = convertControllerTypeToDev(enmCtrlType);
 
     /** @todo support multiple instances of a controller */
     uInstance = 0;
@@ -6999,21 +7000,23 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
 
 
 /**
- * Reconfigures a VDI.
+ * Reconfigures a medium attachment (part of taking an online snapshot).
  *
  * @param   pVM           The VM handle.
  * @param   lInstance     The instance of the controller.
  * @param   enmController The type of the controller.
- * @param   hda           The harddisk attachment.
+ * @param   enmBus        The storage bus type of the controller.
+ * @param   aMediumAtt    The medium attachment.
  * @param   phrc          Where to store com error - only valid if we return VERR_GENERAL_FAILURE.
  * @return  VBox status code.
  */
-static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
-                                              StorageControllerType_T enmController,
-                                              IMediumAttachment *hda,
-                                              HRESULT *phrc)
+static DECLCALLBACK(int) reconfigureMedium(PVM pVM, ULONG lInstance,
+                                           StorageControllerType_T enmController,
+                                           StorageBus_T enmBus,
+                                           IMediumAttachment *aMediumAtt,
+                                           HRESULT *phrc)
 {
-    LogFlowFunc(("pVM=%p hda=%p phrc=%p\n", pVM, hda, phrc));
+    LogFlowFunc(("pVM=%p aMediumAtt=%p phrc=%p\n", pVM, aMediumAtt, phrc));
 
     int             rc;
     HRESULT         hrc;
@@ -7023,83 +7026,41 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
 #define H() do { if (FAILED(hrc)) { AssertMsgFailed(("hrc=%Rhrc (%#x)\n", hrc, hrc)); *phrc = hrc; return VERR_GENERAL_FAILURE; } } while (0)
 
     /*
-     * Figure out which IDE device this is.
+     * Figure out medium and other attachment details.
      */
-    ComPtr<IMedium> hardDisk;
-    hrc = hda->COMGETTER(Medium)(hardDisk.asOutParam());                      H();
+    ComPtr<IMedium> medium;
+    hrc = aMediumAtt->COMGETTER(Medium)(medium.asOutParam());                   H();
     LONG lDev;
-    hrc = hda->COMGETTER(Device)(&lDev);                                        H();
+    hrc = aMediumAtt->COMGETTER(Device)(&lDev);                                 H();
     LONG lPort;
-    hrc = hda->COMGETTER(Port)(&lPort);                                         H();
+    hrc = aMediumAtt->COMGETTER(Port)(&lPort);                                  H();
+    DeviceType_T lType;
+    hrc = aMediumAtt->COMGETTER(Type)(&lType);                                  H();
 
-    int         iLUN;
-    const char *pcszDevice = NULL;
-    bool        fSCSI = false;
+    unsigned iLUN;
+    const char *pcszDevice = Console::convertControllerTypeToDev(enmController);
+    AssertMsgReturn(pcszDevice, ("invalid disk controller type: %d\n", enmController), VERR_GENERAL_FAILURE);
+    hrc = Console::convertBusPortDeviceToLun(enmBus, lPort, lDev, iLUN);        H();
 
-    switch (enmController)
-    {
-        case StorageControllerType_PIIX3:
-        case StorageControllerType_PIIX4:
-        case StorageControllerType_ICH6:
-        {
-            if (lPort >= 2 || lPort < 0)
-            {
-                AssertMsgFailed(("invalid controller channel number: %d\n", lPort));
-                return VERR_GENERAL_FAILURE;
-            }
-
-            if (lDev >= 2 || lDev < 0)
-            {
-                AssertMsgFailed(("invalid controller device number: %d\n", lDev));
-                return VERR_GENERAL_FAILURE;
-            }
-
-            iLUN = 2*lPort + lDev;
-            pcszDevice = "piix3ide";
-            break;
-        }
-        case StorageControllerType_IntelAhci:
-        {
-            iLUN = lPort;
-            pcszDevice = "ahci";
-            break;
-        }
-        case StorageControllerType_BusLogic:
-        {
-            iLUN = lPort;
-            pcszDevice = "buslogic";
-            fSCSI = true;
-            break;
-        }
-        case StorageControllerType_LsiLogic:
-        {
-            iLUN = lPort;
-            pcszDevice = "lsilogicscsi";
-            fSCSI = true;
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed(("invalid disk controller type: %d\n", enmController));
-            return VERR_GENERAL_FAILURE;
-        }
-    }
+    /* Ignore attachments other than hard disks, since at the moment they are
+     * not subject to snapshotting in general. */
+    if (lType != DeviceType_HardDisk || medium.isNull())
+        return VINF_SUCCESS;
 
     /** @todo this should be unified with the relevant part of
     * Console::configConstructor to avoid inconsistencies. */
 
     /*
      * Is there an existing LUN? If not create it.
-     * We ASSUME that this will NEVER collide with the DVD.
      */
     PCFGMNODE pCfg;
     PCFGMNODE pLunL1;
 
     /* SCSI has an extra driver between the device and the block driver. */
-    if (fSCSI)
-        pLunL1 = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/LUN#%d/AttachedDriver/AttachedDriver/", pcszDevice, lInstance, iLUN);
+    if (enmBus == StorageBus_SCSI)
+        pLunL1 = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/LUN#%u/AttachedDriver/AttachedDriver/", pcszDevice, lInstance, iLUN);
     else
-        pLunL1 = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/LUN#%d/AttachedDriver/", pcszDevice, lInstance, iLUN);
+        pLunL1 = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/LUN#%u/AttachedDriver/", pcszDevice, lInstance, iLUN);
 
     if (!pLunL1)
     {
@@ -7107,9 +7068,9 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
         AssertReturn(pInst, VERR_INTERNAL_ERROR);
 
         PCFGMNODE pLunL0;
-        rc = CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%d", iLUN);                     RC_CHECK();
+        rc = CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%u", iLUN);                     RC_CHECK();
 
-        if (fSCSI)
+        if (enmBus == StorageBus_SCSI)
         {
             rc = CFGMR3InsertString(pLunL0, "Driver",              "SCSI");             RC_CHECK();
             rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
@@ -7154,20 +7115,20 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
     /*
      * Create the driver configuration.
      */
-    hrc = hardDisk->COMGETTER(Location)(bstr.asOutParam());                     H();
-    LogFlowFunc(("LUN#%d: leaf location '%ls'\n", iLUN, bstr.raw()));
+    hrc = medium->COMGETTER(Location)(bstr.asOutParam());                       H();
+    LogFlowFunc(("LUN#%u: leaf location '%ls'\n", iLUN, bstr.raw()));
     rc = CFGMR3InsertString(pCfg, "Path", Utf8Str(bstr).c_str());                       RC_CHECK();
-    hrc = hardDisk->COMGETTER(Format)(bstr.asOutParam());                       H();
-    LogFlowFunc(("LUN#%d: leaf format '%ls'\n", iLUN, bstr.raw()));
+    hrc = medium->COMGETTER(Format)(bstr.asOutParam());                         H();
+    LogFlowFunc(("LUN#%u: leaf format '%ls'\n", iLUN, bstr.raw()));
     rc = CFGMR3InsertString(pCfg, "Format", Utf8Str(bstr).c_str());                     RC_CHECK();
 
     /* Pass all custom parameters. */
     bool fHostIP = true;
     SafeArray<BSTR> names;
     SafeArray<BSTR> values;
-    hrc = hardDisk->GetProperties(NULL,
-                                  ComSafeArrayAsOutParam(names),
-                                  ComSafeArrayAsOutParam(values));      H();
+    hrc = medium->GetProperties(NULL,
+                                ComSafeArrayAsOutParam(names),
+                                ComSafeArrayAsOutParam(values));        H();
 
     if (names.size() != 0)
     {
@@ -7188,27 +7149,27 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
     }
 
     /* Create an inversed tree of parents. */
-    ComPtr<IMedium> parentHardDisk = hardDisk;
+    ComPtr<IMedium> parentMedium = medium;
     for (PCFGMNODE pParent = pCfg;;)
     {
-        hrc = parentHardDisk->COMGETTER(Parent)(hardDisk.asOutParam());     H();
-        if (hardDisk.isNull())
+        hrc = parentMedium->COMGETTER(Parent)(medium.asOutParam());             H();
+        if (medium.isNull())
             break;
 
         PCFGMNODE pCur;
         rc = CFGMR3InsertNode(pParent, "Parent", &pCur);                        RC_CHECK();
-        hrc = hardDisk->COMGETTER(Location)(bstr.asOutParam());                 H();
+        hrc = medium->COMGETTER(Location)(bstr.asOutParam());                   H();
         rc = CFGMR3InsertString(pCur,  "Path", Utf8Str(bstr).c_str());          RC_CHECK();
 
-        hrc = hardDisk->COMGETTER(Format)(bstr.asOutParam());                   H();
+        hrc = medium->COMGETTER(Format)(bstr.asOutParam());                     H();
         rc = CFGMR3InsertString(pCur,  "Format", Utf8Str(bstr).c_str());        RC_CHECK();
 
         /* Pass all custom parameters. */
         SafeArray<BSTR> names;
         SafeArray<BSTR> values;
-        hrc = hardDisk->GetProperties(NULL,
-                                      ComSafeArrayAsOutParam(names),
-                                      ComSafeArrayAsOutParam(values));  H();
+        hrc = medium->GetProperties(NULL,
+                                    ComSafeArrayAsOutParam(names),
+                                    ComSafeArrayAsOutParam(values));            H();
 
         if (names.size() != 0)
         {
@@ -7228,7 +7189,6 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
             }
         }
 
-
         /* Custom code: put marker to not use host IP stack to driver
         * configuration node. Simplifies life of DrvVD a bit. */
         if (!fHostIP)
@@ -7239,7 +7199,7 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
 
         /* next */
         pParent = pCur;
-        parentHardDisk = hardDisk;
+        parentMedium = medium;
     }
 
     CFGMR3Dump(CFGMR3GetRoot(pVM));
@@ -7336,7 +7296,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
             // STEP 4: reattach hard disks
             LogFlowFunc(("Reattaching new differencing hard disks...\n"));
 
-            pTask->mProgress->SetNextOperation(Bstr(tr("Reconfiguring hard disks")),
+            pTask->mProgress->SetNextOperation(Bstr(tr("Reconfiguring medium attachments")),
                                                1);       // operation weight, same as computed when setting up progress object
 
             com::SafeIfaceArray<IMediumAttachment> atts;
@@ -7351,6 +7311,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 BSTR controllerName;
                 ULONG lInstance;
                 StorageControllerType_T enmController;
+                StorageBus_T enmBus;
 
                 /*
                 * We can't pass a storage controller object directly
@@ -7358,34 +7319,35 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 * so we have to query needed values here and pass them.
                 */
                 rc = atts[i]->COMGETTER(Controller)(&controllerName);
-                if (FAILED(rc))
-                    break;
+                if (FAILED(rc)) throw rc;
 
                 rc = that->mMachine->GetStorageControllerByName(controllerName, controller.asOutParam());
                 if (FAILED(rc)) throw rc;
 
                 rc = controller->COMGETTER(ControllerType)(&enmController);
+                if (FAILED(rc)) throw rc;
                 rc = controller->COMGETTER(Instance)(&lInstance);
+                if (FAILED(rc)) throw rc;
+                rc = controller->COMGETTER(Bus)(&enmBus);
+                if (FAILED(rc)) throw rc;
 
                 /*
-                 * don't leave the lock since reconfigureHardDisks isn't going
+                 * don't leave the lock since reconfigureMedium isn't going
                  * to access Console.
                  */
                 int vrc = VMR3ReqCallWait(that->mpVM,
                                           VMCPUID_ANY,
-                                          (PFNRT)reconfigureHardDisks,
-                                          5,
+                                          (PFNRT)reconfigureMedium,
+                                          6,
                                           that->mpVM,
                                           lInstance,
                                           enmController,
+                                          enmBus,
                                           atts[i],
                                           &rc);
                 if (RT_FAILURE(vrc))
                     throw setError(E_FAIL, Console::tr("%Rrc"), vrc);
                 if (FAILED(rc)) throw rc;
-                    break;
-                if (FAILED(rc))
-                    break;
             }
         }
 

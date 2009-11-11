@@ -222,6 +222,9 @@ public:
         setError (E_FAIL, tr("Could not load the external authentication library '%s' (%Rrc)"), filename, rc);
     }
 
+    static const char *convertControllerTypeToDev(StorageControllerType_T enmCtrlType);
+    static HRESULT convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG device, unsigned &uLun);
+
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Console"; }
 
@@ -442,8 +445,6 @@ private:
                                           bool fHostDrive, const char *pszPath,
                                           const char *pszFormat, bool fPassthrough,
                                           bool fForce);
-    const char *controllerTypeToDev(StorageControllerType_T enmCtrlType);
-    HRESULT convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG device, unsigned &uLun);
     HRESULT doMediumChange(IMediumAttachment *aMediumAttachment, bool fForce);
 
 #ifdef VBOX_DYNAMIC_NET_ATTACH
