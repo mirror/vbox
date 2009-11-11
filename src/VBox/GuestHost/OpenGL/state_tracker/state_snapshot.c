@@ -1649,10 +1649,12 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
             pProgram->activeState.pAttribs[k].name = crStateLoadString(pSSM);
         }
 
-        int32_t cUniforms;
-        rc = SSMR3GetS32(pSSM, &cUniforms);
-        pProgram->cUniforms = cUniforms;
-        AssertRCReturn(rc, rc);
+        {
+            int32_t cUniforms;
+            rc = SSMR3GetS32(pSSM, &cUniforms);
+            pProgram->cUniforms = cUniforms;
+            AssertRCReturn(rc, rc);
+        }
 
         if (pProgram->cUniforms)
         {
