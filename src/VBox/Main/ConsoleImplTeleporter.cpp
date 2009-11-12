@@ -1282,7 +1282,6 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
             LogRel(("Teleporter: Unknown command '%s' (%.*Rhxs)\n", szCmd, strlen(szCmd), szCmd));
             vrc = VERR_NOT_IMPLEMENTED;
             teleporterTcpWriteNACK(pState, vrc);
-            break;
         }
 
         if (RT_FAILURE(vrc))
