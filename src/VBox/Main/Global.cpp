@@ -27,6 +27,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#include <VBox/err.h>
 
 /* static */
 const Global::OSType Global::sOSTypes[SchemaDefs::OSTypeId_COUNT] =
@@ -235,5 +236,80 @@ Global::stringifySessionState(SessionState_T aState)
 
     }
 }
+
+/*static*/ int
+Global::vboxStatusCodeFromCOM(HRESULT aComStatus)
+{
+    switch (aComStatus)
+    {
+        case S_OK:                              return VINF_SUCCESS;
+        case E_FAIL:                            return VERR_GENERAL_FAILURE;
+        case E_INVALIDARG:                      return VERR_INVALID_PARAMETER;
+        case E_POINTER:                         return VERR_INVALID_POINTER;
+
+        case VBOX_E_OBJECT_NOT_FOUND:           return VERR_COM_OBJECT_NOT_FOUND;
+        case VBOX_E_INVALID_VM_STATE:           return VERR_COM_INVALID_VM_STATE;
+        case VBOX_E_VM_ERROR:                   return VERR_COM_VM_ERROR;
+        case VBOX_E_FILE_ERROR:                 return VERR_COM_FILE_ERROR;
+        case VBOX_E_IPRT_ERROR:                 return VERR_COM_IPRT_ERROR;
+        case VBOX_E_PDM_ERROR:                  return VERR_COM_PDM_ERROR;
+        case VBOX_E_INVALID_OBJECT_STATE:       return VERR_COM_INVALID_OBJECT_STATE;
+        case VBOX_E_HOST_ERROR:                 return VERR_COM_HOST_ERROR;
+        case VBOX_E_NOT_SUPPORTED:              return VERR_COM_NOT_SUPPORTED;
+        case VBOX_E_XML_ERROR:                  return VERR_COM_XML_ERROR;
+        case VBOX_E_INVALID_SESSION_STATE:      return VERR_COM_INVALID_SESSION_STATE;
+        case VBOX_E_OBJECT_IN_USE:              return VERR_COM_OBJECT_IN_USE;
+
+        default:
+            if (SUCCEEDED(aComStatus))
+                return VINF_SUCCESS;
+            return VERR_UNRESOLVED_ERROR;
+    }
+}
+
+
+/*static*/ HRESULT
+Global::vboxStatusCodeToCOM(int aVBoxStatus)
+{
+    switch (aVBoxStatus)
+    {
+        case VINF_SUCCESS:                      return S_OK;
+        case VERR_GENERAL_FAILURE:              return E_FAIL;
+        case VERR_UNRESOLVED_ERROR:             return E_FAIL;
+        case VERR_INVALID_PARAMETER:            return E_INVALIDARG;
+        case VERR_INVALID_POINTER:              return E_POINTER;
+
+        case VERR_COM_OBJECT_NOT_FOUND:         return VBOX_E_OBJECT_NOT_FOUND;
+        case VERR_COM_INVALID_VM_STATE:         return VBOX_E_INVALID_VM_STATE;
+        case VERR_COM_VM_ERROR:                 return VBOX_E_VM_ERROR;
+        case VERR_COM_FILE_ERROR:               return VBOX_E_FILE_ERROR;
+        case VERR_COM_IPRT_ERROR:               return VBOX_E_IPRT_ERROR;
+        case VERR_COM_PDM_ERROR:                return VBOX_E_PDM_ERROR;
+        case VERR_COM_INVALID_OBJECT_STATE:     return VBOX_E_INVALID_OBJECT_STATE;
+        case VERR_COM_HOST_ERROR:               return VBOX_E_HOST_ERROR;
+        case VERR_COM_NOT_SUPPORTED:            return VBOX_E_NOT_SUPPORTED;
+        case VERR_COM_XML_ERROR:                return VBOX_E_XML_ERROR;
+        case VERR_COM_INVALID_SESSION_STATE:    return VBOX_E_INVALID_SESSION_STATE;
+        case VERR_COM_OBJECT_IN_USE:            return VBOX_E_OBJECT_IN_USE;
+
+        default:
+            AssertMsgFailed(("%Rrc\n", aVBoxStatus));
+            if (RT_SUCCESS(aVBoxStatus))
+                return S_OK;
+
+            /* try categorize it */
+            if (aVBoxStatus < 0 && aVBoxStatus > -1000)
+                return VBOX_E_IPRT_ERROR;
+            if (    aVBoxStatus <  VERR_PDM_NO_SUCH_LUN / 100 * 10
+                &&  aVBoxStatus >  VERR_PDM_NO_SUCH_LUN / 100 * 10 - 100)
+                return VBOX_E_PDM_ERROR;
+            if (    aVBoxStatus <= -1000
+                &&  aVBoxStatus >  -5000 /* wrong, but so what... */)
+                return VBOX_E_VM_ERROR;
+
+            return E_FAIL;
+    }
+}
+
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

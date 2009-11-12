@@ -1196,7 +1196,7 @@ Console::doGuestPropNotification(void *pvExtension, uint32_t,
 //             LogFunc(("pCBData->pcszName=%s\n", pCBData->pcszName));
 //             LogFunc(("pCBData->pcszValue=%s\n", pCBData->pcszValue));
 //             LogFunc(("pCBData->pcszFlags=%s\n", pCBData->pcszFlags));
-            rc = VERR_UNRESOLVED_ERROR;  /** @todo translate error code */
+            rc = Global::vboxStatusCodeFromCOM(hrc);
         }
     }
 //     LogFlowFunc(("rc=%Rrc\n", rc));
