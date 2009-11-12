@@ -544,6 +544,8 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../additions                                                        $(SOLARIS_VBOXINST_DIR_64)/additions,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../VirtualBox.chm                                                   $(SOLARIS_VBOXINST_DIR_32)/VirtualBox.chm,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../VirtualBox.chm                                                   $(SOLARIS_VBOXINST_DIR_64)/VirtualBox.chm,)
+	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../vboxefi.fv                                               $(SOLARIS_VBOXINST_DIR_64)/vboxefi.fv,)
+	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../vboxefi.fv                                               $(SOLARIS_VBOXINST_DIR_32)/vboxefi.fv,)
 else
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2    $(SOLARIS_VBOXINST_DIR_ISA)/libSDL-1.2.so.0,)
 	@# @todo -XXX- how to get rid of this manual MKDIR ?
@@ -556,6 +558,7 @@ else
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../rdesktop-vrdp-keymaps                                            $(SOLARIS_VBOXINST_DIR_ISA)/rdesktop-vrdp-keymaps,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../additions                                                        $(SOLARIS_VBOXINST_DIR_ISA)/additions,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../VirtualBox.chm                                                   $(SOLARIS_VBOXINST_DIR_ISA)/VirtualBox.chm,)
+	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../vboxefi.fv                                               $(SOLARIS_VBOXINST_DIR_ISA)/vboxefi.fv,)
 endif
 	$(QUIET)$(LN_SYMLINK) -f ./pkginstall.sh                                                                             $(SOLARIS_VBOXINST_DIR)/ipsinstall.sh
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../../$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh                            $(SOLARIS_USRBIN_DIR)/VBoxQtconfig,)
