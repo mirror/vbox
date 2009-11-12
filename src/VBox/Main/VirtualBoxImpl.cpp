@@ -929,15 +929,87 @@ VirtualBox::COMGETTER(DHCPServers) (ComSafeArrayOut(IDHCPServer *, aDHCPServers)
     return S_OK;
 }
 
-
-
 STDMETHODIMP
-VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType, 
-                                 IN_BSTR        aVersion, 
-                                 BSTR           *aUrl, 
+VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
+                                 IN_BSTR        aVersion,
+                                 BSTR           *aUrl,
                                  BOOL           *aResult)
 {
-    ReturnComNotImplemented();
+    CheckComArgNotNull(aResult);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    const char * url = NULL;
+
+    static const struct {
+        FirmwareType_T type;
+        const char*    fileName;
+        const char*    url;
+    } firmwareDesc[] = {
+        {
+            /* compiled-in firmware */
+            FirmwareType_BIOS,    NULL,             NULL
+        },
+        {
+            FirmwareType_EFI,     "vboxefi.fv",     "http://virtualbox.org/firmware/32/vboxefi.fv"
+        },
+        {
+            FirmwareType_EFI64,   "vboxefi64.fv",   "http://virtualbox.org/firmware/64/vboxefi.fv"
+        },
+        {
+            FirmwareType_EFIDUAL, "vboxefidual.fv", "http://virtualbox.org/firmware/dual/vboxefi.fv"
+        }
+    };
+
+    for (size_t i = 0; i < sizeof(firmwareDesc) / sizeof(firmwareDesc[0]); i++)
+    {
+        if (aFirmwareType != firmwareDesc[i].type)
+            continue;
+
+        /* compiled-in firmware */
+        if (firmwareDesc[i].fileName == NULL)
+        {
+            *aResult = TRUE;
+            break;
+        }
+
+        Utf8Str shortName, fullName;
+        int rc;
+
+        shortName = Utf8StrFmt("Firmware%c%s",
+                               RTPATH_DELIMITER,
+                               firmwareDesc[i].fileName);
+        rc = calculateFullPath(shortName, fullName); AssertRCReturn(rc, rc);
+        if (RTFileExists(fullName.raw()))
+        {
+            *aResult = TRUE;
+            break;
+        }
+
+        char pszVBoxPath[RTPATH_MAX];
+        rc = RTPathExecDir(pszVBoxPath, RTPATH_MAX); AssertRCReturn(rc, rc);
+        fullName = Utf8StrFmt("%s%c%s",
+                              pszVBoxPath,
+                              RTPATH_DELIMITER,
+                              firmwareDesc[i].fileName);
+        if (RTFileExists(fullName.raw()))
+        {
+            *aResult = TRUE;
+            break;
+        }
+
+        url = firmwareDesc[i].url;
+        /** @todo: account for version in the URL */
+        if (aUrl != NULL)
+            Utf8Str(firmwareDesc[i].url).cloneTo(aUrl);
+        *aResult = FALSE;
+
+        /* Assume single record per firmware type */
+        break;
+    }
+
+    return S_OK;
 }
 // IVirtualBox methods
 /////////////////////////////////////////////////////////////////////////////
