@@ -1470,12 +1470,10 @@ VMMR3_INT_DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const cha
                 rc = VINF_SUCCESS;
                 continue;
             }
-            else if (pszName)
-            {
-                AssertMsgFailed(("Caller is not owner! Owner=%p Caller=%p %s\n",
-                                 pUnit->u.Drv.pDrvIns, pDrvIns, pszName));
-                return VERR_SSM_UNIT_NOT_OWNER;
-            }
+
+            AssertMsgReturn(!pszName,
+                            ("Caller is not owner! Owner=%p Caller=%p %s\n", pUnit->u.Drv.pDrvIns, pDrvIns, pszName),
+                            VERR_SSM_UNIT_NOT_OWNER);
         }
 
         /* next */
