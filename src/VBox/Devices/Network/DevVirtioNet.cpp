@@ -1646,6 +1646,7 @@ static DECLCALLBACK(int) vnetReceive(PPDMINETWORKPORT pInterface, const void *pv
     if (vnetAddressFilter(pState, pvBuf, cb))
     {
         rc = vnetHandleRxPacket(pState, pvBuf, cb);
+        STAM_REL_COUNTER_ADD(&pState->StatReceiveBytes, cb);
     }
     vpciSetReadLed(&pState->VPCI, false);
 
@@ -1773,6 +1774,7 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
             STAM_PROFILE_ADV_START(&pState->StatTransmitSend, a);
             int rc = pState->pDrv->pfnSend(pState->pDrv, pFrame, uOffset);
             STAM_PROFILE_ADV_STOP(&pState->StatTransmitSend, a);
+            STAM_REL_COUNTER_ADD(&pState->StatTransmitBytes, uOffset);
             RTMemFree(pFrame);
         }
         vqueuePut(&pState->VPCI, pQueue, &elem, sizeof(VNETHDR) + uOffset);
