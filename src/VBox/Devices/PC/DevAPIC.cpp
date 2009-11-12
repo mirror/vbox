@@ -1019,9 +1019,14 @@ PDMBOTHCBDECL(int) apicLocalInterrupt(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t
                     cpuClearInterrupt(dev, s, enmType);
                 return VINF_SUCCESS;
             case APIC_DM_NMI:
-                Assert(u8Pin == 1); /* NMI should be wired to LINT1. */
+                /* External NMI should be wired to LINT1, but Linux sometimes programs
+                 * LVT0 to NMI delivery mode as well.
+                 */
                 enmType = PDMAPICIRQ_NMI;
-                break;
+                /* Currently delivering NMIs through here causes problems with NMI watchdogs
+                 * on certain Linux kernels, e.g. 64-bit CentOS 5.3. Disable NMIs for now.
+                 */
+                return VINF_SUCCESS;
             case APIC_DM_SMI:
                 enmType = PDMAPICIRQ_SMI;
                 break;
