@@ -1591,7 +1591,7 @@
 
   <interface
     name="IVirtualBox" extends="$dispatched"
-    uuid="c1b8d85d-8f44-4314-94fc-072332bdf852"
+    uuid="cdc78bfb-f4f6-4ab6-aadf-0407ae12fe85"
     wsmap="managed"
   >
     <desc>
