@@ -116,7 +116,6 @@ public:
     IInternalMachineControl    *mpControl;
     PRTTCPSERVER                mhServer;
     PRTTIMERLR                  mphTimerLR;
-    bool                        mfStartPaused;
     bool                        mfLockedMedia;
     int                         mRc;
 
@@ -128,7 +127,6 @@ public:
         , mpControl(pControl)
         , mhServer(NULL)
         , mphTimerLR(phTimerLR)
-        , mfStartPaused(false)
         , mfLockedMedia(false)
         , mRc(VINF_SUCCESS)
     {
@@ -636,20 +634,6 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
         return hrc;
 
     /*
-     * If we're paused, mention this to the target side.
-     *
-     * Note: This means you have to resume the target manually if you pause it
-     *       during the teleportation.
-     */
-    if (    vrc == VINF_SSM_LIVE_SUSPENDED
-        ||  pState->menmOldMachineState == MachineState_Paused)
-    {
-        hrc = teleporterSrcSubmitCommand(pState, "pause");
-        if (FAILED(hrc))
-            return hrc;
-    }
-
-    /*
      * We're at the point of no return.
      */
     if (!pState->mptrProgress->notifyPointOfNoReturn())
@@ -659,7 +643,9 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
     }
 
     /*
-     * The last thing we do is to hand over any media we might have locked.
+     * Hand over any media which we might be sharing.
+     *
+     * Note! This is only important on localhost teleportations.
      */
     /** @todo Maybe we should only do this if it's a local teleportation... */
     hrc = mControl->UnlockMedia();
@@ -671,7 +657,14 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
     if (FAILED(hrc))
         return hrc;
 
-    hrc = teleporterSrcSubmitCommand(pState, "done");
+    /*
+     * The FINAL step is giving the target instructions how to proceed with the VM.
+     */
+    if (    vrc == VINF_SSM_LIVE_SUSPENDED
+        ||  pState->menmOldMachineState == MachineState_Paused)
+        hrc = teleporterSrcSubmitCommand(pState, "hand-over-paused");
+    else
+        hrc = teleporterSrcSubmitCommand(pState, "hand-over-resume");
     if (FAILED(hrc))
         return hrc;
 
@@ -705,6 +698,13 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
     if (SUCCEEDED(hrc))
         hrc = pState->mptrConsole->teleporterSrc(pState);
 
+    /* Close the connection ASAP on so that the other side can complete. */
+    if (pState->mhSocket != NIL_RTSOCKET)
+    {
+        RTTcpClientClose(pState->mhSocket);
+        pState->mhSocket = NIL_RTSOCKET;
+    }
+
     /* Aaarg! setMachineState trashes error info on Windows, so we have to
        complete things here on failure instead of right before cleanup. */
     if (FAILED(hrc))
@@ -713,7 +713,10 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
     /* We can no longer be cancelled (success), or it doesn't matter any longer (failure). */
     pState->mptrProgress->setCancelCallback(NULL, NULL);
 
-    /* Write lock the console before resetting mptrCancelableProgress and fixing the state.  */
+    /*
+     * Write lock the console before resetting mptrCancelableProgress and
+     * fixing the state.
+     */
     AutoWriteLock autoLock(pState->mptrConsole);
     pState->mptrConsole->mptrCancelableProgress.setNull();
 
@@ -824,11 +827,7 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
     /*
      * Cleanup.
      */
-    if (pState->mhSocket != NIL_RTSOCKET)
-    {
-        RTTcpClientClose(pState->mhSocket);
-        pState->mhSocket = NIL_RTSOCKET;
-    }
+    Assert(pState->mhSocket == NIL_RTSOCKET);
     delete pState;
 
     return VINF_SUCCESS; /* ignored */
@@ -1019,16 +1018,9 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
                 if (vrc == VERR_TCP_SERVER_STOP)
                 {
                     vrc = State.mRc;
-                    if (RT_SUCCESS(vrc))
-                    {
-                        if (State.mfStartPaused)
-                            setMachineState(MachineState_Paused);
-                        else
-                            vrc = VMR3Resume(pVM);
-                    }
                     /* Power off the VM on failure unless the state callback
                        already did that. */
-                    else
+                    if (RT_FAILURE(vrc))
                     {
                         VMSTATE enmVMState = VMR3GetState(pVM);
                         if (    enmVMState != VMSTATE_OFF
@@ -1102,13 +1094,14 @@ static void teleporterTrgUnlockMedia(TeleporterStateTrg *pState)
 }
 
 
-static int teleporterTcpWriteACK(TeleporterStateTrg *pState)
+static int teleporterTcpWriteACK(TeleporterStateTrg *pState, bool fAutomaticUnlock = true)
 {
     int rc = RTTcpWrite(pState->mhSocket, "ACK\n", sizeof("ACK\n") - 1);
     if (RT_FAILURE(rc))
     {
         LogRel(("Teleporter: RTTcpWrite(,ACK,) -> %Rrc\n", rc));
-        teleporterTrgUnlockMedia(pState);
+        if (fAutomaticUnlock)
+            teleporterTrgUnlockMedia(pState);
     }
     RTTcpFlush(pState->mhSocket);
     return rc;
@@ -1236,11 +1229,6 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
             LogRel(("Teleporter: Received cancel command.\n"));
             vrc = VERR_SSM_CANCELLED;
         }
-        else if (!strcmp(szCmd, "pause"))
-        {
-            pState->mfStartPaused = true;
-            vrc = teleporterTcpWriteACK(pState);
-        }
         else if (!strcmp(szCmd, "lock-media"))
         {
             HRESULT hrc = pState->mpControl->LockMedia();
@@ -1255,21 +1243,39 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
                 teleporterTcpWriteNACK(pState, vrc);
             }
         }
-        else if (!strcmp(szCmd, "done"))
+        else if (   !strcmp(szCmd, "hand-over-resume")
+                 || !strcmp(szCmd, "hand-over-paused"))
         {
             /*
-             * The ACK is the point of no return.
+             * Point of no return.
+             *
+             * Note! Since we cannot tell whether a VMR3Resume failure is
+             *       destructive for the source or not, we have little choice
+             *       but to ACK it first and take any failures locally.
+             *
+             *       Ideally, we should try resume it first and then ACK (or
+             *       NACK) the request since this would reduce latency and
+             *       make it possible to recover from some VMR3Resume failures.
              */
             if (   pState->mptrProgress->notifyPointOfNoReturn()
                 && pState->mfLockedMedia)
+            {
                 vrc = teleporterTcpWriteACK(pState);
+                if (RT_SUCCESS(vrc))
+                {
+                    if (!strcmp(szCmd, "hand-over-resume"))
+                        vrc = VMR3Resume(pState->mpVM);
+                    else
+                        pState->mptrConsole->setMachineState(MachineState_Paused);
+                    fDone = true;
+                    break;
+                }
+            }
             else
             {
                 vrc = pState->mfLockedMedia ? VERR_WRONG_ORDER : VERR_SSM_CANCELLED;
                 teleporterTcpWriteNACK(pState, vrc);
             }
-            fDone = true;
-            break;
         }
         else
         {
