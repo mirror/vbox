@@ -224,9 +224,6 @@ PDMBOTHCBDECL(int)      vnetGetConfig(void *pState, uint32_t port, uint32_t cb, 
 PDMBOTHCBDECL(int)      vnetSetConfig(void *pState, uint32_t port, uint32_t cb, void *data);
 PDMBOTHCBDECL(void)     vnetReset(void *pState);
 PDMBOTHCBDECL(void)     vnetReady(void *pState);
-#ifdef DEBUG
-static const char *vnetGetQueueName(void *pvState, PVQUEUE pQueue);
-#endif /* DEBUG */
 RT_C_DECLS_END
 
 /*****************************************************************************/
@@ -981,10 +978,9 @@ static void vpciDumpState(PVPCISTATE pState, const char *pcszCaller)
               pState->Queues[i].uNextAvailIndex,
               pState->Queues[i].uNextUsedIndex,
               pState->Queues[i].uPageNumber));
-
 }
 #else
-#define vpciDumpState(x, s)
+# define vpciDumpState(x, s)  do {} while (0)
 #endif
 
 /**
@@ -1265,7 +1261,6 @@ struct __attribute__ ((__packed__)) VNetPCIConfig
     RTMAC    mac;
     uint16_t uStatus;
 };
-
 AssertCompileMemberOffset(struct VNetPCIConfig, uStatus, 6);
 
 /**
@@ -1289,27 +1284,31 @@ struct VNetState_st
 #if HC_ARCH_BITS == 64
     uint32_t    padding;
 #endif
-    PTMTIMERR3  pLinkUpTimer;                             /**< Link Up(/Restore) Timer. */
+
+    /** transmit buffer */
+    R3PTRTYPE(uint8_t*)     pTxBuf;
+    /**< Link Up(/Restore) Timer. */
+    PTMTIMERR3              pLinkUpTimer; 
 
     /** PCI config area holding MAC address as well as TBD. */
-    struct VNetPCIConfig config;
+    struct VNetPCIConfig    config;
     /** MAC address obtained from the configuration. */
-    RTMAC       macConfigured;
+    RTMAC                   macConfigured;
     /** True if physical cable is attached in configuration. */
-    bool        fCableConnected;
+    bool                    fCableConnected;
 
     /** Number of packet being sent/received to show in debug log. */
-    uint32_t    u32PktNo;
+    uint32_t                u32PktNo;
 
     /** Locked state -- no state alteration possible. */
-    bool        fLocked;
+    bool                    fLocked;
 
     /** N/A: */
-    bool volatile fMaybeOutOfSpace;
+    bool volatile           fMaybeOutOfSpace;
 
-    R3PTRTYPE(PVQUEUE) pRxQueue;
-    R3PTRTYPE(PVQUEUE) pTxQueue;
-    R3PTRTYPE(PVQUEUE) pCtlQueue;
+    R3PTRTYPE(PVQUEUE)      pRxQueue;
+    R3PTRTYPE(PVQUEUE)      pTxQueue;
+    R3PTRTYPE(PVQUEUE)      pCtlQueue;
     /* Receive-blocking-related fields ***************************************/
 
     /** EMT: Gets signalled when more RX descriptors become available. */
@@ -1317,14 +1316,14 @@ struct VNetState_st
 
     /* Statistic fields ******************************************************/
 
-    STAMCOUNTER                         StatReceiveBytes;
-    STAMCOUNTER                         StatTransmitBytes;
+    STAMCOUNTER             StatReceiveBytes;
+    STAMCOUNTER             StatTransmitBytes;
 #if defined(VBOX_WITH_STATISTICS)
-    STAMPROFILEADV                      StatReceive;
-    STAMPROFILEADV                      StatTransmit;
-    STAMPROFILEADV                      StatTransmitSend;
-    STAMPROFILE                         StatRxOverflow;
-    STAMCOUNTER                         StatRxOverflowWakeup;
+    STAMPROFILEADV          StatReceive;
+    STAMPROFILEADV          StatTransmit;
+    STAMPROFILEADV          StatTransmitSend;
+    STAMPROFILE             StatRxOverflow;
+    STAMCOUNTER             StatRxOverflowWakeup;
 #endif /* VBOX_WITH_STATISTICS */
 
 };
@@ -1337,8 +1336,8 @@ typedef VNETSTATE *PVNETSTATE;
 
 struct VNetHdr
 {
-    uint8_t u8Flags;
-    uint8_t u8GSOType;
+    uint8_t  u8Flags;
+    uint8_t  u8GSOType;
     uint16_t u16HdrLen;
     uint16_t u16GSOSize;
     uint16_t u16CSumStart;
@@ -1346,6 +1345,7 @@ struct VNetHdr
 };
 typedef struct VNetHdr VNETHDR;
 typedef VNETHDR *PVNETHDR;
+AssertCompileSize(VNETHDR, 10);
 
 AssertCompileMemberOffset(VNETSTATE, VPCI, 0);
 
@@ -1799,15 +1799,6 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
         }
         else
         {
-            uint8_t *pFrame = (uint8_t *)RTMemAllocZ(VNET_MAX_FRAME_SIZE);
-            if (!pFrame)
-            {
-                Log(("%s vnetQueueTransmit: Failed to allocate %u bytes.\n",
-                     INSTANCE(pState), VNET_MAX_FRAME_SIZE));
-                vqueueElemFree(&elem);
-                break; /* For now we simply ignore the header, but it must be there anyway! */
-            }
-
             /* Assemble a complete frame. */
             for (unsigned int i = 1; i < elem.nOut && uOffset < VNET_MAX_FRAME_SIZE; i++)
             {
@@ -1818,14 +1809,13 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
                     uSize = VNET_MAX_FRAME_SIZE - uOffset;
                 }
                 PDMDevHlpPhysRead(pState->VPCI.CTX_SUFF(pDevIns), elem.aSegsOut[i].addr,
-                                  pFrame + uOffset, uSize);
+                                  pState->pTxBuf + uOffset, uSize);
                 uOffset += uSize;
             }
             STAM_PROFILE_ADV_START(&pState->StatTransmitSend, a);
-            int rc = pState->pDrv->pfnSend(pState->pDrv, pFrame, uOffset);
+            int rc = pState->pDrv->pfnSend(pState->pDrv, pState->pTxBuf, uOffset);
             STAM_PROFILE_ADV_STOP(&pState->StatTransmitSend, a);
             STAM_REL_COUNTER_ADD(&pState->StatTransmitBytes, uOffset);
-            RTMemFree(pFrame);
         }
         vqueuePut(&pState->VPCI, pQueue, &elem, sizeof(VNETHDR) + uOffset);
         vqueueSync(&pState->VPCI, pQueue);
@@ -1967,8 +1957,8 @@ static DECLCALLBACK(int) vnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     RTMAC macConfigured;
     rc = SSMR3GetMem(pSSM, &macConfigured, sizeof(macConfigured));
     AssertRCReturn(rc, rc);
-    if (   memcmp(&macConfigured, &pState->macConfigured, sizeof(macConfigured))
-           && (uPass == 0 || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)) )
+    if (memcmp(&macConfigured, &pState->macConfigured, sizeof(macConfigured))
+        && (uPass == 0 || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)))
         LogRel(("%s: The mac address differs: config=%RTmac saved=%RTmac\n", INSTANCE(pState), &pState->macConfigured, &macConfigured));
 
     rc = vpciLoadExec(&pState->VPCI, pSSM, uVersion, uPass);
@@ -2050,13 +2040,17 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pState->INetworkConfig.pfnGetLinkState   = vnetGetLinkState;
     pState->INetworkConfig.pfnSetLinkState   = vnetSetLinkState;
 
+    pState->pTxBuf = (uint8_t *)RTMemAllocZ(VNET_MAX_FRAME_SIZE);
+    AssertMsgReturn(pState->pTxBuf, 
+                    ("Cannot allocate TX buffer for virtio-net device\n"), VERR_NO_MEMORY);
+
     /* Register save/restore state handlers. */
     rc = PDMDevHlpSSMRegisterEx(pDevIns, VNET_SAVEDSTATE_VERSION, sizeof(VNETSTATE), NULL,
                                 NULL,         vnetLiveExec, NULL,
                                 vnetSavePrep, vnetSaveExec, NULL,
                                 vnetLoadPrep, vnetLoadExec, NULL);
     if (RT_FAILURE(rc))
-    return rc;
+        return rc;
 
     /* Create the RX notifier signaller. */
     rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
@@ -2134,6 +2128,12 @@ static DECLCALLBACK(int) vnetDestruct(PPDMDEVINS pDevIns)
         RTSemEventSignal(pState->hEventMoreRxDescAvail);
         RTSemEventDestroy(pState->hEventMoreRxDescAvail);
         pState->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
+    }
+
+    if (pState->pTxBuf)
+    {
+        RTMemFree(pState->pTxBuf);
+        pState->pTxBuf = NULL;
     }
 
     return vpciDestruct(&pState->VPCI);
@@ -2347,4 +2347,3 @@ const PDMDEVREG g_DeviceVirtioNet =
 
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
-
