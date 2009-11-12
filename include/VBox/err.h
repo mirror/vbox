@@ -1449,7 +1449,7 @@
  * @{
  */
 /** Switch back to host */
-#define VINF_PARAV_SWITCH_TO_HOST                     4400
+#define VINF_PARAV_SWITCH_TO_HOST                   4400
 
 /** @} */
 
@@ -1457,8 +1457,38 @@
  * @{
  */
 /** command processing is pending, a completion handler will be called */
-#define VINF_VHWA_CMD_PENDING                        4500
+#define VINF_VHWA_CMD_PENDING                       4500
 
+/** @} */
+
+
+/** @name VBox Webservice Status Codes
+ * @{
+ */
+/** Object not found. */
+#define VERR_COM_OBJECT_NOT_FOUND                  (-4601)
+/** Invalid machine state. */
+#define VERR_COM_INVALID_VM_STATE                  (-4602)
+/** VM error. */
+#define VERR_COM_VM_ERROR                          (-4603)
+/** File error. */
+#define VERR_COM_FILE_ERROR                        (-4604)
+/** IPRT error. */
+#define VERR_COM_IPRT_ERROR                        (-4605)
+/** PDM error. */
+#define VERR_COM_PDM_ERROR                         (-4606)
+/** Invalid object state. */
+#define VERR_COM_INVALID_OBJECT_STATE              (-4607)
+/** Host error. */
+#define VERR_COM_HOST_ERROR                        (-4608)
+/** Not supported. */
+#define VERR_COM_NOT_SUPPORTED                     (-4609)
+/** XML error. */
+#define VERR_COM_XML_ERROR                         (-4610)
+/** Invalid session state. */
+#define VERR_COM_INVALID_SESSION_STATE             (-4611)
+/** Invalid session state. */
+#define VERR_COM_OBJECT_IN_USE                     (-4612)
 /** @} */
 
 /* SED-END */
