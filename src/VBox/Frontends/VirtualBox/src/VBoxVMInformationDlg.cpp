@@ -279,7 +279,7 @@ void VBoxVMInformationDlg::retranslateUi()
                 name = "E1k";
                 break;
             case KNetworkAdapterType_Virtio:
-                name = "Virtio";
+                name = "VNet";
                 break;
             default:
                 name = "PCNet";
