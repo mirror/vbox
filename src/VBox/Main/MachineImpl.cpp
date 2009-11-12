@@ -3971,9 +3971,10 @@ static int readSavedDisplayScreenshot(Utf8Str *pStateFilePath, uint32_t u32Type,
 
                     if (typeOfBlock == u32Type)
                     {
-                        if (cbBlock != 0)
+                        if (cbBlock > 2 * sizeof (uint32_t))
                         {
-                            pu8Data = (uint8_t *)RTMemAlloc(cbBlock);
+                            cbData = cbBlock - 2 * sizeof (uint32_t);
+                            pu8Data = (uint8_t *)RTMemAlloc(cbData);
                             if (pu8Data == NULL)
                             {
                                 rc = VERR_NO_MEMORY;
@@ -3984,9 +3985,8 @@ static int readSavedDisplayScreenshot(Utf8Str *pStateFilePath, uint32_t u32Type,
                             AssertRCBreak(rc);
                             rc = SSMR3GetU32(pSSM, &u32Height);
                             AssertRCBreak(rc);
-                            rc = SSMR3GetMem(pSSM, pu8Data, cbBlock);
+                            rc = SSMR3GetMem(pSSM, pu8Data, cbData);
                             AssertRCBreak(rc);
-                            cbData = cbBlock;
                         }
                         else
                         {
