@@ -60,11 +60,13 @@ public:
                                                "/org/freedesktop/Notifications",
                                                "org.freedesktop.Notifications",
                                                "Notify");
-            if (conn == NULL)
+            if (msg == NULL)
             {
                 Log(("Could not create D-BUS message!\n"));
                 rc = VERR_INVALID_HANDLE;
             }
+	    else
+		rc = VINF_SUCCESS;
         }
         if (RT_SUCCESS(rc))
         {
