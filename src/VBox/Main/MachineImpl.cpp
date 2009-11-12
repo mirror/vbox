@@ -9323,11 +9323,13 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
                                              RTSTR_MAX,
                                              utf8Name.raw(),
                                              RTSTR_MAX, NULL)
-        )
+           )
+        {
             mParent->onGuestPropertyChange(mData->mUuid,
                                            aName,
                                            aValue,
                                            aFlags);
+        }
     }
     catch(std::bad_alloc &)
     {
