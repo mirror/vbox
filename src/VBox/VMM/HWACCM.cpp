@@ -837,18 +837,26 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_EPT\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_INSTR_EXIT)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_INSTR_EXIT\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP_EXIT)
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP_EXIT\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_X2APIC)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_X2APIC\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_VPID\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE)
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT)
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT\n"));               
 
                 val = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.disallowed0;
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC *must* be set\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_INSTR_EXIT)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_INSTR_EXIT *must* be set\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP_EXIT)
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP_EXIT *must* be set\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_X2APIC)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_X2APIC *must* be set\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
@@ -857,6 +865,10 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_VPID *must* be set\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT *must* be set\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE)
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE *must* be set\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT)
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT *must* be set\n"));               
             }
 
             LogRel(("HWACCM: MSR_IA32_VMX_ENTRY_CTLS       = %RX64\n", pVM->hwaccm.s.vmx.msr.vmx_entry.u));
