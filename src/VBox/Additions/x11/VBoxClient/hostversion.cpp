@@ -101,6 +101,8 @@ public:
             dbus_message_iter_append_basic(&iter,DBUS_TYPE_INT32,&msg_timeout);
 
             DBusError err;
+            dbus_error_init(&err);
+
             DBusMessage *reply;
             reply = dbus_connection_send_with_reply_and_block(conn, msg,
                 30 * 1000 /* 30 seconds timeout */, &err);
@@ -113,6 +115,8 @@ public:
                 dbus_connection_flush(conn);
                 dbus_message_unref(reply);
             }
+            if (dbus_error_is_set(&err))
+        	dbus_error_free(&err);
         }
         if (msg != NULL)
             dbus_message_unref(msg);
