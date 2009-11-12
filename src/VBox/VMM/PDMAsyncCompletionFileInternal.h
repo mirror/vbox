@@ -33,6 +33,9 @@
 
 #include "PDMAsyncCompletionInternal.h"
 
+/** Enable the 2Q cache alogrithm. */
+#define VBOX_WITH_2Q_CACHE 1
+
 /** @todo: Revise the caching of tasks. We have currently four caches:
  *  Per endpoint task cache
  *  Per class cache
@@ -274,6 +277,13 @@ typedef struct PDMACFILECACHEGLOBAL
     uint32_t         cbCached;
     /** Critical section protecting the cache. */
     RTCRITSECT       CritSect;
+#ifdef VBOX_WITH_2Q_CACHE
+    uint32_t         cbRecentlyUsedInMax;
+    uint32_t         cbRecentlyUsedOutMax;
+    PDMACFILELRULIST LruRecentlyUsedIn;
+    PDMACFILELRULIST LruRecentlyUsedOut;
+    PDMACFILELRULIST LruFrequentlyUsed;
+#else
     /** Adaption parameter (p) */
     uint32_t         uAdaptVal;
     /** LRU list for recently used entries (T1) */
@@ -284,6 +294,7 @@ typedef struct PDMACFILECACHEGLOBAL
     PDMACFILELRULIST LruRecentlyGhost;
     /** LRU list for evicted entries from T2 (B2) */
     PDMACFILELRULIST LruFrequentlyGhost;
+#endif
 #ifdef VBOX_WITH_STATISTICS
     /** Hit counter. */
     STAMCOUNTER      cHits;
