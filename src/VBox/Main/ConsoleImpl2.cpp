@@ -44,6 +44,7 @@
 #if 0 /* enable to play with lots of memory. */
 # include <iprt/env.h>
 #endif
+#include <iprt/file.h>
 
 #include <VBox/vmapi.h>
 #include <VBox/err.h>
@@ -62,6 +63,7 @@
 #endif /* VBOX_WITH_GUEST_PROPS */
 #include <VBox/intnet.h>
 
+#include <VBox/com/com.h>
 #include <VBox/com/string.h>
 #include <VBox/com/array.h>
 
@@ -129,6 +131,65 @@ const char* controllerString(StorageControllerType_T enmType)
 #if defined(_MSC_VER) && defined(RT_ARCH_AMD64)
 # pragma optimize("g", off)
 #endif
+
+static int findEfiRom(FirmwareType_T aFirmwareType, Utf8Str& aEfiRomFile)
+{
+    /** @todo: combine with similar table in VirtualBox::CheckFirmwarePresent */
+    static const struct {
+        FirmwareType_T type;
+        const char*    fileName;
+    } firmwareDesc[] = {
+        {
+            /* compiled-in firmware */
+            FirmwareType_BIOS,    NULL,
+        },
+        {
+            FirmwareType_EFI,     "vboxefi.fv"
+        },
+        {
+            FirmwareType_EFI64,   "vboxefi64.fv"
+        },
+        {
+            FirmwareType_EFIDUAL, "vboxefidual.fv"
+        }
+    };
+
+
+     for (size_t i = 0; i < sizeof(firmwareDesc) / sizeof(firmwareDesc[0]); i++)
+    {
+        if (aFirmwareType != firmwareDesc[i].type)
+            continue;
+
+        AssertRCReturn(firmwareDesc[i].fileName != NULL, E_INVALIDARG);
+
+        /* Search in ~/.VirtualBox/Firmware and RTPathAppPrivateArch() */
+        char pszVBoxPath[RTPATH_MAX];
+        int rc;
+
+        rc = com::GetVBoxUserHomeDirectory(pszVBoxPath, sizeof(pszVBoxPath)); AssertRCReturn(rc, rc);
+        aEfiRomFile = Utf8StrFmt("%s%cFirmware%c%s",
+                                 pszVBoxPath,
+                                 RTPATH_DELIMITER,
+                                 RTPATH_DELIMITER,
+                                 firmwareDesc[i].fileName);
+        if (RTFileExists(aEfiRomFile.raw()))
+            return S_OK;
+
+        rc = RTPathExecDir(pszVBoxPath, RTPATH_MAX); AssertRCReturn(rc, rc);
+        aEfiRomFile = Utf8StrFmt("%s%c%s",
+                              pszVBoxPath,
+                              RTPATH_DELIMITER,
+                              firmwareDesc[i].fileName);
+
+        if (RTFileExists(aEfiRomFile.raw()))
+            return S_OK;
+
+        aEfiRomFile = "";
+        return VERR_FILE_NOT_FOUND;
+    }
+
+     return E_INVALIDARG;
+}
 
 /**
  *  Construct the VM configuration tree (CFGM).
@@ -694,21 +755,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /*
      * Firmware.
      */
-#ifdef VBOX_WITH_EFI
-    Bstr tmpStr1;
-    hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/UseEFI"), tmpStr1.asOutParam());    H();
-    BOOL fEfiEnabled = !tmpStr1.isEmpty();
+    FirmwareType_T eFwType =  FirmwareType_BIOS;
+    hrc = pMachine->COMGETTER(FirmwareType)(&eFwType);                                H();
 
-    /**
-     * @todo: VBoxInternal2/UseEFI extradata will go away soon, and we'll
-     *        just use this code
-     */
-    if (!fEfiEnabled)
-    {
-      FirmwareType_T eType =  FirmwareType_BIOS;
-      hrc = pMachine->COMGETTER(FirmwareType)(&eType);                                H();
-      fEfiEnabled = (eType == FirmwareType_EFI);
-    }
+#ifdef VBOX_WITH_EFI
+    BOOL fEfiEnabled = (eFwType >= FirmwareType_EFI) && (eFwType <= FirmwareType_EFIDUAL);
 #else
     BOOL fEfiEnabled = false;
 #endif
@@ -773,6 +824,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     }
     else
     {
+        Utf8Str efiRomFile;
+
+        rc = findEfiRom(eFwType, efiRomFile);                                       RC_CHECK();
         /*
          * EFI.
          */
@@ -783,6 +837,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cbRam);                 RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",      cbRamHole);             RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "NumCPUs",          cCpus);                 RC_CHECK();
+        rc = CFGMR3InsertString(pCfg,   "EfiRom",           efiRomFile.raw());      RC_CHECK();
     }
 
     /*
