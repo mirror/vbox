@@ -22,6 +22,7 @@
 
 
 #define LOG_GROUP LOG_GROUP_DEV_VIRTIO_NET
+#define VNET_GC_SUPPORT
 
 #include <iprt/ctype.h>
 #ifdef IN_RING3
@@ -40,14 +41,18 @@
 
 // TODO: move declarations to the header file: #include "DevVirtioNet.h"
 
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
+
 #define INSTANCE(pState) pState->szInstance
 #define IFACE_TO_STATE(pIface, ifaceName) ((VPCISTATE *)((char*)pIface - RT_OFFSETOF(VPCISTATE, ifaceName)))
 
 #define VIRTIO_RELOCATE(p, o) *(RTHCUINTPTR *)&p += o
 
 #ifdef DEBUG
-#define QUEUENAME(s, q) g_VPCIDevices[s->enmDevType].pfnGetQueueName(s, q)
+#define QUEUENAME(s, q) (q->pcszName)
 #endif /* DEBUG */
+
+#endif /* VBOX_DEVICE_STRUCT_TESTCASE */
 
 //- TODO: Move to Virtio.h ----------------------------------------------------
 
@@ -101,6 +106,7 @@ typedef VRINGUSED *PVRINGUSED;
 struct VRing
 {
     uint16_t   uSize;
+    uint16_t   padding[3];
     RTGCPHYS   addrDescriptors;
     RTGCPHYS   addrAvail;
     RTGCPHYS   addrUsed;
@@ -114,7 +120,12 @@ struct VQueue
     uint16_t uNextAvailIndex;
     uint16_t uNextUsedIndex;
     uint32_t uPageNumber;
+#ifdef IN_RING3
     void   (*pfnCallback)(void *pvState, struct VQueue *pQueue);
+#else
+    RTR3UINTPTR pfnCallback;
+#endif
+    R3PTRTYPE(const char *) pcszName;
 };
 typedef struct VQueue VQUEUE;
 typedef VQUEUE *PVQUEUE;
@@ -142,45 +153,61 @@ typedef VQUEUEELEM *PVQUEUEELEM;
 enum VirtioDeviceType
 {
     VIRTIO_NET_ID = 0,
-    VIRTIO_BLK_ID = 1
+    VIRTIO_BLK_ID = 1,
+    VIRTIO_32BIT_HACK = 0x7fffffff
 };
+
+#define VIRTIO_NET_NQUEUES 3
+#define VIRTIO_MAX_NQUEUES 3
 
 struct VPCIState_st
 {
-    PDMCRITSECT cs;                  /**< Critical section - what is it protecting? */
+    PDMCRITSECT            cs;      /**< Critical section - what is it protecting? */
     /* Read-only part, never changes after initialization. */
-    VirtioDeviceType        enmDevType;               /**< Device type: net or blk. */
-    char                    szInstance[8];         /**< Instance name, e.g. VNet#1. */
+#if HC_ARCH_BITS == 64
+    uint32_t               padding1;
+#endif
+    VirtioDeviceType       enmDevType;               /**< Device type: net or blk. */
+    char                   szInstance[8];         /**< Instance name, e.g. VNet#1. */
 
-    PDMIBASE                IBase;
-    PDMILEDPORTS            ILeds;                               /**< LED interface */
-    R3PTRTYPE(PPDMILEDCONNECTORS)    pLedsConnector;
+    PDMIBASE               IBase;
+    PDMILEDPORTS           ILeds;                               /**< LED interface */
+    R3PTRTYPE(PPDMILEDCONNECTORS) pLedsConnector;
 
-    PPDMDEVINSR3            pDevInsR3;                   /**< Device instance - R3. */
-    PPDMDEVINSR0            pDevInsR0;                   /**< Device instance - R0. */
-    PPDMDEVINSRC            pDevInsRC;                   /**< Device instance - RC. */
+    PPDMDEVINSR3           pDevInsR3;                   /**< Device instance - R3. */
+    PPDMDEVINSR0           pDevInsR0;                   /**< Device instance - R0. */
+    PPDMDEVINSRC           pDevInsRC;                   /**< Device instance - RC. */
+
+#if HC_ARCH_BITS == 64
+    uint32_t               padding2;
+#endif
 
     /** TODO */
-    PCIDEVICE   pciDevice;
+    PCIDEVICE              pciDevice;
     /** Base port of I/O space region. */
-    RTIOPORT    addrIOPort;
+    RTIOPORT               addrIOPort;
 
     /* Read/write part, protected with critical section. */
     /** Status LED. */
-    PDMLED      led;
+    PDMLED                 led;
 
-    uint32_t    uGuestFeatures;
-    uint16_t    uQueueSelector; /**< An index in aQueues array. */
-    uint8_t     uStatus; /**< Device Status (bits are device-specific). */
-    uint8_t     uISR; /**< Interrupt Status Register. */
-    PVQUEUE     pQueues;
+    uint32_t               uGuestFeatures;
+    uint16_t               uQueueSelector;         /**< An index in aQueues array. */
+    uint8_t                uStatus; /**< Device Status (bits are device-specific). */
+    uint8_t                uISR;                   /**< Interrupt Status Register. */
+
+#if HC_ARCH_BITS == 64
+    uint32_t               padding3;
+#endif
+
+    VQUEUE                 Queues[VIRTIO_MAX_NQUEUES];
 
 #if defined(VBOX_WITH_STATISTICS)
-    STAMPROFILEADV                      StatIOReadGC;
-    STAMPROFILEADV                      StatIOReadHC;
-    STAMPROFILEADV                      StatIOWriteGC;
-    STAMPROFILEADV                      StatIOWriteHC;
-    STAMCOUNTER                         StatIntsRaised;
+    STAMPROFILEADV         StatIOReadGC;
+    STAMPROFILEADV         StatIOReadHC;
+    STAMPROFILEADV         StatIOWriteGC;
+    STAMPROFILEADV         StatIOWriteHC;
+    STAMCOUNTER            StatIntsRaised;
 #endif /* VBOX_WITH_STATISTICS */
 };
 typedef struct VPCIState_st VPCISTATE;
@@ -204,7 +231,10 @@ RT_C_DECLS_END
 
 /*****************************************************************************/
 
-struct VirtioPCIDevices
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
+
+#ifdef IN_RING3
+const struct VirtioPCIDevices
 {
     uint16_t    uPCIVendorId;
     uint16_t    uPCIDeviceId;
@@ -221,29 +251,23 @@ struct VirtioPCIDevices
     int       (*pfnSetConfig)(void *pvState, uint32_t port, uint32_t cb, void *data);
     void      (*pfnReset)(void *pvState);
     void      (*pfnReady)(void *pvState);
-#ifdef DEBUG
-    const char *(*pfnGetQueueName)(void *pvState, PVQUEUE pQueue);
-#endif /* DEBUG */
 } g_VPCIDevices[] =
 {
     /*  Vendor  Device SSVendor SubSys             Class   NQ Name          Instance */
     { /* Virtio Network Device */
-        0x1AF4, 0x1000, 0x1AF4, 1 + VIRTIO_NET_ID, 0x0200, 3, "virtio-net", "vnet%d",
+        0x1AF4, 0x1000, 0x1AF4, 1 + VIRTIO_NET_ID, 0x0200, VIRTIO_NET_NQUEUES,
+                                                              "virtio-net", "vnet%d",
         vnetGetHostFeatures, vnetGetHostMinimalFeatures, vnetSetHostFeatures,
         vnetGetConfig, vnetSetConfig, vnetReset, vnetReady
-#ifdef DEBUG
-        , vnetGetQueueName
-#endif /* DEBUG */
     },
     { /* Virtio Block Device */
         0x1AF4, 0x1001, 0x1AF4, 1 + VIRTIO_BLK_ID, 0x0180, 2, "virtio-blk", "vblk%d",
         NULL, NULL, NULL, NULL, NULL, NULL, NULL
-#ifdef DEBUG
-        , NULL
-#endif /* DEBUG */
     },
 };
+#endif
 
+#endif /* VBOX_DEVICE_STRUCT_TESTCASE */
 
 /*****************************************************************************/
 
@@ -487,6 +511,7 @@ void vqueueSync(PVPCISTATE pState, PVQUEUE pQueue)
     vqueueNotify(pState, pQueue);
 }
 
+#ifdef IN_RING3
 void vpciReset(PVPCISTATE pState)
 {
     pState->uGuestFeatures = 0;
@@ -495,8 +520,9 @@ void vpciReset(PVPCISTATE pState)
     pState->uISR           = 0;
 
     for (unsigned i = 0; i < g_VPCIDevices[pState->enmDevType].nQueues; i++)
-        vqueueReset(&pState->pQueues[i]);
+        vqueueReset(&pState->Queues[i]);
 }
+#endif
 
 
 DECLINLINE(int) vpciCsEnter(VPCISTATE *pState, int iBusyRc)
@@ -542,11 +568,13 @@ PDMBOTHCBDECL(void) vpciLowerInterrupt(VPCISTATE *pState)
     PDMDevHlpPCISetIrq(pState->CTX_SUFF(pDevIns), 0, 0);
 }
 
+#ifdef IN_RING3
 DECLINLINE(uint32_t) vpciGetHostFeatures(PVPCISTATE pState)
 {
     return g_VPCIDevices[pState->enmDevType].pfnGetHostFeatures(pState)
         | VPCI_F_NOTIFY_ON_EMPTY;
 }
+#endif
 
 /**
  * Port I/O Handler for IN operations.
@@ -573,7 +601,11 @@ PDMBOTHCBDECL(int) vpciIOPortIn(PPDMDEVINS pDevIns, void *pvUser,
     {
         case VPCI_HOST_FEATURES:
             /* Tell the guest what features we support. */
+#ifdef IN_RING3
             *pu32 = vpciGetHostFeatures(pState) | VPCI_F_BAD_FEATURE;
+#else
+            rc = VINF_IOM_HC_IOPORT_READ;
+#endif
             break;
 
         case VPCI_GUEST_FEATURES:
@@ -581,12 +613,12 @@ PDMBOTHCBDECL(int) vpciIOPortIn(PPDMDEVINS pDevIns, void *pvUser,
             break;
 
         case VPCI_QUEUE_PFN:
-            *pu32 = pState->pQueues[pState->uQueueSelector].uPageNumber;
+            *pu32 = pState->Queues[pState->uQueueSelector].uPageNumber;
             break;
 
         case VPCI_QUEUE_NUM:
             Assert(cb == 2);
-            *(uint16_t*)pu32 = pState->pQueues[pState->uQueueSelector].VRing.uSize;
+            *(uint16_t*)pu32 = pState->Queues[pState->uQueueSelector].VRing.uSize;
             break;
 
         case VPCI_QUEUE_SEL:
@@ -608,7 +640,13 @@ PDMBOTHCBDECL(int) vpciIOPortIn(PPDMDEVINS pDevIns, void *pvUser,
 
         default:
             if (port >= VPCI_CONFIG)
+            {
+#ifdef IN_RING3
                 rc = g_VPCIDevices[pState->enmDevType].pfnGetConfig(pState, port - VPCI_CONFIG, cb, pu32);
+#else
+                rc = VINF_IOM_HC_IOPORT_READ;
+#endif
+            }
             else
             {
                 *pu32 = 0xFFFFFFFF;
@@ -650,6 +688,7 @@ PDMBOTHCBDECL(int) vpciIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
     {
         case VPCI_GUEST_FEATURES:
             /* Check if the guest negotiates properly, fall back to basics if it does not. */
+#ifdef IN_RING3
             if (VPCI_F_BAD_FEATURE & u32)
             {
                 Log(("%s WARNING! Guest failed to negotiate properly (guest=%x)\n",
@@ -666,45 +705,61 @@ PDMBOTHCBDECL(int) vpciIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
             else
                 pState->uGuestFeatures = u32;
             g_VPCIDevices[pState->enmDevType].pfnSetHostFeatures(pState, pState->uGuestFeatures);
+#else
+            rc = VINF_IOM_HC_IOPORT_WRITE;
+#endif
             break;
 
         case VPCI_QUEUE_PFN:
+#ifdef IN_RING3
             /*
              * The guest is responsible for allocating the pages for queues,
              * here it provides us with the page number of descriptor table.
              * Note that we provide the size of the queue to the guest via
              * VIRTIO_PCI_QUEUE_NUM.
              */
-            pState->pQueues[pState->uQueueSelector].uPageNumber = u32;
+            pState->Queues[pState->uQueueSelector].uPageNumber = u32;
             if (u32)
-                vqueueInit(&pState->pQueues[pState->uQueueSelector], u32);
+                vqueueInit(&pState->Queues[pState->uQueueSelector], u32);
             else
                 g_VPCIDevices[pState->enmDevType].pfnReset(pState);
+#else
+            rc = VINF_IOM_HC_IOPORT_WRITE;
+#endif
             break;
 
         case VPCI_QUEUE_SEL:
+#ifdef IN_RING3
             Assert(cb == 2);
             u32 &= 0xFFFF;
             if (u32 < g_VPCIDevices[pState->enmDevType].nQueues)
                 pState->uQueueSelector = u32;
             else
                 Log3(("%s virtioIOPortOut: Invalid queue selector %08x\n", szInst, u32));
+#else
+            rc = VINF_IOM_HC_IOPORT_WRITE;
+#endif
             break;
 
         case VPCI_QUEUE_NOTIFY:
+#ifdef IN_RING3
             Assert(cb == 2);
             u32 &= 0xFFFF;
             if (u32 < g_VPCIDevices[pState->enmDevType].nQueues)
-                if (pState->pQueues[u32].VRing.addrDescriptors)
-                    pState->pQueues[u32].pfnCallback(pState, &pState->pQueues[u32]);
+                if (pState->Queues[u32].VRing.addrDescriptors)
+                    pState->Queues[u32].pfnCallback(pState, &pState->Queues[u32]);
                 else
                     Log(("%s The queue (#%d) being notified has not been initialized.\n",
                          INSTANCE(pState), u32));
             else
                 Log(("%s Invalid queue number (%d)\n", INSTANCE(pState), u32));
+#else
+            rc = VINF_IOM_HC_IOPORT_WRITE;
+#endif
             break;
 
         case VPCI_STATUS:
+#ifdef IN_RING3
             Assert(cb == 1);
             u32 &= 0xFF;
             fHasBecomeReady = !(pState->uStatus & VPCI_STATUS_DRV_OK) && (u32 & VPCI_STATUS_DRV_OK);
@@ -714,13 +769,20 @@ PDMBOTHCBDECL(int) vpciIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
                 g_VPCIDevices[pState->enmDevType].pfnReset(pState);
             else if (fHasBecomeReady)
                 g_VPCIDevices[pState->enmDevType].pfnReady(pState);
+#else
+            rc = VINF_IOM_HC_IOPORT_WRITE;
+#endif
             break;
 
         default:
+#ifdef IN_RING3
             if (port >= VPCI_CONFIG)
                 rc = g_VPCIDevices[pState->enmDevType].pfnSetConfig(pState, port - VPCI_CONFIG, cb, &u32);
             else
                 rc = PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "%s virtioIOPortOut: no valid port at offset port=%RTiop cb=%08x\n", szInst, port, cb);
+#else
+            rc = VINF_IOM_HC_IOPORT_WRITE;
+#endif
             break;
     }
 
@@ -911,14 +973,14 @@ static void vpciDumpState(PVPCISTATE pState, const char *pcszCaller)
               "  uNextAvailIndex       = %u\n"
               "  uNextUsedIndex        = %u\n"
               "  uPageNumber           = %x\n",
-              g_VPCIDevices[pState->enmDevType].pfnGetQueueName(pState, &pState->pQueues[i]),
-              pState->pQueues[i].VRing.uSize,
-              pState->pQueues[i].VRing.addrDescriptors,
-              pState->pQueues[i].VRing.addrAvail,
-              pState->pQueues[i].VRing.addrUsed,
-              pState->pQueues[i].uNextAvailIndex,
-              pState->pQueues[i].uNextUsedIndex,
-              pState->pQueues[i].uPageNumber));
+              pState->Queues[i].pcszName,
+              pState->Queues[i].VRing.uSize,
+              pState->Queues[i].VRing.addrDescriptors,
+              pState->Queues[i].VRing.addrAvail,
+              pState->Queues[i].VRing.addrUsed,
+              pState->Queues[i].uNextAvailIndex,
+              pState->Queues[i].uNextUsedIndex,
+              pState->Queues[i].uPageNumber));
 
 }
 #else
@@ -950,13 +1012,13 @@ static DECLCALLBACK(int) vpciSaveExec(PVPCISTATE pState, PSSMHANDLE pSSM)
     /* Save queue states */
     for (unsigned i = 0; i < g_VPCIDevices[pState->enmDevType].nQueues; i++)
     {
-        rc = SSMR3PutU16(pSSM, pState->pQueues[i].VRing.uSize);
+        rc = SSMR3PutU16(pSSM, pState->Queues[i].VRing.uSize);
         AssertRCReturn(rc, rc);
-        rc = SSMR3PutU32(pSSM, pState->pQueues[i].uPageNumber);
+        rc = SSMR3PutU32(pSSM, pState->Queues[i].uPageNumber);
         AssertRCReturn(rc, rc);
-        rc = SSMR3PutU16(pSSM, pState->pQueues[i].uNextAvailIndex);
+        rc = SSMR3PutU16(pSSM, pState->Queues[i].uNextAvailIndex);
         AssertRCReturn(rc, rc);
-        rc = SSMR3PutU16(pSSM, pState->pQueues[i].uNextUsedIndex);
+        rc = SSMR3PutU16(pSSM, pState->Queues[i].uNextUsedIndex);
         AssertRCReturn(rc, rc);
     }
 
@@ -991,17 +1053,17 @@ static DECLCALLBACK(int) vpciLoadExec(PVPCISTATE pState, PSSMHANDLE pSSM, uint32
         /* Restore queues */
         for (unsigned i = 0; i < g_VPCIDevices[pState->enmDevType].nQueues; i++)
         {
-            rc = SSMR3GetU16(pSSM, &pState->pQueues[i].VRing.uSize);
+            rc = SSMR3GetU16(pSSM, &pState->Queues[i].VRing.uSize);
             AssertRCReturn(rc, rc);
-            rc = SSMR3GetU32(pSSM, &pState->pQueues[i].uPageNumber);
+            rc = SSMR3GetU32(pSSM, &pState->Queues[i].uPageNumber);
             AssertRCReturn(rc, rc);
 
-            if (pState->pQueues[i].uPageNumber)
-                vqueueInit(&pState->pQueues[i], pState->pQueues[i].uPageNumber);
+            if (pState->Queues[i].uPageNumber)
+                vqueueInit(&pState->Queues[i], pState->Queues[i].uPageNumber);
 
-            rc = SSMR3GetU16(pSSM, &pState->pQueues[i].uNextAvailIndex);
+            rc = SSMR3GetU16(pSSM, &pState->Queues[i].uNextAvailIndex);
             AssertRCReturn(rc, rc);
-            rc = SSMR3GetU16(pSSM, &pState->pQueues[i].uNextUsedIndex);
+            rc = SSMR3GetU16(pSSM, &pState->Queues[i].uNextUsedIndex);
             AssertRCReturn(rc, rc);
         }
     }
@@ -1045,15 +1107,12 @@ DECLCALLBACK(int) vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
     RTStrPrintf(pState->szInstance, sizeof(pState->szInstance), g_VPCIDevices[enmDevType].pcszNameFmt, iInstance);
     pState->enmDevType   = enmDevType;
 
-    /* Allocate queues */
-    pState->pQueues      = (VQUEUE*)RTMemAllocZ(sizeof(VQUEUE) * g_VPCIDevices[enmDevType].nQueues);
-
     pState->pDevInsR3    = pDevIns;
     pState->pDevInsR0    = PDMDEVINS_2_R0PTR(pDevIns);
     pState->pDevInsRC    = PDMDEVINS_2_RCPTR(pDevIns);
     pState->led.u32Magic = PDMLED_MAGIC;
 
-    pState->ILeds.pfnQueryStatusLed          = vpciQueryStatusLed;
+    pState->ILeds.pfnQueryStatusLed = vpciQueryStatusLed;
 
     /* Initialize critical section. */
     rc = PDMDevHlpCritSectInit(pDevIns, &pState->cs, pState->szInstance);
@@ -1103,13 +1162,9 @@ static DECLCALLBACK(int) vpciDestruct(VPCISTATE* pState)
 {
     Log(("%s Destroying PCI instance\n", INSTANCE(pState)));
 
-    if (pState->pQueues)
-        RTMemFree(pState->pQueues);
-
     if (PDMCritSectIsInitialized(&pState->cs))
-    {
         PDMR3CritSectDelete(&pState->cs);
-    }
+    
     return VINF_SUCCESS;
 }
 
@@ -1137,15 +1192,16 @@ static DECLCALLBACK(void) vpciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 }
 
 PVQUEUE vpciAddQueue(VPCISTATE* pState, unsigned uSize,
-                     void (*pfnCallback)(void *pvState, PVQUEUE pQueue))
+                     void (*pfnCallback)(void *pvState, PVQUEUE pQueue),
+                     const char *pcszName)
 {
     PVQUEUE pQueue = NULL;
     /* Find an empty queue slot */
     for (unsigned i = 0; i < g_VPCIDevices[pState->enmDevType].nQueues; i++)
     {
-        if (pState->pQueues[i].VRing.uSize == 0)
+        if (pState->Queues[i].VRing.uSize == 0)
         {
-            pQueue = &pState->pQueues[i];
+            pQueue = &pState->Queues[i];
             break;
         }
     }
@@ -1160,6 +1216,7 @@ PVQUEUE vpciAddQueue(VPCISTATE* pState, unsigned uSize,
         pQueue->VRing.addrDescriptors = 0;
         pQueue->uPageNumber = 0;
         pQueue->pfnCallback = pfnCallback;
+        pQueue->pcszName = pcszName;
     }
 
     return pQueue;
@@ -1168,6 +1225,7 @@ PVQUEUE vpciAddQueue(VPCISTATE* pState, unsigned uSize,
 
 #endif /* IN_RING3 */
 
+#endif /* VBOX_DEVICE_STRUCT_TESTCASE */
 
 //------------------------- Tear off here: vnet -------------------------------
 
@@ -1228,6 +1286,9 @@ struct VNetState_st
     R0PTRTYPE(PPDMQUEUE)    pCanRxQueueR0;           /**< Rx wakeup signaller - R0. */
     RCPTRTYPE(PPDMQUEUE)    pCanRxQueueRC;           /**< Rx wakeup signaller - RC. */
 
+#if HC_ARCH_BITS == 64
+    uint32_t    padding;
+#endif
     PTMTIMERR3  pLinkUpTimer;                             /**< Link Up(/Restore) Timer. */
 
     /** PCI config area holding MAC address as well as TBD. */
@@ -1243,13 +1304,14 @@ struct VNetState_st
     /** Locked state -- no state alteration possible. */
     bool        fLocked;
 
-    PVQUEUE     pRxQueue;
-    PVQUEUE     pTxQueue;
-    PVQUEUE     pCtlQueue;
-    /* Receive-blocking-related fields ***************************************/
-
     /** N/A: */
     bool volatile fMaybeOutOfSpace;
+
+    R3PTRTYPE(PVQUEUE) pRxQueue;
+    R3PTRTYPE(PVQUEUE) pTxQueue;
+    R3PTRTYPE(PVQUEUE) pCtlQueue;
+    /* Receive-blocking-related fields ***************************************/
+
     /** EMT: Gets signalled when more RX descriptors become available. */
     RTSEMEVENT  hEventMoreRxDescAvail;
 
@@ -1268,6 +1330,8 @@ struct VNetState_st
 };
 typedef struct VNetState_st VNETSTATE;
 typedef VNETSTATE *PVNETSTATE;
+
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 #define VNETHDR_GSO_NONE 0
 
@@ -1292,20 +1356,6 @@ AssertCompileMemberOffset(VNETSTATE, VPCI, 0);
 #undef IFACE_TO_STATE
 #define IFACE_TO_STATE(pIface, ifaceName) ((VNETSTATE *)((char*)pIface - RT_OFFSETOF(VNETSTATE, ifaceName)))
 #define STATUS pState->config.uStatus
-
-#ifdef DEBUG
-static const char *vnetGetQueueName(void *pvState, PVQUEUE pQueue)
-{
-    VNETSTATE *pState = (VNETSTATE *)pvState;
-    if (pQueue == pState->pRxQueue)
-        return "RX ";
-    else if (pQueue == pState->pTxQueue)
-        return "TX ";
-    else if (pQueue == pState->pCtlQueue)
-        return "CTL";
-    return "Invalid";
-}
-#endif /* DEBUG */
 
 DECLINLINE(int) vnetCsEnter(PVNETSTATE pState, int rcBusy)
 {
@@ -1360,6 +1410,7 @@ PDMBOTHCBDECL(int) vnetSetConfig(void *pvState, uint32_t port, uint32_t cb, void
     return VINF_SUCCESS;
 }
 
+#ifdef IN_RING3
 /**
  * Hardware reset. Revert all registers to initial values.
  *
@@ -1377,7 +1428,6 @@ PDMBOTHCBDECL(void) vnetReset(void *pvState)
         STATUS = 0;
 }
 
-#ifdef IN_RING3
 /**
  * Wakeup the RX thread.
  */
@@ -1959,9 +2009,9 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /* Initialize PCI part first. */
     pState->VPCI.IBase.pfnQueryInterface     = vnetQueryInterface;
     rc = vpciConstruct(pDevIns, &pState->VPCI, iInstance, VIRTIO_NET_ID, sizeof(VNetPCIConfig));
-    pState->pRxQueue  = vpciAddQueue(&pState->VPCI, 256, vnetQueueReceive);
-    pState->pTxQueue  = vpciAddQueue(&pState->VPCI, 256, vnetQueueTransmit);
-    pState->pCtlQueue = vpciAddQueue(&pState->VPCI, 16,  vnetQueueControl);
+    pState->pRxQueue  = vpciAddQueue(&pState->VPCI, 256, vnetQueueReceive,  "RX ");
+    pState->pTxQueue  = vpciAddQueue(&pState->VPCI, 256, vnetQueueTransmit, "TX ");
+    pState->pCtlQueue = vpciAddQueue(&pState->VPCI, 16,  vnetQueueControl,  "CTL");
 
     Log(("%s Constructing new instance\n", INSTANCE(pState)));
 

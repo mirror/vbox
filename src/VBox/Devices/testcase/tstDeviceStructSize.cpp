@@ -42,7 +42,7 @@
 #include "../Network/DevPCNet.cpp"
 #ifdef VBOX_WITH_VIRTIO
 # undef LOG_GROUP
-# include "../Network/DevVirtio.cpp"
+# include "../Network/DevVirtioNet.cpp"
 #endif
 #undef LOG_GROUP
 #include "../PC/DevACPI.cpp"
@@ -307,6 +307,8 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VMMDevState, CritSect, 8);
 #ifdef VBOX_WITH_VIRTIO
     CHECK_MEMBER_ALIGNMENT(VPCISTATE, cs, 8);
+    CHECK_MEMBER_ALIGNMENT(VPCISTATE, led, 4);
+    CHECK_MEMBER_ALIGNMENT(VPCISTATE, Queues, 8);
 #endif
 
     /*
