@@ -57,7 +57,7 @@ extern bool DevINIPConfigured(void);
 *   Defined types, constants and macros                                        *
 *******************************************************************************/
 
-/** Converts a pointer to VDIDISK::IMedia to a PVBOXDISK. */
+/** Converts a pointer to VBOXDISK::IMedia to a PVBOXDISK. */
 #define PDMIMEDIA_2_VBOXDISK(pInterface) \
     ( (PVBOXDISK)((uintptr_t)pInterface - RT_OFFSETOF(VBOXDISK, IMedia)) )
 
@@ -145,25 +145,10 @@ typedef struct VBOXDISK
     PVBOXIMAGE               pImages;
 } VBOXDISK, *PVBOXDISK;
 
+
 /*******************************************************************************
-*   Error reporting callback                                                   *
+*   Internal Functions                                                         *
 *******************************************************************************/
-
-static void drvvdErrorCallback(void *pvUser, int rc, RT_SRC_POS_DECL,
-                               const char *pszFormat, va_list va)
-{
-    PPDMDRVINS pDrvIns = (PPDMDRVINS)pvUser;
-    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
-    if (pThis->fErrorUseRuntime)
-        /* We must not pass VMSETRTERR_FLAGS_FATAL as it could lead to a
-         * deadlock: We are probably executed in a thread context != EMT
-         * and the EM thread would wait until every thread is suspended
-         * but we would wait for the EM thread ... */
-        pDrvIns->pDrvHlp->pfnVMSetRuntimeErrorV(pDrvIns, /* fFlags=*/ 0, "DrvVD", pszFormat, va);
-    else
-        pDrvIns->pDrvHlp->pfnVMSetErrorV(pDrvIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
-}
-
 
 /**
  * Internal: allocate new image descriptor and put it in the list
@@ -196,6 +181,51 @@ static void drvvdFreeImages(PVBOXDISK pThis)
         pThis->pImages = pThis->pImages->pNext;
         RTMemFree(p);
     }
+}
+
+
+/**
+ * Undo the temporary read-only status of the image.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The driver instance data.
+ */
+static int drvvdSetWritable(PVBOXDISK pThis)
+{
+    int rc = VINF_SUCCESS;
+    if (pThis->fTempReadOnly)
+    {
+        unsigned uOpenFlags;
+        rc = VDGetOpenFlags(pThis->pDisk, VD_LAST_IMAGE, &uOpenFlags);
+        AssertRC(rc);
+        uOpenFlags &= ~VD_OPEN_FLAGS_READONLY;
+        rc = VDSetOpenFlags(pThis->pDisk, VD_LAST_IMAGE, uOpenFlags);
+        if (RT_SUCCESS(rc))
+            pThis->fTempReadOnly = false;
+        else
+            AssertRC(rc);
+    }
+    return rc;
+}
+
+
+/*******************************************************************************
+*   Error reporting callback                                                   *
+*******************************************************************************/
+
+static void drvvdErrorCallback(void *pvUser, int rc, RT_SRC_POS_DECL,
+                               const char *pszFormat, va_list va)
+{
+    PPDMDRVINS pDrvIns = (PPDMDRVINS)pvUser;
+    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+    if (pThis->fErrorUseRuntime)
+        /* We must not pass VMSETRTERR_FLAGS_FATAL as it could lead to a
+         * deadlock: We are probably executed in a thread context != EMT
+         * and the EM thread would wait until every thread is suspended
+         * but we would wait for the EM thread ... */
+        pDrvIns->pDrvHlp->pfnVMSetRuntimeErrorV(pDrvIns, /* fFlags=*/ 0, "DrvVD", pszFormat, va);
+    else
+        pDrvIns->pDrvHlp->pfnVMSetErrorV(pDrvIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
 }
 
 /*******************************************************************************
@@ -793,9 +823,138 @@ static DECLCALLBACK(void *) drvvdQueryInterface(PPDMIBASE pInterface,
 
 
 /*******************************************************************************
+*   Saved state notification methods                                           *
+*******************************************************************************/
+
+/**
+ * Load done callback for re-opening the image writable during teleportation.
+ *
+ * This is called both for successful and failed load runs, we only care about
+ * successfull ones.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns         The driver instance.
+ * @param   pSSM            The saved state handle.
+ */
+static DECLCALLBACK(int) drvvdLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
+{
+    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+    Assert(!pThis->fErrorUseRuntime);
+
+    /* Drop out if we don't have any work to do or if it's a failed load. */
+    if (   !pThis->fTempReadOnly
+        || RT_FAILURE(SSMR3HandleGetStatus(pSSM)))
+        return VINF_SUCCESS;
+
+    int rc = drvvdSetWritable(pThis);
+    if (RT_FAILURE(rc)) /** @todo does the bugger set any errors? */
+        return SSMR3SetLoadError(pSSM, rc, RT_SRC_POS,
+                                 N_("Failed to write lock the images"));
+    return VINF_SUCCESS;
+}
+
+
+/*******************************************************************************
 *   Driver methods                                                             *
 *******************************************************************************/
 
+static DECLCALLBACK(void) drvvdPowerOff(PPDMDRVINS pDrvIns)
+{
+    LogFlow(("%s:\n", __FUNCTION__));
+    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+
+    /*
+     * We must close the disk here to ensure that
+     * the backend closes all files before the
+     * async transport driver is destructed.
+     */
+    int rc = VDCloseAll(pThis->pDisk);
+    AssertRC(rc);
+}
+
+/**
+ * VM resume notification that we use to undo what the temporary read-only image
+ * mode set by drvvdSuspend.
+ *
+ * Also switch to runtime error mode if we're resuming after a state load
+ * without having been powered on first.
+ *
+ * @param   pDrvIns     The driver instance data.
+ *
+ * @todo    The VMSetError vs VMSetRuntimeError mess must be fixed elsewhere,
+ *          we're making assumptions about Main behavior here!
+ */
+static DECLCALLBACK(void) drvvdResume(PPDMDRVINS pDrvIns)
+{
+    LogFlow(("%s:\n", __FUNCTION__));
+    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+    drvvdSetWritable(pThis);
+    pThis->fErrorUseRuntime = true;
+}
+
+/**
+ * The VM is being suspended, temporarily change to read-only image mode.
+ *
+ * This is important for several reasons:
+ *   -# It makes sure that there are no pending writes to the image.  Most
+ *      backends implements this by closing and reopening the image in read-only
+ *      mode.
+ *   -# It allows Main to read the images during snapshotting without having
+ *      to account for concurrent writes.
+ *   -# This is essential for making teleportation targets sharing images work
+ *      right.  Both with regards to caching and with regards to file sharing
+ *      locks (RTFILE_O_DENY_*).  (See also drvvdLoadDone.)
+ *
+ * @param   pDrvIns     The driver instance data.
+ */
+static DECLCALLBACK(void) drvvdSuspend(PPDMDRVINS pDrvIns)
+{
+    LogFlow(("%s:\n", __FUNCTION__));
+    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+    if (!VDIsReadOnly(pThis->pDisk))
+    {
+        unsigned uOpenFlags;
+        int rc = VDGetOpenFlags(pThis->pDisk, VD_LAST_IMAGE, &uOpenFlags);
+        AssertRC(rc);
+        uOpenFlags |= VD_OPEN_FLAGS_READONLY;
+        rc = VDSetOpenFlags(pThis->pDisk, VD_LAST_IMAGE, uOpenFlags);
+        AssertRC(rc);
+        pThis->fTempReadOnly = true;
+    }
+}
+
+/**
+ * VM PowerOn notification for undoing the TempReadOnly config option and
+ * changing to runtime error mode.
+ *
+ * @param   pDrvIns     The driver instance data.
+ *
+ * @todo    The VMSetError vs VMSetRuntimeError mess must be fixed elsewhere,
+ *          we're making assumptions about Main behavior here!
+ */
+static DECLCALLBACK(void) drvvdPowerOn(PPDMDRVINS pDrvIns)
+{
+    LogFlow(("%s:\n", __FUNCTION__));
+    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+    drvvdSetWritable(pThis);
+    pThis->fErrorUseRuntime = true;
+}
+
+/**
+ * @copydoc FNPDMDRVDESTRUCT
+ */
+static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
+{
+    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+    LogFlow(("%s:\n", __FUNCTION__));
+
+    if (VALID_PTR(pThis->pDisk))
+    {
+        VDDestroy(pThis->pDisk);
+        pThis->pDisk = NULL;
+    }
+    drvvdFreeImages(pThis);
+}
 
 /**
  * Construct a VBox disk media driver instance.
@@ -811,7 +970,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     int rc = VINF_SUCCESS;
     char *pszName = NULL;   /**< The path of the disk image file. */
     char *pszFormat = NULL; /**< The format backed to use for this image. */
-    bool fReadOnly;         /**< True if the media is readonly. */
+    bool fReadOnly;         /**< True if the media is read-only. */
     bool fHonorZeroWrites;  /**< True if zero blocks should be written. */
 
     /*
@@ -1095,7 +1254,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         {
            rc = PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                     N_("Failed to open image '%s' in %s mode rc=%Rrc"), pszName,
-                                    (uOpenFlags & VD_OPEN_FLAGS_READONLY) ? "readonly" : "read-write", rc);
+                                    (uOpenFlags & VD_OPEN_FLAGS_READONLY) ? "read-only" : "read-write", rc);
            break;
         }
 
@@ -1110,6 +1269,17 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         pCurNode = CFGMR3GetParent(pCurNode);
     }
 
+    /*
+     * Register a load-done callback so we can undo TempReadOnly config before
+     * we get to drvvdResume.  Autoamtically deregistered upon destruction.
+     */
+    if (RT_SUCCESS(rc))
+        rc = PDMDrvHlpSSMRegisterEx(pDrvIns, 0 /* version */, 0 /* cbGuess */,
+                                    NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/, NULL /*pfnLiveVote*/,
+                                    NULL /*pfnSavePrep*/, NULL /*pfnSaveExec*/, NULL /*pfnSaveDone*/,
+                                    NULL /*pfnDonePrep*/, NULL /*pfnLoadExec*/, drvvdLoadDone);
+
+
     if (RT_FAILURE(rc))
     {
         if (VALID_PTR(pszName))
@@ -1118,99 +1288,10 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             MMR3HeapFree(pszFormat);
         /* drvvdDestruct does the rest. */
     }
-    else
-    {
-        /* Switch to runtime error facility. */
-        pThis->fErrorUseRuntime = true;
-    }
-
-    /* else: drvvdDestruct cleans up. */
 
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
-
-/**
- * Destruct a driver instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that any non-VM
- * resources can be freed correctly.
- *
- * @param   pDrvIns     The driver instance data.
- */
-static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
-{
-    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
-    LogFlow(("%s:\n", __FUNCTION__));
-
-    if (VALID_PTR(pThis->pDisk))
-    {
-        VDDestroy(pThis->pDisk);
-        pThis->pDisk = NULL;
-    }
-    drvvdFreeImages(pThis);
-}
-
-
-/**
- * When the VM has been suspended we'll change the image mode to read-only
- * so that main and others can read the VDIs. This is important when
- * saving state and so forth.
- *
- * @param   pDrvIns     The driver instance data.
- */
-static DECLCALLBACK(void) drvvdSuspend(PPDMDRVINS pDrvIns)
-{
-    LogFlow(("%s:\n", __FUNCTION__));
-    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
-    if (!VDIsReadOnly(pThis->pDisk))
-    {
-        unsigned uOpenFlags;
-        int rc = VDGetOpenFlags(pThis->pDisk, VD_LAST_IMAGE, &uOpenFlags);
-        AssertRC(rc);
-        uOpenFlags |= VD_OPEN_FLAGS_READONLY;
-        rc = VDSetOpenFlags(pThis->pDisk, VD_LAST_IMAGE, uOpenFlags);
-        AssertRC(rc);
-        pThis->fTempReadOnly = true;
-    }
-}
-
-/**
- * Before the VM resumes we'll have to undo the read-only mode change
- * done in drvvdSuspend.
- *
- * @param   pDrvIns     The driver instance data.
- */
-static DECLCALLBACK(void) drvvdResumeOrPowerOn(PPDMDRVINS pDrvIns)
-{
-    LogFlow(("%s:\n", __FUNCTION__));
-    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
-    if (pThis->fTempReadOnly)
-    {
-        unsigned uOpenFlags;
-        int rc = VDGetOpenFlags(pThis->pDisk, VD_LAST_IMAGE, &uOpenFlags);
-        AssertRC(rc);
-        uOpenFlags &= ~VD_OPEN_FLAGS_READONLY;
-        rc = VDSetOpenFlags(pThis->pDisk, VD_LAST_IMAGE, uOpenFlags);
-        AssertRC(rc);
-        pThis->fTempReadOnly = false;
-    }
-}
-
-static DECLCALLBACK(void) drvvdPowerOff(PPDMDRVINS pDrvIns)
-{
-    LogFlow(("%s:\n", __FUNCTION__));
-    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
-
-    /*
-     * We must close the disk here to ensure that
-     * the backend closes all files before the
-     * async transport driver is destructed.
-     */
-    int rc = VDCloseAll(pThis->pDisk);
-    AssertRC(rc);
-}
-
 
 /**
  * VBox disk container media driver registration record.
@@ -1238,13 +1319,13 @@ const PDMDRVREG g_DrvVD =
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
-    drvvdResumeOrPowerOn,
+    drvvdPowerOn,
     /* pfnReset */
     NULL,
     /* pfnSuspend */
     drvvdSuspend,
     /* pfnResume */
-    drvvdResumeOrPowerOn,
+    drvvdResume,
     /* pfnAttach */
     NULL,
     /* pfnDetach */
