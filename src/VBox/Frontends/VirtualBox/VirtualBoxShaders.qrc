@@ -12,5 +12,7 @@
     <file alias="mainOverlay.c">shaders/mainOverlay.c</file>
     <file alias="mainOverlayNoCKey.c">shaders/mainOverlayNoCKey.c</file>
     <file alias="splitBGRA.c">shaders/splitBGRA.c</file>
+    <file alias="mainOverlayNoDiscard.c">shaders/mainOverlayNoDiscard.c</file>
+    <file alias="mainOverlayNoDiscard2.c">shaders/mainOverlayNoDiscard2.c</file>
  </qresource>
  </RCC>

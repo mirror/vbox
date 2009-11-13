@@ -43,247 +43,177 @@ void vboxVHWASurfDescFree(PVBOXVHWASURFDESC pDesc)
 #define VBOX_DD_VHWA_PAIR(_v) {VBOX_DD(_v), VBOX_VHWA(_v)}
 #define VBOX_DD_DUMMY_PAIR(_v) {VBOX_DD(_v), 0}
 
+#define VBOXVHWA_SUPPORTED_CAPS ( \
+        VBOXVHWA_CAPS_BLT \
+        | VBOXVHWA_CAPS_BLTCOLORFILL \
+        | VBOXVHWA_CAPS_BLTFOURCC \
+        | VBOXVHWA_CAPS_BLTSTRETCH \
+        | VBOXVHWA_CAPS_BLTQUEUE \
+        | VBOXVHWA_CAPS_OVERLAY \
+        | VBOXVHWA_CAPS_OVERLAYFOURCC \
+        | VBOXVHWA_CAPS_OVERLAYSTRETCH \
+        | VBOXVHWA_CAPS_OVERLAYCANTCLIP \
+        | VBOXVHWA_CAPS_COLORKEY \
+        | VBOXVHWA_CAPS_COLORKEYHWASSIST \
+        )
 
-static const uint32_t g_SupportedCapList[][2] = {
-        VBOX_DD_VHWA_PAIR(CAPS_BLT),
-        VBOX_DD_VHWA_PAIR(CAPS_BLTQUEUE),
-        VBOX_DD_VHWA_PAIR(CAPS_BLTCOLORFILL),
-        VBOX_DD_VHWA_PAIR(CAPS_BLTFOURCC),
-        VBOX_DD_VHWA_PAIR(CAPS_BLTSTRETCH),
-        VBOX_DD_VHWA_PAIR(CAPS_OVERLAY),
-        VBOX_DD_VHWA_PAIR(CAPS_OVERLAYCANTCLIP),
-        VBOX_DD_VHWA_PAIR(CAPS_OVERLAYFOURCC),
-        VBOX_DD_VHWA_PAIR(CAPS_OVERLAYSTRETCH),
-        VBOX_DD_VHWA_PAIR(CAPS_COLORKEY),
-        VBOX_DD_VHWA_PAIR(CAPS_COLORKEYHWASSIST)
-};
+#define VBOXVHWA_SUPPORTED_SCAPS ( \
+        VBOXVHWA_SCAPS_BACKBUFFER \
+        | VBOXVHWA_SCAPS_COMPLEX \
+        | VBOXVHWA_SCAPS_FLIP \
+        | VBOXVHWA_SCAPS_FRONTBUFFER \
+        | VBOXVHWA_SCAPS_OFFSCREENPLAIN \
+        | VBOXVHWA_SCAPS_OVERLAY \
+        | VBOXVHWA_SCAPS_PRIMARYSURFACE \
+        | VBOXVHWA_SCAPS_SYSTEMMEMORY \
+        | VBOXVHWA_SCAPS_VIDEOMEMORY \
+        | VBOXVHWA_SCAPS_VISIBLE \
+        | VBOXVHWA_SCAPS_LOCALVIDMEM \
+        )
 
-static const uint32_t g_SupportedCap2List[][2] = {
-        VBOX_DD_VHWA_PAIR(CAPS2_COPYFOURCC),
-};
+#define VBOXVHWA_SUPPORTED_SCAPS2 ( \
+        VBOXVHWA_CAPS2_CANRENDERWINDOWED \
+        | VBOXVHWA_CAPS2_WIDESURFACES \
+        | VBOXVHWA_CAPS2_COPYFOURCC \
+        )
 
+#define VBOXVHWA_SUPPORTED_PF ( \
+        VBOXVHWA_PF_RGB \
+        | VBOXVHWA_PF_RGBTOYUV \
+        | VBOXVHWA_PF_YUV \
+        | VBOXVHWA_PF_FOURCC \
+        )
 
-static const uint32_t g_SupportedSCapList[][2] = {
-        VBOX_DD_VHWA_PAIR(SCAPS_FLIP),
-        VBOX_DD_VHWA_PAIR(SCAPS_PRIMARYSURFACE),
-        VBOX_DD_VHWA_PAIR(SCAPS_OVERLAY),
-        VBOX_DD_VHWA_PAIR(SCAPS_VISIBLE),
-        VBOX_DD_VHWA_PAIR(SCAPS_VIDEOMEMORY),
-        VBOX_DD_VHWA_PAIR(SCAPS_OFFSCREENPLAIN),
-        VBOX_DD_VHWA_PAIR(SCAPS_LOCALVIDMEM),
-        VBOX_DD_VHWA_PAIR(SCAPS_COMPLEX)
-};
+#define VBOXVHWA_SUPPORTED_SD ( \
+        VBOXVHWA_SD_BACKBUFFERCOUNT \
+        | VBOXVHWA_SD_CAPS \
+        | VBOXVHWA_SD_CKDESTBLT \
+        | VBOXVHWA_SD_CKDESTOVERLAY \
+        | VBOXVHWA_SD_CKSRCBLT \
+        | VBOXVHWA_SD_CKSRCOVERLAY \
+        | VBOXVHWA_SD_HEIGHT \
+        | VBOXVHWA_SD_PITCH \
+        | VBOXVHWA_SD_PIXELFORMAT \
+        | VBOXVHWA_SD_WIDTH \
+        )
 
-static const uint32_t gSupportedSDList[][2] = {
-        VBOX_DD_VHWA_PAIR(SD_BACKBUFFERCOUNT),
-        VBOX_DD_VHWA_PAIR(SD_CAPS),
-        VBOX_DD_VHWA_PAIR(SD_CKDESTBLT),
-        VBOX_DD_VHWA_PAIR(SD_CKDESTOVERLAY),
-        VBOX_DD_VHWA_PAIR(SD_CKSRCBLT),
-        VBOX_DD_VHWA_PAIR(SD_CKSRCOVERLAY),
-        VBOX_DD_VHWA_PAIR(SD_HEIGHT),
-        VBOX_DD_VHWA_PAIR(SD_PITCH),
-        VBOX_DD_VHWA_PAIR(SD_PIXELFORMAT),
-        VBOX_DD_VHWA_PAIR(SD_WIDTH),
-};
+#define VBOXVHWA_SUPPORTED_CKEYCAPS ( \
+        VBOXVHWA_CKEYCAPS_DESTBLT \
+        | VBOXVHWA_CKEYCAPS_DESTBLTCLRSPACE \
+        | VBOXVHWA_CKEYCAPS_DESTBLTCLRSPACEYUV \
+        | VBOXVHWA_CKEYCAPS_DESTBLTYUV \
+        | VBOXVHWA_CKEYCAPS_DESTOVERLAY \
+        | VBOXVHWA_CKEYCAPS_DESTOVERLAYCLRSPACE \
+        | VBOXVHWA_CKEYCAPS_DESTOVERLAYCLRSPACEYUV \
+        | VBOXVHWA_CKEYCAPS_DESTOVERLAYONEACTIVE \
+        | VBOXVHWA_CKEYCAPS_DESTOVERLAYYUV \
+        | VBOXVHWA_CKEYCAPS_SRCBLT \
+        | VBOXVHWA_CKEYCAPS_SRCBLTCLRSPACE \
+        | VBOXVHWA_CKEYCAPS_SRCBLTCLRSPACEYUV \
+        | VBOXVHWA_CKEYCAPS_SRCBLTYUV \
+        | VBOXVHWA_CKEYCAPS_SRCOVERLAY \
+        | VBOXVHWA_CKEYCAPS_SRCOVERLAYCLRSPACE \
+        | VBOXVHWA_CKEYCAPS_SRCOVERLAYCLRSPACEYUV \
+        | VBOXVHWA_CKEYCAPS_SRCOVERLAYONEACTIVE \
+        | VBOXVHWA_CKEYCAPS_SRCOVERLAYYUV \
+        | VBOXVHWA_CKEYCAPS_NOCOSTOVERLAY \
+        )
 
-static const uint32_t g_SupportedPFList[][2] = {
-        VBOX_DD_VHWA_PAIR(PF_RGB),
-        VBOX_DD_VHWA_PAIR(PF_RGBTOYUV),
-        VBOX_DD_VHWA_PAIR(PF_YUV),
-        VBOX_DD_VHWA_PAIR(PF_FOURCC)
-};
+#define VBOXVHWA_SUPPORTED_CKEY ( \
+        VBOXVHWA_CKEY_COLORSPACE \
+        | VBOXVHWA_CKEY_DESTBLT \
+        | VBOXVHWA_CKEY_DESTOVERLAY \
+        | VBOXVHWA_CKEY_SRCBLT \
+        | VBOXVHWA_CKEY_SRCOVERLAY \
+        )
 
-static const uint32_t g_SupportedCKeyCapList[][2] = {
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_DESTBLT),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_DESTBLTCLRSPACE),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_DESTBLTCLRSPACEYUV),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_DESTBLTYUV),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_DESTOVERLAY),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_DESTOVERLAYCLRSPACE),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_DESTOVERLAYCLRSPACEYUV),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_DESTOVERLAYONEACTIVE),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_DESTOVERLAYYUV),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_NOCOSTOVERLAY),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_SRCBLT),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_SRCBLTCLRSPACE),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_SRCBLTCLRSPACEYUV),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_SRCBLTYUV),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_SRCOVERLAY),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_SRCOVERLAYCLRSPACE),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_SRCOVERLAYCLRSPACEYUV),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_SRCOVERLAYONEACTIVE),
-        VBOX_DD_VHWA_PAIR(CKEYCAPS_SRCOVERLAYYUV)
-};
-
-//static const uint32_t g_SupportedOverList[][2] = {
-//        VBOX_DD_VHWA_PAIR(OVER_DDFX),
-//        VBOX_DD_VHWA_PAIR(OVER_HIDE),
-//        VBOX_DD_VHWA_PAIR(OVER_KEYDEST),
-//        VBOX_DD_VHWA_PAIR(OVER_KEYDESTOVERRIDE),
-//        VBOX_DD_VHWA_PAIR(OVER_KEYSRC),
-//        VBOX_DD_VHWA_PAIR(OVER_KEYSRCOVERRIDE),
-//        VBOX_DD_VHWA_PAIR(OVER_SHOW)
-//};
-//
-//static const uint32_t g_SupportedCKeyList[][2] = {
-//        VBOX_DD_VHWA_PAIR(CKEY_COLORSPACE),
-//        VBOX_DD_VHWA_PAIR(CKEY_DESTBLT),
-//        VBOX_DD_VHWA_PAIR(CKEY_DESTOVERLAY),
-//        VBOX_DD_VHWA_PAIR(CKEY_SRCBLTE),
-//        VBOX_DD_VHWA_PAIR(CKEY_SRCOVERLAY)
-//};
-
-static uint32_t g_SupportedVHWACaps;
-static uint32_t g_SupportedVHWASCaps;
-static uint32_t g_SupportedVHWAPFs;
-static uint32_t g_SupportedVHWASDs;
-static uint32_t g_SupportedDDCaps;
-static uint32_t g_SupportedDDSCaps;
-static uint32_t g_SupportedDDPFs;
-static uint32_t g_SupportedDDSDs;
-
-static uint32_t g_SupportedVHWACKeyCaps;
-static uint32_t g_SupportedDDCKeyCaps;
-
-static uint32_t g_SupportedOVERs;
-static uint32_t g_SupportedCKEYs;
-
+#define VBOXVHWA_SUPPORTED_OVER ( \
+        VBOXVHWA_OVER_DDFX \
+        | VBOXVHWA_OVER_HIDE \
+        | VBOXVHWA_OVER_KEYDEST \
+        | VBOXVHWA_OVER_KEYDESTOVERRIDE \
+        | VBOXVHWA_OVER_KEYSRC \
+        | VBOXVHWA_OVER_KEYSRCOVERRIDE \
+        | VBOXVHWA_OVER_SHOW \
+        )
 
 void vboxVHWAInit()
 {
-    int i;
-    g_SupportedVHWACaps = 0;
-    g_SupportedVHWASCaps = 0;
-    g_SupportedVHWAPFs = 0;
-    g_SupportedVHWASDs = 0;
-    g_SupportedDDCaps = 0;
-    g_SupportedDDSCaps = 0;
-    g_SupportedDDPFs = 0;
-    g_SupportedDDSDs = 0;
-
-    g_SupportedVHWACKeyCaps = 0;
-    g_SupportedDDCKeyCaps = 0;
-
-    for(i = 0; i < sizeof(g_SupportedCapList)/sizeof(g_SupportedCapList[0]); i++)
-    {
-        g_SupportedDDCaps |= g_SupportedCapList[i][0];
-        g_SupportedVHWACaps |= g_SupportedCapList[i][1];
-    }
-
-    for(i = 0; i < sizeof(g_SupportedSCapList)/sizeof(g_SupportedSCapList[0]); i++)
-    {
-        g_SupportedDDSCaps |= g_SupportedSCapList[i][0];
-        g_SupportedVHWASCaps |= g_SupportedSCapList[i][1];
-    }
-
-    for(i = 0; i < sizeof(g_SupportedPFList)/sizeof(g_SupportedPFList[0]); i++)
-    {
-        g_SupportedDDPFs |= g_SupportedPFList[i][0];
-        g_SupportedVHWAPFs |= g_SupportedPFList[i][1];
-    }
-
-    for(i = 0; i < sizeof(gSupportedSDList)/sizeof(gSupportedSDList[0]); i++)
-    {
-        g_SupportedDDSDs |= gSupportedSDList[i][0];
-        g_SupportedVHWASDs |= gSupportedSDList[i][1];
-    }
-
-    for(i = 0; i < sizeof(g_SupportedCKeyCapList)/sizeof(g_SupportedCKeyCapList[0]); i++)
-    {
-        g_SupportedDDCKeyCaps |= g_SupportedCKeyCapList[i][0];
-        g_SupportedVHWACKeyCaps |= g_SupportedCKeyCapList[i][1];
-    }
-
-    g_SupportedOVERs = VBOXVHWA_OVER_DDFX
-                       | VBOXVHWA_OVER_HIDE
-                       | VBOXVHWA_OVER_KEYDEST
-                       | VBOXVHWA_OVER_KEYDESTOVERRIDE
-                       | VBOXVHWA_OVER_KEYSRC
-                       | VBOXVHWA_OVER_KEYSRCOVERRIDE
-                       | VBOXVHWA_OVER_SHOW;
-
-    g_SupportedCKEYs = VBOXVHWA_CKEY_COLORSPACE
-                       | VBOXVHWA_CKEY_DESTBLT
-                       | VBOXVHWA_CKEY_DESTOVERLAY
-                       | VBOXVHWA_CKEY_SRCBLT
-                       | VBOXVHWA_CKEY_SRCOVERLAY;
 }
 
 void vboxVHWATerm()
 {
-
 }
 
 uint32_t vboxVHWAUnsupportedDDCAPS(uint32_t caps)
 {
-    return caps & (~g_SupportedDDCaps);
+    return caps & (~VBOXVHWA_SUPPORTED_CAPS);
 }
 
 uint32_t vboxVHWAUnsupportedDDSCAPS(uint32_t caps)
 {
-    return caps & (~g_SupportedDDSCaps);
+    return caps & (~VBOXVHWA_SUPPORTED_SCAPS);
 }
 
 uint32_t vboxVHWAUnsupportedDDPFS(uint32_t caps)
 {
-    return caps & (~g_SupportedDDPFs);
+    return caps & (~VBOXVHWA_SUPPORTED_PF);
 }
 
 uint32_t vboxVHWAUnsupportedDSS(uint32_t caps)
 {
-    return caps & (~g_SupportedDDSDs);
+    return caps & (~VBOXVHWA_SUPPORTED_SD);
 }
 
 uint32_t vboxVHWAUnsupportedDDCEYCAPS(uint32_t caps)
 {
-    return caps & (~g_SupportedDDCKeyCaps);
+    return caps & (~VBOXVHWA_SUPPORTED_CKEYCAPS);
 }
 
 uint32_t vboxVHWASupportedDDCEYCAPS(uint32_t caps)
 {
-    return caps & (g_SupportedDDCKeyCaps);
+    return caps & (VBOXVHWA_SUPPORTED_CKEYCAPS);
 }
 
 
 uint32_t vboxVHWASupportedDDCAPS(uint32_t caps)
 {
-    return caps & (g_SupportedDDCaps);
+    return caps & (VBOXVHWA_SUPPORTED_CAPS);
 }
 
 uint32_t vboxVHWASupportedDDSCAPS(uint32_t caps)
 {
-    return caps & (g_SupportedDDSCaps);
+    return caps & (VBOXVHWA_SUPPORTED_SCAPS);
 }
 
 uint32_t vboxVHWASupportedDDPFS(uint32_t caps)
 {
-    return caps & (g_SupportedDDPFs);
+    return caps & (VBOXVHWA_SUPPORTED_PF);
 }
 
 uint32_t vboxVHWASupportedDSS(uint32_t caps)
 {
-    return caps & (g_SupportedDDSDs);
+    return caps & (VBOXVHWA_SUPPORTED_SD);
 }
 
 uint32_t vboxVHWASupportedOVERs(uint32_t caps)
 {
-    return caps & (g_SupportedOVERs);
+    return caps & (VBOXVHWA_SUPPORTED_OVER);
 }
 
 uint32_t vboxVHWAUnsupportedOVERs(uint32_t caps)
 {
-    return caps & (~g_SupportedOVERs);
+    return caps & (~VBOXVHWA_SUPPORTED_OVER);
 }
 
 uint32_t vboxVHWASupportedCKEYs(uint32_t caps)
 {
-    return caps & (g_SupportedCKEYs);
+    return caps & (VBOXVHWA_SUPPORTED_CKEY);
 }
 
 uint32_t vboxVHWAUnsupportedCKEYs(uint32_t caps)
 {
-    return caps & (~g_SupportedCKEYs);
+    return caps & (~VBOXVHWA_SUPPORTED_CKEY);
 }
 
 uint32_t vboxVHWAFromDDOVERs(uint32_t caps) { return caps; }
@@ -300,30 +230,12 @@ void vboxVHWAFromDDOVERLAYFX(VBOXVHWA_OVERLAYFX *pVHWAOverlay, DDOVERLAYFX *pDdO
 
 uint32_t vboxVHWAFromDDCAPS(uint32_t caps)
 {
-    uint32_t vhwaCaps = 0;
-    int i;
-    for(i = 0; i < sizeof(g_SupportedCapList)/sizeof(g_SupportedCapList[0]); i++)
-    {
-        if(caps & g_SupportedCapList[i][0])
-        {
-            vhwaCaps |= g_SupportedCapList[i][1];
-        }
-    }
-    return vhwaCaps;
+    return caps;
 }
 
 uint32_t vboxVHWAToDDCAPS(uint32_t caps)
 {
-    uint32_t vhwaCaps = 0;
-    int i;
-    for(i = 0; i < sizeof(g_SupportedCapList)/sizeof(g_SupportedCapList[0]); i++)
-    {
-        if(caps & g_SupportedCapList[i][1])
-        {
-            vhwaCaps |= g_SupportedCapList[i][0];
-        }
-    }
-    return vhwaCaps;
+    return caps;
 }
 
 uint32_t vboxVHWAFromDDCAPS2(uint32_t caps)
@@ -338,86 +250,32 @@ uint32_t vboxVHWAToDDCAPS2(uint32_t caps)
 
 uint32_t vboxVHWAFromDDSCAPS(uint32_t caps)
 {
-    uint32_t vhwaCaps = 0;
-    int i;
-    for(i = 0; i < sizeof(g_SupportedSCapList)/sizeof(g_SupportedSCapList[0]); i++)
-    {
-        if(caps & g_SupportedSCapList[i][0])
-        {
-            vhwaCaps |= g_SupportedSCapList[i][1];
-        }
-    }
-    return vhwaCaps;
+    return caps;
 }
 
 uint32_t vboxVHWAToDDSCAPS(uint32_t caps)
 {
-    uint32_t vhwaCaps = 0;
-    int i;
-    for(i = 0; i < sizeof(g_SupportedSCapList)/sizeof(g_SupportedSCapList[0]); i++)
-    {
-        if(caps & g_SupportedSCapList[i][1])
-        {
-            vhwaCaps |= g_SupportedSCapList[i][0];
-        }
-    }
-    return vhwaCaps;
+    return caps;
 }
 
 uint32_t vboxVHWAFromDDPFS(uint32_t caps)
 {
-    uint32_t vhwaCaps = 0;
-    int i;
-    for(i = 0; i < sizeof(g_SupportedPFList)/sizeof(g_SupportedPFList[0]); i++)
-    {
-        if(caps & g_SupportedPFList[i][0])
-        {
-            vhwaCaps |= g_SupportedPFList[i][1];
-        }
-    }
-    return vhwaCaps;
+    return caps;
 }
 
 uint32_t vboxVHWAToDDPFS(uint32_t caps)
 {
-    uint32_t vhwaCaps = 0;
-    int i;
-    for(i = 0; i < sizeof(g_SupportedPFList)/sizeof(g_SupportedPFList[0]); i++)
-    {
-        if(caps & g_SupportedPFList[i][1])
-        {
-            vhwaCaps |= g_SupportedPFList[i][0];
-        }
-    }
-    return vhwaCaps;
+    return caps;
 }
 
 uint32_t vboxVHWAFromDDCKEYCAPS(uint32_t caps)
 {
-    uint32_t vhwaCaps = 0;
-    int i;
-    for(i = 0; i < sizeof(g_SupportedCKeyCapList)/sizeof(g_SupportedCKeyCapList[0]); i++)
-    {
-        if(caps & g_SupportedCKeyCapList[i][0])
-        {
-            vhwaCaps |= g_SupportedCKeyCapList[i][1];
-        }
-    }
-    return vhwaCaps;
+    return caps;
 }
 
 uint32_t vboxVHWAToDDCKEYCAPS(uint32_t caps)
 {
-    uint32_t vhwaCaps = 0;
-    int i;
-    for(i = 0; i < sizeof(g_SupportedCKeyCapList)/sizeof(g_SupportedCKeyCapList[0]); i++)
-    {
-        if(caps & g_SupportedCKeyCapList[i][1])
-        {
-            vhwaCaps |= g_SupportedCKeyCapList[i][0];
-        }
-    }
-    return vhwaCaps;
+    return caps;
 }
 
 uint32_t vboxVHWAToDDBLTs(uint32_t caps)
