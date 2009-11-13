@@ -1916,11 +1916,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     pVM->pdm.s.Apic.pfnLocalInterruptR3 = pApicReg->pfnLocalInterruptR3;
     Log(("PDM: Registered APIC device '%s'/%d pDevIns=%p\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pDevIns));
 
-
-        pVM->pdm.s.Apic.pfnLocalInterruptR3 = 0;
-        pVM->pdm.s.Apic.pfnLocalInterruptRC = 0;
-        pVM->pdm.s.Apic.pfnLocalInterruptR0 = 0;
-
     /* set the helper pointer and return. */
     *ppApicHlpR3 = &g_pdmR3DevApicHlp;
     LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
