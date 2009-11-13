@@ -3684,7 +3684,7 @@ quint64 VBoxGlobal::requiredVideoMemory (CMachine *aMachine)
     quint64 needMBytes = needBits % (8 * _1M) ? needBits / (8 * _1M) + 1 :
                          needBits / (8 * _1M) /* convert to megabytes */;
 
-    if (aMachine)
+    if (aMachine && !aMachine->isNull())
     {
        QString typeId = aMachine->GetOSTypeId();
        if (typeId.startsWith("Windows"))
