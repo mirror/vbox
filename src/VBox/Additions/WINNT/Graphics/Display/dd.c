@@ -204,9 +204,17 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
             pVm->dwFlags        = VIDMEM_ISLINEAR ;
             pVm->fpStart        = pDev->layout.offDDRAWHeap;
             pVm->fpEnd          = pDev->layout.offDDRAWHeap + pDev->layout.cbDDRAWHeap - 1; /* inclusive */
-#ifndef VBOX_WITH_VIDEOHWACCEL
-            pVm->ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+            if(pDev->vhwaInfo.bVHWAEnabled)
+            {
+                pVm->ddsCaps.dwCaps = 0;
+                pVm->ddsCapsAlt.dwCaps = 0;
+            }
+            else
 #endif
+            {
+                pVm->ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+            }
             DISPDBG((0, "fpStart %x fpEnd %x\n", pVm->fpStart, pVm->fpEnd));
 
             pVm++;
@@ -954,6 +962,8 @@ DWORD CALLBACK DdMapMemory(PDD_MAPMEMORYDATA lpMapMemory)
 
             DISPDBG((0, "DdMapMemory: Exit GEN, DDHAL_DRIVER_HANDLED\n"));
 
+            AssertBreakpoint();
+
             return(DDHAL_DRIVER_HANDLED);
         }
 
@@ -976,6 +986,7 @@ DWORD CALLBACK DdMapMemory(PDD_MAPMEMORYDATA lpMapMemory)
                        &ReturnedDataLength))
         {
             DISPDBG((0, "Failed IOCTL_VIDEO_UNSHARE_MEMORY\n"));
+            AssertBreakpoint();
         }
     }
 
@@ -1187,6 +1198,7 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
 
         if(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_VISIBLE
                 || lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE
+//                || !!(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_FRONTBUFFER)
                 || (    !!(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_OVERLAY)
                      && pDesc->bVisible
                    )
@@ -1215,6 +1227,10 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
             {
                 lpUnlock->ddRVal = DDERR_GENERIC;
             }
+        }
+        else
+        {
+            lpUnlock->ddRVal = DD_OK;
         }
 #else
         lpUnlock->ddRVal = DD_OK;
@@ -1325,6 +1341,8 @@ DWORD APIENTRY DdDestroySurface(PDD_DESTROYSURFACEDATA lpDestroySurface)
 
             vboxVHWASurfDescFree(pDesc);
 
+            lpSurfaceGlobal->dwReserved1 = NULL;
+
             lpDestroySurface->ddRVal = DD_OK;
         }
         else
@@ -1334,8 +1352,10 @@ DWORD APIENTRY DdDestroySurface(PDD_DESTROYSURFACEDATA lpDestroySurface)
     }
     else
 #endif
-        lpDestroySurface->ddRVal = DD_OK;
-    return DDHAL_DRIVER_HANDLED;
+    lpDestroySurface->ddRVal = DD_OK;
+
+    /* we're not managing video memory currently, so return DDHAL_DRIVER_NOTHANDLED */
+    return DDHAL_DRIVER_NOTHANDLED;
 }
 
 
@@ -1727,6 +1747,9 @@ DWORD APIENTRY DdSetOverlayPosition(PDD_SETOVERLAYPOSITIONDATA  lpSetOverlayPosi
 
     if(!pSrcDesc->bVisible)
     {
+#ifdef DEBUG_misha
+        AssertBreakpoint();
+#endif
         lpSetOverlayPosition->ddRVal = DDERR_GENERIC;
         return DDHAL_DRIVER_HANDLED;
     }
