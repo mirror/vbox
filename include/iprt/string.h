@@ -1057,6 +1057,23 @@ RTDECL(bool) RTStrSimplePatternMultiMatch(const char *pszPatterns, size_t cchPat
  * @{ */
 
 /**
+ * Converts a string representation of a version number to an unsigned number.
+ *
+ * @returns iprt status code.
+ *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VWRN_TRAILING_CHARS
+ * @retval  VWRN_TRAILING_SPACES
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_MEMORY
+ * @retval  VERR_NO_DIGITS
+ *
+ * @param   pszValue    Pointer to the string value.
+ * @param   pu32        Where to store the converted number.
+ */
+RTDECL(int) RTStrVersionToUInt32(const char *pszVer, uint32_t *pu32);
+
+/**
  * Converts a string representation of a number to a 64-bit unsigned number.
  *
  * @returns iprt status code.

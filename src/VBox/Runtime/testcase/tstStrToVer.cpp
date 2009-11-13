@@ -33,43 +33,6 @@
 #include <iprt/err.h>
 
 
-#include <iprt/assert.h>
-
-int RTStrVersionToUInt32(const char *pszVer, uint32_t *pu32)
-{
-    char *str = RTStrDup(pszVer);
-    AssertPtr(pu32);
-    AssertPtr(str);
-
-    char *c = RTStrStrip(str);
-    char *next;
-    char n = '.';
-    int rc;
-    uint32_t t;
-
-    *pu32 = 0;
-
-    char szDelim[] = { '-', '_' };
-
-    /* Get trailing content separated by dash (-) or underscore (_)*/
-    //c = RTStrStr(c, &n)
-    c = strchr(c, '-');
-    if (c)
-        c++; /* Skip dash */
-    else
-        c = str;
-
-    /* Get last digit */
-    rc = RTStrToUInt32Ex(c,
-                         &next,
-                         10 /* number base */,
-                         &t);
-    *pu32 += t;
-    RTStrFree(str);
-    return rc;
-}
-
-
 struct TstU32
 {
     const char *psz;
@@ -109,25 +72,21 @@ struct TstU32
 int main()
 {
     int cErrors = 0;
-    int rc;
-
-    uint32_t l;
-    rc = RTStrVersionToUInt32("asdf--234", &l);
-    RTPrintf("num: %ld\n", l);
-
 
     static const struct TstU32 aTstU32[] =
     {
-        { "asdf",                       VERR_NO_DIGITS, 0 },
-        { "123",                        VINF_SUCCESS, 123 },
-        { "45.63",                      VINF_SUCCESS, 4563 },
-        { "68.54.123",                  VINF_SUCCESS, 6854123 },
-        { "aasdf-1",                    VINF_SUCCESS, 1 },
-        { "qwer-123.34",                VINF_SUCCESS, 12334 },
-        { "aasdf45-r4545-5",            VINF_SUCCESS, 5 },
-        { "foo41-r2431-6.9.8",          VINF_SUCCESS, 698 },
-        { "bar43-r3517-7.1.2-beta",     VINF_SUCCESS, 712 },
-        { "bar43-r3517-7.1.2.534-beta", VWRN_NUMBER_TOO_BIG, 0 },
+        { "asdf",                               VERR_NO_DIGITS, 0 },
+        { "asdf234",                            VERR_NO_DIGITS, 0 },
+        { "123",                                VINF_SUCCESS, 123 },
+        { "45.63",                              VINF_SUCCESS, 4563 },
+        { "68.54.123",                          VINF_SUCCESS, 6854123 },
+        { "1.0.3-asdf",                         VINF_SUCCESS, 103 },
+        { "aasdf-1",                            VINF_SUCCESS, 1 },
+        { "qwer-123.34",                        VINF_SUCCESS, 12334 },
+        { "aasdf45-r4545-5",                    VINF_SUCCESS, 5 },
+        { "foo41-r2431-6.9.8",                  VINF_SUCCESS, 698 },
+        { "bar43-r3517-7.1.2-beta",             VINF_SUCCESS, 712 },
+        { "bar43-r3517-7.1.2.53412344556-beta", VWRN_NUMBER_TOO_BIG, 0 },
     };
     RUN_TESTS(aTstU32, uint32_t, "%#ld", RTStrVersionToUInt32);
 
@@ -138,6 +97,5 @@ int main()
         RTPrintf("tstStrToVer: SUCCESS\n");
     else
         RTPrintf("tstStrToVer: FAILURE - %d errors\n", cErrors);
-    //return !!cErrors;
-    return 0; /* Don't report any failure yet, makes test boxes unhappy */
+    return !!cErrors;
 }
