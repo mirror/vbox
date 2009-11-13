@@ -664,6 +664,11 @@ SetupParam(const nsXPTParamInfo &p, nsXPTCVariant &v)
 static void
 FinishParam(nsXPTCVariant &v)
 {
+#ifdef VBOX
+  /* make valgrind happy */
+  if (!v.MustFreeVal())
+    return;
+#endif
   if (!v.val.p)
     return;
 

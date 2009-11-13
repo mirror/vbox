@@ -158,6 +158,13 @@ struct nsXPTCVariant : public nsXPTCMiniVariant
     PRBool IsValDOMString()  const  {return 0 != (flags & VAL_IS_DOMSTR);}
     PRBool IsValUTF8String() const  {return 0 != (flags & VAL_IS_UTF8STR);}
     PRBool IsValCString()    const  {return 0 != (flags & VAL_IS_CSTR);}    
+#ifdef VBOX
+    PRBool MustFreeVal()     const  {return 0 != (flags & (  VAL_IS_ALLOCD
+                                                           | VAL_IS_IFACE
+                                                           | VAL_IS_DOMSTR
+                                                           | VAL_IS_UTF8STR
+                                                           | VAL_IS_CSTR)); }
+#endif
 
     void Init(const nsXPTCMiniVariant& mv, const nsXPTType& t, PRUint8 f)
     {
