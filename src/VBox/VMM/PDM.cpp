@@ -683,6 +683,12 @@ static DECLCALLBACK(int) pdmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutUInt(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
         SSMR3PutUInt(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_NMI));
         SSMR3PutUInt(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_SMI));
+
+        /* Clear the flags so they don't get saved and trigger the release assertions in pdmR3LoadExec. */
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_SMI);
     }
     SSMR3PutUInt(pSSM, VM_FF_ISSET(pVM, VM_FF_PDM_DMA));
 
