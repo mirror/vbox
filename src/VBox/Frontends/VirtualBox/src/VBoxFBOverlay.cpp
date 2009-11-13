@@ -4418,7 +4418,7 @@ void VBoxGLWidget::vboxDoUpdateViewport(const QRect & aRect)
     }
 
     const OverlayList & overlays = mDisplay.overlays();
-    QRect & overInter = overlaysRectIntersection();
+    QRect overInter = overlaysRectIntersection();
     overInter = overInter.intersect(aRect);
 
     bool bDisplayPrimary = true;
