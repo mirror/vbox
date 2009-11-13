@@ -34,6 +34,8 @@
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
 LOG="/var/log/vboxadd-install-x11.log"
+CONFIG_DIR="/var/lib/VBoxGuestAdditions"
+CONFIG="config"
 
 # Find the version of X installed
 # The last of the three is for the X.org 6.7 included in Fedora Core 2
@@ -177,18 +179,19 @@ fail()
 #
 # syntax: install_x11_startup_app app desktop service_name
 install_x11_startup_app() {
+    self="install_x11_startup_app"
     app_src=$1
     desktop_src=$2
     service_name=$3
     alt_command=$4
     test -r "$app_src" ||
-        { echo "install_x11_startup_app: no script given"; return 1; }
+        { echo >> $LOG "$self: no script given"; return 1; }
     test -r "$desktop_src" ||
-        { echo "install_x11_startup_app: no desktop file given"; return 1; }
+        { echo >> $LOG "$self: no desktop file given"; return 1; }
     test -n "$service_name" ||
-        { echo "install_x11_startup_app: no service given"; return 1; }
+        { echo >> $LOG "$self: no service given"; return 1; }
     test -n "$alt_command" ||
-        { echo "install_x11_startup_app: no service given"; return 1; }
+        { echo >> $LOG "$self: no service given"; return 1; }
     app_dest=`basename $app_src sh`
     app_dest_sh=`basename $app_src sh`.sh
     desktop_dest=`basename $desktop_src`
@@ -226,11 +229,10 @@ install_x11_startup_app() {
     if [ $found -eq 1 ]; then
         return 0
     fi
-    cat << EOF
-Could not set up the X Window $service_name service.
-To start the $service_name service at log-in for a given user,
-add the command $alt_command to the file .xinitrc in their home
-directory.
+    cat >> $LOG << EOF
+Could not set up the $service_name desktop service.
+To start it at log-in for a given user, add the command $alt_command
+to the file .xinitrc in their home directory.
 EOF
     return 1
 }
@@ -256,21 +258,22 @@ restart()
 # setup_script
 setup()
 {
-    begin "Setting up the X Window System drivers"
+    echo "VirtualBox Guest Additions installation, Window System and desktop setup" > $LOG
+    begin "Installing the Window System drivers"
     lib_dir="/usr/lib/VBoxGuestAdditions"
     share_dir="/usr/share/VBoxGuestAdditions"
     test -x "$lib_dir" -a -x "$share_dir" ||
         fail "Invalid Guest Additions configuration found"
-    # By default, we want to run our X Window System configuration script
-    dox11config=1
-    # But not the special version for X.Org 1.5+
-    dox11config15=0
-    # And we don't install our SUSE/X.Org 1.5 configuration file by default
-    dox11config15suse=0
-    # We want to use hal for auto-loading the mouse driver
-    useHalForMouse=1
+    # By default we want to configure X
+    dox11config="true"
+    # By default, we want to run our xorg.conf setup script
+    setupxorgconf="true"
+    # But without the workaround for SUSE 11.1 not doing input auto-detection
+    newmouse=""
+    # By default we want to use hal for auto-loading the mouse driver
+    usehal="--useHal"
     # And on newer servers, we want to test whether dynamic resizing will work
-    testRandR=1
+    testrandr="true"
     # The video driver to install for X.Org 6.9+
     vboxvideo_src=
     # The mouse driver to install for X.Org 6.9+
@@ -287,27 +290,25 @@ setup()
     fi
 
     test -z "$x_version" -o -z "$modules_dir" &&
-        fail "Could not find X.org or XFree86 on the guest system.  The X Window drivers \
-will not be installed."
+        fail "Could not find the X.Org or XFree86 Window System."
 
     echo
     case $x_version in
         1.7.99.* )
             echo "Warning: unsupported pre-release version of X.Org Server installed.  Not"
             echo "installing the X.Org drivers."
-            dox11config=0
+            dox11config=""
             ;;
         1.6.99.* | 1.7.* )
             begin "Installing experimental Xorg Server 1.7 modules"
             vboxvideo_src=vboxvideo_drv_17.so
             vboxmouse_src=vboxmouse_drv_17.so
-            dox11config=0
+            setupxorgconf=""
             ;;
         1.5.99.* | 1.6.* )
             begin "Installing Xorg Server 1.6 modules"
             vboxvideo_src=vboxvideo_drv_16.so
             vboxmouse_src=vboxmouse_drv_16.so
-            dox11config15=1
             ;;
         1.4.99.* | 1.5.* )
             # Fedora 9 shipped X.Org Server version 1.4.99.9x (1.5.0 RC)
@@ -316,20 +317,14 @@ will not be installed."
             vboxvideo_src=vboxvideo_drv_15.so
             vboxmouse_src=vboxmouse_drv_15.so
             # SUSE with X.Org 1.5 is a special case, and is handled specially
-            if [ -f /etc/SuSE-release ]
-            then
-                dox11config15suse=1
-            else
-                # This means do a limited configuration for systems with
-                # autodetection support
-                dox11config15=1
-            fi
+            test -r /etc/SuSE-release &&
+            { usehal=""; newmouse="--newMouse"; }
             ;;
         1.4.* )
             begin "Installing Xorg Server 1.4 modules"
             vboxvideo_src=vboxvideo_drv_14.so
             vboxmouse_src=vboxmouse_drv_14.so
-            useHalForMouse=0
+            usehal=""
             ;;
         1.3.* )
             # This was the first release which gave the server version number
@@ -337,35 +332,35 @@ will not be installed."
             begin "Installing Xorg Server 1.3 modules"
             vboxvideo_src=vboxvideo_drv_13.so
             vboxmouse_src=vboxmouse_drv_71.so
-            useHalForMouse=0
+            usehal=""
             ;;
         7.1.* | 7.2.* )
             begin "Installing Xorg 7.1 modules"
             vboxvideo_src=vboxvideo_drv_71.so
             vboxmouse_src=vboxmouse_drv_71.so
-            useHalForMouse=0
-            testRandR=0
+            usehal=""
+            testrandr=""
             ;;
         6.9.* | 7.0.* )
             begin "Installing Xorg 6.9/7.0 modules"
             vboxvideo_src=vboxvideo_drv_70.so
             vboxmouse_src=vboxmouse_drv_70.so
-            useHalForMouse=0
-            testRandR=0
+            usehal=""
+            testrandr=""
             ;;
         6.7* | 6.8.* | 4.2.* | 4.3.* )
             # Assume X.Org post-fork or XFree86
             begin "Installing XFree86 4.3/Xorg 6.8 modules"
             ln -s "$lib_dir/vboxvideo_drv.o" "$modules_dir/drivers/vboxvideo_drv.o"
             ln -s "$lib_dir/vboxmouse_drv.o" "$modules_dir/input/vboxmouse_drv.o"
-            useHalForMouse=0
-            testRandR=0
+            usehal=""
+            testrandr=""
+            succ_msg
             ;;
         * )
             echo "Warning: unknown version of the X Window System installed.  Not installing"
             echo "X Window System drivers."
-            dox11config=0
-            useHalForMouse=0
+            dox11config=""
             ;;
     esac
     if [ -n "$vboxvideo_src" -a -n "$vboxmouse_src" ]; then
@@ -375,15 +370,84 @@ will not be installed."
         ln -s "$lib_dir/$vboxmouse_src" "$modules_dir/input/vboxmouse_drv.so" &&
         succ_msg
     fi
-    if [ $testRandR -eq 1 ]; then
+    if test -n "$testrandr"; then
         # Run VBoxRandR in test mode as it prints out useful information if
         # dynamic resizing can't be used.  Don't fail here though.
         /usr/bin/VBoxRandR --test 1>&2
     else
-        echo "You appear to be have an old version of the X Window system installed on"
-        echo "your guest system.  Seamless mode and dynamic resizing will not work in"
-        echo "this guest."
+        cat << EOF
+
+You appear to be have an old version of the X Window system installed on your guest system.  Seamless mode and dynamic resizing will not work in
+this guest.
+
+EOF
     fi
+
+    if test -n "$dox11config"; then
+        begin "Setting up the Window System to use the Guest Additions"
+        # Certain Ubuntu/Debian versions use a special PCI-id file to identify
+        # video drivers.  Some versions have the directory and don't use it.
+        # Those versions can autoload vboxvideo though, so we don't need to
+        # hack the configuration file for them.
+        test -f /etc/debian_version -a -d /usr/share/xserver-xorg/pci &&
+        {
+            rm -f "/usr/share/xserver-xorg/pci/vboxvideo.ids"
+            ln -s "$share_dir/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
+            test -n "$usehal" && setupxorgconf=""
+        }
+
+        # Do the XF86Config/xorg.conf hack for those versions that require it
+        configured=""
+        generated=""
+        if test -n "$setupxorgconf"; then
+            for i in $x11conf_files; do
+                if test -r "$i"; then
+                    if grep -q "VirtualBox generated" "$i"; then
+                        generated="$generated  `printf "$i\n"`"
+                    else
+                        "$lib_dir/x11config-new.pl" $newmouse $usehal "$i"
+                    fi
+                    configured="true"
+                fi
+                # Timestamp, so that we can see if the config file is changed
+                # by someone else later
+                test -r "$i.vbox" && touch "$i.vbox"
+            done
+            # X.Org Server 1.5 and 1.6 can detect hardware they know, but they
+            # need a configuration file for VBoxVideo.
+            main_cfg="/etc/X11/xorg.conf"
+            nobak="/etc/X11/xorg.vbox.nobak"
+            if test -z "$configured" -a ! -r "$nobak"; then
+                touch "$main_cfg"
+                "$lib_dir/x11config-new.pl" --useHal --noBak "$main_cfg"
+                touch "$nobak"
+            fi
+        fi
+        # X.Org Server versions starting with 1.5 can do mouse auto-detection,
+        # to make our lives easier and spare us the nasty hacks.
+        test -n "$usehal" &&
+            if [ -d /etc/hal/fdi/policy ]
+            then
+                # Install hal information about the mouse driver so that X.Org
+                # knows to load it.
+                install -o 0 -g 0 -m 0644 "$share_dir/90-vboxguest.fdi" /etc/hal/fdi/policy
+                # Delete the hal cache so that it notices our fdi file
+                rm -r /var/cache/hald/fdi-cache 2> /dev/null
+            fi
+        succ_msg
+        test -n "$generated" &&
+            cat << EOF
+The following X.Org/XFree86 configuration files were originally generated by
+the VirtualBox Guest Additions and were not modified:
+
+$generated
+
+EOF
+        echo "You may need to restart the Window System to enable the Guest Additions."
+        echo
+    fi
+
+    begin "Installing OpenGL and desktop services components"
     # Install selinux policy for Fedora 7 and 8 to allow the X server to
     # open device files
     case "$redhat_release" in
@@ -397,74 +461,6 @@ will not be installed."
     # completely irrelevant on the target system.
     chcon -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
     semanage fcontext -a -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
-
-    # Certain Ubuntu/Debian versions use a special PCI-id file to identify
-    # video drivers.  Some versions have the directory and don't use it.
-    # Those versions can autoload vboxvideo though, so we don't need to
-    # hack the configuration file for them.
-    test -f /etc/debian_version -a -d /usr/share/xserver-xorg/pci &&
-    {
-        rm -f "/usr/share/xserver-xorg/pci/vboxvideo.ids"
-        ln -s "$share_dir/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
-        test "$useHalForMouse" -eq 1 && doX11Config=0
-    }
-
-    # Do the XF86Config/xorg.conf hack for those versions that require it
-    if [ $dox11config -eq 1 ]
-    then
-        # Backup any xorg.conf files
-        for i in $x11conf_files; do
-          test -r "$i" -a ! -f "`dirname $i`/xorg.vbox.nobak" &&
-              cp "$i" "$i.vbox"
-        done
-        if [ $dox11config15suse -eq 1 ]
-        then
-            cp /etc/X11/xorg.conf /etc/X11/xorg.conf.bak 2> /dev/null
-            cp "$share_dir/linux_xorg_suse11.conf" /etc/X11/xorg.conf 2> /dev/null
-        elif [ $dox11config15 -eq 1 ]
-        then
-            "$lib_dir/x11config15.pl" >> $LOG 2>&1
-            x11configured=0
-            for x11configdir in /etc/X11 /etc /usr/etc/X11 /usr/lib/X11
-            do
-                if [ -e $x11configdir/xorg.conf -o -e $x11configdir/xorg.conf-4 ]
-                then
-                    x11configured=1
-                fi
-                if [ $x11configured -eq 0 ]
-                then
-                    cat > /etc/X11/xorg.conf << EOF
-# Default xorg.conf for Xorg 1.5+ without PCI_TXT_IDS_PATH enabled.
-#
-# This file was created by VirtualBox Additions installer as it
-# was unable to find any existing configuration file for X.
-
-Section "Device"
-        Identifier      "VirtualBox Video Card"
-        Driver          "vboxvideo"
-EndSection
-EOF
-                    touch /etc/X11/xorg.vbox.nobak
-                fi
-            done
-        else
-            "$lib_dir/x11config.pl" >> $LOG 2>&1
-        fi
-    fi
-
-    # X.Org Server versions starting with 1.5 can do mouse auto-detection,
-    # to make our lives easier and spare us the nasty hacks.
-    if [ $useHalForMouse -eq 1 ]
-    then
-        # Install hal information about the mouse driver so that X.Org
-        # knows to load it.
-        if [ -d /etc/hal/fdi/policy ]
-        then
-            install -o 0 -g 0 -m 0644 "$share_dir/90-vboxguest.fdi" /etc/hal/fdi/policy
-            # Delete the hal cache so that it notices our fdi file
-            rm -r /var/cache/hald/fdi-cache 2> /dev/null
-        fi
-    fi
     # Install the guest OpenGL drivers
     if [ "$ARCH" = "amd64" ]
     then
@@ -483,39 +479,65 @@ EOF
     fi
 
     # And set up VBoxClient to start when the X session does
-    install_x11_startup_app "$lib_dir/98vboxadd-xclient" "$share_dir/vboxclient.desktop" VBoxClient VBoxClient-all
+    install_x11_startup_app "$lib_dir/98vboxadd-xclient" "$share_dir/vboxclient.desktop" VBoxClient VBoxClient-all ||
+        fail "See the log file $LOG for more information."
+    succ_msg
 }
 
 # cleanup_script
 cleanup()
 {
     # Restore xorg.conf files as far as possible
-    for i in $x11conf_files; do
-        restored=0
-        if test -f "`dirname $i`/xorg.vbox.nobak"; then
-            rm -f "$i" 2> /dev/null
-            restored=1
-        elif test -r "$i.vbox"; then
-            if ! grep -q -E "vboxvideo|vboxmouse" "$i.vbox"; then
-                mv -f "$i.vbox" "$i"
-                restored=1
+    ## List of generated files which have been changed since we generated them
+    newer=""
+    ## Are we dealing with a legacy information which didn't support
+    # uninstallation?
+    legacy=""
+    ## Do any of the restored configuration files still reference our drivers?
+    failed=""
+    test -r "$CONFIG_DIR/$CONFIG" || legacy="true"
+    main_cfg="/etc/X11/xorg.conf"
+    nobak="/etc/X11/xorg.vbox.nobak"
+    if test -r "$nobak"; then
+        test -r "$main_cfg" &&
+            if test "$main_cfg" -ot "$nobak" -o -n "$legacy"; then
+                rm -f "$main_cfg"
+            else
+                newer="$newer`printf "  $main_cfg (no original)\n"`"
             fi
-        elif test -r "$i.bak"; then
-            if ! grep -q -E "vboxvideo|vboxmouse" "$i.bak"; then
-                mv -f "$i.bak" "$i"
-                restored=1
+    else
+        for i in $x11conf_files; do
+            if test -r "$i.vbox"; then
+                if test "$i" -ot "$i.vbox" -o -n "$legacy"; then
+                    mv -f "$i.vbox" "$i"
+                    grep -q -E 'vboxvideo|vboxmouse' "$i" &&
+                        failed="$failed`printf "  $i\n"`"
+                else
+                    newer="$newer`printf "  $i ($i.vbox)\n"`"
+                fi
             fi
-        elif ! test -f "$i"; then
-            restored=1
-        fi
-        test "$restored" = 1 &&
-            rm -f "`dirname $i`/xorg.vbox.nobak" "$i.vbox" 2> /dev/null
-        test "$restored" = 0 && cat << EOF
-Failed to restore the X server configuration file $i.
-Please make sure that you reconfigure your X server before it is started
-again, as otherwise it may fail to start!
+        done
+    fi
+    test -n "$newer" && cat << EOF
+
+The following X.Org/XFree86 configuration files were not restored, as they may
+have been changed since they were generated by the VirtualBox Guest Additions.
+You may wish to restore these manually.  The file name in brackets is the
+original version.
+
+$newer
+
 EOF
-    done
+    test -n "$failed" && cat << EOF
+
+The following X.Org/XFree86 configuration files were restored, but still
+contain references to the Guest Additions drivers.  You may wish to check and
+possibly correct the restored configuration files to be sure that the server
+will continue to work after it is restarted.
+
+$newer
+
+EOF
 
     # Remove X.Org drivers
     find "$x11_modules_dir" /usr/lib64/xorg/modules /usr/lib/xorg/modules \
