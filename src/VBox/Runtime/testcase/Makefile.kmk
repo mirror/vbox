@@ -95,6 +95,7 @@ PROGRAMS += \
 	tstRTStrFormat \
 	tstStrSimplePattern \
 	tstStrToNum \
+	tstStrToVer \
 	tstSystemQueryOsInfo \
 	tstRTTemp \
 	tstTermCallbacks \
@@ -372,6 +373,8 @@ tstRTStrFormat_SOURCES = tstRTStrFormat.cpp
 tstStrSimplePattern_SOURCES = tstStrSimplePattern.cpp
 
 tstStrToNum_SOURCES = tstStrToNum.cpp
+
+tstStrToVer_SOURCES = tstStrToVer.cpp
 
 tstSystemQueryOsInfo_SOURCES = tstSystemQueryOsInfo.cpp
 
