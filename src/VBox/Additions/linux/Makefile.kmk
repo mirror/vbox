@@ -283,8 +283,7 @@ ifndef VBOX_OSE
 	$(VBOX_REL_LNX_ADD_INST)vboxadd-service.sh \
 	$(VBOX_REL_X11_ADD_INST)98vboxadd-xclient \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd.sh \
-	$(VBOX_REL_X11_ADD_INST)x11config.pl \
-	$(VBOX_REL_X11_ADD_INST)x11config15.pl \
+	$(VBOX_REL_X11_ADD_INST)x11config-new.pl \
 	$(VBOX_REL_LNX_INST_SRC)routines.sh
 
 
@@ -294,7 +293,6 @@ ifndef VBOX_OSE
  lnx_add_inst-noexec_SOURCES = \
 	$(VBOX_REL_X11_ADD_INST)vboxclient.desktop \
 	$(VBOX_REL_X11_ADD_INST)vboxvideo.ids \
-	$(VBOX_REL_X11_ADD_INST)linux_xorg_suse11.conf \
 	$(VBOX_REL_LNX_ADD_INST)90-vboxguest.fdi \
 	selinux-fedora/vbox_x11.pp
 
