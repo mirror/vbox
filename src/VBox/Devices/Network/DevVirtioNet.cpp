@@ -205,9 +205,9 @@ struct VPCIState_st
     uint8_t                uStatus; /**< Device Status (bits are device-specific). */
     uint8_t                uISR;                   /**< Interrupt Status Register. */
 
-// #if HC_ARCH_BITS == 64
-//     uint32_t               padding3;
-// #endif
+#if HC_ARCH_BITS != 64
+    uint32_t               padding3;
+#endif
 
     uint32_t               nQueues;       /**< Actual number of queues used. */
     VQUEUE                 Queues[VIRTIO_MAX_NQUEUES];
