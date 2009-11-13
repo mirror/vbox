@@ -56,6 +56,15 @@
 
 //- TODO: Move to Virtio.h ----------------------------------------------------
 
+/*
+ * The saved state version is changed if either common or any of specific
+ * parts are changed. That is, it is perfectly possible that the version
+ * of saved vnet state will increase as a result of change in vblk structure
+ * for example.
+ */
+#define VIRTIO_SAVEDSTATE_VERSION_3_1_BETA1 1
+#define VIRTIO_SAVEDSTATE_VERSION           2
+
 #define VPCI_F_NOTIFY_ON_EMPTY 0x01000000
 #define VPCI_F_BAD_FEATURE     0x40000000
 
@@ -157,8 +166,8 @@ enum VirtioDeviceType
     VIRTIO_32BIT_HACK = 0x7fffffff
 };
 
-#define VIRTIO_NET_NQUEUES 3
 #define VIRTIO_MAX_NQUEUES 3
+#define VNET_NQUEUES       3
 
 struct VPCIState_st
 {
@@ -196,10 +205,11 @@ struct VPCIState_st
     uint8_t                uStatus; /**< Device Status (bits are device-specific). */
     uint8_t                uISR;                   /**< Interrupt Status Register. */
 
-#if HC_ARCH_BITS == 64
-    uint32_t               padding3;
-#endif
+// #if HC_ARCH_BITS == 64
+//     uint32_t               padding3;
+// #endif
 
+    uint32_t               nQueues;       /**< Actual number of queues used. */
     VQUEUE                 Queues[VIRTIO_MAX_NQUEUES];
 
 #if defined(VBOX_WITH_STATISTICS)
@@ -252,7 +262,7 @@ const struct VirtioPCIDevices
 {
     /*  Vendor  Device SSVendor SubSys             Class   NQ Name          Instance */
     { /* Virtio Network Device */
-        0x1AF4, 0x1000, 0x1AF4, 1 + VIRTIO_NET_ID, 0x0200, VIRTIO_NET_NQUEUES,
+        0x1AF4, 0x1000, 0x1AF4, 1 + VIRTIO_NET_ID, 0x0200, VNET_NQUEUES,
                                                               "virtio-net", "vnet%d",
         vnetGetHostFeatures, vnetGetHostMinimalFeatures, vnetSetHostFeatures,
         vnetGetConfig, vnetSetConfig, vnetReset, vnetReady
@@ -516,7 +526,7 @@ void vpciReset(PVPCISTATE pState)
     pState->uStatus        = 0;
     pState->uISR           = 0;
 
-    for (unsigned i = 0; i < g_VPCIDevices[pState->enmDevType].nQueues; i++)
+    for (unsigned i = 0; i < pState->nQueues; i++)
         vqueueReset(&pState->Queues[i]);
 }
 #endif
@@ -726,23 +736,19 @@ PDMBOTHCBDECL(int) vpciIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
             break;
 
         case VPCI_QUEUE_SEL:
-#ifdef IN_RING3
             Assert(cb == 2);
             u32 &= 0xFFFF;
-            if (u32 < g_VPCIDevices[pState->enmDevType].nQueues)
+            if (u32 < pState->nQueues)
                 pState->uQueueSelector = u32;
             else
                 Log3(("%s virtioIOPortOut: Invalid queue selector %08x\n", szInst, u32));
-#else
-            rc = VINF_IOM_HC_IOPORT_WRITE;
-#endif
             break;
 
         case VPCI_QUEUE_NOTIFY:
 #ifdef IN_RING3
             Assert(cb == 2);
             u32 &= 0xFFFF;
-            if (u32 < g_VPCIDevices[pState->enmDevType].nQueues)
+            if (u32 < pState->nQueues)
                 if (pState->Queues[u32].VRing.addrDescriptors)
                     pState->Queues[u32].pfnCallback(pState, &pState->Queues[u32]);
                 else
@@ -961,7 +967,7 @@ static void vpciDumpState(PVPCISTATE pState, const char *pcszCaller)
           pState->uStatus,
           pState->uISR));
 
-    for (unsigned i = 0; i < g_VPCIDevices[pState->enmDevType].nQueues; i++)
+    for (unsigned i = 0; i < pState->nQueues; i++)
         Log2((" %s queue:\n"
               "  VRing.uSize           = %u\n"
               "  VRing.addrDescriptors = %p\n"
@@ -1006,7 +1012,9 @@ static DECLCALLBACK(int) vpciSaveExec(PVPCISTATE pState, PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
 
     /* Save queue states */
-    for (unsigned i = 0; i < g_VPCIDevices[pState->enmDevType].nQueues; i++)
+    rc = SSMR3PutU32(pSSM, pState->nQueues);
+    AssertRCReturn(rc, rc);
+    for (unsigned i = 0; i < pState->nQueues; i++)
     {
         rc = SSMR3PutU16(pSSM, pState->Queues[i].VRing.uSize);
         AssertRCReturn(rc, rc);
@@ -1047,7 +1055,14 @@ static DECLCALLBACK(int) vpciLoadExec(PVPCISTATE pState, PSSMHANDLE pSSM, uint32
         AssertRCReturn(rc, rc);
 
         /* Restore queues */
-        for (unsigned i = 0; i < g_VPCIDevices[pState->enmDevType].nQueues; i++)
+        if (uVersion > VIRTIO_SAVEDSTATE_VERSION_3_1_BETA1)
+        {
+            rc = SSMR3GetU32(pSSM, &pState->nQueues);
+            AssertRCReturn(rc, rc);
+        }
+        else
+            pState->nQueues = g_VPCIDevices[pState->enmDevType].nQueues;
+        for (unsigned i = 0; i < pState->nQueues; i++)
         {
             rc = SSMR3GetU16(pSSM, &pState->Queues[i].VRing.uSize);
             AssertRCReturn(rc, rc);
@@ -1135,6 +1150,8 @@ DECLCALLBACK(int) vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the status LUN"));
     pState->pLedsConnector = (PPDMILEDCONNECTORS)pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
 
+    pState->nQueues = g_VPCIDevices[pState->enmDevType].nQueues;
+
 #if defined(VBOX_WITH_STATISTICS)
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadGC,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in GC",           "/Devices/VNet%d/IO/ReadGC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadHC,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in HC",           "/Devices/VNet%d/IO/ReadHC", iInstance);
@@ -1193,7 +1210,7 @@ PVQUEUE vpciAddQueue(VPCISTATE* pState, unsigned uSize,
 {
     PVQUEUE pQueue = NULL;
     /* Find an empty queue slot */
-    for (unsigned i = 0; i < g_VPCIDevices[pState->enmDevType].nQueues; i++)
+    for (unsigned i = 0; i < pState->nQueues; i++)
     {
         if (pState->Queues[i].VRing.uSize == 0)
         {
@@ -1227,8 +1244,8 @@ PVQUEUE vpciAddQueue(VPCISTATE* pState, unsigned uSize,
 
 //- TODO: Move to VirtioNet.h -------------------------------------------------
 
+#define VNET_TX_DELAY           150   /* 150 microseconds */
 #define VNET_MAX_FRAME_SIZE     65536  // TODO: Is it the right limit?
-#define VNET_SAVEDSTATE_VERSION 1
 
 /* Virtio net features */
 #define VNET_F_CSUM       0x00000001  /* Host handles pkts w/ partial csum */
@@ -1289,6 +1306,18 @@ struct VNetState_st
     R3PTRTYPE(uint8_t*)     pTxBuf;
     /**< Link Up(/Restore) Timer. */
     PTMTIMERR3              pLinkUpTimer; 
+#ifdef VNET_TX_DELAY
+    /**< Transmit Delay Timer - R3. */
+    PTMTIMERR3              pTxTimerR3; 
+    /**< Transmit Delay Timer - R0. */
+    PTMTIMERR0              pTxTimerR0; 
+    /**< Transmit Delay Timer - GC. */
+    PTMTIMERRC              pTxTimerRC; 
+#if HC_ARCH_BITS == 64
+    uint32_t    padding2;
+#endif
+
+#endif /* VNET_TX_DELAY */
 
     /** PCI config area holding MAC address as well as TBD. */
     struct VNetPCIConfig    config;
@@ -1774,9 +1803,8 @@ static DECLCALLBACK(void) vnetQueueReceive(void *pvState, PVQUEUE pQueue)
     vnetWakeupReceive(pState->VPCI.CTX_SUFF(pDevIns));
 }
 
-static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
+static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue)
 {
-    VNETSTATE *pState = (VNETSTATE*)pvState;
     if ((pState->VPCI.uStatus & VPCI_STATUS_DRV_OK) == 0)
     {
         Log(("%s Ignoring transmit requests from non-existent driver (status=0x%x).\n",
@@ -1822,6 +1850,55 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
     }
     vpciSetWriteLed(&pState->VPCI, false);
 }
+
+#ifdef VNET_TX_DELAY
+static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
+{
+    VNETSTATE *pState = (VNETSTATE*)pvState;
+
+    if (TMTimerIsActive(pState->CTX_SUFF(pTxTimer)))
+    {
+        int rc = TMTimerStop(pState->CTX_SUFF(pTxTimer));
+        vringSetNotification(&pState->VPCI, &pState->pTxQueue->VRing, true);
+        Log3(("%s vnetQueueTransmit: Got kicked with notification disabled, "
+              "re-enable notification and flush TX queue\n", INSTANCE(pState)));
+        vnetTransmitPendingPackets(pState, pQueue);
+    }
+    else
+    {
+        TMTimerSetMicro(pState->CTX_SUFF(pTxTimer), VNET_TX_DELAY);
+        vringSetNotification(&pState->VPCI, &pState->pTxQueue->VRing, false);
+    }
+}
+
+/**
+ * Transmit Delay Timer handler.
+ *
+ * @remarks We only get here when the timer expires.
+ *
+ * @param   pDevIns     Pointer to device instance structure.
+ * @param   pTimer      Pointer to the timer.
+ * @param   pvUser      NULL.
+ * @thread  EMT
+ */
+static DECLCALLBACK(void) vnetTxTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+{
+    VNETSTATE *pState = (VNETSTATE*)pvUser;
+
+    vringSetNotification(&pState->VPCI, &pState->pTxQueue->VRing, true);
+    Log3(("%s vnetTxTimer: Expired, %d packets pending\n", INSTANCE(pState), 
+          vringReadAvailIndex(&pState->VPCI, &pState->pTxQueue->VRing) - pState->pTxQueue->uNextAvailIndex));
+    vnetTransmitPendingPackets(pState, pState->pTxQueue);
+}
+
+#else /* !VNET_TX_DELAY */
+static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
+{
+    VNETSTATE *pState = (VNETSTATE*)pvState;
+
+    vnetTransmitPendingPackets(pState, pQueue);
+}
+#endif /* !VNET_TX_DELAY */
 
 static DECLCALLBACK(void) vnetQueueControl(void *pvState, PVQUEUE pQueue)
 {
@@ -1968,13 +2045,30 @@ static DECLCALLBACK(int) vnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     {
         rc = SSMR3GetMem( pSSM, pState->config.mac.au8, sizeof(pState->config.mac));
         AssertRCReturn(rc, rc);
-        /* Indicate link down to the guest OS that all network connections have
-           been lost, unless we've been teleported here. */
-        if (!PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns))
-            vnetTempLinkDown(pState);
     }
 
     return rc;
+}
+
+/**
+ * Link status adjustments after loading.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pSSM        The handle to the saved state.
+ */
+static DECLCALLBACK(int) vnetLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    VNETSTATE *pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
+
+    /*
+     * Indicate link down to the guest OS that all network connections have
+     * been lost, unless we've been teleported here.
+     */
+    if (!PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns))
+        vnetTempLinkDown(pState);
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2045,10 +2139,10 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                     ("Cannot allocate TX buffer for virtio-net device\n"), VERR_NO_MEMORY);
 
     /* Register save/restore state handlers. */
-    rc = PDMDevHlpSSMRegisterEx(pDevIns, VNET_SAVEDSTATE_VERSION, sizeof(VNETSTATE), NULL,
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, VIRTIO_SAVEDSTATE_VERSION, sizeof(VNETSTATE), NULL,
                                 NULL,         vnetLiveExec, NULL,
                                 vnetSavePrep, vnetSaveExec, NULL,
-                                vnetLoadPrep, vnetLoadExec, NULL);
+                                vnetLoadPrep, vnetLoadExec, vnetLoadDone);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2066,6 +2160,17 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                 "VirtioNet Link Up Timer", &pState->pLinkUpTimer);
     if (RT_FAILURE(rc))
         return rc;
+
+#ifdef VNET_TX_DELAY
+    /* Create Transmit Delay Timer */
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, vnetTxTimer, pState,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
+                                "VirtioNet TX Delay Timer", &pState->pTxTimerR3);
+    if (RT_FAILURE(rc))
+        return rc;
+    pState->pTxTimerR0 = TMTimerR0Ptr(pState->pTxTimerR3);
+    pState->pTxTimerRC = TMTimerRCPtr(pState->pTxTimerR3);
+#endif /* VNET_TX_DELAY */
 
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pState->VPCI.IBase, &pState->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))
@@ -2160,6 +2265,9 @@ static DECLCALLBACK(void) vnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     VNETSTATE* pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
     vpciRelocate(pDevIns, offDelta);
     pState->pCanRxQueueRC = PDMQueueRCPtr(pState->pCanRxQueueR3);
+#ifdef VNET_TX_DELAY
+    pState->pTxTimerRC    = TMTimerRCPtr(pState->pTxTimerR3);
+#endif /* VNET_TX_DELAY */
     // TBD
 }
 
