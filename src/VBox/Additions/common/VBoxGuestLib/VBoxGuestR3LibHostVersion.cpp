@@ -53,7 +53,7 @@ VBGLR3DECL(int) VbglR3HostVersionCompare(const char *pszVer1, const char *pszVer
     uint32_t u32Ver1;
     uint32_t u32Ver2;
 
-    Assert(puRes);
+    AssertPtr(puRes);
     int rc = RTStrVersionToUInt32(pszVer1, &u32Ver1);
     if (RT_SUCCESS(rc))
         rc = RTStrVersionToUInt32(pszVer2, &u32Ver2);
