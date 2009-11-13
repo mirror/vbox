@@ -9281,6 +9281,14 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
 
     try
     {
+        AutoCaller autoCaller(this);
+        CheckComRCReturnRC(autoCaller.rc());
+
+        AutoWriteLock alock(this);
+
+        HRESULT rc = checkStateDependency(MutableStateDep);
+        CheckComRCReturnRC(rc);
+
         Utf8Str utf8Name(aName);
         Utf8Str utf8Flags(aFlags);
         Utf8Str utf8Patterns(mHWData->mGuestPropertyNotificationPatterns);
@@ -9292,14 +9300,6 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
         bool matchAll = false;
         if (utf8Patterns.isEmpty())
             matchAll = true;
-
-        AutoCaller autoCaller(this);
-        CheckComRCReturnRC(autoCaller.rc());
-
-        AutoWriteLock alock(this);
-
-        HRESULT rc = checkStateDependency(MutableStateDep);
-        CheckComRCReturnRC(rc);
 
         mHWData.backup();
         for (HWData::GuestPropertyList::iterator iter = mHWData->mGuestProperties.begin();
