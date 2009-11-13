@@ -338,7 +338,7 @@ bool VBoxNewVMWzd::constructMachine()
 
     /* VRAM size - select maximum between recommended and minimum for fullscreen */
     mMachine.SetVRAMSize (qMax (type.GetRecommendedVRAM(),
-                                (ULONG) (VBoxGlobal::requiredVideoMemory() / _1M)));
+                                (ULONG) (VBoxGlobal::requiredVideoMemory(&mMachine) / _1M)));
 
     /* Enabling audio by default */
     mMachine.GetAudioAdapter().SetEnabled (true);
