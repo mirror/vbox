@@ -32,9 +32,11 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/mem.h>
 #include <iprt/string.h>
 #include "internal/iprt.h"
 
+#include <iprt/ctype.h> /* needed for RT_C_IS_DIGIT */
 #include <iprt/err.h>
 
 
@@ -89,6 +91,80 @@ int main()
 }
 */
 
+
+/**
+ * Converts a string representation of a version number to an unsigned number.
+ *
+ * @returns iprt status code.
+ *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VWRN_TRAILING_CHARS
+ * @retval  VWRN_TRAILING_SPACES
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_MEMORY
+ * @retval  VERR_NO_DIGITS
+ *
+ * @param   pszValue    Pointer to the string value.
+ * @param   pu32        Where to store the converted number.
+ */
+int RTStrVersionToUInt32(const char *pszVer, uint32_t *pu32)
+{
+    const char *str = pszVer;
+    AssertPtr(pu32);
+    AssertPtr(str);
+
+    char *strNew = (char*)RTMemAllocZ((strlen(pszVer) + 1) * sizeof(char));
+    if (strNew == NULL)
+        return VERR_NO_MEMORY;
+
+    int rc = VERR_NO_DIGITS;
+    uint16_t c = 0;
+    bool fLastInvalid = false;
+    while (    str
+           && *str != '\0')
+    {
+        if (fLastInvalid)
+        {
+            if (   *str == '-'
+                || *str == '_')
+            {
+                fLastInvalid = false;
+            }
+        }
+        else
+        {
+            if (RT_C_IS_DIGIT(*str))
+            {
+                strNew[c++] = *str;
+            }
+            else if (   *str != '.'
+                     && c == 0)
+            {
+                fLastInvalid = true;
+            }
+        }
+        str++;
+    }
+    strNew[c] = '\0';
+
+    /* Convert final number string to number */
+    if (fLastInvalid)
+    {
+        *pu32 = 0;
+        rc = VERR_NO_DIGITS;
+    }
+    else
+    {
+        rc = RTStrToUInt32Ex(strNew,
+                             NULL,       /* Next pointer, not used */
+                             10          /* Number base */,
+                             pu32);
+        if (rc != VINF_SUCCESS)
+            *pu32 = 0;
+    }
+    RTStrFree(strNew);
+    return rc;
+}
 
 
 /**
