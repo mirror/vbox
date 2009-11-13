@@ -3684,6 +3684,16 @@ quint64 VBoxGlobal::requiredVideoMemory (CMachine *aMachine)
     quint64 needMBytes = needBits % (8 * _1M) ? needBits / (8 * _1M) + 1 :
                          needBits / (8 * _1M) /* convert to megabytes */;
 
+    if (aMachine)
+    {
+       QString typeId = aMachine->GetOSTypeId();
+       if (typeId.startsWith("Windows"))
+       {
+           /* Windows guests need offscreen VRAM too for graphics acceleration features. */
+           needMBytes *= 2;
+       }
+    }
+
     return needMBytes * _1M;
 }
 
