@@ -107,7 +107,7 @@ int main()
  * @param   pszValue    Pointer to the string value.
  * @param   pu32        Where to store the converted number.
  */
-int RTStrVersionToUInt32(const char *pszVer, uint32_t *pu32)
+RTDECL(int) RTStrVersionToUInt32(const char *pszVer, uint32_t *pu32)
 {
     const char *str = pszVer;
     AssertPtr(pu32);
