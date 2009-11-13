@@ -1494,9 +1494,9 @@ typedef struct X86PDE2MPAEBITS
     /** No Execute flag. */
     uint32_t    u1NoExecute : 1;
 } X86PDE2MPAEBITS;
-/** Pointer to a 4MB PAE page table entry. */
+/** Pointer to a 2MB PAE page table entry. */
 typedef X86PDE2MPAEBITS *PX86PDE2MPAEBITS;
-/** Pointer to a 4MB PAE page table entry. */
+/** Pointer to a 2MB PAE page table entry. */
 typedef const X86PDE2MPAEBITS *PCX86PDE2MPAEBITS;
 
 /** @} */
