@@ -165,6 +165,11 @@ running_vboxguest()
     lsmod | grep -q "vboxguest[^_-]"
 }
 
+running_vboxadd()
+{
+    lsmod | grep -q "vboxadd[^_-]"
+}
+
 running_vboxvfs()
 {
     lsmod | grep -q "vboxvfs[^_-]"
@@ -307,7 +312,7 @@ setup()
     echo
     if ! sh /usr/share/$PACKAGE/test_drm/build_in_tmp \
         --no-dkms --no-print-directory >> $LOG 2>&1; then
-        printf "Your system does not seem to support OpenGL in the kernel (this requires\nLinux 2.6.27 or later).  The OpenGL support will not be built.\n"
+        printf "Your system does not seem to support OpenGL in the kernel (this requires\nLinux 2.6.27 or later).  The OpenGL support will not be built.\n\n"
         BUILDVBOXVIDEO=""
     fi
     begin "Building the main Guest Additions module"
@@ -375,8 +380,11 @@ setup()
     ln -sf /usr/lib/$PACKAGE/mount.vboxsf /sbin
 
     succ_msg
-    echo
-    echo "You should reboot your guest to make sure the new modules are actually used"
+    if running_vboxguest || running_vboxadd; then
+        printf "You should restart your guest to make sure the new modules are actually used\n\n"
+    else
+        start
+    fi
 }
 
 # cleanup_script
