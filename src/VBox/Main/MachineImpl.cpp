@@ -3517,6 +3517,16 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
 
     try
     {
+        AutoCaller autoCaller(this);
+        CheckComRCReturnRC(autoCaller.rc());
+
+        AutoWriteLock alock(this);
+
+        rc = checkStateDependency(MutableStateDep);
+        CheckComRCReturnRC(rc);
+
+        rc = S_OK;
+
         Utf8Str utf8Name(aName);
         Utf8Str utf8Flags(aFlags);
         Utf8Str utf8Patterns(mHWData->mGuestPropertyNotificationPatterns);
@@ -3532,16 +3542,6 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
             return setError(E_INVALIDARG,
                             tr("Invalid flag values: '%ls'"),
                             aFlags);
-
-        AutoCaller autoCaller(this);
-        CheckComRCReturnRC(autoCaller.rc());
-
-        AutoWriteLock alock(this);
-
-        rc = checkStateDependency(MutableStateDep);
-        CheckComRCReturnRC(rc);
-
-        rc = S_OK;
 
         if (!mHWData->mPropertyServiceActive)
         {
