@@ -201,7 +201,7 @@ VMMDECL(void) PGMPhysInvalidatePageGCMapTLB(PVM pVM)
     NOREF(pVM);
 }
 
-
+#ifndef IN_RC
 /**
  * Invalidates the ring-0 page mapping TLB.
  *
@@ -230,7 +230,7 @@ VMMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM)
     }
     pgmUnlock(pVM);
 }
-
+#endif /* ! IN_RC */
 
 /**
  * Makes sure that there is at least one handy page ready for use.
@@ -843,7 +843,8 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
         pTlbe->pMap = NULL;
         pTlbe->pv = pPGM->CTXALLSUFF(pvZeroPg);
     }
-    pTlbe->pPage = pPage;
+    pTlbe->GCPhys = (GCPhys & X86_PTE_PAE_PG_MASK);
+    pTlbe->pPage  = pPage;
     return VINF_SUCCESS;
 }
 
@@ -885,6 +886,7 @@ int pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         pTlbe->pMap = NULL;
         pTlbe->pv = pPGM->CTXALLSUFF(pvZeroPg);
     }
+    pTlbe->GCPhys = (GCPhys & X86_PTE_PAE_PG_MASK);
     pTlbe->pPage = pPage;
     return VINF_SUCCESS;
 }
