@@ -2207,18 +2207,21 @@ PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int 
      * We change iIrq here according to the spec and call the SetIrq function
      * of our parent passing the device which asserted the interrupt instead of the device of the bridge.
      */
-    PPCIBUS     pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
-    int iIrqPinBridge = 0;
-    uint8_t uDevFnBridge = pPciDev->devfn;
+    PPCIBUS    pBus          = PDMINS_2_DATA(pDevIns, PPCIBUS);
+    PPCIDEVICE pPciDevBus    = pPciDev;
+    int        iIrqPinBridge = iIrq;
+    uint8_t    uDevFnBridge  = 0;
 
     /* Walk the chain until we reach the host bus. */
-    while (pBus->iBus != 0)
+    do
     {
-        uDevFnBridge = pBus->PciDev.devfn;
-        iIrqPinBridge = ((uDevFnBridge >> 3) + iIrqPinBridge) & 3;
+        uDevFnBridge  = pBus->PciDev.devfn;
+        iIrqPinBridge = ((pPciDevBus->devfn >> 3) + iIrqPinBridge) & 3;
+
         /* Get the parent. */
         pBus = pBus->PciDev.Int.s.CTX_SUFF(pBus);
-    }
+        pPciDevBus = &pBus->PciDev;
+    } while (pBus->iBus != 0);
 
     AssertMsg(pBus->iBus == 0, ("This is not the host pci bus iBus=%d\n", pBus->iBus));
     pciSetIrqInternal(PCIBUS_2_PCIGLOBALS(pBus), uDevFnBridge, pPciDev, iIrqPinBridge, iLevel);
