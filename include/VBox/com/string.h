@@ -374,13 +374,15 @@ public:
     }
 
     /**
-     *  Intended to assign instances to |char *| out parameters from within the
-     *  interface method. Transfers the ownership of the duplicated string to the
-     *  caller.
+     * Intended to assign instances to |char *| out parameters from within the
+     * interface method. Transfers the ownership of the duplicated string to the
+     * caller.
+     *
+     * @remarks The returned string must be freed by RTStrFree, not RTMemFree.
      */
     const Utf8Str& cloneTo(char **pstr) const
     {
-        if (pstr)
+        if (pstr) /** @todo r=bird: This needs to if m_psz is NULL. Shouldn't it also throw std::bad_alloc? */
             *pstr = RTStrDup(m_psz);
         return *this;
     }
@@ -470,8 +472,10 @@ public:
     }
 
     /**
-     *  Intended to pass instances as out (|char **|) parameters to methods.
-     *  Takes the ownership of the returned data.
+     * Intended to pass instances as out (|char **|) parameters to methods. Takes
+     * the ownership of the returned data.
+     *
+     * @remarks    See ministring::jolt().
      */
     char **asOutParam()
     {
@@ -502,8 +506,9 @@ protected:
     {
         if (s)
         {
-            RTUtf16ToUtf8((PRTUTF16)s, &m_psz);
-            m_cbLength = strlen(m_psz);             // TODO optimize by using a different RTUtf* function
+            RTUtf16ToUtf8((PRTUTF16)s, &m_psz); /** @todo r=bird: This isn't throwing std::bad_alloc / handling return codes.
+                                                 * Also, this technically requires using RTStrFree, ministring::cleanup() uses RTMemFree. */
+            m_cbLength = strlen(m_psz);         /** @todo optimize by using a different RTUtf* function */
             m_cbAllocated = m_cbLength + 1;
         }
         else
@@ -675,4 +680,5 @@ public:
 
 } /* namespace com */
 
-#endif /* ___VBox_com_string_h */
+#endif /* !___VBox_com_string_h */
+
