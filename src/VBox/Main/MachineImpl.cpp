@@ -2028,7 +2028,7 @@ Machine::COMSETTER(ClipboardMode) (ClipboardMode_T aClipboardMode)
 }
 
 STDMETHODIMP
-Machine::COMGETTER(GuestPropertyNotificationPatterns) (BSTR *aPatterns)
+Machine::COMGETTER(GuestPropertyNotificationPatterns)(BSTR *aPatterns)
 {
     CheckComArgOutPointerValid(aPatterns);
 
@@ -2037,15 +2037,22 @@ Machine::COMGETTER(GuestPropertyNotificationPatterns) (BSTR *aPatterns)
 
     AutoReadLock alock(this);
 
-    mHWData->mGuestPropertyNotificationPatterns.cloneTo(aPatterns);
+    try
+    {
+        mHWData->mGuestPropertyNotificationPatterns.cloneTo(aPatterns);
+    }
+    catch (...)
+    {
+        return VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+    }
 
-    return RT_LIKELY (aPatterns != NULL) ? S_OK : E_OUTOFMEMORY; /** @todo r=bird: this is wrong... :-) */
+    return S_OK;
 }
 
 STDMETHODIMP
-Machine::COMSETTER(GuestPropertyNotificationPatterns) (IN_BSTR aPatterns)
+Machine::COMSETTER(GuestPropertyNotificationPatterns)(IN_BSTR aPatterns)
 {
-    AssertLogRelReturn (VALID_PTR (aPatterns), E_POINTER);
+    CheckComArgNotNull(aPatterns);
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
@@ -2054,11 +2061,16 @@ Machine::COMSETTER(GuestPropertyNotificationPatterns) (IN_BSTR aPatterns)
     HRESULT rc = checkStateDependency(MutableStateDep);
     CheckComRCReturnRC(rc);
 
-    mHWData.backup();
-    mHWData->mGuestPropertyNotificationPatterns = aPatterns;
-
-    return RT_LIKELY (!mHWData->mGuestPropertyNotificationPatterns.isNull())
-               ? S_OK : E_OUTOFMEMORY;
+    try
+    {
+        mHWData.backup();
+        mHWData->mGuestPropertyNotificationPatterns = aPatterns;
+    }
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+    }
+    return rc;
 }
 
 STDMETHODIMP
@@ -3517,6 +3529,9 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
 
     try
     {
+        Utf8Str utf8Name(aName);
+        Utf8Str utf8Flags(aFlags);
+
         AutoCaller autoCaller(this);
         CheckComRCReturnRC(autoCaller.rc());
 
@@ -3526,15 +3541,6 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
         CheckComRCReturnRC(rc);
 
         rc = S_OK;
-
-        Utf8Str utf8Name(aName);
-        Utf8Str utf8Flags(aFlags);
-        Utf8Str utf8Patterns(mHWData->mGuestPropertyNotificationPatterns);
-
-        bool matchAll = false;
-        if (utf8Patterns.isEmpty())
-            matchAll = true;
-
         uint32_t fFlags = NILFLAG;
         if (    (aFlags != NULL)
              && RT_FAILURE(validateFlags (utf8Flags.raw(), &fFlags))
@@ -3549,33 +3555,32 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
             HWData::GuestProperty property;
             property.mFlags = NILFLAG;
 
-            if (SUCCEEDED(rc))
-            {
-                for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
-                     it != mHWData->mGuestProperties.end();
-                     ++it)
-                    if (it->strName == utf8Name)
+            /** @todo r=bird: see efficiency rant in PushGuestProperty. (Yeah, I know,
+             *        this is simple and do an OK job atm.) */
+            for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
+                 it != mHWData->mGuestProperties.end();
+                 ++it)
+                if (it->strName == utf8Name)
+                {
+                    property = *it;
+                    if (it->mFlags & (RDONLYHOST))
+                        rc = setError(E_ACCESSDENIED,
+                                      tr("The property '%ls' cannot be changed by the host"),
+                                      aName);
+                    else
                     {
-                        property = *it;
-                        if (it->mFlags & (RDONLYHOST))
-                            rc = setError(E_ACCESSDENIED,
-                                          tr("The property '%ls' cannot be changed by the host"),
-                                          aName);
-                        else
-                        {
-                            mHWData.backup();
-                            /* The backup() operation invalidates our iterator, so
-                            * get a new one. */
-                            for (it = mHWData->mGuestProperties.begin();
-                                 it->strName != utf8Name;
-                                 ++it)
-                                ;
-                            mHWData->mGuestProperties.erase (it);
-                        }
-                        found = true;
-                        break;
+                        mHWData.backup();
+                        /* The backup() operation invalidates our iterator, so
+                        * get a new one. */
+                        for (it = mHWData->mGuestProperties.begin();
+                             it->strName != utf8Name;
+                             ++it)
+                            ;
+                        mHWData->mGuestProperties.erase (it);
                     }
-            }
+                    found = true;
+                    break;
+                }
             if (found && SUCCEEDED(rc))
             {
                 if (*aValue)
@@ -3599,12 +3604,15 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
                 mHWData->mGuestProperties.push_back (property);
             }
             if (   SUCCEEDED(rc)
-                && (   matchAll
-                    || RTStrSimplePatternMultiMatch (utf8Patterns.raw(), RTSTR_MAX,
-                                                    utf8Name.raw(), RTSTR_MAX, NULL)
-                )
-            )
-                mParent->onGuestPropertyChange (mData->mUuid, aName, aValue, aFlags);
+                && (   mHWData->mGuestPropertyNotificationPatterns.isEmpty()
+                    || RTStrSimplePatternMultiMatch(mHWData->mGuestPropertyNotificationPatterns.raw(), RTSTR_MAX,
+                                                    utf8Name.raw(), RTSTR_MAX, NULL) )
+               )
+            {
+                /** @todo r=bird: Why aren't we leaving the lock here?  The
+                 *                same code in PushGuestProperty does... */
+                mParent->onGuestPropertyChange(mData->mUuid, aName, aValue, aFlags);
+            }
         }
         else
         {
@@ -3619,9 +3627,11 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
             if (!directControl)
                 rc = E_FAIL;
             else
-                rc = directControl->AccessGuestProperty
-                             (aName, *aValue ? aValue : NULL, aFlags,
-                              true /* isSetter */, &dummy, &dummy64, &dummy);
+                rc = directControl->AccessGuestProperty(aName,
+                                                        *aValue ? aValue : NULL,  /** @todo Fix when adding DeleteGuestProperty(), see defect. */
+                                                        aFlags,
+                                                        true /* isSetter */,
+                                                        &dummy, &dummy64, &dummy);
         }
     }
     catch (std::bad_alloc &)
@@ -3665,9 +3675,6 @@ STDMETHODIMP Machine::EnumerateGuestProperties(IN_BSTR aPatterns,
 
     Utf8Str strPatterns(aPatterns);
 
-    bool matchAll = false;
-    if ((NULL == aPatterns) || (0 == aPatterns[0]))
-        matchAll = true;
     if (!mHWData->mPropertyServiceActive)
     {
 
@@ -3678,7 +3685,7 @@ STDMETHODIMP Machine::EnumerateGuestProperties(IN_BSTR aPatterns,
         for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
              it != mHWData->mGuestProperties.end();
              ++it)
-            if (   matchAll
+            if (   strPatterns.isEmpty()
                 || RTStrSimplePatternMultiMatch(strPatterns.raw(),
                                                 RTSTR_MAX,
                                                 it->strName.raw(),
@@ -9207,58 +9214,67 @@ STDMETHODIMP SessionMachine::PullGuestProperties(ComSafeArrayOut(BSTR, aNames),
 #endif
 }
 
-STDMETHODIMP SessionMachine::PushGuestProperties(ComSafeArrayIn (IN_BSTR, aNames),
-                                                 ComSafeArrayIn (IN_BSTR, aValues),
-                                                 ComSafeArrayIn (ULONG64, aTimestamps),
-                                                 ComSafeArrayIn (IN_BSTR, aFlags))
+STDMETHODIMP SessionMachine::PushGuestProperties(ComSafeArrayIn(IN_BSTR, aNames),
+                                                 ComSafeArrayIn(IN_BSTR, aValues),
+                                                 ComSafeArrayIn(ULONG64, aTimestamps),
+                                                 ComSafeArrayIn(IN_BSTR, aFlags))
 {
     LogFlowThisFunc(("\n"));
 
 #ifdef VBOX_WITH_GUEST_PROPS
     using namespace guestProp;
 
+    AssertReturn(!ComSafeArrayInIsNull(aNames),      E_POINTER);
+    AssertReturn(!ComSafeArrayInIsNull(aValues),     E_POINTER);
+    AssertReturn(!ComSafeArrayInIsNull(aTimestamps), E_POINTER);
+    AssertReturn(!ComSafeArrayInIsNull(aFlags),      E_POINTER);
+
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoWriteLock alock(this);
 
-    /* Temporarily reset the registered flag, so that our machine state
-     * changes (i.e. mHWData.backup()) succeed.  (isMutable() used in
-     * all setters will return FALSE for a Machine instance if mRegistered
-     * is TRUE).  This is copied from registeredInit(), and may or may not be
-     * the right way to handle this. */
+    /*
+     * Temporarily reset the registered flag, so that our machine state
+     * changes (i.e. mHWData.backup()) succeed.  (isMutable() used in all
+     * setters will return FALSE for a Machine instance if mRegistered is TRUE).
+     *
+     * This is copied from registeredInit(), and may or may not be the right
+     * way to handle this.
+     */
+    Assert(!mData->mRegistered);
     mData->mRegistered = FALSE;
+
     HRESULT rc = checkStateDependency(MutableStateDep);
-    LogRel (("checkStateDependency(MutableStateDep) returned 0x%x\n", rc));
-    CheckComRCReturnRC(rc);
+    AssertLogRelMsgReturn(SUCCEEDED(rc), ("%Rhrc\n", rc), rc);
 
-    // ComAssertRet (mData->mMachineState < MachineState_Running, E_FAIL);
+    com::SafeArray<IN_BSTR> names(     ComSafeArrayInArg(aNames));
+    com::SafeArray<IN_BSTR> values(    ComSafeArrayInArg(aValues));
+    com::SafeArray<ULONG64> timestamps(ComSafeArrayInArg(aTimestamps));
+    com::SafeArray<IN_BSTR> flags(     ComSafeArrayInArg(aFlags));
 
-    AssertReturn(!ComSafeArrayInIsNull (aNames), E_POINTER);
-    AssertReturn(!ComSafeArrayInIsNull (aValues), E_POINTER);
-    AssertReturn(!ComSafeArrayInIsNull (aTimestamps), E_POINTER);
-    AssertReturn(!ComSafeArrayInIsNull (aFlags), E_POINTER);
-
-    com::SafeArray<IN_BSTR> names (ComSafeArrayInArg (aNames));
-    com::SafeArray<IN_BSTR> values (ComSafeArrayInArg (aValues));
-    com::SafeArray<ULONG64> timestamps (ComSafeArrayInArg (aTimestamps));
-    com::SafeArray<IN_BSTR> flags (ComSafeArrayInArg (aFlags));
     DiscardSettings();
     mHWData.backup();
-    mHWData->mGuestProperties.erase (mHWData->mGuestProperties.begin(),
+
+    mHWData->mGuestProperties.erase(mHWData->mGuestProperties.begin(),
                                     mHWData->mGuestProperties.end());
     for (unsigned i = 0; i < names.size(); ++i)
     {
         uint32_t fFlags = NILFLAG;
-        validateFlags (Utf8Str (flags[i]).raw(), &fFlags);
+        validateFlags(Utf8Str(flags[i]).raw(), &fFlags);
         HWData::GuestProperty property = { names[i], values[i], timestamps[i], fFlags };
-        mHWData->mGuestProperties.push_back (property);
+        mHWData->mGuestProperties.push_back(property);
     }
+
     mHWData->mPropertyServiceActive = false;
+
     alock.unlock();
     SaveSettings();
+
     /* Restore the mRegistered flag. */
+    alock.lock();
     mData->mRegistered = TRUE;
+
     return S_OK;
 #else
     ReturnComNotImplemented();
@@ -9275,33 +9291,49 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
 #ifdef VBOX_WITH_GUEST_PROPS
     using namespace guestProp;
 
-    CheckComArgNotNull (aName);
-    if ((aValue != NULL) && (!VALID_PTR (aValue) || !VALID_PTR (aFlags)))
+    CheckComArgNotNull(aName);
+    if (aValue != NULL && (!VALID_PTR(aValue) || !VALID_PTR(aFlags)))
         return E_POINTER;  /* aValue can be NULL to indicate deletion */
 
     try
     {
+        /*
+         * Convert input up front.
+         */
+        Utf8Str     utf8Name(aName);
+        uint32_t    fFlags = NILFLAG;
+        if (aFlags)
+        {
+            Utf8Str utf8Flags(aFlags);
+            int vrc = validateFlags(utf8Flags.raw(), &fFlags);
+            AssertRCReturn(vrc, E_INVALIDARG);
+        }
+
+        /*
+         * Now grab the object lock and do the update
+         */
         AutoCaller autoCaller(this);
         CheckComRCReturnRC(autoCaller.rc());
 
         AutoWriteLock alock(this);
 
+        AssertReturn(mHWData->mPropertyServiceActive, VBOX_E_INVALID_OBJECT_STATE);
+
         HRESULT rc = checkStateDependency(MutableStateDep);
         CheckComRCReturnRC(rc);
 
-        Utf8Str utf8Name(aName);
-        Utf8Str utf8Flags(aFlags);
-        Utf8Str utf8Patterns(mHWData->mGuestPropertyNotificationPatterns);
-
-        uint32_t fFlags = NILFLAG;
-        if ((aFlags != NULL) && RT_FAILURE(validateFlags (utf8Flags.raw(), &fFlags)))
-            return E_INVALIDARG;
-
-        bool matchAll = false;
-        if (utf8Patterns.isEmpty())
-            matchAll = true;
-
         mHWData.backup();
+
+        /** @todo r=bird: The careful memory handling doesn't work out here because
+         *  the catch block won't undo any damange we've done.  So, if push_back throws
+         *  bad_alloc then you've lost the value.
+         *
+         *  Another thing. Doing a linear search here isn't extremely efficient, esp.
+         *  since values that changes actually bubbles to the end of the list.  Using
+         *  something that has an efficient lookup and can tollerate a bit of updates
+         *  would be nice.  RTStrSpace is one suggestion (it's not perfect).  Some
+         *  combination of RTStrCache (for sharing names and getting uniqueness into
+         *  the bargain) and hash/tree is another. */
         for (HWData::GuestPropertyList::iterator iter = mHWData->mGuestProperties.begin();
              iter != mHWData->mGuestProperties.end();
              ++iter)
@@ -9313,27 +9345,30 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
         if (aValue != NULL)
         {
             HWData::GuestProperty property = { aName, aValue, aTimestamp, fFlags };
-            mHWData->mGuestProperties.push_back (property);
+            mHWData->mGuestProperties.push_back(property);
         }
 
-        /* send a callback notification if appropriate */
-        alock.leave();
-        if (    matchAll
-             || RTStrSimplePatternMultiMatch(utf8Patterns.raw(),
+        /*
+         * Send a callback notification if appropriate
+         */
+        if (    mHWData->mGuestPropertyNotificationPatterns.isEmpty()
+             || RTStrSimplePatternMultiMatch(mHWData->mGuestPropertyNotificationPatterns.raw(),
                                              RTSTR_MAX,
                                              utf8Name.raw(),
                                              RTSTR_MAX, NULL)
            )
         {
+            alock.leave();
+
             mParent->onGuestPropertyChange(mData->mUuid,
                                            aName,
                                            aValue,
                                            aFlags);
         }
     }
-    catch(std::bad_alloc &)
+    catch (...)
     {
-        return E_OUTOFMEMORY;
+        return VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
     }
     return S_OK;
 #else
