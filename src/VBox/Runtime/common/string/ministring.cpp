@@ -35,13 +35,9 @@
 
 using namespace iprt;
 
-const size_t MiniString::npos = (size_t)-1;
+const size_t MiniString::npos = ~(size_t)0;
 
-/**
- * Appends a copy of @a that to "this".
- * @param that
- */
-MiniString& MiniString::append(const MiniString &that)
+MiniString &MiniString::append(const MiniString &that)
 {
     size_t lenThat = that.length();
     if (lenThat)
@@ -50,7 +46,10 @@ MiniString& MiniString::append(const MiniString &that)
         size_t cbBoth = lenThis + lenThat + 1;
 
         reserve(cbBoth);
-            // calls realloc(cbBoth) and sets m_cbAllocated
+            // calls realloc(cbBoth) and sets m_cbAllocated; may throw bad_alloc.
+#ifndef RT_EXCEPTIONS_ENABLED
+        AssertRelease(capacity() >= cbBoth);
+#endif
 
         memcpy(m_psz + lenThis, that.m_psz, lenThat);
         m_psz[lenThis + lenThat] = '\0';
@@ -59,19 +58,19 @@ MiniString& MiniString::append(const MiniString &that)
     return *this;
 }
 
-/**
- * Appends the given character to "this".
- * @param c
- * @return
- */
 MiniString& MiniString::append(char c)
 {
     if (c)
     {
         // allocate in chunks of 20 in case this gets called several times
         if (m_cbLength + 1 >= m_cbAllocated)
+        {
             reserve(m_cbLength + 10);
-            // calls realloc() and sets m_cbAllocated
+            // calls realloc(cbBoth) and sets m_cbAllocated; may throw bad_alloc.
+#ifndef RT_EXCEPTIONS_ENABLED
+            AssertRelease(capacity() >= m_cbLength + 1);
+#endif
+        }
 
         m_psz[m_cbLength] = c;
         m_psz[m_cbLength + 1] = '\0';
@@ -80,8 +79,7 @@ MiniString& MiniString::append(char c)
     return *this;
 }
 
-size_t MiniString::find(const char *pcszFind,
-                        size_t pos /*= 0*/)
+size_t MiniString::find(const char *pcszFind, size_t pos /*= 0*/)
     const
 {
     const char *pszThis, *p;
@@ -127,7 +125,10 @@ MiniString MiniString::substr(size_t pos /*= 0*/, size_t n /*= npos*/)
                         return ret;     // return empty string on bad encoding
 
                 size_t cbCopy = psz - pFirst;
-                ret.reserve(cbCopy + 1);
+                ret.reserve(cbCopy + 1); // may throw bad_alloc
+#ifndef RT_EXCEPTIONS_ENABLED
+                AssertRelease(capacity() >= cbCopy + 1);
+#endif
                 memcpy(ret.m_psz, pFirst, cbCopy);
                 ret.m_cbLength = cbCopy;
                 ret.m_psz[cbCopy] = '\0';
@@ -147,6 +148,8 @@ bool MiniString::endsWith(const MiniString &that, CaseSensitivity cs /*= CaseSen
     size_t l2 = that.length();
     if (l1 < l2)
         return false;
+    /** @todo r=bird: If l2 is 0, then m_psz can be NULL and we will crash. See
+     *        also handling of l2 == in startsWith. */
 
     size_t l = l1 - l2;
     if (cs == CaseSensitive)
@@ -159,7 +162,7 @@ bool MiniString::startsWith(const MiniString &that, CaseSensitivity cs /*= CaseS
 {
     size_t l1 = length();
     size_t l2 = that.length();
-    if (l1 == 0 || l2 == 0)
+    if (l1 == 0 || l2 == 0) /** @todo r=bird: this differs from endsWith, and I think other IPRT code. If l2 == 0, it matches anything. */
         return false;
 
     if (l1 < l2)
@@ -173,6 +176,8 @@ bool MiniString::startsWith(const MiniString &that, CaseSensitivity cs /*= CaseS
 
 bool MiniString::contains(const MiniString &that, CaseSensitivity cs /*= CaseSensitive*/) const
 {
+    /** @todo r-bird: Not checking for NULL strings like startsWith does (and
+     *        endsWith only does half way). */
     if (cs == CaseSensitive)
         return ::RTStrStr(m_psz, that.m_psz) != NULL;
     else
