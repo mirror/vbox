@@ -36,6 +36,7 @@
 #include <iprt/string.h>
 #include "internal/iprt.h"
 
+#include <iprt/assert.h>
 #include <iprt/ctype.h> /* needed for RT_C_IS_DIGIT */
 #include <iprt/err.h>
 
@@ -106,48 +107,57 @@ int main()
  *
  * @param   pszValue    Pointer to the string value.
  * @param   pu32        Where to store the converted number.
+ *
+ * @remarks The returned value isn't really suitable for comparing two version
+ *          strings.  Try see which result you get when converting "3.0.14" and
+ *          "3.1.0" and comparing the values.  The way to fix this deficiency
+ *          would be to convert the individual parts and dividing the return
+ *          value into sections: bits 31:24 FirstNumber; 23:16 Second; 15:8
+ *          Third; 7:0 Forth.  It would probably be a good idea to use a 64-bit
+ *          return value instead of a 32-bit one, so there is room for revision
+ *          number when found.
+ *
+ *          Actually, because of the above, the kind of API I had in mind was
+ *          int RTStrVersionCompare(const char *pszVer1, const char *pszVer2).
+ *          It wouldn't try convert input to numbers, just do a parallel parse.
+ *          This would allow easy handling beta/alpha/++ indicators and any
+ *          number of dots and dashes.
  */
 RTDECL(int) RTStrVersionToUInt32(const char *pszVer, uint32_t *pu32)
 {
-    const char *str = pszVer;
+    const char *psz = pszVer;
     AssertPtr(pu32);
-    AssertPtr(str);
+    AssertPtr(psz);
 
-    char *strNew = (char*)RTMemAllocZ((strlen(pszVer) + 1) * sizeof(char));
-    if (strNew == NULL)
+    char *pszNew = (char*)RTMemAllocZ((strlen(pszVer) + 1) * sizeof(char));
+    if (pszNew == NULL)
         return VERR_NO_MEMORY;
 
-    int rc = VERR_NO_DIGITS;
-    uint16_t c = 0;
-    bool fLastInvalid = false;
-    while (    str
-           && *str != '\0')
+    unsigned    i            = 0;
+    bool        fLastInvalid = false;
+    while (    psz
+           && *psz != '\0')
     {
         if (fLastInvalid)
         {
-            if (   *str == '-'
-                || *str == '_')
-            {
+            if (   *psz == '-'
+                || *psz == '_')
                 fLastInvalid = false;
-            }
         }
         else
         {
-            if (RT_C_IS_DIGIT(*str))
-            {
-                strNew[c++] = *str;
-            }
-            else if (   *str != '.'
-                     && c == 0)
-            {
+            if (RT_C_IS_DIGIT(*psz))
+                pszNew[i++] = *psz;
+            else if (   *psz != '.'
+                     && i == 0)
                 fLastInvalid = true;
-            }
         }
-        str++;
+        psz++;
     }
-    strNew[c] = '\0';
+    pszNew[i] = '\0';
 
     /* Convert final number string to number */
+    int rc;
     if (fLastInvalid)
     {
         *pu32 = 0;
