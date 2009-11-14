@@ -2268,7 +2268,7 @@ public:
     void attachCopy(const D *data) {
         AssertMsg(data, ("data to copy must not be NULL"));
         if (data)
-            attach(new D (*data));
+            attach(new D(*data));
     }
 
     void attachCopy(const Shareable &data) {
@@ -2345,8 +2345,9 @@ public:
         AssertMsg(this->mData, ("data must not be NULL"));
         if (this->mData && !mBackupData)
         {
+            D *pNewData = new D(*this->mData)
             mBackupData = this->mData;
-            this->mData = new D(*mBackupData);
+            this->mData = pNewData;
         }
     }
 
@@ -2416,8 +2417,9 @@ public:
         {
             if (!mBackupData)
             {
+                D *pNewData = new D(*data)
                 mBackupData = this->mData;
-                this->mData = new D (*data);
+                this->mData = pNewData;
             }
             else
                 *this->mData = *data;
