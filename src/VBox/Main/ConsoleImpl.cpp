@@ -506,6 +506,7 @@ void Console::uninit()
 }
 
 #ifdef VBOX_WITH_GUEST_PROPS
+
 bool Console::enabledGuestPropertiesVRDP(void)
 {
     Bstr value;
@@ -606,6 +607,7 @@ void Console::updateGuestPropertiesVRDPDisconnect(uint32_t u32ClientId)
 
     return;
 }
+
 #endif /* VBOX_WITH_GUEST_PROPS */
 
 
@@ -1161,45 +1163,51 @@ Console::loadStateFileExecInternal(PSSMHANDLE pSSM, uint32_t u32Version)
 }
 
 #ifdef VBOX_WITH_GUEST_PROPS
+
 // static
 DECLCALLBACK(int)
-Console::doGuestPropNotification(void *pvExtension, uint32_t,
+Console::doGuestPropNotification(void *pvExtension, uint32_t u32Function,
                                  void *pvParms, uint32_t cbParms)
 {
     using namespace guestProp;
 
-//     LogFlowFunc(("pvExtension=%p, pvParms=%p, cbParms=%u\n", pvExtension, pvParms, cbParms));
-    int rc = VINF_SUCCESS;
-    /* No locking, as this is purely a notification which does not make any
-     * changes to the object state. */
-    PHOSTCALLBACKDATA pCBData = reinterpret_cast<PHOSTCALLBACKDATA>(pvParms);
+    Assert(u32Function == 0); NOREF(u32Function);
+
+    /*
+     * No locking, as this is purely a notification which does not make any
+     * changes to the object state.
+     */
+    PHOSTCALLBACKDATA   pCBData = reinterpret_cast<PHOSTCALLBACKDATA>(pvParms);
     AssertReturn(sizeof(HOSTCALLBACKDATA) == cbParms, VERR_INVALID_PARAMETER);
     AssertReturn(HOSTCALLBACKMAGIC == pCBData->u32Magic, VERR_INVALID_PARAMETER);
-    ComObjPtr<Console> pConsole = reinterpret_cast<Console *>(pvExtension);
-//     LogFlowFunc(("pCBData->pcszName=%s, pCBData->pcszValue=%s, pCBData->pcszFlags=%s\n", pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
+    Log5(("Console::doGuestPropNotification: pCBData={.pcszName=%s, .pcszValue=%s, .pcszFlags=%s}\n",
+          pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
+
+    int  rc;
     Bstr name(pCBData->pcszName);
     Bstr value(pCBData->pcszValue);
     Bstr flags(pCBData->pcszFlags);
-    if (   name.isNull()
-        || (value.isNull() && (pCBData->pcszValue != NULL))
-        || (flags.isNull() && (pCBData->pcszFlags != NULL))
+    if (   !name.isNull()
+        && (!value.isNull() || pCBData->pcszValue == NULL)
+        && (!flags.isNull() || pCBData->pcszFlags == NULL)
        )
-        rc = VERR_NO_MEMORY;
-    else
     {
-        HRESULT hrc = pConsole->mControl->PushGuestProperty(name, value,
-                                                            pCBData->u64Timestamp,
-                                                            flags);
-        if (FAILED(hrc))
+        ComObjPtr<Console> ptrConsole = reinterpret_cast<Console *>(pvExtension);
+        HRESULT hrc = ptrConsole->mControl->PushGuestProperty(name,
+                                                              value,
+                                                              pCBData->u64Timestamp,
+                                                              flags);
+        if (SUCCEEDED(hrc))
+            rc = VINF_SUCCESS;
+        else
         {
-//             LogFunc(("pConsole->mControl->PushGuestProperty failed, hrc=0x%x\n", hrc));
-//             LogFunc(("pCBData->pcszName=%s\n", pCBData->pcszName));
-//             LogFunc(("pCBData->pcszValue=%s\n", pCBData->pcszValue));
-//             LogFunc(("pCBData->pcszFlags=%s\n", pCBData->pcszFlags));
+            LogFunc(("Console::doGuestPropNotification: hrc=%Rhrc pCBData={.pcszName=%s, .pcszValue=%s, .pcszFlags=%s}\n",
+                     pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
             rc = Global::vboxStatusCodeFromCOM(hrc);
         }
     }
-//     LogFlowFunc(("rc=%Rrc\n", rc));
+    else
+        rc = VERR_NO_MEMORY;
     return rc;
 }
 
@@ -1299,7 +1307,8 @@ HRESULT Console::doEnumerateGuestProperties(CBSTR aPatterns,
     flags.detachTo(ComSafeArrayOutArg(aFlags));
     return S_OK;
 }
-#endif
+
+#endif /* VBOX_WITH_GUEST_PROPS */
 
 
 // IConsole properties
@@ -3896,7 +3905,7 @@ HRESULT Console::getGuestProperty(IN_BSTR aName, BSTR *aValue,
 {
 #ifndef VBOX_WITH_GUEST_PROPS
     ReturnComNotImplemented();
-#else
+#else  /* VBOX_WITH_GUEST_PROPS */
     if (!VALID_PTR(aName))
         return E_INVALIDARG;
     if (!VALID_PTR(aValue))
@@ -3973,7 +3982,7 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
 {
 #ifndef VBOX_WITH_GUEST_PROPS
     ReturnComNotImplemented();
-#else
+#else /* VBOX_WITH_GUEST_PROPS */
     if (!VALID_PTR(aName))
         return E_INVALIDARG;
     if ((aValue != NULL) && !VALID_PTR(aValue))
@@ -4049,7 +4058,7 @@ HRESULT Console::enumerateGuestProperties(IN_BSTR aPatterns,
 {
 #ifndef VBOX_WITH_GUEST_PROPS
     ReturnComNotImplemented();
-#else
+#else /* VBOX_WITH_GUEST_PROPS */
     if (!VALID_PTR(aPatterns) && (aPatterns != NULL))
         return E_POINTER;
     if (ComSafeArrayOutIsNull(aNames))
