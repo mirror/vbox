@@ -28,6 +28,10 @@
  * additional information or have any questions.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/err.h>
@@ -71,6 +75,8 @@ struct TstU32
 
 int main()
 {
+    /** @todo r=bird: IPRT init is missing. Use the RTTest framework (see any
+     *        tstRT*.cpp file for examples of this). */
     int cErrors = 0;
 
     static const struct TstU32 aTstU32[] =
