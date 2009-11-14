@@ -39,33 +39,30 @@
  *
  * Requires strings in form of "majorVer.minorVer.build".
  *
- * @returns iprt status code.
+ * @returns 0 if equal, 1 if Ver1 is greater, 2 if Ver2 is greater.
  *
  * @param   pszVer1     First version string to compare.
  * @param   pszVer2     First version string to compare.
- * @param   uint8_t     Pointer to comparison result:
- *                      0 if equal, 1 if Ver1 is greater, 2 if Ver2 is greater.
  *
- * @todo Move this to IPRT - where?
+ * @todo Move this to IPRT and add support for more dots, suffixes and whatnot.
  */
-VBGLR3DECL(int) VbglR3HostVersionCompare(const char *pszVer1, const char *pszVer2, uint8_t *puRes)
+VBGLR3DECL(int) VbglR3HostVersionCompare(const char *pszVer1, const char *pszVer2)
 {
-    uint32_t u32Ver1;
-    uint32_t u32Ver2;
+    /** @todo r=bird: not checking the return code, may be using uninitialized
+     *        variables... I'll fix this when moving into the runtime.  */
+    int iVer1Major, iVer1Minor, iVer1Build;
+    sscanf(pszVer1, "%d.%d.%d", &iVer1Major, &iVer1Minor, &iVer1Build);
+    int iVer2Major, iVer2Minor, iVer2Build;
+    sscanf(pszVer2, "%d.%d.%d", &iVer2Major, &iVer2Minor, &iVer2Build);
 
-    AssertPtr(puRes);
-    int rc = RTStrVersionToUInt32(pszVer1, &u32Ver1);
-    if (RT_SUCCESS(rc))
-        rc = RTStrVersionToUInt32(pszVer2, &u32Ver2);
+    int iVer1Final = (iVer1Major * 10000) + (iVer1Minor * 100) + iVer1Build;
+    int iVer2Final = (iVer2Major * 10000) + (iVer2Minor * 100) + iVer2Build;
 
-    *puRes = 0;
-    if (RT_SUCCESS(rc))
-    {
-        if (u32Ver1 > u32Ver2)
-            *puRes = 1;
-        else if (u32Ver2 > u32Ver1)
-            *puRes = 2;
-    }
+    int rc = 0;
+    if (iVer1Final > iVer2Final)
+        rc = 1;
+    else if (iVer2Final > iVer1Final)
+        rc = 2;
     return rc;
 }
 
@@ -168,9 +165,7 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
     /* Do the actual version comparison (if needed, see block(s) above) */
     if (RT_SUCCESS(rc) && *pfUpdate)
     {
-        uint8_t u8Res;
-        rc = VbglR3HostVersionCompare(*ppszHostVersion, *ppszGuestVersion, &u8Res);
-        if (RT_SUCCESS(rc) && u8Res == 1) /* Is host version greater than guest add version? */
+        if (VbglR3HostVersionCompare(*ppszHostVersion, *ppszGuestVersion) == 1) /* Is host version greater than guest add version? */
         {
             /* Yay, we have an update! */
             LogRel(("Guest Additions update found! Please upgrade this machine to the latest Guest Additions.\n"));
