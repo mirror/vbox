@@ -281,6 +281,7 @@ RuntimeR3_SOURCES       = \
 	common/string/strspace.cpp \
 	common/string/strstrip.cpp \
 	common/string/strtonum.cpp \
+	common/string/strversion.cpp \
 	common/string/uni.cpp \
 	common/string/unidata.cpp \
 	common/string/utf-16.cpp \
