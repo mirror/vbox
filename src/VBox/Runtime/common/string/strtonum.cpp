@@ -108,14 +108,14 @@ int main()
  * @param   pszValue    Pointer to the string value.
  * @param   pu32        Where to store the converted number.
  *
- * @remarks The returned value isn't really suitable for comparing two version
- *          strings.  Try see which result you get when converting "3.0.14" and
- *          "3.1.0" and comparing the values.  The way to fix this deficiency
- *          would be to convert the individual parts and dividing the return
- *          value into sections: bits 31:24 FirstNumber; 23:16 Second; 15:8
- *          Third; 7:0 Forth.  It would probably be a good idea to use a 64-bit
- *          return value instead of a 32-bit one, so there is room for revision
- *          number when found.
+ * @todo    r=bird: The returned value isn't really suitable for comparing two
+ *          version strings.  Try see which result you get when converting
+ *          "3.0.14" and "3.1.0" and comparing the values.  The way to fix this
+ *          deficiency would be to convert the individual parts and dividing the
+ *          return value into sections: bits 31:24 FirstNumber; 23:16 Second;
+ *          15:8 Third; 7:0 Forth.  It would probably be a good idea to use a
+ *          64-bit return value instead of a 32-bit one, so there is room for
+ *          revision number when found.
  *
  *          Actually, because of the above, the kind of API I had in mind was
  *          int RTStrVersionCompare(const char *pszVer1, const char *pszVer2).
