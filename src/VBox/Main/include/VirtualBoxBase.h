@@ -2345,7 +2345,7 @@ public:
         AssertMsg(this->mData, ("data must not be NULL"));
         if (this->mData && !mBackupData)
         {
-            D *pNewData = new D(*this->mData)
+            D *pNewData = new D(*this->mData);
             mBackupData = this->mData;
             this->mData = pNewData;
         }
@@ -2417,7 +2417,7 @@ public:
         {
             if (!mBackupData)
             {
-                D *pNewData = new D(*data)
+                D *pNewData = new D(*data);
                 mBackupData = this->mData;
                 this->mData = pNewData;
             }
