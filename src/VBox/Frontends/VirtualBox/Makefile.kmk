@@ -558,25 +558,25 @@ $$(PATH_VirtualBox)/include/COMWrappers \
 		$(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,VirtualBox,$<,$@)
-	$(RM) -f $@ $@.tmp $@.h $@.cpp
+	$(QUIET)$(RM) -f $@ $@.tmp $@.h $@.cpp
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl $<
 
-	$(SED) -e '1,/\/\/ wrapper definitions/ !d' \
+	$(QUIET)$(SED) -e '1,/\/\/ wrapper definitions/ !d' \
 		--output $@.tmp $@
-	$(CP) --changed $@.tmp $@.h
+	$(QUIET)$(CP) --changed $@.tmp $@.h
 
-	$(APPEND) -t -n $@.tmp \
+	$(QUIET)$(APPEND) -t -n $@.tmp \
 		'/*' \
 		' * DO NOT EDIT! This is a generated file, see COMWrappers.h for details.' \
 		' */' \
 		'' \
 		'#include "VBoxGlobal.h"' \
 		''
-	$(SED) -e '/\/\/ wrapper definitions/,9999999 !d' \
+	$(QUIET)$(SED) -e '/\/\/ wrapper definitions/,9999999 !d' \
 		-e 's/^inline //' \
 		--append $@.tmp $@
-	$(CP) --changed $@.tmp $@.cpp
-	$(RM) -f $@.tmp
+	$(QUIET)$(CP) --changed $@.tmp $@.cpp
+	$(QUIET)$(RM) -f $@.tmp
 
 
 # alias for generating the COM Wrappers file.
