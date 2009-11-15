@@ -79,8 +79,8 @@ $$(VBox-kStuff_0_OUTDIR)/kErrNameConsts.h: \
 		$(PATH_SUB_CURRENT)/kStuff/include/k/kErrors.h \
 		$(MAKEFILE_CURRENT) \
 		| $$(dir $$@)
-	$(RM) -f $@
-	$(SED) \
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(SED) \
 		-e '/^#define  *\(K[A-Z_]*ERR_[^ ()]*\) .*$$/!d' \
 		-e 's/^#define  *\(K[A-Z_]*ERR_[^ ()]*\) .*$$/ERR_CONST(\1)/' \
 		-e '/K[A-Z_]*ERR_[A-Z0-9_]*BASE/d' \
