@@ -543,7 +543,8 @@ public:
      */
     AcpiTableMADT(uint32_t cCpus)
     {
-        m_cCpus = cCpus;
+        m_cCpus  = cCpus;
+        m_pbData = NULL;                /* size() uses this and gcc will complain if not initilized. */
         uint32_t cb = size();
         m_pbData = (uint8_t *)RTMemAllocZ(cb);
     }
