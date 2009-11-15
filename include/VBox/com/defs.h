@@ -420,7 +420,7 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
 {                                                                             \
     nsresult rv;                                                              \
                                                                               \
-    _InstanceClass * inst;                                                    \
+    _InstanceClass * inst = NULL;       /* initialized to shut up gcc */      \
                                                                               \
     *aResult = NULL;                                                          \
     if (NULL != aOuter) {                                                     \
