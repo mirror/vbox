@@ -316,7 +316,7 @@ VBoxDrvTiger_DEFS       := IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SV
 VBoxDrvTiger_DEFS.debug += DEBUG_DARWIN_GIP
 VBoxDrvTiger_INCS        = .
 VBoxDrvTiger_LIBS        = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
-VBoxDrvTiger_LDFLAGS     = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
+#VBoxDrvTiger_LDFLAGS     = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
 VBoxDrvTiger_SOURCES     = \
 	SUPDrv.c \
 	SUPDrvAgnostic.c \

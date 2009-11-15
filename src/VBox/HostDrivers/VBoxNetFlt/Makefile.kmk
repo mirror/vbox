@@ -54,7 +54,7 @@ ifdef VBOX_LOOPBACK_USEFLAGS
  VBoxNetFlt_DEFS.win += VBOX_LOOPBACK_USEFLAGS
 endif
 VBoxNetFlt_SOURCES = VBoxNetFlt.c
-VBoxNetFlt_LDFLAGS.darwin = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
+#VBoxNetFlt_LDFLAGS.darwin = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
 VBoxNetFlt_LDFLAGS.win.x86 = -Entry:DriverEntry@8
 VBoxNetFlt_LDFLAGS.win.amd64 = -Entry:DriverEntry
 VBoxNetFlt_SOURCES.win.amd64 += win/VBoxNetFltA-win.asm
