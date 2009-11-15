@@ -464,7 +464,7 @@ static bool vboxdmgUdifCkSumIsValid(PCVBOXUDIFCKSUM pCkSum, const char *pszPrefi
 }
 
 
-/** @copydoc VBOXHDDBACKEND::pfnOpen */
+/** @copydoc VBOXHDDBACKEND::pfnClose */
 static DECLCALLBACK(int) vboxdmgClose(void *pvBackendData, bool fDelete)
 {
     PVBOXDMG pThis = (PVBOXDMG)pvBackendData;

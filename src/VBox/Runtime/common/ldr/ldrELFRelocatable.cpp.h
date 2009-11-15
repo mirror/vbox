@@ -1025,7 +1025,7 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
     int rc = pReader->pfnRead(pReader, &pModElf->Ehdr, sizeof(pModElf->Ehdr), 0);
     if (RT_SUCCESS(rc))
     {
-        RTLDRARCH enmArchImage;
+        RTLDRARCH enmArchImage = RTLDRARCH_INVALID; /* shut up gcc */
         rc = RTLDRELF_NAME(ValidateElfHeader)(&pModElf->Ehdr, pszLogName, cbRawImage, &enmArchImage);
         if (RT_SUCCESS(rc))
         {

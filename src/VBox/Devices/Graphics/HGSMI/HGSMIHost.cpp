@@ -1138,7 +1138,7 @@ static int hgsmiHostLoadFifoLocked (PHGSMIINSTANCE pIns, HGSMILIST * pFifo, PSSM
     {
         for(uint32_t i = 0; i < size; ++i)
         {
-            HGSMIHOSTFIFOENTRY *pFifoEntry;
+            HGSMIHOSTFIFOENTRY *pFifoEntry = NULL;  /* initialized to shut up gcc */
             rc = hgsmiHostLoadFifoEntryLocked (pIns, &pFifoEntry, pSSM); AssertRC(rc);
             if (RT_SUCCESS (rc))
             {

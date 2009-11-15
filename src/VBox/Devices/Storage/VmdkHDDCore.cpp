@@ -2074,7 +2074,7 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData,
         return vmdkError(pImage, VERR_VD_VMDK_UNSUPPORTED_VERSION, RT_SRC_POS, N_("VMDK: unsupported format version in descriptor in '%s'"), pImage->pszFilename);
 
     /* Get image creation type and determine image flags. */
-    const char *pszCreateType;
+    const char *pszCreateType = NULL;   /* initialized to make gcc shut up */
     rc = vmdkDescBaseGetStr(pImage, &pImage->Descriptor, "createType",
                             &pszCreateType);
     if (RT_FAILURE(rc))

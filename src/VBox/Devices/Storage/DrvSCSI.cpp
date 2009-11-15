@@ -609,9 +609,9 @@ static int drvscsiProcessRequestOne(PDRVSCSI pThis, PPDMSCSIREQUEST pRequest)
     int rc = VINF_SUCCESS;
     int iTxDir;
     int rcCompletion;
-    uint64_t uOffset;
-    uint32_t cbToTransfer;
-    uint32_t cSegmentsLeft;
+    uint64_t uOffset       = UINT64_MAX;    /* initialized to shut up gcc warnings. */
+    uint32_t cbToTransfer  = UINT32_MAX;    /* ditto */
+    uint32_t cSegmentsLeft = UINT32_MAX;    /* ditto */
 
     LogFlowFunc(("Entered\n"));
 
