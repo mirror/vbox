@@ -280,7 +280,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
     size_t cbNeeded;
     char *pBuf, *pNext;
     int aiMib[6];
-    unsigned short u16DefaultIface;
+    unsigned short u16DefaultIface = 0; /* initialized to shut up gcc */
 
     /* Get the index of the interface associated with default route. */
     rc = getDefaultIfaceIndex(&u16DefaultIface);

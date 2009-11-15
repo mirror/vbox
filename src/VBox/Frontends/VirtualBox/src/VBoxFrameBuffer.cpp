@@ -381,6 +381,7 @@ void VBoxQImageFrameBuffer::resizeEvent (VBoxResizeEvent *re)
                 remind = true;
                 break;
             default:
+                format = QImage::Format_Invalid; /* set it to something so gcc keeps quiet. */
                 remind = true;
                 fallback = true;
                 break;

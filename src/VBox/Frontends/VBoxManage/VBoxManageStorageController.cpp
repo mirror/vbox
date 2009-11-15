@@ -59,7 +59,7 @@ static const RTGETOPTDEF g_aStorageAttachOptions[] =
 
 int handleStorageAttach(HandlerArg *a)
 {
-    int c;
+    int c = VERR_INTERNAL_ERROR;        /* initialized to shut up gcc */
     HRESULT rc = S_OK;
     ULONG port   = ~0U;
     ULONG device = ~0U;
