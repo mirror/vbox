@@ -77,8 +77,8 @@ VBoxNetAdp.kext_CLEAN    = \
 
 $$(PATH_VBoxNetAdp.kext)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxNetAdp,$@,$<)
-	$(xQUIET)$(RM) -f $@
-	$(xQUIET)$(SED) \
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
 		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
