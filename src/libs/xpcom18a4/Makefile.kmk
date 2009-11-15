@@ -1432,8 +1432,6 @@ else
   ## @todo kBuild - this ain't working: VBoxPython_DLLSUFF.darwin = .so
   VBoxPython_DLLSUFF = .so
  endif
- VBoxPython_CFLAGS.darwin   = $(VBOX_PYTHON_FRAMEWORK)
- VBoxPython_CXXFLAGS.darwin = $(VBOX_PYTHON_FRAMEWORK)
  VBoxPython_LDFLAGS.darwin  = $(VBOX_PYTHON_FRAMEWORK)
  VBoxPython_INCS = \
  	python/src \
