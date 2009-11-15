@@ -110,7 +110,8 @@ PrepareAndDispatch(nsXPTCStubBase* self, uint32 methodIndex, PRUint32* args)
  * then subtracting 4 so the three subsequent pushes result in a 16-byte aligned
  * stack. */
 #define ALIGN_STACK_DECL \
-  unsigned int saved_esp;
+  unsigned int saved_esp = 0; /* VBOX: Initialize it to shut up half a million gcc warnings on darwin. 
+                               *       ALIGN_STACK_REGS_OUT/IN are a bit bogus, so the warning is probably correct. */
 
 #define ALIGN_STACK_SAVE \
   "movl %%esp, %3\n\t"
