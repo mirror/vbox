@@ -39,7 +39,7 @@ VBoxNetAdp_NOINST.linux     = true
 VBoxNetAdp_DEPS.solaris    += $(VBOX_SVN_REV_KMK)
 VBoxNetAdp_DEFS             = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
 VBoxNetAdp_DEFS.linux       = KBUILD_MODNAME=KBUILD_STR\(vboxnetadp\) KBUILD_BASENAME=KBUILD_STR\(vboxnetadp\) MODULE
-VBoxNetAdp_LDFLAGS.darwin   = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
+#VBoxNetAdp_LDFLAGS.darwin   = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
 VBoxNetAdp_LDFLAGS.solaris += -N misc/gld -N drv/vboxdrv
 VBoxNetAdp_INCS.linux   := \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
