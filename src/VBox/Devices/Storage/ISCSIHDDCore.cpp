@@ -2841,14 +2841,13 @@ static int iscsiOpen(const char *pszFilename, unsigned uOpenFlags,
 
     rc = iscsiOpenImage(pImage, uOpenFlags);
     if (RT_SUCCESS(rc))
-        *ppBackendData = pImage;
-
-out:
-    if (RT_SUCCESS(rc))
-    {
+    {    
         LogFlowFunc(("target %s cVolume %d, cbSector %d\n", pImage->pszTargetName, pImage->cVolume, pImage->cbSector));
         LogRel(("iSCSI: target address %s, target name %s, SCSI LUN %lld\n", pImage->pszTargetAddress, pImage->pszTargetName, pImage->LUN));
+        *ppBackendData = pImage;
     }
+
+out:
     LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
     return rc;
 }
