@@ -71,6 +71,7 @@
 #include <VBox/VRDPAuth.h>
 #include <VBox/version.h>
 
+#include <iprt/assert.h>
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
@@ -167,6 +168,16 @@ const char *g_pcszIUnknown = "IUnknown";
       <xsl:text>break;</xsl:text>
       <xsl:call-template name="emitNewline" />
     </xsl:for-each>
+    <!-- Add a default case so gcc gives us a rest, esp. on darwin. -->
+    <xsl:call-template name="emitNewlineIndent8" />
+    <xsl:text>default:</xsl:text>
+    <xsl:call-template name="emitNewlineIndent8" />
+    <xsl:text>    AssertMsgFailed(("e=%d\n", (int)e));</xsl:text>
+    <xsl:call-template name="emitNewlineIndent8" />
+    <xsl:value-of select="concat('    v = (vbox__', $enumname, ')0x7fffdead;')" />
+    <xsl:call-template name="emitNewlineIndent8" />
+    <xsl:text>break; </xsl:text>
+    <xsl:call-template name="emitNewline" />
     <xsl:text>    }</xsl:text>
     <xsl:call-template name="emitNewline" />
     <xsl:call-template name="emitNewline" />
@@ -201,6 +212,16 @@ const char *g_pcszIUnknown = "IUnknown";
       <xsl:text>break;</xsl:text>
       <xsl:call-template name="emitNewline" />
     </xsl:for-each>
+    <!-- Insert a default case so gcc gives us a rest, esp. on darwin. -->
+    <xsl:call-template name="emitNewlineIndent8" />
+    <xsl:text>default:</xsl:text>
+    <xsl:call-template name="emitNewlineIndent8" />
+    <xsl:text>    AssertMsgFailed(("v=%d\n", (int)v));</xsl:text>
+    <xsl:call-template name="emitNewlineIndent8" />
+    <xsl:value-of select="concat('    e = (', $enumname, '_T)0x7fffbeef;')" />
+    <xsl:call-template name="emitNewlineIndent8" />
+    <xsl:text>break; </xsl:text>
+    <xsl:call-template name="emitNewline" />
     <xsl:text>    }</xsl:text>
     <xsl:call-template name="emitNewline" />
     <xsl:call-template name="emitNewline" />
