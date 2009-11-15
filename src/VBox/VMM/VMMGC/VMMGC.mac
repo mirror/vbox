@@ -50,9 +50,13 @@
 
 %ifdef ASM_FORMAT_MACHO
  %ifdef __YASM__
-  ; this syntax requires a patch yasm, sorry.
   %macro VMMR0_SEG 1
-  [section %1 segname=VMMR0 align=1 ]
+   %ifndef DEFINED_VMMR0_SEG.%1
+    %define DEFINED_VMMR0_SEG.%1 1
+    [section VMMR0 %1 align=1 ]
+   %else
+    [section VMMR0 %1 ]
+   %endif
   %endmacro
  %else
   %macro VMMR0_SEG 1
