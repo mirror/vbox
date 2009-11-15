@@ -5251,8 +5251,8 @@ bool VBoxQGLOverlay::vboxSynchGl()
             && mContainer->address() == mpOverlayWidget->vboxAddress()
             && mContainer->bitsPerPixel() == mpOverlayWidget->vboxBitsPerPixel()
             && mContainer->bytesPerLine() == mpOverlayWidget->vboxBytesPerLine()
-            && mContainer->width() == mpOverlayWidget->vboxFbWidth()
-            && mContainer->height() == mpOverlayWidget->vboxFbHeight())
+            && (int)mContainer->width() == mpOverlayWidget->vboxFbWidth()
+            && (int)mContainer->height() == mpOverlayWidget->vboxFbHeight())
     {
         return false;
     }
