@@ -402,7 +402,7 @@ install_drivers()
                 # redirect attaching failure output to /dev/null
                 if test -f /platform/i86pc/kernel/drv/vboxusb.conf; then
                     add_driver "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP" "$NULLOP"
-                    # @todo - show indication of USB client driver success/failure.
+                    load_module "drv/$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP"
                 fi
             else
                 warnprint "Solaris 5.11 snv_124 or higher required for USB support. Skipped installing USB support."
