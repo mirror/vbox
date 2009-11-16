@@ -1050,7 +1050,7 @@ VMMR3DECL(void) PDMR3Reset(PVM pVM)
 
 /**
  * This function will notify all the devices and their
- * attached drivers about the VM now being reset.
+ * attached drivers about the VM now being suspended.
  *
  * @param   pVM     VM Handle.
  * @thread  EMT(0)
