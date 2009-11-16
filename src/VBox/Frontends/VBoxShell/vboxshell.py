@@ -393,7 +393,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
         if g_verbose:
             traceback.print_exc()
         return
-    if session.state != ctx['ifaces'].SessionState_Open:
+    if str(session.state) != str(ctx['ifaces'].SessionState_Open):
         print "Session to '%s' in wrong state: %s" %(mach.name, session.state)
         return
     # unfortunately IGuest is suppressed, thus WebServices knows not about it
