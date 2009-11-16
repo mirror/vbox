@@ -191,34 +191,11 @@ VMMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
 
 
 /**
- * Invalidates the GC page mapping TLB.
+ * Invalidates the all page mapping TLBs.
  *
  * @param   pVM     The VM handle.
  */
-VMMDECL(void) PGMPhysInvalidatePageGCMapTLB(PVM pVM)
-{
-    /* later */
-    NOREF(pVM);
-}
-
-#ifndef IN_RC
-/**
- * Invalidates the ring-0 page mapping TLB.
- *
- * @param   pVM     The VM handle.
- */
-VMMDECL(void) PGMPhysInvalidatePageR0MapTLB(PVM pVM)
-{
-    PGMPhysInvalidatePageR3MapTLB(pVM);
-}
-
-
-/**
- * Invalidates the ring-3 page mapping TLB.
- *
- * @param   pVM     The VM handle.
- */
-VMMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM)
+VMMDECL(void) PGMPhysInvalidatePageMapTLB(PVM pVM)
 {
     pgmLock(pVM);
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbHC.aEntries); i++)
@@ -228,9 +205,9 @@ VMMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM)
         pVM->pgm.s.PhysTlbHC.aEntries[i].pMap = 0;
         pVM->pgm.s.PhysTlbHC.aEntries[i].pv = 0;
     }
+    /* @todo clear the RC TLB whenever we add it. */
     pgmUnlock(pVM);
 }
-#endif /* ! IN_RC */
 
 /**
  * Makes sure that there is at least one handy page ready for use.
