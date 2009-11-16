@@ -110,7 +110,7 @@ static int vboxCheck2DVideoAccelerationSupported()
 #endif
 
 #ifdef VBOXGLTEST_WITH_LOGGING
-static int vboxInitLogging(const char *pszFilename)
+static int vboxInitLogging(const char *pszFilename, bool bGenNameSuffix)
 {
     PRTLOGGER loggerRelease;
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
@@ -123,7 +123,10 @@ static int vboxInitLogging(const char *pszFilename)
     RTLOGDEST enmLogDest;
     if(pszFilename)
     {
-        pszFilenameFmt = "%s";
+        if(bGenNameSuffix)
+            pszFilenameFmt = "%s.%ld.log";
+        else
+            pszFilenameFmt = "%s";
         enmLogDest = RTLOGDEST_FILE;
     }
     else
@@ -134,7 +137,7 @@ static int vboxInitLogging(const char *pszFilename)
 
     int vrc = RTLogCreateEx(&loggerRelease, fFlags, "all",
                             "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
-                            RTLOGDEST_FILE, szError, sizeof(szError), pszFilenameFmt, pszFilename);
+                            enmLogDest, szError, sizeof(szError), pszFilenameFmt, pszFilename, RTTimeMilliTS());
     if (RT_SUCCESS(vrc))
     {
         /* some introductory information */
@@ -241,6 +244,7 @@ int main(int argc, char **argv)
 #endif
 #ifdef VBOXGLTEST_WITH_LOGGING
         bool bLog = false;
+        bool bLogSuffix = false;
         const char * pLog;
 #endif
 
@@ -321,9 +325,10 @@ int main(int argc, char **argv)
                 pLog = RTEnvGet("VBOXGLTEST_LOG");
                 if(pLog)
                     bLog = true;
+                bLogSuffix = true;
             }
             if(bLog)
-                rc = vboxInitLogging(pLog);
+                rc = vboxInitLogging(pLog, bLogSuffix);
             else
 #endif
                 rc = vboxInitQuietMode();
