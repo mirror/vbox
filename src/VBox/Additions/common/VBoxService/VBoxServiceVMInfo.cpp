@@ -72,7 +72,6 @@ static uint32_t g_VMInfoLoggedInUsers = UINT32_MAX;
 /** Function prototypes for dynamic loading. */
 fnWTSGetActiveConsoleSessionId g_pfnWTSGetActiveConsoleSessionId = NULL;
 /** External functions. */
-extern int VBoxServiceWinGetAddsVersion(uint32_t uiClientID);
 extern int VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 #endif
 
@@ -170,16 +169,26 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
     VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/ServicePack", "%s", szInfo);
 
     /* Retrieve version information about Guest Additions and installed files (components). */
-#ifdef RT_OS_WINDOWS
-    rc = VBoxServiceWinGetAddsVersion(g_VMInfoGuestPropSvcClientID);
-    rc = VBoxServiceWinGetComponentVersions(g_VMInfoGuestPropSvcClientID);
-#else
-    /* VBoxServiceGetAddsVersion !RT_OS_WINDOWS */
-    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version", "%s", VBOX_VERSION_STRING);
+    char *pszAddVer, *pszAddRev;
+    rc = VbglR3GetAdditionsVersion(&pszAddVer, &pszAddRev);
+    if (RT_SUCCESS(rc))
+    {
+        /* Write information to host. */
+        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision", "%s", pszAddVer);
+        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version", "%s", pszAddRev);
+        RTStrFree(pszAddVer);
+        RTStrFree(pszAddRev);
+    }
 
-    char szRevision[32];
-    RTStrPrintf(szRevision, sizeof(szRevision), "%u", VBOX_SVN_REV);
-    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision", "%s", szRevision);
+#ifdef RT_OS_WINDOWS
+    char *pszInstDir;
+    rc = VbglR3GetAdditionsInstallationPath(&pszInstDir);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/InstallDir", "%s", pszInstDir);
+        RTStrFree(pszInstDir);
+    }
+    rc = VBoxServiceWinGetComponentVersions(g_VMInfoGuestPropSvcClientID);
 #endif
 
     /* Now enter the loop retrieving runtime data continuously. */
