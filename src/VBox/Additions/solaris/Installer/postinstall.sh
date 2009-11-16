@@ -27,10 +27,12 @@ uncompress_files()
     /usr/sbin/removef $PKGINST "$1/vboxvideo_drv_14.so.Z" 1>/dev/null
     /usr/sbin/removef $PKGINST "$1/vboxvideo_drv_15.so.Z" 1>/dev/null
     /usr/sbin/removef $PKGINST "$1/vboxvideo_drv_16.so.Z" 1>/dev/null
+    /usr/sbin/removef $PKGINST "$1/vboxvideo_drv_17.so.Z" 1>/dev/null
     /usr/sbin/removef $PKGINST "$1/vboxvideo_drv_71.so.Z" 1>/dev/null
     /usr/sbin/removef $PKGINST "$1/vboxmouse_drv_14.so.Z" 1>/dev/null
     /usr/sbin/removef $PKGINST "$1/vboxmouse_drv_15.so.Z" 1>/dev/null
     /usr/sbin/removef $PKGINST "$1/vboxmouse_drv_16.so.Z" 1>/dev/null
+    /usr/sbin/removef $PKGINST "$1/vboxmouse_drv_17.so.Z" 1>/dev/null
     /usr/sbin/removef $PKGINST "$1/vboxmouse_drv_70.so.Z" 1>/dev/null
     /usr/sbin/removef $PKGINST "$1/vboxmouse_drv_71.so.Z" 1>/dev/null
 
@@ -42,10 +44,12 @@ uncompress_files()
     /usr/sbin/installf -c none $PKGINST "$1/vboxvideo_drv_14.so" f
     /usr/sbin/installf -c none $PKGINST "$1/vboxvideo_drv_15.so" f
     /usr/sbin/installf -c none $PKGINST "$1/vboxvideo_drv_16.so" f
+    /usr/sbin/installf -c none $PKGINST "$1/vboxvideo_drv_17.so" f
     /usr/sbin/installf -c none $PKGINST "$1/vboxvideo_drv_71.so" f
     /usr/sbin/installf -c none $PKGINST "$1/vboxmouse_drv_14.so" f
     /usr/sbin/installf -c none $PKGINST "$1/vboxmouse_drv_15.so" f
     /usr/sbin/installf -c none $PKGINST "$1/vboxmouse_drv_16.so" f
+    /usr/sbin/installf -c none $PKGINST "$1/vboxmouse_drv_17.so" f
     /usr/sbin/installf -c none $PKGINST "$1/vboxmouse_drv_70.so" f
     /usr/sbin/installf -c none $PKGINST "$1/vboxmouse_drv_71.so" f
 
@@ -57,10 +61,12 @@ uncompress_files()
     uncompress -f "$1/vboxvideo_drv_14.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxvideo_drv_15.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxvideo_drv_16.so.Z" > /dev/null 2>&1
+    uncompress -f "$1/vboxvideo_drv_17.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxvideo_drv_71.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxmouse_drv_14.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxmouse_drv_15.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxmouse_drv_16.so.Z" > /dev/null 2>&1
+    uncompress -f "$1/vboxmouse_drv_17.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxmouse_drv_70.so.Z" > /dev/null 2>&1
     uncompress -f "$1/vboxmouse_drv_71.so.Z" > /dev/null 2>&1
 }
@@ -160,6 +166,10 @@ if test ! -z "$xorgbin"; then
             vboxmouse_src="vboxmouse_drv_15.so"
             vboxvideo_src="vboxvideo_drv_15.so"
             ;;
+        1.7.*)
+            vboxmouse_src="vboxmouse_drv_17.so"
+            vboxvideo_src="vboxvideo_drv_17.so"
+            ;;
         7.1.* | *7.2.* )
             vboxmouse_src="vboxmouse_drv_71.so"
             vboxvideo_src="vboxvideo_drv_71.so"
@@ -236,7 +246,7 @@ if test ! -z "$xorgbin"; then
             7.1.* | 7.2.* | 6.9.* | 7.0.* | 1.3.* )
                 $vboxadditions_path/x11config.pl
                 ;;
-            1.5.* | 1.6.* )
+            1.5.* | 1.6.* | 1.7.* )
                 $vboxadditions_path/x11config15sol.pl
                 ;;
         esac
