@@ -225,6 +225,60 @@ static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszRev)
 
 
 /**
+ * Looks up the storage path handle (registry).
+ *
+ * @returns IPRT status value
+ * @param   hKey        Receives pointer of allocated version string. NULL is
+ *                      accepted. The returned pointer must be closed by
+ *                      vbglR3CloseAdditionsWinStoragePath().
+ */
+static int vbglR3GetAdditionsWinStoragePath(PHKEY phKey)
+{
+    /*
+     * Try get the *installed* version first.
+     */
+    LONG r;
+
+    /* Check the new path first. */
+    r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, phKey);
+# ifdef RT_ARCH_AMD64
+    if (r != ERROR_SUCCESS)
+    {
+        /* Check Wow6432Node (for new entries). */
+        r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, phKey);
+    }
+# endif
+
+    /* Still no luck? Then try the old xVM paths ... */
+    if (r != ERROR_SUCCESS)
+    {
+        r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, phKey);
+# ifdef RT_ARCH_AMD64
+        if (r != ERROR_SUCCESS)
+        {
+            /* Check Wow6432Node (for new entries). */
+            r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, phKey);
+        }
+# endif
+    }
+    return RTErrConvertFromNtStatus(r);
+}
+
+
+/**
+ * Closes the storage path handle (registry).
+ *
+ * @returns IPRT status value
+ * @param   hKey        Handle to close, retrieved by
+ *                      vbglR3GetAdditionsWinStoragePath().
+ */
+static int vbglR3CloseAdditionsWinStoragePath(HKEY hKey)
+{
+    return RTErrConvertFromNtStatus(RegCloseKey(hKey));
+}
+
+
+/**
  * Retrieves the installed Guest Additions version and/or revision.
  *
  * @returns IPRT status value
@@ -238,40 +292,12 @@ static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszRev)
 VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
 {
 #ifdef RT_OS_WINDOWS
-    /*
-     * Try get the *installed* version first.
-     */
-    HKEY hKey = NULL;
-    LONG r;
-
-    /* Check the new path first. */
-    r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-# ifdef RT_ARCH_AMD64
-    if (r != ERROR_SUCCESS)
-    {
-        /* Check Wow6432Node (for new entries). */
-        r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-    }
-# endif
-
-    /* Still no luck? Then try the old xVM paths ... */
-    if (r != ERROR_SUCCESS)
-    {
-        r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-# ifdef RT_ARCH_AMD64
-        if (r != ERROR_SUCCESS)
-        {
-            /* Check Wow6432Node (for new entries). */
-            r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-        }
-# endif
-    }
-
-    /* Did we get something worth looking at? */
-    int rc = VINF_SUCCESS;
-    if (r == ERROR_SUCCESS)
+    HKEY hKey;
+    int rc = vbglR3GetAdditionsWinStoragePath(&hKey);
+    if (RT_SUCCESS(rc))
     {
         /* Version. */
+        LONG l;
         DWORD dwType;
         DWORD dwSize = 32;
         char *pszTmp;
@@ -280,8 +306,8 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
             pszTmp = (char*)RTMemAlloc(dwSize);
             if (pszTmp)
             {
-                r = RegQueryValueEx(hKey, "Version", NULL, &dwType, (BYTE*)(LPCTSTR)pszTmp, &dwSize);
-                if (r == ERROR_SUCCESS)
+                l = RegQueryValueEx(hKey, "Version", NULL, &dwType, (BYTE*)(LPCTSTR)pszTmp, &dwSize);
+                if (l == ERROR_SUCCESS)
                 {
                     if (dwType == REG_SZ)
                         rc = RTStrDupEx(ppszVer, pszTmp);
@@ -290,7 +316,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
                 }
                 else
                 {
-                    rc = RTErrConvertFromNtStatus(r);
+                    rc = RTErrConvertFromNtStatus(l);
                 }
                 RTMemFree(pszTmp);
             }
@@ -304,8 +330,8 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
             pszTmp = (char*)RTMemAlloc(dwSize);
             if (pszTmp)
             {
-                r = RegQueryValueEx(hKey, "Revision", NULL, &dwType, (BYTE*)(LPCTSTR)pszTmp, &dwSize);
-                if (r == ERROR_SUCCESS)
+                l = RegQueryValueEx(hKey, "Revision", NULL, &dwType, (BYTE*)(LPCTSTR)pszTmp, &dwSize);
+                if (l == ERROR_SUCCESS)
                 {
                     if (dwType == REG_SZ)
                         rc = RTStrDupEx(ppszRev, pszTmp);
@@ -314,7 +340,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
                 }
                 else
                 {
-                    rc = RTErrConvertFromNtStatus(r);
+                    rc = RTErrConvertFromNtStatus(l);
                 }
                 RTMemFree(pszTmp);
             }
@@ -327,8 +353,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
                 *ppszVer = NULL;
             }
         }
-        if (hKey != NULL)
-            RegCloseKey(hKey);
+        rc = vbglR3CloseAdditionsWinStoragePath(hKey);
     }
     else
     {
@@ -348,3 +373,57 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
 #endif /* !RT_OS_WINDOWS */
 }
 
+
+/**
+ * Retrieves the installation path of Guest Additions.
+ *
+ * @returns IPRT status value
+ * @param   ppszPath    Receives pointer of allocated installation path string.
+ *                      The returned pointer must be freed using
+ *                      RTStrFree().
+ */
+VBGLR3DECL(int) VbglR3GetAdditionsInstallationPath(char **ppszPath)
+{
+    int rc;
+#ifdef RT_OS_WINDOWS
+    HKEY hKey;
+    rc = vbglR3GetAdditionsWinStoragePath(&hKey);
+    if (RT_SUCCESS(rc))
+    {
+        /* Installation directory. */
+        DWORD dwType;
+        DWORD dwSize = _MAX_PATH * sizeof(char);
+        char *pszTmp = (char*)RTMemAlloc(dwSize + 1);
+        if (pszTmp)
+        {
+            LONG l = RegQueryValueEx(hKey, "InstallDir", NULL, &dwType, (BYTE*)(LPCTSTR)pszTmp, &dwSize);
+            if ((l != ERROR_SUCCESS) && (l != ERROR_FILE_NOT_FOUND))
+            {
+                rc = RTErrConvertFromNtStatus(l);
+            }
+            else
+            {
+                if (dwType == REG_SZ)
+                    rc = RTStrDupEx(ppszPath, pszTmp);
+                else
+                    rc = VERR_INVALID_PARAMETER;
+                if (RT_SUCCESS(rc))
+                {
+                    /* Flip slashes. */
+                    for (char* pszTmp2 = ppszPath[0]; ppszPath; ++ppszPath)
+                        if (*pszTmp2 == '\\')
+                            *pszTmp2 = '/';
+                }
+            }
+            RTMemFree(pszTmp);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+        rc = vbglR3CloseAdditionsWinStoragePath(hKey);
+    }
+#else
+    /** @todo implement me */
+    rc = VINF_NOT_IMPLEMENTED;
+#endif
+    return rc;
+}
