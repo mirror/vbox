@@ -9310,7 +9310,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
         }
 
         /*
-         * Now grab the object lock and do the update
+         * Now grab the object lock, validate the state and do the update.
          */
         AutoCaller autoCaller(this);
         CheckComRCReturnRC(autoCaller.rc());
@@ -9318,9 +9318,20 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
         AutoWriteLock alock(this);
 
         AssertReturn(mHWData->mPropertyServiceActive, VBOX_E_INVALID_OBJECT_STATE);
+        switch (mData->mMachineState)
+        {
+            case MachineState_Paused:
+            case MachineState_Running:
+            case MachineState_Teleporting:
+            case MachineState_TeleportingPausedVM:
+            case MachineState_LiveSnapshotting:
+            case MachineState_Saving:
+                break;
 
-        HRESULT rc = checkStateDependency(MutableStateDep);
-        CheckComRCReturnRC(rc);
+            default:
+                AssertMsgFailedReturn(("%s\n", Global::stringifyMachineState(mData->mMachineState)),
+                                      VBOX_E_INVALID_VM_STATE);
+        }
 
         mHWData.backup();
 
