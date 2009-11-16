@@ -661,6 +661,7 @@ void VBoxRegistrationDlg::populateCountries()
          << "Moldova, Republic of"
          << "Monaco"
          << "Mongolia"
+         << "Montenegro"
          << "Montserrat"
          << "Morocco"
          << "Mozambique"
@@ -702,6 +703,7 @@ void VBoxRegistrationDlg::populateCountries()
          << "Sao Tome & Principe"
          << "Saudi Arabia"
          << "Senegal"
+         << "Serbia"
          << "Seychelles"
          << "Sierra Leone"
          << "Singapore"
@@ -750,7 +752,6 @@ void VBoxRegistrationDlg::populateCountries()
          << "Western Sahara"
          << "Western Samoa"
          << "Yemen"
-         << "Yugoslavia"
          << "Zambia"
          << "Zimbabwe";
     mCbNewCountry->addItems (list);
