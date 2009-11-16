@@ -52,8 +52,6 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define VBOXSOLQUOTE2(x)         #x
-#define VBOXSOLQUOTE(x)          VBOXSOLQUOTE2(x)
 #define DEVICE_NAME              "vboxnet"
 /** The module descriptions as seen in 'modinfo'. */
 #define DEVICE_DESC_DRV          "VirtualBox NetAdp"
@@ -168,7 +166,7 @@ static struct dev_ops g_VBoxNetAdpSolarisDevOps =
 static struct modldrv g_VBoxNetAdpSolarisDriver =
 {
     &mod_driverops,                 /* extern from kernel */
-    DEVICE_DESC_DRV " " VBOX_VERSION_STRING "r" VBOXSOLQUOTE(VBOX_SVN_REV),
+    DEVICE_DESC_DRV " " VBOX_VERSION_STRING "r"  RT_XSTR(VBOX_SVN_REV),
     &g_VBoxNetAdpSolarisDevOps
 };
 
