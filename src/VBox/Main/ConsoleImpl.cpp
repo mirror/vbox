@@ -5776,6 +5776,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                     break;
 
                 /* Change the machine state from Running to Paused. */
+/** @todo Live Migration: Deal with Pause happening before VMR3Teleport! */
                 AssertBreak(that->mMachineState == MachineState_Running);
                 that->setMachineState(MachineState_Paused);
             }
