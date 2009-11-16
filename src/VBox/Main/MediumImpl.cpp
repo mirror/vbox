@@ -613,7 +613,7 @@ private:
  *       Medium::treeLock() is held in read mode.
  */
 class Medium::ImageChain : public Medium::List,
-                             public com::SupportErrorInfoBase
+                           public com::SupportErrorInfoBase
 {
 public:
 
@@ -670,27 +670,24 @@ public:
         for (List::const_iterator it = begin(); it != end(); ++ it)
         {
             HRESULT rc = S_OK;
-            MediumState_T mediaState;
-            rc = (*it)->LockRead(&mediaState);
-            CheckComRCReturnRC(rc);
+            MediumState_T mediumState = (*it)->state();
 
-            if (mediaState == MediumState_Inaccessible)
+            /* accessibility check must be first, otherwise locking
+             * interferes with getting the medium state. */
+            if (mediumState == MediumState_Inaccessible)
             {
-                rc = (*it)->RefreshState(&mediaState);
-                CheckComRCReturnRC(rc);
-                Assert(mediaState == MediumState_LockedRead);
-
-                /* Note that we locked the medium already, so use the error
-                 * value to see if there was an accessibility failure */
-                Bstr error;
-                rc = (*it)->COMGETTER(LastAccessError)(error.asOutParam());
+                rc = (*it)->RefreshState(&mediumState);
                 CheckComRCReturnRC(rc);
 
-                if (!error.isEmpty())
+                if (mediumState == MediumState_Inaccessible)
                 {
+                    Bstr error;
+                    rc = (*it)->COMGETTER(LastAccessError)(error.asOutParam());
+                    CheckComRCReturnRC(rc);
+
                     Bstr loc;
                     rc = (*it)->COMGETTER(Location)(loc.asOutParam());
-                    CheckComRCThrowRC(rc);
+                    CheckComRCReturnRC(rc);
 
                     /* collect multiple errors */
                     eik.restore();
@@ -704,6 +701,9 @@ public:
                     eik.fetch();
                 }
             }
+
+            rc = (*it)->LockRead(&mediumState);
+            CheckComRCReturnRC(rc);
         }
 
         eik.restore();
@@ -724,33 +724,24 @@ public:
         for (List::const_iterator it = begin(); it != end(); ++ it)
         {
             HRESULT rc = S_OK;
-            MediumState_T mediaState;
-            if (it == last)
-                rc = (*it)->LockWrite(&mediaState);
-            else
-                rc = (*it)->LockRead(&mediaState);
-            CheckComRCReturnRC(rc);
+            MediumState_T mediumState = (*it)->state();
 
-            if (mediaState == MediumState_Inaccessible)
+            /* accessibility check must be first, otherwise locking
+             * interferes with getting the medium state. */
+            if (mediumState == MediumState_Inaccessible)
             {
-                rc = (*it)->RefreshState(&mediaState);
-                CheckComRCReturnRC(rc);
-                if (it == last)
-                    Assert(mediaState == MediumState_LockedWrite);
-                else
-                    Assert(mediaState == MediumState_LockedRead);
-
-                /* Note that we locked the medium already, so use the error
-                 * value to see if there was an accessibility failure */
-                Bstr error;
-                rc = (*it)->COMGETTER(LastAccessError)(error.asOutParam());
+                rc = (*it)->RefreshState(&mediumState);
                 CheckComRCReturnRC(rc);
 
-                if (!error.isEmpty())
+                if (mediumState == MediumState_Inaccessible)
                 {
+                    Bstr error;
+                    rc = (*it)->COMGETTER(LastAccessError)(error.asOutParam());
+                    CheckComRCReturnRC(rc);
+
                     Bstr loc;
                     rc = (*it)->COMGETTER(Location)(loc.asOutParam());
-                    CheckComRCThrowRC(rc);
+                    CheckComRCReturnRC(rc);
 
                     /* collect multiple errors */
                     eik.restore();
@@ -764,6 +755,11 @@ public:
                     eik.fetch();
                 }
             }
+
+            if (it == last)
+                rc = (*it)->LockWrite(&mediumState);
+            else
+                rc = (*it)->LockRead(&mediumState);
         }
 
         eik.restore();
