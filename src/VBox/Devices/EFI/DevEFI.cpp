@@ -47,6 +47,7 @@
 #include "Firmware2/VBoxPkg/Include/DevEFI.h"
 #include "../Builtins.h"
 #include "../Builtins2.h"
+#include "../PC/DevFwCommon.h"
 
 /* EFI includes */
 #include <ProcessorBind.h>
@@ -99,6 +100,12 @@ typedef struct DEVEFI
     uint64_t cbRam;
 
     uint64_t cbRamHole;
+
+    /** The DMI tables. */
+    uint8_t         au8DMIPage[0x1000];
+
+    /** I/O-APIC enabled? */
+    uint8_t         u8IOAPIC;
 } DEVEFI;
 typedef DEVEFI *PDEVEFI;
 
@@ -838,9 +845,62 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "EfiRom\0"
                               "RamSize\0"
                               "RamHoleSize\0"
-                              "NumCPUs\0"))
+                              "NumCPUs\0"
+                              "UUID\0"
+                              "IOAPIC\0"
+                              "DmiBIOSVendor\0"
+                              "DmiBIOSVersion\0"
+                              "DmiBIOSReleaseDate\0"
+                              "DmiBIOSReleaseMajor\0"
+                              "DmiBIOSReleaseMinor\0"
+                              "DmiBIOSFirmwareMajor\0"
+                              "DmiBIOSFirmwareMinor\0"
+                              "DmiSystemFamily\0"
+                              "DmiSystemProduct\0"
+                              "DmiSystemSerial\0"
+                              "DmiSystemUuid\0"
+                              "DmiSystemVendor\0"
+                              "DmiSystemVersion\0"
+                              "DmiChassisVendor\0"
+                              "DmiChassisVersion\0"
+                              "DmiChassisSerial\0"
+                              "DmiChassisAssetTag\0"
+#ifdef VBOX_WITH_DMI_OEMSTRINGS
+                              "DmiOEMVBoxVer\0"
+                              "DmiOEMVBoxRev\0"
+#endif
+                              ))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config value(s) for the EFI device"));
+
+    rc = CFGMR3QueryU8Def(pCfgHandle, "IOAPIC", &pThis->u8IOAPIC, 1);
+    if (RT_FAILURE (rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"IOAPIC\""));
+
+    /*
+     * Query the machine's UUID for SMBIOS/DMI use.
+     */
+    RTUUID  uuid;
+    rc = CFGMR3QueryBytes(pCfgHandle, "UUID", &uuid, sizeof(uuid));
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"UUID\" failed"));
+
+    /* Convert the UUID to network byte order. Not entirely straightforward as parts are MSB already... */
+    uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
+    uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
+    uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
+    rc = sharedfwPlantDMITable(pDevIns, pThis->au8DMIPage, VBOX_DMI_TABLE_SIZE, &uuid, pCfgHandle);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (pThis->u8IOAPIC)
+        sharedfwPlantMpsTable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE, pThis->cCpus);
+
+    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage,
+                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "DMI tables");
+    if (RT_FAILURE(rc))
+        return rc;
 
     /* RAM sizes */
     rc = CFGMR3QueryU64(pCfgHandle, "RamSize", &pThis->cbRam);

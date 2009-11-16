@@ -838,6 +838,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",      cbRamHole);             RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "NumCPUs",          cCpus);                 RC_CHECK();
         rc = CFGMR3InsertString(pCfg,   "EfiRom",           efiRomFile.raw());      RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",               fIOAPIC);           RC_CHECK();
+        rc = CFGMR3InsertBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));RC_CHECK();
     }
 
     /*
