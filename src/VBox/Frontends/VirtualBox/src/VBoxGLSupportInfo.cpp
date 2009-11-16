@@ -524,6 +524,7 @@ bool VBoxVHWAInfo::isVHWASupported() const
     if(mglInfo.getGLVersion() <= 0)
     {
         /* error occurred while gl info initialization */
+        VBOXQGLLOGREL(("2D not supported: gl version info not initialized properly\n"));
         return false;
     }
 
@@ -531,17 +532,27 @@ bool VBoxVHWAInfo::isVHWASupported() const
     /* in case we do not support shaders & multitexturing we can not supprt dst colorkey,
      * no sense to report Video Acceleration supported */
     if(!mglInfo.isFragmentShaderSupported())
+    {
+        VBOXQGLLOGREL(("2D not supported: fragment shader unsupported\n"));
         return false;
+    }
 #endif
     if(mglInfo.getMultiTexNumSupported() < 2)
+    {
+        VBOXQGLLOGREL(("2D not supported: multitexture unsupported\n"));
         return false;
+    }
 
     /* color conversion now supported only GL_TEXTURE_RECTANGLE
      * in this case only stretching is accelerated
      * report as unsupported, TODO: probably should report as supported for stretch acceleration */
     if(!mglInfo.isTextureRectangleSupported())
+    {
+        VBOXQGLLOGREL(("2D not supported: texture rectangle unsupported\n"));
         return false;
+    }
 
+    VBOXQGLLOGREL(("2D is supported!\n"));
     return true;
 }
 
