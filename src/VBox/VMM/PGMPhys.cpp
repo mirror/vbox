@@ -644,7 +644,6 @@ static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev
         pVM->pgm.s.pRamRangesRC = pNew->pSelfRC;
     }
     ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
-
     pgmUnlock(pVM);
 }
 
@@ -679,7 +678,6 @@ static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pP
         pVM->pgm.s.pRamRangesRC = pNext ? pNext->pSelfRC : NIL_RTRCPTR;
     }
     ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
-
     pgmUnlock(pVM);
 }
 
@@ -705,7 +703,6 @@ static void pgmR3PhysUnlinkRamRange(PVM pVM, PPGMRAMRANGE pRam)
     AssertFatal(pCur);
 
     pgmR3PhysUnlinkRamRange2(pVM, pRam, pPrev);
-
     pgmUnlock(pVM);
 }
 
@@ -1033,6 +1030,7 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
 
         pgmR3PhysInitAndLinkRamRange(pVM, pNew, GCPhys, GCPhysLast, NIL_RTRCPTR, NIL_RTR0PTR, pszDesc, pPrev);
     }
+    PGMPhysInvalidatePageMapTLB(pVM);
     pgmUnlock(pVM);
 
     /*
@@ -1386,6 +1384,7 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
         pNew->cb = pNew->GCPhys = pNew->GCPhysLast = NIL_RTGCPHYS;
         MMHyperFree(pVM, pRam);
     }
+    PGMPhysInvalidatePageMapTLB(pVM);
 
     return rc;
 }
@@ -1493,6 +1492,7 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
         }
     }
 
+    PGMPhysInvalidatePageMapTLB(pVM);
     return rc;
 }
 
@@ -1640,6 +1640,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
 
                 *ppv = pvPages;
                 RTMemTmpFree(paPages);
+                PGMPhysInvalidatePageMapTLB(pVM);
                 return VINF_SUCCESS;
             }
 
@@ -1751,6 +1752,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iR
             pCur = pCur->pNextR3;
         }
     }
+    PGMPhysInvalidatePageMapTLB(pVM);
     pgmUnlock(pVM);
     return !cFound && iRegion != UINT32_MAX ? VERR_NOT_FOUND : rc;
 }
@@ -1889,6 +1891,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
         REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, REM_NOTIFY_PHYS_RAM_FLAGS_MMIO2);
     }
 
+    PGMPhysInvalidatePageMapTLB(pVM);
     return VINF_SUCCESS;
 }
 
@@ -1969,6 +1972,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
     pCur->fOverlapping = false;
     pCur->fMapped = false;
 
+    PGMPhysInvalidatePageMapTLB(pVM);
     pgmUnlock(pVM);
 
     if (fInformREM)
@@ -2405,6 +2409,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                         pVM->pgm.s.pRomRangesRC = MMHyperCCToRC(pVM, pRomNew);
                     }
 
+                    PGMPhysInvalidatePageMapTLB(pVM);
                     GMMR3AllocatePagesCleanup(pReq);
                     pgmUnlock(pVM);
                     return VINF_SUCCESS;
