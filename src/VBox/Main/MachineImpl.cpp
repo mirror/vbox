@@ -9242,7 +9242,7 @@ STDMETHODIMP SessionMachine::PushGuestProperties(ComSafeArrayIn(IN_BSTR, aNames)
      * This is copied from registeredInit(), and may or may not be the right
      * way to handle this.
      */
-    Assert(!mData->mRegistered);
+    Assert(mData->mRegistered);
     mData->mRegistered = FALSE;
 
     HRESULT rc = checkStateDependency(MutableStateDep);
