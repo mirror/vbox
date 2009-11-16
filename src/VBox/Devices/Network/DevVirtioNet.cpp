@@ -226,7 +226,14 @@ typedef VPCISTATE *PVPCISTATE;
 //- TODO: Move to VirtioPCI.cpp -----------------------------------------------
 
 /*****************************************************************************/
-RT_C_DECLS_BEGIN
+#define virtioGetHostFeatures        vnetGetHostFeatures        
+#define virtioGetHostMinimalFeatures vnetGetHostMinimalFeatures 
+#define virtioSetHostFeatures        vnetSetHostFeatures        
+#define virtioGetConfig              vnetGetConfig              
+#define virtioSetConfig              vnetSetConfig              
+#define virtioReset                  vnetReset                  
+#define virtioReady                  vnetReady                  
+
 PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pState);
 PDMBOTHCBDECL(uint32_t) vnetGetHostMinimalFeatures(void *pState);
 PDMBOTHCBDECL(void)     vnetSetHostFeatures(void *pState, uint32_t uFeatures);
@@ -234,44 +241,28 @@ PDMBOTHCBDECL(int)      vnetGetConfig(void *pState, uint32_t port, uint32_t cb, 
 PDMBOTHCBDECL(int)      vnetSetConfig(void *pState, uint32_t port, uint32_t cb, void *data);
 PDMBOTHCBDECL(void)     vnetReset(void *pState);
 PDMBOTHCBDECL(void)     vnetReady(void *pState);
-RT_C_DECLS_END
 
 /*****************************************************************************/
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 #ifdef IN_RING3
-const struct VirtioPCIDevices
-{
-    uint16_t    uPCIVendorId;
-    uint16_t    uPCIDeviceId;
-    uint16_t    uPCISubsystemVendorId;
-    uint16_t    uPCISubsystemId;
-    uint16_t    uPCIClass;
-    unsigned    nQueues;
-    const char *pcszName;
-    const char *pcszNameFmt;
-    uint32_t  (*pfnGetHostFeatures)(void *pvState);
-    uint32_t  (*pfnGetHostMinimalFeatures)(void *pvState);
-    void      (*pfnSetHostFeatures)(void *pvState, uint32_t uFeatures);
-    int       (*pfnGetConfig)(void *pvState, uint32_t port, uint32_t cb, void *data);
-    int       (*pfnSetConfig)(void *pvState, uint32_t port, uint32_t cb, void *data);
-    void      (*pfnReset)(void *pvState);
-    void      (*pfnReady)(void *pvState);
-} g_VPCIDevices[] =
-{
-    /*  Vendor  Device SSVendor SubSys             Class   NQ Name          Instance */
-    { /* Virtio Network Device */
-        0x1AF4, 0x1000, 0x1AF4, 1 + VIRTIO_NET_ID, 0x0200, VNET_NQUEUES,
-                                                              "virtio-net", "vnet%d",
-        vnetGetHostFeatures, vnetGetHostMinimalFeatures, vnetSetHostFeatures,
-        vnetGetConfig, vnetSetConfig, vnetReset, vnetReady
-    },
+
+#define DEVICE_PCI_VENDOR_ID           0x1AF4
+#define DEVICE_PCI_DEVICE_ID           0x1000
+#define DEVICE_PCI_SUBSYSTEM_VENDOR_ID 0x1AF4
+#define DEVICE_PCI_SUBSYSTEM_ID        1 + VIRTIO_NET_ID
+#define DEVICE_PCI_CLASS               0x0200
+#define DEVICE_N_QUEUES                3
+#define DEVICE_NAME                    "virtio-net"
+#define DEVICE_NAME_FMT                "vnet%d"
+#if 0
     { /* Virtio Block Device */
         0x1AF4, 0x1001, 0x1AF4, 1 + VIRTIO_BLK_ID, 0x0180, 2, "virtio-blk", "vblk%d",
         NULL, NULL, NULL, NULL, NULL, NULL, NULL
     },
-};
+#endif
+
 #endif
 
 #endif /* VBOX_DEVICE_STRUCT_TESTCASE */
@@ -294,10 +285,6 @@ const struct VirtioPCIDevices
 #define VPCI_STATUS_DRV     0x02
 #define VPCI_STATUS_DRV_OK  0x04
 #define VPCI_STATUS_FAILED  0x80
-
-/** @todo use+extend RTNETIPV4 */
-
-/** @todo use+extend RTNETTCP */
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -518,7 +505,6 @@ void vqueueSync(PVPCISTATE pState, PVQUEUE pQueue)
     vqueueNotify(pState, pQueue);
 }
 
-#ifdef IN_RING3
 void vpciReset(PVPCISTATE pState)
 {
     pState->uGuestFeatures = 0;
@@ -529,7 +515,6 @@ void vpciReset(PVPCISTATE pState)
     for (unsigned i = 0; i < pState->nQueues; i++)
         vqueueReset(&pState->Queues[i]);
 }
-#endif
 
 
 DECLINLINE(int) vpciCsEnter(VPCISTATE *pState, int iBusyRc)
@@ -555,6 +540,7 @@ PDMBOTHCBDECL(int) vpciRaiseInterrupt(VPCISTATE *pState, int rcBusy, uint8_t u8I
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
 
+    STAM_COUNTER_INC(&pState->StatIntsRaised);
     LogFlow(("%s vpciRaiseInterrupt: u8IntCause=%x\n",
              INSTANCE(pState), u8IntCause));
 
@@ -575,13 +561,11 @@ PDMBOTHCBDECL(void) vpciLowerInterrupt(VPCISTATE *pState)
     PDMDevHlpPCISetIrq(pState->CTX_SUFF(pDevIns), 0, 0);
 }
 
-#ifdef IN_RING3
 DECLINLINE(uint32_t) vpciGetHostFeatures(PVPCISTATE pState)
 {
-    return g_VPCIDevices[pState->enmDevType].pfnGetHostFeatures(pState)
+    return virtioGetHostFeatures(pState)
         | VPCI_F_NOTIFY_ON_EMPTY;
 }
-#endif
 
 /**
  * Port I/O Handler for IN operations.
@@ -608,11 +592,7 @@ PDMBOTHCBDECL(int) vpciIOPortIn(PPDMDEVINS pDevIns, void *pvUser,
     {
         case VPCI_HOST_FEATURES:
             /* Tell the guest what features we support. */
-#ifdef IN_RING3
             *pu32 = vpciGetHostFeatures(pState) | VPCI_F_BAD_FEATURE;
-#else
-            rc = VINF_IOM_HC_IOPORT_READ;
-#endif
             break;
 
         case VPCI_GUEST_FEATURES:
@@ -648,11 +628,7 @@ PDMBOTHCBDECL(int) vpciIOPortIn(PPDMDEVINS pDevIns, void *pvUser,
         default:
             if (port >= VPCI_CONFIG)
             {
-#ifdef IN_RING3
-                rc = g_VPCIDevices[pState->enmDevType].pfnGetConfig(pState, port - VPCI_CONFIG, cb, pu32);
-#else
-                rc = VINF_IOM_HC_IOPORT_READ;
-#endif
+                rc = virtioGetConfig(pState, port - VPCI_CONFIG, cb, pu32);
             }
             else
             {
@@ -695,12 +671,11 @@ PDMBOTHCBDECL(int) vpciIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
     {
         case VPCI_GUEST_FEATURES:
             /* Check if the guest negotiates properly, fall back to basics if it does not. */
-#ifdef IN_RING3
             if (VPCI_F_BAD_FEATURE & u32)
             {
                 Log(("%s WARNING! Guest failed to negotiate properly (guest=%x)\n",
                      INSTANCE(pState), u32));
-                pState->uGuestFeatures = g_VPCIDevices[pState->enmDevType].pfnGetHostMinimalFeatures(pState);
+                pState->uGuestFeatures = virtioGetHostMinimalFeatures(pState);
             }
             /* The guest may potentially desire features we don't support! */
             else if (~vpciGetHostFeatures(pState) & u32)
@@ -711,14 +686,10 @@ PDMBOTHCBDECL(int) vpciIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
             }
             else
                 pState->uGuestFeatures = u32;
-            g_VPCIDevices[pState->enmDevType].pfnSetHostFeatures(pState, pState->uGuestFeatures);
-#else
-            rc = VINF_IOM_HC_IOPORT_WRITE;
-#endif
+            virtioSetHostFeatures(pState, pState->uGuestFeatures);
             break;
 
         case VPCI_QUEUE_PFN:
-#ifdef IN_RING3
             /*
              * The guest is responsible for allocating the pages for queues,
              * here it provides us with the page number of descriptor table.
@@ -729,10 +700,7 @@ PDMBOTHCBDECL(int) vpciIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
             if (u32)
                 vqueueInit(&pState->Queues[pState->uQueueSelector], u32);
             else
-                g_VPCIDevices[pState->enmDevType].pfnReset(pState);
-#else
-            rc = VINF_IOM_HC_IOPORT_WRITE;
-#endif
+                virtioReset(pState);
             break;
 
         case VPCI_QUEUE_SEL:
@@ -762,30 +730,22 @@ PDMBOTHCBDECL(int) vpciIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
             break;
 
         case VPCI_STATUS:
-#ifdef IN_RING3
             Assert(cb == 1);
             u32 &= 0xFF;
             fHasBecomeReady = !(pState->uStatus & VPCI_STATUS_DRV_OK) && (u32 & VPCI_STATUS_DRV_OK);
             pState->uStatus = u32;
             /* Writing 0 to the status port triggers device reset. */
             if (u32 == 0)
-                g_VPCIDevices[pState->enmDevType].pfnReset(pState);
+                virtioReset(pState);
             else if (fHasBecomeReady)
-                g_VPCIDevices[pState->enmDevType].pfnReady(pState);
-#else
-            rc = VINF_IOM_HC_IOPORT_WRITE;
-#endif
+                virtioReady(pState);
             break;
 
         default:
-#ifdef IN_RING3
             if (port >= VPCI_CONFIG)
-                rc = g_VPCIDevices[pState->enmDevType].pfnSetConfig(pState, port - VPCI_CONFIG, cb, &u32);
+                rc = virtioSetConfig(pState, port - VPCI_CONFIG, cb, &u32);
             else
                 rc = PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "%s virtioIOPortOut: no valid port at offset port=%RTiop cb=%08x\n", szInst, port, cb);
-#else
-            rc = VINF_IOM_HC_IOPORT_WRITE;
-#endif
             break;
     }
 
@@ -1061,7 +1021,7 @@ static DECLCALLBACK(int) vpciLoadExec(PVPCISTATE pState, PSSMHANDLE pSSM, uint32
             AssertRCReturn(rc, rc);
         }
         else
-            pState->nQueues = g_VPCIDevices[pState->enmDevType].nQueues;
+            pState->nQueues = DEVICE_N_QUEUES;
         for (unsigned i = 0; i < pState->nQueues; i++)
         {
             rc = SSMR3GetU16(pSSM, &pState->Queues[i].VRing.uSize);
@@ -1092,18 +1052,17 @@ static DECLCALLBACK(int) vpciLoadExec(PVPCISTATE pState, PSSMHANDLE pSSM, uint32
  */
 static DECLCALLBACK(void) vpciConfigure(PCIDEVICE& pci, VirtioDeviceType enmType)
 {
-    Assert(enmType < (int)RT_ELEMENTS(g_VPCIDevices));
     /* Configure PCI Device, assume 32-bit mode ******************************/
-    PCIDevSetVendorId(&pci, g_VPCIDevices[enmType].uPCIVendorId);
-    PCIDevSetDeviceId(&pci, g_VPCIDevices[enmType].uPCIDeviceId);
-    vpciCfgSetU16(pci, VBOX_PCI_SUBSYSTEM_VENDOR_ID, g_VPCIDevices[enmType].uPCISubsystemVendorId);
-    vpciCfgSetU16(pci, VBOX_PCI_SUBSYSTEM_ID, g_VPCIDevices[enmType].uPCISubsystemId);
+    PCIDevSetVendorId(&pci, DEVICE_PCI_VENDOR_ID);
+    PCIDevSetDeviceId(&pci, DEVICE_PCI_DEVICE_ID);
+    vpciCfgSetU16(pci, VBOX_PCI_SUBSYSTEM_VENDOR_ID, DEVICE_PCI_SUBSYSTEM_VENDOR_ID);
+    vpciCfgSetU16(pci, VBOX_PCI_SUBSYSTEM_ID, DEVICE_PCI_SUBSYSTEM_ID);
 
     /* ABI version, must be equal 0 as of 2.6.30 kernel. */
     vpciCfgSetU8( pci, VBOX_PCI_REVISION_ID,          0x00);
     /* Ethernet adapter */
     vpciCfgSetU8( pci, VBOX_PCI_CLASS_PROG,           0x00);
-    vpciCfgSetU16(pci, VBOX_PCI_CLASS_DEVICE, g_VPCIDevices[enmType].uPCIClass);
+    vpciCfgSetU16(pci, VBOX_PCI_CLASS_DEVICE, DEVICE_PCI_CLASS);
     /* Interrupt Pin: INTA# */
     vpciCfgSetU8( pci, VBOX_PCI_INTERRUPT_PIN,        0x01);
 }
@@ -1115,7 +1074,7 @@ DECLCALLBACK(int) vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
 {
     int rc = VINF_SUCCESS;
     /* Init handles and log related stuff. */
-    RTStrPrintf(pState->szInstance, sizeof(pState->szInstance), g_VPCIDevices[enmDevType].pcszNameFmt, iInstance);
+    RTStrPrintf(pState->szInstance, sizeof(pState->szInstance), DEVICE_NAME_FMT, iInstance);
     pState->enmDevType   = enmDevType;
 
     pState->pDevInsR3    = pDevIns;
@@ -1150,7 +1109,7 @@ DECLCALLBACK(int) vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the status LUN"));
     pState->pLedsConnector = (PPDMILEDCONNECTORS)pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
 
-    pState->nQueues = g_VPCIDevices[pState->enmDevType].nQueues;
+    pState->nQueues = DEVICE_N_QUEUES;
 
 #if defined(VBOX_WITH_STATISTICS)
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadGC,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in GC",           "/Devices/VNet%d/IO/ReadGC", iInstance);
@@ -1439,7 +1398,6 @@ PDMBOTHCBDECL(int) vnetSetConfig(void *pvState, uint32_t port, uint32_t cb, void
     return VINF_SUCCESS;
 }
 
-#ifdef IN_RING3
 /**
  * Hardware reset. Revert all registers to initial values.
  *
@@ -1457,6 +1415,7 @@ PDMBOTHCBDECL(void) vnetReset(void *pvState)
         STATUS = 0;
 }
 
+#ifdef IN_RING3
 /**
  * Wakeup the RX thread.
  */
@@ -1721,6 +1680,7 @@ static DECLCALLBACK(int) vnetReceive(PPDMINETWORKPORT pInterface, const void *pv
     if (RT_FAILURE(rc))
         return rc;
 
+    STAM_PROFILE_ADV_START(&pState->StatReceive, a);
     vpciSetReadLed(&pState->VPCI, true);
     if (vnetAddressFilter(pState, pvBuf, cb))
     {
@@ -1728,6 +1688,7 @@ static DECLCALLBACK(int) vnetReceive(PPDMINETWORKPORT pInterface, const void *pv
         STAM_REL_COUNTER_ADD(&pState->StatReceiveBytes, cb);
     }
     vpciSetReadLed(&pState->VPCI, false);
+    STAM_PROFILE_ADV_STOP(&pState->StatReceive, a);
 
     return rc;
 }
@@ -1827,6 +1788,7 @@ static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE 
         }
         else
         {
+            STAM_PROFILE_ADV_START(&pState->StatTransmit, a);
             /* Assemble a complete frame. */
             for (unsigned int i = 1; i < elem.nOut && uOffset < VNET_MAX_FRAME_SIZE; i++)
             {
@@ -1847,6 +1809,7 @@ static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE 
         }
         vqueuePut(&pState->VPCI, pQueue, &elem, sizeof(VNETHDR) + uOffset);
         vqueueSync(&pState->VPCI, pQueue);
+        STAM_PROFILE_ADV_STOP(&pState->StatTransmit, a);
     }
     vpciSetWriteLed(&pState->VPCI, false);
 }
