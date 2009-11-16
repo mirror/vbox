@@ -311,10 +311,17 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
                     while (pGhostListDst->cbCached > pCache->cbRecentlyUsedOutMax)
                     {
                         PPDMACFILECACHEENTRY pFree = pGhostListDst->pTail;
+                        PPDMACFILEENDPOINTCACHE pEndpointCacheFree = &pFree->pEndpoint->DataCache;
+
+                        RTSemRWRequestWrite(pEndpointCacheFree->SemRWEntries, RT_INDEFINITE_WAIT);
+
                         pdmacFileCacheEntryRemoveFromList(pFree);
+
                         STAM_PROFILE_ADV_START(&pCache->StatTreeRemove, Cache);
-                        RTAvlrFileOffsetRemove(pCurr->pEndpoint->DataCache.pTree, pFree->Core.Key);
+                        RTAvlrFileOffsetRemove(pEndpointCacheFree->pTree, pFree->Core.Key);
                         STAM_PROFILE_ADV_STOP(&pCache->StatTreeRemove, Cache);
+
+                        RTSemRWReleaseWrite(pEndpointCacheFree->SemRWEntries);
                         RTMemFree(pFree);
                     }
 #endif
