@@ -69,8 +69,23 @@ elif test "$ostype" = "SunOS"; then
             echo "Could not find pfexec."
             subin=`which su`
         else
+            idbin=/usr/xpg4/bin/id
+            if test ! -x "$idbin"; then
+                found=`which id 2> /dev/null`
+                if test ! -x "$found"; then
+                    echo "Failed to find a suitable user id executable."
+                    exit 1
+                else
+                    idbin=$found
+                fi
+            fi        
+
             # check if pfexec can get the job done
-            userid=`$pfexecbin id -u`
+            if test "$idbin" = "/usr/xpg4/bin/id"; then
+                userid=`$pfexecbin $idbin -u`
+            else
+                userid=`$pfexecbin $idbin | cut -f1 -d'(' | cut -f2 -d'='`
+            fi
             if test $userid != "0"; then
                 # pfexec exists but user has no pfexec privileges, switch to using su and prompting password
                 subin=`which su`
