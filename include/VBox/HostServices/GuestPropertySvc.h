@@ -244,7 +244,14 @@ enum eHostFn
      * Enumerate guest properties.
      * The parameter format matches that of ENUM_PROPS.
      */
-    ENUM_PROPS_HOST = 6
+    ENUM_PROPS_HOST = 6,
+
+    /**
+     * Flush notifications.
+     * Takes one 32-bit unsigned integer parameter that gives the number of
+     * milliseconds to wait for the worker thread to get the work done.
+     */
+    FLUSH_NOTIFICATIONS_HOST
 };
 
 /**

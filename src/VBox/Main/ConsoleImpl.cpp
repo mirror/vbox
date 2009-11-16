@@ -104,6 +104,7 @@
 #include <algorithm>
 #include <memory> // for auto_ptr
 #include <vector>
+#include <typeinfo>
 
 
 // VMTask and friends
@@ -1307,6 +1308,89 @@ HRESULT Console::doEnumerateGuestProperties(CBSTR aPatterns,
     flags.detachTo(ComSafeArrayOutArg(aFlags));
     return S_OK;
 }
+
+/**
+ * Helper that is used by powerDown to move the guest properties to VBoxSVC.
+ *
+ * @param   fSaving         Whether we're saving a machine state and should
+ *                          therefore save transient properties as well.
+ *
+ * @returns COM status code.
+ *
+ * @remarks This is called without holding the console lock.
+ */
+HRESULT Console::doMoveGuestPropertiesOnPowerOff(bool fSaving)
+{
+    /*
+     * First, flush any pending notifications.
+     */
+    VBOXHGCMSVCPARM parm[1];
+    parm[0].setUInt32(20*1000/*ms*/);
+    int vrc = mVMMDev->hgcmHostCall("VBoxGuestPropSvc", guestProp::FLUSH_NOTIFICATIONS_HOST, 1, &parm[0]);
+    if (RT_FAILURE(vrc))
+        LogRelFunc(("Flushing notifications failed with rc=%Rrc\n", vrc));
+
+    /*
+     * Enumerate the properties and
+     */
+    HRESULT                 hrc;
+    com::SafeArray<BSTR>    namesOut;
+    com::SafeArray<BSTR>    valuesOut;
+    com::SafeArray<ULONG64> timestampsOut;
+    com::SafeArray<BSTR>    flagsOut;
+    try
+    {
+        Bstr                pattern("");
+        hrc = doEnumerateGuestProperties(pattern, ComSafeArrayAsOutParam(namesOut),
+                                         ComSafeArrayAsOutParam(valuesOut),
+                                         ComSafeArrayAsOutParam(timestampsOut),
+                                         ComSafeArrayAsOutParam(flagsOut));
+        if (SUCCEEDED(hrc))
+        {
+            std::vector <BSTR>      names;
+            std::vector <BSTR>      values;
+            std::vector <ULONG64>   timestamps;
+            std::vector <BSTR>      flags;
+            for (size_t i = 0; i < namesOut.size(); ++i)
+            {
+                uint32_t fFlags = guestProp::NILFLAG;
+                vrc = guestProp::validateFlags(Utf8Str(flagsOut[i]).raw(), &fFlags); AssertRC(vrc);
+                if (   fSaving
+                    || !(fFlags & guestProp::TRANSIENT))
+                {
+                    names.push_back(namesOut[i]);
+                    values.push_back(valuesOut[i]);
+                    timestamps.push_back(timestampsOut[i]);
+                    flags.push_back(flagsOut[i]);
+                }
+            }
+            com::SafeArray<BSTR>    namesIn(names);
+            com::SafeArray<BSTR>    valuesIn(values);
+            com::SafeArray<ULONG64> timestampsIn(timestamps);
+            com::SafeArray<BSTR>    flagsIn(flags);
+            if (   namesIn.isNull()
+                || valuesIn.isNull()
+                || timestampsIn.isNull()
+                || flagsIn.isNull()
+               )
+                throw std::bad_alloc();
+            /* PushGuestProperties() calls DiscardSettings(), which calls us back */
+            mControl->PushGuestProperties(ComSafeArrayAsInParam(namesIn),
+                                          ComSafeArrayAsInParam(valuesIn),
+                                          ComSafeArrayAsInParam(timestampsIn),
+                                          ComSafeArrayAsInParam(flagsIn));
+        }
+    }
+    catch (...)
+    {
+        hrc = Console::handleUnexpectedExceptions(RT_SRC_POS);
+    }
+    if (FAILED(hrc))
+        LogRelFunc(("Failed with hrc=%Rhrc\n", hrc));
+    return hrc;
+}
+
+
 
 #endif /* VBOX_WITH_GUEST_PROPS */
 
@@ -2703,6 +2787,33 @@ STDMETHODIMP Console::UnregisterCallback(IConsoleCallback *aCallback)
 // Non-interface public methods
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @copydoc VirtualBox::handleUnexpectedExceptions
+ */
+/* static */
+HRESULT Console::handleUnexpectedExceptions(RT_SRC_POS_DECL)
+{
+    try
+    {
+        /* re-throw the current exception */
+        throw;
+    }
+    catch (const std::exception &err)
+    {
+        return setError(E_FAIL, tr("Unexpected exception: %s [%s]\n%s[%d] (%s)"),
+                                err.what(), typeid(err).name(),
+                                pszFile, iLine, pszFunction);
+    }
+    catch (...)
+    {
+        return setError(E_FAIL, tr("Unknown exception\n%s[%d] (%s)"),
+                                pszFile, iLine, pszFunction);
+    }
+
+    /* should not get here */
+    AssertFailed();
+    return E_FAIL;
+}
 
 /* static */
 const char *Console::convertControllerTypeToDev(StorageControllerType_T enmCtrlType)
@@ -2749,6 +2860,9 @@ HRESULT Console::convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG 
             AssertMsgFailedReturn(("%d\n", enmBus), E_INVALIDARG);
     }
 }
+
+// private methods
+/////////////////////////////////////////////////////////////////////////////
 
 /**
  * Process a medium change.
@@ -4875,7 +4989,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
               || mMachineState == MachineState_Saving
               || mMachineState == MachineState_Restoring
               || mMachineState == MachineState_TeleportingPausedVM
-              || mMachineState == MachineState_TeleportingIn         /** @todo Teleportation ???*/
+              || mMachineState == MachineState_TeleportingIn
               , ("Invalid machine state: %s\n", Global::stringifyMachineState(mMachineState)));
 
     LogRel(("Console::powerDown(): A request to power off the VM has been issued (mMachineState=%s, InUninit=%d)\n",
@@ -4893,11 +5007,15 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
        )
         mVMPoweredOff = true;
 
-    /* go to Stopping state if not already there. Note that we don't go from
-     * Saving/Restoring to Stopping because vmstateChangeCallback() needs it to
-     * set the state to Saved on VMSTATE_TERMINATED. In terms of protecting from
-     * inappropriate operations while leaving the lock below, Saving or
-     * Restoring should be fine too.  Ditto for Teleporting* -> Teleported. */
+    /*
+     * Go to Stopping state if not already there.
+     *
+     * Note that we don't go from Saving/Restoring to Stopping because
+     * vmstateChangeCallback() needs it to set the state to Saved on
+     * VMSTATE_TERMINATED. In terms of protecting from inappropriate operations
+     * while leaving the lock below, Saving or Restoring should be fine too.
+     * Ditto for TeleportingPausedVM -> Teleported.
+     */
     if (   mMachineState != MachineState_Saving
         && mMachineState != MachineState_Restoring
         && mMachineState != MachineState_Stopping
@@ -4930,95 +5048,6 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
     if (aProgress)
         aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
 
-#ifdef VBOX_WITH_HGCM
-
-# ifdef VBOX_WITH_GUEST_PROPS  /** @todo r=bird: This may be premature, the VM may still be running at this point! */
-
-    /* Save all guest property store entries to the machine XML file */
-    com::SafeArray<BSTR> namesOut;
-    com::SafeArray<BSTR> valuesOut;
-    com::SafeArray<ULONG64> timestampsOut;
-    com::SafeArray<BSTR> flagsOut;
-    Bstr pattern("");
-    if (pattern.isNull()) /** @todo r=bird: What is pattern actually used for?  And, again, what's is the out-of-memory policy in main? */
-        rc = E_OUTOFMEMORY;
-    else
-        rc = doEnumerateGuestProperties(Bstr(""), ComSafeArrayAsOutParam(namesOut),
-                                        ComSafeArrayAsOutParam(valuesOut),
-                                        ComSafeArrayAsOutParam(timestampsOut),
-                                        ComSafeArrayAsOutParam(flagsOut));
-    if (SUCCEEDED(rc))
-    {
-        try
-        {
-            std::vector <BSTR> names;
-            std::vector <BSTR> values;
-            std::vector <ULONG64> timestamps;
-            std::vector <BSTR> flags;
-            for (unsigned i = 0; i < namesOut.size(); ++i)
-            {
-                uint32_t fFlags;
-                guestProp::validateFlags(Utf8Str(flagsOut[i]).raw(), &fFlags);
-                if (   !(fFlags & guestProp::TRANSIENT)
-                    || mMachineState == MachineState_Saving
-                    || mMachineState == MachineState_LiveSnapshotting
-                  )
-                {
-                    names.push_back(namesOut[i]);
-                    values.push_back(valuesOut[i]);
-                    timestamps.push_back(timestampsOut[i]);
-                    flags.push_back(flagsOut[i]);
-                }
-            }
-            com::SafeArray<BSTR> namesIn(names);
-            com::SafeArray<BSTR> valuesIn(values);
-            com::SafeArray<ULONG64> timestampsIn(timestamps);
-            com::SafeArray<BSTR> flagsIn(flags);
-            if (   namesIn.isNull()
-                || valuesIn.isNull()
-                || timestampsIn.isNull()
-                || flagsIn.isNull()
-                )
-                throw std::bad_alloc();
-            /* PushGuestProperties() calls DiscardSettings(), which calls us back */
-            alock.leave();
-            mControl->PushGuestProperties(ComSafeArrayAsInParam(namesIn),
-                                          ComSafeArrayAsInParam(valuesIn),
-                                          ComSafeArrayAsInParam(timestampsIn),
-                                          ComSafeArrayAsInParam(flagsIn));
-            alock.enter();
-        }
-        catch (std::bad_alloc)
-        {
-            rc = E_OUTOFMEMORY;
-        }
-    }
-
-    /* advance percent count */
-    if (aProgress)
-        aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
-
-# endif /* VBOX_WITH_GUEST_PROPS defined */
-
-    /* Shutdown HGCM services before stopping the guest, because they might
-     * need a cleanup. */
-    if (mVMMDev)
-    {
-        LogFlowThisFunc(("Shutdown HGCM...\n"));
-
-        /* Leave the lock since EMT will call us back as addVMCaller() */
-        alock.leave();
-
-        mVMMDev->hgcmShutdown();
-
-        alock.enter();
-    }
-
-    /* advance percent count */
-    if (aProgress)
-        aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
-
-#endif /* VBOX_WITH_HGCM */
 
     /* ----------------------------------------------------------------------
      * Now, wait for all mpVM callers to finish their work if there are still
@@ -5051,26 +5080,26 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
 
     vrc = VINF_SUCCESS;
 
-    /* Power off the VM if not already done that */
+    /*
+     * Power off the VM if not already done that.
+     * Leave the lock since EMT will call vmstateChangeCallback.
+     *
+     * Note that VMR3PowerOff() may fail here (invalid VMSTATE) if the
+     * VM-(guest-)initiated power off happened in parallel a ms before this
+     * call. So far, we let this error pop up on the user's side.
+     */
     if (!mVMPoweredOff)
     {
         LogFlowThisFunc(("Powering off the VM...\n"));
-
-        /* Leave the lock since EMT will call us back on VMR3PowerOff() */
         alock.leave();
-
         vrc = VMR3PowerOff(mpVM);
-
-        /* Note that VMR3PowerOff() may fail here (invalid VMSTATE) if the
-         * VM-(guest-)initiated power off happened in parallel a ms before this
-         * call. So far, we let this error pop up on the user's side. */
-
         alock.enter();
-
     }
     else
     {
-        /* reset the flag for further re-use */
+        /** @todo r=bird: Doesn't make sense. Please remove after 3.1 has been branched
+         *        off. */
+        /* reset the flag for future re-use */
         mVMPoweredOff = false;
     }
 
@@ -5078,13 +5107,51 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
     if (aProgress)
         aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
 
+#ifdef VBOX_WITH_HGCM
+# ifdef VBOX_WITH_GUEST_PROPS
+    /*
+     * Save all guest property store entries to the machine XML file
+     * and hand controll over to VBoxSVC.  Ignoring failure for now.
+     */
+    LogFlowThisFunc(("Moving Guest Properties to XML/VBoxSVC...\n"));
+    bool fIsSaving = mMachineState == MachineState_Saving
+                  || mMachineState == MachineState_LiveSnapshotting;
+    alock.leave();
+    doMoveGuestPropertiesOnPowerOff(fIsSaving);
+    alock.enter();
+
+    /* advance percent count */
+    if (aProgress)
+        aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
+
+# endif /* VBOX_WITH_GUEST_PROPS defined */
+
+    /* Shutdown HGCM services before destroying the VM. */
+    if (mVMMDev)
+    {
+        LogFlowThisFunc(("Shutdown HGCM...\n"));
+
+        /* Leave the lock since EMT will call us back as addVMCaller() */
+        alock.leave();
+
+        mVMMDev->hgcmShutdown();
+
+        alock.enter();
+    }
+
+    /* advance percent count */
+    if (aProgress)
+        aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
+
+#endif /* VBOX_WITH_HGCM */
+
     LogFlowThisFunc(("Ready for VM destruction.\n"));
 
     /* If we are called from Console::uninit(), then try to destroy the VM even
      * on failure (this will most likely fail too, but what to do?..) */
     if (RT_SUCCESS(vrc) || autoCaller.state() == InUninit)
     {
-        /* If the machine has an USB comtroller, release all USB devices
+        /* If the machine has an USB controller, release all USB devices
          * (symmetric to the code in captureUSBDevices()) */
         bool fHasUSBController = false;
         {

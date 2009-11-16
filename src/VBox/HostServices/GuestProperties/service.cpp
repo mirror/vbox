@@ -20,7 +20,8 @@
  * additional information or have any questions.
  */
 
-/**
+/** @page pg_svc_guest_properties   Guest Property HGCM Service
+ *
  * This HGCM service allows the guest to set and query values in a property
  * store on the host.  The service proxies the guest requests to the service
  * owner on the host using a request callback provided by the owner, and is
@@ -38,23 +39,23 @@
  * is changed or when the request times out.
  */
 
-#define LOG_GROUP LOG_GROUP_HGCM
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_HGCM
 #include <VBox/HostServices/GuestPropertySvc.h>
 
 #include <VBox/log.h>
-#include <iprt/err.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/string.h>
-#include <iprt/mem.h>
 #include <iprt/autores.h>
-#include <iprt/time.h>
 #include <iprt/cpputils.h>
+#include <iprt/err.h>
+#include <iprt/mem.h>
 #include <iprt/req.h>
+#include <iprt/string.h>
 #include <iprt/thread.h>
+#include <iprt/time.h>
 
 #include <memory>  /* for auto_ptr */
 #include <string>
@@ -162,10 +163,12 @@ private:
     /** @todo we should have classes for thread and request handler thread */
     /** Queue of outstanding property change notifications */
     RTREQQUEUE *mReqQueue;
+    /** Request that we've left pending in a call to flushNotifications. */
+    PRTREQ mPendingDummyReq;
     /** Thread for processing the request queue */
     RTTHREAD mReqThread;
     /** Tell the thread that it should exit */
-    bool mfExitThread;
+    bool volatile mfExitThread;
     /** Callback function supplied by the host for notification of updates
      * to properties */
     PFNHGCMSVCEXT mpfnHostCallback;
@@ -221,8 +224,11 @@ private:
 
 public:
     explicit Service(PVBOXHGCMSVCHELPERS pHelpers)
-        : mpHelpers(pHelpers), mfExitThread(false), mpfnHostCallback(NULL),
-          mpvHostData(NULL)
+        : mpHelpers(pHelpers)
+        , mPendingDummyReq(NULL)
+        , mfExitThread(false)
+        , mpfnHostCallback(NULL)
+        , mpvHostData(NULL)
     {
         int rc = RTReqCreateQueue(&mReqQueue);
 #ifndef VBOX_GUEST_PROP_TEST_NOTHREAD
@@ -320,6 +326,7 @@ private:
     int setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
     int delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
     int enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int flushNotifications(uint32_t cMsTimeout);
     int getNotification(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
                         VBOXHGCMSVCPARM paParms[]);
     int getOldNotificationInternal(const char *pszPattern,
@@ -349,6 +356,7 @@ private:
  * Thread function for processing the request queue
  * @copydoc FNRTTHREAD
  */
+/* static */
 DECLCALLBACK(int) Service::reqThreadFn(RTTHREAD ThreadSelf, void *pvUser)
 {
     SELF *pSelf = reinterpret_cast<SELF *>(pvUser);
@@ -821,6 +829,46 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     return rc;
 }
 
+/**
+ * Flushes the notifications.
+ *
+ * @returns iprt status value
+ * @param   cMsTimeout  The timeout in milliseconds.
+ * @thread  HGCM
+ */
+int Service::flushNotifications(uint32_t cMsTimeout)
+{
+    LogFlowThisFunc(("cMsTimeout=%RU32\n", cMsTimeout));
+    int rc;
+
+#ifndef VBOX_GUEST_PROP_TEST_NOTHREAD
+    /*
+     * Wait for the thread to finish processing all current requests.
+     */
+    if (!mPendingDummyReq && !RTReqIsBusy(mReqQueue))
+        rc = VINF_SUCCESS;
+    else
+    {
+        if (!mPendingDummyReq)
+            rc = RTReqCallEx(mReqQueue, &mPendingDummyReq, 0 /*cMillies*/, RTREQFLAGS_VOID, (PFNRT)reqVoid, 0);
+        else
+            rc = VERR_TIMEOUT;
+        if (rc == VERR_TIMEOUT)
+            rc = RTReqWait(mPendingDummyReq, cMsTimeout);
+        if (RT_SUCCESS(rc))
+        {
+            RTReqFree(mPendingDummyReq);
+            mPendingDummyReq = NULL;
+        }
+    }
+#else
+    NOREF(cMsTimeout);
+    rc = VINF_SUCCESS;
+#endif /* VBOX_GUEST_PROP_TEST_NOTHREAD not defined */
+
+    return rc;
+}
+
 /** Helper query used by getOldNotification */
 int Service::getOldNotificationInternal(const char *pszPatterns,
                                         uint64_t u64Timestamp,
@@ -1094,9 +1142,9 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
  * @thread  request thread
  */
 /* static */
-int Service::reqNotify(PFNHGCMSVCEXT pfnCallback, void *pvData,
-                       char *pszName, char *pszValue, uint32_t u32TimeHigh,
-                       uint32_t u32TimeLow, char *pszFlags)
+DECLCALLBACK(int) Service::reqNotify(PFNHGCMSVCEXT pfnCallback, void *pvData,
+                                     char *pszName, char *pszValue, uint32_t u32TimeHigh,
+                                     uint32_t u32TimeLow, char *pszFlags)
 {
     LogFlowFunc (("pfnCallback=%p, pvData=%p, pszName=%p, pszValue=%p, u32TimeHigh=%u, u32TimeLow=%u, pszFlags=%p\n", pfnCallback, pvData, pszName, pszValue, u32TimeHigh, u32TimeLow, pszFlags));
     LogFlowFunc (("pszName=%s\n", pszName));
@@ -1246,6 +1294,20 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
                 rc = enumProps(cParms, paParms);
                 break;
 
+            /* The host wishes to flush all pending notification */
+            case FLUSH_NOTIFICATIONS_HOST:
+                LogFlowFunc(("FLUSH_NOTIFICATIONS_HOST\n"));
+                if (cParms == 1)
+                {
+                    uint32_t cMsTimeout;
+                    rc = paParms[0].getUInt32(&cMsTimeout);
+                    if (RT_SUCCESS(rc))
+                        rc = flushNotifications(cMsTimeout);
+                }
+                else
+                    rc = VERR_INVALID_PARAMETER;
+                break;
+
             default:
                 rc = VERR_NOT_SUPPORTED;
                 break;
@@ -1263,18 +1325,28 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
 int Service::uninit()
 {
     int rc = VINF_SUCCESS;
-    unsigned count = 0;
 
-    mfExitThread = true;
+    ASMAtomicWriteBool(&mfExitThread, true);
+
 #ifndef VBOX_GUEST_PROP_TEST_NOTHREAD
+    /*
+     * Send a dummy request to the thread so it is forced out of the loop and
+     * notice that the exit flag is set.  Give up waiting after 5 mins.
+     * We call flushNotifications first to try clean up any pending request.
+     */
+    flushNotifications(120*1000);
+
     rc = RTReqCallEx(mReqQueue, NULL, 0, RTREQFLAGS_NO_WAIT, (PFNRT)reqVoid, 0);
     if (RT_SUCCESS(rc))
+    {
+        unsigned count = 0;
         do
         {
             rc = RTThreadWait(mReqThread, 1000, NULL);
             ++count;
             Assert(RT_SUCCESS(rc) || ((VERR_TIMEOUT == rc) && (count != 5)));
         } while ((VERR_TIMEOUT == rc) && (count < 300));
+    }
 #endif /* VBOX_GUEST_PROP_TEST_NOTHREAD not defined */
     if (RT_SUCCESS(rc))
         RTReqDestroyQueue(mReqQueue);
