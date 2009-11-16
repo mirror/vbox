@@ -290,6 +290,7 @@ DevicesR3_SOURCES       = \
 	PC/ACPI/VBoxAcpi.cpp \
 	PC/DevRTC.cpp \
 	PC/DevPcBios.cpp \
+	PC/DevFwCommon.cpp \
 	PC/DevPcArch.c \
 	VMMDev/VMMDev.cpp \
 	VMMDev/VMMDevHGCM.cpp \
