@@ -51,7 +51,7 @@ VBOX_LNX_ADD_INST_INIT_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)init/
 VBOX_LNX_ADD_INST_BIN_DBG_DIR     := $(VBOX_LNX_ADD_INST_DBG_DIR)bin/
 VBOX_LNX_ADD_INST_SBIN_DBG_DIR    := $(VBOX_LNX_ADD_INST_DBG_DIR)sbin/
 VBOX_LNX_ADD_INST_LIB_DBG_DIR     := $(VBOX_LNX_ADD_INST_DBG_DIR)lib/
-VBOX_LNX_ADD_INST_MOD_DBG_DIR     := $(VBOX_LNX_ADD_INST_DBG_DIR)lib/$(VBOX_LNX_ADD_PACKAGE_NAME)/
+VBOX_LNX_ADD_INST_MOD_DBG_DIR     := $(VBOX_LNX_ADD_INST_DBG_DIR)$(VBOX_LNX_ADD_PACKAGE_NAME)/
 
 # Script source directories
 VBOX_PATH_LNX_ADD_INST            := $(PATH_SUB_CURRENT)/installer/
@@ -274,7 +274,6 @@ GuestDrivers-src_MODE = a+r,u+w
 GuestDrivers-src_SOURCES = Makefile
 
 
-## @todo r=bird: Please, do not use VBOX_OSE test for 50 targets like this. use a big ifdef around the whole block!
 ifndef VBOX_OSE
  INSTALLS += lnx_add_inst-exec
  lnx_add_inst-exec_INST = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_MOD_DIR))
@@ -412,12 +411,12 @@ $(VBOX_LNX_ADD_INST_STAGE_DIR)VBoxGuestAdditions.tar.bz2: \
 ifdef VBOX_USE_PBZIP2
  	$(QUIET)tar --owner 0 --group 0 -cRf $(patsubst %.bz2,%,$@) \
  		-C $(VBOX_LNX_ADD_INST_OUT_DIR) \
- 		bin init lib sbin share src
+ 		bin init lib sbin share src debug
 	$(QUIET)pbzip2 $(patsubst %.bz2,%,$@)
 else
 	$(QUIET)tar --owner 0 --group 0 -cjRf $@ \
  		-C $(VBOX_LNX_ADD_INST_OUT_DIR) \
- 		bin init lib sbin share src
+ 		bin init lib sbin share src debug
 endif
 	$(QUIET)$(CHMOD) 0644 $@
 
