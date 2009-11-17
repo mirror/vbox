@@ -2752,7 +2752,7 @@ void VBoxGlobal::retranslateUi()
         tr ("Intel PRO/1000 MT Server (82545EM)", "NetworkAdapterType");
 #ifdef VBOX_WITH_VIRTIO
     mNetworkAdapterTypes [KNetworkAdapterType_Virtio] =
-        tr ("Virtio Network Adapter (Linux guests only)", "NetworkAdapterType");
+        tr ("Paravirtualized Network (virtio-net)", "NetworkAdapterType");
 #endif /* VBOX_WITH_VIRTIO */
 
     mNetworkAttachmentTypes [KNetworkAttachmentType_Null] =
