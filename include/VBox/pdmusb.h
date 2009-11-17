@@ -34,6 +34,7 @@
 #include <VBox/pdmcritsect.h>
 #include <VBox/pdmthread.h>
 #include <VBox/pdmifs.h>
+#include <VBox/pdmcommon.h>
 #include <VBox/tm.h>
 #include <VBox/ssm.h>
 #include <VBox/cfgm.h>
@@ -373,7 +374,9 @@ typedef PDMUSBREG const *PCPDMUSBREG;
 /* none yet */
 /** @} */
 
+
 #ifdef IN_RING3
+
 /**
  * PDM USB Device API.
  */
@@ -570,6 +573,19 @@ typedef struct PDMUSBHLP
      */
     DECLR3CALLBACKMEMBER(VMSTATE, pfnVMState, (PPDMUSBINS pUsbIns));
 
+    /**
+     * Set up asynchronous handling of a suspend or power off notification.
+     *
+     * This shall only be called when getting the notification.  It must be called
+     * for each one.
+     *
+     * @returns VBox status code.
+     * @param   pUSBIns             The USB device instance.
+     * @param   pfnAsyncNotify      The callback.
+     * @thread  EMT(0)
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetAsyncNotification, (PPDMUSBINS pUSbIns, PFNPDMUSBASYNCNOTIFY pfnAsyncNotify));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMUSBHLP;
@@ -606,7 +622,7 @@ typedef struct PDMUSBINS
 #ifdef PDMUSBINSINT_DECLARED
         PDMUSBINSINT            s;
 #endif
-        uint8_t                 padding[HC_ARCH_BITS == 32 ? 64 : 96];
+        uint8_t                 padding[HC_ARCH_BITS == 32 ? 96 : 128];
     } Internal;
 
     /** Pointer the PDM USB Device API. */

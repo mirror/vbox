@@ -886,6 +886,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
                         pNew->Internal.s.pDrv           = pDrv;
                         pNew->Internal.s.pVM            = pVM;
                         //pNew->Internal.s.fDetaching     = false;
+                        pNew->Internal.s.fVMSuspended   = true;
+                        //pNew->Internal.s.pfnAsyncNotify = NULL;
                         pNew->Internal.s.pCfgHandle     = pNode;
                         pNew->pDrvHlp                   = &g_pdmR3DrvHlp;
                         pNew->pDrvReg                   = pDrv->pDrvReg;
@@ -2327,6 +2329,33 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPT
 }
 
 
+/** @copydoc PDMDEVHLPR3::pfnSetAsyncNotification */
+static DECLCALLBACK(int) pdmR3DevHlp_SetAsyncNotification(PPDMDEVINS pDevIns, PFNPDMDEVASYNCNOTIFY pfnAsyncNotify)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT0(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_SetAsyncNotification: caller='%s'/%d: pfnAsyncNotify\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pfnAsyncNotify));
+
+    int rc = VINF_SUCCESS;
+    AssertStmt(pfnAsyncNotify, rc = VERR_INVALID_PARAMETER);
+    AssertStmt(!pDevIns->Internal.s.pfnAsyncNotify, rc = VERR_WRONG_ORDER);
+    AssertStmt(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_SUSPENDED, rc = VERR_WRONG_ORDER);
+    VMSTATE enmVMState = VMR3GetState(pDevIns->Internal.s.pVMR3);
+    AssertStmt(   enmVMState == VMSTATE_SUSPENDING
+               || enmVMState == VMSTATE_SUSPENDING_EXT_LS
+               || enmVMState == VMSTATE_SUSPENDING_LS
+               || enmVMState == VMSTATE_POWERING_OFF
+               || enmVMState == VMSTATE_POWERING_OFF_LS,
+               rc = VERR_INVALID_STATE);
+
+    if (RT_SUCCESS(rc))
+        pDevIns->Internal.s.pfnAsyncNotify = pfnAsyncNotify;
+
+    LogFlow(("pdmR3DevHlp_SetAsyncNotification: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @copydoc PDMDEVHLPR3::pfnA20IsEnabled */
 static DECLCALLBACK(bool) pdmR3DevHlp_A20IsEnabled(PPDMDEVINS pDevIns)
 {
@@ -2835,6 +2864,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_UTCNow,
     pdmR3DevHlp_PDMThreadCreate,
     pdmR3DevHlp_PhysGCPtr2GCPhys,
+    pdmR3DevHlp_SetAsyncNotification,
     0,
     0,
     0,
@@ -3300,6 +3330,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_UTCNow,
     pdmR3DevHlp_PDMThreadCreate,
     pdmR3DevHlp_PhysGCPtr2GCPhys,
+    pdmR3DevHlp_SetAsyncNotification,
     0,
     0,
     0,

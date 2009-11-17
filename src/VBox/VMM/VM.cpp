@@ -1209,7 +1209,7 @@ VMMR3DECL(int) VMR3PowerOn(PVM pVM)
      */
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
                                 vmR3PowerOn, NULL);
-    LogFlow(("VMR3Suspend: returns %Rrc\n", rc));
+    LogFlow(("VMR3PowerOn: returns %Rrc\n", rc));
     return rc;
 }
 

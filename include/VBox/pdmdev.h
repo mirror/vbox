@@ -35,7 +35,7 @@
 #include <VBox/pdmthread.h>
 #include <VBox/pdmifs.h>
 #include <VBox/pdmins.h>
-#include <VBox/pdmdevdrv.h>
+#include <VBox/pdmcommon.h>
 #include <VBox/iom.h>
 #include <VBox/tm.h>
 #include <VBox/ssm.h>
@@ -150,6 +150,7 @@ typedef FNPDMDEVRESET *PFNPDMDEVRESET;
  *
  * @returns VBox status.
  * @param   pDevIns     The device instance data.
+ * @thread  EMT(0)
  */
 typedef DECLCALLBACK(void)  FNPDMDEVSUSPEND(PPDMDEVINS pDevIns);
 /** Pointer to a FNPDMDEVSUSPEND() function. */
@@ -169,6 +170,7 @@ typedef FNPDMDEVRESUME *PFNPDMDEVRESUME;
  * Power Off notification.
  *
  * @param   pDevIns     The device instance data.
+ * @thread  EMT(0)
  */
 typedef DECLCALLBACK(void)   FNPDMDEVPOWEROFF(PPDMDEVINS pDevIns);
 /** Pointer to a FNPDMDEVPOWEROFF() function. */
@@ -405,7 +407,7 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 /** Assert the IRQ (can assume value 1). */
 #define PDM_IRQ_LEVEL_HIGH                      RT_BIT(0)
 /** Deassert the IRQ (can assume value 0). */
-#define PDM_IRQ_LEVEL_LOW           0
+#define PDM_IRQ_LEVEL_LOW                       0
 /** flip-flop - assert and then deassert it again immediately. */
 #define PDM_IRQ_LEVEL_FLIP_FLOP                 (RT_BIT(1) | PDM_IRQ_LEVEL_HIGH)
 /** @} */
@@ -2404,6 +2406,19 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnPhysGCPtr2GCPhys, (PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys));
 
+    /**
+     * Set up asynchronous handling of a suspend or power off notification.
+     *
+     * This shall only be called when getting the notification.  It must be called
+     * for each one.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pfnAsyncNotify      The callback.
+     * @thread  EMT(0)
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetAsyncNotification, (PPDMDEVINS pDevIns, PFNPDMDEVASYNCNOTIFY pfnAsyncNotify));
+
     /** Space reserved for future members.
      * @{ */
     DECLR3CALLBACKMEMBER(void, pfnReserved1,(void));
@@ -3712,6 +3727,14 @@ DECLINLINE(int) PDMDevHlpPhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, 
 DECLINLINE(int) PDMDevHlpPhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
 {
     return pDevIns->pDevHlpR3->pfnPhysGCPtr2GCPhys(pDevIns, GCPtr, pGCPhys);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSetAsyncNotification
+ */
+DECLINLINE(int) PDMDevHlpSetAsyncNotification(PPDMDEVINS pDevIns, PFNPDMDEVASYNCNOTIFY pfnAsyncNotify)
+{
+    return pDevIns->pDevHlpR3->pfnSetAsyncNotification(pDevIns, pfnAsyncNotify);
 }
 
 /**
