@@ -982,6 +982,61 @@ VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
 
 
 /**
+ * VMR3ReqProcessU helper that handles cases where there are more than one
+ * pending request.
+ *
+ * @returns The oldest request.
+ * @param   pUVM                Pointer to the user mode VM structure
+ * @param   idDstCpu            VMCPUID_ANY or virtual CPU ID.
+ * @param   pReqList            The list of requests.
+ * @param   ppvReqs             Pointer to the list head.
+ */
+static PVMREQ vmR3ReqProcessUTooManyHelper(PUVM pUVM, VMCPUID idDstCpu, PVMREQ pReqList, void * volatile *ppvReqs)
+{
+    STAM_COUNTER_INC(&pUVM->vm.s.StatReqMoreThan1);
+    /* Chop off the last one (pReq). */
+    PVMREQ pPrev;
+    PVMREQ pReqRet = pReqList;
+    do
+    {
+        pPrev = pReqRet;
+        pReqRet = pReqRet->pNext;
+    } while (pReqRet->pNext);
+    ASMAtomicWritePtr((void * volatile *)&pPrev->pNext, NULL);
+
+    /* Push the others back onto the list (end of it). */
+    Log2(("VMR3ReqProcess: Pushing back %p %p...\n", pReqList, pReqList->pNext));
+    if (RT_UNLIKELY(!ASMAtomicCmpXchgPtr(ppvReqs, pReqList, NULL)))
+    {
+        STAM_COUNTER_INC(&pUVM->vm.s.StatReqPushBackRaces);
+        do
+        {
+            ASMNopPause();
+            PVMREQ pReqList2 = (PVMREQ)ASMAtomicXchgPtr(ppvReqs, NULL);
+            if (pReqList2)
+            {
+                PVMREQ pLast = pReqList2;
+                while (pLast->pNext)
+                    pLast = pLast->pNext;
+                ASMAtomicWritePtr((void * volatile *)&pLast->pNext, pReqList);
+                pReqList = pReqList2;
+            }
+        } while (!ASMAtomicCmpXchgPtr(ppvReqs, pReqList, NULL));
+    }
+
+    if (RT_LIKELY(pUVM->pVM))
+    {
+        if (idDstCpu == VMCPUID_ANY)
+            VM_FF_SET(pUVM->pVM, VM_FF_REQUEST);
+        else
+            VMCPU_FF_SET(&pUVM->pVM->aCpus[idDstCpu], VMCPU_FF_REQUEST);
+    }
+
+    return pReqRet;
+}
+
+
+/**
  * Process pending request(s).
  *
  * This function is called from a forced action handler in the EMT
@@ -995,6 +1050,8 @@ VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
  *                          case the calling thread must be the EMT of that CPU.
  *
  * @note    SMP safe (multiple EMTs trying to satisfy VM_FF_REQUESTs).
+ *
+ * @remarks This was made reentrant for
  */
 VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu)
 {
@@ -1010,12 +1067,14 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu)
     while (rc <= VINF_SUCCESS)
     {
         /*
-         * Get pending requests.
+         * Get the pending requests.
+         * If there are more than one request, unlink the oldest and put the
+         * rest back so that we're reentrant.
          */
-        void * volatile *ppReqs;
+        void * volatile *ppvReqs;
         if (idDstCpu == VMCPUID_ANY)
         {
-            ppReqs = (void * volatile *)&pUVM->vm.s.pReqs;
+            ppvReqs = (void * volatile *)&pUVM->vm.s.pReqs;
             if (RT_LIKELY(pUVM->pVM))
                 VM_FF_CLEAR(pUVM->pVM, VM_FF_REQUEST);
         }
@@ -1023,61 +1082,32 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu)
         {
             Assert(idDstCpu < pUVM->cCpus);
             Assert(pUVM->aCpus[idDstCpu].vm.s.NativeThreadEMT == RTThreadNativeSelf());
-            ppReqs = (void * volatile *)&pUVM->aCpus[idDstCpu].vm.s.pReqs;
+            ppvReqs = (void * volatile *)&pUVM->aCpus[idDstCpu].vm.s.pReqs;
             if (RT_LIKELY(pUVM->pVM))
                 VMCPU_FF_CLEAR(&pUVM->pVM->aCpus[idDstCpu], VMCPU_FF_REQUEST);
         }
-        PVMREQ pReqs = (PVMREQ)ASMAtomicXchgPtr(ppReqs, NULL);
-        if (!pReqs)
+
+        PVMREQ pReq = (PVMREQ)ASMAtomicXchgPtr(ppvReqs, NULL);
+        if (!pReq)
             break;
+        if (RT_UNLIKELY(pReq->pNext))
+            pReq = vmR3ReqProcessUTooManyHelper(pUVM, idDstCpu, pReq, ppvReqs);
 
         /*
-         * Reverse the list to process it in FIFO order.
+         * Process the request.
+         * Note! The status code handling here extremely important and yet very
+         *       fragile.
          */
-        PVMREQ pReq = pReqs;
-        if (pReq->pNext)
-            Log2(("VMR3ReqProcess: 2+ requests: %p %p %p\n", pReq, pReq->pNext, pReq->pNext->pNext));
-        pReqs = NULL;
-        while (pReq)
-        {
-            Assert(pReq->enmState == VMREQSTATE_QUEUED);
-            Assert(pReq->pUVM == pUVM);
-            PVMREQ pCur = pReq;
-            pReq = pReq->pNext;
-            pCur->pNext = pReqs;
-            pReqs = pCur;
-        }
-
-
-        /*
-         * Process the requests.
-         *
-         * Since this is a FF worker certain rules applies to the
-         * status codes. See the EM section in VBox/err.h and EM.cpp for details.
-         */
-        while (pReqs)
-        {
-            /* Unchain the first request and advance the list. */
-            pReq = pReqs;
-            pReqs = pReqs->pNext;
-            pReq->pNext = NULL;
-
-            /* Process the request */
-            int rc2 = vmR3ReqProcessOneU(pUVM, pReq);
-
-            /*
-             * The status code handling extremely important yet very fragile. Should probably
-             * look for a better way of communicating status changes to EM...
-             */
-            if (    rc2 >= VINF_EM_FIRST
-                &&  rc2 <= VINF_EM_LAST
-                &&  (   rc == VINF_SUCCESS
-                     || rc2 < rc) )
-                rc = rc2;
-            /** @todo may have to abort processing to propagate EM scheduling status codes
-             *        up to the caller... See the ugly hacks after VMMR3EmtRendezvousFF
-             *        and VMR3ReqProcessU in EM.cpp. */
-        }
+        STAM_COUNTER_INC(&pUVM->vm.s.StatReqProcessed);
+        int rc2 = vmR3ReqProcessOneU(pUVM, pReq);
+        if (    rc2 >= VINF_EM_FIRST
+            &&  rc2 <= VINF_EM_LAST
+            &&  (   rc == VINF_SUCCESS
+                 || rc2 < rc) )
+            rc = rc2;
+        /** @todo may have to abort processing to propagate EM scheduling status codes
+         *        up to the caller... See the ugly hacks after VMMR3EmtRendezvousFF
+         *        and VMR3ReqProcessU in EM.cpp. */
     }
 
     LogFlow(("VMR3ReqProcess: returns %Rrc (enmVMState=%d)\n", rc, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
@@ -1095,7 +1125,7 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu)
  */
 static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq)
 {
-    LogFlow(("vmR3ReqProcessOne: pReq=%p type=%d fFlags=%#x\n", pReq, pReq->enmType, pReq->fFlags));
+    LogFlow(("vmR3ReqProcessOneU: pReq=%p type=%d fFlags=%#x\n", pReq, pReq->enmType, pReq->fFlags));
 
     /*
      * Process the request.
@@ -1209,14 +1239,14 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq)
     if (pReq->fFlags & VMREQFLAGS_NO_WAIT)
     {
         /* Free the packet, nobody is waiting. */
-        LogFlow(("vmR3ReqProcessOne: Completed request %p: rcReq=%Rrc rcRet=%Rrc - freeing it\n",
+        LogFlow(("vmR3ReqProcessOneU: Completed request %p: rcReq=%Rrc rcRet=%Rrc - freeing it\n",
                  pReq, rcReq, rcRet));
         VMR3ReqFree(pReq);
     }
     else
     {
         /* Notify the waiter and him free up the packet. */
-        LogFlow(("vmR3ReqProcessOne: Completed request %p: rcReq=%Rrc rcRet=%Rrc - notifying waiting thread\n",
+        LogFlow(("vmR3ReqProcessOneU: Completed request %p: rcReq=%Rrc rcRet=%Rrc - notifying waiting thread\n",
                  pReq, rcReq, rcRet));
         ASMAtomicXchgSize(&pReq->fEventSemClear, false);
         int rc2 = RTSemEventSignal(pReq->EventSem);
