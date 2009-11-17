@@ -839,7 +839,7 @@ typedef struct VM
 #ifdef ___PGMInternal_h
         struct PGM  s;
 #endif
-        uint8_t     padding[6080];      /* multiple of 64 */
+        uint8_t     padding[4096*2+6080];      /* multiple of 64 */
     } pgm;
 
     /** HWACCM part. */
