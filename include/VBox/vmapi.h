@@ -397,8 +397,10 @@ VMMR3DECL(void)     VMR3NotifyCpuFFU(PUVMCPU pUVMCpu, uint32_t fFlags);
 #define VMNOTIFYFF_FLAGS_POKE       RT_BIT_32(1)
 /** @} */
 
-VMMR3DECL(int)  VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts);
-VMMR3DECL(int)  VMR3WaitU(PUVMCPU pUVMCpu);
+VMMR3DECL(int)              VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts);
+VMMR3DECL(int)              VMR3WaitU(PUVMCPU pUVMCpu);
+VMMR3_INT_DECL(int)         VMR3AsyncPdmNotificationWaitU(PUVMCPU pUVCpu);
+VMMR3_INT_DECL(void)        VMR3AsyncPdmNotificationWakeupU(PUVM pUVM);
 VMMR3DECL(RTCPUID)          VMR3GetVMCPUId(PVM pVM);
 VMMR3DECL(RTTHREAD)         VMR3GetVMCPUThread(PVM pVM);
 VMMR3DECL(RTTHREAD)         VMR3GetVMCPUThreadU(PUVM pUVM);

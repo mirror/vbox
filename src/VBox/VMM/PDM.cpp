@@ -1134,6 +1134,9 @@ DECLINLINE(bool) pdmR3SuspendDrv(PPDMDRVINS pDrvIns, unsigned *pcAsync,
                 LogFlow(("PDMR3Suspend: Notifying - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
                          pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
                 pDrvIns->pDrvReg->pfnSuspend(pDrvIns);
+                if (pDrvIns->Internal.s.pfnAsyncNotify)
+                    LogFlow(("PDMR3Suspend: Async notification started - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
+                             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
             }
             else if (pDrvIns->Internal.s.pfnAsyncNotify(pDrvIns))
             {
@@ -1170,6 +1173,8 @@ DECLINLINE(void) pdmR3SuspendUsb(PPDMUSBINS pUsbIns, unsigned *pcAsync)
             {
                 LogFlow(("PDMR3Suspend: Notifying - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
                 pUsbIns->pUsbReg->pfnVMSuspend(pUsbIns);
+                if (pUsbIns->Internal.s.pfnAsyncNotify)
+                    LogFlow(("PDMR3Suspend: Async notification started - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
             }
             else if (pUsbIns->Internal.s.pfnAsyncNotify(pUsbIns))
             {
@@ -1203,6 +1208,8 @@ DECLINLINE(void) pdmR3SuspendDev(PPDMDEVINS pDevIns, unsigned *pcAsync)
             {
                 LogFlow(("PDMR3Suspend: Notifying - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
                 pDevIns->pDevReg->pfnSuspend(pDevIns);
+                if (pDevIns->Internal.s.pfnAsyncNotify)
+                    LogFlow(("PDMR3Suspend: Async notification started - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
             }
             else if (pDevIns->Internal.s.pfnAsyncNotify(pDevIns))
             {
@@ -1240,7 +1247,7 @@ VMMR3DECL(void) PDMR3Suspend(PVM pVM)
      *       on failure.
      */
     unsigned cAsync;
-    for (;;)
+    for (unsigned iLoop = 0; ; iLoop++)
     {
         /*
          * Iterate thru the device instances and USB device instances,
@@ -1292,8 +1299,12 @@ VMMR3DECL(void) PDMR3Suspend(PVM pVM)
          */
         /** @todo This is utterly nuts and completely unsafe... will get back to it in a
          *        bit I hope... */
-        int rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY);
-        AssertReleaseRC(rc == VINF_SUCCESS);
+        int rc = VMR3AsyncPdmNotificationWaitU(&pVM->pUVM->aCpus[0]);
+        AssertReleaseMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+        rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY);
+        AssertReleaseMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+        rc = VMR3ReqProcessU(pVM->pUVM, 0/*idDstCpu*/);
+        AssertReleaseMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
     }
 
     /*
@@ -1455,6 +1466,9 @@ DECLINLINE(bool) pdmR3PowerOffDrv(PPDMDRVINS pDrvIns, unsigned *pcAsync,
                 LogFlow(("PDMR3PowerOff: Notifying - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
                          pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
                 pDrvIns->pDrvReg->pfnPowerOff(pDrvIns);
+                if (pDrvIns->Internal.s.pfnAsyncNotify)
+                    LogFlow(("PDMR3PowerOff: Async notification started - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
+                             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
             }
             else if (pDrvIns->Internal.s.pfnAsyncNotify(pDrvIns))
             {
@@ -1491,6 +1505,8 @@ DECLINLINE(void) pdmR3PowerOffUsb(PPDMUSBINS pUsbIns, unsigned *pcAsync)
             {
                 LogFlow(("PDMR3PowerOff: Notifying - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
                 pUsbIns->pUsbReg->pfnVMPowerOff(pUsbIns);
+                if (pUsbIns->Internal.s.pfnAsyncNotify)
+                    LogFlow(("PDMR3PowerOff: Async notification started - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
             }
             else if (pUsbIns->Internal.s.pfnAsyncNotify(pUsbIns))
             {
@@ -1524,6 +1540,8 @@ DECLINLINE(void) pdmR3PowerOffDev(PPDMDEVINS pDevIns, unsigned *pcAsync)
             {
                 LogFlow(("PDMR3PowerOff: Notifying - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
                 pDevIns->pDevReg->pfnPowerOff(pDevIns);
+                if (pDevIns->Internal.s.pfnAsyncNotify)
+                    LogFlow(("PDMR3PowerOff: Async notification started - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
             }
             else if (pDevIns->Internal.s.pfnAsyncNotify(pDevIns))
             {
@@ -1606,8 +1624,12 @@ VMMR3DECL(void) PDMR3PowerOff(PVM pVM)
          */
         /** @todo This is utterly nuts and completely unsafe... will get back to it in a
          *        bit I hope... */
-        int rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY);
-        AssertReleaseRC(rc == VINF_SUCCESS);
+        int rc = VMR3AsyncPdmNotificationWaitU(&pVM->pUVM->aCpus[0]);
+        AssertReleaseMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+        rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY);
+        AssertReleaseMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+        rc = VMR3ReqProcessU(pVM->pUVM, 0/*idDstCpu*/);
+        AssertReleaseMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
     }
 
     /*

@@ -710,6 +710,17 @@ typedef struct PDMDRVHLP
     DECLR3CALLBACKMEMBER(int, pfnSetAsyncNotification, (PPDMDRVINS pDrvIns, PFNPDMDRVASYNCNOTIFY pfnAsyncNotify));
 
     /**
+     * Notify EMT(0) that the driver has completed the asynchronous notification
+     * handling.
+     *
+     * This can be called at any time, spurious calls will simply be ignored.
+     *
+     * @param   pDrvIns             The driver instance.
+     * @thread  Any
+     */
+    DECLR3CALLBACKMEMBER(void, pfnAsyncNotificationCompleted, (PPDMDRVINS pDrvIns));
+
+    /**
      * Creates a PDM thread.
      *
      * This differs from the RTThreadCreate() API in that PDM takes care of suspending,
@@ -1035,6 +1046,22 @@ DECLINLINE(int) PDMDrvHlpSTAMDeregister(PPDMDRVINS pDrvIns, void *pvSample)
 DECLINLINE(int) PDMDrvHlpUSBRegisterHub(PPDMDRVINS pDrvIns, uint32_t fVersions, uint32_t cPorts, PCPDMUSBHUBREG pUsbHubReg, PPCPDMUSBHUBHLP ppUsbHubHlp)
 {
     return pDrvIns->pDrvHlp->pfnUSBRegisterHub(pDrvIns, fVersions, cPorts, pUsbHubReg, ppUsbHubHlp);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnSetAsyncNotification
+ */
+DECLINLINE(int) PDMDrvHlpSetAsyncNotification(PPDMDRVINS pDrvIns, PFNPDMDRVASYNCNOTIFY pfnAsyncNotify)
+{
+    return pDrvIns->pDrvHlp->pfnSetAsyncNotification(pDrvIns, pfnAsyncNotify);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnAsyncNotificationCompleted
+ */
+DECLINLINE(void) PDMDrvHlpAsyncNotificationCompleted(PPDMDRVINS pDrvIns)
+{
+    pDrvIns->pDrvHlp->pfnAsyncNotificationCompleted(pDrvIns);
 }
 
 /**

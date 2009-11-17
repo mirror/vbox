@@ -1100,6 +1100,36 @@ VMMR3DECL(int) VMR3WaitU(PUVMCPU pUVCpu)
 
 
 /**
+ * Interface that PDMR3Suspend, PDMR3PowerOff and PDMR3Reset uses when they wait
+ * for the handling of asynchronous notifications to complete.
+ *
+ * @returns VINF_SUCCESS unless a fatal error occurred. In the latter
+ *          case an appropriate status code is returned.
+ * @param   pUVCpu              Pointer to the user mode VMCPU structure.
+ * @thread  The emulation thread.
+ */
+VMMR3_INT_DECL(int) VMR3AsyncPdmNotificationWaitU(PUVMCPU pUVCpu)
+{
+    LogFlow(("VMR3AsyncPdmNotificationWaitU:\n"));
+    return VMR3WaitU(pUVCpu);
+}
+
+
+/**
+ * Interface that PDM the helper asynchronous notification completed methods
+ * uses for EMT0 when it is waiting inside VMR3AsyncPdmNotificationWaitU().
+ *
+ * @param   pUVM                Pointer to the user mode VM structure.
+ */
+VMMR3_INT_DECL(void) VMR3AsyncPdmNotificationWakeupU(PUVM pUVM)
+{
+    LogFlow(("VMR3AsyncPdmNotificationWakeupU:\n"));
+    VM_FF_SET(pUVM->pVM, VM_FF_REQUEST); /* this will have to do for now. */
+    g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnNotifyCpuFF(&pUVM->aCpus[0], 0 /*fFlags*/);
+}
+
+
+/**
  * Rendezvous callback that will be called once.
  *
  * @returns VBox strict status code.
