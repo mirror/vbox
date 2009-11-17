@@ -823,7 +823,7 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
         pTlbe->pMap = NULL;
         pTlbe->pv = pPGM->CTXALLSUFF(pvZeroPg);
     }
-#if 0 /* broken */
+#if 1 /* Testing */
     pTlbe->GCPhys = (GCPhys & X86_PTE_PAE_PG_MASK);
 #endif
     pTlbe->pPage  = pPage;
@@ -869,7 +869,7 @@ int pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         pTlbe->pMap = NULL;
         pTlbe->pv = pPGM->CTXALLSUFF(pvZeroPg);
     }
-#if 0 /* broken */
+#if 1 /* Testing */
     pTlbe->GCPhys = (GCPhys & X86_PTE_PAE_PG_MASK);
 #endif
     pTlbe->pPage = pPage;
