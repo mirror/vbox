@@ -535,6 +535,8 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, uint32_t fFlags,
                             pNew->Internal.s.pDrv           = pDrv;
                             pNew->Internal.s.pVM            = pVM;
                             pNew->Internal.s.fDetaching     = false;
+                            pNew->Internal.s.fVMSuspended   = true;
+                            pNew->Internal.s.pfnAsyncNotify = NULL;
                             pNew->Internal.s.pCfgHandle     = pNode;
                             pNew->pDrvHlp                   = &g_pdmR3DrvHlp;
                             pNew->pDrvReg                   = pDrv->pDrvReg;
@@ -1016,6 +1018,33 @@ static DECLCALLBACK(int) pdmR3DrvHlp_USBRegisterHub(PPDMDRVINS pDrvIns, uint32_t
 }
 
 
+/** @copydoc PDMDRVHLP::pfnSetAsyncNotification */
+static DECLCALLBACK(int) pdmR3DrvHlp_SetAsyncNotification(PPDMDRVINS pDrvIns, PFNPDMDRVASYNCNOTIFY pfnAsyncNotify)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    VM_ASSERT_EMT0(pDrvIns->Internal.s.pVM);
+    LogFlow(("pdmR3DrvHlp_SetAsyncNotification: caller='%s'/%d: pfnAsyncNotify=%p\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pfnAsyncNotify));
+
+    int rc = VINF_SUCCESS;
+    AssertStmt(pfnAsyncNotify, rc = VERR_INVALID_PARAMETER);
+    AssertStmt(!pDrvIns->Internal.s.pfnAsyncNotify, rc = VERR_WRONG_ORDER);
+    AssertStmt(pDrvIns->Internal.s.fVMSuspended, rc = VERR_WRONG_ORDER);
+    VMSTATE enmVMState = VMR3GetState(pDrvIns->Internal.s.pVM);
+    AssertStmt(   enmVMState == VMSTATE_SUSPENDING
+               || enmVMState == VMSTATE_SUSPENDING_EXT_LS
+               || enmVMState == VMSTATE_SUSPENDING_LS
+               || enmVMState == VMSTATE_POWERING_OFF
+               || enmVMState == VMSTATE_POWERING_OFF_LS,
+               rc = VERR_INVALID_STATE);
+
+    if (RT_SUCCESS(rc))
+        pDrvIns->Internal.s.pfnAsyncNotify = pfnAsyncNotify;
+
+    LogFlow(("pdmR3DrvHlp_SetAsyncNotification: caller='%s'/%d: returns %Rrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @copydoc PDMDRVHLP::pfnPDMThreadCreate */
 static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
                                                      PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
@@ -1083,6 +1112,7 @@ const PDMDRVHLP g_pdmR3DrvHlp =
     pdmR3DrvHlp_STAMDeregister,
     pdmR3DrvHlp_SUPCallVMMR0Ex,
     pdmR3DrvHlp_USBRegisterHub,
+    pdmR3DrvHlp_SetAsyncNotification,
     pdmR3DrvHlp_PDMThreadCreate,
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
     pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate,

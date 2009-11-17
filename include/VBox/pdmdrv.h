@@ -35,7 +35,7 @@
 #include <VBox/pdmthread.h>
 #include <VBox/pdmifs.h>
 #include <VBox/pdmins.h>
-#include <VBox/pdmdevdrv.h>
+#include <VBox/pdmcommon.h>
 #include <VBox/tm.h>
 #include <VBox/ssm.h>
 #include <VBox/cfgm.h>
@@ -695,6 +695,19 @@ typedef struct PDMDRVHLP
      * @thread  EMT.
      */
     DECLR3CALLBACKMEMBER(int, pfnUSBRegisterHub,(PPDMDRVINS pDrvIns, uint32_t fVersions, uint32_t cPorts, PCPDMUSBHUBREG pUsbHubReg, PPCPDMUSBHUBHLP ppUsbHubHlp));
+
+    /**
+     * Set up asynchronous handling of a suspend or power off notification.
+     *
+     * This shall only be called when getting the notification.  It must be called
+     * for each one.
+     *
+     * @returns VBox status code.
+     * @param   pDrvIns             The driver instance.
+     * @param   pfnAsyncNotify      The callback.
+     * @thread  EMT(0)
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetAsyncNotification, (PPDMDRVINS pDrvIns, PFNPDMDRVASYNCNOTIFY pfnAsyncNotify));
 
     /**
      * Creates a PDM thread.

@@ -324,6 +324,7 @@ int pdmR3DevInit(PVM pVM)
         //pDevIns->Internal.s.pPciBusR0           = 0;
         //pDevIns->Internal.s.pPciDeviceRC        = 0;
         //pDevIns->Internal.s.pPciBusRC           = 0;
+        pDevIns->Internal.s.fIntFlags           = PDMDEVINSINT_FLAGS_SUSPENDED;
         pDevIns->pDevHlpR3                      = fTrusted ? &g_pdmR3DevHlpTrusted : &g_pdmR3DevHlpUnTrusted;
         pDevIns->pDevHlpRC                      = pDevHlpRC;
         pDevIns->pDevHlpR0                      = pDevHlpR0;
