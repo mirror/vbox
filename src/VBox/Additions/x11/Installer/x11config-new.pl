@@ -42,6 +42,7 @@ foreach $arg (@ARGV)
         my $cfg = $arg;
         my $CFG;
         my $xkbopts = "";
+        my $kb_driver = "";
         if (open(CFG, $cfg))
         {
             my $TMP;
@@ -82,9 +83,26 @@ foreach $arg (@ARGV)
                     {
                         $xkbopts = $xkbopts . $line;
                     }
+                    # If we find a keyboard driver, remember it
+                    if ($line =~ /^\s*driver\s+\"(kbd|keyboard)\"/i)
+                    {
+                        $kb_driver = $1;
+                    }
                     $line = "# " . $line;
                 }
                 print TMP $line;
+            }
+
+            if ($kb_driver ne "")
+            {
+                print TMP <<EOF;
+Section "InputDevice"
+  Identifier   "keyboard[0]"
+  Driver       "$kb_driver"
+$xkbopts  Option       "Protocol" "Standard"
+  Option       "CoreKeyboard"
+EndSection
+EOF
             }
 
             if (!$use_hal && !$new_mouse) {
@@ -100,13 +118,6 @@ Section "InputDevice"
   Option      "Vendor" "Sun Microsystems Inc"
   Option      "ZAxisMapping" "4 5"
   Option      "CorePointer"
-EndSection
-
-Section "InputDevice"
-  Identifier   "keyboard"
-  Driver       "keyboard"
-$xkbopts  Option       "Protocol" "Standard"
-  Option       "CoreKeyboard"
 EndSection
 EOF
             }
@@ -135,16 +146,8 @@ Section "InputDevice"
   Option       "SendCoreEvents"
 EndSection
 
-Section "InputDevice"
-  Identifier   "keyboard[0]"
-  Driver       "kbd"
-$xkbopts  Option       "Protocol" "Standard"
-  Option       "CoreKeyboard"
-EndSection
-
 Section "ServerLayout"
   Identifier   "Layout[all]"
-  InputDevice  "Keyboard[0]" "CoreKeyboard"
   InputDevice  "Mouse[1]" "CorePointer"
   InputDevice  "Mouse[2]" "SendCoreEvents"
   Option       "Clone" "off"
@@ -153,6 +156,7 @@ Section "ServerLayout"
 EndSection
 EOF
             }
+
             print TMP <<EOF;
 
 Section "Monitor"
