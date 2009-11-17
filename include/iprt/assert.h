@@ -378,6 +378,33 @@ RT_C_DECLS_END
 #endif
 
 
+/** @def AssertStmt
+ * Assert that an expression is true. If false, hit breakpoint and execute the
+ * statement.
+ * @param   expr    Expression which should be true.
+ * @param   stmt    Statement to execute on failure.
+ */
+#ifdef RT_STRICT
+# define AssertStmt(expr, stmt)  \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertPanic(); \
+            stmt; \
+        } \
+    } while (0)
+#else
+# define AssertStmt(expr, stmt)  \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            stmt; \
+        } \
+    } while (0)
+#endif
+
+
 /** @def AssertReturn
  * Assert that an expression is true and returns if it isn't.
  * In RT_STRICT mode it will hit a breakpoint before returning.
