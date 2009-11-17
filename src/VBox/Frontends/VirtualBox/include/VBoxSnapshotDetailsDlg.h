@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,12 +23,15 @@
 #ifndef __VBoxSnapshotDetailsDlg_h__
 #define __VBoxSnapshotDetailsDlg_h__
 
+/* Local includes */
 #include "VBoxSnapshotDetailsDlg.gen.h"
 #include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
-class VBoxSnapshotDetailsDlg : public QIWithRetranslateUI<QDialog>,
-                               public Ui::VBoxSnapshotDetailsDlg
+/* Global forwards */
+class QScrollArea;
+
+class VBoxSnapshotDetailsDlg : public QIWithRetranslateUI <QDialog>, public Ui::VBoxSnapshotDetailsDlg
 {
     Q_OBJECT;
 
@@ -43,6 +46,9 @@ protected:
 
     void retranslateUi();
 
+    bool eventFilter (QObject *aObject, QEvent *aEvent);
+    void showEvent (QShowEvent *aEvent);
+
 private slots:
 
     void onNameChanged (const QString &aText);
@@ -50,6 +56,38 @@ private slots:
 private:
 
     CSnapshot mSnapshot;
+
+    QPixmap mThumbnail;
+};
+
+class VBoxScreenshotViewer : public QIWithRetranslateUI2 <QWidget>
+{
+    Q_OBJECT;
+
+public:
+
+    VBoxScreenshotViewer (QWidget *aParent, const QPixmap &aScreenshot,
+                          const QString &aSnapshotName, const QString &aMachineName);
+
+private:
+
+    void retranslateUi();
+
+    void showEvent (QShowEvent *aEvent);
+    void resizeEvent (QResizeEvent *aEvent);
+    void mousePressEvent (QMouseEvent *aEvent);
+    void keyPressEvent (QKeyEvent *aEvent);
+
+    void adjustPicture();
+
+    QScrollArea *mArea;
+    QLabel *mPicture;
+
+    QPixmap mScreenshot;
+    QString mSnapshotName;
+    QString mMachineName;
+
+    bool mZoomMode;
 };
 
 #endif // __VBoxSnapshotDetailsDlg_h__
