@@ -58,6 +58,7 @@ private:
     CSnapshot mSnapshot;
 
     QPixmap mThumbnail;
+    QPixmap mScreenshot;
 };
 
 class VBoxScreenshotViewer : public QIWithRetranslateUI2 <QWidget>
