@@ -191,7 +191,7 @@ VMMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
 
 
 /**
- * Invalidates the all page mapping TLBs.
+ * Invalidates all page mapping TLBs.
  *
  * @param   pVM     The VM handle.
  */
@@ -199,6 +199,7 @@ VMMDECL(void) PGMPhysInvalidatePageMapTLB(PVM pVM)
 {
     pgmLock(pVM);
     STAM_COUNTER_INC(&pVM->pgm.s.StatPageMapTlbFlushes);
+    /* Clear the shared R0/R3 TLB completely. */
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbHC.aEntries); i++)
     {
         pVM->pgm.s.PhysTlbHC.aEntries[i].GCPhys = NIL_RTGCPHYS;
@@ -208,6 +209,34 @@ VMMDECL(void) PGMPhysInvalidatePageMapTLB(PVM pVM)
     }
     /* @todo clear the RC TLB whenever we add it. */
     pgmUnlock(pVM);
+}
+
+/**
+ * Invalidates a page mapping TLB entry
+ *
+ * @param   pVM     The VM handle.
+ * @param   GCPhys  GCPhys entry to flush
+ */
+VMMDECL(void) PGMPhysInvalidatePageMapTLBEntry(PVM pVM, RTGCPHYS GCPhys)
+{
+    Assert(PGMIsLocked(pVM));
+
+    STAM_COUNTER_INC(&pVM->pgm.s.StatPageMapTlbFlushEntry);
+    /* Clear the shared R0/R3 TLB entry. */
+#ifdef IN_RC
+    unsigned idx = PGM_PAGER3MAPTLB_IDX(GCPhys);
+    pVM->pgm.s.PhysTlbHC.aEntries[idx].GCPhys = NIL_RTGCPHYS;
+    pVM->pgm.s.PhysTlbHC.aEntries[idx].pPage = 0;
+    pVM->pgm.s.PhysTlbHC.aEntries[idx].pMap = 0;
+    pVM->pgm.s.PhysTlbHC.aEntries[idx].pv = 0;
+#else
+    PPGMPAGEMAPTLBE pTlbe = &pVM->pgm.s.CTXSUFF(PhysTlb).aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
+    pTlbe->GCPhys = NIL_RTGCPHYS;
+    pTlbe->pPage  = 0;
+    pTlbe->pMap   = 0;
+    pTlbe->pv     = 0;
+#endif
+    /* @todo clear the RC TLB whenever we add it. */
 }
 
 /**
@@ -398,7 +427,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     PGM_PAGE_SET_HCPHYS(pPage, HCPhys);
     PGM_PAGE_SET_PAGEID(pPage, pVM->pgm.s.aHandyPages[iHandyPage].idPage);
     PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
-    PGMPhysInvalidatePageMapTLB(pVM);
+    PGMPhysInvalidatePageMapTLBEntry(pVM, GCPhys);
 
     if (    fFlushTLBs
         &&  rc != VINF_PGM_GCPHYS_ALIASED)
