@@ -1714,7 +1714,7 @@ VMMR3DECL(void) PDMR3PowerOff(PVM pVM)
      * The outer loop repeats until there are no more async requests.
      */
     unsigned cAsync;
-    for (;;)
+    for (unsigned iLoop = 0; ; iLoop++)
     {
         /*
          * Iterate thru the device instances and USB device instances,
