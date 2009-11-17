@@ -245,7 +245,7 @@ void VBoxMedium::refresh()
                                                   .arg (mHardDiskType).arg (mHardDiskFormat));
         }
 
-        mToolTip += mRow.arg (VBoxGlobal::tr ("<p style=white-space:pre>Attached to:  %1</p>", "image")
+        mToolTip += mRow.arg (VBoxGlobal::tr ("<p>Attached to:  %1</p>", "image")
                                               .arg (mUsage.isNull() ? VBoxGlobal::tr ("<i>Not Attached</i>", "image") : mUsage));
 
         switch (mState)
