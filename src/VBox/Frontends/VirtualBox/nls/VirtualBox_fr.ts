@@ -1168,7 +1168,7 @@ Version %1</source>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation> compilation EXPERIMENTELE %1r%2 - %3</translation>
+        <translation> Compilation EXPERIMENTAL %1r%2 - %3</translation>
     </message>
     <message>
         <source>&amp;Storage Devices...</source>
@@ -2125,7 +2125,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Cochez ceci si vous désirez reçevoir seulement des notifications sur les actualisations stables de VirtualBox&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Cochez ceci si vous désirez recevoir seulement des notifications sur les actualisations stables de VirtualBox&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Stable release versions</source>
@@ -2133,7 +2133,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Choisissez ceci pour reçevoir des notifications sur toutes les nouvelles versions de VirtualBox.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Choisissez ceci pour recevoir des notifications sur toutes les nouvelles versions de VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;All new releases</source>
@@ -2141,11 +2141,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Choisissez ceci pour reçevoir des notifications sur toutes les nouvelles versions de VirtualBox, y compris les versions experimentelles.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Choisissez ceci pour recevoir des notifications sur toutes les nouvelles versions de VirtualBox, y compris les versions expérimentals.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>All new releases and &amp;pre-releases</source>
-        <translation>Toutes les nouvelles versions, y compris les versions e&amp;xperimentelles</translation>
+        <translation>Toutes les nouvelles versions, y compris les versions e&amp;xperimentals</translation>
     </message>
 </context>
 <context>
@@ -3166,12 +3166,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Restoring Snapshot</source>
         <comment>MachineState</comment>
-        <translation>Réstauration d&apos;instantané</translation>
+        <translation>Restauration d&apos;instantané</translation>
     </message>
     <message>
         <source>Deleting Snapshot</source>
         <comment>MachineState</comment>
-        <translation>Suppréssion d&apos;instantané</translation>
+        <translation>Suppression d&apos;instantané</translation>
     </message>
     <message>
         <source>Floppy</source>
@@ -3593,7 +3593,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation>&amp;Actualiser</translation>
+        <translation>A&amp;ctualiser</translation>
     </message>
     <message>
         <source>Create a new virtual hard disk</source>
@@ -4721,7 +4721,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible! Version &lt;b&gt;%1&lt;/b&gt; est disponible à &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version avec le lien direct suivant&amp;nbsp;: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible! La version &lt;b&gt;%1&lt;/b&gt; est disponible sur &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version avec le lien direct suivant : &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
@@ -4960,7 +4960,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation>La suppréssion du fichier &lt;b&gt;%1&lt;/b&gt; a échoué.&lt;br /&gt;&lt;br /&gt;Veuillez supprimer le fichier manuellement et réessayer.</translation>
+        <translation>La suppression du fichier &lt;b&gt;%1&lt;/b&gt; a échoué.&lt;br /&gt;&lt;br /&gt;Veuillez supprimer le fichier manuellement et réessayer.</translation>
     </message>
     <message>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
@@ -5012,7 +5012,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation>L&apos;éjection du support virtuel a échoué. Le lecteur pourrait être vérouile par le système invité. Veuillez vérifier ceci et réessayer.</translation>
+        <translation>L&apos;éjection du support virtuel a échoué. Le lecteur pourrait être verrouillé par le système invité. Veuillez vérifier ceci et réessayer.</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -5029,7 +5029,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
-        <translation>Vous utilisez une version EXPERIMENTELLE de VirtualBox. Cette version n&apos;est pas appropriée pour des utilisations nécéssitant un haut degré de fiabilité.</translation>
+        <translation>Vous utilisez une version EXPERIMENTAL de VirtualBox. Cette version n&apos;est pas appropriée pour des utilisations nécéssitant un haut degré de fiabilité.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
@@ -5037,7 +5037,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Restore</source>
-        <translation>Réstaurer</translation>
+        <translation>Restaurer</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
@@ -5590,7 +5590,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&amp;Restore Snapshot</source>
-        <translation>&amp;Réstaurer instantané</translation>
+        <translation>&amp;Restaurer instantané</translation>
     </message>
     <message>
         <source>&amp;Delete Snapshot</source>
@@ -5598,7 +5598,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Restore the selected snapshot of the virtual machine</source>
-        <translation>Réstaurer l&apos;instantané sélectionné de la machine virtuelle</translation>
+        <translation>Restaurer l&apos;instantané sélectionné de la machine virtuelle</translation>
     </message>
     <message>
         <source>Delete the selected snapshot of the virtual machine</source>
