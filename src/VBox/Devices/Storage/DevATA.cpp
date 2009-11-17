@@ -3745,10 +3745,14 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
  *
  * @returns true on success.
  * @returns false when the thread is still processing.
- * @param   pThis       Pointer to the controller data.
- * @param   cMillies    How long to wait (total).  This isn't very accurate.
+ * @param   pThis               Pointer to the controller data.
+ * @param   cMillies            How long to wait (total).  This isn't very
+ *                              accurate.
+ * @param   fLeaveSignallingOn  Leave the signalling on so that it will notifiy
+ *                              PDM about completion of the asynchronous
+ *                              notification.
  */
-static bool ataWaitForAsyncIOIsIdle(PATACONTROLLER pCtl, unsigned cMillies)
+static bool ataWaitForAsyncIOIsIdle(PATACONTROLLER pCtl, unsigned cMillies, bool fLeaveSignallingOn)
 {
     uint64_t        u64Start;
     bool            fRc;
@@ -3784,7 +3788,8 @@ static bool ataWaitForAsyncIOIsIdle(PATACONTROLLER pCtl, unsigned cMillies)
                   ("rc=%Rrc i=%u\n", rc, ATACONTROLLER_IDX(pCtl)));
     }
 
-    ASMAtomicWriteBool(&pCtl->fSignalIdle, false);
+    if (fRc || !fLeaveSignallingOn)
+        ASMAtomicWriteBool(&pCtl->fSignalIdle, false);
     return fRc;
 }
 
@@ -3794,16 +3799,19 @@ static bool ataWaitForAsyncIOIsIdle(PATACONTROLLER pCtl, unsigned cMillies)
  *
  * @returns true on success.
  * @returns false when one or more threads is still processing.
- * @param   pThis       Pointer to the instance data.
- * @param   cMillies    How long to wait per controller.
+ * @param   pThis               Pointer to the instance data.
+ * @param   cMillies            How long to wait per controller.
+ * @param   fLeaveSignallingOn  Leave the signalling on so that it will notifiy
+ *                              PDM about completion of the asynchronous
+ *                              notification.
  */
-static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, uint32_t cMillies)
+static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, uint32_t cMillies, bool fLeaveSignallingOn)
 {
     PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
         if (   pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD
-            && !ataWaitForAsyncIOIsIdle(&pThis->aCts[i], cMillies))
+            && !ataWaitForAsyncIOIsIdle(&pThis->aCts[i], cMillies, fLeaveSignallingOn))
         {
             LogRel(("PIIX3 ATA: Ctl#%u is still executing, DevSel=%d AIOIf=%d CmdIf0=%#04x CmdIf1=%#04x\n",
                     i, pThis->aCts[i].iSelectedIf, pThis->aCts[i].iAIOIf,
@@ -4567,7 +4575,10 @@ static void ataAsyncSignalIdle(PATACONTROLLER pCtl)
 
     if (    pCtl->fSignalIdle
         &&  ataAsyncIOIsIdle(pCtl, false /*fStrict*/))
+    {
         RTThreadUserSignal(pCtl->AsyncIOThread);
+        PDMDevHlpAsyncNotificationCompleted(pCtl->pDevInsR3);
+    }
 
     rc = RTSemMutexRelease(pCtl->AsyncIORequestMutex); AssertRC(rc);
 }
@@ -5303,7 +5314,8 @@ static DECLCALLBACK(void)  ataReset(PPDMDEVINS pDevIns)
         Log2(("%s: Ctl#%d: message to async I/O thread, reset controller\n", __FUNCTION__, i));
         ataAsyncIOPutRequest(&pThis->aCts[i], &ataResetARequest);
         ataAsyncIOPutRequest(&pThis->aCts[i], &ataResetCRequest);
-        if (!ataWaitForAsyncIOIsIdle(&pThis->aCts[i], 30000))
+/** @todo Deadlock alert. see @bugref{4394}. */
+        if (!ataWaitForAsyncIOIsIdle(&pThis->aCts[i], 30000, false /*fLeaveSignallingOn*/))
         {
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "DevATA_ASYNCBUSY",
                                        N_("The IDE async I/O thread remained busy after a reset, usually a host filesystem performance problem\n"));
@@ -5621,6 +5633,33 @@ PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 }
 
 #ifdef IN_RING3
+
+/**
+ * Callback employed by ataSuspend and ataPowerOff.
+ *
+ * @returns true if we've quiesced, false if we're still working.
+ * @param   pDevIns     The device instance.
+ */
+static DECLCALLBACK(bool) ataR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDevIns)
+{
+    return ataWaitForAllAsyncIOIsIdle(pDevIns, 0, true /*fLeaveSignallingOn*/);
+}
+
+
+/**
+ * Common worker for ataSuspend and ataPowerOff.
+ */
+static void ataR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
+{
+#if 1
+    if (!ataWaitForAllAsyncIOIsIdle(pDevIns, 0, true /*fLeaveSignallingOn*/))
+        PDMDevHlpSetAsyncNotification(pDevIns, ataR3IsAsyncSuspendOrPowerOffDone);
+#else
+    if (!ataWaitForAllAsyncIOIsIdle(pDevIns, 20000))
+        AssertMsgFailed(("Async I/O didn't stop in ~40 seconds!\n"));
+#endif
+}
+
 
 DECLINLINE(void) ataRelocBuffer(PPDMDEVINS pDevIns, ATADevState *s)
 {
@@ -5980,9 +6019,7 @@ static DECLCALLBACK(int)  ataAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
 static DECLCALLBACK(void) ataSuspend(PPDMDEVINS pDevIns)
 {
     Log(("%s:\n", __FUNCTION__));
-    if (!ataWaitForAllAsyncIOIsIdle(pDevIns, 20000))
-        AssertMsgFailed(("Async I/O didn't stop in ~40 seconds!\n"));
-    return;
+    ataR3SuspendOrPowerOff(pDevIns);
 }
 
 
@@ -6019,9 +6056,7 @@ static DECLCALLBACK(void) ataResume(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) ataPowerOff(PPDMDEVINS pDevIns)
 {
     Log(("%s:\n", __FUNCTION__));
-    if (!ataWaitForAllAsyncIOIsIdle(pDevIns, 20000))
-        AssertMsgFailed(("Async I/O didn't stop in ~40 seconds!\n"));
-    return;
+    ataR3SuspendOrPowerOff(pDevIns);
 }
 
 
