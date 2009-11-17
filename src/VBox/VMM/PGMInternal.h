@@ -1425,7 +1425,7 @@ typedef PGMCHUNKR3MAPTLBE *PPGMCHUNKR3MAPTLBE;
 
 /** The number of TLB entries in PGMCHUNKR3MAPTLB.
  * @remark Must be a power of two value. */
-#define PGM_CHUNKR3MAPTLB_ENTRIES   32
+#define PGM_CHUNKR3MAPTLB_ENTRIES   64
 
 /**
  * Allocation chunk ring-3 mapping TLB.
@@ -1493,7 +1493,7 @@ typedef PGMPAGER3MAPTLBE *PPGMPAGER3MAPTLBE;
 
 /** The number of entries in the ring-3 guest page mapping TLB.
  * @remarks The value must be a power of two. */
-#define PGM_PAGER3MAPTLB_ENTRIES 64
+#define PGM_PAGER3MAPTLB_ENTRIES 256
 
 /**
  * Ring-3 guest page mapping TLB.
