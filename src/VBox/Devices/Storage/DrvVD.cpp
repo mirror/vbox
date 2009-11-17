@@ -1010,25 +1010,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                         &pThis->VDIErrorCallbacks, pDrvIns, &pThis->pVDIfsDisk);
     AssertRC(rc);
 
-#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
-    pThis->VDIAsyncIOCallbacks.cbSize                  = sizeof(VDINTERFACEASYNCIO);
-    pThis->VDIAsyncIOCallbacks.enmInterface            = VDINTERFACETYPE_ASYNCIO;
-    pThis->VDIAsyncIOCallbacks.pfnOpen                 = drvvdAsyncIOOpen;
-    pThis->VDIAsyncIOCallbacks.pfnClose                = drvvdAsyncIOClose;
-    pThis->VDIAsyncIOCallbacks.pfnGetSize              = drvvdAsyncIOGetSize;
-    pThis->VDIAsyncIOCallbacks.pfnSetSize              = drvvdAsyncIOSetSize;
-    pThis->VDIAsyncIOCallbacks.pfnReadSync             = drvvdAsyncIOReadSync;
-    pThis->VDIAsyncIOCallbacks.pfnWriteSync            = drvvdAsyncIOWriteSync;
-    pThis->VDIAsyncIOCallbacks.pfnFlushSync            = drvvdAsyncIOFlushSync;
-    pThis->VDIAsyncIOCallbacks.pfnReadAsync            = drvvdAsyncIOReadAsync;
-    pThis->VDIAsyncIOCallbacks.pfnWriteAsync           = drvvdAsyncIOWriteAsync;
-    pThis->VDIAsyncIOCallbacks.pfnFlushAsync           = drvvdAsyncIOFlushAsync;
-
-    rc = VDInterfaceAdd(&pThis->VDIAsyncIO, "DrvVD_AsyncIO", VDINTERFACETYPE_ASYNCIO,
-                        &pThis->VDIAsyncIOCallbacks, pThis, &pThis->pVDIfsDisk);
-    AssertRC(rc);
-#endif
-
     /* This is just prepared here, the actual interface is per-image, so it's
      * added later. No need to have separate callback tables. */
     pThis->VDIConfigCallbacks.cbSize                = sizeof(VDINTERFACECONFIG);
@@ -1048,6 +1029,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
      * It's sort of up side down from the image dependency tree.
      */
     bool        fHostIP = false;
+    bool        fUseNewIo = false;
     unsigned    iLevel = 0;
     PCFGMNODE   pCurNode = pCfgHandle;
 
@@ -1062,7 +1044,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             fValid = CFGMR3AreValuesValid(pCurNode,
                                           "Format\0Path\0"
                                           "ReadOnly\0TempReadOnly\0HonorZeroWrites\0"
-                                          "HostIPStack\0");
+                                          "HostIPStack\0UseNewIo\0");
         }
         else
         {
@@ -1116,6 +1098,13 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                       N_("DrvVD: Configuration error: Both \"ReadOnly\" and \"TempReadOnly\" are set"));
                 break;
             }
+            rc = CFGMR3QueryBoolDef(pCurNode, "UseNewIo", &fUseNewIo, false);
+            if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"UseNewIo\" as boolean failed"));
+                break;
+            }
         }
 
         PCFGMNODE pParent = CFGMR3GetChild(pCurNode, "Parent");
@@ -1167,6 +1156,31 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                 &pThis->VDITcpNetCallbacks, NULL,
                                 &pThis->pVDIfsDisk);
         }
+
+        if (RT_SUCCESS(rc) && fUseNewIo)
+        {
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+            pThis->VDIAsyncIOCallbacks.cbSize        = sizeof(VDINTERFACEASYNCIO);
+            pThis->VDIAsyncIOCallbacks.enmInterface  = VDINTERFACETYPE_ASYNCIO;
+            pThis->VDIAsyncIOCallbacks.pfnOpen       = drvvdAsyncIOOpen;
+            pThis->VDIAsyncIOCallbacks.pfnClose      = drvvdAsyncIOClose;
+            pThis->VDIAsyncIOCallbacks.pfnGetSize    = drvvdAsyncIOGetSize;
+            pThis->VDIAsyncIOCallbacks.pfnSetSize    = drvvdAsyncIOSetSize;
+            pThis->VDIAsyncIOCallbacks.pfnReadSync   = drvvdAsyncIOReadSync;
+            pThis->VDIAsyncIOCallbacks.pfnWriteSync  = drvvdAsyncIOWriteSync;
+            pThis->VDIAsyncIOCallbacks.pfnFlushSync  = drvvdAsyncIOFlushSync;
+            pThis->VDIAsyncIOCallbacks.pfnReadAsync  = drvvdAsyncIOReadAsync;
+            pThis->VDIAsyncIOCallbacks.pfnWriteAsync = drvvdAsyncIOWriteAsync;
+            pThis->VDIAsyncIOCallbacks.pfnFlushAsync = drvvdAsyncIOFlushAsync;
+
+            rc = VDInterfaceAdd(&pThis->VDIAsyncIO, "DrvVD_AsyncIO", VDINTERFACETYPE_ASYNCIO,
+                                &pThis->VDIAsyncIOCallbacks, pThis, &pThis->pVDIfsDisk);
+#else /* !VBOX_WITH_PDM_ASYNC_COMPLETION */
+            rc = PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
+                                     RT_SRC_POS, N_("DrvVD: Configuration error: Async Completion Framework not compiled in"));
+#endif /* !VBOX_WITH_PDM_ASYNC_COMPLETION */
+        }
+
         if (RT_SUCCESS(rc))
         {
             rc = VDCreate(pThis->pVDIfsDisk, &pThis->pDisk);
