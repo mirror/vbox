@@ -899,9 +899,6 @@ static int vbvaInitMousePointerShape (PDEVICE_EXTENSION PrimaryExtension, void *
     /* We have our custom flags in the field */
     p->fu32Flags = pCtx->pPointerAttr->Enable & 0x0000FFFF;
 
-    /* Even if pointer is invisible, we have to pass following data,
-     * so host could create the pointer with initial status - invisible
-     */
     p->u32HotX   = (pCtx->pPointerAttr->Enable >> 16) & 0xFF;
     p->u32HotY   = (pCtx->pPointerAttr->Enable >> 24) & 0xFF;
     p->u32Width  = pCtx->pPointerAttr->Width;
@@ -909,6 +906,11 @@ static int vbvaInitMousePointerShape (PDEVICE_EXTENSION PrimaryExtension, void *
 
     if (p->fu32Flags & VBOX_MOUSE_POINTER_SHAPE)
     {
+        /* If shape is supplied, then alway create the pointer visible.
+         * See comments in 'vboxUpdatePointerShape'
+         */
+        p->fu32Flags |= VBOX_MOUSE_POINTER_VISIBLE;
+
         /* Copy the actual pointer data. */
         memcpy (p->au8Data, pCtx->pPointerAttr->Pixels, pCtx->cbData);
     }
@@ -928,10 +930,35 @@ static int vbvaFinalizeMousePointerShape (PDEVICE_EXTENSION PrimaryExtension, vo
     return VINF_SUCCESS;
 }
 
-BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION PrimaryExtension,
+BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength)
 {
+    PDEVICE_EXTENSION PrimaryExtension = DeviceExtension->pPrimary;
+
+    /* In multimonitor case the HW mouse pointer is the same on all screens,
+     * and Windows calls each display driver with the same pointer data: visible for
+     * the screen where the pointer is and invisible for other screens.
+     *
+     * This driver passes the shape to the host only from primary screen and makes
+     * the pointer always visible (in vbvaInitMousePointerShape).
+     *
+     * The simple solution makes it impossible to create the shape and keep the mouse
+     * pointer invisible. New shapes will be created visible.
+     * But:
+     * 1) VBox frontends actually ignore the visibility flag if VBOX_MOUSE_POINTER_SHAPE
+     *    is set and always create new pointers visible.
+     * 2) Windows uses DrvMovePointer to hide the pointer, which will still work.
+     */
+
+    if (DeviceExtension->iDevice != PrimaryExtension->iDevice)
+    {
+        dprintf(("vboxUpdatePointerShape: ignore non primary device %d(%d)\n",
+                 DeviceExtension->iDevice, PrimaryExtension->iDevice));
+        /* Success. */
+        return TRUE;
+    }
+
     uint32_t cbData = 0;
 
     if (pointerAttr->Enable & VBOX_MOUSE_POINTER_SHAPE)

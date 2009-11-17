@@ -306,7 +306,7 @@ void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension,
 VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
                              PVIDEO_PORT_CONFIG_INFO pConfigInfo,
                              ULONG AdapterMemorySize);
-BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION PrimaryExtension,
+BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength);
 DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd);
