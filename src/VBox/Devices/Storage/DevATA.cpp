@@ -5286,6 +5286,32 @@ static DECLCALLBACK(int) ataBMDMAIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int
 
 
 /**
+ * Callback employed by ataSuspend and ataPowerOff.
+ *
+ * @returns true if we've quiesced, false if we're still working.
+ * @param   pDevIns     The device instance.
+ */
+static DECLCALLBACK(bool) ataR3IsAsyncResetDone(PPDMDEVINS pDevIns)
+{
+    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+
+    if (   !ataWaitForAsyncIOIsIdle(&pThis->aCts[0], 1, true /*fLeaveSignallingOn*/)
+        || !ataWaitForAsyncIOIsIdle(&pThis->aCts[1], 1, true /*fLeaveSignallingOn*/))
+        return false;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+    {
+        PDMCritSectEnter(&pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
+        for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
+            ataResetDevice(&pThis->aCts[i].aIfs[j]);
+        PDMCritSectLeave(&pThis->aCts[i].lock);
+    }
+    PDMDevHlpAsyncNotificationCompleted(pDevIns);
+    return true;
+}
+
+
+/**
  * Reset notification.
  *
  * @returns VBox status.
@@ -5297,6 +5323,8 @@ static DECLCALLBACK(void)  ataReset(PPDMDEVINS pDevIns)
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
+        PDMCritSectEnter(&pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
+
         pThis->aCts[i].iSelectedIf = 0;
         pThis->aCts[i].iAIOIf = 0;
         pThis->aCts[i].BmDma.u8Cmd = 0;
@@ -5314,17 +5342,24 @@ static DECLCALLBACK(void)  ataReset(PPDMDEVINS pDevIns)
         Log2(("%s: Ctl#%d: message to async I/O thread, reset controller\n", __FUNCTION__, i));
         ataAsyncIOPutRequest(&pThis->aCts[i], &ataResetARequest);
         ataAsyncIOPutRequest(&pThis->aCts[i], &ataResetCRequest);
-/** @todo Deadlock alert. see @bugref{4394}. */
-        if (!ataWaitForAsyncIOIsIdle(&pThis->aCts[i], 30000, false /*fLeaveSignallingOn*/))
-        {
-            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "DevATA_ASYNCBUSY",
-                                       N_("The IDE async I/O thread remained busy after a reset, usually a host filesystem performance problem\n"));
-            AssertMsgFailed(("Async I/O thread busy after reset\n"));
-        }
 
-        for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
-            ataResetDevice(&pThis->aCts[i].aIfs[j]);
+        PDMCritSectLeave(&pThis->aCts[i].lock);
     }
+
+    /*
+     * Only reset the devices when both threads have quiesced.
+     */
+    if (   ataWaitForAsyncIOIsIdle(&pThis->aCts[0], 2, true /*fLeaveSignallingOn*/)
+        && ataWaitForAsyncIOIsIdle(&pThis->aCts[1], 2, true /*fLeaveSignallingOn*/))
+        for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+        {
+            PDMCritSectEnter(&pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
+            for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
+                ataResetDevice(&pThis->aCts[i].aIfs[j]);
+            PDMCritSectLeave(&pThis->aCts[i].lock);
+        }
+    else
+        PDMDevHlpSetAsyncNotification(pDevIns, ataR3IsAsyncResetDone);
 }
 
 
