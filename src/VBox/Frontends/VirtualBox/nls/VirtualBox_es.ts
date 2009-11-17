@@ -742,7 +742,7 @@ Versión %1</translation>
     </message>
     <message>
         <source>Revert the machine state to the state stored in the current snapshot</source>
-        <translation>&amp;Revertir el estado de la máquina al estado almacenado en la instantánea actual</translation>
+        <translation>Revertir el estado de la máquina al estado almacenado en la instantánea actual</translation>
     </message>
     <message>
         <source>Help</source>
@@ -970,7 +970,7 @@ Versión %1</translation>
     </message>
     <message>
         <source>Create or modify shared folders</source>
-        <translation>Abrir un diálogo para modificar las carpetas compartidas</translation>
+        <translation>Crear o modificar las carpetas compartidas</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
@@ -1272,7 +1272,7 @@ Versión %1</translation>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indica la actividad de los discos duros virtuales:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indica actividad en los discos duros virtuales:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -4778,7 +4778,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccione la imagen de disco duro que será usada como disco de arranque. Puede crear un disco nuevo presionando en &lt;b&gt;Nuevo&lt;/b&gt; o puede seleccionar un disco existente desde la lista desplegable o presionando el botón &lt;b&gt;Existentes&lt;/b&gt; (invoca el Administrador de Discos Virtuales).&lt;/p&gt;&lt;p&gt;Si necesita una configuración más complicada de discos duros puede salterarse este paso y luego conectar los discos duros desde el diálogo de configuración de la máquina virtual.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Seleccione la imagen de disco duro que será usada como disco de arranque. Puede crear un disco nuevo presionando en &lt;b&gt;Nuevo&lt;/b&gt; o puede seleccionar un disco existente desde la lista desplegable o presionando el botón &lt;b&gt;Existentes&lt;/b&gt; (invoca el Administrador de Medios Virtuales).&lt;/p&gt;&lt;p&gt;Si necesita una configuración más complicada de discos duros puede saltarse este paso y luego conectar los discos duros desde el diálogo de configuración de la máquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
@@ -4938,15 +4938,15 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;¿Está seguro de que quiere eliminar permanentemente la máquina virtual &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Esta operación no se puede deshacer.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;¿Está seguro de que desea eliminar permanentemente la máquina virtual &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Esta operación no se puede deshacer.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;¿Está seguro de que quiere desregistrar la máquina virtual &lt;b&gt;%1&lt;/b&gt; inaccesible?&lt;/p&gt;&lt;p&gt;No se podrá registrar nuevamente desde la interfaz de usuario (GUI).&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;¿Está seguro de que desea desregistrar la máquina virtual &lt;b&gt;%1&lt;/b&gt; inaccesible?&lt;/p&gt;&lt;p&gt;No se podrá registrar nuevamente desde la interfaz de usuario (GUI).&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;¿Está seguro de que quiere descartar el estado guardado de la máquina virtual &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Esta operación es equivalente a reiniciar o apagar la máquina sin hacerlo desde el SO huésped apropiadamente.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;¿Está seguro de que desea descartar el estado guardado de la máquina virtual &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Esta operación es equivalente a reiniciar o apagar la máquina sin hacerlo desde el SO huésped apropiadamente.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
@@ -5216,7 +5216,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La pantalla de la máquina virtual está optimizada para trabajar en modo de color &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt;. Sin embargo, el modo del pantalla de la máquina virtual está configurada como &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Abra el diálogo de las propiedades de pantalla en el SO huésped y seleccione un modo de color de &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, si esta disponible, para obtener el mejor rendimiento posible en el subsistema de video virtual.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Algunos sistemas operativos, como OS/2, pueden en realidad estar trabajando en modo 32&amp;nbsp;bit pero informarlo como 24&amp;nbsp;bit (16 milliones de colores). Puede tratar de seleccionar una calidad de color diferente para ver si este mensaje desaparece o simplemente deshabilitar este mensaje ahora si está seguro que el modo de color (%4&amp;nbsp;bit) no está disponible en el SO huésped.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La pantalla de la máquina virtual está optimizada para trabajar en modo de color &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt;. Sin embargo, el modo del pantalla de la máquina virtual está configurada como &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Abra el diálogo de las propiedades de pantalla en el SO huésped y seleccione un modo de color de &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, si esta disponible, para obtener el mejor rendimiento posible en el subsistema de video virtual.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Algunos sistemas operativos, como OS/2, pueden en realidad estar trabajando en modo 32&amp;nbsp;bit pero informarlo como 24&amp;nbsp;bit (16 millones de colores). Puede tratar de seleccionar una calidad de color diferente para ver si este mensaje desaparece o simplemente deshabilitar este mensaje ahora si está seguro que el modo de color (%4&amp;nbsp;bit) no está disponible en el SO huésped.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
@@ -5366,7 +5366,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;¿Desea reiniciar la máquina virtual?&lt;/p&gt;&lt;p&gt;Cuando se reinicia una máquina virtual los datos no guardados de las aplicaciones en ejecución en su interior se perderán.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;¿Desea reiniciar la máquina virtual?&lt;/p&gt;&lt;p&gt;Cuando se reinicia una máquina virtual los datos no guardados de todas de las aplicaciones en ejecución en su interior se pierden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -5419,7 +5419,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tiene la opción &lt;b&gt;auto captura de teclado&lt;/b&gt; habilitada. Esto causará que la máquina virtual &lt;b&gt;capture&lt;/b&gt; automáticamente el teclado cada vez que la ventana de la MV sea acticada y hará que no esté disponible para otras aplicaciones ejecutandose en la máquina anfitrión: cuando el teclado es capturado, todas las combinaciones de teclas (incluyendo las del sistema como Alt-Tab) sean enviadas a la MV.&lt;/p&gt;&lt;p&gt;Puede presionar la &lt;b&gt;tecla anfitrión&lt;/b&gt; en cualquier momento para &lt;b&gt;liberar&lt;/b&gt; el teclado y el ratón (si están capturados) y devolverlos al modo de funcionamiento normal. La tecla anfitrión actualmente asignada se muestra en la barra de estado en la parte inferior de la ventana de la máquina virtual, al lado del icono&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Este icono, junto con el icono del ratón situado al lado, indica el estado de captura actual del teclado y ratón.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Tiene la opción &lt;b&gt;auto captura de teclado&lt;/b&gt; habilitada. Esto causará que la máquina virtual &lt;b&gt;capture&lt;/b&gt; automáticamente el teclado cada vez que la ventana de la MV sea activada y hará que no esté disponible para otras aplicaciones ejecutándose en la máquina anfitrión, todas las combinaciones de teclas (incluyendo las del sistema como Alt-Tab) serán enviadas a la MV.&lt;/p&gt;&lt;p&gt;Puede presionar la &lt;b&gt;tecla anfitrión&lt;/b&gt; en cualquier momento para &lt;b&gt;liberar&lt;/b&gt; el teclado y el ratón (si están capturados) y devolverlos al modo de funcionamiento normal. La tecla anfitrión actualmente asignada se muestra en la barra de estado en la parte inferior de la ventana de la máquina virtual, al lado del icono&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Este icono, junto con el icono del ratón situado al lado, indica el estado de captura actual del teclado y ratón.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
@@ -5427,7 +5427,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La ventana de la máquina virtual cambiará al modo &lt;b&gt;pantalla completa&lt;/b&gt;. Puede volver al modo ventana en cualquier momento presionando &lt;b&gt;%1&lt;/b&gt;. Tenga en cuenta que la tecla &lt;i&gt;anfitrión&lt;/i&gt; actualmente está definida como &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Además tenga en cuenta que la barra de menú está oculta en modo pantalla completa. Puede acceder a este menú presionando &lt;b&gt;Anfitrión+Inicio&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La ventana de la máquina virtual cambiará al modo &lt;b&gt;pantalla completa&lt;/b&gt;. Puede volver al modo ventana en cualquier momento presionando &lt;b&gt;%1&lt;/b&gt;. Tenga en cuenta que la tecla &lt;i&gt;anfitrión (Host)&lt;/i&gt; actualmente está definida como &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Además, tenga en cuenta que la barra de menú está oculta en modo pantalla completa. Puede acceder a este menú presionando &lt;b&gt;Host+Inicio&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -5569,7 +5569,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;¿Desea eliminar la unidad de almacenamiento del disco duro &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Si selecciona &lt;b&gt;Eliminar&lt;/b&gt; entonces la unidad de almacenamiento especificada será eliminada definitivamente. Esta operación &lt;b&gt;no puede ser deshecha&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Si selecciona &lt;b&gt;Mantener&lt;/b&gt; entonces el disco duro sólo será eliminado de la lista de discos duros conocidos, pero la unidad de almacenamiento permanecerá sin cambios lo que hace posible agregar este disco duro posteriormente de nuevo a la lista.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;¿Desea eliminar la unidad de almacenamiento del disco duro &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Si selecciona &lt;b&gt;Eliminar&lt;/b&gt; entonces la unidad de almacenamiento especificada será eliminada definitivamente. Esta operación &lt;b&gt;no se puede deshacer&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Si selecciona &lt;b&gt;Mantener&lt;/b&gt; entonces el disco duro sólo será eliminado de la lista de discos duros conocidos, pero la unidad de almacenamiento permanecerá sin cambios lo que hace posible agregar este disco duro posteriormente de nuevo a la lista.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -5587,11 +5587,11 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Hay discos duros conectados a puertos del controlador adicional. Si inhabilita el controlador adicional, todos estos discos duros serán automáticamente desconectados.&lt;/p&gt;&lt;p&gt;¿Está seguro de que quiere deshabilitar el controlador adicional?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Hay discos duros conectados a puertos del controlador adicional. Si inhabilita el controlador adicional, todos estos discos duros serán automáticamente desconectados.&lt;/p&gt;&lt;p&gt;¿Está seguro de que desea deshabilitar el controlador adicional?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Hay discos duros conectados a puertos del controlador adicional. Si inhabilita el controlador adicional, todos estos discos duros serán automáticamente desconectados.&lt;/p&gt;&lt;p&gt;¿Está seguro de que quiere cambiar el controlador adicional?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Hay discos duros conectados a puertos del controlador adicional. Si inhabilita el controlador adicional, todos estos discos duros serán automáticamente desconectados.&lt;/p&gt;&lt;p&gt;¿Está seguro de que desea cambiar el controlador adicional?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change</source>
@@ -8675,7 +8675,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation>Carpetas compatidas</translation>
+        <translation type="unfinished">Carpetas compartidas</translation>
     </message>
     <message>
         <source>Remote Display</source>
@@ -8861,7 +8861,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>S&amp;napshot Folder:</source>
-        <translation>Capeta &amp;instantáneas:</translation>
+        <translation type="unfinished">Carpeta &amp;instantáneas:</translation>
     </message>
     <message>
         <source>&amp;Description</source>
@@ -8944,7 +8944,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation>Lista todos los discos duros conectados a esta máquina. Use un clic de ratón o la tecla &lt;tt&gt;Espacio&lt;/tt&gt; en el elemento seleccionado para activar la lista desplegable y elegir el valor desado. Use el menú contextual o los botones de la derecha para agregar o eliminar conexiones de discos duros.</translation>
+        <translation type="unfinished">Lista todos los discos duros conectados a esta máquina. Use un clic de ratón o la tecla &lt;tt&gt;Espacio&lt;/tt&gt; en el elemento seleccionado para activar la lista desplegable y elegir el valor deseado. Use el menú contextual o los botones de la derecha para agregar o eliminar conexiones de discos duros.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
@@ -9026,7 +9026,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation>Controla la manera en que este adaptador se conecta a la red real del Sistema Operativo Anfitrión.</translation>
+        <translation type="unfinished">Controla la manera en que este adaptador se conecta a la red real del SO anfitrión.</translation>
     </message>
     <message>
         <source>Open additional options dialog for current attachment type.</source>

@@ -90,5 +90,6 @@ TRANSLATIONS = \
 	nls/VirtualBox_zh_TW.ts \
 	nls/VirtualBox_km_KH.ts \
 	nls/VirtualBox_bg.ts \
-	nls/VirtualBox_uk.ts
+	nls/VirtualBox_uk.ts \
+	nls/VirtualBox_da.ts
 

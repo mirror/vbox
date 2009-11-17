@@ -730,7 +730,7 @@
     </message>
     <message>
         <source>Create or modify shared folders</source>
-        <translation>Отвори дијалог за рад са дељене фасцикле</translation>
+        <translation>креирај или промени дељене фасцикле</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
