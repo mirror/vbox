@@ -586,6 +586,17 @@ typedef struct PDMUSBHLP
      */
     DECLR3CALLBACKMEMBER(int, pfnSetAsyncNotification, (PPDMUSBINS pUSbIns, PFNPDMUSBASYNCNOTIFY pfnAsyncNotify));
 
+    /**
+     * Notify EMT(0) that the device has completed the asynchronous notification
+     * handling.
+     *
+     * This can be called at any time, spurious calls will simply be ignored.
+     *
+     * @param   pUSBIns             The USB device instance.
+     * @thread  Any
+     */
+    DECLR3CALLBACKMEMBER(void, pfnAsyncNotificationCompleted, (PPDMUSBINS pUsbIns));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMUSBHLP;
@@ -725,6 +736,22 @@ DECLINLINE(int) PDMUsbDBGFStop(PPDMUSBINS pUsbIns, RT_SRC_POS_DECL, const char *
 DECLINLINE(VMSTATE) PDMUsbHlpVMState(PPDMUSBINS pUsbIns)
 {
     return pUsbIns->pUsbHlp->pfnVMState(pUsbIns);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnSetAsyncNotification
+ */
+DECLINLINE(int) PDMUsbHlpSetAsyncNotification(PPDMUSBINS pUsbIns, PFNPDMUSBASYNCNOTIFY pfnAsyncNotify)
+{
+    return pUsbIns->pUsbHlp->pfnSetAsyncNotification(pUsbIns, pfnAsyncNotify);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnAsyncNotificationCompleted
+ */
+DECLINLINE(void) PDMUsbHlpAsyncNotificationCompleted(PPDMUSBINS pUsbIns)
+{
+    pUsbIns->pUsbHlp->pfnAsyncNotificationCompleted(pUsbIns);
 }
 
 #endif /* IN_RING3 */

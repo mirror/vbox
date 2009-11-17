@@ -2334,7 +2334,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_SetAsyncNotification(PPDMDEVINS pDevIns, PF
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT0(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_SetAsyncNotification: caller='%s'/%d: pfnAsyncNotify\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pfnAsyncNotify));
+    LogFlow(("pdmR3DevHlp_SetAsyncNotification: caller='%s'/%d: pfnAsyncNotify=%p\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pfnAsyncNotify));
 
     int rc = VINF_SUCCESS;
     AssertStmt(pfnAsyncNotify, rc = VERR_INVALID_PARAMETER);
@@ -2353,6 +2353,27 @@ static DECLCALLBACK(int) pdmR3DevHlp_SetAsyncNotification(PPDMDEVINS pDevIns, PF
 
     LogFlow(("pdmR3DevHlp_SetAsyncNotification: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
+}
+
+
+/** @copydoc PDMDEVHLPR3::pfnAsyncNotificationCompleted */
+static DECLCALLBACK(void) pdmR3DevHlp_AsyncNotificationCompleted(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+
+    VMSTATE enmVMState = VMR3GetState(pVM);
+    if (   enmVMState == VMSTATE_SUSPENDING
+        || enmVMState == VMSTATE_SUSPENDING_EXT_LS
+        || enmVMState == VMSTATE_SUSPENDING_LS
+        || enmVMState == VMSTATE_POWERING_OFF
+        || enmVMState == VMSTATE_POWERING_OFF_LS)
+    {
+        LogFlow(("pdmR3DevHlp_AsyncNotificationCompleted: caller='%s'/%d:\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+        VMR3AsyncPdmNotificationWakeupU(pVM->pUVM);
+    }
+    else
+        LogFlow(("pdmR3DevHlp_AsyncNotificationCompleted: caller='%s'/%d: enmVMState=%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, enmVMState));
 }
 
 
@@ -2865,6 +2886,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PDMThreadCreate,
     pdmR3DevHlp_PhysGCPtr2GCPhys,
     pdmR3DevHlp_SetAsyncNotification,
+    pdmR3DevHlp_AsyncNotificationCompleted,
     0,
     0,
     0,
@@ -3331,6 +3353,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_PDMThreadCreate,
     pdmR3DevHlp_PhysGCPtr2GCPhys,
     pdmR3DevHlp_SetAsyncNotification,
+    pdmR3DevHlp_AsyncNotificationCompleted,
     0,
     0,
     0,

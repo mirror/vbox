@@ -2419,6 +2419,17 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnSetAsyncNotification, (PPDMDEVINS pDevIns, PFNPDMDEVASYNCNOTIFY pfnAsyncNotify));
 
+    /**
+     * Notify EMT(0) that the device has completed the asynchronous notification
+     * handling.
+     *
+     * This can be called at any time, spurious calls will simply be ignored.
+     *
+     * @param   pDevIns             The device instance.
+     * @thread  Any
+     */
+    DECLR3CALLBACKMEMBER(void, pfnAsyncNotificationCompleted, (PPDMDEVINS pDevIns));
+
     /** Space reserved for future members.
      * @{ */
     DECLR3CALLBACKMEMBER(void, pfnReserved1,(void));
@@ -3735,6 +3746,14 @@ DECLINLINE(int) PDMDevHlpPhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRT
 DECLINLINE(int) PDMDevHlpSetAsyncNotification(PPDMDEVINS pDevIns, PFNPDMDEVASYNCNOTIFY pfnAsyncNotify)
 {
     return pDevIns->pDevHlpR3->pfnSetAsyncNotification(pDevIns, pfnAsyncNotify);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnAsyncNotificationCompleted
+ */
+DECLINLINE(void) PDMDevHlpAsyncNotificationCompleted(PPDMDEVINS pDevIns)
+{
+    pDevIns->pDevHlpR3->pfnAsyncNotificationCompleted(pDevIns);
 }
 
 /**
