@@ -1607,6 +1607,7 @@ static void pgmR3InitStats(PVM pVM)
     PGM_REG_COUNTER(&pPGM->StatR3ChunkR3MapTlbMisses,         "/PGM/ChunkR3Map/TlbMissesR3",        "TLB misses.");
     PGM_REG_COUNTER(&pPGM->StatR3PageMapTlbHits,              "/PGM/R3/Page/MapTlbHits",            "TLB hits.");
     PGM_REG_COUNTER(&pPGM->StatR3PageMapTlbMisses,            "/PGM/R3/Page/MapTlbMisses",          "TLB misses.");
+    PGM_REG_COUNTER(&pPGM->StatPageMapTlbFlushes,             "/PGM/R3/Page/MapTlbFlushes",         "TLB flushes (all contexts).");
 
     PGM_REG_PROFILE(&pPGM->StatRZSyncCR3HandlerVirtualUpdate, "/PGM/RZ/SyncCR3/Handlers/VirtualUpdate", "Profiling of the virtual handler updates.");
     PGM_REG_PROFILE(&pPGM->StatRZSyncCR3HandlerVirtualReset,  "/PGM/RZ/SyncCR3/Handlers/VirtualReset",  "Profiling of the virtual handler resets.");

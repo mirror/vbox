@@ -198,6 +198,7 @@ VMMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
 VMMDECL(void) PGMPhysInvalidatePageMapTLB(PVM pVM)
 {
     pgmLock(pVM);
+    STAM_COUNTER_INC(&pVM->pgm.s.StatPageMapTlbFlushes);
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbHC.aEntries); i++)
     {
         pVM->pgm.s.PhysTlbHC.aEntries[i].GCPhys = NIL_RTGCPHYS;
@@ -397,6 +398,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     PGM_PAGE_SET_HCPHYS(pPage, HCPhys);
     PGM_PAGE_SET_PAGEID(pPage, pVM->pgm.s.aHandyPages[iHandyPage].idPage);
     PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
+    PGMPhysInvalidatePageMapTLB(pVM);
 
     if (    fFlushTLBs
         &&  rc != VINF_PGM_GCPHYS_ALIASED)
