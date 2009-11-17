@@ -574,7 +574,7 @@ typedef struct PDMUSBHLP
     DECLR3CALLBACKMEMBER(VMSTATE, pfnVMState, (PPDMUSBINS pUsbIns));
 
     /**
-     * Set up asynchronous handling of a suspend or power off notification.
+     * Set up asynchronous handling of a suspend, reset or power off notification.
      *
      * This shall only be called when getting the notification.  It must be called
      * for each one.

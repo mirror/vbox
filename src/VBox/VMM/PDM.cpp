@@ -1038,17 +1038,204 @@ VMMR3DECL(void) PDMR3PowerOn(PVM pVM)
 }
 
 
+/**
+ * Worker for PDMR3Reset that deals with one driver.
+ *
+ * @param   pDrvIns             The driver instance.
+ * @param   pcAsync             The asynchronous reset notification counter.
+ * @param   pszDeviceName       The parent device name.
+ * @param   iDevInstance        The parent device instance number.
+ * @param   iLun                The parent LUN number.
+ */
+DECLINLINE(bool) pdmR3ResetDrv(PPDMDRVINS pDrvIns, unsigned *pcAsync,
+                               const char *pszDeviceName, uint32_t iDevInstance, uint32_t iLun)
+{
+    if (!pDrvIns->Internal.s.fVMReset)
+    {
+        pDrvIns->Internal.s.fVMReset = true;
+        if (pDrvIns->pDrvReg->pfnReset)
+        {
+            if (!pDrvIns->Internal.s.pfnAsyncNotify)
+            {
+                LogFlow(("PDMR3Reset: Notifying - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
+                         pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
+                pDrvIns->pDrvReg->pfnReset(pDrvIns);
+                if (pDrvIns->Internal.s.pfnAsyncNotify)
+                    LogFlow(("PDMR3Reset: Async notification started - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
+                             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
+            }
+            else if (pDrvIns->Internal.s.pfnAsyncNotify(pDrvIns))
+            {
+                pDrvIns->Internal.s.pfnAsyncNotify = false;
+                LogFlow(("PDMR3Reset: Async notification completed - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
+                         pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
+            }
+            if (pDrvIns->Internal.s.pfnAsyncNotify)
+            {
+                pDrvIns->Internal.s.fVMReset = false;
+                (*pcAsync)++;
+                return false;
+            }
+        }
+    }
+    return true;
+}
 
 
 /**
- * This function will notify all the devices and their
- * attached drivers about the VM now being reset.
+ * Worker for PDMR3Reset that deals with one USB device instance.
+ *
+ * @param   pUsbIns             The USB device instance.
+ * @param   pcAsync             The asynchronous reset notification counter.
+ */
+DECLINLINE(void) pdmR3ResetUsb(PPDMUSBINS pUsbIns, unsigned *pcAsync)
+{
+    if (!pUsbIns->Internal.s.fVMReset)
+    {
+        pUsbIns->Internal.s.fVMReset = true;
+        if (pUsbIns->pUsbReg->pfnVMReset)
+        {
+            if (!pUsbIns->Internal.s.pfnAsyncNotify)
+            {
+                LogFlow(("PDMR3Reset: Notifying - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+                pUsbIns->pUsbReg->pfnVMReset(pUsbIns);
+                if (pUsbIns->Internal.s.pfnAsyncNotify)
+                    LogFlow(("PDMR3Reset: Async notification started - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+            }
+            else if (pUsbIns->Internal.s.pfnAsyncNotify(pUsbIns))
+            {
+                LogFlow(("PDMR3Reset: Async notification completed - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+                pUsbIns->Internal.s.pfnAsyncNotify = NULL;
+            }
+            if (pUsbIns->Internal.s.pfnAsyncNotify)
+            {
+                pUsbIns->Internal.s.fVMReset = false;
+                (*pcAsync)++;
+            }
+        }
+    }
+}
+
+
+/**
+ * Worker for PDMR3Reset that deals with one device instance.
+ *
+ * @param   pDevIns             The device instance.
+ * @param   pcAsync             The asynchronous reset notification counter.
+ */
+DECLINLINE(void) pdmR3ResetDev(PPDMDEVINS pDevIns, unsigned *pcAsync)
+{
+    if (!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_RESET))
+    {
+        pDevIns->Internal.s.fIntFlags |= PDMDEVINSINT_FLAGS_RESET;
+        if (pDevIns->pDevReg->pfnReset)
+        {
+            if (!pDevIns->Internal.s.pfnAsyncNotify)
+            {
+                LogFlow(("PDMR3Reset: Notifying - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+                pDevIns->pDevReg->pfnReset(pDevIns);
+                if (pDevIns->Internal.s.pfnAsyncNotify)
+                    LogFlow(("PDMR3Reset: Async notification started - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+            }
+            else if (pDevIns->Internal.s.pfnAsyncNotify(pDevIns))
+            {
+                LogFlow(("PDMR3Reset: Async notification completed - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+                pDevIns->Internal.s.pfnAsyncNotify = NULL;
+            }
+            if (pDevIns->Internal.s.pfnAsyncNotify)
+            {
+                pDevIns->Internal.s.fIntFlags &= ~PDMDEVINSINT_FLAGS_RESET;
+                (*pcAsync)++;
+            }
+        }
+    }
+}
+
+
+/**
+ * This function will notify all the devices and their attached drivers about
+ * the VM now being reset.
  *
  * @param   pVM     VM Handle.
  */
 VMMR3DECL(void) PDMR3Reset(PVM pVM)
 {
     LogFlow(("PDMR3Reset:\n"));
+
+    /*
+     * Clear all the reset flags.
+     */
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
+    {
+        pDevIns->Internal.s.fIntFlags &= ~PDMDEVINSINT_FLAGS_RESET;
+        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                pDrvIns->Internal.s.fVMReset = false;
+    }
+#ifdef VBOX_WITH_USB
+    for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+    {
+        pUsbIns->Internal.s.fVMReset = false;
+        for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                pDrvIns->Internal.s.fVMReset = false;
+    }
+#endif
+
+    /*
+     * The outer loop repeats until there are no more async requests.
+     */
+    unsigned cAsync;
+    for (unsigned iLoop = 0; ; iLoop++)
+    {
+        /*
+         * Iterate thru the device instances and USB device instances,
+         * processing the drivers associated with those.
+         */
+        cAsync = 0;
+        for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
+        {
+            unsigned const cAsyncStart = cAsync;
+
+            if (cAsync == cAsyncStart)
+                for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
+                    for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                        if (!pdmR3ResetDrv(pDrvIns, &cAsync, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pLun->iLun))
+                            break;
+
+                        if (cAsync == cAsyncStart)
+                pdmR3ResetDev(pDevIns, &cAsync);
+        }
+
+#ifdef VBOX_WITH_USB
+        for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+        {
+            unsigned const cAsyncStart = cAsync;
+
+            for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
+                for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                    if (!pdmR3ResetDrv(pDrvIns, &cAsync, pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance, pLun->iLun))
+                        break;
+
+            if (cAsync == cAsyncStart)
+                pdmR3ResetUsb(pUsbIns, &cAsync);
+        }
+#endif
+        if (!cAsync)
+            break;
+
+        /*
+         * Process requests.
+         */
+        /** @todo This is utterly nuts and completely unsafe... will get back to it in a
+         *        bit I hope... */
+        int rc = VMR3AsyncPdmNotificationWaitU(&pVM->pUVM->aCpus[0]);
+        AssertReleaseMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+        rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY);
+        AssertReleaseMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+        rc = VMR3ReqProcessU(pVM->pUVM, 0/*idDstCpu*/);
+        AssertReleaseMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+    }
 
     /*
      * Clear all pending interrupts and DMA operations.
@@ -1062,51 +1249,6 @@ VMMR3DECL(void) PDMR3Reset(PVM pVM)
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_SMI);
     }
     VM_FF_CLEAR(pVM, VM_FF_PDM_DMA);
-
-    /*
-     * Iterate the device instances.
-     * The attached drivers are processed first.
-     */
-    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
-    {
-        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
-            /** @todo Inverse the order here? */
-            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                if (pDrvIns->pDrvReg->pfnReset)
-                {
-                    LogFlow(("PDMR3Reset: Notifying - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
-                             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pLun->iLun, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-                    pDrvIns->pDrvReg->pfnReset(pDrvIns);
-                }
-
-        if (pDevIns->pDevReg->pfnReset)
-        {
-            LogFlow(("PDMR3Reset: Notifying - device '%s'/%d\n",
-                     pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-            pDevIns->pDevReg->pfnReset(pDevIns);
-        }
-    }
-
-#ifdef VBOX_WITH_USB
-    for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
-    {
-        for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
-            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                if (pDrvIns->pDrvReg->pfnReset)
-                {
-                    LogFlow(("PDMR3Reset: Notifying - driver '%s'/%d on LUN#%d of usb device '%s'/%d\n",
-                             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pLun->iLun, pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
-                    pDrvIns->pDrvReg->pfnReset(pDrvIns);
-                }
-
-        if (pUsbIns->pUsbReg->pfnVMReset)
-        {
-            LogFlow(("PDMR3Reset: Notifying - device '%s'/%d\n",
-                     pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
-            pUsbIns->pUsbReg->pfnVMReset(pUsbIns);
-        }
-    }
-#endif
 
     LogFlow(("PDMR3Reset: returns void\n"));
 }

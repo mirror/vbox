@@ -697,7 +697,7 @@ typedef struct PDMDRVHLP
     DECLR3CALLBACKMEMBER(int, pfnUSBRegisterHub,(PPDMDRVINS pDrvIns, uint32_t fVersions, uint32_t cPorts, PCPDMUSBHUBREG pUsbHubReg, PPCPDMUSBHUBHLP ppUsbHubHlp));
 
     /**
-     * Set up asynchronous handling of a suspend or power off notification.
+     * Set up asynchronous handling of a suspend, reset or power off notification.
      *
      * This shall only be called when getting the notification.  It must be called
      * for each one.

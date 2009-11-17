@@ -2339,11 +2339,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_SetAsyncNotification(PPDMDEVINS pDevIns, PF
     int rc = VINF_SUCCESS;
     AssertStmt(pfnAsyncNotify, rc = VERR_INVALID_PARAMETER);
     AssertStmt(!pDevIns->Internal.s.pfnAsyncNotify, rc = VERR_WRONG_ORDER);
-    AssertStmt(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_SUSPENDED, rc = VERR_WRONG_ORDER);
+    AssertStmt(pDevIns->Internal.s.fIntFlags & (PDMDEVINSINT_FLAGS_SUSPENDED | PDMDEVINSINT_FLAGS_RESET), rc = VERR_WRONG_ORDER);
     VMSTATE enmVMState = VMR3GetState(pDevIns->Internal.s.pVMR3);
     AssertStmt(   enmVMState == VMSTATE_SUSPENDING
                || enmVMState == VMSTATE_SUSPENDING_EXT_LS
                || enmVMState == VMSTATE_SUSPENDING_LS
+               || enmVMState == VMSTATE_RESETTING
+               || enmVMState == VMSTATE_RESETTING_LS
                || enmVMState == VMSTATE_POWERING_OFF
                || enmVMState == VMSTATE_POWERING_OFF_LS,
                rc = VERR_INVALID_STATE);
@@ -2366,6 +2368,8 @@ static DECLCALLBACK(void) pdmR3DevHlp_AsyncNotificationCompleted(PPDMDEVINS pDev
     if (   enmVMState == VMSTATE_SUSPENDING
         || enmVMState == VMSTATE_SUSPENDING_EXT_LS
         || enmVMState == VMSTATE_SUSPENDING_LS
+        || enmVMState == VMSTATE_RESETTING
+        || enmVMState == VMSTATE_RESETTING_LS
         || enmVMState == VMSTATE_POWERING_OFF
         || enmVMState == VMSTATE_POWERING_OFF_LS)
     {
