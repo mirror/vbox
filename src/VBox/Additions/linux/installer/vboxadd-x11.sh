@@ -260,7 +260,13 @@ setup()
 {
     echo "VirtualBox Guest Additions installation, Window System and desktop setup" > $LOG
     begin "Installing the Window System drivers"
-    lib_dir="/usr/lib/VBoxGuestAdditions"
+    if [ "$ARCH" = "amd64" ]
+    then
+        LIB=/usr/lib64
+    else
+        LIB=/usr/lib
+    fi
+    lib_dir="$LIB/VBoxGuestAdditions"
     share_dir="/usr/share/VBoxGuestAdditions"
     test -x "$lib_dir" -a -x "$share_dir" ||
         fail "Invalid Guest Additions configuration found"
@@ -309,6 +315,8 @@ setup()
             begin "Installing Xorg Server 1.6 modules"
             vboxvideo_src=vboxvideo_drv_16.so
             vboxmouse_src=vboxmouse_drv_16.so
+            # SUSE with X.Org Server 1.6 knows about vboxvideo
+            test "$system" = "suse" && setupxorgconf=""
             ;;
         1.4.99.* | 1.5.* )
             # Fedora 9 shipped X.Org Server version 1.4.99.9x (1.5.0 RC)
@@ -462,12 +470,6 @@ EOF
     chcon -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
     semanage fcontext -a -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
     # Install the guest OpenGL drivers
-    if [ "$ARCH" = "amd64" ]
-    then
-        LIB=/usr/lib64
-    else
-        LIB=/usr/lib
-    fi
     if [ -d /usr/lib64/dri ]
     then
         rm -f /usr/lib64/dri/vboxvideo_dri.so
@@ -500,8 +502,8 @@ cleanup()
     nobak="/etc/X11/xorg.vbox.nobak"
     if test -r "$nobak"; then
         test -r "$main_cfg" &&
-            if test "$main_cfg" -ot "$nobak" -o -n "$legacy"; then
-                rm -f "$main_cfg"
+            if test -n "$legacy" -o ! "$nobak" -ot "$main_cfg"; then
+                rm -f "$nobak" "$main_cfg"
             else
                 newer="$newer`printf "  $main_cfg (no original)\n"`"
             fi
