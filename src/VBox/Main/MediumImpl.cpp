@@ -102,7 +102,6 @@ struct Medium::Data
           hostDrive(FALSE),
           implicit(false),
           numCreateDiffTasks(0),
-          vdProgress(NULL),
           vdDiskIfaces(NULL)
     {}
 
@@ -149,13 +148,9 @@ struct Medium::Data
     uint32_t numCreateDiffTasks;
 
     Utf8Str vdError;        /*< Error remembered by the VD error callback. */
-    Progress *vdProgress;  /*< Progress for the VD progress callback. */
 
     VDINTERFACE vdIfError;
     VDINTERFACEERROR vdIfCallsError;
-
-    VDINTERFACE vdIfProgress;
-    VDINTERFACEPROGRESS vdIfCallsProgress;
 
     VDINTERFACE vdIfConfig;
     VDINTERFACECONFIG vdIfCallsConfig;
@@ -797,11 +792,6 @@ HRESULT Medium::FinalConstruct()
     m->vdIfCallsError.pfnError = vdErrorCall;
     m->vdIfCallsError.pfnMessage = NULL;
 
-    /* Initialize the callbacks of the VD progress interface */
-    m->vdIfCallsProgress.cbSize = sizeof(VDINTERFACEPROGRESS);
-    m->vdIfCallsProgress.enmInterface = VDINTERFACETYPE_PROGRESS;
-    m->vdIfCallsProgress.pfnProgress = vdProgressCall;
-
     /* Initialize the callbacks of the VD config interface */
     m->vdIfCallsConfig.cbSize = sizeof(VDINTERFACECONFIG);
     m->vdIfCallsConfig.enmInterface = VDINTERFACETYPE_CONFIG;
@@ -810,7 +800,7 @@ HRESULT Medium::FinalConstruct()
     m->vdIfCallsConfig.pfnQuery = vdConfigQuery;
 
     /* Initialize the callbacks of the VD TCP interface (we always use the host
- *      * IP stack for now) */
+     * IP stack for now) */
     m->vdIfCallsTcpNet.cbSize = sizeof(VDINTERFACETCPNET);
     m->vdIfCallsTcpNet.enmInterface = VDINTERFACETYPE_TCPNET;
     m->vdIfCallsTcpNet.pfnClientConnect = RTTcpClientConnect;
@@ -828,11 +818,6 @@ HRESULT Medium::FinalConstruct()
                          &m->vdIfCallsError, this, &m->vdDiskIfaces);
     AssertRCReturn(vrc, E_FAIL);
 
-    vrc = VDInterfaceAdd(&m->vdIfProgress,
-                         "Medium::vdInterfaceProgress",
-                         VDINTERFACETYPE_PROGRESS,
-                         &m->vdIfCallsProgress, this, &m->vdDiskIfaces);
-    AssertRCReturn(vrc, E_FAIL);
     vrc = VDInterfaceAdd(&m->vdIfConfig,
                          "Medium::vdInterfaceConfig",
                          VDINTERFACETYPE_CONFIG,
@@ -4766,14 +4751,13 @@ DECLCALLBACK(void) Medium::vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
 DECLCALLBACK(int) Medium::vdProgressCall(PVM /* pVM */, unsigned uPercent,
                                          void *pvUser)
 {
-    Medium *that = static_cast<Medium*>(pvUser);
-    AssertReturn(that != NULL, VERR_GENERAL_FAILURE);
+    Progress *that = static_cast<Progress *>(pvUser);
 
-    if (that->m->vdProgress != NULL)
+    if (that != NULL)
     {
         /* update the progress object, capping it at 99% as the final percent
          * is used for additional operations like setting the UUIDs and similar. */
-        HRESULT rc = that->m->vdProgress->SetCurrentOperationProgress(uPercent * 99 / 100);
+        HRESULT rc = that->SetCurrentOperationProgress(uPercent * 99 / 100);
         if (FAILED(rc))
         {
             if (rc == E_FAIL)
@@ -4866,6 +4850,20 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
 
     Medium *that = task->that;
 
+    /* Set up a per-operation progress interface, can be used freely (for
+     * binary operations you can use it either on the source or target). */
+    VDINTERFACEPROGRESS vdIfCallsProgress;
+    vdIfCallsProgress.cbSize = sizeof(VDINTERFACEPROGRESS);
+    vdIfCallsProgress.enmInterface = VDINTERFACETYPE_PROGRESS;
+    vdIfCallsProgress.pfnProgress = Medium::vdProgressCall;
+    VDINTERFACE vdIfProgress;
+    PVDINTERFACE vdOperationIfaces = NULL;
+    int vrc = VDInterfaceAdd(&vdIfProgress,
+                             "Medium::vdInterfaceProgress",
+                             VDINTERFACETYPE_PROGRESS,
+                             &vdIfCallsProgress, task->progress, &vdOperationIfaces);
+    AssertRCReturn(vrc, E_FAIL);
+
     /// @todo ugly hack, fix ComAssert... later
     #define setError that->setError
 
@@ -4922,16 +4920,12 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
 
                     PDMMEDIAGEOMETRY geo = { 0 }; /* auto-detect */
 
-                    /* needed for vdProgressCallback */
-                    that->m->vdProgress = task->progress;
-
                     vrc = VDCreateBase(hdd, format.c_str(), location.c_str(),
                                        task->d.size * _1M,
                                        task->d.variant,
                                        NULL, &geo, &geo, id.raw(),
                                        VD_OPEN_FLAGS_NORMAL,
-                                       NULL, that->m->vdDiskIfaces);
-
+                                       NULL, vdOperationIfaces);
                     if (RT_FAILURE(vrc))
                     {
                         throw setError(E_FAIL,
@@ -5041,9 +5035,6 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                     rc = VirtualBox::ensureFilePathExists(targetLocation);
                     CheckComRCThrowRC(rc);
 
-                    /* needed for vdProgressCallback */
-                    that->m->vdProgress = task->progress;
-
                     /** @todo add VD_IMAGE_FLAGS_DIFF to the image flags, to
                      * be on the safe side. */
                     vrc = VDCreateDiff(hdd, targetFormat.c_str(),
@@ -5053,10 +5044,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                                        id.raw(),
                                        VD_OPEN_FLAGS_NORMAL,
                                        target->m->vdDiskIfaces,
-                                       that->m->vdDiskIfaces);
-
-                    that->m->vdProgress = NULL;
-
+                                       vdOperationIfaces);
                     if (RT_FAILURE(vrc))
                     {
                         throw setError(E_FAIL,
@@ -5078,7 +5066,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 /* we set mParent & children() (note that thatLock is released
                  * here), but lock VirtualBox first to follow the rule */
                 AutoMultiWriteLock2 alock(that->mVirtualBox->lockHandle(),
-                                           that->treeLock());
+                                          that->treeLock());
 
                 Assert(target->mParent.isNull());
 
@@ -5088,6 +5076,8 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 that->addDependentChild(target);
                 target->mVirtualBox->removeDependentChild(target);
 
+                /** @todo r=klaus neither target nor that->base() are locked,
+                 * potential race! */
                 /* diffs for immutable hard disks are auto-reset by default */
                 target->m->autoReset =
                     that->base()->m->type == MediumType_Immutable ?
@@ -5214,9 +5204,6 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
 #endif
                     }
 
-                    /* needed for vdProgressCallback */
-                    that->m->vdProgress = task->progress;
-
                     unsigned start = chain->isForward() ?
                         0 : (unsigned)chain->size() - 1;
                     unsigned end = chain->isForward() ?
@@ -5224,10 +5211,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
 #if 0
                     LogFlow(("*** MERGE from %d to %d\n", start, end));
 #endif
-                    vrc = VDMerge(hdd, start, end, that->m->vdDiskIfaces);
-
-                    that->m->vdProgress = NULL;
-
+                    vrc = VDMerge(hdd, start, end, vdOperationIfaces);
                     if (RT_FAILURE(vrc))
                         throw vrc;
 
@@ -5506,9 +5490,6 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                         }
                     }
 
-                    /* unlock before the potentially lengthy operation */
-                    thatLock.leave();
-
                     Utf8Str targetFormat(target->m->strFormat);
                     Utf8Str targetLocation(target->m->strLocationFull);
 
@@ -5517,12 +5498,12 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                     Assert(that->m->state == MediumState_LockedRead);
                     Assert(parent.isNull() || parent->m->state == MediumState_LockedRead);
 
+                    /* unlock before the potentially lengthy operation */
+                    thatLock.leave();
+
                     /* ensure the target directory exists */
                     rc = VirtualBox::ensureFilePathExists(targetLocation);
                     CheckComRCThrowRC(rc);
-
-                    /* needed for vdProgressCallback */
-                    that->m->vdProgress = task->progress;
 
                     PVBOXHDD targetHdd;
                     int vrc = VDCreate(that->m->vdDiskIfaces, &targetHdd);
@@ -5534,6 +5515,8 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                         for (List::const_iterator it = parentChain->begin();
                              it != parentChain->end(); ++ it)
                         {
+                            /** @todo r=klaus (*it) is not locked, lots of
+                             * race opportunities below */
                             /* sanity check */
                             Assert(    (*it)->m->state == MediumState_LockedRead
                                    ||  (*it)->m->state == MediumState_LockedWrite);
@@ -5552,16 +5535,14 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                             }
                         }
 
+                        /** @todo r=klaus target isn't locked, race getting the state */
                         vrc = VDCopy(hdd, VD_LAST_IMAGE, targetHdd,
                                      targetFormat.c_str(),
                                      target->m->state == MediumState_Creating ? targetLocation.raw() : (char *)NULL,
                                      false, 0,
                                      task->d.variant, targetId.raw(), NULL,
                                      target->m->vdDiskIfaces,
-                                     that->m->vdDiskIfaces);
-
-                        that->m->vdProgress = NULL;
-
+                                     vdOperationIfaces);
                         if (RT_FAILURE(vrc))
                         {
                             throw setError(E_FAIL,
@@ -5769,9 +5750,6 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                                        parentLocation.raw(), that->vdError(vrc).raw());
                     }
 
-                    /* needed for vdProgressCallback */
-                    that->m->vdProgress = task->progress;
-
                     vrc = VDCreateDiff(hdd, format.c_str(), location.c_str(),
                                        /// @todo use the same image variant as before
                                        VD_IMAGE_FLAGS_NONE,
@@ -5779,10 +5757,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                                        parentId.raw(),
                                        VD_OPEN_FLAGS_NORMAL,
                                        that->m->vdDiskIfaces,
-                                       that->m->vdDiskIfaces);
-
-                    that->m->vdProgress = NULL;
-
+                                       vdOperationIfaces);
                     if (RT_FAILURE(vrc))
                     {
                         throw setError(E_FAIL,
@@ -5862,32 +5837,28 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                         }
                     }
 
+                    Assert(that->m->state == MediumState_LockedWrite);
+
+                    Utf8Str location(that->m->strLocationFull);
+
                     /* unlock before the potentially lengthy operation */
                     thatLock.leave();
 
-                    Assert(that->m->state == MediumState_LockedWrite);
-
-                    /* needed for vdProgressCallback */
-                    that->m->vdProgress = task->progress;
-
-                    vrc = VDCompact(hdd, VD_LAST_IMAGE, that->m->vdDiskIfaces);
-
-                    that->m->vdProgress = NULL;
-
+                    vrc = VDCompact(hdd, VD_LAST_IMAGE, vdOperationIfaces);
                     if (RT_FAILURE(vrc))
                     {
                         if (vrc == VERR_NOT_SUPPORTED)
                             throw setError(VBOX_E_NOT_SUPPORTED,
                                            tr("Compacting is not yet supported for hard disk '%s'"),
-                                           that->m->strLocationFull.raw());
+                                           location.raw());
                         else if (vrc == VERR_NOT_IMPLEMENTED)
                             throw setError(E_NOTIMPL,
                                            tr("Compacting is not implemented, hard disk '%s'"),
-                                           that->m->strLocationFull.raw());
+                                           location.raw());
                         else
                             throw setError(E_FAIL,
                                            tr("Could not compact hard disk '%s'%s"),
-                                           that->m->strLocationFull.raw(),
+                                           location.raw(),
                                            that->vdError(vrc).raw());
                     }
                 }
