@@ -2728,7 +2728,7 @@ ResumeExecution:
         HWACCMDumpRegs(pVM, pVCpu, pCtx);
 #endif
 
-    Log2(("E%d: New EIP=%RGv\n", exitReason, (RTGCPTR)pCtx->rip));
+    Log2(("E%d: New EIP=%x:%RGv\n", exitReason, pCtx->cs, (RTGCPTR)pCtx->rip));
     Log2(("Exit reason %d, exitQualification %RGv\n", (uint32_t)exitReason, exitQualification));
     Log2(("instrInfo=%d instrError=%d instr length=%d\n", (uint32_t)instrInfo, (uint32_t)instrError, (uint32_t)cbInstr));
     Log2(("Interruption error code %d\n", (uint32_t)errCode));
@@ -3035,7 +3035,7 @@ ResumeExecution:
 #endif
                 Assert(CPUMIsGuestInRealModeEx(pCtx));
 
-                LogFlow(("Real mode X86_XCPT_GP instruction emulation at %RGv\n", (RTGCPTR)pCtx->rip));
+                LogFlow(("Real mode X86_XCPT_GP instruction emulation at %x:%RGv\n", pCtx->cs, (RTGCPTR)pCtx->rip));
 
                 rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
                 if (RT_SUCCESS(rc))
