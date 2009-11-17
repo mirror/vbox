@@ -61,9 +61,6 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <property name="toolTip">
-      <string>Click to enlarge the screenshot.</string>
-     </property>
      <property name="frameShape">
       <enum>QFrame::Panel</enum>
      </property>

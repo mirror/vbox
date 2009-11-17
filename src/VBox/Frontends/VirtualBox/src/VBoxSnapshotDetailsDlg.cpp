@@ -68,8 +68,11 @@ void VBoxSnapshotDetailsDlg::getFromSnapshot (const CSnapshot &aSnapshot)
 
     /* Get thumbnail if present */
     ULONG width = 0, height = 0;
-    QVector <BYTE> data = machine.ReadSavedThumbnailToArray (true, width, height);
-    mThumbnail = data.size() != 0 ? QPixmap::fromImage (QImage (data.data(), width, height, QImage::Format_RGB32).copy()) : QPixmap();
+    QVector <BYTE> thumbData = machine.ReadSavedThumbnailToArray (true, width, height);
+    mThumbnail = thumbData.size() != 0 ? QPixmap::fromImage (QImage (thumbData.data(), width, height, QImage::Format_RGB32).copy()) : QPixmap();
+    QVector <BYTE> screenData = machine.ReadSavedScreenshotPNGToArray (width, height);
+    mScreenshot = screenData.size() != 0 ? QPixmap::fromImage (QImage::fromData (screenData.data(), screenData.size(), "PNG")) : QPixmap();
+
     QGridLayout *lt = qobject_cast <QGridLayout*> (layout());
     Assert (lt);
     if (mThumbnail.isNull())
@@ -117,22 +120,17 @@ void VBoxSnapshotDetailsDlg::retranslateUi()
 
     setWindowTitle (tr ("Details of %1 (%2)").arg (mSnapshot.GetName()).arg (machine.GetName()));
 
+    mLbThumbnail->setToolTip (mScreenshot.isNull() ? QString() : tr ("Click to enlarge the screenshot."));
+
     mTeDetails->setText (vboxGlobal().detailsReport (machine, false /* with links? */));
 }
 
 bool VBoxSnapshotDetailsDlg::eventFilter (QObject *aObject, QEvent *aEvent)
 {
     Assert (aObject == mLbThumbnail);
-    if (aEvent->type() == QEvent::MouseButtonPress)
+    if (aEvent->type() == QEvent::MouseButtonPress && !mScreenshot.isNull())
     {
-        CMachine machine = mSnapshot.GetMachine();
-
-        ULONG width = 0, height = 0;
-        QVector <BYTE> data = machine.ReadSavedScreenshotPNGToArray (width, height);
-        Assert (data.size());
-        QPixmap pixmap = QPixmap::fromImage (QImage::fromData (data.data(), data.size(), "PNG"));
-
-        VBoxScreenshotViewer *viewer = new VBoxScreenshotViewer (this, pixmap, machine.GetName(), mSnapshot.GetName());
+        VBoxScreenshotViewer *viewer = new VBoxScreenshotViewer (this, mScreenshot, mSnapshot.GetMachine().GetName(), mSnapshot.GetName());
         viewer->show();
     }
     return QDialog::eventFilter (aObject, aEvent);
@@ -174,8 +172,9 @@ VBoxScreenshotViewer::VBoxScreenshotViewer (QWidget *aParent, const QPixmap &aSc
     mArea->setWidgetResizable (true);
     layout->addWidget (mArea);
 
+    double aspectRatio = (double) aScreenshot.height() / aScreenshot.width();
     QSize maxSize = aScreenshot.size() + QSize (mArea->frameWidth() * 2, mArea->frameWidth() * 2);
-    QSize initSize = QSize (640, 480).boundedTo (maxSize);
+    QSize initSize = QSize (640, 640 * aspectRatio).boundedTo (maxSize);
 
     setMaximumSize (maxSize);
 
