@@ -414,7 +414,7 @@ ifdef VBOX_USE_PBZIP2
  		bin init lib sbin share src debug
 	$(QUIET)pbzip2 $(patsubst %.bz2,%,$@)
 else
-	$(QUIET)tar --owner 0 --group 0 -cjRf $@ \
+	$(QUIET)tar --owner 0 --group 0 --ignore-failed-read -cjRf $@ \
  		-C $(VBOX_LNX_ADD_INST_OUT_DIR) \
  		bin init lib sbin share src debug
 endif
