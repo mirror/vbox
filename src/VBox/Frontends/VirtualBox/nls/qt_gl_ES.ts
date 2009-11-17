@@ -67,7 +67,7 @@ Check your Gstreamer installation and make sure you
 have libgstreamer-plugins-base installed.</source>
         <translation>Non foi posíbel iniciar a reprodución. 
 
-Comprobe a súa instalación de Gstreamer e asegúrese de 
+Comprobe a súa instalación de Gstreamer e asegúrese de
 que ten instalado o paquete libgstreamer-plugins-base.</translation>
     </message>
     <message numerus="yes">
@@ -382,7 +382,7 @@ que ten instalado o paquete libgstreamer-plugins-base.</translation>
 File not found.
 Check path and filename.</source>
         <translation>%1
-Non se atopou o ficheiro. 
+Non se atopou o ficheiro.
 Comprobar o camiño e o nome do ficheiro.</translation>
     </message>
 </context>
@@ -1099,7 +1099,7 @@ Quere substituílo?</translation>
 File not found.
 Please verify the correct file name was given.</source>
         <translation>%1
-Non se atopou o ficheiro. 
+Non se atopou o ficheiro.
 Verifique que o nome do ficheiro dado é correcto.</translation>
     </message>
     <message>
@@ -1147,7 +1147,7 @@ Verifique que o nome do ficheiro dado é correcto.</translation>
 Directory not found.
 Please verify the correct directory name was given.</source>
         <translation>%1
-Non se atopou o cartafol. 
+Non se atopou o cartafol.
 Verifique que o nome do cartafol dado é correcto.</translation>
     </message>
     <message>
@@ -2982,7 +2982,7 @@ Seleccione un nome de ficheiro diferente.</translation>
     </message>
     <message>
         <source>Pages from</source>
-        <translation>Dende a páxina</translation>
+        <translation>Desde a páxina</translation>
     </message>
     <message>
         <source>to</source>
@@ -3117,7 +3117,7 @@ Seleccione un nome de ficheiro diferente.</translation>
     </message>
     <message>
         <source>bad lookahead syntax</source>
-        <translation>sintaxe incorrecta para a procura cara diante </translation>
+        <translation>sintaxe incorrecta para a busca cara diante </translation>
     </message>
     <message>
         <source>bad repetition syntax</source>
@@ -4719,7 +4719,7 @@ Seleccione un nome de ficheiro diferente.</translation>
     </message>
     <message>
         <source>When casting to %1 from %2, the source value cannot be %3.</source>
-        <translation>Ao converter a %1 dende %2, o valor de orixe non pode ser %3.</translation>
+        <translation>Ao converter a %1 desde %2, o valor de orixe non pode ser %3.</translation>
     </message>
     <message>
         <source>Integer division (%1) by zero (%2) is undefined.</source>
@@ -4835,7 +4835,7 @@ Seleccione un nome de ficheiro diferente.</translation>
     </message>
     <message>
         <source>A library module cannot be evaluated directly. It must be imported from a main module.</source>
-        <translation>Un módulo de biblioteca non se pode avaliar directamente. Débese importar dende un módulo principal.</translation>
+        <translation>Un módulo de biblioteca non se pode avaliar directamente. Débese importar desde un módulo principal.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot be a predicate. A predicate must have either a numeric type or an Effective Boolean Value type.</source>

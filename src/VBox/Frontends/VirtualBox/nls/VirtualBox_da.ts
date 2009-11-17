@@ -1,182 +1,185 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="gl_ES">
+<TS version="2.0" language="da_DK">
 <context>
     <name>@@@</name>
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation>Galego</translation>
+        <translation>Dansk</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
-        <translation>España</translation>
+        <translation></translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation>Galician</translation>
+        <translation>Danish</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
-        <translation>Spain</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Sun Microsystems, Inc.</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Oficina de Software Libre da USC, Enrique Estévez Fernández, Francisco Diéguez Souto, Mancomun, Antón Méixome.</translation>
+        <translation>Lars Sarauw Hansen, Jeppe Fihl Toustrup</translation>
     </message>
 </context>
 <context>
     <name>AttachmentsModel</name>
     <message>
         <source>Double-click to add a new attachment</source>
-        <translation>Faga dobre clic para engadir un novo disco</translation>
+        <translatorcomment>Jvf HSDGs ordliste</translatorcomment>
+        <translation>Dobbeltklik for at vedhæfte et nyt bilag</translation>
     </message>
     <message>
         <source>Hard Disk</source>
-        <translation>Disco ríxido</translation>
+        <translatorcomment>Lagermedie?</translatorcomment>
+        <translation>Harddisk</translation>
     </message>
     <message>
         <source>Slot</source>
-        <translation>Espazo</translation>
+        <translatorcomment>Afhængig af kontekst</translatorcomment>
+        <translation>Udvidelsesplads</translation>
     </message>
 </context>
 <context>
     <name>QApplication</name>
     <message>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
-        <translation>Executábel &lt;b&gt;%1&lt;/b&gt; require Qt %2.x, encontrado Qt %3.</translation>
+        <translation>Program &lt;b&gt;%1&lt;/b&gt; kræver Qt %2.x, du har Qt %3.</translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation>Erro por incompatibilidade da biblioteca Qt</translation>
+        <translation>Inkompatibelt Qt programbibliotek</translation>
     </message>
     <message>
         <source>VirtualBox - Error In %1</source>
-        <translation>VirtualBox - Erro en %1</translation>
+        <translation>VirtualBox - Fejl i %1</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
+        <translation>&lt;html&gt;&lt;b&gt;%1 (returkode=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <source>It may help to reinstall VirtualBox.</source>
-        <translation>Unha solución podería ser a reinstalación do VirtualBox.</translation>
+        <translation>Du bør geninstallere VirtualBox.</translation>
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation>Este erro significa que ao controlador do núcleo lle foi imposíbel asignar a memoria suficiente ou que fallou algunha operación de mapeo.&lt;br/&gt;&lt;br/&gt;Existen algúns problemas coa versión do núcleo de Linux 2.6.29. Se está empregando este núcleo edite /usr/src/vboxdrv-*/Makefile e active &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. A continuación, recompile o módulo do núcleo executando&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;como usuario root.</translation>
+        <translation>Denne fejl skyldes enten at kernemodulet ikke kunne allokere hukommelse nok eller at en adresseoversættelse fejlede.&lt;br/&gt;&lt;br/&gt;Der er kendte problemer med Linux 2.6.29. Hvis du bruger denne kerneudgave, så tilret /usr/src/vboxdrv-*/Makefile og sæt &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. Rekompilér derefter kernemodulet ved at køre&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;som root.</translation>
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation>O controlador do núcleo Linux de VirtualBox (vboxdrv) non está cargado ou existe un problema cos permisos de /dev/vboxdrv. Reconfigura o módulo do núcleo executando&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;como usuario root. Usuarios de Ubuntu, Fedora ou Mandriva deberían instalar primeiro o paquete DKMS. Este paquete vixía os cambios do núcleo Linux e recompila o módulo do núcleo vboxdrv se é necesario.</translation>
+        <translation>VirtualBox&apos; Linux kernemodul (vboxdrv) er enten ikke indlæst eller der er et problem med rettighederne på /dev/vboxdrv. Geninstaller kernemodulet ved at køre&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;som root. Brugere af Ubuntu, Fedora eller Mandriva bør installere DKMS pakken først. Denne pakke holder styr på Linux kerneændringer og rekompilerer vboxdrv kernemodulet om nødvendigt.</translation>
     </message>
     <message>
         <source>Make sure the kernel module has been loaded successfully.</source>
-        <translation>Asegúrese de que o módulo do núcleo foi cargado correctamente.</translation>
+        <translation>Kontroller at kernemodulet er indlæst korrekt.</translation>
     </message>
     <message>
         <source>VirtualBox - Runtime Error</source>
-        <translation>VirtualBox - Erro en tempo de execución</translation>
+        <translation>VirtualBox - Afviklingsfejl</translation>
     </message>
     <message>
         <source>&lt;b&gt;Cannot access the kernel driver!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation>&lt;b&gt;Non é posíbel acceder ao controlador do núcleo!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Kan ikke tilgå kernemodulet!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <source>Unknown %2 error during initialization of the Runtime</source>
-        <translation>Ocorreu un erro %2 descoñecido ao iniciar o Runtime</translation>
+        <translation>Ukendt %2 fejl under indlæsning af afviklingsmiljøet</translation>
     </message>
     <message>
         <source>Kernel driver not accessible</source>
-        <translation>O controlador do núcleo non é accesíbel</translation>
+        <translation>Kernemodul er ikke tilgængeligt</translation>
     </message>
     <message>
         <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
-        <translation>Os módulos de VirtualBox do núcleo non se axustan a esta versión de VirtualBox. Polo visto a instalación de Virtualbox non foi correcta. Unha solución podería ser desinstalar completamente VirtualBox e a súa reinstalación.</translation>
+        <translation>De indlæste kernemoduler passer ikke til denne version af VirtualBox. Installationen af VirtualBox er tilsyneladende ikke gået godt. Du bør afinstallere VirtualBox fuldstændigt og geninstallere.</translation>
     </message>
     <message>
         <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
-        <translation>Os módulos de VirtualBox do núcleo non se axustan a esta versión de VirtualBox. Polo visto a instalación de Virtualbox non foi correcta. Ao executar&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;debería arranxarse este problema. Asegúrese de que non mestura a versión OSE e a versión PUEL de VirtualBox.</translation>
+        <translation>De indlæste kernemoduler passer ikke til denne version af VirtualBox. Installationen af VirtualBox er tilsyneladende ikke gået godt. Kør&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; for at afhjælpe problemet. Undgå at blande OSE og PUEL versionerne af VirtualBox.</translation>
     </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
     <message>
         <source>&amp;Back</source>
-        <translation>&amp;Volver</translation>
+        <translation>Til&amp;bage</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>Segui&amp;nte</translation>
+        <translation>&amp;Næste</translation>
     </message>
 </context>
 <context>
     <name>QIFileDialog</name>
     <message>
         <source>Select a directory</source>
-        <translation>Seleccione un cartafol</translation>
+        <translation>Vælg et katalog</translation>
     </message>
     <message>
         <source>Select a file</source>
-        <translation>Seleccione un ficheiro</translation>
+        <translation>Vælg en fil</translation>
     </message>
 </context>
 <context>
     <name>QIHelpButton</name>
     <message>
         <source>&amp;Help</source>
-        <translation>A&amp;xuda</translation>
+        <translation>&amp;Hjælp</translation>
     </message>
 </context>
 <context>
     <name>QIHotKeyEdit</name>
     <message>
         <source>Left </source>
-        <translation>Esquerda </translation>
+        <translation>Venstre</translation>
     </message>
     <message>
         <source>Right </source>
-        <translation>Dereita </translation>
+        <translation>Højre</translation>
     </message>
     <message>
         <source>Left Shift</source>
-        <translation>Maiúsculas da esquerda</translation>
+        <translation>Venstre Shift</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation>Maiúsculas da dereita</translation>
+        <translation>Højre Shift</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation>Ctrl da esquerda</translation>
+        <translation>Venstre Ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation>Ctrl da dereita </translation>
+        <translation>Højre Ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation>Alt da esquerda</translation>
+        <translation>Venstre Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
-        <translation>Alt da dereita</translation>
+        <translation>Højre Alt</translation>
     </message>
     <message>
         <source>Left WinKey</source>
-        <translation>Tecla de windows da esquerda</translation>
+        <translation>Venstre Windows-tast</translation>
     </message>
     <message>
         <source>Right WinKey</source>
-        <translation>Tecla de windows da dereita</translation>
+        <translation>Højre Windows-tast</translation>
     </message>
     <message>
         <source>Menu key</source>
-        <translation>Tecla de menú</translation>
+        <translation>Menu tast</translation>
     </message>
     <message>
         <source>Alt Gr</source>
@@ -184,23 +187,23 @@
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation>Bloqueo maiúsculas</translation>
+        <translation>Caps Lock</translation>
     </message>
     <message>
         <source>Scroll Lock</source>
-        <translation>Bloqueo de desprazamento</translation>
+        <translation>Scroll Lock</translation>
     </message>
     <message>
         <source>&lt;key_%1&gt;</source>
-        <translation>&lt;tecla_%1&gt;</translation>
+        <translation>&lt;tast_%1&gt;</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation>Deter</translation>
+        <translation>Pause</translation>
     </message>
     <message>
         <source>Print Screen</source>
-        <translation>Imprimir pantalla</translation>
+        <translation>Print Screen</translation>
     </message>
     <message>
         <source>F1</source>
@@ -264,6 +267,7 @@
     </message>
     <message>
         <source>F16</source>
+        <translatorcomment>Also known as a fighterjet :-)</translatorcomment>
         <translation>F16</translation>
     </message>
     <message>
@@ -272,6 +276,7 @@
     </message>
     <message>
         <source>F18</source>
+        <translatorcomment>F18</translatorcomment>
         <translation>F18</translation>
     </message>
     <message>
@@ -300,64 +305,64 @@
     </message>
     <message>
         <source>Num Lock</source>
-        <translation>Bloqueo núm</translation>
+        <translation>Num Lock</translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation>Seguinte</translation>
+        <translation>Fremad</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation>Volver</translation>
+        <translation>Tilbage</translation>
     </message>
 </context>
 <context>
     <name>QIHttp</name>
     <message>
         <source>Connection timed out</source>
-        <translation>Excedeuse o tempo de espera na conexión</translation>
+        <translation>Forbindelsen overskred tidsgrænsen</translation>
     </message>
     <message>
         <source>Could not locate the file on the server (response: %1)</source>
-        <translation>Non foi posíbel atopar o ficheiro no servidor (resposta: %1)</translation>
+        <translation>Kunne ikke finde filen på serveren (besked: %1)</translation>
     </message>
 </context>
 <context>
     <name>QILabelPrivate</name>
     <message>
         <source>&amp;Copy</source>
-        <translation>&amp;Copiar</translation>
+        <translation>Kopier</translation>
     </message>
 </context>
 <context>
     <name>QIMessageBox</name>
     <message>
         <source>OK</source>
-        <translation>Aceptar</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation>Si</translation>
+        <translation>Ja</translation>
     </message>
     <message>
         <source>No</source>
-        <translation>Non</translation>
+        <translation>Nej</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation>Annullér</translation>
     </message>
     <message>
         <source>Ignore</source>
-        <translation>Ignorar</translation>
+        <translation>Ignorer</translation>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation>&amp;Detalles</translation>
+        <translation>&amp;Detaljer</translation>
     </message>
     <message>
         <source>&amp;Details (%1 of %2)</source>
-        <translation>&amp;Detalles (%1 de %2)</translation>
+        <translation>&amp;Detaljer (%1 af %2)</translation>
     </message>
 </context>
 <context>
@@ -365,101 +370,101 @@
     <message>
         <source>not complete</source>
         <comment>value state</comment>
-        <translation>non completo</translation>
+        <translation>ikke komplet</translation>
     </message>
     <message>
         <source>invalid</source>
         <comment>value state</comment>
-        <translation>non válido</translation>
+        <translation>ugyldig</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;O valor do campo &lt;b&gt;%1&lt;/b&gt; na páxina &lt;b&gt;%2&lt;/b&gt; é %3.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Værdien i feltet&lt;b&gt;%1&lt;/b&gt; på siden &lt;b&gt;%2&lt;/b&gt; er %3.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;One of the values on the &lt;b&gt;%1&lt;/b&gt; page is %2.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Un dos valores da páxina &lt;b&gt;%1&lt;/b&gt; é %2.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;En af værdierne på siden &lt;b&gt;%1&lt;/b&gt; er %2.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxAboutDlg</name>
     <message>
         <source>VirtualBox - About</source>
-        <translation>Sobre VirtualBox</translation>
+        <translation>VirtualBox - Om</translation>
     </message>
     <message>
         <source>VirtualBox Graphical User Interface</source>
-        <translation>Interface gráfica de usuario de VirtualBox</translation>
+        <translation>VirtualBox Grafisk Brugerflade</translation>
     </message>
     <message>
         <source>Version %1</source>
-        <translation>Versión %1</translation>
+        <translation>Version %1</translation>
     </message>
 </context>
 <context>
     <name>VBoxAdditionsDownloader</name>
     <message>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation>Annullér</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>Descargando a imaxe do CD dos aplicativos para o sistema operativo convidado desde &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>Henter CD&apos;en med VirtualBox Gæstetilføjelser fra &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Cancelar a descarga da imaxe do CD dos aplicativos para o sistema operativo convidado</translation>
+        <translation>Afbryd hentningen af CD&apos;en med VirtualBox Gæstetilføjelser</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Produciuse un fallo ao gardar o ficheiro descargado como &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke gemme den hentede fil som &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
-        <translation>Seleccione o cartafol onde gardar a imaxe dos aplicativos para o sistema operativo convidado</translation>
+        <translation>Vælg mappen hvor CD&apos;en med Gæstetilføjelser skal gemmes</translation>
     </message>
 </context>
 <context>
     <name>VBoxApplianceEditorWgt</name>
     <message>
         <source>Virtual System %1</source>
-        <translation>Sistema virtual %1</translation>
+        <translation>Virtuelt system %1</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>Nome</translation>
+        <translation>Navn</translation>
     </message>
     <message>
         <source>Product</source>
-        <translation>Produto</translation>
+        <translation>Produkt</translation>
     </message>
     <message>
         <source>Product-URL</source>
-        <translation>URL do produto</translation>
+        <translation>Produkt-URL</translation>
     </message>
     <message>
         <source>Vendor</source>
-        <translation>Provedor</translation>
+        <translation>Leverandør</translation>
     </message>
     <message>
         <source>Vendor-URL</source>
-        <translation>URL do provedor</translation>
+        <translation>Leverandør-URL</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation>Versión</translation>
+        <translation>Version</translation>
     </message>
     <message>
         <source>Description</source>
-        <translation>Descrición</translation>
+        <translation>Beskrivelse</translation>
     </message>
     <message>
         <source>License</source>
-        <translation>Licenza</translation>
+        <translation>Licens</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation>Tipo do sistema operativo convidado</translation>
+        <translation>Gæste OS Type</translation>
     </message>
     <message>
         <source>CPU</source>
@@ -471,15 +476,15 @@
     </message>
     <message>
         <source>Hard Disk Controller IDE</source>
-        <translation>Controlador IDE do disco ríxido</translation>
+        <translation>Harddiskenhed IDE</translation>
     </message>
     <message>
         <source>Hard Disk Controller SATA</source>
-        <translation>Controlador SATA do disco ríxido</translation>
+        <translation>Harddiskenhed SATA</translation>
     </message>
     <message>
         <source>Hard Disk Controller SCSI</source>
-        <translation>Controlador SCSI do disco ríxido</translation>
+        <translation>Harddiskenhed SCSI</translation>
     </message>
     <message>
         <source>DVD</source>
@@ -487,27 +492,27 @@
     </message>
     <message>
         <source>Floppy</source>
-        <translation>Disqueteira</translation>
+        <translation>Diskettedrev</translation>
     </message>
     <message>
         <source>Network Adapter</source>
-        <translation>Adaptador de rede</translation>
+        <translation>Netværkskort</translation>
     </message>
     <message>
         <source>USB Controller</source>
-        <translation>Controlador USB</translation>
+        <translation>USB-styreenhed</translation>
     </message>
     <message>
         <source>Sound Card</source>
-        <translation>Tarxeta de son</translation>
+        <translation>Lydkort</translation>
     </message>
     <message>
         <source>Virtual Disk Image</source>
-        <translation>Imaxe de disco virtual</translation>
+        <translation>Virtuelt diskaftryk</translation>
     </message>
     <message>
         <source>Unknown Hardware Item</source>
-        <translation>Elemento de hardware descoñecido</translation>
+        <translation>Ukendt udstyr</translation>
     </message>
     <message>
         <source>MB</source>
@@ -515,62 +520,62 @@
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation>&lt;b&gt;Valor orixinal:&lt;/b&gt; %1</translation>
+        <translation>&lt;b&gt;Oprindelig værdi:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation>Configuración</translation>
+        <translation>Konfiguration</translation>
     </message>
     <message>
         <source>Warnings:</source>
-        <translation>Avisos:</translation>
+        <translation>Advarsler:</translation>
     </message>
 </context>
 <context>
     <name>VBoxCloseVMDlg</name>
     <message>
         <source>Close Virtual Machine</source>
-        <translation>Pechar máquina virtual</translation>
+        <translation>Stop virtuel maskine</translation>
     </message>
     <message>
         <source>You want to:</source>
-        <translation>Quere:</translation>
+        <translation>Vil du:</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
-        <translation>Gardar o e&amp;stado da máquina</translation>
+        <translation>Gem maskinens til&amp;stand</translation>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
-        <translation>A&amp;pagar a máquina</translation>
+        <translation>Sluk for maskinen</translation>
     </message>
     <message>
         <source>&amp;Revert to the current snapshot</source>
-        <translation>&amp;Reverter á instantánea actual</translation>
+        <translation>Genindlæs seneste øjebliksbillede</translation>
     </message>
     <message>
         <source>Revert the machine state to the state stored in the current snapshot</source>
-        <translation>Reverte o estado da máquina ao estado almacenado na instantánea actual</translation>
+        <translation>Genindlæs maskinens tilstand fra det seneste øjebliksbillede</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation>&amp;Enviar sinal de apagado</translation>
+        <translation>S&amp;end signal til nedlukning</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Cando está marcada, o estado da máquina restaurarase desde o estado almacenado na instantánea da dereita xusto despois de que se apague. Isto é moi útil se está seguro de que quere descartar os resultados das súas últimas sesións e regresar a instantánea actual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Hvis markeret, vil maskinens tilstand blive nulstillet til det seneste øjebliksbillede lige efter nedlukning. Brug denne funktion hvis du altid ønsker at kassere dine ændringer og gå tilbage til det seneste øjebliksbillede.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Garda o estado de execución actual da máquina virtual ao disco ríxido físico do pc anfitrión.&lt;/p&gt;&lt;p&gt;A próxima vez que se inicie a máquina, será restaurada desde o estado gardado e continuará a súa execución desde o mesmo lugar que vostede gardou, o que lle permitirá continuar co seu traballo inmediatamente.&lt;/p&gt;&lt;p&gt;Nota que gardar o estado da máquina lle pode tomar tempo dependendo do tipo do sistema operativo convidado e a cantidade de memoria que vostede lle asignou a máquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Gemmer den nuværende tilstand af den virtuelle maskine på værts-PC&apos;ens harddisk.&lt;/p&gt;&lt;p&gt;Næste gang maskinen startes vil den blive genskabt fra den gemte tilstand og du kan fortsætte dit arbejde hvor du slap.&lt;/p&gt;&lt;p&gt;Bemærk at det kan tage lang tid at gemme maskinens tilstand afhængig af gæstens operativsystem og mængden af hukommelse tildelt til den virtuelle maskine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Envía o evento pulsación botón de enerxía, á máquina virtual.&lt;/p&gt;&lt;p&gt;Normalmente o sistema operativo convidado detectará este sinal e efectuará un procedemento de apagado limpo. Esta é a maneira recomendada de apagar a máquina virtual, xa que os aplicativos correndo dentro da máquina virtual terán a oportunidade de gardar os seus datos e estado.&lt;/p&gt;&lt;p&gt;Se a máquina non responde a esta acción pode que estea mal configurada ou non permita eventos ACPI de apagado.  Neste caso debería seleccionar a acción &lt;b&gt;Apagar a máquina&lt;/b&gt; para deter a execución da máquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sender kommandoen &quot;ACPI-sluk&quot; til maskinen.&lt;/p&gt;&lt;p&gt;Normalt vil gæsteoperativsystemet reagere ved at lukke sig selv ned korrekt. Denne metode anbefales, da det tillader programmerne, der kører i den virtuelle maskine at gemme deres data og lukke pænt.&lt;/p&gt;&lt;p&gt;Hvis maskinen ikke reagerer på denne kommando kan det skyldes at gæsteoperativsystemet ikke er konfigurereret korrekt eller slet ikke forstår ACPI-kommandoer. I det tilfælde bør du i stedet vælge &lt;b&gt;Sluk maskinen&lt;/b&gt; for at stoppe afviklingen af den virtuelle maskine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Apaga a máquina virtual.&lt;/p&gt;&lt;p&gt;Nota que esta acción deterá a execución da máquina inmediatamente polo que o sistema operativo convidado que estea a executar dentro non realizará un proceso de apagado limpo o que pode ter como resultado unha &lt;i&gt;perda de datos&lt;/i&gt; dentro da máquina virtual. Soamente se recomenda esta acción se a máquina virtual non responde a acción &lt;b&gt;Enviar sinal de apagado&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Lukker den virtuelle maskine.&lt;/p&gt;&lt;p&gt;Bemærk at lukningen sker øjeblikkeligt og gæsteoperativsystemet derfor ikke får mulighed for at lukke korrekt ned, hvilket giver risiko for &lt;i&gt;tab af data&lt;/i&gt; i den virtuelle maskine. Du bør kun gøre dette hvis den virtuelle maskine ikke reagerer på &lt;b&gt;signalet til nedlukning&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -581,400 +586,403 @@
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>&amp;Modo de pantalla completa</translation>
+        <translation>&amp;Fuldskærm</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>Cambiar a modo de pantalla completa</translation>
+        <translation>Skift til fuldskærm</translation>
     </message>
     <message>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
-        <translation>Integración do rato</translation>
+        <translation>Integreret mus</translation>
     </message>
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>Redimensionar automaticamente o tamaño da pantalla do convidado</translation>
+        <translation>Tilpas opløsning dynamisk</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Redimensionar o tamaño da pantalla do convi&amp;dado</translation>
+        <translation>Tilpas opløsnin&amp;g dynamisk</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Redimensionar automaticamente o tamaño da pantalla do convidado  cando se redimensiona a xanela (require dos aplicativos para o sistema operativo convidado)</translation>
+        <translation>Tilpas gæstens skærmopløsning automatisk, når størrelsen af vinduet ændres (kræver Guest Additions)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
-        <translation>&amp;Axustar o tamaño da xanela</translation>
+        <translation>Tilp&amp;as vinduesstørrelse</translation>
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation>Axustar o tamaño e a posición da xanela que mellor se axusta a pantalla do convidado</translation>
+        <translation>Tilpas skærmopløsning og placering til gæstens skærm</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
-        <translation>&amp;Inserir Ctrl-Alt-Supr</translation>
+        <translation>Send Ctrl-Alt-Del</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation>Enviar a orde Ctrl-Alt-Supr a máquina virtual</translation>
+        <translation>Send Ctrl-Alt-Del til den virtuelle maskine</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
-        <translation>&amp;Inserir Ctrl-Alt-Retroceso</translation>
+        <translation>Send Ctrl-Alt-Backspace</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation>Enviar a secuencia Ctrl-Alt-Retroceso á máquina virtual</translation>
+        <translation>Send Ctrl-Alt-Backspace til den virtuelle maskine</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
-        <translation>&amp;Restabelecer</translation>
+        <translation>&amp;Reset</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>Restabelecer a máquina virtual</translation>
+        <translation>Nulstiller den virtuelle maskine</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>Apa&amp;gado ACPI</translation>
+        <translation>ACPI sluk</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
-        <translation>Envía o evento pulsación botón de enerxía (ACPI Power) á máquina virtual</translation>
+        <translation>Sender kommandoen &quot;ACPI-sluk&quot; til den virtuelle maskine</translation>
     </message>
     <message>
         <source>&amp;Close...</source>
-        <translation>Pe&amp;char...</translation>
+        <translation>Luk</translation>
     </message>
     <message>
         <source>Close the virtual machine</source>
-        <translation>Pechar a máquina virtual</translation>
+        <translation>Stop den virtuelle maskine</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation>Tomar in&amp;stantánea...</translation>
+        <translation>Tag øjeblik&amp;sbillede...</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>Tomar unha instantánea da máquina virtual</translation>
+        <translation>Tag et øjebliksbillede af den virtuelle maskine</translation>
     </message>
     <message>
         <source>&amp;Floppy Image...</source>
-        <translation>&amp;Imaxe do disquete...</translation>
+        <translatorcomment>http://www.klid.dk/dansk/ordlister/ordliste.html</translatorcomment>
+        <translation>Diskettea&amp;ftryk...</translation>
     </message>
     <message>
         <source>Mount a floppy image file</source>
-        <translation>Montar un ficheiro imaxe de disquete</translation>
+        <translation>Monterer et disketteaftryk</translation>
     </message>
     <message>
         <source>Unmount F&amp;loppy</source>
-        <translation>Desmontar o dis&amp;quete</translation>
+        <translation>&amp;Luk disketteaftryk</translation>
     </message>
     <message>
         <source>Unmount the currently mounted floppy media</source>
-        <translation>Desmontar o medio de disquete actualmente montado</translation>
+        <translation>Fjerner det tilføjede disketteaftryk</translation>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Image...</source>
-        <translation>Imaxe de &amp;CD/DVD-ROM...</translation>
+        <translation>&amp;CD/DVD-ROM aftryk...</translation>
     </message>
     <message>
         <source>Mount a CD/DVD-ROM image file</source>
-        <translation>Montar un ficheiro imaxe de CD/DVD-ROM</translation>
+        <translation>Monterer et CD/DVD-ROM aftryk</translation>
     </message>
     <message>
         <source>Unmount C&amp;D/DVD-ROM</source>
-        <translation>Desmontar o C&amp;D/DVD-ROM</translation>
+        <translation>Afmontér C&amp;D/DVD-ROM</translation>
     </message>
     <message>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation>Desmontar o medio de CD/DVD-ROM actualmente montado</translation>
+        <translation>Afmonterer det tilføjede CD/DVD-ROM aftryk</translation>
     </message>
     <message>
         <source>Remote Dis&amp;play</source>
-        <translation>&amp;Pantalla remota</translation>
+        <translation>Fjernskærm</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Activar ou desactivar as conexións de escritorio remoto a esta máquina</translation>
+        <translation>Tillad eller afvis fjernskærmsforbindelser (RDP) til denne maskine</translation>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation>Cartafole&amp;s compartidos...</translation>
+        <translation>Delte mapper...</translation>
     </message>
     <message>
-        <source>Create or modify shared folders</source>
-        <translation>Crear ou modificar cartafoles compartidos</translation>
+        <source>Open the dialog to operate on shared folders</source>
+        <translation>Konfigurér deling af mapper</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>&amp;Instalar os aplicativos para o sistema operativo convidado...</translation>
+        <translation>&amp;Installér Gæstetilføjelser...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Montar a imaxe de instalación dos aplicativos para o sistema operativo convidado</translation>
+        <translation>Monterer CD&apos;en med Gæstetilføjelser</translation>
     </message>
     <message>
         <source>Mount &amp;Floppy</source>
-        <translation>Montar o dis&amp;quete</translation>
+        <translation>Montér diskettea&amp;ftryk</translation>
     </message>
     <message>
         <source>Mount &amp;CD/DVD-ROM</source>
-        <translation>Montar o &amp;CD/DVD-ROM</translation>
+        <translation>Montér &amp;CD/DVD-ROM</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
-        <translation>Dispositivos &amp;USB</translation>
+        <translation>&amp;USB enheder</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
-        <translation>&amp;Dispositivos</translation>
+        <translation>Enhe&amp;der</translation>
     </message>
     <message>
         <source>De&amp;bug</source>
-        <translation>Depu&amp;ración</translation>
+        <translation>Fejlsøg</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>A&amp;xuda</translation>
+        <translation>&amp;Hjælp</translation>
     </message>
     <message>
         <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;O servidor VRDP está escoitando no porto %1</translation>
+        <translation>&lt;hr&gt;VRDP-server lytter på port %1</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation>De&amp;ter</translation>
+        <translation>&amp;Pause</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>Suspender a execución da máquina virtual</translation>
+        <translation>Suspendér afviklingen af den virtuelle maskine</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>Con&amp;tinuar</translation>
+        <translation>G&amp;enoptag</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>Continuar a execución da máquina virtual</translation>
+        <translation>Genoptag afviklingen af den virtuelle maskine</translation>
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
-        <translation>Desactivar a integración do &amp;rato</translation>
+        <translation>Slå integration af &amp;mus fra</translation>
     </message>
     <message>
         <source>Temporarily disable host mouse pointer integration</source>
-        <translation>Desactivar temporalmente a integración do punteiro do rato do anfitrión</translation>
+        <translation>Slå integration af mus fra midlertidigt</translation>
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>Activar a integración do &amp;rato</translation>
+        <translation>Slå integration af &amp;mus til</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>Activar temporalmente a integración do punteiro do rato do anfitrión</translation>
+        <translation>Ophæv midlertidigt deaktiveret integration af mus</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Instantánea %1</translation>
+        <translation>Øjebliksbillede %1</translation>
     </message>
     <message>
         <source>Host Drive </source>
-        <translation>Unidade do anfitrión </translation>
+        <translation>Værtsdrev</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation>&amp;Máquina</translation>
+        <translation>&amp;Maskine</translation>
     </message>
     <message>
         <source>&amp;Network Adapters</source>
-        <translation>Adaptadores de &amp;rede</translation>
+        <translation>&amp;Netværkskort</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation>Adaptador %1</translation>
+        <translation>Netværkskort %1</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>Floppy tip</comment>
-        <translation>Montar a unidade física seleccionada do equipo anfitrión</translation>
+        <translation>Monterer det valgte diskettedrev fra værts-PC&apos;en</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>CD/DVD tip</comment>
-        <translation>Montar a unidade física seleccionada do equipo anfitrión</translation>
+        <translation>Monterer det valgte CD/DVD-drev fra værts-PC&apos;en</translation>
     </message>
     <message>
         <source>Disconnect the cable from the selected virtual network adapter</source>
-        <translation>Desconectar o cable do adaptador de rede virtual seleccionado</translation>
+        <translation>Træk stikket ud på det valgte virtuelle netværkskort</translation>
     </message>
     <message>
         <source>Connect the cable to the selected virtual network adapter</source>
-        <translation>Conectar o cable ao adaptador de rede virtual seleccionado</translation>
+        <translation>Tilslut kablet til det valgte virtuelle netværkskort</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>Modo f&amp;luído</translation>
+        <translatorcomment>Kantfri, rammefri?</translatorcomment>
+        <translation>Ingen vinduesramme</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>Cambiar ao modo de integración de escritorio fluído</translation>
+        <translation>Skift til rammefri integration med skrivebordet</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade do medio disquete:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Viser aktivitet på diskettedrevet:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Unidade do anfitrión&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Værtsdrev&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Imaxe&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Aftryk&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Ningún medio montado&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Intet aftryk monteret&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade do medio CD/DVD-ROM:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Viser aktivitet på CD/DVD-drevet:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Unidade do anfitrión&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Værtsdrev&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Imaxe&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Aftryk&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Ningún medio montado&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Intet aftryk monteret&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade no disco duro virtual:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Viser aktivitet på de virtuelle harddiske:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Non hai ningún disco ríxido conectado&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Ingen harddiske tilsluttet&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade das interfaces de rede:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation></translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptador %1 (%2)&lt;/b&gt;: cabo %3&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Netværkskort %1 (%2)&lt;/b&gt;: kabel %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>conectado</translation>
+        <translation>tilsluttet</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>desconectado</translation>
+        <translation>afbrudt</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Todos os adaptadores de rede están desactivados&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Alle netværkskort er deaktiveret&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade dos dispositivos USB conectados:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Viser aktivitet på de tilsluttede USB-enheder:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Ningún dispositivo USB conectado&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Ingen USB-enheder tilsluttet&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;O controlador USB está desactivado&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB-enhedsstyring er deaktiveret&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indica a actividade dos cartafoles compartidos:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Viser aktivitet på delte mapper:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Ningún cartafol compartido&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Ingen delte mapper&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>Diálogo da i&amp;nformación da sesión</translation>
+        <translation>I&amp;nformation om session</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation>Mostrar o diálogo da información da sesión</translation>
+        <translation>Vis sessionsinformation</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation>E&amp;statísticas...</translation>
+        <translation>&amp;Statistik...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation>Liña de o&amp;rdes...</translation>
+        <translation>Kommandolinie...</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indica se a función de redimensionado automático na pantalla do convidado está activada (&lt;img src=:/auto_resize_on_16px.png/&gt;) ou desactivada (&lt;img src=:/auto_resize_off_16px.png/&gt;):Nota que esta función require ter instalados os aplicativos para o sistema operativo convidado.</translation>
+        <translation>Viser om dynamiske ændringer af gæstens skærmopløsning er slået til (&lt;img src=:/auto_resize_on_16px.png/&gt;) eller fra (&lt;img src=:/auto_resize_off_16px.png/&gt;). Bemærk at denne funktion kræver at Gæstetilføjelser er installeret på gæstens operativsystem.</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indica se o punteiro do rato do anfitrión é capturado polo sistema operativo convidado:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp; o punteiro non está capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;o punteiro está capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;a integración do rato (MI, de mouse integration) está activada&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;a integración do rato está desactivada, o punteiro está capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;a integración do rato está desactivada, o punteiro non está capturado&lt;/nobr&gt;&lt;br&gt;Nota que a característica de integración do rato require ter instalados os aplicativos para o sistema operativo convidado.</translation>
+        <translation>Viser gæstens niveau af integration med musen:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;musemarkør indfanges ikke&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;musemarkør indfanges&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integration med mus slået til&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integration med mus slået fra/markør indfanges&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;integration med mus slået fra/markør indfanges ikke&lt;/nobr&gt;&lt;br&gt;Bemærk at integration med mus kræver at Gæstetilføjelser er installeret på gæstens operativsystem.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation>Indica se o teclado está capturado polo sistema operativo convidado&lt;img src=:/hostkey_captured_16px.png/&gt;) ou non (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
+        <translation>Viser om tastetryk sendes til gæstens operativsystem (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>Indica se a pantalla remota (VRDP Server) está activada (&lt;img src=:/vrdp_16px.png/&gt;) ou non (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
+        <translation>Viser om forbindelser via fjernskærm (VRDP-server) er tilladt (&lt;img src=:/vrdp_16px.png/&gt;) eller ej (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>Re&amp;xistro...</translation>
+        <translation>&amp;Logger...</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Mostra a tecla actualmente asignada como tecla anfitrión.&lt;br&gt;Cando se preme soa esta tecla, alterna o estado de captura do teclado e o rato. Tamén pode ser empregada en combinación con outras teclas para realizar accións do menú principal rapidamente.</translation>
+        <translation>Viser den nuværende værtstast.&lt;br&gt;Et tryk på den angivne tast skifter status for integration med mus og tastatur. Den kan også bruges i kombination med andre taster til at kalde handlinger fra hovedmenuen direkte.</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
+        <translatorcomment>Sol kunstigboks?</translatorcomment>
         <translation>Sun VirtualBox</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>Indica o estado dos recursos do hardware virtualizado en uso por esta máquina virtual:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
+        <translation>Viser om værtsmaskinens funktioner til hardware-virtualisering bruges af den virtuelle maskine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
@@ -986,41 +994,41 @@
     <name>VBoxDownloaderWgt</name>
     <message>
         <source>The download process has been cancelled by the user.</source>
-        <translation>O usuario cancelou o proceso de descarga.</translation>
+        <translation>Filhentning annulleret af bruger.</translation>
     </message>
 </context>
 <context>
     <name>VBoxEmptyFileSelector</name>
     <message>
         <source>&amp;Choose...</source>
-        <translation>Es&amp;coller...</translation>
+        <translation>Vælg...</translation>
     </message>
 </context>
 <context>
     <name>VBoxExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
-        <translation>Seleccione un ficheiro para a exportación</translation>
+        <translation>Vælg den fil, der skal eksporteres til</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation>Abrir virtualización de formato (%1)</translation>
+        <translation>Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Appliance</source>
-        <translation>Servizo virtualizado (Appliance)</translation>
+        <translation>Prækonfigureret system</translation>
     </message>
     <message>
         <source>Exporting Appliance ...</source>
-        <translation>Exportando servizo virtualizado ...</translation>
+        <translation>Eksporterer prækonfigureret system ...</translation>
     </message>
     <message>
         <source>Appliance Export Wizard</source>
-        <translation>Asistente de exportación de servizo virtualizado</translation>
+        <translation>Eksport af Prækonfigureret system</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation>Benvida ao asistente de exportación de servizo virtualizado!</translation>
+        <translation>Denne guide hjælper dig med at eksportere et Prækonfigureret system!</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -1030,77 +1038,77 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN\&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Este asistente guiarao a través do proceso de exportación dun servizo virtualizado (appliance). &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Emprega o botón &lt;span style=&quot; font-weight:600;&quot;&gt;Seguinte&lt;/span&gt; para ir á seguinte páxina do asistente e o botón &lt;span style=&quot; font-weight:600;&quot;&gt;Volver&lt;/span&gt; para regresar á páxina anterior.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Seleccione a máquina virtual que será exportada como servizo virtualizado. Pode seleccionar máis dunha. Nota que estas máquinas deben estar apagadas para poder ser exportadas.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Denne guide hjælper dig med at eksportere dit eget prækonfigurerede system. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Brug knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Næste&lt;/span&gt; for at gå til næste side af guiden og knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Forrige&lt;/span&gt; for at gå til den forrige side.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Vælg nu de virtuelle maskiner, der skal danne grundlag for dit prækonfigurerede system. Du kan vælge mere end en. Bemærk at disse maskiner skal være lukket ned før de kan eksporteres.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; Vo&amp;lver</translation>
+        <translation>&lt; Til&amp;bage</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation>Segui&amp;nte&gt;</translation>
+        <translation>&amp;Næste &gt;</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation>Annuller</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation>Configuración de exportación de servizos virtualizados</translation>
+        <translation>Indstillinger for eksport af prækonfigureret system</translation>
     </message>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
-        <translation>Aquí pode modificar valores de configuración adicionais das máquinas virtuais seleccionadas. Pode modificar a maioría das propiedades mostradas facendo dobre clic enriba dos elementos.</translation>
+        <translation>Her kan du tilpasse yderligere indstillinger for de valgte virtuelle maskiner. Du kan ændre de fleste af de viste egenskaber ved at dobbeltklikke på værdien.</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation>Restabelecer predefinidas</translation>
+        <translation>Brug standardværdier</translation>
     </message>
     <message>
         <source>&amp;Export &gt;</source>
-        <translation>&amp;Exportar &gt;</translation>
+        <translation>&amp;Eksporter &gt;</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation>Almacena no formato orixinal OVF 0.9 para obter compatibilidade con outros produtos de virtualización.</translation>
+        <translation>Gem i OVF 0.9 format for kompatibilitet med andre virtualiseringsprogrammer.</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation>Almacena no &amp;formato orixinal OVF 0.9</translation>
+        <translation>Gem i OVF 0.9 format</translation>
     </message>
     <message>
         <source>Please choose a filename to export the OVF in.</source>
-        <translation>Escolla un nome de ficheiro no que exportar o OVF.</translation>
+        <translation>Angiv et filnavn til OVF-eksporten.</translation>
     </message>
     <message>
         <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
-        <translation>Complete os campos adicionais como o nome de usuario, contrasinal e contedor. Para rematar vostede debe proporcionar o nome de ficheiro para o OVF destino.</translation>
+        <translation>Udfyld de øvrige felter såsom brugernavn, kodeord og bucket. Afslut med at angive et filnavn til OVF-eksporten.</translation>
     </message>
     <message>
         <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
-        <translation>Complete os campos adicionais coma o nome de usuario, contrasinal, nome de equipo e o contedor. Para rematar vostede debe proporcionar o nome de ficheiro para o OVF destino.</translation>
+        <translation>Udfyld de øvrige felter såsom brugernavn, kodeord, værtsnavn og bucket. Afslut med at angive et filnavn til OVF-eksporten.</translation>
     </message>
     <message>
         <source>Checking files ...</source>
-        <translation>A comprobar ficheiros ...</translation>
+        <translation>Kontrollerer filer ...</translation>
     </message>
     <message>
         <source>Removing files ...</source>
-        <translation>A eliminar ficheiros ...</translation>
+        <translation>Fjerner filer ...</translation>
     </message>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation>Especifique o destino para o exportado de OVF. Vostede pode seleccionar entre exportar a un sistema de ficheiros local, subir o OVF ao servizo Sun Cloud ou a un servidor de almacenamento S3.</translation>
+        <translation>Angiv destinationen for OVF-eksporten. Du kan vælge at eksportere til et lokalt filsystem eller sende OVF&apos;en til Sun Cloud servicen eller en S3 lagerserver.</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation>Sistema de ficheiros &amp;local </translation>
+        <translation>&amp;Lokalt filsystem</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
@@ -1108,101 +1116,101 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation>&amp;Sistema de almacenamento simple (S3)</translation>
+        <translation>&amp;Simple Storage System (S3)</translation>
     </message>
     <message>
         <source>&amp;Username:</source>
-        <translation>Nome de &amp;usuario:</translation>
+        <translation>Br&amp;ugernavn:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation>&amp;Contrasinal:</translation>
+        <translation>Kodeord:</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation>&amp;Ficheiro:</translation>
+        <translation>&amp;Fil:</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation>Conte&amp;dor:</translation>
+        <translation>&amp;Bucket:</translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation>Nome do e&amp;quipo:</translation>
+        <translation>Værtsnavn:</translation>
     </message>
 </context>
 <context>
     <name>VBoxFilePathSelectorWidget</name>
     <message>
         <source>&lt;reset to default&gt;</source>
-        <translation>&lt;restabelecer predefinidos&gt;</translation>
+        <translation>&lt;nulstil til standard&gt;</translation>
     </message>
     <message>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>O valor do camiño predefinido actual mostrarase despois de aceptar os cambios e ó abrir novamente este diálogo.</translation>
+        <translation>Den korrekte standardsti vil blive vist når du accepterer ændringerne og åbner dette vindue igen.</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
-        <translation>&lt;sen seleccionar&gt;</translation>
+        <translation>&lt;ikke valgt&gt;</translation>
     </message>
     <message>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
-        <translation>Emprega o elemento &lt;b&gt;Outro...&lt;/b&gt; da lista despregábel para seleccionar o camiño desexado.</translation>
+        <translation>Vælg &lt;b&gt;Andet...&lt;/b&gt; fra rullegardinmenuen for at angive den ønskede sti.</translation>
     </message>
     <message>
         <source>Other...</source>
-        <translation>Outro...</translation>
+        <translation>Andet...</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>Restabelecer</translation>
+        <translation>Nulstil</translation>
     </message>
     <message>
         <source>Opens a dialog to select a different folder.</source>
-        <translation>Abre unha caixa de diálogo para seleccionar un cartafol diferente.</translation>
+        <translation>Lader dig vælge en anden mappe.</translation>
     </message>
     <message>
         <source>Resets the folder path to the default value.</source>
-        <translation>Restabelece o camiño do cartafol ao valor predefinido.</translation>
+        <translation>Nulstil mappens sti til standardværdi.</translation>
     </message>
     <message>
         <source>Opens a dialog to select a different file.</source>
-        <translation>Abre unha caixa de diálogo para seleccionar un ficheiro diferente.</translation>
+        <translation>Lader dig vælge en anden fil.</translation>
     </message>
     <message>
         <source>Resets the file path to the default value.</source>
-        <translation>Restabelece o camiño do ficheiro ao valor predefinido.</translation>
+        <translation>Nulstil filens sti til standardværdi.</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation>&amp;Copiar</translation>
+        <translation>Kopier</translation>
     </message>
     <message>
         <source>Please type the desired folder path here.</source>
-        <translation>Introduza aquí o camiño do cartafol desexada.</translation>
+        <translation>Angiv den ønskede sti til mappen her.</translation>
     </message>
     <message>
         <source>Please type the desired file path here.</source>
-        <translation>Introduza aquí o camiño do ficheiro desexada.</translation>
+        <translation>Angiv den ønskede sti til filen her.</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation>Xeral</translation>
+        <translation>Generelt</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation>Entrada</translation>
+        <translation>Input</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>Actualizar</translation>
+        <translation>Opdateringer</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>Idioma</translation>
+        <translation>Sprog</translation>
     </message>
     <message>
         <source>USB</source>
@@ -1214,69 +1222,69 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Network</source>
-        <translation>Rede</translation>
+        <translation>Netværk</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsGeneral</name>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>Mostra o camiño ao cartafol de máquinas virtuais predefinido. Este cartafol empregase, no caso de non especificarse outro, ao crear novas máquinas virtuais.</translation>
+        <translation>Viser standardmappen til virtuelle maskiner. Nye virtuelle maskiner gemmes her, hvis du ikke angiver en anden placering.</translation>
     </message>
     <message>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation>Mostra o camiño á biblioteca que fornece autenticación para clientes con pantalla remota (VRDP).</translation>
+        <translation>Viser stien til programbiblioteket, der bruges til brugergodkendelse i fjernskærm-klienter (VRDP).</translation>
     </message>
     <message>
         <source>Default &amp;Hard Disk Folder:</source>
-        <translation>Cartafol predefinido do disco rí&amp;xido:</translation>
+        <translation>Forvalgt &amp;Harddisk mappe:</translation>
     </message>
     <message>
         <source>Default &amp;Machine Folder:</source>
-        <translation>Cartafol predefinido da &amp;máquina:</translation>
+        <translation>Forvalgt &amp;maskinmappe:</translation>
     </message>
     <message>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation>Biblioteca de autenticación V&amp;RDP:</translation>
+        <translation>Programbibliotek til V&amp;RDP brugergodkendelse:</translation>
     </message>
     <message>
         <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>Mostra o camiño ao cartafol de discos ríxidos predefinido. Este cartafol empregase, no caso de non especificarse outro, ao agregar ou crear discos ríxidos virtuais.</translation>
+        <translation>Viser standardmappen for virtuelle harddiske. Nyoprettede og tilføjede virtuelle harddiske gemmes her, hvis du ikke angiver en anden placering.</translation>
     </message>
     <message>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation>Cando está marcada, o aplicativo fornecerá unha icona cun menú contextual na área de notificacións (System Tray).</translation>
+        <translation>Hvis markeret, vises et ikon på statuslinjen der giver adgang til genvejsmenuen.</translation>
     </message>
     <message>
         <source>&amp;Show System Tray Icon</source>
-        <translation>Mo&amp;strar icona na área de notificacións (System Tray)</translation>
+        <translation>Vis ikon på &amp;statuslinjen</translation>
     </message>
     <message>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation>Cando está marcada, a icona ancorada reflexará en tempo real o contido da xanela da máquina virtual.</translation>
+        <translation>Hvis markeret, vil Dock-ikonet løbende vise indholdet af VM-vinduet.</translation>
     </message>
     <message>
         <source>&amp;Dock Icon Realtime Preview</source>
-        <translation>Previsualización en tempo real &amp;da icona ancorada</translation>
+        <translation>&amp;Dock-ikon viser indhold af VM</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsInput</name>
     <message>
         <source>Host &amp;Key:</source>
-        <translation>Tecla an&amp;fitrión:</translation>
+        <translation>Værtstast:</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation>Mostra a tecla empregada como tecla anfitrión na xanela da máquina virtual. Active o campo de entrada e prema a nova tecla anfitrión. Nota que as teclas alfanuméricas, de movemento do cursor e as teclas de edición non é posíbel empregalas como unha tecla anfitrión.</translation>
+        <translation>Viser tasten, der fungerer som værtstast i VM-vinduet. Placer markøren i feltet og tryk på den nye værtstast. Bemærk at alfanumeriske, pile- og redigeringstaster ikke kan bruges.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation>Cando está marcada, capturarase automaticamente o teclado cada vez que a xanela da máquina virtual sexa activada. Cando o teclado está capturado, todas as combinacións de teclas (incluso as do sistema como Alt-Tab) son dirixidas á máquina virtual.</translation>
+        <translation>Hvis markeret, vil tastaturet blive indfanget hver gang VM-vinduet er i fokus. Når tastaturet er indfanget vil alle tastetryk (inklusive system-kombinationer såsom Alt-Tab) blive sendt til den virtuelle maskine.</translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation>Capturar o teclado &amp;automaticamente</translation>
+        <translation>Indf&amp;ang tastatur automatisk</translation>
     </message>
 </context>
 <context>
@@ -1284,38 +1292,38 @@ p, li { white-space: pre-wrap; }
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation> (integrado)</translation>
+        <translation> (indbygget)</translation>
     </message>
     <message>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation>&lt;non dispoñíbel&gt;</translation>
+        <translation>&lt;utilgængeligt&gt;</translation>
     </message>
     <message>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation>&lt;descoñecido&gt;</translation>
+        <translation>&lt;ukendt&gt;</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation>Predefinido</translation>
+        <translation>Standard</translation>
     </message>
     <message>
         <source>Language:</source>
-        <translation>Idioma:</translation>
+        <translation>Sprog:</translation>
     </message>
     <message>
         <source>&amp;Interface Language:</source>
-        <translation>&amp;Idioma da interface:</translation>
+        <translation>Brugerflade-sprog:</translation>
     </message>
     <message>
         <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation>Lista todos os idiomas dispoñíbeis da interface de usuario. O idioma elixido está escrito en &lt;b&gt;negra&lt;/b&gt;. Seleccione &lt;i&gt;Predefinido&lt;/i&gt; para restabelecer ao idioma predefinido do seu sistema.</translation>
+        <translation>Viser alle tilgængeligt brugerflade-sprog. Det nuværende sprog vises med &lt;b&gt;fed&lt;/b&gt; tekst. Vælg &lt;i&gt;Standard&lt;/i&gt; for at bruge systemets standardsprog.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>Nome</translation>
+        <translation>Navn</translation>
     </message>
     <message>
         <source>Id</source>
@@ -1323,15 +1331,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Language</source>
-        <translation>Idioma</translation>
+        <translation>Sprog</translation>
     </message>
     <message>
         <source>Author</source>
-        <translation>Autor</translation>
+        <translation>Forfatter</translation>
     </message>
     <message>
         <source>Author(s):</source>
-        <translation>Autor(es):</translation>
+        <translation>Forfatter(e):</translation>
     </message>
 </context>
 <context>
@@ -1339,262 +1347,262 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
-        <translation>rede %1</translation>
+        <translation>%1 netværk</translation>
     </message>
     <message>
         <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>enderezo IPv4 do equipo &lt;b&gt;%1&lt;/b&gt; é incorrecto</translation>
+        <translation>Værtens IPv4-adresse &lt;b&gt;%1&lt;/b&gt; er forkert</translation>
     </message>
     <message>
         <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>máscara de rede IPv4 do equipo &lt;b&gt;%1&lt;/b&gt; é incorrecta</translation>
+        <translation>Værtens IPv4 netværksmaske &lt;b&gt;%1&lt;/b&gt; er forkert</translation>
     </message>
     <message>
         <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>enderezo IPv6 do equipo &lt;b&gt;%1&lt;/b&gt; é incorrecto</translation>
+        <translation>Værtens IPv6-adresse &lt;b&gt;%1&lt;/b&gt; er forkert</translation>
     </message>
     <message>
         <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>enderezo do servidor DHCP de &lt;b&gt;%1&lt;/b&gt; é incorrecto</translation>
+        <translation>DHCP-serverens adresse &lt;b&gt;%1&lt;/b&gt; er forkert</translation>
     </message>
     <message>
         <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>máscara de rede do servidor DHCP de &lt;b&gt;%1&lt;/b&gt; é incorrecta</translation>
+        <translation>DHCP-serverens netværksmaske &lt;b&gt;%1&lt;/b&gt; er forkert</translation>
     </message>
     <message>
         <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>O límite inferior &lt;b&gt;%1&lt;/b&gt; do enderezo DHCP é incorrecto</translation>
+        <translation>DHCP-serverens nedre grænse for adresser &lt;b&gt;%1&lt;/b&gt; er forkert</translation>
     </message>
     <message>
         <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>O límite superior &lt;b&gt;%1&lt;/b&gt; do enderezo DHCP é incorrecto</translation>
+        <translation>DHCP-serverens øvre grænse for adresser &lt;b&gt;%1&lt;/b&gt; er forkert</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation>Adaptador</translation>
+        <translation>Netværkskort</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation>Configurado automaticamente</translation>
+        <translation>Automatisk konfigureret</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation>Configurado manualmente</translation>
+        <translation>Manuelt konfigureret</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation>Enderezo IPv4</translation>
+        <translation>IPv4-adresse</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation>Sen definir</translation>
+        <translation>Ikke sat</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation>Máscara de rede IPv4</translation>
+        <translation>IPv4-netværksmaske</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation>Sen definir</translation>
+        <translation>Ikke sat</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation>Enderezo IPv6</translation>
+        <translation>IPv6-adresse</translation>
     </message>
     <message>
         <source>IPv6 Network Mask Length</source>
-        <translation>Lonxitude da máscara de rede IPv6</translation>
+        <translation>Længde på IPv6-netværksmaske</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation>Sen definir</translation>
+        <translation>Ikke sat</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation>Servidor DHCP</translation>
+        <translation>DHCP-server</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation>Activado</translation>
+        <translation>Aktiv</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation>Desactivado</translation>
+        <translation>Inaktiv</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>Enderezo</translation>
+        <translation>Adresse</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation>Máscara de rede</translation>
+        <translation>Netværksmaske</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation>Límite inferior</translation>
+        <translation>Nedre grænse</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation>Sen definir</translation>
+        <translation>Ikke sat</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation>Límite superior</translation>
+        <translation>Øvre grænse</translation>
     </message>
     <message>
         <source>&amp;Add host-only network</source>
-        <translation>Eng&amp;adir  rede exclusiva do anfitrión</translation>
+        <translation>Tilføj værtsbegrænset netværk</translation>
     </message>
     <message>
         <source>&amp;Remove host-only network</source>
-        <translation>Elimina&amp;r rede exclusiva do anfitrión</translation>
+        <translation>Nedlæg væ&amp;rtsbegrænset netværk</translation>
     </message>
     <message>
         <source>&amp;Edit host-only network</source>
-        <translation>&amp;Editar rede exclusiva do anfitrión</translation>
+        <translation>Tilpas værtsb&amp;egrænset netværk</translation>
     </message>
     <message>
         <source>Performing</source>
         <comment>creating/removing host-only network</comment>
-        <translation>Realizando</translation>
+        <translation>Arbejder</translation>
     </message>
     <message>
         <source>&amp;Host-only Networks:</source>
-        <translation>Redes e&amp;xclusivas do anfitrión:</translation>
+        <translation>Interne netværk:</translation>
     </message>
     <message>
         <source>Lists all available host-only networks.</source>
-        <translation>Lista todas as redes exclusivas do anfitirión dispoñíbeis.</translation>
+        <translation>Vis alle værtsbegrænsede netværk.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>Nome</translation>
+        <translation>Navn</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
-        <translation>Detalles da rede exclusiva do anfitrión</translation>
+        <translation>Detaljer for værtsbegrænset netværk</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation>&amp;Adaptador</translation>
+        <translation>Netværkskort</translation>
     </message>
     <message>
         <source>Manual &amp;Configuration</source>
-        <translation>Manual de &amp;configuración</translation>
+        <translation>Manuel konfiguration</translation>
     </message>
     <message>
         <source>Use manual configuration for this host-only network adapter.</source>
-        <translation>Empregar a configuración manual para este adaptador da rede exclusiva do anfitrión.</translation>
+        <translation>Konfigurér værtsbegrænset netværkskort manuelt.</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation>Enderezo &amp;IPv4:</translation>
+        <translation>&amp;IPv4-adresse:</translation>
     </message>
     <message>
         <source>Displays the host IPv4 address for this adapter.</source>
-        <translation>Mostrar o enderezo IPv4 do equipo para este adaptador.</translation>
+        <translation>Viser værtens IPv4-adresse for dette netværkskort.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation>&amp;Máscara de rede IPv4:</translation>
+        <translation>IPv4-netværks&amp;maske:</translation>
     </message>
     <message>
         <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation>Mostrar a máscara de rede IPv4 do equipo para este adaptador.</translation>
+        <translation>Viser værtens IPv4-netværksmaske for dette netværkskort.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation>Enderezo I&amp;Pv6:</translation>
+        <translation>I&amp;Pv6-adresse:</translation>
     </message>
     <message>
         <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation>Mostrar o enderezo IPv6 do equipo para este adaptador de se permitir IPv6.</translation>
+        <translation>Viser værtens IPv6-adresse for dette netværkskort.</translation>
     </message>
     <message>
         <source>IPv6 Network Mask &amp;Length:</source>
-        <translation>&amp;Lonxitude da máscara de rede IPv6:</translation>
+        <translation>&amp;Længde på IPv6-netværksmaske:</translation>
     </message>
     <message>
         <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation>Mostra a lonxitude do prefixo da máscara de rede IPv6 do anfitrión para este adaptador de se permitir IPv6.</translation>
+        <translation>Viser præfix-længden af værtens IPv6-netværksmaske for dette netværkskort, hvis IPv6 understøttes.</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation>Servidor &amp;DHCP</translation>
+        <translation>&amp;DHCP-server</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation>Activar o s&amp;ervidor</translation>
+        <translation>Aktiv&amp;er server</translation>
     </message>
     <message>
         <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation>Indica se o servidor DHCP está activado no arranque da máquina ou non.</translation>
+        <translation>Viser om DHCP-serveren aktiveres ved opstart.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation>Ende&amp;rezo do servidor:</translation>
+        <translation>Serverad&amp;resse:</translation>
     </message>
     <message>
         <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Mostra o enderezo do servidor DHCP ao servir a rede asociada con este adaptador exclusivo do anfitrión.</translation>
+        <translation>Viser DHCP-serverens adresse på netværket tilknyttet det værtsbegrænsede netværkskort.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation>&amp;Máscara do servidor:</translation>
+        <translation>Server-&amp;maske:</translation>
     </message>
     <message>
         <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Mostra a máscara de rede do servidor DHCP ao servir a rede asociada con este adaptador exclusivo do anfitrión.</translation>
+        <translation>Viser DHCP-serverens netværksmaske på netværket tilknyttet det værtsbegrænsede netværkskort.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation>&amp;Límite inferior de enderezos:</translation>
+        <translation>Nedre grænse for adresser:</translation>
     </message>
     <message>
         <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Mostra o límite inferior de enderezos ofrecidos polo servidor DHCP ao servir a rede asociada con este adaptador exclusivo do anfitrión.</translation>
+        <translation>Viser DHCP-serverens nedre grænse for adresser på netværket tilknyttet det værtsbegrænsede netværkskort.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation>Límite s&amp;uperior de enderezos:</translation>
+        <translation>Øvre grænse for adresser:</translation>
     </message>
     <message>
         <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Mostra o límite superior de enderezos ofrecidos polo servidor DHCP ao servir a rede asociada con este adaptador exclusivo do anfitrión.</translation>
+        <translation>Viser DHCP-serverens øvre grænse for adresser på netværket tilknyttet det værtsbegrænsede netværkskort.</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation>Cando está marcada, o aplicativo conectarase periodicamente ao sitio web de VirtualBox e comprobará se unha nova versión de VirtualBox está dispoñíbel.</translation>
+        <translation>Hvis markeret, vil applikationen periodisk forbinde sig til VirtualBox&apos; hjemmeside for at kontrollere om en nyere udgave er tilgængelig.</translation>
     </message>
     <message>
         <source>&amp;Check for updates</source>
-        <translation>&amp;Comprobar actualizacións</translation>
+        <translation>Søg efter opdateringer</translation>
     </message>
     <message>
         <source>&amp;Once per:</source>
-        <translation>Un&amp;ha vez cada:</translation>
+        <translation>Hvor &amp;ofte:</translation>
     </message>
     <message>
         <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation>Especifica con que frecuencia se realizará a comprobación de novas versións. Se quere desactivar completamente esta comprobación, simplemente desmarque a caixa de verificación de enriba.</translation>
+        <translation>Angiver hvor ofte der skal søges efter opdateringer. Hvis du ikke ønsker at søge efter opdateringer skal du fjerne markeringen i afkrydsningsfeltet.</translation>
     </message>
     <message>
         <source>Next Check:</source>
-        <translation>Seguinte comprobación:</translation>
+        <translation>Næste tjek:</translation>
     </message>
 </context>
 <context>
@@ -1602,52 +1610,53 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
-        <translation>Dispositivo descoñecido %1:%2</translation>
+        <translation>Ukendt enhed %1:%2</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;nobr&gt;ID do vendedor: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID do produto: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revisión: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Producent-ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Produkt-ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Número de serie %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Serienummer: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Estado: %1&lt;/nobr&gt;</translation>
+        <translatorcomment>Eller status?</translatorcomment>
+        <translation>&lt;br&gt;&lt;nobr&gt;Tilstand: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Name</source>
         <comment>details report</comment>
-        <translation>Nome</translation>
+        <translation>Navn</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation>Tipo de sistema operativo</translation>
+        <translation>OS type</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation>Memoria base</translation>
+        <translation>Hukommelse</translation>
     </message>
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation>Xeral</translation>
+        <translation>Generelt</translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation>Memoria de vídeo</translation>
+        <translation>Grafikhukommelse</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation>Orde de inicio</translation>
+        <translation>Opstartsrækkefølge</translation>
     </message>
     <message>
         <source>ACPI</source>
@@ -1662,67 +1671,68 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not Attached</source>
         <comment>details report (HDDs)</comment>
-        <translation>Sen conectar</translation>
+        <translation>Ikke tilsluttet</translation>
     </message>
     <message>
         <source>Hard Disks</source>
         <comment>details report</comment>
-        <translation>Discos ríxidos</translation>
+        <translation>Harddiske</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (ACPI)</comment>
-        <translation>Activado</translation>
+        <translation>Aktiveret</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (ACPI)</comment>
-        <translation>Desactivado</translation>
+        <translation>Deaktiveret</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (IO APIC)</comment>
-        <translation>Activado</translation>
+        <translation>Aktiveret</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (IO APIC)</comment>
-        <translation>Desactivado</translation>
+        <translation>Deaktiveret</translation>
     </message>
     <message>
         <source>Not mounted</source>
         <comment>details report (floppy)</comment>
-        <translation>Sen montar</translation>
+        <translation>Ikke tilsluttet</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>details report (floppy)</comment>
-        <translation>Imaxe</translation>
+        <translation>Aftryk</translation>
     </message>
     <message>
         <source>Host Drive</source>
         <comment>details report (floppy)</comment>
-        <translation>Unidade do anfitrión</translation>
+        <translatorcomment>Værtsenhed?</translatorcomment>
+        <translation>Værtsdrev</translation>
     </message>
     <message>
         <source>Floppy</source>
         <comment>details report</comment>
-        <translation>Disqueteira</translation>
+        <translation>Diskettedrev</translation>
     </message>
     <message>
         <source>Not mounted</source>
         <comment>details report (DVD)</comment>
-        <translation>Sen montar</translation>
+        <translation>Ikke tilsluttet</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>details report (DVD)</comment>
-        <translation>Imaxe</translation>
+        <translation>Aftryk</translation>
     </message>
     <message>
         <source>Host Drive</source>
         <comment>details report (DVD)</comment>
-        <translation>Unidade do anfitrión</translation>
+        <translation>Værtsdrev</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
@@ -1732,122 +1742,124 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>details report (audio)</comment>
-        <translation>Desactivado</translation>
+        <translation>Deaktiveret</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>details report</comment>
-        <translation>Audio</translation>
+        <translatorcomment>Eller bare lyd?</translatorcomment>
+        <translation>Lydkort</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation>Adaptador %1</translation>
+        <translation>Netværkskort %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (network)</comment>
-        <translation>Desactivado</translation>
+        <translation>Deaktiveret</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>details report</comment>
-        <translation>Rede</translation>
+        <translation>Netværk</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation>Filtros do dispositivo</translation>
+        <translatorcomment>Enhedskriterier?</translatorcomment>
+        <translation>Enhedsfiltre</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
-        <translation>%1 (%2 activo)</translation>
+        <translation>%1 (%2 aktiv)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
-        <translation>Desactivado</translation>
+        <translation>Deaktiveret</translation>
     </message>
     <message>
         <source>Powered Off</source>
         <comment>MachineState</comment>
-        <translation>Apagada</translation>
+        <translation>Slukket</translation>
     </message>
     <message>
         <source>Saved</source>
         <comment>MachineState</comment>
-        <translation>Gardada</translation>
+        <translation>Gemt</translation>
     </message>
     <message>
         <source>Aborted</source>
         <comment>MachineState</comment>
-        <translation>Interrompida</translation>
+        <translation>Afbrudt</translation>
     </message>
     <message>
         <source>Running</source>
         <comment>MachineState</comment>
-        <translation>Executando</translation>
+        <translation>Kørende</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>MachineState</comment>
-        <translation>Detida</translation>
+        <translation>Suspenderet</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>MachineState</comment>
-        <translation>Iniciando</translation>
+        <translation>Starter</translation>
     </message>
     <message>
         <source>Stopping</source>
         <comment>MachineState</comment>
-        <translation>Detendo</translation>
+        <translation>Stopper</translation>
     </message>
     <message>
         <source>Saving</source>
         <comment>MachineState</comment>
-        <translation>Gardando</translation>
+        <translation>Gemmer</translation>
     </message>
     <message>
         <source>Restoring</source>
         <comment>MachineState</comment>
-        <translation>Restaurando</translation>
+        <translation>Genskaber</translation>
     </message>
     <message>
         <source>Discarding</source>
         <comment>MachineState</comment>
-        <translation>Descartando</translation>
+        <translation>Dropper</translation>
     </message>
     <message>
         <source>Closed</source>
         <comment>SessionState</comment>
-        <translation>Pechada</translation>
+        <translation>Lukket</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>SessionState</comment>
-        <translation>Abrir</translation>
+        <translation>Åben</translation>
     </message>
     <message>
         <source>Spawning</source>
         <comment>SessionState</comment>
-        <translation>Xerando</translation>
+        <translation>Kloner</translation>
     </message>
     <message>
         <source>Closing</source>
         <comment>SessionState</comment>
-        <translation>Pechando</translation>
+        <translation>Lukker</translation>
     </message>
     <message>
         <source>None</source>
         <comment>DeviceType</comment>
-        <translation>Ningún</translation>
+        <translation>Ingen</translation>
     </message>
     <message>
         <source>Floppy</source>
         <comment>DeviceType</comment>
-        <translation>Disqueteira</translation>
+        <translation>Diskettedrev</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
@@ -1857,12 +1869,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Hard Disk</source>
         <comment>DeviceType</comment>
-        <translation>Disco ríxido</translation>
+        <translation>Harddisk</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>DeviceType</comment>
-        <translation>Rede</translation>
+        <translation>Netværkskort</translation>
     </message>
     <message>
         <source>Normal</source>
@@ -1872,42 +1884,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Immutable</source>
         <comment>DiskType</comment>
-        <translation>Immutábel</translation>
+        <translation>Skrivebeskyttet</translation>
     </message>
     <message>
         <source>Writethrough</source>
         <comment>DiskType</comment>
-        <translation>Escritura directa</translation>
+        <translation>Glem ændringer</translation>
     </message>
     <message>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
-        <translation>Nulo</translation>
+        <translation>Ingen</translation>
     </message>
     <message>
         <source>External</source>
         <comment>VRDPAuthType</comment>
-        <translation>Externo</translation>
+        <translation>Ekstern</translation>
     </message>
     <message>
         <source>Guest</source>
         <comment>VRDPAuthType</comment>
-        <translation>Convidado</translation>
+        <translation>Gæst</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>USBFilterActionType</comment>
-        <translation>Ignorar</translation>
+        <translation>Ignorer</translation>
     </message>
     <message>
         <source>Hold</source>
         <comment>USBFilterActionType</comment>
-        <translation>Reter</translation>
+        <translation>Hold</translation>
     </message>
     <message>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>Controlador de audio nulo</translation>
+        <translation>Ingen lyd</translation>
     </message>
     <message>
         <source>Windows Multimedia</source>
@@ -1917,12 +1929,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>Controlador de audio OSS</translation>
+        <translation>OSS</translation>
     </message>
     <message>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>Controlador de audio ALSA</translation>
+        <translation>ALSA</translation>
     </message>
     <message>
         <source>Windows DirectSound</source>
@@ -1932,12 +1944,13 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
-        <translation>CoreAudio</translation>
+        <translatorcomment>Mac OS X lydsystem</translatorcomment>
+        <translation>Core Audio</translation>
     </message>
     <message>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Sen conexión</translation>
+        <translation>Ikke tilsluttet</translation>
     </message>
     <message>
         <source>NAT</source>
@@ -1947,72 +1960,72 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Internal Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Rede interna</translation>
+        <translation>Internt netværk</translation>
     </message>
     <message>
         <source>Not supported</source>
         <comment>USBDeviceState</comment>
-        <translation>Non compatíbel</translation>
+        <translation>Ikke understøttet</translation>
     </message>
     <message>
         <source>Unavailable</source>
         <comment>USBDeviceState</comment>
-        <translation>Non dispoñíbel</translation>
+        <translation>Utilgængelig</translation>
     </message>
     <message>
         <source>Busy</source>
         <comment>USBDeviceState</comment>
-        <translation>Ocupado</translation>
+        <translation>Optaget</translation>
     </message>
     <message>
         <source>Available</source>
         <comment>USBDeviceState</comment>
-        <translation>Dispoñíbel</translation>
+        <translation>Tilgængelig</translation>
     </message>
     <message>
         <source>Held</source>
         <comment>USBDeviceState</comment>
-        <translation>Retido</translation>
+        <translation>Reserveret</translation>
     </message>
     <message>
         <source>Captured</source>
         <comment>USBDeviceState</comment>
-        <translation>Capturado</translation>
+        <translation>Taget</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
-        <translation>Desactivado</translation>
+        <translation>Deaktiveret</translation>
     </message>
     <message>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
-        <translation>Anfitrión a convidado</translation>
+        <translation>Vært til gæst</translation>
     </message>
     <message>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
-        <translation>Convidado a anfitrión</translation>
+        <translation>Gæst til vært</translation>
     </message>
     <message>
         <source>Bidirectional</source>
         <comment>ClipboardType</comment>
-        <translation>Bidireccional</translation>
+        <translation>Begge veje</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
-        <translation>Porto %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
-        <translation>Desactivado</translation>
+        <translation>Deaktiveret</translation>
     </message>
     <message>
         <source>Serial Ports</source>
         <comment>details report</comment>
-        <translation>Portos serie</translation>
+        <translation>Serielle porte</translation>
     </message>
     <message>
         <source>USB</source>
@@ -2022,47 +2035,47 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation>Cartafoles compartidos</translation>
+        <translation>Delte mapper</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details report (shared folders)</comment>
-        <translation>Ningún</translation>
+        <translation>Ingen</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation>Cartafoles compartidos</translation>
+        <translation>Delte mapper</translation>
     </message>
     <message>
         <source>Stuck</source>
         <comment>MachineState</comment>
-        <translation>Preso</translation>
+        <translation>Låst</translation>
     </message>
     <message>
         <source>Disconnected</source>
         <comment>PortMode</comment>
-        <translation>Desconectado</translation>
+        <translation>Ikke tilsluttet</translation>
     </message>
     <message>
         <source>Host Pipe</source>
         <comment>PortMode</comment>
-        <translation>Canalización no anfitrión</translation>
+        <translation>Værtskanal</translation>
     </message>
     <message>
         <source>Host Device</source>
         <comment>PortMode</comment>
-        <translation>Dispositivo no anfitrión</translation>
+        <translation>Værtsenhed</translation>
     </message>
     <message>
         <source>User-defined</source>
         <comment>serial port</comment>
-        <translation>Definido polo usuario</translation>
+        <translation>Brugerdefineret</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation>VT-x/AMD-V</translation>
+        <translation>AMD-V/VT-x</translation>
     </message>
     <message>
         <source>PAE/NX</source>
@@ -2072,47 +2085,47 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation>Activado</translation>
+        <translation>Aktiveret</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation>Desactivado</translation>
+        <translation>Deaktiveret</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation>Activado</translation>
+        <translation>Aktiveret</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation>Desactivado</translation>
+        <translation>Deaktiveret</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation>Controlador do anfitrión</translation>
+        <translation>Lydsystem</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation>Controlador</translation>
+        <translation>Lydenhed</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation>Porto %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation>Desactivado</translation>
+        <translation>Deaktiveret</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation>Portos paralelos</translation>
+        <translation>Parallelporte</translation>
     </message>
     <message>
         <source>USB</source>
@@ -2122,7 +2135,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation>Cartafol compartido</translation>
+        <translation>Delte mapper</translation>
     </message>
     <message>
         <source>IDE</source>
@@ -2137,32 +2150,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Primary</source>
         <comment>StorageBusChannel</comment>
-        <translation>Primario</translation>
+        <translation>Primær</translation>
     </message>
     <message>
         <source>Secondary</source>
         <comment>StorageBusChannel</comment>
-        <translation>Secundario</translation>
+        <translation>Sekundær</translation>
     </message>
     <message>
         <source>Master</source>
         <comment>StorageBusDevice</comment>
-        <translation>Principal</translation>
+        <translation>Master</translation>
     </message>
     <message>
         <source>Slave</source>
         <comment>StorageBusDevice</comment>
-        <translation>Escravo</translation>
+        <translation>Slave</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>StorageBusChannel</comment>
-        <translation>Porto %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
-        <translation>Audio de Solaris</translation>
+        <translation>Solaris Audio</translation>
     </message>
     <message>
         <source>PulseAudio</source>
@@ -2202,140 +2215,140 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;ID do vendedor: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Producent-ID: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;ID do produto: %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Produkt ID: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Revisión: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Produto: %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Produkt: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Fabricante: %5&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Producent: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Número de serie: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Serienummer: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Porto: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Estado: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Tilstand: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation>Adaptador %1</translation>
+        <translation>Netværkskort %1</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
         <comment>hard disk</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Tipo&amp;nbsp;(Formato):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Conectado a:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Tilsluttet til:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;i&gt;Sen&amp;nbsp;conectar&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Ikke&amp;nbsp;tilsluttet&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;br&gt;&lt;i&gt;Comprobando accesibilidade...&lt;/i&gt;</translation>
+        <translation>&lt;br&gt;&lt;i&gt;Kontrollerer tilgængelighed...&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
         <comment>medium</comment>
-        <translation>&lt;hr&gt;Produciuse un fallo ao comprobar a accesibilidade ao medio.&lt;br&gt;%1.</translation>
+        <translation>&lt;hr&gt;Kunne ikke kontrollere mediets tilgængelighed.&lt;br&gt;%1.</translation>
     </message>
     <message>
         <source>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;A conexión deste disco ríxido realizarase indirectamente  empregando a un disco ríxido diferencial creado recentemente.</translation>
+        <translation>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Tilslutning af denne harddisk vil automatisk oprette en separat ændrings-harddisk.</translation>
     </message>
     <message>
         <source>Checking...</source>
         <comment>medium</comment>
-        <translation>Comprobando...</translation>
+        <translation>Kontrollerer...</translation>
     </message>
     <message>
         <source>Inaccessible</source>
         <comment>medium</comment>
-        <translation>Inaccesíbel</translation>
+        <translation>Utilgængelig</translation>
     </message>
     <message>
         <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
-        <translation>&lt;hr&gt;Algúns dos medios nesta cadea de discos ríxidos son inaccesíbeis.. Empregue o xestor de medios virtuais no modo &lt;b&gt;Mostrar discos ríxidos diferenciais&lt;/b&gt; para inspeccionar estes medios.</translation>
+        <translation>&lt;hr&gt;Nogle af enhederne i harddisk-kæden er utilgængelige. Brug funktionen &lt;b&gt;Vis ændrings-harddiske&lt;/b&gt; i Virtuel diskhåndtering for at undersøge problemet nærmere.</translation>
     </message>
     <message>
         <source>%1&lt;hr&gt;This base hard disk is indirectly attached using the following differencing hard disk:&lt;br&gt;%2%3</source>
-        <translation>%1&lt;hr&gt;Este disco ríxido é conectado indirectamente empregando o seguinte disco ríxido diferencial:&lt;br&gt;%2%3</translation>
+        <translation>%1&lt;hr&gt;Denne harddisk er indirekte tilsluttet gennem ændrings-harddisken:&lt;br&gt;%2%3</translation>
     </message>
     <message>
         <source>3D Acceleration</source>
         <comment>details report</comment>
-        <translation>Aceleración 3D</translation>
+        <translation>3D-acceleration</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation>Activado</translation>
+        <translation>Aktiveret</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation>Desactivado</translation>
+        <translation>Deaktiveret</translation>
     </message>
     <message>
         <source>Setting Up</source>
         <comment>MachineState</comment>
-        <translation>A configurar</translation>
+        <translation>Sætter op</translation>
     </message>
     <message>
         <source>Differencing</source>
         <comment>DiskType</comment>
-        <translation>A diferenciar</translation>
+        <translation>Kun ændringer</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation>Paxinación aniñada</translation>
+        <translation>Nested Paging</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation>Activado</translation>
+        <translation>Aktiveret</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation>Desactivado</translation>
+        <translation>Deaktiveret</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Rede interna, &apos;%1&apos;</translation>
+        <translation>Internt netværk, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>SCSI</source>
@@ -2375,12 +2388,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation>Adaptador ponte, %1</translation>
+        <translation>Netværksbro, %1</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Adaptador exclusivo do anfitrión, &apos;%1&apos;</translation>
+        <translation>Værtsbegrænset netværkskort, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Intel PRO/1000 MT Server (82545EM)</source>
@@ -2390,12 +2403,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Adaptador ponte (bridged)</translation>
+        <translation>Netværksbro</translation>
     </message>
     <message>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Adaptador exclusivo do anfitrión</translation>
+        <translation>Værtsbegrænset netværkskort</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
@@ -2405,7 +2418,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Processor(s)</source>
         <comment>details report</comment>
-        <translation>Procesador(es)</translation>
+        <translation>Processor(er)</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
@@ -2415,73 +2428,73 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation>Sistema</translation>
+        <translation>System</translation>
     </message>
     <message>
         <source>Remote Display Server Port</source>
         <comment>details report (VRDP Server)</comment>
-        <translation>Porto do servidor da pantalla remota</translation>
+        <translation>Fjernskærm-serverport</translation>
     </message>
     <message>
         <source>Remote Display Server</source>
         <comment>details report (VRDP Server)</comment>
-        <translation>Servidor da pantalla remota</translation>
+        <translation>Fjernskærm-server</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDP Server)</comment>
-        <translation>Desactivado</translation>
+        <translation>Deaktiveret</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation>Pantalla</translation>
+        <translation>Skærm</translation>
     </message>
     <message>
         <source>Raw File</source>
         <comment>PortMode</comment>
-        <translation>Ficheiro Raw</translation>
+        <translation>Rå data</translation>
     </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
     <message>
         <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
-        <translation>&apos;%1 (0x%2)&apos; non é un código de tecla anfitrión válido.</translation>
+        <translation>&apos;%1 (0x%2)&apos; er ikke en gyldig værtstast.</translation>
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
-        <translation>O valor &apos;%1&apos; da tecla &apos;%2&apos; non coincide coa restrición da expresión regular &apos;%3&apos;.</translation>
+        <translation>Værdien &apos;%1&apos; i nøglen &apos;%2&apos; matcher ikke regexp-kriteriet &apos;%3&apos;.</translation>
     </message>
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>
-        <translation>Non é posíbel borrar a chave &apos;%1&apos;.</translation>
+        <translation>Kan ikke slette nøglen &apos;%1&apos;.</translation>
     </message>
 </context>
 <context>
     <name>VBoxImportApplianceWgt</name>
     <message>
         <source>Importing Appliance ...</source>
-        <translation>Importando o servizo virtualizado ...</translation>
+        <translation>Importerer prækonfigureret system ...</translation>
     </message>
 </context>
 <context>
     <name>VBoxImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
-        <translation>Seleccione un servizo virtualizado para importar</translation>
+        <translation>Vælg det Prækonfigurerede system, der skal importeres</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation>Abrir virtualización de formato (%1)</translation>
+        <translation>Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Appliance Import Wizard</source>
-        <translation>Asistente de importación de servizo virtualizado</translation>
+        <translation>Guide til import af Prækonfigureret system</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation>Benvida ao asistente de importación de servizo virtualizado!</translation>
+        <translation>Denne guide hjælper dig med at importere et Prækonfigureret system!</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -2495,445 +2508,445 @@ p, li { white-space: pre-wrap; }
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Este asistente guiarao a través do proceso de importación dun servizo virtualizado. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Empregue o botón &lt;span style=&quot; font-weight:600;&quot;&gt;Seguinte&lt;/span&gt; para ir á seguinte páxina do asistente e o botón &lt;span style=&quot; font-weight:600;&quot;&gt;Volver&lt;/span&gt; para regresar á páxina anterior.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Para importar un servizo virtualizado ten que seleccionar un ficheiro que describe o servizo virtualizado primeiro. Actualmente VirtualBox admite o formato aberto de virtualización ou Open Virtualization Format (OVF). Para continuar, seleccione abaixo o ficheiro para importar:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Denne guide hjælper dig med at importere et Prækonfigureret system. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Brug knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Næste&lt;/span&gt; for at gå til næste trin i guiden og knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Forrige&lt;/span&gt; for at gå til det forrige trin i guiden.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For at kunne importere et Prækonfigureret system, skal du først vælge filen, der beskriver det Prækonfigurerede system. VirtualBox understøtter Open Virtualization Format (OVF). For at fortsætte, vælg filen herunder:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; Vo&amp;lver</translation>
+        <translation>&lt; Til&amp;bage</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation>Segui&amp;nte&gt;</translation>
+        <translation>&amp;Næste &gt;</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation>Annullér</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
-        <translation>Configuración de importación de servizos virtualizados</translation>
+        <translation>Indstillinger for import af Prækonfigureret system</translation>
     </message>
     <message>
         <source>These are the virtual machines as described in the appliance with their suggested mappings for importing into VirtualBox. You can change many of the shown properties by double-clicking on the items and disable others by using the check boxes below.</source>
-        <translation>Estas son as máquinas virtuais descritas no ficheiro de servizos virtualizados (appliance) cos seus mapeos correspondentes para importar a VirtualBox. Vostede pode cambiar as propiedades mostradas facendo dobre clic nos elementos e desactivar outras empregando as caixas de verificación de abaixo.</translation>
+        <translation>Disse virtuelle maskiner og deres konfiguration er en del af det Prækonfigurerede system og kan importeres til VirtualBox. Du kan ændre de fleste af de viste egenskaber ved at dobbeltklikke på værdierne og deaktivere andre ved hjælp af afkrydsningsfelterne.</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation>Restabelecer predefinidas</translation>
+        <translation>Brug standardværdier</translation>
     </message>
     <message>
         <source>&amp;Import &gt;</source>
-        <translation>&amp;Importar &gt;</translation>
+        <translation>&amp;Importer &gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
-        <translation>&lt;b&gt;O sistema virtual &quot;%1&quot; require que acepte o acordo de licenza mostrado abaixo.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Prema &lt;b&gt;Aceptar&lt;/b&gt; para continuar ou prema en &lt;b&gt;Non aceptar&lt;/b&gt; para cancelar o importado.</translation>
+        <translation>&lt;b&gt;Det virtuelle system &quot;%1&quot; kræver at du accepterer betingelserne i software-licensaftalen vist herunder.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Vælg &lt;b&gt;Acceptér&lt;/b&gt; for at fortsætte eller &lt;b&gt;Afvis&lt;/b&gt; for at annullere importen.</translation>
     </message>
     <message>
         <source>Software License Agreement</source>
-        <translation>Contrato de licenza de software</translation>
+        <translation>Software-licensaftale</translation>
     </message>
     <message>
         <source>&amp;Disagree</source>
-        <translation>Non acep&amp;to</translation>
+        <translation>Afvis</translation>
     </message>
     <message>
         <source>&amp;Agree</source>
-        <translation>&amp;Acepto</translation>
+        <translation>&amp;Acceptér</translation>
     </message>
     <message>
         <source>&amp;Print...</source>
-        <translation>Im&amp;primir...</translation>
+        <translation>Udskriv...</translation>
     </message>
     <message>
         <source>&amp;Save...</source>
-        <translation>&amp;Gardar...</translation>
+        <translation>Gem...</translation>
     </message>
     <message>
         <source>Text (*.txt)</source>
-        <translation>Texto (*.txt)</translation>
+        <translation>Tekst (*.txt)</translation>
     </message>
     <message>
         <source>Save license to file...</source>
-        <translation>Gardar a licenza a un ficheiro...</translation>
+        <translation>Gem licens som fil...</translation>
     </message>
 </context>
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>VirtualBox License</source>
-        <translation>Licenza de VirtualBox</translation>
+        <translation>VirtualBox licens</translation>
     </message>
     <message>
         <source>I &amp;Agree</source>
-        <translation>&amp;Acepto</translation>
+        <translation>Jeg &amp;accepterer</translation>
     </message>
     <message>
         <source>I &amp;Disagree</source>
-        <translation>Non acep&amp;to</translation>
+        <translation>Jeg afviser</translation>
     </message>
 </context>
 <context>
     <name>VBoxLineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
-        <translation>&amp;Editar</translation>
+        <translation>R&amp;ediger</translation>
     </message>
 </context>
 <context>
     <name>VBoxLogSearchPanel</name>
     <message>
         <source>Close the search panel</source>
-        <translation>Pechar o panel de buscar</translation>
+        <translation>Luk søgevinduet</translation>
     </message>
     <message>
         <source>Find </source>
-        <translation>Buscar </translation>
+        <translation>Find </translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation>Introduza aquí unha cadea para buscar</translation>
+        <translation>Indtast dit søgekriterie her</translation>
     </message>
     <message>
         <source>&amp;Previous</source>
-        <translation>An&amp;terior</translation>
+        <translation>Forrige</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string</source>
-        <translation>Busca a anterior ocorrencia da cadea</translation>
+        <translation>Søg baglæns efter forekomster af strengen</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>Segui&amp;nte</translation>
+        <translation>&amp;Næste</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
-        <translation>Busca a seguinte ocorrencia da cadea</translation>
+        <translation>Søg forlæns efter forekomster af strengen</translation>
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation>Diferenci&amp;ar maiúsculas de minúsculas</translation>
+        <translation>Forskel på store/små bogst&amp;aver</translation>
     </message>
     <message>
         <source>Perform case sensitive search (when checked)</source>
-        <translation>Realiza a busca diferenciando maiúsculas e minúsculas (cando está marcada)</translation>
+        <translation>Søgning skelner mellem store og små bogstaver</translation>
     </message>
     <message>
         <source>String not found</source>
-        <translation>Non se encontrou a cadea</translation>
+        <translation>Strengen blev ikke fundet</translation>
     </message>
 </context>
 <context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
-        <translation>Ningún medio dispoñíbel. Empregue o xestor de medios virtuais para engadir os medios do tipo correspondente.</translation>
+        <translation>Intet medie tilgængeligt. Brug Virtuel diskhåndtering for at tilføje medier af den rigtige type.</translation>
     </message>
     <message>
         <source>&lt;no media&gt;</source>
-        <translation>&lt;ningún medio&gt;</translation>
+        <translation>&lt;intet medie&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxMediaManagerDlg</name>
     <message>
         <source>&amp;Actions</source>
-        <translation>&amp;Accións</translation>
+        <translation>H&amp;andlinger</translation>
     </message>
     <message>
         <source>&amp;New...</source>
-        <translation>&amp;Novo...</translation>
+        <translation>&amp;Ny...</translation>
     </message>
     <message>
         <source>&amp;Add...</source>
-        <translation>Eng&amp;adir...</translation>
+        <translation>Tilføj...</translation>
     </message>
     <message>
         <source>R&amp;emove</source>
-        <translation>&amp;Eliminar</translation>
+        <translation>Fj&amp;ern</translation>
     </message>
     <message>
         <source>Re&amp;lease</source>
-        <translation>&amp;Liberar</translation>
+        <translation>Frigiv</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation>Actuali&amp;zar</translation>
+        <translation>Genop&amp;frisk</translation>
     </message>
     <message>
         <source>Create a new virtual hard disk</source>
-        <translation>Crea un novo disco ríxido virtual</translation>
+        <translation>Opret en ny virtuel harddisk</translation>
     </message>
     <message>
         <source>Add an existing medium</source>
-        <translation>Engadir un medio existente</translation>
+        <translation>Tilføj et eksisterende medie</translation>
     </message>
     <message>
         <source>Remove the selected medium</source>
-        <translation>Eliminar o medio seleccionado</translation>
+        <translation>Fjern det valgte medie</translation>
     </message>
     <message>
         <source>Release the selected medium by detaching it from the machines</source>
-        <translation>Liberar o medio seleccionado desconectándoo das máquinas</translation>
+        <translation>Frigiv det valgte medie ved at afmontere det fra maskiner, hvor det bruges</translation>
     </message>
     <message>
         <source>Refresh the media list</source>
-        <translation>Actualizar a lista de medios</translation>
+        <translation>Opdater medie-listen</translation>
     </message>
     <message>
         <source>Location</source>
-        <translation>Localización</translation>
+        <translation>Placering</translation>
     </message>
     <message>
         <source>Type (Format)</source>
-        <translation>Tipo (Formato)</translation>
+        <translation>Type (Format)</translation>
     </message>
     <message>
         <source>Attached to</source>
-        <translation>Conectado a</translation>
+        <translation>Monteret på</translation>
     </message>
     <message>
         <source>Checking accessibility</source>
-        <translation>Comprobando accesibilidade</translation>
+        <translation>Kontrollerer tilgængelighed</translation>
     </message>
     <message>
         <source>&amp;Select</source>
-        <translation>&amp;Seleccionar</translation>
+        <translation>Vælg</translation>
     </message>
     <message>
         <source>All hard disk images (%1)</source>
-        <translation>Todas as imaxes de disco ríxido (%1)</translation>
+        <translation>Alle harddisk-aftryk (%1)</translation>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation>Todos os ficheiros (*)</translation>
+        <translation>Alle filer (*)</translation>
     </message>
     <message>
         <source>Select a hard disk image file</source>
-        <translation>Seleccionar un ficheiro de imaxe de disco ríxido</translation>
+        <translation>Vælg et harddisk-aftryk</translation>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation>Imaxes de CD/DVD-ROM (*.iso);;Todos os ficheiros (*)</translation>
+        <translation>CD/DVD-aftryk (*.iso);;Alle filer (*)</translation>
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation>Seleccionar un ficheiro de imaxe de disco CD/DVD-ROM</translation>
+        <translation>Vælg et CD/DVD-aftryk</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation>Imaxes de disquete (*.img);;Todos os ficheiros (*)</translation>
+        <translation>Diskette-aftryk (*.img);;Alle filer (*)</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
-        <translation>Seleccionar un ficheiro de imaxe de disquete</translation>
+        <translation>Vælg et diskette-aftryk</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Sen&amp;nbsp;conectar&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Ikke&amp;nbsp;tilsluttet&lt;/i&gt;</translation>
     </message>
     <message>
         <source>--</source>
         <comment>no info</comment>
-        <translation>España</translation>
+        <translation>--</translation>
     </message>
     <message>
         <source>Virtual Media Manager</source>
-        <translation>Xestor de medios virtuais</translation>
+        <translation>Virtuel diskhåndtering</translation>
     </message>
     <message>
         <source>Hard &amp;Disks</source>
-        <translation>&amp;Discos ríxidos</translation>
+        <translation>Hard&amp;diske</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>Nome</translation>
+        <translation>Navn</translation>
     </message>
     <message>
         <source>Virtual Size</source>
-        <translation>Tamaño virtual</translation>
+        <translation>Virtuel størrelse</translation>
     </message>
     <message>
         <source>Actual Size</source>
-        <translation>Tamaño real</translation>
+        <translation>Reel størrelse</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Images</source>
-        <translation>Imaxes de &amp;CD/DVD</translation>
+        <translation>&amp;CD/DVD-aftryk</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>Tamaño</translation>
+        <translation>Størrelse</translation>
     </message>
     <message>
         <source>&amp;Floppy Images</source>
-        <translation>Imaxes de dis&amp;quete</translation>
+        <translation>Diskette-a&amp;ftryk</translation>
     </message>
 </context>
 <context>
     <name>VBoxMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
-        <translation>Mostrar sempre a barra de ferramentas</translation>
+        <translation>Vis altid værktøjslinjen</translation>
     </message>
     <message>
         <source>Exit Full Screen or Seamless Mode</source>
-        <translation>Saír do modo fluído ou de pantalla completa</translation>
+        <translation>Forlad fuldskærm/rammefri tilstand</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation>Pechar a máquina virtual (VM)</translation>
+        <translation>Luk virtuel maskine</translation>
     </message>
 </context>
 <context>
     <name>VBoxNewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
-        <translation>Crear novo disco virtual</translation>
+        <translation>Opret ny virtuel disk</translation>
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>Benvida ao asistente para crear novos discos virtuais!</translation>
+        <translation>Denne guide hjælper dig med at oprette en ny virtuel disk!</translation>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation>Tamaño e localización do disco virtual</translation>
+        <translation>Placering og størrelse af virtuel disk</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation>Resumo</translation>
+        <translation>Oversigt</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 bytes&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
-        <translation>Imaxes de disco ríxido (*.vdi)</translation>
+        <translation>Harddisk-aftryk (*.vdi)</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation>Selecciona un ficheiro para a nova imaxe de disco ríxido</translation>
+        <translation>Vælg et filnavn til det nye harddisk-aftryk</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; Vo&amp;lver</translation>
+        <translation>&lt; Til&amp;bage</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation>Segui&amp;nte&gt;</translation>
+        <translation>&amp;Næste &gt;</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation>&amp;Finalizar</translation>
+        <translation>A&amp;fslut</translation>
     </message>
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation>Tipo</translation>
+        <translation>Type</translation>
     </message>
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation>Localización</translation>
+        <translation>Placering</translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation>Tamaño</translation>
+        <translation>Størrelse</translation>
     </message>
     <message>
         <source>Bytes</source>
         <comment>summary</comment>
-        <translation>Bytes</translation>
+        <translation>bytes</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation>Annullér</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Este asistente axudaralle a crear un novo disco ríxido virtual para a súa máquina virtual.&lt;/p&gt;&lt;p&gt;Empregue o botón &lt;b&gt;Seguinte&lt;/b&gt; para ir á seguinte páxina do asistente e o botón &lt;b&gt;Volver&lt;/b&gt; para regresar á páxina anterior.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Denne guide hjælper dig med at oprette en ny harddisk til din virtuelle maskine.&lt;/p&gt;&lt;p&gt;Brug knappen &lt;b&gt;Næste&lt;/b&gt; for at gå til næste side af guiden og &lt;b&gt;Tilbage&lt;/b&gt; for at gå til den forrige side.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Hard Disk Storage Type</source>
-        <translation>Tipo de almacenamento no disco ríxido</translation>
+        <translation>Allokeringsstrategi</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccione o tipo de disco ríxido virtual que desexa crear.&lt;/p&gt;&lt;p&gt;Un &lt;b&gt;almacenamento de expansión dinámica&lt;/b&gt; inicialmente ocupa unha pequena cantidade de espazo no seu disco ríxido. Este espazo en disco aumentará dinamicamente (ata o tamaño especificado) segundo o vaia necesitando o sistema operativo convidado.&lt;/p&gt;&lt;p&gt;Un &lt;b&gt;almacenamento de tamaño fixo&lt;/b&gt; non aumenta. Almacénase nun ficheiro no que aproximadamente o seu tamaño é igual co do disco ríxido virtual.  A creación dun disco de tamaño fixo pode demorarse dependendo do tamaño de almacenamento e a velocidade de escritura do seu disco ríxido.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vælg en allokeringsstrategi for din virtuelle harddisk.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Dynamisk udvidelse&lt;/b&gt; optager kun lidt plads i starten, men vokser dynamisk (op til den angivne størrelse i takt med at gæsteoperativsystemet allokerer plads.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Fast størrelse&lt;/b&gt; vokser aldrig. Pladsen allokeres på forhånd i en fil af samme størrelse som den virtuelle harddisk. Oprettelsen af denne type harddisk kan tage lang tid afhængig af den valgte størrelse og skrivehastigheden på din fysiske harddisk.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Storage Type</source>
-        <translation>Tipo de almacenamento</translation>
+        <translation>Allokeringsstrategi</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding storage</source>
-        <translation>Almacenamento de expansión &amp;dinámica</translation>
+        <translation>&amp;Dynamisk udvidelse</translation>
     </message>
     <message>
         <source>&amp;Fixed-size storage</source>
-        <translation>Almacenamento de tamaño &amp;fixo</translation>
+        <translation>&amp;Fast størrelse</translation>
     </message>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Prema no botón &lt;b&gt;Seleccionar&lt;/b&gt; para escoller a localización dun ficheiro onde almacenar os datos do disco ríxido ou introduza un nome de ficheiro no campo de entrada.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Klik på &lt;b&gt;Vælg&lt;/b&gt; for at vælge placeringen af filen, som harddisken gemmes i eller indtast et filnavn i feltet.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Location</source>
-        <translation>&amp;Localización</translation>
+        <translation>P&amp;lacering</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccione o tamaño do disco ríxido virtual en megabytes. Este tamaño comunicaráselle ao sistema operativo convidado como o tamaño máximo do seu disco ríxido.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Angiv størrelsen af den virtuelle harddisk i megabytes. Gæsteoperativsystemet vil se denne værdi som harddiskens maksimale størrelse.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>&amp;Tamaño</translation>
+        <translation>&amp;Størrelse</translation>
     </message>
     <message>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation>Vaise crear un novo disco ríxido virtual cos seguintes parámetros:</translation>
+        <translation>Du er ved at oprette en ny virtuel harddisk med følgende egenskaber:</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation>Se os axustes anteriores son correctos, prema no botón &lt;b&gt;Finalizar&lt;/b&gt;. Unha vez que prema nel, crearase un novo disco ríxido.</translation>
+        <translation>Hvis indstillingerne er som du ønsker, så klik på &lt;b&gt;Færdig&lt;/b&gt; for at oprette din nye harddisk.</translation>
     </message>
 </context>
 <context>
     <name>VBoxNewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
-        <translation>Crear unha nova máquina virtual</translation>
+        <translation>Opret ny virtuel maskine</translation>
     </message>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>Benvida ao asistente de nova máquina virtual!</translation>
+        <translation>Denne guide hjælper dig med at oprette en ny virtuel maskine!</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
-        <translation>N&amp;ome</translation>
+        <translation>N&amp;avn</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>&amp;Tipo de sistema operativo</translation>
+        <translation>OS &amp;type</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation>Nome da máquina virtual e tipo de sistema operativo</translation>
+        <translation>VM-navn og OS-type</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccione a cantidade de memoria base (RAM) en megabytes que se lle asignará á máquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vælg størrelsen af hukommelsen (RAM) i megabytes, der skal tildeles den virtuelle maskine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation>Tamaño da &amp;memoria base</translation>
+        <translation>Størrelse på huko&amp;mmelse</translation>
     </message>
     <message>
         <source>MB</source>
@@ -2941,51 +2954,51 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Memory</source>
-        <translation>Memoria</translation>
+        <translation>Hukommelse</translation>
     </message>
     <message>
         <source>Virtual Hard Disk</source>
-        <translation>Disco ríxido virtual</translation>
+        <translation>Virtuel harddisk</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation>Resumo</translation>
+        <translation>Oversigt</translation>
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>O tamaño da memoria base recomendado é &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+        <translation>Anbefalet størrelse på hukommelsen er &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>O tamaño do disco ríxido de inicio é &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+        <translation>Anbefalet størrelse på opstartsharddisken er &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Este asistente guiarao a través dos pasos que son necesarios para crear unha nova máquina virtual para VirtualBox.&lt;/p&gt;&lt;p&gt;Empregue o botón &lt;b&gt;Seguinte&lt;/b&gt; para ir á seguinte páxina do asistente e o botón &lt;b&gt;Volver&lt;/b&gt; para regresar á páxina anterior.&lt;/p&gt;</translation>
+        <translation>Denne guide hjælper dig igennem de nødvendige trin for at oprette en ny virtuel maskine i VirtualBox.&lt;/p&gt;&lt;p&gt;Klik på &lt;b&gt;Næste&lt;/b&gt; for at gå til næste side af guiden og &lt;b&gt;Forrige&lt;/b&gt; for at gå til den forrige side.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; Vo&amp;lver</translation>
+        <translation>&lt; Til&amp;bage</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation>Segui&amp;nte&gt;</translation>
+        <translation>&amp;Næste &gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Insira un nome para a nova máquina virtual e seleccione o tipo de sistema operativo convidado que planea instalar na máquina virtual.&lt;/p&gt;&lt;p&gt;O nome da máquina virtual xeralmente indica a súa configuración de hardware e software. Será empregado por todos os compoñentes de VirtualBox para identificar a súa máquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Indtast navnet på den nye virtuelle maskine og vælg typen af operativsystem du planlægger at installere på den.&lt;/p&gt;&lt;p&gt;Navnet på den virtuelle maskine bør indikere dens software- og hardware-konfiguration, da det vil blive brugt af alle VirtualBox&apos; komponenter til at identificere din virtuelle maskine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vaise crear unha nova máquina virtual cos seguintes parámetros:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Du er ved at oprette en ny virtuel maskine med følgende egenskaber:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Se o anterior é correcto prema no botón &lt;b&gt;Finalizar&lt;/b&gt;. Unha vez que prema nel, crearase unha nova máquina virtual. &lt;/p&gt;&lt;p&gt;Nota que pode modificar estas e todas as outras configuracións da máquina virtual creada en calquera momento empregando o cadro de diálogo &lt;b&gt;Configuracións&lt;/b&gt; accesíbel a través do menú da xanela principal.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Hvis ovenstående er korrekt, klik på &lt;b&gt;Afslut&lt;/b&gt; for at oprette en ny virtuel maskine.&lt;/p&gt;&lt;p&gt;Bemærk at du kan ændre alle indstillinger for den virtuelle maskine når som helst ved hjælp af menupunktet &lt;b&gt;Indstillinger&lt;/b&gt; i hovedvinduet.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation>&amp;Finalizar</translation>
+        <translation>A&amp;fslut</translation>
     </message>
     <message>
         <source>MB</source>
@@ -2995,61 +3008,61 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Name</source>
         <comment>summary</comment>
-        <translation>Nome</translation>
+        <translation>Navn</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation>Tipo de sistema operativo</translation>
+        <translation>OS type</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation>Memoria base</translation>
+        <translation>Hukommelse</translation>
     </message>
     <message>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation>Disco ríxido de inicio</translation>
+        <translation>Opstartsdisk</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation>Annullér</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccione unha imaxe de disco ríxido para empregala como disco ríxido de inicio da máquina virtual. Pode crear un novo disco ríxido empregando o botón &lt;b&gt;Novo&lt;/b&gt;, ou seleccione unha imaxe de disco ríxido existente desde a lista despregábel, ou prema no botón &lt;b&gt;Existentes&lt;/b&gt; (para abrir o diálogo do xestor de medios virtuais).&lt;/p&gt;&lt;p&gt;Se é necesaria unha configuración de disco ríxido máis complexa, pode saltar este paso e conectar os discos ríxidos máis tarde empregando o diálogo de configuracións da máquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vælg det harddisk-aftryk, som den virtuelle maskine skal starte op fra. Du kan enten oprette en ny harddisk ved hjælp af knappen &lt;b&gt;Ny&lt;/b&gt; eller vælge et eksisterende harddisk-aftryk fra rullegardinmenuen eller ved at klikke på knappen &lt;b&gt;Eksisterende&lt;/b&gt; (starter Virtuel diskhåndtering).&lt;/p&gt;&lt;p&gt;Har du brug for en mere avanceret harddisk-opsætning, kan du springe dette trin over og montere dine harddiske senere i &lt;i&gt;Indstillinger for VM&lt;/i&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>&amp;Disco ríxido de inicio (Primario Mestre)</translation>
+        <translation>Opstarts&amp;disk (Primær master)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
-        <translation>&amp;Crear un novo disco ríxido</translation>
+        <translation>Opret ny harddisk</translation>
     </message>
     <message>
         <source>&amp;Use existing hard disk</source>
-        <translation>Empregar &amp;un disco ríxido existente</translation>
+        <translation>Br&amp;ug eksisterende harddisk</translation>
     </message>
 </context>
 <context>
     <name>VBoxOSTypeSelectorWidget</name>
     <message>
         <source>Operating &amp;System:</source>
-        <translation>&amp;Sistema operativo:</translation>
+        <translation>Operativ&amp;system:</translation>
     </message>
     <message>
         <source>Displays the operating system family that you plan to install into this virtual machine.</source>
-        <translation>Mostrar a familia  do sistema operativo que planeas instalar nesta máquina virtual.</translation>
+        <translation>Viser kategorien af operativsystem som du planlægger at installere i den virtuelle maskine.</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation>Mostrar o tipo do sistema operativo  que planeas instalar nesta máquina virtual (chamado un sistema operativo convidado).</translation>
+        <translation>Viser typen af operativsystem som du planlægger at installere i den virtuelle maskine (kaldt et gæsteoperativsystem).</translation>
     </message>
     <message>
         <source>&amp;Version:</source>
-        <translation>&amp;Versión:</translation>
+        <translation>&amp;Version:</translation>
     </message>
 </context>
 <context>
@@ -3057,855 +3070,857 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - Información</translation>
+        <translation>VirtualBox - Information</translation>
     </message>
     <message>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - Pregunta</translation>
+        <translation>VirtualBox - Spørgsmål</translation>
     </message>
     <message>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - Aviso</translation>
+        <translation>VirtualBox - Advarsel</translation>
     </message>
     <message>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - Erro</translation>
+        <translation>VirtualBox - Fejl</translation>
     </message>
     <message>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - Erro crítico</translation>
+        <translation>VirtualBox - Alvorlig fejl</translation>
     </message>
     <message>
         <source>Do not show this message again</source>
         <comment>msg box flag</comment>
-        <translation>Non mostrar esta mensaxe de novo</translation>
+        <translation>Vis ikke denne besked igen</translation>
     </message>
     <message>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>Produciuse un fallo ao abrir &lt;tt&gt;%1&lt;/tt&gt;. Asegúrese de que o seu contorno de escritorio pode manipular correctamente URL deste tipo.</translation>
+        <translation>Kunne ikke åbne &lt;tt&gt;%1&lt;/tt&gt;. Kontroller at dit skrivebordsmiljø kan håndtere et URL af denne type.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Produciuse un fallo ao iniciar COM ou non se encontrou o servidor COM de VirtualBox. Probablemente, o servidor VirtualBox non se esté executando ou fallou ao iniciarse.&lt;/p&gt;&lt;p&gt;O aplicativo terminará agora.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke initialisere COM eller finde VirtualBox&apos; COM-server. VirtualBox&apos; server kører muligvis ikke eller kunne ikke startes.&lt;/p&gt;&lt;p&gt;Applikationen afsluttes.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Produciuse un fallo ao crear o obxeto COM de VirtualBox.&lt;/p&gt;&lt;p&gt;O aplicativo terminará agora.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke oprette VirtualBox&apos; COM-objekt.&lt;/p&gt;&lt;p&gt;Applikationen afsluttes.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation>Produciuse un fallo ao definir as propiedades globais de VirtualBox.</translation>
+        <translation>Kunne ikke sætte VirtualBox&apos; globale egenskaber.</translation>
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
-        <translation>Produciuse un fallo ao acceder ao subsistema USB.</translation>
+        <translation>Kunne ikke tilgå USB-enheder.</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine.</source>
-        <translation>Produciuse un fallo ao crear unha nova máquina virtual.</translation>
+        <translation>Kunne ikke oprette ny virtuel maskine.</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao crear unha nova máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke oprette ny virtuel maskine &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao aplicar as configuracións á máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke sætte egenskaberne for den virtuelle maskine &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao iniciar a máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke starte den virtuelle maskine &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao deter a execución da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke suspendere afviklingen af den virtuelle maskine &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao continuar a execución da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke genoptage afviklingen af den virtuelle maskine &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao gardar o estado da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke gemme tilstanden for den virtuelle maskine &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao crear unha instantánea da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke oprette et øjebliksbillede af den virtuelle maskine &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao deter a máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke stoppe den virtuelle maskine &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao eliminar a máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke fjerne den virtuelle maskine &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao descartar o estado gardado da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke droppe den gemte tilstand af &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao descartar a instantánea &lt;b&gt;%1&lt;/b&gt; da máquina virtual &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Kunne ikke droppe øjebliksbilledet &lt;b&gt;%1&lt;/b&gt; af den virtuelle maskine &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao descartar o estado actual da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke droppe den nuværende tilstand af &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao descartar a instantánea actual e o estado actual da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke droppe det nuværende øjebliksbillede og den nuværende tilstand af &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Non hai ningunha máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Der er ingen virtuel maskine ved navn &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Esá seguro de que quere borrar permanentemente a máquina virtual &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Está operación non é posíbel desfacela.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Er du sikker på at du vil slette den virtuelle maskine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Handlingen kan ikke fortrydes efterfølgende.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Está seguro de que quere cancelar o rexistro a máquina virtual &lt;b&gt;%1&lt;/b&gt; que está inaccesíbel?&lt;/p&gt;&lt;p&gt;Será imposíbel rexistrala de novo desde a interface gráfica de usuario.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Er du sikker på at du vil afregistere den utilgængelige virtuelle maskine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Du vil ikke kunne registrere den igen vha GUI&apos;et.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Está seguro de que quere descartar o estado gardado da máquina virtual &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Esta operación é equivalente a reiniciar ou apagar a máquina sen facer un apagado apropiado polos medios do sistema operativo convidado.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Er du sikker på at du vil droppe den gemte tilstand af den virtuelle maskine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Handlingen svarer til at nulstille eller slukke for maskinen uden at lukke gæsteoperativsystemet pænt ned først.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create a new session.</source>
-        <translation>Produciuse un fallo ao crear unha nova sesión.</translation>
+        <translation>Kunne ikke starte ny session.</translation>
     </message>
     <message>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao abrir unha sesión para a máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke åbne en session til den virtuelle maskine &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao eliminar a interface de rede do anfitrión &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke nedlægge værts-netværkskortet &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao conectar o dispositivo USB &lt;b&gt;%1&lt;/b&gt; á máquina virtual &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Kunne ikke tilslutte USB-enheden &lt;b&gt;%1&lt;/b&gt; til den virtuelle maskine &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao desconectar o dispositivo UBS &lt;b&gt;%1&lt;/b&gt; desde a máquina vritual &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Kunne ikke fjerne USB-enheden &lt;b&gt;%1&lt;/b&gt; fra den virtuelle maskine &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create a shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao crear un cartafol compartido &lt;b&gt;%1&lt;/b&gt; (apuntando para &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; para a máquina virtual &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Kunne ikke oprette en delt mappe &lt;b&gt;%1&lt;/b&gt; (pegende på &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for den virtuelle maskine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao eliminar o cartafol compartido &lt;b&gt;%1&lt;/b&gt; (apuntando para &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; para a máquina virtual &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Kunne ikke fjerne den delte mappe &lt;b&gt;%1&lt;/b&gt; (pegende på &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) i den virtuelle maskine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A máquina virtual informa que o sistema operativo convidado non permite a &lt;b&gt;integración do punteiro do rato&lt;/b&gt; no modo de vídeo actual. Necesita capturar o rato (facendo clic sobre a pantalla da máquina virtual ou premendo a tecla anfitrión) para poder empregalo dentro do sistema operativo convidado.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Gæsteoperativsystemet i den virtuelle maskine understøtter ikke &lt;b&gt;integration med mus&lt;/b&gt; i den aktive skærmtilstand. Du skal selv indfange musen ved at klikke på den virtuelle maskines skærm eller trykke på værtstasten for at kunne bruge mus i gæsteoperativsystemet.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A máquina virtual está actualmente no estado &lt;b&gt;Detida&lt;/b&gt; e polo tanto non acepta ningunha entrada do rato e o teclado. Se quere continuar a traballar dentro da máquina virtual necesita retomar a sesión seleccionando a acción correspondente desde a barra de menú.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Den virtuelle maskine er &lt;b&gt;suspenderet&lt;/b&gt; for øjeblikket og modtager derfor ikke input fra mus eller tastatur. Hvis du vil arbejde videre i den virtuelle maskine, skal du bruge menupunktet &lt;b&gt;Genoptag&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Non é posíbel executar VirtualBox no modo &lt;i&gt;Selector de máquina virtual (VM)&lt;/i&gt; debido ás restricións locais.&lt;/p&gt;&lt;p&gt;O aplicativo terminará agora.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kan ikke afvikle VirtualBox i &lt;i&gt;VM Vælger&lt;/i&gt; tilstand grundet lokale begrænsninger.&lt;/p&gt;&lt;p&gt;Applikationen afsluttes.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Erro moi grave&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Alvorlig fejl&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Erro non moi grave&lt;/nobr&gt;</translation>
+        <translatorcomment>Er det så en fejl eller hvad?</translatorcomment>
+        <translation>&lt;nobr&gt;Ukritisk fejl&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Aviso&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Advarsel&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Erro ID: &lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Fejl-ID: &lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity: </source>
         <comment>runtime error info</comment>
-        <translation>Gravidade: </translation>
+        <translation>Fejltype:</translation>
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ocorreu un erro moi grave durante a execución da máquina virtual! A máquina virtual apagarase. Suxíreselle que empregue o portapapeis para copiar a seguinte mensaxe de erro para examinala máis a fondo:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Der opstod en alvorlig fejl under afvikling af den virtuelle maskine! Maskinen vil blive slukket. Det anbefales at kopiere følgende fejlbesked vha klippebordet for at kunne analysere den yderligere:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ocorreu un erro durante a execución da máquina virtual! Os detalles do erro móstranse abaixo. Pode tentar corrixir o erro descrito e continuar coa execución da máquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Der opstod en fejl under afvikling af den virtuelle maskine! Detaljer om fejlen vises herunder. Du kan prøve at løse problemet og genoptage afviklingen af den virtuelle maskine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A execución da máquina virtual pode crear unha condición de erro como a que se describe abaixo. Pode ignorar esta mensaxe, pero suxíreselle que realice a acción apropiada para asegurarse de que o erro descrito non volva suceder.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Afviklingen af den virtuelle maskine kan resultere i en fejl som beskrevet herunder. Du kan ignorere denne besked, men det anbefales at du forsøger at fjerne årsagen til fejlen, så den ikke opstår.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>Código&amp;nbsp;resultado: </translation>
+        <translation>Retur&amp;nbsp;kode: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>Compoñente: </translation>
+        <translation>Komponent: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>Interface: </translation>
+        <translation>Kort: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>Receptor: </translation>
+        <translation>Kald til: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>Receptor&amp;nbsp;RC: </translation>
+        <translation>Kald til&amp;nbsp;returkode: </translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Non foi posíbel encontrar un ficheiro idioma para o &lt;b&gt;%1&lt;/b&gt; no cartafol &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;O idioma restabelecerase temporalmente ao predefinido do sistema. Vaia ao diálogo &lt;b&gt;Preferencias&lt;/b&gt; que pode abrir desde o menú &lt;b&gt;Ficheiro&lt;/b&gt; da xanela principal de VirtualBox e seleccione un dos idiomas existentes na sección &lt;b&gt;Idioma&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke finde en fil indeholdende sproget &lt;b&gt;%1&lt;/b&gt; i kataloget &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Applikationen vil i stedet bruge systemets standardsprog. Vælg et eksisterende sprog i afsnittet &lt;b&gt;Sprog&lt;/b&gt; tilgængelig via menupunktet &lt;b&gt;Indstillinger&lt;/b&gt; i menuen &lt;b&gt;Fil&lt;/b&gt; i VirtualBox&apos; hovedvindue.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Non foi posíbel cargar o ficheiro de idioma &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;O idioma restabelecerase temporalmente a Inglés (integrado). Vaia ao diálogo &lt;b&gt;Preferencias&lt;/b&gt; que pode abrir desde o menú &lt;b&gt;Ficheiro&lt;/b&gt; da xanela principal de VirtualBox e seleccione un dos idiomas existentes na sección &lt;b&gt;Idioma&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke åbne sprogfilen &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;VirtualBox vil derfor midlertidigt bruge engelsk. Du kan vælge det rigtige sprog i afsnittet &lt;b&gt;Sprog&lt;/b&gt; tilgængelig via menupunktet &lt;b&gt;Indstillinger&lt;/b&gt; i menuen &lt;b&gt;Fil&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Os aplicativos para o sistema operativo convidado de VirtualBox instalados no sistema operativo convidado son antigos: a versión instalada é a %1 e requírese a versión %2. Algunhas características que requiren dos aplicativos para o sistema operativo convidado (a integración do rato, o redimensionamento automático da pantalla do convidado) probablemente deixarán de traballar de maneira correcta.&lt;/p&gt;&lt;p&gt;Actualice os aplicativos para o sistema operativo convidado á versión máis recente elixindo &lt;b&gt;Instalar os aplicativos para o sistema operativo convidado&lt;/b&gt; desde o menú &lt;b&gt;Dispositivos&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Den installerede version %1 af VirtualBox&apos; Gæstetilføjelser er forældet. Den forventede version er %2. De funktioner, der kræver Gæstetilføjelser (integration med mus, dynamisk ændring af gæstens skærmopløsning) vil sandsynligvis ikke fungere.&lt;/p&gt;&lt;p&gt;Vælg &lt;b&gt;Installér Gæstetilføjelser&lt;/b&gt; i menuen &lt;b&gt;Enheder&lt;b&gt; for at opdatere til seneste version.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Os aplicativos para o sistema operativo convidado de VirtualBox instalados no sistema operativo convidado están desactualizados: a versión instalada é a %1 e requírese a versión %2. Algunhas características que requiren dos aplicativos para o sistema operativo convidado (a integración do rato, o redimensionamento automático da pantalla do convidado) poden non traballar como se espera.&lt;/p&gt;&lt;p&gt;Recoméndase actualizar os aplicativos para o sistema operativo convidado á versión máis recente elixindo &lt;b&gt;Instalar os aplicativos para o sistema operativo convidado&lt;/b&gt; desde o menú &lt;b&gt;Dispositivos&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Den installerede version %1 af VirtualBox&apos; Gæstetilføjelser er forældet. Den forventede version er %2. De funktioner, der kræver Gæstetilføjelser (integration med mus, dynamisk ændring af gæstens skærmopløsning) vil sandsynligvis ikke fungere.&lt;/p&gt;&lt;p&gt;Vælg &lt;b&gt;Installér Gæstetilføjelser&lt;/b&gt; i menuen &lt;b&gt;Enheder&lt;b&gt; for at opdatere til seneste version.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Os aplicativos para o sistema operativo convidado de VirtualBox instalados no sistema operativo convidado son demasiado recentes: a versión instalada é a %1 e requírese a versión %2.&lt;/p&gt;&lt;p&gt;Non é compatíbel o uso dunha versión máis nova dos aplicativos para o sistema operativo convidado cunha versión máis vella de VirtualBox. Instale a versión actual dos aplicativos para o sistema operativo convidado elixindo &lt;b&gt;Instalar os aplicativos para o sistema operativo convidado&lt;/b&gt; desde o menú &lt;b&gt;Dispositivos&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Den installerede version %1 af VirtualBox&apos; Gæstetilføjelser er for høj. Den forventede version er %2.&lt;/p&gt;&lt;p&gt;Brugen af en nyere version af Gæstetilføjelser med en ældre version af VirtualBox understøttes ikke. Vælg &lt;b&gt;Installér Gæstetilføjelser&lt;/b&gt; i menuen &lt;b&gt;Enheder&lt;b&gt; for at installere den korrekte version.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Produciuse un fallo ao cambiar o camiño do cartafol da instantánea da máquina virtual &lt;b&gt;%1&lt;b&gt; a &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Kunne ikke ændre kataloget til øjebliksbilleder af den virtuelle maskine &lt;b&gt;%1&lt;b&gt; til &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Produciuse un fallo ao eliminar o cartafol compartido &lt;b&gt;%1&lt;/b&gt; (apuntando para &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) desde a máquina virtual &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Peche todos os programas que poden estar empregando este cartafol compartido no sistema operativo convidado e ténteo de novo.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke fjerne den delte mappe &lt;b&gt;%1&lt;/b&gt; (pegende på &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) i den virtuelle maskine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Luk alle programmer i gæsteoperativsystemet, der bruger denne mappe og forsøg igen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Non foi posíbel encontrar o ficheiro imaxe de CD dos aplicativos para o sistema operativo convidado de VirtualBox &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ou &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Quere descargar esta imaxe de CD desde a Internet?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke finde VirtualBox Gæstetilføjelser CD-aftrykket &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; eller &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Vil du hente det fra internettet?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Produciuse un fallo ao descargar a imaxe de CD dos aplicativos para o sistema operativo convidado de VirtualBox desde &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke hente VirtualBox Gæstetilføjelser CD-aftrykket fra &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Está seguro de que quere descargar a imaxe de CD dos aplicativos para o sistema operativo convidado de VirtualBox desde &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (tamaño %3 bytes)?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Er du sikker på at du vil hente VirtualBox Gæstetilføjelser CD-aftrykket fra &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (%3 bytes)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A imaxe de CD dos aplicativos para o sistema operativo convidado de VirtualBox descargouse correctamente desde &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; e gardouse localmente como &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Quere rexistrar esta imaxe de CD e montala na unidade de CD/DVD virtual?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;VirtualBox Gæstetilføjelser CD-aftrykket blev hentet fra &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; og gemt lokalt som &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Vil du montere dette CD-aftryk som et virtuelt CD/DVD-drev?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A xanela da máquina virtual está optimizada para traballar no modo de cor de &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; pero o modo de cor da pantalla virtual está definida a &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Abre o diálogo de propiedades da pantalla do sistema operativo convidado e seleccione un modo de cor de &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, se este está dispoñíbel, para obter un mellor rendemento do subsistema de vídeo virtual.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;. Algúns sistemas operativos, coma OS/2, poden traballar en modo 32&amp;nbsp;bits pero informan de 24&amp;nbsp;bit (16 millóns de cores). Pode tentar seleccionar unha calidade de cor diferente para ver se esta mensaxe desaparece ou pode simplemente desactivar esta mensaxe agora mesmo se está seguro que a calidade de cor requirida (%4&amp;nbsp;bit) non está dispoñíbel no seu sistema operativo convidado.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Visning af virtuelle maskiner fungerer bedst ved &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; farver men den virtuelle maskines skærm er sat til &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Åbn egenskaber for skærm i gæsteoperativsystemet og vælg &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; farver (hvis tilgængelig) for at opnå bedst mulig grafikydelse.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Bemærk&lt;/b&gt;. Nogle operativsystemer, såsom OS/2, arbejder muligvis med 32&amp;nbsp;bit farver, men rapporterer dette som 24&amp;nbsp;bit (16 millioner farver). Du kan prøve at vælge en anden bit pr. farve-indstilling for at se om denne besked forsvinder eller du kan vælge helt at deaktivere denne besked, hvis den krævede indstilling (%4&amp;nbsp;bit) ikke er tilgængelig i gæsteoperativsystemet.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vostede non conectou un disco ríxido á nova máquina virtual. A máquina non iniciará a non ser que vostede conecte un disco ríxido cun sistema operativo convidado ou algún outro medio iniciábel. Para facer isto máis tarde empregue o diálogo de configuracións da máquina ou o asistente de primeira execución.&lt;/p&gt;&lt;p&gt;Quere continuar?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Du har ikke tilsluttet en harddisk til den nye virtuelle maskine. Maskinen vil ikke kunne starte, medmindre du tilslutter en harddisk indeholdende et gæsteoperativsystem eller andet opstartsprogram enten via Maskin-indstillinger eller Første gang-guiden.&lt;/p&gt;&lt;p&gt;Vil du fortsætte?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Produciuse un fallo ao encontrar os ficheiros de licenza en &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Kunne ikke finde licensfiler i &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation>Produciuse un fallo ao abrir o ficheiro de licenza &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Comprobar permisos do ficheiro.</translation>
+        <translation>Kunne ikke åbne licensfilen &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Kontroller rettighederne.</translation>
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao enviar o evento pulsación botón de enerxía (ACPI Power) á máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke sende &quot;ACPI-sluk&quot; kommandoen til den virtuelle maskine &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Parabéns! Rexistrouse correctamente como usuario do VirtualBox.&lt;/p&gt;&lt;p&gt;Grazas por dedicar tempo para cubrir o formulario de rexistro!&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Tillykke! Du er nu registreret som bruger af VirtualBox.&lt;/p&gt;&lt;p&gt;Tak fordi du brugte tid på dette!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Produciuse un fallo ao gardar as configuracións globais de VirtualBox en &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke gemme VirtualBox&apos; globale indstillinger i &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Produciuse un fallo ao cargar a configuración global da interface gráfica de usuario desde &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;O aplicativo terminará agora.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke indlæse GUI-konfigurationen fra &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Applikationen afsluttes.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Produciuse un fallo ao gardar a configuración global da interface gráfica de usuario en &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;O aplicativo terminará agora.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke gemme GUI-konfigurationen i &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Applikationen afsluttes.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao gardar as configuracións da máquina virtual &lt;b&gt;%1&lt;/b&gt; en &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+        <translation>Kunne ikke gemme indstillingerne for den virtuelle maskine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao cargar as configuracións da máquina virtual &lt;b&gt;%1&lt;/b&gt; desde &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+        <translation>Kunne ikke indlæse indstillingerne for den virtuelle maskine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Delete</source>
         <comment>machine</comment>
-        <translation>Borrar</translation>
+        <translation>Nedlæg</translation>
     </message>
     <message>
         <source>Unregister</source>
         <comment>machine</comment>
-        <translation>Cancelar o rexistro</translation>
+        <translation>Fjern</translation>
     </message>
     <message>
         <source>Discard</source>
         <comment>saved state</comment>
-        <translation>Descartar</translation>
+        <translation>Droppet</translation>
     </message>
     <message>
         <source>Disable</source>
         <comment>hard disk</comment>
-        <translation>Desactivar</translation>
+        <translation>Deaktivér</translation>
     </message>
     <message>
         <source>Download</source>
         <comment>additions</comment>
-        <translation>Descargar</translation>
+        <translation>Hent</translation>
     </message>
     <message>
         <source>Mount</source>
         <comment>additions</comment>
-        <translation>Montar</translation>
+        <translation>Montér</translation>
     </message>
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;A tecla anfitrión está actualmente definida como &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Værtstasten er &lt;b&gt;%1&lt;/b&gt; .&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Capture</source>
         <comment>do input capture</comment>
-        <translation>Capturar</translation>
+        <translation>Indfang</translation>
     </message>
     <message>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
-        <translation>Marcar</translation>
+        <translation>Undersøg</translation>
     </message>
     <message>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>Copia de seguran&amp;za</translation>
+        <translation>Sikkerhedskopi</translation>
     </message>
     <message>
         <source>Switch</source>
         <comment>fullscreen</comment>
-        <translation>Cambiar</translation>
+        <translation>Skift</translation>
     </message>
     <message>
         <source>Switch</source>
         <comment>seamless</comment>
-        <translation>Cambiar</translation>
+        <translation>Skift</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Desexa realmente reiniciar a máquina virtual?&lt;/p&gt;&lt;p&gt;Cando a máquina é reiniciada pérdense os datos sen gardar de todos os aplicativos que se estaban executando.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Er du sikker på at du vil nulstille den virtuelle maskine?&lt;/p&gt;&lt;p&gt;Når maskinen nulstilles, mistes alle ikke-gemte data i alle programmer, der kører i den.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
         <comment>machine</comment>
-        <translation>Restabelecer</translation>
+        <translation>Nulstil</translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation>Continuar</translation>
+        <translation>Fortsæt</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation>Volver</translation>
+        <translation>Tilbage</translation>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation>Produciuse un fallo ao copiar o ficheiro &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; a &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
+        <translation>Kunne ikke kopiere filen &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; til &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
-        <translation>&amp;Crear</translation>
+        <translation>Opret</translation>
     </message>
     <message>
         <source>Select</source>
         <comment>hard disk</comment>
-        <translation>Seleccionar</translation>
+        <translation>Vælg</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Non foi posíbel entrar no modo fluído debido a que o convidado non ten  memoria de vídeo suficiente.&lt;/p&gt;&lt;p&gt;Debería configurar a máquina virtual para ter polo menos &lt;b&gt;%1&lt;/b&gt; de memoria de vídeo.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke skifte til rammefri tilstand på grund af for lidt grafikhukommelse i gæsten.&lt;/p&gt;&lt;p&gt;Du bør konfigure den virtuelle maskine til at have en grafikhukommelse på mindst &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Non foi posíbel cambiar a pantalla do convidado ao modo de pantalla completa debido a que o convidado non ten memoria de vídeo suficiente.&lt;/p&gt;&lt;p&gt;Debería configurar a máquina virtual para ter polo menos &lt;b&gt;%1&lt;/b&gt; de memoria de vídeo.&lt;/p&gt;&lt;p&gt;Prema en &lt;b&gt;Ignorar&lt;/b&gt; para cambiar ao modo de pantalla completa de calquera maneira ou en &lt;b&gt;Cancelar&lt;/b&gt; para cancelar a operación.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke skifte til fuldskærm på grund af for lidt grafikhukommelse i gæsten.&lt;/p&gt;&lt;p&gt;Du bør konfigure den virtuelle maskine til at have en grafikhukommelse på mindst &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tryk &lt;b&gt;Ignorer&lt;/b&gt; for at forsøge at skifte alligevel eller tryk &lt;b&gt;Annullér&lt;/b&gt; for at afbryde.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
-        <translation>Xa está instalada a última versión de VirtualBox. Repita a comprobación de versión máis tarde.</translation>
+        <translation>Du har allerede den nyeste version af VirtualBox. Kontroller versionen igen en anden dag.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Fixo &lt;b&gt;clic co rato&lt;/b&gt; dentro da pantalla da Máquina Virtual ou premeu a &lt;b&gt;tecla anfitrión&lt;/b&gt;. Isto causará que a máquina virtual &lt;b&gt;capture&lt;/b&gt; o punteiro do rato (soamente se o sistema operativo convidado non permite actualmente a integración do punteiro do rato) e o teclado do anfitrión, os cales non estarán dispoñíbeis para outros aplicativos que se estean a executar na máquina anfitrión.&lt;/p&gt;&lt;p&gt;En calquera momento pode premer a &lt;b&gt;tecla anfitrión&lt;/b&gt; para &lt;b&gt;liberar&lt;/b&gt; o teclado e o rato (se están capturados) e devolvelos a súa operación normal. A tecla anfitrión actualmente asignada móstrase na barra de estado  na parte de abaixo da xanela da máquina virtual, ao lado da icona&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Esta icona, xunto coa icona do rato adxacente, indica o actual estado de captura do rato e o teclado.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Du &lt;b&gt;klikkede med musen&lt;/b&gt; på den virtuelle maskines vindue eller trykkede på &lt;b&gt;værtstasten&lt;/b&gt;. Dette får den virtuelle maskine til at &lt;b&gt;indfange&lt;/b&gt; musemarkøren (kun hvis &lt;i&gt;Integration med mus&lt;/i&gt; ikke understøttes af gæsteoperativsystemet) og tastaturet, hvilket gør dem utilgængelige for andre kørende programmer.&lt;/p&gt;&lt;p&gt;Du kan trykke på &lt;b&gt;værtstasten&lt;/b&gt; for at &lt;b&gt;frigive&lt;/b&gt; mus og tastatur (hvis de er indfangede) og bruge dem normalt igen. Den nuværende værtstast vises på statuslinjen i bunden af den virtuelle maskines vindue ved siden af ikonet &amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;. Dette ikon sammen med museikonet tæt ved, viser om mus og tastatur er indfanget eller ej.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ten a opción de &lt;b&gt;captura de teclado automática&lt;/b&gt; activada. Isto causará que a máquina virtual &lt;b&gt;capture&lt;/b&gt; automaticamente o teclado cada vez que se active a xanela da máquina virtual e non estará dispoñíbel para outros aplicativos que se esteen executando na máquina anfitrión: cando o teclado está capturado, todas as combinacións de teclas (incluso as do sistema como Alt-Tab) serán dirixidas á máquina virtual.&lt;/p&gt;&lt;p&gt;En calquera momento pode premer a &lt;b&gt;tecla anfitrión&lt;/b&gt; para &lt;b&gt;liberar&lt;/b&gt; o teclado e o rato (se están capturados) e devolvelos a súa operación normal. A tecla anfitrión actualmente asignada móstrase na barra de estado  na parte de abaixo da xanela da máquina virtual, ao lado da icona&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Esta icona, xunto coa icona do rato adxacente, indica o actual estado de captura do rato e o teclado.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Funktionen &lt;b&gt;Indfang tastatur&lt;/b&gt; er slået til. Dermed vil den virtuelle maskine automatisk &lt;b&gt;indfange&lt;/b&gt; tastaturet hver gang VM-vinduet kommer i fokus og gør tastaturet utilgængeligt for andre programmer - alle tastetryk (inklusive system-kombinationer, såsom Alt-Tab) vil blive sendt til den virtuelle maskine.&lt;/p&gt;&lt;p&gt;Du kan trykke på &lt;b&gt;værtstasten&lt;/b&gt; for at &lt;b&gt;frigive&lt;/b&gt; tastatur og mus (hvis de er indfangede) og bruge dem normalt igen. Den nuværende værtstast vises på statuslinjen i bunden af den virtuelle maskines vindue ved siden af ikonet &amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;. Dette ikon sammen med museikonet tæt ved, viser om mus og tastatur er indfanget eller ej.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A máquina virtual informa que o sistema operativo convidado permite a &lt;b&gt;integración do punteiro do rato&lt;/b&gt;. Isto significa que non necesita &lt;i&gt;capturar&lt;/i&gt; o punteiro do rato para poder empregalo no seu sistema operativo convidado -- todas as accións do rato que realice cando o punteiro do rato eantalla da mástá sobre a pquina virtual son enviadas directamente ao sistema operativo convidado. Se o rato está actualmente capturado será liberado automaticamente.&lt;/p&gt;&lt;p&gt;A icona do rato na barra de estado verase com&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;para informalo de que a integración do punteiro do rato permítese no sistema operativo convidado e actualmente está activada.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;:Algúns aplicativos poden comportase incorrectamente no modo de integración do punteiro do rato. Sempre pode desactivalo para a sesión actual (e activalo de novo) seleccionando a acción correspondente desde a barra do menú.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Den virtuelle maskine rapporterer at gæsteoperativsystemet understøtter &lt;b&gt;Integration med mus&lt;/b&gt;. Dermed behøver du ikke at &lt;i&gt;indfange&lt;/i&gt; musen for at kunne bruge den i gæsteoperativsystemet. Alle musehandlinger, der udføres indenfor den virtuelle maskines vindue sendes direkte til gæsteoperativsystemet. Hvis musen er indfanget vil den blive frigivet automatisk.&lt;/p&gt;&lt;p&gt;Museikonet på statuslinjen ser sådan ud &amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp; når &lt;b&gt;Integration med mus&lt;/b&gt; er understøttet og aktiveret.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Bemærk&lt;/b&gt;: Nogle programmer fungerer ikke korrekt, når &lt;b&gt;Integration med mus&lt;/b&gt; er aktivt, men du kan altid slå det fra i den nuværende session (og slå det til igen) ved at vælge funktionen fra menulinjen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Agora cambiarase a xanela da máquina virtual ao modo de &lt;b&gt;pantalla completa&lt;/b&gt;. En calquera momento pode volver ao modo de xanela  premendo &lt;b&gt;%1&lt;/b&gt;. Nota que a tecla &lt;i&gt;anfitrión&lt;/i&gt; está actualmente definida como &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota que a barra de menú principal ocúltase no modo de pantalla completa. Pode acceder a este premendo &lt;b&gt;Tecla anfitrión + Inicio&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Den virtuelle maskines vindue vil nu skifte til &lt;b&gt;fuldskærm&lt;/b&gt;. Du kan skifte tilbage til vinduestilstand ved at trykke &lt;b&gt;%1&lt;/b&gt;. &lt;i&gt;Værtstasten&lt;/i&gt; er for øjeblikket sat til &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Bemærk at menulinjen er skjult i fuldskærmstilstand, men du kan åbne den ved at trykke &lt;b&gt;Værtstast+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Agora cambiarase a xanela da máquina virtual ao modo de &lt;b&gt;Fluído&lt;/b&gt;. En calquera momento pode volver ao modo de xanela  premendo &lt;b&gt;%1&lt;/b&gt;. Nota que a tecla &lt;i&gt;anfitrión&lt;/i&gt; está actualmente definida como &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota que a barra de menú principal ocultase no modo fluído. Pode acceder a este premendo &lt;b&gt;Tecla anfitrión + Inicio&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Den virtuelle maskines vindue vil nu skifte til &lt;b&gt;rammefri tilstand&lt;/b&gt;. Du kan skifte tilbage til vinduestilstand ved at trykke &lt;b&gt;%1&lt;/b&gt;. &lt;i&gt;Værtstasten&lt;/i&gt; er for øjeblikket sat til &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Bemærk at menulinjen er skjult i rammefri tilstand, men du kan åbne den ved at trykke &lt;b&gt;Værtstast+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation>&amp;Contidos...</translation>
+        <translation>Indhold...</translation>
     </message>
     <message>
         <source>Show the online help contents</source>
-        <translation>Mostrar os contidos da axuda en liña</translation>
+        <translation>Vis indholdet af hjælp</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation>Sitio web de &amp;VirtualBox...</translation>
+        <translation>&amp;VirtualBox&apos; hjemmeside...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Abre o navegador e vai ao sitio web do produto VirtualBox</translation>
+        <translation>Åbn en browser og gå til VirtualBox&apos; hjemmeside</translation>
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation>&amp;Restabelecer todos os avisos</translation>
+        <translation>Nulstil alle adva&amp;rsler</translation>
     </message>
     <message>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation>Fai que todos os avisos e as mensaxes desactivadas sexan mostradas novamente</translation>
+        <translation>Vis alle undertrykte advarsler og beskeder igen</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation>R&amp;existro de VirtualBox...</translation>
+        <translation>R&amp;egistrér VirtualBox...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation>Abrir formulario de rexistro de VirtualBox</translation>
+        <translation>Åbn VirtualBox&apos; registreringsformular</translation>
     </message>
     <message>
         <source>C&amp;heck for Updates...</source>
-        <translation>Ve&amp;rificar actualizacións...</translation>
+        <translation>Søg efter opdateringer...</translation>
     </message>
     <message>
         <source>Check for a new VirtualBox version</source>
-        <translation>Comproba se hai unha nova versión de VirtualBox</translation>
+        <translation>Søg efter ny version af VirtualBox</translation>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
-        <translation>Sobre Virtu&amp;alBox...</translation>
+        <translation>Om Virtu&amp;alBox...</translation>
     </message>
     <message>
         <source>Show a dialog with product information</source>
-        <translation>Mostrar un diálogo con información do produto</translation>
+        <translation>Vis vindue med produktinformation</translation>
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Unha nova versión de VirtualBox foi publicada! A versión &lt;b&gt;%1&lt;/b&gt; está dispoñíbel en &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Pode descargar esta versión directamente desde esta ligazón:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;En ny version af VirtualBox er på gaden! Version &lt;b&gt;%1&lt;/b&gt; er tilgængelig fra &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Du kan hente denne version her: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Está seguro de que quere liberar o %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Isto desconectarao das seguintes máquinas virtuais: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Er du sikker på at du vil fjerne %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Det vil afmontere det fra disse virtuelle maskiner: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Release</source>
         <comment>detach medium</comment>
-        <translation>Liberar</translation>
+        <translation>Fjern</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Está seguro de que quere eliminar o %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; da lista de medios coñecidos?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Er du sikker på at du vil fjerne %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; fra listen over kendte medier?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Note that this hard disk is inaccessible so that its storage unit cannot be deleted right now.</source>
-        <translation>Nota que este disco ríxido é inaccesíbel polo que non é posíbel eliminar a súa unidade de almacenamento neste intre.</translation>
+        <translation>Denne harddisk er utilgængelig, så dens lagerenhed kan ikke slettes lige nu.</translation>
     </message>
     <message>
         <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation>O seguinte diálogo permitiralle elixir se vostede quere eliminar a unidade de almacenamento deste disco ríxido ou conservala para un uso posterior.</translation>
+        <translation>I det næste vindue skal du vælge om harddiskens lagerenhed skal slettes eller gemmes til senere brug.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and therefore it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nota que a unidade de almacenamento deste medio non se eliminará e polo tanto será posíbel engadila á lista de novo máis adiante.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Bemærk at mediets lagerenhed ikke vil blive slettet og derfor kan den tilføjes til listen igen på et senere tidspunkt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Remove</source>
         <comment>medium</comment>
-        <translation>Eliminar</translation>
+        <translation>Nedlæg</translation>
     </message>
     <message>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A unidade de almacenamento de disco ríxido localizada en &lt;b&gt;%1&lt;/b&gt; xa existe. Non é posíbel crear un novo disco ríxido virtual que empregue esta localización porque xa pode estar sendo empregado por outro disco ríxido virtual.&lt;/p&gt;&lt;p&gt;Especifique unha localización diferente.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Harddiskens lagerenhed placeret på &lt;b&gt;%1&lt;/b&gt; eksisterer allerede. Du kan ikke oprette en ny virtuel harddisk på denne placering, da den kan blive brugt af en anden virtuel harddisk.&lt;/p&gt;&lt;p&gt;Vælg derfor en anden placering.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Quere borrar a unidade de almacenamento do disco ríxido &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Se selecciona &lt;b&gt;Borrar&lt;/b&gt;, a unidade de almacenamento especificada borrarase permanentemente. &lt;b&gt;Non é posíbel desfacer&lt;/b&gt; esta operación.&lt;/p&gt;&lt;p&gt;Se selecciona &lt;b&gt;Manter&lt;/b&gt;, o disco ríxido só se eliminará da lista de discos ríxidos coñecidos, pero a unidade de almacenamento non se modificará o que fai posíbel engadir de novo este disco ríxido á lista  máis adiante.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vil du slette lagerenheden for harddisken &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Hvis du vælger &lt;b&gt;Slet&lt;/b&gt; vil den angivne lagerenhed blive slettet permanent. Handlingen kan &lt;b&gt;ikke fortrydes&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Hvis du vælger &lt;b&gt;Behold&lt;/b&gt; så vil harddisken kun blive fjernet fra listen over kendte harddiske, mens lagerenheden ikke vil blive rørt og derfor kan harddisken tilføjes til listen igen senere.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
         <comment>hard disk storage</comment>
-        <translation>Borrar</translation>
+        <translation>Slet</translation>
     </message>
     <message>
         <source>Keep</source>
         <comment>hard disk storage</comment>
-        <translation>Manter</translation>
+        <translation>Behold</translation>
     </message>
     <message>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao borrar a unidade de almacenamento  do disco ríxido &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke slette lagerenheden for harddisken &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Non existen discos ríxidos sen empregar dispoñíbeis para a conexión creada recentemente.&lt;/p&gt;&lt;p&gt;Prema o botón &lt;b&gt;Crear&lt;/b&gt; para iniciar o asistente de &lt;i&gt;novo disco virtual&lt;/i&gt; para crear un novo disco ríxido, ou prema no botón &lt;b&gt;Seleccionar&lt;/b&gt; para abrir o &lt;i&gt;xestor de medios virtuais&lt;/i&gt; e seleccionar que facer.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Der er ingen ubrugte harddiske tilgængelige til den nye udvidelse.&lt;/p&gt;&lt;p&gt;Tryk på knappen &lt;b&gt;Opret&lt;/b&gt; for at starte guiden &lt;i&gt;Ny virtuel disk&lt;/i&gt; og oprette en ny harddisk eller tryk &lt;b&gt;Vælg&lt;/b&gt; for at åbne &lt;i&gt;Virtuel diskhåndtering&lt;/i&gt; og vælge hvad der skal ske.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>Produciuse un fallo ao crear o almacenamento de disco ríxido &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
+        <translation>Kunne ikke oprette harddisk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao conectar o disco ríxido &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ao espazo &lt;i&gt;%2&lt;/i&gt; da máquina &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Kunne ikke montere harddisken &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; på udvidelsespladsen &lt;i&gt;%2&lt;/i&gt; i maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao separar o disco ríxido &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; desde o espazo &lt;i&gt;%2&lt;/i&gt; da máquina &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Kunne ikke afmontere harddisken &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; fra udvidelsespladsen &lt;i&gt;%2&lt;/i&gt; i maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; to the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao montar o %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; á máquina &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Kunne ikke tilslutte %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; til maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao desmontar o %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; desde a máquina &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Kunne ikke afkoble %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; fra maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Produciuse un fallo ao abrir o %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Kunne ikke åbne %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Produciuse un fallo ao pechar o %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Kunne ikke lukke %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to get the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Produciuse un fallo ao obter o estado de accesibilidade do medio &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Kunne ikke bestemme tilgængeligheden af mediet &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Produciuse un fallo ao conectarse ao servizo de rexistro en liña de Virtual debido ao seguinte erro:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke forbinde til VirtualBox&apos; registreringstjeneste på nettet på grund af følgende fejl:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Resultou imposíbel obter a información da nova versión debido ao seguinte erro:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke hente information om nye versioner på grund af følgende fejl:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Un ou máis medios virtuais (disco ríxido, CD/DVD ou disqueteira) non están accesíbeis actualmente. Polo tanto, non poderá traballar coas máquinas virtuais que empreguen estes medios ata que sexan accesíbeis.&lt;/p&gt;&lt;p&gt;Prema en &lt;b&gt;Comprobar&lt;/b&gt; para abrir o xanela do xestor de medios virtuais e consulte que medios están inaccesíbeis, ou prema en &lt;b&gt;Ignorar&lt;/b&gt; para ignorar esta mensaxe.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;En eller flere virtuelle harddiske, CD/DVD- eller diskette-drev er ikke tilgængelige for øjeblikket. Du vil ikke kunne bruge virtuelle maskiner, som benytter disse enheder indtil de bliver gjort tilgængelige&lt;/p&gt;&lt;p&gt;Tryk &lt;b&gt;Kontrollér&lt;/b&gt; for at åbne Virtuel diskhåndtering og se hvilke enheder der er utilgængelige eller tryk &lt;b&gt;Ignorer&lt;/b&gt; for at ignorere denne meddelelse.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Convertéronse automaticamente os ficheiros existentes de configuracións de VirtualBox desde o formato antigo ao novo formato necesario para a nova versión de VirtualBox.&lt;/p&gt;&lt;p&gt;Prema en &lt;b&gt;Aceptar&lt;/b&gt; para iniciar VirtualBox agora ou prema en &lt;b&gt;Máis&lt;/b&gt; se quere obter máis información sobre que ficheiros se converteron e acceder a accións adicionais.&lt;/p&gt;&lt;p&gt;Prema en &lt;b&gt;Saír&lt;/b&gt; para terminar o aplicativo VirtualBox sen gardar os resultados da conversión no disco.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Dine nuværende VirtualBox-indstillinger er automatisk blevet konverteret til det format, som kræves af den nye version af VirtualBox.&lt;/p&gt;&lt;p&gt;Tryk &lt;b&gt;OK&lt;/b&gt; for at starte VirtualBox nu eller tryk &lt;b&gt;Mere&lt;/b&gt;, hvis du ønsker mere information om hvad der blev konverteret eller vil tilgå yderligere funktioner&lt;/p&gt;&lt;p&gt;Tryk &lt;b&gt;Afslut&lt;/b&gt; for at afslutte VirtualBox uden at gemme resultaterne af konverteringen&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;More</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>&amp;Máis</translation>
+        <translation>&amp;Mere</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>Saí&amp;r</translation>
+        <translation>Afslut</translation>
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Os seguintes ficheiros de configuración de VirtualBox convertéronse automaticamente a nova versión de formato de ficheiro de configuracións &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Porén, os resultados da conversión non se gardaron en disco aínda. Prema en:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Copia de seguranza&lt;/b&gt; para crear copias de seguranza dos ficheiros de configuración no anterior formato antes de gardalos no novo formato;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Sobrescribir&lt;/b&gt; para gardar todos os ficheiros convertidos automaticamente sen crear copias de seguranza (despois non será posíbel empregar estes ficheiros de configuración cunha versión anterior de VirtualBox);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Sempre se recomenda seleccionar &lt;b&gt;Copia de seguranza&lt;/b&gt; porque neste caso (se for necesario) sería posíbel regresar á versión previa de VirtualBox sen perder a súa configuración actual. Consultar o manual de VirtualBox para máis información sobre volver a unha versión anterior.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Følgende filer med dine nuværende VirtualBox-indstillinger er automatisk blevet konverteret til det nye format &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Resultatet af konverteringen er endnu ikke gemt på disk. Tryk: &lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Kopiér&lt;/b&gt; for at oprette sikkerhedskopier af de gamle filer inden de gemmes i det nye format.&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overskriv&lt;/b&gt; for at gemme de konverterede filer uden at oprette sikkerhedskopier (dermed kan du ikke længere disse filer i en ældre version af VirtualBox)&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Det anbefales at vælge &lt;b&gt;Kopiér&lt;/b&gt;, da det giver mulighed for at skifte tilbage til en tidligere version af VirtualBox uden at miste dine indstillinger. Se manualen til VirtualBox, hvis du vil nedgradere.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation>&lt;li&gt;&lt;b&gt;Saír&lt;/b&gt; para finalizar VirtualBox sen gardar os resultados da conversión ao disco.&lt;/li&gt;</translation>
+        <translation>&lt;li&gt;Vælg &lt;b&gt;Aflslut&lt;/b&gt; for at afslutte VirtualBox uden at gemme resultatet af konverteringen til disk.&lt;/li&gt;</translation>
     </message>
     <message>
         <source>O&amp;verwrite</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>S&amp;obrescribir</translation>
+        <translation>O&amp;verskriv</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ocorreu un erro crítico mentres se executaba a máquina virtual e se detivo a súa execución.&lt;/p&gt;&lt;p&gt;Para obter axuda, consulte a sección Comunidade en &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; ou ao servizo de asistencia que teña contratado. Proporcione os contidos do ficheiro de rexistro &lt;tt&gt;VBox.log&lt;/tt&gt; e o ficheiro de imaxe &lt;tt&gt;VBox.png&lt;/tt&gt;, os cales pode localizar no cartafol &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, así como unha descrición do que estaba a facer cando sucedeu este erro. Nota que tamén pode acceder aos ficheiros de arriba seleccionando &lt;b&gt;Mostrar rexistro&lt;/b&gt; desde o menú &lt;b&gt;Máquina&lt;/b&gt; da xanela principal de VirtualBox.&lt;/p&gt;&lt;p&gt;Prema en &lt;b&gt;Aceptar&lt;/b&gt; se quere apagar a máquina ou prema en &lt;b&gt;Ignorar&lt;/b&gt; se quere deixala como está para depuración. Nota que a depuración require coñecementos e ferramentas especiais, polo que se recomenda premer en &lt;b&gt;Aceptar&lt;/b&gt; agora.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Der opstod en alvorlig fejl under afviklingen af den virtuelle maskine og afviklingen er stoppet.&lt;/p&gt;&lt;p&gt;For hjælp med dette, se under &lt;i&gt;Community&lt;/i&gt;-sektionen på &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; eller din support-kontrakt. Hav en kopi af logfilen &lt;tt&gt;VBox.log&lt;/tt&gt; og billedfilen &lt;tt&gt;VBox.png&lt;/tt&gt;, som du finder i kataloget &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; og en beskrivelse af hvad du gjorde da fejlen opstod, klar. Du kan også finde de nødvendige filer ved at vælge &lt;b&gt;Vis log&lt;/b&gt; fra menuen &lt;b&gt;Maskine&lt;/b&gt; i VirtualBox&apos; hovedvindue.&lt;/p&gt;&lt;p&gt;Tryk &lt;b&gt;OK&lt;/b&gt; for at slukke maskinen eller tryk &lt;b&gt;Fejlsøgning&lt;/b&gt;, hvis du vil efterlade maskinen i dens nuværende tilstand. Bemærk at fejlsøgning kræver særlig viden og værktøjer, så det anbefales at vælge &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>hard disk</source>
         <comment>failed to close ...</comment>
-        <translation>disco ríxido</translation>
+        <translation>harddisk</translation>
     </message>
     <message>
         <source>CD/DVD image</source>
         <comment>failed to close ...</comment>
-        <translation>imaxe de CD/DVD</translation>
+        <translation>CD/DVD-aftryk</translation>
     </message>
     <message>
         <source>floppy image</source>
         <comment>failed to close ...</comment>
-        <translation>imaxe de disquete</translation>
+        <translation>diskette-aftryk</translation>
     </message>
     <message>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation>Os seguintes ficheiros xa existen:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Está seguro de que quere substituílos? Substituílos sobrescribirá os seus contidos.</translation>
+        <translation>Følgende filer findes allerede:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Er du sikker på at du vil overskrive dem?</translation>
     </message>
     <message>
         <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation>Produciuse un fallo ao eliminar o ficheiro &lt;b&gt;%1&lt;/b&gt;.&lt;br/&gt;&lt;br/&gt;Elimine o ficheiro manualmente e ténteo de novo.</translation>
+        <translation>Kunne ikke slette filen &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Prøv manuelt at fjerne filen og gentag handlingen.</translation>
     </message>
     <message>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation>Está a executar unha versión prerelease de VirtualBox. Esta versión non é axeitada para o uso en produción.</translation>
+        <translation>Du benytter en beta-version af VirtualBox. Denne version er ikke egnet til produktiv brug.</translation>
     </message>
     <message>
         <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation>Non foi posíbel acceder ao USB no sistema anfitrión, porque nin o sistema de ficheiros USB (usbfs), nin o DBUS, nin os servizos da capa de abstracción de hardware (HAL) están dispoñíbeis actualmente. Se desexa empregar os dispositivos USB do anfitrión dentro dos sistemas convidados debe corrixir isto e reiniciar VirtualBox.</translation>
+        <translation>Kan ikke tilgå USB på værtssystemet, da hverken USB filsystemet (usbfs) eller DBus/HAL-tjenester er tilgængelige. Hvis du vil bruge USB-enheder fra værten i dine virtuelle maskiner skal du først løse problemet og så genstarte VirtualBox.</translation>
     </message>
     <message>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not use the ACPI subsystem.</source>
-        <translation>Está tentando apagar o convidado co botón de enerxía ACPI. Isto actualmente non é posíbel porque o convidado non permite o uso do subsistema ACPI.</translation>
+        <translation>Du forsøger at lukke gæsten vha kommandoen &quot;ACPI-sluk&quot;. Det er ikke muligt, da gæsten ikke understøtter ACPI-kommandoer.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Activouse a aceleración de hardware VT-x/AMD-V pero non é funcional. O seu sistema operativo convidado de 64-bit fallará ao detectar unha CPU de 64-bit e non poderá iniciarse.&lt;/p&gt;&lt;p&gt;Asegúrese de que activou correctamente VT-x/AMD-V no BIOS do seu computador anfitrión.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;VT-x/AMD-V hardware acceleration er slået til, men fungerer ikke. Din 64-bit gæst vil ikke kunne se en 64-bit CPU og vil derfor ikke kunne starte op.&lt;/p&gt;&lt;p&gt;Kontrollér at du har indstillet understøttelsen af VT-x/AMD-V korrekt i værtsmaskinens BIOS.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation>Pechar a máquina virtual (VM)</translation>
+        <translation>Luk virtuel maskine</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation>Continuar</translation>
+        <translation>Fortsæt</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Está seguro de que desexa borrar a instantánea e o estado gardado seleccionado?&lt;/p&gt;</translation>
+        <translatorcomment>Forskel på øjebliksbillede og saved state?</translatorcomment>
+        <translation>&lt;p&gt;Er du sikker på at du vil slette det valgte øjebliksbillede?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation>Descartar</translation>
+        <translation>Drop</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation>Annullér</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Existen discos ríxidos conectados aos portos do controlador adicional. Se desactiva o controlador adicional, todos estes discos ríxidos serán desconectados automaticamente.&lt;/p&gt;&lt;p&gt;Está seguro de que quere desactivar o controlador adicional?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Der er tilsluttet harddiske til porte på den ekstra styreenhed. Hvis du deaktiverer den ekstra styreenhed, vil disse harddiske automatisk blive frakoblet.&lt;/p&gt;&lt;p&gt;Er du sikker på at du vil deaktivere den ekstra styreenhed?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Existen discos ríxidos conectados aos portos do controlador adicional. Se cambia o controlador adicional, todos estes discos ríxidos serán desconectados automaticamente.&lt;/p&gt;&lt;p&gt;Está seguro de que quere cambiar o controlador adicional?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Der er tilsluttet harddiske til porte på den ekstra styreenhed. Hvis du ændrer på den ekstra styreenhed, vil disse harddiske automatisk blive frakoblet.&lt;/p&gt;&lt;p&gt;Er du sikker på at du vil ændre på den ekstra styreenhed?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change</source>
         <comment>hard disk</comment>
-        <translation>Cambiar</translation>
+        <translation>Udskift</translation>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
-        <translation>Produciuse un fallo ao crear a interface de rede exclusiva do anfitrión.</translation>
+        <translation>Kunne ikke oprette værtsbegrænset netværkskort.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Converteranse automaticamente os ficheiros existentes de configuracións de VirtualBox desde o formato antigo ao novo formato necesario para a nova versión de VirtualBox.&lt;/p&gt;&lt;p&gt;Prema en &lt;b&gt;Aceptar&lt;/b&gt; para iniciar VirtualBox agora ou prema en &lt;b&gt;Saír&lt;/b&gt; se quere terminar o aplicativo VirtualBox sen máis accións.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Dine nuværende VirtualBox-indstillinger vil automatisk blevet konverteret til det format, som kræves af den nye version af VirtualBox.&lt;/p&gt;&lt;p&gt;Tryk &lt;b&gt;OK&lt;/b&gt; for at starte VirtualBox nu eller tryk &lt;b&gt;Afslut&lt;/b&gt; for at afslutte VirtualBox uden at ændre noget.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open appliance.</source>
-        <translation>Produciuse un fallo ao abrir o servizo virtualizado.</translation>
+        <translation>Kunne ikke åbne Prækonfigureret system.</translation>
     </message>
     <message>
         <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao abrir/interpretar o servizo virtualizado &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke åbne/fortolke Prækonfigureret system &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao importar o servizo virtualizado &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke importere Prækonfigureret system &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create appliance.</source>
-        <translation>Produciuse un fallo ao crear o servizo virtualizado.</translation>
+        <translation>Kunne ikke oprette Prækonfigureret system.</translation>
     </message>
     <message>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao preparar a exportación do servizo virtualizado &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke forberede eksport af det Prækonfigurerede system &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create an appliance.</source>
-        <translation>Produciuse un fallo ao crear un servizo virtualizado.</translation>
+        <translation>Kunne ikke oprette Prækonfigureret system.</translation>
     </message>
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Produciuse un fallo ao exportar o servizo virtualizado &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Kunne ikke eksportere &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;O borrado desta rede exclusiva do anfitrión levará ao borrado das interfaces exclusivas do anfitrión baseadas nesta rede.  Quere eliminar a interface (rede exclusiva do anfitrión) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt; esta interface pode estar en uso por un ou máis adaptadores de rede virtuais pertencentes a unha das súas máquinas virtuais. Despois da súa eliminación, estes adaptadores non poderán empregarse máis ata que corrixa as súas configuracións, ou escollendo unha interface diferente ou un tipo de conexión diferente para o adaptador.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nedlæggelse af dette værtsbegrænsede netværk vil medføre sletning af det tilhørende værtsbegrænsede netværkskort. Vil du slette det (værtsbegrænsede) netværkskort &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Bemærk:&lt;/b&gt;det værtsbegrænsede netværk bruges muligvis af et eller flere virtuelle netværkskort i dine virtuelle maskiner. Hvis du sletter det værtsbaserede netværk, vil de virtuelle netværkskort ikke fungere før du vælger et andet netværk eller tilslutningstype til dem.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation>Xa existe un ficheiro chamado &lt;b&gt;%1&lt;/b&gt;. Está seguro de que quere substituílo?&lt;br /&gt;&lt;br /&gt;Ao substituílo sobrescribiranse o seu contido. </translation>
+        <translation>Filen &lt;b&gt;%1&lt;/b&gt; findes allerede. Er du sikker på at du vil overskrive den?&lt;br /&gt;&lt;br /&gt;Du vil miste det gamle indhold.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Activouse a aceleración de hardware VT-x/AMD-V pero non é funcional. Determinados convidados (p. ex. OS/2 e QNX) requiren esta característica.&lt;/p&gt;&lt;p&gt;Asegúrese de que no BIOS do seu computador anfitrión ten activada correctamente  VT-x/AMD-V.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;VT-x/AMD-V hardware acceleration er slået til, men fungerer ikke. Visse gæsteoperativsystemer (såsom OS/2 og QNX) kræver denne funktion.&lt;/p&gt;&lt;p&gt;Kontrollér at du har indstillet understøttelsen af VT-x/AMD-V korrekt i værtsmaskinens BIOS.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Especificou un enderezo de correo electrónico ou contrasinal non válido.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ugyldig email-adresse eller kodeord angivet.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Produciuse un fallo ao rexistrar o produto VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke registrere VirtualBox-produktet. &lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to check files.</source>
-        <translation>Produciuse un fallo ao comprobar os ficheiros.</translation>
+        <translation>Kunne ikke kontrollere filer.</translation>
     </message>
     <message>
         <source>Failed to remove file.</source>
-        <translation>Produciuse un fallo ao eliminar o ficheiro.</translation>
+        <translation>Kunne ikke pbne filer.</translation>
     </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
     <message>
         <source>Time remaining: %1</source>
-        <translation>Tempo restante: %1</translation>
+        <translation>Tilbageværende tid: %1</translation>
     </message>
 </context>
 <context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
-        <translation>Diálogo de rexistro de VirtualBox</translation>
+        <translation>Registrering af VirtualBox</translation>
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
-        <translation>Insira o seu nome completo empregando caracteres latinos.</translation>
+        <translation>Indtast dit navn.</translation>
     </message>
     <message>
         <source>Enter your valid e-mail address.</source>
-        <translation>Insira o seu enderezo de correo electrónico válido.</translation>
+        <translation>Indtast din email-adresse.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation>Benvida ao formulario de rexistro de VirtualBox!</translation>
+        <translation>Velkommen til Registrering af VirtualBox!</translation>
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
-        <translation>Non foi posíbel realizar a negociación da conexión.</translation>
+        <translation>Kunne ikke udføre forhandling af forbindelse.</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation>Annullér</translation>
     </message>
     <message>
         <source>Select Country/Territory</source>
-        <translation>Seleccione país/territorio</translation>
+        <translation>Vælg land/område</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Cubra este formulario de rexistro para permitirnos saber que emprega VirtualBox e, opcionalmente, telo informado sobre as novas e actualizacións de VirtualBox.&lt;/p&gt;&lt;p&gt;Empregue caracteres latinos para cubrir os campos de abaixo. Nota que Sun Microsystems soamente empregará esta información para obter estatísticas de uso do produto e para enviarlle boletíns de novas. En particular, Sun Microsystems nunca pasará os seus datos a terceiros. Información detallada sobre como empregamos os seus datos persoais encóntrase na sección &lt;b&gt;Política de privacidade&lt;/b&gt; do manual de VirtualBox ou no sitio web de VirtualBox na páxina &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Udfyld venligst denne registreringsformular for at lade os vide at du bruger VirtualBox og, hvis du ønsker det, så vi kan holde dig underrettet om VirtualBox-nyheder og opdateringer.&lt;/p&gt;&lt;p&gt;Brug latinske bogstaver i nedenstående felter. Vær opmærksom på at Sun Microsystems kun bruger denne information til at indsamle brugsstatistik og til at sende dig nyhedsbreve om VirtualBox. Sun Microsystems vil aldrig overgive dine data til tredjepart. Detaljeret information om hvad vi bruger dine personlige data til, kan findes i afsnittet &lt;b&gt;Privacy Policy&lt;/b&gt; i VirtualBox&apos; manual eller under &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; på VirtualBox&apos; hjemmeside.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>I &amp;have a Sun Online account already:</source>
-        <translation>Xa teño un&amp;ha conta en liña de Sun:</translation>
+        <translation>Jeg &amp;har allerede en Sun Online konto:</translation>
     </message>
     <message>
         <source>&amp;E-mail:</source>
-        <translation>Correo &amp;electrónico:</translation>
+        <translation>&amp;E-mail:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation>&amp;Contrasinal:</translation>
+        <translation>Kodeord:</translation>
     </message>
     <message>
         <source>I &amp;would like to register creating a new Sun Online account:</source>
-        <translation>&amp;Gustaríalle rexistrar a creación dunha nova conta de Sun en liña:</translation>
+        <translation>Jeg vil gerne oprette en Sun Online konto:</translation>
     </message>
     <message>
         <source>&amp;First Name:</source>
-        <translation>No&amp;me:</translation>
+        <translation>&amp;Fornavn:</translation>
     </message>
     <message>
         <source>&amp;Last Name:</source>
-        <translation>Ape&amp;lido:</translation>
+        <translation>Efternavn:</translation>
     </message>
     <message>
         <source>&amp;Company:</source>
-        <translation>&amp;Compañía:</translation>
+        <translation>Firma:</translation>
     </message>
     <message>
         <source>Co&amp;untry:</source>
-        <translation>Paí&amp;s:</translation>
+        <translation>Land:</translation>
     </message>
     <message>
         <source>E-&amp;mail:</source>
-        <translation>Correo elec&amp;trónico:</translation>
+        <translation>E-&amp;mail:</translation>
     </message>
     <message>
         <source>P&amp;assword:</source>
-        <translation>Contr&amp;asinal:</translation>
+        <translation>Kodeord:</translation>
     </message>
     <message>
         <source>Co&amp;nfirm Password:</source>
-        <translation>Co&amp;nfirmar contrasinal:</translation>
+        <translation>Ge&amp;ntag kodeord:</translation>
     </message>
     <message>
         <source>&amp;Register</source>
-        <translation>&amp;Rexistro</translation>
+        <translation>&amp;Registrér</translation>
     </message>
 </context>
 <context>
     <name>VBoxSFDialog</name>
     <message>
         <source>Shared Folders</source>
-        <translation>Cartafoles compartidos</translation>
+        <translation>Delte mapper</translation>
     </message>
 </context>
 <context>
@@ -3916,141 +3931,141 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation>&amp;Detalles</translation>
+        <translation>&amp;Detaljer</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
-        <translation>&amp;Preferencias...</translation>
+        <translation>Indstillinger...</translation>
     </message>
     <message>
         <source>Display the global settings dialog</source>
-        <translation>Mostrar o diálogo de configuracións globais</translation>
+        <translation>Vis globale indstillinger</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
-        <translation>Saí&amp;r</translation>
+        <translation>Afslut</translation>
     </message>
     <message>
         <source>Close application</source>
-        <translation>Cerrar o aplicativo</translation>
+        <translation>Luk applikationen</translation>
     </message>
     <message>
         <source>&amp;New...</source>
-        <translation>&amp;Novo...</translation>
+        <translation>&amp;Ny...</translation>
     </message>
     <message>
         <source>Create a new virtual machine</source>
-        <translation>Crear unha nova máquina virtual</translation>
+        <translation>Opret en ny virtuel maskine</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation>Configuración&amp;s...</translation>
+        <translation>Op&amp;sætning...</translation>
     </message>
     <message>
         <source>Configure the selected virtual machine</source>
-        <translation>Configurar a máquina virtual seleccionada</translation>
+        <translation>Tilpas den valgte virtuelle maskine</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>&amp;Borrar</translation>
+        <translation>Ne&amp;dlæg</translation>
     </message>
     <message>
         <source>Delete the selected virtual machine</source>
-        <translation>Borrar a máquina virtual seleccionada</translation>
+        <translation>Slet den valgte virtuelle maskine</translation>
     </message>
     <message>
         <source>D&amp;iscard</source>
-        <translation>Rexe&amp;itar</translation>
+        <translation>Drop</translation>
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Descartar o estado gardado da máquina virtual seleccionada</translation>
+        <translation>Dropper den gemte tilstand af den valgte virtuelle maskine</translation>
     </message>
     <message>
         <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Actualizar o estado de accesibilidade da máquina virtual seleccionada</translation>
+        <translation>Opdatér tilgængeligheden af den valgte virtuelle maskine</translation>
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>&amp;Ficheiro</translation>
+        <translation>&amp;Fil</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>A&amp;xuda</translation>
+        <translation>&amp;Hjælp</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation>In&amp;stantáneas</translation>
+        <translation>Øjeblik&amp;sbilleder</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
-        <translation>D&amp;escrición</translation>
+        <translation>B&amp;eskrivelse</translation>
     </message>
     <message>
         <source>D&amp;escription *</source>
-        <translation>D&amp;escrición *</translation>
+        <translation>B&amp;eskrivelse *</translation>
     </message>
     <message>
         <source>S&amp;how</source>
-        <translation>M&amp;ostrar</translation>
+        <translation>Vis</translation>
     </message>
     <message>
         <source>Switch to the window of the selected virtual machine</source>
-        <translation>Cambia a xanela da máquina virtual seleccionada</translation>
+        <translation>Skift til den valgte virtuelle maskines vindue</translation>
     </message>
     <message>
         <source>S&amp;tart</source>
-        <translation>I&amp;niciar</translation>
+        <translation>S&amp;tart</translation>
     </message>
     <message>
         <source>Start the selected virtual machine</source>
-        <translation>Iniciar a máquina virtual seleccionada</translation>
+        <translation>Start den valgte virtuelle maskine</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation>&amp;Máquina</translation>
+        <translation>&amp;Maskine</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
-        <translation>Mostrar re&amp;xistro...</translation>
+        <translation>Vis &amp;log...</translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation>Mostrar os ficheiros de rexistro da máquina virtual seleccionada</translation>
+        <translation>Vis logfilerne fra den valgte virtuelle maskine</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>Con&amp;tinuar</translation>
+        <translation>G&amp;enoptag</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>Continuar a execución da máquina virtual</translation>
+        <translation>Genoptag afviklingen af den virtuelle maskine</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation>De&amp;ter</translation>
+        <translation>&amp;Pause</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>Suspender a execución da máquina virtual</translation>
+        <translation>Suspendér afviklingen af den virtuelle maskine</translation>
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Dámoslle a benvida a VirtualBox.&lt;/h3&gt;&lt;p&gt;A parte esquerda desta xanela destínase a mostrar unha lista de todas as máquinas virtuais do seu computador. Neste intre a lista está baleira porque aínda non creou ningunha máquina virtual.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Para crear unha nova máquina virtual prema no botón &lt;b&gt;Novo&lt;/b&gt; da barra de ferramentas localizada na parte superior da xanela principal.&lt;/p&gt;&lt;p&gt;Pode premer a tecla &lt;b&gt;%1&lt;/b&gt; para obter axuda ou visitar &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; para consultar as últimas novas e información.&lt;/p&gt;</translation>
+        <translation>&lt;h3&gt;Velkommen til VirtualBox!&lt;/h3&gt;&lt;p&gt;Den venstre side af dette vindue viser alle virtuelle maskiner på din computer. Lige nu er listen tom, fordi du ikke har oprettet nogle virtuelle maskiner endnu.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;For at oprette en virtuel maskine, klik på knappen &lt;b&gt;Ny&lt;/b&gt; i værktøjslinjen.&lt;/p&gt;&lt;p&gt;Du kan også trykke &lt;b&gt;%1&lt;/b&gt; for at få hjælp eller besøge &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for information og nyheder.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Virtual Media Manager...</source>
-        <translation>Xestor de medios &amp;virtuais...</translation>
+        <translation>&amp;Virtuel diskhåndtering...</translation>
     </message>
     <message>
         <source>Display the Virtual Media Manager dialog</source>
-        <translation>Mostra o diálogo do xestor de medios virtuais</translation>
+        <translation>Åbner Virtual diskhåndtering</translation>
     </message>
     <message>
         <source>Log</source>
         <comment>icon text</comment>
-        <translation>Rexistro</translation>
+        <translation>Log</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
@@ -4058,249 +4073,251 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
-        <translation>&amp;Importar servizo virtualizado...</translation>
+        <translation>&amp;Importér Prækonfigureret system...</translation>
     </message>
     <message>
         <source>Import an appliance into VirtualBox</source>
-        <translation>Importa un servizo virtualizado (appliance) no VirtualBox</translation>
+        <translation>Importerer et Prækonfigureret system til VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Export Appliance...</source>
-        <translation>&amp;Exportar servizo virtualizado...</translation>
+        <translation>&amp;Eksportér Prækonfigureret system...</translation>
     </message>
     <message>
         <source>Export an appliance out of VM&apos;s from VirtualBox</source>
-        <translation>Exportar un servizo virtualizado (Appliance) desde máquinas virtuais de VirtualBox</translation>
+        <translation>Eksporterer et Prækonfigureret system fra VirtualBox</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation>Actuali&amp;zar</translation>
+        <translation>Genop&amp;frisk</translation>
     </message>
 </context>
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;Seleccione da lista a súa esquerda unha categoría de configuración e logo mova o rato sobre os elementos para obter máis información&lt;/i&gt;.</translation>
+        <translation>&lt;i&gt;Vælg en kategori i listen til venstre og peg med musen på en indstilling for at få mere information&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation>Detectáronse configuracións non válidas</translation>
+        <translation>Ugyldige indstillinger fundet</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>Configuracións</translation>
+        <translation>Indstillinger</translation>
     </message>
     <message>
         <source>Non-optimal settings detected</source>
-        <translation>Detectáronse configuracións non optimizadas</translation>
+        <translation>Uhensigtsmæssige indstillinger fundet</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation>Dentro da sección &lt;b&gt;%1&lt;/b&gt;, %2</translation>
+        <translation>På siden &lt;b&gt;%1&lt;/b&gt;, %2</translation>
     </message>
 </context>
 <context>
     <name>VBoxSnapshotDetailsDlg</name>
     <message>
         <source>VBoxSnapshotDetailsDlg</source>
+        <translatorcomment>Probably should not be translated</translatorcomment>
         <translation>VBoxSnapshotDetailsDlg</translation>
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation>&amp;Nome</translation>
+        <translation>&amp;Navn</translation>
     </message>
     <message>
         <source>&amp;Description</source>
-        <translation>&amp;Descrición</translation>
+        <translation>Beskrivelse</translation>
     </message>
     <message>
         <source>&amp;Machine Details</source>
-        <translation>Detalles da &amp;máquina</translation>
+        <translation>&amp;Maskin-detaljer</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
-        <translation>Detalles de %1 (%2)</translation>
+        <translation>Detaljer for %1 (%2)</translation>
     </message>
     <message>
         <source>Snapshot Details</source>
-        <translation>Detalles da instantánea</translation>
+        <translation>Detaljer om øjebliksbillede</translation>
     </message>
 </context>
 <context>
     <name>VBoxSnapshotsWgt</name>
     <message>
         <source>[snapshot]</source>
-        <translation>[instantánea]</translation>
+        <translation>[øjebliksbillede]</translation>
     </message>
     <message>
         <source>VBoxSnapshotsWgt</source>
+        <translatorcomment>Probably should not be translated</translatorcomment>
         <translation>VBoxSnapshotsWgt</translation>
     </message>
     <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation>Estado actual (modificado)</translation>
+        <translation>Aktuel tilstand (ændret)</translation>
     </message>
     <message>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation>Estado actual</translation>
+        <translation>Aktuel tilstand</translation>
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation>O estado actual é diferente do estado almacenado na instántanea actual</translation>
+        <translation>Den aktuelle tilstand er forskellig fra øjebliksbilledets tilstand</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation>O estado actual é idéntico ao estado almacenado na instantánea actual</translation>
+        <translation>Den aktuelle tilstand er identisk med øjebliksbilledets tilstand</translation>
     </message>
     <message>
         <source> (current, </source>
         <comment>Snapshot details</comment>
-        <translation> (actual, </translation>
+        <translation> (aktuel, </translation>
     </message>
     <message>
         <source>online)</source>
         <comment>Snapshot details</comment>
-        <translation>conectado)</translation>
+        <translation>tilgængelig)</translation>
     </message>
     <message>
         <source>offline)</source>
         <comment>Snapshot details</comment>
-        <translation>sen conexión)</translation>
+        <translation>utilgængelig)</translation>
     </message>
     <message>
         <source>Taken at %1</source>
         <comment>Snapshot (time)</comment>
-        <translation>Tomado en %1</translation>
+        <translation>Taget %1</translation>
     </message>
     <message>
         <source>Taken on %1</source>
         <comment>Snapshot (date + time)</comment>
-        <translation>Tomado en %1</translation>
+        <translation>Taget %1</translation>
     </message>
     <message>
         <source>%1 since %2</source>
         <comment>Current State (time or date + time)</comment>
-        <translation>%1 desde %2</translation>
+        <translation>%1 siden %2</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Instantánea %1</translation>
+        <translation>Øjebliksbillede %1</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot</source>
-        <translation>Tomar in&amp;stantánea</translation>
+        <translation>Tag øjeblik&amp;sbillede</translation>
     </message>
     <message>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation>&amp;Reverter a instantánea actual</translation>
+        <translation>Genindlæs seneste øjebliksbillede</translation>
     </message>
     <message>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation>Descartar estado e &amp;instantánea actual</translation>
+        <translation>Drop den nuværende t&amp;ilstand og øjebliksbillede</translation>
     </message>
     <message>
         <source>S&amp;how Details</source>
-        <translation>M&amp;ostrar os detalles</translation>
+        <translation>Vis detaljer</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation>Tomar unha instantánea do estado actual da máquina virtual</translation>
+        <translation>Tag et øjebliksbillede af den virtuelle maskines nuværende tilstand</translation>
     </message>
     <message>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation>Restaurar o estado da máquina virtual desde o estado almacenado na actual instantánea</translation>
+        <translation>Nulstil den virtuelle maskines tilstand til tilstanden gemt i det nuværende øjebliksbillede</translation>
     </message>
     <message>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation>Descarta o estado actual da instantánea e reverte a máquina ao estado que tiña antes de que se tomara a instantánea</translation>
+        <translation>Drop det nuværende øjebliksbillede og nulstil maskinen til den tilstand den havde før øjebliksbilledet blev taget</translation>
     </message>
     <message>
         <source>Show details of the selected snapshot</source>
-        <translation>Mostrar os detalles da instantánea seleccionada</translation>
+        <translation>Vis detaljer om det valgte øjebliksbillede</translation>
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation>Re&amp;xeitar a Instantánea</translation>
+        <translation>&amp;Drop øjebliksbillede</translation>
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation>Descartar a instantánea da máquina virtual seleccionada</translation>
+        <translation>Dropper det valgte øjebliksbillede</translation>
     </message>
 </context>
 <context>
     <name>VBoxSwitchMenu</name>
     <message>
         <source>Disable</source>
-        <translation>Desactivar</translation>
+        <translation>Deaktivér</translation>
     </message>
     <message>
         <source>Enable</source>
-        <translation>Activar</translation>
+        <translation>Aktivér</translation>
     </message>
 </context>
 <context>
     <name>VBoxTakeSnapshotDlg</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation>Tomar unha instantánea da máquina virtual</translation>
+        <translation>Tag øjebliksbillede af virtuel maskine</translation>
     </message>
     <message>
         <source>Snapshot &amp;Name</source>
-        <translation>&amp;Nome da instantánea</translation>
+        <translation>&amp;Navn på øjebliksbillede</translation>
     </message>
     <message>
         <source>Snapshot &amp;Description</source>
-        <translation>&amp;Descrición da instantánea</translation>
+        <translation>Beskrivelse af øjebliksbille&amp;de</translation>
     </message>
 </context>
 <context>
     <name>VBoxTextEditor</name>
     <message>
         <source>Edit text</source>
-        <translation>Editar texto</translation>
+        <translation>Redigér tekst</translation>
     </message>
     <message>
         <source>&amp;Replace...</source>
-        <translation>Substituí&amp;r...</translation>
+        <translation>E&amp;rstat...</translation>
     </message>
     <message>
         <source>Replaces the current text with the content of a given file.</source>
-        <translation>Substituír o texto actual co contido dun ficheiro dado.</translation>
+        <translation>Erstatter den nuværende tekst med indholdet fra en fil.</translation>
     </message>
     <message>
         <source>Text (*.txt);;All (*.*)</source>
-        <translation>Texto (*.txt);;Todos (*.*)</translation>
+        <translation>Tekst (*.txt);;Alle (*.*)</translation>
     </message>
     <message>
         <source>Select a file to open...</source>
-        <translation>Seleccionar un ficheiro para abrir...</translation>
+        <translation>Vælg filen, der skal åbnes...</translation>
     </message>
 </context>
 <context>
     <name>VBoxTrayIcon</name>
     <message>
         <source>Show Selector Window</source>
-        <translation>Mostrar selector de xanela</translation>
+        <translation>Vis Vælger-vinduet</translation>
     </message>
     <message>
         <source>Show the selector window assigned to this menu</source>
-        <translation>Mostrar o selector de xanela asignado a este menú</translation>
+        <translation>Viser Vælger-vinduet tilknyttet denne menu</translation>
     </message>
     <message>
         <source>Hide Tray Icon</source>
-        <translation>Ocultar icona da área de notificación</translation>
+        <translation>Skjul statusikon</translation>
     </message>
     <message>
         <source>Remove this icon from the system tray</source>
-        <translation>Eliminar esta icona da área de notificación</translation>
+        <translation>Fjern dette ikon fra statuslinjen</translation>
     </message>
     <message>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation>&amp;Outras máquinas...</translation>
+        <translation>Andre maskiner...</translation>
     </message>
 </context>
 <context>
@@ -4308,220 +4325,220 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;no available devices&gt;</source>
         <comment>USB devices</comment>
-        <translation>&lt;dispositivos non dispoñíbeis&gt;</translation>
+        <translation>&lt;ingen tilgængelige enheder&gt;</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
-        <translation>Ningún dispositivo compatíbel está conectado ao PC anfitrión</translation>
+        <translation>Ingen understøttede enheder forbundet til værtsmaskinen</translation>
     </message>
 </context>
 <context>
     <name>VBoxUpdateDlg</name>
     <message>
         <source>1 day</source>
-        <translation>1 día</translation>
+        <translation>1 dag</translation>
     </message>
     <message>
         <source>2 days</source>
-        <translation>2 días</translation>
+        <translation>2 dage</translation>
     </message>
     <message>
         <source>3 days</source>
-        <translation>3 días</translation>
+        <translation>3 dage</translation>
     </message>
     <message>
         <source>4 days</source>
-        <translation>4 días</translation>
+        <translation>4 dage</translation>
     </message>
     <message>
         <source>5 days</source>
-        <translation>5 días</translation>
+        <translation>5 dage</translation>
     </message>
     <message>
         <source>6 days</source>
-        <translation>6 días</translation>
+        <translation>6 dage</translation>
     </message>
     <message>
         <source>1 week</source>
-        <translation>1 semana</translation>
+        <translation>1 uge</translation>
     </message>
     <message>
         <source>2 weeks</source>
-        <translation>2 semanas</translation>
+        <translation>2 uger</translation>
     </message>
     <message>
         <source>3 weeks</source>
-        <translation>3 semanas</translation>
+        <translation>3 uger</translation>
     </message>
     <message>
         <source>1 month</source>
-        <translation>1 mes</translation>
+        <translation>1 måned</translation>
     </message>
     <message>
         <source>Never</source>
-        <translation>Nunca</translation>
+        <translation>Aldrig</translation>
     </message>
     <message>
         <source>Chec&amp;k</source>
-        <translation>Compro&amp;bar</translation>
+        <translation>&amp;Søg</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>&amp;Cerrar</translation>
+        <translation>Luk</translation>
     </message>
     <message>
         <source>VirtualBox Update Wizard</source>
-        <translation>Asistente de actualización de VirtualBox</translation>
+        <translation>VirtualBox opdateringsguide</translation>
     </message>
     <message>
         <source>Check for Updates</source>
-        <translation>Comprobar actualizacións</translation>
+        <translation>Søg efter opdateringer</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation>Annullér</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation>Resumo</translation>
+        <translation>Oversigt</translation>
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Unha nova versión de VirtualBox foi publicada! A versión &lt;b&gt;%1&lt;/b&gt; está dispoñíbel en &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Pode descargar esta versión directamente desde esta ligazón:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Der er frigivet en ny version af VirtualBox! Version &lt;b&gt;%1&lt;/b&gt; er tilgængelig fra &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Du kan hente den nye version her:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Resultou imposíbel obter información sobre a nova versión debido ao seguinte erro de rede:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kunne ikke søge efter opdateringer på grund af netværksfejlen:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
-        <translation>Xa está instalada a última versión de VirtualBox. Repita a comprobación de versión máis tarde.</translation>
+        <translation>Du har allerede den nyeste version af VirtualBox. Søg efter opdateringer igen en anden dag.</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Este asistente conectarao ao sitio web de VirtualBox e comprobará se unha nova versión de VirtualBox está dispoñíbel.&lt;/p&gt;&lt;p&gt;Emprega o botón &lt;b&gt;Comprobar&lt;/b&gt;para comprobar agora unha nova versión ou o botón &lt;b&gt;Cancelar&lt;/b&gt; se non quere realizar esta comprobación.&lt;/p&gt;&lt;p&gt;Pode executar este asistente en calquera momento escollendo &lt;b&gt;Comprobar actualizacións...&lt;/b&gt; desde o menú &lt;b&gt;Axuda&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Denne guide vil forbinde sig til VirtualBox&apos; hjemmeside for at søge efter en opdateret udgave af VirtualBox.&lt;/p&gt;&lt;p&gt;Klik på &lt;b&gt;Søg&lt;/b&gt; for at søge efter opdateringer eller &lt;b&gt;Annullér&lt;/b&gt; hvis du vil afbryde.&lt;/p&gt;&lt;p&gt;Du kan starte denne guide når som helst ved at vælge &lt;b&gt;Søg efter opdateringer...&lt;/b&gt; fra menuen &lt;b&gt;Hjælp&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMDescriptionPage</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>Sen descrición. Prema no botón Editar de abaixo para engadila.</translation>
+        <translation>Ingen beskrivelse. Klik på Redigér for at tilføje en.</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>Editar</translation>
+        <translation>Redigér</translation>
     </message>
     <message>
         <source>Edit (Ctrl+E)</source>
-        <translation>Editar (Ctrl+E)</translation>
+        <translation>Redigér (Ctrl+E)</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMDetailsView</name>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation>A máquina virtual seleccionada está &lt;i&gt;inaccesíbel&lt;/i&gt;. Inspecciona a mensaxe de erro mostrada abaixo e prema no botón &lt;b&gt;Actualizar&lt;/b&gt; se quere repetir a comprobación de accesibilidade:</translation>
+        <translation>Den valgte virtuelle maskine er &lt;i&gt;utilgængelig&lt;/i&gt;. Læs fejlmeddelelsen nedenfor og klik på &lt;b&gt;Opdatér&lt;/b&gt; hvis du vil gentage tilgængelighedstjekket:</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
-        <translation>Asistente de primeira execución</translation>
+        <translation>Guide til 1.gang</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Iniciou por primeira vez unha máquina virtual creada recentemente. Este asistente axudárao a efectuar os pasos necesarios para instalar un sistema operativo da súa elección nesta máquina virtual.&lt;/p&gt;&lt;p&gt;Empregue o botón &lt;b&gt;Seguinte&lt;/b&gt; para ir á seguinte páxina do asistente e o botón &lt;b&gt;Volver&lt;/b&gt; para regresar á páxina anterior. Tamén pode premer en &lt;b&gt;Cancelar&lt;/b&gt; se quere cancelar a execución deste asistente.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Du har startet en nyoprettet virtuel maskine for første gang. Denne guide hjælper dig med at udføre de trin, der er nødvendige for at installere det ønskede operativsystem i den virtuelle maskine.&lt;/p&gt;&lt;p&gt;Klik på &lt;b&gt;Næste&lt;/b&gt; for at gå til næste side af guiden og &lt;b&gt;Tilbage&lt;/b&gt; for at gå tilbage til den forrige side. Du kan også vælge &lt;b&gt;Annullér&lt;/b&gt;, hvis du vil afbryde denne guide.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the First Run Wizard!</source>
-        <translation>Benvida ao asistente de primeira execución!</translation>
+        <translation>Velkommen til 1.gang-guiden!</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Selecciona o tipo de medio proposto abaixo que lle gustaría empregar para a instalación.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vælg medietypen, som du ønsker at bruge til installationsarbejdet, nedenfor.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Type</source>
-        <translation>Tipo de medio</translation>
+        <translation>Medietype</translation>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Device</source>
-        <translation>Dispositivo de &amp;CD/DVD-ROM</translation>
+        <translation>&amp;CD/DVD-ROM drev</translation>
     </message>
     <message>
         <source>&amp;Floppy Device</source>
-        <translation>Dis&amp;queteira</translation>
+        <translation>Diskettedrev</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccione o medio que contén o programa de instalación do sistema operativo que quere instalar. Este medio debe ser iniciábel, noutro caso o programa de instalación non se poderá iniciar.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vælg mediet, som indeholder opsætningsprogrammet til det ønskede operativsystem. Det skal være muligt at starte op på mediet for at opsætningsprogrammet kan køre.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Source</source>
-        <translation>Fonte de medios</translation>
+        <translation>Mediekilde</translation>
     </message>
     <message>
         <source>&amp;Host Drive</source>
-        <translation>Unidade anfi&amp;trión</translation>
+        <translation>Værtsdrev</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation>Ficheiro de &amp;imaxe</translation>
+        <translation>Aftryksf&amp;il</translation>
     </message>
     <message>
         <source>Select Installation Media</source>
-        <translation>Seleccionar medio de instalación</translation>
+        <translation>Vælg installationsmedie</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccionou iniciar desde os seguintes medios:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Du har valgt at starte op på følgende medie:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation>Resumo</translation>
+        <translation>Oversigt</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Device</source>
-        <translation>Dispositivo de CD/DVD-ROM</translation>
+        <translation>CD/DVD-ROM drev</translation>
     </message>
     <message>
         <source>Floppy Device</source>
-        <translation>Disqueteira</translation>
+        <translation>Diskettedrev</translation>
     </message>
     <message>
         <source>Host Drive %1</source>
-        <translation>Unidade do anfitrión %1</translation>
+        <translation>Værtsdrev %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Iniciou por primeira vez unha máquina virtual creada recentemente. Este asistente axudárao a efectuar os pasos necesarios para iniciar un sistema operativo da súa escolla na máquina virtual.&lt;/p&gt;&lt;p&gt;Nota que agora non poderá instalar un sistema operativo nesta máquina virtual porque non conectou ningún disco ríxido a máquina. Se non é isto o que quere, pode cancelar a execución deste asistente. Seleccione &lt;b&gt;Configuracións&lt;/b&gt; desde o menú &lt;b&gt;Máquina&lt;/b&gt; da xanela principal de VirtualBox para acceder ao diálogo de configuracións desta máquina e cambiar a configuración do disco ríxido.&lt;/p&gt;&lt;p&gt;Empregue o botón &lt;b&gt;Seguinte&lt;/b&gt; para ir á seguinte páxina do asistente e o botón &lt;b&gt;Volver&lt;/b&gt; para regresar á páxina anterior. Tamén pode premer en &lt;b&gt;Cancelar&lt;/b&gt; se quere cancelar a execución deste asistente.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Du har startet en nyoprettet virtuel maskine for første gang. Denne guide hjælper dig med at udføre de trin, der er nødvendige for at starte et operativsystem i den virtuelle maskine.&lt;/p&gt;&lt;p&gt;Bemærk at du ikke kan installere et operativsystem i denne virtuelle maskine endnu, da du ikke har tilsluttet en harddisk til den. Hvis du ønsker at tilføje en harddisk, så skal du afbryde denne guide og vælge &lt;b&gt;Indstillinger&lt;/b&gt; fra menuen &lt;b&gt;Maskine&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Klik &lt;b&gt;Næste&lt;/b&gt; for at gå til næste side af guiden og &lt;b&gt;Tilbage&lt;/b&gt; for at gå til den forrige side. Du kan også vælge &lt;b&gt;Annullér&lt;/b&gt;, hvis du vil afbryde denne guide.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccione o tipo de medio que lle gustaría empregar para iniciar o sistema operativo.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vælg medietypen, som du ønsker at bruge til opstarten af et operativsystem.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccione o medio que contén o sistema operativo co quere traballar. Este medio debe ser iniciábel, noutro caso o sistema operativo non se poderá iniciar.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vælg mediet, som indeholder operativsystemet du vil anvende. Det skal være muligt at starte op på mediet for at operativsystem kan starte.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccionou iniciar un sistema operativo desde os seguintes medios:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Du har valgt at starte et operativsystem fra følgende medie:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Se o anterior é correcto, prema no botón &lt;b&gt;Finalizar&lt;/b&gt;. Unha vez que prema nel, montarase unha máquina virtual no medio seleccionado e a máquina iniciará a súa execución.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Tryk &lt;b&gt;Færdig&lt;/b&gt; hvis ovenstående er korrekt. Det valgte medie vil så blive monteret på den virtuelle maskine og maskinen vil begynde afviklingen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; Vo&amp;lver</translation>
+        <translation>&lt; Til&amp;bage</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation>Segui&amp;nte&gt;</translation>
+        <translation>&amp;Næste &gt;</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
@@ -4533,134 +4550,135 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Se o anterior é correcto prema no botón &lt;span style=&quot; font-weight:600;&quot;&gt;Finalizar&lt;/span&gt;. Unha vez que prema nel, o medio seleccionado montarase temporalmente na máquina virtual e a máquina iniciará a súa execución.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Nota que cando peche a máquina virtual, automaticamente se desmontará o medio especificado e o dispositivo de inicio estabelecerase ao primeiro disco ríxido.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Dependendo do tipo de programa de instalación, pode necesitar desmontar manualmente (expulsar) o medio despois de que o programa de instalación reinicie a máquina virtual para evitar que o proceso de instalación comece de novo. Pode facer isto seleccionado a acción &lt;span style=&quot; font-weight:600;&quot;&gt;Desmontar...&lt;/span&gt; no menú &lt;span style=&quot; font-weight:600;&quot;&gt;Dispositivos&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Hvis ovenstående er korrekt, klik på.knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Færdig&lt;/span&gt;. Herefter vil det valgte medie blive monteret midlertidigt på den virtuelle maskine, som så begynder afviklingen.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Bemærk at når du lukker den virtuelle maskine vil det valgte medie automatisk blive afmonteret og opstartsenheden vil blive sat til den første harddisk.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Afhængig af typen af opsætningsprogram, kan det være nødvendigt manuelt at afmontere (fjerne) mediet, når opsætningsprogrammet genstarter den virtuelle maskine for at undgå at opsætningsprogrammet starter igen. Du kan gøre dette ved at vælge handlingen &lt;span style=&quot; font-weight:600;&quot;&gt;Afmontér...&lt;/span&gt; i menuen &lt;span style=&quot; font-weight:600;&quot;&gt;Enheder&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation>&amp;Finalizar</translation>
+        <translation>A&amp;fslut</translation>
     </message>
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation>Tipo</translation>
+        <translation>Type</translation>
     </message>
     <message>
         <source>Source</source>
         <comment>summary</comment>
-        <translation>Fonte</translation>
+        <translation>Kilde</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation>Annullér</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMInformationDlg</name>
     <message>
         <source>%1 - Session Information</source>
-        <translation>%1 - Información de sesión</translation>
+        <translation>%1 - Sessionsinformation</translation>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation>&amp;Detalles</translation>
+        <translation>&amp;Detaljer</translation>
     </message>
     <message>
         <source>&amp;Runtime</source>
-        <translation>&amp;Tempo de execución</translation>
+        <translation>Afvikling</translation>
     </message>
     <message>
         <source>DMA Transfers</source>
-        <translation>Transferencia DMA</translation>
+        <translation>DMA-overførsler</translation>
     </message>
     <message>
         <source>PIO Transfers</source>
-        <translation>Transferencia PIO</translation>
+        <translation>PIO-overførsler</translation>
     </message>
     <message>
         <source>Data Read</source>
-        <translation>Datos lidos</translation>
+        <translation>Data læst</translation>
     </message>
     <message>
         <source>Data Written</source>
-        <translation>Datos escritos</translation>
+        <translation>Data skrevet</translation>
     </message>
     <message>
         <source>Data Transmitted</source>
-        <translation>Datos transmitidos</translation>
+        <translation>Data sendt</translation>
     </message>
     <message>
         <source>Data Received</source>
-        <translation>Datos recibidos</translation>
+        <translation>Data modtaget</translation>
     </message>
     <message>
         <source>Runtime Attributes</source>
-        <translation>Atributos de tempo de execución</translation>
+        <translation>Afviklingsindstillinger</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
-        <translation>Resolución da pantalla</translation>
+        <translation>Skærmopløsning</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
-        <translation>Estatísticas do CD/DVD-ROM</translation>
+        <translation>CD/DVD-ROM-statistik</translation>
     </message>
     <message>
         <source>Network Adapter Statistics</source>
-        <translation>Estatísticas do adaptador de rede</translation>
+        <translation>Netværkskort-statistik</translation>
     </message>
     <message>
         <source>Version %1.%2</source>
         <comment>guest additions</comment>
-        <translation>Versión %1.%2</translation>
+        <translation>Version %1.%2</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation>Non se detectou</translation>
+        <translation>Ikke fundet</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest os type</comment>
-        <translation>Non se detectou</translation>
+        <translation>Ikke fundet</translation>
     </message>
     <message>
         <source>Guest Additions</source>
-        <translation>Os aplicativos para o sistema operativo convidado</translation>
+        <translation>Gæstetilføjelser</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation>Tipo do sistema operativo convidado</translation>
+        <translation>Gæsteoperativsystemtype</translation>
     </message>
     <message>
         <source>Hard Disk Statistics</source>
-        <translation>Estatísticas do disco ríxido</translation>
+        <translation>Harddisk-statistik</translation>
     </message>
     <message>
         <source>No Hard Disks</source>
-        <translation>Sen discos ríxidos</translation>
+        <translation>Ingen harddiske</translation>
     </message>
     <message>
         <source>No Network Adapters</source>
-        <translation>Sen adaptadores de rede</translation>
+        <translation>Ingen netværkskort</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Activado</translation>
+        <translation>Slået til</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Desactivado</translation>
+        <translation>Slået fra</translation>
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation>Paxinación aniñada</translation>
+        <translation>Nested Paging</translation>
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
+        <translatorcomment>Probably should not be translated</translatorcomment>
         <translation>VBoxVMInformationDlg</translation>
     </message>
 </context>
@@ -4668,173 +4686,173 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMListView</name>
     <message>
         <source>Inaccessible</source>
-        <translation>Inaccesíbel</translation>
+        <translation>Utilgængelig</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 desde %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Sesión %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 siden %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccesíbel desde %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Utilgængelig siden %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>S&amp;how</source>
-        <translation>M&amp;ostrar</translation>
+        <translation>Vis</translation>
     </message>
     <message>
         <source>Switch to the window of the selected virtual machine</source>
-        <translation>Cambia a xanela da máquina virtual seleccionada</translation>
+        <translation>Skift til den valgte virtuelle maskines vindue</translation>
     </message>
     <message>
         <source>S&amp;tart</source>
-        <translation>I&amp;niciar</translation>
+        <translation>S&amp;tart</translation>
     </message>
     <message>
         <source>Start the selected virtual machine</source>
-        <translation>Iniciar a máquina virtual seleccionada</translation>
+        <translation>Start den valgte virtuelle maskine</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>Con&amp;tinuar</translation>
+        <translation>G&amp;enoptag</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>Continuar a execución da máquina virtual</translation>
+        <translation>Genoptag afviklingen af den virtuelle maskine</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation>De&amp;ter</translation>
+        <translation>&amp;Pause</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>Suspender a execución da máquina virtual</translation>
+        <translation>Suspendér afviklingen af den virtuelle maskine</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
-        <translation>Visualizador de rexistro</translation>
+        <translation>Logfremviser</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>&amp;Gardar</translation>
+        <translation>Gem</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation>Actualiza&amp;r</translation>
+        <translation>Opdaté&amp;r</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 - Visualizador de rexistro de VirtualBox</translation>
+        <translation>%1 - VirtualBox logfremviser</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Non se encontrou ningún ficheiro de rexistro. Prema no botón &lt;b&gt;Actualizar&lt;/b&gt; para examinar de novo o cartafol de rexistro &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ingen logfiler fundet. Klik på knappen &lt;b&gt;Opdatér&lt;/b&gt; for at genindlæse logkataloget &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation>Gardar rexistro de VirtualBox como</translation>
+        <translation>Gem VirtualBox-log som</translation>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation>&amp;Buscar</translation>
+        <translation>&amp;Find</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Pechar</translation>
+        <translation>Luk</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsAudio</name>
     <message>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation>Cando está marcada, a tarxeta de son PCI virtual é conectada a máquina virtual que emprega o controlador especificado para comunicarse coa tarxeta de son do anfitrión.</translation>
+        <translation>Hvis markeret, vil det virtuelle PCI lydkort blive tilkoblet den virtuelle maskine og bruge det angivne lydsystem til at kommunikere med værtens lydkort.</translation>
     </message>
     <message>
         <source>Enable &amp;Audio</source>
-        <translation>&amp;Activar audio</translation>
+        <translation>&amp;Aktivér lyd</translation>
     </message>
     <message>
         <source>Host Audio &amp;Driver:</source>
-        <translation>Controla&amp;dor de audio do anfitrión:</translation>
+        <translation>Ly&amp;dsystem:</translation>
     </message>
     <message>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation>Controla o controlador da saída de audio. O &lt;b&gt;Controlador de audio nulo&lt;/b&gt; fai que o convidado vexa unha tarxeta de son, porén calquera acceso será ignorado.</translation>
+        <translation>Vælger lydkortets driver. &lt;b&gt;Ingen lyd&lt;/b&gt; får gæsten til at se et lydkort, men alle forsøg på at bruge det vil blive ignoreret.</translation>
     </message>
     <message>
         <source>Audio &amp;Controller:</source>
-        <translation>&amp;Controlador de audio:</translation>
+        <translation>Lydenhed:</translation>
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation>Seleccione o tipo da tarxeta de son virtual. Dependendo deste valor, VirtualBox proporcionará diferente hardware de audio á máquina virtual.</translation>
+        <translation>Vælger det virtuelle lydkorts type. Dette fortæller VirtualBox hvilken slags lydkort der skal stilles til rådighed for den virtuelle maskine.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsCD</name>
     <message>
         <source>Host CD/DVD drive is not selected</source>
-        <translation>A unidade de CD/DVD do anfitrión non está seleccionada</translation>
+        <translation>Værts-CD/DVD-drev er ikke valgt</translation>
     </message>
     <message>
         <source>CD/DVD image file is not selected</source>
-        <translation>O ficheiro de imaxe de CD/DVD non está seleccionado</translation>
+        <translation>CD/DVD-aftryk er ikke valgt</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation>Cando está marcada, monta o medio especificado á unidade de CD/DVD da máquina virtual. Nota que a unidade de CD/DVD sempre está conectada ao controlador principal IDE secundario da máquina.</translation>
+        <translation>Hvis markeret, vil det angivne medie blive monteret i den virtuelle maskines CD/DVD-drev. Bemærk at CD/DVD-drevet altid er tilsluttet som Master på den sekundære IDE-styreenhed i maskinen.</translation>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation>&amp;Montar unidade de CD/DVD</translation>
+        <translation>&amp;Montér CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation>Monta a unidade de CD/DVD especificada na unidade de CD/DVD virtual.</translation>
+        <translation>Monterer det angivne CD/DVD-drev som virtuelt CD/DVD-drev.</translation>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation>Uni&amp;dade de CD/DVD do anfitrión</translation>
+        <translation>Værts-C&amp;D/DVD-drev</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation>Lista as unidades de CD/DVD do anfitrión dispoñíbeis para montar na máquina virtual.</translation>
+        <translation>Vis CD/DVD-drev tilgængelige for montering i den virtuelle maskine.</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>Cando está marcada, permite que o sistema operativo convidado envíe ordes ATAPI directamente á unidade anfitrión o que permite empregar gravadoras de CD/DVD conectadas á máquina anfitrión dentro da máquina virtual. Nota que aínda non se permite gravar CD de audio dentro da máquina virtual.</translation>
+        <translation>Hvis markeret, kan gæsten sende ATAPI-kommandoer direkte til værtsdrevet, således at CD/DVD-brændere kan bruges inde fra den virtuelle maskine.. Bemærk at brænding af lyd-CD&apos;ere ikke understøttes endnu.</translation>
     </message>
     <message>
         <source>Enable &amp;Passthrough</source>
-        <translation>Activar modo de &amp;paso directo (Passthrough)</translation>
+        <translation>Tillad direkte ATA&amp;PI-kald</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation>Monta a imaxe de CD/DVD especificada na unidade de CD/DVD virtual.</translation>
+        <translation>Monterer det angivne CD/DVD-aftryk i det virtuelle CD/DVD-drev.</translation>
     </message>
     <message>
         <source>&amp;ISO Image File</source>
-        <translation>Ficheiro de imaxe &amp;ISO</translation>
+        <translation>&amp;ISO-aftryksfil</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation>Mostra o ficheiro de imaxe a montar na unidade de CD/DVD virtual e permite seleccionar rapidamente unha imaxe diferente.</translation>
+        <translation>Viser aftryksfilen, der skal monteres i det virtuelle CD/DVD-drev og tillader hurtigt at vælge et andet aftryk.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
-        <translation>Abre o xestor de medios virtuais para seleccionar unha imaxe de CD/DVD a montar.</translation>
+        <translation>Starter Virtuel diskhåndtering så du kan montere et CD/DVD-aftryk.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation>asignou menos de &lt;b&gt;%1&lt;/b&gt; para a memoria de vídeo que é a mínima cantidade requirida para cambiar a máquina virtual entre o modo de pantalla completa e o modo fluído.</translation>
+        <translation>Du har tildelt mindre end &lt;b&gt;%1&lt;/b&gt; til grafikhukommelse, som ellers er den mindste mængde, der tillader den virtuelle maskine at skifte til fuldskærm eller rammefri tilstand.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -4842,15 +4860,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Video</source>
-        <translation>&amp;Vídeo</translation>
+        <translation>&amp;Video</translation>
     </message>
     <message>
         <source>Video &amp;Memory:</source>
-        <translation>&amp;Memoria de vídeo:</translation>
+        <translation>Grafikhuko&amp;mmelse:</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation>Controla a cantidade de memoria vídeo proporcionada á máquina virtual.</translation>
+        <translation>Styrer tildelingen af grafikhukommelse til den virtuelle maskine.</translation>
     </message>
     <message>
         <source>MB</source>
@@ -4858,66 +4876,66 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation>Funcionalidades estendidas:</translation>
+        <translation>Udvidede funktioner:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
-        <translation>Cando está marcada, a máquina virtual terá acceso as capacidades gráficas 3D dispoñíbeis no anfitrión.</translation>
+        <translation>Hvis markeret, vil den virtuelle maskine få adgang til 3D grafik-funktionerne på værten.</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation>Activar aceleración &amp;3D</translation>
+        <translation>Tillad &amp;3D-acceleration</translation>
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation>Pantalla &amp;remota</translation>
+        <translation>Fje&amp;rnskærm</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>Cando está marcada, a máquina virtual actúa como un servidor de protocolo de escritorio remoto (Remote Desktop Protocol), permitindo a clientes remotos conectarse e manexar a máquina virtual (cando se está executando) empregando un cliente RDP estándar.</translation>
+        <translation>Hvis markeret, vil den virtuelle maskine fungere som RDP-server, hvilket tillader fjernklienter at forbinde sig til og styre den virtuelle maskine (når den kører) ved hjælp af en standard RDP-klient.</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation>Activar o s&amp;ervidor</translation>
+        <translation>RDP-s&amp;erver</translation>
     </message>
     <message>
         <source>Server &amp;Port:</source>
-        <translation>&amp;Porto do servidor:</translation>
+        <translation>Server&amp;port:</translation>
     </message>
     <message>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation>Mostrar o número de porto do servidor VRDP. Pode especificar &lt;tt&gt;0&lt;/tt&gt; (cero) para restabelecer o valor predefinido do porto.</translation>
+        <translation>Angiver VRDP serverens portnummer. Du kan angive &lt;tt&gt;0&lt;/tt&gt; (nul) for at nulstille porten til standardværdien.</translation>
     </message>
     <message>
         <source>Authentication &amp;Method:</source>
-        <translation>&amp;Método de autenticación:</translation>
+        <translation>Godkendelses&amp;metode:</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation>Define o método de autenticación VRDP.</translation>
+        <translation>Angiver godkendelsesmetoden for VRDP.</translation>
     </message>
     <message>
         <source>Authentication &amp;Timeout:</source>
-        <translation>&amp;Tempo de espera na autenticación:</translation>
+        <translation>&amp;Tidsgrænse for godkendelse:</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation>Especifica o tempo de espera para a autenticación do convidado, en milísegundos.</translation>
+        <translation>Angiver tidsgrænsen (i millisekunder) for godkendelse på gæsten.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation>Xeral</translation>
+        <translation>Generelt</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation>Almacenamento</translation>
+        <translation>Lagerenheder</translation>
     </message>
     <message>
         <source>Hard Disks</source>
-        <translation>Discos ríxidos</translation>
+        <translation>Harddiske</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
@@ -4925,27 +4943,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Floppy</source>
-        <translation>Disqueteira</translation>
+        <translation>Diskettedrev</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation>Audio</translation>
+        <translation>Lydkort</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Rede</translation>
+        <translation>Netværk</translation>
     </message>
     <message>
         <source>Ports</source>
-        <translation>Portos</translation>
+        <translation>Porte</translation>
     </message>
     <message>
         <source>Serial Ports</source>
-        <translation>Portos serie</translation>
+        <translation>Serielle porte</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
-        <translation>Portos paralelos</translation>
+        <translation>Parallelporte</translation>
     </message>
     <message>
         <source>USB</source>
@@ -4953,7 +4971,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation>Cartafoles compartidos</translation>
+        <translation>Delte mapper</translation>
     </message>
     <message>
         <source>%1 - %2</source>
@@ -4961,283 +4979,284 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>System</source>
-        <translation>Sistema</translation>
+        <translation>System</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation>Pantalla</translation>
+        <translation>Skærm</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>seleccionou un sistema operativo convidado de tipo 64-bit para esta máquina virtual. Tales convidados requiren hardware de virtualización (VT-x/AMD-V) co que esta característica activarase automaticamente.</translation>
+        <translation>Du har valgt et 64-bit gæsteoperativsystem til denne VM. Da denne type gæst kræver hardware-virtualisering (VT-x/AMD-V) er dette automatisk blevet slået til.</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
-        <translation>seleccionou un sistema operativo convidado de tipo 64-bit para esta máquina virtual. VirtualBox actualmente non permite máis ca unha CPU virtual para convidados de 64-bit executándose en anfitrións de 32-bit.</translation>
+        <translation>Du har valgt et 64-bit gæsteoperativsystem til denne VM. VirtualBox understøtter ikke mere end 1 virtuel CPU i 64-bit gæster, som afvikles på 32-bit værter.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsFD</name>
     <message>
         <source>Host floppy drive is not selected</source>
-        <translation>A disqueteira do anfitrión non está seleccionada</translation>
+        <translation>Værtsdiskettedrev er ikke valgt</translation>
     </message>
     <message>
         <source>Floppy image file is not selected</source>
-        <translation>O ficheiro de imaxe de disquete non está seleccionado</translation>
+        <translation>Diskette-aftryk er ikke valgt</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation>Cando está marcada, monta o medio especificado á disqueteira da máquina virtual.</translation>
+        <translation>Hvis markeret, monteres det angivne aftryk i den virtuelle maskines diskettedrev.</translation>
     </message>
     <message>
         <source>&amp;Mount Floppy Drive</source>
-        <translation>&amp;Montar a disqueteira</translation>
+        <translation>&amp;Montér diskettedrev</translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation>Monta a disqueteira do anfitrión na disqueteira virtual.</translation>
+        <translation>Monterer det angivne diskettedrev som virtuelt diskettedrev.</translation>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>
-        <translation>&amp;Disqueteira do anfitrión</translation>
+        <translation>Værts&amp;diskettedrev</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation>Lista as disqueteiras do anfitrión dispoñíbeis para montar na máquina virtual.</translation>
+        <translation>Vis diskettedrev tilgængelige for montering i den virtuelle maskine.</translation>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation>Monta a imaxe de disquete especificada na disqueteira virtual.</translation>
+        <translation>Monterer det angivne diskette-aftryk i det virtuelle diskettedrev.</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation>Ficheiro de &amp;imaxe</translation>
+        <translation>Aftryksf&amp;il</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation>Mostra o ficheiro de imaxe a montar na disqueteira virtual e permite seleccionar rapidamente unha imaxe diferente.</translation>
+        <translation>Viser aftryksfilen, der skal monteres i det virtuelle diskettedrev og tillader hurtigt at vælge et andet aftryk.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
-        <translation>Abre o xestor de medios virtuais para seleccionar unha imaxe de disquete que montar.</translation>
+        <translation>Starter Virtuel diskhåndtering så du kan montere et diskette-aftryk.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsGeneral</name>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation>Mostra o camiño onde se almacenaran as instantáneas desta máquina virtual. Nota que as instantáneas poden ocupar bastante espazo en disco. </translation>
+        <translation>Viser stien, hvor øjebliksbilleder af den virtuelle maskine bliver gemt. Bemærk at øjebliksbilleder kan bruge en hel del lagerplads.</translation>
     </message>
     <message>
         <source>&amp;Basic</source>
-        <translation>&amp;Básico</translation>
+        <translation>&amp;Basal</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation>&amp;Nome:</translation>
+        <translation>&amp;Navn:</translation>
     </message>
     <message>
         <source>Displays the name of the virtual machine.</source>
-        <translation>Mostrar o nome da máquina virtual.</translation>
+        <translation>Viser navnet på den virtuelle maskine.</translation>
     </message>
     <message>
         <source>&amp;Advanced</source>
-        <translation>&amp;Avanzado</translation>
+        <translation>&amp;Avanceret</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard:</source>
-        <translation>Portapapei&amp;s compartido:</translation>
+        <translation>Delt udklip&amp;sholder:</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Define o modo de compartir o portapapeis entre o sistema operativo convidado e o anfitrión. Nota que esta característica require ter instalados os aplicativos para o sistema operativo convidado.</translation>
+        <translation>Angiver måden, udklipsholderen deles mellem gæst- og værtsoperativsystem. Bemærk at denne funktion kræver at Gæstetilføjelser er installeret i gæsteoperativsystemet.</translation>
     </message>
     <message>
         <source>S&amp;napshot Folder:</source>
-        <translation>Cartafol da i&amp;nstantánea:</translation>
+        <translation>Øjebliksbilleder:</translation>
     </message>
     <message>
         <source>&amp;Description</source>
-        <translation>&amp;Descrición</translation>
+        <translation>Beskrivelse</translation>
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation>Mostrar a descrición da máquina virtual. O campo descrición é moi útil para comentar detalles da configuración do sistema operativo convidado instalado.</translation>
+        <translation>Viser beskrivelsen af den virtuelle maskine. Her kan du skrive lidt om de vigtigste detaljer i gæsteoperativsystemets konfiguration.</translation>
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation>Se está marcada, calquera cambio realizado na montaxe dos medios de CD/DVD e disquete durante a execución da máquina gardarase no ficheiro de configuracións para preservar a súa configuración entre execucións.</translation>
+        <translation>Hvis markeret, vil alle ændringer i monterede CD/DVD- eller diskettedrev blive gemt som en del af den permanente konfiguration og dermed være tilgængelige næste gang også.</translation>
     </message>
     <message>
         <source>Removable Media:</source>
-        <translation>Medios extraíbeis:</translation>
+        <translatorcomment>Ental eller flertal?</translatorcomment>
+        <translation>Flytbare medier:</translation>
     </message>
     <message>
         <source>&amp;Remember Runtime Changes</source>
-        <translation>Lemb&amp;rar os cambios en tempo de execución</translation>
+        <translation>Gem ænd&amp;ringer</translation>
     </message>
     <message>
         <source>Mini ToolBar:</source>
-        <translation>Barra de ferramentas pequena:</translation>
+        <translation>Miniværktøjslinje:</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation>Se está marcada, mostra a barra de ferramentas pequena nos modos fluído e de pantalla completa.</translation>
+        <translation>Hvis markeret, vises mini-værktøjslinjen i Fuldskærm og Rammefri tilstand.</translation>
     </message>
     <message>
         <source>Show In &amp;Fullscreen/Seamless</source>
-        <translation>Mostrar en modo de &amp;Pantalla completa/Fluído</translation>
+        <translation>Vis i &amp;Fuldskærm/Rammefri tilstand</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsHD</name>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation>Ningún disco ríxido está seleccionado para &lt;i&gt;%1&lt;/i&gt;</translation>
+        <translation>Ingen harddisk er valgt for &lt;i&gt;%1&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation>&lt;i&gt;%1&lt;/i&gt; emprega o disco ríxido que xa está conectado a &lt;i&gt;%2&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; bruger harddisken, der allerede er tilsluttet til &lt;i&gt;%2&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&amp;Add Attachment</source>
-        <translation>Eng&amp;adir conexión</translation>
+        <translation>Ny tilslutning</translation>
     </message>
     <message>
         <source>&amp;Remove Attachment</source>
-        <translation>Elimina&amp;r conexión</translation>
+        <translation>Fje&amp;rn tilslutning</translation>
     </message>
     <message>
         <source>&amp;Select Hard Disk</source>
-        <translation>&amp;Seleccionar disco ríxido</translation>
+        <translation>Vælg harddi&amp;sk</translation>
     </message>
     <message>
         <source>Adds a new hard disk attachment.</source>
-        <translation>Engade a conexión un novo disco ríxido.</translation>
+        <translation>Tilføjer en ny virtuel harddisk.</translation>
     </message>
     <message>
         <source>Removes the highlighted hard disk attachment.</source>
-        <translation>Elimina a conexión ao disco ríxido realzado.</translation>
+        <translation>Fjerner den markerede harddisk.</translation>
     </message>
     <message>
         <source>&amp;Attachments</source>
-        <translation>C&amp;onexións</translation>
+        <translation>Tilslutninger</translation>
     </message>
     <message>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation>Lista todos os discos ríxidos conectados a esta máquina. Prema co rato ou empregue a tecla  de &lt;tt&gt;Espazo&lt;/tt&gt; no elemento realzado para activar a lista despregábel e escoller o valor desexado. Empregue o menú contextual ou os botóns da dereita para engadir ou eliminar conexións a discos ríxidos.</translation>
+        <translation>Viser alle harddiske tilsluttet denne maskine. Klik med musen eller brug &lt;tt&gt;Space&lt;/tt&gt; på det markerede element for at vælge mellem mulige værdier. Brug højrekliksmenuen eller knapperne til højre for at tilføje og fjerne harddisktilslutninger.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation>Abre o xestor de medios virtuais para seleccionar un disco ríxido para conectar ao espazo realzado actualmente.</translation>
+        <translation>Starter Virtuel diskhåndtering, så du kan vælge den harddisk, der skal tilsluttes på den markerede plads.</translation>
     </message>
     <message>
         <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
-        <translation>Se está marcada, mostrará os discos ríxidos diferenciais conectados aos espazos en vez dos seus discos ríxidos base (mostrados no caso de conexións indirectas) e tamén permitirá conectar explicitamente outros discos ríxidos diferenciais. Active isto só se necesita unha configuración complexa de disco ríxido.</translation>
+        <translation>Hvis markeret, vil de faktiske ændrings-harddiske blive vist fremfor de harddiske, de er baseret på (vises i tilfælde af indirekte tilslutninger) og tillader dig at tilslutte yderligere ændrings-harddiske. Brug kun denne funktion, hvis du har brug for en avanceret opsætning af harddiske.</translation>
     </message>
     <message>
         <source>&amp;Show Differencing Hard Disks</source>
-        <translation>&amp;Mostrar discos ríxidos diferenciais</translation>
+        <translation>Vi&amp;s ændrings-harddiske</translation>
     </message>
     <message>
         <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation>Cando está marcada, activa un controlador virtual adicional (SATA ou SCSI) para esta máquina.</translation>
+        <translation>Hvis markeret, tilføjes en ekstra virtuel styreenhed (SATA eller SCSI) til maskinen.</translation>
     </message>
     <message>
         <source>&amp;Enable Additional Controller</source>
-        <translation>Acti&amp;var controlador adicional</translation>
+        <translation>Tilføj styre&amp;enhed</translation>
     </message>
     <message>
         <source>IDE &amp;Controller Type</source>
-        <translation>Tipo do &amp;controlador do IDE</translation>
+        <translation>IDE-styreenhed</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation>Define o tipo do controlador do IDE virtual. Dependendo deste valor, VirtualBox proporcionará diferentes dispositivos hardware IDE virtuais para o sistema operativo convidado.</translation>
+        <translation>Vælger typen af den virtuelle IDE styreenhed. Dette fortæller VirtualBox hvilken slags IDE-styreenhed der skal stilles til rådighed for den virtuelle maskine.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetwork</name>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation>Cando está marcada, conecta este adaptador de rede virtual á máquina virtual.</translation>
+        <translation>Hvis markeret, bliver det virtuelle netværkskort tilsluttet den virtuelle maskine.</translation>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
-        <translation>Activar o adaptador d&amp;e rede</translation>
+        <translation>Aktiv&amp;ér netværkskort</translation>
     </message>
     <message>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation>Selecciona o tipo do adaptador de rede virtual. Dependendo deste valor, VirtualBox proporcionará diferente hardware de rede á máquina virtual.</translation>
+        <translation>Vælger det virtuelle netkorts type. Dette fortæller VirtualBox hvilken slags netværkskort der skal stilles til rådighed for den virtuelle maskine.</translation>
     </message>
     <message>
         <source>&amp;Attached to:</source>
-        <translation>Conect&amp;ado a:</translation>
+        <translation>Forbundet til:</translation>
     </message>
     <message>
         <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation>Controla como este adaptador virtual se conecta á rede real do sistema operativo anfitrión.</translation>
+        <translation>Angiver hvordan det virtuelle netværkskort er forbundet til værtens fysiske netværk.</translation>
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
-        <translation>&amp;Tipo de adaptador:</translation>
+        <translation>Netkort-&amp;type:</translation>
     </message>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation>non se seleccionou un adaptador de rede en modo ponte</translation>
+        <translation>Du skal vælge en netværksbro</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
-        <translation>non se especificou un nome para a rede interna</translation>
+        <translation>Du skal angive et navn til det interne netværk</translation>
     </message>
     <message>
         <source>no host-only network adapter is selected</source>
-        <translation>non se seleccionou un adaptador de rede exclusivo do anfitrión</translation>
+        <translation>Du skal vælge et værtsbegrænset netværkskort</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>network adapter name</comment>
-        <translation>Sen seleccionar</translation>
+        <translation>Ikke angivet</translation>
     </message>
     <message>
         <source>Open additional options dialog for current attachment type.</source>
-        <translation>Abrir o diálogo de opcións adicionais para o tipo de conexión actual.</translation>
+        <translation>Angiv yderligere indstillinger for den nuværende tilslutningstype.</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation>&amp;Nome:</translation>
+        <translation>&amp;Navn:</translation>
     </message>
     <message>
         <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
-        <translation>Selecciona o nome do adaptador de rede se o tipo anexado é equivalente a &lt;b&gt;Adaptador ponte&lt;/b&gt; ou &lt;b&gt;Adaptador exclusivo do anfitrión&lt;/b&gt; e o nome da rede interna se o tipo anexado é equivalente a &lt;b&gt;Rede interna&lt;/b&gt;.</translation>
+        <translation>Angiver navnet på netværkskortet, hvis tilslutningstypen er &lt;b&gt;Netværksbro&lt;/b&gt; eller &lt;b&gt;Værtsbegrænset netværk&lt;/b&gt; eller navnet på det interne netværk hvis tilslutningstypen er &lt;b&gt;Internt netværk&lt;/b&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetworkDetails</name>
     <message>
         <source>Guest &amp;MAC Address:</source>
-        <translation>Enderezo &amp;MAC do convidado:</translation>
+        <translation>Gæstens &amp;MAC-adresse:</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation>Mostrar o enderezo MAC deste adaptador. Contén exactamente 12 caracteres escollidos de {0-9,A-F}. Nota que o segundo carácter debe ser un díxito par.</translation>
+        <translation>Viser netværkskortets MAC-adresse. Den består af 12 karakterer fra gruppen {0-9,A-F}. Bemærk at 2.karakter skal være et lige tal.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation>Xera un novo enderezo MAC aleatorio.</translation>
+        <translation>Generér en ny tilfældig MAC-adresse.</translation>
     </message>
     <message>
         <source>&amp;Cable connected</source>
-        <translation>&amp;Cable conectado</translation>
+        <translation>Kabel tilsluttet</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation>Indica se o cable da rede virtual está conectado no arranque da máquina ou non.</translation>
+        <translation>Angiver om det virtuelle netværkskabel er tilsluttet maskinen under opstart eller ej.</translation>
     </message>
     <message>
         <source>Additional Options</source>
-        <translation>Opcións adicionais</translation>
+        <translation>Yderligere indstillinger</translation>
     </message>
 </context>
 <context>
@@ -5245,23 +5264,23 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
-        <translation>Porto %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation>Cando está marcada, activa o porto paralelo da máquina virtual.</translation>
+        <translation>Hvis markeret, aktiveres den angivne parallel port i den virtuelle maskine.</translation>
     </message>
     <message>
         <source>&amp;Enable Parallel Port</source>
-        <translation>Activar o porto paral&amp;elo</translation>
+        <translation>Aktiv&amp;ér parallelport</translation>
     </message>
     <message>
         <source>Port &amp;Number:</source>
-        <translation>&amp;Número de porto:</translation>
+        <translation>Port&amp;nummer:</translation>
     </message>
     <message>
         <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>Mostrar o número do porto paralelo. Pode escoller un dos portos paralelos estándar ou seleccionar &lt;b&gt;Definido polo usuario&lt;/b&gt; e especificar os parámetros do porto manualmente.</translation>
+        <translation>Viser parallelportens nummer. Du kan vælge en standard parallelport eller vælge &lt;b&gt;Brugerdefineret&lt;/b&gt; for at konfigurere porten manuelt.</translation>
     </message>
     <message>
         <source>&amp;IRQ:</source>
@@ -5269,136 +5288,136 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation>Mostra o número IRQ deste porto paralelo. Os números enteiros no rango de &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;255&lt;/tt&gt; son valores válidos. Valores maiores que &lt;tt&gt;15&lt;/tt&gt; soamente poden ser empregados se se activou a &lt;b&gt;IO APIC&lt;/b&gt; para esta máquina virtual.</translation>
+        <translation>Viser parallelportens IRQ-nummer. Gyldige værdier er et heltal fra &lt;tt&gt;0&lt;/tt&gt; til &lt;tt&gt;255&lt;/tt&gt;. Værdier større end &lt;tt&gt;15&lt;/tt&gt; kan kun bruges hvis &lt;b&gt;IO APIC&lt;/b&gt; er aktiveret for denne virtuelle maskine.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
-        <translation>Po&amp;rto de E/S:</translation>
+        <translation>I/O Po&amp;rt:</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>Mostra o enderezo base E/S (I/O) deste porto paralelo. Os números enteiros no rango de &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;0xFFFF&lt;/tt&gt; son valores válidos.</translation>
+        <translation>Viser parallelportens I/O-adresse. Gyldige værdier er heltal fra &lt;tt&gt;0&lt;/tt&gt; til &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <source>Port &amp;Path:</source>
-        <translation>Camiño do &amp;porto:</translation>
+        <translation>&amp;Port-sti:</translation>
     </message>
     <message>
         <source>Displays the host parallel device name.</source>
-        <translation>Mostra o nome do dispositivo paralelo do anfitrión.</translation>
+        <translation>Viser parallelportens enhedsnavn på værten.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
         <source>Duplicate port number is selected </source>
-        <translation>Seleccionouse un número de porto duplicado </translation>
+        <translation>Portnummer allerede i brug </translation>
     </message>
     <message>
         <source>Port path is not specified </source>
-        <translation>Non se especificou o camiño do porto </translation>
+        <translation>Sti til port er ikke angivet </translation>
     </message>
     <message>
         <source>Duplicate port path is entered </source>
-        <translation>Introduciuse un camiño de porto duplicado </translation>
+        <translation>Stien til porten bruges allerede </translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsSF</name>
     <message>
         <source>&amp;Add New Shared Folder</source>
-        <translation>Eng&amp;adir un novo cartafol compartido</translation>
+        <translation>Tilføj ny delt m&amp;appe</translation>
     </message>
     <message>
         <source>&amp;Edit Selected Shared Folder</source>
-        <translation>&amp;Editar o cartafol compartido seleccionado</translation>
+        <translation>Tilpas d&amp;eling af valgt mappe</translation>
     </message>
     <message>
         <source>&amp;Remove Selected Shared Folder</source>
-        <translation>Elimin&amp;ar o cartafol compartido seleccionado</translation>
+        <translation>Fje&amp;rn deling af valgt mappe</translation>
     </message>
     <message>
         <source>Adds a new shared folder definition.</source>
-        <translation>Engada unha nova definición ao cartafol compartido.</translation>
+        <translation>Tilføjer en ny deling af en mappe.</translation>
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
-        <translation>Edita a definición do cartafol compartido seleccionado.</translation>
+        <translation>Tilpasser delingen af den valgte mappe.</translation>
     </message>
     <message>
         <source>Removes the selected shared folder definition.</source>
-        <translation>Elimina a definición do cartafol compartido seleccionado.</translation>
+        <translation>Fjerner delingen af den valgte mappe.</translation>
     </message>
     <message>
         <source> Machine Folders</source>
-        <translation> Cartafoles da máquina</translation>
+        <translation> Maskinmapper</translation>
     </message>
     <message>
         <source> Transient Folders</source>
-        <translation> Cartafoles transitorios</translation>
+        <translation> Midlertidige mapper</translation>
     </message>
     <message>
         <source>Full</source>
-        <translation>Completo</translation>
+        <translation>Fuld</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation>Só de lectura</translation>
+        <translation>Skrivebeskyttet</translation>
     </message>
     <message>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>Lista todos os cartafoles compartidos accesíbeis a esta máquina. Empregue &apos;net use x: \\vboxsvr\\share&apos; para acceder a un cartafol chamado &lt;i&gt;compartir&lt;/i&gt; desde un sistema operativo baseado en DOS, ou &apos;mount -t vboxsf compartir punto_de_montaxe&apos; para acceder desde un sistema operativo Linux. Esta funcionalidade require dos aplicativos para o sistema operativo convidado.</translation>
+        <translation>Viser alle delte mapper tilgængelige for denne maskine. Brug kommandoen &apos;net use x: \\vboxsvr\share&apos; på Windows eller &apos;mount -t vboxsf share mount_point&apos; på Linux for at tilgå den delte mappe &lt;i&gt;share&lt;/i&gt;. Denne funktion kræver at Gæstetilføjelser er installeret.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>Nome</translation>
+        <translation>Navn</translation>
     </message>
     <message>
         <source>Path</source>
-        <translation>Camiño</translation>
+        <translation>Sti</translation>
     </message>
     <message>
         <source>Access</source>
-        <translation>Acceso</translation>
+        <translation>Adgang</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsSFDetails</name>
     <message>
         <source>Add Share</source>
-        <translation>Engadir compartir</translation>
+        <translation>Tilføj deling</translation>
     </message>
     <message>
         <source>Edit Share</source>
-        <translation>Editar compartir</translation>
+        <translation>Redigér deling</translation>
     </message>
     <message>
         <source>Dialog</source>
-        <translation>Diálogo</translation>
+        <translation>Vindue</translation>
     </message>
     <message>
         <source>Folder Path:</source>
-        <translation>Camiño do cartafol:</translation>
+        <translation>Mappesti:</translation>
     </message>
     <message>
         <source>Folder Name:</source>
-        <translation>Nome do cartafol:</translation>
+        <translation>Mappenavn:</translation>
     </message>
     <message>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation>Mostra o nome do cartafol compartido (como se verá no sistema operativo convidado).</translation>
+        <translation>Viser navnet på den delte mappe (som gæsteoperativsystemet ser det).</translation>
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation>Cando está marcada, o sistema operativo convidado non poderá escribir no cartafol compartido especificado.</translation>
+        <translation>Hvis markeret, vil gæsteoperativsystemet ikke kunne skrive til den delte mappe.</translation>
     </message>
     <message>
         <source>&amp;Read-only</source>
-        <translation>Só de lectu&amp;ra</translation>
+        <translation>Sk&amp;rivebeskyttet</translation>
     </message>
     <message>
         <source>&amp;Make Permanent</source>
-        <translation>Facer &amp;permanente</translation>
+        <translation>Gør per&amp;manent</translation>
     </message>
 </context>
 <context>
@@ -5406,23 +5425,23 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Port %1</source>
         <comment>serial ports</comment>
-        <translation>Porto %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation>Cando está marcada, activa o porto serie da máquina virtual.</translation>
+        <translation>Hvis markeret, aktiveres den angivne serielle port i den virtuelle maskine.</translation>
     </message>
     <message>
         <source>&amp;Enable Serial Port</source>
-        <translation>Activar o porto s&amp;erie</translation>
+        <translation>Aktiv&amp;ér serielport</translation>
     </message>
     <message>
         <source>Port &amp;Number:</source>
-        <translation>&amp;Número de porto:</translation>
+        <translation>Port&amp;nummer:</translation>
     </message>
     <message>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>Mostra o número do porto serie. Pode escoller un dos portos serie estándar ou seleccionar &lt;b&gt;Definido polo usuario&lt;/b&gt; e especificar os parámetros do porto manualmente.</translation>
+        <translation>Viser serielportens nummer. Du kan vælge en standard serielport eller vælge &lt;b&gt;Brugerdefineret&lt;/b&gt; for at konfigurere porten manuelt.</translation>
     </message>
     <message>
         <source>&amp;IRQ:</source>
@@ -5430,81 +5449,81 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation>Mostra o número IRQ deste porto serie. Os números enteiros no rango de &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;255&lt;/tt&gt; son valores válidos. Valores maiores que &lt;tt&gt;15&lt;/tt&gt; soamente poden ser empregados se se activou a &lt;b&gt;IO APIC&lt;/b&gt; para esta máquina virtual.</translation>
+        <translation>Viser serielportens IRQ-nummer. Gyldige værdier er et heltal fra &lt;tt&gt;0&lt;/tt&gt; til &lt;tt&gt;255&lt;/tt&gt;. Værdier større end &lt;tt&gt;15&lt;/tt&gt; kan kun bruges hvis &lt;b&gt;IO APIC&lt;/b&gt; er aktiveret for denne virtuelle maskine.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
-        <translation>Po&amp;rto de E/S:</translation>
+        <translation>I/O Po&amp;rt:</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>Mostra o enderezo base E/S (I/O) deste porto serie. Os números enteiros no rango de &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;0xFFFF&lt;/tt&gt; son valores válidos.</translation>
+        <translation>Viser serielportens I/O-adresse. Gyldige værdier er heltal fra &lt;tt&gt;0&lt;/tt&gt; til &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <source>Port &amp;Mode:</source>
-        <translation>&amp;Modo do porto:</translation>
+        <translation>Porttilstand:</translation>
     </message>
     <message>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation>Controla o modo de traballo deste porto serie. Se selecciona &lt;b&gt;desconectado&lt;/b&gt;, o sistema operativo convidado detectará o porto serie pero non poderá manexalo.</translation>
+        <translation>Styrer den serielle ports tilstand. Hvis du vælger &lt;b&gt;Ikke tilsluttet&lt;/b&gt;, vil gæsteoperativsystemet kunne se den serielle port, men ikke bruge den.</translation>
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
-        <translation>Se está marcada, ao iniciarse a máquina virtual crearase a canalización especificada no campo &lt;b&gt;camiño do porto&lt;/b&gt;. Noutro caso, a máquina virtual tentará empregar unha canalización existente.</translation>
+        <translation>Hvis markeret, vil røret angivet i feltet&lt;b&gt;Sti til port&lt;/b&gt; blive oprettet, når den virtuelle maskine starter. Ellers vil den virtuelle maskine forsøge at bruge et eksisterende rør.</translation>
     </message>
     <message>
         <source>&amp;Create Pipe</source>
-        <translation>&amp;Crear canalización</translation>
+        <translation>Opret rør</translation>
     </message>
     <message>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation>Mostra o camiño da canalización do porto serie no anfitrión cando o porto traballa no modo &lt;b&gt;canalización no anfitrión&lt;/b&gt;, ou o nome do dispositivo serie no anfitrión cando o porto traballa no modo &lt;b&gt;dispositivo no anfitrión&lt;/b&gt;.</translation>
+        <translation>Viser stien til serielportens rør på værten, hvis porten er i &lt;b&gt;Rør&lt;/b&gt;-tilstand eller stien til serielportens enhedsfil, når porten er i &lt;b&gt;Enhed&lt;/b&gt;-tilstand.</translation>
     </message>
     <message>
         <source>Port/File &amp;Path:</source>
-        <translation>Camiño do &amp;porto/ficheiro:</translation>
+        <translation>&amp;Port/Filsti:</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
         <source>Duplicate port number is selected </source>
-        <translation>Seleccionouse un número de porto duplicado </translation>
+        <translation>Portnummer allerede i brug </translation>
     </message>
     <message>
         <source>Port path is not specified </source>
-        <translation>Non se especificou o camiño do porto </translation>
+        <translation>Sti til port er ikke angivet </translation>
     </message>
     <message>
         <source>Duplicate port path is entered </source>
-        <translation>Introduciuse un camiño de porto duplicado </translation>
+        <translation>Stien til porten bruges allerede </translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation>Asignou máis de &lt;b&gt;%1%&lt;/b&gt; da memoria do seu computdor (&lt;b&gt;%2&lt;/b&gt;) á máquina virtual. Non hai memoria suficiente para o sistema operativo anfitrión. Escolla un valor menor.</translation>
+        <translation>du har tildelt mere end &lt;b&gt;%1%&lt;/b&gt; af din computers hukommelse (&lt;b&gt;%2&lt;/b&gt;) til den virtuelle maskine. Dermed er der ikke hukommelse nok tilbage til værtsoperativsystemet. Vælg en lavere tildeling.</translation>
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation>Asignou máis de &lt;b&gt;%1%&lt;/b&gt; da memoria do seu computdor (&lt;b&gt;%2&lt;/b&gt;) á máquina virtual. Podería non haber memoria suficiente para o sistema operativo anfitrión.  Continuar baixo a súa responsabilidade.</translation>
+        <translation>du har tildelt mere end &lt;b&gt;%1%&lt;/b&gt; af din computers hukommelse (&lt;b&gt;%2&lt;/b&gt;) til den virtuelle maskine. Der er muligvis ikke hukommelse nok tilbage til dit værtsoperativsystem. Fortsæt på egen risiko.</translation>
     </message>
     <message>
         <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation>por razóns de rendemento, o número de CPU virtuais anexado á máquina virtual non debe ser máis do dobre do número de CPU físicas do anfitrión (&lt;b&gt;%1&lt;/b&gt;). Reduza o número de CPU virtuais.</translation>
+        <translation>af ydelsesmæssige grunde, kan antallet af virtuelle CPU&apos;er tildelt en virtuel maskine ikke overstige 2 gange antallet af fysiske CPU&apos;er i værten (&lt;b&gt;%1&lt;/b&gt;). Nedsæt antallet af virtuelle CPU&apos;er.</translation>
     </message>
     <message>
         <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation>asignou máis CPU virtuais á máquina virtual que o número de CPU físicas do sistema anfitrión (&lt;b&gt;%1&lt;/b&gt;). Isto é susceptíbel de degradar o rendemento da súa máquina virtual. Considere a posibilidade de reducir o número de CPU virtuais.</translation>
+        <translation>du har tildelt flere virtuelle CPU&apos;er til den virtuelle maskine end antallet af fysiske CPU&apos;er i din vært (&lt;b&gt;%1&lt;/b&gt;). Dette vil sandsynligvis forringe den virtuelle maskines ydeevne. Overvej at nedsætte antallet af virtuelle CPU&apos;er.</translation>
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>asignou máis dunha CPU virtual a esta máquina virtual. Isto non funcionará a menos que a característica IO-APIC tamén estea activada. Farase automaticamente cando ao premer no botón Aceptar acepte as configuracións da máquina virtual.</translation>
+        <translation>du har tildelt mere end 1 virtuel CPU til denne virtuelle maskine. Dette kræver at IO APIC funktionen er aktiveret, hvilket sker automatisk, hvis du gemmer indstillingerne for den virtuelle maskine ved at klikke OK.</translation>
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>asignou máis dunha CPU virtual a esta máquina virtual. Isto non funcionará a menos que a virtualización de hardware (VT-x/AMD-V) tamén estea activada. Farase automaticamente cando ao premer no botón Aceptar acepte as configuracións da máquina virtual.</translation>
+        <translation>du har tildelt mere end 1 virtuel CPU til denne virtuelle maskine. Dette kræver at hardware-virtualisering (VT-x/AMD-V) er aktiveret, hvilket sker automatisk, hvis du gemmer indstillingerne for den virtuelle maskine ved at klikke OK.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -5518,19 +5537,19 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is 32 for now</comment>
-        <translation>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;CPU&apos;er&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Motherboard</source>
-        <translation>Placa &amp;base</translation>
+        <translation>Bundkort</translation>
     </message>
     <message>
         <source>Base &amp;Memory:</source>
-        <translation>&amp;Memoria base:</translation>
+        <translation>Huko&amp;mmelse:</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>Controla a cantidade de memoria proporcionada á máquina virtual. Se asigna demasiada, a máquina podería non iniciar.</translation>
+        <translation>Angiver tildelingen af hukommelse til den virtuelle maskine. Tildeler du for meget, vil maskinen ikke kunne starte.</translation>
     </message>
     <message>
         <source>MB</source>
@@ -5538,175 +5557,175 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Boot Order:</source>
-        <translation>Or&amp;de de inicio:</translation>
+        <translation>Opstartsrækkefølge:</translation>
     </message>
     <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>Define a orde do dispositivo de inicio. Empregue as caixas de verificación da esquerda para activar ou desactivar os dispositivos de inicio individuais. Mover os elementos cara a arriba e abaixo para cambiar a orde dos dispositivos.</translation>
+        <translation>Angiver opstartsrækkefølgen. Brug afkrydsningsfelterne til venstre til at vælge opstartsenheder. Flyt enhederne op og ned for at angive rækkefølgen.</translation>
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
-        <translation>Mover cara a abaixo (Ctrl-Av Páx)</translation>
+        <translation>Flyt ned (Ctrl-Pil ned)</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation>Mover cara a abaixo o dispositivo de inicio seleccionado.</translation>
+        <translation>Flytter den valgte enhed nedad.</translation>
     </message>
     <message>
         <source>Move Up (Ctrl-Up)</source>
-        <translation>Mover cara a arriba (Ctrl-Re Páx)</translation>
+        <translation>Flyt op (Ctrl-Pil op)</translation>
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation>Mover cara a arriba o dispositivo de inicio seleccionado.</translation>
+        <translation>Flytter den valgte enhed opad.</translation>
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation>Funcionalidades estendidas:</translation>
+        <translation>Udvidede funktioner:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Cando está marcada, a máquina virtual permitirá a Interface avanzada de configuración e xestión de enerxía ou Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Nota:&lt;/b&gt; non desactivar esta característica despois de instalar un sistema operativo convidado Windows!</translation>
+        <translation>Hvis markeret, vil den virtuelle maskine understøtte &lt;i&gt;Advanced Configuration and Power Management Interface (ACPI)&lt;/i&gt;. &lt;b&gt;Bemærk!&lt;/b&gt; Slå ikke dette fra igen, hvis du har installeret Windows som gæsteoperativsystem.</translation>
     </message>
     <message>
         <source>Enable &amp;ACPI</source>
-        <translation>Activar &amp;ACPI</translation>
+        <translation>&amp;Aktivér ACPI</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Cando está marcada, a máquina virtual permitirá a Entrada/Saída APIC (IO APIC), o que pode reducir lixeiramente o rendemento da máquina virtual. &lt;b&gt;Nota:&lt;/b&gt; non desactivar esta característica despois de instalar un sistema operativo convidado Windows!</translation>
+        <translation>Hvis markeret, vil den virtuelle maskine understøtte &lt;i&gt;Input Output APIC (IO APIC)&lt;/i&gt;, hvilket kan nedsætte den virtuelle maskines ydelse en smule. &lt;b&gt;Bemærk!&lt;/b&gt; Slå ikke dette fra igen, hvis du har installeret Windows som gæsteoperativsystem.</translation>
     </message>
     <message>
         <source>Enable &amp;IO APIC</source>
-        <translation>Activar &amp;IO APIC</translation>
+        <translation>Aktivér &amp;IO APIC</translation>
     </message>
     <message>
         <source>&amp;Processor</source>
-        <translation>&amp;Procesador</translation>
+        <translation>C&amp;PU</translation>
     </message>
     <message>
         <source>&amp;Processor(s):</source>
-        <translation>&amp;Procesador(es):</translation>
+        <translation>C&amp;PU&apos;er:</translation>
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation>Controla o número de CPU virtuais na máquina virtual.</translation>
+        <translation>Angiver antallet af virtuelle CPU&apos;er i den virtuelle maskine.</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation>Cando está marcada, a característica de extensión de enderezo físico ou Physical Address Extension (PAE) da CPU do anfitrión será exposta á máquina virtual.</translation>
+        <translation>Hvis markeret, vil værts-CPU&apos;ens &lt;i&gt;Physical Address Extension (PAE)&lt;/i&gt;-funktion være tilgængelig for den virtuelle maskine.</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation>Activar PA&amp;E/NX</translation>
+        <translation>Aktivér PA&amp;E/NX</translation>
     </message>
     <message>
         <source>Acce&amp;leration</source>
-        <translation>Ace&amp;leración</translation>
+        <translation>Acce&amp;leration</translation>
     </message>
     <message>
         <source>Hardware Virtualization:</source>
-        <translation>Virtualización de hardware:</translation>
+        <translation>Hardware-virtualisering:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation>Cando está marcada, a máquina virtual tentará facer uso das extensións de hardware de virtualización da CPU do anfitrión, tales como Intel VT-x e AMD-V.</translation>
+        <translation>Hvis markeret, vil den virtuelle maskine forsøge at bruge værts-CPU&apos;ens funktioner til hardware-virtualisering, såsom Intel VT-x og AMD-V.</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation>Activar &amp;VT-x/AMD-V</translation>
+        <translation>Aktivér &amp;VT-x/AMD-V</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation>Cando está marcada, a máquina virtual tentará facer uso da extensión de paxinación aniñada de Intel VT-x e AMD-V.</translation>
+        <translation>Hvis markeret, vil den virtuelle maskine forsøge at bruge &lt;i&gt;Nested Paging&lt;/i&gt;-funktionen i Intel VT-x og AMD-V.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation>Activar paxinación aniñada (Nested Pa&amp;ging)</translation>
+        <translation>Aktivér Nested Pa&amp;ging</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsUSB</name>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation>Eng&amp;adir o filtro baleiro</translation>
+        <translation>Tilføj tomt filter</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation>Engadir o filtro desde &amp;dispositivo</translation>
+        <translation>Tilføj filter fra enhe&amp;d</translation>
     </message>
     <message>
         <source>&amp;Edit Filter</source>
-        <translation>&amp;Editar o filtro</translation>
+        <translation>R&amp;ediger filter</translation>
     </message>
     <message>
         <source>&amp;Remove Filter</source>
-        <translation>Elimina&amp;r o filtro</translation>
+        <translation>Fje&amp;rn filter</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation>&amp;Mover cara a arriba o filtro</translation>
+        <translation>Flyt filter op</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation>M&amp;over cara a abaixo o filtro</translation>
+        <translation>Flyt filter ned</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Engade un novo filtro USB con todos os campos definidos inicialmente con cadeas baleiras. Nota que tal filtro coincidirá con calquera dispositivo USB conectado. </translation>
+        <translation>Tilføjer et nyt USB-filter hvor alle felter er blanke. Dette filter vil matche alle tilsluttede USB-enheder.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>Engade un novo filtro USB con todos os campos definidos aos valores do dispositivo USB seleccionado conectado ao PC anfitrión.</translation>
+        <translation>Tilføjer et nyt USB-filter hvor alle felter er sat til værdierne fra den valgte tilsluttede USB-enhed.</translation>
     </message>
     <message>
         <source>Edits the selected USB filter.</source>
-        <translation>Edita o filtro USB seleccionado.</translation>
+        <translation>Tilpasser det valgte USB-filter.</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation>Elimina o filtro USB seleccionado.</translation>
+        <translation>Fjerner det valgte USB-filter.</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation>Move cara a arriba o filtro USB seleccionado.</translation>
+        <translation>Flytter det valgte USB-filter opad.</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation>Move cara a abaixo o filtro USB seleccionado.</translation>
+        <translation>Flytter det valgte USB-filter nedad.</translation>
     </message>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation>Novo filtro %1</translation>
+        <translation>Nyt filter %1</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation>Cando está marcada, activa o controlador USB virtual desta máquina.</translation>
+        <translation>Hvis markeret, aktiveres maskinens virtuelle USB-styreenhed.</translation>
     </message>
     <message>
         <source>Enable &amp;USB Controller</source>
-        <translation>Activar o controlador &amp;USB</translation>
+        <translation>Aktivér &amp;USB-styreenhed</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>Cando está marcada, activa o controlador USB EHCI virtual desta máquina. O controlador USB EHCI fornecerá compatibilidade de USB 2.0.</translation>
+        <translation>Hvis markeret, aktiveres maskinens virtuelle USB EHCI-styreenhed. USB EHCI-styreenheden understøtter USB 2.0.</translation>
     </message>
     <message>
         <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
-        <translation>Activar o controlador USB 2.0 (E&amp;HCI)</translation>
+        <translation>Aktivér USB 2.0 (E&amp;HCI)-styreenhed</translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
-        <translation>&amp;Filtros de dispositivo USB</translation>
+        <translation>USB-enheds&amp;filtre</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation>Lista todos os filtros USB desta máquina. A caixa de verificación da esquerda define se o filtro específico está activado ou non. Emprega ou menú contextual ou o botón da dereita para engadir ou eliminar os filtros USB.</translation>
+        <translation>Viser alle maskinens USB-filtre. Afkrydsningsfeltet til venstre angiver om filteret er aktivt eller ej. Brug højrekliksmenuen eller knapperne til højre for at tilføje eller fjerne USB-filtre.</translation>
     </message>
     <message>
         <source>[filter]</source>
-        <translation>[filtro]</translation>
+        <translation>[filter]</translation>
     </message>
 </context>
 <context>
@@ -5714,101 +5733,102 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Any</source>
         <comment>remote</comment>
-        <translation>Calquera</translation>
+        <translatorcomment>Covers two options</translatorcomment>
+        <translation>Begge</translation>
     </message>
     <message>
         <source>Yes</source>
         <comment>remote</comment>
-        <translation>Si</translation>
+        <translation>Ja</translation>
     </message>
     <message>
         <source>No</source>
         <comment>remote</comment>
-        <translation>Non</translation>
+        <translation>Nej</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation>&amp;Nome:</translation>
+        <translation>&amp;Navn:</translation>
     </message>
     <message>
         <source>Displays the filter name.</source>
-        <translation>Mostrar o nome do filtro.</translation>
+        <translation>Viser filterets navn.</translation>
     </message>
     <message>
         <source>&amp;Vendor ID:</source>
-        <translation>ID do &amp;vendedor:</translation>
+        <translation>Le&amp;verandør-ID:</translation>
     </message>
     <message>
         <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>Define o filtro do ID do vendedor. O formato da cadea de &lt;i&gt;coincidencia exacta&lt;/i&gt; é &lt;tt&gt;XXXX&lt;/tt&gt; onde &lt;tt&gt;X&lt;/tt&gt; é un díxito hexadecimal. Unha cadea baleira coincidirá con calquera valor.</translation>
+        <translation>Styrer leverandør-ID-filteret. Formatet for et &lt;i&gt;nøjagtigt match&lt;/i&gt; er &lt;tt&gt;XXXX&lt;/tt&gt; hvor &lt;tt&gt;X&lt;/tt&gt; er et heksadecimalt ciffer. En tom streng matcher alt.</translation>
     </message>
     <message>
         <source>&amp;Product ID:</source>
-        <translation>ID do &amp;produto:</translation>
+        <translation>&amp;Produkt-ID:</translation>
     </message>
     <message>
         <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>Define o filtro do ID do produto. O formato da cadea de &lt;i&gt;coincidencia exacta&lt;/i&gt; é &lt;tt&gt;XXXX&lt;/tt&gt; onde &lt;tt&gt;X&lt;/tt&gt; é un díxito hexadecimal. Unha cadea baleira coincidirá con calquera valor.</translation>
+        <translation>Styrer produkt-ID-filteret. Formatet for et &lt;i&gt;nøjagtigt match&lt;/i&gt; er &lt;tt&gt;XXXX&lt;/tt&gt; hvor &lt;tt&gt;X&lt;/tt&gt; er et heksadecimalt ciffer. En tom streng matcher alt.</translation>
     </message>
     <message>
         <source>&amp;Revision:</source>
-        <translation>&amp;Revisión:</translation>
+        <translation>Ve&amp;rsion:</translation>
     </message>
     <message>
         <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation>Define o filtro do número de revisión. O formato da cadea de &lt;i&gt;coincidencia exacta&lt;/i&gt; é &lt;tt&gt;IIFF&lt;/tt&gt; onde &lt;tt&gt;l&lt;/tt&gt; é un díxito decimal da parte enteira e &lt;tt&gt;F&lt;/tt&gt; é un díxito decimal da parte fraccionaria. Unha cadea baleira coincidirá con calquera valor.</translation>
+        <translation>Styrer versionsnummer-filteret. Formatet for et &lt;i&gt;nøjagtigt match&lt;/i&gt; er &lt;tt&gt;IIFF&lt;/tt&gt; hvor &lt;tt&gt;I&lt;/tt&gt; er et ciffer før kommaet og &lt;tt&gt;F&lt;/tt&gt; er et ciffer efter kommaet. En tom streng matcher alt.</translation>
     </message>
     <message>
         <source>&amp;Manufacturer:</source>
-        <translation>&amp;Fabricante:</translation>
+        <translation>Producent:</translation>
     </message>
     <message>
         <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Define o filtro do fabricante como unha cadea de &lt;i&gt;coincidencia exacta&lt;/i&gt;. Unha cadea baleira coincidirá con calquera valor.</translation>
+        <translation>Producent-ID-filteret laver et &lt;i&gt;nøjagtigt match&lt;/i&gt; på en tekststreng. En tom streng matcher alt.</translation>
     </message>
     <message>
         <source>Pro&amp;duct:</source>
-        <translation>Pro&amp;duto:</translation>
+        <translation>Pro&amp;dukt:</translation>
     </message>
     <message>
         <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Define o filtro do nome do produto como unha cadea de &lt;i&gt;coincidencia exacta&lt;/i&gt;. Unha cadea baleira coincidirá con calquera valor.</translation>
+        <translation>Produkt-ID-filteret laver et &lt;i&gt;nøjagtigt match&lt;/i&gt; på en tekststreng. En tom streng matcher alt.</translation>
     </message>
     <message>
         <source>&amp;Serial No.:</source>
-        <translation>Número de &amp;serie:</translation>
+        <translation>&amp;Serienummer:</translation>
     </message>
     <message>
         <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Define o filtro do número de serie como unha cadea de &lt;i&gt;coincidencia exacta&lt;/i&gt;. Unha cadea baleira coincidirá con calquera valor.</translation>
+        <translation>Serienummer-filteret laver et &lt;i&gt;nøjagtigt match&lt;/i&gt; på en tekststreng. En tom streng matcher alt.</translation>
     </message>
     <message>
         <source>Por&amp;t:</source>
-        <translation>Por&amp;to:</translation>
+        <translation>Por&amp;t:</translation>
     </message>
     <message>
         <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>Define o filtro do porto USB anfitrión como unha cadea de &lt;i&gt;coincidencia exacta&lt;/i&gt;. Unha cadea baleira coincidirá con calquera valor.</translation>
+        <translation>USB-port ID-filteret laver et &lt;i&gt;nøjagtigt match&lt;/i&gt; på en tekststreng. En tom streng matcher alt.</translation>
     </message>
     <message>
         <source>R&amp;emote:</source>
-        <translation>R&amp;emoto:</translation>
+        <translation>Fj&amp;ern:</translation>
     </message>
     <message>
         <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation>Define se este filtro se lles aplica aos dispositivos USB conectados localmente ao computador anfitrión (&lt;i&gt;Non&lt;/i&gt;), a un computador cliente VRDP (&lt;i&gt;Si&lt;/i&gt;), ou a ambos (&lt;i&gt;Calquera&lt;/i&gt;).</translation>
+        <translation>Styrer om dette filter gælder for USB-enheder tilsluttet direkte til værtsmaskinen (&lt;i&gt;Nej&lt;/i&gt;), til en VRDP-klients maskine (&lt;i&gt;Ja&lt;/i&gt;) eller begge (&lt;i&gt;Begge&lt;/i&gt;).</translation>
     </message>
     <message>
         <source>&amp;Action:</source>
-        <translation>&amp;Acción:</translation>
+        <translation>H&amp;andling:</translation>
     </message>
     <message>
         <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation>Define a acción que executará o computador anfitrión cando se conecte un dispositivo específico: darlle o control ao sistema operativo convidado (&lt;i&gt;Ignorar&lt;/i&gt;) ou capturalo para un uso posterior por outras máquinas virtuais (&lt;i&gt;Reter&lt;/i&gt;).</translation>
+        <translation>Angiver handlingen, der udføres, når en matchende enhed tilsluttes. Enten videregives kontrollen over den til værtsoperativsystemet (&lt;i&gt;Ignorér&lt;/i&gt;) eller også beholdes den til senere brug i virtuelle maskiner (&lt;i&gt;Behold&lt;/i&gt;).</translation>
     </message>
     <message>
         <source>USB Filter Details</source>
-        <translation>Detalles do filtro USB</translation>
+        <translation>Detaljer for USB-filter</translation>
     </message>
 </context>
 </TS>
