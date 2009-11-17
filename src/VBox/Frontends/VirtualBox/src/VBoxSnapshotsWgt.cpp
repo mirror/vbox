@@ -100,7 +100,7 @@ public:
     void setItalic (bool aItalic)
     {
         QFont myFont = font (0);
-        myFont.setBold (aItalic);
+        myFont.setItalic (aItalic);
         setFont (0, myFont);
         adjustText();
     }
@@ -642,6 +642,7 @@ void VBoxSnapshotsWgt::refreshAll()
 
         /* Add the "current state" item */
         SnapshotWgtItem *csi = new SnapshotWgtItem (mCurSnapshotItem, mMachine);
+        csi->setBold (true);
         csi->recache();
 
         SnapshotWgtItem *cur = findItem (selectedItem);
@@ -660,6 +661,7 @@ void VBoxSnapshotsWgt::refreshAll()
 
         /* Add the "current state" item */
         SnapshotWgtItem *csi = new SnapshotWgtItem (mTreeWidget, mMachine);
+        csi->setBold (true);
         csi->recache();
 
         mTreeWidget->setCurrentItem (csi);
