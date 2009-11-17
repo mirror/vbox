@@ -65,11 +65,26 @@ typedef struct _VBVAVIEW
     VBVAPARTIALRECORD partialRecord;
 } VBVAVIEW;
 
+typedef struct VBVAMOUSESHAPEINFO
+{
+    bool fSet;
+    bool fVisible;
+    bool fAlpha;
+    uint32_t u32HotX;
+    uint32_t u32HotY;
+    uint32_t u32Width;
+    uint32_t u32Height;
+    uint32_t cbShape;
+    uint32_t cbAllocated;
+    uint8_t *pu8Shape;
+} VBVAMOUSESHAPEINFO;
+
 /* @todo saved state: save and restore VBVACONTEXT */
 typedef struct _VBVACONTEXT
 {
     uint32_t cViews;
     VBVAVIEW aViews[64 /* @todo SchemaDefs::MaxGuestMonitors*/];
+    VBVAMOUSESHAPEINFO mouseShapeInfo;
 } VBVACONTEXT;
 
 /* Copies 'cb' bytes from the VBVA ring buffer to the 'pu8Dst'.
@@ -518,6 +533,57 @@ static int vbvaDisable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pC
     return VINF_SUCCESS;
 }
 
+#ifdef DEBUG_sunlover
+void dumpMouseShapeInfo(const VBVAMOUSESHAPEINFO *pMouseShapeInfo)
+{
+    LogFlow(("fSet = %d, fVisible %d, fAlpha %d, @%d,%d %dx%d (%p, %d/%d)\n",
+             pMouseShapeInfo->fSet,
+             pMouseShapeInfo->fVisible,
+             pMouseShapeInfo->fAlpha,
+             pMouseShapeInfo->u32HotX,
+             pMouseShapeInfo->u32HotY,
+             pMouseShapeInfo->u32Width,
+             pMouseShapeInfo->u32Height,
+             pMouseShapeInfo->pu8Shape,
+             pMouseShapeInfo->cbShape,
+             pMouseShapeInfo->cbAllocated
+             ));
+}
+#endif
+
+static int vbvaUpdateMousePointerShape(PVGASTATE pVGAState, VBVAMOUSESHAPEINFO *pMouseShapeInfo, bool fShape, const uint8_t *pu8Shape)
+{
+    int rc;
+    LogFlowFunc(("pVGAState %p, pMouseShapeInfo %p, fShape %d, pu8Shape %p\n",
+                  pVGAState, pMouseShapeInfo, fShape, pu8Shape));
+#ifdef DEBUG_sunlover
+    dumpMouseShapeInfo(pMouseShapeInfo);
+#endif
+
+    if (fShape && pu8Shape != NULL)
+    {
+        rc = pVGAState->pDrv->pfnVBVAMousePointerShape (pVGAState->pDrv,
+                                                        pMouseShapeInfo->fVisible,
+                                                        pMouseShapeInfo->fAlpha,
+                                                        pMouseShapeInfo->u32HotX,
+                                                        pMouseShapeInfo->u32HotY,
+                                                        pMouseShapeInfo->u32Width,
+                                                        pMouseShapeInfo->u32Height,
+                                                        pu8Shape);
+    }
+    else
+    {
+        rc = pVGAState->pDrv->pfnVBVAMousePointerShape (pVGAState->pDrv,
+                                                        pMouseShapeInfo->fVisible,
+                                                        false,
+                                                        0, 0,
+                                                        0, 0,
+                                                        NULL);
+    }
+
+    return rc;
+}
+
 static int vbvaMousePointerShape (PVGASTATE pVGAState, VBVACONTEXT *pCtx, const VBVAMOUSEPOINTERSHAPE *pShape, HGSMISIZE cbShape)
 {
     bool fVisible = (pShape->fu32Flags & VBOX_MOUSE_POINTER_VISIBLE) != 0;
@@ -539,31 +605,45 @@ static int vbvaMousePointerShape (PVGASTATE pVGAState, VBVACONTEXT *pCtx, const 
         return VERR_INVALID_PARAMETER;
     }
 
+    /* Save mouse info it will be used to restore mouse pointer after restoring saved state. */
+    pCtx->mouseShapeInfo.fSet = true;
+    pCtx->mouseShapeInfo.fVisible = fVisible;
+    pCtx->mouseShapeInfo.fAlpha = fAlpha;
+    pCtx->mouseShapeInfo.u32HotX = pShape->u32HotX;
+    pCtx->mouseShapeInfo.u32HotY = pShape->u32HotY;
+    pCtx->mouseShapeInfo.u32Width = pShape->u32Width;
+    pCtx->mouseShapeInfo.u32Height = pShape->u32Height;
+    if (fShape)
+    {
+        /* Reallocate memory buffer if necessary. */
+        if (cbPointerData > pCtx->mouseShapeInfo.cbAllocated)
+        {
+            RTMemFree (pCtx->mouseShapeInfo.pu8Shape);
+            pCtx->mouseShapeInfo.pu8Shape = NULL;
+            pCtx->mouseShapeInfo.cbShape = 0;
+
+            uint8_t *pu8Shape = (uint8_t *)RTMemAlloc (cbPointerData);
+            if (pu8Shape)
+            {
+                pCtx->mouseShapeInfo.pu8Shape = pu8Shape;
+                pCtx->mouseShapeInfo.cbAllocated = cbPointerData;
+            }
+        }
+
+        /* Copy shape bitmaps. */
+        if (pCtx->mouseShapeInfo.pu8Shape)
+        {
+            memcpy (pCtx->mouseShapeInfo.pu8Shape, &pShape->au8Data[0], cbPointerData);
+            pCtx->mouseShapeInfo.cbShape = cbPointerData;
+        }
+    }
+
     if (pVGAState->pDrv->pfnVBVAMousePointerShape == NULL)
     {
         return VERR_NOT_SUPPORTED;
     }
 
-    int rc;
-
-    if (fShape)
-    {
-        rc = pVGAState->pDrv->pfnVBVAMousePointerShape (pVGAState->pDrv,
-                                                        fVisible,
-                                                        fAlpha,
-                                                        pShape->u32HotX, pShape->u32HotY,
-                                                        pShape->u32Width, pShape->u32Height,
-                                                        &pShape->au8Data[0]);
-    }
-    else
-    {
-        rc = pVGAState->pDrv->pfnVBVAMousePointerShape (pVGAState->pDrv,
-                                                        fVisible,
-                                                        false,
-                                                        0, 0,
-                                                        0, 0,
-                                                        NULL);
-    }
+    int rc = vbvaUpdateMousePointerShape(pVGAState, &pCtx->mouseShapeInfo, fShape, &pShape->au8Data[0]);
 
     return rc;
 }
@@ -628,6 +708,8 @@ static void dumpctx(const VBVACONTEXT *pCtx)
               pView->partialRecord.cb,
               pView->partialRecord.pu8));
     }
+
+    dumpMouseShapeInfo(&pCtx->mouseShapeInfo);
 }
 #endif /* DEBUG_sunlover */
 
@@ -704,6 +786,33 @@ int vboxVBVASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
                     AssertRCReturn(rc, rc);
                 }
             }
+
+            /* Save mouse pointer shape information. */
+            rc = SSMR3PutBool (pSSM, pCtx->mouseShapeInfo.fSet);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutBool (pSSM, pCtx->mouseShapeInfo.fVisible);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutBool (pSSM, pCtx->mouseShapeInfo.fAlpha);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.u32HotX);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.u32HotY);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.u32Width);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.u32Height);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.cbShape);
+            AssertRCReturn(rc, rc);
+            if (pCtx->mouseShapeInfo.cbShape)
+            {
+                rc = SSMR3PutMem (pSSM, pCtx->mouseShapeInfo.pu8Shape, pCtx->mouseShapeInfo.cbShape);
+                AssertRCReturn(rc, rc);
+            }
+
+            /* Size of some additional data. For future extensions. */
+            rc = SSMR3PutU32 (pSSM, 0);
+            AssertRCReturn(rc, rc);
         }
     }
 
@@ -712,7 +821,7 @@ int vboxVBVASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
 {
-    if (u32Version < 3)
+    if (u32Version < VGA_SAVEDSTATE_VERSION_HGSMI)
     {
         /* Nothing was saved. */
         return VINF_SUCCESS;
@@ -809,6 +918,52 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
                 }
             }
 
+            if (u32Version > VGA_SAVEDSTATE_VERSION_WITH_CONFIG)
+            {
+                /* Read mouse pointer shape information. */
+                rc = SSMR3GetBool (pSSM, &pCtx->mouseShapeInfo.fSet);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetBool (pSSM, &pCtx->mouseShapeInfo.fVisible);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetBool (pSSM, &pCtx->mouseShapeInfo.fAlpha);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.u32HotX);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.u32HotY);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.u32Width);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.u32Height);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.cbShape);
+                AssertRCReturn(rc, rc);
+                if (pCtx->mouseShapeInfo.cbShape)
+                {
+                    pCtx->mouseShapeInfo.pu8Shape = (uint8_t *)RTMemAlloc(pCtx->mouseShapeInfo.cbShape);
+                    if (pCtx->mouseShapeInfo.pu8Shape == NULL)
+                    {
+                        return VERR_NO_MEMORY;
+                    }
+                    pCtx->mouseShapeInfo.cbAllocated = pCtx->mouseShapeInfo.cbShape;
+                    rc = SSMR3GetMem (pSSM, pCtx->mouseShapeInfo.pu8Shape, pCtx->mouseShapeInfo.cbShape);
+                    AssertRCReturn(rc, rc);
+                }
+                else
+                {
+                    pCtx->mouseShapeInfo.pu8Shape = NULL;
+                }
+
+                /* Size of some additional data. For future extensions. */
+                uint32_t cbExtra = 0;
+                rc = SSMR3GetU32 (pSSM, &cbExtra);
+                AssertRCReturn(rc, rc);
+                if (cbExtra > 0)
+                {
+                    rc = SSMR3Skip(pSSM, cbExtra);
+                    AssertRCReturn(rc, rc);
+                }
+            }
+
             pCtx->cViews = iView;
             LogFlowFunc(("%d views loaded\n", pCtx->cViews));
 
@@ -838,6 +993,11 @@ int vboxVBVALoadStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
                 vbvaEnable (iView, pVGAState, pCtx, pView->pVBVA, pView->u32VBVAOffset);
                 vbvaResize (pVGAState, pView, &pView->screen);
             }
+        }
+
+        if (pCtx->mouseShapeInfo.fSet)
+        {
+            vbvaUpdateMousePointerShape(pVGAState, &pCtx->mouseShapeInfo, true, pCtx->mouseShapeInfo.pu8Shape);
         }
     }
 
@@ -1401,6 +1561,12 @@ void VBVAReset (PVGASTATE pVGAState)
         {
             vbvaDisable (uScreenId, pVGAState, pCtx);
         }
+
+        pCtx->mouseShapeInfo.fSet = false;
+        RTMemFree(pCtx->mouseShapeInfo.pu8Shape);
+        pCtx->mouseShapeInfo.pu8Shape = NULL;
+        pCtx->mouseShapeInfo.cbAllocated = 0;
+        pCtx->mouseShapeInfo.cbShape = 0;
     }
 
 }
@@ -1466,6 +1632,17 @@ int VBVAInit (PVGASTATE pVGAState)
 
 void VBVADestroy (PVGASTATE pVGAState)
 {
+    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pVGAState->pHGSMI);
+
+    if (pCtx)
+    {
+        pCtx->mouseShapeInfo.fSet = false;
+        RTMemFree(pCtx->mouseShapeInfo.pu8Shape);
+        pCtx->mouseShapeInfo.pu8Shape = NULL;
+        pCtx->mouseShapeInfo.cbAllocated = 0;
+        pCtx->mouseShapeInfo.cbShape = 0;
+    }
+
     HGSMIDestroy (pVGAState->pHGSMI);
     pVGAState->pHGSMI = NULL;
 }
