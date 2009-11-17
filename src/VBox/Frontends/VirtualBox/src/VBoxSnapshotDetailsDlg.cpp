@@ -69,7 +69,7 @@ void VBoxSnapshotDetailsDlg::getFromSnapshot (const CSnapshot &aSnapshot)
     /* Get thumbnail if present */
     ULONG width = 0, height = 0;
     QVector <BYTE> data = machine.ReadSavedThumbnailToArray (true, width, height);
-    mThumbnail = data.size() != 0 ? QPixmap::fromImage (QImage (data.data(), width, height, QImage::Format_RGB32)) : QPixmap();
+    mThumbnail = data.size() != 0 ? QPixmap::fromImage (QImage (data.data(), width, height, QImage::Format_RGB32).copy()) : QPixmap();
     QGridLayout *lt = qobject_cast <QGridLayout*> (layout());
     Assert (lt);
     if (mThumbnail.isNull())
