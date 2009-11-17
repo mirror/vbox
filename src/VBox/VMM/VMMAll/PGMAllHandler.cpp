@@ -843,6 +843,7 @@ VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
                         Assert(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO);
                         pPage++;
                     }
+                    PGMPhysInvalidatePageMapTLB(pVM);
                 }
                 else
                 {
@@ -853,7 +854,6 @@ VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
                     PGM_INVL_ALL_VCPU_TLBS(pVM);
                 }
 
-                PGMPhysInvalidatePageMapTLB(pVM);
                 rc = VINF_SUCCESS;
                 break;
             }
