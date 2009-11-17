@@ -412,7 +412,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsInstallationPath(char **ppszPath)
                 if (RT_SUCCESS(rc))
                 {
                     /* Flip slashes. */
-                    for (char* pszTmp2 = ppszPath[0]; ppszPath; ++ppszPath)
+                    for (char *pszTmp2 = ppszPath[0]; *pszTmp2; ++pszTmp2)
                         if (*pszTmp2 == '\\')
                             *pszTmp2 = '/';
                 }
