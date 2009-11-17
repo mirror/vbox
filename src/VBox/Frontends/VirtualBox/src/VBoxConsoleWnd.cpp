@@ -1361,6 +1361,8 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *aEvent)
 
                 /* Make the Discard checkbox invisible if there are no snapshots */
                 dlg.mCbDiscardCurState->setVisible (machine.GetSnapshotCount() > 0);
+                if (!machine.GetCurrentSnapshot().isNull())
+                    dlg.mCbDiscardCurState->setText (dlg.mCbDiscardCurState->text().arg (machine.GetCurrentSnapshot().GetName()));
 
                 if (mMachineState != KMachineState_Stuck)
                 {

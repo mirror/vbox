@@ -207,7 +207,7 @@
             <string>&lt;p>When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p></string>
            </property>
            <property name="text" >
-            <string>&amp;Restore the current snapshot</string>
+            <string>&amp;Restore current snapshot '%1'</string>
            </property>
           </widget>
          </item>
