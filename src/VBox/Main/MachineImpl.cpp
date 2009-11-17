@@ -2725,6 +2725,8 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
                         tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
                         aDevice, aControllerPort, aControllerName);
 
+    ComObjPtr<Medium> oldmedium = pAttach->medium();
+    DeviceType_T mediumType = pAttach->type();
 
     if (pAttach->isImplicit())
     {
@@ -2743,8 +2745,7 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
         alock.leave();
 
-        ComObjPtr<Medium> hd = pAttach->medium();
-        rc = hd->deleteStorageAndWait();
+        rc = oldmedium->deleteStorageAndWait();
 
         alock.enter();
 
@@ -2759,6 +2760,10 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
      * a copy of the list and make this copy active, but the iterator
      * still refers to the original and is not valid for the copy */
     mMediaData->mAttachments.remove(pAttach);
+
+    /* For non-hard disk media, detach straight away. */
+    if (mediumType != DeviceType_HardDisk && !oldmedium.isNull())
+        oldmedium->detachFrom(mData->mUuid);
 
     return S_OK;
 }
