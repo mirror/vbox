@@ -141,6 +141,8 @@ typedef struct PDMDEVINSINT
  * events.  PDMR3Resume and PDMR3PowerOn also makes use of it to bail out on
  * a failure (already resumed/powered-on devices are suspended). */
 #define PDMDEVINSINT_FLAGS_SUSPENDED     RT_BIT_32(1)
+/** Indicates that the device has been reset already.  Used by PDMR3Reset. */
+#define PDMDEVINSINT_FLAGS_RESET         RT_BIT_32(2)
 /** @} */
 
 
@@ -177,9 +179,11 @@ typedef struct PDMUSBINSINT
     R3PTRTYPE(PPDMUSBHUB)           pHub;
     /** The port number that we're connected to. */
     uint32_t                        iPort;
-    /** Indicates that the driver hasn't been powered on or resumed.
+    /** Indicates that the USB device hasn't been powered on or resumed.
      * See PDMDEVINSINT_FLAGS_SUSPENDED. */
     bool                            fVMSuspended;
+    /** Indicates that the USB device has been reset. */
+    bool                            fVMReset;
     /** Pointer to the asynchronous notification callback set while in
      * FNPDMDEVSUSPEND or FNPDMDEVPOWEROFF. */
     R3PTRTYPE(PFNPDMUSBASYNCNOTIFY) pfnAsyncNotify;
@@ -209,6 +213,8 @@ typedef struct PDMDRVINSINT
     /** Indicates that the driver hasn't been powered on or resumed.
      * See PDMDEVINSINT_FLAGS_SUSPENDED. */
     bool                            fVMSuspended;
+    /** Indicates that the driver has been reset already. */
+    bool                            fVMReset;
     /** Pointer to the asynchronous notification callback set while in
      * PDMUSBREG::pfnVMSuspend or PDMUSBREG::pfnVMPowerOff. */
     R3PTRTYPE(PFNPDMDRVASYNCNOTIFY) pfnAsyncNotify;

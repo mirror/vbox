@@ -2407,7 +2407,7 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnPhysGCPtr2GCPhys, (PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys));
 
     /**
-     * Set up asynchronous handling of a suspend or power off notification.
+     * Set up asynchronous handling of a suspend, reset or power off notification.
      *
      * This shall only be called when getting the notification.  It must be called
      * for each one.
