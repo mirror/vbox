@@ -1510,7 +1510,7 @@ static BOOLEAN ShowPointer(PVOID HwDeviceExtension)
 #ifndef VBOX_WITH_HGSMI
         Result = vboxUpdatePointerShape(&PointerAttributes, sizeof (PointerAttributes));
 #else
-        Result = vboxUpdatePointerShape(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, &PointerAttributes, sizeof (PointerAttributes));
+        Result = vboxUpdatePointerShape((PDEVICE_EXTENSION)HwDeviceExtension, &PointerAttributes, sizeof (PointerAttributes));
 #endif /* VBOX_WITH_HGSMI */
 
         if (Result)
@@ -1761,7 +1761,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 #ifndef VBOX_WITH_HGSMI
                 Result = vboxUpdatePointerShape(&PointerAttributes, sizeof (PointerAttributes));
 #else
-                Result = vboxUpdatePointerShape(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, &PointerAttributes, sizeof (PointerAttributes));
+                Result = vboxUpdatePointerShape((PDEVICE_EXTENSION)HwDeviceExtension, &PointerAttributes, sizeof (PointerAttributes));
 #endif /* VBOX_WITH_HGSMI */
 
                 if (Result)
@@ -1810,7 +1810,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 #ifndef VBOX_WITH_HGSMI
                 Result = vboxUpdatePointerShape(pPointerAttributes, RequestPacket->InputBufferLength);
 #else
-                Result = vboxUpdatePointerShape(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, pPointerAttributes, RequestPacket->InputBufferLength);
+                Result = vboxUpdatePointerShape((PDEVICE_EXTENSION)HwDeviceExtension, pPointerAttributes, RequestPacket->InputBufferLength);
 #endif /* VBOX_WITH_HGSMI */
                 if (!Result)
                     dprintf(("VBoxVideo::VBoxVideoStartIO: Could not set hardware pointer -> fallback\n"));
