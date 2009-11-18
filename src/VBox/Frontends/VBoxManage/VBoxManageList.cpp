@@ -551,18 +551,18 @@ int handleList(HandlerArg *a)
                 ComPtr<IMedium> hdd = hdds[i];
                 Bstr uuid;
                 hdd->COMGETTER(Id)(uuid.asOutParam());
-                RTPrintf("UUID:         %s\n", Utf8Str(uuid).raw());
+                RTPrintf("UUID:       %s\n", Utf8Str(uuid).raw());
                 Bstr format;
                 hdd->COMGETTER(Format)(format.asOutParam());
-                RTPrintf("Format:       %lS\n", format.raw());
+                RTPrintf("Format:     %lS\n", format.raw());
                 Bstr filepath;
                 hdd->COMGETTER(Location)(filepath.asOutParam());
-                RTPrintf("Location:     %lS\n", filepath.raw());
+                RTPrintf("Location:   %lS\n", filepath.raw());
                 MediumState_T enmState;
                 /// @todo NEWMEDIA check accessibility of all parents
                 /// @todo NEWMEDIA print the full state value
                 hdd->RefreshState(&enmState);
-                RTPrintf("Accessible:   %s\n", enmState != MediumState_Inaccessible ? "yes" : "no");
+                RTPrintf("Accessible: %s\n", enmState != MediumState_Inaccessible ? "yes" : "no");
 
                 MediumType_T type;
                 hdd->COMGETTER(Type)(&type);
@@ -579,7 +579,7 @@ int handleList(HandlerArg *a)
                         typeStr = "writethrough";
                         break;
                 }
-                RTPrintf("Type:         %s\n", typeStr);
+                RTPrintf("Type:       %s\n", typeStr);
 
                 com::SafeArray<BSTR> machineIds;
                 hdd->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
@@ -592,7 +592,7 @@ int handleList(HandlerArg *a)
                     machine->COMGETTER(Name)(name.asOutParam());
                     machine->COMGETTER(Id)(uuid.asOutParam());
                     RTPrintf("%s%lS (UUID: %lS)\n",
-                            j == 0 ? "Usage:        " : "              ",
+                            j == 0 ? "Usage:      " : "            ",
                             name.raw(), machineIds[j]);
                 }
                 /// @todo NEWMEDIA check usage in snapshots too
@@ -619,7 +619,21 @@ int handleList(HandlerArg *a)
                 MediumState_T enmState;
                 dvdImage->RefreshState(&enmState);
                 RTPrintf("Accessible: %s\n", enmState != MediumState_Inaccessible ? "yes" : "no");
-                /** @todo usage */
+
+                com::SafeArray<BSTR> machineIds;
+                dvdImage->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
+                for (size_t j = 0; j < machineIds.size(); ++ j)
+                {
+                    ComPtr<IMachine> machine;
+                    CHECK_ERROR(a->virtualBox, GetMachine(machineIds[j], machine.asOutParam()));
+                    ASSERT(machine);
+                    Bstr name;
+                    machine->COMGETTER(Name)(name.asOutParam());
+                    machine->COMGETTER(Id)(uuid.asOutParam());
+                    RTPrintf("%s%lS (UUID: %lS)\n",
+                            j == 0 ? "Usage:      " : "            ",
+                            name.raw(), machineIds[j]);
+                }
                 RTPrintf("\n");
             }
         }
@@ -641,7 +655,21 @@ int handleList(HandlerArg *a)
                 MediumState_T enmState;
                 floppyImage->RefreshState(&enmState);
                 RTPrintf("Accessible: %s\n", enmState != MediumState_Inaccessible ? "yes" : "no");
-                /** @todo usage */
+
+                com::SafeArray<BSTR> machineIds;
+                floppyImage->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
+                for (size_t j = 0; j < machineIds.size(); ++ j)
+                {
+                    ComPtr<IMachine> machine;
+                    CHECK_ERROR(a->virtualBox, GetMachine(machineIds[j], machine.asOutParam()));
+                    ASSERT(machine);
+                    Bstr name;
+                    machine->COMGETTER(Name)(name.asOutParam());
+                    machine->COMGETTER(Id)(uuid.asOutParam());
+                    RTPrintf("%s%lS (UUID: %lS)\n",
+                            j == 0 ? "Usage:      " : "            ",
+                            name.raw(), machineIds[j]);
+                }
                 RTPrintf("\n");
             }
         }
