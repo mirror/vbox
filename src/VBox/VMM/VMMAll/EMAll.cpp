@@ -172,10 +172,21 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
     State.pVCpu = pVCpu;
     int rc = PGMPhysSimpleReadGCPtr(pVCpu, &State.aOpcode, InstrGC, sizeof(State.aOpcode));
     if (RT_SUCCESS(rc))
+    {
         State.GCPtr = InstrGC;
+    }
     else
-        State.GCPtr = NIL_RTGCPTR;
+    {
+        if (PAGE_ADDRESS(InstrGC) == PAGE_ADDRESS(InstrGC + sizeof(State.aOpcode) - 1))
+        {
+           if (rc == VERR_PAGE_TABLE_NOT_PRESENT)
+              HWACCMInvalidatePage(pVCpu, InstrGC);
 
+           Log(("emDisCoreOne: read failed with %d\n", rc));
+           return rc; 
+        }
+        State.GCPtr = NIL_RTGCPTR;
+    }
     return DISCoreOneEx(InstrGC, pDis->mode, EMReadBytes, &State, pDis, pOpsize);
 }
 
@@ -245,9 +256,21 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
 
     rc = PGMPhysSimpleReadGCPtr(pVCpu, &State.aOpcode, GCPtrInstr, sizeof(State.aOpcode));
     if (RT_SUCCESS(rc))
+    {
         State.GCPtr = GCPtrInstr;
+    }
     else
+    {
+        if (PAGE_ADDRESS(GCPtrInstr) == PAGE_ADDRESS(GCPtrInstr + sizeof(State.aOpcode) - 1))
+        {
+           if (rc == VERR_PAGE_TABLE_NOT_PRESENT)
+              HWACCMInvalidatePage(pVCpu, GCPtrInstr);
+
+           Log(("EMInterpretDisasOneEx: read failed with %d\n", rc));
+           return rc; 
+        }
         State.GCPtr = NIL_RTGCPTR;
+    }
 #endif
 
     rc = DISCoreOneEx(GCPtrInstr, SELMGetCpuModeFromSelector(pVM, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid),
