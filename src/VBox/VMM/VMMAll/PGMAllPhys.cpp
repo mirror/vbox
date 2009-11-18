@@ -437,6 +437,27 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 
 
 /**
+ * Deal with a write monitored page.
+ *
+ * @returns VBox strict status code.
+ *
+ * @param   pVM         The VM address.
+ * @param   pPage       The physical page tracking structure.
+ *
+ * @remarks Called from within the PGM critical section.
+ */
+void pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage)
+{
+    Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED);
+    PGM_PAGE_SET_WRITTEN_TO(pPage);
+    PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
+    Assert(pVM->pgm.s.cMonitoredPages > 0);
+    pVM->pgm.s.cMonitoredPages--;
+    pVM->pgm.s.cWrittenToPages++;
+}
+
+
+/**
  * Deal with pages that are not writable, i.e. not in the ALLOCATED state.
  *
  * @returns VBox strict status code.
@@ -455,11 +476,7 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     switch (PGM_PAGE_GET_STATE(pPage))
     {
         case PGM_PAGE_STATE_WRITE_MONITORED:
-            PGM_PAGE_SET_WRITTEN_TO(pPage);
-            PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
-            Assert(pVM->pgm.s.cMonitoredPages > 0);
-            pVM->pgm.s.cMonitoredPages--;
-            pVM->pgm.s.cWrittenToPages++;
+            pgmPhysPageMakeWriteMonitoredWritable(pVM, pPage);
             /* fall thru */
         default: /* to shut up GCC */
         case PGM_PAGE_STATE_ALLOCATED:
