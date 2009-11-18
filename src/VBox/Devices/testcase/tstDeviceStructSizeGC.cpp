@@ -1235,7 +1235,6 @@ int main()
     GEN_CHECK_OFF(AHCI, aCts);
     GEN_CHECK_OFF(AHCI, aCts[1]);
     GEN_CHECK_OFF(AHCI, lock);
-    GEN_CHECK_OFF(AHCI, hEvtIdle);
     GEN_CHECK_OFF(AHCI, u32PortsInterrupted);
     GEN_CHECK_OFF(AHCI, fReset);
     GEN_CHECK_OFF(AHCI, f64BitAddr);

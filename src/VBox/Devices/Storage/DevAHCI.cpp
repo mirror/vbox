@@ -582,12 +582,6 @@ typedef struct AHCI
     /** The critical section. */
     PDMCRITSECT                     lock;
 
-    /** Semaphore that gets set when fSignalIdle is set. */
-    RTSEMEVENT                      hEvtIdle;
-#if HC_ARCH_BITS == 32
-    uint32_t                        Alignment7;
-#endif
-
     /** Bitmask of ports which asserted an interrupt. */
     uint32_t                        u32PortsInterrupted;
     /** Device is in a reset state. */
@@ -600,8 +594,8 @@ typedef struct AHCI
     bool                            fR0Enabled;
     /** If the new async interface is used if available. */
     bool                            fUseAsyncInterfaceIfAvailable;
-    /** Indicates that hEvtIdle should be signalled when a port is entering the
-     * idle state. */
+    /** Indicates that PDMDevHlpAsyncNotificationCompleted should be called when
+     * a port is entering the idle state. */
     bool volatile                   fSignalIdle;
     bool                            afAlignment8[1];
 
@@ -4927,7 +4921,7 @@ static DECLCALLBACK(int) ahciTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterfa
     int rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState);
 
     if (pAhciPort->uActTasksActive == 0 && pAhciPort->pAhciR3->fSignalIdle)
-        RTSemEventSignal(pAhciPort->pAhciR3->hEvtIdle);
+        PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
     return rc;
 }
 
@@ -5386,7 +5380,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
         ASMAtomicXchgBool(&pAhciPort->fAsyncIOThreadIdle, true);
         if (pAhci->fSignalIdle)
-            RTSemEventSignal(pAhci->hEvtIdle);
+            PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
 
         rc = RTSemEventWait(pAhciPort->AsyncIORequestSem, 1000);
         if (rc == VERR_TIMEOUT)
@@ -5651,7 +5645,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
     }
 
     if (pAhci->fSignalIdle)
-        RTSemEventSignal(pAhci->hEvtIdle);
+        PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
 
     /* Free task state memory */
     if (pAhciPortTaskState->pSGListHead)
@@ -5784,9 +5778,6 @@ static DECLCALLBACK(int) ahciDestruct(PPDMDEVINS pDevIns)
         for (unsigned i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
             ataControllerDestroy(&pAhci->aCts[i]);
 
-        RTSemEventDestroy(pAhci->hEvtIdle);
-        pAhci->hEvtIdle = NIL_RTSEMEVENT;
-
         PDMR3CritSectDelete(&pAhci->lock);
     }
 
@@ -5894,52 +5885,38 @@ static int ahciConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
     return rc;
 }
 
-static bool ahciWaitForAllAsyncIOIsFinished(PPDMDEVINS pDevIns, unsigned cMillies)
+/**
+ * Checks if all asynchronous I/O is finished.
+ *
+ * @returns true if quiesced, false if busy.
+ * @param   pDevIns         The device instance.
+ */
+static bool ahciR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
 {
-    PAHCI     pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-    uint64_t  u64Start;
-    PAHCIPort pAhciPort;
-    bool      fAllFinished;
+    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
 
-    ASMAtomicWriteBool(&pAhci->fSignalIdle, true);
-    u64Start = RTTimeMilliTS();
-    for (;;)
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->ahciPort); i++)
     {
-        fAllFinished = true;
-        for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->ahciPort); i++)
+        PAHCIPort pThisPort = &pThis->ahciPort[i];
+        if (pThisPort->pDrvBase)
         {
-            pAhciPort = &pAhci->ahciPort[i];
-
-            if (pAhciPort->pDrvBase)
-            {
-                if (pAhciPort->fAsyncInterface)
-                    fAllFinished &= (pAhciPort->uActTasksActive == 0);
-                else
-                    fAllFinished &= ((pAhciPort->uActTasksActive == 0) && (pAhciPort->fAsyncIOThreadIdle));
-
-                if (!fAllFinished)
-                    break;
-            }
+            bool fFinished;
+            if (pThisPort->fAsyncInterface)
+                fFinished = (pThisPort->uActTasksActive == 0);
+            else
+                fFinished = ((pThisPort->uActTasksActive == 0) && (pThisPort->fAsyncIOThreadIdle));
+            if (!fFinished)
+               return false;
         }
-        if (   fAllFinished
-            || RTTimeMilliTS() - u64Start >= cMillies)
-            break;
-
-        /* Wait for a port to signal idleness. */
-        int rc = RTSemEventWait(pAhci->hEvtIdle, 100 /*ms*/);
-        AssertMsg(RT_SUCCESS(rc) || rc == VERR_TIMEOUT, ("%Rrc\n", rc)); NOREF(rc);
     }
-
-    ASMAtomicWriteBool(&pAhci->fSignalIdle, false);
-    return fAllFinished;
+    return true;
 }
 
 static DECLCALLBACK(int) ahciSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
 
-    if (!ahciWaitForAllAsyncIOIsFinished(pDevIns, 20000))
-        AssertMsgFailed(("One port is still active\n"));
+    Assert(ahciR3AllAsyncIOIsFinished(pDevIns));
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
     {
@@ -5970,6 +5947,36 @@ static DECLCALLBACK(int) ahciLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 }
 
 /**
+ * Callback employed by ataSuspend and ataR3PowerOff.
+ *
+ * @returns true if we've quiesced, false if we're still working.
+ * @param   pDevIns     The device instance.
+ */
+static DECLCALLBACK(bool) ahciR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDevIns)
+{
+    if (!ahciR3AllAsyncIOIsFinished(pDevIns))
+        return false;
+
+    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+    return true;
+}
+
+/**
+ * Common worker for ataSuspend and ataR3PowerOff.
+ */
+static void ahciR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
+{
+    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+
+    ASMAtomicWriteBool(&pThis->fSignalIdle, true);
+    if (!ahciR3AllAsyncIOIsFinished(pDevIns))
+        PDMDevHlpSetAsyncNotification(pDevIns, ahciR3IsAsyncSuspendOrPowerOffDone);
+    else
+        ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+}
+
+/**
  * Suspend notification.
  *
  * @returns VBox status.
@@ -5977,24 +5984,18 @@ static DECLCALLBACK(int) ahciLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(void) ahciSuspend(PPDMDEVINS pDevIns)
 {
-    PAHCI    pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-
-    if (!ahciWaitForAllAsyncIOIsFinished(pDevIns, 20000))
-        AssertMsgFailed(("AHCI: One port is still active\n"));
-
+    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
     Log(("%s:\n", __FUNCTION__));
-    for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
-    {
-        ataControllerSuspend(&pAhci->aCts[i]);
-    }
-    return;
-}
 
+    ahciR3SuspendOrPowerOff(pDevIns);
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
+        ataControllerSuspend(&pAhci->aCts[i]);
+}
 
 /**
  * Resume notification.
  *
- * @returns VBox status.
  * @param   pDevIns     The device instance data.
  */
 static DECLCALLBACK(void) ahciResume(PPDMDEVINS pDevIns)
@@ -6003,9 +6004,7 @@ static DECLCALLBACK(void) ahciResume(PPDMDEVINS pDevIns)
 
     Log(("%s:\n", __FUNCTION__));
     for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
-    {
         ataControllerResume(&pAhci->aCts[i]);
-    }
     return;
 }
 
@@ -6399,17 +6398,13 @@ static DECLCALLBACK(int)  ahciAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 }
 
 /**
- * Reset notification.
+ * Common reset worker.
  *
- * @returns VBox status.
  * @param   pDevIns     The device instance data.
  */
-static DECLCALLBACK(void) ahciReset(PPDMDEVINS pDevIns)
+static int ahciR3ResetCommon(PPDMDEVINS pDevIns, bool fConstructor)
 {
     PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-
-    if (!ahciWaitForAllAsyncIOIsFinished(pDevIns, 20000))
-        AssertMsgFailed(("AHCI: One port is still active\n"));
 
     ahciHBAReset(pAhci);
 
@@ -6419,6 +6414,44 @@ static DECLCALLBACK(void) ahciReset(PPDMDEVINS pDevIns)
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
         ataControllerReset(&pAhci->aCts[i]);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Callback employed by ahciReset.
+ *
+ * @returns true if we've quiesced, false if we're still working.
+ * @param   pDevIns     The device instance.
+ */
+static DECLCALLBACK(bool) ahciR3IsAsyncResetDone(PPDMDEVINS pDevIns)
+{
+    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+
+    if (!ahciR3AllAsyncIOIsFinished(pDevIns))
+        return false;
+    ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+
+    ahciR3ResetCommon(pDevIns, false /*fConstructor*/);
+    return true;
+}
+
+/**
+ * Reset notification.
+ *
+ * @param   pDevIns     The device instance data.
+ */
+static DECLCALLBACK(void) ahciReset(PPDMDEVINS pDevIns)
+{
+    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+
+    ASMAtomicWriteBool(&pThis->fSignalIdle, true);
+    if (!ahciR3AllAsyncIOIsFinished(pDevIns))
+        PDMDevHlpSetAsyncNotification(pDevIns, ahciR3IsAsyncResetDone);
+    else
+    {
+        ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+        ahciR3ResetCommon(pDevIns, false /*fConstructor*/);
+    }
 }
 
 /**
@@ -6431,8 +6464,7 @@ static DECLCALLBACK(void) ahciPowerOff(PPDMDEVINS pDevIns)
 {
     PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
 
-    if (!ahciWaitForAllAsyncIOIsFinished(pDevIns, 20000))
-        AssertMsgFailed(("AHCI: One port is still active\n"));
+    ahciR3SuspendOrPowerOff(pDevIns);
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
         ataControllerPowerOff(&pAhci->aCts[i]);
@@ -6521,7 +6553,6 @@ static DECLCALLBACK(int) ahciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->hEvtIdle  = NIL_RTSEMEVENT;
 
     PCIDevSetVendorId    (&pThis->dev, 0x8086); /* Intel */
     PCIDevSetDeviceId    (&pThis->dev, 0x2829); /* ICH-8M */
@@ -6602,9 +6633,6 @@ static DECLCALLBACK(int) ahciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         Log(("%s: Failed to create critical section.\n", __FUNCTION__));
         return rc;
     }
-
-    rc = RTSemEventCreate(&pThis->hEvtIdle);
-    AssertRCReturn(rc, rc);
 
     /* Create the timer for command completion coalescing feature. */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, ahciCccTimer, pThis,
@@ -6949,9 +6977,7 @@ static DECLCALLBACK(int) ahciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return rc;
 
-    ahciReset(pDevIns);
-
-    return rc;
+    return ahciR3ResetCommon(pDevIns, true /*fConstructor*/);
 }
 
 /**
