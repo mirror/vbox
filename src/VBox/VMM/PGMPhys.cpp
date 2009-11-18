@@ -271,17 +271,25 @@ VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf,
                 PPGMPAGE    pPage = &pRam->aPages[iPage];
 
                 /*
-                 * It the page is in any way problematic, we have to
-                 * do the work on the EMT. Anything that needs to be made
-                 * writable or involves access handlers is problematic.
+                 * Is the page problematic, we have to do the work on the EMT.
+                 *
+                 * Allocating writable pages and access handlers are
+                 * problematic, write monitored pages are simple and can be
+                 * dealth with here.
                  */
                 if (    PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage)
                     ||  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
                 {
-                    pgmUnlock(pVM);
+                    if (    PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED
+                        && !PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+                        pgmPhysPageMakeWriteMonitoredWritable(pVM, pPage);
+                    else
+                    {
+                        pgmUnlock(pVM);
 
-                    return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)pgmR3PhysWriteExternalEMT, 4,
-                                           pVM, &GCPhys, pvBuf, cbWrite);
+                        return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)pgmR3PhysWriteExternalEMT, 4,
+                                               pVM, &GCPhys, pvBuf, cbWrite);
+                    }
                 }
                 Assert(!PGM_PAGE_IS_MMIO(pPage));
 
@@ -436,18 +444,30 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
             /*
              * If the page is shared, the zero page, or being write monitored
              * it must be converted to an page that's writable if possible.
-             * This has to be done on an EMT.
+             * We can only deal with write monitored pages here, the rest have
+             * to be on an EMT.
              */
             if (    PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage)
+                ||  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
 #ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
                 ||  pgmPoolIsDirtyPage(pVM, GCPhys)
 #endif
-                ||  RT_UNLIKELY(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED))
+               )
             {
-                pgmUnlock(pVM);
+                if (    PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED
+                    &&  !PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage)
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+                    &&  !pgmPoolIsDirtyPage(pVM, GCPhys)
+#endif
+                   )
+                    pgmPhysPageMakeWriteMonitoredWritable(pVM, pPage);
+                else
+                {
+                    pgmUnlock(pVM);
 
-                return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)pgmR3PhysGCPhys2CCPtrDelegated, 4,
-                                       pVM, &GCPhys, ppv, pLock);
+                    return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)pgmR3PhysGCPhys2CCPtrDelegated, 4,
+                                           pVM, &GCPhys, ppv, pLock);
+                }
             }
 
             /*
