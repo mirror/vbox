@@ -5947,7 +5947,7 @@ static DECLCALLBACK(int) ahciLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 }
 
 /**
- * Callback employed by ataSuspend and ataR3PowerOff.
+ * Callback employed by ahciSuspend and ahciPowerOff..
  *
  * @returns true if we've quiesced, false if we're still working.
  * @param   pDevIns     The device instance.
@@ -5963,7 +5963,7 @@ static DECLCALLBACK(bool) ahciR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDevIns)
 }
 
 /**
- * Common worker for ataSuspend and ataR3PowerOff.
+ * Common worker for ahciSuspend and ahciPowerOff.
  */
 static void ahciR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
 {
