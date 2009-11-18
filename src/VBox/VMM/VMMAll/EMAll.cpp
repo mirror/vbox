@@ -2812,7 +2812,7 @@ static const char *emMSRtoString(uint32_t uMsr)
     case MSR_IA32_PERFEVTSEL1:
         return "Unsupported MSR_IA32_PERFEVTSEL1";
     case MSR_IA32_PERF_STATUS:
-        return "Unsupported MSR_IA32_PERF_STATUS";
+        return "MSR_IA32_PERF_STATUS";
     case MSR_IA32_PERF_CTL:
         return "Unsupported MSR_IA32_PERF_CTL";
     case MSR_K7_PERFCTR0:

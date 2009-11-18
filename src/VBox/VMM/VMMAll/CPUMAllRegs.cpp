@@ -786,6 +786,12 @@ VMMDECL(uint64_t)  CPUMGetGuestMsr(PVMCPU pVCpu, unsigned idMsr)
             u64 = pVCpu->cpum.s.GuestMsr.msr.tscAux;
             break;
 
+        case MSR_IA32_PERF_STATUS:
+            /** @todo: could really be not exactly correct, maybe use host's values */
+            u64 =     (1000ULL                /* TSC increment by tick */)
+                    | (((uint64_t)4ULL) << 40 /* CPU multiplier */       );
+            break;
+
         /* fs & gs base skipped on purpose as the current context might not be up-to-date. */
         default:
             AssertFailed();
