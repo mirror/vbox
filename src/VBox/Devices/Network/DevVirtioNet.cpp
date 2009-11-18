@@ -218,6 +218,7 @@ struct VPCIState_st
     STAMPROFILEADV         StatIOWriteGC;
     STAMPROFILEADV         StatIOWriteHC;
     STAMCOUNTER            StatIntsRaised;
+    STAMCOUNTER            StatIntsSkipped;
 #endif /* VBOX_WITH_STATISTICS */
 };
 typedef struct VPCIState_st VPCISTATE;
@@ -495,6 +496,11 @@ void vqueueNotify(PVPCISTATE pState, PVQUEUE pQueue)
         if (RT_FAILURE(rc))
             Log(("%s vqueueNotify: Failed to raise an interrupt (%Vrc).\n", INSTANCE(pState), rc));
     }
+    else
+    {
+        STAM_COUNTER_INC(&pState->StatIntsSkipped);
+    }
+
 }
 
 void vqueueSync(PVPCISTATE pState, PVQUEUE pQueue)
@@ -1117,6 +1123,7 @@ DECLCALLBACK(int) vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteGC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in GC",          "/Devices/VNet%d/IO/WriteGC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteHC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in HC",          "/Devices/VNet%d/IO/WriteHC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIntsRaised,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of raised interrupts",        "/Devices/VNet%d/Interrupts/Raised", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIntsSkipped,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of skipped interrupts",        "/Devices/VNet%d/Interrupts/Skipped", iInstance);
 #endif /* VBOX_WITH_STATISTICS */
 
     return rc;
@@ -1205,6 +1212,8 @@ PVQUEUE vpciAddQueue(VPCISTATE* pState, unsigned uSize,
 
 #define VNET_TX_DELAY           150   /* 150 microseconds */
 #define VNET_MAX_FRAME_SIZE     65536  // TODO: Is it the right limit?
+#define VNET_MAC_FILTER_LEN     32
+#define VNET_MAX_VID            (1 << 12)
 
 /* Virtio net features */
 #define VNET_F_CSUM       0x00000001  /* Host handles pkts w/ partial csum */
@@ -1288,11 +1297,23 @@ struct VNetState_st
     /** Number of packet being sent/received to show in debug log. */
     uint32_t                u32PktNo;
 
-    /** Locked state -- no state alteration possible. */
-    bool                    fLocked;
-
     /** N/A: */
     bool volatile           fMaybeOutOfSpace;
+
+    /** Promiscuous mode -- RX filter accepts all packets. */
+    bool                    fPromiscuous;
+    /** AllMulti mode -- RX filter accepts all multicast packets. */
+    bool                    fAllMulti;
+    /** The number of actually used slots in aMacTable. */
+    uint32_t                nMacFilterEntries;
+    /** Array of MAC addresses accepted by RX filter. */
+    RTMAC                   aMacFilter[VNET_MAC_FILTER_LEN];
+    /** Bit array of VLAN filter, one bit per VLAN ID. */
+    uint8_t                 aVlanFilter[VNET_MAX_VID / sizeof(uint8_t)];
+
+#if HC_ARCH_BITS == 64
+    uint32_t    padding3;
+#endif
 
     R3PTRTYPE(PVQUEUE)      pRxQueue;
     R3PTRTYPE(PVQUEUE)      pTxQueue;
@@ -1337,6 +1358,31 @@ AssertCompileSize(VNETHDR, 10);
 
 AssertCompileMemberOffset(VNETSTATE, VPCI, 0);
 
+#define VNET_OK                    0
+#define VNET_ERROR                 1
+typedef uint8_t VNETCTLACK;
+
+#define VNET_CTRL_CLS_RX_MODE          0
+#define VNET_CTRL_CMD_RX_MODE_PROMISC  0
+#define VNET_CTRL_CMD_RX_MODE_ALLMULTI 1
+
+#define VNET_CTRL_CLS_MAC              1
+#define VNET_CTRL_CMD_MAC_TABLE_SET    0
+
+#define VNET_CTRL_CLS_VLAN             2
+#define VNET_CTRL_CMD_VLAN_ADD         0
+#define VNET_CTRL_CMD_VLAN_DEL         1
+
+
+struct VNetCtlHdr
+{
+    uint8_t  u8Class;
+    uint8_t  u8Command;
+};
+typedef struct VNetCtlHdr VNETCTLHDR;
+typedef VNETCTLHDR *PVNETCTLHDR;
+AssertCompileSize(VNETCTLHDR, 2);
+
 //- TODO: Leave here ----------------------------------------------------------
 
 #undef INSTANCE
@@ -1358,8 +1404,19 @@ DECLINLINE(void) vnetCsLeave(PVNETSTATE pState)
 
 PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pvState)
 {
-    // TODO: implement
-    return VNET_F_MAC | VNET_F_STATUS;
+    /* We support:
+     * - Host-provided MAC address
+     * - Link status reporting in config space
+     * - Control queue
+     * - RX mode setting
+     * - MAC filter table
+     * - VLAN filter
+     */
+    return VNET_F_MAC
+        | VNET_F_STATUS
+        | VNET_F_CTRL_VQ
+        | VNET_F_CTRL_RX
+        | VNET_F_CTRL_VLAN;
 }
 
 PDMBOTHCBDECL(uint32_t) vnetGetHostMinimalFeatures(void *pvState)
@@ -1413,6 +1470,15 @@ PDMBOTHCBDECL(void) vnetReset(void *pvState)
         STATUS = VNET_S_LINK_UP;
     else
         STATUS = 0;
+    /*
+     * By default we pass all packets up since the older guests cannot control
+     * virtio mode.
+     */
+    pState->fPromiscuous      = true;
+    pState->fAllMulti         = false;
+    pState->nMacFilterEntries = 0;
+    memset(pState->aMacFilter,  0, VNET_MAC_FILTER_LEN * sizeof(RTMAC));
+    memset(pState->aVlanFilter, 0, sizeof(pState->aVlanFilter));
 }
 
 #ifdef IN_RING3
@@ -1580,12 +1646,31 @@ static DECLCALLBACK(void *) vnetQueryInterface(struct PDMIBASE *pInterface, PDMI
 }
 
 /**
- * Determines if the packet is to be delivered to upper layer. The following
- * filters supported:
- * - Exact Unicast/Multicast
- * - Promiscuous Unicast/Multicast
- * - Multicast
- * - VLAN
+ * Returns true if it is a broadcast packet.
+ *
+ * @returns true if destination address indicates broadcast.
+ * @param   pvBuf           The ethernet packet.
+ */
+DECLINLINE(bool) vnetIsBroadcast(const void *pvBuf)
+{
+    static const uint8_t s_abBcastAddr[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+    return memcmp(pvBuf, s_abBcastAddr, sizeof(s_abBcastAddr)) == 0;
+}
+
+/**
+ * Returns true if it is a multicast packet.
+ *
+ * @remarks returns true for broadcast packets as well.
+ * @returns true if destination address indicates multicast.
+ * @param   pvBuf           The ethernet packet.
+ */
+DECLINLINE(bool) vnetIsMulticast(const void *pvBuf)
+{
+    return (*(char*)pvBuf) & 1;
+}
+
+/**
+ * Determines if the packet is to be delivered to upper layer.
  *
  * @returns true if packet is intended for this node.
  * @param   pState          Pointer to the state structure.
@@ -1594,7 +1679,30 @@ static DECLCALLBACK(void *) vnetQueryInterface(struct PDMIBASE *pInterface, PDMI
  */
 static bool vnetAddressFilter(PVNETSTATE pState, const void *pvBuf, size_t cb)
 {
-    return true; // TODO: Implement!
+    if (pState->fPromiscuous)
+        return true;
+
+    /* Ignore everything outside of our VLANs */
+    uint16_t *u16Ptr = (uint16_t*)pvBuf;
+    /* Compare TPID with VLAN Ether Type */
+    if (   u16Ptr[6] == RT_H2BE_U16(0x8100)
+        && !ASMBitTest(pState->aVlanFilter, RT_BE2H_U16(u16Ptr[7]) & 0xFFF))
+        return false;
+
+    if (vnetIsBroadcast(pvBuf))
+        return true;
+
+    if (pState->fAllMulti && vnetIsMulticast(pvBuf))
+        return true;
+
+    if (!memcmp(pState->config.mac.au8, pvBuf, sizeof(RTMAC)))
+        return true;
+
+    for (unsigned i = 0; i < pState->nMacFilterEntries; i++)
+        if (!memcmp(&pState->aMacFilter[i], pvBuf, sizeof(RTMAC)))
+            return true;
+
+    return false;
 }
 
 /**
@@ -1870,10 +1978,212 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
 }
 #endif /* !VNET_TX_DELAY */
 
+static uint8_t vnetControlRx(PVNETSTATE pState, PVNETCTLHDR pCtlHdr, PVQUEUEELEM pElem)
+{
+    uint8_t u8Ack = VNET_OK;
+    uint8_t fOn;
+    PDMDevHlpPhysRead(pState->VPCI.CTX_SUFF(pDevIns),
+                      pElem->aSegsOut[1].addr,
+                      &fOn, sizeof(fOn));
+    Log(("%s vnetControlRx: uCommand=%u fOn=%u\n", INSTANCE(pState), pCtlHdr->u8Command, fOn));
+    switch (pCtlHdr->u8Command)
+    {
+        case VNET_CTRL_CMD_RX_MODE_PROMISC:
+            pState->fPromiscuous = !!fOn;
+            break;
+        case VNET_CTRL_CMD_RX_MODE_ALLMULTI:
+            pState->fAllMulti = !!fOn;
+            break;
+        default:
+            u8Ack = VNET_ERROR;
+    }
+
+    return u8Ack;
+}
+
+static uint8_t vnetControlMac(PVNETSTATE pState, PVNETCTLHDR pCtlHdr, PVQUEUEELEM pElem)
+{
+    uint32_t nMacs = 0;
+
+    if (pCtlHdr->u8Command != VNET_CTRL_CMD_MAC_TABLE_SET
+        || pElem->nOut != 3
+        || pElem->aSegsOut[1].cb < sizeof(nMacs)
+        || pElem->aSegsOut[2].cb < sizeof(nMacs))
+    {
+        Log(("%s vnetControlMac: Segment layout is wrong "
+             "(u8Command=%u nOut=%u cb1=%u cb2=%u)\n", INSTANCE(pState),
+             pCtlHdr->u8Command, pElem->nOut,
+             pElem->aSegsOut[1].cb, pElem->aSegsOut[2].cb));
+        return VNET_ERROR;
+    }
+
+    /* Load unicast addresses */
+    PDMDevHlpPhysRead(pState->VPCI.CTX_SUFF(pDevIns),
+                      pElem->aSegsOut[1].addr,
+                      &nMacs, sizeof(nMacs));
+
+    if (pElem->aSegsOut[1].cb < nMacs * sizeof(RTMAC) + sizeof(nMacs))
+    {
+        Log(("%s vnetControlMac: The unicast mac segment is too small "
+             "(nMacs=%u cb=%u)\n", INSTANCE(pState), pElem->aSegsOut[1].cb));
+        return VNET_ERROR;
+    }
+
+    if (nMacs > VNET_MAC_FILTER_LEN)
+    {
+        Log(("%s vnetControlMac: MAC table is too big, have to use promiscuous"
+             " mode (nMacs=%u)\n", INSTANCE(pState), nMacs));
+        pState->fPromiscuous = true;
+    }
+    else
+    {
+        if (nMacs)
+            PDMDevHlpPhysRead(pState->VPCI.CTX_SUFF(pDevIns),
+                              pElem->aSegsOut[1].addr + sizeof(nMacs),
+                              pState->aMacFilter, nMacs * sizeof(RTMAC));
+        pState->nMacFilterEntries = nMacs;
+#ifdef DEBUG
+        Log(("%s vnetControlMac: unicast macs:\n", INSTANCE(pState)));
+        for(unsigned i = 0; i < nMacs; i++)
+            Log(("         %RTmac\n", &pState->aMacFilter[i]));
+#endif /* DEBUG */
+    }
+
+    /* Load multicast addresses */
+    PDMDevHlpPhysRead(pState->VPCI.CTX_SUFF(pDevIns),
+                      pElem->aSegsOut[2].addr,
+                      &nMacs, sizeof(nMacs));
+
+    if (pElem->aSegsOut[2].cb < nMacs * sizeof(RTMAC) + sizeof(nMacs))
+    {
+        Log(("%s vnetControlMac: The multicast mac segment is too small "
+             "(nMacs=%u cb=%u)\n", INSTANCE(pState), pElem->aSegsOut[2].cb));
+        return VNET_ERROR;
+    }
+
+    if (nMacs > VNET_MAC_FILTER_LEN - pState->nMacFilterEntries)
+    {
+        Log(("%s vnetControlMac: MAC table is too big, have to use allmulti"
+             " mode (nMacs=%u)\n", INSTANCE(pState), nMacs));
+        pState->fAllMulti = true;
+    }
+    else
+    {
+        if (nMacs)
+            PDMDevHlpPhysRead(pState->VPCI.CTX_SUFF(pDevIns),
+                              pElem->aSegsOut[2].addr + sizeof(nMacs),
+                              &pState->aMacFilter[pState->nMacFilterEntries],
+                              nMacs * sizeof(RTMAC));
+#ifdef DEBUG
+        Log(("%s vnetControlMac: multicast macs:\n", INSTANCE(pState)));
+        for(unsigned i = 0; i < nMacs; i++)
+            Log(("         %RTmac\n",
+                 &pState->aMacFilter[i+pState->nMacFilterEntries]));
+#endif /* DEBUG */
+        pState->nMacFilterEntries += nMacs;
+    }
+
+    return VNET_OK;
+}
+
+static uint8_t vnetControlVlan(PVNETSTATE pState, PVNETCTLHDR pCtlHdr, PVQUEUEELEM pElem)
+{
+    uint8_t  u8Ack = VNET_OK;
+    uint16_t u16Vid;
+
+    if (pElem->nOut != 2 || pElem->aSegsOut[1].cb != sizeof(u16Vid))
+    {
+        Log(("%s vnetControlVlan: Segment layout is wrong "
+             "(u8Command=%u nOut=%u cb=%u)\n", INSTANCE(pState),
+             pCtlHdr->u8Command, pElem->nOut, pElem->aSegsOut[1].cb));
+        return VNET_ERROR;
+    }
+
+    PDMDevHlpPhysRead(pState->VPCI.CTX_SUFF(pDevIns),
+                      pElem->aSegsOut[1].addr,
+                      &u16Vid, sizeof(u16Vid));
+
+    if (u16Vid >= VNET_MAX_VID)
+    {
+        Log(("%s vnetControlVlan: VLAN ID is out of range "
+             "(VID=%u)\n", INSTANCE(pState), u16Vid));
+        return VNET_ERROR;
+    }
+
+    Log(("%s vnetControlVlan: uCommand=%u VID=%u\n", INSTANCE(pState),
+         pCtlHdr->u8Command, u16Vid));
+
+    switch (pCtlHdr->u8Command)
+    {
+        case VNET_CTRL_CMD_VLAN_ADD:
+            ASMBitSet(pState->aVlanFilter, u16Vid);
+            break;
+        case VNET_CTRL_CMD_VLAN_DEL:
+            ASMBitClear(pState->aVlanFilter, u16Vid);
+            break;
+        default:
+            u8Ack = VNET_ERROR;
+    }
+
+    return u8Ack;
+}
+
+
 static DECLCALLBACK(void) vnetQueueControl(void *pvState, PVQUEUE pQueue)
 {
     VNETSTATE *pState = (VNETSTATE*)pvState;
-    Log(("%s Pending control message\n", INSTANCE(pState)));
+    uint8_t u8Ack;
+    VQUEUEELEM elem;
+    while (vqueueGet(&pState->VPCI, pQueue, &elem))
+    {
+        unsigned int uOffset = 0;
+        if (elem.nOut < 1 || elem.aSegsOut[0].cb < sizeof(VNETCTLHDR))
+        {
+            Log(("%s vnetQueueControl: The first 'out' segment is not the "
+                 "header! (%u < 1 || %u < %u).\n", INSTANCE(pState), elem.nOut,
+                 elem.aSegsOut[0].cb,sizeof(VNETCTLHDR)));
+            vqueueElemFree(&elem);
+            break; /* Skip the element and hope the next one is good. */
+        }
+        else if (   elem.nIn < 1
+                 || elem.aSegsIn[elem.nIn - 1].cb < sizeof(VNETCTLACK))
+        {
+            Log(("%s vnetQueueControl: The last 'in' segment is too small "
+                 "to hold the acknowledge! (%u < 1 || %u < %u).\n",
+                 INSTANCE(pState), elem.nIn, elem.aSegsIn[elem.nIn - 1].cb,
+                 sizeof(VNETCTLACK)));
+            vqueueElemFree(&elem);
+            break; /* Skip the element and hope the next one is good. */
+        }
+        else
+        {
+            VNETCTLHDR CtlHdr;
+            PDMDevHlpPhysRead(pState->VPCI.CTX_SUFF(pDevIns),
+                              elem.aSegsOut[0].addr,
+                              &CtlHdr, sizeof(CtlHdr));
+            switch (CtlHdr.u8Class)
+            {
+                case VNET_CTRL_CLS_RX_MODE:
+                    u8Ack = vnetControlRx(pState, &CtlHdr, &elem);
+                    break;
+                case VNET_CTRL_CLS_MAC:
+                    u8Ack = vnetControlMac(pState, &CtlHdr, &elem);
+                    break;
+                case VNET_CTRL_CLS_VLAN:
+                    u8Ack = vnetControlVlan(pState, &CtlHdr, &elem);
+                    break;
+                default:
+                    u8Ack = VNET_ERROR;
+            }
+            Log(("%s Processed control message %u, ack=%u.\n", INSTANCE(pState),
+                 CtlHdr.u8Class, u8Ack));
+            PDMDevHlpPhysWrite(pState->VPCI.CTX_SUFF(pDevIns),
+                               elem.aSegsIn[elem.nIn - 1].addr,
+                               &u8Ack, sizeof(u8Ack));
+        }
+        vqueuePut(&pState->VPCI, pQueue, &elem, sizeof(u8Ack));
+        vqueueSync(&pState->VPCI, pQueue);
+    }
 }
 
 /**
@@ -1939,6 +2249,17 @@ static DECLCALLBACK(int) vnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
     /* Save device-specific part */
     rc = SSMR3PutMem( pSSM, pState->config.mac.au8, sizeof(pState->config.mac));
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutBool(pSSM, pState->fPromiscuous);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutBool(pSSM, pState->fAllMulti);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32( pSSM, pState->nMacFilterEntries);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutMem( pSSM, pState->aMacFilter,
+                      pState->nMacFilterEntries * sizeof(RTMAC));
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutMem( pSSM, pState->aVlanFilter, sizeof(pState->aVlanFilter));
     AssertRCReturn(rc, rc);
     Log(("%s State has been saved\n", INSTANCE(pState)));
     return VINF_SUCCESS;
@@ -2013,8 +2334,38 @@ static DECLCALLBACK(int) vnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
 
     if (uPass == SSM_PASS_FINAL)
     {
-        rc = SSMR3GetMem( pSSM, pState->config.mac.au8, sizeof(pState->config.mac));
+        rc = SSMR3GetMem( pSSM, pState->config.mac.au8,
+                          sizeof(pState->config.mac));
         AssertRCReturn(rc, rc);
+        if (uVersion > VIRTIO_SAVEDSTATE_VERSION_3_1_BETA1)
+        {
+            rc = SSMR3GetBool(pSSM, &pState->fPromiscuous);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3GetBool(pSSM, &pState->fAllMulti);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3GetU32(pSSM, &pState->nMacFilterEntries);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3GetMem(pSSM, pState->aMacFilter,
+                             pState->nMacFilterEntries * sizeof(RTMAC));
+            AssertRCReturn(rc, rc);
+            /* Clear the rest. */
+            if (pState->nMacFilterEntries < VNET_MAC_FILTER_LEN)
+                memset(&pState->aMacFilter[pState->nMacFilterEntries],
+                       0,
+                       (VNET_MAC_FILTER_LEN - pState->nMacFilterEntries)
+                       * sizeof(RTMAC));
+            rc = SSMR3GetMem(pSSM, pState->aVlanFilter,
+                             sizeof(pState->aVlanFilter));
+            AssertRCReturn(rc, rc);
+        }
+        else
+        {
+            pState->fPromiscuous = true;
+            pState->fAllMulti = false;
+            pState->nMacFilterEntries = 0;
+            memset(pState->aMacFilter, 0, VNET_MAC_FILTER_LEN * sizeof(RTMAC));
+            memset(pState->aVlanFilter, 0, sizeof(pState->aVlanFilter));
+        }
     }
 
     return rc;
@@ -2094,7 +2445,6 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pState->config.uStatus = 0;
 
     /* Initialize state structure */
-    pState->fLocked      = false;
     pState->u32PktNo     = 1;
 
     /* Interfaces */
