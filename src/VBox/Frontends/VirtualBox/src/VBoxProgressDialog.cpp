@@ -234,10 +234,10 @@ void VBoxProgressDialog::timerEvent (QTimerEvent * /* aEvent */)
             mETA->setText (mETAText[ 4].arg (minutes));
         else if (newTime > VBOX_HOUR * 23 + VBOX_MINUTE * 55)
             mETA->setText (mETAText[ 5]);
-        else if (newTime > VBOX_HOUR * 2)
+        else if (newTime >= VBOX_HOUR * 2)
             mETA->setText (mETAText[ 6].arg (hours).arg (minutes));
         else if (newTime > VBOX_HOUR + VBOX_MINUTE * 5)
-            mETA->setText (mETAText[ 7].arg (hours).arg (minutes));
+            mETA->setText (mETAText[ 7].arg (minutes));
         else if (newTime > VBOX_MINUTE * 55)
             mETA->setText (mETAText[ 8]);
         else if (newTime > VBOX_MINUTE * 2)
