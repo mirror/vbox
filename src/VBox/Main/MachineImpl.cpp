@@ -7704,7 +7704,7 @@ void Machine::fixupMedia(bool aCommit, bool aOnline /*= false*/)
                      oldIt != oldAtts.end();
                      ++oldIt)
                 {
-                    MediumAttachment *pOldAttach = *it;
+                    MediumAttachment *pOldAttach = *oldIt;
                     if (pOldAttach->medium().equalsTo(pMedium))
                     {
                         LogFlowThisFunc(("--> medium '%s' was attached before, will not remove\n", pMedium->name().raw()));
