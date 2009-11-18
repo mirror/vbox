@@ -3305,9 +3305,13 @@ void VBoxConsoleView::onStateChange (KMachineState state)
     switch (state)
     {
         case KMachineState_Paused:
-        case KMachineState_TeleportingPausedVM: /** @todo Live Migration: Check out this */
+        case KMachineState_TeleportingPausedVM:
         {
-            if (mode != VBoxDefs::TimerMode && mFrameBuf)
+            if (    mode != VBoxDefs::TimerMode
+                &&  mFrameBuf
+                &&  (   state      != KMachineState_TeleportingPausedVM
+                     || mLastState != KMachineState_Teleporting)
+               )
             {
                 /*
                  *  Take a screen snapshot. Note that TakeScreenShot() always
