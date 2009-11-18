@@ -3861,7 +3861,10 @@ static void ataAsyncSignalIdle(PAHCIATACONTROLLER pCtl)
 
     if (    pCtl->fSignalIdle
         &&  ataAsyncIOIsIdle(pCtl, false /*fStrict*/))
+    {
+        PDMDevHlpAsyncNotificationCompleted(pCtl->pDevInsR3);
         RTThreadUserSignal(pCtl->AsyncIOThread);
+    }
 
     rc = RTSemMutexRelease(pCtl->AsyncIORequestMutex); AssertRC(rc);
 }
@@ -4332,6 +4335,8 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
     }
 
     /* Signal the ultimate idleness. */
+    if (pCtl->fSignalIdle)
+        PDMDevHlpAsyncNotificationCompleted(pCtl->pDevInsR3);
     RTThreadUserSignal(ThreadSelf);
 
     /* Do not destroy request mutex yet, still needed for proper shutdown. */
@@ -5171,20 +5176,6 @@ static DECLCALLBACK(int)  ataAttach(PPDMDEVINS pDevIns, unsigned iLUN)
 }
 #endif
 
-/**
- * Suspend notification.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
- */
-void ataControllerSuspend(PAHCIATACONTROLLER pCtl)
-{
-    Log(("%s:\n", __FUNCTION__));
-    if (!ataWaitForAllAsyncIOIsIdle(pCtl, 20000))
-        AssertMsgFailed(("Async I/O didn't stop in 20 seconds!\n"));
-    return;
-}
-
 
 /**
  * Resume notification.
@@ -5208,58 +5199,20 @@ void ataControllerResume(PAHCIATACONTROLLER pCtl)
 
 
 /**
- * Power Off notification.
+ * Tests if the controller is idle, leaving the PDM notifications on if busy.
  *
- * @returns VBox status.
- * @param   pCtl     The controller instance.
+ * @returns true if idle, false if idle.
+ * @param   pCtl the controller instance.
  */
-void ataControllerPowerOff(PAHCIATACONTROLLER pCtl)
+bool ataControllerIsIdle(PAHCIATACONTROLLER pCtl)
 {
-    Log(("%s:\n", __FUNCTION__));
-    if (!ataWaitForAllAsyncIOIsIdle(pCtl, 20000))
-        AssertMsgFailed(("Async I/O didn't stop in 20 seconds!\n"));
-    return;
-}
-
-/**
- * Prepare state save and load operation.
- *
- * @returns VBox status code.
- * @param   pDevIns         Device instance of the device which registered the data unit.
- * @param   pSSM            SSM operation handle.
- */
-static int ataSaveLoadPrep(PAHCIATACONTROLLER pCtl)
-{
-    /* sanity - the suspend notification will wait on the async stuff. */
-    Assert(ataAsyncIOIsIdle(pCtl, false));
-    if (!ataAsyncIOIsIdle(pCtl, false))
-        return VERR_SSM_IDE_ASYNC_TIMEOUT;
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Prepare state save operation.
- *
- * @returns VBox status code.
- * @param   pCtl    The controller instance.
- * @param   pSSM    SSM operation handle.
- */
-DECLCALLBACK(int) ataControllerSavePrep(PAHCIATACONTROLLER pCtl, PSSMHANDLE pSSM)
-{
-    return ataSaveLoadPrep(pCtl);
-}
-
-/**
- * Prepare state load operation.
- *
- * @returns VBox status code.
- * @param   pCtl    The controller instance.
- * @param   pSSM    SSM operation handle.
- */
-DECLCALLBACK(int) ataControllerLoadPrep(PAHCIATACONTROLLER pCtl, PSSMHANDLE pSSM)
-{
-    return ataSaveLoadPrep(pCtl);
+    ASMAtomicWriteBool(&pCtl->fSignalIdle, true);
+    if (ataAsyncIOIsIdle(pCtl, false /*fStrict*/))
+    {
+        ASMAtomicWriteBool(&pCtl->fSignalIdle, false);
+        return true;
+    }
+    return false;
 }
 
 /**

@@ -5702,7 +5702,7 @@ static DECLCALLBACK(void) ahciUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
 /* -=-=-=-=- Helper -=-=-=-=- */
 
 /**
- * Checks if all asynchronous I/O is finished.
+ * Checks if all asynchronous I/O is finished, both AHCI and IDE.
  *
  * Used by ahciR3Reset, ahciR3Suspend and ahciR3PowerOff. ahciR3SavePrep makes
  * use of it in strict builds (which is why it's up here).
@@ -5728,6 +5728,11 @@ static bool ahciR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
                return false;
         }
     }
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+        if (!ataControllerIsIdle(&pThis->aCts[i]))
+            return false;
+
     return true;
 }
 
@@ -5738,19 +5743,7 @@ static bool ahciR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) ahciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-
     Assert(ahciR3AllAsyncIOIsFinished(pDevIns));
-
-    for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
-    {
-        int rc;
-
-        rc = ataControllerSavePrep(&pAhci->aCts[i], pSSM);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
     return VINF_SUCCESS;
 }
 
@@ -5759,17 +5752,7 @@ static DECLCALLBACK(int) ahciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ahciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-
-    for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
-    {
-        int rc;
-
-        rc = ataControllerLoadPrep(&pAhci->aCts[i], pSSM);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
+    Assert(ahciR3AllAsyncIOIsFinished(pDevIns));
     return VINF_SUCCESS;
 }
 
@@ -6267,18 +6250,12 @@ static void ahciR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
 /**
  * Suspend notification.
  *
- * @returns VBox status.
  * @param   pDevIns     The device instance data.
  */
 static DECLCALLBACK(void) ahciR3Suspend(PPDMDEVINS pDevIns)
 {
-    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-    Log(("%s:\n", __FUNCTION__));
-
+    Log(("ahciR3Suspend\n"));
     ahciR3SuspendOrPowerOff(pDevIns);
-
-    for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
-        ataControllerSuspend(&pAhci->aCts[i]);
 }
 
 /**
@@ -6474,17 +6451,12 @@ static DECLCALLBACK(void) ahciR3Reset(PPDMDEVINS pDevIns)
 /**
  * Poweroff notification.
  *
- * @returns nothing
  * @param   pDevIns Pointer to the device instance
  */
 static DECLCALLBACK(void) ahciR3PowerOff(PPDMDEVINS pDevIns)
 {
-    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-
+    Log(("achiR3PowerOff\n"));
     ahciR3SuspendOrPowerOff(pDevIns);
-
-    for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
-        ataControllerPowerOff(&pAhci->aCts[i]);
 }
 
 /**
