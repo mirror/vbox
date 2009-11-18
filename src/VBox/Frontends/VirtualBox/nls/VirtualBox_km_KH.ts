@@ -2916,11 +2916,11 @@
       <translation>បានបរាជ័យ​ក្នុង​​ការ​បង្កើត​ការ​ផ្ទុក​ថាសរឹង &lt;nobr>&lt;b>%1&lt;/b> ។&lt;/nobr></translation>
     </message>
     <message>
-      <source>Failed to attach the hard disk &lt;nobr>&lt;b>%1&lt;/b>&lt;/nobr> to the slot &lt;i>%2&lt;/i> of the machine &lt;b>%3&lt;/b>.</source>
+      <source>Failed to attach the hard disk &lt;nobr>&lt;b>%1&lt;/b>&lt;/nobr> to slot &lt;i>%2&lt;/i> of the machine &lt;b>%3&lt;/b>.</source>
       <translation>បានបរាជ័យក្នុងកា​រភ្ជាប់ &lt;nobr>&lt;b>%1&lt;/b>&lt;/nobr> ទៅ​រន្ធ &lt;i>%2&lt;/i> របស់​ម៉ាស៊ីន &lt;b>%3&lt;/b> ។</translation>
     </message>
     <message>
-      <source>Failed to detach the hard disk &lt;nobr>&lt;b>%1&lt;/b>&lt;/nobr> from the slot &lt;i>%2&lt;/i> of the machine &lt;b>%3&lt;/b>.</source>
+      <source>Failed to detach the hard disk &lt;nobr>&lt;b>%1&lt;/b>&lt;/nobr> from slot &lt;i>%2&lt;/i> of the machine &lt;b>%3&lt;/b>.</source>
       <translation>បាន​បរាជ័យ​ក្នុងកា​រផ្ដាច់​ថាសរឹង &lt;nobr>&lt;b>%1&lt;/b>&lt;/nobr> ពី​រន្ធ &lt;i>%2&lt;/i> របស់​ម៉ាស៊ីន &lt;b>%3&lt;/b> ។</translation>
     </message>
     <message>

@@ -3249,11 +3249,11 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;br&gt;&lt;nobr&gt;Utilisé&amp;nbsp;par&amp;nbsp;:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;&lt;b&gt;Not&amp;nbsp;Set&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Required virtual image or host-drive could be mounted at runtime.</source>
+        <source>&lt;nobr&gt;&lt;b&gt;No&amp;nbsp;medium&amp;nbsp;selected&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;You can also change this while the machine is running.</source>
         <translation>&lt;nobr&gt;&lt;b&gt;Non&amp;nbsp;sélectionné&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Vous pouvez insérer un support virtuel pendant que la machine est en marche.</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;&lt;b&gt;Not&amp;nbsp;Available&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Use the Virtual Media Manager to add image of the corresponding type.</source>
+        <source>&lt;nobr&gt;&lt;b&gt;No&amp;nbsp;media&amp;nbsp;available&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;You can create media images using the virtual media manager.</source>
         <translation>&lt;nobr&gt;&lt;b&gt;Non&amp;nbsp;disponible&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Utilisez le Gestionnaire de supports.virtuels pour ajouter un support passant.</translation>
     </message>
 </context>
@@ -4784,11 +4784,11 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>Le conteneur de disque dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; n&apos;a pas pu être créé.&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">Le disque dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; n&apos;a pas pu être connecté à l&apos;emplacement &lt;i&gt;%2&lt;/i&gt; de la machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">Le disque dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; n&apos;a pas pu être détaché de l&apos;emplacement &lt;i&gt;%2&lt;/i&gt; de la machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -5056,7 +5056,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>Échec de supréssion de l&apos;instantané &lt;b&gt;%1&lt;/b&gt; de la machine virtuelle &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;There are no unused mediums available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Il n&apos;y a pas de supports inutilisés disponibles pour utilisation avec le nouveau périphérique.&lt;/p&gt;&lt;p&gt;Actionnez le bouton &lt;b&gt;Créer&lt;/b&gt; pour démarrer l&apos;&lt;i&gt;assistant de création de disques virtuels&lt;/i&gt; afin de créer un nouveau support, ou bien actionnez le bouton &lt;b&gt;Choisir&lt;/b&gt; si vous désirez ouvrir le &lt;i&gt;Gestionaire de supports virtuels&lt;/i&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5070,15 +5070,15 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>Choi&amp;sir</translation>
     </message>
     <message>
-        <source>&lt;p&gt;There are no unused mediums available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Il n&apos;y a pas de supports inutilisés disponibles pour utilisation avec le nouveau périphérique.&lt;/p&gt;&lt;p&gt;Actionnez le bouton &lt;b&gt;Choisir&lt;/b&gt; si vous désirez ouvrir le &lt;i&gt;Gestionaire de supports virtuels&lt;/i&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Failed to attach the %1 to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Impossible d&apos;attacher le périphérique %1 à l&apos;emplacement &lt;i&gt;%2&lt;/i&gt; de la machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to detach the $1 from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to detach the $1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Impossible d&apos;enlever %1 de l&apos;emplacement &lt;i&gt;%2&lt;/i&gt; de la machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>

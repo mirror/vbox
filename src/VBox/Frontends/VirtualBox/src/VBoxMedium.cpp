@@ -310,10 +310,10 @@ QString VBoxMedium::toolTip (bool aNoDiffs /* = false */, bool aCheckRO /* = fal
 
     if (mMedium.isNull())
     {
-        tip = aNullAllowed ? mRow.arg (VBoxGlobal::tr ("<b>Not Set</b>", "medium")) +
-                             mRow.arg (VBoxGlobal::tr ("Required virtual image or host-drive could be mounted at runtime.")) :
-                             mRow.arg (VBoxGlobal::tr ("<b>Not Available</b>", "medium")) +
-                             mRow.arg (VBoxGlobal::tr ("Use the Virtual Media Manager to add image of the corresponding type."));
+        tip = aNullAllowed ? mRow.arg (VBoxGlobal::tr ("<b>No medium selected</b>", "medium")) +
+                             mRow.arg (VBoxGlobal::tr ("You can also change this while the machine is running.")) :
+                             mRow.arg (VBoxGlobal::tr ("<b>No media available</b>", "medium")) +
+                             mRow.arg (VBoxGlobal::tr ("You can create media images using the virtual media manager."));
     }
     else
     {
@@ -478,10 +478,10 @@ void VBoxMedium::checkNoDiffs (bool aNoDiffs)
             mNoDiffs.state = cur->mState;
 
             if (mNoDiffs.toolTip.isNull())
-                mNoDiffs.toolTip = mRow.arg (VBoxGlobal::tr ("Some of the mediums in this hard disk chain "
+                mNoDiffs.toolTip = mRow.arg (VBoxGlobal::tr ("Some of the media in this hard disk chain "
                                                              "are inaccessible. Please use the Virtual Media "
                                                              "Manager in <b>Show Differencing Hard Disks</b> "
-                                                             "mode to inspect these mediums.", "medium"));
+                                                             "mode to inspect these media.", "medium"));
 
             if (!cur->mResult.isOk())
             {

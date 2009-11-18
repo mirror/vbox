@@ -4595,12 +4595,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1130"/>
-        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Не вдалося з&apos;єднати жорсткий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; зі слотом &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1143"/>
-        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Не вдається від&apos;єднати жорсткий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; з гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
