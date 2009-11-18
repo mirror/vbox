@@ -259,7 +259,8 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
         rc = VINF_SUCCESS;
     else
     /* Note: hack alert for difficult to reproduce problem. */
-    if (    rc == VERR_PAGE_TABLE_NOT_PRESENT           /* seen with UNI & SMP */
+    if (    rc == VERR_PAGE_NOT_PRESENT                 /* SMP only ; disassembly might fail. */
+        ||  rc == VERR_PAGE_TABLE_NOT_PRESENT           /* seen with UNI & SMP */
         ||  rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT   /* seen with SMP */
         ||  rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT)     /* precaution */
     {
