@@ -2693,6 +2693,11 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
         CSAMR3Reset(pVM);
         PGMR3Reset(pVM);                    /* We clear VM RAM in PGMR3Reset. It's vital PDMR3Reset is executed
                                              * _afterwards_. E.g. ACPI sets up RAM tables during init/reset. */
+/** @todo PGMR3Reset should be called after PDMR3Reset really, because we'll trash OS <-> hardware
+ * communication structures residing in RAM when done in the other order.  I.e. the device must be
+ * quiesced first, then we clear the memory and plan tables. Probably have to make these things
+ * explicit in some way, some memory setup pass or something.
+ * (Example: DevAHCI may assert if memory is zeroed before it've read the FIS.) */
         MMR3Reset(pVM);
         PDMR3Reset(pVM);
         SELMR3Reset(pVM);
