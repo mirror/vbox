@@ -63,7 +63,7 @@
         <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <source>It may help to reinstall VirtualBox.</source>
+        <source>Please try reinstalling VirtualBox.</source>
         <translation>VirtualBox를 다시 설치하시면 해결될 수도 있습니다.</translation>
     </message>
     <message>
@@ -71,7 +71,7 @@
         <translation>VirtualBox 커널 드라이버에서 충분한 메모리를 할당할 수 없었거나, 일부 매핑 동작이 실패한 것 같습니다.&lt;br /&gt;&lt;br /&gt;리눅스 커널 2.6.29에는 알려진 문제가 있습니다. 리눅스 커널 2.6.29를 사용하신다면, /usr/src/vboxdrv-*/Makefile을 편집하시고, &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;을 추가하십시오. 그 다음 루트 권한으로 이 명령어를 내려서 커널 모듈을 다시 컴파일하십시오.&lt;br /&gt;&lt;br /&gt;&lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br /&gt;&lt;br /&gt;.</translation>
     </message>
     <message>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation>VirtualBox 리눅스 커널 드라이버(vboxdrv)가 불러와지지 않았거나 /dev/vobxdrv에 접근할 수 없습니다. 루트 권한으로 다음 명령어를 실행시켜서 커널 모듈을 다시 설정하십시오.&lt;br /&gt;&lt;br /&gt;&lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br /&gt;&lt;br /&gt;우분투, 페도라, 맨드리바 사용자들께서는 DKMS 패키지를 설치하는 것을 추천합니다. 이 패키지를 사용하면 리눅스 커널이 바뀌었을 때 자동으로 커널 모듈을 다시 컴파일합니다.</translation>
     </message>
     <message>
@@ -87,7 +87,7 @@
         <translation>&lt;b&gt;커널 드라이버에 접근할 수 없습니다!&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;</translation>
     </message>
     <message>
-        <source>Unknown %2 error during initialization of the Runtime</source>
+        <source>Unknown error %2 during initialization of the Runtime</source>
         <translation>런타임을 초기화하는 중 알 수 없슨 %2 오류가 발생했습니다</translation>
     </message>
     <message>
@@ -95,11 +95,11 @@
         <translation>커널 드라이버에 접근할 수 없음</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Please try completely uninstalling and reinstalling VirtualBox.</source>
         <translation>이 버전의 VirtualBox에서는 현재 설치되어 있는 커널 모듈을 사용할 수 없습니다. VirtualBox 설치 과정이 실패했을 수도 있습니다. 완전히 삭제한 다음 다시 설치해 보십시오.</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
         <translation>이 버전의 VirtualBox에서는 현재 설치되어 있는 커널 모듈을 사용할 수 없습니다. VirtualBox 설치 과정이 실패했을 수도 있습니다. &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; 명령을 실행시키면 문제를 해결할 수도 있습니다. VirtualBox OSE 버전과 PUEL 버전을 같이 설치하지 마십시오..</translation>
     </message>
 </context>
@@ -373,7 +373,7 @@
         <translation>잘못되었</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;The value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;&lt;b&gt;%2&lt;/b&gt; 페이지의 &lt;b&gt;%1&lt;/b&gt; 필드의 값이 %3습니다.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -493,15 +493,15 @@
         <translation>RAM</translation>
     </message>
     <message>
-        <source>Hard Disk Controller IDE</source>
+        <source>Hard Disk Controller (IDE)</source>
         <translation>IDE 하드 디스크 컨트롤러</translation>
     </message>
     <message>
-        <source>Hard Disk Controller SATA</source>
+        <source>Hard Disk Controller (SATA)</source>
         <translation>SATA 하드 디스크 컨트롤러</translation>
     </message>
     <message>
-        <source>Hard Disk Controller SCSI</source>
+        <source>Hard Disk Controller (SCSI)</source>
         <translation>SCSI 하드 디스크 컨트롤러</translation>
     </message>
     <message>
@@ -580,7 +580,7 @@
         <translation>컴퓨터 끄기 신호 보내기(&amp;E)</translation>
     </message>
     <message>
-        <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
         <translation>&lt;p&gt;선택하면 가상 머신을 끈 다음 현재 스냅샷으로 가상 머신의 상태를 되돌립니다. 마지막 세션의 작업 결과를 삭제하고 현재 스냅샷으로 되돌아가려고 할 때 유용합니다.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -765,7 +765,7 @@
         <translation>도움말(&amp;H)</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
+        <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
         <translation>&lt;hr&gt;포트 %1에서 VRDP 서버가 응답을 기다리는 중</translation>
     </message>
     <message>
@@ -888,7 +888,7 @@
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;미디어가 마운트되지 않았음&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;가상 하드디스크의 활동 상태를 표시합니다:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -938,7 +938,7 @@
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB 컨트롤러가 비활성화됨&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine'sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;공유 폴더의 활동 상태를 표시합니다:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1052,7 +1052,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1078,7 +1078,7 @@ p, li { white-space: pre-wrap; }
         <translation>가상 시스템 내보내기 설정</translation>
     </message>
     <message>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
         <translation>선택한 가상 머신의 추가 설정값을 변경할 수 있습니다. 대부분 항목은 두 번 누르면 편집할 수 있습니다.</translation>
     </message>
     <message>
@@ -1102,15 +1102,15 @@ p, li { white-space: pre-wrap; }
         <translation>OVF 0.9로 쓰기(&amp;W)</translation>
     </message>
     <message>
-        <source>Please choose a filename to export the OVF in.</source>
+        <source>Please choose a filename to export the OVF to.</source>
         <translation>내보낼 OVF 파일을 선택하십시오.</translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
         <translation>사용자 이름, 암호, 저장소 정보와 같은 추가 정보를 입력해 주십시오. 그 다음 OVF 파일 이름을 지정하십시오.</translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
         <translation>사용자 이름, 암호, 호스트 이름, 저장소 정보와 같은 추가 정보를 입력해 주십시오. 그 다음 OVF 파일 이름을 지정하십시오.</translation>
     </message>
     <message>
@@ -1122,7 +1122,7 @@ p, li { white-space: pre-wrap; }
         <translation>파일 삭제 중...</translation>
     </message>
     <message>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
         <translation>OVF로 내보낼 장소를 선택하십시오. 로컬 파일로 내보내거나, OVF 파일을 Sun 클라우드 서비스 및 S3 저장소 서버로 바로 업로드할 수 있습니다.</translation>
     </message>
     <message>
@@ -1173,7 +1173,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;선택하지 않음&gt;</translation>
     </message>
     <message>
-        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
+        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a path.</source>
         <translation>원하시는 경로를 선택하려면 드롭다운 목록에서 &lt;b&gt;기타...&lt;/b&gt; 항목을 선택하십시오.</translation>
     </message>
     <message>
@@ -1205,11 +1205,11 @@ p, li { white-space: pre-wrap; }
         <translation>복사(&amp;C)</translation>
     </message>
     <message>
-        <source>Please type the desired folder path here.</source>
+        <source>Please type the folder path here.</source>
         <translation>원하는 폴더 경로를 입력하십시오.</translation>
     </message>
     <message>
-        <source>Please type the desired file path here.</source>
+        <source>Please type the file path here.</source>
         <translation>원하는 파일 경로를 입력하십시오.</translation>
     </message>
 </context>
@@ -1294,7 +1294,7 @@ p, li { white-space: pre-wrap; }
         <translation>호스트 키(&amp;H):</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation>가상 머신 창에서 사용될 호스트 키를 설정합니다. 항목을 활성화시킨 다음 새 호스트 키를 입력하십시오. 숫자나 문자, 커서 이동 및 편집 키는 호스트 키로 사용할 수 없습니다.</translation>
     </message>
     <message>

@@ -73,7 +73,7 @@ QString g_QStrHintLinuxNoMemory = QApplication::tr(
 
 QString g_QStrHintLinuxNoDriver = QApplication::tr(
   "The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or "
-  "there is a permission problem with /dev/vboxdrv. Re-setup the kernel "
+  "there is a permission problem with /dev/vboxdrv. Please reinstall the kernel "
   "module by executing<br/><br/>"
   "  <font color=blue>'/etc/init.d/vboxdrv setup'</font><br/><br/>"
   "as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS "
@@ -82,18 +82,18 @@ QString g_QStrHintLinuxNoDriver = QApplication::tr(
   );
 
 QString g_QStrHintOtherWrongDriverVersion = QApplication::tr(
-  "The VirtualBox kernel modules do not fit to this version of "
+  "The VirtualBox kernel modules do not match this version of "
   "VirtualBox. The installation of VirtualBox was apparently not "
-  "successful. It may help to completely uninstall and re-install "
+  "successful. Please try completely uninstalling and reinstalling "
   "VirtualBox."
   );
 
 QString g_QStrHintLinuxWrongDriverVersion = QApplication::tr(
-  "The VirtualBox kernel modules do not fit to this version of "
+  "The VirtualBox kernel modules do not match this version of "
   "VirtualBox. The installation of VirtualBox was apparently not "
   "successful. Executing<br/><br/>"
   "  <font color=blue>'/etc/init.d/vboxdrv setup'</font><br/><br/>"
-  "should fix that problem. Make sure that you don't mix the "
+  "may correct this. Make sure that you do not mix the "
   "OSE version and the PUEL version of VirtualBox."
   );
 
@@ -103,7 +103,7 @@ QString g_QStrHintOtherNoDriver = QApplication::tr(
 
 /* I hope this isn't (C), (TM) or (R) Microsoft support ;-) */
 QString g_QStrHintReinstall = QApplication::tr(
-  "It may help to reinstall VirtualBox."
+  "Please try reinstalling VirtualBox."
   );
 
 #if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
@@ -624,7 +624,7 @@ int main (int argc, char **argv, char **envp)
                 break;
             default:
                 msgText += QApplication::tr (
-                        "Unknown %2 error during initialization of the Runtime"
+                        "Unknown error %2 during initialization of the Runtime"
                         ).arg (rc);
                 break;
         }

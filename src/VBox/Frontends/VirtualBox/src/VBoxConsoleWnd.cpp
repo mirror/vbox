@@ -2904,7 +2904,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
     if (aElement & HardDiskStuff)
     {
         QString tip = tr ("<p style='white-space:pre'><nobr>Indicates the activity "
-                          "of virtual hard disks:</nobr>%1</p>", "HDD tooltip");
+                          "of the virtual hard disks:</nobr>%1</p>", "HDD tooltip");
         QString data;
         bool attachmentsPresent = false;
 
@@ -3079,7 +3079,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
                               "is enabled (<img src=:/vrdp_16px.png/>) or not "
                               "(<img src=:/vrdp_disabled_16px.png/>).");
             if (vrdpsrv.GetEnabled())
-                tip += tr ("<hr>VRDP Server is listening on port %1").arg (vrdpsrv.GetPort());
+                tip += tr ("<hr>The VRDP Server is listening on port %1").arg (vrdpsrv.GetPort());
             mVrdpLed->setToolTip (tip);
 #endif
         }
@@ -3087,7 +3087,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
     if (aElement & SharedFolderStuff)
     {
         QString tip = tr ("<p style='white-space:pre'><nobr>Indicates the activity of "
-                          "shared folders:</nobr>%1</p>", "Shared folders tooltip");
+                          "the machine's shared folders:</nobr>%1</p>", "Shared folders tooltip");
 
         QString data;
         QMap <QString, QString> sfs;

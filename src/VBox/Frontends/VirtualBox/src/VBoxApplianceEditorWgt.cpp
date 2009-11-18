@@ -188,9 +188,9 @@ QVariant HardwareItem::data (int aColumn, int aRole) const
                         case KVirtualSystemDescriptionType_OS: v = VBoxApplianceEditorWgt::tr ("Guest OS Type"); break;
                         case KVirtualSystemDescriptionType_CPU: v = VBoxApplianceEditorWgt::tr ("CPU"); break;
                         case KVirtualSystemDescriptionType_Memory: v = VBoxApplianceEditorWgt::tr ("RAM"); break;
-                        case KVirtualSystemDescriptionType_HardDiskControllerIDE: v = VBoxApplianceEditorWgt::tr ("Hard Disk Controller IDE"); break;
-                        case KVirtualSystemDescriptionType_HardDiskControllerSATA: v = VBoxApplianceEditorWgt::tr ("Hard Disk Controller SATA"); break;
-                        case KVirtualSystemDescriptionType_HardDiskControllerSCSI: v = VBoxApplianceEditorWgt::tr ("Hard Disk Controller SCSI"); break;
+                        case KVirtualSystemDescriptionType_HardDiskControllerIDE: v = VBoxApplianceEditorWgt::tr ("Hard Disk Controller (IDE)"); break;
+                        case KVirtualSystemDescriptionType_HardDiskControllerSATA: v = VBoxApplianceEditorWgt::tr ("Hard Disk Controller (SATA)"); break;
+                        case KVirtualSystemDescriptionType_HardDiskControllerSCSI: v = VBoxApplianceEditorWgt::tr ("Hard Disk Controller (SCSI)"); break;
                         case KVirtualSystemDescriptionType_CDROM: v = VBoxApplianceEditorWgt::tr ("DVD"); break;
                         case KVirtualSystemDescriptionType_Floppy: v = VBoxApplianceEditorWgt::tr ("Floppy"); break;
                         case KVirtualSystemDescriptionType_NetworkAdapter: v = VBoxApplianceEditorWgt::tr ("Network Adapter"); break;

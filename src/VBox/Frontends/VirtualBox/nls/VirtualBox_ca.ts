@@ -92,7 +92,7 @@
         <translation>Aquest error significa que el controlador del nucli no ha pogut assignar memòria suficient o bé alguna operació de mapejat ha fallat.&lt;br/&gt;&lt;br/&gt;Existeixen alguns problemes coneguts amb el nucli Linux 2.6.29. Si esteu executant aquest nucli, editeu el fitxer /usr/src/vboxdrv-*/Makefile i habiliteu &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. Després d&apos;això, torneu a compilar el mòdul executant com a root a una terminal l&apos;ordre &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;.</translation>
     </message>
     <message>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation>El controlador del nucli del VirtualBox (vboxdrv) no s&apos;ha carregat o existeix un problema de permisos amb /dev/vboxdrv. Torneu a configurar el mòdul del nucli executant com a root a una terminal &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;. Usuaris d&apos;Ubuntu, Fedora o Mandriva haurien d&apos;instal·lar abans el paquet DKMS. Aquest paquet manté actiu el mòdul quan hi ha canvis al nucli i el recompila si és necessari.</translation>
     </message>
     <message>
@@ -120,7 +120,7 @@
         <translation>No es pot accedir al controlador del nucli</translation>
     </message>
     <message>
-        <source>Unknown %2 error during initialization of the Runtime</source>
+        <source>Unknown error %2 during initialization of the Runtime</source>
         <translation>S&apos;ha produït un error desconegut %2 quan s&apos;iniciava l&apos;execució</translation>
     </message>
     <message>
@@ -132,15 +132,15 @@
         <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <source>It may help to reinstall VirtualBox.</source>
+        <source>Please try reinstalling VirtualBox.</source>
         <translation>Hauria d&apos;ajudar-vos a tornar a instal·lar VirtualBox.</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Please try completely uninstalling and reinstalling VirtualBox.</source>
         <translation>Els mòduls del nucli del VirtualBox no coincideixen amb aquesta versió del VirtualBox. La instal·lació no s&apos;ha completat. Proveu desinstal·lant i tornant a instal·lar el VirtualBox.</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
         <translation>Els mòduls del nucli del VirtualBox no coincideixen amb aquesta versió del VirtualBox. La instal·lació no s&apos;ha completat. Proveu a executar&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; per resoldre el problema. Assegureu-vos que no barrejeu la versió OSE (lliure) amb la versió completa dle VirtualBox.</translation>
     </message>
 </context>
@@ -421,7 +421,7 @@
         <translation>és invàlid</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;The value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;El valor del camp &lt;b&gt;%1&lt;/b&gt; a la pàgina &lt;b&gt;%2&lt;/b&gt; %3.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -619,15 +619,15 @@ Versió %1</translation>
         <translation>RAM</translation>
     </message>
     <message>
-        <source>Hard Disk Controller IDE</source>
+        <source>Hard Disk Controller (IDE)</source>
         <translation>Controlador de disc IDE</translation>
     </message>
     <message>
-        <source>Hard Disk Controller SATA</source>
+        <source>Hard Disk Controller (SATA)</source>
         <translation>Controlador de disc SATA</translation>
     </message>
     <message>
-        <source>Hard Disk Controller SCSI</source>
+        <source>Hard Disk Controller (SCSI)</source>
         <translation>Controlador de disc SCSI</translation>
     </message>
     <message>
@@ -744,7 +744,7 @@ Versió %1</translation>
 &lt;p&gt;Tingueu en compte que aquesta acció aturarà immediatament l&apos;execució de la màquina de manera que el sistema operatiu client que s&apos;hi està executant no podrà realitzar un procediment de tancament net, cosa que pot ocasionar una &lt;i&gt;pèrdua de dades&lt;/i&gt; en la màquina virtual. Només es recomana seleccionar aquesta acció si la màquina virtual no respon a l&apos;acció &lt;b&gt;Envia el senyal d&apos;aturada&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Quan estigui marcat, es restaurarà l&apos;estat de la màquina des de l&apos;estat emmagatzemat a la captura actual quan es va aturar. Això és útil si esteu segur que voleu descartar els resultats de les últimes sessions i tornar a la captura actual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -982,7 +982,7 @@ Versió %1</translation>
         <translation type="obsolete">Mostra la tecla assignada a l&apos;amfitrió.&lt;br&gt;Quan es prem aquesta tecla commuta l&apos;estat de captura del teclat i el ratolí. També es pot fer servir en combinació amb altres tecles per accedir ràpidament a algunes opcions del menú principal.</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
+        <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
         <translation>&lt;hr&gt;El servidor VRDP està escoltant el port %1</translation>
     </message>
     <message>
@@ -1117,7 +1117,7 @@ Versió %1</translation>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hi ha cap suport muntat&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indica l&apos;activitat dels discos durs virtuals:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1171,7 +1171,7 @@ Versió %1</translation>
         <translation type="obsolete">Indica si la pantalla remota (servidor VRDP) està activada (&lt;img src=vrdp_16px.png/&gt;) o no (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine'sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indica l&apos;activitat de les carpetes compartides:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1619,7 +1619,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1645,7 +1645,7 @@ p, li { white-space: pre-wrap; }
         <translation>Paràmetres d&apos;exportació de l&apos;aplicació virtual</translation>
     </message>
     <message>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
         <translation>Aquí podeu canviar valors adicionals de la configuració de les màquines virtuals seleccionades. Podeu modificar la majoria de les propietats mostrades fent doble clic sobre els ítems.</translation>
     </message>
     <message>
@@ -1669,15 +1669,15 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Exporta &gt;</translation>
     </message>
     <message>
-        <source>Please choose a filename to export the OVF in.</source>
+        <source>Please choose a filename to export the OVF to.</source>
         <translation>Seleccioneu un nom de fitxer al qual exportar l&apos;OVF.</translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
         <translation>Ompliu els camps addicionals com el nom d&apos;usuari, conrasenya i el contenidor. Després haureu de proveir un nom de fitxer a l&apos;objectiu de l&apos;OVF.</translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
         <translation>Completeu els camps addicionals com el nom d&apos;usuari, la contrasenya, el nom de l&apos;amfitrió i el contenidor. Després haureu de proveir un nom de fitxer a l&apos;objectiu de l&apos;OVF.</translation>
     </message>
     <message>
@@ -1689,7 +1689,7 @@ p, li { white-space: pre-wrap; }
         <translation>S&apos;estan eliminant els fitxers...</translation>
     </message>
     <message>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
         <translation>Especifiqueu l&apos;objectiu per a l&apos;exportació OVF. Podeu triar entre una exportació del sistema a fitxer local, pujar l&apos;OVF al servei Sun Cloud o en un servidor d&apos;emmagatzamatge S3.</translation>
     </message>
     <message>
@@ -1740,7 +1740,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;no seleccionat&gt;</translation>
     </message>
     <message>
-        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
+        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a path.</source>
         <translation>Feu servir l&apos;ítem &lt;b&gt;Altra...&lt;/b&gt; a la llista desplegable per a seleccionar la ruta desitjada.</translation>
     </message>
     <message>
@@ -1772,11 +1772,11 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Copia</translation>
     </message>
     <message>
-        <source>Please type the desired folder path here.</source>
+        <source>Please type the folder path here.</source>
         <translation>Introduïu aquí la ruta desitjada per a la carpeta.</translation>
     </message>
     <message>
-        <source>Please type the desired file path here.</source>
+        <source>Please type the file path here.</source>
         <translation>Introduïu aquí la ruta desitjada per al fitxer.</translation>
     </message>
 </context>
@@ -1865,7 +1865,7 @@ p, li { white-space: pre-wrap; }
         <translation>Tecla d&apos;&amp;amfitrió:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation>Mostra la tecla que es fa servir com a tecla d&apos;amfitrió en la finestra de la màquina virtual. Activeu el camp d&apos;entrada i premeu una nova tecla d&apos;amfitrió. Tingueu en compte que les tecles alfanumèriques, de moviment del cursor i d&apos;edició no es poden fer servir com a tecles d&apos;amfitrió.</translation>
     </message>
     <message>
@@ -3393,7 +3393,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Preferències del VirtualBox</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Mostra la tecla que es fa servir com a tecla d&apos;amfitrió en la finestra de la màquina virtual. Activeu el camp d&apos;entrada i premeu una nova tecla d&apos;amfitrió. Tingueu en compte les tecles alfanumèriques, de moviment del cursor i d&apos;edició no es poden fer servir com a tecles d&apos;amfitrió.</translation>
     </message>
     <message>

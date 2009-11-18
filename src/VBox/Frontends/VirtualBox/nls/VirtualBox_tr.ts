@@ -104,7 +104,7 @@
         <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <source>It may help to reinstall VirtualBox.</source>
+        <source>Please try reinstalling VirtualBox.</source>
         <translation>VirtualBox uygulamasının yeniden yüklenmesine yardımcı olabilir.</translation>
     </message>
     <message>
@@ -112,7 +112,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -128,7 +128,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Unknown %2 error during initialization of the Runtime</source>
+        <source>Unknown error %2 during initialization of the Runtime</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -136,11 +136,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Please try completely uninstalling and reinstalling VirtualBox.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -421,7 +421,7 @@
         <translation>geçersiz</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;The value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;&lt;b&gt;%1&lt;/b&gt; alanının &lt;b&gt;%2&lt;/b&gt; sayfasındaki değeri %3.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -614,15 +614,15 @@ Version %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Hard Disk Controller IDE</source>
+        <source>Hard Disk Controller (IDE)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Hard Disk Controller SATA</source>
+        <source>Hard Disk Controller (SATA)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Hard Disk Controller SCSI</source>
+        <source>Hard Disk Controller (SCSI)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -739,7 +739,7 @@ Version %1</source>
 &lt;p&gt;Bu eylemin sanal makine içerisindeki misafir işletim sistemini hemen kapatacağını ve &lt;i&gt;veri kaybı&lt;/i&gt; yaşayabileceğinizi unutmayın. Bu eylem &lt;b&gt;Kapatma sinyali gönder&lt;/b&gt; seçeneği yanıt vermediği zaman tavsiye edilir.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
         <translation>&lt;p&gt;İşaretlendiğinde makine durumu kapatılıdıktan hemen sonra kaydedilen durumdan geri yüklenir. Bu seçenek son oturumda yaptıklarınızı kaydetmek istemediğiniz durumlarda ve kaydedilen geçerli durumu kullanmak istediğinizde kullanışlıdır&lt;/p&gt;</translation>
     </message>
     <message>
@@ -977,7 +977,7 @@ Version %1</source>
         <translation type="obsolete">Atanmış sunucu anahtarını gösterir.&lt;br&gt; Sunucu anahtarına yanlız basıldığında klavye ve farenin yakalanma durumunu değiştirir. İşlemlerinizi daha hızlı yapmak için ana menüden diğer kullanılabilir tuş kombinasyonlarını görebilirsiniz.</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
+        <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
         <translation>&lt;hr&gt;VRDP Sunusu %1 portundan dinleniyor</translation>
     </message>
     <message>
@@ -1104,7 +1104,7 @@ Version %1</source>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Bağlanmış ortam yok&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Sanal sabit disk sürücüleri için etkinlikleri gösterir:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1158,7 +1158,7 @@ Version %1</source>
         <translation type="obsolete">Uzak Masaüstünün (VRDP Sunucu) etkin olup olmadığını gösterir (&lt;img src=vrdp_16px.png/&gt;) ya da (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine'sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Paylaşılan dizinler için etkinlikleri gösterir:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1582,7 +1582,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1602,7 +1602,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1622,15 +1622,15 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Please choose a filename to export the OVF in.</source>
+        <source>Please choose a filename to export the OVF to.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1642,7 +1642,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1693,7 +1693,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;seçilmedi&gt;</translation>
     </message>
     <message>
-        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
+        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a path.</source>
         <translation>Lütfen istediğiniz yolu belirlemek için açılabilir menüden &lt;b&gt;Diğer...&lt;/b&gt; ögesini seçin.</translation>
     </message>
     <message>
@@ -1725,11 +1725,11 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Kopyala</translation>
     </message>
     <message>
-        <source>Please type the desired folder path here.</source>
+        <source>Please type the folder path here.</source>
         <translation>Lütfen dizin yolunu buraya yazın.</translation>
     </message>
     <message>
-        <source>Please type the desired file path here.</source>
+        <source>Please type the file path here.</source>
         <translation>Lütfen dosya yolunu buraya yazın.</translation>
     </message>
 </context>
@@ -1818,7 +1818,7 @@ p, li { white-space: pre-wrap; }
         <translation>Makine &amp;Anahtarı:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation>VM penceresinde, kullanılan anahtarı, makine anahtarı olarak gösterir. Girdi alanını aktif hale getirin ve yeni bir makine anahtarına basın. Alfa numeriklerin, imleç hareketlerinin ve anahtar düzenlemelerinin makine anahtarı olarak kullanılamayacağını unutmayın.</translation>
     </message>
     <message>
@@ -3330,7 +3330,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">VirtualBox Tercihleri</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">VM penceresinde, kullanılan anahtarı, makine anahtarı olarak gösterir. Girdi alanını aktif hale getirin ve yeni bir makine anahtarına basın. alfa numerik... işaretci hareketi ve anahtar düzenlemesinin, makine anahtarı olarak kullanılamayacağını unutmayın.</translation>
     </message>
     <message>

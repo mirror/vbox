@@ -63,7 +63,7 @@
         <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <source>It may help to reinstall VirtualBox.</source>
+        <source>Please try reinstalling VirtualBox.</source>
         <translation>VirtualBox opnieuw installeren kan helpen.</translation>
     </message>
     <message>
@@ -71,7 +71,7 @@
         <translation>Deze fout betekend dat de kernel stuurprogramma niet genoeg geheugen kan reserveren of dat een Mapping-Operatie mislukte.&lt;br/&gt;&lt;br/&gt;Het is bekend dat Linux 2.6.29 een aantal problemen heef. Gebruikt u deze kernel, pas dan /usr/src/vboxdrv-*/Makefile aan en activeer &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. Hercompileer hierna de kernel module door&lt;br/&gt;&lt;br/&gt; &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; als root uit te voeren.</translation>
     </message>
     <message>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation>De VirtualBox Linux kernel stuurprogramma (vboxdrv) is of niet geladen of er is een probleem met de toegangsrechten van /dev/vboxdrv.Zet de kernel module opnieuw op door&lt;br/&gt;&lt;br/&gt;&lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; uit te voeren als Root. Gebruikers van Ubuntu, Fedora of Mandriva moeten het DKMS pakket als eerste installeren. Dit pakket houd de aanpassingen aan de Linux kernel bij en hercompileert de vboxdrv kernel module zo nodig.</translation>
     </message>
     <message>
@@ -87,7 +87,7 @@
         <translation>&lt;b&gt;Kan de kernel stuurprogramma niet benaderen!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <source>Unknown %2 error during initialization of the Runtime</source>
+        <source>Unknown error %2 during initialization of the Runtime</source>
         <translation>Onbekende fout %2 tijdens de initialiseren voor het uitvoeren</translation>
     </message>
     <message>
@@ -95,11 +95,11 @@
         <translation>Kernel stuurprogramma niet toegankelijk</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Please try completely uninstalling and reinstalling VirtualBox.</source>
         <translation>De VirtualBox kernel modules passen niet bij deze versie van VirtualBox. De installatie van VirtualBox is klaarblijkelijk niet een succes. Het kan helpen om de installatie volledig ongedaan te maken en VirtualBox opnieuw te installeren.</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
         <translation>De VirtualBox kernel modules passen niet bij deze versie van VirtualBox. De installatie van VirtualBox is klaarblijkelijk niet een succes. Voer &lt;br/&gt;&lt;br/&gt;&lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; uit, dit moet het probleem verhelpen. Controleer of u de OSE versie en de PUEL versie niet hebt verwisseld.</translation>
     </message>
 </context>
@@ -375,7 +375,7 @@
         <translation>Ongeldig</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;The value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;De waarde van veld &lt;b&gt;%1&lt;/b&gt; op pagina &lt;b&gt;%2&lt;/b&gt; is %3.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -472,15 +472,15 @@
         <translation>RAM</translation>
     </message>
     <message>
-        <source>Hard Disk Controller IDE</source>
+        <source>Hard Disk Controller (IDE)</source>
         <translation>Harde schijf controller IDE</translation>
     </message>
     <message>
-        <source>Hard Disk Controller SATA</source>
+        <source>Hard Disk Controller (SATA)</source>
         <translation>Harde schijf controller SATA</translation>
     </message>
     <message>
-        <source>Hard Disk Controller SCSI</source>
+        <source>Hard Disk Controller (SCSI)</source>
         <translation>Harde schijf controller SCSI</translation>
     </message>
     <message>
@@ -560,7 +560,7 @@
         <translation>S&amp;tuur het signaal uitzetten</translation>
     </message>
     <message>
-        <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Is deze optie aangevinkt dan zal de status van de machine, nadat deze is uitgezet, teruggeplaatst worden naar de status zoals in de huidige momentopname is vastgelegd. Dit is handig als u er zeker van bent dat u de resultaten van uw laatste sessie niet wil bewaren en dus terug wilt gaan naar de huidige momentopname.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -741,7 +741,7 @@
         <translation>&amp;Help</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
+        <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
         <translation>&lt;hr&gt;VRDP server luistert op poort %1</translation>
     </message>
     <message>
@@ -869,7 +869,7 @@
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Geen media gekoppeld&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Geeft de activiteit van de viruele harde schijf weer:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -919,7 +919,7 @@
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB controller is gedeactiveerd&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine'sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Geeft de activiteit van de gedeelde mappen weer:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1053,7 +1053,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1063,7 +1063,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Selecteer de virtuele machine die geëxpoteerd moet worden naar een Appliance.U kunt meerde virtuele systemen selecteren. Let op deze machines moet uit staan voordat ze geëxporteerd kunnen worden.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
         <translation>Hier kunt u aanvullende instellingen, van de geselecteerde virtuele machines, aanpassen. U kunt merendeel van de weergegeven eigenschappen aanpassen door daarop te dubbelklikken.</translation>
     </message>
     <message>
@@ -1079,15 +1079,15 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Schrijf weg in OVF 0.9</translation>
     </message>
     <message>
-        <source>Please choose a filename to export the OVF in.</source>
+        <source>Please choose a filename to export the OVF to.</source>
         <translation>Kies een bestandsnaam voor de export van OVF.</translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
         <translation>Vul de aanvullende velden, zoals gebruikersnaam, wachtwoord en de emmer, in. Ten slotte moet u een bestandsnaam opgeven voor de OVF bestemming.</translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
         <translation>Vul de aanvullende velden, zoals gebruikersnaam, wachtwoord, hostnaam en de emmer, in. Ten slotte moet u een bestandsnaam opgeven voor de OVF bestemming.</translation>
     </message>
     <message>
@@ -1099,7 +1099,7 @@ p, li { white-space: pre-wrap; }
         <translation>Bestanden verwijderen ...</translation>
     </message>
     <message>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
         <translation>Geef een bestemming op voor de OVF export. U kunt kiezen tussen een lokaal bestandssysteem, het uploaden van de OVF naar de Sun Cloud server of een S3 opslagserver.</translation>
     </message>
     <message>
@@ -1150,7 +1150,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;niet geselecteerd&gt;</translation>
     </message>
     <message>
-        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
+        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a path.</source>
         <translation>Gebruik het &lt;b&gt;andere...&lt;/b&gt; item uit de keuzelijst om het gewenste pad te selecteren.</translation>
     </message>
     <message>
@@ -1182,11 +1182,11 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Kopiëren</translation>
     </message>
     <message>
-        <source>Please type the desired folder path here.</source>
+        <source>Please type the folder path here.</source>
         <translation>Geef hier het gewenste pad naar de map op.</translation>
     </message>
     <message>
-        <source>Please type the desired file path here.</source>
+        <source>Please type the file path here.</source>
         <translation>Geef hier het gewenste pad naar het bestand op.</translation>
     </message>
 </context>
@@ -1272,7 +1272,7 @@ p, li { white-space: pre-wrap; }
         <translation>Gastheer &amp;toets:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation>Geeft de toets weer, in het VM venster, die als gastheer toets wordt gebruikt. Activeer het opgave veld en druk op een nieuwe gastheer toets. Let op dat alfanumerieke, cursor, wijzigings toetsen niet gebruikt kunnen worden als gastheer toets.</translation>
     </message>
     <message>

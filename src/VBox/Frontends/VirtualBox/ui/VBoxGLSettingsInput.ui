@@ -68,7 +68,7 @@
    <item row="0" column="2" >
     <widget class="QIHotKeyEdit" name="mHeHostKey" >
      <property name="whatsThis" >
-      <string>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</string>
+      <string>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</string>
      </property>
     </widget>
    </item>

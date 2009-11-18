@@ -108,7 +108,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="wordWrap">
             <bool>true</bool>
@@ -249,7 +249,7 @@ p, li { white-space: pre-wrap; }
             </size>
            </property>
            <property name="text">
-            <string>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</string>
+            <string>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</string>
            </property>
            <property name="wordWrap">
             <bool>true</bool>
@@ -416,7 +416,7 @@ p, li { white-space: pre-wrap; }
             </size>
            </property>
            <property name="text">
-            <string>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</string>
+            <string>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</string>
            </property>
            <property name="wordWrap">
             <bool>true</bool>

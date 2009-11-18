@@ -66,7 +66,7 @@
         <translation>&lt;html&gt;&lt;b&gt;%1 (returkode=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <source>It may help to reinstall VirtualBox.</source>
+        <source>Please try reinstalling VirtualBox.</source>
         <translation>Du bør geninstallere VirtualBox.</translation>
     </message>
     <message>
@@ -74,7 +74,7 @@
         <translation>Denne fejl skyldes enten at kernemodulet ikke kunne allokere hukommelse nok eller at en adresseoversættelse fejlede.&lt;br/&gt;&lt;br/&gt;Der er kendte problemer med Linux 2.6.29. Hvis du bruger denne kerneudgave, så tilret /usr/src/vboxdrv-*/Makefile og sæt &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. Rekompilér derefter kernemodulet ved at køre&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;som root.</translation>
     </message>
     <message>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation>VirtualBox&apos; Linux kernemodul (vboxdrv) er enten ikke indlæst eller der er et problem med rettighederne på /dev/vboxdrv. Geninstaller kernemodulet ved at køre&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;som root. Brugere af Ubuntu, Fedora eller Mandriva bør installere DKMS pakken først. Denne pakke holder styr på Linux kerneændringer og rekompilerer vboxdrv kernemodulet om nødvendigt.</translation>
     </message>
     <message>
@@ -90,7 +90,7 @@
         <translation>&lt;b&gt;Kan ikke tilgå kernemodulet!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <source>Unknown %2 error during initialization of the Runtime</source>
+        <source>Unknown error %2 during initialization of the Runtime</source>
         <translation>Ukendt %2 fejl under indlæsning af afviklingsmiljøet</translation>
     </message>
     <message>
@@ -98,11 +98,11 @@
         <translation>Kernemodul er ikke tilgængeligt</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Please try completely uninstalling and reinstalling VirtualBox.</source>
         <translation>De indlæste kernemoduler passer ikke til denne version af VirtualBox. Installationen af VirtualBox er tilsyneladende ikke gået godt. Du bør afinstallere VirtualBox fuldstændigt og geninstallere.</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
         <translation>De indlæste kernemoduler passer ikke til denne version af VirtualBox. Installationen af VirtualBox er tilsyneladende ikke gået godt. Kør&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; for at afhjælpe problemet. Undgå at blande OSE og PUEL versionerne af VirtualBox.</translation>
     </message>
 </context>
@@ -378,7 +378,7 @@
         <translation>ugyldig</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;The value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Værdien i feltet&lt;b&gt;%1&lt;/b&gt; på siden &lt;b&gt;%2&lt;/b&gt; er %3.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -475,15 +475,15 @@
         <translation>RAM</translation>
     </message>
     <message>
-        <source>Hard Disk Controller IDE</source>
+        <source>Hard Disk Controller (IDE)</source>
         <translation>Harddiskenhed IDE</translation>
     </message>
     <message>
-        <source>Hard Disk Controller SATA</source>
+        <source>Hard Disk Controller (SATA)</source>
         <translation>Harddiskenhed SATA</translation>
     </message>
     <message>
-        <source>Hard Disk Controller SCSI</source>
+        <source>Hard Disk Controller (SCSI)</source>
         <translation>Harddiskenhed SCSI</translation>
     </message>
     <message>
@@ -562,7 +562,7 @@
         <translation>S&amp;end signal til nedlukning</translation>
     </message>
     <message>
-        <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Hvis markeret, vil maskinens tilstand blive nulstillet til det seneste øjebliksbillede lige efter nedlukning. Brug denne funktion hvis du altid ønsker at kassere dine ændringer og gå tilbage til det seneste øjebliksbillede.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -748,7 +748,7 @@
         <translation>&amp;Hjælp</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
+        <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
         <translation>&lt;hr&gt;VRDP-server lytter på port %1</translation>
     </message>
     <message>
@@ -872,7 +872,7 @@
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Intet aftryk monteret&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Viser aktivitet på de virtuelle harddiske:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -922,7 +922,7 @@
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB-enhedsstyring er deaktiveret&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine'sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Viser aktivitet på delte mapper:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1037,7 +1037,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1063,7 +1063,7 @@ p, li { white-space: pre-wrap; }
         <translation>Indstillinger for eksport af prækonfigureret system</translation>
     </message>
     <message>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
         <translation>Her kan du tilpasse yderligere indstillinger for de valgte virtuelle maskiner. Du kan ændre de fleste af de viste egenskaber ved at dobbeltklikke på værdien.</translation>
     </message>
     <message>
@@ -1083,15 +1083,15 @@ p, li { white-space: pre-wrap; }
         <translation>Gem i OVF 0.9 format</translation>
     </message>
     <message>
-        <source>Please choose a filename to export the OVF in.</source>
+        <source>Please choose a filename to export the OVF to.</source>
         <translation>Angiv et filnavn til OVF-eksporten.</translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
         <translation>Udfyld de øvrige felter såsom brugernavn, kodeord og bucket. Afslut med at angive et filnavn til OVF-eksporten.</translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
         <translation>Udfyld de øvrige felter såsom brugernavn, kodeord, værtsnavn og bucket. Afslut med at angive et filnavn til OVF-eksporten.</translation>
     </message>
     <message>
@@ -1103,7 +1103,7 @@ p, li { white-space: pre-wrap; }
         <translation>Fjerner filer ...</translation>
     </message>
     <message>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
         <translation>Angiv destinationen for OVF-eksporten. Du kan vælge at eksportere til et lokalt filsystem eller sende OVF&apos;en til Sun Cloud servicen eller en S3 lagerserver.</translation>
     </message>
     <message>
@@ -1154,7 +1154,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;ikke valgt&gt;</translation>
     </message>
     <message>
-        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
+        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a path.</source>
         <translation>Vælg &lt;b&gt;Andet...&lt;/b&gt; fra rullegardinmenuen for at angive den ønskede sti.</translation>
     </message>
     <message>
@@ -1186,11 +1186,11 @@ p, li { white-space: pre-wrap; }
         <translation>Kopier</translation>
     </message>
     <message>
-        <source>Please type the desired folder path here.</source>
+        <source>Please type the folder path here.</source>
         <translation>Angiv den ønskede sti til mappen her.</translation>
     </message>
     <message>
-        <source>Please type the desired file path here.</source>
+        <source>Please type the file path here.</source>
         <translation>Angiv den ønskede sti til filen her.</translation>
     </message>
 </context>
@@ -1275,7 +1275,7 @@ p, li { white-space: pre-wrap; }
         <translation>Værtstast:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation>Viser tasten, der fungerer som værtstast i VM-vinduet. Placer markøren i feltet og tryk på den nye værtstast. Bemærk at alfanumeriske, pile- og redigeringstaster ikke kan bruges.</translation>
     </message>
     <message>
