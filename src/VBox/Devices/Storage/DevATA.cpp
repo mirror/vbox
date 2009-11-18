@@ -3467,6 +3467,7 @@ static void ataResetDevice(ATADevState *s)
     s->iIOBufferPIODataEnd = 0;
     s->iBeginTransfer = ATAFN_BT_NULL;
     s->iSourceSink = ATAFN_SS_NULL;
+    s->fDMA = false;
     s->fATAPITransfer = false;
     s->uATATransferMode = ATA_MODE_UDMA | 2; /* PIIX3 supports only up to UDMA2 */
 
@@ -4902,6 +4903,8 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
                     }
                     else
                     {
+                        /* Stop any pending DMA transfer. */
+                        s->fDMA = false;
                         ataPIOTransferStop(s);
                         ataUnsetStatus(s, ATA_STAT_BUSY | ATA_STAT_DRQ | ATA_STAT_SEEK | ATA_STAT_ERR);
                         ataSetStatus(s, ATA_STAT_READY);
