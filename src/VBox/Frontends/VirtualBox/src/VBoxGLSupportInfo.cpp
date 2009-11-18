@@ -578,7 +578,10 @@ bool VBoxVHWAInfo::checkVHWASupport()
 
     rc = RTProcCreate(pszVBoxPath, papszArgs, RTENV_DEFAULT, 0, &Process);
     if (RT_FAILURE(rc))
+    {
+        VBOXQGLLOGREL(("2D support test failed: failed to create a test process\n"));
         return false;
+    }
 
     StartTS = RTTimeMilliTS();
 
@@ -593,6 +596,7 @@ bool VBoxVHWAInfo::checkVHWASupport()
             RTProcTerminate(Process);
             RTThreadSleep(100);
             RTProcWait(Process, RTPROCWAIT_FLAGS_NOBLOCK, &ProcStatus);
+            VBOXQGLLOGREL(("2D support test failed: the test did not complete within 30 sec\n"));
             return false;
         }
         RTThreadSleep(100);
@@ -602,9 +606,12 @@ bool VBoxVHWAInfo::checkVHWASupport()
     {
         if ((ProcStatus.enmReason==RTPROCEXITREASON_NORMAL) && (ProcStatus.iStatus==0))
         {
+            VBOXQGLLOGREL(("2D support test succeeded\n"));
             return true;
         }
     }
+
+    VBOXQGLLOGREL(("2D support test failed: err code (%Rra)\n", rc));
 
     return false;
 #else
