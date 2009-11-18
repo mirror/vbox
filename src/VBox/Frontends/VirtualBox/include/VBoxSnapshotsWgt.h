@@ -23,6 +23,9 @@
 #ifndef __VBoxSnapshotsWgt_h__
 #define __VBoxSnapshotsWgt_h__
 
+/* Global includes */
+#include <QTimer>
+
 /* Local includes */
 #include "VBoxSnapshotsWgt.gen.h"
 #include "VBoxGlobal.h"
@@ -30,6 +33,16 @@
 
 /* Local forwards */
 class SnapshotWgtItem;
+
+/* Snapshot age format */
+enum SnapshotAgeFormat
+{
+    AgeInSeconds,
+    AgeInMinutes,
+    AgeInHours,
+    AgeInDays,
+    AgeMax
+};
 
 class VBoxSnapshotsWgt : public QIWithRetranslateUI <QWidget>, public Ui::VBoxSnapshotsWgt
 {
@@ -60,12 +73,15 @@ private slots:
     void machineStateChanged (const VBoxMachineStateChangeEvent &aEvent);
     void sessionStateChanged (const VBoxSessionStateChangeEvent &aEvent);
 
+    void updateSnapshotsAge();
+
 private:
 
     void refreshAll();
     SnapshotWgtItem* findItem (const QString &aSnapshotId);
     SnapshotWgtItem* curStateItem();
     void populateSnapshots (const CSnapshot &aSnapshot, QTreeWidgetItem *aItem);
+    SnapshotAgeFormat traverseSnapshotAge (QTreeWidgetItem *aParentItem);
 
     CMachine         mMachine;
     QString          mMachineId;
@@ -80,6 +96,8 @@ private:
     QAction         *mDeleteSnapshotAction;
     QAction         *mShowSnapshotDetailsAction;
     QAction         *mTakeSnapshotAction;
+
+    QTimer          mAgeUpdateTimer;
 };
 
 #endif // __VBoxSnapshotsWgt_h__
