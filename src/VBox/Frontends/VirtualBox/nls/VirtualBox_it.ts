@@ -5464,11 +5464,11 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
         <translation>Creazione non riuscita del disco fisso &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Collegamento non riuscito del disco fisso &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Rimozione del collegamento non riuscita per il disco fisso &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; dallo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>

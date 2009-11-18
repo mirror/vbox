@@ -3645,11 +3645,11 @@ p, li { white-space: pre-wrap; }
         <translation>Het is niet gelukt om de harde schijf opslag &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; aan te maken.</translation>
     </message>
     <message>
-        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Het is niet gelukt om harde schijf&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te koppelen aan het slot &lt;i&gt;%2&lt;/i&gt; van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Het is niet gelukt om harde schijf &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; los te koppelen van het slot &lt;i&gt;%2&lt;/i&gt; van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>

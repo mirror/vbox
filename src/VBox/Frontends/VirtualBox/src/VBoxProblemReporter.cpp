@@ -1116,7 +1116,7 @@ int VBoxProblemReporter::confirmRunNewHDWzdOrVDM (KDeviceType aDeviceType)
     {
         case KDeviceType_HardDisk:
             return message (QApplication::activeWindow(), Info,
-                            tr ("<p>There are no unused mediums available for the newly "
+                            tr ("<p>There are no unused media available for the newly "
                                 "created attachment.</p>"
                                 "<p>Press the <b>Create</b> button to start the <i>New "
                                 "Virtual Disk</i> wizard and create a new medium, "
@@ -1130,7 +1130,7 @@ int VBoxProblemReporter::confirmRunNewHDWzdOrVDM (KDeviceType aDeviceType)
                             tr ("&Select", "medium"));
         default:
             return message (QApplication::activeWindow(), Info,
-                            tr ("<p>There are no unused mediums available for the newly "
+                            tr ("<p>There are no unused media available for the newly "
                                 "created attachment.</p>"
                                 "<p>Press the <b>Select</b> button to open the <i>Virtual "
                                 "Media Manager</i> and select what to do.</p>"),
@@ -1165,7 +1165,7 @@ void VBoxProblemReporter::cannotAttachDevice (QWidget *aParent, const CMachine &
         what += QString (" (<nobr><b>%1</b></nobr>)").arg (aLocation);
 
     message (aParent, Error,
-             tr ("Failed to attach the %1 to the slot <i>%2</i> of the machine <b>%3</b>.")
+             tr ("Failed to attach the %1 to slot <i>%2</i> of the machine <b>%3</b>.")
                  .arg (what)
                  .arg (vboxGlobal().toString (StorageSlot (aBus, aChannel, aDevice)))
                  .arg (CMachine (aMachine).GetName()),
@@ -1181,7 +1181,7 @@ void VBoxProblemReporter::cannotDetachDevice (QWidget *aParent, const CMachine &
         what += QString (" (<nobr><b>%1</b></nobr>)").arg (aLocation);
 
     message (aParent, Error,
-             tr ("Failed to detach the %1 from the slot <i>%2</i> of the machine <b>%3</b>.")
+             tr ("Failed to detach the %1 from slot <i>%2</i> of the machine <b>%3</b>.")
                  .arg (what)
                  .arg (vboxGlobal().toString (StorageSlot (aBus, aChannel, aDevice)))
                  .arg (CMachine (aMachine).GetName()),

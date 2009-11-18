@@ -3618,11 +3618,11 @@ p, li { white-space: pre-wrap; }
         <translation>Kunne ikke oprette harddisk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Kunne ikke montere harddisken &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; på udvidelsespladsen &lt;i&gt;%2&lt;/i&gt; i maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Kunne ikke afmontere harddisken &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; fra udvidelsespladsen &lt;i&gt;%2&lt;/i&gt; i maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
