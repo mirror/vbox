@@ -3549,7 +3549,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to import an appliance, you have to select a file describing the appliance first. Currently VirtualBox supports the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -3580,7 +3580,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="265"/>
-        <source>These are the virtual machines as described in the appliance with their suggested mappings for importing into VirtualBox. You can change many of the shown properties by double-clicking on the items and disable others by using the check boxes below.</source>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
         <translation>Dessa är de virtuella maskinerna som beskrivs i din appliance med deras föreslagna mappningar för import till VirtualBox. Du kan ändra många av de egenskaper som visas genom att dubbelklicka på dem och inaktivera andra genom att använda kryssrutorna nedan.</translation>
     </message>
     <message>
@@ -4522,12 +4522,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="947"/>
-        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Är du säker på att du vill avregistrera den oåtkomliga virtuella maskinen &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Du kommer inte längre att kunna registrera den igen via det grafiska gränssnittet.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="963"/>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Är du säker på att du vill förkasta det sparade tillståndet för den virtuella maskinen &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Den här åtgärden är samma som att starta om eller stänga av maskinen utan att göra en korrekt avstängning i gästoperativsystemet.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4592,7 +4592,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="" line="0"/>
-        <source>Failed to get the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
+        <source>Failed to determine the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
         <translation type="obsolete">Misslyckades med att läsa av tillgänglighetstillståndet för mediet &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Delar av det registrerade mediet kan bli oåtkomligt.</translation>
     </message>
     <message>
@@ -4617,7 +4617,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1396"/>
-        <source>Failed to create a shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Misslyckades med att skapa den delade mappen &lt;b&gt;%1&lt;/b&gt; (pekar på &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) för den virtuella maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -4632,7 +4632,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1718"/>
-        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Den virtuella maskinen är för tillfället i ett &lt;b&gt;pausat&lt;/b&gt; tillstånd och kan därför inte ta emot inmatningar från tangentbord eller mus. Om du vill fortsätta att arbeta i den virtuella maskinen behöver du återuppta körningen av den genom att välja motsvarande åtgärd från menyraden.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4672,17 +4672,17 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2174"/>
-        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ett ödesdigert fel har inträffat under körning av den virtuella maskinen! Den virtuella maskinen kommer att stängas av. Det föreslås att använda urklippet för att kopiera följande felmeddelande för senare undersökning av problemet:&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2186"/>
-        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ett fel har inträffat under körning av den virtuella maskinen! Detaljer om felet visas nedan. Du kan försöka att rätta till det beskrivna felet och återuppta körningen av den virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2196"/>
-        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Körningen av den virtuella maskinen kan komma i ett feltillstånd som beskrivet nedan. Du kan ignorera det här meddelandet men det föreslås att genomföra en lämplig åtgärd för att försäkra sig om att det beskrivna felet inte inträffar.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4727,17 +4727,17 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1485"/>
-        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBox Gästtillägg som är installerat i gästoperativsystemet är för gammalt: den installerade versionen är %1, förväntad version är %2. Några funktioner som kräver Gästtillägg (musintegration, automatisk storleksändring av gästskärmen) kommer antagligen att sluta att fungera korrekt.&lt;/p&gt;&lt;p&gt;Uppdatera Gästtillägg till den aktuella versionen genom att välja &lt;b&gt;Installera Gästtillägg&lt;/b&gt; från menyn &lt;b&gt;Enheter&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1501"/>
-        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBox Gästtillägg som är installerat i gästoperativsystemet är för gammalt: den installerade versionen är %1, förväntad version är %2. Vissa funktioner som kräver Gästtillägg (musintegration, automatisk storleksändring av gästskärmen) kanske inte fungerar som förväntat.&lt;/p&gt;&lt;p&gt;Det rekommenderas att uppdatera Gästtillägg till den aktuella versionen genom att välja &lt;b&gt;Installera Gästtillägg&lt;/b&gt; från menyn &lt;b&gt;Enheter&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1517"/>
-        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBox Gästtillägg som är installerat i gästoperativsystemet är för nytt för den här versionen av VirtualBox: den installerade versionen är %1, förväntad version är %2.&lt;/p&gt;&lt;p&gt;Användning av en senare version av tilläggen med en äldre version av VirtualBox stöds inte. Installera den aktuella versionen av Gästtillägg genom att välja &lt;b&gt;Installera Gästtillägg&lt;/b&gt; från menyn &lt;b&gt;Enheter&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4752,7 +4752,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1430"/>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Kunde inte hitta cd-avbildningsfilen för VirtualBox Gästtillägg &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; eller &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Vill du hämta ner den här cd-avbildningen från Internet?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4767,12 +4767,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1467"/>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Cd-avbildningen för VirtualBox Gästtillägg har hämtats ner från &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; och sparats lokalt som &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Vill du registrera den här cd-avbildningen och montera den på den virtuella CD/DVD-enheten?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1918"/>
-        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Det virtuella maskinfönstret är optimerat till att arbeta i &lt;b&gt;%1-bitars&lt;/b&gt; färgläge men färgkvaliteten för den virtuella displayen är för närvarande inställd till &lt;b&gt;%2&amp;nbsp;bitar&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Öppna dialogrutan för displayegenskaper i gästoperativsystemet och välj ett &lt;b&gt;%3-bitars&lt;/b&gt; färgläge, om det finns tillgängligt, för bästa tänkbara prestanda för det virtuella grafiksystemet.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Observera&lt;/b&gt;. Vissa operativsystem, såsom OS/2, kan faktiskt fungera i 32-bitars läge men rapportera det som 24-bitars (16 miljoner färger). Du kan försöka att välja en annan färgkvalitet för att se om det här meddelandet försvinner eller så kan du helt enkelt inaktivera meddelandet för tillfället om du är säker på att den nödvändiga färgkvaliteten (%4 bitar) inte finns tillgänglig i det angivna gästoperativsystemet.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4782,7 +4782,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1983"/>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Du anslöt inte en hårddisk till den nya virtuella maskinen. Maskinen kommer inte att kunna starta såvida inte du ansluter en hårddisk med ett gästoperativsystem eller något annat startbart media till den senare genom att använda dialogrutan för maskininställningar eller Förstagångsguiden.&lt;/p&gt;&lt;p&gt;Vill du fortsätta?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4974,7 +4974,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1967"/>
-        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Vill du verkligen starta om den virtuella maskinen?&lt;/p&gt;&lt;p&gt;När maskinen startas om kommer osparat data i samtliga program som körs i den att försvinna.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5002,8 +5002,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="" line="0"/>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Det finns inga oanvända hårddiskar tillgängliga för den nyligen skapade anslutningen.&lt;/p&gt;&lt;p&gt;Tryck på knappen &lt;b&gt;Skapa&lt;/b&gt; för att starta guiden för &lt;i&gt;Ny virtuell disk&lt;/i&gt; och skapa en ny hårddisk eller tryck på knappen &lt;b&gt;Välj&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Det finns inga oanvända hårddiskar tillgängliga för den nyligen skapade anslutningen.&lt;/p&gt;&lt;p&gt;Tryck på knappen &lt;b&gt;Skapa&lt;/b&gt; för att starta guiden för &lt;i&gt;Ny virtuell disk&lt;/i&gt; och skapa en ny hårddisk eller tryck på knappen &lt;b&gt;Välj&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1106"/>
@@ -5034,7 +5034,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1585"/>
-        <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
+        <source>You are already running the most recent version of VirtualBox.</source>
         <translation>Du har redan installerat den senaste versionen av VirtualBox. Upprepa versionskontrollen igen senare.</translation>
     </message>
     <message>
@@ -5089,7 +5089,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="114"/>
-        <source>Cause all suppressed warnings and messages to be shown again</source>
+        <source>Go back to showing all suppressed warnings and messages</source>
         <translation>Gör att alla tysta varningar och meddelanden visas igen</translation>
     </message>
     <message>
@@ -5124,7 +5124,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1569"/>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;En ny version av VirtualBox har släppts! Version &lt;b&gt;%1&lt;/b&gt; finns tillgänglig på &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Du kan hämta ner denna version från denna direktlänk:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5145,7 +5145,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1002"/>
-        <source>Note that this hard disk is inaccessible so that its storage unit cannot be deleted right now.</source>
+        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
         <translation>Observera att denna hårddisk inte är tillgänglig så att dess lagringsenhet inte kan tas bort just nu.</translation>
     </message>
     <message>
@@ -5155,7 +5155,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1013"/>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and therefore it will be possible to add it to the list later again.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Observera att lagringsenheten för detta media inte kommer att tas bort och därför är det möjligt att lägga till den till listan igen senare.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5193,7 +5193,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1101"/>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Det finns inga oanvända hårddiskar tillgängliga för den nyligen skapade anslutningen.&lt;/p&gt;&lt;p&gt;Tryck på knappen &lt;b&gt;Skapa&lt;/b&gt; för att starta guiden &lt;i&gt;Ny virtuell disk&lt;/i&gt; och skapa en ny hårddisk eller tryck på knappen &lt;b&gt;Välj&lt;/b&gt; för att öppna &lt;i&gt;Hanterare för virtuella media&lt;/i&gt; och välj vad som ska göras.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5213,7 +5213,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1158"/>
-        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; to the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Misslyckades med att montera %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; till maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -5233,7 +5233,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1241"/>
-        <source>Failed to get the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Misslyckades med att få tag på tillgänglighetstillstånd för mediet &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
@@ -5253,7 +5253,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1794"/>
-        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Dina befintliga VirtualBox-inställningsfiler blev automatiskt konverterade från det äldre formatet till ett nytt format som krävs av den nya versionen av VirtualBox.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;OK&lt;/b&gt; för att starta VirtualBox nu eller tryck på &lt;b&gt;Mer&lt;/b&gt; om du vill få mer information om vilka filer som blev konverterade och få åtkomst till ytterligare åtgärder.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;Avsluta&lt;/b&gt; för att avsluta programmet VirtualBox utan att spara resultatet för konverteringen till disk.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5334,7 +5334,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="758"/>
-        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not use the ACPI subsystem.</source>
+        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
         <translation>Du försöker att stänga av gästen med ACPI-avstängningsknappen. Detta är inte möjligt för närvarande därför att gästen inte använder ACPI-subsystemet.</translation>
     </message>
     <message>
@@ -5395,7 +5395,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1770"/>
-        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Dina befintliga VirtualBox-inställningsfiler kommer automatiskt att konverteras från det gamla formatet till ett nytt format som krävs för den nya versionen av VirtualBox.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;OK&lt;/b&gt; för att starta VirtualBox nu eller tryck på &lt;b&gt;Avsluta&lt;/b&gt; om du vill avsluta programmet VirtualBox utan några ytterligare åtgärder.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5435,7 +5435,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1256"/>
-        <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Borttagning av detta endast värd-nätverk kommer att leda till borttagning av endast värd-gränssnittet som detta nätverk är baserat på. Vill du ta bort (endast värd-nätverkets) gränssnitt &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Observera:&lt;/b&gt; detta gränssnitt kan användas av en eller flera virtuella nätverkskort som tillhör någon av dina virtuella maskiner. Efter att de har tagits bort så kommer dessa kort inte längre att vara användbara förrän du har korrigerat deras inställningar, antingen genom att välja ett annat gränssnittsnamn eller en annan anslutningstyp för kortet.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6266,7 +6266,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="396"/>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;En ny version av VirtualBox har släppts! Version &lt;b&gt;%1&lt;/b&gt; finns tillgänglig på &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Du kan hämta ner denna version från denna direktlänk:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6276,7 +6276,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="402"/>
-        <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
+        <source>You are already running the most recent version of VirtualBox.</source>
         <translation>Du har redan installerat den senaste versionen av VirtualBox. Repetera denna versionskontroll vid ett senare tillfälle.</translation>
     </message>
     <message>

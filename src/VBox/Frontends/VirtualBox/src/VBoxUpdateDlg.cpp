@@ -315,14 +315,13 @@ void VBoxUpdateDlg::retranslateUi()
     mTextSuccessInfo->setText (tr ("<p>A new version of VirtualBox has been released! "
                                    "Version <b>%1</b> is available at "
                                    "<a href=\"http://www.virtualbox.org/\">virtualbox.org</a>.</p>"
-                                   "<p>You can download this version from this direct link:</p>"
+                                   "<p>You can download this version using the link:</p>"
                                    "<p><a href=%2>%3</a></p>"));
 
     mTextFailureInfo->setText (tr ("<p>Unable to obtain the new version information "
                                    "due to the following network error:</p><p><b>%1</b></p>"));
 
-    mTextNotFoundInfo->setText (tr ("You have already installed the latest VirtualBox "
-                                    "version. Please repeat the version check later."));
+    mTextNotFoundInfo->setText (tr ("You are already running the most recent version of VirtualBox."));
 #endif
 }
 

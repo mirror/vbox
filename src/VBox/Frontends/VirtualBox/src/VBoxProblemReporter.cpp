@@ -789,7 +789,7 @@ void VBoxProblemReporter::cannotSendACPIToMachine()
     message (mainWindowShown(),  Warning,
         tr ("You are trying to shut down the guest with the ACPI power "
             "button. This is currently not possible because the guest "
-            "does not use the ACPI subsystem."));
+            "does not support software shutdown."));
 }
 
 bool VBoxProblemReporter::warnAboutVirtNotEnabled64BitsGuest()
@@ -843,8 +843,8 @@ bool VBoxProblemReporter::askAboutSnapshotRestoring (const QString &aSnapshotNam
 bool VBoxProblemReporter::askAboutSnapshotDeleting (const QString &aSnapshotName)
 {
     return messageOkCancel (mainWindowShown(), Question,
-        tr ("<p>By deleting a snapshot, the state information stored in the snapshot will be thrown away, and disk data will be merged between "
-            "different image files that VirtualBox has created together with the snapshot. This can be a lengthy process, and the information "
+        tr ("<p>By deleting a snapshot, the state information stored in the snapshot will be thrown away, and disk data spread over "
+            "several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information "
             "in the snapshot cannot be recovered.</p></p>Are you sure you want to delete the selected snapshot <b>%1</b>?</p>")
             .arg (aSnapshotName),
         /* Do NOT allow this message to be disabled! */
@@ -962,7 +962,7 @@ bool VBoxProblemReporter::confirmMachineDeletion (const CMachine &machine)
                fi.completeBaseName() : fi.fileName();
         msg = tr ("<p>Are you sure you want to unregister the inaccessible "
                   "virtual machine <b>%1</b>?</p>"
-                  "<p>You will no longer be able to register it back from "
+                  "<p>You will not be able to register it again from "
                   "GUI.</p>")
                   .arg (name);
         button = tr ("Unregister", "machine");
@@ -978,7 +978,7 @@ bool VBoxProblemReporter::confirmDiscardSavedState (const CMachine &machine)
         tr ("<p>Are you sure you want to discard the saved state of "
             "the virtual machine <b>%1</b>?</p>"
             "<p>This operation is equivalent to resetting or powering off "
-            "the machine without doing a proper shutdown by means of the "
+            "the machine without doing a proper shutdown of the "
             "guest OS.</p>")
             .arg (machine.GetName()),
         0 /* aAutoConfirmId */,
@@ -1018,7 +1018,7 @@ bool VBoxProblemReporter::confirmRemoveMedium (QWidget *aParent,
     {
         if (aMedium.state() == KMediumState_Inaccessible)
             msg +=
-                tr ("Note that this hard disk is inaccessible so that its "
+                tr ("Note that as this hard disk is inaccessible its "
                     "storage unit cannot be deleted right now.");
         else
             msg +=
@@ -1029,7 +1029,7 @@ bool VBoxProblemReporter::confirmRemoveMedium (QWidget *aParent,
     else
         msg +=
             tr ("<p>Note that the storage unit of this medium will not be "
-                "deleted and therefore it will be possible to add it to "
+                "deleted and that it will be possible to add it to "
                 "the list later again.</p>");
 
     return messageOkCancel (aParent, Question, msg,
@@ -1120,8 +1120,8 @@ int VBoxProblemReporter::confirmRunNewHDWzdOrVDM (KDeviceType aDeviceType)
                                 "created attachment.</p>"
                                 "<p>Press the <b>Create</b> button to start the <i>New "
                                 "Virtual Disk</i> wizard and create a new medium, "
-                                "or press the <b>Select</b> button to open the <i>Virtual "
-                                "Media Manager</i> and select what to do.</p>"),
+                                "or press the <b>Select</b> if you wish to open the <i>Virtual "
+                                "Media Manager</i>.</p>"),
                             0, /* aAutoConfirmId */
                             QIMessageBox::Yes,
                             QIMessageBox::No | QIMessageBox::Default,
@@ -1132,8 +1132,8 @@ int VBoxProblemReporter::confirmRunNewHDWzdOrVDM (KDeviceType aDeviceType)
             return message (QApplication::activeWindow(), Info,
                             tr ("<p>There are no unused media available for the newly "
                                 "created attachment.</p>"
-                                "<p>Press the <b>Select</b> button to open the <i>Virtual "
-                                "Media Manager</i> and select what to do.</p>"),
+                                "<p>Press the <b>Select</b> if you wish to open the <i>Virtual "
+                                "Media Manager</i>.</p>"),
                             0, /* aAutoConfirmId */
                             QIMessageBox::No | QIMessageBox::Default,
                             QIMessageBox::Cancel | QIMessageBox::Escape,
@@ -1196,13 +1196,13 @@ int VBoxProblemReporter::cannotRemountMedium (QWidget *aParent, const CMachine &
     QString text;
     if (aMount)
     {
-        text = tr ("Unable to mount the %1 <nobr><b>%2</b></nobr> to the machine <b>%3</b>.");
-        if (aRetry) text += tr (" Would you like to forcedly mount this medium?");
+        text = tr ("Unable to mount the %1 <nobr><b>%2</b></nobr> on the machine <b>%3</b>.");
+        if (aRetry) text += tr (" Would you like to force mounting of this medium?");
     }
     else
     {
         text = tr ("Unable to unmount the %1 <nobr><b>%2</b></nobr> from the machine <b>%3</b>.");
-        if (aRetry) text += tr (" Would you like to forcedly unmount this medium?");
+        if (aRetry) text += tr (" Would you like to force unmounting of this medium?");
     }
     if (aRetry)
     {
@@ -1292,7 +1292,7 @@ void VBoxProblemReporter::cannotOpenSession (
 void VBoxProblemReporter::cannotGetMediaAccessibility (const VBoxMedium &aMedium)
 {
     message (qApp->activeWindow(), Error,
-        tr ("Failed to get the accessibility state of the medium "
+        tr ("Failed to determine the accessibility state of the medium "
             "<nobr><b>%1</b></nobr>.")
             .arg (aMedium.location()),
         formatErrorInfo (aMedium.result()));
@@ -1302,7 +1302,7 @@ int VBoxProblemReporter::confirmDeletingHostInterface (const QString &aName,
                                                        QWidget *aParent)
 {
     return vboxProblem().message (aParent, VBoxProblemReporter::Question,
-        tr ("<p>Deleting this host-only network will lead to the deleting of "
+        tr ("<p>Deleting this host-only network will remove "
             "the host-only interface this network is based on. Do you want to "
             "remove the (host-only network) interface <nobr><b>%1</b>?</nobr></p>"
             "<p><b>Note:</b> this interface may be in use by one or more "
@@ -1410,7 +1410,7 @@ void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,
     COMResult res (aMachine);
 
     message (aParent, Error,
-             tr ("Failed to create a shared folder <b>%1</b> "
+             tr ("Failed to create the shared folder <b>%1</b> "
                  "(pointing to <nobr><b>%2</b></nobr>) "
                  "for the virtual machine <b>%3</b>.")
                  .arg (aName)
@@ -1446,7 +1446,7 @@ void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,
     COMResult res (aConsole);
 
     message (aParent, Error,
-             tr ("Failed to create a shared folder <b>%1</b> "
+             tr ("Failed to create the shared folder <b>%1</b> "
                  "(pointing to <nobr><b>%2</b></nobr>) "
                  "for the virtual machine <b>%3</b>.")
                  .arg (aName)
@@ -1481,7 +1481,7 @@ int VBoxProblemReporter::cannotFindGuestAdditions (const QString &aSrc1,
     return message (&vboxGlobal().consoleWnd(), Question,
                     tr ("<p>Could not find the VirtualBox Guest Additions "
                         "CD image file <nobr><b>%1</b></nobr> or "
-                        "<nobr><b>%2</b>.</nobr></p><p>Do you want to "
+                        "<nobr><b>%2</b>.</nobr></p><p>Do you wish to "
                         "download this CD image from the Internet?</p>")
                         .arg (aSrc1).arg (aSrc2),
                     0, /* aAutoConfirmId */
@@ -1501,8 +1501,8 @@ void VBoxProblemReporter::cannotDownloadGuestAdditions (const QString &aURL,
 void VBoxProblemReporter::cannotMountGuestAdditions (const QString &aMachineName)
 {
     message (&vboxGlobal().consoleWnd(), Error,
-             tr ("<p>Could not attach the VirtualBox Guest Additions "
-                 "installer to the virtual machine <b>%1</b>, as the machine "
+             tr ("<p>Could not insert the VirtualBox Guest Additions "
+                 "installer CD image into the virtual machine <b>%1</b>, as the machine "
                  "has no CD/DVD-ROM drives. Please add a drive using the "
                  "storage page of the virtual machine settings dialog.</p>")
                  .arg (aMachineName));
@@ -1528,7 +1528,7 @@ bool VBoxProblemReporter::confirmMountAdditions (const QString &aURL,
             "successfully downloaded from "
             "<nobr><a href=\"%1\">%2</a></nobr> "
             "and saved locally as <nobr><b>%3</b>.</nobr></p>"
-            "<p>Do you want to register this CD image and mount it "
+            "<p>Do you wish to register this CD image and mount it "
             "on the virtual CD/DVD drive?</p>")
             .arg (aURL).arg (aURL).arg (aSrc),
         0, /* aAutoConfirmId */
@@ -1540,12 +1540,12 @@ void VBoxProblemReporter::warnAboutTooOldAdditions (QWidget *aParent,
                                                     const QString &aExpectedVer)
 {
     message (aParent, VBoxProblemReporter::Error,
-        tr ("<p>VirtualBox Guest Additions installed in the Guest OS are too "
+        tr ("<p>The VirtualBox Guest Additions installed in the Guest OS are too "
             "old: the installed version is %1, the expected version is %2. "
             "Some features that require Guest Additions (mouse integration, "
             "guest display auto-resize) will most likely stop "
             "working properly.</p>"
-            "<p>Please update Guest Additions to the current version by choosing "
+            "<p>Please update the Guest Additions to the current version by choosing "
             "<b>Install Guest Additions</b> from the <b>Devices</b> "
             "menu.</p>")
              .arg (aInstalledVer).arg (aExpectedVer),
@@ -1557,11 +1557,11 @@ void VBoxProblemReporter::warnAboutOldAdditions (QWidget *aParent,
                                                  const QString &aExpectedVer)
 {
     message (aParent, VBoxProblemReporter::Warning,
-        tr ("<p>VirtualBox Guest Additions installed in the Guest OS are "
+        tr ("<p>The VirtualBox Guest Additions installed in the Guest OS are "
             "outdated: the installed version is %1, the expected version is %2. "
             "Some features that require Guest Additions (mouse integration, "
             "guest display auto-resize) may not work as expected.</p>"
-            "<p>It is recommended to update Guest Additions to the current version "
+            "<p>It is recommended to update the Guest Additions to the current version "
             " by choosing <b>Install Guest Additions</b> from the <b>Devices</b> "
             "menu.</p>")
              .arg (aInstalledVer).arg (aExpectedVer),
@@ -1573,12 +1573,12 @@ void VBoxProblemReporter::warnAboutNewAdditions (QWidget *aParent,
                                                  const QString &aExpectedVer)
 {
     message (aParent, VBoxProblemReporter::Error,
-        tr ("<p>VirtualBox Guest Additions installed in the Guest OS are "
+        tr ("<p>The VirtualBox Guest Additions installed in the Guest OS are "
             "too recent for this version of VirtualBox: the installed version "
             "is %1, the expected version is %2.</p>"
             "<p>Using a newer version of Additions with an older version of "
             "VirtualBox is not supported. Please install the current version "
-            "of Guest Additions by choosing <b>Install Guest Additions</b> "
+            "of the Guest Additions by choosing <b>Install Guest Additions</b> "
             "from the <b>Devices</b> menu.</p>")
              .arg (aInstalledVer).arg (aExpectedVer),
         "warnAboutNewAdditions");
@@ -1630,7 +1630,7 @@ void VBoxProblemReporter::showUpdateSuccess (QWidget *aParent,
 {
     message (aParent, Info,
              tr ("<p>A new version of VirtualBox has been released! Version <b>%1</b> is available at <a href=\"http://www.virtualbox.org/\">virtualbox.org</a>.</p>"
-                 "<p>You can download this version from this direct link:</p>"
+                 "<p>You can download this version using the link:</p>"
                  "<p><a href=%2>%3</a></p>")
                  .arg (aVersion, aLink, aLink));
 }
@@ -1647,8 +1647,8 @@ void VBoxProblemReporter::showUpdateFailure (QWidget *aParent,
 void VBoxProblemReporter::showUpdateNotFound (QWidget *aParent)
 {
     message (aParent, Info,
-             tr ("You have already installed the latest VirtualBox "
-                 "version. Please repeat the version check later."));
+             tr ("You are already running the most recent version of VirtualBox."
+                 ""));
 }
 
 /**
@@ -1778,7 +1778,7 @@ bool VBoxProblemReporter::remindAboutPausedVMInput()
         Info,
         tr (
             "<p>The Virtual Machine is currently in the <b>Paused</b> state and "
-            "therefore does not accept any keyboard or mouse input. If you want to "
+            "not able to see any keyboard or mouse input. If you want to "
             "continue to work inside the VM, you need to resume it by selecting the "
             "corresponding action from the menu bar.</p>"
         ),
@@ -1824,7 +1824,7 @@ int VBoxProblemReporter::warnAboutSettingsAutoConversion (const QString &aFileLi
         /* Common variant for all VMs */
         return message (mainWindowShown(), Info,
             tr ("<p>Your existing VirtualBox settings files will be automatically "
-                "converted from the old format to a new format necessary for the "
+                "converted from the old format to a new format required by the "
                 "new version of VirtualBox.</p>"
                 "<p>Press <b>OK</b> to start VirtualBox now or press <b>Exit</b> if "
                 "you want to terminate the VirtualBox "
@@ -1841,7 +1841,7 @@ int VBoxProblemReporter::warnAboutSettingsAutoConversion (const QString &aFileLi
         /* Particular VM variant */
         return message (mainWindowShown(), Info,
             tr ("<p>The following VirtualBox settings files will be automatically "
-                "converted from the old format to a new format necessary for the "
+                "converted from the old format to a new format required by the "
                 "new version of VirtualBox.</p>"
                 "<p>Press <b>OK</b> to start VirtualBox now or press <b>Exit</b> if "
                 "you want to terminate the VirtualBox "
@@ -1915,7 +1915,7 @@ void VBoxProblemReporter::remindAboutWrongColorDepth (ulong aRealBPP,
 
     int rc = message (&vboxGlobal().consoleWnd(), Info,
         tr ("<p>The virtual machine window is optimized to work in "
-            "<b>%1&nbsp;bit</b> color mode but the color quality of the "
+            "<b>%1&nbsp;bit</b> color mode but the "
             "virtual display is currently set to <b>%2&nbsp;bit</b>.</p>"
             "<p>Please open the display properties dialog of the guest OS and "
             "select a <b>%3&nbsp;bit</b> color mode, if it is available, for "
@@ -1923,9 +1923,9 @@ void VBoxProblemReporter::remindAboutWrongColorDepth (ulong aRealBPP,
             "<p><b>Note</b>. Some operating systems, like OS/2, may actually "
             "work in 32&nbsp;bit mode but report it as 24&nbsp;bit "
             "(16 million colors). You may try to select a different color "
-            "quality to see if this message disappears or you can simply "
+            "mode to see if this message disappears or you can simply "
             "disable the message now if you are sure the required color "
-            "quality (%4&nbsp;bit) is not available in the given guest OS.</p>")
+            "mode (%4&nbsp;bit) is not available in the guest OS.</p>")
             .arg (aWantedBPP).arg (aRealBPP).arg (aWantedBPP).arg (aWantedBPP),
         kName);
     NOREF(rc);
@@ -1974,8 +1974,8 @@ bool VBoxProblemReporter::confirmVMReset (QWidget *aParent)
 {
     return messageOkCancel (aParent, Question,
         tr ("<p>Do you really want to reset the virtual machine?</p>"
-            "<p>When the machine is reset, unsaved data of all applications "
-            "running inside it will be lost.</p>"),
+            "<p>This will cause any unsaved data in applications running inside "
+            "it to be lost.</p>"),
         "confirmVMReset" /* aAutoConfirmId */,
         tr ("Reset", "machine"));
 }
@@ -1991,7 +1991,7 @@ bool VBoxProblemReporter::confirmHardDisklessMachine (QWidget *aParent)
             "The machine will not be able to boot unless you attach "
             "a hard disk with a guest operating system or some other bootable "
             "media to it later using the machine settings dialog or the First "
-            "Run Wizard.</p><p>Do you want to continue?</p>"),
+            "Run Wizard.</p><p>Do you wish to continue?</p>"),
         0, /* aAutoConfirmId */
         QIMessageBox::Ok,
         QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
@@ -2180,9 +2180,9 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
     {
         rc = message (&vboxGlobal().consoleWnd(), type,
             tr ("<p>A fatal error has occurred during virtual machine execution! "
-                "The virtual machine will be powered off. It is suggested to "
-                "use the clipboard to copy the following error message for "
-                "further examination:</p>"),
+                "The virtual machine will be powered off. Please copy the "
+                "following error message using the clipboard to help diagnose "
+                "the problem:</p>"),
             formatted, autoConfimId.data());
 
         /* always power down after a fatal error */
@@ -2192,8 +2192,8 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
     {
         rc = message (&vboxGlobal().consoleWnd(), type,
             tr ("<p>An error has occurred during virtual machine execution! "
-                "The error details are shown below. You can try to correct "
-                "the described error and resume the virtual machine "
+                "The error details are shown below. You may try to correct "
+                "the error and resume the virtual machine "
                 "execution.</p>"),
             formatted, autoConfimId.data());
     }
@@ -2202,9 +2202,9 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
         rc = message (&vboxGlobal().consoleWnd(), type,
             tr ("<p>The virtual machine execution may run into an error "
                 "condition as described below. "
-                "You may ignore this message, but it is suggested to perform "
-                "an appropriate action to make sure the described error will "
-                "not happen.</p>"),
+                "We suggest that you take "
+                "an appropriate action to avert the error."
+                "</p>"),
             formatted, autoConfimId.data());
     }
 

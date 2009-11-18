@@ -2469,11 +2469,11 @@
       <translation>&lt;p>តើអ្នក​ប្រាកដ​ជា​ចង់​លុប​ម៉ាស៊ីន​និម្មិត &lt;b>%1&lt;/b> ជា​អចិន្ត្រៃយ៍​ឬ ?&lt;/p>&lt;p>ប្រតិបត្តិការ​នេះ​មិនអាច​ត្រូវ​បាន​ធ្វើ​វិញ​ទេ ។&lt;/p></translation>
     </message>
     <message>
-      <source>&lt;p>Are you sure you want to unregister the inaccessible virtual machine &lt;b>%1&lt;/b>?&lt;/p>&lt;p>You will no longer be able to register it back from GUI.&lt;/p></source>
+      <source>&lt;p>Are you sure you want to unregister the inaccessible virtual machine &lt;b>%1&lt;/b>?&lt;/p>&lt;p>You will not be able to register it again from GUI.&lt;/p></source>
       <translation>&lt;p>តើ​អ្នក​ប្រាកដ​ជា​ចង់​លុប​ឈ្មោះ​ម៉ាស៊ីននិម្មិត &lt;b>%1&lt;/b>​ដែល​មិនអាច​ចូលដំណើរការ​បាន​​ដែរឬទេ?&lt;/p>&lt;p>អ្នក​នឹង​មិនអាច​ចុះឈ្មោះ​វា​បានទៀតទេ​ពី GUI ។&lt;/p></translation>
     </message>
     <message>
-      <source>&lt;p>Are you sure you want to discard the saved state of the virtual machine &lt;b>%1&lt;/b>?&lt;/p>&lt;p>This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p></source>
+      <source>&lt;p>Are you sure you want to discard the saved state of the virtual machine &lt;b>%1&lt;/b>?&lt;/p>&lt;p>This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p></source>
       <translation>&lt;p>តើ​អ្នក​ប្រាកដ​ជា​ចង់​បោះបង់​ស្ថានភាព​ដែលបានរក្សាទុក​របស់ម៉ាស៊ីន​និម្មិត &lt;b>%1&lt;/b>ដែរឬទេ ?&lt;/p>&lt;p>ប្រតិបត្តិការ​នេះ​មិន​ស្មើ​នឹង​កា​រកំណត់​ឡើង​វិញ ឬ​បិទ​ម៉ាស៊ីន​​ដោ​​យ​មិន​បានចុច​ប៊ូតុង​ដោយ​សមរម្យ​តាម​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ។&lt;/p></translation>
     </message>
     <message>
@@ -2501,7 +2501,7 @@
       <translation>បាន​ប​រាជ័យ​ក្នុងការ​ផ្ដាច់​ឧបករណ៍ USB &lt;b>%1&lt;/b> ពី​ម៉ាស៊ីន​និម្មិត &lt;b>%2&lt;/b> ។</translation>
     </message>
     <message>
-      <source>Failed to create a shared folder &lt;b>%1&lt;/b> (pointing to &lt;nobr>&lt;b>%2&lt;/b>&lt;/nobr>) for the virtual machine &lt;b>%3&lt;/b>.</source>
+      <source>Failed to create the shared folder &lt;b>%1&lt;/b> (pointing to &lt;nobr>&lt;b>%2&lt;/b>&lt;/nobr>) for the virtual machine &lt;b>%3&lt;/b>.</source>
       <translation>បាន​បរាជ័យ​ក្នុងកា​របង្កើត​ថត &lt;b>%1&lt;/b> (ចង្អុល​ទៅ​ &lt;nobr>&lt;b>%2&lt;/b>&lt;/nobr>) សម្រាប់​ម៉ាស៊ីន​និម្មិត &lt;b>%3&lt;/b> ។</translation>
     </message>
     <message>
@@ -2513,7 +2513,7 @@
       <translation>&lt;p>ម៉ាស៊ីន​និម្មិត​រាយការណ៍​ថា​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​មិន​គាំទ្រទេ ។ &lt;b>ការ​រួម​បញ្ចូល​ទ្រនិច​កណ្ដុរ&lt;/b> នៅ​ក្នុង​របៀប​វីដេអូ​បច្ចុប្បន្ន ។ អ្នក​ត្រូវតែ​ចាប់យក​កណ្ដុរ (ដោយ​ចុច​លើ​ការ​បង្ហាញ VM ឬ​ចុច​គ្រាប់ចុច​លើ​ម៉ាស៊ីន) ដើម្បី​ប្រើ​កណ្ដុរ​ខាង​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ។&lt;/p></translation>
     </message>
     <message>
-      <source>&lt;p>The Virtual Machine is currently in the &lt;b>Paused&lt;/b> state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p></source>
+      <source>&lt;p>The Virtual Machine is currently in the &lt;b>Paused&lt;/b> state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p></source>
       <translation>&lt;p>ម៉ាស៊ីន​និម្មិត​បច្ចុប្បន្ន​ស្ថិត​ក្នុង​ស្ថានភាព &lt;b>បាន​ផ្អាក&lt;/b> ហើយ​ដូច្នេះ​មិន​ទទួល​​ក្ដារចុច​ ឬ​កណ្ដុរ​ណា​មួយ ។ ប្រសិន​បើ​អ្នក​ចង់​បន្ត​ដំណើរការ​ខាង​ក្នុង VM អ្នក​ត្រូវ​តែ​បន្តវា ដោយ​ជ្រើស​សកម្មភាព​ដែល​ទាក់ទង​ពីរបារ​ម៉ឺនុយ ។&lt;/p></translation>
     </message>
     <message>
@@ -2546,15 +2546,15 @@
       <translation>ភាព​ម៉ឺងម៉ាត់ ៖</translation>
     </message>
     <message>
-      <source>&lt;p>A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p></source>
+      <source>&lt;p>A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p></source>
       <translation>&lt;p>កំហុស​ធ្ងន់ធ្ងរ​មានកើត​ឡើង​កំឡុង​ពេល​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត ! ម៉ាស៊ីន​និម្មិត​នឹង​ត្រូវ​បាន​បិទ ។ វា​ត្រូ​វបាន​ស្នើ​ឲ្យ​ប្រើ​ក្ដារតម្បៀតខ្ទាស់​ដើម្បី​ចម្លង​សារ​កំហុស​ដើម្បីពិនិត្យ​មើល​បន្ថែម​ទេ ៖&lt;/p></translation>
     </message>
     <message>
-      <source>&lt;p>An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p></source>
+      <source>&lt;p>An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p></source>
       <translation>&lt;p>កំហុស​បានកើត​ឡើង​កំឡុង​ពេល​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត ! សេចក្ដី​លម្អិត​កំហុស​ត្រូវ​បានបង្ហាញ​ខាង​ក្រោម ។ អ្នកអាច​ព្យាយាម​កែ​កំហុស​ដែល​ពិពណ៌នា ហើយ​បន្ត​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត ។&lt;/p></translation>
     </message>
     <message>
-      <source>&lt;p>The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p></source>
+      <source>&lt;p>The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p></source>
       <translation>&lt;p>ការ​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត​អាច​រត់​ក្នុង​លក្ខខណ្ឌ​មាន​កំហុស​ដូច​បាន​ពិពណ៌នា​ខាង​ក្រោម ។ អ្នក​អាច​មិនអើពើ​សារ​នេះ​បាន ប៉ុន្តែ​វា​ត្រូវ​បាន​ស្នើ​ឲ្យ​អនុវត្ត​សកម្មភាព​ដែល​សមរម្យ ដើម្បីប្រាកដ​ថា​សារ​ដែលបានពិពណ៌នា​មិន​កើតឡើង​ទេ ។&lt;/p></translation>
     </message>
     <message>
@@ -2591,15 +2591,15 @@
       <translation>&lt;p>មិនអាច​ផ្ទុក​ឯកសារ​ភាសា &lt;b>&lt;nobr>%1&lt;/nobr>&lt;/b> បានទេ ។ &lt;p>ភាសា​នឹង​ត្រូវ​បានកំណត់​ទៅ​ជា​ភាសា​អង់គ្លេស​ជា​បណ្ដោះអាសន្ន ។ សូម​ចូល​ទៅ​ប្រអប់ &lt;b>ចំណូល​ចិត្ត&lt;/b> ដែល​អ្នក​អាច​បើក​ពី​ម៉ឺនុយ​ &lt;b>ឯកសារ&lt;/b> នៃ​បង្អួច VirtualBox មេ ហើយ​ជ្រើស​ភាសា​មួយ​ក្នុងចំណោម​ភាសា​ដែល​មាន​ស្រាប់​នៅ​លើ​ទំព័រ &lt;b>ភាសា&lt;/b> ។&lt;/p></translation>
     </message>
     <message>
-      <source>&lt;p>VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p>&lt;p>Please update Guest Additions to the current version by choosing &lt;b>Install Guest Additions&lt;/b> from the &lt;b>Devices&lt;/b> menu.&lt;/p></source>
+      <source>&lt;p>The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p>&lt;p>Please update the Guest Additions to the current version by choosing &lt;b>Install Guest Additions&lt;/b> from the &lt;b>Devices&lt;/b> menu.&lt;/p></source>
       <translation>&lt;p>ផ្នែក​បន្ថែម​ភាសា​ភ្ញៀវ​របស់ VirtualBox បាន​ដំឡើង​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ចាស់​ពេក ៖ កំណែ​ដែល​បាន​ដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុកគឺ %2 ។ លក្ខណៈពិសេស​មួយ​ចំនួន​ត្រូវការ​ផ្នែកបន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ (ការ​រួម​បញ្ចូល​កណ្ដុរ បង្ហាញ​ការ​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ​របស់​ម៉ាស៊ីន​ភ្ញៀវ) នឹង​បញ្ឈប់​ដំណើរការ​យ៉ាង​ត្រឹមត្រូវ ។&lt;/p>&lt;p>សូម​ធ្វើ​ឲ្យ​ផ្នែក​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ​ទាន់សម័យ​ទៅ​កំណែ​បច្ចុប្បន្ន​ ដោយ​ជ្រើស &lt;b>ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b> ពី​ម៉ឺនុយ &lt;b>ឧបករណ៍&lt;/b> ។&lt;/p></translation>
     </message>
     <message>
-      <source>&lt;p>VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p>&lt;p>It is recommended to update Guest Additions to the current version  by choosing &lt;b>Install Guest Additions&lt;/b> from the &lt;b>Devices&lt;/b> menu.&lt;/p></source>
+      <source>&lt;p>The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p>&lt;p>It is recommended to update the Guest Additions to the current version  by choosing &lt;b>Install Guest Additions&lt;/b> from the &lt;b>Devices&lt;/b> menu.&lt;/p></source>
       <translation>&lt;p>ផ្នែក​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ VirtualBox បានដំឡើង​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​គឺ​ហួស​សម័យ​ហើយ ៖ កំណែ​ដែលបានដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុក​គឺ %2 ។ លក្ខណៈ​ពិសេស​មួយ​ចំនួន​ដែល​ត្រូវការ​ផ្នែក​បន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ (ការ​រួម​បញ្ចូល​កណ្ដុរ បង្ហាញ​កា​រផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ​របស់ម៉ាស៊ីន​ភ្ញៀវ) មិនអាច​ដំណើរការ​ដូច​ដែល​បាន​រំពឹង​ទុក​ទេ ។&lt;/p>&lt;p>វា​ត្រូ​វបានផ្ដល់​អនុសាសន៍​ឲ្យ​ធ្វើ​ឲ្យ​ផ្នែកបន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ទាន់សម័យ​ទៅ​កណែ​បច្ចុប្បន្ន ដោយ​ជ្រើស​ &lt;b>ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b> ពី​ម៉ឺនុយ &lt;b>ឧបករណ៍&lt;/b> ។&lt;/p></translation>
     </message>
     <message>
-      <source>&lt;p>VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p>&lt;p>Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b>Install Guest Additions&lt;/b> from the &lt;b>Devices&lt;/b> menu.&lt;/p></source>
+      <source>&lt;p>The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p>&lt;p>Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b>Install Guest Additions&lt;/b> from the &lt;b>Devices&lt;/b> menu.&lt;/p></source>
       <translation>&lt;p>ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ថ្មីពេក​សម្រាប់​កំណែ​របស់ VirtualBox ៖ កំណែ​ដែល​បាន​ដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុក​គឺ %2 ។&lt;/p>&lt;p>កា​រប្រើកំណែ​ថ្មី​របស់​បន្ថែម​ផ្នែកបន្ថែម​ជាង​កំណែ​ចាស់​របស់ VirtualBox មិន​ត្រូវ​បានគាំទ្រទេ ។ សូម​ដំឡើង​កំណែ​បច្ចុប្បន្ន​របស់​ផ្នែកបន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ ដោយ​ជ្រើស​&lt;b>ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b> ពី​ម៉ឺនុយ &lt;b>ឧបករណ៍&lt;/b> ។&lt;/p></translation>
     </message>
     <message>
@@ -2611,7 +2611,7 @@
       <translation>&lt;p>បានបរាជ័យ​ក្នុងកា​រយក​ថត​ដែល​បានចែករំលែក &lt;b>%1&lt;/b> ចេញ (ចង្អុល​ទៅ &lt;nobr>&lt;b>%2&lt;/b>&lt;/nobr>) ពី​ម៉ាស៊ីន​និម្មិត &lt;b>%3&lt;/b> ។&lt;/p>&lt;p>សូម​បិទ​កម្មវិធី​ទាំង​អស់​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន​ភ្ញៀវ​ដែល​អាច​កំពុង​ប្រើ​ថត​ដែលបានចែករំលែក​នេះ ហើយ​ព្យាយាម​ម្ដង​ទៀត ។&lt;/p></translation>
     </message>
     <message>
-      <source>&lt;p>Could not find the VirtualBox Guest Additions CD image file &lt;nobr>&lt;b>%1&lt;/b>&lt;/nobr> or &lt;nobr>&lt;b>%2&lt;/b>.&lt;/nobr>&lt;/p>&lt;p>Do you want to download this CD image from the Internet?&lt;/p></source>
+      <source>&lt;p>Could not find the VirtualBox Guest Additions CD image file &lt;nobr>&lt;b>%1&lt;/b>&lt;/nobr> or &lt;nobr>&lt;b>%2&lt;/b>.&lt;/nobr>&lt;/p>&lt;p>Do you wish to download this CD image from the Internet?&lt;/p></source>
       <translation>&lt;p>មិនអាច​រក​​ឯកសារ​រូបភាព​ស៊ីឌី​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox &lt;nobr>&lt;b>%1&lt;/b>&lt;/nobr> ឬ &lt;nobr>&lt;b>%2&lt;/b> ។&lt;/nobr>&lt;/p>&lt;p>តើអ្នក​ចង់​ទាញ​យក​រូបភាព​ស៊ីឌី​ពី​អ៊ីនធឺណិត​ដែរឬទេ ?&lt;/p></translation>
     </message>
     <message>
@@ -2623,15 +2623,15 @@
       <translation>&lt;p>តើ​អ្នក​ប្រាក​ដ​ជា​ចង់​ទាញ​យក​រូបភាព​ស៊ីឌី​បន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox ពី &lt;nobr>&lt;a href=&quot;%1&quot;>%2&lt;/a>&lt;/nobr> (ទំហំ %3 បៃ) ដែរឬទេ?&lt;/p></translation>
     </message>
     <message>
-      <source>&lt;p>The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr>&lt;a href=&quot;%1&quot;>%2&lt;/a>&lt;/nobr> and saved locally as &lt;nobr>&lt;b>%3&lt;/b>.&lt;/nobr>&lt;/p>&lt;p>Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p></source>
+      <source>&lt;p>The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr>&lt;a href=&quot;%1&quot;>%2&lt;/a>&lt;/nobr> and saved locally as &lt;nobr>&lt;b>%3&lt;/b>.&lt;/nobr>&lt;/p>&lt;p>Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p></source>
       <translation>&lt;p>រូបភាពស៊ីឌីផ្នែក​នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ VirtualBត្រូ​វបាន​ទាញយក​ដោយ​ជោគជ័យ​ពីr&lt;nobr>&lt;a href=&quot;%1&quot;>​%2&lt;/a>&lt;/nobr>bហើយ​បាន​រក្សាទុក​ក្នុង​មូលដ្ឋាន​ជា as &lt;nobr>&lt;b>%3&lt;/b> ។&lt;/nobr>&lt;/p>&lt;p>តើ​អ្នក​ចង់​ចុះឈ្មោះ​រូបភាព​ស៊ីឌី​នេះ ហើយ​ម៉ោន​វា​នៅ​លើ​ដ្រាយ​ស៊ីឌី/ឌីវីឌី​និម្មិតដែរឬទេ ?ve?&lt;/p></translation>
     </message>
     <message>
-      <source>&lt;p>The virtual machine window is optimized to work in &lt;b>%1&amp;nbsp;bit&lt;/b> color mode but the color quality of the virtual display is currently set to &lt;b>%2&amp;nbsp;bit&lt;/b>.&lt;/p>&lt;p>Please open the display properties dialog of the guest OS and select a &lt;b>%3&amp;nbsp;bit&lt;/b> color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p>&lt;p>&lt;b>Note&lt;/b>. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p></source>
+      <source>&lt;p>The virtual machine window is optimized to work in &lt;b>%1&amp;nbsp;bit&lt;/b> color mode but the virtual display is currently set to &lt;b>%2&amp;nbsp;bit&lt;/b>.&lt;/p>&lt;p>Please open the display properties dialog of the guest OS and select a &lt;b>%3&amp;nbsp;bit&lt;/b> color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p>&lt;p>&lt;b>Note&lt;/b>. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p></source>
       <translation>&lt;p>បង្អួច​ម៉ាស៊ីន​និម្មិត​ត្រូវ​បានធ្វើ​ឲ្យ​ប្រសើរ​ដើម្បី​ធ្វើការ​ក្នុងរបៀប​ពណ៌ &lt;b>%1&amp;nbsp;ប៊ីត&lt;/b> ប៉ុន្តែ​គុណភាពពណ៌​​នៃ​ការ​បង្ហាញ​និម្មិត​បច្ចុប្បន្ន​ត្រូវ​បានកំណត់​ទៅ &lt;b>%2&amp;nbsp;ប៊ីត&lt;/b> ។&lt;/p>&lt;p>សូម​បើក​ប្រអប់លក្ខណៈសម្បត្តិ​បង្ហាញ​របស់​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ហើយ​ជ្រើសរបៀប​ពណ៌ &lt;b>%3&amp;nbsp;ប៊ីត&lt;/b> ប្រសិនបើ​មាន សម្រាប់​ការអនុវត្ត​ដ៏​ល្អ​បំផុត​របស់​ប្រព័ន្ធ​រង​វីដែអូ​និម្មិត ។&lt;/p>&lt;p>&lt;b>ចំណាំ&lt;/b> ។ ប្រព័ន្ធ​ប្រតិបត្តិការ​មួយ​ចំនួន ដូចជា OS/2 អាច​ដំណើរការ​យ៉ាង​ពិតប្រាកដ​នៅ​ក្នុង​របៀប ៣២&amp;nbsp;ប៊ីត ប៉ុន្តែ​រាយការណ៍​ជា ២៤&amp;nbsp;ប៊ីត (១៦​ លាន​ពណ៌) ។ អ្នក​អាច​ព្យាយាម​ជ្រើស​គុណភាព​ពណ៌​ផ្សេង​ដើម្បីមើល​ថាតើ​សារ​នេះ​មិនបង្ហាញ​ ឬ​អ្នក​អាច​បិទ​សារ​យ៉ាង​សាមញ្ញ ឥឡូវ​ប្រសិនបើ​អ្នក​ប្រាកដ​គុណភាព​ពណ៌​ដែល​ត្រូវការ (%4&amp;nbsp;ប៊ីត) មិនអាច​ប្រើ​បាននៅ​ក្នុង​ប្រព័ន្ធ ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​ដែល​បានផ្ដល់​ឲ្យ​ទេ ។&lt;/p></translation>
     </message>
     <message>
-      <source>&lt;p>You didn't attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p>&lt;p>Do you want to continue?&lt;/p></source>
+      <source>&lt;p>You didn't attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p>&lt;p>Do you wish to continue?&lt;/p></source>
       <translation>&lt;p>អ្នកមិនបានភ្ជាប់​ថាសរឹង​ទៅកាន់​ម៉ាស៊ីន​និម្មិត​ថ្មីទេ ។ ម៉ាស៊ីន​នឹង​មិនអាច​ចាប់ផ្ដើម​បានទេ លុះត្រា​តែ​អ្នក​ភ្ជាប់​ថាសរឹង​ជា​មួយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ ឬ​មេឌៀ​ចាប់ផ្ដើម​ផ្សេងៗ​មួយ​ចំនួន​ទៀត​ទៅវា​ ពេលក្រោយ​ប្រើ​ប្រអប់​កំណត់​ម៉ាស៊ីន​ ឬ​រត់​អ្នក​ជំនួយការ​សិន ។&lt;/p>&lt;p>តើអ្នក​ចង់​បន្ត​ដែរឬទេ ?&lt;/p></translation>
     </message>
     <message>
@@ -2739,7 +2739,7 @@
       <translation>ប្ដូរ</translation>
     </message>
     <message>
-      <source>&lt;p>Do you really want to reset the virtual machine?&lt;/p>&lt;p>When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p></source>
+      <source>&lt;p>Do you really want to reset the virtual machine?&lt;/p>&lt;p>This will cause any unsaved data in applications running inside it to be lost.&lt;/p></source>
       <translation>&lt;p>តើ​អ្នក​ពិត​ជា​ចង់​កំណត់​ម៉ាស៊ីននិម្មិត​ឡើង​វិញ​ដែរឬទេ ?&lt;/p>&lt;p>នៅ​ពេល​ម៉ាស៊ីន​ត្រូវ​បាន​កំណត់​ឡើង​វិញ ទិន្នន័យ​របស់​កម្មវិធី​ដែល​មិនបានរក្សាទុកទាំង​អស់​ដែល​កំពុង​រត់​វា​នឹង​ត្រូវ​បានបាត់បង់ ។&lt;/p></translation>
     </message>
     <message>
@@ -2780,7 +2780,7 @@
       <translation>&lt;p>មិនអាច​ប្ដូរ​ការ​បង្ហាញ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ទៅ​របៀប​ពេញ​អេក្រង់​បានទេ ដោយសារ​តែ​សតិ​វីដេអូ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​មិន​គ្រប់គ្រាន់ ។&lt;/p>&lt;p>អ្នក​គួរ​កំណត់​រចនាសម្ព័ន្ធ​ម៉ាស៊ីន​និម្មិត​ឲ្យ​មានសតិ​​យ៉ាង​ហោចណាស់​ &lt;b>%1&lt;/b> នៃ​សតិ​វីដេអូ ។&lt;/p>&lt;p>ចុច​ &lt;b>មិនអើពើ&lt;/b> ដើម្បី​ប្ដូរ​ទៅ​របៀប​ពេញអេក្រង់ ឬ​បើ​មិន​ដូច្នេះ​ទេ​ចុច &lt;b>បោះបង់&lt;/b> ដើម្បី​បោះបង់​ប្រតិបត្តិការ ។&lt;/p></translation>
     </message>
     <message>
-      <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
+      <source>You are already running the most recent version of VirtualBox.</source>
       <translation>អ្នក​បាន​ដំឡើង​កំណែ VirtualBox ចុងក្រោយ​បំផុត​រួ​ចហើយ ។ សូម​​ពិនិត្យ​មើល​កំណែ​ពេលក្រោយ ។</translation>
     </message>
     <message>
@@ -2824,7 +2824,7 @@
       <translation>កំណត់​ការ​ព្រមាន​ទាំងអស់</translation>
     </message>
     <message>
-      <source>Cause all suppressed warnings and messages to be shown again</source>
+      <source>Go back to showing all suppressed warnings and messages</source>
       <translation>ធ្វើ​ឲ្យ​ការ​ព្រមាន​ទាំងអស់​ដែល​បានបង្ហាប់ ហើយសារ​ត្រូវ​បានបង្ហាញ​ម្ដង​ទៀត</translation>
     </message>
     <message>
@@ -2852,7 +2852,7 @@
       <translation>បង្ហាញ​ប្រអប់​ដែល​មាន​ព័ត៌មាន​ផលិតផល</translation>
     </message>
     <message>
-      <source>&lt;p>A new version of VirtualBox has been released! Version &lt;b>%1&lt;/b> is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;>virtualbox.org&lt;/a>.&lt;/p>&lt;p>You can download this version from this direct link:&lt;/p>&lt;p>&lt;a href=%2>%3&lt;/a>&lt;/p></source>
+      <source>&lt;p>A new version of VirtualBox has been released! Version &lt;b>%1&lt;/b> is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;>virtualbox.org&lt;/a>.&lt;/p>&lt;p>You can download this version using the link:&lt;/p>&lt;p>&lt;a href=%2>%3&lt;/a>&lt;/p></source>
       <translation>&lt;p>កំណែ​ថ្មី​របស់ VirtualBox ត្រូវ​បាន​ចេញ​ផ្សាយ ! គឺ​កំណែ &lt;b>%1&lt;/b> ដែលអាច​រក​បាន​នៅ &lt;a href=&quot;http://www.virtualbox.org/&quot;>virtualbox.org&lt;/a> ។&lt;/p>&lt;p>អ្នក​អាច​ទាញ​យក​កំណែ​នេះ​ពី​តំណ​នេះ​ដោយ​ផ្ទាល់ ៖&lt;/p>&lt;p>&lt;a href=%2>%3&lt;/a>&lt;/p></translation>
     </message>
     <message>
@@ -2869,7 +2869,7 @@
       <translation>&lt;p>តើអ្នក​ប្រាកដ​ជា​ចង់​យក %1 &lt;nobr>&lt;b>%2&lt;/b>&lt;/nobr> ចេញ​ពី​មេឌៀ​ដែលបាន​ស្គាល់​ដែរឬទេ ?&lt;/p></translation>
     </message>
     <message>
-      <source>Note that this hard disk is inaccessible so that its storage unit cannot be deleted right now.</source>
+      <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
       <translation>ចំណាំថា ថាសរឹង​នេះ​មិនអាច​ចូលដំណើរការ​បានទេ ដូច្នេះ​ឯកតា​ផ្ទុក​របស់វា​មិនអាច​ត្រូវ​បានលុប​ឥឡូវ​ទេ ។</translation>
     </message>
     <message>
@@ -2877,7 +2877,7 @@
       <translation>ប្រអប់​បន្ទាប់​នឹង​អនុញ្ញាត​ឲ្យ​អ្នក​ជ្រើស​ថាតើ អ្នក​ចង់​លុប​ឯកតា​ផ្ទុក​របស់​ថាសរឹង​នេះ ឬ​ទុក​វា​សម្រាប់​ប្រើ​ពេលក្រោយ ។</translation>
     </message>
     <message>
-      <source>&lt;p>Note that the storage unit of this medium will not be deleted and therefore it will be possible to add it to the list later again.&lt;/p></source>
+      <source>&lt;p>Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p></source>
       <translation>&lt;p>ចំណាំ​ថា ឯកតា​ផ្ទុក​របស់​ឧបករណ៍​ផ្ទុក​នេះ​នឹង​មិន​ត្រូវ​បានលុប​ទេ ហើយ​ដូច្នេះ​វា​នឹង​អាច​បន្ថែម​ទៅ​កាន់​បញ្ជី​ពេល​ក្រោយ​ម្ដង​ទៀត ។&lt;/p></translation>
     </message>
     <message>
@@ -2908,7 +2908,7 @@
       <translation>បាន​បរាជ័យ​ក្នុងការ​លុប​ការ​ផ្ទុក​របស់​ថាសរឹង &lt;b>%1&lt;/b> ។</translation>
     </message>
     <message>
-      <source>&lt;p>There are no unused hard disks available for the newly created attachment.&lt;/p>&lt;p>Press the &lt;b>Create&lt;/b> button to start the &lt;i>New Virtual Disk&lt;/i> wizard and create a new hard disk, or press the &lt;b>Select&lt;/b> button to open the &lt;i>Virtual Media Manager&lt;/i> and select what to do.&lt;/p></source>
+      <source>&lt;p>There are no unused hard disks available for the newly created attachment.&lt;/p>&lt;p>Press the &lt;b>Create&lt;/b> button to start the &lt;i>New Virtual Disk&lt;/i> wizard and create a new hard disk, or press the &lt;b>Select&lt;/b> if you wish to open the &lt;i>Virtual Media Manager&lt;/i>.&lt;/p></source>
       <translation>&lt;p>មិនមាន​ថាសរឹង​ដែល​មិនបានប្រើទេ​ សម្រាប់​ការ​ភ្ជាប់​ដែល​បាន​បង្កើត​ថ្មីៗ ។&lt;/p>&lt;p>ចុច​ប៊ូតុង &lt;b>បង្កើត&lt;/b> ដើម្បី​ចាប់ផ្ដើម​អ្នក​ជំនួយការ &lt;i>ថាស​និម្មិត​ថ្មី&lt;/i> ហើយ​បង្កើត​ថាសរឹង​ថ្មី ឬ​ចុច​ប៊ូតុង &lt;b>ជ្រើស&lt;/b> ដើម្បី​បើក​ &lt;i>កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត&lt;/i> ហើយ​ជ្រើស​អ្វី​ត្រូវ​ធ្វើ ។&lt;/p></translation>
     </message>
     <message>
@@ -2924,7 +2924,7 @@
       <translation>បាន​បរាជ័យ​ក្នុងកា​រផ្ដាច់​ថាសរឹង &lt;nobr>&lt;b>%1&lt;/b>&lt;/nobr> ពី​រន្ធ &lt;i>%2&lt;/i> របស់​ម៉ាស៊ីន &lt;b>%3&lt;/b> ។</translation>
     </message>
     <message>
-      <source>Failed to mount the %1 &lt;nobr>&lt;b>%2&lt;/b>&lt;/nobr> to the machine &lt;b>%3&lt;/b>.</source>
+      <source>Failed to mount the %1 &lt;nobr>&lt;b>%2&lt;/b>&lt;/nobr> on the machine &lt;b>%3&lt;/b>.</source>
       <translation>បាន​បរាជ័យ​ក្នុងកា​រម៉ោន​ %1 &lt;nobr>&lt;b>%2&lt;/b>&lt;/nobr> ទៅ​ម៉ាស៊ីន &lt;b>%3&lt;/b> ។</translation>
     </message>
     <message>
@@ -2940,7 +2940,7 @@
       <translation>បានបរាជ័យ​ក្នុងកា​របិទ %1 &lt;nobr>&lt;b>%2&lt;/b>&lt;/nobr> ។</translation>
     </message>
     <message>
-      <source>Failed to get the accessibility state of the medium &lt;nobr>&lt;b>%1&lt;/b>&lt;/nobr>.</source>
+      <source>Failed to determine the accessibility state of the medium &lt;nobr>&lt;b>%1&lt;/b>&lt;/nobr>.</source>
       <translation>បានបរាជ័យ​ក្នុងកា​រ​ចូលដំណើរការ​ស្ថានភាព​របស់​ឧបករណ៍​ផ្ទុក &lt;nobr>&lt;b>%1&lt;/b>&lt;/nobr> ។</translation>
     </message>
     <message>
@@ -2956,7 +2956,7 @@
       <translation>&lt;p>ថាសរឹង​និម្មិត​មួយ ឬ​ច្រើន ស៊ីឌី/ឌីវីឌី ឬ​មេឌៀ​ថាសទន់​បច្ចុប្បន្ន​មិនអាច​ចូលដំណើរការ​បានទេ ។ ជា​លទ្ធផល អ្នកនឹង​មិនអាច​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត​ ដែល​ប្រើ​មេឌៀ​នេះ​បាន​ទេ រហូត​ដល់​ពួកវា​អាច​ចូលដំណើរការ​បាននៅពេល​ក្រោយ ។&lt;/p>&lt;p>ចុច &lt;b>ពិនិត្យ​មើល&lt;/b> ដើម្បី​ប្រើ​បង្អួច​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត ហើយ​មើល​អ្វី​ដែល​មេឌៀ​មិនអាច​ចូលដំណើរការ​បាន ឬ​ចុច &lt;b>មិនអើពើ&lt;/b> ដើម្បី​មិនអើពើ​នឹង​សារ​នេះ ។&lt;/p></translation>
     </message>
     <message>
-      <source>&lt;p>Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p>&lt;p>Press &lt;b>OK&lt;/b> to start VirtualBox now or press &lt;b>More&lt;/b> if you want to get more information about what files were converted and access additional actions.&lt;/p>&lt;p>Press &lt;b>Exit&lt;/b> to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p></source>
+      <source>&lt;p>Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p>&lt;p>Press &lt;b>OK&lt;/b> to start VirtualBox now or press &lt;b>More&lt;/b> if you want to get more information about what files were converted and access additional actions.&lt;/p>&lt;p>Press &lt;b>Exit&lt;/b> to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p></source>
       <translation>&lt;p>ឯកសារ​កំណត់​របស់​ VirtualBox ដែល​មានស្រាប់​របស់​អ្នក​ត្រូវ​បាន​បម្លែង​ដោយ​ស្វ័យ​ប្រវត្តិ​ពី​ទ្រង់ទ្រាយ​ចាស់​ទៅ​ទ្រង់ទ្រាយ​ថ្មី​ដែល​ចាំបាច់​សម្រាប់​កំណែ​ថ្មី​របស់ VirtualBox ។&lt;/p>&lt;p>ចុច &lt;b>យល់ព្រម&lt;/b> ដើម្បី​ចាប់ផ្ដើម​ VirtualBox ឥឡូវ ឬ​ចុច​ &lt;b>ផ្សេង​ទៀត&lt;/b> ប្រសិន​បើ​អ្នក​ចង់​យក​ព័ត៌មាន​បន្ថែម​ទៀត​ពី​ឯកសារ​ដែល​ត្រូវ​បានបម្លែង​ និង​ចូលដំណើរការ​សកម្មភាព​បន្ថែម ។&lt;/p>&lt;p>ចុច &lt;b>ចេញ&lt;/b> ដើម្បី​ចេញ​ពី​កម្មវិធី VirtualBox ដោយ​មិន​រក្សាទុក​លទ្ធផល​នៃ​ការ​បម្លែង​ទៅ​កាន់​ថាសរឹង ។&lt;/p></translation>
     </message>
     <message>
@@ -3496,7 +3496,7 @@
       <translation>សេចក្ដី​សង្ខេប</translation>
     </message>
     <message>
-      <source>&lt;p>A new version of VirtualBox has been released! Version &lt;b>%1&lt;/b> is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;>virtualbox.org&lt;/a>.&lt;/p>&lt;p>You can download this version from this direct link:&lt;/p>&lt;p>&lt;a href=%2>%3&lt;/a>&lt;/p></source>
+      <source>&lt;p>A new version of VirtualBox has been released! Version &lt;b>%1&lt;/b> is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;>virtualbox.org&lt;/a>.&lt;/p>&lt;p>You can download this version using the link:&lt;/p>&lt;p>&lt;a href=%2>%3&lt;/a>&lt;/p></source>
       <translation>&lt;p>កំណែ​ថ្មី​របស់ VirtualBox ត្រូ​វបាន​ចេញ​ផ្សាយ​ហើយ ! គឺ​កំណែ &lt;b>%1&lt;/b> ដែល​អាច​រក​បាននៅ &lt;a href=&quot;http://www.virtualbox.org/&quot;>virtualbox.org&lt;/a>។&lt;/p>&lt;p>អ្នកអាច​ទាញ​យក​កំណែ​នេះ​​ដោយ​ផ្ទាល់ពី​តំណ ៖&lt;/p>&lt;p>&lt;a href=%2>%3&lt;/a>&lt;/p></translation>
     </message>
     <message>
@@ -3504,7 +3504,7 @@
       <translation>&lt;p>មិនអាច​យក​ព័ត៌មានកំណែ​ថ្មី​បានទេ ដោយសារ​តែ​កំហុស​បណ្ដាញ​ដូច​ខាងក្រោម ៖&lt;/p>&lt;p>&lt;b>%1&lt;/b>&lt;/p></translation>
     </message>
     <message>
-      <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
+      <source>You are already running the most recent version of VirtualBox.</source>
       <translation>អ្នក​បាន​ដំឡើង​កំណែ​របស់ VirtualBox ចុងក្រោយ​រួច​ហើយ ។ សូម​ធ្វើ​ការ​ពិនិត្យ​ពេលក្រោយ​ម្ដង​ទៀត ។</translation>
     </message>
     <message>
