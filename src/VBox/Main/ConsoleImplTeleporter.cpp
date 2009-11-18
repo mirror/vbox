@@ -282,13 +282,27 @@ static DECLCALLBACK(int) teleporterTcpOpWrite(void *pvUser, uint64_t offStream, 
     AssertReturn(cbToWrite < UINT32_MAX, VERR_OUT_OF_RANGE);
     AssertReturn(pState->mfIsSource, VERR_INVALID_HANDLE);
 
+    /* Poll for incoming NACKs and errors from the other side */
+    int rc = RTTcpSelectOne(pState->mhSocket, 0);
+    if (rc != VERR_TIMEOUT)
+    {
+        if (RT_SUCCESS(rc))
+        {
+            LogRel(("Teleporter/TCP: Incoming data found before write, assuming it's a cancel.\n"));
+            rc = VERR_SSM_CANCELLED;
+        }
+        else
+            LogRel(("Teleporter/TCP: RTTcpSelectOne -> %Rrc before write.\n", rc));
+        return rc;
+    }
+
     for (;;)
     {
         /* Write block header. */
         TELEPORTERTCPHDR Hdr;
         Hdr.u32Magic = TELEPORTERTCPHDR_MAGIC;
         Hdr.cb       = RT_MIN((uint32_t)cbToWrite, TELEPORTERTCPHDR_MAX_SIZE);
-        int rc = RTTcpWrite(pState->mhSocket, &Hdr, sizeof(Hdr));
+        rc = RTTcpWrite(pState->mhSocket, &Hdr, sizeof(Hdr));
         if (RT_FAILURE(rc))
         {
             LogRel(("Teleporter/TCP: Header write error: %Rrc\n", rc));
