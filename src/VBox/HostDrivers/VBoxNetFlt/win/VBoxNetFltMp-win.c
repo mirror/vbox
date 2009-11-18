@@ -740,11 +740,12 @@ static NDIS_STATUS vboxNetFltWinMpInitialize(
                             {
                                 Assert(vboxNetFltWinGetOpState(&pAdapt->MPState) == kVBoxNetDevOpState_Initialized);
                                 vboxNetFltWinSetOpState(&pAdapt->MPState, kVBoxNetDevOpState_Initialized);
-
+#if 0
                                 NdisMIndicateStatus(pAdapt->hMiniportHandle,
                                                          NDIS_STATUS_MEDIA_CONNECT,
                                                          (PVOID)NULL,
                                                          0);
+#endif
                             }
                             else
                             {
