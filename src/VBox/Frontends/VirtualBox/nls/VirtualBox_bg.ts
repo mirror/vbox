@@ -2525,7 +2525,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to import an appliance, you have to select a file describing the appliance first. Currently VirtualBox supports the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Този помощник ще ви води през процеса на внасяне на приспособление. &lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Използвайте бутона &lt;span style=&quot; font-weight:600;&quot;&gt;Напред&lt;/span&gt;, за да отидете към следващата страница на помощника, и бутона &lt;span style=&quot; font-weight:600;&quot;&gt;Назад&lt;/span&gt;, за да се върнете към предишната страница.&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Като начало, за да внесете приспособление, трябва първо да изберете файл, описващ приспособлението. За момента VirtualBox поддържа Отворения Виртуализационен Формат (OVF). За да продължите, изберете по-долу файл за внасяне:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
@@ -2545,7 +2545,7 @@ p, li { white-space: pre-wrap; }
         <translation>Настройки за внасяне на приспособление</translation>
     </message>
     <message>
-        <source>These are the virtual machines as described in the appliance with their suggested mappings for importing into VirtualBox. You can change many of the shown properties by double-clicking on the items and disable others by using the check boxes below.</source>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
         <translation>Това са виртуалните машини, както са описани в приспособлението с техните предложени указания за внасяне във VirtualBox. Можете да промените много от показаните опции чрез двойно щракване върху елементите, и да забраните другите като използвате кутийките за отметки по-долу.</translation>
     </message>
     <message>
@@ -3202,11 +3202,11 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Сигурни ли сте, че искате цялостно да изтриете виртуалната машина &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Тази операция не може да бъде възстановена.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Сигурни ли сте, че искате да отпишете недостъпната виртуална машина &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Няма да можете отново да я регистрирате през GUI.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Сигурни ли сте, че искате да изчистите запазеното състояние на виртуална машина &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Тази операция е подобна на рестартиране или изключване на виртуалната машина без извършване на стандартна процедура по изключване, каквато има за тази виртуална ОС.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3230,7 +3230,7 @@ p, li { white-space: pre-wrap; }
         <translation>проблем при изваждането на USB устройство &lt;b&gt;%1&lt;/b&gt; от виртуална машина &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to create a shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Проблем при създаването на споделена папка &lt;b&gt;%1&lt;/b&gt; (сочеща към &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) за виртуална машина &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -3242,7 +3242,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Виртуалната машина съобщава, че виртуалната ОС не поддържа &lt;b&gt;интеграция показалеца на мишката&lt;/b&gt; в настоящия видео режим. Нужно е да прихващате мишката (чрез щракване върху екрана на ВМ или чрез натискането на основния клавиш), за да можете да използвате мишката вътре във виртуалната ОС.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Виртуалната машина е в текущо състояние &lt;p&gt;Пауза&lt;/p&gt; и поради това не приема никакви въвеждания от клавиатурата или мишката. Ако искате да продължите работата си във ВМ, нужно е да продължите изпълнението й, като изберете съответното действие от менюто.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3275,15 +3275,15 @@ p, li { white-space: pre-wrap; }
         <translation>Строгост:</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
         <translation>&lt;p&gt;Възникна фатална грешка по време изпълнението на виртуалната машина! Виртуалната машина ще бъде изключена. Предлага се да използвате клипборда, за да копирате следното съобщение за грешка за по-нататъшно изследване:&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Възникна грешка по време изпълнението на виртуалната машина! Детайлите по грешката са показани по-долу. Можете да опитате да поправите описаната грешка и да възстановите изпълнението на виртуалната машина.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Изпълнението на виртуалната машина може да изпадне в състояние на грешка, както е описано по-долу. Можете да изгнорирате това съобщение, но е препоръчително да извършите необходимите действия, за да сте сигурни, че описаната грешка няма да възникне.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3320,15 +3320,15 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Не може да се зареди езиковият файл &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Езикът временно ще бъде върнат до Английски (вграден). Моля, отидете в диалога &lt;b&gt;Предпочитания&lt;/b&gt;, който може да бъде отворен от менюто &lt;b&gt;Файл&lt;/b&gt; на основния прозорец на VirtualBox, и изберете един от съществуващите езици в страницата  &lt;b&gt;Език&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBox Виртуални Добавки, които са инсталирани във виртуалната ОС, са твърде стари: инсталираната версия е %1, очакваната версия е %2. Някои функции, които изискват Виртуални Добавки (интеграция на мишката, авто-преоразмеряване на виртуалния прозорец) вероятно няма да работят правилно.&lt;/p&gt;&lt;p&gt;Моля, обновете Виртуалните Добавки до настоящата версия като изберете &lt;b&gt;Инсталиране на Виртуални Добавки&lt;/b&gt; от менюто &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBox Виртуални Добавки, които са инсталирани във виртуалната ОС, не са съвременни: инсталираната версия е %1, очакваната версия е %2. Някои функции, които изискват Виртуални Добавки (интеграция на мишката, авто-преоразмеряване на виртуалния прозорец) вероятно няма да работят правилно.&lt;/p&gt;&lt;p&gt;Моля, обновете Виртуалните Добавки до настоящата версия като изберете &lt;b&gt;Инсталиране на Виртуални Добавки&lt;/b&gt; от менюто &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBox Виртуални Добавки, които са инсталирани във виртуалната ОС, са твърде нови за тази версия на VirtualBox: инсталираната версия е %1, очакваната версия е %2.&lt;/p&gt;&lt;p&gt;Използването на по-нова версия на добавките с по-стара версия на VirtualBox не се поддържа. Моля, инсталирайте необходимата версия на Виртуални Добавки, като изберете &lt;b&gt;Инсталиране на Виртуални Добавки от менюто &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3340,7 +3340,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;проблем при премахването на споделената папка &lt;b&gt;%1&lt;/b&gt; (сочеща към &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) от виртуалната машина &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Моля, затворете всички програми във виртуалната ОС, които може би използват тази споделена папка, и опитайте отново.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Не може да се открие файлът със CD изображението на VirtualBox Виртуални Добавки &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; или &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Искате ли да свалите това CD изображение от Интернет?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3352,15 +3352,15 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Сигурни ли сте, че искате да свалите CD изображението VirtualBox Виртуални Добавки от &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (размер %3 байта)?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation>&lt;p&gt;CD изображението VirtualBox Виртуални Добавки е изтеглено успешно от &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; и запазено локално като &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Искате ли да регистрирате това CD изображение и да го монтирате във виртуалното CD/DVD устройство?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Прозорецът на виртуалната машина е оптимизиран за работа в цветови режим &lt;b&gt;%1&amp;nbsp;бита&lt;/b&gt;, но качеството на цветовете за виртуалния екран е зададено на &lt;b&gt;%2&amp;nbsp;бита&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Моля, отворете диалога за предпочитанията за екрана във виртуалната ОС и изберете цветови режим &lt;b&gt;%3&amp;nbsp;бита&lt;/b&gt;, ако е достъпен, за възможно най-добра производителност на виртуалната видео подсистема.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Забележка&lt;/b&gt;. Някои операционни системи, като OS/2, може текущо да работят в режим 32&amp;nbsp;бита, но да известяват за 24&amp;nbsp;бита (16 милиона цвята). Можете да опитате да изберете друго цветово качество, за да видите дали това съобщение ще изчезне, или можете просто да забраните това съобщение сега, ако сте сигурни, че необходимото цветово качество (%4&amp;nbsp;бита) не е достъпно в дадената виртуална ОС.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Не сте закачили твърд диск към новата виртуална машина. Машината няма да може да зареди, докато не закачите твърд диск с виртуална операционна система или някаква друг зареждащ диск от диалога за настройки на машината, или от Помощника при първо стартиране.&lt;/p&gt;&lt;p&gt;Искате ли да продължите?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3464,7 +3464,7 @@ p, li { white-space: pre-wrap; }
         <translation>Превключване</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Наистина ли искате да рестартирате виртуалната машина?&lt;/p&gt;&lt;p&gt;Когато машината се рестартира, всички незапазени данни на програми, които са стартирани в нея, ще бъдат загубени.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3505,7 +3505,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Не може да се премине в режим на цял екран, поради недостиг на виртуална видео памет.&lt;/p&gt;&lt;p&gt;Трябва да конфигурирате виртуалната машина с поне &lt;b&gt;%1&lt;/b&gt; видео памет.&lt;/p&gt;&lt;p&gt;Натиснете &lt;b&gt;Игнориране&lt;/b&gt;, за превключите към цял екран все пак, или натиснете &lt;b&gt;Отказ&lt;/b&gt;, за да откажете тази операция.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
+        <source>You are already running the most recent version of VirtualBox.</source>
         <translation>Вече сте инсталирали последната версия на VirtualBox. Моля, повторете проверката за версия по-късно.</translation>
     </message>
     <message>
@@ -3549,7 +3549,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Нулиране на всички предупреждения</translation>
     </message>
     <message>
-        <source>Cause all suppressed warnings and messages to be shown again</source>
+        <source>Go back to showing all suppressed warnings and messages</source>
         <translation>Указва всички спрени предупреждения и съобщения да се показват отново</translation>
     </message>
     <message>
@@ -3577,7 +3577,7 @@ p, li { white-space: pre-wrap; }
         <translation>Показва диалога с информацията за продукта</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Излязла е нова версия на VirtualBox! Версия &lt;b&gt;%1&lt;/b&gt; е достъпна на &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;. Можете да изтеглите тази версия от тази директна връзка:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3594,7 +3594,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Сигурни ли сте, че искате да премахнете %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; от списъка с познатите дискове?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Note that this hard disk is inaccessible so that its storage unit cannot be deleted right now.</source>
+        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
         <translation>Имайте предвид, че този твърд диск е недостъпен, така че неговият файл не може да бъде изтрит в момента.</translation>
     </message>
     <message>
@@ -3602,7 +3602,7 @@ p, li { white-space: pre-wrap; }
         <translation>Следващият диалог ще ви даде избор дали наистина искате да изтриете файла на този твърд диск или искате да го запазите за последващо използване.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and therefore it will be possible to add it to the list later again.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Имайте предвид, че файлът на този диск няма да бъде изтрит, така че след това ще имате възможност да го добавите отново в списъка.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3633,7 +3633,7 @@ p, li { white-space: pre-wrap; }
         <translation>Проблем при изтриването файла на твърдия диск &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Няма неизползвани свободни твърди дискове за новосъздаденото прикачване.&lt;/p&gt;&lt;p&gt;Натиснете бутона &lt;b&gt;Създаване&lt;/b&gt;, за да стартирате помощника &lt;i&gt;Нов виртуален диск&lt;/i&gt;, и създайте нов твърд диск, или натиснете бутона &lt;b&gt;Избор&lt;/b&gt;, за да отворите &lt;i&gt;Управлението на виртуални дискове&lt;/i&gt;, и изберете какво да бъде направено.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3649,7 +3649,7 @@ p, li { white-space: pre-wrap; }
         <translation>Проблем при разкачването на твърдия диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; от слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; to the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Проблем при монтирането на %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; в машината &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -3665,7 +3665,7 @@ p, li { white-space: pre-wrap; }
         <translation>Проблем при затварянето на %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <source>Failed to get the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Проблем при установяването достъпността на диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
@@ -3681,7 +3681,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Един или повече виртуални твърди дискове, CD/DVD или флопи дискове не са достъпни в момента. В резултат на това, няма да можете да работите с тях във виртуалните машини, които ги използват, докато не станат достъпни по-късно.&lt;/p&gt;&lt;p&gt;Натиснете &lt;b&gt;Проверка&lt;/b&gt;, за да отворите прозореца на Управлението на виртуални дискове и да видите кои дискове са недостъпни, или натиснете &lt;b&gt;Игнориране&lt;/b&gt;, за да игнорирате това съобщение.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Съществуващите ви файлове с настройки за VirtualBox са преобразувани автоматично от стария формат към новия формат, необходим за новата версия на VirtualBox.&lt;/p&gt;&lt;p&gt;Натиснете &lt;b&gt;Добре&lt;/b&gt;, за да стартирате VirtualBox сега, или натиснете &lt;b&gt;Повече&lt;/b&gt;, ако искате да получите повече информация относно това кои файлове са били преобразувани и за да достъпите допълнителни действия.&lt;/p&gt;&lt;p&gt;Натиснете &lt;b&gt;Изход&lt;/b&gt;, за да затворите програмата VirtualBox без запазване на резултатите от преобразуването на диска.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3747,7 +3747,7 @@ p, li { white-space: pre-wrap; }
         <translation>Не може да се достъпи USB на реалната система, защото нито е с USB файлова система (usbfs), нито DBus и hal услугите са достъпни в момента. Ако искате да използвате реални USB устройства във виртуалните системи, трябва да поправите това и да рестартирате VirtualBox.</translation>
     </message>
     <message>
-        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not use the ACPI subsystem.</source>
+        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
         <translation>Опитвате се да изключите виртуалната машина с ACPI бутона за включване. Това в момента не е възможно, тъй като виртуалната машина не използва ACPI подсистема.</translation>
     </message>
     <message>
@@ -3792,7 +3792,7 @@ p, li { white-space: pre-wrap; }
         <translation>Проблем при създаването на мрежов интерфейс само-хост.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Съществуващите ви файлове с настройки за VirtualBox ще бъдат автоматично преобразувани от стария формат към новия формат, необходим за новата версия на VirtualBox.&lt;/p&gt;&lt;p&gt;Натиснете &lt;b&gt;Добре&lt;/b&gt;, за да стартирате VirtualBox сега, или натиснете &lt;b&gt;Изход&lt;/b&gt;, ако искате да изключите програмата VirtualBox без каквито и да е други действия.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3824,7 +3824,7 @@ p, li { white-space: pre-wrap; }
         <translation>Проблем при изнасянето на приспособление &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation>&lt;p&gt;С изтриването на тази мрежа само-хост ще се изтрие и интерфейсът само-хост, върху който се базира тази мрежа. Искате ли да премахнете (само-хост мрежови) интерфейса &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Забележка:&lt;/b&gt; този интерфейс може да се използва от един или повече виртуални мрежови адаптери принадлежащи към една от вашите ВМ. След като бъде премахнат, тези адаптери няма да бъдат използваеми, докато не поправите техните настройки, като изберете име на друг интерфейс или друг тип прикачване на адаптер.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4456,7 +4456,7 @@ p, li { white-space: pre-wrap; }
         <translation>Обобщение</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Излязла е нова версия на VirtualBox! Версия &lt;b&gt;%1&lt;/b&gt; е достъпна на &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;. Можете да изтеглите тази версия от тази директна връзка:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4464,7 +4464,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Не може да се получи информацията за нова версия, поради следния проблем с мрежата:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
+        <source>You are already running the most recent version of VirtualBox.</source>
         <translation>Вече сте инсталирали последната версия на VirtualBox. Моля, повторете проверката за версия по-късно.</translation>
     </message>
     <message>

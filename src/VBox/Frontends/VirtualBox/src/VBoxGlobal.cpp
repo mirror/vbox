@@ -2654,7 +2654,7 @@ void VBoxGlobal::retranslateUi()
     mMachineStates [KMachineState_Paused] =     tr ("Paused", "MachineState");
     mMachineStates [KMachineState_Stuck] =      tr ("Guru Meditation", "MachineState");
     mMachineStates [KMachineState_Teleporting] = tr ("Teleporting", "MachineState");
-    mMachineStates [KMachineState_LiveSnapshotting] = tr ("Live Snapshotting", "MachineState");
+    mMachineStates [KMachineState_LiveSnapshotting] = tr ("Taking Live Snapshot", "MachineState");
     mMachineStates [KMachineState_Starting] =   tr ("Starting", "MachineState");
     mMachineStates [KMachineState_Stopping] =   tr ("Stopping", "MachineState");
     mMachineStates [KMachineState_Saving] =     tr ("Saving", "MachineState");

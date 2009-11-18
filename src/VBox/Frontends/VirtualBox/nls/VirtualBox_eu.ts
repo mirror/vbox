@@ -906,7 +906,7 @@
         <translation type="obsolete">Abisu Guztiak Be&amp;rrezarri</translation>
     </message>
     <message>
-        <source>Cause all suppressed warnings and messages to be shown again</source>
+        <source>Go back to showing all suppressed warnings and messages</source>
         <translation type="obsolete">Ezabatutako abisu eta mezu guztiak berriz agertzea eragien du</translation>
     </message>
     <message>
@@ -3479,7 +3479,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to import an appliance, you have to select a file describing the appliance first. Currently VirtualBox supports the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3499,7 +3499,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>These are the virtual machines as described in the appliance with their suggested mappings for importing into VirtualBox. You can change many of the shown properties by double-clicking on the items and disable others by using the check boxes below.</source>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4406,11 +4406,11 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation>&lt;p&gt;Ziur al zaude &lt;b&gt;%1&lt;/b&gt; Maina Birtuala betirako ezabatu nahi duzula?&lt;/p&gt;&lt;p&gt;Ekintza hau ezin da desegin.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ziur al zaude eskuratu ezin den &lt;b&gt;%1&lt;/b&gt; makina birtualaren erregistroa kendu nahi duzula?&lt;/p&gt;&lt;p&gt;Ezingo duzu berau interfazearen bidez berriz erregistratu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ziur al zaude &lt;b&gt;%1&lt;/b&gt; makina birtualaren gordetako uneko egoera baztertu nahi duzula?&lt;/p&gt;&lt;p&gt;Ekintza hau makinaren reset botoia jo edo behar bezala bezero sistema eragilea itzali gabe makina itzaltzearen berdina da&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4474,7 +4474,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation>Huts &lt;b&gt;%1&lt;/b&gt; makina birtualarentzat saio bat irekitzean.</translation>
     </message>
     <message>
-        <source>Failed to get the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
+        <source>Failed to determine the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
         <translation type="obsolete">Huts &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; medioaren eskuragarritasun egoera egiaztatzerakoan. Erregistraturiko zenbait euskarri eskuraezin egon litezke.</translation>
     </message>
     <message>
@@ -4494,7 +4494,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation>Huts &lt;b&gt;%1&lt;/b&gt; USB gailua &lt;b&gt;%2&lt;/b&gt; makina birtualetik kentzerakoan.</translation>
     </message>
     <message>
-        <source>Failed to create a shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Huts &lt;b&gt;%1&lt;/b&gt; partekatutako karpeta (&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;-ra lotua) &lt;b&gt;%3&lt;/b&gt; makina birtualean sortzerakoan.</translation>
     </message>
     <message>
@@ -4518,7 +4518,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation>&lt;p&gt;Makina Birtualak bezero SE-ak bideo modu honetan ez duela &lt;b&gt;sagu integrazioa&lt;/b&gt; onartzen erreportatu du. Sagua kapturatu egin beharko duzu (MB leihoan klikatuaz edo ostalari tekla sakatuaz) sagua bezeroko sistema eragilean erabili ahal izateko.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Makina Birtuala orain &lt;b&gt;Gelditurik&lt;/b&gt; egoeran dago eta horregatik ez du sagu edo teklatu sarrerarik onartzen. MB barnean lanean jarraitu nahi izanez gero berau jarraitu behar duzu dagokion ekintza hautatuaz menu barratik.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4583,15 +4583,15 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation>Larritasuna: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
         <translation>&lt;p&gt;Errore konponezin bat gertatu da makina birtuala exekutatzean! Makina birtuala itzali egingo da. Hurrengo errore mezua beranduago begiratzeko kopiatzeko arbela erabiltzea gomendatzen da:&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Errore bat gertatu da makina birtuala exekutatzean! Errore xehetasunak behean ikusten dira. Azaldutako errorea konpondu eta makina birtual exekuzioa jarraitzen saiatu zaitezke.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Makina Birtual exekuzioak behean azaltzen den bezala errore egoera batetan jarraitu dezake. Mezu hau albo batetara utzi dezakezu, baina azaldutako errorea berriz ez gertatzeko egin beharrekoa egitea gomendatzen da.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4628,15 +4628,15 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation>&lt;p&gt;Ezin da &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; hizkuntza fitxategia kargatu.&lt;p&gt;Hizkuntza aldiroko Ingelesera (barneratua) berrezarriko da. Mesedez joan VirtualBox leiho nagusiko &lt;b&gt;Fitxategia&lt;/b&gt; menuan aurki dezakezun &lt;b&gt;Hobespenak&lt;/b&gt; leihora eta hautatu erabilgarri daudenetako bat &lt;b&gt;Hizkuntza&lt;/b&gt; orrialdean.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Bezero sistema eragilea instalaturik dauden Virtualbox Bezero Gehigarriak zaharregiak dira: Instalaturiko bertsioa %1 da eta espero zena %2. Bezero gehigarriak behar dituzten zenbait funtziok (sagu integrazioa, bezero pantaila auto tamaina aldaketa) behar bezala funtzionatzeaz utziko dute ziurrenik.&lt;/p&gt;&lt;p&gt;Mesedez eguneratu Bezero Gehigarriak gaur egungo bertsiora &lt;b&gt;Gailuak&lt;/b&gt; menuko &lt;b&gt;Bezero Gehigarriak&lt;/b&gt; Instalatu hautatuaz.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Bezero sistema eragilea instalaturik dauden Virtualbox Bezero Gehigarriak zaharkiturik daude: Instalaturiko bertsioa %1 da eta espero zena %2. Bezero gehigarriak behar dituzten zenbait funtziok (sagu integrazioa, bezero pantaila auto tamaina aldaketa) behar bezala funtzionatzeaz utziko dute ziurrenik.&lt;/p&gt;&lt;p&gt;Mesedez eguneratu Bezero Gehigarriak gaur egungo bertsiora &lt;b&gt;Gailuak&lt;/b&gt; menuko &lt;b&gt;Bezero Gehigarriak Instalatu&lt;/b&gt; hautatuaz.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Bezero sistema eragilea instalaturik dauden Virtualbox Bezero Gehigarriak berriegiak dira: Instalaturik dagoen bertsioa %1 da eta espero zena %2&lt;/p&gt;&lt;p&gt;Gehigarrien Virtualbox baino bertsio berriago bat erabiltzea ez da onartzen. Mesedez instalatu egungo Bezero Gehigarriak &lt;b&gt;Gailuak&lt;/b&gt; menuko &lt;b&gt;Bezero Gehigarriak Instalatu &lt;/b&gt;hautatuaz.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4652,7 +4652,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation>&lt;p&gt;Huts &lt;b&gt;%1&lt;/b&gt; partekatutako kapeta (&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;-ra lotua dagoena) &lt;b&gt;%3&lt;/b&gt; makina birtualetik ezabatzerakoan.&lt;/p&gt; &lt;p&gt;Mesedez itxi partekatutako karpeta hori erabiltzen ari diren sistema eragileko aplikazioak eta berriz saiatu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ez da &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; edo &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; VirtualBox Bezero Gehigarri irudia aurkitu.&lt;/p&gt;&lt;p&gt;Irudi hau internetetik deskargatu nahi al duzu?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4664,7 +4664,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation>&lt;p&gt;Ziur zaude VirtualBox Bezero Gehigarrien CD irudia &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;-etik deskargatu nahi duzula &lt;/nobr&gt; (tamaina %3 byte)?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBox Bezero Gehigarri CD irudia behar bezala deskargatu da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; -etik eta &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;bezala gorde da.&lt;/nobr&gt;&lt;/p&gt; &lt;p&gt;CD irudi hori erregistratu eta CD/DVD birtualean kargatu nahi al duzu?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4676,11 +4676,11 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="obsolete">&lt;p&gt;Makina Birtuala orain &lt;b&gt;integrazio garden&lt;/b&gt; modura aldatuko da. Atzera leihoturiko modura itzuli zaitezke edozein momentutan &lt;b&gt;%1&lt;/b&gt; sakatuaz. Kontutan izan &lt;i&gt;Ostalari&lt;/i&gt; tekla une honetan &lt;b&gt;%2&lt;/b&gt; bezala ezarririk dagoela.&lt;/p&gt;&lt;p&gt; Kontutan izan menu-barra ezkutaturik dagoela pantaila osoko moduan. Bera eskuratzeko aski da &lt;b&gt;Osta+Etxea&lt;/b&gt;sakatzearekin.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Makina birtualaren leihoa &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; kolore moduan funtzionatzeko garatua izan da baina pantaila birtualaren kalitatea &lt;b&gt;%2&amp;nbsp;bitera&lt;/b&gt; ezarririk dago.&lt;/p&gt;&lt;p&gt;Mesedez ireki bezero sistema eragileko pantaila propietateak eta hautatu &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; duen modu bat, erabilgarri badago, bideo birtual azpisistemak ahal den hobekien funtzionatzeko.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Kontutan izan&lt;/b&gt; OS/2 bezalako zenbait sistema eragilek 32 bit-eako moduan lan egiten dutela, baina 24 bit-etara (16 Milioi kolore) dagoela dirudi. Beste kolore kalitate bat hautatzea probatu dezakezu, edo mezu hau baztertu dezakezu ziur bazaude eskatutako kolore kalitatea (%4&amp;nbsp;bit) ezin dela Sistema eragile bezeroan erabili.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ez duzu disko gogor birtualik erantsi makina birtual honetara. Makina ez da abiarazteko gai izango sistema eragile duen disko gogor bat edo beste euskarri abiarazgarri baten bat erantsi arte, berau beranduago egiteko ezarpen leiho edo Lehen Abiarazte Morroiaren bidez egin dezakezu.&lt;/p&gt;&lt;p&gt;Aurrera jarraitu nahi al duzu?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4795,7 +4795,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4836,11 +4836,11 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
+        <source>You are already running the most recent version of VirtualBox.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4884,7 +4884,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished">Abisu Guztiak Be&amp;rrezarri</translation>
     </message>
     <message>
-        <source>Cause all suppressed warnings and messages to be shown again</source>
+        <source>Go back to showing all suppressed warnings and messages</source>
         <translation type="unfinished">Ezabatutako abisu eta mezu guztiak berriz agertzea eragien du</translation>
     </message>
     <message>
@@ -4912,7 +4912,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4936,7 +4936,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not use the ACPI subsystem.</source>
+        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4973,7 +4973,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Note that this hard disk is inaccessible so that its storage unit cannot be deleted right now.</source>
+        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4981,7 +4981,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and therefore it will be possible to add it to the list later again.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5025,7 +5025,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5041,7 +5041,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; to the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5057,7 +5057,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to get the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5081,11 +5081,11 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5424,7 +5424,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="obsolete">Abisu Guztiak Be&amp;rrezarri</translation>
     </message>
     <message>
-        <source>Cause all suppressed warnings and messages to be shown again</source>
+        <source>Go back to showing all suppressed warnings and messages</source>
         <translation type="obsolete">Ezabatutako abisu eta mezu guztiak berriz agertzea eragien du</translation>
     </message>
     <message>
@@ -6183,7 +6183,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
         <translation type="unfinished">Laburpena</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6191,7 +6191,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
+        <source>You are already running the most recent version of VirtualBox.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

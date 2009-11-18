@@ -2501,7 +2501,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to import an appliance, you have to select a file describing the appliance first. Currently VirtualBox supports the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2527,7 +2527,7 @@ p, li { white-space: pre-wrap; }
         <translation>Import instellingen voor Appliance</translation>
     </message>
     <message>
-        <source>These are the virtual machines as described in the appliance with their suggested mappings for importing into VirtualBox. You can change many of the shown properties by double-clicking on the items and disable others by using the check boxes below.</source>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
         <translation>Dit zijn de virtuele machines zoals beschreven in het hulpmiddel, met hun voorstellen voor mappings naar VirtuelBox. U kun veel van de weergegeven eigenschappen aanpassen door hierop te dubbelklikken of keuze, van de onderstaande keuzevakjes, te wijzigen.</translation>
     </message>
     <message>
@@ -3192,11 +3192,11 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Weet u zeker dat u virtuele machine &lt;b&gt;%1&lt;/b&gt; voorgoed wil verwijderen?&lt;/p&gt;&lt;p&gt;Deze actie kan niet teruggedraaid worden.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Weet u zeker dat u, de niet te benaderen, virtuele machine &lt;b&gt;%1&lt;/b&gt; wilt uitschrijven?&lt;/p&gt;&lt;p&gt;U kunt deze dan niet meer via de GUI registreren.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Weet u zeker dat u de opgeslagen status van virtuele machine &lt;b&gt;%1&lt;/b&gt; wilt weggooien?&lt;/p&gt;&lt;p&gt;Deze actie staat gelijk aan het uitzetten van de machine zonder het gast besturingssysteem netjes af te sluiten.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3216,7 +3216,7 @@ p, li { white-space: pre-wrap; }
         <translation>Het is niet gelukt een sessie aan te maken voor virtuele machine &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Verwijderen van dit host-only netwerk zal leiden tot het verwijderen van de host only interface waarop dit netwerk is gebaseerd. Wilt u deze (host-only netwerk) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; verwijderen?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Let op:&lt;/b&gt; Deze interface wordt mogelijk door meerdere virtuele netwerk adapters, van uw virtuele machines, gebruikt. Nadat deze interface is verwijderd zullen de adapters niet meer bruikbaar zijn, tenzij u de instellingen corrigeert door of een andere interface naam of een andere soort adapter te kiezen.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3232,7 +3232,7 @@ p, li { white-space: pre-wrap; }
         <translation>Het is niet gelukt USB apparaat &lt;b&gt;%1&lt;/b&gt; te ontkoppelen van virtuele machine &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to create a shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Het is niet gelukt om gedeelde map &lt;b&gt;%1&lt;/b&gt; (die verwijst naar &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) aan te maken voor virtuale machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -3244,7 +3244,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;De virtuale machine rapporteert dat het gast besturingssysteem geen &lt;b&gt;muis integraten&lt;/b&gt; ondersteunt in de huidige video modus. U moet de muis vangen, door te klikken in het venster van de virtuale machine of door te drukken op de gastheer toets, om deze te kunnen gebruiken in het gast besturingssyteem.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation>&lt;p&gt;De virtuale machine is nu in de &lt;b&gt;gepauseerde&lt;/b&gt; toestand en accepteert daarom geen invoer van het toetsenbord of de muis. Wilt u doorgaan met werken in deze virtuale machine dan moet u deze activeren via de overeenkomstige actie in de menubalk.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3281,15 +3281,15 @@ p, li { white-space: pre-wrap; }
         <translation>nauwgezetheid:</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
         <translation>&lt;p&gt;Een fatale fout is opgetreden tijdens de werking van de virtuale machine! De virtuale machine wordt uitgezet. Het is zinvol om de volgende foutboodschap te kopieren, wat helpt bij het nader onderzoeken van het probleem:&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
         <translation>&lt;p&gt;een fout is opgetreden tijdens de werking van de virtuale machine! De details van de fout worden hieronder weergegeven. U kunt proberen de beschreven fout te herstellen en de uitvoering van de virtuale machine.voort te zetten.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
         <translation>&lt;p&gt;De uitvoering van de virtuale machine.kan tegen de onderstaande foutsituatie aanlopen. U kunt de boodschap negeren maar het is verstandig om een geschikte actie te ondernemen om er zeker van te zijn deze fout niet zal optreden. &lt;/p&gt;</translation>
     </message>
     <message>
@@ -3328,15 +3328,15 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Kan het taalbestand &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; niet laden.&lt;p&gt;De taal wordt tijdelijk terug gezet naar Engels (ingebouwd). Ga naar de &lt;b&gt;voorkeuren&lt;/b&gt; dialoog, deze is te bereiken via het menu in het VirtualBox hoofdscherm, en selecteer een van de bestaande talen uit de pagina &lt;b&gt;talen&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;De gast uitbreidingen, geïnstalleerd in de het gast besturingssysteem, zijn te oud: versie %1 is geïnstalleerd, terwijl versie %2 wordt verwacht. Een aantal onderdelen die afhankelijk zijn van de gast uitbreiding (muis integratie, automatisch scherm aanpassen) zullen niet goed werken .&lt;/p&gt;&lt;p&gt;Werk de gast uitbreiding bij door te kiezen voor &lt;b&gt;gast uitbreiding installatie&lt;/b&gt; in het menu &lt;b&gt;apparaten&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;De gast uitbreidingen, geïnstalleerd in de het gast besturingssysteem, zijn verouderd: versie %1 is geïnstalleerd, terwijl versie %2 wordt verwacht. Een aantal onderdelen die afhankelijk zijn van de gast uitbreiding (muis integratie, automatisch scherm aanpassen) zullen niet goed werken.&lt;/p&gt;&lt;p&gt;Werk de gast uitbreiding bij door te kiezen voor &lt;b&gt;gast uitbreiding installatie&lt;/b&gt; in het menu &lt;b&gt;apparaten&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;De gast uitbreidingen, geïnstalleerd in de het gast besturingssysteem, zijn te nieuw: versie %1 is geïnstalleerd, terwijl versie %2.&lt;/p&gt;&lt;p&gt;wordt verwacht. Een te nieuwe versie gebruiken bij een oudere versie van VirtualBox wordt niet ondersteunt. Installeer de huidige versie van |de gast uitbreiding door te kiezen voor &lt;b&gt;gast uitbreiding installatie&lt;/b&gt; in het menu &lt;b&gt;apparaten&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3348,7 +3348,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Het is niet gelukt om de gedeeld map &lt;b&gt;%1&lt;/b&gt; (die verwijst naar &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) te verwijderen van virtuele machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Sluit alle programma&apos;s af, in het gast besturginssysteem, die deze map mogen gebruiken en probeer het opnieuw.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
         <translation>&lt;p&gt;De CD image bestand &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; of &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; , met daarop de gast uitbreidingen, is niet te vinden.&lt;/p&gt;&lt;p&gt;Wilt u deze downloaden van het internet?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3360,15 +3360,15 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Weet u het zeker dat u het CD image bestand, met daarop de gast uitbreidingen, bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (omvang %3 bytes) wil downladen?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Het CD image bestand, met daarop de gast uitbreidingen, is succesvol gedownload bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; en locaal opgeslagen als &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;wilt u de CD image registreren en koppelen aan het virtuele CD/DVD station?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Het venster van de virtuale machine is geöptimaliseerd om te werken in &lt;b&gt;%1 bits&lt;/b&gt; kleurenmodus, echter de kleurkwaliteit van het virtuele beeldscherm staat op &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Open de beeldscherm eigenschappen in het gast besturingssysteem en selecteer &lt;b&gt;%3 bits&lt;/b&gt;kleurenmodus,mits beschikbaar, voor de beste prestatie van het video subsysteem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Let op&lt;/b&gt;: Sommige besturingssystemen (zoals OS/2) werken in 32 bits kleurenmodus maar melden dit als 24 bits kleurenmodus (16 miljoen kleuren).U kunt proberen een andere kleur kwaliteit te selecteren om de boodschap weg te krijgen of u kunt de boodschap nu uitzetten, als u zeker weet dat de vereist kleur kwaliteit (%4&amp;nbsp; bit) niet beschikbaar is in het besturingssysteem.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;U heeft geen harde schijf gekoppeld aan de nieuwe virtuele machine. De machine kan niet eerder opstarten dan nadat u een harde schijf, met een gast besturingssysteem of een andere opstartbaar medium, hebt gekoppeld. U kunt dit doen via de machine instellingen dialoog of door de assistent op te starten.&lt;/p&gt;&lt;p&gt;Wilt u doorgaan?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3438,7 +3438,7 @@ p, li { white-space: pre-wrap; }
         <translation>Overschakelen</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Weet u zeker dat u de virtuele machine wilt resetten?&lt;/p&gt;&lt;p&gt;Wordt de machine gereset dan gaan alle, niet opgeslagen, gegevens van alle draaiende programma&apos;s verloren.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3509,7 +3509,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Kan de gast scherm niet laten overschakelen op schermvullend omdat de gast te weinig video geheugen heeft.&lt;/p&gt;&lt;p&gt;U moet, bij de configuratie, de virtuele machine minimaal &lt;b&gt;%1&lt;/b&gt; video geheugen meegeven.&lt;/p&gt;&lt;p&gt;klik op &lt;b&gt;Negeren&lt;/b&gt; om toch op volledig beeld over te schakelen of klik op&lt;b&gt;Annuleren&lt;/b&gt; om niets te doen.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
+        <source>You are already running the most recent version of VirtualBox.</source>
         <translation>U heeft reeds de laatste versie van VirtualBox geïnstalleerd.</translation>
     </message>
     <message>
@@ -3553,7 +3553,7 @@ p, li { white-space: pre-wrap; }
         <translation>Alle Waarschuwingen &amp;terugzetten</translation>
     </message>
     <message>
-        <source>Cause all suppressed warnings and messages to be shown again</source>
+        <source>Go back to showing all suppressed warnings and messages</source>
         <translation>Hierdoor worden alle onderdrukte waarschuwingen en berichten weer zichtbaar</translation>
     </message>
     <message>
@@ -3581,7 +3581,7 @@ p, li { white-space: pre-wrap; }
         <translation>Geef de produkt informatie weer</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Een nieuwe versie van VirtualBox is vrijgegeven! Versie &lt;b&gt;%1&lt;/b&gt; is beschikbaar bij &lt;a href=&quot;http//www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;U kunt deze versie direct downloaden via deze link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3598,7 +3598,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Weet u zeker dat u %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; wilt verwijderen uit de lijst met bekende media?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Note that this hard disk is inaccessible so that its storage unit cannot be deleted right now.</source>
+        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
         <translation>Let op: deze harde schijf is niet te benaderen, dus kan zijn opslag eenheid nu niet verwijderd worden.</translation>
     </message>
     <message>
@@ -3606,7 +3606,7 @@ p, li { white-space: pre-wrap; }
         <translation>De volgende dialoog laat u kiezen of u ook de opslag eenheid wilt verwijderen of dat u deze harde schijf wilt bewaren voor later gebruik.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and therefore it will be possible to add it to the list later again.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Let op: de opslag eenheid van dit medium wordt niet verwijderd en dus is het mogelijk deze later opnieuw aan de lijst toe te voegen.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3637,7 +3637,7 @@ p, li { white-space: pre-wrap; }
         <translation>Het is niet gelukt om de opslag eenheid van harde schijf &lt;b&gt;%1&lt;/b&gt; te verwijderen.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Voor de nieuw aangemaakte bijlage is geen, ongebruikte, harde schijf beschikbaar.&lt;/p&gt;&lt;p&gt;Druk op de knop &lt;b&gt;Aanmaken&lt;/b&gt; om de assistent voor een &lt;i&gt;nieuwe virtuele schijf/i&gt; op te starten en daarmee een nieuwe harde schijf aan te maken. Of druk op de knop &lt;b&gt;Selecteer&lt;/b&gt; om de &lt;i&gt;manager voor virtuele media&lt;/i&gt; te openen.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3653,7 +3653,7 @@ p, li { white-space: pre-wrap; }
         <translation>Het is niet gelukt om harde schijf &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; los te koppelen van het slot &lt;i&gt;%2&lt;/i&gt; van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; to the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Het is niet gelukt om %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; te koppelen aan de virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -3669,7 +3669,7 @@ p, li { white-space: pre-wrap; }
         <translation>Het is niet gelukt om %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; te sluiten.</translation>
     </message>
     <message>
-        <source>Failed to get the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Het is niet gelukt om de toegankelijkheids status van medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; op te halen.</translation>
     </message>
     <message>
@@ -3685,7 +3685,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Een of meer virtuele harde schijven, CD/DVD-Rom's of de diskette zijn nu niet te benaderen.Hierdoor kunt u niet met de virtuele machines werken die deze media gebruiken, totdat de media later wel weer benaderbaar zijn.&lt;/p&gt;&lt;p&gt;Druk op de knop &lt;b&gt;Controleren&lt;/b&gt; om de manager voor virtuele media te openen om na te gaan welke media niet te benaderen is, of drukt opde knop &lt;b&gt;Nogeren&lt;/b&gt; om dir berichte te negeren.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
         <translation>&lt;p&gt;De bestaande bestanden, met VirtualBox instellingen, zijn automatisch van het oude formaat in het nieuwe formaat overgezet, dit was nodig voor de nieuwe versie van VirtualBox.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Ok&lt;/b&gt; om VirtualBox op te starten of klik op&lt;b&gt;Meer&lt;/b&gt; voor extra informatie over welke bestanden overgezet zijn en toegang te krijgen naar aanvullende acties.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Afsluiten&lt;/b&gt; om VirtualBox af te sluiten zonder dat de resultaten van het overzetten op schijf te bewaren.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3735,7 +3735,7 @@ p, li { white-space: pre-wrap; }
         <translation>Het is niet mogelijk om de USB op het gastheer systeem te benaderen omdat nog het USB bestandssysteem (usbfs) nog de DBus en HAL services nu beschikbaar zijn. Wilt u het met USB op het gast systeem werken moet eea corrigeren en VirtuaBox herstarten.</translation>
     </message>
     <message>
-        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not use the ACPI subsystem.</source>
+        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
         <translation>U probeert de gast af te sluiten via de ACPI startknop. Dit is op dit moment niet mogelijk omdat de gast geen ACPI subsysteem gebruikt.</translation>
     </message>
     <message>
@@ -3796,7 +3796,7 @@ p, li { white-space: pre-wrap; }
         <translation>Annuleren</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
         <translation>&lt;p&gt;De bestaande bestanden, met VirtualBox instellingen, zijn automatisch van het oude formaat in het nieuwe formaat overgezet, dit was nodig voor de nieuwe versie van VirtualBox.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Ok&lt;/b&gt; om nu VirtualBox te starten of &lt;b&gt;Afsluiten&lt;/b&gt; om VirtualBox, zonder verdere acties af te sluiten.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4406,7 +4406,7 @@ p, li { white-space: pre-wrap; }
         <translation>Samenvatting</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Een nieuwe versie van VirtualBox is vrijgegeven! Versie &lt;b&gt;%1&lt;/b&gt; is beschikbaar via &lt;a href=&quot;http//www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;U kunt deze versie direkt downloaden via deze link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4414,7 +4414,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Het is niet mogelijk de nieuwe versie op te halen vanwege de volgende netwerkfout:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
+        <source>You are already running the most recent version of VirtualBox.</source>
         <translation>U heeft al de nieuwste versie van VirtualBox geïnstalleerd.</translation>
     </message>
     <message>

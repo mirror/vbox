@@ -111,7 +111,7 @@ void VBoxHelpActions::retranslateUi()
 
     resetMessagesAction->setText (VBoxProblemReporter::tr ("&Reset All Warnings"));
     resetMessagesAction->setStatusTip (VBoxProblemReporter::tr (
-        "Cause all suppressed warnings and messages to be shown again"));
+        "Go back to showing all suppressed warnings and messages"));
 
     registerAction->setText (VBoxProblemReporter::tr ("R&egister VirtualBox..."));
     registerAction->setStatusTip (VBoxProblemReporter::tr (
