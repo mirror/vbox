@@ -380,7 +380,7 @@ install_drivers()
 
         if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$HOST_OS_MAJORVERSION" != "5.10"; then
             # For VirtualBox 3.1 the new USB code requires Nevada > 123
-            if test "$HOST_OS_MINORVERSION" -gt 115; then
+            if test "$HOST_OS_MINORVERSION" -gt 123; then
                 add_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
                 load_module "drv/$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
 
