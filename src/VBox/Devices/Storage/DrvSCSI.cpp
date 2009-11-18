@@ -90,6 +90,9 @@ typedef struct DRVSCSI
     PRTREQQUEUE             pQueueRequests;
     /** Request that we've left pending on wakeup or reset. */
     PRTREQ                  pPendingDummyReq;
+    /** Indicates whether PDMDrvHlpAsyncNotificationCompleted should be called by
+     * any of the dummy functions. */
+    bool volatile           fDummySignal;
     /** Release statistics: number of bytes written. */
     STAMCOUNTER             StatBytesWritten;
     /** Release statistics: number of bytes read. */
@@ -675,20 +678,26 @@ static int drvscsiProcessRequestOne(PDRVSCSI pThis, PPDMSCSIREQUEST pRequest)
  * Dummy request function used by drvscsiReset to wait for all pending requests
  * to complete prior to the device reset.
  *
+ * @param   pThis           Pointer to the instace data.
  * @returns VINF_SUCCESS.
  */
-static int drvscsiAsyncIOLoopSyncCallback(void)
+static int drvscsiAsyncIOLoopSyncCallback(PDRVSCSI pThis)
 {
+    if (pThis->fDummySignal)
+        PDMDrvHlpAsyncNotificationCompleted(pThis->pDrvIns);
     return VINF_SUCCESS;
 }
 
 /**
  * Request function to wakeup the thread.
  *
+ * @param   pThis           Pointer to the instace data.
  * @returns VWRN_STATE_CHANGED.
  */
-static int drvscsiAsyncIOLoopWakeupFunc(void)
+static int drvscsiAsyncIOLoopWakeupFunc(PDRVSCSI pThis)
 {
+    if (pThis->fDummySignal)
+        PDMDrvHlpAsyncNotificationCompleted(pThis->pDrvIns);
     return VWRN_STATE_CHANGED;
 }
 
@@ -696,7 +705,7 @@ static int drvscsiAsyncIOLoopWakeupFunc(void)
  * The thread function which processes the requests asynchronously.
  *
  * @returns VBox status code.
- * @param   pDrvIns    Pointer to the device instance data.
+ * @param   pDrvIns    Pointer to the driver instance data.
  * @param   pThread    Pointer to the thread instance data.
  */
 static int drvscsiAsyncIOLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
@@ -752,7 +761,7 @@ static int drvscsiAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
         return VERR_TIMEOUT;
     }
 
-    rc = RTReqCall(pThis->pQueueRequests, &pReq, 10000 /* 10 sec. */, (PFNRT)drvscsiAsyncIOLoopWakeupFunc, 0);
+    rc = RTReqCall(pThis->pQueueRequests, &pReq, 10000 /* 10 sec. */, (PFNRT)drvscsiAsyncIOLoopWakeupFunc, 1, pThis);
     if (RT_SUCCESS(rc))
         RTReqFree(pReq);
     else
@@ -804,48 +813,54 @@ static DECLCALLBACK(void *)  drvscsiQueryInterface(PPDMIBASE pInterface, PDMINTE
 /**
  * Worker for drvscsiReset, drvscsiSuspend and drvscsiPowerOff.
  *
- * @param   pThis               The instance data.
- * @param   pszEvent            The notification event (for logging).
+ * @param   pDrvIns         The driver instance.
+ * @param   pfnAsyncNotify  The async callback.
  */
-static void drvscsiWaitForPendingRequests(PDRVSCSI pThis, const char *pszEvent)
+static void drvscsiR3ResetOrSuspendOrPowerOff(PPDMDRVINS pDrvIns, PFNPDMDRVASYNCNOTIFY pfnAsyncNotify)
 {
-    /*
-     * Try make sure any pending I/O has completed now.
-     */
-    if (pThis->pQueueRequests)
+    PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
+
+    if (!pThis->pQueueRequests)
+        return;
+
+    ASMAtomicWriteBool(&pThis->fDummySignal, true);
+    if (drvscsiAsyncIOLoopNoPendingDummy(pThis, 0 /*ms*/))
     {
-        if (!drvscsiAsyncIOLoopNoPendingDummy(pThis, 20000 /*ms*/))
+        if (!RTReqIsBusy(pThis->pQueueRequests))
         {
-            LogRel(("drvscsi%s#%u: previous dummy request is still pending\n", pszEvent, pThis->pDrvIns->iInstance));
+            ASMAtomicWriteBool(&pThis->fDummySignal, false);
             return;
         }
 
-        if (RTReqIsBusy(pThis->pQueueRequests))
+        PRTREQ pReq;
+        int rc = RTReqCall(pThis->pQueueRequests, &pReq, 0 /*ms*/, (PFNRT)drvscsiAsyncIOLoopSyncCallback, 1, pThis);
+        if (RT_SUCCESS(rc))
         {
-            PRTREQ pReq;
-            int rc = RTReqCall(pThis->pQueueRequests, &pReq, 20000 /*ms*/, (PFNRT)drvscsiAsyncIOLoopSyncCallback, 0);
-            if (RT_SUCCESS(rc))
-                RTReqFree(pReq);
-            else
-            {
-                pThis->pPendingDummyReq = pReq;
-                LogRel(("drvscsi%s#%u: %Rrc pReq=%p\n", pszEvent, pThis->pDrvIns->iInstance, rc, pReq));
-            }
+            ASMAtomicWriteBool(&pThis->fDummySignal, false);
+            RTReqFree(pReq);
+            return;
         }
+
+        pThis->pPendingDummyReq = pReq;
     }
-/** @todo r=bird: this is a deadlock trap. We're EMT(0), if there are
- *        outstanding requests they may require EMT interaction because of
- *        physical write backs around lsilogicDeviceSCSIRequestCompleted...
+    PDMDrvHlpSetAsyncNotification(pDrvIns, pfnAsyncNotify);
+}
+
+/**
+ * Callback employed by drvscsiSuspend and drvscsiPowerOff.
  *
- *        I have some more generic solution for delayed suspend, reset and
- *        poweroff handling that I'm considering.  The idea is that the
- *        notification callback returns a status indicating that it didn't
- *        complete and needs to be called again or something.  EMT continues on
- *        the next device and when it's done, it processes incoming requests and
- *        does another notification round... This way we could combine the waits
- *        in the I/O controllers and reduce the time it takes to suspend a VM a
- *        wee bit...
+ * @returns true if we've quiesced, false if we're still working.
+ * @param   pDrvIns     The driver instance.
  */
+static DECLCALLBACK(bool) drvscsiIsAsyncSuspendOrPowerOffDone(PPDMDRVINS pDrvIns)
+{
+    PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
+
+    if (!drvscsiAsyncIOLoopNoPendingDummy(pThis, 0 /*ms*/))
+        return false;
+    ASMAtomicWriteBool(&pThis->fDummySignal, false);
+    PDMR3ThreadSuspend(pThis->pAsyncIOThread);
+    return true;
 }
 
 /**
@@ -853,8 +868,7 @@ static void drvscsiWaitForPendingRequests(PDRVSCSI pThis, const char *pszEvent)
  */
 static DECLCALLBACK(void) drvscsiPowerOff(PPDMDRVINS pDrvIns)
 {
-    PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
-    PDMR3ThreadSuspend(pThis->pAsyncIOThread);
+    drvscsiR3ResetOrSuspendOrPowerOff(pDrvIns, drvscsiIsAsyncSuspendOrPowerOffDone);
 }
 
 /**
@@ -862,8 +876,23 @@ static DECLCALLBACK(void) drvscsiPowerOff(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvscsiSuspend(PPDMDRVINS pDrvIns)
 {
+    drvscsiR3ResetOrSuspendOrPowerOff(pDrvIns, drvscsiIsAsyncSuspendOrPowerOffDone);
+}
+
+/**
+ * Callback employed by drvscsiReset.
+ *
+ * @returns true if we've quiesced, false if we're still working.
+ * @param   pDrvIns     The driver instance.
+ */
+static DECLCALLBACK(bool) drvscsiIsAsyncResetDone(PPDMDRVINS pDrvIns)
+{
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
-    PDMR3ThreadSuspend(pThis->pAsyncIOThread);
+
+    if (!drvscsiAsyncIOLoopNoPendingDummy(pThis, 0 /*ms*/))
+        return false;
+    ASMAtomicWriteBool(&pThis->fDummySignal, false);
+    return true;
 }
 
 /**
@@ -871,8 +900,7 @@ static DECLCALLBACK(void) drvscsiSuspend(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvscsiReset(PPDMDRVINS pDrvIns)
 {
-    PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
-    drvscsiWaitForPendingRequests(pThis, "Reset");
+    drvscsiR3ResetOrSuspendOrPowerOff(pDrvIns, drvscsiIsAsyncResetDone);
 }
 
 /**
