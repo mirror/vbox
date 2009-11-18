@@ -104,7 +104,7 @@
         <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <source>It may help to reinstall VirtualBox.</source>
+        <source>Please try reinstalling VirtualBox.</source>
         <translation>VirtualBoxを再インストールしてください。</translation>
     </message>
     <message>
@@ -112,7 +112,7 @@
         <translation>このエラーは、カーネル ドライバに十分なメモリを割り当てできないか、またはマッピング操作に失敗したことを意味します。&lt;br/&gt;&lt;br/&gt;これはLinux 2.6.29の既知の問題です。このバージョンのカーネルを使用するならば、/usr/src/vboxdrv-*/Makefileを編集し、&lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;を有効にしてください。その後、root権限で&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;を実行してカーネル モジュールを再コンパイルしてください。</translation>
     </message>
     <message>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation>VirtualBoxのLinuxカーネル ドライバ(vboxdrv)はロードされません。または/dev/vboxdrvのパーミッションに問題があります。root権限で&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;を実行してカーネル モジュールを再セットアップしてください。Ubuntu、FedoraまたはMandrivaユーザーは最初にDKMSパッケージをインストールしてください。このパッケージはLinuxカーネルの変更を把握し、必要ならばvboxdrvカーネル モジュールを再コンパイルします。</translation>
     </message>
     <message>
@@ -128,7 +128,7 @@
         <translation>&lt;b&gt;カーネルドライバにアクセスできません！&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <source>Unknown %2 error during initialization of the Runtime</source>
+        <source>Unknown error %2 during initialization of the Runtime</source>
         <translation>ランタイムの初期化中に予期しないエラー(%2)</translation>
     </message>
     <message>
@@ -136,11 +136,11 @@
         <translation>カーネルドライバにアクセスできない</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Please try completely uninstalling and reinstalling VirtualBox.</source>
         <translation>カーネルモジュールのバージョンが適合しません。VirtualBoxのインストールは成功しませんでした。この問題はVirtualBoxを完全にアンインストール後、再インストールすることで解決するかもしれません。</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
         <translation>カーネルモジュールのバージョンが適合しません。VirtualBoxのインストールは成功しませんでした。&lt;/br&gt;&lt;/br&gt;&lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;を実行すると、この問題は修正されるでしょう。VirtualBoxのOSEバージョンとPUELバージョンを混在して使用しないでください。</translation>
     </message>
 </context>
@@ -421,7 +421,7 @@
         <translation>無効</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;The value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;&lt;b&gt;%2&lt;/b&gt;ページの&lt;b&gt;%1&lt;/b&gt;フィールドの値は%3です。&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -617,15 +617,15 @@ Version %1</source>
         <translation>RAM</translation>
     </message>
     <message>
-        <source>Hard Disk Controller IDE</source>
+        <source>Hard Disk Controller (IDE)</source>
         <translation>ハードディスク コントローラ IDE</translation>
     </message>
     <message>
-        <source>Hard Disk Controller SATA</source>
+        <source>Hard Disk Controller (SATA)</source>
         <translation>ハードディスク コントローラ SATA</translation>
     </message>
     <message>
-        <source>Hard Disk Controller SCSI</source>
+        <source>Hard Disk Controller (SCSI)</source>
         <translation>ハードディスク コントローラ SCSI</translation>
     </message>
     <message>
@@ -743,7 +743,7 @@ Version %1</source>
 &lt;p&gt;注：この動作は、ゲストOSを正しく終了することなく、直ちに仮想マシンの実行を停止します。仮想マシン内の&lt;i&gt;データの損失&lt;/i&gt;を招くかもしれません。この動作は、仮想マシンが&lt;b&gt;[シャットダウン シグナル送信]&lt;/b&gt;に反応しない場合のみ選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
         <translation>&lt;p&gt;仮想マシンをオフにした後、現在のスナップショットに保存された状態に復元します。これは直前のセッションの状態を破棄し、差現在のスナップショットの状態に戻りたい場合に役立ちます。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -971,7 +971,7 @@ Version %1</source>
         <translation type="obsolete">現在割り当てられているホストキーを表示します。&lt;br&gt;ホストキーを単独で押すと、キーボートとマウスの制御が切り替わります。また、他のキーと合わせてキーボード ショートカットの操作に使用することができます。</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
+        <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
         <translation>&lt;hr&gt;VRDPサーバーはポート %1 を待ち受けしています</translation>
     </message>
     <message>
@@ -1098,7 +1098,7 @@ Version %1</source>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;メディアがマウントされていない&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;仮想ハードディスクの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1152,7 +1152,7 @@ Version %1</source>
         <translation type="obsolete">リモートディスプレイ(VRDPサーバ)機能が有効なとき(&lt;img src=vrdp_16px.png/&gt;) を、無効なとき (&lt;img src=vrdp_disabled_16px.png/&gt;)を表示します。</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine'sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;共有フォルダの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1600,7 +1600,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;このウィザードは、仮想アプライアンスをエクスポートする手順を案内します。&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;ウィザードの次のページに進むには&lt;span style=&quot; font-weight:600;&quot;&gt;[次へ]&lt;/span&gt;ボタンを、前のページに戻るには&lt;span style=&quot; font-weight:600;&quot;&gt;[戻る]&lt;/span&gt;ボタンを使用してください。&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;エクスポートする仮想マシンを選択してください。 1つ以上の仮想マシンを選択できます。 エクスポートする前に、それらの仮想マシンをオフにしなければなりません。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
@@ -1620,7 +1620,7 @@ p, li { white-space: pre-wrap; }
         <translation>仮想アプライアンスのエクスポート設定</translation>
     </message>
     <message>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
         <translation>選択した仮想マシンの構成を変更することができます。項目をダブルクリックして表示されているプロパティを変更できます。</translation>
     </message>
     <message>
@@ -1644,15 +1644,15 @@ p, li { white-space: pre-wrap; }
         <translation>OVF 0.9形式で書き込み(&amp;W)</translation>
     </message>
     <message>
-        <source>Please choose a filename to export the OVF in.</source>
+        <source>Please choose a filename to export the OVF to.</source>
         <translation>エクスポートするファイル名を選択してください。</translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
         <translation>ユーザ名、パスワードおよびバケット名などの追加フィールドを全て指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
         <translation>ユーザ名、パスワード、ホスト名およびバケット名などの追加フィールドを全て指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
     </message>
     <message>
@@ -1664,7 +1664,7 @@ p, li { white-space: pre-wrap; }
         <translation>ファイルを除去中...</translation>
     </message>
     <message>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
         <translation>OVFのエクスポートのためのターゲットを指定してください。 ローカル ファイルシステムへのエクスポートか、OVFのアップロード(Sun CloudまたはS3 ストレージ サーバー)を選択することができます。</translation>
     </message>
     <message>
@@ -1715,7 +1715,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;選択されていません&gt;</translation>
     </message>
     <message>
-        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
+        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a path.</source>
         <translation>ドロップダウンリストから&lt;b&gt;[その他...]&lt;/b&gt;を実行して、使用するパスを選択してください。</translation>
     </message>
     <message>
@@ -1747,11 +1747,11 @@ p, li { white-space: pre-wrap; }
         <translation>コピー(&amp;C)</translation>
     </message>
     <message>
-        <source>Please type the desired folder path here.</source>
+        <source>Please type the folder path here.</source>
         <translation>ここに使用するフォルダ パスを入力してください。</translation>
     </message>
     <message>
-        <source>Please type the desired file path here.</source>
+        <source>Please type the file path here.</source>
         <translation>ここに使用するファイル パスを入力してください。</translation>
     </message>
 </context>
@@ -1840,7 +1840,7 @@ p, li { white-space: pre-wrap; }
         <translation>ホストキー(&amp;K):</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation>仮想マシンのウィンドウでホストキーとして使用するキーを表示します。変更するには入力フィールドをアクティブにして新しいホストキーを押してください。注：英数字、カーソルキー、編集キーはホストキーとして使用できません。</translation>
     </message>
     <message>
@@ -3298,7 +3298,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">VirtualBox 環境設定</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">仮想マシンのウィンドウでホストキーとして使用するキーを表示します。変更するには入力フィールドをアクティブにして新しいホストキーを押してください。注：英数字、カーソルキー、編集キーはホストキーとして使用できません。</translation>
     </message>
     <message>

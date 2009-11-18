@@ -130,9 +130,9 @@ void VBoxExportApplianceWzd::retranslateUi()
 
     mDefaultApplianceName = tr("Appliance");
 
-    mExportToFileSystemDesc = tr("Please choose a filename to export the OVF in.");
-    mExportToSunCloudDesc = tr("Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.");
-    mExportToS3Desc = tr("Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.");
+    mExportToFileSystemDesc = tr("Please choose a filename to export the OVF to.");
+    mExportToSunCloudDesc = tr("Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.");
+    mExportToS3Desc = tr("Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.");
 
     switch (currentStorageType())
     {

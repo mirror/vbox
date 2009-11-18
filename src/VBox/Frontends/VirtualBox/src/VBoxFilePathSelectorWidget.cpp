@@ -290,7 +290,7 @@ void VBoxFilePathSelectorWidget::retranslateUi()
     {
         mNoneStr = tr ("<not selected>");
         mNoneTip = tr ("Please use the <b>Other...</b> item from the drop-down "
-                       "list to select a desired path.");
+                       "list to select a path.");
     }
 
     /* Retranslate 'path' item */
@@ -508,8 +508,8 @@ void VBoxFilePathSelectorWidget::refreshText()
             setItemText (PathId, mPath);
         setItemIcon (PathId, QIcon());
         setToolTip (mMode == Mode_Folder ?
-            tr ("Please type the desired folder path here.") :
-            tr ("Please type the desired file path here."));
+            tr ("Please type the folder path here.") :
+            tr ("Please type the file path here."));
 
         if (mIsMouseAwaited)
         {

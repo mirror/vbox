@@ -315,7 +315,7 @@ QString QIWidgetValidator::warningText() const
         state = tr ("invalid", "value state");
 
     if (!title.isEmpty())
-        return tr ("<qt>Value of the <b>%1</b> field "
+        return tr ("<qt>The value of the <b>%1</b> field "
                    "on the <b>%2</b> page is %3.</qt>")
             .arg (title, mCaption, state);
 

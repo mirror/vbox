@@ -104,7 +104,7 @@
         <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <source>It may help to reinstall VirtualBox.</source>
+        <source>Please try reinstalling VirtualBox.</source>
         <translation>Talán újra kellene telepítened a VirtualBox-ot.</translation>
     </message>
     <message>
@@ -112,7 +112,7 @@
         <translation>Ez a hiba azt jelenti,hogy a kernel driver nem tud elegendő memóriát foglalni, vagy valamilyen foglalási művelet nem sikerült.&lt;br/&gt;&lt;br/&gt; Ez ismert probléma a Linux kernel 2.6.29-es verziójával. Ha ilyen, vagy újabb kernelt futtatsz, a /usr/src/vboxdrv-*/Makefile fájlban engedélyezni kell a &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt; beállítást. Ezután a kernel modul újrafordítását a &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; parancs root-ként való futtatásával végezhetjük el.</translation>
     </message>
     <message>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation>A VirtualBox Linux kernel modulja (vboxdrv) nincs betöltve, vagy jogosultsági problémák léptek fel a /dev/vboxdrv eszközfájlon. Próbáld meg a &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt; futtatásával úrjakonfigurálni a kernelmodult root-ként. Ubuntu, Dedora és Mandriva felhasználóknak előbb a DKMS csomagot érdemes feltelepíteniük. Ez a csomag követi a Linux kernel változásait, és újrafordítja a modulokat, ha szükséges. </translation>
     </message>
     <message>
@@ -128,7 +128,7 @@
         <translation>&lt;b&gt;A kernel driver nem elérhető!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <source>Unknown %2 error during initialization of the Runtime</source>
+        <source>Unknown error %2 during initialization of the Runtime</source>
         <translation>Ismeretlen %2 hiba a futtatókörnyezet inicializálásakor</translation>
     </message>
     <message>
@@ -136,11 +136,11 @@
         <translation>A kernel driver nem érhető el</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Please try completely uninstalling and reinstalling VirtualBox.</source>
         <translation>A VirtualBox kernel modul verziója nem megfelelő ehhez a VirtualBox-hoz. Valószínű, hogy a telepítés nem sikerült, és a program vagy a kernelmodul eltávolítása és újratelepítése segíthet.</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
         <translation>A VirtualBox kernel modul nem megfelelő a VirtualBox-hoz. Valószínű, hogy a telepítés nem volt sikeres, de a &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;/etc/init.d/vboxdrv setup&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;parancs lefuttatása segíthet. Figyelj arra, hogy a VirtualBox OSE és a PUEL verziója nem kompatibilis egymással.</translation>
     </message>
 </context>
@@ -421,7 +421,7 @@
         <translation>érvénytelen</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;The value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;A(z) &lt;b&gt;%1&lt;/b&gt;-s mező a &lt;b&gt;%2&lt;/b&gt; lapon %3.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -615,15 +615,15 @@ Verzió %1</translation>
         <translation>RAM</translation>
     </message>
     <message>
-        <source>Hard Disk Controller IDE</source>
+        <source>Hard Disk Controller (IDE)</source>
         <translation>IDE merevlemezvezérlő</translation>
     </message>
     <message>
-        <source>Hard Disk Controller SATA</source>
+        <source>Hard Disk Controller (SATA)</source>
         <translation>SATA merevlemezvezérlő</translation>
     </message>
     <message>
-        <source>Hard Disk Controller SCSI</source>
+        <source>Hard Disk Controller (SCSI)</source>
         <translation>SCSI merevlemezvezérlő</translation>
     </message>
     <message>
@@ -752,7 +752,7 @@ Verzió %1</translation>
 &lt;p&gt;Ez a művelet azonnal kikapcsolja a virtuális gépet. így a vendég rendszer képtelen lesz rendesen leállítani a gépet. Ennek &lt;i&gt;adat vesztés&lt;/i&gt; lehet az eredménye a virtuális gépen  belül. Ez a művelet csak akkor ajánlott, ha a virtuális gép nem válaszol a &lt;b&gt;Gép leállítása&lt;/b&gt; gomb megnyomására.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ha engedélyezed, a gép visszaáll a legutolsó pillanatkép állapotába, miután kikapcsolod. Ez akkor hasznos, ha el szeretnéd dobni a virtuális gép legutóbbi módosításait.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -1058,7 +1058,7 @@ Verzió %1</translation>
         <translation type="obsolete">Jelzi, hogy a Távoli képernyő (VRDP) szerver engedélyezett (&lt;img src=vrdp_16px.png/&gt;) vagy sem (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
+        <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
         <translation>&lt;hr&gt;A VRDP szerver az alábbi porton figyel: %1</translation>
     </message>
     <message>
@@ -1189,7 +1189,7 @@ Verzió %1</translation>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nincs lemez&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Jelzi a merevlemezen az aktivitást:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1243,7 +1243,7 @@ Verzió %1</translation>
         <translation type="obsolete">Jelzi, hogy a Távoli képernyő (VRDP szerver) engedélyezett (&lt;img src=vrdp_16px.png/&gt;) vagy sem (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine'sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Jelzi az aktivitást a megosztott mappákon:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1707,7 +1707,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1733,7 +1733,7 @@ p, li { white-space: pre-wrap; }
         <translation>Exportálás beállításai</translation>
     </message>
     <message>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
         <translation>Itt lehet módosítani a kiválasztott virtuális gépek beállításait. A legtöbb beállítás dupla kattintás után módosítható.</translation>
     </message>
     <message>
@@ -1757,16 +1757,16 @@ p, li { white-space: pre-wrap; }
         <translation>OVF 0.9 &amp;használata</translation>
     </message>
     <message>
-        <source>Please choose a filename to export the OVF in.</source>
+        <source>Please choose a filename to export the OVF to.</source>
         <translation>Add meg az OVF fájl nevét, amibe exportálsz.</translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
         <translatorcomment>klaus-vb asked leave &quot;bucket&quot; untranslated</translatorcomment>
         <translation>Töltsd ki a többi mezőt is (felhasználónév, jelszó, bucket neve), majd add meg az OVF fájl nevét, amibe exportálsz.</translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
         <translatorcomment>klaus-vb asked leave &quot;bucket&quot; untranslated</translatorcomment>
         <translation>Töltsd ki a többi mezőt is (felhasználónév, jelszó, gépnév, bucket neve), majd add meg az OVF fájl nevét, amibe exportálsz.</translation>
     </message>
@@ -1779,7 +1779,7 @@ p, li { white-space: pre-wrap; }
         <translation>Fájlok törlése...</translation>
     </message>
     <message>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
         <translation>Add meg az OVF exportálás helyét. Exportálhatsz a helyi fájlrendszerbe, vagy feltöltheted az OVF fájlt egy Sun Cloud szolgáltatásra vagy egy S3 szerverre.</translation>
     </message>
     <message>
@@ -1830,7 +1830,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;nincs kiválasztva&gt;</translation>
     </message>
     <message>
-        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
+        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a path.</source>
         <translation>Használd a &lt;b&gt;Más...&lt;/b&gt; elemet a legördülő listából a kívánt útvonal megadásához.</translation>
     </message>
     <message>
@@ -1862,11 +1862,11 @@ p, li { white-space: pre-wrap; }
         <translation>Má&amp;solás</translation>
     </message>
     <message>
-        <source>Please type the desired folder path here.</source>
+        <source>Please type the folder path here.</source>
         <translation>Írd be a kívánt mappa útvonalát.</translation>
     </message>
     <message>
-        <source>Please type the desired file path here.</source>
+        <source>Please type the file path here.</source>
         <translation>Írd be a kívánt fájl útvonalát.</translation>
     </message>
 </context>
@@ -1955,7 +1955,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Gazda-billentyű:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation>Megmutatja az aktuális gazda-billentyűt. Kattints a beviteli mezőre, és üsd le az új gazda-billentyűt. Az alfanumerikus, kurzormozgató és szerkesztéssegítő billentyűk nem használhatók gazda-billentyűként.</translation>
     </message>
     <message>
@@ -3469,7 +3469,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">VirtualBox beállítások</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Megmutatja az aktuális gazda-billentyűt. Aktiválja a beviteli mezőt, és üsse le az új gazda-billentyűt. Az alfanumerikus, kurzormozgató és szerkesztéssegítő billentyűk nem használhatók gazda-billentyűként.</translation>
     </message>
     <message>

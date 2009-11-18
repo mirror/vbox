@@ -204,7 +204,7 @@
             <string>Restore the machine state stored in the current snapshot</string>
            </property>
            <property name="whatsThis" >
-            <string>&lt;p>When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p></string>
+            <string>&lt;p>When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p></string>
            </property>
            <property name="text" >
             <string>&amp;Restore current snapshot '%1'</string>

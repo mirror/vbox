@@ -62,7 +62,7 @@
       <translation>&lt;html>&lt;b>%1 (rc=%2)&lt;/b>&lt;br/>&lt;br/></translation>
     </message>
     <message>
-      <source>It may help to reinstall VirtualBox.</source>
+      <source>Please try reinstalling VirtualBox.</source>
       <translation>វា​អាច​ជួយ​ឲ្យ​ដំឡើង VirtualBox ឡើង​វិញ ។</translation>
     </message>
   </context>
@@ -306,7 +306,7 @@
       <translation>មិន​ត្រឹមត្រូវ</translation>
     </message>
     <message>
-      <source>&lt;qt>Value of the &lt;b>%1&lt;/b> field on the &lt;b>%2&lt;/b> page is %3.&lt;/qt></source>
+      <source>&lt;qt>The value of the &lt;b>%1&lt;/b> field on the &lt;b>%2&lt;/b> page is %3.&lt;/qt></source>
       <translation>&lt;qt>តម្លៃ​របស់​វាល &lt;b>%1&lt;/b> នៅ​លើ​ទំព័រ &lt;b>%2&lt;/b> គឺ %3 ។&lt;/qt></translation>
     </message>
     <message>
@@ -406,7 +406,7 @@
       <translation>ផ្ញើ​សញ្ញា​បិទ</translation>
     </message>
     <message>
-      <source>&lt;p>When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p></source>
+      <source>&lt;p>When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p></source>
       <translation>&lt;p>នៅពេល​គូស​ធីក ស្ថានភាព​ម៉ាស៊ីន​នឹង​ត្រូវ​បាន​ស្ដារ​ពី​ស្ថានភាព​ដែល​បាន​ទុក​នៅ​ក្នុង​រូបថត​បច្ចុប្បន្ន​ខាង​ស្ដាំ​បន្ទាប់​ពី​​បិទ ។ វា​មាន​ប្រយោជន៍​ប្រសិន​បើ​​អ្នក​ប្រាកដ​ថា អ្នក​ចង់​បោះបង់​លទ្ធផល​នៃ​សម័យ​ចុងក្រោយ​របស់​អ្នក ហើយ​ត្រឡប់​ទៅ​រូបថត​បច្ចុប្បន្ន ។&lt;/p></translation>
     </message>
     <message>
@@ -591,7 +591,7 @@
       <translation>ជំនួយ</translation>
     </message>
     <message>
-      <source>&lt;hr>VRDP Server is listening on port %1</source>
+      <source>&lt;hr>The VRDP Server is listening on port %1</source>
       <translation>&lt;hr>ម៉ាស៊ីន​បម្រើ VRDP កំពុង​ស្ដាប់​ច្រក %1</translation>
     </message>
     <message>
@@ -714,7 +714,7 @@
       <translation>&lt;br>&lt;nobr>&lt;b>គ្មាន​មេឌៀ​បានម៉ោន​ទេ&lt;/b>&lt;/nobr></translation>
     </message>
     <message>
-      <source>&lt;qt>&lt;nobr>Indicates activity on the virtual hard disks:&lt;/nobr>%1&lt;/qt></source>
+      <source>&lt;qt>&lt;nobr>Indicates activity on the the virtual hard disks:&lt;/nobr>%1&lt;/qt></source>
       <comment>HDD tooltip</comment>
       <translation>&lt;qt>&lt;nobr>បង្ហាញ​សកម្មភាព​របស់​ថាសរឹង​និម្មិត ៖&lt;/nobr>%1&lt;/qt></translation>
     </message>
@@ -764,7 +764,7 @@
       <translation>&lt;br>&lt;nobr>&lt;b>វត្ថុ​បញ្ជា USB ត្រូវ​បាន​បិទ&lt;/b>&lt;/nobr></translation>
     </message>
     <message>
-      <source>&lt;qt>&lt;nobr>Indicates the activity of shared folders:&lt;/nobr>%1&lt;/qt></source>
+      <source>&lt;qt>&lt;nobr>Indicates the activity of the machineof the machine'sapos;s shared folders: shared folders:&lt;/nobr>%1&lt;/qt></source>
       <comment>Shared folders tooltip</comment>
       <translation>&lt;qt>&lt;nobr>បង្ហាញ​សកម្មភាព​របស់​ថត​ដែល​បានចែករំលែក ៖&lt;/nobr>%1&lt;/qt></translation>
     </message>
@@ -843,7 +843,7 @@
       <translation>&lt;មិន​បានជ្រើស></translation>
     </message>
     <message>
-      <source>Please use the &lt;b>Other...&lt;/b> item from the drop-down list to select a desired path.</source>
+      <source>Please use the &lt;b>Other...&lt;/b> item from the drop-down list to select a path.</source>
       <translation>សូម​ប្រើធាតុ &lt;b>ផ្សេងៗ...&lt;/b> ពី​បញ្ជី​ទម្លាក់ចុះ​ដើម្បី​ជ្រើស​ផ្លូវ​ដែល​ចង់​បាន ។</translation>
     </message>
     <message>
@@ -875,11 +875,11 @@
       <translation>ចម្លង</translation>
     </message>
     <message>
-      <source>Please type the desired folder path here.</source>
+      <source>Please type the folder path here.</source>
       <translation>សូម​វាយ​ផ្លូវ​ថត​ដែល​ចង់​បាននៅ​ទីនេះ ។</translation>
     </message>
     <message>
-      <source>Please type the desired file path here.</source>
+      <source>Please type the file path here.</source>
       <translation>សូម​វាយ​ផ្លូវ​ឯកសារ​ដែល​ចង់​បាន​នៅ​ទីនេះ ។</translation>
     </message>
   </context>
@@ -952,7 +952,7 @@
       <translation>គ្រាប់ចុច​ម៉ាស៊ីន ៖</translation>
     </message>
     <message>
-      <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+      <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
       <translation>បង្ហាញគ្រាប់ចុច​ដែល​បាន​ប្រើ​ជា​គ្រាប់​ចុច​ម៉ាស៊ីន​នៅ​ក្នុង​បង្អួច VM ។ ធ្វើ​ឲ្យ​វាល​ធាតុ​សកម្ម ហើយ​ចុច​គ្រាប់ចុច​ម៉ាស៊ីន​ថ្មី ។ ចំណាំថា​លេខ ចលនា​ទស្សន៍ទ្រនិច និង​គ្រាប់ចុចកែសម្រួល​មិនអាច​ត្រូវ​បាន​ប្រើ​ជា​គ្រាប់ចុច​ម៉ាស៊ីន​ទេ ។</translation>
     </message>
     <message>

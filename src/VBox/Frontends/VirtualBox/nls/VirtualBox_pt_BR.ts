@@ -105,7 +105,7 @@
         <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <source>It may help to reinstall VirtualBox.</source>
+        <source>Please try reinstalling VirtualBox.</source>
         <translation>Sugerimos que o VirtualBox seja reinstalado.</translation>
     </message>
     <message>
@@ -113,7 +113,7 @@
         <translation>Este erro significa que o driver do kernel não pôde alocar memória suficiente, ou que uma operação de mapeamento de memória falhou.&lt;br/&gt;&lt;br/&gt;Existem problemas conhecidos com o kernel Linux2.6.29. Se você está utilizando esta versão de kernel, edite o arquivo /usr/src/vboxdrv-*/Makefile e habilite a opção &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. Em seguida, recompile o módulo do kernel executando o comando&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;como root.</translation>
     </message>
     <message>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation>O driver de kernel para Linux do VirtualBox (vboxdrv) não está carregado, ou existe um problema de permissões no arquivo /dev/vboxdrv. Compile novamente o módulo de kernel executando o comando&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;como root. Usuários de Ubuntu, Fedora ou Mandriva devem instalar o pacote DKMS primeiro. Este pacote monitora as mudanças no kernel Linux e recompila o módulo vboxdrv automaticamente se for necessário.</translation>
     </message>
     <message>
@@ -129,7 +129,7 @@
         <translation>&lt;b&gt;Não foi possível acessar o módulo do kernel!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <source>Unknown %2 error during initialization of the Runtime</source>
+        <source>Unknown error %2 during initialization of the Runtime</source>
         <translation>Erro desconhecido %2 durante a inicialização do Runtime</translation>
     </message>
     <message>
@@ -137,11 +137,11 @@
         <translation>Módulo de kernel não está acessível</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Please try completely uninstalling and reinstalling VirtualBox.</source>
         <translation>Os módulos de kernel para o VirtualBox que estão carregados não servem para esta versão do VirtualBox. Aparentemente, a instalação do VirtualBox não foi completada corretamente. É recomendado que o VirtualBox seja completamente removido e instalado novamente.</translation>
     </message>
     <message>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
         <translation>Os módulos de kernel para o VirtualBox que estão carregados não servem para esta versão do VirtualBox. Aparentemente, a instalação do VirtualBox não foi completada corretamente. Execute &lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;para resolver este problema. Certifique-se de que não esteja misturando componentes da versão OSE com a versão PUEL do VirtualBox.</translation>
     </message>
 </context>
@@ -422,7 +422,7 @@
         <translation>inválido</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;The value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;O valor do campo &lt;b&gt;%1&lt;/b&gt; na página &lt;b&gt;%2&lt;/b&gt; é %3.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -624,15 +624,15 @@ Versão %1</translation>
         <translation>Memória RAM</translation>
     </message>
     <message>
-        <source>Hard Disk Controller IDE</source>
+        <source>Hard Disk Controller (IDE)</source>
         <translation>Controladora de Disco Rígido IDE</translation>
     </message>
     <message>
-        <source>Hard Disk Controller SATA</source>
+        <source>Hard Disk Controller (SATA)</source>
         <translation>Controladora de Disco Rígido SATA</translation>
     </message>
     <message>
-        <source>Hard Disk Controller SCSI</source>
+        <source>Hard Disk Controller (SCSI)</source>
         <translation>Controladora de Disco Rígido SCSI</translation>
     </message>
     <message>
@@ -765,7 +765,7 @@ Versão %1</translation>
 &lt;p&gt;Esta ação irá interromper a execução da máquina imediatamente, de tal forma que o sistema operacional convidado sendo executado não terá chance de efetuar um desligamento correto, o que pode resultar em  &lt;i&gt;perda de dados&lt;/i&gt; dentro da máquina virtual. O uso desta ação é recomendado apenas nos casos em que a máquina virtual não estiver respondendo à ação de &lt;b&gt;Enviar sinal de desligamento ACPI&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Quando selecionado, o estado da máquina será restaurado a partir do estado armazenado no snapshot atual logo após o desligamento. Esta opção é útil se você tem certeza de que deseja descartar os resultados da última sessão e voltar para o snapshot atual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -1071,7 +1071,7 @@ Versão %1</translation>
         <translation type="obsolete">Indica se a Tela Remota (servidor VRDP) está habilitada (&lt;img src=vrdp_16px.png/&gt;) ou não (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
+        <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
         <translation>&lt;hr&gt;O Servidor VRDP está ouvindo na porta %1</translation>
     </message>
     <message>
@@ -1227,7 +1227,7 @@ Versão %1</translation>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nenhuma mídia montada&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indica a atividade dos discos rígidos virtuais:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1281,7 +1281,7 @@ Versão %1</translation>
         <translation type="obsolete">Indica se o servidor de Display Remoto (VRDP) está habilitado (&lt;img src=vrdp_16px.png/&gt;) ou não (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine'sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indica a atividade em pastas compartilhadas:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1761,7 +1761,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1787,7 +1787,7 @@ p, li { white-space: pre-wrap; }
         <translation>Configurações de Exportação de Appliance</translation>
     </message>
     <message>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
         <translation>Aqui você pode alterar parâmetros de configuração adicionais para as máquinas virtuais selecionadas. Você pode alterar a maioria das propriedades exibidas clicando duas vezes em cada item.</translation>
     </message>
     <message>
@@ -1811,16 +1811,16 @@ p, li { white-space: pre-wrap; }
         <translation>Gravar em formato antigo OVF 0.9 (&amp;W)</translation>
     </message>
     <message>
-        <source>Please choose a filename to export the OVF in.</source>
+        <source>Please choose a filename to export the OVF to.</source>
         <translation>Escolha um nome de arquivo para exportar o OVF.</translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
         <translatorcomment>Bucket = serviço de armazenamento no estilo Amazon S3</translatorcomment>
         <translation>Por favor complete os campos adicionais, tais como nome de usuário, senha e o nome do &apos;bucket&apos;. Finalmente, forneça o nome do arquivo OVF de destino.</translation>
     </message>
     <message>
-        <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
         <translation>Por favor complete os campos adicionais, tais como nome de usuário, senha, nome do servidor e o nome do &apos;bucket&apos;. Finalmente, forneça o nome do arquivo OVF de destino.</translation>
     </message>
     <message>
@@ -1832,7 +1832,7 @@ p, li { white-space: pre-wrap; }
         <translation>Removendo arquivos ...</translation>
     </message>
     <message>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
         <translation>Especifique o destino para exportação do OVF. Você pode escolher entre exportar para um sistema de arquivos local, enviar o OVF para o serviço Sun Cloud ou um servidor de armazenamento S3.</translation>
     </message>
     <message>
@@ -1883,7 +1883,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;não selecionado&gt;</translation>
     </message>
     <message>
-        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
+        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a path.</source>
         <translation>Por favor utilize o item &lt;b&gt;Outro...&lt;/b&gt; da lista de opções para selecionar o caminho desejado.</translation>
     </message>
     <message>
@@ -1915,11 +1915,11 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Copiar</translation>
     </message>
     <message>
-        <source>Please type the desired folder path here.</source>
+        <source>Please type the folder path here.</source>
         <translation>Por favor informe o caminho da pasta desejada aqui.</translation>
     </message>
     <message>
-        <source>Please type the desired file path here.</source>
+        <source>Please type the file path here.</source>
         <translation>Por favor digite o caminho da pasta desejada aqui.</translation>
     </message>
 </context>
@@ -2008,7 +2008,7 @@ p, li { white-space: pre-wrap; }
         <translation>Tecla de &amp;Hospedeiro:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation>Exibe a tecla utilizada como Tecla do Hospedeiro numa janela de MV. Ative o campo de entrada e pressione uma nova Tecla de Hospedeiro. Note que teclas alfanuméricas, de movimentação de cursor e edição não podem ser utilizadas como Tecla de Hospedeiro.</translation>
     </message>
     <message>
@@ -3541,7 +3541,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Preferências do VirtualBox</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Exibe a tecla utilizada como Tecla do Hospedeiro numa janela de MV. Ative o campo de entrada e pressione uma nova Tecla de Hospedeiro. Note que teclas alfanuméricas, de movimentação de cursor e edição não podem ser utilizadas como Tecla de Hospedeiro.</translation>
     </message>
     <message>

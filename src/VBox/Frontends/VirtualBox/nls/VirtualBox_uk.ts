@@ -76,7 +76,7 @@
     </message>
     <message>
         <location filename="../src/main.cpp" line="107"/>
-        <source>It may help to reinstall VirtualBox.</source>
+        <source>Please try reinstalling VirtualBox.</source>
         <translation>Це може допомогти перевстановити VirtualBox.</translation>
     </message>
     <message>
@@ -86,17 +86,17 @@
     </message>
     <message>
         <location filename="../src/main.cpp" line="82"/>
-        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation>Драйвер ядра VirtualBox (vboxdrv) або не завантажений, або має проблеми з правами доступу /dev/vboxdrv. Перевстановіть модуль ядра, виконавши з-під адміністратора&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;. Користувачі Ubuntu, Fedora або Mandriva слід спочатку встановити DKMS. Цей пакунок утримує доріжку змін і перекомпіляцій модуля ядра vboxdrv, якщо це необхідно.</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="89"/>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Please try completely uninstalling and reinstalling VirtualBox.</source>
         <translation>Модуль ядра VirtualBox не придатний для цієї версії VirtualBox. Напевно, встановлення VirtualBox закінчилось неуспішно. Вилучення і повторне встановлення може допомогти.</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="98"/>
-        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
         <translation>Модуль ядра VirtualBox не придатний для цієї версії VirtualBox. Напевно, встановлення VirtualBox закінчилось неуспішно. Здійснення&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;має виправити цю проблему. Переконайтесь, що ви не змішували версію OSE та PUEL.</translation>
     </message>
     <message>
@@ -121,7 +121,7 @@
     </message>
     <message>
         <location filename="../src/main.cpp" line="589"/>
-        <source>Unknown %2 error during initialization of the Runtime</source>
+        <source>Unknown error %2 during initialization of the Runtime</source>
         <translation>Невідома помилка %2 протягом встановлення часу оброблення</translation>
     </message>
 </context>
@@ -457,7 +457,7 @@
     </message>
     <message>
         <location filename="../src/QIWidgetValidator.cpp" line="320"/>
-        <source>&lt;qt&gt;Value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;The value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Значення &lt;b&gt;%1&lt;/b&gt; поля в &lt;b&gt;%2&lt;/b&gt; на сторінці %3.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -604,17 +604,17 @@
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="191"/>
-        <source>Hard Disk Controller IDE</source>
+        <source>Hard Disk Controller (IDE)</source>
         <translation>Котролер жорсткого диска IDE</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="192"/>
-        <source>Hard Disk Controller SATA</source>
+        <source>Hard Disk Controller (SATA)</source>
         <translation>Котролер жорсткого диска SATA</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="193"/>
-        <source>Hard Disk Controller SCSI</source>
+        <source>Hard Disk Controller (SCSI)</source>
         <translation>Котролер жорсткого диска SCSI</translation>
     </message>
     <message>
@@ -712,7 +712,7 @@
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="207"/>
-        <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Якщо це відмічено, стан машини буде відновлено до стану, який збережено в поточному знімку, відразу після її вимкнення. Це може бути корисним, якщо ви впевнені, що бажаєте відкинути результати останнього сеансу і вернутись до поточного знімку.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -942,7 +942,7 @@
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2056"/>
-        <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
+        <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
         <translation>&lt;hr&gt;Сервер VRDP очікує з&apos;єднання на порті %1</translation>
     </message>
     <message>
@@ -1093,7 +1093,7 @@
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1937"/>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Показує активність віртуальних жорстких дисків:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1153,7 +1153,7 @@
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2065"/>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine'sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Показує активність спільних тек:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -1274,17 +1274,17 @@
     </message>
     <message>
         <location filename="../src/VBoxExportApplianceWzd.cpp" line="133"/>
-        <source>Please choose a filename to export the OVF in.</source>
+        <source>Please choose a filename to export the OVF to.</source>
         <translation>Будь ласка, виберіть назву файла для експорту OVF.</translation>
     </message>
     <message>
         <location filename="../src/VBoxExportApplianceWzd.cpp" line="134"/>
-        <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
         <translation>Будь ласка, заповніть додаткові поля такі, як ім&apos;я користувача, пароль і крилата діжка. Наостанок, ви маєте надати назву файлові для цілі OVF.</translation>
     </message>
     <message>
         <location filename="../src/VBoxExportApplianceWzd.cpp" line="135"/>
-        <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
         <translation>Будь ласка, заповніть додаткові поля такі, як ім&apos;я користувача, пароль, назва вузла і крилата діжка. Наостанок, ви маєте надати назву файлові для цілі OVF.</translation>
     </message>
     <message>
@@ -1320,7 +1320,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1351,7 +1351,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="252"/>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
         <translation>Тут ви можете змінити додаткові значення налаштування вибраної віртуальної машини. Ви можете змінити більшість показаних властивостей подвійним клацом по пунктах.</translation>
     </message>
     <message>
@@ -1361,7 +1361,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="419"/>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
         <translation>Будь ласка, вкажіть ціль експорту OVF. Ви можете вибрати між експортом локальної файлової системи і завантаженням OVF на хмарні служби Sun або на сервер зберігання S3.</translation>
     </message>
     <message>
@@ -1439,7 +1439,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="293"/>
-        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
+        <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a path.</source>
         <translation>Будь ласка, виберіть &lt;b&gt;Інші...&lt;/b&gt; зі спадного списку, щоб вибрати шлях.</translation>
     </message>
     <message>
@@ -1479,12 +1479,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="511"/>
-        <source>Please type the desired folder path here.</source>
+        <source>Please type the folder path here.</source>
         <translation>Будь ласка, введіть тут шлях до теки.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="512"/>
-        <source>Please type the desired file path here.</source>
+        <source>Please type the file path here.</source>
         <translation>Будь ласка, введіть тут шлях до файла.</translation>
     </message>
 </context>
@@ -1588,7 +1588,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="71"/>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
+        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation>Показує клавішу, яка використовується як головна клавіша у вікні віртуальної машини. Перейдіть до поля введення і натисніть нову головну клавішу. Майте на увазі, рух курсора і клавіші, що редагують, не можуть використовуватись як головні клавіші.</translation>
     </message>
     <message>
