@@ -2461,7 +2461,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     do
     {
-        if (mMediaData.isBackedUp())
+        if (aType == DeviceType_HardDisk && mMediaData.isBackedUp())
         {
             const MediaData::AttachmentList &oldAtts = mMediaData.backedUpData()->mAttachments;
 
