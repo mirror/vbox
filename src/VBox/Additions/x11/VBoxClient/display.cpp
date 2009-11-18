@@ -58,6 +58,8 @@ static int initDisplay()
     }
     if (RT_SUCCESS(rc))
         rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
+    else
+        VbglR3CtlFilterMask(0, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
     /* Log and ignore the return value, as there is not much we can do with
      * it. */
     LogFlowFunc(("dynamic resizing: result %Rrc\n", rc));
@@ -77,6 +79,12 @@ static int initDisplay()
         }
         else
             rc = VERR_NOT_SUPPORTED;
+    }
+    if (RT_FAILURE(rc))
+    {
+        VbglR3CtlFilterMask(0, VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED);
+        VbglR3SetMouseStatus(  fMouseFeatures
+                             | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
     }
     LogFlowFunc(("mouse re-capturing support: result %Rrc\n", rc));
     return VINF_SUCCESS;
