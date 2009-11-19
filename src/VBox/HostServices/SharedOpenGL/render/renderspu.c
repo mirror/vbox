@@ -242,7 +242,7 @@ renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx)
              * If the mapPending flag is set, then we should now make the window
              * visible.
              */
-            renderspu_SystemShowWindow( window, GL_TRUE );
+            /*renderspu_SystemShowWindow( window, GL_TRUE );*/
             window->mapPending = GL_FALSE;
         }
         window->everCurrent = GL_TRUE;
