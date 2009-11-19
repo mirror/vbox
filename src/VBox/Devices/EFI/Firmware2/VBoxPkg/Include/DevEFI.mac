@@ -54,6 +54,7 @@ struc DEVEFIINFO
 endstruc
 
 %define DEVEFI_INFO_PHYS_ADDR   (0xfffff000)
+%define DEVEFI_INFO_FLAGS_X64   RT_BIT(0)
 
 %endif
 

@@ -29,7 +29,7 @@
 ;; we'll use no more than 128 vectors atm
 %define IDT_VECTORS     128
 ;; keep in sync with actual GDT size
-%define GDT_SELECTORS   7
+%define GDT_SELECTORS   10
 
 
 ;*******************************************************************************
@@ -78,6 +78,9 @@ efi_thunk_GDT:
         dw      0xffff, 0, 0x9b00, 0x0000       ; 16 bit code segment base=0xf0000 limit=0xffff - FIXME: the base is 0, not f0000 here.
         dw      0xffff, 0, 0x9300, 0x0000       ; 16 bit data segment base=0x0 limit=0xffff     - FIXME: ditto.
         dw      0xffff, 0, 0x9300, 0x00cf       ; 32 bit flat stack segment (0x30)
+        dw      0xffff, 0, 0x9a00, 0x00af       ; 64 bit flat code segment (0x38)
+        dw      0,      0, 0,      0            ; ditto
+        dw      0,      0, 0,      0            ; ditto
 
 ;; For lidt
 efi_thunk_idtr:
@@ -92,8 +95,7 @@ efi_thunk_gdtr:
         dw      efi_thunk_GDT                   ; base  15:00
         db      0x0f                            ; base  23:16
         db      0x00                            ; unused
-
-
+        
 BITS 32
 
 ;;
@@ -136,7 +138,7 @@ HaltForEver:
 
 BITS 16
 ;;
-; This is the place where we jump immediately after boot and
+; This i the place where we jump immediately after boot and
 ; switch the CPU into protected mode.
 ;
 genesis:
@@ -206,10 +208,102 @@ code_32:
         ; GDT and TSS) before enabling interrupts. It may also switch the stack
         ; around all it wants for all we care.
         ;
+        mov     eax,[0xfffff000 + DEVEFIINFO.fFlags]
+        and      eax, DEVEFI_INFO_FLAGS_X64
+        jnz trampoline_64
         mov     ebp, [0xfffff000 + DEVEFIINFO.PhysFwVol]
         mov     esi, [0xfffff000 + DEVEFIINFO.pfnFirmwareEP]
         mov     edi, [0xfffff000 + DEVEFIINFO.pfnPeiEP]
         jmp     [0xfffff000 + DEVEFIINFO.pfnFirmwareEP]
+        jmp     HaltForEver
+trampoline_64:
+%macro fill_pkt 1
+%%loop:
+        mov [ebx],eax
+        xor edx,edx
+        mov [ebx + 4], edx
+        add ebx, 8
+        add eax, %1
+        loop %%loop
+%endmacro
+
+%define base 0x800000;0xfffff000 
+        mov ecx, 0x800 ; pde size
+        mov ebx, base - (6 << X86_PAGE_4K_SHIFT)
+        xor eax, eax
+        ;; or flags to eax 
+        or eax, (X86_PDE_P|X86_PDE_A|X86_PDE_PS|X86_PDE_PCD|X86_PDE_RW|RT_BIT(6)) 
+        fill_pkt (1 << X86_PAGE_2M_SHIFT)
+
+        ;; pdpt (1st 4 entries describe 4Gb)
+        mov ebx, base - (2 << X86_PAGE_4K_SHIFT)
+        mov eax, base - (6 << X86_PAGE_4K_SHIFT) ;; 
+        or eax, (X86_PDPE_P|X86_PDPE_RW|X86_PDPE_A|X86_PDPE_PCD)
+        mov [ebx],eax
+        xor edx,edx
+        mov [ebx + 4], edx
+        add ebx, 8
+
+        mov eax, base - 5 * (1 << X86_PAGE_4K_SHIFT) ;; 
+        or eax, (X86_PDPE_P|X86_PDPE_RW|X86_PDPE_A|X86_PDPE_PCD)
+        mov [ebx],eax
+        xor edx,edx
+        mov [ebx + 4], edx
+        add ebx, 8
+
+        mov eax, base - 4 * (1 << X86_PAGE_4K_SHIFT) ;; 
+        or eax, (X86_PDPE_P|X86_PDPE_RW|X86_PDPE_A|X86_PDPE_PCD)
+        mov [ebx],eax
+        xor edx,edx
+        mov [ebx + 4], edx
+        add ebx, 8
+
+        mov eax, base - 3 * (1 << X86_PAGE_4K_SHIFT) ;; 
+        or eax, (X86_PDPE_P|X86_PDPE_RW|X86_PDPE_A|X86_PDPE_PCD)
+        mov [ebx],eax
+        xor edx,edx
+        mov [ebx + 4], edx
+        add ebx, 8
+
+        mov ecx, 0x1f7 ; pdte size
+        mov ebx, base - 2 * (1 << X86_PAGE_4K_SHIFT) + 4 * 8
+        mov eax, base - 6 * (1 << X86_PAGE_4K_SHIFT);; 
+        or eax, (X86_PDPE_P|X86_PDPE_RW|X86_PDPE_A|X86_PDPE_PCD)
+        ;; or flags to eax 
+        fill_pkt 3 * (1 << X86_PAGE_4K_SHIFT)
+        
+        mov ecx, 0x200 ; pml4 size
+        mov ebx, base - (1 << X86_PAGE_4K_SHIFT)
+        mov eax, base - 2 * (1 << X86_PAGE_4K_SHIFT) ;; 
+        or eax, (X86_PML4E_P|X86_PML4E_PCD|X86_PML4E_A|X86_PML4E_RW)
+        ;; or flags to eax 
+        fill_pkt 0
+
+        mov eax, base - (1 << X86_PAGE_4K_SHIFT)
+        mov cr3, eax
+
+
+        mov eax,cr4
+        or eax, X86_CR4_PAE|X86_CR4_OSFSXR|X86_CR4_OSXMMEEXCPT
+        mov cr4,eax
+        
+        mov ecx, MSR_K6_EFER
+        rdmsr
+        or  eax, MSR_K6_EFER_LME
+        wrmsr
+
+        mov     eax, cr0
+        or      eax, X86_CR0_PG
+        mov     cr0, eax
+        jmp compat
+compat:
+        jmp 0x38:0xffff0000 + efi_64
+BITS 64
+efi_64:
+        mov     ebp, [0xff009] ;  DEVEFIINFO.PhysFwVol
+        mov     esi, [0xff000]; + DEVEFIINFO.pfnFirmwareEP]
+        mov     edi, [0xff000 + 0x28]; + DEVEFIINFO.pfnPeiEP]
+        jmp     [0xff000]; + DEVEFIINFO.pfnFirmwareEP]
         jmp     HaltForEver
 
         ;
@@ -220,6 +314,7 @@ code_32:
 cpu_start:
         BITS 16
         jmp     genesis
-        times (16 - 3) db 0cch
-
+        dw 0xdead
+        dw 0xbeaf
+        times (16 - 7) db 0cch
 end:
