@@ -28,6 +28,7 @@
  * additional information or have any questions.
  */
 
+#include <iprt/initterm.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/err.h>
@@ -94,6 +95,8 @@ struct TstU32
 
 int main()
 {
+    RTR3Init();
+
     int cErrors = 0;
     static const struct TstU64 aTstU64[] =
     {
