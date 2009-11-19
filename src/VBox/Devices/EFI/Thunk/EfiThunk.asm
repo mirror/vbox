@@ -209,7 +209,7 @@ code_32:
         ; around all it wants for all we care.
         ;
         mov     eax,[0xfffff000 + DEVEFIINFO.fFlags]
-        and      eax, DEVEFI_INFO_FLAGS_X64
+        and      eax, DEVEFI_INFO_FLAGS_AMD64
         jnz trampoline_64
         mov     ebp, [0xfffff000 + DEVEFIINFO.PhysFwVol]
         mov     esi, [0xfffff000 + DEVEFIINFO.pfnFirmwareEP]
