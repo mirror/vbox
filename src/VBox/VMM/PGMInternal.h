@@ -166,7 +166,7 @@
 /** @def VBOX_WITH_REAL_WRITE_MONITORED_PAGES
  * Enables real write monitoring of pages, i.e. mapping them read-only and
  * only making them writable when getting a write access #PF. */
-/*#define VBOX_WITH_REAL_WRITE_MONITORED_PAGES */
+#define VBOX_WITH_REAL_WRITE_MONITORED_PAGES
 
 /** @} */
 
@@ -1083,7 +1083,7 @@ typedef PPGMPAGE *PPPGMPAGE;
 
 #if 0
 /** Enables sanity checking of write monitoring using CRC-32.  */
-#define PGMLIVESAVERAMPAGE_WITH_CRC32
+# define PGMLIVESAVERAMPAGE_WITH_CRC32
 #endif
 
 /**
