@@ -1758,41 +1758,53 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  *
  * @param   pVM         The VM handle.
  * @param   pSSM        The SSM handle.
+ * @param   uPass       The data pass.
  */
-static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM)
+static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 {
-#if 0
-    RTPrintf("# Rom[R/D/Z/M]=%03x/%03x/%03x/%03x  Mmio2=%04x/%04x/%04x/%04x  Ram=%06x/%06x/%06x/%06x Ignored=%03x\n",
-             pVM->pgm.s.LiveSave.Rom.cReadyPages,
-             pVM->pgm.s.LiveSave.Rom.cDirtyPages,
-             pVM->pgm.s.LiveSave.Rom.cZeroPages,
-             pVM->pgm.s.LiveSave.Rom.cMonitoredPages,
-             pVM->pgm.s.LiveSave.Mmio2.cReadyPages,
-             pVM->pgm.s.LiveSave.Mmio2.cDirtyPages,
-             pVM->pgm.s.LiveSave.Mmio2.cZeroPages,
-             pVM->pgm.s.LiveSave.Mmio2.cMonitoredPages,
-             pVM->pgm.s.LiveSave.Ram.cReadyPages,
-             pVM->pgm.s.LiveSave.Ram.cDirtyPages,
-             pVM->pgm.s.LiveSave.Ram.cZeroPages,
-             pVM->pgm.s.LiveSave.Ram.cMonitoredPages,
-             pVM->pgm.s.LiveSave.cIgnoredPages
-             );
-    static int s_iHack = 0;
-    if ((++s_iHack % 42) == 0)
-        return VINF_SUCCESS;
-    RTThreadSleep(1000);
+    const uint32_t cHistoryEntries = RT_ELEMENTS(pVM->pgm.s.LiveSave.acDirtyPagesHistory);
 
-#else
-    if (      pVM->pgm.s.LiveSave.Rom.cDirtyPages
-           +  pVM->pgm.s.LiveSave.Mmio2.cDirtyPages
-           +  pVM->pgm.s.LiveSave.Ram.cDirtyPages
-# if 0
-        <  256)                         /* semi random number. */
-# else
-        <  4096)                        /* too high number */
-# endif
-        return VINF_SUCCESS;
-#endif
+    /* update history. */
+    uint32_t i = pVM->pgm.s.LiveSave.iDirtyPagesHistory;
+    pVM->pgm.s.LiveSave.acDirtyPagesHistory[i] = pVM->pgm.s.LiveSave.Rom.cDirtyPages
+                                               + pVM->pgm.s.LiveSave.Mmio2.cDirtyPages
+                                               + pVM->pgm.s.LiveSave.Ram.cDirtyPages;
+    pVM->pgm.s.LiveSave.iDirtyPagesHistory = (i + 1) % cHistoryEntries;
+
+    /* calc shortterm average (4 passes). */
+    AssertCompile(RT_ELEMENTS(pVM->pgm.s.LiveSave.acDirtyPagesHistory) >= 4);
+    uint64_t cTotal = pVM->pgm.s.LiveSave.acDirtyPagesHistory[i];
+    cTotal += pVM->pgm.s.LiveSave.acDirtyPagesHistory[(i + cHistoryEntries - 1) % cHistoryEntries];
+    cTotal += pVM->pgm.s.LiveSave.acDirtyPagesHistory[(i + cHistoryEntries - 2) % cHistoryEntries];
+    cTotal += pVM->pgm.s.LiveSave.acDirtyPagesHistory[(i + cHistoryEntries - 3) % cHistoryEntries];
+    uint32_t const cDirtyPagesShort = cTotal / 4;
+    pVM->pgm.s.LiveSave.cDirtyPagesShort = cDirtyPagesShort;
+
+    /* calc longterm average. */
+    cTotal = 0;
+    for (i = 0; i < RT_ELEMENTS(pVM->pgm.s.LiveSave.acDirtyPagesHistory); i++)
+          cTotal += pVM->pgm.s.LiveSave.acDirtyPagesHistory[i];
+    uint32_t const cDirtyPagesLong = cTotal / cHistoryEntries;
+    pVM->pgm.s.LiveSave.cDirtyPagesLong = cDirtyPagesLong;
+
+    /*
+     * Try make a decision.
+     */
+    /** @todo take the count dirtied write-monitored page into account here. */
+    if (cDirtyPagesShort <= cDirtyPagesLong)
+    {
+        if (    cDirtyPagesShort <= 128
+            &&  cDirtyPagesLong  <= 1024)
+            return VINF_SUCCESS;
+
+        if (cDirtyPagesLong  <= 256)
+            return VINF_SUCCESS;
+
+        /* !! hack !! */
+        if (    cDirtyPagesLong < 4096
+            &&  uPass >= 8192)
+            return VINF_SUCCESS;
+    }
     return VINF_SSM_VOTE_FOR_ANOTHER_PASS;
 }
 
@@ -1835,6 +1847,9 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
     pVM->pgm.s.LiveSave.Ram.cDirtyPages   = 0;
     pVM->pgm.s.LiveSave.cIgnoredPages     = 0;
     pVM->pgm.s.LiveSave.fActive           = true;
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.LiveSave.acDirtyPagesHistory); i++)
+        pVM->pgm.s.LiveSave.acDirtyPagesHistory[i] = UINT32_MAX / 2;
+    pVM->pgm.s.LiveSave.iDirtyPagesHistory = 0;
 
     /*
      * Per page type.

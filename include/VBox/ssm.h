@@ -430,9 +430,10 @@ typedef FNSSMDEVLIVEEXEC *PFNSSMDEVLIVEEXEC;
  *
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
+ * @param   uPass           The data pass.
  * @thread  Any.
  */
-typedef DECLCALLBACK(int) FNSSMDEVLIVEVOTE(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
+typedef DECLCALLBACK(int) FNSSMDEVLIVEVOTE(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass);
 /** Pointer to a FNSSMDEVLIVEVOTE() function. */
 typedef FNSSMDEVLIVEVOTE *PFNSSMDEVLIVEVOTE;
 
@@ -558,9 +559,10 @@ typedef FNSSMDRVLIVEEXEC *PFNSSMDRVLIVEEXEC;
  * @param   pDrvIns         Driver instance of the device which registered the
  *                          data unit.
  * @param   pSSM            SSM operation handle.
+ * @param   uPass           The data pass.
  * @thread  Any.
  */
-typedef DECLCALLBACK(int) FNSSMDRVLIVEVOTE(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM);
+typedef DECLCALLBACK(int) FNSSMDRVLIVEVOTE(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uPass);
 /** Pointer to a FNSSMDRVLIVEVOTE() function. */
 typedef FNSSMDRVLIVEVOTE *PFNSSMDRVLIVEVOTE;
 
@@ -685,9 +687,10 @@ typedef FNSSMINTLIVEEXEC *PFNSSMINTLIVEEXEC;
  *
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
+ * @param   uPass           The data pass.
  * @thread  Any.
  */
-typedef DECLCALLBACK(int) FNSSMINTLIVEVOTE(PVM pVM, PSSMHANDLE pSSM);
+typedef DECLCALLBACK(int) FNSSMINTLIVEVOTE(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass);
 /** Pointer to a FNSSMINTLIVEVOTE() function. */
 typedef FNSSMINTLIVEVOTE *PFNSSMINTLIVEVOTE;
 
@@ -810,9 +813,10 @@ typedef FNSSMEXTLIVEEXEC *PFNSSMEXTLIVEEXEC;
  *
  * @param   pSSM            SSM operation handle.
  * @param   pvUser          User argument.
+ * @param   uPass           The data pass.
  * @thread  Any.
  */
-typedef DECLCALLBACK(int) FNSSMEXTLIVEVOTE(PSSMHANDLE pSSM, void *pvUser);
+typedef DECLCALLBACK(int) FNSSMEXTLIVEVOTE(PSSMHANDLE pSSM, void *pvUser, uint32_t uPass);
 /** Pointer to a FNSSMEXTLIVEVOTE() function. */
 typedef FNSSMEXTLIVEVOTE *PFNSSMEXTLIVEVOTE;
 
