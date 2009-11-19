@@ -45,6 +45,7 @@ public:
     /* Normal snapshot item (child of tree-widget) */
     SnapshotWgtItem (QTreeWidget *aTreeWidget, const CSnapshot &aSnapshot)
         : QTreeWidgetItem (aTreeWidget, ItemType)
+        , mIsCurrentState (false)
         , mSnapshot (aSnapshot)
     {
     }
@@ -52,6 +53,7 @@ public:
     /* Normal snapshot item (child of tree-widget-item) */
     SnapshotWgtItem (QTreeWidgetItem *aRootItem, const CSnapshot &aSnapshot)
         : QTreeWidgetItem (aRootItem, ItemType)
+        , mIsCurrentState (false)
         , mSnapshot (aSnapshot)
     {
     }
@@ -59,6 +61,7 @@ public:
     /* Current state item (child of tree-widget) */
     SnapshotWgtItem (QTreeWidget *aTreeWidget, const CMachine &aMachine)
         : QTreeWidgetItem (aTreeWidget, ItemType)
+        , mIsCurrentState (true)
         , mMachine (aMachine)
     {
         updateCurrentState (mMachine.GetState());
@@ -67,6 +70,7 @@ public:
     /* Current state item (child of tree-widget-item) */
     SnapshotWgtItem (QTreeWidgetItem *aRootItem, const CMachine &aMachine)
         : QTreeWidgetItem (aRootItem, ItemType)
+        , mIsCurrentState (true)
         , mMachine (aMachine)
     {
         updateCurrentState (mMachine.GetState());
@@ -77,7 +81,8 @@ public:
         switch (aRole)
         {
             case Qt::DisplayRole:
-                return QVariant (QString ("%1%2").arg (QTreeWidgetItem::data (aColumn, aRole).toString()).arg (mAge));
+                return mIsCurrentState ? QTreeWidgetItem::data (aColumn, aRole) :
+                       QVariant (QString ("%1%2").arg (QTreeWidgetItem::data (aColumn, aRole).toString()).arg (mAge));
             default:
                 break;
         }
@@ -129,17 +134,7 @@ public:
 
     void recache()
     {
-        if (!mSnapshot.isNull())
-        {
-            mId = mSnapshot.GetId();
-            setText (0, mSnapshot.GetName());
-            mOnline = mSnapshot.GetOnline();
-            setIcon (0, vboxGlobal().snapshotIcon (mOnline));
-            mDesc = mSnapshot.GetDescription();
-            mTimestamp.setTime_t (mSnapshot.GetTimeStamp() / 1000);
-            mCurStateModified = false;
-        }
-        else
+        if (mIsCurrentState)
         {
             Assert (!mMachine.isNull());
             mCurStateModified = mMachine.GetCurrentStateModified();
@@ -151,6 +146,17 @@ public:
                     parent() != 0 ?
                     VBoxSnapshotsWgt::tr ("The current state is identical to the state stored in the current snapshot") :
                     QString::null;
+        }
+        else
+        {
+            Assert (!mSnapshot.isNull());
+            mId = mSnapshot.GetId();
+            setText (0, mSnapshot.GetName());
+            mOnline = mSnapshot.GetOnline();
+            setIcon (0, vboxGlobal().snapshotIcon (mOnline));
+            mDesc = mSnapshot.GetDescription();
+            mTimestamp.setTime_t (mSnapshot.GetTimeStamp() / 1000);
+            mCurStateModified = false;
         }
         adjustText();
         recacheToolTip();
@@ -174,27 +180,27 @@ public:
         SnapshotAgeFormat ageFormat;
         if (mTimestamp.daysTo (QDateTime::currentDateTime()) > 30)
         {
-            mAge = VBoxSnapshotsWgt::tr (" [%1]").arg (mTimestamp.toString (Qt::LocalDate));
+            mAge = VBoxSnapshotsWgt::tr (" (%1)").arg (mTimestamp.toString (Qt::LocalDate));
             ageFormat = AgeMax;
         }
         else if (mTimestamp.secsTo (QDateTime::currentDateTime()) > 60 * 60 * 24)
         {
-            mAge = VBoxSnapshotsWgt::tr (" [%1d ago]").arg (mTimestamp.secsTo (QDateTime::currentDateTime()) / 60 / 60 / 24);
+            mAge = VBoxSnapshotsWgt::tr (" (%n day(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()) / 60 / 60 / 24);
             ageFormat = AgeInDays;
         }
         else if (mTimestamp.secsTo (QDateTime::currentDateTime()) > 60 * 60)
         {
-            mAge = VBoxSnapshotsWgt::tr (" [%1h ago]").arg (mTimestamp.secsTo (QDateTime::currentDateTime()) / 60 / 60);
+            mAge = VBoxSnapshotsWgt::tr (" (%n hour(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()) / 60 / 60);
             ageFormat = AgeInHours;
         }
         else if (mTimestamp.secsTo (QDateTime::currentDateTime()) > 60)
         {
-            mAge = VBoxSnapshotsWgt::tr (" [%1min ago]").arg (mTimestamp.secsTo (QDateTime::currentDateTime()) / 60);
+            mAge = VBoxSnapshotsWgt::tr (" (%n minute(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()) / 60);
             ageFormat = AgeInMinutes;
         }
         else
         {
-            mAge = VBoxSnapshotsWgt::tr (" [%1sec ago]").arg (mTimestamp.secsTo (QDateTime::currentDateTime()));
+            mAge = VBoxSnapshotsWgt::tr (" (%n second(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()));
             ageFormat = AgeInSeconds;
         }
 
@@ -261,6 +267,8 @@ private:
 
         setToolTip (0, toolTip);
     }
+
+    bool mIsCurrentState;
 
     CSnapshot mSnapshot;
     CMachine mMachine;
