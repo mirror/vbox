@@ -81,8 +81,9 @@ public:
         switch (aRole)
         {
             case Qt::DisplayRole:
-                return mIsCurrentState ? QTreeWidgetItem::data (aColumn, aRole) :
-                       QVariant (QString ("%1%2").arg (QTreeWidgetItem::data (aColumn, aRole).toString()).arg (mAge));
+                return mIsCurrentState ? QTreeWidgetItem::data (aColumn, aRole) : QVariant (QString ("%1%2")
+                                         .arg (QTreeWidgetItem::data (aColumn, Qt::DisplayRole).toString())
+                                         .arg (QTreeWidgetItem::data (aColumn, Qt::UserRole).toString()));
             default:
                 break;
         }
@@ -174,40 +175,38 @@ public:
 
     SnapshotAgeFormat updateAge()
     {
-        QString oldAge (mAge);
+        QString age;
 
         /* Age: [date time|%1d ago|%1h ago|%1min ago|%1sec ago] */
         SnapshotAgeFormat ageFormat;
         if (mTimestamp.daysTo (QDateTime::currentDateTime()) > 30)
         {
-            mAge = VBoxSnapshotsWgt::tr (" (%1)").arg (mTimestamp.toString (Qt::LocalDate));
+            age = VBoxSnapshotsWgt::tr (" (%1)").arg (mTimestamp.toString (Qt::LocalDate));
             ageFormat = AgeMax;
         }
         else if (mTimestamp.secsTo (QDateTime::currentDateTime()) > 60 * 60 * 24)
         {
-            mAge = VBoxSnapshotsWgt::tr (" (%n day(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()) / 60 / 60 / 24);
+            age = VBoxSnapshotsWgt::tr (" (%n day(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()) / 60 / 60 / 24);
             ageFormat = AgeInDays;
         }
         else if (mTimestamp.secsTo (QDateTime::currentDateTime()) > 60 * 60)
         {
-            mAge = VBoxSnapshotsWgt::tr (" (%n hour(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()) / 60 / 60);
+            age = VBoxSnapshotsWgt::tr (" (%n hour(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()) / 60 / 60);
             ageFormat = AgeInHours;
         }
         else if (mTimestamp.secsTo (QDateTime::currentDateTime()) > 60)
         {
-            mAge = VBoxSnapshotsWgt::tr (" (%n minute(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()) / 60);
+            age = VBoxSnapshotsWgt::tr (" (%n minute(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()) / 60);
             ageFormat = AgeInMinutes;
         }
         else
         {
-            mAge = VBoxSnapshotsWgt::tr (" (%n second(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()));
+            age = VBoxSnapshotsWgt::tr (" (%n second(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()));
             ageFormat = AgeInSeconds;
         }
 
-#if 0
-        if (mAge != oldAge)
-            emitDataChanged();
-#endif
+        /* Update data */
+        setData (0, Qt::UserRole, age);
 
         return ageFormat;
     }
@@ -277,7 +276,6 @@ private:
     bool mOnline;
     QString mDesc;
     QDateTime mTimestamp;
-    QString mAge;
 
     bool mCurStateModified;
     KMachineState mMachineState;
