@@ -1682,16 +1682,17 @@ static int vmdkDescExtInsert(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
         RTStrPrintf(szExt, sizeof(szExt), "%s %llu %s ", apszAccess[enmAccess],
                     cNominalSectors, apszType[enmType]);
     }
+    else if (enmType == VMDKETYPE_FLAT)
+    {
+        RTStrPrintf(szExt, sizeof(szExt), "%s %llu %s \"%s\" %llu",
+                    apszAccess[enmAccess], cNominalSectors,
+                    apszType[enmType], pszBasename, uSectorOffset);
+    }
     else
     {
-        if (!uSectorOffset)
-            RTStrPrintf(szExt, sizeof(szExt), "%s %llu %s \"%s\"",
-                        apszAccess[enmAccess], cNominalSectors,
-                        apszType[enmType], pszBasename);
-        else
-            RTStrPrintf(szExt, sizeof(szExt), "%s %llu %s \"%s\" %llu",
-                        apszAccess[enmAccess], cNominalSectors,
-                        apszType[enmType], pszBasename, uSectorOffset);
+        RTStrPrintf(szExt, sizeof(szExt), "%s %llu %s \"%s\"",
+                    apszAccess[enmAccess], cNominalSectors,
+                    apszType[enmType], pszBasename);
     }
     cbDiff = strlen(szExt) + 1;
 
