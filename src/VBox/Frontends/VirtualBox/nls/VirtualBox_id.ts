@@ -66,7 +66,7 @@
 <context>
     <name>BootItemsTable</name>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Pilih urutan boot device. Gunakan checkbox yang tersedia di sebelah kiri untuk menyalakan atau mematikan boot device secara individual. Naikkan atau turunkan pilihan yang ada untuk mengubah urutan device.</translation>
     </message>
 </context>
@@ -7133,7 +7133,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">Menampilkan nomer IRQ pada port parallelberikut. Nilai yang valid adalah angka integer dalam jangkauan dari &lt;tt&gt;0&lt;/tt&gt; hingga &lt;tt&gt;255&lt;/tt&gt;. Nilai lebih besar dari &lt;tt&gt;15&lt;/tt&gt; hanya bisa digunakan bila &lt;b&gt;IO APIC&lt;/b&gt; dinyalakan untuk mesin virtual ini.</translation>
     </message>
     <message>
@@ -7141,7 +7141,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Po&amp;rt I/O</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Menampilkan alamat port I/O dasar dari port paralel ini. Nilai yang valid adalah angka integer numbers dalam jangkauan &lt;tt&gt;0&lt;/tt&gt; hingga &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -7180,7 +7180,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">Menampilkan nomor IRQ dari port serial ini. Nilai yang valid adalah angka integer dalam jangkauan dari &lt;tt&gt;0&lt;/tt&gt; hingga &lt;tt&gt;255&lt;/tt&gt;. Nilai lebih besar dari &lt;tt&gt;15&lt;/tt&gt; hanya dapat digunakan bila &lt;b&gt;IO APIC&lt;/b&gt; dinyalakan pada mesin virtual ini.</translation>
     </message>
     <message>
@@ -7188,7 +7188,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Po&amp;rt I/O</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Menampilkan alamat port I/O dasar dari port serial ini. Nilai yang valid adalah angka integer dalam jangkauan dari &lt;tt&gt;0&lt;/tt&gt; ke &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -7204,7 +7204,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Ciptakan Pipa</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation type="obsolete">BIla ditandai, pipa yang disebutkan dalam field &lt;b&gt;Path Port&lt;/b&gt; akan diciptakan oleh mesin virtual saat ia mulai menyala, Atau mesin virtual akan mencoba menggunakan pipa yang sudah ada.</translation>
     </message>
     <message>
@@ -7212,7 +7212,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Path Port</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">Menampilkan path menuju pipa port serial dalam host saat port bekerja pada mode &lt;b&gt;Pipa Host&lt;/a&gt;, atau nama device serial host saat port bekerja pada mode &lt;b&gt;Device Host&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -7847,18 +7847,18 @@ fitur ini setelah menginstall sebuah sistem operasi guest Windows!&lt;/qt&gt;</t
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Saat tertandai, mesin virtual akan mendukung
 Input Output APIC (IO APIC), yang bisa saja sedikit menurunkan performa mesin virtual &lt;b&gt;Catatan:&lt;/b&gt; Jangan matikan
 fitur ini setelah menginstall sebuah sistem operasi guest Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Mendefinisikan mode sharing untuk clipboard diantara sistem operasi guest dan host. Perhatikan bahwa fitur ini membutuhkan Guest Additions terinstall pada sistem operasi guest.</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Menampilkan path dimana snapshot dari mesin virtual akan disimpan. Perhatikan bahwa snapshot dapat menghabiskan banyak ruang disk.</translation>
     </message>
     <message>
@@ -7866,7 +7866,7 @@ fitur ini setelah menginstall sebuah sistem operasi guest Windows!&lt;/qt&gt;</t
         <translation type="obsolete">Me-reset path folder snapshot pada nilai awal. Path default aktual akan ditampilkan setelah menerima perubahan dan membuka dialog ini kembali.</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="obsolete">Menampilkan deskripsi mesin virtual. Field deskripsi berguna untuk memberikan komentar pada detail konfigurasi dari Sistem Operasi guest terinstal.</translation>
     </message>
     <message>
@@ -8045,11 +8045,11 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="obsolete">Antarmuka jaringan host yang tidak tepat terpilih</translation>
     </message>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation type="obsolete">Nomor port ganda terpilih </translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation type="obsolete">Path port ganda dimasukkan </translation>
     </message>
     <message>
@@ -8268,7 +8268,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="obsolete">Nama jaringan internal belum di-set</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation type="obsolete">Path port tidak dijelaskan</translation>
     </message>
     <message>
@@ -8411,7 +8411,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="unfinished">Menampilkan path dimana snapshot dari mesin virtual akan disimpan. Perhatikan bahwa snapshot dapat menghabiskan banyak ruang disk.</translation>
     </message>
     <message>
@@ -8463,7 +8463,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished">&amp;Mendalam</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Pilih urutan boot device. Gunakan checkbox yang tersedia di sebelah kiri untuk menyalakan atau mematikan boot device secara individual. Naikkan atau turunkan pilihan yang ada untuk mengubah urutan device.</translation>
     </message>
     <message>
@@ -8499,7 +8499,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="unfinished">Mendefinisikan mode sharing untuk clipboard diantara sistem operasi guest dan host. Perhatikan bahwa fitur ini membutuhkan Guest Additions terinstall pada sistem operasi guest.</translation>
     </message>
     <message>
@@ -8515,7 +8515,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished">&amp;Deskripsi</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="unfinished">Menampilkan deskripsi mesin virtual. Field deskripsi berguna untuk memberikan komentar pada detail konfigurasi dari Sistem Operasi guest terinstal.</translation>
     </message>
     <message>
@@ -8590,7 +8590,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8732,7 +8732,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8802,7 +8802,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="unfinished">Menampilkan nomer IRQ pada port parallelberikut. Nilai yang valid adalah angka integer dalam jangkauan dari &lt;tt&gt;0&lt;/tt&gt; hingga &lt;tt&gt;255&lt;/tt&gt;. Nilai lebih besar dari &lt;tt&gt;15&lt;/tt&gt; hanya bisa digunakan bila &lt;b&gt;IO APIC&lt;/b&gt; dinyalakan untuk mesin virtual ini.</translation>
     </message>
     <message>
@@ -8810,7 +8810,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="unfinished">Menampilkan alamat port I/O dasar dari port paralel ini. Nilai yang valid adalah angka integer numbers dalam jangkauan &lt;tt&gt;0&lt;/tt&gt; hingga &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -8825,15 +8825,15 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
 <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation type="unfinished">Nomor port ganda terpilih </translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation type="unfinished">Path port tidak dijelaskan</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation type="unfinished">Path port ganda dimasukkan </translation>
     </message>
 </context>
@@ -8963,7 +8963,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="unfinished">Menampilkan nomor IRQ dari port serial ini. Nilai yang valid adalah angka integer dalam jangkauan dari &lt;tt&gt;0&lt;/tt&gt; hingga &lt;tt&gt;255&lt;/tt&gt;. Nilai lebih besar dari &lt;tt&gt;15&lt;/tt&gt; hanya dapat digunakan bila &lt;b&gt;IO APIC&lt;/b&gt; dinyalakan pada mesin virtual ini.</translation>
     </message>
     <message>
@@ -8971,7 +8971,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="unfinished">Menampilkan alamat port I/O dasar dari port serial ini. Nilai yang valid adalah angka integer dalam jangkauan dari &lt;tt&gt;0&lt;/tt&gt; ke &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -8983,7 +8983,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished">Mengendalikan mode kerja dari serial port ini. Bila anda memilih &lt;b&gt;Terputus&lt;/b&gt;, Sistem Operasi Guest akan mendeteksi port serial tapi tidak akan dapat mengoperasikannya.</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation type="unfinished">BIla ditandai, pipa yang disebutkan dalam field &lt;b&gt;Path Port&lt;/b&gt; akan diciptakan oleh mesin virtual saat ia mulai menyala, Atau mesin virtual akan mencoba menggunakan pipa yang sudah ada.</translation>
     </message>
     <message>
@@ -8991,7 +8991,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished">&amp;Ciptakan Pipa</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="unfinished">Menampilkan path menuju pipa port serial dalam host saat port bekerja pada mode &lt;b&gt;Pipa Host&lt;/a&gt;, atau nama device serial host saat port bekerja pada mode &lt;b&gt;Device Host&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -9002,15 +9002,15 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation type="unfinished">Nomor port ganda terpilih </translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation type="unfinished">Path port tidak dijelaskan</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation type="unfinished">Path port ganda dimasukkan </translation>
     </message>
 </context>
@@ -9021,7 +9021,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9075,7 +9075,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="unfinished">Pilih urutan boot device. Gunakan checkbox yang tersedia di sebelah kiri untuk menyalakan atau mematikan boot device secara individual. Naikkan atau turunkan pilihan yang ada untuk mengubah urutan device.</translation>
     </message>
     <message>
@@ -9107,7 +9107,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

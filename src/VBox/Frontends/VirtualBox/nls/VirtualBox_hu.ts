@@ -66,7 +66,7 @@
 <context>
     <name>BootItemsTable</name>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Meghatározza a bootsorrendet. Használja ezt az opciót a boot eszközök engedélyezésére/tiltására. Mozgassa fel vagy le az elemeket a pontos sorrendhez.</translation>
     </message>
 </context>
@@ -7001,7 +7001,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">A soros port megszakításának száma. Bármely szám lehet &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;255&lt;/tt&gt; között. Ha az &lt;b&gt;IO APIC&lt;/b&gt; engedélyezve van, a &lt;tt&gt;15&lt;/tt&gt; feletti megszakítások foglaltak.</translation>
     </message>
     <message>
@@ -7009,7 +7009,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">I/O Po&amp;rt</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">A soros port I/O báziscíme. Bármely cím érvényes &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;0xFFFF&lt;/tt&gt; között.</translation>
     </message>
     <message>
@@ -7029,7 +7029,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Alt+C</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation type="obsolete">Ha engedélyezed, egy cső fog létrejönni a &lt;b&gt;Port útvonal&lt;/b&gt; mezőben megadott helyen a virtuális gép indulásakor. Egyébként a virtuális gép megpróbálja felhasználni a már létező csövet.</translation>
     </message>
     <message>
@@ -7037,7 +7037,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Port útvonal</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">A port útvonala ha a port &lt;b&gt;Gazda cső&lt;/b&gt; üzemmódban működik, vagy a gazda soros portjának neve ha a port &lt;b&gt;Gazda eszköz&lt;/b&gt; üzemmódban működik.</translation>
     </message>
 </context>
@@ -7688,18 +7688,18 @@ Advanced Configuration and Power Management Interface (ACPI)-t. &lt;b&gt;Figyele
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Ha engedélyezed, a virtuális gép támogatni fogja az
 Input Output APIC (IO APIC), amely egy picit visszafogja a virtuális gép teljesítményét. &lt;b&gt;Figyelem:&lt;/b&gt;
  ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">A vágólap megosztásának módját állíthatod itt be a gazda és a vendég rendszer közt. Ez a virtuális gépen a Guest Additions telepítését igénlyi.</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">A gépről készített pillanatképek útvonala. A pillanatképek egy picit sok helyet foglalnak el.</translation>
     </message>
     <message>
@@ -7707,7 +7707,7 @@ Input Output APIC (IO APIC), amely egy picit visszafogja a virtuális gép telje
         <translation type="obsolete">A pillanatképek mappáját az alapértelmezettre állítja vissza. Az új érték a változások elfogadása és az ablak újranyitása után jelenik meg.</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="obsolete">A virtuális gép leírása. A leírás mező hasznos a konfiguráció részleteinek megadásakor.</translation>
     </message>
     <message>
@@ -7886,11 +7886,11 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation type="obsolete">Helytelen gazda interface van kiválasztva</translation>
     </message>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation type="obsolete">Kettős portszám van kiválasztva </translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation type="obsolete">Kétszer van ugyanaz az útvonal megadva </translation>
     </message>
     <message>
@@ -8086,7 +8086,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>A gépről készített pillanatképek útvonala. A pillanatképek egy picit sok helyet foglalnak el.</translation>
     </message>
     <message>
@@ -8138,7 +8138,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation type="obsolete">Boo&amp;t sorrend: </translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Meghatározza a bootsorrendet. A pipadobozok segítségével lehetőség nyílik a boot eszközök engedélyezésére/tiltására, illetve az elemek fel-le mozgatásával a bootolási sorrend meghatározására.</translation>
     </message>
     <message>
@@ -8170,7 +8170,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation type="obsolete">A&amp;CPI engedélyezése</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">Ha engedélyezed, a virtuális gép támogatni fogja az Input Output APIC-t (IO APIC), amely egy picit visszafogja a virtuális gép teljesítményét. &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
     </message>
     <message>
@@ -8198,7 +8198,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>O&amp;sztott vágólap:</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>A vágólap megosztásának módját állíthatod itt be a gazda és a vendég rendszer közt. Ez a virtuális gépen a Guest Additions telepítését igénlyi.</translation>
     </message>
     <message>
@@ -8218,7 +8218,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>L&amp;eírás</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>A virtuális gép leírása. A leírás mező hasznos a konfiguráció részleteinek megadásakor.</translation>
     </message>
     <message>
@@ -8254,7 +8254,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation type="obsolete">több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, adj kevesebb memóriát a virtuális gépnek.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="obsolete">több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, ami problémákat okozhat.</translation>
     </message>
     <message>
@@ -8338,7 +8338,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>A Virtuális médiakezelő használatával válassz egy merevlemezt, ami a jelenleg kiemelt foglalatba kerül.</translation>
     </message>
     <message>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation>Ha engedélyezed, megmutatja a foglalathoz jelenleg csatolt különbözeti merevlemezeket az alap merevlemezek helyett (megjelennek a közvetett csatolások is) és másik különbözeti merevlemezek is csatolhatók. Ezt csak akkor válaszd, ha összetett merevlemez beállításra van szükséged.</translation>
     </message>
     <message>
@@ -8504,7 +8504,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>&amp;Név:</translation>
     </message>
     <message>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation>A hálózati kártya nevét lehet itt beállítani, ha a csatolás típusa &lt;b&gt;Bridgelt kártya&lt;/b&gt; vagy &lt;b&gt;Host-only kártya&lt;/b&gt;, és a belső háló nevét, ha a csatolás típusa &lt;b&gt;Belső hálózat&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -8578,7 +8578,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>A párhuzamos port megszakításának száma. Bármely szám lehet &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;255&lt;/tt&gt; között. Ha az &lt;b&gt;IO APIC&lt;/b&gt; engedélyezve van, a &lt;tt&gt;15&lt;/tt&gt; feletti megszakítások foglaltak.</translation>
     </message>
     <message>
@@ -8586,7 +8586,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>I/O Po&amp;rt:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>A párhuzamos port I/O báziscíme. Bármely cím érvényes &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;0xFFFF&lt;/tt&gt; között.</translation>
     </message>
     <message>
@@ -8601,15 +8601,15 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
 <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Kettős portszám van kiválasztva </translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>A port útvonala nincs megadva </translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Kétszer van ugyanaz az útvonal megadva </translation>
     </message>
 </context>
@@ -8739,7 +8739,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>A soros port megszakításának száma. Bármely szám lehet &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;255&lt;/tt&gt; között. Ha az &lt;b&gt;IO APIC&lt;/b&gt; engedélyezve van, a &lt;tt&gt;15&lt;/tt&gt; feletti megszakítások foglaltak.</translation>
     </message>
     <message>
@@ -8747,7 +8747,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>I/O Po&amp;rt:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>A soros port I/O báziscíme. Bármely cím érvényes &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;0xFFFF&lt;/tt&gt; között.</translation>
     </message>
     <message>
@@ -8759,7 +8759,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>A soros port működési módja. Ha a &lt;b&gt;Lekapcsolva&lt;/b&gt; módot választod, a vendég rendszer érzékeli majd a soros portot, de használni nem fogja tudni (nem lesz benne kábel).</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation>Ha engedélyezed, egy cső fog létrejönni a &lt;b&gt;Port útvonal&lt;/b&gt; mezőben megadott helyen a virtuális gép indulásakor. Egyébként a virtuális gép megpróbálja felhasználni a már létező csövet.</translation>
     </message>
     <message>
@@ -8771,7 +8771,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation type="obsolete">&amp;Port útvonal:</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>A port útvonala, ha a port &lt;b&gt;Gazda cső&lt;/b&gt; üzemmódban működik, vagy a gazda soros portjának neve ha a port &lt;b&gt;Gazda eszköz&lt;/b&gt; üzemmódban működik.</translation>
     </message>
     <message>
@@ -8782,15 +8782,15 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Kettős portszám van kiválasztva </translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>A port útvonala nincs megadva </translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Kétszer van ugyanaz az útvonal megadva </translation>
     </message>
 </context>
@@ -8801,7 +8801,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, adj kevesebb memóriát a virtuális gépnek.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation>több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, ami problémákat okozhat.</translation>
     </message>
     <message>
@@ -8855,7 +8855,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>&amp;Boot sorrend:</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation>Meghatározza a bootsorrendet. Használd ezt az opciót a boot eszközök engedélyezésére/tiltására. Mozgasd fel vagy le az elemeket a pontos sorrendhez.</translation>
     </message>
     <message>
@@ -8887,7 +8887,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>&amp;ACPI engedélyezése</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation>Ha engedélyezed, a virtuális gép támogatni fogja az Input Output APIC-t (IO APIC), amely egy picit visszafogja a virtuális gép teljesítményét. &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
     </message>
     <message>

@@ -110,7 +110,7 @@
          </sizepolicy>
         </property>
         <property name="whatsThis" >
-         <string>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt>0&lt;/tt> to &lt;tt>255&lt;/tt>. Values greater than &lt;tt>15&lt;/tt> may be used only if the &lt;b>IO APIC&lt;/b> is enabled for this virtual machine.</string>
+         <string>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt>0&lt;/tt> and &lt;tt>255&lt;/tt>. Values greater than &lt;tt>15&lt;/tt> may only be used if the &lt;b>IO APIC&lt;/b> setting is enabled for this virtual machine.</string>
         </property>
        </widget>
       </item>

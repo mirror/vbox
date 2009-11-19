@@ -146,7 +146,7 @@
              </sizepolicy>
             </property>
             <property name="whatsThis" >
-             <string>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</string>
+             <string>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</string>
             </property>
            </widget>
           </item>
@@ -269,7 +269,7 @@
        <item>
         <widget class="QTextEdit" name="mTeDescription" >
          <property name="whatsThis" >
-          <string>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</string>
+          <string>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</string>
          </property>
          <property name="acceptRichText" >
           <bool>false</bool>

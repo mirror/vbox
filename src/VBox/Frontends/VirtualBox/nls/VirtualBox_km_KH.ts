@@ -4056,7 +4056,7 @@ p, li { white-space: pre-wrap; }
       <translation>&lt;qt>%1&amp;nbsp;មេកាបៃ&lt;/qt></translation>
     </message>
     <message>
-      <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+      <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
       <translation>បង្ហាញ​ផ្លូវ​ដែល​រូបថត​របស់ម៉ាស៊ីន​និម្មិត​នេះ​នឹង​ត្រូ​វបានផ្ទុក ។ ចំណាំ​ថា រូបថត​អាចចាប់យក​​ទំហំ​ថាស​ជា​ច្រើន​​យ៉ាង​ស្ងៀវស្ងាត់​ ។</translation>
     </message>
     <message>
@@ -4112,7 +4112,7 @@ p, li { white-space: pre-wrap; }
       <translation>លំដាប់​ចាប់ផ្ដើម ៖</translation>
     </message>
     <message>
-      <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+      <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
       <translation>កំណត់​លំដាប់​ឧបករណ៍​ចាប់ផ្ដើម ។ ប្រើ​ប្រអប់​គូសធីក​នៅ​ខា​ងឆ្វេង​ដើម្បី​បើក ​ឬ​បិទ​ឧបករណ៍​ចាប់ផ្ដើម​នីមួយៗ ។ ផ្លាស់ទីធាតុ​ឡើង​លើ និង​ចុះក្រោម​ដើម្បី​ផ្លាស់ប្ដូរ​លំដាប់​ឧបករណ៍ ។</translation>
     </message>
     <message>
@@ -4148,7 +4148,7 @@ p, li { white-space: pre-wrap; }
       <translation>បើក ACPI</translation>
     </message>
     <message>
-      <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b>Note:&lt;/b> don't disable this feature after having installed a Windows guest operating system!</source>
+      <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b>Note:&lt;/b> don't disable this feature after having installed a Windows guest operating system!</source>
       <translation>នៅពេល​បាន​គូស​ធីក ម៉ាស៊ីន​និម្មិត​នឹង​គាំទ្រ​ Input Output APIC (IO APIC) ដែល​អាច​បន្ថយ​ការ​អនុវត្ត​របស់ VM តិចតួច ។ &lt;b>ចំណាំ ៖&lt;/b> កុំ​បិទ​លក្ខណៈ​ពិសេស​នេះ​បន្ទាប់ពី​ដំឡើង​ប្រព័ន្ធ​ប្រតិបត្តិការ​វីនដូ​របស់ម៉ាស៊ីន​ភ្ញៀវ !</translation>
     </message>
     <message>
@@ -4176,7 +4176,7 @@ p, li { white-space: pre-wrap; }
       <translation>ក្ដារតម្បៀតខ្ទាស់​ដែល​បាន​ចែករំលែក ៖</translation>
     </message>
     <message>
-      <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+      <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
       <translation>កំណត់​របៀប​ចែករំលែក​ក្ដារតម្បៀតខ្ទាស់​រវាង​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ និង​របស់ម៉ាស៊ីន ។ ចំណាំ​ថា លក្ខណៈពិសេស​នេះ​តម្រូវ​ឲ្យ​ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​ក្នុង​ប្រព័ន្ធប្រតិបត្តិការ​របស់​ម៉ាស៊ីន ។</translation>
     </message>
     <message>
@@ -4196,7 +4196,7 @@ p, li { white-space: pre-wrap; }
       <translation>សេចក្ដី​ពិពណ៌នា</translation>
     </message>
     <message>
-      <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+      <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
       <translation>បង្ហាញ​សេចក្ដីពិពណ៌នា​របស់ម៉ាស៊ីន​និម្មិត ។ វាល​សេចក្ដី​ពិពន៌នា​មានប្រយោជន៍​សម្រាប់​ផ្ដល់​យោបល់​អំពី​សេចក្ដី​លម្អិត​កំណត់​រចនាសម្ព័ន្ធ​របស់​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​ដែល​បាន​ដំឡើង ។</translation>
     </message>
     <message>
@@ -4220,7 +4220,7 @@ p, li { white-space: pre-wrap; }
       <translation>អ្នក​បានផ្ដល់​សតិ​កុំព្យូទ័រ​ច្រើនជាង &lt;b>75%&lt;/b> នៃកុំព្យូទ័រ​របស់ (&lt;b>%1&lt;/b>) ដល់​ម៉ាស៊ីន​និម្មមិត ។ គ្មាន​សតិ​នៅសល់​គ្រប់គ្រាន់​សម្រាប់ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​របស់​អ្នក​ទេ ។ សូម​ជ្រើស​ចំនួន​សតិ​តូចជាង​នេះ ។</translation>
     </message>
     <message>
-      <source>you have assigned more than &lt;b>50%&lt;/b> of your computer's memory (&lt;b>%1&lt;/b>) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+      <source>you have assigned more than &lt;b>50%&lt;/b> of your computer's memory (&lt;b>%1&lt;/b>) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
       <translation>អ្នក​បានផ្ដល់​សិត​កុំព្យូទ័រ​ច្រើនជាង &lt;b>50%&lt;/b> នៃ​សតិ​កុំព្យូទ័រ​របស់​អ្នក (&lt;b>%1&lt;/b>) ដល់​ម៉ាស៊ីន​និម្មិត ។ គ្មាន​សតិ​គ្រប់គ្រាន់​នៅ​សល់​សម្រាប់​ប្រព័ន្ធ​ប្រតិបត្តិកា​រម៉ាស៊ីន​របស់​អ្នក​ទេ ។ បន្ត​​ទាំង​គ្រោះថ្នាក់ឬ ?</translation>
     </message>
     <message>
@@ -4287,7 +4287,7 @@ p, li { white-space: pre-wrap; }
       <translation>ដកហូត​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត ដើម្បី​ជ្រើស​ថាសរឹង ត្រូវ​ភ្ជាប់​ទៅ​រន្ធ​ដែល​បាន​បន្លិច​បច្ចុប្បន្ន ។</translation>
     </message>
     <message>
-      <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+      <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
       <translation>ប្រសិនបើ​បានគូសធីគ វា​នឹង​បង្ហាញ​ថាសរឹង​ផ្សេងៗ​ដែល​បានភ្ជាប់​ទៅ​រន្ធ​ជំនួស​ឲ្យ​ថាសរឹង​មូលដ្ឋាន​​របស់​ពួកវា (បង្ហាញតែ​ក្នុងករណី​ដែល​មានការ​ភ្ជាប់​ដោយ​ប្រយោល​ប៉ុណ្ណោះ) ហើយ​នឹង​អនុញ្ញាត​ឲ្យ​ភ្ជាប់​ថាសរឹង​ផ្សេងៗ​ផងដែរ ។ គូស​ធីក​តែ​ក្នុងករណី​ដែល​អ្នក​ត្រូវការ​ការ​រៀបចំ​ថាសរឹង​ស្មុគស្មាញ​ប៉ុណ្ណោះ ។</translation>
     </message>
     <message>
@@ -4437,7 +4437,7 @@ p, li { white-space: pre-wrap; }
       <translation>IRQ ៖</translation>
     </message>
     <message>
-      <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt>0&lt;/tt> to &lt;tt>255&lt;/tt>. Values greater than &lt;tt>15&lt;/tt> may be used only if the &lt;b>IO APIC&lt;/b> is enabled for this virtual machine.</source>
+      <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt>0&lt;/tt> and &lt;tt>255&lt;/tt>. Values greater than &lt;tt>15&lt;/tt> may only be used if the &lt;b>IO APIC&lt;/b> setting is enabled for this virtual machine.</source>
       <translation>បង្ហាញលេខ IRQ របស​ច្រក​ប៉ារ៉ាឡែល​នេះ ។ តម្លៃ​ត្រឹមត្រូវ​ជា​ចំនួន​គត់​ដែល​ស្ថិត​ក្នុងជួរពី &lt;tt>0&lt;/tt> ដល់ &lt;tt>២៥៥&lt;/tt> ។ តម្លៃ​ធំជាង &lt;tt>១៥&lt;/tt> អាច​ត្រូវ​បានប្រើ​តែ​ក្នុងករណី​ដែល &lt;b>IO APIC&lt;/b> ត្រូ​វបានបើក​សម្រាប់​ម៉ាស៊ីន​និម្មិត​នេះ​ប៉ុណ្ណោះ ។</translation>
     </message>
     <message>
@@ -4460,15 +4460,15 @@ p, li { white-space: pre-wrap; }
   <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
-      <source>Duplicate port number is selected </source>
+      <source>Duplicate port number selected </source>
       <translation>បាន​ជ្រើស​លេខ​ច្រក​ស្ទួន</translation>
     </message>
     <message>
-      <source>Port path is not specified </source>
+      <source>Port path not specified </source>
       <translation>មិន​បាន​បញ្ជាក់ផ្លូវ​ច្រក​ទេ</translation>
     </message>
     <message>
-      <source>Duplicate port path is entered </source>
+      <source>Duplicate port path entered </source>
       <translation>បាន​បញ្ចូល​ផ្លូវ​ច្រក​ស្ទួន</translation>
     </message>
   </context>
@@ -4598,7 +4598,7 @@ p, li { white-space: pre-wrap; }
       <translation>IRQ ៖</translation>
     </message>
     <message>
-      <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt>0&lt;/tt> to &lt;tt>255&lt;/tt>. Values greater than &lt;tt>15&lt;/tt> may be used only if the &lt;b>IO APIC&lt;/b> is enabled for this virtual machine.</source>
+      <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt>0&lt;/tt> and &lt;tt>255&lt;/tt>. Values greater than &lt;tt>15&lt;/tt> may only be used if the &lt;b>IO APIC&lt;/b> setting is enabled for this virtual machine.</source>
       <translation>បង្ហាញ​លេខ IRQ របស់​ច្រក​ស៊េរៀល​នេះ ។ តម្លៃ​ដែល​ត្រឹមត្រូវ​គឺ​ជា​ចំនួន​គត់​ដែល​ស្ថិត​នៅ​ក្នុង​ចន្លោះ​ពី &lt;tt>0&lt;/tt> ដល់ &lt;tt>២៥៥&lt;/tt> ។ តម្លៃ​ធំជាង​ &lt;tt>១៥&lt;/tt> អាច​ត្រូ​វបានប្រើ​តែ​ក្នុងករណី​ដែល &lt;b>IO APIC&lt;/b> ត្រូវ​បានបើក​សម្រាប់​ម៉ាស៊ីន​និម្មិត ។</translation>
     </message>
     <message>
@@ -4618,7 +4618,7 @@ p, li { white-space: pre-wrap; }
       <translation>ពិនិត្យ​មើល​របៀប​ដំណើរការ​របស់​ច្រក​ស៊េរៀល ។ ប្រសិនបើ​អ្នក​ជ្រើស​ &lt;b>បានផ្ដាច់&lt;/b> ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​រកឃើញ​ច្រក​ស៊េរៀល​ ប៉ុន្តែ​នឹង​មិន​អាច​ប្រតិបត្តិ​វា​បានទេ ។</translation>
     </message>
     <message>
-      <source>If checked, the pipe specified in the &lt;b>Port Path&lt;/b> field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+      <source>If checked, the pipe specified in the &lt;b>Port Path&lt;/b> field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
       <translation>ប្រសិន​បើ​បានគូស​ធីក បំពង់​បាន​បញ្ជាក់​នៅ​ក្នុងវាល &lt;b>ផ្លូវ​ច្រក&lt;/b> នឹង​ត្រូវ​បាន​បង្កើត​ដោយ​​ម៉ាស៊ីន​និម្មិត នៅពេល​វា​ចាប់ផ្ដើម ។ បើ​មិន​ដូច្នេះ​ទេ ម៉ាស៊ីន​និម្មិត​នឹង​ព្យាយាម​ប្រើ​បំពង់​ដែល​បានស្រាប់ ។</translation>
     </message>
     <message>
@@ -4630,22 +4630,22 @@ p, li { white-space: pre-wrap; }
       <translation>ផ្លូវ​ច្រក ៖</translation>
     </message>
     <message>
-      <source>Displays the path to the serial port's pipe on the host when the port works in &lt;b>Host Pipe&lt;/b> mode, or the host serial device name when the port works in &lt;b>Host Device&lt;/b> mode.</source>
+      <source>Displays the path to the serial port's pipe on the host when the port is working in &lt;b>Host Pipe&lt;/b> mode, or the host serial device name when the port is working in &lt;b>Host Device&lt;/b> mode.</source>
       <translation>បង្ហាញ​ផ្លូវ​ទៅកាន់​ច្រក​ស៊េរៀល​នៅ​លើ​ម៉ាស៊ីន នៅពេល​ច្រក​ដំណើការ​ក្នុង​របៀប &lt;b>បំពង់​ម៉ាស៊ីន&lt;/b> ឬ​ឈ្មោះ​ឧបករណ៍​ស៊េរៀល​នៅពេល​ច្រក​ដំណើរការ​ក្នុង​របៀប &lt;b>ឧបករណ៍​ម៉ាស៊ីន&lt;/b> ។</translation>
     </message>
   </context>
   <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-      <source>Duplicate port number is selected </source>
+      <source>Duplicate port number selected </source>
       <translation>បានជ្រើស​លេខ​ច្រក​ស្ទួន</translation>
     </message>
     <message>
-      <source>Port path is not specified </source>
+      <source>Port path not specified </source>
       <translation>មិនបានបញ្ជាក់​ផ្លូវ​ច្រក​ស្ទួន​ទេ</translation>
     </message>
     <message>
-      <source>Duplicate port path is entered </source>
+      <source>Duplicate port path entered </source>
       <translation>បាន​បញ្ចូល​ផ្លូវ​ច្រក​ស្ទួន</translation>
     </message>
   </context>

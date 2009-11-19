@@ -183,7 +183,7 @@
             </sizepolicy>
            </property>
            <property name="whatsThis">
-            <string>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</string>
+            <string>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</string>
            </property>
            <property name="verticalScrollBarPolicy">
             <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -319,7 +319,7 @@
           </sizepolicy>
          </property>
          <property name="whatsThis">
-          <string>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don't disable this feature after having installed a Windows guest operating system!</string>
+          <string>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don't disable this feature after having installed a Windows guest operating system!</string>
          </property>
          <property name="text">
           <string>Enable &amp;IO APIC</string>
@@ -335,7 +335,7 @@
           </sizepolicy>
          </property>
          <property name="whatsThis">
-          <string>When checked, activates support for the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if activated..</string>
+          <string>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</string>
          </property>
          <property name="text">
           <string>Enable &amp;EFI (special OSes only)</string>

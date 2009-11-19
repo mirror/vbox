@@ -7081,7 +7081,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="154"/>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Visar sökvägen där ögonblicksbilder av den virtuella maskinen lagras. Observera att ögonblicksbilder kan ta upp en hel del diskutrymme.</translation>
     </message>
     <message>
@@ -7161,7 +7161,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="" line="0"/>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Definierar ordningen för uppstartsenheter. Använd kryssrutorna till vänster för att aktivera eller inaktivera individuella uppstartsenheter. Flytta objekten uppåt och nedåt för att ändra enhetsordningen.</translation>
     </message>
     <message>
@@ -7206,7 +7206,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="" line="0"/>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">När kryssad kommer den virtuella maskinen att ha stöd för Input Output APIC (IO APIC), som till viss del kan minska prestandan för den virtuella maskinen. &lt;b&gt;Observera:&lt;/b&gt; inaktivera inte denna funktion efter att ett Windows-gästoperativsystem har installerats!</translation>
     </message>
     <message>
@@ -7241,7 +7241,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="149"/>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>Definierar delningsläget för urklipp mellan gäst- och värdoperativsystemet. Observera att den här funktionen kräver att Gästtillägg är installerat på gästoperativsystemet.</translation>
     </message>
     <message>
@@ -7266,7 +7266,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="253"/>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Visar beskrivningen för den virtuella maskinen. Beskrivningsfältet är användbart för att kommentera konfigurationsdetaljer för det installerade gästoperativsystemet.</translation>
     </message>
     <message>
@@ -7296,7 +7296,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="" line="0"/>
-        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="obsolete">du har tilldelat mer än &lt;b&gt;50%&lt;/b&gt; av din dators minne (&lt;b&gt;%1&lt;/b&gt;) till den virtuella maskinen. Det finns kanske inte tillräckligt mycket minne kvar för ditt värdoperativsystem. Fortsätt på egen risk.</translation>
     </message>
     <message>
@@ -7321,7 +7321,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="" line="0"/>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="obsolete">du har tilldelat mer än &lt;b&gt;%1%&lt;/b&gt; av din dators minne (&lt;b&gt;%2&lt;/b&gt;) till den virtuella maskinen. Det kanske inte finns tillräckligt mycket minne kvar för ditt värdoperativsystem. Fortsätt på egen risk.</translation>
     </message>
     <message>
@@ -7434,7 +7434,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="176"/>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation>Om kryssad kommer den att visa skiljande hårddiskar som anslutits till platserna istället för deras bashårddiskar (visas vid indirekta anslutningar) och kommer även att tillåta uttrycklig anslutning av andra skiljande hårddiskar. Kryssa endast i denna om du behöver en komplex hårddiskkonfiguration.</translation>
     </message>
     <message>
@@ -7685,7 +7685,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation>Väljer namnet för nätverkskortet om anslutningstypen är den samma som &lt;b&gt;Bryggat nätkort&lt;/b&gt; eller &lt;b&gt;Endast värd-kort&lt;/b&gt; och namnet på det interna nätverket om anslutningstypen är den samma som &lt;b&gt;Internt nätverk&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -7851,7 +7851,7 @@ parallel ports</comment>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="113"/>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Visar IRQ-numret för denna parallellport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; kan endast användas om &lt;b&gt;IO APIC&lt;/b&gt; har aktiverats för denna virtuella maskin.</translation>
     </message>
     <message>
@@ -7861,7 +7861,7 @@ parallel ports</comment>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="136"/>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Visar basadressen för In/Ut-porten för denna parallellport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -7885,17 +7885,17 @@ parallel ports</comment>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="223"/>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Dublett av portnummer har valts </translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="239"/>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Portsökväg har inte angivits </translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="240"/>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Dublett av portsökväg har angivits </translation>
     </message>
 </context>
@@ -8056,7 +8056,7 @@ serial ports</comment>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="113"/>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Visar IRQ-numret för den här serieporten. Giltiga värden är heltal i ett intervall från &lt;tt&gt;0&lt;/tt&gt; upp till &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; kan endast användas om &lt;b&gt;IO APIC&lt;/b&gt; är aktiverat för den här virtuella maskinen.</translation>
     </message>
     <message>
@@ -8066,7 +8066,7 @@ serial ports</comment>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="136"/>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Visar I/O-basportadressen för den här serieporten. Giltiga värden är heltal i ett intervall från &lt;tt&gt;0&lt;/tt&gt; upp till &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -8081,7 +8081,7 @@ serial ports</comment>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="176"/>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation>När kryssad kommer röret angivet i fältet &lt;b&gt;Portsökväg&lt;/b&gt; att skapas av den virtuella maskinen när den startas. Om inte kommer den virtuella maskinen att försöka använda det befintliga röret.</translation>
     </message>
     <message>
@@ -8096,7 +8096,7 @@ serial ports</comment>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="199"/>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Visar sökvägen till serieportens rör på värden när porten arbetar i läget &lt;b&gt;Värdrör&lt;/b&gt;, eller värdmaskinens serieenhetsnamn när porten arbetar i läget &lt;b&gt;Värdenhet&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -8115,17 +8115,17 @@ serial ports</comment>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="263"/>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Dublett av portnummer har valts </translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="285"/>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Portsökväg har inte angivits </translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="286"/>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Dublett av portsökväg har angivits </translation>
     </message>
 </context>
@@ -8138,7 +8138,7 @@ serial ports</comment>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSystem.cpp" line="362"/>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation>du har tilldelat mer än &lt;b&gt;%1%&lt;/b&gt; av din dators minne (&lt;b&gt;%2&lt;/b&gt;) till den virtuella maskinen. Det kanske inte finns tillräckligt mycket minne kvar för ditt värdoperativsystem. Fortsätt på egen risk.</translation>
     </message>
     <message>
@@ -8205,7 +8205,7 @@ serial ports</comment>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSystem.ui" line="194"/>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation>Definierar ordningen för uppstartsenheter. Använd kryssrutorna till vänster för att aktivera eller inaktivera individuella uppstartsenheter. Flytta objekten uppåt och nedåt för att ändra enhetsordningen.</translation>
     </message>
     <message>
@@ -8245,7 +8245,7 @@ serial ports</comment>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSystem.ui" line="346"/>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation>När kryssad kommer den virtuella maskinen att ha stöd för Input Output APIC (IO APIC), som till viss del kan minska prestandan för den virtuella maskinen. &lt;b&gt;Observera:&lt;/b&gt; inaktivera inte denna funktion efter att ett Windows-gästoperativsystem har installerats!</translation>
     </message>
     <message>

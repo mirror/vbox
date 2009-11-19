@@ -112,7 +112,7 @@
 <context>
     <name>BootItemsTable</name>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">指定開機裝置的順序。利用左側核取方塊來啟用或停用個別的開機裝置。將項目往上或往下移動以變更裝置順序。</translation>
     </message>
 </context>
@@ -7930,7 +7930,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">顯示這個序列埠的 IRQ 號碼。有效值為從 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;255&lt;/tt&gt; 的整數。只有當這個虛擬機器的 &lt;b&gt;IO APIC&lt;/b&gt; 被啟用時，才能使用大於 &lt;tt&gt;15&lt;/tt&gt; 的值。</translation>
     </message>
     <message>
@@ -7938,7 +7938,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">I/O 埠(&amp;R)</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">顯示這個序列埠的基本 I/O 埠位址。有效值為從 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;0xFFFF&lt;/tt&gt; 的整數。</translation>
     </message>
     <message>
@@ -7958,7 +7958,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Alt+C</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation type="obsolete">如果勾選，在&lt;b&gt;序列埠路徑&lt;/b&gt; 欄位中指定的管線將由虛擬機器於啟動時建立。否則，虛擬機器將會試著使用已有的管線。</translation>
     </message>
     <message>
@@ -7966,7 +7966,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">序列埠路徑(&amp;P)</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">顯示序列埠在 &lt;b&gt;主端管線&lt;/b&gt; 模式中，管線位於主端的路徑，或是當序列埠在 &lt;b&gt;主端裝置&lt;/b&gt; 模式中作用時，主端序列裝置的名稱。</translation>
     </message>
 </context>
@@ -8445,7 +8445,7 @@ plan to install into this virtual machine (called a guest operating system).</so
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine
-will be stored. Note that snapshots can take quite a lot of disk space.</source>
+will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">顯示用來儲存此虛擬機器快照的路徑。
 請注意，快照有可能會佔用相當多的磁碟空間。</translation>
     </message>
@@ -8492,7 +8492,7 @@ this feature after having installed a Windows guest operating system!</source>
     </message>
     <message>
         <source>When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">如果勾選，虛擬機器將會支援「輸入輸出 APIC (IO ACPI)」，
 而它也許會稍微降低虛擬機器的效能。&lt;b&gt;注意：&lt;/b&gt; 在安裝 Windows 客端作業系統之後，請不要停用此功能！</translation>
@@ -8875,18 +8875,18 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;如果勾選，虛擬機器將會支援
 輸入輸出 APIC (IO APIC)，它也許會稍微降低虛擬機器的效能。 &lt;b&gt;注意：&lt;/b&gt; 不要在安裝
 了 Windows 作業系統之後停用此功能！&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">定義在客端與主端作業系統之間分享剪貼簿的模式。請注意，此功能需要在客端作業系統中先安裝客端額外功能。</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">顯示用來儲存此虛擬機器快照的路徑。請注意，快照可能會佔據相當大的磁碟空間。</translation>
     </message>
     <message>
@@ -8894,7 +8894,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
         <translation type="obsolete">重新設定快照資料夾路徑為預設值。實際的預設路徑，將會在接受變更並再次開啟此對話框之後顯示。</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="obsolete">顯示虛擬機器的描述。描述欄位可用來註解已安裝的客端作業系統配置細節。</translation>
     </message>
     <message>
@@ -9077,11 +9077,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">選取了不正確的主端網路介面</translation>
     </message>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation type="obsolete">選取了重複的埠號</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation type="obsolete">輸入了重複的序列埠路徑</translation>
     </message>
     <message>
@@ -9268,7 +9268,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;%1 MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="unfinished">顯示用來儲存此虛擬機器快照的路徑。請注意，快照可能會佔據相當大的磁碟空間。</translation>
     </message>
     <message>
@@ -9320,7 +9320,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished">進階(&amp;A)</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">指定開機裝置的順序。利用左側核取方塊來啟用或停用個別的開機裝置。將項目往上或往下移動以變更裝置順序。</translation>
     </message>
     <message>
@@ -9356,7 +9356,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="unfinished">定義在客端與主端作業系統之間分享剪貼簿的模式。請注意，此功能需要在客端作業系統中先安裝客端額外功能。</translation>
     </message>
     <message>
@@ -9368,7 +9368,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished">描述(&amp;D)</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="unfinished">顯示虛擬機器的描述。描述欄位可用來註解已安裝的客端作業系統配置細節。</translation>
     </message>
     <message>
@@ -9439,7 +9439,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9577,7 +9577,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9636,7 +9636,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9644,7 +9644,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9659,15 +9659,15 @@ makes the guest see an audio card, however every access to it will be ignored.&l
 <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation type="unfinished">選取了重複的埠號</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation type="unfinished">輸入了重複的序列埠路徑</translation>
     </message>
 </context>
@@ -9797,7 +9797,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="unfinished">顯示這個序列埠的 IRQ 號碼。有效值為從 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;255&lt;/tt&gt; 的整數。只有當這個虛擬機器的 &lt;b&gt;IO APIC&lt;/b&gt; 被啟用時，才能使用大於 &lt;tt&gt;15&lt;/tt&gt; 的值。</translation>
     </message>
     <message>
@@ -9805,7 +9805,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="unfinished">顯示這個序列埠的基本 I/O 埠位址。有效值為從 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;0xFFFF&lt;/tt&gt; 的整數。</translation>
     </message>
     <message>
@@ -9817,7 +9817,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished">控制這個序列埠的工作模式。如果您選取 &lt;b&gt;已離線&lt;/b&gt;，客端作業系統將會偵測到序列埠但無法操作它。</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation type="unfinished">如果勾選，在&lt;b&gt;序列埠路徑&lt;/b&gt; 欄位中指定的管線將由虛擬機器於啟動時建立。否則，虛擬機器將會試著使用已有的管線。</translation>
     </message>
     <message>
@@ -9825,7 +9825,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished">建立管線(&amp;C)</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="unfinished">顯示序列埠在 &lt;b&gt;主端管線&lt;/b&gt; 模式中，管線位於主端的路徑，或是當序列埠在 &lt;b&gt;主端裝置&lt;/b&gt; 模式中作用時，主端序列裝置的名稱。</translation>
     </message>
     <message>
@@ -9836,15 +9836,15 @@ makes the guest see an audio card, however every access to it will be ignored.&l
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation type="unfinished">選取了重複的埠號</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation type="unfinished">輸入了重複的序列埠路徑</translation>
     </message>
 </context>
@@ -9855,7 +9855,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9909,7 +9909,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="unfinished">指定開機裝置的順序。利用左側核取方塊來啟用或停用個別的開機裝置。將項目往上或往下移動以變更裝置順序。</translation>
     </message>
     <message>
@@ -9941,7 +9941,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

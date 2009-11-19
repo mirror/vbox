@@ -7348,7 +7348,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">olet antanut enemmän kuin &lt;b&gt;%1 %&lt;/b&gt; järjestelmän muistista (&lt;b&gt;%2&lt;/b&gt;) virtuaalikoneelle. Tietokoneen isäntäkäyttöjärjestelmälle ei kää käytettäväksi tarpeeksi muistia, valitse pienempi arvo.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="obsolete">olet antanut enemmän kuin &lt;b&gt;%1%&lt;/b&gt; järjestelmän muistista (&lt;b&gt;%2&lt;/b&gt;) virtuaalikoneelle. Saattaa olla, ettei isäntäjärjestelmän ohjelmille jää tarpeeksi muistia käytettäväksi. Jatka omalla riskillä.</translation>
     </message>
     <message>
@@ -7360,7 +7360,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Näytä polku, jonne tämän virtuaalikoneen palautuspisteet tallennetaan. Huomaa, että palautuspisteet voivat viedä paljon levytilaa.</translation>
     </message>
     <message>
@@ -7416,7 +7416,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Käynnistysjärjestys:</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Määrittää käynnistyslaitteiden järjestyksen. Voit määrittää käytössä olevat käynnistyslaitteet vasemmalla olevilla valinnoilla. Voit määrittää käynnistysjärjestyksen siirtämällä laitteita ylös ja alas.</translation>
     </message>
     <message>
@@ -7452,7 +7452,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Ota A&amp;CPI käyttöön</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">Jos asetettu, virtuaalikone tukee IO APIC-rajapintaa, joka saattaa hidastaa jonkin verran virtuaalikoneen suorituskykyä. &lt;b&gt;Huomautus:&lt;/b&gt; älä poista tätä käytöstä, jos olet asentanut Windows-virtuaalikoneen!</translation>
     </message>
     <message>
@@ -7488,7 +7488,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Jaettu leikepöytä:</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>Määrittää tavan, jolla leikepöytä jaetaan virtuaalikoneen ja isäntäkoneen välillä. Huomaa, että tämä ominaisuus vaatii asiakaslisäosien asennuksen virtuaalikoneeseen.</translation>
     </message>
     <message>
@@ -7508,7 +7508,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Kuvaus</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Näyttää virtuaalikoneen kuvauksen. Kuvauskenttää on näppärä käyttää selittämää asennetun virtuaalikoneen määrittelyn yksityiskohtia.</translation>
     </message>
     <message>
@@ -7532,7 +7532,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Olet määrittänyt enemmän kuin &lt;b&gt;75%&lt;/b&gt; isäntäkoneen muistista (&lt;b&gt;%1&lt;/b&gt;) virtuaalikoneelle. Isäntäkoneen käyttöjärjestelmälle ei jää tarpeeksi muistia käyttöön, valitse pienempi muistimäärä.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="obsolete">Olet määrittänyt enemmän kuin &lt;b&gt;50%&lt;/b&gt; isäntäkoneen muistista (&lt;b&gt;%1&lt;/b&gt;) virtuaalikoneelle. Isäntäkoneen käyttöjärjestelmälle ei välttämättä jää tarpeeksi muistia käyttöön. Jatka näin omalla riskilläsi.</translation>
     </message>
     <message>
@@ -7627,7 +7627,7 @@ p, li { white-space: pre-wrap; }
         <translation>Käynnistää virtuaalimedioiden hallinnan, jolla voit valita korostettuun paikkaan liitettävän kiintolevyn.</translation>
     </message>
     <message>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation>Jos asetettu, näytetään paikkaan liitetyt todelliset erotellut kiintolevyt niiden pohjakiintolevyn sijasta. Tämä näytetään vain epäsuorien liitosten kohdalla. Voit myös erikseen liittää muita eroteltuja kiintolevyjä. Käytä tätä vain, jos tarvitset monimutkaisia kiintolevymäärittelyjä.</translation>
     </message>
     <message>
@@ -7750,7 +7750,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Nimi:</translation>
     </message>
     <message>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7956,7 +7956,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Keskeytys:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Näyttää rinnakkaisportin keskeytysnumeron. Kelvolliset arvot ovat kokonaislukuja väliltä &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;255&lt;/tt&gt;.  Suurempia arvoja kuin &lt;tt&gt;15&lt;/&lt;tt&gt; voidaan käyttää vain, jos &lt;b&gt;IO APIC&lt;/b&gt; on päällä virtuaalikoneessa.</translation>
     </message>
     <message>
@@ -7964,7 +7964,7 @@ p, li { white-space: pre-wrap; }
         <translation>IO-po&amp;rtti:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Näyttää rinnakkaisportin IO-porttiosoitteen. Kelvolliset arvot ovat kokonaislukuja väliltä &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -7979,15 +7979,15 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Portin numero on valittu kahdesti</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Portin polkua ei ole annettu</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Portin polku on valittu kahdesti</translation>
     </message>
 </context>
@@ -8117,7 +8117,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Keskeytys:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Näyttää sarjaportin keskeytysnumeron.  Kelvolliset arvot ovat kokonaislukuja väliltä &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;255&lt;/tt&gt;.  Suurempia arvoja kuin &lt;tt&gt;15&lt;/&lt;tt&gt; voidaan käyttää vain, jos &lt;b&gt;IO APIC&lt;/b&gt; on päällä virtuaalikoneessa.</translation>
     </message>
     <message>
@@ -8125,7 +8125,7 @@ p, li { white-space: pre-wrap; }
         <translation>IO-po&amp;rtti:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Näyttää sarjaportin IO-porttiosoitteen. Kelvolliset arvot ovat kokonaislukuja väliltä &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -8137,7 +8137,7 @@ p, li { white-space: pre-wrap; }
         <translation>Ohjaa tämän sarjaportin toimintatilaa. Jos valitset &lt;b&gt;Pois käytöstä&lt;/b&gt;, virtuaalikone havaitsee sarjaportin mutta ei voi käyttää sitä.</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation>Jos asetettu, kentässä &lt;b&gt;Portin polku&lt;/b&gt; määritelty putki luodaan virtuaalikoneen käynnistyessä. Muussa tapauksessa virtuaalikone yrittää käyttää olemassaolevaa putkea.</translation>
     </message>
     <message>
@@ -8149,7 +8149,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Portin &amp;polku:</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Näyttää polun sarjaportin putkitiedostoon, kun portti on &lt;b&gt;Isännän putki&lt;/b&gt;-tilassa, tai isäntäkoneen sarjaportin laitenimen, kun portti on &lt;b&gt;Isäntälaite&lt;/b&gt;-tilassa.</translation>
     </message>
     <message>
@@ -8160,15 +8160,15 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Porttinumero on valittu kahteen kertaan</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Portin polkua ei ole määritelty</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Portin polku on valittu kahdesti</translation>
     </message>
 </context>
@@ -8179,7 +8179,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">olet antanut enemmän kuin &lt;b&gt;%1 %&lt;/b&gt; järjestelmän muistista (&lt;b&gt;%2&lt;/b&gt;) virtuaalikoneelle. Tietokoneen isäntäkäyttöjärjestelmälle ei kää käytettäväksi tarpeeksi muistia, valitse pienempi arvo.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="unfinished">olet antanut enemmän kuin &lt;b&gt;%1%&lt;/b&gt; järjestelmän muistista (&lt;b&gt;%2&lt;/b&gt;) virtuaalikoneelle. Saattaa olla, ettei isäntäjärjestelmän ohjelmille jää tarpeeksi muistia käytettäväksi. Jatka omalla riskillä.</translation>
     </message>
     <message>
@@ -8233,7 +8233,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="unfinished">Määrittää käynnistyslaitteiden järjestyksen. Voit määrittää käytössä olevat käynnistyslaitteet vasemmalla olevilla valinnoilla. Voit määrittää käynnistysjärjestyksen siirtämällä laitteita ylös ja alas.</translation>
     </message>
     <message>
@@ -8265,7 +8265,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="unfinished">Jos asetettu, virtuaalikone tukee IO APIC-rajapintaa, joka saattaa hidastaa jonkin verran virtuaalikoneen suorituskykyä. &lt;b&gt;Huomautus:&lt;/b&gt; älä poista tätä käytöstä, jos olet asentanut Windows-virtuaalikoneen!</translation>
     </message>
     <message>

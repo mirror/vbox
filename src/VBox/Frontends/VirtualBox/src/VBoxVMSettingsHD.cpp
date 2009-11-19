@@ -1767,7 +1767,7 @@ bool VBoxVMSettingsHD::revalidate (QString &aWarning, QString &)
             /* Check for coincidence */
             if (!vboxGlobal().findMedium (key).isNull() && config.contains (key))
             {
-                aWarning = tr ("<i>%1</i> uses the medium that is already attached to <i>%2</i>.")
+                aWarning = tr ("<i>%1</i> uses a medium that is already attached to <i>%2</i>.")
                               .arg (value).arg (config [key]);
                 return aWarning.isNull();
             }
@@ -1799,11 +1799,11 @@ void VBoxVMSettingsHD::retranslateUi()
     mAddFDAttAction->setText (tr ("Add Floppy Device"));
     mDelAttAction->setText (tr ("Remove Attachment"));
 
-    mAddCtrAction->setWhatsThis (tr ("Adds a new controller to the end of Storage Tree."));
-    mDelCtrAction->setWhatsThis (tr ("Removes controller highlighted in Storage Tree."));
+    mAddCtrAction->setWhatsThis (tr ("Adds a new controller to the end of the Storage Tree."));
+    mDelCtrAction->setWhatsThis (tr ("Removes the controller highlighted in the Storage Tree."));
     mAddAttAction->setWhatsThis (tr ("Adds a new attachment to the Storage Tree using "
                                      "currently selected controller as parent."));
-    mDelAttAction->setWhatsThis (tr ("Removes attachment highlighted in Storage Tree."));
+    mDelAttAction->setWhatsThis (tr ("Removes the attachment highlighted in the Storage Tree."));
 
     mAddCtrAction->setToolTip (QString ("<nobr>%1&nbsp;(%2)")
                                .arg (mAddCtrAction->text().remove ('&'))

@@ -66,7 +66,7 @@
 <context>
     <name>BootItemsTable</name>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Başlangıç aygıtlarının sıralamasını tanımlar. Bir başlangıç ögesini etkinleştirmek ya da pasifleştirmek için soldaki seçme kutularını kullanın. Aygıt sıralamasını değiştirmek için nesneleri yukarı veya aşağı taşıyın.</translation>
     </message>
 </context>
@@ -7000,7 +7000,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">Seri portun IRQ numaralarını gösterir.  Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;255&lt;/tt&gt; arasındaki tüm sayılardır. &lt;tt&gt;15&lt;/tt&gt;&apos;ten daha büyük sayılar sadece sanal makine için &lt;b&gt;IO APIC&lt;/b&gt; etkinleştirildiyse kullanılabilir.</translation>
     </message>
     <message>
@@ -7008,7 +7008,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">I/O Po&amp;rtu</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Seri portun temel I/O adreslerini gösterir. Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;0xFFFF&lt;/tt&gt; arasındaki tüm sayılardır.</translation>
     </message>
     <message>
@@ -7024,7 +7024,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Boru Oluştur</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation type="obsolete">Eğer seçilirse makine başlatılırken &lt;b&gt;Port Yolu&lt;/b&gt; alanı içerisinde belirlenen boru oluşturulur. Aksi taktirde sanal makine var olan boruyu kullanır.</translation>
     </message>
     <message>
@@ -7032,7 +7032,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Port &amp;Yolu</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">Eğer seri port &lt;b&gt;Sunucu Borusu&lt;/b&gt; kipinde çalışıyorsa seri portun sunucu üzerindeki borusunun yolunu gösterir ya da &lt;b&gt;Sunucu Aygıtı&lt;/b&gt; kipinde çalışıyorsa sunucunun seri portunun adını gösterir.</translation>
     </message>
 </context>
@@ -7659,18 +7659,18 @@ işletim sistemi yükledikten sonra bunu pasifleştirmeyin!&lt;/qt&gt;</translat
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Seçildiğinde sanal makine Girdi Çıktı APIC (IO APIC)
 destekleyecektir ki bu sanal makine başarımını biraz düşürür. &lt;b&gt;Not:&lt;/b&gt; Bir misafir Windows
 işletim sistemi yükledikten sonra bunu pasifleştirmeyin!&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Misafir işletim sistemi ile sunucu işletim sistemi arasındaki pano paylaşımını tanımlar. Bu özelliğin Misafir Eklentileri gerektirdiğini unutmatın.</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Bu sanal makinenin anlık görüntülerinin nereye kaydedileceğini tanımlar. Anlık görüntülerin çok yer kaplayabileceğini unutmayın.</translation>
     </message>
     <message>
@@ -7678,7 +7678,7 @@ işletim sistemi yükledikten sonra bunu pasifleştirmeyin!&lt;/qt&gt;</translat
         <translation type="obsolete">Anlık görüntü dizinini öntanımlı ayarlarına döndürür. Güncel öntanımlı yol bu ayarlar kabul edildikten sonra bu pencere yeniden açılarak gösterilecektir.</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="obsolete">Sanal makinenin tanımını gösterir. Tanımlama alanı misafir işletim sisteminin yapılandırma detaylarını yorum olarak eklemek için kullanışlıdır.</translation>
     </message>
     <message>
@@ -7848,11 +7848,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">Yanlış sunucu ağ arayüzü seçildi</translation>
     </message>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation type="obsolete">İkinci kez aynı port numarası seçildi </translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation type="obsolete">İkinci kez aynı port yolu girildi </translation>
     </message>
     <message>
@@ -7953,7 +7953,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">İç ağ adı belirtilmedi</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation type="obsolete">Port yolu belirtilmedi</translation>
     </message>
     <message>
@@ -8100,7 +8100,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Bu sanal makinenin anlık görüntülerinin nereye kaydedileceğini tanımlar. Anlık görüntülerin çok yer kaplayabileceğini unutmayın.</translation>
     </message>
     <message>
@@ -8160,7 +8160,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">Başlangıç Sı&amp;ralaması:</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Başlangıç aygıtlarının sıralamasını tanımlar. Bir başlangıç ögesini etkinleştirmek ya da pasifleştirmek için soldaki seçme kutularını kullanın. Aygıt sıralamasını değiştirmek için nesneleri yukarı veya aşağı taşıyın.</translation>
     </message>
     <message>
@@ -8208,7 +8208,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&amp;Paylaşılan Pano:</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>Misafir işletim sistemi ile sunucu işletim sistemi arasındaki pano paylaşımını tanımlar. Bu özelliğin Misafir Eklentileri gerektirdiğini unutmatın.</translation>
     </message>
     <message>
@@ -8224,7 +8224,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&amp;Açıklama</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Sanal makinenin tanımını gösterir. Tanımlama alanı misafir işletim sisteminin yapılandırma detaylarını yorum olarak eklemek için kullanışlıdır.</translation>
     </message>
     <message>
@@ -8315,7 +8315,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8477,7 +8477,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished">&amp;İsim:</translation>
     </message>
     <message>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8551,7 +8551,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8559,7 +8559,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>I/O Po&amp;rtu:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8574,15 +8574,15 @@ makes the guest see an audio card, however every access to it will be ignored.&l
 <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>İkinci kez aynı port numarası seçildi </translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Port yolu belirtilmedi</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>İkinci kez aynı port yolu girildi </translation>
     </message>
 </context>
@@ -8712,7 +8712,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Seri portun IRQ numaralarını gösterir.  Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;255&lt;/tt&gt; arasındaki tüm sayılardır. &lt;tt&gt;15&lt;/tt&gt;&apos;ten daha büyük sayılar sadece sanal makine için &lt;b&gt;IO APIC&lt;/b&gt; etkinleştirildiyse kullanılabilir.</translation>
     </message>
     <message>
@@ -8720,7 +8720,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>I/O Po&amp;rtu:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Seri portun temel I/O adreslerini gösterir. Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;0xFFFF&lt;/tt&gt; arasındaki tüm sayılardır.</translation>
     </message>
     <message>
@@ -8732,7 +8732,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>Bu seri portun çalışma kipini denetler. Eğer &lt;b&gt;Çevrimdışı&lt;/b&gt; seçmişseniz misafir işletim sistemi seri portu bulur ama kullanamaz.</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation>Eğer seçilirse makine başlatılırken &lt;b&gt;Port Yolu&lt;/b&gt; alanı içerisinde belirlenen boru oluşturulur. Aksi taktirde sanal makine var olan boruyu kullanır.</translation>
     </message>
     <message>
@@ -8744,7 +8744,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">Port &amp;Yolu:</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Eğer seri port &lt;b&gt;Sunucu Borusu&lt;/b&gt; kipinde çalışıyorsa seri portun sunucu üzerindeki borusunun yolunu gösterir ya da &lt;b&gt;Sunucu Aygıtı&lt;/b&gt; kipinde çalışıyorsa sunucunun seri portunun adını gösterir.</translation>
     </message>
     <message>
@@ -8755,15 +8755,15 @@ makes the guest see an audio card, however every access to it will be ignored.&l
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>İkinci kez aynı port numarası seçildi </translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Port yolu belirtilmedi</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>İkinci kez aynı port yolu girildi </translation>
     </message>
 </context>
@@ -8774,7 +8774,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8828,7 +8828,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="unfinished">Başlangıç aygıtlarının sıralamasını tanımlar. Bir başlangıç ögesini etkinleştirmek ya da pasifleştirmek için soldaki seçme kutularını kullanın. Aygıt sıralamasını değiştirmek için nesneleri yukarı veya aşağı taşıyın.</translation>
     </message>
     <message>
@@ -8860,7 +8860,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

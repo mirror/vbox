@@ -6399,7 +6399,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="154"/>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Показує шлях, де будуть зберігатися знімки цієї машини. Майте на увазі, знімки можуть займати доволі чимало дискового простору.</translation>
     </message>
     <message>
@@ -6469,7 +6469,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Описує порядок завантаження пристроїв. Використайте мітку, щоб ввімкнути або вимкнути конкретні пристрої, що завантажуються. Перемістіть пункти вверх і вниз, щоб змінити порядок завантаження.</translation>
     </message>
     <message>
@@ -6514,7 +6514,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">Якщо це відмічено, віртуальна машина буде підтримувати покращений програмовний контролер переривань В/В (IO APIC), який може трохи понизити продуктивність віртуальної машини.&lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
     </message>
     <message>
@@ -6549,7 +6549,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="149"/>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>Описує режим розподіл буфера обміну між гостьової і головною операційною системою. Майте на увазі, ця властивість вимагає встановити гостьові доповнення в гостьову операційну систему.</translation>
     </message>
     <message>
@@ -6574,7 +6574,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="253"/>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Показує характеристику віртуальної машини. Поля опису є корисні для коментування деталей налаштування гостьової операційної системи, котра встановлена.</translation>
     </message>
     <message>
@@ -6604,7 +6604,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
-        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="obsolete">ви вказали більше ніж &lt;b&gt;50%&lt;/b&gt; пам&apos;яті вашого комп&apos;ютера  (&lt;b&gt;%1&lt;/b&gt;) у віртуальну машину. Може бути недостатньо пам&apos;яті для вашої головної операційної системи. Продовжуйте на власний ризик.</translation>
     </message>
     <message>
@@ -6712,7 +6712,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="176"/>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation>Якщо це відмічено, буде показуватись обчислення жорстких дисків, які реально під&apos;єднані до гнізд замість основних жорстких дисків (у випадку непрямого під&apos;єднання) і також під&apos;єднає інші явні обчислення жорстких дисків. Перевіряйте це лише тоді, коли вам потрібне складене встановлення жорсткого диска.</translation>
     </message>
     <message>
@@ -6911,7 +6911,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation>Вибирає назву мережевого адаптера, якщо тип під&apos;єднання рівносильний до &lt;b&gt;проміжного адаптера&lt;/b&gt; або &lt;b&gt;лише головного адаптера&lt;/b&gt; і назву внутрьошньої мережі, якщо тип під&apos;єднання рівносильний до &lt;b&gt;внутрьошньої мережі&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -6996,7 +6996,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="113"/>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Показує номер запиту на переривання (IRQ) цього паралельно порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значення більше ніж &lt;tt&gt;15&lt;/tt&gt; може використовуватись лише якщо ввімкнутий &lt;b&gt;IO APIC&lt;/b&gt; для цієї віртуальної машини.</translation>
     </message>
     <message>
@@ -7006,7 +7006,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="136"/>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Показує базову адресу порту В/В цього паралельного порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -7024,17 +7024,17 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsParallelPage</name>
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="223"/>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Цей номер порту вже використовується</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="239"/>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Шлях до порту не вказаний</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="240"/>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Цей шлях до порту вже використовується</translation>
     </message>
 </context>
@@ -7194,7 +7194,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="113"/>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Показує номер запиту на переривання (IRQ) цього послідовного порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значення більше ніж &lt;tt&gt;15&lt;/tt&gt; може використовуватись лише якщо ввімкнутий &lt;b&gt;IO APIC&lt;/b&gt; для цієї віртуальної машини.</translation>
     </message>
     <message>
@@ -7204,7 +7204,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="136"/>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Показує базову адресу порту В/В цього послідовного порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -7219,7 +7219,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="176"/>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation>Якщо це відмічено, канал описується в полі &lt;b&gt;Шлях порту&lt;/b&gt;, яке буде створене при запуску віртуальної машини. Інакше віртуальна машина спробує використати існуючий канал.</translation>
     </message>
     <message>
@@ -7234,7 +7234,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="199"/>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Показує шлях до головного каналу послідовного порту, коли порт працює в режимі &lt;b&gt;Головний канал&lt;/b&gt;, або назву головного пристрою послідовного порту, коли порт працює в режимі &lt;b&gt;Головний пристрій&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -7247,17 +7247,17 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsSerialPage</name>
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="263"/>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Цей номер порту вже використовується</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="285"/>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Шлях до порту не вказаний</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="286"/>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Цей шлях до порту вже використовується</translation>
     </message>
 </context>
@@ -7270,7 +7270,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSystem.cpp" line="362"/>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation>ви вказали більше, ніж &lt;b&gt;%1%&lt;/b&gt; пам&apos;яті вашого комп&apos;ютера (&lt;b&gt;%2&lt;/b&gt;) у віртуальній машині. Недостатньо пам&apos;яті для вашої головної операційної системи. Продовжуйте на власний ризик.</translation>
     </message>
     <message>
@@ -7337,7 +7337,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSystem.ui" line="194"/>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation>Описує порядок завантаження пристроїв. Використайте мітку, щоб ввімкнути або вимкнути конкретні пристрої, які завантажуються. Перемістіть пункти вверх і вниз, щоб змінити порядок завантаження.</translation>
     </message>
     <message>
@@ -7377,7 +7377,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSystem.ui" line="346"/>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation>Якщо це відмічено, віртуальна машина буде підтримувати покращений програмовний контролер переривань В/В (IO APIC), який може трохи понизити продуктивність віртуальної машини.&lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
     </message>
     <message>

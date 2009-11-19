@@ -66,7 +66,7 @@
 <context>
     <name>BootItemsTable</name>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Abio gailu ordena ezartzen du. Aukerakutxak erabili abio gailuak gaitu edo ezgaitzeko. Elementuak gora eta behera mugitu gailu ordena aldatzeko.</translation>
     </message>
 </context>
@@ -6777,7 +6777,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">Serie ataka honen IRQ zenbakia bistarazi. Balio erabilgarriak zenbaki osoak &lt;tt&gt;0&lt;/tt&gt; eta &lt;tt&gt;255&lt;/tt&gt; artean. &lt;tt&gt;15&lt;/tt&gt; baina balioa handiagoak erabiltzeko &lt;b&gt;IO APIC&lt;/b&gt; gaiturik egon behar da makina birtual honetan.</translation>
     </message>
     <message>
@@ -6785,7 +6785,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">I/O A&amp;taka</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Serie ataka honen oinarri S/I helbidea bistaratzen du. Balio erabilgarria zenbaki osoak &lt;tt&gt;0&lt;/tt&gt; eta &lt;tt&gt;0xFFFF&lt;/tt&gt; tartean.</translation>
     </message>
     <message>
@@ -6805,7 +6805,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Alt+S</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation type="obsolete">Markaturik badago, &lt;b&gt;Ataka Bidean&lt;/b&gt; ezarritako kanalizazioa sortuko da makina birtualean abiaraztean. Bestela makina birtuala dagoen kanalizazioa erabiltzen saiatuko da.</translation>
     </message>
     <message>
@@ -6813,7 +6813,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Ataka &amp;Bidea</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">Ostalarian Serial atakarako kanalizazioaren bidea erakusten du ataka &lt;b&gt;Ostalari Kanalizazio&lt;/b&gt; moduan funtzionatzean, edo serie ataka izena atakak &lt;b&gt;Ostalari Gailua&lt;/b&gt; moduan funtzinoatzean.</translation>
     </message>
 </context>
@@ -7472,7 +7472,7 @@ ezaugarri hau windows bezero sistema eragile bat instalatu ondoren!&lt;/qt&gt;</
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Markaturik dagoenean, makina birtualak Sarrera Irteera
 APIC (IO APIC) onartuko du, honek makina birtualaren
@@ -7480,11 +7480,11 @@ funtzionamendua asko geldotuko du.&lt;b&gt;Oharra:&lt;/b&gt; ez ezgaitu
 ezaugarri hau windows bezero sistema eragile bat instalatu ondoren!&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Bezero eta ostalariaren sistema eragileen arteko arbela partekatzeko modua ezartzen du. Kontutan izan honek Bezero Gehigarriak sistema eragile bezeroan instalaturik egotea behar duela.</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Makina birtual honen egoera-argazkiak gordeko diren bidea erakusten du. Kontutan izan egoera-argazkiek disko leku asko erabili dezaketela.</translation>
     </message>
     <message>
@@ -7492,7 +7492,7 @@ ezaugarri hau windows bezero sistema eragile bat instalatu ondoren!&lt;/qt&gt;</
         <translation type="obsolete">Egoera-argazki karpeta bidea lehenetsiriko balioan berrezartzen du. Uneko lehenetsiriko bidea erakutsiko da aldaketak onartu eta leiho hau berriz irekitzean.</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="obsolete">Makina birtualaren azalpena erakusten du. Azalpenen eremua instalaturiko bezero sistemaren eragileari edo konfigurazioari buruz iruzkinak egiteko da erabilgarria.</translation>
     </message>
     <message>
@@ -7683,11 +7683,11 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="obsolete">Ostalari sare interfaze okerra hautatu da</translation>
     </message>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation type="obsolete">Bikoizturiko ataka zenbakia hautatu da </translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation type="obsolete">Bikoizturiko ataka bidea idatzi da </translation>
     </message>
     <message>
@@ -7874,7 +7874,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="unfinished">Makina birtual honen egoera-argazkiak gordeko diren bidea erakusten du. Kontutan izan egoera-argazkiek disko leku asko erabili dezaketela.</translation>
     </message>
     <message>
@@ -7926,7 +7926,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished">&amp;Aurreratua</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Abio gailu ordena ezartzen du. Aukerakutxak erabili abio gailuak gaitu edo ezgaitzeko. Elementuak gora eta behera mugitu gailu ordena aldatzeko.</translation>
     </message>
     <message>
@@ -7962,7 +7962,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="unfinished">Bezero eta ostalariaren sistema eragileen arteko arbela partekatzeko modua ezartzen du. Kontutan izan honek Bezero Gehigarriak sistema eragile bezeroan instalaturik egotea behar duela.</translation>
     </message>
     <message>
@@ -7974,7 +7974,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished">A&amp;zalpena</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="unfinished">Makina birtualaren azalpena erakusten du. Azalpenen eremua instalaturiko bezero sistemaren eragileari edo konfigurazioari buruz iruzkinak egiteko da erabilgarria.</translation>
     </message>
     <message>
@@ -8053,7 +8053,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8139,7 +8139,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8238,7 +8238,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8246,7 +8246,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8261,15 +8261,15 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
 <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation type="unfinished">Bikoizturiko ataka zenbakia hautatu da </translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation type="unfinished">Bikoizturiko ataka bidea idatzi da </translation>
     </message>
 </context>
@@ -8399,7 +8399,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="unfinished">Serie ataka honen IRQ zenbakia bistarazi. Balio erabilgarriak zenbaki osoak &lt;tt&gt;0&lt;/tt&gt; eta &lt;tt&gt;255&lt;/tt&gt; artean. &lt;tt&gt;15&lt;/tt&gt; baina balioa handiagoak erabiltzeko &lt;b&gt;IO APIC&lt;/b&gt; gaiturik egon behar da makina birtual honetan.</translation>
     </message>
     <message>
@@ -8407,7 +8407,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="unfinished">Serie ataka honen oinarri S/I helbidea bistaratzen du. Balio erabilgarria zenbaki osoak &lt;tt&gt;0&lt;/tt&gt; eta &lt;tt&gt;0xFFFF&lt;/tt&gt; tartean.</translation>
     </message>
     <message>
@@ -8419,7 +8419,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished">Serie ataka honen funtzionamendu modua kontrolatzen du. &lt;b&gt;Deskonektaturik&lt;/b&gt; hautatuaz gero, bezero SE-ak serie ataka ikusiko du baina ezingo du berarekin lan egin.</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation type="unfinished">Markaturik badago, &lt;b&gt;Ataka Bidean&lt;/b&gt; ezarritako kanalizazioa sortuko da makina birtualean abiaraztean. Bestela makina birtuala dagoen kanalizazioa erabiltzen saiatuko da.</translation>
     </message>
     <message>
@@ -8427,7 +8427,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished">&amp;Sortu Kanalizazioa</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="unfinished">Ostalarian Serial atakarako kanalizazioaren bidea erakusten du ataka &lt;b&gt;Ostalari Kanalizazio&lt;/b&gt; moduan funtzionatzean, edo serie ataka izena atakak &lt;b&gt;Ostalari Gailua&lt;/b&gt; moduan funtzinoatzean.</translation>
     </message>
     <message>
@@ -8438,15 +8438,15 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation type="unfinished">Bikoizturiko ataka zenbakia hautatu da </translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation type="unfinished">Bikoizturiko ataka bidea idatzi da </translation>
     </message>
 </context>
@@ -8457,7 +8457,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8511,7 +8511,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="unfinished">Abio gailu ordena ezartzen du. Aukerakutxak erabili abio gailuak gaitu edo ezgaitzeko. Elementuak gora eta behera mugitu gailu ordena aldatzeko.</translation>
     </message>
     <message>
@@ -8543,7 +8543,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

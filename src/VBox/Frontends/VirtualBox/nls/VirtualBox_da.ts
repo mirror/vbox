@@ -5044,7 +5044,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsGeneral</name>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Viser stien, hvor øjebliksbilleder af den virtuelle maskine bliver gemt. Bemærk at øjebliksbilleder kan bruge en hel del lagerplads.</translation>
     </message>
     <message>
@@ -5068,7 +5068,7 @@ p, li { white-space: pre-wrap; }
         <translation>Delt udklip&amp;sholder:</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>Angiver måden, udklipsholderen deles mellem gæst- og værtsoperativsystem. Bemærk at denne funktion kræver at Gæstetilføjelser er installeret i gæsteoperativsystemet.</translation>
     </message>
     <message>
@@ -5080,7 +5080,7 @@ p, li { white-space: pre-wrap; }
         <translation>Beskrivelse</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Viser beskrivelsen af den virtuelle maskine. Her kan du skrive lidt om de vigtigste detaljer i gæsteoperativsystemets konfiguration.</translation>
     </message>
     <message>
@@ -5152,7 +5152,7 @@ p, li { white-space: pre-wrap; }
         <translation>Starter Virtuel diskhåndtering, så du kan vælge den harddisk, der skal tilsluttes på den markerede plads.</translation>
     </message>
     <message>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation>Hvis markeret, vil de faktiske ændrings-harddiske blive vist fremfor de harddiske, de er baseret på (vises i tilfælde af indirekte tilslutninger) og tillader dig at tilslutte yderligere ændrings-harddiske. Brug kun denne funktion, hvis du har brug for en avanceret opsætning af harddiske.</translation>
     </message>
     <message>
@@ -5228,7 +5228,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Navn:</translation>
     </message>
     <message>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation>Angiver navnet på netværkskortet, hvis tilslutningstypen er &lt;b&gt;Netværksbro&lt;/b&gt; eller &lt;b&gt;Værtsbegrænset netværk&lt;/b&gt; eller navnet på det interne netværk hvis tilslutningstypen er &lt;b&gt;Internt netværk&lt;/b&gt;</translation>
     </message>
 </context>
@@ -5287,7 +5287,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Viser parallelportens IRQ-nummer. Gyldige værdier er et heltal fra &lt;tt&gt;0&lt;/tt&gt; til &lt;tt&gt;255&lt;/tt&gt;. Værdier større end &lt;tt&gt;15&lt;/tt&gt; kan kun bruges hvis &lt;b&gt;IO APIC&lt;/b&gt; er aktiveret for denne virtuelle maskine.</translation>
     </message>
     <message>
@@ -5295,7 +5295,7 @@ p, li { white-space: pre-wrap; }
         <translation>I/O Po&amp;rt:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Viser parallelportens I/O-adresse. Gyldige værdier er heltal fra &lt;tt&gt;0&lt;/tt&gt; til &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -5310,15 +5310,15 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Portnummer allerede i brug </translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Sti til port er ikke angivet </translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Stien til porten bruges allerede </translation>
     </message>
 </context>
@@ -5448,7 +5448,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Viser serielportens IRQ-nummer. Gyldige værdier er et heltal fra &lt;tt&gt;0&lt;/tt&gt; til &lt;tt&gt;255&lt;/tt&gt;. Værdier større end &lt;tt&gt;15&lt;/tt&gt; kan kun bruges hvis &lt;b&gt;IO APIC&lt;/b&gt; er aktiveret for denne virtuelle maskine.</translation>
     </message>
     <message>
@@ -5456,7 +5456,7 @@ p, li { white-space: pre-wrap; }
         <translation>I/O Po&amp;rt:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Viser serielportens I/O-adresse. Gyldige værdier er heltal fra &lt;tt&gt;0&lt;/tt&gt; til &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -5468,7 +5468,7 @@ p, li { white-space: pre-wrap; }
         <translation>Styrer den serielle ports tilstand. Hvis du vælger &lt;b&gt;Ikke tilsluttet&lt;/b&gt;, vil gæsteoperativsystemet kunne se den serielle port, men ikke bruge den.</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation>Hvis markeret, vil røret angivet i feltet&lt;b&gt;Sti til port&lt;/b&gt; blive oprettet, når den virtuelle maskine starter. Ellers vil den virtuelle maskine forsøge at bruge et eksisterende rør.</translation>
     </message>
     <message>
@@ -5476,7 +5476,7 @@ p, li { white-space: pre-wrap; }
         <translation>Opret rør</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Viser stien til serielportens rør på værten, hvis porten er i &lt;b&gt;Rør&lt;/b&gt;-tilstand eller stien til serielportens enhedsfil, når porten er i &lt;b&gt;Enhed&lt;/b&gt;-tilstand.</translation>
     </message>
     <message>
@@ -5487,15 +5487,15 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Portnummer allerede i brug </translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Sti til port er ikke angivet </translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Stien til porten bruges allerede </translation>
     </message>
 </context>
@@ -5506,7 +5506,7 @@ p, li { white-space: pre-wrap; }
         <translation>du har tildelt mere end &lt;b&gt;%1%&lt;/b&gt; af din computers hukommelse (&lt;b&gt;%2&lt;/b&gt;) til den virtuelle maskine. Dermed er der ikke hukommelse nok tilbage til værtsoperativsystemet. Vælg en lavere tildeling.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation>du har tildelt mere end &lt;b&gt;%1%&lt;/b&gt; af din computers hukommelse (&lt;b&gt;%2&lt;/b&gt;) til den virtuelle maskine. Der er muligvis ikke hukommelse nok tilbage til dit værtsoperativsystem. Fortsæt på egen risiko.</translation>
     </message>
     <message>
@@ -5560,7 +5560,7 @@ p, li { white-space: pre-wrap; }
         <translation>Opstartsrækkefølge:</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation>Angiver opstartsrækkefølgen. Brug afkrydsningsfelterne til venstre til at vælge opstartsenheder. Flyt enhederne op og ned for at angive rækkefølgen.</translation>
     </message>
     <message>
@@ -5592,7 +5592,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Aktivér ACPI</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation>Hvis markeret, vil den virtuelle maskine understøtte &lt;i&gt;Input Output APIC (IO APIC)&lt;/i&gt;, hvilket kan nedsætte den virtuelle maskines ydelse en smule. &lt;b&gt;Bemærk!&lt;/b&gt; Slå ikke dette fra igen, hvis du har installeret Windows som gæsteoperativsystem.</translation>
     </message>
     <message>

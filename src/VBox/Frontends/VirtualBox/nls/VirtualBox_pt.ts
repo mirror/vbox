@@ -66,7 +66,7 @@
 <context>
     <name>BootItemsTable</name>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Define a ordem de arranque dos dispositivos. Use as caixas do lado esquerdo para activar ou desactivar os dispositivos de arranque individualmente. Mova os itens para cima ou para biaxo para alterar a ordem de arranque.</translation>
     </message>
 </context>
@@ -7405,7 +7405,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">Mostra o número IRQ desta porta paralela. Os valor válidos são números inteiros num intervalo de &lt;tt&gt;0&lt;/tt&gt; até &lt;tt&gt;255&lt;/tt&gt;. Os valores maiores que &lt;tt&gt;15&lt;/tt&gt; podem apenas ser usados se a opção &lt;b&gt;IO APIC&lt;/b&gt; estiver activada para esta máquina virtual.</translation>
     </message>
     <message>
@@ -7413,7 +7413,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Po&amp;rta E/S</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Mostra o endereço base da porta E/S para esta porta paralela. Os valores válidos são números inteiros num intervalo de &lt;tt&gt;0&lt;/tt&gt; até &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -7452,7 +7452,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">Mostra o número IRQ associado a esta porta série. Os valores válidos são números inteiros de &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;255&lt;/tt&gt;. Valores maiores que &lt;tt&gt;15&lt;/tt&gt; só poderão ser usados se a opção &lt;b&gt;IO APIC&lt;/b&gt; estiver activada para esta máquina.</translation>
     </message>
     <message>
@@ -7460,7 +7460,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Po&amp;rta de E/S</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Mostra o endereço da porta base de E/S desta porta série. Os valores válidos são números hexadecimais inteiros de &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -7476,7 +7476,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Criar Via de Comunicação</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation type="obsolete">Se seleccionado, a via de comunicação indicado no campo &lt;b&gt;Localização da Porta&lt;/b&gt; será criada pela máquina virtual quando esta iniciar. Caso contrário, a máquina virtual tentará usar a via existente.</translation>
     </message>
     <message>
@@ -7484,7 +7484,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Localização da &amp;Porta</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">Mostra a localização para a via de comunicação da porta série no hospedeiro quando a porta estiver configurada no modo &lt;b&gt;Via de Comunicação do Hospedeiro&lt;/b&gt;, ou o nome do dispositivo série quando a porta estiver configurada para o modo &lt;b&gt;Dispositivo do Hospedeiro&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -8176,18 +8176,18 @@ um sistema operativo convidado do tipo Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Quando seleccionado, a máquina virtual irá suportar o recurso de Entrada
 e Saída APIC (IO APIC), o que deve diminuir levemente o desempenho da MV.
 &lt;b&gt;Nota:&lt;/b&gt; não desactive esta opção após instalar um sistema operativo do tipo Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Define o modo de partilha da área de transferência entre o SO convidado e hospedeiro. Note que este recurso requer a instalação das Adições de Convidado no SO convidado.</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Mostra a localização onde as capturas desta máquina virtual serão armazenadas. Note que estas capturas podem ocupar bastante espaço em disco.</translation>
     </message>
     <message>
@@ -8195,7 +8195,7 @@ e Saída APIC (IO APIC), o que deve diminuir levemente o desempenho da MV.
         <translation type="obsolete">Restaura a localização da pasta de capturaspara o valor predefinido. O valor predefinido actual será mostrado após aceitar as mudanças e abrir este diálogo novamente.</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="obsolete">Mostra a descrição da máquina virtual. O campo de descrição é útil para comentar detalhes de configuração do sistema operativo convidado instalado.</translation>
     </message>
     <message>
@@ -8374,11 +8374,11 @@ faz com que o PC convidade veja uma placa de som, no entanto qualquer acesso a e
         <translation type="obsolete">Está seleccionado um interface de rede hospedeiro incorreto</translation>
     </message>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation type="obsolete">Está seleccionado um número de porta duplicado</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation type="obsolete"> Foi introduzida uma localização de porta duplicada</translation>
     </message>
     <message>
@@ -8597,7 +8597,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation type="obsolete">O nome da rede interna não está definido</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation type="obsolete">A localização da porta não está especificada</translation>
     </message>
     <message>
@@ -8744,7 +8744,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="unfinished">Mostra a localização onde as capturas desta máquina virtual serão armazenadas. Note que estas capturas podem ocupar bastante espaço em disco.</translation>
     </message>
     <message>
@@ -8804,7 +8804,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation type="obsolete">Ordem de Arranque:</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Define a ordem de arranque dos dispositivos. Use as caixas do lado esquerdo para activar ou desactivar os dispositivos de arranque individualmente. Mova os itens para cima ou para biaxo para alterar a ordem de arranque.</translation>
     </message>
     <message>
@@ -8840,7 +8840,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation type="obsolete">Activar A&amp;CPI</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">Quando seleccionado, a máquina virtual suportará &quot;Input Output APIC&quot; (IO APIC), o que poderá reduzir ligeiramente a performance da Máquina Virtual. &lt;b&gt;Atenção:&lt;/b&gt; não desactivar esta opção depois de instalar um sistema operativo convidado Windows!</translation>
     </message>
     <message>
@@ -8868,7 +8868,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation>Área de Tran&amp;sferência Partilhada:</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>Define o modo de partilha da área de transferência entre o SO convidado e hospedeiro. Note que este recurso requer a instalação das Adições de Convidado no SO convidado.</translation>
     </message>
     <message>
@@ -8888,7 +8888,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation>&amp;Descrição</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Mostra a descrição da máquina virtual. O campo de descrição é útil para comentar detalhes de configuração do sistema operativo convidado instalado.</translation>
     </message>
     <message>
@@ -8912,7 +8912,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation type="obsolete">atribuiu mais de &lt;b&gt;75%&lt;/b&gt; da memória do ser computador (&lt;b&gt;%1&lt;/b&gt;) à máquina virtual. Não ficará disponível memória suficiente para o sistema operativo hospedeiro. Por favor seleccione uma quantidade inferior.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="obsolete">atribuiu mais de &lt;b&gt;50%&lt;/b&gt; da memória do ser computador (&lt;b&gt;%1&lt;/b&gt;) à máquina virtual. Poderá não ficar disponível memória suficiente para o sistema operativo hospedeiro. Este é um valor arriscado.</translation>
     </message>
     <message>
@@ -8995,7 +8995,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation>Abre o Gestor de Discos Virtuais para seleccionar um disco rígido a associar à &quot;slot&quot; actualmente seleccionada.</translation>
     </message>
     <message>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9161,7 +9161,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation type="unfinished">&amp;Nome:</translation>
     </message>
     <message>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9235,7 +9235,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Mostra o número IRQ desta porta paralela. Os valor válidos são números inteiros num intervalo de &lt;tt&gt;0&lt;/tt&gt; até &lt;tt&gt;255&lt;/tt&gt;. Os valores maiores que &lt;tt&gt;15&lt;/tt&gt; podem apenas ser usados se a opção &lt;b&gt;IO APIC&lt;/b&gt; estiver activada para esta máquina virtual.</translation>
     </message>
     <message>
@@ -9243,7 +9243,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation>Po&amp;rta E/S:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Mostra o endereço base da porta E/S para esta porta paralela. Os valores válidos são números inteiros num intervalo de &lt;tt&gt;0&lt;/tt&gt; até &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -9258,15 +9258,15 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
 <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Está seleccionado um número de porta duplicado</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>A localização da porta não está especificada</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation> Foi introduzida uma localização de porta duplicada</translation>
     </message>
 </context>
@@ -9396,7 +9396,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Mostra o número IRQ associado a esta porta série. Os valores válidos são números inteiros de &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;255&lt;/tt&gt;. Valores maiores que &lt;tt&gt;15&lt;/tt&gt; só poderão ser usados se a opção &lt;b&gt;IO APIC&lt;/b&gt; estiver activada para esta máquina.</translation>
     </message>
     <message>
@@ -9404,7 +9404,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation>Po&amp;rta E/S:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Mostra o endereço da porta base de E/S desta porta série. Os valores válidos são números hexadecimais inteiros de &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -9416,7 +9416,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation>Controla o modo de funcionamento desta porta série. Se seleccionar &lt;b&gt;Desconectado&lt;/b&gt;, o sistema operativo Convidado irá detectar a porta série mas não a conseguirá usar.</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation>Se seleccionado, a via de comunicação indicado no campo &lt;b&gt;Localização da Porta&lt;/b&gt; será criada pela máquina virtual quando esta iniciar. Caso contrário, a máquina virtual tentará usar a via existente.</translation>
     </message>
     <message>
@@ -9428,7 +9428,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation type="obsolete">Localização da &amp;Porta:</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Mostra a localização para a via de comunicação da porta série no hospedeiro quando a porta estiver configurada no modo &lt;b&gt;Via de Comunicação do Hospedeiro&lt;/b&gt;, ou o nome do dispositivo série quando a porta estiver configurada para o modo &lt;b&gt;Dispositivo do Hospedeiro&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -9439,15 +9439,15 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Está seleccionado um número de porta duplicado</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>A localização da porta não está especificada</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation> Foi introduzida uma localização de porta duplicada</translation>
     </message>
 </context>
@@ -9458,7 +9458,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9512,7 +9512,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="unfinished">Define a ordem de arranque dos dispositivos. Use as caixas do lado esquerdo para activar ou desactivar os dispositivos de arranque individualmente. Mova os itens para cima ou para biaxo para alterar a ordem de arranque.</translation>
     </message>
     <message>
@@ -9544,7 +9544,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="unfinished">Quando seleccionado, a máquina virtual suportará &quot;Input Output APIC&quot; (IO APIC), o que poderá reduzir ligeiramente a performance da Máquina Virtual. &lt;b&gt;Atenção:&lt;/b&gt; não desactivar esta opção depois de instalar um sistema operativo convidado Windows!</translation>
     </message>
     <message>

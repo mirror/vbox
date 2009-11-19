@@ -5158,7 +5158,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>이 가상 머신의 스냅샷을 저장할 경로를 표시합니다. 스냅샷은 많은 디스크 공간을 차지할 수도 있습니다.</translation>
     </message>
     <message>
@@ -5214,7 +5214,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">부팅 순서(&amp;T):</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">부트 장치의 순서를 정합니다. 체크 상자를 사용해서 각각 부트 장치를 켜거나 끌 수 있습니다. 항목을 위나 아래로 이동해서 순서를 바꿀 수 있습니다.</translation>
     </message>
     <message>
@@ -5250,7 +5250,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ACPI 사용하기(&amp;C)</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">선택하면 가상 머신에서 IO APIC를 사용합니다. 이 경우 가상 머신의 성능이 저하될 수도 있습니다. &lt;b&gt;주의:&lt;/b&gt; 게스트 운영체제로 윈도를 설치한 후에 이 기능을 끄지 마십시오!</translation>
     </message>
     <message>
@@ -5278,7 +5278,7 @@ p, li { white-space: pre-wrap; }
         <translation>클립보드 공유(&amp;S):</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>호스트와 게스트 운영체제 사이의 클립보드 공유 모드를 설정합니다. 이 기능을 사용하려면 게스트 확장이 게스트 운영체제에 설치되어야 합니다.</translation>
     </message>
     <message>
@@ -5298,7 +5298,7 @@ p, li { white-space: pre-wrap; }
         <translation>설명(&amp;D)</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>가상 머신의 설명을 표시합니다. 설치한 게스트 운영체제의 설정을 적어두는 데 도움이 될 수 있습니다.</translation>
     </message>
     <message>
@@ -5334,7 +5334,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">컴퓨터의 메모리(&lt;b&gt;%2&lt;/b&gt;)의 &lt;b&gt;%1%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족합니다. 좀 더 적은 양을 선택하십시오.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="obsolete">컴퓨터의 메모리(&lt;b&gt;%2&lt;/b&gt;)의 &lt;b&gt;%1%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족해질 수도 있습니다. 실행하는 동안 주의하십시오.</translation>
     </message>
     <message>
@@ -5413,7 +5413,7 @@ p, li { white-space: pre-wrap; }
         <translation>이 가상 머신에 연결된 모든 하드디스크의 목록입니다. 강조된 항목에서 마우스를 누르거나 &lt;tt&gt;Space&lt;/tt&gt; 키를 누르면 드롭다운 목록이 표시되며, 원하는 값을 선택할 수 있습니다. 컨텍스트 메뉴나 오른쪽에 있는 단추를 사용하면 새 가상 하드디스크를 연결할 수 있습니다.</translation>
     </message>
     <message>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation>선택하면 가상 하드디스크를 바로 연결하지 않고 변경 사항을 저장하는 하드디스크를 보여주며, 다른 변경 사항이 저장된 하드디스크를 연결할 수 있습니다. 복잡한 디스크 구성을 사용하려는 경우에만 선택하십시오.</translation>
     </message>
     <message>
@@ -5536,7 +5536,7 @@ p, li { white-space: pre-wrap; }
         <translation>이름(&amp;N):</translation>
     </message>
     <message>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation>연결 종류가 &lt;b&gt;브리지 어댑터&lt;/b&gt; 및 &lt;b&gt;호스트 전용 어댑터&lt;/b&gt;인 경우 해당하는 어댑터를 선택하시고, &lt;b&gt;내부 네트워크&lt;/b&gt;인 경우 내부 네트워크의 이름을 입력하십시오.</translation>
     </message>
 </context>
@@ -5659,7 +5659,7 @@ p, li { white-space: pre-wrap; }
         <translation>IRQ(&amp;I):</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>이 병렬 포트의 IRQ 번호를 표시합니다. &lt;tt&gt;0&lt;/tt&gt;부터 &lt;tt&gt;255&lt;/tt&gt; 까지의 숫자를 사용할 수 있으며, &lt;tt&gt;15&lt;/tt&gt; 이상의 숫자는 이 가상 머신의 &lt;b&gt;IO APIC&lt;/b&gt; 설정이 활성화되어 있어야만 사용 가능합니다.</translation>
     </message>
     <message>
@@ -5667,7 +5667,7 @@ p, li { white-space: pre-wrap; }
         <translation>I/O 포트(&amp;R):</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>이 병렬 포트의 I/O 포트 주소를 표시합니다. 16진수 숫자&lt;tt&gt;0x0&lt;/tt&gt;부터 &lt;tt&gt;0xFFFF&lt;/tt&gt; 사이의 숫자를 사용할 수 있습니다.</translation>
     </message>
     <message>
@@ -5682,15 +5682,15 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>포트 번호가 중복됩니다</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>포트 경로가 지정되지 않았습니다</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>포트 경로가 중복됩니다</translation>
     </message>
 </context>
@@ -5820,7 +5820,7 @@ p, li { white-space: pre-wrap; }
         <translation>IRQ(&amp;I):</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>이 직렬 포트의 IRQ 번호를 표시합니다. &lt;tt&gt;0&lt;/tt&gt;부터 &lt;tt&gt;255&lt;/tt&gt; 까지의 숫자를 사용할 수 있으며, &lt;tt&gt;15&lt;/tt&gt; 이상의 숫자는 이 가상 머신의 &lt;b&gt;IO APIC&lt;/b&gt; 설정이 활성화되어 있어야만 사용 가능합니다.</translation>
     </message>
     <message>
@@ -5828,7 +5828,7 @@ p, li { white-space: pre-wrap; }
         <translation>I/O 포트(&amp;R):</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>이 직렬 포트의 I/O 포트 주소를 표시합니다. 16진수 숫자&lt;tt&gt;0x0&lt;/tt&gt;부터 &lt;tt&gt;0xFFFF&lt;/tt&gt; 사이의 숫자를 사용할 수 있습니다.</translation>
     </message>
     <message>
@@ -5840,7 +5840,7 @@ p, li { white-space: pre-wrap; }
         <translation>이 직렬 포트의 작동 상태를 조정합니다. &lt;b&gt;연결되지 않음&lt;/b&gt;을 선택하면 게스트 운영체제에서는 직렬 포트를 감지할 것이지만 작동하지는 않을 것입니다.</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation>만약 선택한다면 가상 머신을 시작할 때 &lt;b&gt;포트 경로&lt;/b&gt;에 지정한 파이프를 만듭니다. 그렇지 않다면 가상 머신에서는 존재하는 파이프를 사용하려고 시도합니다.</translation>
     </message>
     <message>
@@ -5852,7 +5852,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">포트 경로(&amp;P):</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>&lt;b&gt;호스트 파이프&lt;/b&gt; 모드로 작동할 때는 직렬 포트의 파이프 경로를 표시하고, &lt;b&gt;호스트 장치&lt;/b&gt; 모드로 작동할 때는 호스트의 직렬 장치 이름을 표시합니다.</translation>
     </message>
     <message>
@@ -5863,15 +5863,15 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>포트 번호가 중복됩니다</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>포트 경로가 지정되지 않았습니다</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>포트 경로가 중복됩니다</translation>
     </message>
 </context>
@@ -5882,7 +5882,7 @@ p, li { white-space: pre-wrap; }
         <translation>컴퓨터 메모리(&lt;b&gt;%2&lt;/b&gt;)의 &lt;b&gt;%1%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족합니다. 좀 더 적은 양을 선택하십시오.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation>컴퓨터 메모리(&lt;b&gt;%2&lt;/b&gt;)의 &lt;b&gt;%1%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족해질 수도 있습니다. 실행하는 동안 주의하십시오.</translation>
     </message>
     <message>
@@ -5936,7 +5936,7 @@ p, li { white-space: pre-wrap; }
         <translation>부팅 순서(&amp;B):</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation>부트 장치의 순서를 정합니다. 체크 상자를 사용해서 각각 부트 장치를 켜거나 끌 수 있습니다. 항목을 위나 아래로 이동해서 순서를 바꿀 수 있습니다.</translation>
     </message>
     <message>
@@ -5968,7 +5968,7 @@ p, li { white-space: pre-wrap; }
         <translation>ACPI 사용하기(&amp;A)</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation>선택하면 가상 머신에서 IO APIC를 사용합니다. 이 경우 가상 머신의 성능이 저하될 수도 있습니다. &lt;b&gt;주의:&lt;/b&gt; 게스트 운영체제로 윈도를 설치한 후에 이 기능을 끄지 마십시오!</translation>
     </message>
     <message>
