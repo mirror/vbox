@@ -117,7 +117,7 @@ typedef struct DEVEFIINFO
     uint32_t    cbBelow4GB;
     /** 0x18 - Amount of memory above 4GB (in bytes). */
     uint64_t    cbAbove4GB;
-    /** 0x20 - Flags reserved for future use, must be zero. */
+    /** 0x20 - see flags values below */
     uint32_t    fFlags;
     /** 0x24 - The nubmer of Virtual CPUs. */
     uint32_t    cCpus;
@@ -134,6 +134,7 @@ typedef DEVEFIINFO const *PCDEVEFIINFO;
 
 /** The physical address where DEVEFIINFO can be found. */
 #define DEVEFI_INFO_PHYS_ADDR   (0xfffff000)
+#define DEVEFI_INFO_FLAGS_X64   RT_BIT(0)
 
 /** @} */
 
