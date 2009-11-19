@@ -134,7 +134,7 @@ typedef DEVEFIINFO const *PCDEVEFIINFO;
 
 /** The physical address where DEVEFIINFO can be found. */
 #define DEVEFI_INFO_PHYS_ADDR   (0xfffff000)
-#define DEVEFI_INFO_FLAGS_X64   RT_BIT(0)
+#define DEVEFI_INFO_FLAGS_AMD64   RT_BIT(0)
 
 /** @} */
 
