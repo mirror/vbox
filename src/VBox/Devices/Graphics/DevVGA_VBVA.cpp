@@ -1037,7 +1037,10 @@ DECLINLINE(void) vbvaVHWAHHCommandRetain (VBOXVHWACMD* pCmd)
 
 static unsigned vbvaVHWAHandleCommand (PVGASTATE pVGAState, VBVACONTEXT *pCtx, PVBOXVHWACMD pCmd)
 {
-    pVGAState->pDrv->pfnVHWACommandProcess(pVGAState->pDrv, pCmd);
+    if (pVGAState->pDrv->pfnVHWACommandProcess)
+        pVGAState->pDrv->pfnVHWACommandProcess(pVGAState->pDrv, pCmd);
+    else
+        AssertFailed();
     return 0;
 }
 
