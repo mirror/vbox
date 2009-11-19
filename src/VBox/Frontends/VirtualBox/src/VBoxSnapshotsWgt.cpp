@@ -691,7 +691,7 @@ void VBoxSnapshotsWgt::retranslateUi()
 
     mRestoreSnapshotAction->setStatusTip (tr ("Restore the selected snapshot of the virtual machine"));
     mDeleteSnapshotAction->setStatusTip (tr ("Delete the selected snapshot of the virtual machine"));
-    mShowSnapshotDetailsAction->setStatusTip (tr ("Show details of the selected snapshot"));
+    mShowSnapshotDetailsAction->setStatusTip (tr ("Show the details of the selected snapshot"));
     mTakeSnapshotAction->setStatusTip (tr ("Take a snapshot of the current virtual machine state"));
 
     mRestoreSnapshotAction->setToolTip (mRestoreSnapshotAction->text().remove ('&').remove ('.') +

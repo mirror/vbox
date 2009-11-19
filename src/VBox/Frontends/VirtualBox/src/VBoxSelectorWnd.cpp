@@ -1323,7 +1323,7 @@ void VBoxSelectorWnd::retranslateUi()
 
     mFileApplianceExportAction->setText (tr ("&Export Appliance..."));
     mFileApplianceExportAction->setShortcut (QKeySequence ("Ctrl+E"));
-    mFileApplianceExportAction->setStatusTip (tr ("Export an appliance out of VM's from VirtualBox"));
+    mFileApplianceExportAction->setStatusTip (tr ("Export one or more VirtualBox virtual machines as an appliance"));
 
 #ifdef Q_WS_MAC
     /*
@@ -1538,7 +1538,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
             mVmDetailsView->setDetailsText
                 (tr ("<h3>"
                      "Welcome to VirtualBox!</h3>"
-                     "<p>The left part of this window is intended to display "
+                     "<p>The left part of this window is  "
                      "a list of all virtual machines on your computer. "
                      "The list is empty now because you haven't created any virtual "
                      "machines yet."

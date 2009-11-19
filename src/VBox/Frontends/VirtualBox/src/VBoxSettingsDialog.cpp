@@ -92,7 +92,7 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     layout->addWidget (mStack);
 
     /* Setup whatsthis stuff */
-    setWhatsThis (tr ("<i>Select a settings category from the list on the left side and move the mouse over a settings item to get more information</i>."));
+    setWhatsThis (tr ("<i>Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information</i>."));
     qApp->installEventFilter (this);
     mWhatsThisTimer->setSingleShot (true);
     connect (mWhatsThisTimer, SIGNAL (timeout()), this, SLOT (updateWhatsThis()));

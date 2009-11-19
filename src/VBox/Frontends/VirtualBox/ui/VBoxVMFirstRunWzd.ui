@@ -118,7 +118,7 @@
               </size>
              </property>
              <property name="text" >
-              <string>&lt;p>You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p>&lt;p>Use the &lt;b>Next&lt;/b> button to go to the next page of the wizard and the &lt;b>Back&lt;/b> button to return to the previous page. You can also press &lt;b>Cancel&lt;/b> if you want to cancel execution of this wizard.&lt;/p></string>
+              <string>&lt;p>You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p>&lt;p>Use the &lt;b>Next&lt;/b> button to go to the next page of the wizard and the &lt;b>Back&lt;/b> button to return to the previous page. You can also press &lt;b>Cancel&lt;/b> if you want to cancel the execution of this wizard.&lt;/p></string>
              </property>
              <property name="alignment" >
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -143,7 +143,7 @@
               </size>
              </property>
              <property name="text" >
-              <string>&lt;p>You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p>&lt;p>Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b>Settings&lt;/b> from the &lt;b>Machine&lt;/b> menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p>&lt;p>Use the &lt;b>Next&lt;/b> button to go to the next page of the wizard and the &lt;b>Back&lt;/b> button to return to the previous page. You can also press &lt;b>Cancel&lt;/b> if you want to cancel execution of this wizard.&lt;/p></string>
+              <string>&lt;p>You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p>&lt;p>Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b>Settings&lt;/b> from the &lt;b>Machine&lt;/b> menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p>&lt;p>Use the &lt;b>Next&lt;/b> button to go to the next page of the wizard and the &lt;b>Back&lt;/b> button to return to the previous page. You can also press &lt;b>Cancel&lt;/b> if you want to cancel the execution of this wizard.&lt;/p></string>
              </property>
              <property name="wordWrap" >
               <bool>true</bool>
@@ -304,7 +304,7 @@
               </size>
              </property>
              <property name="text" >
-              <string>&lt;p>Select the type of the media you would like to use for installation purposes below.&lt;/p></string>
+              <string>&lt;p>Select the type of media you would like to use for installation.&lt;/p></string>
              </property>
              <property name="alignment" >
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -329,7 +329,7 @@
               </size>
              </property>
              <property name="text" >
-              <string>&lt;p>Select the type of the media you would like to use for booting an operating system.&lt;/p></string>
+              <string>&lt;p>Select the type of media you would like to use for booting an operating system.&lt;/p></string>
              </property>
              <property name="wordWrap" >
               <bool>true</bool>

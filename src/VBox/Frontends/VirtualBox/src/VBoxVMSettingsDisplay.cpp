@@ -189,7 +189,7 @@ bool VBoxVMSettingsDisplay::revalidate (QString &aWarning, QString & /* aTitle *
     if ((quint64) mSlMemory->value() * _1M < needBytes)
     {
         aWarning = tr (
-            "you have assigned less than <b>%1</b> for video memory which is "
+            "you have assigned less than <b>%1</b> of video memory which is "
             "the minimum amount required to switch the virtual machine to "
             "fullscreen or seamless mode.")
             .arg (vboxGlobal().formatSize (needBytes, 0, VBoxDefs::FormatSize_RoundUp));
@@ -202,7 +202,7 @@ bool VBoxVMSettingsDisplay::revalidate (QString &aWarning, QString & /* aTitle *
         if ((quint64) mSlMemory->value() * _1M < needBytesWith2D)
         {
             aWarning = tr (
-                "you have assigned less than <b>%1</b> for video memory which is "
+                "you have assigned less than <b>%1</b> of video memory which is "
                 "the minimum amount required for HD Video to be played efficiently.")
                 .arg (vboxGlobal().formatSize (needBytesWith2D, 0, VBoxDefs::FormatSize_RoundUp));
             return true;

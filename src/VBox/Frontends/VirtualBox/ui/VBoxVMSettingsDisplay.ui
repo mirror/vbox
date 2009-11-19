@@ -169,7 +169,7 @@
              </sizepolicy>
             </property>
             <property name="whatsThis">
-             <string>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</string>
+             <string>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</string>
             </property>
             <property name="text">
              <string>Enable &amp;3D Acceleration</string>
@@ -185,7 +185,7 @@
              </sizepolicy>
             </property>
             <property name="whatsThis">
-             <string>When checked, the virtual machine will get access to the Video Acceleration capabilities available on the host.</string>
+             <string>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</string>
             </property>
             <property name="text">
              <string>Enable &amp;2D Video Acceleration</string>

@@ -3829,7 +3829,7 @@ p, li { white-space: pre-wrap; }
         <translation>Insira o seu nome completo empregando caracteres latinos.</translation>
     </message>
     <message>
-        <source>Enter your valid e-mail address.</source>
+        <source>Enter your e-mail address. Please use a valid address here.</source>
         <translation>Insira o seu enderezo de correo electrónico válido.</translation>
     </message>
     <message>
@@ -3849,11 +3849,11 @@ p, li { white-space: pre-wrap; }
         <translation>Seleccione país/territorio</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Cubra este formulario de rexistro para permitirnos saber que emprega VirtualBox e, opcionalmente, telo informado sobre as novas e actualizacións de VirtualBox.&lt;/p&gt;&lt;p&gt;Empregue caracteres latinos para cubrir os campos de abaixo. Nota que Sun Microsystems soamente empregará esta información para obter estatísticas de uso do produto e para enviarlle boletíns de novas. En particular, Sun Microsystems nunca pasará os seus datos a terceiros. Información detallada sobre como empregamos os seus datos persoais encóntrase na sección &lt;b&gt;Política de privacidade&lt;/b&gt; do manual de VirtualBox ou no sitio web de VirtualBox na páxina &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>I &amp;have a Sun Online account already:</source>
+        <source>I &amp;already have a Sun Online account:</source>
         <translation>Xa teño un&amp;ha conta en liña de Sun:</translation>
     </message>
     <message>
@@ -3865,7 +3865,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Contrasinal:</translation>
     </message>
     <message>
-        <source>I &amp;would like to register creating a new Sun Online account:</source>
+        <source>I &amp;would like to create a new Sun Online account:</source>
         <translation>&amp;Gustaríalle rexistrar a creación dunha nova conta de Sun en liña:</translation>
     </message>
     <message>
@@ -4036,7 +4036,7 @@ p, li { white-space: pre-wrap; }
         <translation>Suspender a execución da máquina virtual</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Dámoslle a benvida a VirtualBox.&lt;/h3&gt;&lt;p&gt;A parte esquerda desta xanela destínase a mostrar unha lista de todas as máquinas virtuais do seu computador. Neste intre a lista está baleira porque aínda non creou ningunha máquina virtual.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Para crear unha nova máquina virtual prema no botón &lt;b&gt;Novo&lt;/b&gt; da barra de ferramentas localizada na parte superior da xanela principal.&lt;/p&gt;&lt;p&gt;Pode premer a tecla &lt;b&gt;%1&lt;/b&gt; para obter axuda ou visitar &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; para consultar as últimas novas e información.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4069,7 +4069,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Exportar servizo virtualizado...</translation>
     </message>
     <message>
-        <source>Export an appliance out of VM&apos;s from VirtualBox</source>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
         <translation>Exportar un servizo virtualizado (Appliance) desde máquinas virtuais de VirtualBox</translation>
     </message>
     <message>
@@ -4080,7 +4080,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
         <translation>&lt;i&gt;Seleccione da lista a súa esquerda unha categoría de configuración e logo mova o rato sobre os elementos para obter máis información&lt;/i&gt;.</translation>
     </message>
     <message>
@@ -4218,7 +4218,7 @@ p, li { white-space: pre-wrap; }
         <translation>Descarta o estado actual da instantánea e reverte a máquina ao estado que tiña antes de que se tomara a instantánea</translation>
     </message>
     <message>
-        <source>Show details of the selected snapshot</source>
+        <source>Show the details of the selected snapshot</source>
         <translation>Mostrar os detalles da instantánea seleccionada</translation>
     </message>
     <message>
@@ -4267,7 +4267,7 @@ p, li { white-space: pre-wrap; }
         <translation>Substituí&amp;r...</translation>
     </message>
     <message>
-        <source>Replaces the current text with the content of a given file.</source>
+        <source>Replaces the current text with the content of a file.</source>
         <translation>Substituír o texto actual co contido dun ficheiro dado.</translation>
     </message>
     <message>
@@ -4306,7 +4306,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxUSBMenu</name>
     <message>
-        <source>&lt;no available devices&gt;</source>
+        <source>&lt;no devices available&gt;</source>
         <comment>USB devices</comment>
         <translation>&lt;dispositivos non dispoñíbeis&gt;</translation>
     </message>
@@ -4432,7 +4432,7 @@ p, li { white-space: pre-wrap; }
         <translation>Asistente de primeira execución</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Iniciou por primeira vez unha máquina virtual creada recentemente. Este asistente axudárao a efectuar os pasos necesarios para instalar un sistema operativo da súa elección nesta máquina virtual.&lt;/p&gt;&lt;p&gt;Empregue o botón &lt;b&gt;Seguinte&lt;/b&gt; para ir á seguinte páxina do asistente e o botón &lt;b&gt;Volver&lt;/b&gt; para regresar á páxina anterior. Tamén pode premer en &lt;b&gt;Cancelar&lt;/b&gt; se quere cancelar a execución deste asistente.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4440,7 +4440,7 @@ p, li { white-space: pre-wrap; }
         <translation>Benvida ao asistente de primeira execución!</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Selecciona o tipo de medio proposto abaixo que lle gustaría empregar para a instalación.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4496,11 +4496,11 @@ p, li { white-space: pre-wrap; }
         <translation>Unidade do anfitrión %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Iniciou por primeira vez unha máquina virtual creada recentemente. Este asistente axudárao a efectuar os pasos necesarios para iniciar un sistema operativo da súa escolla na máquina virtual.&lt;/p&gt;&lt;p&gt;Nota que agora non poderá instalar un sistema operativo nesta máquina virtual porque non conectou ningún disco ríxido a máquina. Se non é isto o que quere, pode cancelar a execución deste asistente. Seleccione &lt;b&gt;Configuracións&lt;/b&gt; desde o menú &lt;b&gt;Máquina&lt;/b&gt; da xanela principal de VirtualBox para acceder ao diálogo de configuracións desta máquina e cambiar a configuración do disco ríxido.&lt;/p&gt;&lt;p&gt;Empregue o botón &lt;b&gt;Seguinte&lt;/b&gt; para ir á seguinte páxina do asistente e o botón &lt;b&gt;Volver&lt;/b&gt; para regresar á páxina anterior. Tamén pode premer en &lt;b&gt;Cancelar&lt;/b&gt; se quere cancelar a execución deste asistente.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Seleccione o tipo de medio que lle gustaría empregar para iniciar o sistema operativo.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4751,7 +4751,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsAudio</name>
     <message>
-        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>Cando está marcada, a tarxeta de son PCI virtual é conectada a máquina virtual que emprega o controlador especificado para comunicarse coa tarxeta de son do anfitrión.</translation>
     </message>
     <message>
@@ -4833,7 +4833,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsDisplay</name>
     <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>asignou menos de &lt;b&gt;%1&lt;/b&gt; para a memoria de vídeo que é a mínima cantidade requirida para cambiar a máquina virtual entre o modo de pantalla completa e o modo fluído.</translation>
     </message>
     <message>
@@ -4861,7 +4861,7 @@ p, li { white-space: pre-wrap; }
         <translation>Funcionalidades estendidas:</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation>Cando está marcada, a máquina virtual terá acceso as capacidades gráficas 3D dispoñíbeis no anfitrión.</translation>
     </message>
     <message>

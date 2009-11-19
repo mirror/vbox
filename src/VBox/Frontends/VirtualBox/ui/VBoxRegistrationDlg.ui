@@ -105,7 +105,7 @@
           </size>
          </property>
          <property name="text" >
-          <string>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</string>
+          <string>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</string>
          </property>
          <property name="wordWrap" >
           <bool>true</bool>
@@ -122,7 +122,7 @@
        <item row="4" column="1" colspan="3" >
         <widget class="QRadioButton" name="mRbOld" >
          <property name="text" >
-          <string>I &amp;have a Sun Online account already:</string>
+          <string>I &amp;already have a Sun Online account:</string>
          </property>
          <property name="checked" >
           <bool>true</bool>
@@ -161,7 +161,7 @@
        <item row="5" column="3" >
         <widget class="QLineEdit" name="mLeOldEmail" >
          <property name="whatsThis" >
-          <string>Enter your valid e-mail address.</string>
+          <string>Enter your e-mail address. Please use a valid address here.</string>
          </property>
         </widget>
        </item>
@@ -181,7 +181,7 @@
        <item row="6" column="3" >
         <widget class="QLineEdit" name="mLeOldPassword" >
          <property name="whatsThis" >
-          <string>Enter your valid e-mail address.</string>
+          <string>Enter your e-mail address. Please use a valid address here.</string>
          </property>
          <property name="echoMode" >
           <enum>QLineEdit::Password</enum>
@@ -198,7 +198,7 @@
        <item row="8" column="1" colspan="3" >
         <widget class="QRadioButton" name="mRbNew" >
          <property name="text" >
-          <string>I &amp;would like to register creating a new Sun Online account:</string>
+          <string>I &amp;would like to create a new Sun Online account:</string>
          </property>
         </widget>
        </item>
