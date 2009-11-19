@@ -2387,14 +2387,24 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                             /* Note: No need to invalidate this entry on other VCPUs as a stale TLB entry will not harm; write access will simply
                              *       fault again and take this path to only invalidate the entry.
                              */
-                            if (    pPage
-                                &&  PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+                            if (RT_LIKELY(pPage))
                             {
-                                /* Assuming write handlers here as the PTE is present (otherwise we wouldn't be here). */
-                                PteDst.n.u1Write    = 0;
+                                if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+                                    /* Assuming write handlers here as the PTE is present (otherwise we wouldn't be here). */
+                                    PteDst.n.u1Write = 0;
+                                else
+                                {
+                                    if (   PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED
+                                        && PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
+                                    {
+                                        rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, pPteSrc->u & GST_PTE_PG_MASK);
+                                        AssertRC(rc);
+                                    }
+                                    PteDst.n.u1Write = 1;
+                                }
                             }
                             else
-                                PteDst.n.u1Write    = 1;
+                                PteDst.n.u1Write     = 1;
 
                             PteDst.n.u1Dirty    = 1;
                             PteDst.n.u1Accessed = 1;
