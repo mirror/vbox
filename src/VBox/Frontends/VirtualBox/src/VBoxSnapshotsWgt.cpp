@@ -198,8 +198,10 @@ public:
             ageFormat = AgeInSeconds;
         }
 
+#if 0
         if (mAge != oldAge)
             emitDataChanged();
+#endif
 
         return ageFormat;
     }
