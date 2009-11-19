@@ -161,7 +161,12 @@
 
 /** @def VBOX_WITH_NEW_LAZY_PAGE_ALLOC
  * Enables the experimental lazy page allocation code. */
-/*# define VBOX_WITH_NEW_LAZY_PAGE_ALLOC */
+/*#define VBOX_WITH_NEW_LAZY_PAGE_ALLOC */
+
+/** @def VBOX_WITH_REAL_WRITE_MONITORED_PAGES
+ * Enables real write monitoring of pages, i.e. mapping them read-only and
+ * only making them writable when getting a write access #PF. */
+/*#define VBOX_WITH_REAL_WRITE_MONITORED_PAGES */
 
 /** @} */
 
@@ -2740,7 +2745,15 @@ typedef struct PGM
         /** Indicates that a live save operation is active.  */
         bool                        fActive;
         /** Padding. */
-        bool                        afReserved[3];
+        bool                        afReserved[2];
+        /** The next history index. */
+        uint8_t                     iDirtyPagesHistory;
+        /** History of the total amount of dirty pages. */
+        uint32_t                    acDirtyPagesHistory[64];
+        /** Short term dirty page average. */
+        uint32_t                    cDirtyPagesShort;
+        /** Long term dirty page average. */
+        uint32_t                    cDirtyPagesLong;
     } LiveSave;
 
     /** @name   Error injection.
