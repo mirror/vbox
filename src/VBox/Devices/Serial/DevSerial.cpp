@@ -996,7 +996,7 @@ const PDMDEVREG g_DeviceSerialPort =
     /* fClass */
     PDM_DEVREG_CLASS_SERIAL,
     /* cMaxInstances */
-    1,
+    UINT32_MAX,
     /* cbInstance */
     sizeof(SerialState),
     /* pfnConstruct */
