@@ -918,6 +918,10 @@ static int ssmR3LazyInit(PVM pVM)
      */
     if (RT_SUCCESS(rc))
         rc = RTCritSectInit(&pVM->ssm.s.CancelCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        STAM_REL_REG_USED(pVM, &pVM->ssm.s.uPass, STAMTYPE_U32, "/SSM/uPass", STAMUNIT_COUNT, "Current pass");
+    }
 
     pVM->ssm.s.fInitialized = RT_SUCCESS(rc);
     return rc;
@@ -4044,7 +4048,7 @@ static int ssmR3SaveDoDoneRun(PVM pVM, PSSMHANDLE pSSM)
 static int ssmR3SaveDoClose(PVM pVM, PSSMHANDLE pSSM)
 {
     VM_ASSERT_EMT0(pVM);
-
+    pVM->ssm.s.uPass = 0;
 
     /*
      * Make it non-cancellable, close the stream and delete the file on failure.
@@ -4919,6 +4923,8 @@ static int ssmR3DoLiveExecVoteLoop(PVM pVM, PSSMHANDLE pSSM)
 #define SSM_MAX_PASSES  _1M
     for (uint32_t uPass = 0; uPass < SSM_MAX_PASSES; uPass++)
     {
+        pVM->ssm.s.uPass = uPass;
+
         /*
          * Save state and vote on whether we need more passes or not.
          */
