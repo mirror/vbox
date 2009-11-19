@@ -4805,11 +4805,13 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     BOOL fTeleporterEnabled;
     rc = mMachine->COMGETTER(TeleporterEnabled)(&fTeleporterEnabled);
     CheckComRCReturnRC(rc);
+#if 0 /** @todo we should save it afterwards, but that isn't necessarily a good idea. Find a better place for this (VBoxSVC).  */
     if (fTeleporterEnabled)
     {
         rc = mMachine->COMSETTER(TeleporterEnabled)(FALSE);
         CheckComRCReturnRC(rc);
     }
+#endif
 
     /* create a progress object to track progress of this operation */
     ComObjPtr<Progress> powerupProgress;
