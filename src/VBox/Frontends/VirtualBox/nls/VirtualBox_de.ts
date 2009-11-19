@@ -33,15 +33,15 @@
     <name>AttachmentsModel</name>
     <message>
         <source>Double-click to add a new attachment</source>
-        <translation>Doppelklick für neuen Anschluss</translation>
+        <translation type="obsolete">Doppelklick für neuen Anschluss</translation>
     </message>
     <message>
         <source>Hard Disk</source>
-        <translation>Festplatte</translation>
+        <translation type="obsolete">Festplatte</translation>
     </message>
     <message>
         <source>Slot</source>
-        <translation>Slot</translation>
+        <translation type="obsolete">Slot</translation>
     </message>
 </context>
 <context>
@@ -68,7 +68,7 @@
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation>Diese Fehlermeldung bedeutet, dass der Kerntreiber entweder nicht genügend Speicher allokieren konnte oder dass eine Mapping-Operation fehlgeschlagen ist.&lt;br/&gt;&lt;br/&gt;Es gibt bekannte Probleme mit Linux 2.6.29.</translation>
+        <translation type="obsolete">Diese Fehlermeldung bedeutet, dass der Kerntreiber entweder nicht genügend Speicher allokieren konnte oder dass eine Mapping-Operation fehlgeschlagen ist.&lt;br/&gt;&lt;br/&gt;Es gibt bekannte Probleme mit Linux 2.6.29.</translation>
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
@@ -102,6 +102,10 @@
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
         <translation>Die VirtualBox-Kernmodule passen nicht zu dieser Version von VirtualBox. Die Installation von VirtualBox war möglicherweise nicht vollständig. Durch Ausführen von &lt;br/&gt;&lt;br/&gt;&lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; sollte dieses Problem behoben werden. Bitte stellen Sie sicher, dass Sie die OSE-Version von VirtualBox nicht mit der PUEL-Version mischen.</translation>
     </message>
+    <message>
+        <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -129,7 +133,7 @@
     <name>QIHelpButton</name>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Hilfe</translation>
+        <translation type="obsolete">&amp;Hilfe</translation>
     </message>
 </context>
 <context>
@@ -323,10 +327,17 @@
     </message>
 </context>
 <context>
+    <name>QILabel</name>
+    <message>
+        <source>&amp;Copy</source>
+        <translation type="unfinished">&amp;Kopieren</translation>
+    </message>
+</context>
+<context>
     <name>QILabelPrivate</name>
     <message>
         <source>&amp;Copy</source>
-        <translation>&amp;Kopieren</translation>
+        <translation type="obsolete">&amp;Kopieren</translation>
     </message>
 </context>
 <context>
@@ -546,11 +557,11 @@
     </message>
     <message>
         <source>&amp;Revert to the current snapshot</source>
-        <translation>&amp;Zurückkehren zum letzten Sicherungspunkt</translation>
+        <translation type="obsolete">&amp;Zurückkehren zum letzten Sicherungspunkt</translation>
     </message>
     <message>
         <source>Revert the machine state to the state stored in the current snapshot</source>
-        <translation>Überführt den Maschinenzustand in den Zustand des aktuellen Sicherungspunktes</translation>
+        <translation type="obsolete">Überführt den Maschinenzustand in den Zustand des aktuellen Sicherungspunktes</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
@@ -571,6 +582,14 @@
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Schaltet die virtuelle Maschine aus.&lt;/p&gt;&lt;p&gt;Bitte beachten Sie, dass dadurch die Ausführung der Maschine sofort unterbrochen wird und das Gastsystem somit keine Gelegenheit hat, sich sauber zu beenden. Dadurch kann es zu &lt;i&gt;Datenverlust&lt;/i&gt; innerhalb der virtuellen Maschine kommen. Diese Aktion sollte nur dann durchgeführt werden, wenn die virtuelle Maschine nicht auf &lt;b&gt;Sende Signal zum Herunterfahren&lt;/b&gt; reagiert.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Restore the machine state stored in the current snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Restore current snapshot &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -659,39 +678,39 @@
     </message>
     <message>
         <source>&amp;Floppy Image...</source>
-        <translation>&amp;Diskettenabbild...</translation>
+        <translation type="obsolete">&amp;Diskettenabbild...</translation>
     </message>
     <message>
         <source>Mount a floppy image file</source>
-        <translation>Bindet ein Diskettenabbild ein</translation>
+        <translation type="obsolete">Bindet ein Diskettenabbild ein</translation>
     </message>
     <message>
         <source>Unmount F&amp;loppy</source>
-        <translation>&amp;Diskettenlaufwerk trennen</translation>
+        <translation type="obsolete">&amp;Diskettenlaufwerk trennen</translation>
     </message>
     <message>
         <source>Unmount the currently mounted floppy media</source>
-        <translation>Trennt das momentan zugewiesene Diskettenmedium</translation>
+        <translation type="obsolete">Trennt das momentan zugewiesene Diskettenmedium</translation>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Image...</source>
-        <translation>&amp;CD/DVD-ROM-Abbild...</translation>
+        <translation type="obsolete">&amp;CD/DVD-ROM-Abbild...</translation>
     </message>
     <message>
         <source>Mount a CD/DVD-ROM image file</source>
-        <translation>Bindet ein CD/DVD-ROM-Abbild ein</translation>
+        <translation type="obsolete">Bindet ein CD/DVD-ROM-Abbild ein</translation>
     </message>
     <message>
         <source>Unmount C&amp;D/DVD-ROM</source>
-        <translation>&amp;CD/DVD-ROM trennen</translation>
+        <translation type="obsolete">&amp;CD/DVD-ROM trennen</translation>
     </message>
     <message>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation>Momentan zugewiesenes CD/DVD-ROM-Medium trennen</translation>
+        <translation type="obsolete">Momentan zugewiesenes CD/DVD-ROM-Medium trennen</translation>
     </message>
     <message>
         <source>Remote Dis&amp;play</source>
-        <translation>&amp;Fernsteuerung aktivieren</translation>
+        <translation type="obsolete">&amp;Fernsteuerung aktivieren</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
@@ -715,11 +734,11 @@
     </message>
     <message>
         <source>Mount &amp;Floppy</source>
-        <translation>&amp;Diskettenlaufwerk einbinden</translation>
+        <translation type="obsolete">&amp;Diskettenlaufwerk einbinden</translation>
     </message>
     <message>
         <source>Mount &amp;CD/DVD-ROM</source>
-        <translation>&amp;CD/DVD-ROM einbinden</translation>
+        <translation type="obsolete">&amp;CD/DVD-ROM einbinden</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
@@ -779,7 +798,7 @@
     </message>
     <message>
         <source>Host Drive </source>
-        <translation>Host-Laufwerk </translation>
+        <translation type="obsolete">Host-Laufwerk </translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
@@ -791,30 +810,30 @@
     </message>
     <message>
         <source>&amp;Network Adapters</source>
-        <translation>&amp;Netzwerkadapter</translation>
+        <translation type="obsolete">&amp;Netzwerkadapter</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation>Adapter %1</translation>
+        <translation type="obsolete">Adapter %1</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>Floppy tip</comment>
-        <translation>Bindet das ausgewählte physische Laufwerk des Host-PCs ein</translation>
+        <translation type="obsolete">Bindet das ausgewählte physische Laufwerk des Host-PCs ein</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>CD/DVD tip</comment>
-        <translation>Bindet das ausgewählte physische Laufwerk des Host-PCs ein</translation>
+        <translation type="obsolete">Bindet das ausgewählte physische Laufwerk des Host-PCs ein</translation>
     </message>
     <message>
         <source>Disconnect the cable from the selected virtual network adapter</source>
-        <translation>Trennt das virtuelle Kabel vom ausgewählten Netzwerkadapter</translation>
+        <translation type="obsolete">Trennt das virtuelle Kabel vom ausgewählten Netzwerkadapter</translation>
     </message>
     <message>
         <source>Connect the cable to the selected virtual network adapter</source>
-        <translation>Verbindet das Kabel mit dem ausgewählten Netzwerkadapter</translation>
+        <translation type="obsolete">Verbindet das Kabel mit dem ausgewählten Netzwerkadapter</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
@@ -827,47 +846,47 @@
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>Zeigt die Aktivität der Diskette:&lt;nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">Zeigt die Aktivität der Diskette:&lt;nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Hostlaufwerk&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Hostlaufwerk&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Abbild&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Abbild&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Kein Medium zugewiesen&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Kein Medium zugewiesen&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Zeigt die Aktivität des CD/DVD-ROM-Mediums:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Zeigt die Aktivität des CD/DVD-ROM-Mediums:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Hostlaufwerk&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Hostlaufwerk&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Abbild&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Abbild&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Kein Medium zugewiesen&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Kein Medium zugewiesen&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Zeigt die Aktivität der virtuellen Festplatten:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Zeigt die Aktivität der virtuellen Festplatten:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -877,7 +896,7 @@
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Zeigt die Aktivität der Netzinterfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Zeigt die Aktivität der Netzinterfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
@@ -902,7 +921,7 @@
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Zeigt die Aktivität der angeschlossenen USB-Geräte:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Zeigt die Aktivität der angeschlossenen USB-Geräte:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -915,9 +934,9 @@
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB-Controller ist deaktiviert&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine'sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine&apos;sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Zeigt die Aktivität der gemeinsamen Ordner:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Zeigt die Aktivität der gemeinsamen Ordner:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -980,6 +999,99 @@
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source> EXPERIMENTAL build %1r%2 - %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Network Adapters...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change the settings of network adapters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remote Display</source>
+        <translation type="unfinished">&amp;Fernsteuerung</translation>
+    </message>
+    <message>
+        <source>Remote Desktop (RDP) Server</source>
+        <comment>enable/disable...</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>More CD/DVD Images...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unmount CD/DVD Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>More Floppy Images...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unmount Floppy Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No CD/DVD Devices Attached</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Floppy Devices Attached</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>HDD tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>CD/DVD tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No CD/DVD devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>CD/DVD tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>FD tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No floppy devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>FD tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>Shared folders tooltip</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1596,6 +1708,34 @@ p, li { white-space: pre-wrap; }
         <source>Next Check:</source>
         <translation>Nächste Überprüfung:</translation>
     </message>
+    <message>
+        <source>Check for:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stable release versions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;All new releases</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All new releases and &amp;pre-releases</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobal</name>
@@ -1662,12 +1802,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not Attached</source>
         <comment>details report (HDDs)</comment>
-        <translation>nicht angeschlossen</translation>
+        <translation type="obsolete">nicht angeschlossen</translation>
     </message>
     <message>
         <source>Hard Disks</source>
         <comment>details report</comment>
-        <translation>Festplatten</translation>
+        <translation type="obsolete">Festplatten</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -1692,42 +1832,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not mounted</source>
         <comment>details report (floppy)</comment>
-        <translation>nicht zugewiesen</translation>
+        <translation type="obsolete">nicht zugewiesen</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>details report (floppy)</comment>
-        <translation>Abbild</translation>
+        <translation type="obsolete">Abbild</translation>
     </message>
     <message>
         <source>Host Drive</source>
         <comment>details report (floppy)</comment>
-        <translation>Host-Laufwerk</translation>
+        <translation type="obsolete">Host-Laufwerk</translation>
     </message>
     <message>
         <source>Floppy</source>
         <comment>details report</comment>
-        <translation>Diskettenlaufwerk</translation>
+        <translation type="obsolete">Diskettenlaufwerk</translation>
     </message>
     <message>
         <source>Not mounted</source>
         <comment>details report (DVD)</comment>
-        <translation>nicht zugewiesen</translation>
+        <translation type="obsolete">nicht zugewiesen</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>details report (DVD)</comment>
-        <translation>Abbild</translation>
+        <translation type="obsolete">Abbild</translation>
     </message>
     <message>
         <source>Host Drive</source>
         <comment>details report (DVD)</comment>
-        <translation>Host-Laufwerk</translation>
+        <translation type="obsolete">Host-Laufwerk</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
         <comment>details report</comment>
-        <translation>CD/DVD-ROM</translation>
+        <translation type="obsolete">CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -1832,7 +1972,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Discarding</source>
         <comment>MachineState</comment>
-        <translation>Verwerfen</translation>
+        <translation type="obsolete">Verwerfen</translation>
     </message>
     <message>
         <source>Closed</source>
@@ -2062,7 +2202,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Stuck</source>
         <comment>MachineState</comment>
-        <translation>Hängt</translation>
+        <translation type="obsolete">Hängt</translation>
     </message>
     <message>
         <source>Disconnected</source>
@@ -2265,34 +2405,29 @@ p, li { white-space: pre-wrap; }
         <translation>Adapter %1</translation>
     </message>
     <message>
-        <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
-        <comment>hard disk</comment>
-        <translation></translation>
-    </message>
-    <message>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Gebunden an:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Gebunden an:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;i&gt;Not&amp;nbsp;angeschlossen&lt;/i&gt;</translation>
+        <translation type="obsolete">&lt;i&gt;Not&amp;nbsp;angeschlossen&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;br&gt;&lt;i&gt;Überprüfe Zugriffsrecht...&lt;/i&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;i&gt;Überprüfe Zugriffsrecht...&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
         <comment>medium</comment>
-        <translation>&lt;hr&gt;Die Zugriffsrechte des Mediums konnten nicht ermittelt werden.&lt;br&gt;%1.</translation>
+        <translation type="obsolete">&lt;hr&gt;Die Zugriffsrechte des Mediums konnten nicht ermittelt werden.&lt;br&gt;%1.</translation>
     </message>
     <message>
         <source>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Durch zuweisen dieses Abbildes wird ein neues differentielles Abbild erzeugt.</translation>
+        <translation type="obsolete">&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Durch zuweisen dieses Abbildes wird ein neues differentielles Abbild erzeugt.</translation>
     </message>
     <message>
         <source>Checking...</source>
@@ -2306,11 +2441,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
-        <translation>&lt;hr&gt;Einige der zu dieser virtuellen Festplatte gehörigen Dateien sind nicht zugreifbar. Bitte verwenden Sie den Manager für virtuelle Medien im Modus &lt;b&gt;Zeige Differenz-Abbilder&lt;/b&gt; um diese Dateien anzuzeigen.</translation>
+        <translation type="obsolete">&lt;hr&gt;Einige der zu dieser virtuellen Festplatte gehörigen Dateien sind nicht zugreifbar. Bitte verwenden Sie den Manager für virtuelle Medien im Modus &lt;b&gt;Zeige Differenz-Abbilder&lt;/b&gt; um diese Dateien anzuzeigen.</translation>
     </message>
     <message>
         <source>%1&lt;hr&gt;This base hard disk is indirectly attached using the following differencing hard disk:&lt;br&gt;%2%3</source>
-        <translation>%1&lt;hr&gt;Diese Basisfestplatte ist indirekt über die folgenden Differenzfestplatten eingebunden:&lt;br&gt;%2%3</translation>
+        <translation type="obsolete">%1&lt;hr&gt;Diese Basisfestplatte ist indirekt über die folgenden Differenzfestplatten eingebunden:&lt;br&gt;%2%3</translation>
     </message>
     <message>
         <source>3D Acceleration</source>
@@ -2442,6 +2577,194 @@ p, li { white-space: pre-wrap; }
         <comment>PortMode</comment>
         <translation>Datei</translation>
     </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (2D Video Acceleration)</comment>
+        <translation type="unfinished">aktiviert</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (2D Video Acceleration)</comment>
+        <translation type="unfinished">deaktiviert</translation>
+    </message>
+    <message>
+        <source>2D Video Acceleration</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>details report (Storage)</comment>
+        <translation type="unfinished">nicht angeschlossen</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Plattenspeicher</translation>
+    </message>
+    <message>
+        <source>Teleported</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guru Meditation</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Teleporting</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Taking Live Snapshot</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Teleporting Paused VM</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restoring Snapshot</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deleting Snapshot</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device %1</source>
+        <comment>StorageBusDevice</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE Primary Master</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE Primary Slave</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE Secondary Master</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE Secondary Slave</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SATA Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SCSI Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy Device %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paravirtualized Network (virtio-net)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I82078</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Empty</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Drive &apos;%1&apos;</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Drive %1 (%2)</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=white-space:pre&gt;Type (Format):  %1 (%2)&lt;/p&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Attached to:  %1&lt;/p&gt;</source>
+        <comment>image</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not Attached&lt;/i&gt;</source>
+        <comment>image</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to check media accessibility.</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can also change this while the machine is running.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can create media images using the virtual media manager.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -2459,10 +2782,21 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>VBoxHelpButton</name>
+    <message>
+        <source>&amp;Help</source>
+        <translation type="unfinished">&amp;Hilfe</translation>
+    </message>
+</context>
+<context>
     <name>VBoxImportApplianceWgt</name>
     <message>
         <source>Importing Appliance ...</source>
         <translation>Appliance importieren ...</translation>
+    </message>
+    <message>
+        <source>Reading Appliance ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2632,11 +2966,11 @@ p, li { white-space: pre-wrap; }
     <name>VBoxMediaComboBox</name>
     <message>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
-        <translation>Keine Medium verfügbar. Verwenden Sie den Manager für virtuelle Medien, um entsprechende Medien hinzuzufügen.</translation>
+        <translation type="obsolete">Keine Medium verfügbar. Verwenden Sie den Manager für virtuelle Medien, um entsprechende Medien hinzuzufügen.</translation>
     </message>
     <message>
         <source>&lt;no media&gt;</source>
-        <translation>&lt;kein Medium&gt;</translation>
+        <translation type="obsolete">&lt;kein Medium&gt;</translation>
     </message>
 </context>
 <context>
@@ -2774,6 +3108,21 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Floppy Images</source>
         <translation>&amp;Diskettenabbilder</translation>
     </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="unfinished">angeschlossen an</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="unfinished">angeschlossen an</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="unfinished">angeschlossen an</translation>
+    </message>
 </context>
 <context>
     <name>VBoxMiniToolBar</name>
@@ -2788,6 +3137,13 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Close VM</source>
         <translation>VM beenden</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxNetworkDialog</name>
+    <message>
+        <source>Network Adapters</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3162,15 +3518,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Der Sicherungspunkt &lt;b&gt;%1&lt;/b&gt; der virtuellen Maschine &lt;b&gt;%2&lt;/b&gt; konnte nicht freigegeben werden.</translation>
+        <translation type="obsolete">Der Sicherungspunkt &lt;b&gt;%1&lt;/b&gt; der virtuellen Maschine &lt;b&gt;%2&lt;/b&gt; konnte nicht freigegeben werden.</translation>
     </message>
     <message>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Der aktuelle Zustand der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht freigegeben werden.</translation>
+        <translation type="obsolete">Der aktuelle Zustand der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht freigegeben werden.</translation>
     </message>
     <message>
         <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Der aktuelle Sicherungspunkt sowie der aktuelle Zustand der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; konnten nicht freigegeben werden.</translation>
+        <translation type="obsolete">Der aktuelle Sicherungspunkt sowie der aktuelle Zustand der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; konnten nicht freigegeben werden.</translation>
     </message>
     <message>
         <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -3471,7 +3827,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>&amp;Sichern</translation>
+        <translation type="obsolete">&amp;Sichern</translation>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
@@ -3480,12 +3836,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
-        <translation>&amp;Erzeugen</translation>
+        <translation type="obsolete">&amp;Erzeugen</translation>
     </message>
     <message>
         <source>Select</source>
         <comment>hard disk</comment>
-        <translation>Auswählen</translation>
+        <translation type="obsolete">Auswählen</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
@@ -3625,7 +3981,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Für diesen neuen Anschluss sind keine unbenutzten Plattenabbilder verfügbar.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;Erzeugen&lt;/b&gt;, um eine neue virtuelle Platte zu erzeugen. Betätigen Sie &lt;b&gt;Auswählen&lt;/b&gt;, um den &lt;i&gt;Manager für virtuelle Medien&lt;/i&gt; zu starten.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Für diesen neuen Anschluss sind keine unbenutzten Plattenabbilder verfügbar.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;Erzeugen&lt;/b&gt;, um eine neue virtuelle Platte zu erzeugen. Betätigen Sie &lt;b&gt;Auswählen&lt;/b&gt;, um den &lt;i&gt;Manager für virtuelle Medien&lt;/i&gt; zu starten.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
@@ -3633,19 +3989,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Die virtuelle Festplatte &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht an den Slot &lt;i&gt;%2&lt;/i&gt; der virtuellen Maschine &lt;b&gt;%3&lt;/b&gt; angeschlossen werden.</translation>
+        <translation type="obsolete">Die virtuelle Festplatte &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht an den Slot &lt;i&gt;%2&lt;/i&gt; der virtuellen Maschine &lt;b&gt;%3&lt;/b&gt; angeschlossen werden.</translation>
     </message>
     <message>
         <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Die virtuelle Festplatte &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht vom Slot &lt;i&gt;%2&lt;/i&gt; der virtuellen Maschine &lt;b&gt;%3&lt;/b&gt; getrennt werden.</translation>
+        <translation type="obsolete">Die virtuelle Festplatte &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht vom Slot &lt;i&gt;%2&lt;/i&gt; der virtuellen Maschine &lt;b&gt;%3&lt;/b&gt; getrennt werden.</translation>
     </message>
     <message>
         <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Die %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; konnte nicht an die virtuelle Maschine &lt;b&gt;%3&lt;/b&gt; angeschlossen werden.</translation>
+        <translation type="obsolete">Die %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; konnte nicht an die virtuelle Maschine &lt;b&gt;%3&lt;/b&gt; angeschlossen werden.</translation>
     </message>
     <message>
         <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Die %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; konnte nicht von der virtuellen Maschine &lt;b&gt;%3&lt;/b&gt; getrennt werden.</translation>
+        <translation type="obsolete">Die %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; konnte nicht von der virtuellen Maschine &lt;b&gt;%3&lt;/b&gt; getrennt werden.</translation>
     </message>
     <message>
         <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -3673,30 +4029,30 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Die vorhandenen VirtualBox-Einstellungen wurden automatisch aus dem alten Format in ein neues Format für die aktuelle Version von VirtualBox konvertiert.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;OK&lt;/b&gt;, um VirtualBox nun zu starten oder &lt;b&gt;Mehr&lt;/b&gt;, um mehr Informationen über die konvertierten Dateien zu erhalten sowie für zusätzliche Optionen.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;Beenden&lt;/b&gt;, um VirtualBox ohne Speichern der Konvertierungen zu beenden.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Die vorhandenen VirtualBox-Einstellungen wurden automatisch aus dem alten Format in ein neues Format für die aktuelle Version von VirtualBox konvertiert.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;OK&lt;/b&gt;, um VirtualBox nun zu starten oder &lt;b&gt;Mehr&lt;/b&gt;, um mehr Informationen über die konvertierten Dateien zu erhalten sowie für zusätzliche Optionen.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;Beenden&lt;/b&gt;, um VirtualBox ohne Speichern der Konvertierungen zu beenden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;More</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>&amp;Mehr</translation>
+        <translation type="obsolete">&amp;Mehr</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>B&amp;eenden</translation>
+        <translation type="obsolete">B&amp;eenden</translation>
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Die folgenden Dateien mit VirtualBox-Einstellungen wurden automatisch in die neue Formatversion &lt;b&gt;%1&lt;/b&gt; konvertiert.&lt;/p&gt;&lt;p&gt;Die konvertierten Dateien wurden allerdings noch nicht abgespeichert. Wählen Sie &lt;p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Sichern&lt;/b&gt;, um Sicherheitskopien im alten Format zu erzeugen,&lt;/li&gt;&lt;li&gt;&lt;b&gt;Überschreiben&lt;/b&gt;, um alle konvertierten Dateien ohne Sicherheitskopien zu überschreiben; diese Einstellungen können allerdings nicht mehr mit einer älteren Version von VirtualBox verwendet werden,&lt;/li&gt;&lt;li&gt;%2&lt;/ul&gt;&lt;p&gt;Es wird empfohlen, &lt;b&gt;Sichern&lt;/b&gt; zu wählen, um die Sicherheitskopien mit älteren Versionen von VirtualBox verwenden zu können. Lesen Sie auch die Dokumentation für mehr Informationen über Downgrading.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Die folgenden Dateien mit VirtualBox-Einstellungen wurden automatisch in die neue Formatversion &lt;b&gt;%1&lt;/b&gt; konvertiert.&lt;/p&gt;&lt;p&gt;Die konvertierten Dateien wurden allerdings noch nicht abgespeichert. Wählen Sie &lt;p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Sichern&lt;/b&gt;, um Sicherheitskopien im alten Format zu erzeugen,&lt;/li&gt;&lt;li&gt;&lt;b&gt;Überschreiben&lt;/b&gt;, um alle konvertierten Dateien ohne Sicherheitskopien zu überschreiben; diese Einstellungen können allerdings nicht mehr mit einer älteren Version von VirtualBox verwendet werden,&lt;/li&gt;&lt;li&gt;%2&lt;/ul&gt;&lt;p&gt;Es wird empfohlen, &lt;b&gt;Sichern&lt;/b&gt; zu wählen, um die Sicherheitskopien mit älteren Versionen von VirtualBox verwenden zu können. Lesen Sie auch die Dokumentation für mehr Informationen über Downgrading.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation>&lt;li&gt;&lt;b&gt;Beenden&lt;/b&gt;, um VirtualBox ohne Sichern der konvertierten Dateien zu verlassen.&lt;/li&gt;</translation>
+        <translation type="obsolete">&lt;li&gt;&lt;b&gt;Beenden&lt;/b&gt;, um VirtualBox ohne Sichern der konvertierten Dateien zu verlassen.&lt;/li&gt;</translation>
     </message>
     <message>
         <source>O&amp;verwrite</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>&amp;Überschreiben</translation>
+        <translation type="obsolete">&amp;Überschreiben</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
@@ -3705,17 +4061,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>hard disk</source>
         <comment>failed to close ...</comment>
-        <translation>die Festplatte</translation>
+        <translation type="obsolete">die Festplatte</translation>
     </message>
     <message>
         <source>CD/DVD image</source>
         <comment>failed to close ...</comment>
-        <translation>das CD/DVD-Abbild</translation>
+        <translation type="obsolete">das CD/DVD-Abbild</translation>
     </message>
     <message>
         <source>floppy image</source>
         <comment>failed to close ...</comment>
-        <translation>das Diskettenabbild</translation>
+        <translation type="obsolete">das Diskettenabbild</translation>
     </message>
     <message>
         <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
@@ -3772,11 +4128,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sind Sie sicher, dass Sie den ausgewählten Sicherungspunkt und den gesicherten Zustand löschen wollen?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Sind Sie sicher, dass Sie den ausgewählten Sicherungspunkt und den gesicherten Zustand löschen wollen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation>Verwerfen</translation>
+        <translation type="obsolete">Verwerfen</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -3810,12 +4166,215 @@ p, li { white-space: pre-wrap; }
         <source>Failed to remove file.</source>
         <translation>Dateien konnten nicht gelöscht werden.</translation>
     </message>
+    <message>
+        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;By deleting a snapshot, the state information stored in the snapshot will be thrown away, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished">Löschen</translation>
+    </message>
+    <message>
+        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>medium</comment>
+        <translation type="unfinished">&amp;Erzeugen</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <comment>medium</comment>
+        <translation type="unfinished">&amp;Auswählen</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Would you like to force mounting of this medium?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Would you like to force unmounting of this medium?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force Unmount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutSettingsAutoConversion message box</comment>
+        <translation type="unfinished">B&amp;eenden</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to mount ...</comment>
+        <translation type="unfinished">die Festplatte</translation>
+    </message>
+    <message>
+        <source>CD/DVD</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to mount ...</comment>
+        <translation type="unfinished">das CD/DVD-Abbild</translation>
+    </message>
+    <message>
+        <source>floppy</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to mount ...</comment>
+        <translation type="unfinished">das Diskettenabbild</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to attach ...</comment>
+        <translation type="unfinished">die Festplatte</translation>
+    </message>
+    <message>
+        <source>CD/DVD device</source>
+        <comment>failed to attach ...</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>floppy device</source>
+        <comment>failed to close ...</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
     <message>
         <source>Time remaining: %1</source>
-        <translation>Verbleibende Zeit: %1</translation>
+        <translation type="obsolete">Verbleibende Zeit: %1</translation>
+    </message>
+    <message>
+        <source>%1 days, %2 hours remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 days, %2 minutes remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 days remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 day, %1 hours remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 day, %1 minutes remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 day remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 hours, %2 minutes remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 hour, %1 minutes remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 hour remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 minutes remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 minute, %2 seconds remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 minute remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 seconds remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A few seconds remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Canceling...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel the current operation</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3906,6 +4465,21 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folders</source>
         <translation>Gemeinsame Ordner</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxScreenshotViewer</name>
+    <message>
+        <source>Screenshot of %1 (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click to view non-scaled screenshot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click to view scaled screenshot.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4103,20 +4677,16 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxSnapshotDetailsDlg</name>
     <message>
-        <source>VBoxSnapshotDetailsDlg</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>&amp;Name</source>
-        <translation>&amp;Name</translation>
+        <translation type="obsolete">&amp;Name</translation>
     </message>
     <message>
         <source>&amp;Description</source>
-        <translation>&amp;Beschreibung</translation>
+        <translation type="obsolete">&amp;Beschreibung</translation>
     </message>
     <message>
         <source>&amp;Machine Details</source>
-        <translation>&amp;Einzelheiten der Maschine</translation>
+        <translation type="obsolete">&amp;Einzelheiten der Maschine</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -4124,15 +4694,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Snapshot Details</source>
-        <translation>Sicherungspunktdetails</translation>
+        <translation type="obsolete">Sicherungspunktdetails</translation>
+    </message>
+    <message>
+        <source>Click to enlarge the screenshot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Name:</translation>
+    </message>
+    <message>
+        <source>Taken:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>D&amp;etails:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxSnapshotsWgt</name>
-    <message>
-        <source>[snapshot]</source>
-        <translation></translation>
-    </message>
     <message>
         <source>VBoxSnapshotsWgt</source>
         <translation></translation>
@@ -4191,7 +4777,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation>Sicherungspunkt &amp;verwerfen</translation>
+        <translation type="obsolete">Sicherungspunkt &amp;verwerfen</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot</source>
@@ -4199,11 +4785,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation>Zu&amp;rückkehren zum letzten Sicherungspunkt</translation>
+        <translation type="obsolete">Zu&amp;rückkehren zum letzten Sicherungspunkt</translation>
     </message>
     <message>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation>Aktuellen S&amp;icherungspunkt und Zustand verwerfen</translation>
+        <translation type="obsolete">Aktuellen S&amp;icherungspunkt und Zustand verwerfen</translation>
     </message>
     <message>
         <source>S&amp;how Details</source>
@@ -4211,7 +4797,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation>Verwirft den ausgewählten Sicherungspunkt der virtuellen Maschine</translation>
+        <translation type="obsolete">Verwirft den ausgewählten Sicherungspunkt der virtuellen Maschine</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
@@ -4219,11 +4805,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation>Der Zustand der virtuellen Maschine wird aus dem Zustand im aktuellen Sicherungspunkt wieder hergestellt</translation>
+        <translation type="obsolete">Der Zustand der virtuellen Maschine wird aus dem Zustand im aktuellen Sicherungspunkt wieder hergestellt</translation>
     </message>
     <message>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation>Verwirft den ausgewählten Sicherungspunkt und stellt den Zustand der virtuellen Maschine vor dem Sicherungspunkt wieder her</translation>
+        <translation type="obsolete">Verwirft den ausgewählten Sicherungspunkt und stellt den Zustand der virtuellen Maschine vor dem Sicherungspunkt wieder her</translation>
     </message>
     <message>
         <source>Show the details of the selected snapshot</source>
@@ -4232,6 +4818,54 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Merge Snapshot with Parent</source>
         <translation type="obsolete">Überführe den Snapshot in den Parent</translation>
+    </message>
+    <message>
+        <source> (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n day(s) ago)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n hour(s) ago)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n minute(s) ago)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n second(s) ago)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>&amp;Restore Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Delete Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore the selected snapshot of the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected snapshot of the virtual machine</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4469,11 +5103,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Host Drive</source>
-        <translation>&amp;Host-Laufwerk</translation>
+        <translation type="obsolete">&amp;Host-Laufwerk</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation>&amp;Abbild</translation>
+        <translation type="obsolete">&amp;Abbild</translation>
     </message>
     <message>
         <source>Select Installation Media</source>
@@ -4497,7 +5131,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host Drive %1</source>
-        <translation>Host-Laufwerk %1</translation>
+        <translation type="obsolete">Host-Laufwerk %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
@@ -4534,7 +5168,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot;/&gt;&lt;style type=&quot;text/css&quot;&gt;
+        <translation type="obsolete">&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot;/&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li {white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot;font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Betätigen Sie &lt;span style=&quot;font-weight:600;&quot;&gt;Fertig&lt;/span&gt; wenn diese Angaben richtig sind. Nachdem Sie dies getan haben, wird das ausgewählte Medium temporär der virtuellen Maschine zugewiesen und diese startet.&lt;/p&gt;
@@ -4558,6 +5192,10 @@ p, li {white-space: pre-wrap; }
     <message>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4608,11 +5246,11 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
-        <translation>CD/DVD-ROM</translation>
+        <translation type="obsolete">CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Network Adapter Statistics</source>
-        <translation>Netzwerkadapter</translation>
+        <translation type="obsolete">Netzwerkadapter</translation>
     </message>
     <message>
         <source>Version %1.%2</source>
@@ -4639,11 +5277,11 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Hard Disk Statistics</source>
-        <translation>Festplatten</translation>
+        <translation type="obsolete">Festplatten</translation>
     </message>
     <message>
         <source>No Hard Disks</source>
-        <translation>Keine Festplatten</translation>
+        <translation type="obsolete">Keine Festplatten</translation>
     </message>
     <message>
         <source>No Network Adapters</source>
@@ -4666,6 +5304,23 @@ p, li {white-space: pre-wrap; }
     <message>
         <source>VBoxVMInformationDlg</source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>details report (VRDP server port)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Storage Devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network Statistics</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4783,55 +5438,55 @@ p, li {white-space: pre-wrap; }
     <name>VBoxVMSettingsCD</name>
     <message>
         <source>Host CD/DVD drive is not selected</source>
-        <translation>CD/DVD-Laufwerk des Hosts ist nicht ausgewählt</translation>
+        <translation type="obsolete">CD/DVD-Laufwerk des Hosts ist nicht ausgewählt</translation>
     </message>
     <message>
         <source>CD/DVD image file is not selected</source>
-        <translation>CD/DVD-Abbild ist nicht ausgewählt</translation>
+        <translation type="obsolete">CD/DVD-Abbild ist nicht ausgewählt</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation>Bindet das angegebene Medium an das CD/DVD-Laufwerk der virtuellen Maschine. Beachten Sie, dass das CD/DVD-Laufwerk immer an den zweiten Master-Slot des IDE-Controllers angeschlossen wird.</translation>
+        <translation type="obsolete">Bindet das angegebene Medium an das CD/DVD-Laufwerk der virtuellen Maschine. Beachten Sie, dass das CD/DVD-Laufwerk immer an den zweiten Master-Slot des IDE-Controllers angeschlossen wird.</translation>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation>CD/DVD-Laufwerk &amp;einbinden</translation>
+        <translation type="obsolete">CD/DVD-Laufwerk &amp;einbinden</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation>Verbindet das eingestellte CD/DVD-Laufwerk mit der virtuellen Maschine.</translation>
+        <translation type="obsolete">Verbindet das eingestellte CD/DVD-Laufwerk mit der virtuellen Maschine.</translation>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation>&amp;CD/DVD-Laufwerk des Hosts</translation>
+        <translation type="obsolete">&amp;CD/DVD-Laufwerk des Hosts</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation>Zeigt die CD/DVD-Geräte am Host, die für die Einbindung in die virtuelle Maschine verfügbar sind.</translation>
+        <translation type="obsolete">Zeigt die CD/DVD-Geräte am Host, die für die Einbindung in die virtuelle Maschine verfügbar sind.</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>Ist diese Box aktiviert, dann darf der Gast ATAPI-Kommandos direkt an das Hostlaufwerk senden. Dies ermöglicht die Nutzung von CD/DVD-Schreibgeräten des Hosts innerhalb der VM. Bitte beachten Sie, dass das Schreiben von Audio-CDs innerhalb der VM noch nicht unterstützt wird.</translation>
+        <translation type="obsolete">Ist diese Box aktiviert, dann darf der Gast ATAPI-Kommandos direkt an das Hostlaufwerk senden. Dies ermöglicht die Nutzung von CD/DVD-Schreibgeräten des Hosts innerhalb der VM. Bitte beachten Sie, dass das Schreiben von Audio-CDs innerhalb der VM noch nicht unterstützt wird.</translation>
     </message>
     <message>
         <source>Enable &amp;Passthrough</source>
-        <translation>&amp;Passthrough aktivieren</translation>
+        <translation type="obsolete">&amp;Passthrough aktivieren</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation>Bindet das angegebene CD/DVD-Abbild als virtuelles CD/DVD-Laufwerk ein.</translation>
+        <translation type="obsolete">Bindet das angegebene CD/DVD-Abbild als virtuelles CD/DVD-Laufwerk ein.</translation>
     </message>
     <message>
         <source>&amp;ISO Image File</source>
-        <translation>&amp;ISO-Abbild</translation>
+        <translation type="obsolete">&amp;ISO-Abbild</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation>Zeigt die Datei, die als Abbild für virtuelle CD/DVD-Laufwerke verwendet werden soll und erlaubt die Auswahl eines anderen Abbilds.</translation>
+        <translation type="obsolete">Zeigt die Datei, die als Abbild für virtuelle CD/DVD-Laufwerke verwendet werden soll und erlaubt die Auswahl eines anderen Abbilds.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
-        <translation>Ruft den Manager für virtuelle Medien auf, um ein CD/DVD-Abbild für die Einbindung auszuwählen.</translation>
+        <translation type="obsolete">Ruft den Manager für virtuelle Medien auf, um ein CD/DVD-Abbild für die Einbindung auszuwählen.</translation>
     </message>
 </context>
 <context>
@@ -4890,7 +5545,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation>Zeigt die VRDP-Server-Portnummer. Sie können &lt;tt&gt;0&lt;/tt&gt; (Null) einstellen, um den voreingestellten Port zu verwenden.</translation>
+        <translation type="obsolete">Zeigt die VRDP-Server-Portnummer. Sie können &lt;tt&gt;0&lt;/tt&gt; (Null) einstellen, um den voreingestellten Port zu verwenden.</translation>
     </message>
     <message>
         <source>Authentication &amp;Method:</source>
@@ -4907,6 +5562,22 @@ p, li {white-space: pre-wrap; }
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
         <translation>Legt die maximale Zeit für die Anmeldung des Gastes in Millisekunden fest.</translation>
+    </message>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;2D Video Acceleration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4979,52 +5650,56 @@ p, li {white-space: pre-wrap; }
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
         <translation>haben Sie einen 64-Bit Gastbetriebssystem für diese VM ausgewählt. VirtualBox unterstützt momentan nur eine virtuelle CPU für 64-Bit-Gäste auf 32-Bit Hosts.</translation>
     </message>
+    <message>
+        <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsFD</name>
     <message>
         <source>Host floppy drive is not selected</source>
-        <translation>Diskettenlaufwerk des Hosts ist nicht ausgewählt</translation>
+        <translation type="obsolete">Diskettenlaufwerk des Hosts ist nicht ausgewählt</translation>
     </message>
     <message>
         <source>Floppy image file is not selected</source>
-        <translation>Diskettenabbild ist nicht ausgewählt</translation>
+        <translation type="obsolete">Diskettenabbild ist nicht ausgewählt</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation>Bindet das angegebene Abbild als virtuelle Diskette ein.</translation>
+        <translation type="obsolete">Bindet das angegebene Abbild als virtuelle Diskette ein.</translation>
     </message>
     <message>
         <source>&amp;Mount Floppy Drive</source>
-        <translation>&amp;Diskettenlaufwerk einbinden</translation>
+        <translation type="obsolete">&amp;Diskettenlaufwerk einbinden</translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation>Bindet das angegebene Hostlaufwerk als virtuelles Floppylaufwerk ein.</translation>
+        <translation type="obsolete">Bindet das angegebene Hostlaufwerk als virtuelles Floppylaufwerk ein.</translation>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>
-        <translation>&amp;Diskettenlaufwerk des Hosts</translation>
+        <translation type="obsolete">&amp;Diskettenlaufwerk des Hosts</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation>Zeigt die Diskettenabbilder, die an die virtuelle Maschine gebunden werden können.</translation>
+        <translation type="obsolete">Zeigt die Diskettenabbilder, die an die virtuelle Maschine gebunden werden können.</translation>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation>Verbindet das eingestellte Diskettenlaufwerk mit der virtuellen Maschine.</translation>
+        <translation type="obsolete">Verbindet das eingestellte Diskettenlaufwerk mit der virtuellen Maschine.</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation>&amp;Abbild</translation>
+        <translation type="obsolete">&amp;Abbild</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation>Zeigt die Datei, die als Abbild für eine virtuelle Diskette verwendet werden soll und erlaubt die Auswahl eines anderen Abbildes.</translation>
+        <translation type="obsolete">Zeigt die Datei, die als Abbild für eine virtuelle Diskette verwendet werden soll und erlaubt die Auswahl eines anderen Abbildes.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
-        <translation>Ruft den Manager für virtuelle Medien auf, um ein Diskettenabbild auszuwählen.</translation>
+        <translation type="obsolete">Ruft den Manager für virtuelle Medien auf, um ein Diskettenabbild auszuwählen.</translation>
     </message>
 </context>
 <context>
@@ -5091,7 +5766,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, show the Mini ToolBar at the top of the screen, rather than in it&apos;s default position at the bottom of the screen.</source>
-        <translation>Falls aktiviert wird die Mini-Toolbar am oberen Bildschirmrand gezeigt</translation>
+        <translation type="obsolete">Falls aktiviert wird die Mini-Toolbar am oberen Bildschirmrand gezeigt</translation>
     </message>
     <message>
         <source>Show At &amp;Top Of Screen</source>
@@ -5101,48 +5776,52 @@ p, li {white-space: pre-wrap; }
         <source>Show In &amp;Fullscreen/Seamless</source>
         <translation>Zeige im &amp;Fullscreen/Seamless-Modus</translation>
     </message>
+    <message>
+        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsHD</name>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation>Keine Festplatte für &lt;i&gt;%1&lt;/i&gt; ausgewählt</translation>
+        <translation type="obsolete">Keine Festplatte für &lt;i&gt;%1&lt;/i&gt; ausgewählt</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation>&lt;i&gt;%1&lt;/i&gt; benutzt die Festplatte, die bereits an &lt;i&gt;%2&lt;/i&gt; angeschlossen ist</translation>
+        <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; benutzt die Festplatte, die bereits an &lt;i&gt;%2&lt;/i&gt; angeschlossen ist</translation>
     </message>
     <message>
         <source>&amp;Add Attachment</source>
-        <translation>Anschluss &amp;hinzufügen</translation>
+        <translation type="obsolete">Anschluss &amp;hinzufügen</translation>
     </message>
     <message>
         <source>&amp;Remove Attachment</source>
-        <translation>Anschluss &amp;entfernen</translation>
+        <translation type="obsolete">Anschluss &amp;entfernen</translation>
     </message>
     <message>
         <source>&amp;Select Hard Disk</source>
-        <translation>Festplatte &amp;auswählen</translation>
+        <translation type="obsolete">Festplatte &amp;auswählen</translation>
     </message>
     <message>
         <source>Adds a new hard disk attachment.</source>
-        <translation>Fügt eine virtuelle Festplatte zur VM hinzu.</translation>
+        <translation type="obsolete">Fügt eine virtuelle Festplatte zur VM hinzu.</translation>
     </message>
     <message>
         <source>Removes the highlighted hard disk attachment.</source>
-        <translation>Entfernt die ausgewählte virtuelle Platte von der VM.</translation>
+        <translation type="obsolete">Entfernt die ausgewählte virtuelle Platte von der VM.</translation>
     </message>
     <message>
         <source>&amp;Attachments</source>
-        <translation>&amp;Anschlüsse</translation>
+        <translation type="obsolete">&amp;Anschlüsse</translation>
     </message>
     <message>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation>Zeigt alle an diese Maschine angeschlossenen Festplatten. Durch Mausklick oder Betätigen der Leertaste auf dem ausgewählten Eintrag aktivieren Sie eine Drop-Down-Liste und können den Anschlusstyp wählen. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite, um Festplatten hinzuzufügen oder zu entfernen.</translation>
+        <translation type="obsolete">Zeigt alle an diese Maschine angeschlossenen Festplatten. Durch Mausklick oder Betätigen der Leertaste auf dem ausgewählten Eintrag aktivieren Sie eine Drop-Down-Liste und können den Anschlusstyp wählen. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite, um Festplatten hinzuzufügen oder zu entfernen.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation>Ruft den Manager für virtuelle Medien auf, um eine Festplatte an den ausgewählten Slot anzuschließen.</translation>
+        <translation type="obsolete">Ruft den Manager für virtuelle Medien auf, um eine Festplatte an den ausgewählten Slot anzuschließen.</translation>
     </message>
     <message>
         <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
@@ -5150,23 +5829,231 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Show Differencing Hard Disks</source>
-        <translation>&amp;Zeige Differenzabbilder</translation>
+        <translation type="obsolete">&amp;Zeige Differenzabbilder</translation>
     </message>
     <message>
         <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation>Aktiviert einen zusätzlichen virtuellen Controller (entweder SATA oder SCSI) für diese Maschine.</translation>
+        <translation type="obsolete">Aktiviert einen zusätzlichen virtuellen Controller (entweder SATA oder SCSI) für diese Maschine.</translation>
     </message>
     <message>
         <source>&amp;Enable Additional Controller</source>
-        <translation>Zusätzlichen &amp;Controller aktivieren</translation>
+        <translation type="obsolete">Zusätzlichen &amp;Controller aktivieren</translation>
     </message>
     <message>
         <source>IDE &amp;Controller Type</source>
-        <translation>&amp;IDE-Controller-Typ</translation>
+        <translation type="obsolete">&amp;IDE-Controller-Typ</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation>Wählt den Typ des virtuellen IDE-Controllers. Abhängig von dieser Einstellung emuliert VirtualBox unterschiedliche IDE-Hardware für den Gast.</translation>
+        <translation type="obsolete">Wählt den Typ des virtuellen IDE-Controllers. Abhängig von dieser Einstellung emuliert VirtualBox unterschiedliche IDE-Hardware für den Gast.</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add IDE Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add SATA Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add SCSI Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Floppy Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Hard Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add CD/DVD Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Floppy Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adds a new controller to the end of the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removes the controller highlighted in the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removes the attachment highlighted in the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SATA Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SCSI Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disk:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Device:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Device:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Storage Tree</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attributes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Name:</translation>
+    </message>
+    <message>
+        <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;lot:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the virtual disk image or the host drive used by this attachment.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtual Media Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>D&amp;ifferencing Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Passthrough</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Actual Size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type (Format):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attached To:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5210,7 +6097,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Open additional options dialog for current attachment type.</source>
-        <translation>Öffnet zusätzliche Einstellungen für den ausgewählten Anschlusstyp.</translation>
+        <translation type="obsolete">Öffnet zusätzliche Einstellungen für den ausgewählten Anschlusstyp.</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -5224,32 +6111,60 @@ p, li {white-space: pre-wrap; }
         <source>Adapter &amp;Type:</source>
         <translation>Adapter&amp;typ:</translation>
     </message>
+    <message>
+        <source>A&amp;dvanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shows or hides additional network adapter options.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Mac Address:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <translation type="unfinished">Zeigt die MAC-Adresse dieses Adapters. Sie besteht aus genau 12 Zeichen aus dem Zeichenvorrat {0-9,A-F}. Das zweite Zeichen muss eine gerate Zahl sein.</translation>
+    </message>
+    <message>
+        <source>Generates a new random MAC address.</source>
+        <translation type="unfinished">Erzeugt eine neue zufällige MAC-Adresse.</translation>
+    </message>
+    <message>
+        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
+        <translation type="unfinished">Zeigt, ob das virtuelle Netzwerkkabel an die virtuelle Maschine angeschlossen ist oder nicht.</translation>
+    </message>
+    <message>
+        <source>&amp;Cable connected</source>
+        <translation type="unfinished">&amp;Kabel verbunden</translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetworkDetails</name>
     <message>
         <source>Additional Options</source>
-        <translation>Weitere Einstellungen</translation>
+        <translation type="obsolete">Weitere Einstellungen</translation>
     </message>
     <message>
         <source>Guest &amp;MAC Address:</source>
-        <translation>Gast-&amp;MAC-Adresse:</translation>
+        <translation type="obsolete">Gast-&amp;MAC-Adresse:</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation>Zeigt die MAC-Adresse dieses Adapters. Sie besteht aus genau 12 Zeichen aus dem Zeichenvorrat {0-9,A-F}. Das zweite Zeichen muss eine gerate Zahl sein.</translation>
+        <translation type="obsolete">Zeigt die MAC-Adresse dieses Adapters. Sie besteht aus genau 12 Zeichen aus dem Zeichenvorrat {0-9,A-F}. Das zweite Zeichen muss eine gerate Zahl sein.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation>Erzeugt eine neue zufällige MAC-Adresse.</translation>
+        <translation type="obsolete">Erzeugt eine neue zufällige MAC-Adresse.</translation>
     </message>
     <message>
         <source>&amp;Cable connected</source>
-        <translation>&amp;Kabel verbunden</translation>
+        <translation type="obsolete">&amp;Kabel verbunden</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation>Zeigt, ob das virtuelle Netzwerkkabel an die virtuelle Maschine angeschlossen ist oder nicht.</translation>
+        <translation type="obsolete">Zeigt, ob das virtuelle Netzwerkkabel an die virtuelle Maschine angeschlossen ist oder nicht.</translation>
     </message>
 </context>
 <context>
@@ -5281,7 +6196,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation>Zeigt die IRQ-Nummer dieser parallelen Schnittstelle. Gültige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;255&lt;/tt&gt;. Zahlen größer als &lt;tt&gt;15&lt;/tt&gt; können nur verwendet werden, wenn der &lt;b&gt;I/O-APIC&lt;/b&gt; für diese virtuelle Maschine aktiviert ist.</translation>
+        <translation type="obsolete">Zeigt die IRQ-Nummer dieser parallelen Schnittstelle. Gültige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;255&lt;/tt&gt;. Zahlen größer als &lt;tt&gt;15&lt;/tt&gt; können nur verwendet werden, wenn der &lt;b&gt;I/O-APIC&lt;/b&gt; für diese virtuelle Maschine aktiviert ist.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
@@ -5289,7 +6204,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>Zeigt den Basis-Portadresse dieser parallelen Schnittstelle. Zulässige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
+        <translation type="obsolete">Zeigt den Basis-Portadresse dieser parallelen Schnittstelle. Zulässige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <source>Port &amp;Path:</source>
@@ -5298,6 +6213,14 @@ p, li {white-space: pre-wrap; }
     <message>
         <source>Displays the host parallel device name.</source>
         <translation>Zeigt den Namen der parallelen Schnittstelle des Hostes an.</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5319,15 +6242,15 @@ p, li {white-space: pre-wrap; }
     <name>VBoxVMSettingsSF</name>
     <message>
         <source>&amp;Add New Shared Folder</source>
-        <translation>&amp;Fügt einen neuen gemeinsamen Ordner hinzu</translation>
+        <translation type="obsolete">&amp;Fügt einen neuen gemeinsamen Ordner hinzu</translation>
     </message>
     <message>
         <source>&amp;Edit Selected Shared Folder</source>
-        <translation>Gemeinsamen Ordner &amp;ändern</translation>
+        <translation type="obsolete">Gemeinsamen Ordner &amp;ändern</translation>
     </message>
     <message>
         <source>&amp;Remove Selected Shared Folder</source>
-        <translation>Gemeinsamen Ordner &amp;entfernen</translation>
+        <translation type="obsolete">Gemeinsamen Ordner &amp;entfernen</translation>
     </message>
     <message>
         <source>Adds a new shared folder definition.</source>
@@ -5372,6 +6295,26 @@ p, li {white-space: pre-wrap; }
     <message>
         <source>Access</source>
         <translation>Zugriff</translation>
+    </message>
+    <message>
+        <source> Global Folders</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Shared Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Edit Shared Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove Shared Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Folders List</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5442,7 +6385,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation>Zeigt die IRQ-Nummer dieser seriellen Schnittstelle. Gültige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;255&lt;/tt&gt;. Zahlen größer als &lt;tt&gt;15&lt;/tt&gt; können nur verwendet werden, wenn der &lt;b&gt;I/O-APIC&lt;/b&gt; für diese virtuelle Maschine aktiviert ist.</translation>
+        <translation type="obsolete">Zeigt die IRQ-Nummer dieser seriellen Schnittstelle. Gültige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;255&lt;/tt&gt;. Zahlen größer als &lt;tt&gt;15&lt;/tt&gt; können nur verwendet werden, wenn der &lt;b&gt;I/O-APIC&lt;/b&gt; für diese virtuelle Maschine aktiviert ist.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
@@ -5450,7 +6393,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>Zeigt den Basis-Portadresse dieser seriellen Schnittstelle. Zulässige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
+        <translation type="obsolete">Zeigt den Basis-Portadresse dieser seriellen Schnittstelle. Zulässige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <source>Port &amp;Mode:</source>
@@ -5475,6 +6418,14 @@ p, li {white-space: pre-wrap; }
     <message>
         <source>Port/File &amp;Path:</source>
         <translation>Port/Datei-&amp;Pfad:</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5528,11 +6479,6 @@ p, li {white-space: pre-wrap; }
         <translation></translation>
     </message>
     <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
-        <comment>%1 is 32 for now</comment>
-        <translation></translation>
-    </message>
-    <message>
         <source>&amp;Motherboard</source>
         <translation>&amp;Hauptplatine</translation>
     </message>
@@ -5578,11 +6524,11 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Aktiviert die Unterstützung für ACPI (Advanced Configuration and Power Management (ACPI) im Gast. &lt;b&gt;Beachten Sie:&lt;/b&gt; Deaktivieren Sie die ACPI-Unterstützung nicht, nachdem Sie Windows installiert haben!</translation>
+        <translation type="obsolete">Aktiviert die Unterstützung für ACPI (Advanced Configuration and Power Management (ACPI) im Gast. &lt;b&gt;Beachten Sie:&lt;/b&gt; Deaktivieren Sie die ACPI-Unterstützung nicht, nachdem Sie Windows installiert haben!</translation>
     </message>
     <message>
         <source>Enable &amp;ACPI</source>
-        <translation>&amp;ACPI aktivieren</translation>
+        <translation type="obsolete">&amp;ACPI aktivieren</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
@@ -5635,6 +6581,19 @@ p, li {white-space: pre-wrap; }
     <message>
         <source>Enable Nested Pa&amp;ging</source>
         <translation>Nested P&amp;aging aktivieren</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
+        <comment>%1 is host cpu count * 2 for now</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;EFI (special OSes only)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

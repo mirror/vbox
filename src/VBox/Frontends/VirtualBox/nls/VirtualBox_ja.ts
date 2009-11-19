@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1" language="ja">
-<defaultcodec></defaultcodec>
+<!DOCTYPE TS>
+<TS version="2.0" language="ja">
 <context>
     <name>@@@</name>
     <message>
@@ -33,15 +33,15 @@
     <name>AttachmentsModel</name>
     <message>
         <source>Double-click to add a new attachment</source>
-        <translation>ダブルクリックで新規の割り当てを追加</translation>
+        <translation type="obsolete">ダブルクリックで新規の割り当てを追加</translation>
     </message>
     <message>
         <source>Hard Disk</source>
-        <translation>ハードディスク</translation>
+        <translation type="obsolete">ハードディスク</translation>
     </message>
     <message>
         <source>Slot</source>
-        <translation>スロット</translation>
+        <translation type="obsolete">スロット</translation>
     </message>
 </context>
 <context>
@@ -109,7 +109,7 @@
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation>このエラーは、カーネル ドライバに十分なメモリを割り当てできないか、またはマッピング操作に失敗したことを意味します。&lt;br/&gt;&lt;br/&gt;これはLinux 2.6.29の既知の問題です。このバージョンのカーネルを使用するならば、/usr/src/vboxdrv-*/Makefileを編集し、&lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;を有効にしてください。その後、root権限で&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;を実行してカーネル モジュールを再コンパイルしてください。</translation>
+        <translation type="obsolete">このエラーは、カーネル ドライバに十分なメモリを割り当てできないか、またはマッピング操作に失敗したことを意味します。&lt;br/&gt;&lt;br/&gt;これはLinux 2.6.29の既知の問題です。このバージョンのカーネルを使用するならば、/usr/src/vboxdrv-*/Makefileを編集し、&lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;を有効にしてください。その後、root権限で&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;を実行してカーネル モジュールを再コンパイルしてください。</translation>
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
@@ -143,6 +143,10 @@
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
         <translation>カーネルモジュールのバージョンが適合しません。VirtualBoxのインストールは成功しませんでした。&lt;/br&gt;&lt;/br&gt;&lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;を実行すると、この問題は修正されるでしょう。VirtualBoxのOSEバージョンとPUELバージョンを混在して使用しないでください。</translation>
     </message>
+    <message>
+        <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -170,7 +174,7 @@
     <name>QIHelpButton</name>
     <message>
         <source>&amp;Help</source>
-        <translation>ヘルプ(&amp;H)</translation>
+        <translation type="obsolete">ヘルプ(&amp;H)</translation>
     </message>
 </context>
 <context>
@@ -364,10 +368,17 @@
     </message>
 </context>
 <context>
+    <name>QILabel</name>
+    <message>
+        <source>&amp;Copy</source>
+        <translation type="unfinished">コピー(&amp;C)</translation>
+    </message>
+</context>
+<context>
     <name>QILabelPrivate</name>
     <message>
         <source>&amp;Copy</source>
-        <translation>コピー(&amp;C)</translation>
+        <translation type="obsolete">コピー(&amp;C)</translation>
     </message>
 </context>
 <context>
@@ -693,11 +704,11 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Revert to the current snapshot</source>
-        <translation>最新のスナップショットの状態に戻す(&amp;R)</translation>
+        <translation type="obsolete">最新のスナップショットの状態に戻す(&amp;R)</translation>
     </message>
     <message>
         <source>Revert the machine state to the state stored in the current snapshot</source>
-        <translation>仮想マシンの状態を最新のスナップショットに保存されている状態に戻す</translation>
+        <translation type="obsolete">仮想マシンの状態を最新のスナップショットに保存されている状態に戻す</translation>
     </message>
     <message>
         <source>Help</source>
@@ -757,6 +768,14 @@ Version %1</source>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
         <translation>&lt;p&gt;仮想マシンの電源を切ります。&lt;/p&gt;&lt;p&gt;注：この動作は、ゲストOSを正しく終了することなく、直ちに仮想マシンの実行を停止します。仮想マシン内の&lt;i&gt;データの損失&lt;/i&gt;を招くかもしれません。この動作は、仮想マシンが&lt;b&gt;[シャットダウン シグナル送信]&lt;/b&gt;に反応しない場合のみ選択してください。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Restore the machine state stored in the current snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Restore current snapshot &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -849,44 +868,44 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Floppy Image...</source>
-        <translation>フロッピーイメージ(&amp;F)...</translation>
+        <translation type="obsolete">フロッピーイメージ(&amp;F)...</translation>
     </message>
     <message>
         <source>Mount a floppy image file</source>
-        <translation>フロッピーイメージファイルをマウントする</translation>
+        <translation type="obsolete">フロッピーイメージファイルをマウントする</translation>
     </message>
     <message>
         <source>Unmount F&amp;loppy</source>
-        <translation>フロッピーのマウント解除(&amp;L)</translation>
+        <translation type="obsolete">フロッピーのマウント解除(&amp;L)</translation>
     </message>
     <message>
         <source>Unmount the currently mounted floppy media</source>
-        <translation>マウント中のフロッピーメディアをマウント解除する</translation>
+        <translation type="obsolete">マウント中のフロッピーメディアをマウント解除する</translation>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Image...</source>
-        <translation>CD/DVD-ROMイメージ(&amp;C)...</translation>
+        <translation type="obsolete">CD/DVD-ROMイメージ(&amp;C)...</translation>
     </message>
     <message>
         <source>Mount a CD/DVD-ROM image file</source>
-        <translation>CD/DVD-ROMイメージファイルをマウントする</translation>
+        <translation type="obsolete">CD/DVD-ROMイメージファイルをマウントする</translation>
     </message>
     <message>
         <source>Unmount C&amp;D/DVD-ROM</source>
-        <translation>CD/DVD-ROMのマウント解除(&amp;D)</translation>
+        <translation type="obsolete">CD/DVD-ROMのマウント解除(&amp;D)</translation>
     </message>
     <message>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation>マウント中のCD/DVDメディアをマウント解除する</translation>
+        <translation type="obsolete">マウント中のCD/DVDメディアをマウント解除する</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation type="obsolete">リモートデスクトップ(RDP)サーバ</translation>
+        <translation type="unfinished">リモートデスクトップ(RDP)サーバ</translation>
     </message>
     <message>
         <source>Remote Dis&amp;play</source>
-        <translation>リモートディスプレイ(&amp;P)</translation>
+        <translation type="obsolete">リモートディスプレイ(&amp;P)</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
@@ -934,11 +953,11 @@ Version %1</source>
     </message>
     <message>
         <source>Mount &amp;Floppy</source>
-        <translation>フロッピーのマウント(&amp;F)</translation>
+        <translation type="obsolete">フロッピーのマウント(&amp;F)</translation>
     </message>
     <message>
         <source>Mount &amp;CD/DVD-ROM</source>
-        <translation>CD/DVD-ROMのマウント(&amp;C)</translation>
+        <translation type="obsolete">CD/DVD-ROMのマウント(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
@@ -1012,7 +1031,7 @@ Version %1</source>
     </message>
     <message>
         <source>Host Drive </source>
-        <translation>ホスト ドライブ</translation>
+        <translation type="obsolete">ホスト ドライブ</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
@@ -1020,30 +1039,30 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Network Adapters</source>
-        <translation>ネットワーク アダプタ(&amp;N)</translation>
+        <translation type="obsolete">ネットワーク アダプタ(&amp;N)</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation>アダプタ %1</translation>
+        <translation type="obsolete">アダプタ %1</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>Floppy tip</comment>
-        <translation>選択されたホストPCの物理ドライブをマウントする</translation>
+        <translation type="obsolete">選択されたホストPCの物理ドライブをマウントする</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>CD/DVD tip</comment>
-        <translation>選択されたホストPCの物理ドライブをマウントする</translation>
+        <translation type="obsolete">選択されたホストPCの物理ドライブをマウントする</translation>
     </message>
     <message>
         <source>Disconnect the cable from the selected virtual network adapter</source>
-        <translation>選択された仮想ネットワーク アダプタからケーブルを切断する</translation>
+        <translation type="obsolete">選択された仮想ネットワーク アダプタからケーブルを切断する</translation>
     </message>
     <message>
         <source>Connect the cable to the selected virtual network adapter</source>
-        <translation>選択された仮想ネットワーク アダプタにケーブルを接続する</translation>
+        <translation type="obsolete">選択された仮想ネットワーク アダプタにケーブルを接続する</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
@@ -1060,47 +1079,47 @@ Version %1</source>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;フロッピーメディアの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;フロッピーメディアの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;ホスト ドライブ&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;ホスト ドライブ&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;イメージ&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;イメージ&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;メディアがマウントされていない&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;メディアがマウントされていない&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;CD/DVD-ROMメディアの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;CD/DVD-ROMメディアの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;ホスト ドライブ&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;ホスト ドライブ&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;イメージ&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;イメージ&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;メディアがマウントされていない&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;メディアがマウントされていない&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates activity on the the virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;仮想ハードディスクの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;仮想ハードディスクの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -1110,7 +1129,7 @@ Version %1</source>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;ネットワーク インターフェースの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;ネットワーク インターフェースの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
@@ -1135,7 +1154,7 @@ Version %1</source>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;USBデバイスの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;USBデバイスの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -1152,9 +1171,9 @@ Version %1</source>
         <translation type="obsolete">リモートディスプレイ(VRDPサーバ)機能が有効なとき(&lt;img src=vrdp_16px.png/&gt;) を、無効なとき (&lt;img src=vrdp_disabled_16px.png/&gt;)を表示します。</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine'sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine&apos;sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;共有フォルダの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;共有フォルダの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -1233,6 +1252,94 @@ Version %1</source>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source> EXPERIMENTAL build %1r%2 - %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Network Adapters...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change the settings of network adapters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remote Display</source>
+        <translation type="unfinished">リモートディスプレイ(&amp;R)</translation>
+    </message>
+    <message>
+        <source>More CD/DVD Images...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unmount CD/DVD Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>More Floppy Images...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unmount Floppy Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No CD/DVD Devices Attached</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Floppy Devices Attached</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>HDD tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>CD/DVD tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No CD/DVD devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>CD/DVD tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>FD tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No floppy devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>FD tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>Shared folders tooltip</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2169,6 +2276,34 @@ p, li { white-space: pre-wrap; }
         <source>Next Check:</source>
         <translation>次回の確認:</translation>
     </message>
+    <message>
+        <source>Check for:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Stable release versions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;All new releases</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All new releases and &amp;pre-releases</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobal</name>
@@ -2250,12 +2385,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not Attached</source>
         <comment>details report (HDDs)</comment>
-        <translation>割り当てられていません</translation>
+        <translation type="obsolete">割り当てられていません</translation>
     </message>
     <message>
         <source>Hard Disks</source>
         <comment>details report</comment>
-        <translation>ハードディスク</translation>
+        <translation type="obsolete">ハードディスク</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -2280,42 +2415,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not mounted</source>
         <comment>details report (floppy)</comment>
-        <translation>マウントされていません</translation>
+        <translation type="obsolete">マウントされていません</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>details report (floppy)</comment>
-        <translation>イメージ</translation>
+        <translation type="obsolete">イメージ</translation>
     </message>
     <message>
         <source>Host Drive</source>
         <comment>details report (floppy)</comment>
-        <translation>ホスト ドライブ</translation>
+        <translation type="obsolete">ホスト ドライブ</translation>
     </message>
     <message>
         <source>Floppy</source>
         <comment>details report</comment>
-        <translation>フロッピー</translation>
+        <translation type="obsolete">フロッピー</translation>
     </message>
     <message>
         <source>Not mounted</source>
         <comment>details report (DVD)</comment>
-        <translation>マウントされていません</translation>
+        <translation type="obsolete">マウントされていません</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>details report (DVD)</comment>
-        <translation>イメージ</translation>
+        <translation type="obsolete">イメージ</translation>
     </message>
     <message>
         <source>Host Drive</source>
         <comment>details report (DVD)</comment>
-        <translation>ホスト ドライブ</translation>
+        <translation type="obsolete">ホスト ドライブ</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
         <comment>details report</comment>
-        <translation>CD/DVD-ROM</translation>
+        <translation type="obsolete">CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -2429,7 +2564,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Discarding</source>
         <comment>MachineState</comment>
-        <translation>破棄中</translation>
+        <translation type="obsolete">破棄中</translation>
     </message>
     <message>
         <source>Closed</source>
@@ -2692,7 +2827,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Stuck</source>
         <comment>MachineState</comment>
-        <translation>スタック</translation>
+        <translation type="obsolete">スタック</translation>
     </message>
     <message>
         <source>Disconnected</source>
@@ -2932,32 +3067,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
         <comment>hard disk</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;タイプ&amp;nbsp;(形式):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;タイプ&amp;nbsp;(形式):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;割り当て:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;割り当て:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;i&gt;未割り当て&lt;/i&gt;</translation>
+        <translation type="obsolete">&lt;i&gt;未割り当て&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;br&gt;&lt;i&gt;アクセス可否を確認中...&lt;/i&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;i&gt;アクセス可否を確認中...&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
         <comment>medium</comment>
-        <translation>&lt;hr&gt;メディアのアクセス可否の確認に失敗しました。&lt;br&gt;%1.</translation>
+        <translation type="obsolete">&lt;hr&gt;メディアのアクセス可否の確認に失敗しました。&lt;br&gt;%1.</translation>
     </message>
     <message>
         <source>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;このハードディスクの割り当ては、新規作成された差分ハードディスクの使用により、間接的に実行されます。</translation>
+        <translation type="obsolete">&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;このハードディスクの割り当ては、新規作成された差分ハードディスクの使用により、間接的に実行されます。</translation>
     </message>
     <message>
         <source>Checking...</source>
@@ -2971,11 +3106,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
-        <translation>&lt;hr&gt;ハードディスク チェーン中のいくつかのメディアにアクセスできません。仮想メディアマネージャの&lt;b&gt;[別のハードディスクを表示する]&lt;/b&gt;を使用して、これらのメディアを確認してください。</translation>
+        <translation type="obsolete">&lt;hr&gt;ハードディスク チェーン中のいくつかのメディアにアクセスできません。仮想メディアマネージャの&lt;b&gt;[別のハードディスクを表示する]&lt;/b&gt;を使用して、これらのメディアを確認してください。</translation>
     </message>
     <message>
         <source>%1&lt;hr&gt;This base hard disk is indirectly attached using the following differencing hard disk:&lt;br&gt;%2%3</source>
-        <translation>%1&lt;hr&gt;このベース ハードディスクは以下の差分ハードディスクを使用して間接的に割り当てられます:&lt;br&gt;%2%3</translation>
+        <translation type="obsolete">%1&lt;hr&gt;このベース ハードディスクは以下の差分ハードディスクを使用して間接的に割り当てられます:&lt;br&gt;%2%3</translation>
     </message>
     <message>
         <source>3D Acceleration</source>
@@ -3146,6 +3281,194 @@ p, li { white-space: pre-wrap; }
         <source>Raw File</source>
         <comment>PortMode</comment>
         <translation>Rawファイル</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (2D Video Acceleration)</comment>
+        <translation type="unfinished">有効</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (2D Video Acceleration)</comment>
+        <translation type="unfinished">無効</translation>
+    </message>
+    <message>
+        <source>2D Video Acceleration</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>details report (Storage)</comment>
+        <translation type="unfinished">割り当てられていません</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>details report</comment>
+        <translation type="unfinished">ストレージ</translation>
+    </message>
+    <message>
+        <source>Teleported</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guru Meditation</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Teleporting</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Taking Live Snapshot</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Teleporting Paused VM</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restoring Snapshot</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deleting Snapshot</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished">フロッピー</translation>
+    </message>
+    <message>
+        <source>Device %1</source>
+        <comment>StorageBusDevice</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE Primary Master</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE Primary Slave</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE Secondary Master</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE Secondary Slave</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SATA Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SCSI Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy Device %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paravirtualized Network (virtio-net)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I82078</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Empty</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Drive &apos;%1&apos;</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Drive %1 (%2)</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=white-space:pre&gt;Type (Format):  %1 (%2)&lt;/p&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Attached to:  %1&lt;/p&gt;</source>
+        <comment>image</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not Attached&lt;/i&gt;</source>
+        <comment>image</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to check media accessibility.</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can also change this while the machine is running.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can create media images using the virtual media manager.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3623,10 +3946,21 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
 </context>
 <context>
+    <name>VBoxHelpButton</name>
+    <message>
+        <source>&amp;Help</source>
+        <translation type="unfinished">ヘルプ(&amp;H)</translation>
+    </message>
+</context>
+<context>
     <name>VBoxImportApplianceWgt</name>
     <message>
         <source>Importing Appliance ...</source>
         <translation>仮想アプライアンスのインポート...</translation>
+    </message>
+    <message>
+        <source>Reading Appliance ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3798,11 +4132,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
-        <translation>利用可能なメディアがありません。 仮想メディアマネージャを使用して、対応するタイプのメディアを追加してください。</translation>
+        <translation type="obsolete">利用可能なメディアがありません。 仮想メディアマネージャを使用して、対応するタイプのメディアを追加してください。</translation>
     </message>
     <message>
         <source>&lt;no media&gt;</source>
-        <translation>&lt;メディアなし&gt;</translation>
+        <translation type="obsolete">&lt;メディアなし&gt;</translation>
     </message>
 </context>
 <context>
@@ -3940,6 +4274,21 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Floppy Images</source>
         <translation>フロッピーイメージ(&amp;F)</translation>
     </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="unfinished">割り当て</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="unfinished">割り当て</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="unfinished">割り当て</translation>
+    </message>
 </context>
 <context>
     <name>VBoxMiniToolBar</name>
@@ -3989,6 +4338,13 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Removes the selected host interface.</source>
         <translation type="obsolete">選択したホスト インターフェースを除去します。</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxNetworkDialog</name>
+    <message>
+        <source>Network Adapters</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4542,15 +4898,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>仮想マシン&lt;b&gt;&quot;%2&quot;&lt;/b&gt;のスナップショット &lt;b&gt;%1&lt;/b&gt; の破棄に失敗しました。</translation>
+        <translation type="obsolete">仮想マシン&lt;b&gt;&quot;%2&quot;&lt;/b&gt;のスナップショット &lt;b&gt;%1&lt;/b&gt; の破棄に失敗しました。</translation>
     </message>
     <message>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の最新の状態の破棄に失敗しました。</translation>
+        <translation type="obsolete">仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の最新の状態の破棄に失敗しました。</translation>
     </message>
     <message>
         <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の最新のスナップショットと状態の破棄に失敗しました。</translation>
+        <translation type="obsolete">仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の最新のスナップショットと状態の破棄に失敗しました。</translation>
     </message>
     <message>
         <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -4944,7 +5300,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>バックアップ(&amp;B)</translation>
+        <translation type="obsolete">バックアップ(&amp;B)</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -4992,12 +5348,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
-        <translation>作成(&amp;C)</translation>
+        <translation type="obsolete">作成(&amp;C)</translation>
     </message>
     <message>
         <source>Select</source>
         <comment>hard disk</comment>
-        <translation>選択</translation>
+        <translation type="obsolete">選択</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
@@ -5141,7 +5497,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;新規の割り当てに利用できる未使用のハードディスクがありません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[作成]&lt;/b&gt;ボタンをクリックし、&lt;i&gt;新規仮想ディスク作成ウィザード&lt;/i&gt;を起動して新規ハードディスクイメージを作成するか、&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックして、&lt;i&gt;仮想メディアマネージャ&lt;/i&gt;を開き、動作を選択してください。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;新規の割り当てに利用できる未使用のハードディスクがありません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[作成]&lt;/b&gt;ボタンをクリックし、&lt;i&gt;新規仮想ディスク作成ウィザード&lt;/i&gt;を起動して新規ハードディスクイメージを作成するか、&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックして、&lt;i&gt;仮想メディアマネージャ&lt;/i&gt;を開き、動作を選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
@@ -5149,19 +5505,19 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>ハードディスク&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;&lt;/nobr&gt;の、仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;のスロット&lt;i&gt;&quot;%2&quot;&lt;/i&gt; への割り当てに失敗しました。</translation>
+        <translation type="obsolete">ハードディスク&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;&lt;/nobr&gt;の、仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;のスロット&lt;i&gt;&quot;%2&quot;&lt;/i&gt; への割り当てに失敗しました。</translation>
     </message>
     <message>
         <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>ハードディスク&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;&lt;/nobr&gt;の、仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;のスロット&lt;i&gt;&quot;%2&quot;&lt;/i&gt; への割り当て解除に失敗しました。</translation>
+        <translation type="obsolete">ハードディスク&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;&lt;/nobr&gt;の、仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;のスロット&lt;i&gt;&quot;%2&quot;&lt;/i&gt; への割り当て解除に失敗しました。</translation>
     </message>
     <message>
         <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>&quot;%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&quot;の、仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;へのマウントに失敗しました。</translation>
+        <translation type="obsolete">&quot;%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&quot;の、仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;へのマウントに失敗しました。</translation>
     </message>
     <message>
         <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>&quot;%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&quot;の、仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;からのマウント解除に失敗しかました。</translation>
+        <translation type="obsolete">&quot;%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&quot;の、仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;からのマウント解除に失敗しかました。</translation>
     </message>
     <message>
         <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -5189,30 +5545,30 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;既存のVirtualBox設定ファイルは古い形式からVirtualBoxの新バージョンに必要な形式に自動変換されました。&lt;/p&gt;&lt;p&gt;すぐにVirtualBoxを起動するには&lt;b&gt;[OK]&lt;/b&gt;ボタンをクリックしてください。変換された設定ファイルについて、詳しい情報を得たい場合は&lt;b&gt;[詳細]&lt;/b&gt;ボタンをクリックしてください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[終了]&lt;/b&gt;ボタンをクリックすると、変換結果をディスクに保存することなく、VirtualBoxアプリケーションを終了します。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;既存のVirtualBox設定ファイルは古い形式からVirtualBoxの新バージョンに必要な形式に自動変換されました。&lt;/p&gt;&lt;p&gt;すぐにVirtualBoxを起動するには&lt;b&gt;[OK]&lt;/b&gt;ボタンをクリックしてください。変換された設定ファイルについて、詳しい情報を得たい場合は&lt;b&gt;[詳細]&lt;/b&gt;ボタンをクリックしてください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[終了]&lt;/b&gt;ボタンをクリックすると、変換結果をディスクに保存することなく、VirtualBoxアプリケーションを終了します。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;More</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>詳細(&amp;M)</translation>
+        <translation type="obsolete">詳細(&amp;M)</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>終了(&amp;X)</translation>
+        <translation type="obsolete">終了(&amp;X)</translation>
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;次のVirtualBox設定ファイルは自動的にバージョン &lt;b&gt;&quot;%1&quot;&lt;/b&gt; の新しい設定ファイル形式に変換されました。&lt;/p&gt;&lt;p&gt;しかしながら、変換後のファイルはまだディスクに保存されていません。ボタンをクリックしてください：&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;[バックアップ]&lt;/b&gt;： 新しい形式で設定ファイルを保存する前に、古い形式で設定ファイルのバックアップコピーを作成します。&lt;/li&gt;&lt;li&gt;&lt;b&gt;[上書き]&lt;/b&gt;：バックアップコピーを作成せずに、すべての変換済みファイルを保存します。(旧バージョンのVirtualBoxでこれらの設定ファイルは使用できません)&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;(必要ならば) 旧バージョンのVirtualBoxに現在の設定を失うことなく戻ることができるので、&lt;b&gt;[バックアップ]&lt;/b&gt; を選択することを推奨します。ダウングレードに関する詳細はVirtualBoxマニュアルを参照してください。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;次のVirtualBox設定ファイルは自動的にバージョン &lt;b&gt;&quot;%1&quot;&lt;/b&gt; の新しい設定ファイル形式に変換されました。&lt;/p&gt;&lt;p&gt;しかしながら、変換後のファイルはまだディスクに保存されていません。ボタンをクリックしてください：&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;[バックアップ]&lt;/b&gt;： 新しい形式で設定ファイルを保存する前に、古い形式で設定ファイルのバックアップコピーを作成します。&lt;/li&gt;&lt;li&gt;&lt;b&gt;[上書き]&lt;/b&gt;：バックアップコピーを作成せずに、すべての変換済みファイルを保存します。(旧バージョンのVirtualBoxでこれらの設定ファイルは使用できません)&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;(必要ならば) 旧バージョンのVirtualBoxに現在の設定を失うことなく戻ることができるので、&lt;b&gt;[バックアップ]&lt;/b&gt; を選択することを推奨します。ダウングレードに関する詳細はVirtualBoxマニュアルを参照してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation>&lt;li&gt;&lt;b&gt;[終了]&lt;/b&gt;：変換結果をディスクに保存せずにVirtualBoxを終了します。&lt;/li&gt;</translation>
+        <translation type="obsolete">&lt;li&gt;&lt;b&gt;[終了]&lt;/b&gt;：変換結果をディスクに保存せずにVirtualBoxを終了します。&lt;/li&gt;</translation>
     </message>
     <message>
         <source>O&amp;verwrite</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>上書き(&amp;V)</translation>
+        <translation type="obsolete">上書き(&amp;V)</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
@@ -5221,17 +5577,17 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>hard disk</source>
         <comment>failed to close ...</comment>
-        <translation>ハードディスク</translation>
+        <translation type="obsolete">ハードディスク</translation>
     </message>
     <message>
         <source>CD/DVD image</source>
         <comment>failed to close ...</comment>
-        <translation>CD/DVDイメージ</translation>
+        <translation type="obsolete">CD/DVDイメージ</translation>
     </message>
     <message>
         <source>floppy image</source>
         <comment>failed to close ...</comment>
-        <translation>フロッピーイメージ</translation>
+        <translation type="obsolete">フロッピーイメージ</translation>
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
@@ -5271,11 +5627,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;選択されたスナップショットと保存された状態を削除しますか？&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;選択されたスナップショットと保存された状態を削除しますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation>破棄</translation>
+        <translation type="obsolete">破棄</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -5362,16 +5718,215 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>Failed to remove file.</source>
         <translation>ファイルの除去中に失敗しました。</translation>
     </message>
+    <message>
+        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;By deleting a snapshot, the state information stored in the snapshot will be thrown away, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished">削除</translation>
+    </message>
+    <message>
+        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>medium</comment>
+        <translation type="unfinished">作成(&amp;C)</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <comment>medium</comment>
+        <translation type="unfinished">選択(&amp;S)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Would you like to force mounting of this medium?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Would you like to force unmounting of this medium?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force Unmount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutSettingsAutoConversion message box</comment>
+        <translation type="unfinished">終了(&amp;X)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to mount ...</comment>
+        <translation type="unfinished">ハードディスク</translation>
+    </message>
+    <message>
+        <source>CD/DVD</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to mount ...</comment>
+        <translation type="unfinished">CD/DVDイメージ</translation>
+    </message>
+    <message>
+        <source>floppy</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to mount ...</comment>
+        <translation type="unfinished">フロッピーイメージ</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to attach ...</comment>
+        <translation type="unfinished">ハードディスク</translation>
+    </message>
+    <message>
+        <source>CD/DVD device</source>
+        <comment>failed to attach ...</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>floppy device</source>
+        <comment>failed to close ...</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="obsolete">キャンセル(&amp;C)</translation>
+        <translation type="unfinished">キャンセル(&amp;C)</translation>
     </message>
     <message>
         <source>Time remaining: %1</source>
-        <translation>残り時間: %1</translation>
+        <translation type="obsolete">残り時間: %1</translation>
+    </message>
+    <message>
+        <source>%1 days, %2 hours remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 days, %2 minutes remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 days remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 day, %1 hours remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 day, %1 minutes remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 day remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 hours, %2 minutes remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 hour, %1 minutes remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 hour remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 minutes remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 minute, %2 seconds remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 minute remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 seconds remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A few seconds remaining</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Canceling...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel the current operation</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5510,6 +6065,21 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&amp;OK</source>
         <translation type="obsolete">OK(&amp;O)</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxScreenshotViewer</name>
+    <message>
+        <source>Screenshot of %1 (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click to view non-scaled screenshot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click to view scaled screenshot.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5928,7 +6498,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     <name>VBoxSnapshotDetailsDlg</name>
     <message>
         <source>VBoxSnapshotDetailsDlg</source>
-        <translation>VBoxSnapshotDetailsDlg</translation>
+        <translation type="obsolete">VBoxSnapshotDetailsDlg</translation>
     </message>
     <message>
         <source> Snapshot Details </source>
@@ -5936,15 +6506,15 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation>名前(&amp;N)</translation>
+        <translation type="obsolete">名前(&amp;N)</translation>
     </message>
     <message>
         <source>&amp;Description</source>
-        <translation>説明(&amp;D)</translation>
+        <translation type="obsolete">説明(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Machine Details</source>
-        <translation>仮想マシン詳細(&amp;M)</translation>
+        <translation type="obsolete">仮想マシン詳細(&amp;M)</translation>
     </message>
     <message>
         <source>Help</source>
@@ -5968,14 +6538,34 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
     <message>
         <source>Snapshot Details</source>
-        <translation>スナップショット詳細</translation>
+        <translation type="obsolete">スナップショット詳細</translation>
+    </message>
+    <message>
+        <source>Click to enlarge the screenshot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">名前(&amp;N):</translation>
+    </message>
+    <message>
+        <source>Taken:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Description:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>D&amp;etails:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxSnapshotsWgt</name>
     <message>
         <source>[snapshot]</source>
-        <translation>[snapshot]</translation>
+        <translation type="obsolete">[snapshot]</translation>
     </message>
     <message>
         <source>VBoxSnapshotsWgt</source>
@@ -5991,7 +6581,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation>スナップショットを破棄(&amp;D)</translation>
+        <translation type="obsolete">スナップショットを破棄(&amp;D)</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -6015,7 +6605,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
     <message>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation>最新のスナップショットと状態を破棄(&amp;I)</translation>
+        <translation type="obsolete">最新のスナップショットと状態を破棄(&amp;I)</translation>
     </message>
     <message>
         <source>Show Details</source>
@@ -6079,7 +6669,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation>選択した仮想マシンのスナップショットを破棄</translation>
+        <translation type="obsolete">選択した仮想マシンのスナップショットを破棄</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -6095,7 +6685,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
     <message>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation>最新のスナップショットの状態に戻す(&amp;R)</translation>
+        <translation type="obsolete">最新のスナップショットの状態に戻す(&amp;R)</translation>
     </message>
     <message>
         <source>Ctrl+Shift+R</source>
@@ -6103,7 +6693,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
     <message>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation>仮想マシンの状態を最新のスナップショットに保存された状態に復元</translation>
+        <translation type="obsolete">仮想マシンの状態を最新のスナップショットに保存された状態に復元</translation>
     </message>
     <message>
         <source>Ctrl+Shift+B</source>
@@ -6111,7 +6701,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
     <message>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation>最新のスナップショットを破棄し、スナップショットを作成する前の状態に戻す</translation>
+        <translation type="obsolete">最新のスナップショットを破棄し、スナップショットを作成する前の状態に戻す</translation>
     </message>
     <message>
         <source>Show the details of the selected snapshot</source>
@@ -6120,6 +6710,50 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     <message>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+スペース</translation>
+    </message>
+    <message>
+        <source> (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n day(s) ago)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n hour(s) ago)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n minute(s) ago)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n second(s) ago)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>&amp;Restore Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Delete Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore the selected snapshot of the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected snapshot of the virtual machine</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6536,11 +7170,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Host Drive</source>
-        <translation>ホスト デバイス(&amp;H)</translation>
+        <translation type="obsolete">ホスト デバイス(&amp;H)</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation>イメージファイル(&amp;I)</translation>
+        <translation type="obsolete">イメージファイル(&amp;I)</translation>
     </message>
     <message>
         <source>VDM</source>
@@ -6556,7 +7190,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;上記の設定が正しければ、&lt;b&gt;[完了]&lt;/b&gt;ボタンをクリックしてください。 クリックすると、選択されたメディアが一時的に仮想マシンにマウントされ、仮想マシンが起動します。&lt;/p&gt;&lt;p&gt;仮想マシンを閉じると、指定されたメディアは自動的にマウント解除され、起動デバイスは最初のハードディスクに設定されます。&lt;/p&gt;&lt;p&gt;セットアップ プログラムの種類によっては、仮想マシンを再起動したときにインストール作業が再実行されることを防ぐため、手動でデバイスのマウント解除(取り出し)を行う必要があります。これは&lt;b&gt;[デバイス]&lt;/b&gt;メニューから対応する&lt;b&gt;[マウント解除...]&lt;/b&gt;の動作を選択することで可能です。&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;上記の設定が正しければ、&lt;b&gt;[完了]&lt;/b&gt;ボタンをクリックしてください。 クリックすると、選択されたメディアが一時的に仮想マシンにマウントされ、仮想マシンが起動します。&lt;/p&gt;&lt;p&gt;仮想マシンを閉じると、指定されたメディアは自動的にマウント解除され、起動デバイスは最初のハードディスクに設定されます。&lt;/p&gt;&lt;p&gt;セットアップ プログラムの種類によっては、仮想マシンを再起動したときにインストール作業が再実行されることを防ぐため、手動でデバイスのマウント解除(取り出し)を行う必要があります。これは&lt;b&gt;[デバイス]&lt;/b&gt;メニューから対応する&lt;b&gt;[マウント解除...]&lt;/b&gt;の動作を選択することで可能です。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -6572,7 +7206,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Host Drive %1</source>
-        <translation>ホスト ドライブ %1</translation>
+        <translation type="obsolete">ホスト ドライブ %1</translation>
     </message>
     <message>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
@@ -6614,7 +7248,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;上記が正しいなら、[&lt;span style=&quot; font-weight:600;&quot;&gt;完了&lt;/span&gt;]ボタンをクリックしてください。 選択されたメディアが仮想マシンに一時的にマウントされ、仮想マシンが起動します。&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;仮想マシンを終了すると、指定されたメディアは自動的にマウント解除され、起動デバイスは最初のハードディスクに設定されます。&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;セットアッププログラムの種類によっては、インストールプロセスが再度実行されないように、仮想マシンの再起動後にメディアを手動でマウント解除(取り出し)する必要があります。これは&lt;span style=&quot; font-weight:600;&quot;&gt;[デバイス]&lt;/span&gt;メニューから対応する&lt;span style=&quot; font-weight:600;&quot;&gt;[〜のマウント解除]&lt;/span&gt;の動作を選択することで行えます。&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation type="obsolete">&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;上記が正しいなら、[&lt;span style=&quot; font-weight:600;&quot;&gt;完了&lt;/span&gt;]ボタンをクリックしてください。 選択されたメディアが仮想マシンに一時的にマウントされ、仮想マシンが起動します。&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;仮想マシンを終了すると、指定されたメディアは自動的にマウント解除され、起動デバイスは最初のハードディスクに設定されます。&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;セットアッププログラムの種類によっては、インストールプロセスが再度実行されないように、仮想マシンの再起動後にメディアを手動でマウント解除(取り出し)する必要があります。これは&lt;span style=&quot; font-weight:600;&quot;&gt;[デバイス]&lt;/span&gt;メニューから対応する&lt;span style=&quot; font-weight:600;&quot;&gt;[〜のマウント解除]&lt;/span&gt;の動作を選択することで行えます。&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
@@ -6691,11 +7325,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>CD/DVD-ROM Statistics</source>
-        <translation>CD/DVD-ROM 統計</translation>
+        <translation type="obsolete">CD/DVD-ROM 統計</translation>
     </message>
     <message>
         <source>Network Adapter Statistics</source>
-        <translation>ネットワーク アダプタ統計</translation>
+        <translation type="obsolete">ネットワーク アダプタ統計</translation>
     </message>
     <message>
         <source>Version %1.%2</source>
@@ -6722,11 +7356,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Hard Disk Statistics</source>
-        <translation>ハードディスク統計</translation>
+        <translation type="obsolete">ハードディスク統計</translation>
     </message>
     <message>
         <source>No Hard Disks</source>
-        <translation>ハードディスクなし</translation>
+        <translation type="obsolete">ハードディスクなし</translation>
     </message>
     <message>
         <source>No Network Adapters</source>
@@ -6757,6 +7391,23 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>VBoxVMInformationDlg</source>
         <translation>VBoxVMInformationDlg</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>details report (VRDP server port)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Storage Devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network Statistics</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7128,51 +7779,51 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsCD</name>
     <message>
         <source>Host CD/DVD drive is not selected</source>
-        <translation>ホスト CD/DVDドライブが選択されていない</translation>
+        <translation type="obsolete">ホスト CD/DVDドライブが選択されていない</translation>
     </message>
     <message>
         <source>CD/DVD image file is not selected</source>
-        <translation>CD/DVDイメージファイルが選択されていない</translation>
+        <translation type="obsolete">CD/DVDイメージファイルが選択されていない</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation>指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDEコントローラのマスタースロットに割り当てられます。</translation>
+        <translation type="obsolete">指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDEコントローラのマスタースロットに割り当てられます。</translation>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation>CD/DVD ドライブのマウント(&amp;M)</translation>
+        <translation type="obsolete">CD/DVD ドライブのマウント(&amp;M)</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation>指定したCD/DVDドライブを仮想CD/DVDドライブにマウントします。</translation>
+        <translation type="obsolete">指定したCD/DVDドライブを仮想CD/DVDドライブにマウントします。</translation>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation>ホスト CD/DVDドライブ(&amp;D)</translation>
+        <translation type="obsolete">ホスト CD/DVDドライブ(&amp;D)</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation>仮想マシンにマウントするために利用可能なホストのCD/DVDドライブをリスト表示します。</translation>
+        <translation type="obsolete">仮想マシンにマウントするために利用可能なホストのCD/DVDドライブをリスト表示します。</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>ホストに接続されたCD/DVDライターを使用可能にするため、ゲストOSのATAPIコマンドを直接ホスト ドライブに送ります。注：仮想マシンから音楽CDへの書き込みはサポートされていません。</translation>
+        <translation type="obsolete">ホストに接続されたCD/DVDライターを使用可能にするため、ゲストOSのATAPIコマンドを直接ホスト ドライブに送ります。注：仮想マシンから音楽CDへの書き込みはサポートされていません。</translation>
     </message>
     <message>
         <source>Enable &amp;Passthrough</source>
-        <translation>パススルーを有効化(&amp;P)</translation>
+        <translation type="obsolete">パススルーを有効化(&amp;P)</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation>指定したCD/DVDイメージを仮想CD/DVDドライブにマウントします。</translation>
+        <translation type="obsolete">指定したCD/DVDイメージを仮想CD/DVDドライブにマウントします。</translation>
     </message>
     <message>
         <source>&amp;ISO Image File</source>
-        <translation>ISO イメージファイル(&amp;I)</translation>
+        <translation type="obsolete">ISO イメージファイル(&amp;I)</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation>仮想CD/DVDドライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
+        <translation type="obsolete">仮想CD/DVDドライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
@@ -7180,7 +7831,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
-        <translation>仮想メディアマネージャを起動し、選択したCD/DVDイメージをマウントします。</translation>
+        <translation type="obsolete">仮想メディアマネージャを起動し、選択したCD/DVDイメージをマウントします。</translation>
     </message>
 </context>
 <context>
@@ -7239,7 +7890,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation>VRDPサーバーのポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。</translation>
+        <translation type="obsolete">VRDPサーバーのポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。</translation>
     </message>
     <message>
         <source>Authentication &amp;Method:</source>
@@ -7256,6 +7907,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
         <translation>ゲスト認証のタイムアウト値をミリ秒単位で指定します。</translation>
+    </message>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;2D Video Acceleration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8032,48 +8699,52 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
         <translation>64ビットのゲストOSタイプが選択されました。VirtualBoxは現在32ビットのホストOS上で実行される64ビットのゲストOSで2つ以上の仮想CPUをサポートしていません。</translation>
     </message>
+    <message>
+        <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsFD</name>
     <message>
         <source>Host floppy drive is not selected</source>
-        <translation>ホスト フロッピードライブが選択されていない</translation>
+        <translation type="obsolete">ホスト フロッピードライブが選択されていない</translation>
     </message>
     <message>
         <source>Floppy image file is not selected</source>
-        <translation>フロッピーイメージファイルが選択されていない</translation>
+        <translation type="obsolete">フロッピーイメージファイルが選択されていない</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation>指定したメディアを仮想マシンのフロッピードライブにマウントします。</translation>
+        <translation type="obsolete">指定したメディアを仮想マシンのフロッピードライブにマウントします。</translation>
     </message>
     <message>
         <source>&amp;Mount Floppy Drive</source>
-        <translation>フロッピードライブのマウント(&amp;M)</translation>
+        <translation type="obsolete">フロッピードライブのマウント(&amp;M)</translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation>指定したホスト フロッピードライブを仮想フロッピードライブにマウントします。</translation>
+        <translation type="obsolete">指定したホスト フロッピードライブを仮想フロッピードライブにマウントします。</translation>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>
-        <translation>ホスト フロッピードライブ(&amp;D)</translation>
+        <translation type="obsolete">ホスト フロッピードライブ(&amp;D)</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation>仮想マシンにマウントするために利用可能なホスト フロッピードライブをリスト表示します。</translation>
+        <translation type="obsolete">仮想マシンにマウントするために利用可能なホスト フロッピードライブをリスト表示します。</translation>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation>指定したフロッピーイメージを仮想フロッピードライブにマウントします。</translation>
+        <translation type="obsolete">指定したフロッピーイメージを仮想フロッピードライブにマウントします。</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation>イメージファイル(&amp;I)</translation>
+        <translation type="obsolete">イメージファイル(&amp;I)</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation>仮想フロッピードライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
+        <translation type="obsolete">仮想フロッピードライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
@@ -8081,7 +8752,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
-        <translation>仮想メディアマネージャを起動し、選択したフロッピーイメージをマウントします。</translation>
+        <translation type="obsolete">仮想メディアマネージャを起動し、選択したフロッピーイメージをマウントします。</translation>
     </message>
 </context>
 <context>
@@ -8318,36 +8989,44 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <source>Show In &amp;Fullscreen/Seamless</source>
         <translation>フルスクリーン/シームレスモード時に表示</translation>
     </message>
+    <message>
+        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show At &amp;Top Of Screen</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsHD</name>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation> &lt;i&gt;%1&lt;/i&gt;のためのハードディスクが選択されていない</translation>
+        <translation type="obsolete"> &lt;i&gt;%1&lt;/i&gt;のためのハードディスクが選択されていない</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation>&lt;i&gt;%1&lt;/i&gt;はすでに&lt;i&gt;%2&lt;/i&gt;に割り当てられている</translation>
+        <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt;はすでに&lt;i&gt;%2&lt;/i&gt;に割り当てられている</translation>
     </message>
     <message>
         <source>&amp;Add Attachment</source>
-        <translation>割り当てを追加する(&amp;A)</translation>
+        <translation type="obsolete">割り当てを追加する(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Remove Attachment</source>
-        <translation>割り当てを除去する(&amp;R)</translation>
+        <translation type="obsolete">割り当てを除去する(&amp;R)</translation>
     </message>
     <message>
         <source>&amp;Select Hard Disk</source>
-        <translation>ハードディスクを選択する(&amp;S)</translation>
+        <translation type="obsolete">ハードディスクを選択する(&amp;S)</translation>
     </message>
     <message>
         <source>Adds a new hard disk attachment.</source>
-        <translation>新規ハードディスクの割り当てを追加します。</translation>
+        <translation type="obsolete">新規ハードディスクの割り当てを追加します。</translation>
     </message>
     <message>
         <source>Removes the highlighted hard disk attachment.</source>
-        <translation>ハイライト表示されたハードディスクの割り当てを除去します。</translation>
+        <translation type="obsolete">ハイライト表示されたハードディスクの割り当てを除去します。</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a hard disk to attach to the currently highlighted slot.</source>
@@ -8363,15 +9042,15 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>&amp;Attachments</source>
-        <translation>割り当て(&amp;A)</translation>
+        <translation type="obsolete">割り当て(&amp;A)</translation>
     </message>
     <message>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation>この仮想マシンに割り当てられたすべてのハードディスクをリスト表示します。ハイライト表示された項目をマウスクリックするか、&lt;tt&gt;[スペース]&lt;/tt&gt;キーを使用して、ドロップダウンリストから使用するハードディスクを選択してください。コンテキストメニューか右のボタンを使って、ハードディスクの割り当ての追加または除去が行えます。</translation>
+        <translation type="obsolete">この仮想マシンに割り当てられたすべてのハードディスクをリスト表示します。ハイライト表示された項目をマウスクリックするか、&lt;tt&gt;[スペース]&lt;/tt&gt;キーを使用して、ドロップダウンリストから使用するハードディスクを選択してください。コンテキストメニューか右のボタンを使って、ハードディスクの割り当ての追加または除去が行えます。</translation>
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation>仮想メディアマネージャを起動し、ハードディスクを現在ハイライト表示されたスロットに割り当てます。</translation>
+        <translation type="obsolete">仮想メディアマネージャを起動し、ハードディスクを現在ハイライト表示されたスロットに割り当てます。</translation>
     </message>
     <message>
         <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
@@ -8379,23 +9058,231 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>&amp;Show Differencing Hard Disks</source>
-        <translation>差分ハードディスクを表示(&amp;S)</translation>
+        <translation type="obsolete">差分ハードディスクを表示(&amp;S)</translation>
     </message>
     <message>
         <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation>この仮想マシンの追加の仮想コントローラ(SATAまたはSCSI)を有効にします。</translation>
+        <translation type="obsolete">この仮想マシンの追加の仮想コントローラ(SATAまたはSCSI)を有効にします。</translation>
     </message>
     <message>
         <source>&amp;Enable Additional Controller</source>
-        <translation>追加のコントローラを有効化(&amp;E)</translation>
+        <translation type="obsolete">追加のコントローラを有効化(&amp;E)</translation>
     </message>
     <message>
         <source>IDE &amp;Controller Type</source>
-        <translation>IDEコントローラ タイプ(&amp;C)</translation>
+        <translation type="obsolete">IDEコントローラ タイプ(&amp;C)</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation>仮想IDEコントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
+        <translation type="obsolete">仮想IDEコントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add IDE Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add SATA Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add SCSI Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Floppy Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Attachment</source>
+        <translation type="unfinished">割り当ての追加</translation>
+    </message>
+    <message>
+        <source>Add Hard Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add CD/DVD Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Floppy Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Attachment</source>
+        <translation type="unfinished">割り当てを除去</translation>
+    </message>
+    <message>
+        <source>Adds a new controller to the end of the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removes the controller highlighted in the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removes the attachment highlighted in the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SATA Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SCSI Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disk:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Device:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Device:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Storage Tree</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attributes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">名前(&amp;N):</translation>
+    </message>
+    <message>
+        <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;lot:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the virtual disk image or the host drive used by this attachment.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtual Media Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>D&amp;ifferencing Disks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Passthrough</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Actual Size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type (Format):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attached To:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8446,11 +9333,11 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="obsolete">このアダプタのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
+        <translation type="unfinished">このアダプタのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="obsolete">MACアドレスをランダムに生成します。</translation>
+        <translation type="unfinished">MACアドレスをランダムに生成します。</translation>
     </message>
     <message>
         <source>&amp;Generate</source>
@@ -8458,7 +9345,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="obsolete">仮想マシンの起動時に仮想ネットワークケーブルが接続されるかどうかを示します。</translation>
+        <translation type="unfinished">仮想マシンの起動時に仮想ネットワークケーブルが接続されるかどうかを示します。</translation>
     </message>
     <message>
         <source>Ca&amp;ble Connected</source>
@@ -8570,7 +9457,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Open additional options dialog for current attachment type.</source>
-        <translation>現在の割り当てタイプのための追加オプションダイアログを開きます。</translation>
+        <translation type="obsolete">現在の割り当てタイプのための追加オプションダイアログを開きます。</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -8579,6 +9466,22 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation>&lt;b&gt;ブリッジ アダプタ&lt;/b&gt;または&lt;b&gt;ホストオンリー アダプタ&lt;/b&gt;を割り当てた場合は使用するネットワーク アダプタの名前を選択します。&lt;b&gt;内部ネットワーク&lt;/b&gt;を割り当てた場合は内部ネットワークの名前を指定します。</translation>
+    </message>
+    <message>
+        <source>A&amp;dvanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shows or hides additional network adapter options.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Mac Address:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Cable connected</source>
+        <translation type="unfinished">ケーブル接続(&amp;C)</translation>
     </message>
 </context>
 <context>
@@ -8649,27 +9552,27 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Guest &amp;MAC Address:</source>
-        <translation>ゲストMACアドレス:</translation>
+        <translation type="obsolete">ゲストMACアドレス:</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation>このアダプタのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
+        <translation type="obsolete">このアダプタのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation>MACアドレスをランダムに生成します。</translation>
+        <translation type="obsolete">MACアドレスをランダムに生成します。</translation>
     </message>
     <message>
         <source>&amp;Cable connected</source>
-        <translation>ケーブル接続(&amp;C)</translation>
+        <translation type="obsolete">ケーブル接続(&amp;C)</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation>仮想マシンの起動時に仮想ネットワークケーブルを接続するかどうかを示します。</translation>
+        <translation type="obsolete">仮想マシンの起動時に仮想ネットワークケーブルを接続するかどうかを示します。</translation>
     </message>
     <message>
         <source>Additional Options</source>
-        <translation>追加オプション</translation>
+        <translation type="obsolete">追加オプション</translation>
     </message>
 </context>
 <context>
@@ -8712,7 +9615,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation>このパラレルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
+        <translation type="obsolete">このパラレルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
@@ -8720,7 +9623,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>このパラレルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
+        <translation type="obsolete">このパラレルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
     <message>
         <source>Port &amp;Path:</source>
@@ -8729,6 +9632,14 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <source>Displays the host parallel device name.</source>
         <translation>ホストのパラレル デバイス名を表示します。</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8750,15 +9661,15 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <name>VBoxVMSettingsSF</name>
     <message>
         <source>&amp;Add New Shared Folder</source>
-        <translation>新規共有フォルダを追加(&amp;A)</translation>
+        <translation type="obsolete">新規共有フォルダを追加(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Edit Selected Shared Folder</source>
-        <translation>選択した共有フォルダを編集(&amp;E)</translation>
+        <translation type="obsolete">選択した共有フォルダを編集(&amp;E)</translation>
     </message>
     <message>
         <source>&amp;Remove Selected Shared Folder</source>
-        <translation>選択した共有フォルダを除去(&amp;R)</translation>
+        <translation type="obsolete">選択した共有フォルダを除去(&amp;R)</translation>
     </message>
     <message>
         <source>Adds a new shared folder definition.</source>
@@ -8803,6 +9714,26 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <source>Access</source>
         <translation>アクセス権</translation>
+    </message>
+    <message>
+        <source> Global Folders</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Shared Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Edit Shared Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove Shared Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Folders List</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8873,7 +9804,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation>このシリアルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
+        <translation type="obsolete">このシリアルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
@@ -8881,7 +9812,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>このシリアルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
+        <translation type="obsolete">このシリアルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
     <message>
         <source>Port &amp;Mode:</source>
@@ -8910,6 +9841,14 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <source>Port/File &amp;Path:</source>
         <translation>ポート/ファイル パス(&amp;P):</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8965,7 +9904,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is 32 for now</comment>
-        <translation>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Motherboard</source>
@@ -9013,11 +9952,11 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>仮想マシンでACPI(Advanced Configuration and Power Management Interface)サポートを有効にします。&lt;b&gt;注：&lt;/b&gt; Windows ゲストOSをインストールした後で本機能を無効にしないでください！</translation>
+        <translation type="obsolete">仮想マシンでACPI(Advanced Configuration and Power Management Interface)サポートを有効にします。&lt;b&gt;注：&lt;/b&gt; Windows ゲストOSをインストールした後で本機能を無効にしないでください！</translation>
     </message>
     <message>
         <source>Enable &amp;ACPI</source>
-        <translation>ACPIを有効化(&amp;A)</translation>
+        <translation type="obsolete">ACPIを有効化(&amp;A)</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
@@ -9070,6 +10009,19 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <source>Enable Nested Pa&amp;ging</source>
         <translation>ネステッドページングを有効化(&amp;G)</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
+        <comment>%1 is host cpu count * 2 for now</comment>
+        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;EFI (special OSes only)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
