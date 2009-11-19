@@ -165,7 +165,7 @@ void VBoxVMSettingsGeneral::retranslateUi()
 
     /* Path selector */
     mPsSnapshot->setWhatsThis (tr ("Displays the path where snapshots of this "
-                                   "virtual machine will be stored. Note that "
+                                   "virtual machine will be stored. Be aware that "
                                    "snapshots can take quite a lot of disk "
                                    "space."));
 

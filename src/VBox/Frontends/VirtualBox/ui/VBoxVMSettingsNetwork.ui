@@ -110,7 +110,7 @@
          </sizepolicy>
         </property>
         <property name="whatsThis" >
-         <string>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</string>
+         <string>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</string>
         </property>
        </widget>
       </item>
@@ -138,7 +138,7 @@
            <string>A&amp;dvanced</string>
           </property>
           <property name="whatsThis" >
-           <string>Shows/hide additional network adapter options.</string>
+           <string>Shows or hides additional network adapter options.</string>
           </property>
          </widget>
         </item>

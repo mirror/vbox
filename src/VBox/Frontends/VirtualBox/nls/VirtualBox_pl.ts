@@ -66,7 +66,7 @@
 <context>
     <name>BootItemsTable</name>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Definiuje porządek urządzeń startowych. Używając przełączników po lewej stronie można odblokować lub zablokować wybrane urządzenia, natomiast przesuwając pozycje w górę i w dół można zmieniać kolejność urządzeń.</translation>
     </message>
 </context>
@@ -7323,7 +7323,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;IRQ </translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">Zawiera numer przerwania IRQ danego portu równoległego. Poprawne wartości to liczby całkowite od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Wartości większe od &lt;tt&gt;15&lt;/tt&gt; mogą być używane tylko, jeśli opcja &lt;b&gt;IO APIC&lt;/b&gt; zostanie włączona w ustawieniach maszyny wirtualnej.</translation>
     </message>
     <message>
@@ -7331,7 +7331,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Adres I/O portu</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Zawiera adres I/O danego portu równoległego. Poprawne wartości to liczby szesnastkowe od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -7366,7 +7366,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;IRQ portu</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">Zawiera numer przerwania IRQ danego portu szeregowego. Poprawne wartości to liczby całkowite od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Wartości większe od &lt;tt&gt;15&lt;/tt&gt; mogą być używane tylko, jeśli opcja &lt;b&gt;IO APIC&lt;/b&gt; zostanie włączona w ustawieniach maszyny wirtualnej.</translation>
     </message>
     <message>
@@ -7374,7 +7374,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Adres I/O portu</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Zawiera adres I/O danego portu szeregowego. Poprawne wartości to liczby szesnastkowe od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -7394,7 +7394,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Alt+S</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation type="obsolete">Zaznaczenie tej opcji powoduje, że nazwane łącze wybrane w polu &lt;b&gt;Ścieżka portu&lt;/b&gt; zostanie utworzone podczas uruchamiania maszyny wirtualnej. W przeciwnym razie maszyna wirtualna spróbuje użyć istniejącego łącza nazwanego.</translation>
     </message>
     <message>
@@ -7402,7 +7402,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Ś&amp;cieżka portu</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">Zawiera ścieżkę do łącza nazwanego portu szeregowego w systemie gospodarza, jeśli port pracuje w trybie &lt;b&gt;Nazwane łącze w systemie gospodarza&lt;/b&gt; lub do sprzętowego portu szeregowego, jeśli port pracuje w trybie &lt;b&gt;Sprzętowy port gospodarza&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -7993,18 +7993,18 @@ tej opcji po zainstalowaniu na tej maszynie wirtualnej systemu Windows!&lt;/qt&g
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Włącza w maszynie wirtualnej obsługę
 Input Output APIC (IO APIC), które może w niewielkim stopniu zmniejszyć jej wydajność. &lt;b&gt;Uwaga:&lt;/b&gt; nie należy wyłączać
 tej opcji po zainstalowaniu na tej maszynie systemu Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Definiuje tryb współdzielenia schowka pomiędzy systemami operacyjnymi gospodarza i goszczonym. Uwaga: opcja ta wymaga zainstalowania Dodatków (Guest Additions) w goszczonym systemie operacyjnym.</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Zawiera ścieżkę, do której będą zapisywane migawki maszyny wirtualnej. Uwaga: migawki mogą zająć sporo miejsca na dysku.</translation>
     </message>
     <message>
@@ -8012,7 +8012,7 @@ tej opcji po zainstalowaniu na tej maszynie systemu Windows!&lt;/qt&gt;</transla
         <translation type="obsolete">Przywraca domyślną ścieżkę do katalogu z migawkami. Nowa ścieżka będzie widoczna po zatwierdzeniu zmian i ponownym otwarciu tego okna.</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="obsolete">Zawiera opis maszyny wirtualnej. Można tu umieścić szczegóły dotyczące konfiguracji zainstalowanego jako gościa systemu operacyjnego.</translation>
     </message>
     <message>
@@ -8190,11 +8190,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">Wybrano nieprawidłowy interfejs sieciowy gospodarza</translation>
     </message>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation type="obsolete">Wybrano powtarzający się numer portu </translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation type="obsolete">Wybrano powtarzającą się ścieżkę portu </translation>
     </message>
     <message>
@@ -8407,7 +8407,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">Nazwa sieci wewnętrznej nie została ustawiona</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation type="obsolete">Ścieżka portu nie została podana </translation>
     </message>
     <message>
@@ -8550,7 +8550,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Zawiera ścieżkę do katalogu, w którym będą zapisywane migawki maszyny wirtualnej. Uwaga: migawki mogą zająć sporo miejsca na dysku.</translation>
     </message>
     <message>
@@ -8610,7 +8610,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&amp;Kolejność startowania:</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Definiuje porządek urządzeń startowych. Używając przełączników po lewej stronie można odblokować lub zablokować wybrane urządzenia, natomiast przesuwając pozycje w górę i w dół można zmieniać kolejność urządzeń.</translation>
     </message>
     <message>
@@ -8646,7 +8646,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">Włącz A&amp;CPI</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">Włącza w maszynie wirtualnej obsługę Input Output APIC (IO APIC), które może w niewielkim stopniu zmniejszyć jej wydajność. &lt;b&gt;Uwaga:&lt;/b&gt; nie należy wyłączać tej opcji po zainstalowaniu na tej maszynie wirtualnej systemu Windows!</translation>
     </message>
     <message>
@@ -8674,7 +8674,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&amp;Współdzielony schowek:</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>Definiuje tryb współdzielenia schowka pomiędzy systemami operacyjnymi gospodarza i goszczonym. Uwaga: opcja ta wymaga zainstalowania Dodatków (Guest Additions) w goszczonym systemie operacyjnym.</translation>
     </message>
     <message>
@@ -8694,7 +8694,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>Opi&amp;s</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Zawiera opis maszyny wirtualnej. Można tu umieścić szczegóły dotyczące konfiguracji zainstalowanego jako gościa systemu operacyjnego.</translation>
     </message>
     <message>
@@ -8730,7 +8730,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">maszynie wirtualnej przydzielono więcej niż &lt;b&gt;%1%&lt;/b&gt; pamięci (&lt;b&gt;%2&lt;/b&gt;) tego komputera. Nie pozostało dość pamięci dla systemu operacyjnego gospodarza. Proszę wybrać mniejszy rozmiar.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="obsolete">maszynie wirtualnej przydzielono więcej niż &lt;b&gt;%1%&lt;/b&gt; pamięci (&lt;b&gt;%2&lt;/b&gt;) tego komputera. Mogła pozostać niewystarczająca ilość pamięci dla systemu operacyjnego gospodarza. Proszę wybrać mniejszy rozmiar.</translation>
     </message>
     <message>
@@ -8813,7 +8813,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>Otwiera Menedżera nośników wirtualnych, w celu utworzenia nowego lub wybrania już istniejącego wirtualnego dysku twardego do podłączenia do wybranego slotu.</translation>
     </message>
     <message>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation>Po zaznaczeniu tej opcji pokazywane będą różnicowe dyski twarde podłączone do slotów, zamiast ich bazowych dysków twardych (pokazywanych w przypadku podłączeń pośrednich). Pozwoli to również na jawne podłączenie innych dysków różnicowych. Należy zaznaczyć tę opcję tylko, jeśli potrzebna jest złożona konfiguracja dysków twardych.</translation>
     </message>
     <message>
@@ -8992,7 +8992,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished">&amp;Nazwa:</translation>
     </message>
     <message>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9122,7 +9122,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Zawiera numer przerwania IRQ danego portu równoległego. Poprawne wartości to liczby całkowite od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Wartości większe od &lt;tt&gt;15&lt;/tt&gt; mogą być używane tylko, jeśli opcja &lt;b&gt;IO APIC&lt;/b&gt; zostanie włączona w ustawieniach maszyny wirtualnej.</translation>
     </message>
     <message>
@@ -9130,7 +9130,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&amp;Adres I/O portu:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Zawiera adres I/O danego portu równoległego. Poprawne wartości to liczby szesnastkowe od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -9145,15 +9145,15 @@ makes the guest see an audio card, however every access to it will be ignored.&l
 <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Wybrano powtarzający się numer portu </translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Ścieżka portu nie została podana </translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Wybrano powtarzającą się ścieżkę portu </translation>
     </message>
 </context>
@@ -9283,7 +9283,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Zawiera numer przerwania IRQ danego portu szeregowego. Poprawne wartości to liczby całkowite od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Wartości większe od &lt;tt&gt;15&lt;/tt&gt; mogą być używane tylko, jeśli opcja &lt;b&gt;IO APIC&lt;/b&gt; zostanie włączona w ustawieniach maszyny wirtualnej.</translation>
     </message>
     <message>
@@ -9291,7 +9291,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&amp;Adres I/O portu:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Zawiera adres I/O danego portu szeregowego. Poprawne wartości to liczby szesnastkowe od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -9303,7 +9303,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>Definiuje tryb pracy danego portu szeregowego. Wybranie opcji &lt;b&gt;Odłączony&lt;/b&gt; powoduje, że goszczony system operacyjny wykryje port szeregowy, ale nie będzie mógł z niego korzystać.</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation>Zaznaczenie tej opcji powoduje, że nazwane łącze wskazane w polu &lt;b&gt;Ścieżka portu&lt;/b&gt; zostanie utworzone podczas uruchamiania maszyny wirtualnej. W przeciwnym razie maszyna wirtualna spróbuje użyć istniejącego łącza nazwanego.</translation>
     </message>
     <message>
@@ -9315,7 +9315,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">Ś&amp;cieżka portu:</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Zawiera ścieżkę do łącza nazwanego dla portu szeregowego w systemie gospodarza, jeśli port pracuje w trybie &lt;b&gt;Nazwane łącze w systemie gospodarza&lt;/b&gt; lub nazwę sprzętowego portu szeregowego, jeśli port pracuje w trybie &lt;b&gt;Sprzętowy port gospodarza&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -9326,15 +9326,15 @@ makes the guest see an audio card, however every access to it will be ignored.&l
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Wybrano powtarzający się numer portu </translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Ścieżka portu nie została podana </translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Wybrano powtarzającą się ścieżkę portu </translation>
     </message>
 </context>
@@ -9345,7 +9345,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished">maszynie wirtualnej przydzielono więcej niż &lt;b&gt;%1%&lt;/b&gt; pamięci (&lt;b&gt;%2&lt;/b&gt;) tego komputera. Nie pozostało dość pamięci dla systemu operacyjnego gospodarza. Proszę wybrać mniejszy rozmiar.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="unfinished">maszynie wirtualnej przydzielono więcej niż &lt;b&gt;%1%&lt;/b&gt; pamięci (&lt;b&gt;%2&lt;/b&gt;) tego komputera. Mogła pozostać niewystarczająca ilość pamięci dla systemu operacyjnego gospodarza. Proszę wybrać mniejszy rozmiar.</translation>
     </message>
     <message>
@@ -9399,7 +9399,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="unfinished">Definiuje porządek urządzeń startowych. Używając przełączników po lewej stronie można odblokować lub zablokować wybrane urządzenia, natomiast przesuwając pozycje w górę i w dół można zmieniać kolejność urządzeń.</translation>
     </message>
     <message>
@@ -9431,7 +9431,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="unfinished">Włącza w maszynie wirtualnej obsługę Input Output APIC (IO APIC), które może w niewielkim stopniu zmniejszyć jej wydajność. &lt;b&gt;Uwaga:&lt;/b&gt; nie należy wyłączać tej opcji po zainstalowaniu na tej maszynie wirtualnej systemu Windows!</translation>
     </message>
     <message>

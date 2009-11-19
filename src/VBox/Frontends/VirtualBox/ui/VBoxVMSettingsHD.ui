@@ -70,7 +70,7 @@
          <item>
           <widget class="QITreeView" native="1" name="mTwStorageTree" >
            <property name="whatsThis" >
-            <string>Contains all the created storage controllers and all the attached virtual images and host-drives.</string>
+            <string>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</string>
            </property>
           </widget>
          </item>
@@ -123,7 +123,7 @@
         <item row="1" column="1" >
          <widget class="QLabel" name="mLbInfo" >
           <property name="text" >
-           <string>Storage Tree supports multiple storage controllers of any type. Currently there are no storage controllers created.</string>
+           <string>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</string>
           </property>
           <property name="wordWrap">
            <bool>true</bool>
@@ -182,7 +182,7 @@
         <item row="1" column="2" >
          <widget class="QLineEdit" name="mLeName" >
           <property name="whatsThis" >
-           <string>Allows to edit the name of the storage controller currently selected in the Storage Tree.</string>
+           <string>Changes the name of the storage controller currently selected in the Storage Tree.</string>
           </property>
          </widget>
         </item>
@@ -202,7 +202,7 @@
         <item row="2" column="2" >
          <widget class="QComboBox" name="mCbType" >
           <property name="whatsThis" >
-           <string>Allows to select the sub-type of the storage controller currently selected in the Storage Tree.</string>
+           <string>Selects the sub-type of the storage controller currently selected in the Storage Tree.</string>
           </property>
           <property name="sizePolicy" >
            <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
@@ -264,7 +264,7 @@
         <item row="1" column="2" colspan="2" >
          <widget class="QComboBox" name="mCbSlot" >
           <property name="whatsThis" >
-           <string>Allows to select the slot of the storage attachment currently selected in the Storage Tree. The list of the currently available slots depends on parent controller type of this attachment and takes into account slots already used by the other attachments of the same parent.</string>
+           <string>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</string>
           </property>
           <property name="sizePolicy" >
            <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
@@ -287,7 +287,7 @@
         <item row="2" column="2" >
          <widget class="VBoxMediaComboBox" native="1" name="mCbVdi" >
           <property name="whatsThis" >
-           <string>Allows to select virtual image or host-drive assigned for the currently selected attachment according to device type of this attachment.</string>
+           <string>Selects the virtual disk image or the host drive used by this attachment.</string>
           </property>
           <property name="sizePolicy" >
            <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
@@ -322,7 +322,7 @@
            </sizepolicy>
           </property>
           <property name="whatsThis">
-           <string>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</string>
+           <string>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</string>
           </property>
           <property name="text">
            <string>D&amp;ifferencing Disks</string>

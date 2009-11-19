@@ -551,7 +551,7 @@ bool VBoxVMSettingsDlg::correlate (QWidget *aPage, QString &aWarning)
             displayPage->isAcceleration2DVideoSelected() && !generalPage->isWindowsOSTypeSelected())
         {
             aWarning = tr (
-                "you have Video 2D Acceleration enabled. As Video 2D Acceleration "
+                "you have 2D Video Acceleration enabled. As 2D Video Acceleration "
                 "is supported for Windows guests only, this feature will be disabled.");
             return true;
         }

@@ -66,7 +66,7 @@
 <context>
     <name>BootItemsTable</name>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Definiu l&apos;ordre dels dispositius d&apos;arrencada. Useu les caseles de selecció a l&apos;esquerra per activar o desactivar els dispositius d&apos;arrencada individuals. Moveu els elements amunt i avall per a canviar l&apos;ordre dels dispositius.</translation>
     </message>
 </context>
@@ -7295,7 +7295,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">Mostra el número IRQ per a aquest port paral·lel. Valors vàlids són nombres enters en un rang des de &lt;tt&gt;0&lt;/tt&gt; fins &lt;tt&gt;255&lt;/tt&gt;. Valors més grans que &lt;tt&gt;15&lt;/tt&gt; es faran servir si &lt;b&gt;IO APIC&lt;/b&gt; es troba habilitat a aquesta màquina virtual.</translation>
     </message>
     <message>
@@ -7303,7 +7303,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Po&amp;rt E/S</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Mostra l&apos;adreça base del port E/S per a aquest port paral·lel. Valors vàlids són nombres enters en un rang des de &lt;tt&gt;0&lt;/tt&gt; fins &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -7326,15 +7326,15 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Crea Conducte</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Mostra l&apos;adreça base del port d&apos;E/S d&apos;aquest port sèrie. Valors vàlids són nombres enters del rang des de &lt;tt&gt;0&lt;/tt&gt; fins &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">Mostra el número IRQ d&apos;aquest port sèrie. Valors vàlids són nombres enters del rang des de &lt;tt&gt;0&lt;/tt&gt; fins &lt;tt&gt;255&lt;/tt&gt;. Valors més grans que &lt;tt&gt;15&lt;/tt&gt; només s&apos;han de fer servir només si l&apos;&lt;b&gt;IO APIC&lt;/b&gt; és actiu per a aquesta màquina virtual.</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">Mostra la ruta al conducte del port sèrie a l&apos;amfitrió quan el port treballa en el mode &lt;b&gt;Conducte Amfitrió&lt;/b&gt;, o al dispositiu sèrie de l&apos;amfitrió quan el port treballa en el mode &lt;b&gt;Dispositiu Amfitrió&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -7346,7 +7346,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Habilita &amp;el Port Sèrie</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation type="obsolete">Si està marcat, el conducte especificat al camp &lt;b&gt;Ruta del Port&lt;/b&gt; es crearà per la màquina virtual quan s&apos;iniciï. En altre cas, la màquina virtual provarà de fer servir el conducte existent.</translation>
     </message>
     <message>
@@ -7703,7 +7703,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Ctrl+Amunt</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Defineix el mode de compartició del porta-retalls entre el client i l&apos;amfitrió. Tingueu en compte que aquesta característica requereix tenir instal·lades les Guest Additions al sistema client.</translation>
     </message>
     <message>
@@ -7719,7 +7719,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Descripció</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="obsolete">Mostra la descripció de la màquina virtual. El camp de descripció és útil per comentar els detalls de configuració del sistema client instal·lat.</translation>
     </message>
     <message>
@@ -7743,7 +7743,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Mostra el tipus de sistema operatiu que voleu instal·lar a dins d&apos;aquesta màquina virtual (anomenat sistema operatiu client).</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Mostra la ruta on les captures d&apos;aquesta màquina virtual es desaran. Tingueu en compte que les captures poden ocupar prou quantitat d&apos;espai al disc dur.</translation>
     </message>
     <message>
@@ -7751,11 +7751,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Mostra el disc dur virtual per connectar aquesta ranura IDE i permet seleccionar ràpidament un disc dur diferent.</translation>
     </message>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation type="obsolete">S&apos;ha seleccionat un número de port duplicat</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation type="obsolete">S&apos;ha introduït una ruta de port duplicada</translation>
     </message>
     <message>
@@ -8039,7 +8039,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Quan estigui marcat, la màquina virtual suportarà
 l&apos;Entrada Sortida APIC (ES APIC), que pot disminuir el rendiment de la màquina virtual. &lt;b&gt;Nota:&lt;/b&gt; no inhabiliteu
@@ -8387,7 +8387,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation type="obsolete">No s&apos;ha especificat un nom de xarxa intern</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation type="obsolete">No s&apos;ha especificat una ruta al port</translation>
     </message>
     <message>
@@ -8534,7 +8534,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation type="obsolete">heu assignat més d&apos;un &lt;b&gt;%1%&lt;/b&gt; de la memòria del vostre ordinador (&lt;b&gt;%2&lt;/b&gt;) a la màquina virtual. No heu deixat suficient memòria al sistema amfitrió. Seleccineu un percentatge menor.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="obsolete">heu assignat més d&apos;un &lt;b&gt;%1%&lt;/b&gt; de la memòria del vostre ordinador (&lt;b&gt;%2&lt;/b&gt;) a la màquina virtual. No heu deixat suficient memòria al sistema amfitrió. Contineu pel vostre compte (no recomanable).</translation>
     </message>
     <message>
@@ -8546,7 +8546,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Mostra la ruta on les captures d&apos;aquesta màquina virtual es desaran. Tingueu en compte que les captures poden ocupar prou quantitat d&apos;espai al disc dur.</translation>
     </message>
     <message>
@@ -8610,7 +8610,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation type="obsolete">&amp;Ordre d&apos;inici:</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Defineix l&apos;ordre dels dispositius d&apos;arrencada. Useu les caselles de selecció a l&apos;esquerra per activar o desactivar els dispositius d&apos;arrencada individuals. Moveu els elements amunt i avall per a canviar l&apos;ordre dels dispositius.</translation>
     </message>
     <message>
@@ -8646,7 +8646,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation type="obsolete">Habilita A&amp;CPI</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">Quan estigui marcat, la màquina virtual suportarà l&apos;entrada/sortida APIC (ES APIC), que pot reduir el rendiment de la màquina virtual. &lt;b&gt;Nota:&lt;/b&gt; no inhabiliteu aquesta característica després d&apos;haver instal·lat un Windows al sistema operatiu client!</translation>
     </message>
     <message>
@@ -8682,7 +8682,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation>Porta-retall&amp;s compartit:</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>Defineix el mode de compartició del porta-retalls entre el client i l&apos;amfitrió. Tingueu en compte que aquesta característica requereix tenir instal·lades les Guest Additions al sistema client.</translation>
     </message>
     <message>
@@ -8702,7 +8702,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation>&amp;Descripció</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Mostra la descripció de la màquina virtual. El camp de descripció és útil per comentar els detalls de configuració del sistema client instal·lat.</translation>
     </message>
     <message>
@@ -8726,7 +8726,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation type="obsolete">heu assignat més del &lt;b&gt;75%&lt;/b&gt; de la memòria del vostre ordinador (&lt;b&gt;%1&lt;/b&gt;) per a la màquina virtual. D&apos;aquesta manera no es deixa la suficient memòria per al sistema amfitrió. Seleccioneu una quantitat de memòria inferior.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="obsolete">heu assignat més del &lt;b&gt;50%&lt;/b&gt; de la memòria del vostre ordinador (&lt;b&gt;%1&lt;/b&gt;) per a la màquina virtual. D&apos;aquesta manera no es deixa la suficient memòria per al sistema amfitrió. Contineu pel vostre compte (no recomanable).</translation>
     </message>
     <message>
@@ -8825,7 +8825,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation>Invoca el gestor de suports virtuals per crear un de nou o seleccionar un disc dur existent per connectar-lo a la ranura remarcada.</translation>
     </message>
     <message>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation>Si està marcat, mostrarà de forma diferenciada els discos durs connectats a les ranures en lloc de als discos durs base (mostrat en cas d&apos;adjuncions indirectes), a més permetrà connectar altres discos durs explícitament. Marqueu això només si necessiteu una configuració complexa del disc dur.</translation>
     </message>
     <message>
@@ -8948,7 +8948,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation>&amp;Nom:</translation>
     </message>
     <message>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation>Selecciona el nom de l&apos;adaptador de xarxa si el tipus d&apos;adjunció és equivalent a &lt;b&gt;Adaptador en pont&lt;/b&gt; o &lt;b&gt;Adaptador de només l&apos;amfitrió&lt;/b&gt; i el nom de la xarxa interna si el tipus d&apos;adjunció és equivalent a &lt;b&gt;Xarxa interna&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -9154,7 +9154,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Mostra el número IRQ per a aquest port paral·lel. Valors vàlids són nombres enters en un rang des de &lt;tt&gt;0&lt;/tt&gt; fins &lt;tt&gt;255&lt;/tt&gt;. Valors més grans que &lt;tt&gt;15&lt;/tt&gt; es faran servir si &lt;b&gt;IO APIC&lt;/b&gt; es troba habilitat a aquesta màquina virtual.</translation>
     </message>
     <message>
@@ -9162,7 +9162,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation>Po&amp;rt E/S:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Mostra l&apos;adreça base del port E/S per a aquest port paral·lel. Valors vàlids són nombres enters en un rang des de &lt;tt&gt;0&lt;/tt&gt; fins &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -9177,15 +9177,15 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
 <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>S&apos;ha seleccionat un número de port duplicat</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>No s&apos;ha especificat una ruta al port</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>S&apos;ha introduït una ruta de port duplicada</translation>
     </message>
 </context>
@@ -9315,7 +9315,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Mostra el número IRQ d&apos;aquest port sèrie. Valors vàlids són nombres enters del rang des de &lt;tt&gt;0&lt;/tt&gt; fins &lt;tt&gt;255&lt;/tt&gt;. Valors més grans que &lt;tt&gt;15&lt;/tt&gt; només s&apos;han de fer servir només si l&apos;&lt;b&gt;IO APIC&lt;/b&gt; és actiu per a aquesta màquina virtual.</translation>
     </message>
     <message>
@@ -9323,7 +9323,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation>Po&amp;rt E/S:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Mostra l&apos;adreça base del port d&apos;E/S d&apos;aquest port sèrie. Valors vàlids són nombres enters del rang des de &lt;tt&gt;0&lt;/tt&gt; fins &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -9335,7 +9335,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation>Controla el mode de treball d&apos;aquest port sèrie. Si seleccioneu &lt;b&gt;Desconnectat&lt;/b&gt;, el sistema client detectarà el port sèrie però no podrà operar amb ell.</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation>Si està marcat, el conducte especificat al camp &lt;b&gt;Ruta del port&lt;/b&gt; es crearà per la màquina virtual quan s&apos;iniciï. En altre cas, la màquina virtual provarà de fer servir el conducte existent.</translation>
     </message>
     <message>
@@ -9347,7 +9347,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation type="obsolete">Ruta del &amp;port:</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Mostra la ruta al conducte del port sèrie a l&apos;amfitrió quan el port treballa en el mode &lt;b&gt;Conducte amfitrió&lt;/b&gt;, o al dispositiu sèrie de l&apos;amfitrió quan el port treballa en el mode &lt;b&gt;Dispositiu Amfitrió&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -9358,15 +9358,15 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>S&apos;ha seleccionat un número de port duplicat</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>No s&apos;ha especificat una ruta al port</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>S&apos;ha introduït una ruta de port duplicada</translation>
     </message>
 </context>
@@ -9377,7 +9377,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation>heu assignat més d&apos;un &lt;b&gt;%1%&lt;/b&gt; de la memòria del vostre ordinador (&lt;b&gt;%2&lt;/b&gt;) a la màquina virtual. No heu deixat suficient memòria al sistema amfitrió. Seleccineu un percentatge menor.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation>heu assignat més d&apos;un &lt;b&gt;%1%&lt;/b&gt; de la memòria del vostre ordinador (&lt;b&gt;%2&lt;/b&gt;) a la màquina virtual. No heu deixat suficient memòria al sistema amfitrió. Contineu pel vostre compte (no recomanable).</translation>
     </message>
     <message>
@@ -9431,7 +9431,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation>&amp;Ordre d&apos;inici:</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation>Definiu l&apos;ordre dels dispositius d&apos;arrencada. Useu les caselles de selecció a l&apos;esquerra per activar o desactivar els dispositius d&apos;arrencada individuals. Moveu els elements amunt i avall per a canviar l&apos;ordre dels dispositius.</translation>
     </message>
     <message>
@@ -9463,7 +9463,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation>Habilita &amp;ACPI</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation>Quan estigui marcat, la màquina virtual suportarà l&apos;entrada/sortida APIC (ES APIC), que pot reduir el rendiment de la màquina virtual. &lt;b&gt;Nota:&lt;/b&gt; no inhabiliteu aquesta característica després d&apos;haver instal·lat un Windows al sistema operatiu client!</translation>
     </message>
     <message>

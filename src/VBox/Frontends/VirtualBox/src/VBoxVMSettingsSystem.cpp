@@ -267,7 +267,7 @@ bool VBoxVMSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle */
     {
         aWarning = tr (
             "you have assigned more than <b>%1%</b> of your computer's memory "
-            "(<b>%2</b>) to the virtual machine. Not enough memory might be "
+            "(<b>%2</b>) to the virtual machine. There might not be enough memory "
             "left for your host operating system. Continue at your own risk.")
             .arg ((unsigned)qRound ((double)mSlMemory->maxRAMOpt() / fullSize * 100.0))
             .arg (vboxGlobal().formatSize ((uint64_t)fullSize * _1M));

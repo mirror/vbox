@@ -5026,7 +5026,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsGeneral</name>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Mostra o camiño onde se almacenaran as instantáneas desta máquina virtual. Nota que as instantáneas poden ocupar bastante espazo en disco. </translation>
     </message>
     <message>
@@ -5050,7 +5050,7 @@ p, li { white-space: pre-wrap; }
         <translation>Portapapei&amp;s compartido:</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>Define o modo de compartir o portapapeis entre o sistema operativo convidado e o anfitrión. Nota que esta característica require ter instalados os aplicativos para o sistema operativo convidado.</translation>
     </message>
     <message>
@@ -5062,7 +5062,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Descrición</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Mostrar a descrición da máquina virtual. O campo descrición é moi útil para comentar detalles da configuración do sistema operativo convidado instalado.</translation>
     </message>
     <message>
@@ -5133,7 +5133,7 @@ p, li { white-space: pre-wrap; }
         <translation>Abre o xestor de medios virtuais para seleccionar un disco ríxido para conectar ao espazo realzado actualmente.</translation>
     </message>
     <message>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation>Se está marcada, mostrará os discos ríxidos diferenciais conectados aos espazos en vez dos seus discos ríxidos base (mostrados no caso de conexións indirectas) e tamén permitirá conectar explicitamente outros discos ríxidos diferenciais. Active isto só se necesita unha configuración complexa de disco ríxido.</translation>
     </message>
     <message>
@@ -5209,7 +5209,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Nome:</translation>
     </message>
     <message>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation>Selecciona o nome do adaptador de rede se o tipo anexado é equivalente a &lt;b&gt;Adaptador ponte&lt;/b&gt; ou &lt;b&gt;Adaptador exclusivo do anfitrión&lt;/b&gt; e o nome da rede interna se o tipo anexado é equivalente a &lt;b&gt;Rede interna&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -5268,7 +5268,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Mostra o número IRQ deste porto paralelo. Os números enteiros no rango de &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;255&lt;/tt&gt; son valores válidos. Valores maiores que &lt;tt&gt;15&lt;/tt&gt; soamente poden ser empregados se se activou a &lt;b&gt;IO APIC&lt;/b&gt; para esta máquina virtual.</translation>
     </message>
     <message>
@@ -5276,7 +5276,7 @@ p, li { white-space: pre-wrap; }
         <translation>Po&amp;rto de E/S:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Mostra o enderezo base E/S (I/O) deste porto paralelo. Os números enteiros no rango de &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;0xFFFF&lt;/tt&gt; son valores válidos.</translation>
     </message>
     <message>
@@ -5291,15 +5291,15 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Seleccionouse un número de porto duplicado </translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Non se especificou o camiño do porto </translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Introduciuse un camiño de porto duplicado </translation>
     </message>
 </context>
@@ -5429,7 +5429,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Mostra o número IRQ deste porto serie. Os números enteiros no rango de &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;255&lt;/tt&gt; son valores válidos. Valores maiores que &lt;tt&gt;15&lt;/tt&gt; soamente poden ser empregados se se activou a &lt;b&gt;IO APIC&lt;/b&gt; para esta máquina virtual.</translation>
     </message>
     <message>
@@ -5437,7 +5437,7 @@ p, li { white-space: pre-wrap; }
         <translation>Po&amp;rto de E/S:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Mostra o enderezo base E/S (I/O) deste porto serie. Os números enteiros no rango de &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;0xFFFF&lt;/tt&gt; son valores válidos.</translation>
     </message>
     <message>
@@ -5449,7 +5449,7 @@ p, li { white-space: pre-wrap; }
         <translation>Controla o modo de traballo deste porto serie. Se selecciona &lt;b&gt;desconectado&lt;/b&gt;, o sistema operativo convidado detectará o porto serie pero non poderá manexalo.</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation>Se está marcada, ao iniciarse a máquina virtual crearase a canalización especificada no campo &lt;b&gt;camiño do porto&lt;/b&gt;. Noutro caso, a máquina virtual tentará empregar unha canalización existente.</translation>
     </message>
     <message>
@@ -5457,7 +5457,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Crear canalización</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Mostra o camiño da canalización do porto serie no anfitrión cando o porto traballa no modo &lt;b&gt;canalización no anfitrión&lt;/b&gt;, ou o nome do dispositivo serie no anfitrión cando o porto traballa no modo &lt;b&gt;dispositivo no anfitrión&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -5468,15 +5468,15 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Seleccionouse un número de porto duplicado </translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Non se especificou o camiño do porto </translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Introduciuse un camiño de porto duplicado </translation>
     </message>
 </context>
@@ -5487,7 +5487,7 @@ p, li { white-space: pre-wrap; }
         <translation>Asignou máis de &lt;b&gt;%1%&lt;/b&gt; da memoria do seu computdor (&lt;b&gt;%2&lt;/b&gt;) á máquina virtual. Non hai memoria suficiente para o sistema operativo anfitrión. Escolla un valor menor.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation>Asignou máis de &lt;b&gt;%1%&lt;/b&gt; da memoria do seu computdor (&lt;b&gt;%2&lt;/b&gt;) á máquina virtual. Podería non haber memoria suficiente para o sistema operativo anfitrión.  Continuar baixo a súa responsabilidade.</translation>
     </message>
     <message>
@@ -5541,7 +5541,7 @@ p, li { white-space: pre-wrap; }
         <translation>Or&amp;de de inicio:</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation>Define a orde do dispositivo de inicio. Empregue as caixas de verificación da esquerda para activar ou desactivar os dispositivos de inicio individuais. Mover os elementos cara a arriba e abaixo para cambiar a orde dos dispositivos.</translation>
     </message>
     <message>
@@ -5573,7 +5573,7 @@ p, li { white-space: pre-wrap; }
         <translation>Activar &amp;ACPI</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation>Cando está marcada, a máquina virtual permitirá a Entrada/Saída APIC (IO APIC), o que pode reducir lixeiramente o rendemento da máquina virtual. &lt;b&gt;Nota:&lt;/b&gt; non desactivar esta característica despois de instalar un sistema operativo convidado Windows!</translation>
     </message>
     <message>

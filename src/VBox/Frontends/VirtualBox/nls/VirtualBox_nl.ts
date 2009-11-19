@@ -5047,7 +5047,7 @@ p, li {white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsGeneral</name>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
+        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Geeft het pad weer waar momentopnames, van deze virtuele machine, worden opgeslagen. Let op: momentopnames kunnen veel ruimte op de harde schijf innemen.</translation>
     </message>
     <message>
@@ -5071,7 +5071,7 @@ p, li {white-space: pre-wrap; }
         <translation>&amp;Gedeeld klembord:</translation>
     </message>
     <message>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
+        <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>Definieert de modus voor het delen van het klembord, tussen de gast en het besturingssysteem van de gastheer. Let op: deze optie vereist dat de gast uitbreidingen zijn geïnstalleerd bij het gast besturingssysteem.</translation>
     </message>
     <message>
@@ -5083,7 +5083,7 @@ p, li {white-space: pre-wrap; }
         <translation>&amp;Omschrijving</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
+        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Geeft de omschrijving van de virtuele machine weer. Het veld voor omschrijving is handig voor commentaar op de configuratie van het geïnstallerde besturingssysteem.</translation>
     </message>
     <message>
@@ -5154,7 +5154,7 @@ p, li {white-space: pre-wrap; }
         <translation>Roept de virtuele media manager aan om een harde schrijf te selecteren om deze vervolgens aan het opgelichte slot te koppelen.</translation>
     </message>
     <message>
-        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation>Is deze optie aangevinkt dan worden onderscheiden harde schijven weergegeven, die nu gekoppeld zijn aan de slots, inplaats van basis harde schijven (weergegeven in het geval van indirecte koppeling) en zal ook andere onderscheiden harde schijven expliciet laten koppelen. Vink deze optie alleen aan als u een complexe opzet van harde schijven nodig hebt.</translation>
     </message>
     <message>
@@ -5226,7 +5226,7 @@ p, li {white-space: pre-wrap; }
         <translation>&amp;Naam:</translation>
     </message>
     <message>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation>Selecteert de naam van de netwerk adapter als het soort bijlage gelijk is aan de &lt;b&gt;bridge adapter&lt;/b&gt; of een &lt;b&gt;host-only adapter&lt;/b&gt; en de naam van het interne netwerk als de soort bijlage gelijk is aan het &lt;b&gt;interne netwerk&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -5289,7 +5289,7 @@ p, li {white-space: pre-wrap; }
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Geeft het IRQ nummer van deze parallelle poort weer. Geldige waarden zijn gehele getallen tussen &lt;tt&gt;0&lt;/tt&gt; en &lt;tt&gt;255&lt;/tt&gt;. Waarden groter dan &lt;tt&gt;15&lt;/tt&gt; kunnen alleen dan gebruikt worden als &lt;b&gt;I/O APIC&lt;/b&gt;, voor deze virtuele machine is geactiveerd.</translation>
     </message>
     <message>
@@ -5297,7 +5297,7 @@ p, li {white-space: pre-wrap; }
         <translation>I/O Poo&amp;rt:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Geeft het basis I/O poort adres, van deze parallelle poort weer. Geldige waarden zijn gehele getallen tussen &lt;tt&gt;0&lt;/tt&gt; en &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -5312,15 +5312,15 @@ p, li {white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsParallelPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>dubbel poortnummer geselecteerd</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>Pad voor de poort is niet gespecificeerd</translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>dubbel poortnummer is opgegeven</translation>
     </message>
 </context>
@@ -5450,7 +5450,7 @@ p, li {white-space: pre-wrap; }
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation>Geeft het IRQ nummer van deze seriële poort weer. Geldige waarden zijn gehele getallen tussen &lt;tt&gt;0&lt;/tt&gt; en &lt;tt&gt;255&lt;/tt&gt;. Waarden groter dan &lt;tt&gt;15&lt;/tt&gt; kunnen alleen gebruikt worden als &lt;b&gt;I/O APIC&lt;/b&gt; geactiveerd is voor deze virtuele machine.</translation>
     </message>
     <message>
@@ -5458,7 +5458,7 @@ p, li {white-space: pre-wrap; }
         <translation>I/O poo&amp;rt:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Geeft het basis I/O poort adres weer van deze seriële poort. Geldige waarden zijn gehele getallen tussen &lt;tt&gt;0&lt;/tt&gt; tot &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -5470,7 +5470,7 @@ p, li {white-space: pre-wrap; }
         <translation>Controleert de status van deze seriële poort. Selecteert u &lt;b&gt;niet verbonden&lt;/b&gt; dan zal het gast besturingssysteem de seriële poort wel detecteren maar is niet in staat ermee te werken.</translation>
     </message>
     <message>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation>Is deze optie aangevinkt dan zal de pijp, gespecificeerd in het &lt;b&gt;pad voor de poort&lt;/b&gt;, aangemaakt worden door de virtuele machine zodra deze opstart. Anders zal de virtuele machine een bestaande pijp proberen te gebruiken.</translation>
     </message>
     <message>
@@ -5478,7 +5478,7 @@ p, li {white-space: pre-wrap; }
         <translation>Maak &amp;Pijp aan</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Geeft het pad weer naar de seriële poort op de gastheer, als de poort in &lt;b&gt;Host pijp&lt;/b&gt; modus werkt, of de gastheer seriële apparaat naam, als de poort in &lt;b&gt;Host appparaat&lt;/b&gt;modus werkt.</translation>
     </message>
     <message>
@@ -5489,15 +5489,15 @@ p, li {white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-        <source>Duplicate port number is selected </source>
+        <source>Duplicate port number selected </source>
         <translation>Dubbel poortnummer gelecteerd</translation>
     </message>
     <message>
-        <source>Port path is not specified </source>
+        <source>Port path not specified </source>
         <translation>pad naar de poort is niet gespecificeerd </translation>
     </message>
     <message>
-        <source>Duplicate port path is entered </source>
+        <source>Duplicate port path entered </source>
         <translation>Dubbel pad is opgegeven voor de poort</translation>
     </message>
 </context>
@@ -5508,7 +5508,7 @@ p, li {white-space: pre-wrap; }
         <translation>u heeft meer dan &lt;b&gt;%1%&lt;/b&gt; van u geheugen in fysieke computer (&lt;b&gt;%2&lt;/b&gt;) aan de virtuele machin toegewezen. Er blijft onvoldoende geheugen over voor uw gastheer besturingssysteem. Kies voor een lager aantal.</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation>u heeft meer dan &lt;b&gt;%1%&lt;/b&gt; van u geheugen in fysieke computer (&lt;b&gt;%2&lt;/b&gt;) aan de virtuele machin toegewezen. Er blijft onvoldoende geheugen over voor uw gastheer besturingssysteem. Doorgaan is op eigen risico .</translation>
     </message>
     <message>
@@ -5562,7 +5562,7 @@ p, li {white-space: pre-wrap; }
         <translation>&amp;Opstart volgorde:</translation>
     </message>
     <message>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation>Legt de opstart volgorde vast. Gebruik de keuzevakjes aan de linker zijde om individuele opstart apparaten te activeren of te deactiveren. Verplaats items naar boven of beneden om de opstart volgorde te wijzigen.</translation>
     </message>
     <message>
@@ -5594,7 +5594,7 @@ p, li {white-space: pre-wrap; }
         <translation>&amp;ACPI activeren</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation>Is deze optie aangevinkt dan zal de virtuele machine de invoer/uitvoer APIC (IO APIC) ondersteunen, dit de prestatie negatief beïnvloeden. &lt;b&gt;Let op:&lt;/b&gt; deactiveer deze optie niet nadat u het gast besturingssysteem heeft geïnstalleerd!</translation>
     </message>
     <message>

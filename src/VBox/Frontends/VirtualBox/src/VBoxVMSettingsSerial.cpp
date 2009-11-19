@@ -263,7 +263,7 @@ bool VBoxVMSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle)
             valid = !ports.contains (port);
             if (!valid)
             {
-                aWarning = tr ("Duplicate port number is selected ");
+                aWarning = tr ("Duplicate port number selected ");
                 aTitle += ": " +
                     vboxGlobal().removeAccelMark (mTabWidget->tabText (mTabWidget->indexOf (tab)));
                 break;
@@ -285,8 +285,8 @@ bool VBoxVMSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle)
                 else
                 {
                     aWarning = path.isEmpty() ?
-                        tr ("Port path is not specified ") :
-                        tr ("Duplicate port path is entered ");
+                        tr ("Port path not specified ") :
+                        tr ("Duplicate port path entered ");
                     aTitle += ": " +
                         vboxGlobal().removeAccelMark (mTabWidget->tabText (mTabWidget->indexOf (tab)));
                     break;
