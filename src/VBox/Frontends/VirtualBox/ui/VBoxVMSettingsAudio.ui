@@ -30,7 +30,7 @@
    <item row="0" column="0" colspan="2" >
     <widget class="QCheckBox" name="mGbAudio" >
      <property name="whatsThis" >
-      <string>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</string>
+      <string>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</string>
      </property>
      <property name="text" >
       <string>Enable &amp;Audio</string>

@@ -3182,7 +3182,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">[name]</translation>
     </message>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;左側のリストから設定のカテゴリを選択し、設定項目をマウスオーバーして詳細な情報を参照してください&lt;i&gt;。</translation>
     </message>
     <message>
@@ -5393,7 +5393,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">メールアドレス(&amp;E)</translation>
     </message>
     <message>
-        <source>Enter your valid e-mail address.</source>
+        <source>Enter your e-mail address. Please use a valid address here.</source>
         <translation>メールアドレスを入力してください。</translation>
     </message>
     <message>
@@ -5421,7 +5421,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>接続を確立できませんでした。</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;登録フォームに入力し、あなたが VirtualBox を使用していることを我々に知らせてください。VirtualBox のニュースと更新情報をお知らせします(任意)。&lt;/p&gt;&lt;p&gt;フルネーム(英字)とメールアドレスを下のフィールドに入力してください。注：Sun Microsystems は、この情報を製品使用の統計を収集し、VirtualBox ニュースレターを送信するためだけに使用します。Sun Microsystems が個人情報を第三者に渡すことはありません。個人情報の扱いに関する詳細情報は、VirtualBox マニュアルの&quot;&lt;b&gt;Privacy Policy&lt;/b&gt;&quot; セクションまたは VirtualBox webサイトの&quot;&lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt;&quot;ページを参照してください。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5441,11 +5441,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>国/地域を選択</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation>&lt;p&gt;登録フォームに入力し、あなたが VirtualBox を使用していることを我々に知らせてください。VirtualBox のニュースと更新情報をお知らせします(任意)。&lt;/p&gt;&lt;p&gt;フルネーム(英字)とメールアドレスを下のフィールドに入力してください。注：Sun Microsystems は、この情報を製品使用の統計を収集し、VirtualBox ニュースレターを送信するためだけに使用します。Sun Microsystems が個人情報を第三者に渡すことはありません。個人情報の扱いに関する詳細情報は、VirtualBox マニュアルの&quot;&lt;b&gt;Privacy Policy&lt;/b&gt;&quot; セクションまたは VirtualBox webサイトの&quot;&lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt;&quot;ページを参照してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>I &amp;have a Sun Online account already:</source>
+        <source>I &amp;already have a Sun Online account:</source>
         <translation>Sun オンライン アカウントに登録済みです(&amp;H):</translation>
     </message>
     <message>
@@ -5457,7 +5457,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>パスワード:</translation>
     </message>
     <message>
-        <source>I &amp;would like to register creating a new Sun Online account:</source>
+        <source>I &amp;would like to create a new Sun Online account:</source>
         <translation>Sun オンライン アカウントを作成して登録します(&amp;W):</translation>
     </message>
     <message>
@@ -5712,7 +5712,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>選択した仮想マシンを起動</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;h3&gt;ようこそVirtualBoxへ!&lt;/h3&gt;&lt;p&gt;このウィンドウの左側にコンピュータ上のすべての仮想マシンがリスト表示されます。まだ仮想マシンが作成されていないため、リストは空です。&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;新規仮想マシンを作成するにはウィンドウ上部にあるメインツールバーの&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックしてください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;キーでヘルプを表示できます。または最新の情報とニュースを取得するため &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; を訪問してください。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5772,7 +5772,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>仮想マシンの実行を一時停止する</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;ようこそVirtualBoxへ！&lt;/h3&gt;&lt;p&gt;このウィンドウの左側にコンピュータ上のすべての仮想マシンがリスト表示されます。まだ仮想マシンが作成されていないため、リストは空です。&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;新規仮想マシンを作成するにはウィンドウ上部にあるメインツールバーの&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックしてください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;キーでヘルプを表示できます。または最新の情報とニュースを取得するため &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; を訪問してください。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5805,7 +5805,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>仮想アプライアンスのエクスポート(&amp;E)...</translation>
     </message>
     <message>
-        <source>Export an appliance out of VM&apos;s from VirtualBox</source>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
         <translation>VirtualBoxの仮想マシンを仮想アプライアンスにエクスポート</translation>
     </message>
     <message>
@@ -5816,7 +5816,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
         <translation>&lt;i&gt;左側のリストから設定のカテゴリを選択し、設定項目をマウスオーバーして詳細な情報を参照してください&lt;i&gt;。</translation>
     </message>
     <message>
@@ -6114,7 +6114,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation>最新のスナップショットを破棄し、スナップショットを作成する前の状態に戻す</translation>
     </message>
     <message>
-        <source>Show details of the selected snapshot</source>
+        <source>Show the details of the selected snapshot</source>
         <translation>選択したスナップショットの詳細を表示</translation>
     </message>
     <message>
@@ -6179,7 +6179,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation>置換(&amp;R)...</translation>
     </message>
     <message>
-        <source>Replaces the current text with the content of a given file.</source>
+        <source>Replaces the current text with the content of a file.</source>
         <translation>現在のテキストを指定のファイルの内容で置き換えます。</translation>
     </message>
     <message>
@@ -6359,7 +6359,7 @@ value.&lt;/qt&gt;</source>
 <context>
     <name>VBoxUSBMenu</name>
     <message>
-        <source>&lt;no available devices&gt;</source>
+        <source>&lt;no devices available&gt;</source>
         <comment>USB devices</comment>
         <translation>&lt;利用できるデバイスがありません&gt;</translation>
     </message>
@@ -6503,7 +6503,7 @@ value.&lt;/qt&gt;</source>
         <translation>初回起動ウィザード</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;新たに作成された仮想マシンが初めて起動されました。このウィザードは、この仮想マシンに選択したオペレーティングシステムをインストールするために必要な作業を手助けします。&lt;/p&gt;&lt;p&gt;ウィザードの次のページに進むには&lt;b&gt;[次へ]&lt;/b&gt;ボタンを、前のページに戻るには&lt;b&gt;[戻る]&lt;/b&gt;ボタンを使用してください。ウィザードの実行を中止したい場合は&lt;b&gt;[キャンセル]&lt;/b&gt;ボタンをクリックしてください。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6511,7 +6511,7 @@ value.&lt;/qt&gt;</source>
         <translation>ようこそ初回起動ウィザードへ！</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;インストールに使用したいメディアの種別を選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6580,11 +6580,11 @@ value.&lt;/qt&gt;</source>
 </translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;新たに作成された仮想マシンが初めて起動されました。この仮想マシンに選択したオペレーティングシステムをインストールするために必要な作業を手助けします。&lt;/p&gt;&lt;p&gt;注：ハードディスクが割り当てられていないため、現在オペレーティングシステムをこの仮想マシンにインストールすることができません。このウィザードの実行を中止し、VirtualBoxメインウィンドウの&lt;b&gt;[仮想マシン]&lt;/b&gt;メニューから&lt;b&gt;[設定]&lt;/b&gt;を選び、仮想マシンの設定ダイアログにアクセスしてハードディスク構成を変更することができます。&lt;/p&gt;&lt;p&gt;ウィザードの次のページに進むには&lt;b&gt;[次へ]&lt;/b&gt;ボタンを、前のページに戻るには&lt;b&gt;[戻る]&lt;/b&gt;ボタンを使用してください。ウィザードの実行を中止したい場合は&lt;b&gt;[キャンセル]&lt;/b&gt;ボタンをクリックしてください&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
         <translation>&lt;p&gt;オペレーティングシステムの起動に使用したいメディアのタイプを選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7100,7 +7100,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsAudio</name>
     <message>
-        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>指定されたドライバを使用してホストのオーディオカードと通信する仮想PCIオーディオカードを仮想マシンに接続します。</translation>
     </message>
     <message>
@@ -7186,7 +7186,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsDisplay</name>
     <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>仮想マシンをフルスクリーンまたはシームレスモードに切り換えるために必要な値(%1)より少ないビデオメモリが仮想マシンに割り当てられました。</translation>
     </message>
     <message>
@@ -7214,7 +7214,7 @@ p, li { white-space: pre-wrap; }
         <translation>拡張機能:</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation>仮想マシンはホストマシンの3Dグラフィックス機能を利用します。</translation>
     </message>
     <message>
@@ -7281,7 +7281,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">VBoxVMSettingsDlg</translation>
     </message>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;左側のリストから設定のカテゴリを選択し、設定項目をマウスオーバーして詳細な情報を参照してください&lt;i&gt;。</translation>
     </message>
     <message>
@@ -7545,7 +7545,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">仮想フロッピードライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
     </message>
     <message>
-        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation type="obsolete">指定されたドライバを使用してホストのオーディオカードと通信する仮想PCIオーディオカードを仮想マシンに接続します。</translation>
     </message>
     <message>
@@ -8267,11 +8267,11 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="obsolete">実メモリ(&lt;b&gt;%1&lt;/b)の&lt;b&gt;50%&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSが十分なメモリを使用できません。割り当てメモリを減らしてください。</translation>
     </message>
     <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation type="obsolete">仮想マシンをフルスクリーンまたはシームレスモードに切り換えるために必要な値(%1)より少ないビデオメモリが仮想マシンに割り当てられました。</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation type="obsolete">仮想マシンはホストマシンの3Dグラフィックス機能を利用します。</translation>
     </message>
     <message>

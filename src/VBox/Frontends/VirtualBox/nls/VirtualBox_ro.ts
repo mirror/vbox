@@ -3451,7 +3451,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">[nume]</translation>
     </message>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;Selectați o categorie de setări din lista din stânga și mergeți cu mouseul peste un item din listă pentru a obține informații suplimentare&lt;/i&gt;.</translation>
     </message>
     <message>
@@ -5891,7 +5891,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">&amp;E-mail</translation>
     </message>
     <message>
-        <source>Enter your valid e-mail address.</source>
+        <source>Enter your e-mail address. Please use a valid address here.</source>
         <translation>Introduceți adresa dvs de e-mail validă.</translation>
     </message>
     <message>
@@ -5923,7 +5923,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Nu am putut efectua strângerea de mâini necesară conexiunii.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Vă rugăm completați formularul de înregistrare pentru ca noi să știm că folosiți VirtualBox și, opțional, să vă ținem la curent cu noutățile și actualizările VirtualBox. &lt;/p&gt;&lt;p&gt;Introduceți numele dvs complet folosind caractere latine și adresa dvs de e-mail în câmpurile de mai jos. Notați faptul că Sun Microsystems va folosi aceste informații numai pentru a obține statistici de utilizare a produsului și pentru a vă trimite newsletter. În particular, Sun Microsystems nu va retransmite niciodată datele dvs către terți. Informații detaliate despre cum folosim datele dvs personale pot fi găsite în secțiunea &lt;b&gt;Politică de intimiate&lt;/b&gt; din Manualul VirtualBox sau pe pagina &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; de pe site-ul web VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5947,11 +5947,11 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Alegeți Țara/Zona</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>I &amp;have a Sun Online account already:</source>
+        <source>I &amp;already have a Sun Online account:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5963,7 +5963,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>&amp;Parolă:</translation>
     </message>
     <message>
-        <source>I &amp;would like to register creating a new Sun Online account:</source>
+        <source>I &amp;would like to create a new Sun Online account:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6230,7 +6230,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Pornește mașina virtuală selectată</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;h3&gt;Bun venit în VirtualBox!&lt;/h3&gt;&lt;p&gt;Partea din stânga a ferestrei arată lista tuturor mașinilor virtuale din computerul dvs. Lista este goală acum deoarece nu a fost creată nici o mașină virtuală până acum.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pentru a crea o mașină virtuală nouă apăsați butonul &lt;b&gt;Nouă&lt;/b&gt; în bara de unelte principală localizată în partea de sus a ferestrei.&lt;/p&gt;&lt;p&gt;Puteți apăsa tasta &lt;b&gt;%1&lt;/b&gt; pentru a obține ajutor instantaneu, sau puteți vizita &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pentru ultimele știri și informații.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6298,7 +6298,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">Caută pe server actualizări VirtualBox</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Bun venit în VirtualBox!&lt;/h3&gt;&lt;p&gt;Partea din stânga a ferestrei arată lista tuturor mașinilor virtuale din computerul dvs. Lista este goală acum deoarece nu a fost creată nici o mașină virtuală până acum.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pentru a crea o mașină virtuală nouă apăsați butonul &lt;b&gt;Nouă&lt;/b&gt; în bara de unelte principală localizată în partea de sus a ferestrei.&lt;/p&gt;&lt;p&gt;Puteți apăsa tasta &lt;b&gt;%1&lt;/b&gt; pentru a obține ajutor instantaneu, sau puteți vizita &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pentru ultimele știri și informații.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6331,7 +6331,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Export an appliance out of VM&apos;s from VirtualBox</source>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6342,7 +6342,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
         <translation>&lt;i&gt;Selectați o categorie de setări din lista din stânga și mergeți cu mouseul peste un item din listă pentru a obține informații suplimentare&lt;/i&gt;.</translation>
     </message>
     <message>
@@ -6715,7 +6715,7 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>Elimină instantaneul curent și întoarce mașina în starea dinaintea instantaneului</translation>
     </message>
     <message>
-        <source>Show details of the selected snapshot</source>
+        <source>Show the details of the selected snapshot</source>
         <translation>Arată detalii despre instantaneul selectat</translation>
     </message>
     <message>
@@ -6784,7 +6784,7 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>Î&amp;nlocuiește...</translation>
     </message>
     <message>
-        <source>Replaces the current text with the content of a given file.</source>
+        <source>Replaces the current text with the content of a file.</source>
         <translation>Înlocuiește textul curent cu un fișier dat.</translation>
     </message>
     <message>
@@ -7035,7 +7035,7 @@ value.&lt;/qt&gt;</source>
 <context>
     <name>VBoxUSBMenu</name>
     <message>
-        <source>&lt;no available devices&gt;</source>
+        <source>&lt;no devices available&gt;</source>
         <comment>USB devices</comment>
         <translation>&lt;lipsă dispozitive&gt;</translation>
     </message>
@@ -7214,7 +7214,7 @@ value.&lt;/qt&gt;</source>
         <translation>Asistent prima rulare</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ați pornit pentru prima dată o mașină virtuală proaspăt creată. Acest asistent vă va ajuta să treceți prin pașii necesari instalării unui sistem de operare dorit în această mașină virtuală.&lt;/p&gt;&lt;p&gt;Folosiți butoanele &lt;b&gt;Înainte&lt;/b&gt; și &lt;b&gt;Înapoi&lt;/b&gt; pentru a parcurge paginile acestui asistent. Puteți de asemenea apăsa butonul &lt;b&gt;Renunță&lt;/b&gt; dacă doriți întreruperea execuției acestui asistent.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7222,7 +7222,7 @@ value.&lt;/qt&gt;</source>
         <translation>Bine ați venit la asistentul Prima rulare!</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Selectați tipul de media pe care doriți să îl folosiți pentru instalare.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7306,11 +7306,11 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tip:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Sursă:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ați pornit o mașină virtuală nouă pentru prima oară. Acest asistent vă va ajuta să efectuați pașii necesari bootării unui sistem de operare ales de dvs pe mașina virtuală.&lt;/p&gt;&lt;p&gt;Notați faptul că nu veți putea instala acum un sistem de operare musafir chiar acum, pentru că nu ați conectat nici un disc dur la ea. Dacă nu asta doriți, puteți revoca execuția acestui asistent, apoi selectați &lt;b&gt;Setări&lt;/b&gt; din meniul &lt;b&gt;Mașină&lt;/b&gt; al ferestrei principale VirtualBox pentru a accesa dialogul de setări al acestei mașini și schimba configurația discului dur.&lt;/p&gt;&lt;p&gt;Folosiți butonul &lt;b&gt;Înainte&lt;/b&gt; pentru a merge la pagina următoare și butonul &lt;b&gt;Înapoi&lt;/b&gt; pentru a reveni la pagina anterioară. Puteți apăsa oricând butonul &lt;b&gt;Renunță&lt;/b&gt; pentru a opri execuția acestui asistent.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Selectați tipul mediului pe care doriți să-l folosiți pentru a boota un sistem de operare.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8031,7 +8031,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsAudio</name>
     <message>
-        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>Când este bifat, placa de sunet PCI virtuală este conectată la mașina virtuală care folosește driverul specificat pentru a comunica cu placa de sunet a gazdei.</translation>
     </message>
     <message>
@@ -8117,7 +8117,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsDisplay</name>
     <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>ați asociat mașinii virtuale mai puțin de &lt;b&gt;%1&lt;/b&gt; memorie video, care este minimul necesar pentru a comuta în modul pe tot ecranul sau transparent.</translation>
     </message>
     <message>
@@ -8145,7 +8145,7 @@ p, li { white-space: pre-wrap; }
         <translation>Funcții avansate:</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation>Când este bifat, mașina virtuală va avea acces la capacitățile grafice 3D ale mașinii gazdă.</translation>
     </message>
     <message>
@@ -8212,7 +8212,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">VBoxVMSettingsDlg</translation>
     </message>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;Selectați o categorie de setări din listă și mergeți cu mouseul peste un item din listă pentru a obține informații suplimentare&lt;/i&gt;.</translation>
     </message>
     <message>
@@ -8723,7 +8723,7 @@ toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC
         <translation type="obsolete">Afișează fișierul imagine de montat la unitatea de dischetă virtuală și permite selectarea rapidă a unei imagini diferite.</translation>
     </message>
     <message>
-        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation type="obsolete">Când este selectat, placa de sunet PCI virtuală este conectată la mașina virtuală care folosește driverul specificat pentru a comunica cu placa de sunet a gazdei.</translation>
     </message>
     <message>
@@ -9543,11 +9543,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">ați asociat mașinii virtuale mai mult de &lt;b&gt;50%&lt;/b&gt; din memoria computerului dvs (&lt;b&gt;%1&lt;/b&gt;). Memoria rămasă pentru sistemul de operare gazdă ar putea fi insuficientă. Continuați pe propriul dvs. risc.</translation>
     </message>
     <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation type="obsolete">ați asociat mașinii virtuale mai puțin de &lt;b&gt;%1&lt;/b&gt; memorie video, care este minimul necesar pentru a comuta în modul pe tot ecranul sau transparent.</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation type="obsolete">Când este bifat, mașina virtuală va avea acces la capacitățile grafice 3D ale mașinii gazdă.</translation>
     </message>
     <message>

@@ -3021,7 +3021,7 @@
       <translation>អ៊ីមែល</translation>
     </message>
     <message>
-      <source>Enter your valid e-mail address.</source>
+      <source>Enter your e-mail address. Please use a valid address here.</source>
       <translation>បញ្ចូល​អាសយដ្ឋាន​អ៊ីមែល​ដែល​ត្រឹមត្រូវ​របស់អ្នក ។</translation>
     </message>
     <message>
@@ -3037,7 +3037,7 @@
       <translation>មិនអាច​អនុវត្ត​ការ​តភ្ជាប់​ចាប់ដៃ​បានទេ ។</translation>
     </message>
     <message>
-      <source>&lt;p>Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p>&lt;p>Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b>Privacy Policy&lt;/b> section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy>Privacy Policy&lt;/a> page of the VirtualBox web-site.&lt;/p></source>
+      <source>&lt;p>Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p>&lt;p>Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b>Privacy Policy&lt;/b> section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy>Privacy Policy&lt;/a> page of the VirtualBox web-site.&lt;/p></source>
       <translation>&lt;p>សូមបំពេញ​សំណុំ​បែបបទ​ចុះឈ្មោះនេះ ដើម្បីអនុញ្ញាត​ឲ្យ​យើង​ដឹង​ថា​ អ្នកប្រើ VirtualBox និង​ជា​ជម្រើស​ត្រូវ​ជូនដំណឹង​អ្នក​អំពី​ព័ត៌មាន និង​ភាព​ទាន់សម័យ​របស់ VirtualBox ។&lt;/p>&lt;p>បញ្ចូល​ឈ្មោះ​ពេញលេញ​របស់​អ្នកដោយ​ប្រើ​តួអក្សរ​ឡាតាំង ហើយអាសយដ្ឋាន​អ៊ីមែល​របស់អ្នកក្នុង​វាល​ខាង​ក្រោម ។ សូម​ចំណាំ​ថា Sun Microsystems នឹង​ប្រើ​ព័ត៌មាននេះដើម្បី​ប្រមូល​តែ​​ស្ថិតិ​ប្រើ​ផលិតផល ហើយ​ផ្ញើ​ព្រឹត្តិបត្រ​ VirtualBox ឲ្យ​អ្នក ។ ជា​ទូទៅ Sun Microsystems នឹង​មិន​ចម្លង​ទិន្នន័យ​របស់​អ្នក​ទៅ​ភាគីទីបី​បានទេ ។ ព័ត៌មាន​លម្អិត​អំពី​​វិធី​ដែល​យើង​ប្រើ​ទិន្នន័យ​ផ្ទាល់ខ្លួន​របស់​អ្នក អាច​រក​បាននៅ​ក្នុង​ផ្នែក &lt;b>គោលនយោបាយ​ឯកជន&lt;/b> របស់​សៀវភៅ​ដៃ VirtualBox ឬ​នៅ​លើ​ទំព័រ &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy>គោលនយោបាយ​ឯកជន&lt;/a> របស់​តំបន់បណ្ដាញ VirtualBox ។&lt;/p></translation>
     </message>
     <message>
@@ -3196,7 +3196,7 @@
       <translation>ផ្អាក​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីននិម្មិត</translation>
     </message>
     <message>
-      <source>&lt;h3>Welcome to VirtualBox!&lt;/h3>&lt;p>The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven't created any virtual machines yet.&lt;img src=:/welcome.png align=right/>&lt;/p>&lt;p>In order to create a new virtual machine, press the &lt;b>New&lt;/b> button in the main tool bar located at the top of the window.&lt;/p>&lt;p>You can press the &lt;b>F1&lt;/b> key to get instant help, or visit &lt;a href=http://www.virtualbox.org>www.virtualbox.org&lt;/a> for the latest information and news.&lt;/p></source>
+      <source>&lt;h3>Welcome to VirtualBox!&lt;/h3>&lt;p>The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven't created any virtual machines yet.&lt;img src=:/welcome.png align=right/>&lt;/p>&lt;p>In order to create a new virtual machine, press the &lt;b>New&lt;/b> button in the main tool bar located at the top of the window.&lt;/p>&lt;p>You can press the &lt;b>F1&lt;/b> key to get instant help, or visit &lt;a href=http://www.virtualbox.org>www.virtualbox.org&lt;/a> for the latest information and news.&lt;/p></source>
       <translation>&lt;h3>សូម​ស្វាគមន៍​មក​កាន់​ VirtualBox!&lt;/h3>&lt;p>ផ្នែក​ដែល​នៅ​សល់​របស់​បង្អួច​នេះ​​មានបំណង​បង្ហាញ​បញ្ជី​ម៉ាស៊ីន​និម្មិត​នៅ​លើ​កុំព្យូទ័រ​របស់​អ្នក ។ បញ្ជី​ទទេ​ឥឡូវ​ ពីព្រោះ​អ្នក​មិន​បានបង្កើត​ម៉ាស៊ីន​និម្មិត​ណាមួយ​នៅ​ឡើយ​ទេ ។&lt;img src=:/welcome.png align=right/>&lt;/p>&lt;p>ដើម្បី​បង្កើត​ម៉ាស៊ីន​និម្មិត​ថ្មី ចុច​ប៊ុតុង &lt;b>ថ្មី&lt;/b> នៅ​ក្នុង​របារ​ឧបករណ៍​មេ​ ដែល​មាន​ទីតាំង​នៅ​ផ្នែក​ខាង​លើ​របស់​បង្អួច ។&lt;/p>&lt;p>អ្នក​អាច​ចុច​គ្រាប់ចុច &lt;b>F1&lt;/b> ដើម្បី​រកជំនួយ ឬ​ទស្សនាតំប់​បណ្ដាញ &lt;a href=http://www.virtualbox.org>www.virtualbox.org&lt;/a> សម្រាប់​រក​ព័ត៌មាន​ដែល​ថ្មីៗ​បំផុត ។&lt;/p></translation>
     </message>
     <message>
@@ -3216,7 +3216,7 @@
   <context>
     <name>VBoxSettingsDialog</name>
     <message>
-      <source>&lt;i>Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i>.</source>
+      <source>&lt;i>Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i>.</source>
       <translation>&lt;i>ជ្រើស​ប្រភេទ​ការ​កំណត់​ពី​បញ្ជីនៅ​ខាង​ផ្នែកខាង​ឆ្វេង​ ហើយ​ផ្លាស់ទី​កណ្ដុរ​លើ​ធាតុ​កំណត់​ដើម្បី​ទទួល​យក​ព័ត៌មានបន្ថែម&lt;/i> ។</translation>
     </message>
     <message>
@@ -3358,7 +3358,7 @@
       <translation>បោះបង់​រូបថត​បច្ចុប្បន្ន​ និង​ត្រឡប់​ម៉ាស៊ីន​ទៅ​ស្ថានភាព​ដែល​វា​មុន​នឹង​ថត​រូប</translation>
     </message>
     <message>
-      <source>Show details of the selected snapshot</source>
+      <source>Show the details of the selected snapshot</source>
       <translation>បង្ហាញ​សេចក្ដី​លម្អិត​របស់​រូបថត​ដែល​បានជ្រើស</translation>
     </message>
   </context>
@@ -3415,7 +3415,7 @@
   <context>
     <name>VBoxUSBMenu</name>
     <message>
-      <source>&lt;no available devices></source>
+      <source>&lt;no devices available></source>
       <comment>USB devices</comment>
       <translation>&lt;មិនមាន​ឧបករណ៍​ទេ></translation>
     </message>
@@ -3541,7 +3541,7 @@
       <translation>អ្នក​ជំនួយកា​ររត់​ដំបូង</translation>
     </message>
     <message>
-      <source>&lt;p>You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p>&lt;p>Use the &lt;b>Next&lt;/b> button to go to the next page of the wizard and the &lt;b>Back&lt;/b> button to return to the previous page. You can also press &lt;b>Cancel&lt;/b> if you want to cancel execution of this wizard.&lt;/p></source>
+      <source>&lt;p>You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p>&lt;p>Use the &lt;b>Next&lt;/b> button to go to the next page of the wizard and the &lt;b>Back&lt;/b> button to return to the previous page. You can also press &lt;b>Cancel&lt;/b> if you want to cancel the execution of this wizard.&lt;/p></source>
       <translation>&lt;p>អ្នក​បាន​ចាប់ផ្ដើម​ម៉ាស៊ីន​និម្មិត​ដែលបាន​បង្កើត​ថ្មីៗ​ពេល​ដំបូង​បាន​ ។ អ្នក​ជំនួយការ​នេះ​នឹង​ជួយ​អ្នក​ឲ្យ​អនុវត្ត​ជំហាន​ដែល​ចាំបាច់​សម្រាប់ដំឡើង​​ប្រព័ន្ធ​ប្រតិបត្តិការ​នៃ​ជម្រើស​របស់អ្នក​ក្នុង​​ម៉ាស៊ីន​និម្មិត​នេះ ។&lt;/p>&lt;p>ប្រើ​ប៊ូតុង &lt;b>បន្ទាប់&lt;/b> ដើម្បី​ទៅ​កាន់​ទំព័រ​បន្ទាប់​របស់​អ្នក​ជំនួយការ ហើយ​ប៊ូតុង​ &lt;b>ថយក្រោយ&lt;/b> ដើម្បីត្រឡប់​ទៅ​ទំព័រ​មុន ។ អ្នកក៏​អាច​ចុច &lt;b>បោះបង់&lt;/b> ប្រសិន​បើ​អ្នក​ចង់​បោះបង់​ប្រតិបត្តិការ​របស់​អ្នក​ជំនួយកា​រនេះ ។&lt;/p></translation>
     </message>
     <message>
@@ -3549,7 +3549,7 @@
       <translation>សូម​ស្វាគមន៍​មកកាន់​អ្នក​ជំនួយកា​រដំបូង !</translation>
     </message>
     <message>
-      <source>&lt;p>Select the type of the media you would like to use for installation purposes below.&lt;/p></source>
+      <source>&lt;p>Select the type of media you would like to use for installation.&lt;/p></source>
       <translation>&lt;p>ជ្រើស​ប្រភេទ​មេឌៀ​ដែល​អ្នក​ចង់​ប្រើ​សម្រាប់​ដំឡើងខាង​ក្រោម ។&lt;/p></translation>
     </message>
     <message>
@@ -3605,11 +3605,11 @@
       <translation>ដ្រាយ​ម៉ាស៊ីន %1</translation>
     </message>
     <message>
-      <source>&lt;p>You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p>&lt;p>Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b>Settings&lt;/b> from the &lt;b>Machine&lt;/b> menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p>&lt;p>Use the &lt;b>Next&lt;/b> button to go to the next page of the wizard and the &lt;b>Back&lt;/b> button to return to the previous page. You can also press &lt;b>Cancel&lt;/b> if you want to cancel execution of this wizard.&lt;/p></source>
+      <source>&lt;p>You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p>&lt;p>Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b>Settings&lt;/b> from the &lt;b>Machine&lt;/b> menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p>&lt;p>Use the &lt;b>Next&lt;/b> button to go to the next page of the wizard and the &lt;b>Back&lt;/b> button to return to the previous page. You can also press &lt;b>Cancel&lt;/b> if you want to cancel the execution of this wizard.&lt;/p></source>
       <translation>&lt;p>អ្នក​បាន​ចាប់ផ្ដើម​ម៉ាស៊ីន​និម្មិត​ដែល​ទើប​បានបង្កើត​ថ្មី​ជា​លើក​ដំបូង ។ អ្នក​ជំនួយ​ការ​នេះ​នឹង​ជួយ​អ្នក​ក្នុងការ​អនុវត្ត​ជំហាន​ដែល​ចាំបាច់​សម្រាប់​ចាប់ផ្ដើម​ប្រព័ន្ធ​ប្រតិបត្តិការ​ជា​ជម្រើស​របស់​អ្នក​នៅ​លើ​ម៉ាស៊ីន​និម្មិត ។&lt;/p>&lt;p>ចំណាំ​ថា អ្នក​នឹង​មិន​អាច​ដំឡើង​ប្រព័ន្ធ​ប្រតិបត្តិការ​ក្នុង​ម៉ាស៊ីន​និម្មិត​ឥឡូវ​បានទេ ពីព្រោះ​អ្នក​មិន​បាន​ភ្ជាប់​ថាសរឹង​ ។ ប្រសិន​បើ​នេះ​មិនមែន​ជា​អ្វី​ដែល​អ្នក​ចង់​បានទេ អ្នក​អាច​បោះបង់​ប្រតិបត្តិការ​នៃ​អ្នក​ជំនួយ​ការ​នេះ​បាន ដោយ​ជ្រើស &lt;b>ការ​កំណត់&lt;/b> ពី​ម៉ឺនុយ​ &lt;b>ម៉ាស៊ីន&lt;/b> របស់​បង្អួច​ VirtualBox មេ ដើម្បី​ចូលដំណើរការ​ប្រអប់​កំណត់​របស់​ម៉ាស៊ីន​នេះ ហើយ​ផ្លាស់ប្ដូរ​កា​រកំណត់​រចនាសម្ព័ន្ធ​ថាសរឹង ។&lt;/p>&lt;p>ប្រើ​ប៊ូតុង &lt;b>បន្ទាប់&lt;/b> ដើម្បី​ទៅ​ទំព័រ​បន្ទាប់​របស់​អ្នក​ជំនួយការ ហើយ​ប៊ូតុង &lt;b>ថយក្រោយ&lt;/b> ដើម្បីត្រឡប់​ទៅ​ទំព័រ​មុន ។ អ្នក​ក៏អា​ច​ចុច &lt;b>បោះបង់&lt;/b> ប្រសិន​បើ​អ្នក​បោះបង់​ប្រត្តិការ​អ្នក​ជំនួយការ​នេះ ។&lt;/p></translation>
     </message>
     <message>
-      <source>&lt;p>Select the type of the media you would like to use for booting an operating system.&lt;/p></source>
+      <source>&lt;p>Select the type of media you would like to use for booting an operating system.&lt;/p></source>
       <translation>&lt;p>ជ្រើស​ប្រភេទ​មេឌៀ​ដែល​អ្នកចង់​ប្រើ​ដើម្បី​ចាប់ផ្ដើម​ប្រព័ន្ធ​ប្រតិបត្តិការ​ ។&lt;/p></translation>
     </message>
     <message>
@@ -3860,7 +3860,7 @@ p, li { white-space: pre-wrap; }
   <context>
     <name>VBoxVMSettingsAudio</name>
     <message>
-      <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
+      <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
       <translation>នៅពេល​បាន​គូស​ធីក កាត​អូឌីយ៉ូ PCI និម្មិត​នៅ​ក្នុង​ម៉ាស៊ីន​និម្មិត ​ដែល​ប្រើ​កម្មវិធី​បញ្ជា​ដែល​បានបញ្ជាក់​ទាក់ទង​ទៅ​កាត​អូឌីយ៉ូ​របស់​ម៉ាស៊ីន ។</translation>
     </message>
     <message>
@@ -4224,11 +4224,11 @@ p, li { white-space: pre-wrap; }
       <translation>អ្នក​បានផ្ដល់​សិត​កុំព្យូទ័រ​ច្រើនជាង &lt;b>50%&lt;/b> នៃ​សតិ​កុំព្យូទ័រ​របស់​អ្នក (&lt;b>%1&lt;/b>) ដល់​ម៉ាស៊ីន​និម្មិត ។ គ្មាន​សតិ​គ្រប់គ្រាន់​នៅ​សល់​សម្រាប់​ប្រព័ន្ធ​ប្រតិបត្តិកា​រម៉ាស៊ីន​របស់​អ្នក​ទេ ។ បន្ត​​ទាំង​គ្រោះថ្នាក់ឬ ?</translation>
     </message>
     <message>
-      <source>you have assigned less than &lt;b>%1&lt;/b> for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+      <source>you have assigned less than &lt;b>%1&lt;/b> of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
       <translation>អ្នក​បាន​ផ្ដល់​សតិ​វីដេអូ​តិចជាង &lt;b>%1&lt;/b> សម្រាប់​សតិ​វីដេអូ​ដែល​ជា​ចំនួន​អប្បបរមា​ដែល​បានទាមទារ​ឲ្យ​ប្ដូរ​ម៉ាស៊ីន​និម្មិត​ទៅ​​របៀប​ពេញអេក្រង់ ឬ​គ្មាន​ថ្នេរ ។</translation>
     </message>
     <message>
-      <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+      <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
       <translation>នៅពេល​បាន​គូស​ធីគ ម៉ាស៊ីន​និម្មិត​នឹង​ចូលដំណើរការ​សមត្ថភាព​ក្រាហ្វិក​ត្រីមាត្រ​ដែល​មាន​នៅ​លើ​ម៉ាស៊ីន ។</translation>
     </message>
     <message>

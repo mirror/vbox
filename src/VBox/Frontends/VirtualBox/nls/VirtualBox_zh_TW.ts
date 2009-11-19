@@ -3623,7 +3623,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">[名稱]</translation>
     </message>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;從左側的清單中選取一個設定分類，然後將滑鼠移到設定項目上方以獲得更多資訊&lt;i&gt;。</translation>
     </message>
     <message>
@@ -5943,7 +5943,7 @@ with UUID %2!</source>
         <translation type="obsolete">電子郵件(&amp;E)</translation>
     </message>
     <message>
-        <source>Enter your valid e-mail address.</source>
+        <source>Enter your e-mail address. Please use a valid address here.</source>
         <translation>輸入您的有效電子郵件地址。</translation>
     </message>
     <message>
@@ -5983,11 +5983,11 @@ with UUID %2!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>I &amp;have a Sun Online account already:</source>
+        <source>I &amp;already have a Sun Online account:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5999,7 +5999,7 @@ with UUID %2!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>I &amp;would like to register creating a new Sun Online account:</source>
+        <source>I &amp;would like to create a new Sun Online account:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6298,7 +6298,7 @@ with UUID %2!</source>
         <translation>切換到所選虛擬機器的視窗</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;h3&gt;歡迎使用 VirtualBox！&lt;/h3&gt;&lt;p&gt;此視窗的剩餘部份，預定要顯示您電腦上所有虛擬機器的清單。清單目前為空，因為您尚未建立任何虛擬機器。&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;為了要建立新的虛擬機器，請按下位於視窗頂端主工具列中的 &lt;b&gt;新增&lt;/b&gt; 按鈕。&lt;/p&gt;&lt;p&gt;您可以按下 &lt;b&gt;%1&lt;/b&gt; 鍵以得到立即的說明，或是造訪 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 以獲得最新的資訊與消息。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6350,7 +6350,7 @@ with UUID %2!</source>
         <translation type="unfinished">暫停虛擬機器的執行</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6383,7 +6383,7 @@ with UUID %2!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Export an appliance out of VM&apos;s from VirtualBox</source>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6394,7 +6394,7 @@ with UUID %2!</source>
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6747,7 +6747,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="unfinished">捨棄目前快照並且將機器還原到拍下快照前所具有的狀態</translation>
     </message>
     <message>
-        <source>Show details of the selected snapshot</source>
+        <source>Show the details of the selected snapshot</source>
         <translation type="unfinished">顯示所選快照的細節</translation>
     </message>
 </context>
@@ -6812,7 +6812,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Replaces the current text with the content of a given file.</source>
+        <source>Replaces the current text with the content of a file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7126,7 +7126,7 @@ value.&lt;/qt&gt;</source>
 <context>
     <name>VBoxUSBMenu</name>
     <message>
-        <source>&lt;no available devices&gt;</source>
+        <source>&lt;no devices available&gt;</source>
         <comment>USB devices</comment>
         <translation>&lt;無可用裝置&gt;</translation>
     </message>
@@ -7260,7 +7260,7 @@ value.&lt;/qt&gt;</source>
         <translation>首次運行精靈</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;您已首次啟動剛建立的虛擬機器。這個精靈將協助您進行必要步驟，以在虛擬機器中安裝您所選的作業系統。&lt;/p&gt;&lt;p&gt;使用 &lt;b&gt;下一步&lt;/b&gt; 按鈕以跳到精靈的下一頁面，或是 &lt;b&gt;上一步&lt;/b&gt; 按鈕以回到上一頁面。如果您想要取消精靈的執行，您也可以按下 &lt;b&gt;取消&lt;/b&gt;。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7268,7 +7268,7 @@ value.&lt;/qt&gt;</source>
         <translation>歡迎使用首次運行精靈！</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;選取您為了以下安裝目的而想要使用的媒體類型。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7352,11 +7352,11 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;類型：&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;來源：&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;您已首次啟動剛建立的虛擬機器。這個精靈將協助您進行必要步驟，以在虛擬機器中啟動您所選的作業系統。&lt;/p&gt;&lt;p&gt;請注意，您將無法馬上將作業系統安裝進入這個虛擬機器，因為您還未於其上掛接任何硬碟。如果這不是您所要的，您可取消這個精靈的執行，藉助從 VirtualBox 主視窗的 &lt;b&gt;機器&lt;/b&gt; 選單中選擇 &lt;b&gt;設定值&lt;/b&gt;，以存取這個機器的設定值對話框並變更硬碟組態。&lt;/p&gt;&lt;p&gt;使用 &lt;b&gt;下一步&lt;/b&gt; 按鈕以跳到精靈的下一頁面，或是 &lt;b&gt;上一步&lt;/b&gt; 按鈕以回到上一頁面。如果您想要取消精靈的執行，您也可以按下 &lt;b&gt;取消&lt;/b&gt;。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
         <translation>&lt;p&gt;選取您想要用來讓作業系統開機的媒體類型。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7973,7 +7973,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsAudio</name>
     <message>
-        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation type="unfinished">如果勾選，虛擬音效卡就會插入虛擬機器，並使用特定的驅動程式與主端音效卡通訊。</translation>
     </message>
     <message>
@@ -8059,7 +8059,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsDisplay</name>
     <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8087,7 +8087,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8326,7 +8326,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">[名稱]</translation>
     </message>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;從左側的清單中選取一項設定值分類，然後將滑鼠移到設定項目上方以取得更多資訊&lt;i&gt;。</translation>
     </message>
     <message>
@@ -8788,7 +8788,7 @@ with all fields set to the values of the selected USB device attached to the hos
         <translation type="obsolete">顯示掛載為虛擬軟碟機的映像檔，並允許快速選取一個不同的映像檔。</translation>
     </message>
     <message>
-        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation type="obsolete">如果勾選，虛擬音效卡就會插入虛擬機器，並使用特定的驅動程式與主端音效卡通訊。</translation>
     </message>
     <message>

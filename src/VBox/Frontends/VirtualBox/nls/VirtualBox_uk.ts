@@ -4883,7 +4883,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="184"/>
-        <source>Enter your valid e-mail address.</source>
+        <source>Enter your e-mail address. Please use a valid address here.</source>
         <translation>Введіть дійсну адресу вашої електронної пошти.</translation>
     </message>
     <message>
@@ -4903,7 +4903,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxRegistrationDlg.cpp" line="0"/>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Будь ласка, заповніть реєстраційну форму, цим самим, ми будемо знати, що ви користуєтесь програмою VirtualBox і, за власним бажанням, отримаєте можливість бути в курсі новин і оновлень про VirtualBox.&lt;/p&gt;&lt;p&gt;Введіть ваше повне і&apos;мя, користуючись латинськими символами, та адресу електронної пошти в нижніх полях. Будь ласка, майте на увазі, що ця інформація буде використовуватись лише для статистичних даних кількості користувачів і розсилці новин про VirtualBox. Власне, Sun Microsystems ніколи не буде надавати ваші дані третій стороні. Більш детальна інформація про те, як ми використовуємо ваші особисті дані, можна знайти в розділі &lt;b&gt;Privacy Policy&lt;/b&gt; (Політика Конфіденційності) у документації програми або на сторінці  &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; веб-сайта VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4928,12 +4928,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="108"/>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Будь ласка, заповніть цю реєстраційну форму, щоб ми знали, що ви використуєте VirtualBox, і, за вашим бажанням, ми триматимемо вас у курсі всіх новин і оновлень щодо VirtualBox.&lt;/p&gt;&lt;p&gt;Будь ласка, використовуйте латинські символи для заповнення полів нижче. Будь ласка, майте на увазі, Sun Microsystems використовуватиме цю інформацію лише для збору статистичної інформації та розсилки новин. Власне, Sun Microsystems ніколи не надасть ваших даних третій особі. Детальна інформація про використання ваших особистих даних можна знайти в довідці VirtualBox у розділі  &lt;b&gt;Privacy Policy&lt;/b&gt; або на &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; сторінці сайта VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="125"/>
-        <source>I &amp;have a Sun Online account already:</source>
+        <source>I &amp;already have a Sun Online account:</source>
         <translation>&amp;Я вже маю зареєстрований акаунт у Sun:</translation>
     </message>
     <message>
@@ -4948,7 +4948,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="201"/>
-        <source>I &amp;would like to register creating a new Sun Online account:</source>
+        <source>I &amp;would like to create a new Sun Online account:</source>
         <translation>Я &amp;бажаю зареєструватись, створивши акаунт Sun:</translation>
     </message>
     <message>
@@ -5170,7 +5170,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="0"/>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;h3&gt;Ласкаво просимо до програми VirtualBox!&lt;/h3&gt;&lt;p&gt;Ліва частина цього вікна призначена для показу списку всіх віртуальних машин на вашому комп&apos;ютері. Цей список зараз порожній, бо ви ще не створили жодної віртуальної машини.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Щоб створити нову віртуальну машину, натисніть кнопку &lt;b&gt;Створити&lt;/b&gt; на головній панелі інструментів, який знаходиться зверху вікна.&lt;/p&gt;&lt;p&gt;Ви можете натиснути клавішу &lt;b&gt;F1&lt;/b&gt; для отримання  миттєвої допомоги, або відвідайте &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;, щоб дізнатися останню інформацію та новини.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5211,7 +5211,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1302"/>
-        <source>Export an appliance out of VM&apos;s from VirtualBox</source>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
         <translation>Експорт образа віртуальної машини з VirtualBox</translation>
     </message>
     <message>
@@ -5221,7 +5221,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1518"/>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Ласкаво просимо до VirtualBox!&lt;/h3&gt;&lt;p&gt;У лівій частині цього вікна показується список віртуальних машин на вашому комп&apos;ютері. Зараз список порожній, оскільки, поки що, ви не маєте створених віртуальних машин.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Для того, щоб створити нову віртуальну машину, натисніть &lt;b&gt;Створити&lt;/b&gt; в головному меню панелі інструментів , які знаходяться вверху вікна.&lt;/p&gt;&lt;p&gt;Ви можете натиснути &lt;b&gt;%1&lt;/b&gt;, щоб отримати миттєву довідку, або відвідайте  &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; щодо останіх новин.&lt;/p&gt;</translation>
     </message>
 </context>
@@ -5229,7 +5229,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxSettingsDialog</name>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="95"/>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
         <translation>&lt;i&gt;Виберіть категорію налаштувань зі списку зліва та пересуньте мишку до пункту налаштувань, щоб отримати детальнішу інформацію&lt;/i&gt;.</translation>
     </message>
     <message>
@@ -5408,7 +5408,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="694"/>
-        <source>Show details of the selected snapshot</source>
+        <source>Show the details of the selected snapshot</source>
         <translation>Показати деталі вибраного знімку</translation>
     </message>
 </context>
@@ -5457,7 +5457,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxLineTextEdit.cpp" line="79"/>
-        <source>Replaces the current text with the content of a given file.</source>
+        <source>Replaces the current text with the content of a file.</source>
         <translation>Заміняє поточний текст з контекстом певного файла.</translation>
     </message>
     <message>
@@ -5504,7 +5504,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxUSBMenu</name>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="4870"/>
-        <source>&lt;no available devices&gt;</source>
+        <source>&lt;no devices available&gt;</source>
         <comment>USB devices</comment>
         <translation>&lt;нема доступних пристроїв&gt;</translation>
     </message>
@@ -5658,7 +5658,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="121"/>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ви запустили новостворену віртуальну машину перший раз. Цей майстер допоможе вам виконати кроки, які необхідні для встановлення операційної системи на ваш вибір на цю віртуальну машину.&lt;/p&gt;&lt;p&gt;Натисніть кнопку &lt;b&gt;Далі&lt;/b&gt;, щоб перейти до наступної сторінки майстера або кнопку &lt;b&gt;Назад&lt;/b&gt;, щоб повернутись до попередньої сторінки. Також ви можете натиснути кнопку &lt;b&gt;Скасувати&lt;/b&gt;, якщо ви бажаєте скасувати виконання майстра.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5668,7 +5668,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="307"/>
-        <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Виберіть тип носія, який ви бажаєте використати для встановлення, нижче.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5738,12 +5738,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="146"/>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ви запустили нову віртуальну машину вперше. Цей майстер допоможе вам виконати кроки, необхідні для завантаження вами вибраної операційної системи на віртуальну машину.&lt;/p&gt;&lt;p&gt;Майте на увазі, ви не зможете встановити операційну систему на цю віртуальну машину зараз, бо ви не під&apos;єднали до неї жодного жорсткого диска. Якщо це не те, що ви бажаєте, то ви можете скасувати виконання майстера, вибрати &lt;b&gt;Налаштування&lt;/b&gt; з меню &lt;b&gt;Машина&lt;/b&gt; головного вікна VirtualBox для відкриття діалогу налаштувань машини та змінити налаштування жорсткого диска.&lt;/p&gt;&lt;p&gt;Натисніть кнопку &lt;b&gt;Далі&lt;/b&gt;, щоб перейти до наступної сторінки майстера, або кнопку &lt;b&gt;Назад&lt;/b&gt;, щоб повернутись до попередньої сторінки. Також ви можете натиснути кнопку &lt;b&gt;Скасувати&lt;/b&gt;, якщо ви бажаєте скасувати виконання майстра.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="332"/>
-        <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Виберіть тип носія, який ви бажаєте використовувати для завантаження операційної системи.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6044,7 +6044,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsAudio</name>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="33"/>
-        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>Якщо це відмічено, віртуальна аудіоплата PCI під&apos;єднана до віртуальної машини, використовуючи вказаний драйвер для роботи з головною аудіоплатою.</translation>
     </message>
     <message>
@@ -6145,7 +6145,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsDisplay</name>
     <message>
         <location filename="../src/VBoxVMSettingsDisplay.cpp" line="168"/>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>ви вказали менше ніж &lt;b&gt;%1&lt;/b&gt; відеопам&apos;яті, що менше за мінімальний об&apos;єм, потрібний для перемикання віртуальної машини у повноекранний або повноцінний режим. </translation>
     </message>
     <message>
@@ -6180,7 +6180,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsDisplay.ui" line="171"/>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation>Якщо це відмічено, віртуальна машина отримає доступ до можливостей прискорення просторової графіки, доступних на головній операційній системі.</translation>
     </message>
     <message>
@@ -6609,12 +6609,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation type="obsolete">ви вказали менше ніж &lt;b&gt;%1&lt;/b&gt; відеопам&apos;яті, менше за мінімальний об’єм, потрібний для перемикання віртуальної машини у повноекранний або повноцінний режим. </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation type="obsolete">Якщо позначити цей пункт, віртуальна машина отримає доступ до можливостей прискорення просторової графіки, доступних на вузлі.</translation>
     </message>
     <message>

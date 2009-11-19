@@ -5145,15 +5145,15 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
-        <translation>Entrez votre nom complet en utilisant les caractères latins.</translation>
+        <translation>Entrez votre nom complet en utilisant seulement les caractères latins.</translation>
     </message>
     <message>
         <source>&amp;E-mail</source>
         <translation type="obsolete">&amp;Courri&amp;el</translation>
     </message>
     <message>
-        <source>Enter your valid e-mail address.</source>
-        <translation>Entrez votre adresse courriel.</translation>
+        <source>Enter your e-mail address. Please use a valid address here.</source>
+        <translation>Entrez votre adresse courriel. Prière dEntrez votre adresse courriel.apos;utiliser une adresse valide.</translation>
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
@@ -5176,7 +5176,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>La négociation de la connexion a échoué.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Veuillez remplir, s&apos;il vous plaît, ce formulaire d&apos;enregistrement pour nous permettre de savoir que vous utilisez VirtualBox et éventuellement vous informer sur les nouveautés VirtualBox et les mises à jour.&lt;/p&gt;&lt;p&gt;Entrez votre nom complet en utilisant des caractères latins et votre adresse e-mail dans les champs ci-dessous. Notez que Sun Microsystems n&apos;utilise ces renseignements qu&apos;à des fins statistiques, et pour vous envoyer des circulaires concernants VirtualBox. Sun Microsystems ne transmettra jamais vos données à des tierces. Des renseignements détaillés sur l&apos;utilisation de vos informations personnelles peuvent être trouvées dans la section &lt;b&gt;Privacy Policy&lt;/b&gt; du Manuel VirtualBox ou sur la page &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; du site Internet VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5196,11 +5196,11 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>Choisissez votre pays/territoire</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Veuillez remplir ce formulaire d&apos;enregistrement pour nous dire que vous utilisez VirtualBox et, si vous le souhaitez, pour que nous vous gardions au courrent sur les nouveautés et les actualisations de VirtualBox.&lt;/p&gt;&lt;p&gt;Veuillez utiliser les caractères latins pour remplir les champs ci-dessous. Nous soulignons que Sun Microsystems n&apos;utilisera les informations que pour collectioner des statistiques d&apos;utilisation sur le produit et pour vous envoyer les circulaires informatifs sur VirtualBox. En particulier, Sun Microsystems ne transmettra jamais vos données à de tiers partis. Vous trouverez des informations détaillés sur l&apos;usage que nous font de vos données personnels dans le section &lt;b&gt;Politique de confidentialité&lt;/b&gt; du manuel d&apos;utilisation VirtualBox ou sur la page &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; du site toile VirtualBox.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Veuillez remplir ce formulaire d&apos;enregistrement pour nous dire que vous utilisez VirtualBox et, si vous le souhaitez, pour que nous vous gardions au courrent sur les nouveautés et les actualisations de VirtualBox.&lt;/p&gt;&lt;p&gt;Veuillez utiliser seulement les caractères latins pour remplir les champs ci-dessous. Nous soulignons que Sun Microsystems n&apos;utilisera les informations que pour collectioner des statistiques d&apos;utilisation sur le produit et pour vous envoyer les circulaires informatifs sur VirtualBox. En particulier, Sun Microsystems ne transmettra jamais vos données à de tiers partis. Vous trouverez des informations détaillés sur l&apos;usage que nous font de vos données personnels dans le section &lt;b&gt;Politique de confidentialité&lt;/b&gt; du manuel d&apos;utilisation VirtualBox ou sur la page &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; du site toile VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>I &amp;have a Sun Online account already:</source>
+        <source>I &amp;already have a Sun Online account:</source>
         <translation>J&apos;ai &amp;déjà un compte Sun Online :</translation>
     </message>
     <message>
@@ -5212,7 +5212,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>Mot de &amp;passe :</translation>
     </message>
     <message>
-        <source>I &amp;would like to register creating a new Sun Online account:</source>
+        <source>I &amp;would like to create a new Sun Online account:</source>
         <translation>J&apos;aimerais m&apos;en&amp;register et créer un nouveau compte Sun Online :</translation>
     </message>
     <message>
@@ -5395,7 +5395,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>Suspend l&apos;exécution de la machine virtuelle</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Bienvenue sur VirtualBox !&lt;/h3&gt;&lt;p&gt;La partie gauche de cette boîte de dialogue affiche la liste des machines virtuelles de votre ordinateur. Cette liste est vide car vous n&apos;avez pas encore créé des machines virtuelles.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pour créer une nouvelle machine virtuelle, activer le bouton &lt;b&gt;Nouveau&lt;/b&gt; situé dans le haut de cette boîte de dialogue.&lt;/p&gt;&lt;p&gt;Vous pouvez actionner la touche &lt;b&gt;%1&lt;/b&gt; afin d&apos;avoir une aide immédiate ou bien visiter &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pour obtenir les informations les plus récentes.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5424,8 +5424,8 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>&amp;Exporter application virtuelle...</translation>
     </message>
     <message>
-        <source>Export an appliance out of VM&apos;s from VirtualBox</source>
-        <translation>Exporte des machines virtuelles VirtualBox comme application virtuelle</translation>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation>Exporte une ou plusieurs machines virtuelles VirtualBox comme application virtuelle</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
@@ -5439,7 +5439,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
         <translation>&lt;i&gt;Choisir une catégorie de configuration sur la liste à gauche et déplacer la souris sur  un paramètre afin d&apos;avoir plus d&apos;informations&lt;i&gt;.</translation>
     </message>
     <message>
@@ -5585,7 +5585,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation type="obsolete">Rejeter l&apos;instantané actuel et remettre l&apos;état de la machine sur celui qu&apos;elle avait avant la saisie de l&apos;instantané</translation>
     </message>
     <message>
-        <source>Show details of the selected snapshot</source>
+        <source>Show the details of the selected snapshot</source>
         <translation>Voir les détails de l&apos;instantané sélectionné</translation>
     </message>
     <message>
@@ -5649,7 +5649,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>&amp;Remplacer...</translation>
     </message>
     <message>
-        <source>Replaces the current text with the content of a given file.</source>
+        <source>Replaces the current text with the content of a file.</source>
         <translation>Remplace le texte actuel avec le contenu d&apos;un fichier.</translation>
     </message>
     <message>
@@ -5688,7 +5688,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
 <context>
     <name>VBoxUSBMenu</name>
     <message>
-        <source>&lt;no available devices&gt;</source>
+        <source>&lt;no devices available&gt;</source>
         <comment>USB devices</comment>
         <translation>&lt;pas de périphériques disponibles&gt;</translation>
     </message>
@@ -5830,7 +5830,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>Assistant du premier lancement</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Vous avez lancé une nouvelle machine virtuelle pour la première fois. Cet assistant vous aidera à effectuer toutes les opérations nécessaires pour l&apos;installation d&apos;un nouveau système d&apos;exploitation sur cette machine virtuelle.&lt;/p&gt;&lt;p&gt;Utilisez le bouton &lt;b&gt;Suivant&lt;/b&gt; pour choisir la page suivante et le bouton &lt;b&gt;Précédent&lt;/b&gt; pour revenir sur la page précédente. Vous pouvez également utiliser le bouton &lt;b&gt;Annuler&lt;/b&gt; pour interrompre l&apos;exécution de l&apos;assistant.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5838,7 +5838,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>Bienvenue sur l&apos;assistant du premier lancement:</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Choisissez le type du média que vous voulez utiliser pour l&apos;installation.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5894,11 +5894,11 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation type="obsolete">Lecteur de l&apos;hôte %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Vous avez lancer une machine virtuelle nouvellement crée pour la première fois. Cet assistant vous aidera à configurer celle ci  afin de pouvoir amorcer un système d&apos;exploitation de votre choix dans cette machine virtuelle.&lt;/p&gt;&lt;p&gt;Notez que vous ne pourrez pas installer un système d&apos;exploitation car vous n&apos;avez pas encore affecté un disque à cette machine. Ci ce n&apos;est pas ce que vous désirez, vous pouvez interrompre cet assistant. Choisissez &lt;b&gt;Préférences&lt;/b&gt; à partir du menu &lt;b&gt;Machine&lt;/b&gt; de la boîte de dialogue principale pour accéder à la boîte de dialogue du paramétrage et modifier la configuration des disques durs.&lt;/p&gt;&lt;p&gt;Utilisez la touche &lt;b&gt;Suivant&gt;&lt;/b&gt; ou &lt;b&gt;Précédent&lt;/b&gt; pour accéder aux différentes pages de cet assistant. Vous pouvez également activer la touche &lt;b&gt;Annuler&lt;/b&gt; pour terminer cet assistant.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Choisissez le type de média que vous désirez utiliser pour lancer un système d´exploitation.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6170,7 +6170,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsAudio</name>
     <message>
-        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>Si cette case est cochée, la carte son PCI virtuelle insérée dans la machine virtuelle sera utilisée pour la communication avec la carte audio de l&apos;ordinateur.</translation>
     </message>
     <message>
@@ -6256,7 +6256,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsDisplay</name>
     <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>Vous avez affecté à la machine moins que &lt;b&gt;%1&lt;/b&gt; de mémoire vidéo, la quantité minimale nécéssaire pour faire passer la machine virtuelle en mode plein écran ou intégré.</translation>
     </message>
     <message>
@@ -6284,7 +6284,7 @@ p, li { white-space: pre-wrap; }
         <translation>Paramètres étendus :</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation>Si cette case est cochée, la machine virtuelle aura accès aux capaciités graphiques 3D de l&apos;hôte.</translation>
     </message>
     <message>
@@ -6328,7 +6328,7 @@ p, li { white-space: pre-wrap; }
         <translation>Définie le timeout (en millisecondes) pour l&apos;authentification de l&apos;invité.</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will get access to the Video Acceleration capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
         <translation>Si cette case est cochée, la machine virtuelle aura accès aux capacités d&apos;accélération graphiques disponible sur le système hôte.</translation>
     </message>
     <message>
@@ -6336,7 +6336,7 @@ p, li { white-space: pre-wrap; }
         <translation>Activer l&apos;accélération &amp;2D</translation>
     </message>
     <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required for HD Video to be played efficiently.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
         <translation>Vous avez affecté à la machine moins que &lt;b&gt;%1&lt;/b&gt; de mémoire vidéo, la quantité minimale nécéssaire pour reproduire efficacement la vidéo en haute définition.</translation>
     </message>
     <message>
@@ -6665,11 +6665,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">vous avez affecté plus que &lt;b&gt;50%&lt;/b&gt; de la mémoire vive de votre ordinateur (&lt;b&gt;%1&lt;/b&gt;) à la machine virtuelle. Il pourrait ne pas en rester assez pour votre système d&apos;exploitation hôte. Nous vous conseillons de changer votre sélection.</translation>
     </message>
     <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation type="obsolete">Vous avez affecté moins que &lt;b&gt;%1&lt;/b&gt; de mémoire vidéo, la quantité minimale nécéssaire pour faire passer la machine virtuelle en mode plein écran ou affichage intégré dans le bureau.</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation type="obsolete">Cochez cette case pour donner l&apos;accès aux capabilités graphiques 3D de l&apos;hôte à la machine virtuelle.</translation>
     </message>
     <message>

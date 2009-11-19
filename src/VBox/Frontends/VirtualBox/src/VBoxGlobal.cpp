@@ -4938,7 +4938,7 @@ void VBoxUSBMenu::processAboutToShow()
     bool isUSBEmpty = host.GetUSBDevices().size() == 0;
     if (isUSBEmpty)
     {
-        QAction *action = addAction (tr ("<no available devices>", "USB devices"));
+        QAction *action = addAction (tr ("<no devices available>", "USB devices"));
         action->setEnabled (false);
         action->setToolTip (tr ("No supported devices connected to the host PC",
                                 "USB device tooltip"));

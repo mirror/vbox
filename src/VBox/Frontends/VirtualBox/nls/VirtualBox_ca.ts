@@ -3237,7 +3237,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">[nom]</translation>
     </message>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;Seleccioneu una categoria de paràmetres en la llista de l&apos;esquerra i deplaceu el ratolí sobre un element de la dreta per obtenir més informació&lt;i&gt;.</translation>
     </message>
     <message>
@@ -5599,7 +5599,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation>Introduïu el nom complet fent servir caràcters llatins.</translation>
     </message>
     <message>
-        <source>Enter your valid e-mail address.</source>
+        <source>Enter your e-mail address. Please use a valid address here.</source>
         <translation>Introduïu una adreça de correu vàlida.</translation>
     </message>
     <message>
@@ -5627,7 +5627,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation>No s&apos;ha pogut dur a terme la conformitat de connexió.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Ompliu aquest formulari de registre per deixar-nos conèixer que feu servir el VirtualBox i, opcionalment, per mantenir-vos informat sobre novetats i actualitzacions.&lt;/p&gt;&lt;p&gt;Introduïu el vostre nom complet fent servir caràcters llatins i la vostra adreça de correu electrònica als camps següents. Tingueu en compte que Sun Microsystems farà servir aquesta informació només per estadístiques del producte i per enviar-vos notícies sobre el VirtualBox. En particular, Sun Microsystems no deixarà les vostres dades a terceres parts. Podeu trobar informació detallada sobre l&apos;ús de les dades personals a la secció &lt;b&gt;Política de Privacitat&lt;/b&gt; (en anglès) del manual de VirtualBox o &lt; l&apos;adreça web &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Política de Privacitat&lt;/a&gt; (en anglès).&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5647,11 +5647,11 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation>Seleccioneu un país/territori</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ompliu aquest formulari de registre per permetre&apos;ns conèixer que feu servir el VirtualBox i, opcionalment, mantenir-vos informat sobre novetats i actualitzacions del VirtualBox.&lt;/p&gt;&lt;p&gt;Feu servir caràcters llatins per omplir els camps següents. Tingueu en compte que Sun Microsystems farà servir aquesta informació només per a usos estadístics i per enviar-vos notícies sobre el VirtualBox. Sun Microsystems mai compartirà les vostres dades amb terceres parts. Més informació detallada sobre l&apos;ús de les vostres dades personals poden trobar-se a la secció de &lt;b&gt;Política de privacitat&lt;/b&gt; al manual de VirtualBox o al&lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; lloc web del VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>I &amp;have a Sun Online account already:</source>
+        <source>I &amp;already have a Sun Online account:</source>
         <translation>Ja tinc un compte a &amp;Sun Online:</translation>
     </message>
     <message>
@@ -5663,7 +5663,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation>&amp;Contrasenya:</translation>
     </message>
     <message>
-        <source>I &amp;would like to register creating a new Sun Online account:</source>
+        <source>I &amp;would like to create a new Sun Online account:</source>
         <translation>Vull &amp;registrar-me creant un nou compte a Sun Online:</translation>
     </message>
     <message>
@@ -5829,7 +5829,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation>&amp;Fitxer</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;h3&gt;Benvinguts a VirtualBox!&lt;/h3&gt;&lt;p&gt;A la part esquerra d&apos;aquesta finestra es mostra un llistat de totes les màquines virtuals a l&apos;ordinador. Aquest llistat és buit actualment perquè encara no heu creat cap màquina virtual.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Per crear una nova màquina virtual, premeu sobre el botó &lt;b&gt;Nova&lt;/b&gt; a la barra principal que es troba a la part de dalt d&apos;aquesta finestra.&lt;/p&gt;&lt;p&gt;Podeu prémer la tecla &lt;b&gt;%1&lt;/b&gt; per obtenir ajuda o bé visitar &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; per veure altra informació i novetats.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5982,7 +5982,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation>Suspèn l&apos;execució de la màquina virtual</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Benvinguts a VirtualBox!&lt;/h3&gt;&lt;p&gt;A la part esquerra d&apos;aquesta finestra es mostra un llistat de totes les màquines virtuals a l&apos;ordinador. Aquest llistat és buit actualment perquè encara no heu creat cap màquina virtual.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Per crear una nova màquina virtual, premeu sobre el botó &lt;b&gt;Nova&lt;/b&gt; a la barra principal que es troba a la part de dalt d&apos;aquesta finestra.&lt;/p&gt;&lt;p&gt;Podeu prémer la tecla &lt;b&gt;%1&lt;/b&gt; per obtenir ajuda o bé visitar &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; per veure altra informació i novetats.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6010,7 +6010,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation>&amp;Exporta una aplicació virtual...</translation>
     </message>
     <message>
-        <source>Export an appliance out of VM&apos;s from VirtualBox</source>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
         <translation>Exporta una aplicació virtual d&apos;una màquina virtual del VirtualBox</translation>
     </message>
     <message>
@@ -6026,7 +6026,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
         <translation>&lt;i&gt;Seleccioneu una categoria de paràmetres en la llista de l&apos;esquerra i deplaceu el ratolí sobre un element de la dreta per obtenir-ne més informació&lt;i&gt;.</translation>
     </message>
     <message>
@@ -6291,7 +6291,7 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
         <translation>Mostra els &amp;detalls</translation>
     </message>
     <message>
-        <source>Show details of the selected snapshot</source>
+        <source>Show the details of the selected snapshot</source>
         <translation>Mostra els detalls de la captura seleccionada</translation>
     </message>
     <message>
@@ -6406,7 +6406,7 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
         <translation>&amp;Reemplaça...</translation>
     </message>
     <message>
-        <source>Replaces the current text with the content of a given file.</source>
+        <source>Replaces the current text with the content of a file.</source>
         <translation>Reemplaça el text actual amb el contingut del fitxer proveït.</translation>
     </message>
     <message>
@@ -6595,7 +6595,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
 <context>
     <name>VBoxUSBMenu</name>
     <message>
-        <source>&lt;no available devices&gt;</source>
+        <source>&lt;no devices available&gt;</source>
         <comment>USB devices</comment>
         <translation>&lt;no hi ha dispositius disponibles&gt;</translation>
     </message>
@@ -6793,11 +6793,11 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
         <translation>&lt;p&gt;Seleccioneu el suport que conté el programa de configuració del sistema operatiu amb el qual voleu treballar. Aquest suport ha d&apos;ésser arrencable, en altre cas el sistema no podrà iniciar-se.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Seleccioneu el tipus de suport que voleu fer servir per iniciar un sistema operatiu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Seleccioneu el tipus de suport que voleu fer servir per a la instal·lació dels elements mostrats.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6809,11 +6809,11 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
         <translation>&lt;p&gt;Heu seleccionat el següent suport per iniciar des de:&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Heu iniciat un nova màquina virtual per primera vegada. Aquest assistent us ajudarà a dur a terme els passos necessaris per iniciar un sistema operatiu de la vostra elecció a la màquina virtual.&lt;/p&gt;&lt;p&gt;Tingueu en compte que no podeu instal·lar un sistema operatiu a dins d&apos;aquesta màquina virtual en aquest moment perquè encara no heu seleccionat un disc. Si això no és el que voleu, podeu cancel·lar l&apos;execució d&apos;aquest assistent, seleccioneu &lt;b&gt;Paràmetres&lt;/b&gt; des del menú &lt;b&gt;Màquina&lt;/b&gt; de la finestra principal del VirtualBox per accedir al diàleg de configuració d&apos;aquest màquina i canviar la configuració de disc.&lt;/p&gt;&lt;p&gt;Feu servir el botó &lt;b&gt;Següent&lt;/b&gt; per continuar amb la següent pàgina de l&apos;assistent i el botó &lt;b&gt;Enrere&lt;/b&gt; per tornar a la pàgina anterior. Podeu prémer també &lt;b&gt;Cancel·la&lt;/b&gt; si voleu cancel·lar l&apos;execució d&apos;aquest assistent.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Heu iniciat un nova màquina virtual per primera vegada. Aquest assistent us ajudarà a dur a terme els passos necessaris per iniciar un sistema operatiu de la vostra elecció a la màquina virtual.&lt;/p&gt;&lt;p&gt;Feu servir el botó &lt;b&gt;Següent&lt;/b&gt; per continuar amb la següent pàgina de l&apos;assistent i el botó &lt;b&gt;Enrere&lt;/b&gt; per tornar a la pàgina anterior. Podeu prémer també &lt;b&gt;Cancel·la&lt;/b&gt; si voleu cancel·lar l&apos;execució d&apos;aquest assistent.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7381,7 +7381,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsAudio</name>
     <message>
-        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>Quan estigui marcat, la tarjeta de so PCI virtual es connectarà a dins de la màquina virtual la qual farà servir un controlador específic per comunicar-se amb la tarjeta de so de l&apos;amfitrió.</translation>
     </message>
     <message>
@@ -7467,7 +7467,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsDisplay</name>
     <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>heu assignat menys de l&apos;&lt;b&gt;%1&lt;/b&gt; per a la memòria de vídeo, que és el mínim necessari per arrencar el sistema client en mode de pantalla completa o fluid.</translation>
     </message>
     <message>
@@ -7495,7 +7495,7 @@ p, li { white-space: pre-wrap; }
         <translation>Característiques avançades:</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation>Quan estigui marcat, la màquina virtual permetrà l&apos;accés als gràfics 3D disponibles a l&apos;amfitrió.</translation>
     </message>
     <message>
@@ -7871,7 +7871,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Invoca el Gestor de discos durs virtuals per seleccionar una imatge de disquet a muntar.</translation>
     </message>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;Seleccioneu una categoria de configuració de la llista de l&apos;esquerra i moveu el ratolí sobre l&apos;ítem de paràmetres per obtenir més informació&lt;/i&gt;.</translation>
     </message>
     <message>
@@ -8182,7 +8182,7 @@ aquesta característica després d&apos;haver instal·lat un Windows al sistema 
         <translation type="obsolete">Quan estigui marcat, la màquina virtual provarà de fer servir les extensions de virtualització per maquinari de la CPU de l&apos;amfitrió com Intel VT-x i AMD-V. L&apos;estat grayed de la casella de selecció indica que aquest paràmetre està determinat pel valor del paràmetre global.</translation>
     </message>
     <message>
-        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation type="obsolete">Quan estigui marcat, la tarjeta de so PCI virtual es connectarà a dins de la màquina virtual, la qual farà servir un controlador específic per comunicar-se amb la tarjeta de so de l&apos;amfitrió.</translation>
     </message>
     <message>
@@ -8730,11 +8730,11 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation type="obsolete">heu assignat més del &lt;b&gt;50%&lt;/b&gt; de la memòria del vostre ordinador (&lt;b&gt;%1&lt;/b&gt;) per a la màquina virtual. D&apos;aquesta manera no es deixa la suficient memòria per al sistema amfitrió. Contineu pel vostre compte (no recomanable).</translation>
     </message>
     <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation type="obsolete">heu assignat menys de l&apos;&lt;b&gt;%1&lt;/b&gt; per a la memòria de vídeo, que és el mínim necessari per arrencar el sistema client en mode de pantalla completa o fluid.</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation type="obsolete">Quan estigui marcat, la màquina virtual permetrà l&apos;accés als gràfics 3D disponibles a l&apos;amfitrió.</translation>
     </message>
     <message>

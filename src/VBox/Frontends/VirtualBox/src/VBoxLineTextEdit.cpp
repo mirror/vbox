@@ -76,7 +76,7 @@ void VBoxTextEditor::retranslateUi()
 {
     setWindowTitle (tr ("Edit text"));
     mOpenBtn->setText (tr ("&Replace..."));
-    mOpenBtn->setToolTip (tr ("Replaces the current text with the content of a given file."));
+    mOpenBtn->setToolTip (tr ("Replaces the current text with the content of a file."));
 }
 
 void VBoxTextEditor::open()

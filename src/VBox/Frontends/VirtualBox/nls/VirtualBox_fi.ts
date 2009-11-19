@@ -3125,7 +3125,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">[nimi]</translation>
     </message>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;Valitse asetusryhmä vasemmalla puolella olevasta luettelosta, ja siirrä hiiren osoitinta asetusten yli saadaksesi lisää tietoja&lt;i&gt;.</translation>
     </message>
     <message>
@@ -5013,7 +5013,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="obsolete">&amp;Sähköposti</translation>
     </message>
     <message>
-        <source>Enter your valid e-mail address.</source>
+        <source>Enter your e-mail address. Please use a valid address here.</source>
         <translation>Syötä kelvollinen sähköpostiosoite.</translation>
     </message>
     <message>
@@ -5029,7 +5029,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>Yhteyden kättely ei onnistunut.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Täytä tämä rekisteröintikaavake, jolla kerrot meille käyttäväsi VirtualBoxia ja jolla voit lisäksi halutessasi rekisteröityä vastaanottamaan uutisia ja päivityksiä VirtualBoxiin liittyen.&lt;/p&gt;&lt;p&gt;Anna koko nimesi, käyttäen vain ASCII-merkistöä, sekä sähköpostiosoitteesi alla oleviin kenttiin. Huomaa, että Sun Microsystems käyttää näitä tietoja vain kerätäkseen tuoteen käyttötilastoja ja VirtualBoxin uutiskirjeen lähettämiseen. Sun Microsystems ei koskaan tule kertomaan näitä tietojasi kolmansille osapuolille. Tarkat tiedot tietojesi käytöstä voit luokea VirtualBoxin ohjeen osiosta &lt;p&gt;Privacy Policy&lt;/p&gt;, tai &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt;-sivulta VirtualBoxin www-sivuilta.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5049,11 +5049,11 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>I &amp;have a Sun Online account already:</source>
+        <source>I &amp;already have a Sun Online account:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5065,7 +5065,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>I &amp;would like to register creating a new Sun Online account:</source>
+        <source>I &amp;would like to create a new Sun Online account:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5368,7 +5368,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>Keskeytä virtuaalikoneen suoritus</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Tervetuloa VirtualBoxiin!&lt;/h3&gt;&lt;p&gt;Oikealla olevasta tilasta näet kaikki tällä tietokoneella olevat virtuaalikoneet. Luettelo on nyt tyhjä, koska et ole vielä luonut yhtäkään virtuaalikonetta.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Jos haluat luoda uuden virtuaalikoneen, napsauta nappia &lt;b&gt;Uusi&lt;/b&gt; ikkunan yläosassa olevasta työkalupalkista.&lt;/p&gt;&lt;p&gt;Voit lukea ohjeita painamalla &lt;b&gt;%1&lt;/b&gt; tai lukea viimeisimmät tiedot ja uutiset sivulta &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5396,7 +5396,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>&amp;Vie laitteistokuva...</translation>
     </message>
     <message>
-        <source>Export an appliance out of VM&apos;s from VirtualBox</source>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
         <translation>Vie virtuaalikoneista koostuva laitteisto VirtualBoxista</translation>
     </message>
     <message>
@@ -5412,7 +5412,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
         <translation>&lt;i&gt;Valitse vasemmalla olevasta luettelosta asetusluokka ja siirrä hiiren kohdistin asetuksen päälle saadaksesi lisätietoja&lt;/i&gt;.</translation>
     </message>
     <message>
@@ -5707,7 +5707,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>&amp;Palauta nykyiseen palautuspisteeseen</translation>
     </message>
     <message>
-        <source>Show details of the selected snapshot</source>
+        <source>Show the details of the selected snapshot</source>
         <translation>Näytä valitun palautuspisteen tiedot</translation>
     </message>
     <message>
@@ -5796,7 +5796,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>&amp;Korvaa...</translation>
     </message>
     <message>
-        <source>Replaces the current text with the content of a given file.</source>
+        <source>Replaces the current text with the content of a file.</source>
         <translation>Korvaa tämänhetkisen tekstin annetun tiedoston sisällöllä.</translation>
     </message>
     <message>
@@ -5893,7 +5893,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
 <context>
     <name>VBoxUSBMenu</name>
     <message>
-        <source>&lt;no available devices&gt;</source>
+        <source>&lt;no devices available&gt;</source>
         <comment>USB devices</comment>
         <translation>&lt;ei laitteita saatavilla&gt;</translation>
     </message>
@@ -6023,7 +6023,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>Ensimmäisen suorituskerran ohjattu toiminto</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Olet käynnistänyt uuden virtuaalikoneen ensimmäistä kertaa. Tämä apulainen auttaa sinua tehtävissä, jotka vaaditaan uuden käyttöjärjestelmän asentamiseksi tähän virtuaalikoneeseen.&lt;/p&gt;&lt;p&gt;Voit siirtyä apulaisen seuraavalle sivulle napista &lt;b&gt;Seuraava&lt;/b&gt; ja edelliselle sivulle napista &lt;b&gt;Takaisin&lt;/b&gt;. Voit myös painaa nappia &lt;b&gt;Peru&lt;/b&gt;, jos haluat keskeyttää tämän apulaisen suorittamisen.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6031,7 +6031,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>Tervetuloa ensimmäisen suorituskerran ohjattuun toimintoon!</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Valitse media, jota haluat käyttää asennukseen allaolevasta luettelosta.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6095,11 +6095,11 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>Isäntäkoneen asema %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Olet käynnistänyt uuden virtuaalikoneen ensimmäistä kertaa. Tämä apulainen auttaa sinua tehtävissä, jotka vaaditaan uuden käyttöjärjestelmän käynnistämisessä virtuaalikoneessa.&lt;/p&gt;&lt;p&gt;Huomaa ettet voi asentaa nyt käyttöjärjestelmää tähän virtuaalikoneeseen, koska et ole liittänyt siihen kiintolevyä. Jos haluat kuitenkin asentaa käyttöjärjestelmän, keskeytä tämän apulaisen suoritus, avaa tämän virtuaalikoneen asetuset valitsemalla &lt;b&gt;Asetukset&lt;/b&gt; VirtualBoxin pääikkunan &lt;b&gt;Kone&lt;/b&gt;-valikosta ja muuta kiintolevyjen asetuksia.&lt;/p&gt;&lt;p&gt;Voit siirtyä apulaisen seuraavalle sivulle napista &lt;b&gt;Seuraava&lt;/b&gt; ja edelliselle sivulle napista &lt;b&gt;Takaisin&lt;/b&gt;. Voit myös painaa nappia &lt;b&gt;Peru&lt;/b&gt;, jos haluat keskeyttää tämän apulaisen suorittamisen.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Valitse käyttöjärjestelmän käynnistämiseen käytettävän median tyyppi.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6456,7 +6456,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsAudio</name>
     <message>
-        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
+        <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>Jos asetettu, liitetään virtuaalinen PCI-äänikortti virtuaalikoneeseen, joka käyttää annettua ajuria isäntäkoneen äänikortin käsittelyyn.</translation>
     </message>
     <message>
@@ -6538,7 +6538,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsDisplay</name>
     <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation type="unfinished">Olet määrittänyt vähemmän kuin &lt;b&gt;%1&lt;/b&gt; videomuistia. Tämä on vähemmän kuin minimmäismäärä, joka vaaditaan virtuaalikoneen kokoruututilaan tai saumattomaan tilaan.</translation>
     </message>
     <message>
@@ -6566,7 +6566,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Laajennetut ominaisuudet:</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation type="unfinished">Jos asetettu, virtuaalikone voi käyttää isäntäkoneen 3D-grafiikkaominaisuuksia.</translation>
     </message>
     <message>
@@ -6629,7 +6629,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">[nimi]</translation>
     </message>
     <message>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;Valitse asetusryhmä vasemmalla puolella olevasta luettelosta, ja siirrä hiiren osoitinta asetusten yli saadaksesi lisää tietoja&lt;i&gt;.</translation>
     </message>
     <message>
@@ -7536,11 +7536,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Olet määrittänyt enemmän kuin &lt;b&gt;50%&lt;/b&gt; isäntäkoneen muistista (&lt;b&gt;%1&lt;/b&gt;) virtuaalikoneelle. Isäntäkoneen käyttöjärjestelmälle ei välttämättä jää tarpeeksi muistia käyttöön. Jatka näin omalla riskilläsi.</translation>
     </message>
     <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation type="obsolete">Olet määrittänyt vähemmän kuin &lt;b&gt;%1&lt;/b&gt; videomuistia. Tämä on vähemmän kuin minimmäismäärä, joka vaaditaan virtuaalikoneen kokoruututilaan tai saumattomaan tilaan.</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation type="obsolete">Jos asetettu, virtuaalikone voi käyttää isäntäkoneen 3D-grafiikkaominaisuuksia.</translation>
     </message>
     <message>
