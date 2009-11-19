@@ -1186,6 +1186,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
      * Assert alignment and sizes.
      */
     AssertCompile(sizeof(pVM->pgm.s) <= sizeof(pVM->pgm.padding));
+    AssertCompile(sizeof(pVM->aCpus[0].pgm.s) <= sizeof(pVM->aCpus[0].pgm.padding));
     AssertCompileMemberAlignment(PGM, CritSect, sizeof(uintptr_t));
 
     /*
