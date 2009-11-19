@@ -4621,8 +4621,8 @@
         the next time it is powered on.  This can only set to @a true when the
         VM is in the @a PoweredOff or @a Aborted state.
 
-        This property is automatically set to @a false when the VM is powered
-        on.
+        <!-- This property is automatically set to @a false when the VM is powered
+        on. (bird: This doesn't work yet ) -->
       </desc>
     </attribute>
 
