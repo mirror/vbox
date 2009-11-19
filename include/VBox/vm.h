@@ -210,7 +210,7 @@ typedef struct VMCPU
 #ifdef ___PGMInternal_h
         struct PGMCPU       s;
 #endif
-        uint8_t             padding[28*1024];   /* multiple of 4096 */
+        uint8_t             padding[32*1024];   /* multiple of 4096 */
     } pgm;
 
 } VMCPU;
