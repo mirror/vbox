@@ -2697,7 +2697,10 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
  * communication structures residing in RAM when done in the other order.  I.e. the device must be
  * quiesced first, then we clear the memory and plan tables. Probably have to make these things
  * explicit in some way, some memory setup pass or something.
- * (Example: DevAHCI may assert if memory is zeroed before it've read the FIS.) */
+ * (Example: DevAHCI may assert if memory is zeroed before it've read the FIS.)
+ *
+ * @bugref{4467}
+ */
         MMR3Reset(pVM);
         PDMR3Reset(pVM);
         SELMR3Reset(pVM);
