@@ -1784,8 +1784,12 @@ static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass
 
     /* calc longterm average. */
     cTotal = 0;
-    for (i = 0; i < RT_ELEMENTS(pVM->pgm.s.LiveSave.acDirtyPagesHistory); i++)
-          cTotal += pVM->pgm.s.LiveSave.acDirtyPagesHistory[i];
+    if (uPass < cHistoryEntries)
+        for (i = 0; i < cHistoryEntries && i <= uPass; i++)
+              cTotal += pVM->pgm.s.LiveSave.acDirtyPagesHistory[i];
+    else
+        for (i = 0; i < cHistoryEntries; i++)
+            cTotal += pVM->pgm.s.LiveSave.acDirtyPagesHistory[i];
     uint32_t const cDirtyPagesLong = cTotal / cHistoryEntries;
     pVM->pgm.s.LiveSave.cDirtyPagesLong = cDirtyPagesLong;
 
