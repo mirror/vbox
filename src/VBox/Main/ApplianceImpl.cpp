@@ -1423,25 +1423,6 @@ int Appliance::importFS(TaskImportOVF *pTask)
                 }
             }
 
-            // Floppy support
-            std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy);
-            if (vsdeFloppy.size() > 1)
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Too many floppy controllers in OVF; import facility only supports one"));
-            if (vsdeFloppy.size() == 1)
-            {
-                ComPtr<IStorageController> pController;
-                rc = pNewMachine->AddStorageController(Bstr("Floppy Controller"), StorageBus_Floppy, pController.asOutParam());
-                if (FAILED(rc)) throw rc;
-
-                Bstr bstrName;
-                rc = pController->COMGETTER(Name)(bstrName.asOutParam());
-                if (FAILED(rc)) throw rc;
-
-                rc = pNewMachine->AttachDevice(bstrName, 0, 0, DeviceType_Floppy, Bstr(""));
-                if (FAILED(rc)) throw rc;
-            }
-
             /* Hard disk controller IDE */
             std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
             if (vsdeHDCIDE.size() > 1)
@@ -1527,12 +1508,134 @@ int Appliance::importFS(TaskImportOVF *pTask)
             // store new machine for roll-back in case of errors
             llMachinesRegistered.push_back(newMachineId);
 
+            // Add floppies and CD-ROMs to the appropriate controllers.
+            std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy);
+            if (vsdeFloppy.size() > 1)
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Too many floppy controllers in OVF; import facility only supports one"));
+            std::list<VirtualSystemDescriptionEntry*> vsdeCDROM = vsdescThis->findByType(VirtualSystemDescriptionType_CDROM);
+            if (    (vsdeFloppy.size() > 0)
+                 || (vsdeCDROM.size() > 0)
+               )
+            {
+                // If there's an error here we need to close the session, so
+                // we need another try/catch block.
+
+                try
+                {
+                    /* In order to attach things we need to open a session
+                     * for the new machine */
+                    rc = mVirtualBox->OpenSession(session, newMachineId_);
+                    if (FAILED(rc)) throw rc;
+                    fSessionOpen = true;
+
+                    ComPtr<IMachine> sMachine;
+                    rc = session->COMGETTER(Machine)(sMachine.asOutParam());
+                    if (FAILED(rc)) throw rc;
+
+                    // floppy first
+                    if (vsdeFloppy.size() == 1)
+                    {
+                        ComPtr<IStorageController> pController;
+                        rc = sMachine->AddStorageController(Bstr("Floppy Controller"), StorageBus_Floppy, pController.asOutParam());
+                        if (FAILED(rc)) throw rc;
+
+                        Bstr bstrName;
+                        rc = pController->COMGETTER(Name)(bstrName.asOutParam());
+                        if (FAILED(rc)) throw rc;
+
+                        // this is for rollback later
+                        MyHardDiskAttachment mhda;
+                        mhda.uuid = newMachineId;
+                        mhda.pMachine = pNewMachine;
+                        mhda.controllerType = bstrName;
+                        mhda.lChannel = 0;
+                        mhda.lDevice = 0;
+
+                        Log(("Attaching floppy\n"));
+
+                        rc = sMachine->AttachDevice(mhda.controllerType,
+                                                    mhda.lChannel,
+                                                    mhda.lDevice,
+                                                    DeviceType_Floppy,
+                                                    Bstr(""));
+                        if (FAILED(rc)) throw rc;
+
+                        llHardDiskAttachments.push_back(mhda);
+                    }
+
+
+                    // CD-ROMs next
+                    for (std::list<VirtualSystemDescriptionEntry*>::const_iterator it = vsdeCDROM.begin();
+                        it != vsdeCDROM.end();
+                        ++it)
+                    {
+                        // for now always attach to secondary master on IDE controller;
+                        // there seems to be no useful information in OVF where else to
+                        // attach it (@todo test with latest versions of OVF software)
+
+                        // find the IDE controller
+                        const HardDiskController *pController = NULL;
+                        for (ControllersMap::const_iterator it = vsysThis.mapControllers.begin();
+                             it != vsysThis.mapControllers.end();
+                             ++it)
+                        {
+                            if (it->second.system == HardDiskController::IDE)
+                            {
+                                pController = &it->second;
+                            }
+                        }
+
+                        if (!pController)
+                            throw setError(VBOX_E_FILE_ERROR,
+                                           tr("OVF wants a CD-ROM drive but cannot find IDE controller, which is required in this version of VirtualBox"));
+
+                        // this is for rollback later
+                        MyHardDiskAttachment mhda;
+                        mhda.uuid = newMachineId;
+                        mhda.pMachine = pNewMachine;
+
+                        ConvertDiskAttachmentValues(*pController,
+                                                    2,     // interpreted as secondary master
+                                                    mhda.controllerType,        // Bstr
+                                                    mhda.lChannel,
+                                                    mhda.lDevice);
+
+                        Log(("Attaching CD-ROM to channel %d on device %d\n", mhda.lChannel, mhda.lDevice));
+
+                        rc = sMachine->AttachDevice(mhda.controllerType,
+                                                    mhda.lChannel,
+                                                    mhda.lDevice,
+                                                    DeviceType_DVD,
+                                                    Bstr(""));
+                        if (FAILED(rc)) throw rc;
+
+                        llHardDiskAttachments.push_back(mhda);
+                    } // end for (itHD = avsdeHDs.begin();
+
+                    rc = sMachine->SaveSettings();
+                    if (FAILED(rc)) throw rc;
+
+                    // only now that we're done with all disks, close the session
+                    rc = session->Close();
+                    if (FAILED(rc)) throw rc;
+                    fSessionOpen = false;
+                }
+                catch(HRESULT /* aRC */)
+                {
+                    if (fSessionOpen)
+                        session->Close();
+
+                    throw;
+                }
+            }
+
             /* Create the hard disks & connect them to the appropriate controllers. */
             std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
             if (avsdeHDs.size() > 0)
             {
-                /* If in the next block an error occur we have to deregister
-                   the machine, so make an extra try/catch block. */
+                // If there's an error here we need to close the session, so
+                // we need another try/catch block.
                 ComPtr<IMedium> srcHdVBox;
                 bool fSourceHdNeedsClosing = false;
 
@@ -1698,95 +1801,6 @@ int Appliance::importFS(TaskImportOVF *pTask)
 
                         rc = sMachine->SaveSettings();
                         if (FAILED(rc)) throw rc;
-                    } // end for (itHD = avsdeHDs.begin();
-
-                    // only now that we're done with all disks, close the session
-                    rc = session->Close();
-                    if (FAILED(rc)) throw rc;
-                    fSessionOpen = false;
-                }
-                catch(HRESULT /* aRC */)
-                {
-                    if (fSourceHdNeedsClosing)
-                        srcHdVBox->Close();
-
-                    if (fSessionOpen)
-                        session->Close();
-
-                    throw;
-                }
-            }
-
-            // Add CD-ROMs to the appropriate controllers.
-            std::list<VirtualSystemDescriptionEntry*> vsdeCDROM = vsdescThis->findByType(VirtualSystemDescriptionType_CDROM);
-            if (avsdeHDs.size() > 0)
-            {
-                /* If in the next block an error occur we have to deregister
-                   the machine, so make an extra try/catch block. */
-                ComPtr<IMedium> srcHdVBox;
-                bool fSourceHdNeedsClosing = false;
-
-                try
-                {
-                    /* In order to attach hard disks we need to open a session
-                     * for the new machine */
-                    rc = mVirtualBox->OpenSession(session, newMachineId_);
-                    if (FAILED(rc)) throw rc;
-                    fSessionOpen = true;
-
-                    for (std::list<VirtualSystemDescriptionEntry*>::const_iterator it = vsdeCDROM.begin();
-                        it != vsdeCDROM.end();
-                        ++it)
-                    {
-                        // for now always attach to secondary master on IDE controller;
-                        // there seems to be no useful information in OVF where else to
-                        // attach it (@todo test with latest versions of OVF software)
-
-                        // find the IDE controller
-                        const HardDiskController *pController = NULL;
-                        for (ControllersMap::const_iterator it = vsysThis.mapControllers.begin();
-                             it != vsysThis.mapControllers.end();
-                             ++it)
-                        {
-                            if (it->second.system == HardDiskController::IDE)
-                            {
-                                pController = &it->second;
-                            }
-                        }
-
-                        if (!pController)
-                            throw setError(VBOX_E_FILE_ERROR,
-                                           tr("OVF wants a CD-ROM drive but cannot find IDE controller, which is required in this version of VirtualBox"));
-
-                        // this is for rollback later
-                        MyHardDiskAttachment mhda;
-                        mhda.uuid = newMachineId;
-                        mhda.pMachine = pNewMachine;
-
-                        ConvertDiskAttachmentValues(*pController,
-                                                    2,     // interpreted as secondary master
-                                                    mhda.controllerType,        // Bstr
-                                                    mhda.lChannel,
-                                                    mhda.lDevice);
-
-                        Log(("Attaching CD-ROM to channel %d on device %d\n", mhda.lChannel, mhda.lDevice));
-
-                        ComPtr<IMachine> sMachine;
-                        rc = session->COMGETTER(Machine)(sMachine.asOutParam());
-                        if (FAILED(rc)) throw rc;
-
-                        rc = sMachine->AttachDevice(mhda.controllerType,
-                                                    mhda.lChannel,
-                                                    mhda.lDevice,
-                                                    DeviceType_DVD,
-                                                    Bstr(""));
-                        if (FAILED(rc)) throw rc;
-
-                        llHardDiskAttachments.push_back(mhda);
-
-                        rc = sMachine->SaveSettings();
-                        if (FAILED(rc)) throw rc;
-
                     } // end for (itHD = avsdeHDs.begin();
 
                     // only now that we're done with all disks, close the session
