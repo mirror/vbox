@@ -1749,7 +1749,6 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
     return rc;
 }
 
-//#include <iprt/stream.h>
 
 /**
  * Votes on whether the live save phase is done or not.
