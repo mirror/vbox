@@ -1762,6 +1762,9 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  */
 static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 {
+    /*
+     * Update and calculate parameters used in the decision making.
+     */
     const uint32_t cHistoryEntries = RT_ELEMENTS(pVM->pgm.s.LiveSave.acDirtyPagesHistory);
 
     /* update history. */
@@ -1772,7 +1775,7 @@ static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass
     pVM->pgm.s.LiveSave.iDirtyPagesHistory = (i + 1) % cHistoryEntries;
 
     /* calc shortterm average (4 passes). */
-    AssertCompile(RT_ELEMENTS(pVM->pgm.s.LiveSave.acDirtyPagesHistory) >= 4);
+    AssertCompile(RT_ELEMENTS(pVM->pgm.s.LiveSave.acDirtyPagesHistory) > 4);
     uint64_t cTotal = pVM->pgm.s.LiveSave.acDirtyPagesHistory[i];
     cTotal += pVM->pgm.s.LiveSave.acDirtyPagesHistory[(i + cHistoryEntries - 1) % cHistoryEntries];
     cTotal += pVM->pgm.s.LiveSave.acDirtyPagesHistory[(i + cHistoryEntries - 2) % cHistoryEntries];
