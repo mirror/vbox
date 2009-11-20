@@ -1850,8 +1850,12 @@ static GLX_Pixmap_t* stubInitGlxPixmap(Display *dpy, GLXDrawable draw, ContextIn
 
     if (!XGetGeometry(dpy, (Pixmap)draw, &root, &x, &y, &w, &h, &border, &depth))
     {
-        crWarning("stubInitGlxPixmap failed in call to XGetGeometry for 0x%x", (int) draw);
-        return NULL;
+        XSync(dpy, False);
+        if (!XGetGeometry(dpy, (Pixmap)draw, &root, &x, &y, &w, &h, &border, &depth))
+        {
+            crWarning("stubInitGlxPixmap failed in call to XGetGeometry for 0x%x", (int) draw);
+            return NULL;
+        }
     }
 
     pGlxPixmap = crAlloc(sizeof(GLX_Pixmap_t));
