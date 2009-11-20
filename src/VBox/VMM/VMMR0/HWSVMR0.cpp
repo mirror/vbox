@@ -75,11 +75,6 @@ VMMR0DECL(int) SVMR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RT
     AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
 
     /* We must turn on AMD-V and setup the host state physical address, as those MSRs are per-cpu/core. */
-
-#if defined(LOG_ENABLED) && !defined(DEBUG_bird)
-    SUPR0Printf("SVMR0EnableCpu cpu %d page (%x) %x\n", pCpu->idCpu, pvPageCpu, (uint32_t)pPageCpuPhys);
-#endif
-
     uint64_t val = ASMRdMsr(MSR_K6_EFER);
     if (val & MSR_K6_EFER_SVME)
         return VERR_SVM_IN_USE;
@@ -105,10 +100,6 @@ VMMR0DECL(int) SVMR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS p
 {
     AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
     AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
-
-#if defined(LOG_ENABLED) && !defined(DEBUG_bird)
-    SUPR0Printf("SVMR0DisableCpu cpu %d\n", pCpu->idCpu);
-#endif
 
     /* Turn off AMD-V in the EFER MSR. */
     uint64_t val = ASMRdMsr(MSR_K6_EFER);
