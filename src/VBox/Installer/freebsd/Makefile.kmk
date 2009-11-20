@@ -130,6 +130,13 @@ VBOX_FBSD_NO_STRIP = \
 	  components/VirtualBox_XPCOM.xpt) \
 	vboxdrv.tar.gz
 
+# EFI firmware
+ifdef VBOX_WITH_EFIFW_PACKING
+  VBOX_FBSD_NO_STRIP += \
+	vboxefi.fv \
+        vboxefi64.fv
+endif
+
 # Symlinks residing in bin/
 VBOX_FBSD_SYMLINKS = \
 	$(if $(VBOX_WITH_MAIN), \

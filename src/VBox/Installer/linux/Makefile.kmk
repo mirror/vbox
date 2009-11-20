@@ -239,7 +239,8 @@ endif
 # EFI firmware
 ifdef VBOX_WITH_EFIFW_PACKING
   VBOX_LNX_NO_STRIP += \
-	vboxefi.fv
+	vboxefi.fv     \
+	vboxefi64.fv
 endif
 
 #

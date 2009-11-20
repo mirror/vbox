@@ -298,9 +298,11 @@ INSTALLS += buildserver-efifw
 buildserver-efifw_INST = $(INST_BIN)
 buildserver-efifw_MODE = 0644
 buildserver-efifw_SOURCES = \
-	$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd=>vboxefi.fv
+	$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd=>vboxefi.fv \
+        $(buildserver-efifw_0_OUTDIR)/FV/VBOX64.fd=>vboxefi64.fv
 buildserver-efifw_CLEANS = \
 	$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd \
+        $(buildserver-efifw_0_OUTDIR)/FV/VBOX64.fd \
 	$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip \
 	$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip.tmp
 ## @todo rainy day: cleanup the output directory (zip contains lots more)
@@ -334,7 +336,8 @@ INSTALLS += local-efifw
 local-efifw_INST = $(INST_BIN)
 local-efifw_MODE = 0644
 local-efifw_SOURCES = \
-	$(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareBin/vboxefi.fv=>vboxefi.fv
+	$(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareBin/vboxefi.fv=>vboxefi.fv \
+        $(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareBin/vboxefi64.fv=>vboxefi64.fv
 endif # VBOX_WITH_EFIFW_FROM_BUILD_SERVER
 
 
