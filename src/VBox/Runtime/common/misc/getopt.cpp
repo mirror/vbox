@@ -35,10 +35,11 @@
 #include <iprt/getopt.h>
 #include "internal/iprt.h"
 
-#include <iprt/err.h>
-#include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
+#include <iprt/err.h>
+#include <iprt/message.h>
+#include <iprt/string.h>
 #include <iprt/uuid.h>
 
 
@@ -639,3 +640,27 @@ RTDECL(int) RTGetOptFetchValue(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion
     return rtGetOptProcessValue(fFlags, pszValue, pValueUnion);
 }
 RT_EXPORT_SYMBOL(RTGetOptFetchValue);
+
+
+RTDECL(int) RTGetOptPrintError(int ch, PCRTGETOPTUNION pValueUnion)
+{
+    if (ch == VINF_GETOPT_NOT_OPTION)
+        RTMsgError("Invalid parameter: %s", pValueUnion->psz);
+    else if (ch > 0)
+    {
+        if (RT_C_IS_GRAPH(ch))
+            RTMsgError("Unhandled option: -%c", ch);
+        else
+            RTMsgError("Unhandled option: %i (%#x)", ch, ch);
+    }
+    else if (ch == VERR_GETOPT_UNKNOWN_OPTION)
+        RTMsgError("Unknown option: '%s'", pValueUnion->psz);
+    else if (pValueUnion->pDef)
+        RTMsgError("%s: %Rrs\n", pValueUnion->pDef->pszLong, ch);
+    else
+        RTMsgError("%Rrs\n", ch);
+
+    return 2; /** @todo add defines for EXIT_SUCCESS, EXIT_FAILURE, EXIT_INVAL, etc... */
+}
+RT_EXPORT_SYMBOL(RTGetOptPrintError);
+
