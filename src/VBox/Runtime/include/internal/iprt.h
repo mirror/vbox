@@ -44,6 +44,13 @@
  && !defined(RT_NO_EXPORT_SYMBOL)
 # define bool linux_bool /* see r0drv/linux/the-linux-kernel.h */
 # include <linux/autoconf.h>
+# if defined(CONFIG_MODVERSIONS) && !defined(MODVERSIONS)
+#  include <linux/version.h>
+#  define MODVERSIONS
+#  if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 71)
+#   include <linux/modversions.h>
+#  endif
+# endif
 # include <linux/module.h>
 # undef bool
 # define RT_EXPORT_SYMBOL(Name) EXPORT_SYMBOL(Name)
