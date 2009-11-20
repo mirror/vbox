@@ -48,6 +48,7 @@ RTDECL(int)  RTMsgError(const char *pszFormat, ...)
     va_end(va);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTMsgError);
 
 
 RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va)
@@ -94,4 +95,6 @@ RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va)
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTMsgErrorV);
+
 
