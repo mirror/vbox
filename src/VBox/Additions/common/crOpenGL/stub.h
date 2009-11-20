@@ -72,6 +72,7 @@ struct glxpixmap_info_t
 {
     int x, y;
     unsigned int w, h, border, depth;
+    GLenum format;
     Window root;
     GC gc;
     Pixmap hShmPixmap; /* Shared memory pixmap object, if it's supported*/
