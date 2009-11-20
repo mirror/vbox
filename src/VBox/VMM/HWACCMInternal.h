@@ -414,6 +414,9 @@ typedef struct HWACCM
         /** Virtual address of the IO bitmap. */
         R0PTRTYPE(void *)           pIOBitmap;
 
+        /* HWCR msr (for diagnostics) */
+        uint64_t                    msrHWCR;
+
         /** SVM revision. */
         uint32_t                    u32Rev;
 
