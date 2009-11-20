@@ -520,8 +520,10 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatIntReinject,            "/HWACCM/CPU%d/Irq/Reinject");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatPendingHostIrq,         "/HWACCM/CPU%d/Irq/PendingOnHost");
 
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushPage,              "/HWACCM/CPU%d/Flush/Page");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushPageManual,        "/HWACCM/CPU%d/Flush/Page/Virt");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushPhysPageManual,    "/HWACCM/CPU%d/Flush/Page/Phys");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushTLB,               "/HWACCM/CPU%d/Flush/TLB");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushTLBManual,         "/HWACCM/CPU%d/Flush/TLB/Manual");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushTLBCRxChange,      "/HWACCM/CPU%d/Flush/TLB/CRx");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushPageInvlpg,        "/HWACCM/CPU%d/Flush/Page/Invlpg");
