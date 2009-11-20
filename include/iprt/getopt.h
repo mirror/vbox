@@ -358,6 +358,18 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion);
  */
 RTDECL(int) RTGetOptFetchValue(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion, uint32_t fFlags);
 
+/**
+ * Print error messages for a RTGetOpt default case.
+ *
+ * Uses RTMsgError.
+ *
+ * @returns Suitable exit code.
+ *
+ * @param   ch          The RTGetOpt return value.
+ * @param   pValueUnion The value union returned by RTGetOpt.
+ */
+RTDECL(int) RTGetOptPrintError(int ch, PCRTGETOPTUNION pValueUnion);
+
 /** @} */
 
 RT_C_DECLS_END
