@@ -811,8 +811,10 @@ typedef struct HWACCMCPU
     STAMCOUNTER             StatIntReinject;
     STAMCOUNTER             StatPendingHostIrq;
 
+    STAMCOUNTER             StatFlushPage;
     STAMCOUNTER             StatFlushPageManual;
     STAMCOUNTER             StatFlushPhysPageManual;
+    STAMCOUNTER             StatFlushTLB;
     STAMCOUNTER             StatFlushTLBManual;
     STAMCOUNTER             StatFlushPageInvlpg;
     STAMCOUNTER             StatFlushTLBWorldSwitch;
