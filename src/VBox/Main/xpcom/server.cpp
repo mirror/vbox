@@ -52,14 +52,12 @@
 #include <iprt/timer.h>
 
 #include <stdio.h>
-
-// for the signal handler
-#include <signal.h>
+#include <signal.h>     // for the signal handler
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <getopt.h>
-
+#include <sys/fcntl.h>
 #ifndef RT_OS_OS2
 # include <sys/resource.h>
 #endif
@@ -747,22 +745,15 @@ int main (int argc, char **argv)
     const struct option options[] =
     {
         { "automate",       no_argument,        NULL, 'a' },
-#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
         { "auto-shutdown",  no_argument,        NULL, 'A' },
-#endif
         { "daemonize",      no_argument,        NULL, 'd' },
         { "pidfile",        required_argument,  NULL, 'p' },
-#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
         { "pipe",           required_argument,  NULL, 'P' },
-#endif
         { NULL,             0,                  NULL,  0  }
     };
-    int c;
-
+    int  c;
     bool fDaemonize = false;
-#ifndef RT_OS_OS2
-    static int daemon_pipe_fds[2] = {-1, -1};
-#endif
+    int  daemon_pipe_wr = -1;
 
     for (;;)
     {
@@ -781,14 +772,12 @@ int main (int argc, char **argv)
                 break;
             }
 
-# if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
             /* Used together with '-P', see below. Internal use only. */
             case 'A':
             {
                 gAutoShutdown = true;
                 break;
             }
-#endif
 
             case 'd':
             {
@@ -802,15 +791,13 @@ int main (int argc, char **argv)
                 break;
             }
 
-# if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
             /* we need to exec on darwin, this is just an internal
              * hack for passing the pipe fd along to the final child. */
             case 'P':
             {
-                daemon_pipe_fds[1] = atoi(optarg);
+                daemon_pipe_wr = atoi(optarg);
                 break;
             }
-#endif
 
             default:
             {
@@ -833,11 +820,14 @@ int main (int argc, char **argv)
     if (fDaemonize)
     {
         /* create a pipe for communication between child and parent */
+        int daemon_pipe_fds[2] = {-1, -1};
         if (pipe(daemon_pipe_fds) < 0)
         {
             printf("ERROR: pipe() failed (errno = %d)\n", errno);
             return 1;
         }
+        daemon_pipe_wr = daemon_pipe_fds[1];
+        int daemon_pipe_rd = daemon_pipe_fds[0];
 
         pid_t childpid = fork();
         if (childpid == -1)
@@ -852,23 +842,23 @@ int main (int argc, char **argv)
             bool fSuccess = false;
 
             /* close the writing end of the pipe */
-            close(daemon_pipe_fds[1]);
+            close(daemon_pipe_wr);
 
             /* try to read a message from the pipe */
-            char msg[10] = {0}; /* initialize so it's NULL terminated */
-            if (read(daemon_pipe_fds[0], msg, sizeof(msg)) > 0)
+            char msg[10 + 1];
+            RT_ZERO(msg); /* initialize so it's NULL terminated */
+            if (read(daemon_pipe_rd, msg, sizeof(msg) - 1) > 0)
             {
                 if (strcmp(msg, "READY") == 0)
                     fSuccess = true;
                 else
-                    printf ("ERROR: Unknown message from child "
-                            "process (%s)\n", msg);
+                    printf ("ERROR: Unknown message from child process (%s)\n", msg);
             }
             else
                 printf ("ERROR: 0 bytes read from child process\n");
 
             /* close the reading end of the pipe as well and exit */
-            close(daemon_pipe_fds[0]);
+            close(daemon_pipe_rd);
             return fSuccess ? 0 : 1;
         }
         /* we're the child process */
@@ -897,18 +887,32 @@ int main (int argc, char **argv)
             exit(0);
         }
 
-        /* Redirect standard i/o streams to /dev/null */
-        if (daemon_pipe_fds[0] > 2)
+        /* Close all file handles except for the write end of the pipe. */
+        int fdMax;
+        struct rlimit lim;
+        if (getrlimit(RLIMIT_NOFILE, &lim) == 0)
+            fdMax = (int)RT_MIN(lim.rlim_cur, 65535); /* paranoia */
+        else
+            fdMax = 1024;
+        for (int fd = 0; fd < fdMax; fd++)
+            if (fd != daemon_pipe_wr)
+                close(fd);
+
+        /* Make sure the pipe isn't any of the standard handles. */
+        if (daemon_pipe_wr <= 2)
         {
-            freopen ("/dev/null", "r", stdin);
-            freopen ("/dev/null", "w", stdout);
-            freopen ("/dev/null", "w", stderr);
+            if (dup2(daemon_pipe_wr, 3) == 3)
+            {
+                close(daemon_pipe_wr);
+                daemon_pipe_wr = 3;
+            }
         }
 
-        /* close the reading end of the pipe */
-        close(daemon_pipe_fds[0]);
+        /* Redirect the standard handles to NULL by opening /dev/null three times. */
+        open("/dev/null", O_RDWR, 0);
+        open("/dev/null", O_RDWR, 0);
+        open("/dev/null", O_RDWR, 0);
 
-# if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
         /*
          * On leopard we're no longer allowed to use some of the core API's
          * after forking - this will cause us to hit an int3.
@@ -920,12 +924,12 @@ int main (int argc, char **argv)
          * exits making it impossible to autostart VBoxSVC when starting
          * a frontend (debugger and strace don't contain any useful info).
          */
-        const char *apszArgs[7];
+        const char *apszArgs[7 + 2];
         unsigned i = 0;
         apszArgs[i++] = argv[0];
         apszArgs[i++] = "--pipe";
         char szPipeArg[32];
-        RTStrPrintf (szPipeArg, sizeof (szPipeArg), "%d", daemon_pipe_fds[1]);
+        RTStrPrintf (szPipeArg, sizeof (szPipeArg), "%d", daemon_pipe_wr);
         apszArgs[i++] = szPipeArg;
         if (pszPidFile)
         {
@@ -937,7 +941,6 @@ int main (int argc, char **argv)
         apszArgs[i++] = NULL; Assert(i <= RT_ELEMENTS(apszArgs));
         execv (apszArgs[0], (char * const *)apszArgs);
         exit (126);
-# endif
     }
 
 #endif // !RT_OS_OS2
@@ -1045,15 +1048,13 @@ int main (int argc, char **argv)
 #endif
         }
 
-#ifndef RT_OS_OS2
-        if (daemon_pipe_fds[1] >= 0)
+        if (daemon_pipe_wr >= 0)
         {
             printf ("\nStarting event loop....\n[send TERM signal to quit]\n");
             /* now we're ready, signal the parent process */
-            write(daemon_pipe_fds[1], "READY", strlen("READY"));
+            write(daemon_pipe_wr, "READY", strlen("READY"));
         }
         else
-#endif
         {
             printf ("\nStarting event loop....\n[press Ctrl-C to quit]\n");
         }
@@ -1132,13 +1133,11 @@ int main (int argc, char **argv)
         RTFileDelete(pszPidFile);
     }
 
-#ifndef RT_OS_OS2
-    if (daemon_pipe_fds[1] >= 0)
+    if (daemon_pipe_wr >= 0)
     {
         /* close writing end of the pipe as well */
-        close(daemon_pipe_fds[1]);
+        close(daemon_pipe_wr);
     }
-#endif
 
     return 0;
 }
