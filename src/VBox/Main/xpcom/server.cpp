@@ -57,7 +57,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <getopt.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #ifndef RT_OS_OS2
 # include <sys/resource.h>
 #endif
