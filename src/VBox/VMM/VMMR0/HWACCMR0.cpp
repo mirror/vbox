@@ -112,14 +112,17 @@ static struct
     } vmx;
     struct
     {
-        /** Set by the ring-0 driver to indicate SVM is supported by the CPU. */
-        bool                        fSupported;
+        /* HWCR msr (for diagnostics) */
+        uint64_t                    msrHWCR;
 
         /** SVM revision. */
         uint32_t                    u32Rev;
 
         /** SVM feature bits from cpuid 0x8000000a */
         uint32_t                    u32Features;
+
+        /** Set by the ring-0 driver to indicate SVM is supported by the CPU. */
+        bool                        fSupported;
     } svm;
     /** Saved error from detection */
     int32_t         lLastError;
@@ -366,7 +369,8 @@ VMMR0DECL(int) HWACCMR0Init(void)
                 {
                     /* Query AMD features. */
                     ASMCpuId(0x8000000A, &HWACCMR0Globals.svm.u32Rev, &HWACCMR0Globals.uMaxASID, &u32Dummy, &HWACCMR0Globals.svm.u32Features);
-
+                    /* Read the HWCR msr for diagnostics. */
+                    HWACCMR0Globals.svm.msrHWCR    = ASMRdMsr(MSR_K8_HWCR);
                     HWACCMR0Globals.svm.fSupported = true;
                 }
                 else
@@ -907,6 +911,7 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed1    = HWACCMR0Globals.vmx.msr.vmx_cr4_fixed1;
     pVM->hwaccm.s.vmx.msr.vmx_vmcs_enum     = HWACCMR0Globals.vmx.msr.vmx_vmcs_enum;
     pVM->hwaccm.s.vmx.msr.vmx_eptcaps       = HWACCMR0Globals.vmx.msr.vmx_eptcaps;
+    pVM->hwaccm.s.svm.msrHWCR               = HWACCMR0Globals.svm.msrHWCR;
     pVM->hwaccm.s.svm.u32Rev                = HWACCMR0Globals.svm.u32Rev;
     pVM->hwaccm.s.svm.u32Features           = HWACCMR0Globals.svm.u32Features;
     pVM->hwaccm.s.cpuid.u32AMDFeatureECX    = HWACCMR0Globals.cpuid.u32AMDFeatureECX;
