@@ -1868,6 +1868,7 @@ static GLX_Pixmap_t* stubInitGlxPixmap(Display *dpy, GLXDrawable draw, ContextIn
     pGlxPixmap->border = border;
     pGlxPixmap->depth = depth;
     pGlxPixmap->root = root;
+    pGlxPixmap->format = pGlxPixmap->depth==24 ? GL_RGB : GL_RGBA;
 
     /* Try to allocate shared memory
      * As we're allocating huge chunk of memory, do it in this function, only if this extension is really used
@@ -1921,7 +1922,7 @@ static GLX_Pixmap_t* stubInitGlxPixmap(Display *dpy, GLXDrawable draw, ContextIn
      * Note that we're making empty texture by passing NULL as pixels pointer, so there's no overhead transferring data to host.*/
     if (CR_MAX_TRANSFER_SIZE < 4*pGlxPixmap->w*pGlxPixmap->h)
     {
-        stub.spu->dispatch_table.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pGlxPixmap->w, pGlxPixmap->h, 0, 
+        stub.spu->dispatch_table.TexImage2D(GL_TEXTURE_2D, 0, pGlxPixmap->format, pGlxPixmap->w, pGlxPixmap->h, 0, 
                                             GL_BGRA, GL_UNSIGNED_BYTE, NULL);
     }
 
@@ -1966,7 +1967,7 @@ static void stubXshmUpdateWholeImage(Display *dpy, GLXDrawable draw, GLX_Pixmap_
                   pGlxPixmap->x, pGlxPixmap->y, pGlxPixmap->w, pGlxPixmap->h, 0, 0);
         /* Have to make sure XCopyArea is processed */
         XSync(dpy, False);
-        stub.spu->dispatch_table.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pGlxPixmap->w, pGlxPixmap->h, 0, 
+        stub.spu->dispatch_table.TexImage2D(GL_TEXTURE_2D, 0, pGlxPixmap->format, pGlxPixmap->w, pGlxPixmap->h, 0, 
                                             GL_BGRA, GL_UNSIGNED_BYTE, stub.xshmSI.shmaddr);
         /*crDebug("Sync texture for drawable 0x%x(dmg handle 0x%x) [%i,%i,%i,%i]", 
                   (unsigned int) draw, (unsigned int)pGlxPixmap->hDamage, 
@@ -2125,7 +2126,7 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
             return;
         }
 
-        stub.spu->dispatch_table.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pxim->width, pxim->height, 0, 
+        stub.spu->dispatch_table.TexImage2D(GL_TEXTURE_2D, 0, pGlxPixmap->format, pxim->width, pxim->height, 0, 
                                             GL_BGRA, GL_UNSIGNED_BYTE, (void*)(&(pxim->data[0])));
         XDestroyImage(pxim);
     }
