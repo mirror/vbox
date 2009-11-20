@@ -137,6 +137,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_USB,
     /** VGA Device group. */
     LOG_GROUP_DEV_VGA,
+    /** Virtio PCI Device group. */
+    LOG_GROUP_DEV_VIRTIO,
     /** Virtio Network Device group. */
     LOG_GROUP_DEV_VIRTIO_NET,
     /** VMM Device group. */
@@ -387,6 +389,7 @@ typedef enum LOGGROUP
     "DEV_SMC",      \
     "DEV_USB",      \
     "DEV_VGA",      \
+    "DEV_VIRTIO",   \
     "DEV_VIRTIO_NET", \
     "DEV_VMM",      \
     "DEV_VMM_BACKDOOR", \
