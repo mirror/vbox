@@ -41,10 +41,11 @@
 #include <iprt/initterm.h>
 #include <iprt/critsect.h>
 #include <iprt/getopt.h>
+#include <iprt/message.h>
+#include <iprt/stream.h>
 #include <iprt/path.h>
 #include <iprt/timer.h>
 
-#include <stdio.h>
 #include <signal.h>     // for the signal handler
 #include <stdlib.h>
 #include <unistd.h>
@@ -284,7 +285,7 @@ public:
         sInstance = NULL;
 
         LogFlowFunc(("VirtualBox object deleted.\n"));
-        printf("Informational: VirtualBox object deleted.\n");
+        RTPrintf("Informational: VirtualBox object deleted.\n");
     }
 
     NS_IMETHOD_(nsrefcnt) Release()
@@ -504,7 +505,7 @@ public:
 
                 sInstance->AddRef(); /* protect FinalConstruct() */
                 rv = sInstance->FinalConstruct();
-                printf("Informational: VirtualBox object created (rc=%08X).\n", rv);
+                RTPrintf("Informational: VirtualBox object created (rc=%Rhrc).\n", rv);
                 if (NS_FAILED(rv))
                 {
                     /* On failure diring VirtualBox initialization, delete it
@@ -815,7 +816,7 @@ int main(int argc, char **argv)
         int daemon_pipe_fds[2] = {-1, -1};
         if (pipe(daemon_pipe_fds) < 0)
         {
-            printf("ERROR: pipe() failed (errno = %d)\n", errno);
+            RTMsgError("pipe() failed (errno = %d)", errno);
             return 1;
         }
         daemon_pipe_wr = daemon_pipe_fds[1];
@@ -824,7 +825,7 @@ int main(int argc, char **argv)
         pid_t childpid = fork();
         if (childpid == -1)
         {
-            printf("ERROR: fork() failed (errno = %d)\n", errno);
+            RTMsgError("fork() failed (errno = %d)", errno);
             return 1;
         }
 
@@ -844,10 +845,10 @@ int main(int argc, char **argv)
                 if (strcmp(msg, "READY") == 0)
                     fSuccess = true;
                 else
-                    printf("ERROR: Unknown message from child process (%s)\n", msg);
+                    RTMsgError("Unknown message from child process (%s)", msg);
             }
             else
-                printf("ERROR: 0 bytes read from child process\n");
+                RTMsgError("0 bytes read from child process");
 
             /* close the reading end of the pipe as well and exit */
             close(daemon_pipe_rd);
@@ -859,7 +860,7 @@ int main(int argc, char **argv)
         pid_t sid = setsid();
         if (sid < 0)
         {
-            printf("ERROR: setsid() failed (errno = %d)\n", errno);
+            RTMsgError("setsid() failed (errno = %d)", errno);
             return 1;
         }
 
@@ -869,7 +870,7 @@ int main(int argc, char **argv)
         childpid = fork();
         if (childpid == -1)
         {
-            printf("ERROR: second fork() failed (errno = %d)\n", errno);
+            RTMsgError("second fork() failed (errno = %d)", errno);
             return 1;
         }
 
@@ -944,7 +945,7 @@ int main(int argc, char **argv)
         rc = com::Initialize();
         if (NS_FAILED(rc))
         {
-            printf("ERROR: Failed to initialize XPCOM! (rc=%08X)\n", rc);
+            RTMsgError("Failed to initialize XPCOM! (rc=%Rhrc)\n", rc);
             break;
         }
 
@@ -952,7 +953,7 @@ int main(int argc, char **argv)
         rc = NS_GetComponentRegistrar(getter_AddRefs(registrar));
         if (NS_FAILED(rc))
         {
-            printf("ERROR: Failed to get component registrar! (rc=%08X)\n", rc);
+            RTMsgError("Failed to get component registrar! (rc=%Rhrc)", rc);
             break;
         }
 
@@ -961,7 +962,7 @@ int main(int argc, char **argv)
                                     NS_ARRAY_LENGTH (components));
         if (NS_FAILED(rc))
         {
-            printf("ERROR: Failed to register server components! (rc=%08X)\n", rc);
+            RTMsgError("Failed to register server components! (rc=%Rhrc)", rc);
             break;
         }
 
@@ -971,14 +972,14 @@ int main(int argc, char **argv)
         rc = NS_GetMainEventQ(&gEventQ);
         if (NS_FAILED(rc))
         {
-            printf("ERROR: Failed to get the main event queue! (rc=%08X)\n", rc);
+            RTMsgError("Failed to get the main event queue! (rc=%Rhrc)", rc);
             break;
         }
 
         nsCOMPtr<ipcIService> ipcServ (do_GetService(IPC_SERVICE_CONTRACTID, &rc));
         if (NS_FAILED (rc))
         {
-            printf("ERROR: Failed to get IPC service! (rc=%08X)\n", rc);
+            RTMsgError("Failed to get IPC service! (rc=%Rhrc)", rc);
             break;
         }
 
@@ -992,9 +993,9 @@ int main(int argc, char **argv)
             LogFlowFunc(("Failed to register the server name (rc=%Rhrc (%08X))!\n"
                          "Is another server already running?\n", rc, rc));
 
-            printf("ERROR: Failed to register the server name \"%s\" (rc=%08X)!\n"
-                   "Is another server already running?\n",
-                   VBOXSVC_IPC_NAME, rc);
+            RTMsgError("Failed to register the server name \"%s\" (rc=%Rhrc)!\n"
+                       "Is another server already running?\n",
+                       VBOXSVC_IPC_NAME, rc);
             NS_RELEASE(gIpcServ);
             break;
         }
@@ -1020,35 +1021,35 @@ int main(int argc, char **argv)
                                 VBOX_VERSION_STRING);
             for (int i = iSize; i > 0; i--)
                 putchar('*');
-            printf("\n%s\n", szBuf);
-            printf("(C) 2008-2009 Sun Microsystems, Inc.\n"
-                   "All rights reserved.\n");
+            RTPrintf("\n%s\n", szBuf);
+            RTPrintf("(C) 2008-2009 Sun Microsystems, Inc.\n"
+                     "All rights reserved.\n");
 #ifdef DEBUG
-            printf("Debug version.\n");
+            RTPrintf("Debug version.\n");
 #endif
         }
 
         if (daemon_pipe_wr >= 0)
         {
-            printf("\nStarting event loop....\n[send TERM signal to quit]\n");
+            RTPrintf("\nStarting event loop....\n[send TERM signal to quit]\n");
             /* now we're ready, signal the parent process */
             write(daemon_pipe_wr, "READY", strlen("READY"));
         }
         else
-            printf("\nStarting event loop....\n[press Ctrl-C to quit]\n");
+            RTPrintf("\nStarting event loop....\n[press Ctrl-C to quit]\n");
 
         if (g_pszPidFile)
         {
-            RTFILE pidFile = NIL_RTFILE;
-            vrc = RTFileOpen(&pidFile, g_pszPidFile, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
+            RTFILE hPidFile = NIL_RTFILE;
+            vrc = RTFileOpen(&hPidFile, g_pszPidFile, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
             if (RT_SUCCESS(vrc))
             {
                 char szBuf[32];
                 const char *lf = "\n";
                 RTStrFormatNumber(szBuf, getpid(), 10, 0, 0, 0);
-                RTFileWrite(pidFile, szBuf, strlen(szBuf), NULL);
-                RTFileWrite(pidFile, lf, strlen(lf), NULL);
-                RTFileClose(pidFile);
+                RTFileWrite(hPidFile, szBuf, strlen(szBuf), NULL);
+                RTFileWrite(hPidFile, lf, strlen(lf), NULL);
+                RTFileClose(hPidFile);
             }
         }
 
@@ -1061,11 +1062,11 @@ int main(int argc, char **argv)
             {
                 lim.rlim_cur = RT_MIN(lim.rlim_max, 10240);
                 if (setrlimit(RLIMIT_NOFILE, &lim) == -1)
-                    printf("WARNING: failed to increase file descriptor limit. (%d)\n", errno);
+                    RTPrintf("WARNING: failed to increase file descriptor limit. (%d)\n", errno);
             }
         }
         else
-            printf("WARNING: failed to obtain per-process file-descriptor limit (%d).\n", errno);
+            RTPrintf("WARNING: failed to obtain per-process file-descriptor limit (%d).\n", errno);
 
         PLEvent *ev;
         while (gKeepRunning)
@@ -1090,7 +1091,7 @@ int main(int argc, char **argv)
          * restore gKeepRunning and continue to serve. */
         gEventQ->ProcessPendingEvents();
 
-        printf("Terminated event loop.\n");
+        RTPrintf("Terminated event loop.\n");
     }
     while (0); // this scopes the nsCOMPtrs
 
@@ -1103,10 +1104,10 @@ int main(int argc, char **argv)
     rc = com::Shutdown();
     LogFlowFunc(("Finished com::Shutdown() (rc=%Rhrc)\n", rc));
 
-    if (NS_FAILED (rc))
-        printf("ERROR: Failed to shutdown XPCOM! (rc=%08X)\n", rc);
+    if (NS_FAILED(rc))
+        RTMsgError("Failed to shutdown XPCOM! (rc=%Rhrc)", rc);
 
-    printf("XPCOM server has shutdown.\n");
+    RTPrintf("XPCOM server has shutdown.\n");
 
     if (g_pszPidFile)
         RTFileDelete(g_pszPidFile);
