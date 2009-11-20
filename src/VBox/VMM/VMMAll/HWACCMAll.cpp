@@ -173,6 +173,10 @@ VMMDECL(int) HWACCMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
+        /* Nothing to do if a TLB flush is already pending; the VCPU should have already been poked if it were active */
+        if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
+            continue;
+
         if (pVCpu->idCpu == idCurCpu)
         {
             HWACCMInvalidatePage(pVCpu, GCPtr);
