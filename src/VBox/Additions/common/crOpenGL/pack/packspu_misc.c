@@ -43,6 +43,10 @@ void PACKSPU_APIENTRY packspu_ChromiumParametervCR(GLenum target, GLenum type, G
 GLboolean packspuSyncOnFlushes()
 {
     GLint buffer;
+
+    /*Seems to still cause issues, always sync for now*/
+    return 1;
+
     crStateGetIntegerv(GL_DRAW_BUFFER, &buffer);
     /*Usually buffer==GL_BACK, so put this extra check to simplify boolean eval on runtime*/
     return  (buffer != GL_BACK)
