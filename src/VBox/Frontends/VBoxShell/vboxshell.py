@@ -496,6 +496,21 @@ def getControllerType(type):
     else:
         return "Unknown"
 
+def getFirmwareType(type):
+    if type == 0:
+        return "invalid"
+    elif type == 1:
+        return "bios"
+    elif type == 2:
+        return "efi"
+    elif type == 3:
+        return "efi64"
+    elif type == 4:
+        return "efidual"
+    else:
+        return "Unknown"
+
+
 def infoCmd(ctx,args):
     if (len(args) < 2):
         print "usage: info [vmname|uuid]"
@@ -508,7 +523,7 @@ def infoCmd(ctx,args):
     print "  Name [name]: %s" %(mach.name)
     print "  ID [n/a]: %s" %(mach.id)
     print "  OS Type [n/a]: %s" %(os.description)
-    print "  Firmware [firmwareType]: %s" %(mach.firmwareType)
+    print "  Firmware [firmwareType]: %s (%s)" %(getFirmwareType(mach.firmwareType),mach.firmwareType)
     print
     print "  CPUs [CPUCount]: %d" %(mach.CPUCount)
     print "  RAM [memorySize]: %dM" %(mach.memorySize)
