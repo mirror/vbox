@@ -747,12 +747,12 @@ int main (int argc, char **argv)
     const struct option options[] =
     {
         { "automate",       no_argument,        NULL, 'a' },
-# if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
         { "auto-shutdown",  no_argument,        NULL, 'A' },
 #endif
         { "daemonize",      no_argument,        NULL, 'd' },
         { "pidfile",        required_argument,  NULL, 'p' },
-# if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
         { "pipe",           required_argument,  NULL, 'P' },
 #endif
         { NULL,             0,                  NULL,  0  }
@@ -828,7 +828,7 @@ int main (int argc, char **argv)
      * started daemonized when it is necessary */
     NOREF(fDaemonize);
 
-#else // ifdef RT_OS_OS2
+#else // !RT_OS_OS2
 
     if (fDaemonize)
     {
@@ -936,11 +936,11 @@ int main (int argc, char **argv)
             apszArgs[i++] = "--auto-shutdown";
         apszArgs[i++] = NULL; Assert(i <= RT_ELEMENTS(apszArgs));
         execv (apszArgs[0], (char * const *)apszArgs);
-        exit (0);
+        exit (126);
 # endif
     }
 
-#endif // ifdef RT_OS_OS2
+#endif // !RT_OS_OS2
 
     /*
      * Initialize the VBox runtime without loading
