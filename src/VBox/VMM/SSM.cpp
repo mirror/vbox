@@ -8664,7 +8664,7 @@ VMMR3DECL(uint32_t) SSMR3HandleHostBits(PSSMHANDLE pSSM)
  * Get the VirtualBox SVN revision that created the saved state.
  *
  * @returns The revision number on success.
- *          form.  If we don't know, it's an empty string.
+ *          form.  If we don't know, it's 0.
  * @param   pSSM            The saved state handle.
  *
  * @remarks This method should ONLY be used for hacks when loading OLDER saved
@@ -8676,7 +8676,11 @@ VMMR3DECL(uint32_t)     SSMR3HandleRevision(PSSMHANDLE pSSM)
 {
     if (pSSM->enmOp >= SSMSTATE_LOAD_PREP)
         return pSSM->u.Read.u32SvnRev;
+#ifdef SSM_STANDALONE
     return VMMGetSvnRev();
+#else
+    return 0;
+#endif
 }
 
 
