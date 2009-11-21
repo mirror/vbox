@@ -36,19 +36,54 @@
 /** Combined version number. */
 # define VBOX_VERSION                    (VBOX_VERSION_MAJOR << 16 | VBOX_VERSION_MINOR)
 /** Get minor version from combined version */
-# define VBOX_GET_VERSION_MINOR(uVer)    (uVer & 0xffff)
+# define VBOX_GET_VERSION_MINOR(uVer)    ((uVer) & 0xffff)
 /** Get major version from combined version. */
-# define VBOX_GET_VERSION_MAJOR(uVer)    (uVer >> 16)
+# define VBOX_GET_VERSION_MAJOR(uVer)    ((uVer) >> 16)
+
+/**
+ * Make a full version number.
+ *
+ * The returned number can be used in normal integer comparsions and will yield
+ * the expected results.
+ *
+ * @param   uMajor      The major version nu.ber
+ * @param   uMinor      The minor version number.
+ * @param   uBuild      The build number.
+ * @returns Full version number.
+ */
+# define VBOX_FULL_VERSION_MAKE(uMajor, uMinor, uBuild) \
+    (  (uint32_t)((uMajor) &   0xff) << 24 \
+     | (uint32_t)((uMinor) &   0xff) << 16 \
+     | (uint32_t)((uMinor) & 0xffff)       \
+    )
+
+/** Combined version number. */
+# define VBOX_FULL_VERSION              \
+    VBOX_FULL_VERSION_MAKE(VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD)
+/** Get the major version number from a VBOX_FULL_VERSION style number. */
+# define VBOX_FULL_VERSION_GET_MAJOR(uFullVer)  ( ((uFullVer) >> 24) &   0xffU )
+/** Get the minor version number from a VBOX_FULL_VERSION style number. */
+# define VBOX_FULL_VERSION_GET_MINOR(uFullVer)  ( ((uFullVer) >> 16) &   0xffU )
+/** Get the build version number from a VBOX_FULL_VERSION style number. */
+# define VBOX_FULL_VERSION_GET_BUILD(uFullVer)  ( ((uFullVer)      ) & 0xffffU )
+
 #endif /* !RC_INVOKED */
 
 /** Vendor name */
 #define VBOX_VENDOR                     "Sun Microsystems, Inc."
 
-/** Prefined strings for Windows resource files */
+/** @name Prefined strings for Windows resource files
+ *
+ * @remarks The VBOX_VERSION_*_NR define are integer numbers while
+ *          VBOX_VERSION_* are strings when using the resource compile.
+ *          Kind of confusing...
+ *
+ * @{ */
 #define VBOX_RC_COMPANY_NAME            VBOX_VENDOR
 #define VBOX_RC_LEGAL_COPYRIGHT         "Copyright (C) 2009 Sun Microsystems, Inc.\0"
 #define VBOX_RC_PRODUCT_VERSION         VBOX_VERSION_MAJOR_NR , VBOX_VERSION_MINOR_NR , 0 , 0
 #define VBOX_RC_FILE_VERSION            VBOX_VERSION_MAJOR_NR , VBOX_VERSION_MINOR_NR , 0 , 0
+/** @} */
 
 #endif
 
