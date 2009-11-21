@@ -548,6 +548,8 @@ typedef struct SSMHANDLE
 
             /** 32-bit MSC saved this? */
             bool            fIsHostMsc32;
+            /** "Host OS" dot "architecture", picked up from recent SSM data units. */
+            char            szHostOSAndArch[32];
 
             /** @name Header info (set by ssmR3ValidateFile)
              * @{ */
@@ -1016,6 +1018,7 @@ static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uV
 
             /*
              * Detect 32-bit MSC for handling SSMFIELD_ENTRY_PAD_MSC32_AUTO.
+             * Save the Host OS for SSMR3HandleHostOSAndArch
              */
             if (!strcmp(szVar, "Host OS"))
             {
@@ -1025,6 +1028,12 @@ static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uV
                     LogRel(("SSM: (fIsHostMsc32 %RTbool => %RTbool)\n", pSSM->u.Read.fIsHostMsc32, fIsHostMsc32));
                     pSSM->u.Read.fIsHostMsc32 = fIsHostMsc32;
                 }
+
+                size_t cchValue = strlen(szValue);
+                size_t cchCopy = RT_MIN(cchValue, sizeof(pSSM->u.Read.szHostOSAndArch) - 1);
+                Assert(cchValue == cchCopy);
+                memcpy(pSSM->u.Read.szHostOSAndArch, szValue, cchCopy);
+                pSSM->u.Read.szHostOSAndArch[cchCopy] = '\0';
             }
         }
     }
@@ -7351,6 +7360,7 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
     pSSM->u.Read.cbGCPtr        = UINT8_MAX;
     pSSM->u.Read.fFixedGCPtrSize= false;
     pSSM->u.Read.fIsHostMsc32   = SSM_HOST_IS_MSC_32;
+    RT_ZERO(pSSM->u.Read.szHostOSAndArch);
     pSSM->u.Read.u16VerMajor    = UINT16_MAX;
     pSSM->u.Read.u16VerMinor    = UINT16_MAX;
     pSSM->u.Read.u32VerBuild    = UINT32_MAX;
@@ -8638,11 +8648,83 @@ VMMR3DECL(bool) SSMR3HandleIsLiveSave(PSSMHANDLE pSSM)
  *
  * @returns 32 or 64. If pSSM is invalid, 0 is returned.
  * @param   pSSM            The saved state handle.
+ *
+ * @remarks This method should ONLY be used for hacks when loading OLDER saved
+ *          state that have data layout or semantical changes without the
+ *          compulsory version number change.
  */
 VMMR3DECL(uint32_t) SSMR3HandleHostBits(PSSMHANDLE pSSM)
 {
     SSM_ASSERT_VALID_HANDLE(pSSM);
     return ssmR3GetHostBits(pSSM);
+}
+
+
+/**
+ * Get the VirtualBox SVN revision that created the saved state.
+ *
+ * @returns The revision number on success.
+ *          form.  If we don't know, it's an empty string.
+ * @param   pSSM            The saved state handle.
+ *
+ * @remarks This method should ONLY be used for hacks when loading OLDER saved
+ *          state that have data layout or semantical changes without the
+ *          compulsory version number change.  Be VERY careful with this
+ *          function since it will return different values for OSE builds!
+ */
+VMMR3DECL(uint32_t)     SSMR3HandleRevision(PSSMHANDLE pSSM)
+{
+    if (pSSM->enmOp >= SSMSTATE_LOAD_PREP)
+        return pSSM->u.Read.u32SvnRev;
+    return VMMGetSvnRev();
+}
+
+
+/**
+ * Gets the VirtualBox version that created the saved state.
+ *
+ * @returns VBOX_FULL_VERSION style version number.
+ *          Returns UINT32_MAX if unknown or somehow out of range.
+ *
+ * @param   pSSM            The saved state handle.
+ *
+ * @remarks This method should ONLY be used for hacks when loading OLDER saved
+ *          state that have data layout or semantical changes without the
+ *          compulsory version number change.
+ */
+VMMR3DECL(uint32_t)     SSMR3HandleVersion(PSSMHANDLE pSSM)
+{
+    if (pSSM->enmOp >= SSMSTATE_LOAD_PREP)
+    {
+        if (    !pSSM->u.Read.u16VerMajor
+            &&  !pSSM->u.Read.u16VerMinor
+            &&  !pSSM->u.Read.u32VerBuild)
+            return UINT32_MAX;
+        AssertReturn(pSSM->u.Read.u16VerMajor <=   0xff, UINT32_MAX);
+        AssertReturn(pSSM->u.Read.u16VerMinor <=   0xff, UINT32_MAX);
+        AssertReturn(pSSM->u.Read.u32VerBuild <= 0xffff, UINT32_MAX);
+        return VBOX_FULL_VERSION_MAKE(pSSM->u.Read.u16VerMajor, pSSM->u.Read.u16VerMinor, pSSM->u.Read.u32VerBuild);
+    }
+    return VBOX_FULL_VERSION;
+}
+
+
+/**
+ * Get the host OS and architecture where the saved state was created.
+ *
+ * @returns Pointer to a read only string.  When known, this is on the os.arch
+ *          form.  If we don't know, it's an empty string.
+ * @param   pSSM            The saved state handle.
+ *
+ * @remarks This method should ONLY be used for hacks when loading OLDER saved
+ *          state that have data layout or semantical changes without the
+ *          compulsory version number change.
+ */
+VMMR3DECL(const char *) SSMR3HandleHostOSAndArch(PSSMHANDLE pSSM)
+{
+    if (pSSM->enmOp >= SSMSTATE_LOAD_PREP)
+        return pSSM->u.Read.szHostOSAndArch;
+    return KBUILD_TARGET "." KBUILD_TARGET_ARCH;
 }
 
 

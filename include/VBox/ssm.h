@@ -1016,6 +1016,9 @@ VMMR3DECL(int)          SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus);
 VMMR3DECL(SSMAFTER)     SSMR3HandleGetAfter(PSSMHANDLE pSSM);
 VMMR3DECL(bool)         SSMR3HandleIsLiveSave(PSSMHANDLE pSSM);
 VMMR3DECL(uint32_t)     SSMR3HandleHostBits(PSSMHANDLE pSSM);
+VMMR3DECL(uint32_t)     SSMR3HandleRevision(PSSMHANDLE pSSM);
+VMMR3DECL(uint32_t)     SSMR3HandleVersion(PSSMHANDLE pSSM);
+VMMR3DECL(const char *) SSMR3HandleHostOSAndArch(PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)     SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr);
 VMMR3DECL(int)          SSMR3Cancel(PVM pVM);
 
