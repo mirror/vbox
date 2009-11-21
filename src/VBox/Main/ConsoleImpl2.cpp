@@ -210,6 +210,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /* Note: hardcoded assumption about number of slots; see rom bios */
     bool afPciDeviceNo[32] = {false};
     bool fFdcEnabled = false;
+    BOOL fIs64BitGuest = false;
 
 #if !defined (VBOX_WITH_XPCOM)
     {
@@ -376,7 +377,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         BOOL fSupportsLongMode = false;
         hrc = host->GetProcessorFeature(ProcessorFeature_LongMode,
                                         &fSupportsLongMode);                        H();
-        BOOL fIs64BitGuest = false;
         hrc = guestOSType->COMGETTER(Is64Bit)(&fIs64BitGuest);                      H();
 
         if (fSupportsLongMode && fIs64BitGuest)
@@ -826,9 +826,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     {
         Utf8Str efiRomFile;
         /** @todo: which entry point to use for dual firmware, depend on guest? */
-        bool f64BitEntry = eFwType == FirmwareType_EFI64;
-
-        rc = findEfiRom(eFwType, efiRomFile);                                       RC_CHECK();
+        bool f64BitEntry = fIs64BitGuest;
+        //eFwType = f64BitEntry? FirmwareType_EFI64: FirmwareType_EFI;
+        rc = findEfiRom(f64BitEntry? FirmwareType_EFI64: FirmwareType_EFI, efiRomFile);                  RC_CHECK();
         /*
          * EFI.
          */
