@@ -931,7 +931,7 @@ VirtualBox::COMGETTER(DHCPServers) (ComSafeArrayOut(IDHCPServer *, aDHCPServers)
 
 STDMETHODIMP
 VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
-                                 IN_BSTR        aVersion,
+                                 IN_BSTR        /*aVersion*/,
                                  BSTR           *aUrl,
                                  BOOL           *aResult)
 {
