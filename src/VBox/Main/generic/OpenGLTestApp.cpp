@@ -245,7 +245,7 @@ int main(int argc, char **argv)
 #ifdef VBOXGLTEST_WITH_LOGGING
         bool bLog = false;
         bool bLogSuffix = false;
-        const char * pLog;
+        const char * pLog = NULL;
 #endif
 
         for (;;)
