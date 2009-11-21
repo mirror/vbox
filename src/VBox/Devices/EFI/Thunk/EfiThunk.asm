@@ -199,7 +199,7 @@ code_32:
         ;
         ; Switch stack, have it start at the last page before 2M
         ;
-        mov     esp,  0x200000 - 0x10
+        mov     esp,  0xfffff000;
 
         ;
         ; Jump to 32-bit entry point of the firmware, interrupts still disabled.
