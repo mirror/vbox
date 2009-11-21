@@ -975,7 +975,19 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
         RTRCPTR RCPtrIgnored;
         SSMR3GetRCPtr(pSSM, &RCPtrIgnored);
         SSMR3GetRCPtr(pSSM, &RCPtrIgnored);
-        SSMR3Skip(pSSM, VMM_STACK_SIZE);
+#ifdef RT_OS_DARWIN
+        if (   SSMR3HandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(3,0,0)
+            && SSMR3HandleVersion(pSSM)  <  VBOX_FULL_VERSION_MAKE(3,1,0)
+            && SSMR3HandleRevision(pSSM) >= 48858
+            && (   !strcmp(SSMR3HandleHostOSAndArch(pSSM), "darwin.x86")
+                || !strcmp(SSMR3HandleHostOSAndArch(pSSM), "") )
+           )
+            SSMR3Skip(pSSM, 16384);
+        else
+            SSMR3Skip(pSSM, 8192);
+#else
+        SSMR3Skip(pSSM, 8192);
+#endif
     }
 
     /*
