@@ -115,7 +115,7 @@ static bool removeAddresses(char *pszAdapterName)
     char aszAddresses[MAX_ADDRESSES][MAX_ADDRLEN];
     int rc;
     int fds[2];
-    char * const argv[] = { VBOXADPCTL_IFCONFIG_PATH, pszAdapterName, NULL };
+    char * const argv[] = { (char*)VBOXADPCTL_IFCONFIG_PATH, pszAdapterName, NULL };
     char * const envp[] = { (char*)"LC_ALL=C", NULL };
 
     memset(aszAddresses, 0, sizeof(aszAddresses));
