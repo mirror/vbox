@@ -2286,7 +2286,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                 char     chSign      = pCtx->fpu.aRegs[0].au16[4] & 0x8000 ? '-' : '+';
                 unsigned iInteger    = (unsigned)(pCtx->fpu.aRegs[0].au64[0] >> 63);
                 uint64_t u64Fraction = pCtx->fpu.aRegs[0].au64[0] & UINT64_C(0x7fffffffffffffff);
-                unsigned uExponent   = pCtx->fpu.aRegs[0].au16[5] & 0x7fff;
+                unsigned uExponent   = pCtx->fpu.aRegs[0].au16[4] & 0x7fff;
                 /** @todo This isn't entirenly correct and needs more work! */
                 pHlp->pfnPrintf(pHlp,
                                 "%sST(%u)=%sFPR%u={%04RX16'%08RX32'%08RX32} t%d %c%u.%022llu ^ %u",
