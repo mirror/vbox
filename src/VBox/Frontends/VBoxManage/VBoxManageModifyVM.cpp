@@ -1450,6 +1450,13 @@ int handleModifyVM(HandlerArg *a)
                 }
 
 #endif /* !RT_OS_DARWIN */
+# ifdef RT_OS_FREEBSD
+                else if (!strcmp(ValueUnion.psz, "oss"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+                }
+# endif
                 else
                 {
                     errorArgument("Invalid --audio argument '%s'", ValueUnion.psz);
