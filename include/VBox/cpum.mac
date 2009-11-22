@@ -212,9 +212,8 @@ struc X86FXSTATE
     .FCW            resw    1
     ;/** Status word. */
     .FSW            resw    1
-    ;/** Tag word (it's a byte actually). */
-    .FTW            resb    1
-    .huh1           resb    1
+    ;/** Tag word. */
+    .FTW            resw    1
     ;/** Opcode. */
     .FOP            resw    1
     ;/** Instruction pointer. */

@@ -2270,18 +2270,51 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp);
 
             pHlp->pfnPrintf(pHlp,
-                "FPU:\n"
-                "%sFCW=%04x %sFSW=%04x %sFTW=%02x\n"
-                "%sres1=%02x %sFOP=%04x %sFPUIP=%08x %sCS=%04x %sRsvrd1=%04x\n"
-                "%sFPUDP=%04x %sDS=%04x %sRsvrd2=%04x %sMXCSR=%08x %sMXCSR_MASK=%08x\n"
+                "%sFCW=%04x %sFSW=%04x %sFTW=%04x %sFOP=%04x %sMXCSR=%08x %sMXCSR_MASK=%08x\n"
+                "%sFPUIP=%08x %sCS=%04x %sRsvrd1=%04x  %sFPUDP=%08x %sDS=%04x %sRsvrd2=%04x\n"
                 ,
-                pszPrefix, pCtx->fpu.FCW, pszPrefix, pCtx->fpu.FSW, pszPrefix, pCtx->fpu.FTW,
-                pszPrefix, pCtx->fpu.huh1, pszPrefix, pCtx->fpu.FOP, pszPrefix, pCtx->fpu.FPUIP, pszPrefix, pCtx->fpu.CS, pszPrefix, pCtx->fpu.Rsvrd1,
-                pszPrefix, pCtx->fpu.FPUDP, pszPrefix, pCtx->fpu.DS, pszPrefix, pCtx->fpu.Rsrvd2,
-                pszPrefix, pCtx->fpu.MXCSR, pszPrefix, pCtx->fpu.MXCSR_MASK);
+                pszPrefix, pCtx->fpu.FCW,   pszPrefix, pCtx->fpu.FSW, pszPrefix, pCtx->fpu.FTW, pszPrefix, pCtx->fpu.FOP,
+                pszPrefix, pCtx->fpu.MXCSR, pszPrefix, pCtx->fpu.MXCSR_MASK,
+                pszPrefix, pCtx->fpu.FPUIP, pszPrefix, pCtx->fpu.CS,  pszPrefix, pCtx->fpu.Rsvrd1,
+                pszPrefix, pCtx->fpu.FPUDP, pszPrefix, pCtx->fpu.DS,  pszPrefix, pCtx->fpu.Rsrvd2
+                );
+            unsigned iShift = (pCtx->fpu.FSW >> 11) & 7;
+            for (unsigned iST = 0; iST < RT_ELEMENTS(pCtx->fpu.aRegs); iST++)
+            {
+                unsigned iFPR        = (iST + iShift) % RT_ELEMENTS(pCtx->fpu.aRegs);
+                unsigned uTag        = pCtx->fpu.FTW & (1 << iFPR) ? 1 : 0;
+                char     chSign      = pCtx->fpu.aRegs[0].au16[4] & 0x8000 ? '-' : '+';
+                unsigned iInteger    = (unsigned)(pCtx->fpu.aRegs[0].au64[0] >> 63);
+                uint64_t u64Fraction = pCtx->fpu.aRegs[0].au64[0] & UINT64_C(0x7fffffffffffffff);
+                unsigned uExponent   = pCtx->fpu.aRegs[0].au16[5] & 0x7fff;
+                /** @todo This isn't entirenly correct and needs more work! */
+                pHlp->pfnPrintf(pHlp,
+                                "%sST(%u)=%sFPR%u={%04RX16'%08RX32'%08RX32} t%d %c%u.%022llu ^ %u",
+                                pszPrefix, iST, pszPrefix, iFPR,
+                                pCtx->fpu.aRegs[0].au16[4], pCtx->fpu.aRegs[0].au32[1], pCtx->fpu.aRegs[0].au32[0],
+                                uTag, chSign, iInteger, u64Fraction, uExponent);
+                if (pCtx->fpu.aRegs[0].au16[5] || pCtx->fpu.aRegs[0].au16[6] || pCtx->fpu.aRegs[0].au16[7])
+                    pHlp->pfnPrintf(pHlp, " res={%04RX16,%04RX16,%04RX16}\n",
+                                    pCtx->fpu.aRegs[0].au16[5], pCtx->fpu.aRegs[0].au16[6], pCtx->fpu.aRegs[0].au16[7]);
+                else
+                    pHlp->pfnPrintf(pHlp, "\n");
+            }
+            for (unsigned iXMM = 0; iXMM < RT_ELEMENTS(pCtx->fpu.aXMM); iXMM++)
+                pHlp->pfnPrintf(pHlp,
+                                iXMM & 1
+                                ? "%sXMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32\n"
+                                : "%sXMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32  ",
+                                pszPrefix, iXMM, iXMM < 10 ? " " : "",
+                                pCtx->fpu.aRegs[iXMM].au32[3],
+                                pCtx->fpu.aRegs[iXMM].au32[2],
+                                pCtx->fpu.aRegs[iXMM].au32[1],
+                                pCtx->fpu.aRegs[iXMM].au32[0]);
+            for (unsigned i = 0; i < RT_ELEMENTS(pCtx->fpu.au32RsrvdRest); i++)
+                if (pCtx->fpu.au32RsrvdRest[i])
+                    pHlp->pfnPrintf(pHlp, "%sRsrvdRest[i]=%RX32 (offset=%#x)\n",
+                                    pszPrefix, i, pCtx->fpu.au32RsrvdRest[i], RT_OFFSETOF(X86FXSTATE, au32RsrvdRest[i]) );
 
             pHlp->pfnPrintf(pHlp,
-                "MSR:\n"
                 "%sEFER         =%016RX64\n"
                 "%sPAT          =%016RX64\n"
                 "%sSTAR         =%016RX64\n"

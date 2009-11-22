@@ -1893,9 +1893,8 @@ typedef struct X86FXSTATE
     uint16_t    FCW;
     /** Status word. */
     uint16_t    FSW;
-    /** Tag word (it's a byte actually). */
-    uint8_t     FTW;
-    uint8_t     huh1;
+    /** Tag word. (The upper byte is always zero.) */
+    uint16_t    FTW;
     /** Opcode. */
     uint16_t    FOP;
     /** Instruction pointer. */
