@@ -1963,24 +1963,24 @@ typedef const X86FXSTATE *PCX86FXSTATE;
  */
 typedef struct X86DESCATTRBITS
 {
-    /** Segment Type. */
+    /** 00 - Segment Type. */
     unsigned    u4Type : 4;
-    /** Descriptor Type. System(=0) or code/data selector */
+    /** 04 - Descriptor Type. System(=0) or code/data selector */
     unsigned    u1DescType : 1;
-    /** Descriptor Privelege level. */
+    /** 05 - Descriptor Privelege level. */
     unsigned    u2Dpl : 2;
-    /** Flags selector present(=1) or not. */
+    /** 07 - Flags selector present(=1) or not. */
     unsigned    u1Present : 1;
-    /** Segment limit 16-19. */
+    /** 08 - Segment limit 16-19. */
     unsigned    u4LimitHigh : 4;
-    /** Available for system software. */
+    /** 0c - Available for system software. */
     unsigned    u1Available : 1;
-    /** 32 bits mode: Reserved - 0, long mode: Long Attribute Bit. */
+    /** 0d - 32 bits mode: Reserved - 0, long mode: Long Attribute Bit. */
     unsigned    u1Long : 1;
-    /** This flags meaning depends on the segment type. Try make sense out
+    /** 0e - This flags meaning depends on the segment type. Try make sense out
      * of the intel manual yourself.  */
     unsigned    u1DefBig : 1;
-    /** Granularity of the limit. If set 4KB granularity is used, if
+    /** 0f - Granularity of the limit. If set 4KB granularity is used, if
      * clear byte. */
     unsigned    u1Granularity : 1;
 } X86DESCATTRBITS;
