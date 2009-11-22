@@ -117,6 +117,7 @@ SRCS += device_if.h bus_if.h
 OBJS = \
 	SUPDrv-freebsd.o \
 	SUPDrv.o \
+	SUPDrvAgnostic.o \
 	heapsimple.o \
 	RTErrConvertFromErrno.o \
 	RTErrConvertToErrno.o \
