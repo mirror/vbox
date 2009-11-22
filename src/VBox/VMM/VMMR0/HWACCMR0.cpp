@@ -1696,11 +1696,11 @@ VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     Log(("FPU:\n"
         "FCW=%04x FSW=%04x FTW=%02x\n"
-        "res1=%02x FOP=%04x FPUIP=%08x CS=%04x Rsvrd1=%04x\n"
+        "FOP=%04x FPUIP=%08x CS=%04x Rsvrd1=%04x\n"
         "FPUDP=%04x DS=%04x Rsvrd2=%04x MXCSR=%08x MXCSR_MASK=%08x\n"
         ,
         pCtx->fpu.FCW, pCtx->fpu.FSW, pCtx->fpu.FTW,
-        pCtx->fpu.huh1, pCtx->fpu.FOP, pCtx->fpu.FPUIP, pCtx->fpu.CS, pCtx->fpu.Rsvrd1,
+        pCtx->fpu.FOP, pCtx->fpu.FPUIP, pCtx->fpu.CS, pCtx->fpu.Rsvrd1,
         pCtx->fpu.FPUDP, pCtx->fpu.DS, pCtx->fpu.Rsrvd2,
         pCtx->fpu.MXCSR, pCtx->fpu.MXCSR_MASK));
 
