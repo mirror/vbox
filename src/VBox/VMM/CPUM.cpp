@@ -2305,10 +2305,10 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                                 ? "%sXMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32\n"
                                 : "%sXMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32  ",
                                 pszPrefix, iXMM, iXMM < 10 ? " " : "",
-                                pCtx->fpu.aRegs[iXMM].au32[3],
-                                pCtx->fpu.aRegs[iXMM].au32[2],
-                                pCtx->fpu.aRegs[iXMM].au32[1],
-                                pCtx->fpu.aRegs[iXMM].au32[0]);
+                                pCtx->fpu.aXMM[iXMM].au32[3],
+                                pCtx->fpu.aXMM[iXMM].au32[2],
+                                pCtx->fpu.aXMM[iXMM].au32[1],
+                                pCtx->fpu.aXMM[iXMM].au32[0]);
             for (unsigned i = 0; i < RT_ELEMENTS(pCtx->fpu.au32RsrvdRest); i++)
                 if (pCtx->fpu.au32RsrvdRest[i])
                     pHlp->pfnPrintf(pHlp, "%sRsrvdRest[i]=%RX32 (offset=%#x)\n",
