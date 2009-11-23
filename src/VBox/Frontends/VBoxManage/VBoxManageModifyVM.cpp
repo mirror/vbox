@@ -301,9 +301,13 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_FIRMWARE:
             {
-                if (!strcmp(ValueUnion.psz, "efi") || !strcmp(ValueUnion.psz, "efi32"))
+                if (!strcmp(ValueUnion.psz, "efi"))
                 {
                     CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_EFI));
+                }
+                else if (!strcmp(ValueUnion.psz, "efi32"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_EFI32));
                 }
                 else if (!strcmp(ValueUnion.psz, "efi64"))
                 {

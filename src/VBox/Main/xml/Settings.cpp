@@ -1591,6 +1591,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                           || (strFirmwareType == "2")           // some trunk builds used the number here
                         )
                     hw.firmwareType = FirmwareType_EFI;
+                else if (    strFirmwareType == "EFI32")
+                    hw.firmwareType = FirmwareType_EFI32;
                 else if (    strFirmwareType == "EFI64")
                     hw.firmwareType = FirmwareType_EFI64;
                 else if (    strFirmwareType == "EFIDUAL")
@@ -2487,6 +2489,7 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
          switch (hw.firmwareType)
          {
             case FirmwareType_EFI:      pcszFirmware = "EFI";   break;
+            case FirmwareType_EFI32:    pcszFirmware = "EFI32"; break;
             case FirmwareType_EFI64:    pcszFirmware = "EFI64"; break;
             case FirmwareType_EFIDUAL:  pcszFirmware = "EFIDUAL"; break;
             default:                    pcszFirmware = "None"; break;

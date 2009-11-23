@@ -144,7 +144,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 #ifdef VBOX_WITH_VIDEOHWACCEL
                  "                            [--accelerate2dvideo <on|off>]\n"
 #endif
-                 "                            [--firmware bios|efi|efi64]\n"
+                 "                            [--firmware bios|efi|efi32|efi64]\n"
                  "                            [--bioslogofadein on|off]\n"
                  "                            [--bioslogofadeout on|off]\n"
                  "                            [--bioslogodisplaytime <msec>]\n"
