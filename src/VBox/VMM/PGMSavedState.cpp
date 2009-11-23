@@ -1823,7 +1823,7 @@ static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass
      */
     if (    cDirtyPagesShort <= cDirtyPagesLong
         &&  (   cDirtyNow    <= cDirtyPagesShort
-             || cDirtyNow - cDirtyPagesShort < cDirtyPagesShort / 8
+             || cDirtyNow - cDirtyPagesShort < RT_MIN(cDirtyPagesShort / 8, 16)
             )
        )
     {
