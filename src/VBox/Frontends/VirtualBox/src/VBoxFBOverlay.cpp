@@ -3810,7 +3810,7 @@ static DECLCALLBACK(int) vboxQGLLoadExec(PSSMHANDLE pSSM, void *pvUser, uint32_t
 {
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
     VBoxGLWidget * pw = (VBoxGLWidget*)pvUser;
-    return pw->vhwaLoadExec(NULL, pSSM, u32Version);
+    return VBoxGLWidget::vhwaLoadExec(&pw->onResizeCmdList(), pSSM, u32Version);
 }
 
 int VBoxGLWidget::vhwaSaveSurface(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *pSurf, uint32_t surfCaps)
@@ -4124,6 +4124,14 @@ int VBoxGLWidget::vhwaLoadOverlayData(VHWACommandList * pCmdList, struct SSMHAND
     return rc;
 }
 
+void VBoxGLWidget::vhwaSaveExecVoid(struct SSMHANDLE * pSSM)
+{
+    VBOXQGL_SAVE_START(pSSM);
+    int rc = SSMR3PutU32(pSSM, 0);         AssertRC(rc); /* 0 primaries */
+    rc = SSMR3PutU32(pSSM, 0);         AssertRC(rc); /* 0 overlays */
+    VBOXQGL_SAVE_STOP(pSSM);
+}
+
 void VBoxGLWidget::vhwaSaveExec(struct SSMHANDLE * pSSM)
 {
     VBOXQGL_SAVE_START(pSSM);
@@ -4238,12 +4246,6 @@ int VBoxGLWidget::vhwaLoadExec(VHWACommandList * pCmdList, struct SSMHANDLE * pS
 
     int rc;
     uint32_t u32;
-
-    if(pCmdList == NULL)
-    {
-        /* use our own list */
-        pCmdList = &mOnResizeCmdList;
-    }
 
     rc = SSMR3GetU32(pSSM, &u32); AssertRC(rc);
     if(RT_SUCCESS(rc))
@@ -5575,7 +5577,7 @@ int VBoxQGLOverlay::vhwaLoadExec(struct SSMHANDLE * pSSM, uint32_t u32Version)
 //    int rc = SSMR3GetBool(pSSM, &bTmp /*&mGlOn*/);         AssertRC(rc);
 //    rc = SSMR3GetBool(pSSM, &bTmp /*&mOverlayVisible*/);         AssertRC(rc);
 //    if(RT_SUCCESS(rc))
-    return mpOverlayWidget->vhwaLoadExec(&mOnResizeCmdList, pSSM, u32Version);
+    return VBoxGLWidget::vhwaLoadExec(&mOnResizeCmdList, pSSM, u32Version);
 //    return rc;
 }
 
@@ -5584,7 +5586,10 @@ void VBoxQGLOverlay::vhwaSaveExec(struct SSMHANDLE * pSSM)
 //    int rc = SSMR3PutBool(pSSM, mGlOn);         AssertRC(rc);
 //    rc = SSMR3PutBool(pSSM, mOverlayVisible);         AssertRC(rc);
 //
-    mpOverlayWidget->vhwaSaveExec(pSSM);
+    if(mpOverlayWidget)
+        mpOverlayWidget->vhwaSaveExec(pSSM);
+    else
+        VBoxGLWidget::vhwaSaveExecVoid(pSSM);
 }
 
 int VBoxQGLOverlay::vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd)

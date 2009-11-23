@@ -1080,7 +1080,8 @@ public:
     uint64_t vboxVRAMOffset(VBoxVHWASurfaceBase * pSurf);
 
     void vhwaSaveExec(struct SSMHANDLE * pSSM);
-    int vhwaLoadExec(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t u32Version);
+    static void vhwaSaveExecVoid(struct SSMHANDLE * pSSM);
+    static int vhwaLoadExec(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t u32Version);
 
     int vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd);
     int vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd);
@@ -1156,6 +1157,8 @@ public:
 #endif
         return bForce;
     }
+
+    VHWACommandList &onResizeCmdList() { return mOnResizeCmdList; }
 protected:
 
     void paintGL()
@@ -1201,10 +1204,11 @@ private:
     }
 
     int vhwaSaveSurface(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *pSurf, uint32_t surfCaps);
-    int vhwaLoadSurface(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t cBackBuffers, uint32_t u32Version);
+    static int vhwaLoadSurface(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t cBackBuffers, uint32_t u32Version);
     int vhwaSaveOverlayData(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *pSurf, bool bVisible);
-    int vhwaLoadOverlayData(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t u32Version);
-    int vhwaLoadVHWAEnable(VHWACommandList * pCmdList);
+    static int vhwaLoadOverlayData(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t u32Version);
+    static int vhwaLoadVHWAEnable(VHWACommandList * pCmdList);
+
     void vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBoxVHWASurfaceBase *pSrcSurf, struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmd);
 #endif
     static const QGLFormat & vboxGLFormat();
