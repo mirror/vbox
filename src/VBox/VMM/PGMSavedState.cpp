@@ -1784,11 +1784,12 @@ static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass
     pgmLock(pVM);
     uint32_t const cWrittenToPages = pVM->pgm.s.cWrittenToPages;
     pgmUnlock(pVM);
+    uint32_t const cDirtyNow = pVM->pgm.s.LiveSave.Rom.cDirtyPages
+                             + pVM->pgm.s.LiveSave.Mmio2.cDirtyPages
+                             + pVM->pgm.s.LiveSave.Ram.cDirtyPages
+                             + cWrittenToPages;
     uint32_t i = pVM->pgm.s.LiveSave.iDirtyPagesHistory;
-    pVM->pgm.s.LiveSave.acDirtyPagesHistory[i] = pVM->pgm.s.LiveSave.Rom.cDirtyPages
-                                               + pVM->pgm.s.LiveSave.Mmio2.cDirtyPages
-                                               + pVM->pgm.s.LiveSave.Ram.cDirtyPages
-                                               + cWrittenToPages;
+    pVM->pgm.s.LiveSave.acDirtyPagesHistory[i] = cDirtyNow;
     pVM->pgm.s.LiveSave.iDirtyPagesHistory = (i + 1) % cHistoryEntries;
 
     /* calc shortterm average (4 passes). */
@@ -1820,7 +1821,11 @@ static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass
     /*
      * Try make a decision.
      */
-    if (cDirtyPagesShort <= cDirtyPagesLong)
+    if (    cDirtyPagesShort <= cDirtyPagesLong
+        &&  (   cDirtyNow    <= cDirtyPagesShort
+             || cDirtyNow - cDirtyPagesShort < cDirtyPagesShort / 8
+            )
+       )
     {
         if (uPass > 10)
         {
