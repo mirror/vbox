@@ -4474,7 +4474,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
                            strCpuCount);
 
         /* Memory */
-        Utf8Str strMemory = Utf8StrFmt("%RI32", (uint64_t)ulMemSizeMB * _1M);
+        Utf8Str strMemory = Utf8StrFmt("%RI64", (uint64_t)ulMemSizeMB * _1M);
         pNewDesc->addEntry(VirtualSystemDescriptionType_Memory,
                            "",
                            strMemory,
