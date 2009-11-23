@@ -75,6 +75,7 @@ int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char 
 
 
 #ifdef RT_OS_WINDOWS
+/** @todo return an iprt status code instead of BOOL */
 BOOL VBoxServiceGetFileString(const char* pszFileName,
                               char* pszBlock,
                               char* pszString,
@@ -99,14 +100,17 @@ BOOL VBoxServiceGetFileString(const char* pszFileName,
 
     if (!dwLen)
     {
-        VBoxServiceError("No file information found! File = %s, Error: %ld\n", pszFileName, GetLastError());
+        /* Don't print this to release log -- this confuses people if a file
+         * isn't present because it's optional / was not installed intentionally. */
+        VBoxServiceVerbose(3, "No file information found! File = %s, Error: %Rrc\n",
+            pszFileName, RTErrConvertFromWin32(GetLastError()));
         return FALSE;
     }
 
     lpData = (LPTSTR) RTMemTmpAlloc(dwLen);
     if (!lpData)
     {
-        VBoxServiceError("Could not allocate temp buffer!\n");
+        VBoxServiceError("Could not allocate temp buffer for file string lookup!\n");
         return FALSE;
     }
 
@@ -122,15 +126,16 @@ BOOL VBoxServiceGetFileString(const char* pszFileName,
             ZeroMemory(pszString, *puiSize);
             memcpy(pszString, lpValue, uiSize);
         }
-        else VBoxServiceError("Could not query value!\n");
+        else VBoxServiceVerbose(3, "No file string value for \"%s\" in file \"%s\" available!\n", pszBlock, pszFileName);
     }
-    else VBoxServiceError("Could not get file version info!\n");
+    else VBoxServiceVerbose(3, "No file version table for file \"%s\" available!\n", pszFileName);
 
     RTMemFree(lpData);
     return bRet;
 }
 
 
+/** @todo return an iprt status code instead of BOOL */
 BOOL VBoxServiceGetFileVersion(const char* pszFileName,
                                DWORD* pdwMajor,
                                DWORD* pdwMinor,
@@ -170,7 +175,7 @@ BOOL VBoxServiceGetFileVersion(const char* pszFileName,
         lpData = (LPTSTR) RTMemTmpAlloc(dwLen);
         if (!lpData)
         {
-            VBoxServiceError("Could not allocate temp buffer!\n");
+            VBoxServiceError("Could not allocate temp buffer for file version string!\n");
             return FALSE;
         }
 
@@ -182,10 +187,11 @@ BOOL VBoxServiceGetFileVersion(const char* pszFileName,
                 *pdwMinor = LOWORD(pFileInfo->dwFileVersionMS);
                 *pdwBuildNumber = HIWORD(pFileInfo->dwFileVersionLS);
                 *pdwRevisionNumber = LOWORD(pFileInfo->dwFileVersionLS);
+                bRet = TRUE;
             }
-            else VBoxServiceError("Could not query file information value!\n");
+            else VBoxServiceVerbose(3, "No file version value for file \"%s\" available!\n", pszFileName);
         }
-        else VBoxServiceError("Could not get file version info!\n");
+        else VBoxServiceVerbose(3, "No file version struct for file \"%s\" available!\n", pszFileName);
 
         RTMemFree(lpData);
     }
