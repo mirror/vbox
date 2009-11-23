@@ -1033,6 +1033,7 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
             void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(&State));
             if (pProgress->setCancelCallback(teleporterProgressCancelCallback, pvUser))
             {
+                LogRel(("Teleporter: Waiting for incoming VM...\n"));
                 vrc = RTTcpServerListen(hServer, Console::teleporterTrgServeConnection, &State);
                 pProgress->setCancelCallback(NULL, NULL);
 
@@ -1193,6 +1194,7 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
     vrc = teleporterTcpWriteACK(pState);
     if (RT_FAILURE(vrc))
         return VINF_SUCCESS;
+    LogRel(("Teleporter: Incoming VM!\n"));
 
     /*
      * Stop the server and cancel the timeout timer.
