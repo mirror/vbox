@@ -342,12 +342,15 @@ void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage openmedium       disk|dvd|floppy <filename>\n"
                  "                            [--type normal|immutable|writethrough] (disk only)\n"
+                 "                            [--uuid <uuid>]\n"
+                 "                            [--parentuuid <uuid>] (disk only)\n"
                  "\n");
     }
 
     if (u64Cmd & USAGE_CLOSEMEDIUM)
     {
         RTPrintf("VBoxManage closemedium      disk|dvd|floppy <uuid>|<filename>\n"
+                 "                            [--delete]\n"
                  "\n");
     }
 
