@@ -73,9 +73,9 @@ que teniu instal·lat el connector libgstreamer-plugins-base.</translation>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
         <translation>
-            <numerusform>No es troba un còdec requerit. Necessiteu instal·lar els següents còdecs per reproduir aquest contingut: %0</numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+            <numerusform>No es troba un còdec requerit. Necessiteu instal·lar el còdec següent per reproduir aquest contingut: %0</numerusform>
+            <numerusform>No es troba un còdec requerit. Necessiteu instal·lar els còdecs següents per reproduir aquest contingut: %0</numerusform>
+            <numerusform>No es troba un còdec requerit. Necessiteu instal·lar els còdecs següents per reproduir aquest contingut: %0</numerusform>
         </translation>
     </message>
     <message>
@@ -4879,17 +4879,17 @@ Trieu un nom de fitxer diferent.</translation>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
         <translation>
+            <numerusform>%1 fa servir com a màxim %n(s) argument. Per tant, %2 no és vàlid.</numerusform>
             <numerusform>%1 fa servir com a màxim %n(s) arguments. Per tant, %2 no és vàlid.</numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+            <numerusform>%1 fa servir com a màxim %n(s) arguments. Per tant, %2 no és vàlid.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%1 requires at least %n argument(s). %2 is therefore invalid.</source>
         <translation>
+            <numerusform>%1 requereix com a mínim %n argument. Per tant, %2 no és vàlid.</numerusform>
             <numerusform>%1 requereix com a mínim %n arguments. Per tant, %2 no és vàlid.</numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+            <numerusform>%1 requereix com a mínim %n arguments. Per tant, %2 no és vàlid.</numerusform>
         </translation>
     </message>
     <message>
