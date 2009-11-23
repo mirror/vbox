@@ -287,34 +287,28 @@ int handleCreateHardDisk(HandlerArg *a)
         CHECK_ERROR(hardDisk, CreateBaseStorage(sizeMB, DiskVariant, progress.asOutParam()));
         if (SUCCEEDED(rc) && progress)
         {
-            showProgress(progress);
-            if (SUCCEEDED(rc))
+            rc = showProgress(progress);
+            if (FAILED(rc))
             {
-                LONG iRc;
-                progress->COMGETTER(ResultCode)(&iRc);
-                rc = iRc;
-                if (FAILED(rc))
-                {
-                    com::ProgressErrorInfo info(progress);
-                    if (info.isBasicAvailable())
-                        RTPrintf("Error: failed to create hard disk. Error message: %lS\n", info.getText().raw());
-                    else
-                        RTPrintf("Error: failed to create hard disk. No error message available!\n");
-                }
+                com::ProgressErrorInfo info(progress);
+                if (info.isBasicAvailable())
+                    RTPrintf("Error: failed to create hard disk. Error message: %lS\n", info.getText().raw());
                 else
+                    RTPrintf("Error: failed to create hard disk. No error message available!\n");
+            }
+            else
+            {
+                doClose = !fRemember;
+
+                Bstr uuid;
+                CHECK_ERROR(hardDisk, COMGETTER(Id)(uuid.asOutParam()));
+
+                if (DiskType == MediumType_Writethrough)
                 {
-                    doClose = !fRemember;
-
-                    Bstr uuid;
-                    CHECK_ERROR(hardDisk, COMGETTER(Id)(uuid.asOutParam()));
-
-                    if (DiskType == MediumType_Writethrough)
-                    {
-                        CHECK_ERROR(hardDisk, COMSETTER(Type)(MediumType_Writethrough));
-                    }
-
-                    RTPrintf("Disk image created. UUID: %s\n", Utf8Str(uuid).raw());
+                    CHECK_ERROR(hardDisk, COMSETTER(Type)(MediumType_Writethrough));
                 }
+
+                RTPrintf("Disk image created. UUID: %s\n", Utf8Str(uuid).raw());
             }
         }
         if (doClose)
@@ -481,12 +475,7 @@ int handleModifyHardDisk(HandlerArg *a)
             ComPtr<IProgress> progress;
             CHECK_ERROR(hardDisk, Compact(progress.asOutParam()));
             if (SUCCEEDED(rc))
-            {
-                showProgress(progress);
-                LONG iRc;
-                progress->COMGETTER(ResultCode)(&iRc);
-                rc = iRc;
-            }
+                rc = showProgress(progress);
             if (FAILED(rc))
             {
                 if (rc == E_NOTIMPL)
@@ -698,10 +687,7 @@ int handleCloneHardDisk(HandlerArg *a)
         ComPtr<IProgress> progress;
         CHECK_ERROR_BREAK(srcDisk, CloneTo(dstDisk, DiskVariant, NULL, progress.asOutParam()));
 
-        showProgress(progress);
-        LONG iRc;
-        progress->COMGETTER(ResultCode)(&iRc);
-        rc = iRc;
+        rc = showProgress(progress);
         if (FAILED(rc))
         {
             com::ProgressErrorInfo info(progress);
@@ -1439,10 +1425,11 @@ int handleOpenMedium(HandlerArg *a)
     }
     else if (cmd == CMD_DVD)
     {
-        if (fDiskType || fSetImageId || fSetParentId)
+        if (fDiskType || fSetParentId)
             return errorSyntax(USAGE_OPENMEDIUM, "Invalid option for DVD images");
+        Bstr ImageIdStr = BstrFmt("%RTuuid", &ImageId);
         ComPtr<IMedium> dvdImage;
-        rc = a->virtualBox->OpenDVDImage(Bstr(Filename), Bstr(), dvdImage.asOutParam());
+        rc = a->virtualBox->OpenDVDImage(Bstr(Filename), ImageIdStr, dvdImage.asOutParam());
         if (rc == VBOX_E_FILE_ERROR)
         {
             char szFilenameAbs[RTPATH_MAX] = "";
@@ -1452,17 +1439,18 @@ int handleOpenMedium(HandlerArg *a)
                 RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Filename);
                 return 1;
             }
-            CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(szFilenameAbs), Bstr(), dvdImage.asOutParam()));
+            CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(szFilenameAbs), ImageIdStr, dvdImage.asOutParam()));
         }
         else if (FAILED(rc))
-            CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(Filename), Bstr(), dvdImage.asOutParam()));
+            CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(Filename), ImageIdStr, dvdImage.asOutParam()));
     }
     else if (cmd == CMD_FLOPPY)
     {
         if (fDiskType || fSetImageId || fSetParentId)
             return errorSyntax(USAGE_OPENMEDIUM, "Invalid option for floppy images");
+        Bstr ImageIdStr = BstrFmt("%RTuuid", &ImageId);
         ComPtr<IMedium> floppyImage;
-         rc = a->virtualBox->OpenFloppyImage(Bstr(Filename), Bstr(), floppyImage.asOutParam());
+        rc = a->virtualBox->OpenFloppyImage(Bstr(Filename), ImageIdStr, floppyImage.asOutParam());
         if (rc == VBOX_E_FILE_ERROR)
         {
             char szFilenameAbs[RTPATH_MAX] = "";
@@ -1472,10 +1460,10 @@ int handleOpenMedium(HandlerArg *a)
                 RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Filename);
                 return 1;
             }
-            CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(szFilenameAbs), Bstr(), floppyImage.asOutParam()));
+            CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(szFilenameAbs), ImageIdStr, floppyImage.asOutParam()));
         }
         else if (FAILED(rc))
-            CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(Filename), Bstr(), floppyImage.asOutParam()));
+            CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(Filename), ImageIdStr, floppyImage.asOutParam()));
     }
 
     return SUCCEEDED(rc) ? 0 : 1;
@@ -1486,6 +1474,7 @@ static const RTGETOPTDEF g_aCloseMediumOptions[] =
     { "disk",           'd', RTGETOPT_REQ_NOTHING },
     { "dvd",            'D', RTGETOPT_REQ_NOTHING },
     { "floppy",         'f', RTGETOPT_REQ_NOTHING },
+    { "--delete",       'r', RTGETOPT_REQ_NOTHING },
 };
 
 int handleCloseMedium(HandlerArg *a)
@@ -1498,6 +1487,7 @@ int handleCloseMedium(HandlerArg *a)
         CMD_FLOPPY
     } cmd = CMD_NONE;
     const char *FilenameOrUuid = NULL;
+    bool fDelete = false;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -1524,6 +1514,10 @@ int handleCloseMedium(HandlerArg *a)
                 if (cmd != CMD_NONE)
                     return errorSyntax(USAGE_CLOSEMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
                 cmd = CMD_FLOPPY;
+                break;
+
+            case 'r':   // --delete
+                fDelete = true;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -1556,52 +1550,63 @@ int handleCloseMedium(HandlerArg *a)
     if (!FilenameOrUuid)
         return errorSyntax(USAGE_CLOSEMEDIUM, "Disk name or UUID required");
 
+    ComPtr<IMedium> medium;
+
     /* first guess is that it's a UUID */
     Bstr uuid(FilenameOrUuid);
 
     if (cmd == CMD_DISK)
     {
-        ComPtr<IMedium> hardDisk;
-        rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
+        rc = a->virtualBox->GetHardDisk(uuid, medium.asOutParam());
         /* not a UUID or not registered? Then it must be a filename */
-        if (!hardDisk)
+        if (!medium)
         {
-            CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(FilenameOrUuid), hardDisk.asOutParam()));
-        }
-        if (SUCCEEDED(rc) && hardDisk)
-        {
-            CHECK_ERROR(hardDisk, Close());
+            CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(FilenameOrUuid), medium.asOutParam()));
         }
     }
     else
     if (cmd == CMD_DVD)
     {
-        ComPtr<IMedium> dvdImage;
-        rc = a->virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
+        rc = a->virtualBox->GetDVDImage(uuid, medium.asOutParam());
         /* not a UUID or not registered? Then it must be a filename */
-        if (!dvdImage)
+        if (!medium)
         {
-            CHECK_ERROR(a->virtualBox, FindDVDImage(Bstr(FilenameOrUuid), dvdImage.asOutParam()));
-        }
-        if (SUCCEEDED(rc) && dvdImage)
-        {
-            CHECK_ERROR(dvdImage, Close());
+            CHECK_ERROR(a->virtualBox, FindDVDImage(Bstr(FilenameOrUuid), medium.asOutParam()));
         }
     }
     else
     if (cmd == CMD_FLOPPY)
     {
-        ComPtr<IMedium> floppyImage;
-        rc = a->virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
+        rc = a->virtualBox->GetFloppyImage(uuid, medium.asOutParam());
         /* not a UUID or not registered? Then it must be a filename */
-        if (!floppyImage)
+        if (!medium)
         {
-            CHECK_ERROR(a->virtualBox, FindFloppyImage(Bstr(FilenameOrUuid), floppyImage.asOutParam()));
+            CHECK_ERROR(a->virtualBox, FindFloppyImage(Bstr(FilenameOrUuid), medium.asOutParam()));
         }
-        if (SUCCEEDED(rc) && floppyImage)
+    }
+
+    if (SUCCEEDED(rc) && medium)
+    {
+        if (fDelete)
         {
-            CHECK_ERROR(floppyImage, Close());
+            ComPtr<IProgress> progress;
+            CHECK_ERROR(medium, DeleteStorage(progress.asOutParam()));
+            if (SUCCEEDED(rc))
+            {
+                rc = showProgress(progress);
+                if (FAILED(rc))
+                {
+                    com::ProgressErrorInfo info(progress);
+                    if (info.isBasicAvailable())
+                        RTPrintf("Error: failed to delete medium. Error message: %lS\n", info.getText().raw());
+                    else
+                        RTPrintf("Error: failed to delete medium. No error message available!\n");
+                }
+            }
+            else
+                RTPrintf("Error: failed to delete medium. Error code %Rrc\n", rc);
         }
+        CHECK_ERROR(medium, Close());
     }
 
     return SUCCEEDED(rc) ? 0 : 1;
