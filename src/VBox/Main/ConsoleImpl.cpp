@@ -1724,6 +1724,7 @@ STDMETHODIMP Console::Pause()
 
         case MachineState_Paused:
         case MachineState_TeleportingPausedVM:
+        case MachineState_Saving:
             return setError(VBOX_E_INVALID_VM_STATE, tr("Already paused"));
 
         default:
@@ -5770,17 +5771,32 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
 
         case VMSTATE_SUSPENDED:
         {
-            if (aOldState == VMSTATE_SUSPENDING)
-            {
-                AutoWriteLock alock(that);
+            AutoWriteLock alock(that);
 
-                if (that->mVMStateChangeCallbackDisabled)
+            if (that->mVMStateChangeCallbackDisabled)
+                break;
+
+            switch (that->mMachineState)
+            {
+                case MachineState_Teleporting:
+                    that->setMachineState(MachineState_TeleportingPausedVM);
                     break;
 
-                /* Change the machine state from Running to Paused. */
-/** @todo Live Migration: Deal with Pause happening before VMR3Teleport! */
-                AssertBreak(that->mMachineState == MachineState_Running);
-                that->setMachineState(MachineState_Paused);
+                case MachineState_LiveSnapshotting:
+                    that->setMachineState(MachineState_Saving);
+                    break;
+
+                case MachineState_TeleportingPausedVM:
+                case MachineState_Saving:
+                case MachineState_Restoring:
+                    /* The worker threads handles the transition. */
+                    break;
+
+                default:
+                    AssertMsgFailed(("%s\n", Global::stringifyMachineState(that->mMachineState)));
+                case MachineState_Running:
+                    that->setMachineState(MachineState_Paused);
+                    break;
             }
             break;
         }
@@ -5791,12 +5807,26 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
             AutoWriteLock alock(that);
             if (that->mVMStateChangeCallbackDisabled)
                 break;
-            if (that->mMachineState == MachineState_Teleporting)
-                that->setMachineState(MachineState_TeleportingPausedVM);
-            else if (that->mMachineState == MachineState_LiveSnapshotting)
-                that->setMachineState(MachineState_Saving);
-            else
-                AssertMsgFailed(("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(aOldState),  VMR3GetStateName(aState) ));
+            switch (that->mMachineState)
+            {
+                case MachineState_Teleporting:
+                    that->setMachineState(MachineState_TeleportingPausedVM);
+                    break;
+
+                case MachineState_LiveSnapshotting:
+                    that->setMachineState(MachineState_Saving);
+                    break;
+
+                case MachineState_TeleportingPausedVM:
+                case MachineState_Saving:
+                    /* ignore */
+                    break;
+
+                default:
+                    AssertMsgFailed(("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(aOldState),  VMR3GetStateName(aState) ));
+                    that->setMachineState(MachineState_Paused);
+                    break;
+            }
             break;
         }
 
