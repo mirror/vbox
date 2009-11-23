@@ -241,8 +241,8 @@ def removeVm(ctx,mach):
     session = ctx['global'].openMachineSession(id)
     try:
        mach = session.machine
-       for d in ctx['global'].getArray(mach, 'hardDiskAttachments'):
-          mach.detachHardDisk(d.controller, d.port, d.device)
+       for d in ctx['global'].getArray(mach, 'mediumAttachments'):
+          mach.detachDevice(d.controller, d.port, d.device)
     except:
        traceback.print_exc()
     mach.saveSettings()
