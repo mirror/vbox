@@ -170,8 +170,11 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 
 # define finish_wait(q, wait) \
     do { \
-        remove_wait_queue(q, wait); \
+        unsigned long flags; \
         set_current_state(TASK_RUNNING); \
+        spin_lock_irqsave(&(q)->lock, flags); \
+        list_del_init((q)->task_list); \
+        spin_unlock_irqrestore(&(q)->lock, flags); \
     } while (0)
 
 #endif /* < 2.6.7 */
