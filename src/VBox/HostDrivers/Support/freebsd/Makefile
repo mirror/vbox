@@ -40,143 +40,120 @@ CFLAGS += -DRT_OS_FREEBSD -DIN_RING0 -DIN_RT_R0 -DIN_SUP_R0 -DVBOX -DRT_WITH_VBO
 .endif
 
 SRCS = \
-	freebsd/SUPDrv-freebsd.c \
 	SUPDrv.c \
 	SUPDrvAgnostic.c \
-	alloc/heapsimple.c \
-	common/err/RTErrConvertFromErrno.c \
-	common/err/RTErrConvertToErrno.c \
-	common/log/log.c \
-	common/log/logellipsis.c \
-	common/log/logrel.c \
-	common/log/logrelellipsis.c \
-	common/log/logcom.c \
-	common/log/logformat.c \
-	common/misc/handletable.c \
-	common/misc/handletablectx.c \
-	common/misc/once.c \
-	common/misc/thread.c \
-	common/string/strformat.c \
-	common/string/strformatrt.c \
-	common/string/strformattype.c \
-	common/string/strprintf.c \
-	common/string/strtonum.c \
-	common/string/memchr.c \
-	common/string/string.c \
-	common/rand/rand.c \
-	common/rand/randadv.c \
-	common/rand/randparkmiller.c \
-	common/path/RTPathStripFilename.c \
-	common/checksum/crc32.c \
-	common/checksum/ipv4.c \
-	common/table/avlpv.c \
-	generic/uuid-generic.c \
-	generic/RTAssertShouldPanic-generic.c \
-	generic/RTLogWriteDebugger-generic.c \
-	generic/RTLogWriteStdOut-stub-generic.c \
-	generic/RTLogWriteStdErr-stub-generic.c \
-	generic/RTLogWriteUser-generic.c \
-	generic/RTRandAdvCreateSystemFaster-generic.c \
-	generic/RTRandAdvCreateSystemTruer-generic.c \
-	generic/RTTimerCreate-generic.c \
-	generic/timer-generic.c \
-	generic/mppresent-generic.c \
-	r0drv/alloc-r0drv.c \
-	r0drv/initterm-r0drv.c \
-	r0drv/powernotification-r0drv.c \
-	r0drv/freebsd/assert-r0drv-freebsd.c \
-	r0drv/freebsd/alloc-r0drv-freebsd.c \
-	r0drv/freebsd/initterm-r0drv-freebsd.c \
-	r0drv/freebsd/memobj-r0drv-freebsd.c \
-	r0drv/freebsd/memuserkernel-r0drv-freebsd.c \
-	r0drv/freebsd/mp-r0drv-freebsd.c \
-	r0drv/freebsd/process-r0drv-freebsd.c \
-	r0drv/freebsd/semevent-r0drv-freebsd.c \
-	r0drv/freebsd/semeventmulti-r0drv-freebsd.c \
-	r0drv/freebsd/semfastmutex-r0drv-freebsd.c \
-	r0drv/freebsd/spinlock-r0drv-freebsd.c \
-	r0drv/freebsd/thread-r0drv-freebsd.c \
-	r0drv/freebsd/thread2-r0drv-freebsd.c \
-	r0drv/freebsd/time-r0drv-freebsd.c \
-	r0drv/generic/semspinmutex-r0drv-generic.c \
-	r0drv/generic/mpnotification-r0drv-generic.c \
-	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.c \
-	r0drv/memobj-r0drv.c \
-	VBox/log-vbox.c \
-	VBox/strformat-vbox.c
 
-SRCS += device_if.h bus_if.h
+# Include needed interface headers so they are created during build
+SRCS += \
+	device_if.h \
+	bus_if.h
+
+.PATH:	${.CURDIR}/freebsd
+SRCS += \
+	SUPDrv-freebsd.c
+
+.PATH:	${.CURDIR}/alloc
+SRCS += \
+	heapsimple.c
+
+.PATH:	${.CURDIR}/common/err
+SRCS += \
+	RTErrConvertFromErrno.c \
+	RTErrConvertToErrno.c
+
+.PATH:	${.CURDIR}/common/log
+SRCS += \
+	log.c \
+	logellipsis.c \
+	logrel.c \
+	logrelellipsis.c \
+	logcom.c \
+	logformat.c
+
+.PATH:	${.CURDIR}/common/misc
+SRCS += \
+	handletable.c \
+	handletablectx.c \
+	once.c \
+	thread.c
+
+.PATH:	${.CURDIR}/common/string
+SRCS += \
+	strformat.c \
+	strformatrt.c \
+	strformattype.c \
+	strprintf.c \
+	strtonum.c \
+	memchr.c \
+	string.c
+
+.PATH:	${.CURDIR}/common/rand
+SRCS += \
+	rand.c \
+	randadv.c \
+	randparkmiller.c
+
+.PATH:	${.CURDIR}/common/path
+SRCS += \
+	RTPathStripFilename.c
+
+.PATH:	${.CURDIR}/common/checksum
+SRCS += \
+	crc32.c \
+	ipv4.c
+
+.PATH:	${.CURDIR}/common/table
+SRCS += \
+	avlpv.c
+
+.PATH:	${.CURDIR}/generic
+SRCS += \
+	uuid-generic.c \
+	RTAssertShouldPanic-generic.c \
+	RTLogWriteDebugger-generic.c \
+	RTLogWriteStdOut-stub-generic.c \
+	RTLogWriteStdErr-stub-generic.c \
+	RTLogWriteUser-generic.c \
+	RTRandAdvCreateSystemFaster-generic.c \
+	RTRandAdvCreateSystemTruer-generic.c \
+	RTTimerCreate-generic.c \
+	timer-generic.c \
+	mppresent-generic.c
+
+.PATH:	${.CURDIR}/r0drv
+SRCS += \
+	alloc-r0drv.c \
+	initterm-r0drv.c \
+	memobj-r0drv.c \
+	powernotification-r0drv.c
+
+.PATH:	${.CURDIR}/r0drv/freebsd
+SRCS += \
+	assert-r0drv-freebsd.c \
+	alloc-r0drv-freebsd.c \
+	initterm-r0drv-freebsd.c \
+	memobj-r0drv-freebsd.c \
+	memuserkernel-r0drv-freebsd.c \
+	mp-r0drv-freebsd.c \
+	process-r0drv-freebsd.c \
+	semevent-r0drv-freebsd.c \
+	semeventmulti-r0drv-freebsd.c \
+	semfastmutex-r0drv-freebsd.c \
+	spinlock-r0drv-freebsd.c \
+	thread-r0drv-freebsd.c \
+	thread2-r0drv-freebsd.c \
+	time-r0drv-freebsd.c
+
+.PATH:	${.CURDIR}/r0drv/generic
+SRCS += \
+	semspinmutex-r0drv-generic.c \
+	mpnotification-r0drv-generic.c \
+	RTMpIsCpuWorkPending-r0drv-generic.c
+
+.PATH:	${.CURDIR}/VBox
+SRCS += \
+	log-vbox.c \
+	strformat-vbox.c
 
 .include <bsd.kmod.mk>
-
-# HACK ALERT: The generated object files are not stored in the same directories as the
-#             C files but in the current directory. Linking will fail because
-#             it searches in the given directories for object files but doesn't
-#             find them. Redefine the varaiable used for linking with the correct paths
-#             to the files. KEEP IN SYNC WITH ABOVE DEFINITION!!!
-OBJS = \
-	SUPDrv-freebsd.o \
-	SUPDrv.o \
-	SUPDrvAgnostic.o \
-	heapsimple.o \
-	RTErrConvertFromErrno.o \
-	RTErrConvertToErrno.o \
-	log.o \
-	logellipsis.o \
-	logrel.o \
-	logrelellipsis.o \
-	logcom.o \
-	logformat.o \
-	handletable.o \
-	handletablectx.o \
-	once.o \
-	thread.o \
-	strformat.o \
-	strformatrt.o \
-	strformattype.o \
-	strprintf.o \
-	strtonum.o \
-	memchr.o \
-	string.o \
-	rand.o \
-	randadv.o \
-	randparkmiller.o \
-	RTPathStripFilename.o \
-	crc32.o \
-	ipv4.o \
-	avlpv.o \
-	uuid-generic.o \
-	RTAssertShouldPanic-generic.o \
-	RTLogWriteDebugger-generic.o \
-	RTLogWriteStdOut-stub-generic.o \
-	RTLogWriteStdErr-stub-generic.o \
-	RTLogWriteUser-generic.o \
-	RTRandAdvCreateSystemFaster-generic.o \
-	RTRandAdvCreateSystemTruer-generic.o \
-	RTTimerCreate-generic.o \
-	timer-generic.o \
-	mppresent-generic.o \
-	alloc-r0drv.o \
-	initterm-r0drv.o \
-	powernotification-r0drv.o \
-	assert-r0drv-freebsd.o \
-	alloc-r0drv-freebsd.o \
-	initterm-r0drv-freebsd.o \
-	memobj-r0drv-freebsd.o \
-	memuserkernel-r0drv-freebsd.o \
-	mp-r0drv-freebsd.o \
-	process-r0drv-freebsd.o \
-	semevent-r0drv-freebsd.o \
-	semeventmulti-r0drv-freebsd.o \
-	semfastmutex-r0drv-freebsd.o \
-	spinlock-r0drv-freebsd.o \
-	thread-r0drv-freebsd.o \
-	thread2-r0drv-freebsd.o \
-	time-r0drv-freebsd.o \
-	semspinmutex-r0drv-generic.o \
-	mpnotification-r0drv-generic.o \
-	RTMpIsCpuWorkPending-r0drv-generic.o \
-	memobj-r0drv.o \
-	log-vbox.o \
-	strformat-vbox.o
 
