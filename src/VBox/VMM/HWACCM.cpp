@@ -2613,6 +2613,12 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersio
         }
     }
 #endif
+
+    /* Recheck all VCPUs if we can go staight into hwaccm execution mode. */
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    {
+        HWACCMR3CanExecuteGuest(pVM, pVCpu);
+    }
     return VINF_SUCCESS;
 }
 
