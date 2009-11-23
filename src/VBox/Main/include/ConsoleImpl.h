@@ -146,7 +146,7 @@ public:
                             IProgress **aProgress);
     STDMETHOD(DeleteSnapshot)(IN_BSTR aId, IProgress **aProgress);
     STDMETHOD(RestoreSnapshot)(ISnapshot *aSnapshot, IProgress **aProgress);
-    STDMETHOD(Teleport)(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress **aProgress);
+    STDMETHOD(Teleport)(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, ULONG aMaxDowntime, IProgress **aProgress);
     STDMETHOD(RegisterCallback) (IConsoleCallback *aCallback);
     STDMETHOD(UnregisterCallback)(IConsoleCallback *aCallback);
 

@@ -1580,6 +1580,8 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REL_REG_USED(pVM, &pPGM->LiveSave.cIgnoredPages,        STAMTYPE_U32,     "/PGM/LiveSave/cIgnoredPages",        STAMUNIT_COUNT,     "The number of ignored pages in the RAM ranges (i.e. MMIO, MMIO2 and ROM).");
     STAM_REL_REG_USED(pVM, &pPGM->LiveSave.cDirtyPagesLong,      STAMTYPE_U32,     "/PGM/LiveSave/cDirtyPagesLong",      STAMUNIT_COUNT,     "Longer term dirty page average.");
     STAM_REL_REG_USED(pVM, &pPGM->LiveSave.cDirtyPagesShort,     STAMTYPE_U32,     "/PGM/LiveSave/cDirtyPagesShort",     STAMUNIT_COUNT,     "Short term dirty page average.");
+    STAM_REL_REG_USED(pVM, &pPGM->LiveSave.cPagesPerSecond,      STAMTYPE_U32,     "/PGM/LiveSave/cPagesPerSecond",      STAMUNIT_COUNT,     "Pages per second.");
+    STAM_REL_REG_USED(pVM, &pPGM->LiveSave.cSavedPages,          STAMTYPE_U64,     "/PGM/LiveSave/cSavedPages",          STAMUNIT_COUNT,     "The total number of saved pages.");
     STAM_REL_REG_USED(pVM, &pPGM->LiveSave.Ram.cReadyPages,      STAMTYPE_U32,     "/PGM/LiveSave/Ram/cReadPages",       STAMUNIT_COUNT,     "RAM: Ready pages.");
     STAM_REL_REG_USED(pVM, &pPGM->LiveSave.Ram.cDirtyPages,      STAMTYPE_U32,     "/PGM/LiveSave/Ram/cDirtyPages",      STAMUNIT_COUNT,     "RAM: Dirty pages.");
     STAM_REL_REG_USED(pVM, &pPGM->LiveSave.Ram.cZeroPages,       STAMTYPE_U32,     "/PGM/LiveSave/Ram/cZeroPages",       STAMUNIT_COUNT,     "RAM: Ready zero pages.");

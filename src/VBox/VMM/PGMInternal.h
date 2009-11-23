@@ -2753,6 +2753,16 @@ typedef struct PGM
         uint32_t                    cDirtyPagesShort;
         /** Long term dirty page average. */
         uint32_t                    cDirtyPagesLong;
+        /** The number of saved pages.  This is used to get some kind of estimate of the
+         * link speed so we can decide when we're done.  It is reset after the first
+         * 7 passes so the speed estimate doesn't get inflated by the initial set of
+         * zero pages.   */
+        uint64_t                    cSavedPages;
+        /** The nanosecond timestamp when cSavedPages was 0. */
+        uint64_t                    uSaveStartNS;
+        /** Pages per second (for statistics). */
+        uint32_t                    cPagesPerSecond;
+        uint32_t                    cAlignment;
     } LiveSave;
 
     /** @name   Error injection.

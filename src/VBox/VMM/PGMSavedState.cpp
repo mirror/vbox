@@ -436,6 +436,7 @@ static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
             {
                 pVM->pgm.s.LiveSave.Rom.cDirtyPages--;
                 pVM->pgm.s.LiveSave.Rom.cReadyPages++;
+                pVM->pgm.s.LiveSave.cSavedPages++;
             }
         }
     }
@@ -501,6 +502,7 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
                         pRomPage->LiveSave.fDirty = false;
                         pVM->pgm.s.LiveSave.Rom.cReadyPages++;
                         pVM->pgm.s.LiveSave.Rom.cDirtyPages--;
+                        pVM->pgm.s.LiveSave.cSavedPages++;
                     }
                     pgmUnlock(pVM);
                     AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
@@ -879,6 +881,7 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
                             continue;
                     }
                     u8Type = paLSPages[iPage].fZero ? PGM_STATE_REC_MMIO2_ZERO : PGM_STATE_REC_MMIO2_RAW;
+                    pVM->pgm.s.LiveSave.cSavedPages++;
                 }
 
                 if (iPage != 0 && iPage == iPageLast + 1)
@@ -956,6 +959,7 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
                 pVM->pgm.s.LiveSave.Mmio2.cReadyPages++;
                 if (u8Type == PGM_STATE_REC_MMIO2_ZERO)
                     pVM->pgm.s.LiveSave.Mmio2.cZeroPages++;
+                pVM->pgm.s.LiveSave.cSavedPages++;
                 iPageLast = iPage;
             }
 
@@ -1607,6 +1611,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                         if (fZero)
                             pVM->pgm.s.LiveSave.Ram.cZeroPages++;
                         pVM->pgm.s.LiveSave.Ram.cDirtyPages--;
+                        pVM->pgm.s.LiveSave.cSavedPages++;
                     }
                     if (idRamRangesGen != pVM->pgm.s.idRamRangesGen)
                     {
@@ -1722,6 +1727,15 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
         if (RT_FAILURE(rc))
             return rc;
     }
+    /*
+     * Reset the page-per-second estimate to avoid inflation by the initial
+     * load of zero pages.  pgmR3LiveVote ASSUMES this is done at pass 7.
+     */
+    else if (uPass == 7)
+    {
+        pVM->pgm.s.LiveSave.cSavedPages  = 0;
+        pVM->pgm.s.LiveSave.uSaveStartNS = RTTimeNanoTS();
+    }
 
     /*
      * Do the scanning.
@@ -1767,10 +1781,14 @@ static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass
     const uint32_t cHistoryEntries = RT_ELEMENTS(pVM->pgm.s.LiveSave.acDirtyPagesHistory);
 
     /* update history. */
+    pgmLock(pVM);
+    uint32_t const cWrittenToPages = pVM->pgm.s.cWrittenToPages;
+    pgmUnlock(pVM);
     uint32_t i = pVM->pgm.s.LiveSave.iDirtyPagesHistory;
     pVM->pgm.s.LiveSave.acDirtyPagesHistory[i] = pVM->pgm.s.LiveSave.Rom.cDirtyPages
                                                + pVM->pgm.s.LiveSave.Mmio2.cDirtyPages
-                                               + pVM->pgm.s.LiveSave.Ram.cDirtyPages;
+                                               + pVM->pgm.s.LiveSave.Ram.cDirtyPages
+                                               + cWrittenToPages;
     pVM->pgm.s.LiveSave.iDirtyPagesHistory = (i + 1) % cHistoryEntries;
 
     /* calc shortterm average (4 passes). */
@@ -1793,33 +1811,45 @@ static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass
     uint32_t const cDirtyPagesLong = cTotal / cHistoryEntries;
     pVM->pgm.s.LiveSave.cDirtyPagesLong = cDirtyPagesLong;
 
+    /* estimate the speed */
+    uint64_t cNsElapsed = RTTimeNanoTS() - pVM->pgm.s.LiveSave.uSaveStartNS;
+    uint32_t cPagesPerSecond = (uint32_t)(   pVM->pgm.s.LiveSave.cSavedPages
+                                          / ((long double)cNsElapsed / 1000000000.0) );
+    pVM->pgm.s.LiveSave.cPagesPerSecond = cPagesPerSecond;
+
     /*
      * Try make a decision.
      */
-    /** @todo take the count dirtied write-monitored page into account here. */
     if (cDirtyPagesShort <= cDirtyPagesLong)
     {
-        if (    cDirtyPagesShort <= 128
-            &&  cDirtyPagesLong  <= 1024)
-            return VINF_SUCCESS;
-        if (cDirtyPagesLong  <= 256)
-            return VINF_SUCCESS;
-        /* !! hack !! */
-        if (    cDirtyPagesShort <= 512
-            &&  cDirtyPagesLong  <= 640
-            &&  uPass >= 1024)
-            return VINF_SUCCESS;
-        if (    cDirtyPagesShort <= 896
-            &&  cDirtyPagesLong  <= 1024
-            &&  uPass >= 2048)
-            return VINF_SUCCESS;
-        if (    cDirtyPagesShort <= 1512
-            &&  cDirtyPagesLong  <= 1536
-            &&  uPass >= 4096)
-            return VINF_SUCCESS;
-        if (    cDirtyPagesLong  <= 4096
-            &&  uPass >= 8192)
-            return VINF_SUCCESS;
+        if (uPass > 10)
+        {
+            uint32_t cMsLeftShort   = (uint32_t)(cDirtyPagesShort / (long double)cPagesPerSecond * 1000.0);
+            uint32_t cMsLeftLong    = (uint32_t)(cDirtyPagesLong  / (long double)cPagesPerSecond * 1000.0);
+            uint32_t cMsMaxDowntime = SSMR3HandleMaxDowntime(pSSM);
+            if (cMsMaxDowntime < 32)
+                cMsMaxDowntime = 32;
+            if (   (   cMsLeftLong  <= cMsMaxDowntime
+                    && cMsLeftShort <  cMsMaxDowntime)
+                || cMsLeftShort < cMsMaxDowntime / 2
+               )
+            {
+                Log(("pgmR3LiveVote: VINF_SUCCESS - pass=%d cDirtyPagesShort=%u|%ums cDirtyPagesLong=%u|%ums cMsMaxDowntime=%u\n",
+                     uPass, cDirtyPagesShort, cMsLeftShort, cDirtyPagesLong, cMsLeftLong, cMsMaxDowntime));
+                return VINF_SUCCESS;
+            }
+        }
+        else
+        {
+            if (   (   cDirtyPagesShort <= 128
+                    && cDirtyPagesLong  <= 1024)
+                || cDirtyPagesLong <= 256
+               )
+            {
+                Log(("pgmR3LiveVote: VINF_SUCCESS - pass=%d cDirtyPagesShort=%u cDirtyPagesLong=%u\n", uPass, cDirtyPagesShort, cDirtyPagesLong));
+                return VINF_SUCCESS;
+            }
+        }
     }
     return VINF_SSM_VOTE_FOR_ANOTHER_PASS;
 }
@@ -1866,6 +1896,9 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.LiveSave.acDirtyPagesHistory); i++)
         pVM->pgm.s.LiveSave.acDirtyPagesHistory[i] = UINT32_MAX / 2;
     pVM->pgm.s.LiveSave.iDirtyPagesHistory = 0;
+    pVM->pgm.s.LiveSave.cSavedPages       = 0;
+    pVM->pgm.s.LiveSave.uSaveStartNS      = RTTimeNanoTS();
+    pVM->pgm.s.LiveSave.cPagesPerSecond   = 8192;
 
     /*
      * Per page type.
@@ -2979,7 +3012,7 @@ int pgmR3InitSavedState(PVM pVM, uint64_t cbRam)
 {
     return SSMR3RegisterInternal(pVM, "pgm", 1, PGM_SAVED_STATE_VERSION, (size_t)cbRam + sizeof(PGM),
                                  pgmR3LivePrep, pgmR3LiveExec, pgmR3LiveVote,
-                                 NULL, pgmR3SaveExec, pgmR3SaveDone,
-                                 pgmR3LoadPrep, pgmR3Load, NULL);
+                                 NULL,          pgmR3SaveExec, pgmR3SaveDone,
+                                 pgmR3LoadPrep, pgmR3Load,     NULL);
 }
 

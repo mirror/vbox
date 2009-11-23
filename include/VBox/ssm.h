@@ -1000,8 +1000,10 @@ VMMR3_INT_DECL(int)     SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const
 VMMR3DECL(int)          SSMR3DeregisterInternal(PVM pVM, const char *pszName);
 VMMR3DECL(int)          SSMR3DeregisterExternal(PVM pVM, const char *pszName);
 VMMR3DECL(int)          SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);
-VMMR3_INT_DECL(int)     SSMR3LiveSave(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOps,
-                                      SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, PSSMHANDLE *ppSSM);
+VMMR3_INT_DECL(int)     SSMR3LiveSave(PVM pVM, uint32_t cMsMaxDowntime,
+                                      const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOps,
+                                      SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser,
+                                      PSSMHANDLE *ppSSM);
 VMMR3_INT_DECL(int)     SSMR3LiveDoStep1(PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)     SSMR3LiveDoStep2(PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)     SSMR3LiveDone(PSSMHANDLE pSSM);
@@ -1015,6 +1017,7 @@ VMMR3DECL(int)          SSMR3HandleGetStatus(PSSMHANDLE pSSM);
 VMMR3DECL(int)          SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus);
 VMMR3DECL(SSMAFTER)     SSMR3HandleGetAfter(PSSMHANDLE pSSM);
 VMMR3DECL(bool)         SSMR3HandleIsLiveSave(PSSMHANDLE pSSM);
+VMMR3DECL(uint32_t)     SSMR3HandleMaxDowntime(PSSMHANDLE pSSM);
 VMMR3DECL(uint32_t)     SSMR3HandleHostBits(PSSMHANDLE pSSM);
 VMMR3DECL(uint32_t)     SSMR3HandleRevision(PSSMHANDLE pSSM);
 VMMR3DECL(uint32_t)     SSMR3HandleVersion(PSSMHANDLE pSSM);
