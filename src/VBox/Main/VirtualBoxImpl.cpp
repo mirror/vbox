@@ -933,6 +933,7 @@ STDMETHODIMP
 VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
                                  IN_BSTR        aVersion,
                                  BSTR           *aUrl,
+                                 BSTR           *aFile,
                                  BOOL           *aResult)
 {
     CheckComArgNotNull(aResult);
@@ -952,13 +953,13 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
             FirmwareType_BIOS,    NULL,             NULL
         },
         {
-            FirmwareType_EFI,     "vboxefi.fv",     "http://virtualbox.org/firmware/32/vboxefi.fv"
+            FirmwareType_EFI32,   "VBoxEFI32.fd",   "http://virtualbox.org/firmware/VBoxEFI32.fd"
         },
         {
-            FirmwareType_EFI64,   "vboxefi64.fv",   "http://virtualbox.org/firmware/64/vboxefi.fv"
+            FirmwareType_EFI64,   "VBoxEFI64.fd",   "http://virtualbox.org/firmware/VBoxEFI64.fd"
         },
         {
-            FirmwareType_EFIDUAL, "vboxefidual.fv", "http://virtualbox.org/firmware/dual/vboxefi.fv"
+            FirmwareType_EFIDUAL, "VBoxEFIDual.fd", "http://virtualbox.org/firmware/VBoxEFIDual.fd"
         }
     };
 
@@ -984,6 +985,8 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
         if (RTFileExists(fullName.raw()))
         {
             *aResult = TRUE;
+             if (aFile)
+                Utf8Str(fullName).cloneTo(aFile);
             break;
         }
 
@@ -996,9 +999,12 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
         if (RTFileExists(fullName.raw()))
         {
             *aResult = TRUE;
+            if (aFile)
+                Utf8Str(fullName).cloneTo(aFile);
             break;
         }
 
+       
         url = firmwareDesc[i].url;
         /** @todo: account for version in the URL */
         if (aUrl != NULL)

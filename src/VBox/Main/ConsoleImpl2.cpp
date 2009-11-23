@@ -132,63 +132,23 @@ const char* controllerString(StorageControllerType_T enmType)
 # pragma optimize("g", off)
 #endif
 
-static int findEfiRom(FirmwareType_T aFirmwareType, Utf8Str& aEfiRomFile)
+static int findEfiRom(IVirtualBox* vbox, FirmwareType_T aFirmwareType, Utf8Str& aEfiRomFile)
 {
-    /** @todo: combine with similar table in VirtualBox::CheckFirmwarePresent */
-    static const struct {
-        FirmwareType_T type;
-        const char*    fileName;
-    } firmwareDesc[] = {
-        {
-            /* compiled-in firmware */
-            FirmwareType_BIOS,    NULL,
-        },
-        {
-            FirmwareType_EFI,     "vboxefi.fv"
-        },
-        {
-            FirmwareType_EFI64,   "vboxefi64.fv"
-        },
-        {
-            FirmwareType_EFIDUAL, "vboxefidual.fv"
-        }
-    };
+    int rc;
+    BOOL fPresent = FALSE;
+    Bstr aFilePath, empty;
+    
+    rc = vbox->CheckFirmwarePresent(aFirmwareType, empty,
+                                    empty.asOutParam(), aFilePath.asOutParam(), &fPresent);
+    if (RT_FAILURE(rc))
+        AssertComRCReturn (rc, VERR_FILE_NOT_FOUND);
 
-
-     for (size_t i = 0; i < sizeof(firmwareDesc) / sizeof(firmwareDesc[0]); i++)
-    {
-        if (aFirmwareType != firmwareDesc[i].type)
-            continue;
-
-        AssertRCReturn(firmwareDesc[i].fileName != NULL, E_INVALIDARG);
-
-        /* Search in ~/.VirtualBox/Firmware and RTPathAppPrivateArch() */
-        char pszVBoxPath[RTPATH_MAX];
-        int rc;
-
-        rc = com::GetVBoxUserHomeDirectory(pszVBoxPath, sizeof(pszVBoxPath)); AssertRCReturn(rc, rc);
-        aEfiRomFile = Utf8StrFmt("%s%cFirmware%c%s",
-                                 pszVBoxPath,
-                                 RTPATH_DELIMITER,
-                                 RTPATH_DELIMITER,
-                                 firmwareDesc[i].fileName);
-        if (RTFileExists(aEfiRomFile.raw()))
-            return S_OK;
-
-        rc = RTPathExecDir(pszVBoxPath, RTPATH_MAX); AssertRCReturn(rc, rc);
-        aEfiRomFile = Utf8StrFmt("%s%c%s",
-                              pszVBoxPath,
-                              RTPATH_DELIMITER,
-                              firmwareDesc[i].fileName);
-
-        if (RTFileExists(aEfiRomFile.raw()))
-            return S_OK;
-
-        aEfiRomFile = "";
+    if (!fPresent)
         return VERR_FILE_NOT_FOUND;
-    }
 
-     return E_INVALIDARG;
+    aEfiRomFile = Utf8Str(aFilePath);
+
+    return S_OK;
 }
 
 /**
@@ -824,17 +784,26 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     }
     else
     {
-        Utf8Str efiRomFile;
-        /** @todo: which entry point to use for dual firmware, depend on guest? */
-        bool f64BitEntry = fIs64BitGuest;
-        //eFwType = f64BitEntry? FirmwareType_EFI64: FirmwareType_EFI;
-        rc = findEfiRom(f64BitEntry? FirmwareType_EFI64: FirmwareType_EFI, efiRomFile);                  RC_CHECK();
+        Utf8Str efiRomFile;        
+        
+        /* Autodetect firmware type, basing on guest type */
+        if (eFwType == FirmwareType_EFI)
+        {
+            eFwType =
+                    fIs64BitGuest ?
+                    (FirmwareType_T)FirmwareType_EFI64
+                    :
+                    (FirmwareType_T)FirmwareType_EFI32;
+        }
+
+        rc = findEfiRom(virtualBox, eFwType, efiRomFile);                                                                                                                          RC_CHECK();
+        bool f64BitEntry = eFwType == FirmwareType_EFI64;
         /*
          * EFI.
          */
         rc = CFGMR3InsertNode(pDevices, "efi", &pDev);                              RC_CHECK();
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   RC_CHECK();        
+        rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   RC_CHECK();
         rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cbRam);                 RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",      cbRamHole);             RC_CHECK();

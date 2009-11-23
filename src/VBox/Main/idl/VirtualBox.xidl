@@ -1102,16 +1102,19 @@
     <desc>
       Firmware type.
     </desc>
-    <const name="BIOS"            value="1">
+    <const name="BIOS"           value="1">
       <desc>BIOS Firmware.</desc>
     </const>
-    <const name="EFI"             value="2">
+    <const name="EFI"            value="2">
+      <desc>EFI Firmware, bitness detetced basing on OS type.</desc>
+    </const>
+    <const name="EFI32"          value="3">
       <desc>Efi firmware, 32-bit.</desc>
     </const>
-    <const name="EFI64"           value="3">
+    <const name="EFI64"          value="4">
       <desc>Efi firmware, 64-bit.</desc>
     </const>
-    <const name="EFIDUAL"         value="4">
+    <const name="EFIDUAL"        value="5">
       <desc>Efi firmware, combined 32 and 64-bit.</desc>
     </const>
   </enum>
@@ -3030,6 +3033,13 @@
           Suggested url to download this firmware from.
         </desc>
       </param>
+
+      <param name="file" type="wstring" dir="out">
+        <desc>
+          Filename of firmware, only valid if result == TRUE.
+        </desc>
+      </param>
+
       <param name="result" type="boolean" dir="return">
         <desc>If firmware of this type and version is available.</desc>
       </param>
