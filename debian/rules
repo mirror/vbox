@@ -194,6 +194,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	    debian/lintian-override.in > \
 	   $(prefix)/usr/share/lintian/overrides/$(verpkg)
 	mv $(archdir)/vboxefi.fv $(prefix)/usr/lib/$(package)
+	mv $(archdir)/vboxefi64.fv $(prefix)/usr/lib/$(package)
 	mv $(archdir)/VBox.png \
 	   $(prefix)/usr/share/pixmaps/VBox.png
 	mv $(archdir)/*.gc $(prefix)/usr/lib/$(package)
