@@ -87,7 +87,7 @@ typedef int (*PFNHANDLER)(HandlerArg *a);
 /**
  * Print out progress on the console
  */
-LONG showProgress(ComPtr<IProgress> progress)
+HRESULT showProgress(ComPtr<IProgress> progress)
 {
     BOOL fCompleted;
     ULONG ulCurrentPercent;
@@ -162,7 +162,7 @@ LONG showProgress(ComPtr<IProgress> progress)
     }
 
     /* complete the line. */
-    LONG iRc;
+    LONG iRc = E_FAIL;
     if (SUCCEEDED(progress->COMGETTER(ResultCode)(&iRc)))
     {
         if (SUCCEEDED(iRc))
@@ -615,11 +615,8 @@ static int handleControlVM(HandlerArg *a)
             ComPtr<IProgress> progress;
             CHECK_ERROR_BREAK(console, PowerDown(progress.asOutParam()));
 
-            showProgress(progress);
-
-            LONG iRc;
-            progress->COMGETTER(ResultCode)(&iRc);
-            if (FAILED(iRc))
+            rc = showProgress(progress);
+            if (FAILED(rc))
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
@@ -637,11 +634,8 @@ static int handleControlVM(HandlerArg *a)
             ComPtr<IProgress> progress;
             CHECK_ERROR_BREAK(console, SaveState(progress.asOutParam()));
 
-            showProgress(progress);
-
-            LONG iRc;
-            progress->COMGETTER(ResultCode)(&iRc);
-            if (FAILED(iRc))
+            rc = showProgress(progress);
+            if (FAILED(rc))
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
@@ -1330,11 +1324,8 @@ static int handleControlVM(HandlerArg *a)
 
             ComPtr<IProgress> progress;
             CHECK_ERROR_BREAK(console, Teleport(bstrHostname, uPort, bstrPassword, uMaxDowntime, progress.asOutParam()));
-            showProgress(progress);
-
-            LONG iRc;
-            CHECK_ERROR_BREAK(progress, COMGETTER(ResultCode)(&iRc));
-            if (FAILED(iRc))
+            rc = showProgress(progress);
+            if (FAILED(rc))
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())

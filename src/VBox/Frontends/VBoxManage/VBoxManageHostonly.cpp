@@ -70,20 +70,15 @@ static int handleCreate(HandlerArg *a, int iStart, int *pcProcessed)
 
     CHECK_ERROR(host, CreateHostOnlyNetworkInterface (hif.asOutParam(), progress.asOutParam()));
 
-    showProgress(progress);
-
-    HRESULT hr;
-    CHECK_ERROR(progress, COMGETTER(ResultCode) (&hr));
-
+    rc = showProgress(progress);
     *pcProcessed = index - iStart;
-
-    if(FAILED(hr))
+    if (FAILED(rc))
     {
         com::ProgressErrorInfo info(progress);
         if (info.isBasicAvailable())
             RTPrintf("Error: failed to create the host-only adapter. Error message: %lS\n", info.getText().raw());
         else
-            RTPrintf("Error: failed to create the host-only adapter. No error message available, HRESULT code: 0x%x\n", hr);
+            RTPrintf("Error: failed to create the host-only adapter. No error message available, HRESULT code: 0x%x\n", rc);
 
         return 1;
     }
@@ -119,20 +114,15 @@ static int handleRemove(HandlerArg *a, int iStart, int *pcProcessed)
     ComPtr<IProgress> progress;
     CHECK_ERROR(host, RemoveHostOnlyNetworkInterface (guid, progress.asOutParam()));
 
-    showProgress(progress);
-
-    HRESULT hr;
-    CHECK_ERROR(progress, COMGETTER(ResultCode) (&hr));
-
+    rc = showProgress(progress);
     *pcProcessed = index - iStart;
-
-    if(FAILED(hr))
+    if (FAILED(rc))
     {
         com::ProgressErrorInfo info(progress);
         if (info.isBasicAvailable())
             RTPrintf("Error: failed to remove the host-only adapter. Error message: %lS\n", info.getText().raw());
         else
-            RTPrintf("Error: failed to remove the host-only adapter. No error message available, HRESULT code: 0x%x\n", hr);
+            RTPrintf("Error: failed to remove the host-only adapter. No error message available, HRESULT code: 0x%x\n", rc);
 
         return 1;
     }
