@@ -4283,7 +4283,7 @@ static DECLCALLBACK(int) pcnetLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 {
     PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
     pcnetSaveConfig(pThis, pSSM);
-    return VINF_SUCCESS;
+    return VINF_SSM_DONT_CALL_AGAIN;
 }
 
 
