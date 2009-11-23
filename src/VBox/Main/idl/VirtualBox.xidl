@@ -6441,7 +6441,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="55dd56a5-1d1d-4d81-b742-b082b9571be6"
+     uuid="6375231a-c17c-464b-92cb-ae9e128d71c3"
      wsmap="managed"
      >
     <desc>
@@ -7146,6 +7146,21 @@
       </param>
       <param name="password" type="wstring" dir="in">
         <desc>The password.</desc>
+      </param>
+      <param name="maxDowntime" type="unsigned long" dir="in">
+        <desc>
+          The maximum allowed downtime given as milliseconds.  0 is not a valid
+          value.  Recommended value: 250 ms.
+
+          The higher the value is, the greater the chance for a successful
+          teleportation.  A small value may easily result in the teleportation
+          process taking hours and eventually fail.
+
+          <note>
+            The current implementation treats this a guideline, not as an
+            absolute rule.
+          </note>
+        </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>

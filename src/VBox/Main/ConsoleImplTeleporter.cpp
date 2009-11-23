@@ -91,6 +91,7 @@ class TeleporterStateSrc : public TeleporterState
 public:
     Utf8Str             mstrHostname;
     uint32_t            muPort;
+    uint32_t            mcMsMaxDowntime;
     MachineState_T      menmOldMachineState;
     bool                mfSuspendedByUs;
     bool                mfUnlockedMedia;
@@ -98,6 +99,7 @@ public:
     TeleporterStateSrc(Console *pConsole, PVM pVM, Progress *pProgress, MachineState_T enmOldMachineState)
         : TeleporterState(pConsole, pVM, pProgress, true /*fIsSource*/)
         , muPort(UINT32_MAX)
+        , mcMsMaxDowntime(250)
         , menmOldMachineState(enmOldMachineState)
         , mfSuspendedByUs(false)
         , mfUnlockedMedia(false)
@@ -639,7 +641,10 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
         return hrc;
 
     void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(pState));
-    vrc = VMR3Teleport(pState->mpVM, &g_teleporterTcpOps, pvUser, teleporterProgressCallback, pvUser, &pState->mfSuspendedByUs);
+    vrc = VMR3Teleport(pState->mpVM, pState->mcMsMaxDowntime,
+                       &g_teleporterTcpOps, pvUser,
+                       teleporterProgressCallback, pvUser,
+                       &pState->mfSuspendedByUs);
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("VMR3Teleport -> %Rrc"), vrc);
 
@@ -853,13 +858,14 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
  *
  * @returns COM status code.
  *
- * @param   aHostname   The name of the target host.
- * @param   aPort       The TCP port number.
- * @param   aPassword   The password.
- * @param   aProgress   Where to return the progress object.
+ * @param   aHostname       The name of the target host.
+ * @param   aPort           The TCP port number.
+ * @param   aPassword       The password.
+ * @param   aMaxDowntime    Max allowed "downtime" in milliseconds.
+ * @param   aProgress       Where to return the progress object.
  */
 STDMETHODIMP
-Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress **aProgress)
+Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, ULONG aMaxDowntime, IProgress **aProgress)
 {
     /*
      * Validate parameters, check+hold object status, write lock the object
@@ -869,6 +875,7 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress *
     CheckComArgStrNotEmptyOrNull(aHostname);
     CheckComArgNotNull(aHostname);
     CheckComArgExprMsg(aPort, aPort > 0 && aPort <= 65535, ("is %u", aPort));
+    CheckComArgExprMsg(aMaxDowntime, aMaxDowntime > 0, ("is %u", aMaxDowntime));
 
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
@@ -902,9 +909,10 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress *
     CheckComRCReturnRC(hrc);
 
     TeleporterStateSrc *pState = new TeleporterStateSrc(this, mpVM, ptrProgress, mMachineState);
-    pState->mstrPassword = aPassword;
-    pState->mstrHostname = aHostname;
-    pState->muPort       = aPort;
+    pState->mstrPassword    = aPassword;
+    pState->mstrHostname    = aHostname;
+    pState->muPort          = aPort;
+    pState->mcMsMaxDowntime = aMaxDowntime;
 
     void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(pState));
     ptrProgress->setCancelCallback(teleporterProgressCancelCallback, pvUser);

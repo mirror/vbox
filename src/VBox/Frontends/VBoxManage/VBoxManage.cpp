@@ -1295,11 +1295,14 @@ static int handleControlVM(HandlerArg *a)
         else if (!strcmp(a->argv[1], "teleport"))
         {
             Bstr        bstrHostname;
-            uint32_t    uPort = UINT32_MAX;
+            uint32_t    uMaxDowntime = 250 /*ms*/;
+            uint32_t    uPort        = UINT32_MAX;
             Bstr        bstrPassword("");
             static const RTGETOPTDEF s_aTeleportOptions[] =
             {
-                { "--hostname",    'h', RTGETOPT_REQ_STRING }, /** @todo RTGETOPT_FLAG_MANDATORY */
+                { "--host",        'h', RTGETOPT_REQ_STRING }, /** @todo RTGETOPT_FLAG_MANDATORY */
+                { "--hostname",    'h', RTGETOPT_REQ_STRING }, /** @todo remove this */
+                { "--maxdowntime", 'd', RTGETOPT_REQ_UINT32 },
                 { "--port",        'p', RTGETOPT_REQ_UINT32 }, /** @todo RTGETOPT_FLAG_MANDATORY */
                 { "--password",    'P', RTGETOPT_REQ_STRING }
             };
@@ -1313,6 +1316,7 @@ static int handleControlVM(HandlerArg *a)
                 switch (ch)
                 {
                     case 'h': bstrHostname  = Value.psz; break;
+                    case 'd': uMaxDowntime  = Value.u32; break;
                     case 'p': uPort         = Value.u32; break;
                     case 'P': bstrPassword  = Value.psz; break;
                     default:
@@ -1325,7 +1329,7 @@ static int handleControlVM(HandlerArg *a)
                 break;
 
             ComPtr<IProgress> progress;
-            CHECK_ERROR_BREAK(console, Teleport(bstrHostname, uPort, bstrPassword, progress.asOutParam()));
+            CHECK_ERROR_BREAK(console, Teleport(bstrHostname, uPort, bstrPassword, uMaxDowntime, progress.asOutParam()));
             showProgress(progress);
 
             LONG iRc;

@@ -503,6 +503,8 @@ typedef struct SSMHANDLE
             uint8_t         abRecHdr[1+7];
             /** Data buffer. */
             uint8_t         abDataBuffer[4096];
+            /** The maximum downtime given as milliseconds. */
+            uint32_t        cMsMaxDowntime;
         } Write;
 
         /** Read data. */
@@ -4603,25 +4605,26 @@ static int ssmR3SaveDoCreateFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS 
     if (!pSSM)
         return VERR_NO_MEMORY;
 
-    pSSM->pVM                   = pVM;
-    pSSM->enmOp                 = SSMSTATE_INVALID;
-    pSSM->enmAfter              = enmAfter;
-    pSSM->fCancelled            = SSMHANDLE_OK;
-    pSSM->rc                    = VINF_SUCCESS;
-    pSSM->cbUnitLeftV1          = 0;
-    pSSM->offUnit               = UINT64_MAX;
-    pSSM->fLiveSave             = false;
-    pSSM->pfnProgress           = pfnProgress;
-    pSSM->pvUser                = pvProgressUser;
-    pSSM->uPercent              = 0;
-    pSSM->offEstProgress        = 0;
-    pSSM->cbEstTotal            = 0;
-    pSSM->offEst                = 0;
-    pSSM->offEstUnitEnd         = 0;
-    pSSM->uPercentPrepare       = 0;
-    pSSM->uPercentDone          = 0;
-    pSSM->pszFilename           = pszFilename;
-    pSSM->u.Write.offDataBuffer = 0;
+    pSSM->pVM                       = pVM;
+    pSSM->enmOp                     = SSMSTATE_INVALID;
+    pSSM->enmAfter                  = enmAfter;
+    pSSM->fCancelled                = SSMHANDLE_OK;
+    pSSM->rc                        = VINF_SUCCESS;
+    pSSM->cbUnitLeftV1              = 0;
+    pSSM->offUnit                   = UINT64_MAX;
+    pSSM->fLiveSave                 = false;
+    pSSM->pfnProgress               = pfnProgress;
+    pSSM->pvUser                    = pvProgressUser;
+    pSSM->uPercent                  = 0;
+    pSSM->offEstProgress            = 0;
+    pSSM->cbEstTotal                = 0;
+    pSSM->offEst                    = 0;
+    pSSM->offEstUnitEnd             = 0;
+    pSSM->uPercentPrepare           = 0;
+    pSSM->uPercentDone              = 0;
+    pSSM->pszFilename               = pszFilename;
+    pSSM->u.Write.offDataBuffer     = 0;
+    pSSM->u.Write.cMsMaxDowntime    = UINT32_MAX;
 
     int rc;
     if (pStreamOps)
@@ -5096,6 +5099,7 @@ VMMR3_INT_DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
  * @returns VBox status.
  *
  * @param   pVM             The VM handle.
+ * @param   cMsMaxDowntime  The maximum downtime given as milliseconds.
  * @param   pszFilename     Name of the file to save the state in. This string
  *                          must remain valid until SSMR3LiveDone is called.
  *                          Must be NULL if pStreamOps is used.
@@ -5108,11 +5112,13 @@ VMMR3_INT_DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
  *
  * @thread  EMT0
  */
-VMMR3_INT_DECL(int) SSMR3LiveSave(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
-                                  SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, PSSMHANDLE *ppSSM)
+VMMR3_INT_DECL(int) SSMR3LiveSave(PVM pVM, uint32_t cMsMaxDowntime,
+                                  const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
+                                  SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser,
+                                  PSSMHANDLE *ppSSM)
 {
-    LogFlow(("SSMR3LiveSave: pszFilename=%p:{%s} pStreamOps=%p pvStreamOpsUser=%p enmAfter=%d pfnProgress=%p pvProgressUser=%p\n",
-             pszFilename, pszFilename, pStreamOps, pvStreamOpsUser, enmAfter, pfnProgress, pvProgressUser));
+    LogFlow(("SSMR3LiveSave: cMsMaxDowntime=%u pszFilename=%p:{%s} pStreamOps=%p pvStreamOpsUser=%p enmAfter=%d pfnProgress=%p pvProgressUser=%p\n",
+             cMsMaxDowntime, pszFilename, pszFilename, pStreamOps, pvStreamOpsUser, enmAfter, pfnProgress, pvProgressUser));
     VM_ASSERT_EMT0(pVM);
 
     /*
@@ -5147,9 +5153,10 @@ VMMR3_INT_DECL(int) SSMR3LiveSave(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
                                    enmAfter, pfnProgress, pvProgressUser, &pSSM);
     if (RT_FAILURE(rc))
         return rc;
-    pSSM->uPercentPrepare = 20; /** @todo fix these. */
-    pSSM->uPercentDone    = 2;
-    pSSM->fLiveSave       = true;
+    pSSM->uPercentPrepare        = 20; /** @todo fix these. */
+    pSSM->uPercentDone           = 2;
+    pSSM->fLiveSave              = true;
+    pSSM->u.Write.cMsMaxDowntime = cMsMaxDowntime;
 
     /*
      * Write the saved state stream header and do the prep run for live saving.
@@ -8640,6 +8647,23 @@ VMMR3DECL(bool) SSMR3HandleIsLiveSave(PSSMHANDLE pSSM)
 {
     SSM_ASSERT_VALID_HANDLE(pSSM);
     return pSSM->fLiveSave;
+}
+
+
+/**
+ * Gets the maximum downtime for a live operation.
+ *
+ * @returns The max downtime in milliseconds.  Can be anything from 0 thru
+ *          UINT32_MAX.
+ *
+ * @param   pSSM            The saved state handle.
+ */
+VMMR3DECL(uint32_t) SSMR3HandleMaxDowntime(PSSMHANDLE pSSM)
+{
+    SSM_ASSERT_VALID_HANDLE(pSSM);
+    if (pSSM->enmOp <= SSMSTATE_SAVE_DONE)
+        return pSSM->u.Write.cMsMaxDowntime;
+    return UINT32_MAX;
 }
 
 

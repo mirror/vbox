@@ -308,8 +308,8 @@ void printUsage(USAGECATEGORY u64Cmd)
         RTPrintf("                            setvideomodehint <xres> <yres> <bpp> [display] |\n"
                  "                            setcredentials <username> <password> <domain>\n"
                  "                                           [--allowlocallogon <yes|no>] |\n"
-                 "                            teleport --hostname <name> --port <port>\n"
-                 "                                   [--password password]\n"
+                 "                            teleport --host <name> --port <port>\n"
+                 "                                   [--maxdowntime <msec>] [--password password]\n"
                  "\n");
     }
 
