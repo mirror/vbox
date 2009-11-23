@@ -1097,7 +1097,7 @@
 
    <enum
     name="FirmwareType"
-    uuid="7ceea938-8b49-41e2-bb47-667219c0d586"
+    uuid="b903f264-c230-483e-ac74-2b37ce60d371"
   >
     <desc>
       Firmware type.
@@ -1594,7 +1594,7 @@
 
   <interface
     name="IVirtualBox" extends="$dispatched"
-    uuid="cdc78bfb-f4f6-4ab6-aadf-0407ae12fe85"
+    uuid="2158464a-f706-414b-a8c4-fb589dfc6b62"
     wsmap="managed"
   >
     <desc>
