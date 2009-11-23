@@ -58,7 +58,7 @@
 #endif
 
 #define VBOXQGL_STATE_NAMEBASE "QGLVHWAData"
-#define VBOXQGL_STATE_VERSION 1
+#define VBOXQGL_STATE_VERSION 2
 
 #ifdef DEBUG
 VBoxVHWADbgTimer::VBoxVHWADbgTimer(uint32_t cPeriods) :
@@ -4155,69 +4155,72 @@ void VBoxGLWidget::vhwaSaveExec(struct SSMHANDLE * pSSM)
      */
     const SurfList & primaryList = mDisplay.primaries().surfaces();
     uint32_t cPrimary = (uint32_t)primaryList.size();
-    Assert(cPrimary >= 1);
-    if(mDisplay.getVGA() == NULL || mDisplay.getVGA()->handle() == VBOXVHWA_SURFHANDLE_INVALID)
+    if(cPrimary &&
+            (mDisplay.getVGA() == NULL || mDisplay.getVGA()->handle() == VBOXVHWA_SURFHANDLE_INVALID))
     {
         cPrimary -= 1;
     }
+
     int rc = SSMR3PutU32(pSSM, cPrimary);         AssertRC(rc);
-
-    for (SurfList::const_iterator pr = primaryList.begin();
-         pr != primaryList.end(); ++ pr)
+    if(cPrimary)
     {
-        VBoxVHWASurfaceBase *pSurf = *pr;
-//        bool bVga = (pSurf == mDisplay.getVGA());
-        bool bVisible = (pSurf == mDisplay.getPrimary());
-        uint32_t flags = VBOXVHWA_SCAPS_PRIMARYSURFACE;
-        if(bVisible)
-            flags |= VBOXVHWA_SCAPS_VISIBLE;
-
-        if(pSurf->handle() != VBOXVHWA_SURFHANDLE_INVALID)
+        for (SurfList::const_iterator pr = primaryList.begin();
+             pr != primaryList.end(); ++ pr)
         {
-            rc = vhwaSaveSurface(pSSM, *pr, flags);    AssertRC(rc);
+            VBoxVHWASurfaceBase *pSurf = *pr;
+    //        bool bVga = (pSurf == mDisplay.getVGA());
+            bool bVisible = (pSurf == mDisplay.getPrimary());
+            uint32_t flags = VBOXVHWA_SCAPS_PRIMARYSURFACE;
+            if(bVisible)
+                flags |= VBOXVHWA_SCAPS_VISIBLE;
+
+            if(pSurf->handle() != VBOXVHWA_SURFHANDLE_INVALID)
+            {
+                rc = vhwaSaveSurface(pSSM, *pr, flags);    AssertRC(rc);
 #ifdef DEBUG
-            --cPrimary;
-            Assert(cPrimary < UINT32_MAX / 2);
+                --cPrimary;
+                Assert(cPrimary < UINT32_MAX / 2);
 #endif
+            }
+            else
+            {
+                Assert(pSurf == mDisplay.getVGA());
+            }
         }
-        else
-        {
-            Assert(pSurf == mDisplay.getVGA());
-        }
-    }
 
 #ifdef DEBUG
-    Assert(!cPrimary);
+        Assert(!cPrimary);
 #endif
 
-    const OverlayList & overlays = mDisplay.overlays();
-    rc = SSMR3PutU32(pSSM, (uint32_t)overlays.size());         AssertRC(rc);
+        const OverlayList & overlays = mDisplay.overlays();
+        rc = SSMR3PutU32(pSSM, (uint32_t)overlays.size());         AssertRC(rc);
 
-    for (OverlayList::const_iterator it = overlays.begin();
-         it != overlays.end(); ++ it)
-    {
-        VBoxVHWASurfList * pSurfList = *it;
-        const SurfList & surfaces = pSurfList->surfaces();
-        uint32_t cSurfs = (uint32_t)surfaces.size();
-        uint32_t flags = VBOXVHWA_SCAPS_OVERLAY;
-        if(cSurfs > 1)
-            flags |= VBOXVHWA_SCAPS_COMPLEX;
-        rc = SSMR3PutU32(pSSM, cSurfs);         AssertRC(rc);
-        for (SurfList::const_iterator sit = surfaces.begin();
-             sit != surfaces.end(); ++ sit)
+        for (OverlayList::const_iterator it = overlays.begin();
+             it != overlays.end(); ++ it)
         {
-            rc = vhwaSaveSurface(pSSM, *sit, flags);    AssertRC(rc);
-        }
+            VBoxVHWASurfList * pSurfList = *it;
+            const SurfList & surfaces = pSurfList->surfaces();
+            uint32_t cSurfs = (uint32_t)surfaces.size();
+            uint32_t flags = VBOXVHWA_SCAPS_OVERLAY;
+            if(cSurfs > 1)
+                flags |= VBOXVHWA_SCAPS_COMPLEX;
+            rc = SSMR3PutU32(pSSM, cSurfs);         AssertRC(rc);
+            for (SurfList::const_iterator sit = surfaces.begin();
+                 sit != surfaces.end(); ++ sit)
+            {
+                rc = vhwaSaveSurface(pSSM, *sit, flags);    AssertRC(rc);
+            }
 
-        bool bVisible = true;
-        VBoxVHWASurfaceBase * pOverlayData = pSurfList->current();
-        if(!pOverlayData)
-        {
-            pOverlayData = surfaces.front();
-            bVisible = false;
-        }
+            bool bVisible = true;
+            VBoxVHWASurfaceBase * pOverlayData = pSurfList->current();
+            if(!pOverlayData)
+            {
+                pOverlayData = surfaces.front();
+                bVisible = false;
+            }
 
-        rc = vhwaSaveOverlayData(pSSM, pOverlayData, bVisible);    AssertRC(rc);
+            rc = vhwaSaveOverlayData(pSSM, pOverlayData, bVisible);    AssertRC(rc);
+        }
     }
 
     VBOXQGL_SAVE_STOP(pSSM);
@@ -4244,52 +4247,65 @@ int VBoxGLWidget::vhwaLoadExec(VHWACommandList * pCmdList, struct SSMHANDLE * pS
 {
     VBOXQGL_LOAD_START(pSSM);
 
+    if(u32Version > VBOXQGL_STATE_VERSION)
+        return VERR_VERSION_MISMATCH;
+
     int rc;
     uint32_t u32;
 
-    rc = SSMR3GetU32(pSSM, &u32); AssertRC(rc);
+    rc = vhwaLoadVHWAEnable(pCmdList); AssertRC(rc);
     if(RT_SUCCESS(rc))
     {
-        if(u32)
-        {
-            rc = vhwaLoadVHWAEnable(pCmdList);
-            AssertRC(rc);
-        }
-
-        for(uint32_t i = 0; i < u32; ++i)
-        {
-            rc = vhwaLoadSurface(pCmdList, pSSM, 0, u32Version);  AssertRC(rc);
-            if(RT_FAILURE(rc))
-                break;
-        }
-
+        rc = SSMR3GetU32(pSSM, &u32); AssertRC(rc);
         if(RT_SUCCESS(rc))
         {
-            rc = SSMR3GetU32(pSSM, &u32); AssertRC(rc);
-            if(RT_SUCCESS(rc))
+            if(u32Version == 1 && u32 == (~0)) /* work around the v1 bug */
+                u32 = 0;
+            if(u32)
             {
                 for(uint32_t i = 0; i < u32; ++i)
                 {
-                    uint32_t cSurfs;
-                    rc = SSMR3GetU32(pSSM, &cSurfs); AssertRC(rc);
-                    for(uint32_t j = 0; j < cSurfs; ++j)
-                    {
-                        rc = vhwaLoadSurface(pCmdList, pSSM, cSurfs - 1, u32Version);  AssertRC(rc);
-                        if(RT_FAILURE(rc))
-                            break;
-                    }
+                    rc = vhwaLoadSurface(pCmdList, pSSM, 0, u32Version);  AssertRC(rc);
+                    if(RT_FAILURE(rc))
+                        break;
+                }
 
+                if(RT_SUCCESS(rc))
+                {
+                    rc = SSMR3GetU32(pSSM, &u32); AssertRC(rc);
                     if(RT_SUCCESS(rc))
                     {
-                        rc = vhwaLoadOverlayData(pCmdList, pSSM, u32Version);  AssertRC(rc);
-                    }
+                        for(uint32_t i = 0; i < u32; ++i)
+                        {
+                            uint32_t cSurfs;
+                            rc = SSMR3GetU32(pSSM, &cSurfs); AssertRC(rc);
+                            for(uint32_t j = 0; j < cSurfs; ++j)
+                            {
+                                rc = vhwaLoadSurface(pCmdList, pSSM, cSurfs - 1, u32Version);  AssertRC(rc);
+                                if(RT_FAILURE(rc))
+                                    break;
+                            }
 
-                    if(RT_FAILURE(rc))
-                    {
-                        break;
+                            if(RT_SUCCESS(rc))
+                            {
+                                rc = vhwaLoadOverlayData(pCmdList, pSSM, u32Version);  AssertRC(rc);
+                            }
+
+                            if(RT_FAILURE(rc))
+                            {
+                                break;
+                            }
+                        }
                     }
                 }
             }
+#ifdef VBOXQGL_STATE_DEBUG
+            else if(u32Version == 1) /* read the 0 overlay count to ensure the following VBOXQGL_LOAD_STOP succeedes */
+            {
+                rc = SSMR3GetU32(pSSM, &u32); AssertRC(rc);
+                Assert(u32 == 0);
+            }
+#endif
         }
     }
 
