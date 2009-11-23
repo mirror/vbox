@@ -4204,13 +4204,78 @@ quint64 VBoxGlobal::required2DOffscreenVideoMemory()
  */
 bool VBoxGlobal::openURL (const QString &aURL)
 {
-    if (QDesktopServices::openUrl (aURL))
-        return true;
+    /* Service event */
+    class ServiceEvent : public QEvent
+    {
+        public:
 
-    /* If we go here it means we couldn't open the URL */
-    vboxProblem().cannotOpenURL (aURL);
+            ServiceEvent (bool aResult) : QEvent (QEvent::User), mResult (aResult) {}
 
-    return false;
+            bool result() const { return mResult; }
+
+        private:
+
+            bool mResult;
+    };
+
+    /* Service-Client object */
+    class ServiceClient : public QEventLoop
+    {
+        public:
+
+            ServiceClient() : mResult (false) {}
+
+            bool result() const { return mResult; }
+
+        private:
+
+            bool event (QEvent *aEvent)
+            {
+                if (aEvent->type() == QEvent::User)
+                {
+                    ServiceEvent *event = static_cast <ServiceEvent*> (aEvent);
+                    mResult = event->result();
+                    event->accept();
+                    quit();
+                    return true;
+                }
+                return false;
+            }
+
+            bool mResult;
+    };
+
+    /* Service-Server object */
+    class ServiceServer : public QThread
+    {
+        public:
+
+            ServiceServer (ServiceClient &aClient, const QString &aURL)
+                : mClient (aClient), mURL (aURL) {}
+
+        private:
+
+            void run()
+            {
+                QApplication::postEvent (&mClient, new ServiceEvent (QDesktopServices::openUrl (mURL)));
+            }
+
+            ServiceClient &mClient;
+            const QString &mURL;
+    };
+
+    ServiceClient client;
+    ServiceServer server (client, aURL);
+    server.start();
+    client.exec();
+    server.wait();
+
+    bool result = client.result();
+
+    if (!result)
+        vboxProblem().cannotOpenURL (aURL);
+
+    return result;
 }
 
 /**
