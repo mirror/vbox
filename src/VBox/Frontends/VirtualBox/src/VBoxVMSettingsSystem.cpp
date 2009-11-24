@@ -163,7 +163,7 @@ void VBoxVMSettingsSystem::getFrom (const CMachine &aMachine)
     mCbApic->setChecked (biosSettings.GetIOAPICEnabled());
 
     /* EFI */
-    mCbEFI->setChecked (mMachine.GetFirmwareType() == KFirmwareType_EFI);
+    mCbEFI->setChecked (mMachine.GetFirmwareType() >= KFirmwareType_EFI && mMachine.GetFirmwareType() <= KFirmwareType_EFIDUAL);
 
     /* CPU count */
     bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost()
