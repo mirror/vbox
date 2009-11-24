@@ -397,6 +397,7 @@ endef
  	samples/java/jax-ws/Makefile.glue=>java/jax-ws/src/Makefile \
  	samples/java/jax-ws/Makefile=>java/jax-ws/samples/Makefile \
  	samples/perl/clienttest.pl=>perl/samples/clienttest.pl \
+ 	samples/php/clienttest.php=>php/samples/clienttest.php \
  	samples/python/Makefile=>python/samples/Makefile \
  	samples/python/Makefile.glue=>python/lib/Makefile
 
