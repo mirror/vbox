@@ -1197,7 +1197,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     AssertReturn(aInitiator && aName, E_INVALIDARG);
     AssertReturn(aStateFilePath, E_POINTER);
 
-    LogFlowThisFunc(("aName='%ls'\n", aName));
+    LogFlowThisFunc(("aName='%ls' fTakingSnapshotOnline=%RTbool\n", aName, fTakingSnapshotOnline));
 
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
@@ -1265,7 +1265,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     try
     {
         LogFlowThisFunc(("Creating differencing hard disks (online=%d)...\n",
-                        fTakingSnapshotOnline));
+                         fTakingSnapshotOnline));
 
         // backup the media data so we can recover if things goes wrong along the day;
         // the matching commit() is in fixupMedia() during endSnapshot()
@@ -1282,14 +1282,16 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
                                  aConsoleProgress,
                                  1,            // operation weight; must be the same as in Console::TakeSnapshot()
                                  !!fTakingSnapshotOnline);
+        if (FAILED(rc))
+            throw rc;
 
-        if (SUCCEEDED(rc) && mSnapshotData.mLastState == MachineState_Saved)
+        if (mSnapshotData.mLastState == MachineState_Saved)
         {
             Utf8Str stateFrom = mSSData->mStateFilePath;
             Utf8Str stateTo = mSnapshotData.mSnapshot->stateFilePath();
 
             LogFlowThisFunc(("Copying the execution state from '%s' to '%s'...\n",
-                            stateFrom.raw(), stateTo.raw()));
+                             stateFrom.raw(), stateTo.raw()));
 
             aConsoleProgress->SetNextOperation(Bstr(tr("Copying the execution state")),
                                                1);        // weight
@@ -1307,26 +1309,40 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
             alock.enter();
 
             if (RT_FAILURE(vrc))
+            {
+                /** @todo r=bird: Delete stateTo when appropriate. */
                 throw setError(E_FAIL,
                                tr("Could not copy the state file '%s' to '%s' (%Rrc)"),
                                stateFrom.raw(),
                                stateTo.raw(),
                                vrc);
+            }
         }
     }
     catch (HRESULT hrc)
     {
+        LogThisFunc(("Caught %Rhrc [%s]\n", hrc, Global::stringifyMachineState(mData->mMachineState) ));
+        if (    mSnapshotData.mLastState != mData->mMachineState
+            &&  (  mSnapshotData.mLastState == MachineState_Running
+                 ? mData->mMachineState == MachineState_LiveSnapshotting
+                 : mData->mMachineState == MachineState_Saving)
+           )
+            setMachineState(mSnapshotData.mLastState);
+
         pSnapshot->uninit();
         pSnapshot.setNull();
+        mSnapshotData.mLastState = MachineState_Null;
+        mSnapshotData.mSnapshot.setNull();
+
         rc = hrc;
     }
 
-    if (fTakingSnapshotOnline)
+    if (fTakingSnapshotOnline && SUCCEEDED(rc))
         strStateFilePath.cloneTo(aStateFilePath);
     else
         *aStateFilePath = NULL;
 
-    LogFlowThisFuncLeave();
+    LogFlowThisFunc(("LEAVE - %Rhrc [%s]\n", rc, Global::stringifyMachineState(mData->mMachineState) ));
     return rc;
 }
 
@@ -1364,8 +1380,8 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
     /*
      * Restore the state we had when BeginTakingSnapshot() was called,
      * Console::fntTakeSnapshotWorker restores its local copy when we return.
-     * If the state was Running, then let Console::fntTakeSnapshotWorker it
-     * all via Console::Resume().
+     * If the state was Running, then let Console::fntTakeSnapshotWorker do it
+     * all to avoid races.
      */
     if (   mData->mMachineState != mSnapshotData.mLastState
         && mSnapshotData.mLastState != MachineState_Running)
