@@ -147,7 +147,8 @@ typedef struct TELEPORTERTCPHDR
     /** Magic value. */
     uint32_t    u32Magic;
     /** The size of the data block following this header.
-     * 0 indicates the end of the stream. */
+     * 0 indicates the end of the stream, while UINT32_MAX indicates
+     * cancelation. */
     uint32_t    cb;
 } TELEPORTERTCPHDR;
 /** Magic value for TELEPORTERTCPHDR::u32Magic. (Egberto Gismonti Amin) */
@@ -387,21 +388,26 @@ static DECLCALLBACK(int) teleporterTcpOpRead(void *pvUser, uint64_t offStream, v
                 LogRel(("Teleporter/TCP: Header read error: %Rrc\n", rc));
                 return rc;
             }
-            if (   Hdr.u32Magic != TELEPORTERTCPHDR_MAGIC
-                || Hdr.cb > TELEPORTERTCPHDR_MAX_SIZE)
+
+            if (RT_UNLIKELY(   Hdr.u32Magic != TELEPORTERTCPHDR_MAGIC
+                            || Hdr.cb > TELEPORTERTCPHDR_MAX_SIZE
+                            || Hdr.cb == 0))
             {
+                if (    Hdr.u32Magic == TELEPORTERTCPHDR_MAGIC
+                    &&  (   Hdr.cb == 0
+                         || Hdr.cb == UINT32_MAX)
+                   )
+                {
+                    pState->mfEndOfStream = true;
+                    pState->mcbReadBlock  = 0;
+                    return Hdr.cb ? VERR_SSM_CANCELLED : VERR_EOF;
+                }
                 pState->mfIOError = true;
                 LogRel(("Teleporter/TCP: Invalid block: u32Magic=%#x cb=%#x\n", Hdr.u32Magic, Hdr.cb));
                 return VERR_IO_GEN_FAILURE;
             }
 
             pState->mcbReadBlock = Hdr.cb;
-            if (!Hdr.cb)
-            {
-                pState->mfEndOfStream = true;
-                return VERR_EOF;
-            }
-
             if (pState->mfStopReading)
                 return VERR_EOF;
         }
@@ -498,13 +504,15 @@ static DECLCALLBACK(int) teleporterTcpOpIsOk(void *pvUser)
 /**
  * @copydoc SSMSTRMOPS::pfnClose
  */
-static DECLCALLBACK(int) teleporterTcpOpClose(void *pvUser)
+static DECLCALLBACK(int) teleporterTcpOpClose(void *pvUser, bool fCancelled)
 {
     TeleporterState *pState = (TeleporterState *)pvUser;
 
     if (pState->mfIsSource)
     {
-        TELEPORTERTCPHDR EofHdr = { TELEPORTERTCPHDR_MAGIC, 0 };
+        TELEPORTERTCPHDR EofHdr;
+        EofHdr.u32Magic = TELEPORTERTCPHDR_MAGIC;
+        EofHdr.cb       = fCancelled ? UINT32_MAX : 0;
         int rc = RTTcpWrite(pState->mhSocket, &EofHdr, sizeof(EofHdr));
         if (RT_SUCCESS(rc))
             rc = RTTcpFlush(pState->mhSocket);
