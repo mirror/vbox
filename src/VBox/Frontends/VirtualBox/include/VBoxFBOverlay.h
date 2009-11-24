@@ -1103,6 +1103,8 @@ public:
     QRect overlaysRectIntersection();
 #endif
 
+    int reset(VHWACommandList * pCmdList);
+
     ulong vboxBitsPerPixel() { return mDisplay.getVGA()->bitsPerPixel(); }
     ulong vboxBytesPerLine() { return mDisplay.getVGA() ? mDisplay.getVGA()->bytesPerLine() : 0; }
     int vboxFbWidth() {return mDisplay.getVGA()->width(); }
@@ -1401,6 +1403,8 @@ private:
     int vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd);
 
     int reset();
+
+    int resetGl();
 	
     void initGl();
 

@@ -1044,6 +1044,11 @@ static unsigned vbvaVHWAHandleCommand (PVGASTATE pVGAState, VBVACONTEXT *pCtx, P
     return 0;
 }
 
+static DECLCALLBACK(void) vbvaVHWAHHCommandSetEventCallback(void * pContext)
+{
+    RTSemEventSignal((RTSEMEVENT)pContext);
+}
+
 static int vbvaVHWAHHCommandPost(PVGASTATE pVGAState, VBOXVHWACMD* pCmd)
 {
     RTSEMEVENT hComplEvent;
@@ -1053,7 +1058,7 @@ static int vbvaVHWAHHCommandPost(PVGASTATE pVGAState, VBOXVHWACMD* pCmd)
     {
         /* ensure the cmd is not deleted until we process it */
         vbvaVHWAHHCommandRetain (pCmd);
-        pCmd->GuestVBVAReserved1 = (uint64_t)hComplEvent;
+        VBOXVHWA_HH_CALLBACK_SET(pCmd, vbvaVHWAHHCommandSetEventCallback, (void*)hComplEvent);
         vbvaVHWAHandleCommand(pVGAState, NULL, pCmd);
         if((ASMAtomicReadU32((volatile uint32_t *)&pCmd->Flags)  & VBOXVHWACMD_FLAG_HG_ASYNCH) != 0)
         {
@@ -1248,10 +1253,10 @@ int vbvaVHWACommandCompleteAsynch(PPDMDDISPLAYVBVACALLBACKS pInterface, PVBOXVHW
     }
     else
     {
-        if(pCmd->GuestVBVAReserved1)
+        PFNVBOXVHWA_HH_CALLBACK pfn = VBOXVHWA_HH_CALLBACK_GET(pCmd);
+        if(pfn)
         {
-            RTSEMEVENT hComplEvent = (RTSEMEVENT)pCmd->GuestVBVAReserved1;
-            RTSemEventSignal(hComplEvent);
+            pfn(VBOXVHWA_HH_CALLBACK_GET_ARG(pCmd));
         }
         rc = VINF_SUCCESS;
     }
