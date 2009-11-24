@@ -2,7 +2,7 @@
  * Sample client for the VirtualBox web service, written in Java
  * (object-oriented bindings).
  *
- * Run the VirtualBox web service server first; see the VirtualBOx
+ * Run the VirtualBox web service server first; see the VirtualBox
  * SDK reference for details.
  *
  * Copyright (C) 2008-2009 Sun Microsystems, Inc.
