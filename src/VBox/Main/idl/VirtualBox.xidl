@@ -9427,7 +9427,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Whether this differencing medium will be automatically reset each
         time a virtual machine it is attached to is powered up.
 
-        See <link to="#reset()"/> for more information about resetting
+        See <link to="#reset"/> for more information about resetting
         differencing media.
 
         <note>
@@ -10165,8 +10165,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         state when it does not contain any sector data and any read operation is
         redirected to its parent medium.
 
-        This medium will be placed to <link to="MediumState_LockedWrite"/>
-        for the duration of this operation.
+        The medium will be write-locked for the duration of this operation (see
+        <link to="#lockWrite" />).
 
         <result name="VBOX_E_NOT_SUPPORTED">
           This is not a differencing medium.
