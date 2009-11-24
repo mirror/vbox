@@ -380,6 +380,8 @@ typedef struct SSMSTRMBUF
     uint32_t                cb;
     /** End of stream indicator (for read streams only). */
     bool                    fEndOfStream;
+    /** The nano timestamp set by ssmR3StrmGetFreeBuf. */
+    uint64_t                NanoTS;
     /** Pointer to the next buffer in the chain. */
     PSSMSTRMBUF volatile    pNext;
 } SSMSTRMBUF;
@@ -1779,6 +1781,34 @@ static DECLCALLBACK(int) ssmR3FileSize(void *pvUser, uint64_t *pcb)
 
 
 /**
+ * @copydoc SSMSTRMOPS::pfnIsOk
+ */
+static DECLCALLBACK(int) ssmR3FileIsOk(void *pvUser)
+{
+    /*
+     * Check that there is still some space left on the disk.
+     */
+    RTFOFF cbFree;
+    int rc = RTFileQueryFsSizes((RTFILE)(uintptr_t)pvUser, NULL, &cbFree, NULL, NULL);
+#define SSM_MIN_DISK_FREE    ((RTFOFF)( 10 * _1M ))
+    if (RT_SUCCESS(rc))
+    {
+        if (cbFree < SSM_MIN_DISK_FREE)
+        {
+            LogRel(("SSM: Giving up: Low on disk space. (cbFree=%RTfoff, SSM_MIN_DISK_FREE=%RTfoff).\n",
+                    cbFree, SSM_MIN_DISK_FREE));
+            rc = VERR_SSM_LOW_ON_DISK_SPACE;
+        }
+    }
+    else if (rc == VERR_NOT_SUPPORTED)
+        rc = VINF_SUCCESS;
+    else
+        AssertLogRelRC(rc);
+    return rc;
+}
+
+
+/**
  * @copydoc SSMSTRMOPS::pfnClose
  */
 static DECLCALLBACK(int) ssmR3FileClose(void *pvUser)
@@ -1798,6 +1828,7 @@ static SSMSTRMOPS const g_ssmR3FileOps =
     ssmR3FileSeek,
     ssmR3FileTell,
     ssmR3FileSize,
+    ssmR3FileIsOk,
     ssmR3FileClose,
     SSMSTRMOPS_VERSION
 };
@@ -1920,6 +1951,7 @@ static PSSMSTRMBUF ssmR3StrmGetFreeBuf(PSSMSTRM pStrm)
             pMine->cb           = 0;
             pMine->pNext        = NULL;
             pMine->fEndOfStream = false;
+            pMine->NanoTS       = RTTimeNanoTS();
             return pMine;
         }
     }
@@ -2098,10 +2130,12 @@ static int ssmR3StrmWriteBuffers(PSSMSTRM pStrm)
         pHead = pCur->pNext;
 
         /* flush */
-        int rc = pStrm->pOps->pfnWrite(pStrm->pvUser, pCur->offStream, &pCur->abData[0], pCur->cb);
+        int rc = pStrm->pOps->pfnIsOk(pStrm->pvUser);
+        if (RT_SUCCESS(rc))
+            rc = pStrm->pOps->pfnWrite(pStrm->pvUser, pCur->offStream, &pCur->abData[0], pCur->cb);
         if (    RT_FAILURE(rc)
             &&  ssmR3StrmSetError(pStrm, rc))
-            LogRel(("ssmR3StrmWriteBuffers: RTFileWriteAt failed with rc=%Rrc at offStream=%#llx\n", rc, pCur->offStream));
+            LogRel(("ssmR3StrmWriteBuffers: Write failed with rc=%Rrc at offStream=%#llx\n", rc, pCur->offStream));
 
         /* free */
         bool fEndOfStream = pCur->fEndOfStream;
@@ -2534,6 +2568,32 @@ static uint8_t const *ssmR3StrmReadDirect(PSSMSTRM pStrm, size_t cbToRead)
         }
     }
     return NULL;
+}
+
+
+/**
+ * Check that the stream is OK and flush data that is getting old
+ *
+ * The checking is mainly for testing for cancellation and out of space
+ * conditions.
+ *
+ * @returns VBox status code.
+ * @param   pStrm       The stream handle.
+ */
+static int ssmR3StrmCheckAndFlush(PSSMSTRM pStrm)
+{
+    int rc = pStrm->pOps->pfnIsOk(pStrm->pvUser);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (    pStrm->fWrite
+        &&  pStrm->hIoThread != NIL_RTTHREAD
+        &&  !pStrm->pHead /* the worker is probably idle */
+        &&  pStrm->pCur
+        &&  RTTimeNanoTS() - pStrm->pCur->NanoTS > 500*1000*1000 /* 0.5s */
+       )
+        ssmR3StrmFlushCurBuf(pStrm);
+    return VINF_SUCCESS;
 }
 
 
@@ -4963,24 +5023,11 @@ static int ssmR3DoLiveExecVoteLoop(PVM pVM, PSSMHANDLE pSSM)
         }
 
         /*
-         * Check that there is still some space left on the disk.
+         * Check that the stream is still OK.
          */
-        /** @todo move this to the stream flushing code? It's not perfect when done
-         *        here, it could be way better if we did it there. */
-        if (pSSM->pszFilename)
-        {
-            RTFOFF cbFree;
-            rc = RTFsQuerySizes(pSSM->pszFilename, NULL, &cbFree, NULL, NULL);
-            AssertRC(rc);
-#define SSM_MIN_DISK_FREE    ((RTFOFF)( 10 * _1M ))
-            if (   RT_SUCCESS(rc)
-                && cbFree < SSM_MIN_DISK_FREE)
-            {
-                LogRel(("SSM: Giving up: Low on disk space. (cbFree=%RTfoff, SSM_MIN_DISK_FREE=%RTfoff).\n",
-                        cbFree, SSM_MIN_DISK_FREE));
-                return pSSM->rc = VERR_SSM_LOW_ON_DISK_SPACE;
-            }
-        }
+        rc = ssmR3StrmCheckAndFlush(&pSSM->Strm);
+        if (RT_FAILURE(rc))
+            return pSSM->rc = rc;
     }
 
     LogRel(("SSM: Giving up: Too many passes! (%u)\n", SSM_MAX_PASSES));
