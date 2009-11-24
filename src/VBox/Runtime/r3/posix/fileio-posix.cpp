@@ -46,6 +46,7 @@
 #else
 # include <unistd.h>
 # include <sys/time.h>
+# include <sys/statvfs.h>
 #endif
 #ifdef RT_OS_LINUX
 # include <sys/file.h>
@@ -715,6 +716,32 @@ RTR3DECL(int) RTFileSetMode(RTFILE File, RTFMODE fMode)
     }
     return VINF_SUCCESS;
 }
+
+
+RTR3DECL(int) RTFileQueryFsSizes(RTFILE hFile, PRTFOFF pcbTotal, RTFOFF *pcbFree,
+                                 uint32_t *pcbBlock, uint32_t *pcbSector)
+{
+    struct statvfs StatVFS;
+    RT_ZERO(StatVFS);
+    if (fstatvfs(hFile, &StatVFS))
+        return RTErrConvertFromErrno(errno);
+
+    /*
+     * Calc the returned values.
+     */
+    if (pcbTotal)
+        *pcbTotal = (RTFOFF)StatVFS.f_blocks * StatVFS.f_frsize;
+    if (pcbFree)
+        *pcbFree = (RTFOFF)StatVFS.f_bavail * StatVFS.f_frsize;
+    if (pcbBlock)
+        *pcbBlock = StatVFS.f_frsize;
+    /* no idea how to get the sector... */
+    if (pcbSector)
+        *pcbSector = 512;
+
+    return VINF_SUCCESS;
+}
+
 
 
 RTR3DECL(int) RTFileRename(const char *pszSrc, const char *pszDst, unsigned fRename)

@@ -340,6 +340,8 @@ typedef const RTFSOBJINFO *PCRTFSOBJINFO;
  * @param   pcbFree         Where to store the remaining free space in the filesystem. (Optional)
  * @param   pcbBlock        Where to store the block size. (Optional)
  * @param   pcbSector       Where to store the sector size. (Optional)
+ *
+ * @sa      RTFileQueryFsSizes
  */
 RTR3DECL(int) RTFsQuerySizes(const char *pszFsPath, PRTFOFF pcbTotal, RTFOFF *pcbFree,
                              uint32_t *pcbBlock, uint32_t *pcbSector);
