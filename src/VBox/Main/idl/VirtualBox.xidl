@@ -6997,7 +6997,7 @@
 
     <method name="deleteSnapshot">
       <desc>
-        Starts discarding the specified snapshot asynchronously.
+        Starts deleting the specified snapshot asynchronously.
         See <link to="ISnapshot" /> for an introduction to snapshots.
 
         The execution state and settings of the associated machine stored in
@@ -7009,73 +7009,44 @@
         deleted. The parent of this snapshot will become a new parent for all
         its child snapshots.
 
-        If the discarded snapshot is the current one, its parent
-        snapshot will become a new current snapshot. The current machine
-        state is not directly affected in this case, except that
-        currently attached differencing media based on media
-        of the discarded snapshot will be also merged as described
-        above.
+        If the deleted snapshot is the current one, its parent snapshot will
+        become a new current snapshot. The current machine state is not directly
+        affected in this case, except that currently attached differencing
+        media based on media of the discarded snapshot will be also merged as
+        described above.
 
-        If the discarded snapshot is the first one (the root snapshot)
-        and it has exactly one child snapshot, this child snapshot will
-        become the first snapshot after discarding. If there are no
-        children at all (i.e. the first snapshot is the only snapshot of
-        the machine), both the current and the first snapshot of the
-        machine will be set to @c null. In all other cases, the first
-        snapshot cannot be discarded.
+        If the deleted snapshot is the first or current snapshot, then the
+        respective IMachine attributes will be adjusted. Deleting the current
+        snapshot will also implicitly call <link to="IMachine::saveSettings"/>
+        to make all current machine settings permanent.
 
-        You cannot discard the snapshot if it
-        stores <link to="MediumType_Normal">normal</link> (non-differencing)
-        media that have differencing media based on them. Snapshots of
-        such kind can be discarded only when every normal medium has either
-        no children at all or exactly one child. In the former case, the normal
-        medium simply becomes unused (i.e. not attached to any VM). In the
-        latter case, it receives all the changes stored in the child medium,
-        and then it replaces the child medium in the configuration of the
-        corresponding snapshot or machine.
+        Deleting a snapshot has the following preconditions:
 
-        Also, you cannot discard the snapshot if it stores media
-        (of any type) having differencing child media that belong
-        to other machines. Such snapshots can be only discarded after
-        you discard all snapshots of other machines containing "foreign"
-        child media, or detach these "foreign" child media from machines
-        they are attached to.
+        <ul>
+          <li>Child media of all normal media of the discarded snapshot
+            must be accessible (see <link to="IMedium::state"/>) for this
+            operation to succeed.  In particular, this means that all virtual
+            machines, whose media are directly or indirectly based on the
+            media of discarded snapshot, must be powered off.</li>
 
-        One particular example of the snapshot storing normal media
-        is the first snapshot of a virtual machine that had normal media
-        attached when taking the snapshot. Be careful when
-        discarding such snapshots because this implicitly commits
-        changes (made since the snapshot being discarded has been taken)
-        to normal media (as described above), which may be not what
-        you want.
+          <li>You cannot delete the snapshot if a medium attached to it has
+          more than once child medium (differencing images) because otherwise
+          merging would be impossible. This might be the case if there is
+          more than one child snapshot or differencing images were created
+          for other reason (e.g. implicitly because of multiple machine
+          attachments).</li>
+        </ul>
 
-        The virtual machine is put to
-        the <link to="MachineState_Discarding">Discarding</link> state until
-        the discard operation is completed.
 
-        <note>
-          The machine must not be running, otherwise the operation
-          will fail.
-        </note>
+        The virtual machine's <link to="IMachine::state">state</link> is changed to "DeletingSnapshot"
+        while this operation is in progress.
 
-        <note>
-          Child media of all normal media of the discarded snapshot
-          must be accessible (see <link to="IMedium::state"/>) for this
-          operation to succeed.  In particular, this means that all virtual
-          machines, whose media are directly or indirectly based on the
-          media of discarded snapshot, must be powered off.
-        </note>
         <note>
           Merging medium contents can be very time and disk space
           consuming, if these media are big in size and have many
           children. However, if the snapshot being discarded is the last
           (head) snapshot on the branch, the operation will be rather
           quick.
-        </note>
-        <note>
-          Note that discarding the current snapshot
-          will implicitly call <link to="IMachine::saveSettings"/> to
-          make all current machine settings permanent.
         </note>
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine is running.
@@ -8982,9 +8953,8 @@
       child medium to its parent). It is also possible to walk down the tree
       using the <link to="#children"/> attribute.
 
-      Note that the type of all differencing media is
-      <link to="MediumType_Normal" />; all other values are meaningless for
-      them. Base media may be of any type.
+      Note that the type of all differencing media is "Normal"; all other
+      values are meaningless for them. Base media may be of any type.
 
       <h3>Creating hard disks</h3>
 
@@ -9425,7 +9395,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="autoReset" type="boolean">
       <desc>
         Whether this differencing medium will be automatically reset each
-        time a virtual machine it is attached to is powered up.
+        time a virtual machine it is attached to is powered up. This
+        attribute is automatically set to @c true for the last
+        differencing image of an "immutable" medium (see
+        <link to="MediumType" />).
 
         See <link to="#reset"/> for more information about resetting
         differencing media.
@@ -10163,7 +10136,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         This operation will reset the differencing medium to its initial
         state when it does not contain any sector data and any read operation is
-        redirected to its parent medium.
+        redirected to its parent medium. This automatically gets called
+        during VM power-up for every medium whose <link to="#autoReset" />
+        attribute is @c true.
 
         The medium will be write-locked for the duration of this operation (see
         <link to="#lockWrite" />).
