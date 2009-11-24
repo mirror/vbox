@@ -25,6 +25,7 @@
 #include "state/cr_texture.h"
 #include "cr_mem.h"
 #include "cr_string.h"
+#include "cr_pixeldata.h"
 #include <stdio.h>
 
 #include <iprt/assert.h>
@@ -1049,6 +1050,43 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
 #endif
 
+    {
+        CRViewportState *pVP = &pContext->viewport;
+        CRPixelPackState packing = pContext->client.pack;
+        GLint cbData = crPixelSize(GL_RGBA, GL_UNSIGNED_BYTE) * pVP->viewportH * pVP->viewportW;
+        void *pData = crAlloc(cbData);
+
+        if (!pData)
+        {
+            return VERR_NO_MEMORY;
+        }
+
+        diff_api.PixelStorei(GL_PACK_SKIP_ROWS, 0);
+        diff_api.PixelStorei(GL_PACK_SKIP_PIXELS, 0);
+        diff_api.PixelStorei(GL_PACK_ALIGNMENT, 1);
+        diff_api.PixelStorei(GL_PACK_ROW_LENGTH, 0);
+        diff_api.PixelStorei(GL_PACK_IMAGE_HEIGHT, 0);
+        diff_api.PixelStorei(GL_PACK_SKIP_IMAGES, 0);
+        diff_api.PixelStorei(GL_PACK_SWAP_BYTES, 0);
+        diff_api.PixelStorei(GL_PACK_LSB_FIRST, 0);
+
+        diff_api.ReadPixels(0, 0, pVP->viewportW, pVP->viewportH, GL_RGBA, GL_UNSIGNED_BYTE, pData);
+
+        diff_api.PixelStorei(GL_PACK_SKIP_ROWS, packing.skipRows);
+        diff_api.PixelStorei(GL_PACK_SKIP_PIXELS, packing.skipPixels);
+        diff_api.PixelStorei(GL_PACK_ALIGNMENT, packing.alignment);
+        diff_api.PixelStorei(GL_PACK_ROW_LENGTH, packing.rowLength);
+        diff_api.PixelStorei(GL_PACK_IMAGE_HEIGHT, packing.imageHeight);
+        diff_api.PixelStorei(GL_PACK_SKIP_IMAGES, packing.skipImages);
+        diff_api.PixelStorei(GL_PACK_SWAP_BYTES, packing.swapBytes);
+        diff_api.PixelStorei(GL_PACK_LSB_FIRST, packing.psLSBFirst);
+
+        rc = SSMR3PutMem(pSSM, pData, cbData);
+        AssertRCReturn(rc, rc);
+
+        crFree(pData);
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -1690,6 +1728,44 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
     /*Mark for resending to GPU*/
     pContext->glsl.bResyncNeeded = GL_TRUE;
 #endif
+
+    {
+        CRViewportState *pVP = &pContext->viewport;
+        CRPixelPackState unpack = pContext->client.unpack;
+        GLint cbData = crPixelSize(GL_RGBA, GL_UNSIGNED_BYTE) * pVP->viewportH * pVP->viewportW;
+        void *pData = crAlloc(cbData);
+
+        if (!pData)
+        {
+            return VERR_NO_MEMORY;
+        }
+
+        rc = SSMR3GetMem(pSSM, pData, cbData);
+        AssertRCReturn(rc, rc);
+
+        diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+        diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+        diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        diff_api.PixelStorei(GL_UNPACK_IMAGE_HEIGHT, 0);
+        diff_api.PixelStorei(GL_UNPACK_SKIP_IMAGES, 0);
+        diff_api.PixelStorei(GL_UNPACK_SWAP_BYTES, 0);
+        diff_api.PixelStorei(GL_UNPACK_LSB_FIRST, 0);
+
+        diff_api.WindowPos2iARB(0, 0);
+        diff_api.DrawPixels(pVP->viewportW, pVP->viewportH, GL_RGBA, GL_UNSIGNED_BYTE, pData);
+
+        diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, unpack.skipRows);
+        diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, unpack.skipPixels);
+        diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, unpack.alignment);
+        diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, unpack.rowLength);
+        diff_api.PixelStorei(GL_UNPACK_IMAGE_HEIGHT, unpack.imageHeight);
+        diff_api.PixelStorei(GL_UNPACK_SKIP_IMAGES, unpack.skipImages);
+        diff_api.PixelStorei(GL_UNPACK_SWAP_BYTES, unpack.swapBytes);
+        diff_api.PixelStorei(GL_UNPACK_LSB_FIRST, unpack.psLSBFirst);
+
+        crFree(pData);
+    }
 
     return VINF_SUCCESS;
 }
