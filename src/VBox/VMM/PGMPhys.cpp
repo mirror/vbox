@@ -1141,8 +1141,10 @@ int pgmR3PhysRamPreAllocate(PVM pVM)
 int pgmR3PhysRamReset(PVM pVM)
 {
     Assert(PGMIsLockOwner(pVM));
+
     /*
-     * We batch up pages before freeing them.
+     * We batch up pages that should be freed instead of calling GMM for
+     * each and every one of them.
      */
     uint32_t            cPendingPages = 0;
     PGMMFREEPAGESREQ    pReq;
@@ -3223,6 +3225,13 @@ static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPa
     else
         pVM->pgm.s.cPrivatePages--;
     pVM->pgm.s.cZeroPages++;
+
+    /* Deal with write monitored pages. */
+    if (PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED)
+    {
+        PGM_PAGE_SET_WRITTEN_TO(pPage);
+        pVM->pgm.s.cWrittenToPages++;
+    }
 
     /*
      * pPage = ZERO page.
