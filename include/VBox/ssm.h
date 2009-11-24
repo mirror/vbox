@@ -964,6 +964,16 @@ typedef struct SSMSTRMOPS
     DECLCALLBACKMEMBER(int, pfnSize)(void *pvUser, uint64_t *pcb);
 
     /**
+     * Check if the stream is OK or not (cancelled).
+     *
+     * @returns VBox status code.
+     * @param   pvUser              The user argument.
+     *
+     * @remarks The method is expected to do a LogRel on failure.
+     */
+    DECLCALLBACKMEMBER(int, pfnIsOk)(void *pvUser);
+
+    /**
      * Close the stream.
      *
      * @returns VBox status code.

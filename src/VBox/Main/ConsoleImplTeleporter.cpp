@@ -284,27 +284,13 @@ static DECLCALLBACK(int) teleporterTcpOpWrite(void *pvUser, uint64_t offStream, 
     AssertReturn(cbToWrite < UINT32_MAX, VERR_OUT_OF_RANGE);
     AssertReturn(pState->mfIsSource, VERR_INVALID_HANDLE);
 
-    /* Poll for incoming NACKs and errors from the other side */
-    int rc = RTTcpSelectOne(pState->mhSocket, 0);
-    if (rc != VERR_TIMEOUT)
-    {
-        if (RT_SUCCESS(rc))
-        {
-            LogRel(("Teleporter/TCP: Incoming data found before write, assuming it's a cancel.\n"));
-            rc = VERR_SSM_CANCELLED;
-        }
-        else
-            LogRel(("Teleporter/TCP: RTTcpSelectOne -> %Rrc before write.\n", rc));
-        return rc;
-    }
-
     for (;;)
     {
         /* Write block header. */
         TELEPORTERTCPHDR Hdr;
         Hdr.u32Magic = TELEPORTERTCPHDR_MAGIC;
         Hdr.cb       = RT_MIN((uint32_t)cbToWrite, TELEPORTERTCPHDR_MAX_SIZE);
-        rc = RTTcpWrite(pState->mhSocket, &Hdr, sizeof(Hdr));
+        int rc = RTTcpWrite(pState->mhSocket, &Hdr, sizeof(Hdr));
         if (RT_FAILURE(rc))
         {
             LogRel(("Teleporter/TCP: Header write error: %Rrc\n", rc));
@@ -482,6 +468,34 @@ static DECLCALLBACK(int) teleporterTcpOpSize(void *pvUser, uint64_t *pcb)
 
 
 /**
+ * @copydoc SSMSTRMOPS::pfnIsOk
+ */
+static DECLCALLBACK(int) teleporterTcpOpIsOk(void *pvUser)
+{
+    TeleporterState *pState = (TeleporterState *)pvUser;
+
+    if (pState->mfIsSource)
+    {
+        /* Poll for incoming NACKs and errors from the other side */
+        int rc = RTTcpSelectOne(pState->mhSocket, 0);
+        if (rc != VERR_TIMEOUT)
+        {
+            if (RT_SUCCESS(rc))
+            {
+                LogRel(("Teleporter/TCP: Incoming data detect by IsOk, assuming it's a cancel.\n"));
+                rc = VERR_SSM_CANCELLED;
+            }
+            else
+                LogRel(("Teleporter/TCP: RTTcpSelectOne -> %Rrc (IsOk).\n", rc));
+            return rc;
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @copydoc SSMSTRMOPS::pfnClose
  */
 static DECLCALLBACK(int) teleporterTcpOpClose(void *pvUser)
@@ -521,6 +535,7 @@ static SSMSTRMOPS const g_teleporterTcpOps =
     teleporterTcpOpSeek,
     teleporterTcpOpTell,
     teleporterTcpOpSize,
+    teleporterTcpOpIsOk,
     teleporterTcpOpClose,
     SSMSTRMOPS_VERSION
 };
