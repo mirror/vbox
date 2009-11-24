@@ -68,6 +68,7 @@ else # !VBOX_ONLY_DOCS
  	VBoxManageInfo.cpp \
  	VBoxManageList.cpp \
  	VBoxManageMetrics.cpp \
+ 	VBoxManageMisc.cpp \
  	VBoxManageModifyVM.cpp \
  	VBoxManageSnapshot.cpp \
  	VBoxManageStorageController.cpp \
