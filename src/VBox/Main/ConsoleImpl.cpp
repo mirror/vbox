@@ -2578,7 +2578,8 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
 
     ULONG ulMemSize;
     rc = mMachine->COMGETTER(MemorySize)(&ulMemSize);
-    if (FAILED(rc)) return rc;
+    if (FAILED(rc))
+        return rc;
 
     for (size_t i = 0;
          i < aMediumAttachments.size();
@@ -2586,7 +2587,8 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
     {
         DeviceType_T type;
         rc = aMediumAttachments[i]->COMGETTER(Type)(&type);
-        if (FAILED(rc)) return rc;
+        if (FAILED(rc))
+            return rc;
 
         if (type == DeviceType_HardDisk)
         {
@@ -2604,7 +2606,7 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
     LogFlowFunc(("fTakingSnapshotOnline = %d, mMachineState = %d\n", fTakingSnapshotOnline, mMachineState));
 
     if (    fTakingSnapshotOnline
-         || (mMachineState == MachineState_Saved)
+         || mMachineState == MachineState_Saved
        )
     {
         ++cOperations;
@@ -2623,11 +2625,12 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
                          Bstr(tr("Setting up snapshot operation")),      // first sub-op description
                          1);        // ulFirstOperationWeight
 
-    if (FAILED(rc)) return rc;
+    if (FAILED(rc))
+        return rc;
 
     VMTakeSnapshotTask *pTask;
     if (!(pTask = new VMTakeSnapshotTask(this, pProgress, aName, aDescription)))
-        return VERR_NO_MEMORY;
+        return E_OUTOFMEMORY;
 
     Assert(pTask->mProgress);
 
@@ -5270,7 +5273,8 @@ HRESULT Console::setMachineState(MachineState_T aMachineState,
 
     if (mMachineState != aMachineState)
     {
-        LogFlowThisFunc(("machineState=%d\n", aMachineState));
+        LogThisFunc(("machineState=%s -> %s aUpdateServer=%RTbool\n",
+                     Global::stringifyMachineState(mMachineState), Global::stringifyMachineState(aMachineState), aUpdateServer));
         mMachineState = aMachineState;
 
         /// @todo (dmik)
@@ -5626,8 +5630,8 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                                                   VMSTATE aOldState,
                                                   void *aUser)
 {
-    LogFlowFunc(("Changing state from %d to %d (aVM=%p)\n",
-                 aOldState, aState, aVM));
+    LogFlowFunc(("Changing state from %s to %s (aVM=%p)\n",
+                 VMR3GetStateName(aOldState), VMR3GetStateName(aState), aVM));
 
     Console *that = static_cast<Console *>(aUser);
     AssertReturnVoid(that);
@@ -7344,6 +7348,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
     // 3) saving the state of the virtual machine (here, in the VM process, if the machine is online)
 
     bool fBeganTakingSnapshot = false;
+    bool fSuspenededBySave = false;
 
     AutoCaller autoCaller(pTask->mConsole);
     CheckComRCReturnRC(autoCaller.rc());
@@ -7367,7 +7372,8 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                                                             pTask->mProgress,
                                                             pTask->fTakingSnapshotOnline,
                                                             pTask->bstrSavedStateFile.asOutParam());
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
 
         fBeganTakingSnapshot = true;
 
@@ -7380,7 +7386,10 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                        rc = E_FAIL);
 
         /* sync the state with the server */
-        that->setMachineStateLocally(MachineState_Saving);
+        if (pTask->lastMachineState == MachineState_Running)
+            that->setMachineStateLocally(MachineState_LiveSnapshotting);
+        else
+            that->setMachineStateLocally(MachineState_Saving);
 
         // STEP 3: save the VM state (if online)
         if (pTask->fTakingSnapshotOnline)
@@ -7391,18 +7400,19 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                                                pTask->ulMemSize);       // operation weight, same as computed when setting up progress object
 
             alock.leave();
-
+            LogFlowFunc(("VMR3Save...\n"));
             int vrc = VMR3Save(that->mpVM,
                                strSavedStateFile.c_str(),
                                true /*fContinueAfterwards*/,
                                Console::stateProgressCallback,
-                               (void*)pTask);
+                               (void*)pTask,
+                               &fSuspenededBySave);
+            alock.enter();
             if (RT_FAILURE(vrc))
                 throw setError(E_FAIL,
-                            tr("Failed to save the machine state to '%s' (%Rrc)"),
-                            strSavedStateFile.c_str(), vrc);
+                               tr("Failed to save the machine state to '%s' (%Rrc)"),
+                               strSavedStateFile.c_str(), vrc);
 
-            alock.enter();
 
             // STEP 4: reattach hard disks
             LogFlowFunc(("Reattaching new differencing hard disks...\n"));
@@ -7412,7 +7422,8 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
 
             com::SafeIfaceArray<IMediumAttachment> atts;
             rc = that->mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(atts));
-            if (FAILED(rc)) throw rc;
+            if (FAILED(rc))
+                throw rc;
 
             for (size_t i = 0;
                 i < atts.size();
@@ -7430,17 +7441,22 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 * so we have to query needed values here and pass them.
                 */
                 rc = atts[i]->COMGETTER(Controller)(&controllerName);
-                if (FAILED(rc)) throw rc;
+                if (FAILED(rc))
+                    throw rc;
 
                 rc = that->mMachine->GetStorageControllerByName(controllerName, controller.asOutParam());
-                if (FAILED(rc)) throw rc;
+                if (FAILED(rc))
+                    throw rc;
 
                 rc = controller->COMGETTER(ControllerType)(&enmController);
-                if (FAILED(rc)) throw rc;
+                if (FAILED(rc))
+                    throw rc;
                 rc = controller->COMGETTER(Instance)(&lInstance);
-                if (FAILED(rc)) throw rc;
+                if (FAILED(rc))
+                    throw rc;
                 rc = controller->COMGETTER(Bus)(&enmBus);
-                if (FAILED(rc)) throw rc;
+                if (FAILED(rc))
+                    throw rc;
 
                 /*
                  * don't leave the lock since reconfigureMedium isn't going
@@ -7458,7 +7474,8 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                                           &rc);
                 if (RT_FAILURE(vrc))
                     throw setError(E_FAIL, Console::tr("%Rrc"), vrc);
-                if (FAILED(rc)) throw rc;
+                if (FAILED(rc))
+                    throw rc;
             }
         }
 
@@ -7467,31 +7484,134 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
          * This will reset the machine state to the state it had right
          * before calling mControl->BeginTakingSnapshot().
          */
-        rc = that->mControl->EndTakingSnapshot(TRUE);        // success
+        rc = that->mControl->EndTakingSnapshot(TRUE /*aSuccess*/);
         // do not throw rc here because we can't call EndTakingSnapshot() twice
+        LogFlowFunc(("EndTakingSnapshot -> %Rhrc [mMachineState=%s]\n", rc, Global::stringifyMachineState(that->mMachineState)));
     }
-    catch (HRESULT rc)
+    catch (HRESULT rcThrown)
     {
         /* preserve existing error info */
         ErrorInfoKeeper eik;
 
         if (fBeganTakingSnapshot)
-            that->mControl->EndTakingSnapshot(FALSE);             // failure
-    }
+            that->mControl->EndTakingSnapshot(FALSE /*aSuccess*/);
 
-    pTask->mProgress->notifyComplete(rc);
+        rc = rcThrown;
+        LogFunc(("Caught %Rhrc [mMachineState=%s]\n", rc, Global::stringifyMachineState(that->mMachineState)));
+    }
+    Assert(alock.isWriteLockOnCurrentThread());
+
+    if (FAILED(rc)) /* Must come before calling setMachineState. */
+        pTask->mProgress->notifyComplete(rc);
+
+    /*
+     * Fix up the machine state.
+     *
+     * For live snapshots we do all the work, for the two other variantions we
+     * just update the local copy.
+     */
+    MachineState_T enmMachineState;
+    that->mMachine->COMGETTER(State)(&enmMachineState);
+    if (   that->mMachineState == MachineState_LiveSnapshotting
+        || that->mMachineState == MachineState_Saving)
+    {
+
+        if (!pTask->fTakingSnapshotOnline)
+            that->setMachineStateLocally(pTask->lastMachineState);
+        else if (SUCCEEDED(rc))
+        {
+            Assert(   pTask->lastMachineState == MachineState_Running
+                   || pTask->lastMachineState == MachineState_Paused);
+            Assert(that->mMachineState == MachineState_Saving);
+            if (pTask->lastMachineState == MachineState_Running)
+            {
+                LogFlowFunc(("VMR3Resume...\n"));
+                alock.leave();
+                int vrc = VMR3Resume(that->mpVM);
+                alock.enter();
+                if (RT_FAILURE(vrc))
+                {
+                    rc = setError(VBOX_E_VM_ERROR, tr("Could not resume the machine execution (%Rrc)"), vrc);
+                    pTask->mProgress->notifyComplete(rc);
+                    if (that->mMachineState == MachineState_Saving)
+                        that->setMachineStateLocally(MachineState_Paused);
+                }
+            }
+            else
+                that->setMachineStateLocally(MachineState_Paused);
+        }
+        else
+        {
+            /** @todo this could probably be made more generic and reused elsewhere. */
+            /* paranoid cleanup on for a failed online snapshot. */
+            VMSTATE enmVMState = VMR3GetState(that->mpVM);
+            switch (enmVMState)
+            {
+                case VMSTATE_RUNNING:
+                case VMSTATE_RUNNING_LS:
+                case VMSTATE_DEBUGGING:
+                case VMSTATE_DEBUGGING_LS:
+                case VMSTATE_POWERING_OFF:
+                case VMSTATE_POWERING_OFF_LS:
+                case VMSTATE_RESETTING:
+                case VMSTATE_RESETTING_LS:
+                    Assert(!fSuspenededBySave);
+                    that->setMachineState(MachineState_Running);
+                    break;
+
+                case VMSTATE_GURU_MEDITATION:
+                case VMSTATE_GURU_MEDITATION_LS:
+                    that->setMachineState(MachineState_Stuck);
+                    break;
+
+                case VMSTATE_FATAL_ERROR:
+                case VMSTATE_FATAL_ERROR_LS:
+                    if (pTask->lastMachineState == MachineState_Paused)
+                        that->setMachineStateLocally(pTask->lastMachineState);
+                    else
+                        that->setMachineState(MachineState_Paused);
+                    break;
+
+                default:
+                    AssertMsgFailed(("%s\n", VMR3GetStateName(enmVMState)));
+                case VMSTATE_SUSPENDED:
+                case VMSTATE_SUSPENDED_LS:
+                case VMSTATE_SUSPENDING:
+                case VMSTATE_SUSPENDING_LS:
+                case VMSTATE_SUSPENDING_EXT_LS:
+                    if (fSuspenededBySave)
+                    {
+                        Assert(pTask->lastMachineState == MachineState_Running);
+                        LogFlowFunc(("VMR3Resume (on failure)...\n"));
+                        alock.leave();
+                        int vrc = VMR3Resume(that->mpVM);
+                        alock.enter();
+                        AssertLogRelRC(vrc);
+                        if (RT_FAILURE(vrc))
+                            that->setMachineState(MachineState_Paused);
+                    }
+                    else if (pTask->lastMachineState == MachineState_Paused)
+                        that->setMachineStateLocally(pTask->lastMachineState);
+                    else
+                        that->setMachineState(MachineState_Paused);
+                    break;
+            }
+
+        }
+    }
+    /*else: somebody else has change the state... Leave it. */
+
+    /* check the remote state to see that we got it right. */
+    that->mMachine->COMGETTER(State)(&enmMachineState);
+    AssertLogRelMsg(that->mMachineState == enmMachineState,
+                    ("mMachineState=%s enmMachineState=%s\n", Global::stringifyMachineState(that->mMachineState),
+                     Global::stringifyMachineState(enmMachineState) ));
+
+
+    if (SUCCEEDED(rc)) /* The failure cases are handled above. */
+        pTask->mProgress->notifyComplete(rc);
 
     delete pTask;
-
-    if (pTask->lastMachineState == MachineState_Running)
-    {
-        /* restore the paused state if appropriate */
-        that->setMachineStateLocally(MachineState_Paused);
-        /* restore the running state if appropriate */
-        that->Resume();
-    }
-    else
-        that->setMachineStateLocally(pTask->lastMachineState);
 
     LogFlowFuncLeave();
     return VINF_SUCCESS;
@@ -7523,17 +7643,20 @@ DECLCALLBACK(int) Console::saveStateThread(RTTHREAD Thread, void *pvUser)
 
     LogFlowFunc(("Saving the state to '%s'...\n", task->mSavedStateFile.raw()));
 
+    bool fSuspenededBySave;
     int vrc = VMR3Save(that->mpVM,
                        task->mSavedStateFile.c_str(),
                        false, /*fContinueAfterwards*/
                        Console::stateProgressCallback,
-                       static_cast<VMProgressTask*>(task.get()));
+                       static_cast<VMProgressTask*>(task.get()),
+                       &fSuspenededBySave);
     if (RT_FAILURE(vrc))
     {
         errMsg = Utf8StrFmt(Console::tr("Failed to save the machine state to '%s' (%Rrc)"),
                             task->mSavedStateFile.raw(), vrc);
         rc = E_FAIL;
     }
+    Assert(!fSuspenededBySave);
 
     /* lock the console once we're going to access it */
     AutoWriteLock thatLock(that);
