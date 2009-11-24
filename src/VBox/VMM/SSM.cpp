@@ -1811,8 +1811,9 @@ static DECLCALLBACK(int) ssmR3FileIsOk(void *pvUser)
 /**
  * @copydoc SSMSTRMOPS::pfnClose
  */
-static DECLCALLBACK(int) ssmR3FileClose(void *pvUser)
+static DECLCALLBACK(int) ssmR3FileClose(void *pvUser, bool fCancelled)
 {
+    NOREF(fCancelled);
     return RTFileClose((RTFILE)(uintptr_t)pvUser);
 }
 
@@ -2156,8 +2157,10 @@ static int ssmR3StrmWriteBuffers(PSSMSTRM pStrm)
  *
  * @returns VBox status code.
  * @param   pStrm           The stream handle.
+ * @param   fCancelled      Indicates whether the operation was cancelled or
+ *                          not.
  */
-static int ssmR3StrmClose(PSSMSTRM pStrm)
+static int ssmR3StrmClose(PSSMSTRM pStrm, bool fCancelled)
 {
     /*
      * Flush, terminate the I/O thread, and close the stream.
@@ -2184,13 +2187,13 @@ static int ssmR3StrmClose(PSSMSTRM pStrm)
             pStrm->hIoThread = NIL_RTTHREAD;
         }
 
-        rc = pStrm->pOps->pfnClose(pStrm->pvUser);
+        rc = pStrm->pOps->pfnClose(pStrm->pvUser, fCancelled);
         if (RT_FAILURE(rc))
             ssmR3StrmSetError(pStrm, rc);
     }
     else
     {
-        rc = pStrm->pOps->pfnClose(pStrm->pvUser);
+        rc = pStrm->pOps->pfnClose(pStrm->pvUser, fCancelled);
         if (RT_FAILURE(rc))
             ssmR3StrmSetError(pStrm, rc);
 
@@ -4125,7 +4128,7 @@ static int ssmR3SaveDoClose(PVM pVM, PSSMHANDLE pSSM)
      * Make it non-cancellable, close the stream and delete the file on failure.
      */
     ssmR3SetCancellable(pVM, pSSM, false);
-    int rc = ssmR3StrmClose(&pSSM->Strm);
+    int rc = ssmR3StrmClose(&pSSM->Strm, pSSM->rc == VERR_SSM_CANCELLED);
     if (RT_SUCCESS(rc))
         rc = pSSM->rc;
     if (RT_SUCCESS(rc))
@@ -5223,7 +5226,7 @@ VMMR3_INT_DECL(int) SSMR3LiveSave(PVM pVM, uint32_t cMsMaxDowntime,
         return VINF_SUCCESS;
     }
     /* bail out. */
-    int rc2 = ssmR3StrmClose(&pSSM->Strm);
+    int rc2 = ssmR3StrmClose(&pSSM->Strm, pSSM->rc == VERR_SSM_CANCELLED);
     RTMemFree(pSSM);
     rc2 = RTFileDelete(pszFilename);
     AssertRC(rc2);
@@ -5274,7 +5277,7 @@ static int ssmR3DataReadFinishV1(PSSMHANDLE pSSM)
  * Callback for reading compressed data into the input buffer of the
  * decompressor, for saved file format version 1.
  *
- * @returns VBox status code.
+ * @returns VBox status code. Set pSSM->rc on error.
  * @param   pvSSM       The SSM handle.
  * @param   pvBuf       Where to store the compressed data.
  * @param   cbBuf       Size of the buffer.
@@ -5298,17 +5301,19 @@ static DECLCALLBACK(int) ssmR3ReadInV1(void *pvSSM, void *pvBuf, size_t cbBuf, s
             ssmR3Progress(pSSM, cbRead);
             return VINF_SUCCESS;
         }
-        return rc;
+        return pSSM->rc = rc;
     }
 
     if (pSSM->enmAfter != SSMAFTER_DEBUG_IT)
         AssertMsgFailed(("SSM: attempted reading more than the unit!\n"));
-    return VERR_SSM_LOADED_TOO_MUCH;
+    return pSSM->rc = VERR_SSM_LOADED_TOO_MUCH;
 }
 
 
 /**
  * Internal read worker for reading data from a version 1 unit.
+ *
+ * @returns VBox status code, pSSM->rc is set on error.
  *
  * @param   pSSM            The saved state handle.
  * @param   pvBuf           Where to store the read data.
@@ -5395,9 +5400,7 @@ static int ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
 /**
  * Read reader that keep works the progress indicator and unit offset.
  *
- * Does not set SSM::rc.
- *
- * @returns VBox status code.
+ * @returns VBox status code. Does NOT set pSSM->rc.
  * @param   pSSM            The saved state handle.
  * @param   pvBuf           Where to put the bits
  * @param   cbBuf           How many bytes to read.
@@ -5412,7 +5415,9 @@ DECLINLINE(int) ssmR3DataReadV2Raw(PSSMHANDLE pSSM, void *pvBuf, size_t cbToRead
         return VINF_SUCCESS;
     }
 
-    /** @todo weed out lazy saving */
+    if (rc == VERR_SSM_CANCELLED)
+        return rc;
+
     if (pSSM->enmAfter != SSMAFTER_DEBUG_IT)
         AssertMsgFailed(("SSM: attempted reading more than the unit!\n"));
     return VERR_SSM_LOADED_TOO_MUCH;
@@ -5422,7 +5427,7 @@ DECLINLINE(int) ssmR3DataReadV2Raw(PSSMHANDLE pSSM, void *pvBuf, size_t cbToRead
 /**
  * Reads and checks the LZF "header".
  *
- * @returns VBox status code.
+ * @returns VBox status code. Sets pSSM->rc on error.
  * @param   pSSM            The saved state handle..
  * @param   pcbDecompr      Where to store the size of the decompressed data.
  */
@@ -5437,7 +5442,7 @@ DECLINLINE(int) ssmR3DataReadV2RawLzfHdr(PSSMHANDLE pSSM, uint32_t *pcbDecompr)
     uint8_t cKB;
     int rc = ssmR3DataReadV2Raw(pSSM, &cKB, 1);
     if (RT_FAILURE(rc))
-        return rc;
+        return pSSM->rc = rc;
     pSSM->u.Read.cbRecLeft -= sizeof(cKB);
 
     uint32_t cbDecompr = (uint32_t)cKB * _1K;
@@ -5455,7 +5460,7 @@ DECLINLINE(int) ssmR3DataReadV2RawLzfHdr(PSSMHANDLE pSSM, uint32_t *pcbDecompr)
  * Reads an LZF block from the stream and decompresses into the specified
  * buffer.
  *
- * @returns VBox status code.
+ * @returns VBox status code. Sets pSSM->rc on error.
  * @param   SSM             The saved state handle.
  * @param   pvDst           Pointer to the output buffer.
  * @param   cbDecompr       The size of the decompressed data.
@@ -5479,7 +5484,7 @@ static int ssmR3DataReadV2RawLzf(PSSMHANDLE pSSM, void *pvDst, size_t cbDecompr)
     {
         rc = ssmR3DataReadV2Raw(pSSM, &pSSM->u.Read.abComprBuffer[0], cbCompr);
         if (RT_FAILURE(rc))
-            return rc;
+            return pSSM->rc = rc;
         pb = &pSSM->u.Read.abComprBuffer[0];
     }
 
@@ -5497,14 +5502,14 @@ static int ssmR3DataReadV2RawLzf(PSSMHANDLE pSSM, void *pvDst, size_t cbDecompr)
     }
 
     AssertLogRelMsgFailed(("cbCompr=%#x cbDecompr=%#x rc=%Rrc\n", cbCompr, cbDecompr, rc));
-    return VERR_SSM_INTEGRITY_DECOMPRESSION;
+    return pSSM->rc = VERR_SSM_INTEGRITY_DECOMPRESSION;
 }
 
 
 /**
  * Reads and checks the raw zero "header".
  *
- * @returns VBox status code.
+ * @returns VBox status code. Sets pSSM->rc on error.
  * @param   pSSM            The saved state handle..
  * @param   pcbDecompr      Where to store the size of the zero data.
  */
@@ -5516,7 +5521,7 @@ DECLINLINE(int) ssmR3DataReadV2RawZeroHdr(PSSMHANDLE pSSM, uint32_t *pcbZero)
     uint8_t cKB;
     int rc = ssmR3DataReadV2Raw(pSSM, &cKB, 1);
     if (RT_FAILURE(rc))
-        return rc;
+        return pSSM->rc = rc;
     pSSM->u.Read.cbRecLeft = 0;
 
     uint32_t cbZero = (uint32_t)cKB * _1K;
@@ -5536,7 +5541,7 @@ DECLINLINE(int) ssmR3DataReadV2RawZeroHdr(PSSMHANDLE pSSM, uint32_t *pcbZero)
  * read in full and validated, the fEndOfData indicator is set, and VINF_SUCCESS
  * is returned.
  *
- * @returns VBox status code.
+ * @returns VBox status code. Does not set pSSM->rc.
  * @param   pSSM            The saved state handle.
  */
 static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
@@ -5816,6 +5821,8 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
 
 /**
  * Buffer miss, do a buffered read.
+ *
+ * @returns VBox status code. Sets pSSM->rc on error.
  *
  * @param   pSSM            The saved state handle.
  * @param   pvBuf           Where to store the read data.
@@ -7448,7 +7455,7 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
             return rc;
 
         /* failure path */
-        ssmR3StrmClose(&pSSM->Strm);
+        ssmR3StrmClose(&pSSM->Strm, pSSM->rc == VERR_SSM_CANCELLED);
     }
     else
         Log(("SSM: Failed to open save state file '%s', rc=%Rrc.\n",  pszFilename, rc));
@@ -7773,7 +7780,8 @@ static int ssmR3LoadDirectoryAndFooter(PSSMHANDLE pSSM)
 /**
  * Executes the loading of a V2.X file.
  *
- * @returns VBox status code.
+ * @returns VBox status code.  May or may not set pSSM->rc, the returned
+ *          status code is ALWAYS the more accurate of the two.
  * @param   pVM                 The VM handle.
  * @param   pSSM                The saved state handle.
  */
@@ -8130,14 +8138,14 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
                 }
             }
         }
-        rc = Handle.rc;
 
         /* progress */
         if (pfnProgress)
             pfnProgress(pVM, 99, pvProgressUser);
 
         ssmR3SetCancellable(pVM, &Handle, false);
-        ssmR3StrmClose(&Handle.Strm);
+        ssmR3StrmClose(&Handle.Strm, Handle.rc == VERR_SSM_CANCELLED);
+        rc = Handle.rc;
     }
 
     /*
@@ -8280,7 +8288,7 @@ VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename, bool fChecksumIt)
     int rc = ssmR3OpenFile(NULL, pszFilename, NULL /*pStreamOps*/, NULL /*pvUser*/, fChecksumIt,
                            false /*fChecksumOnRead*/, 1 /*cBuffers*/, &Handle);
     if (RT_SUCCESS(rc))
-        ssmR3StrmClose(&Handle.Strm);
+        ssmR3StrmClose(&Handle.Strm, false /*fCancelled*/);
     else
         Log(("SSM: Failed to open saved state file '%s', rc=%Rrc.\n",  pszFilename, rc));
     return rc;
@@ -8360,7 +8368,7 @@ VMMR3DECL(int) SSMR3Close(PSSMHANDLE pSSM)
     /*
      * Close the stream and free the handle.
      */
-    int rc = ssmR3StrmClose(&pSSM->Strm);
+    int rc = ssmR3StrmClose(&pSSM->Strm, pSSM->rc == VERR_SSM_CANCELLED);
     if (pSSM->u.Read.pZipDecompV1)
     {
         RTZipDecompDestroy(pSSM->u.Read.pZipDecompV1);

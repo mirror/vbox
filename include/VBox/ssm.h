@@ -978,8 +978,9 @@ typedef struct SSMSTRMOPS
      *
      * @returns VBox status code.
      * @param   pvUser              The user argument.
+     * @param   fCancelled          True if the operation was cancelled.
      */
-    DECLCALLBACKMEMBER(int, pfnClose)(void *pvUser);
+    DECLCALLBACKMEMBER(int, pfnClose)(void *pvUser, bool fCancelled);
 
     /** Struct magic + version (SSMSTRMOPS_VERSION). */
     uint32_t    u32EndVersion;
