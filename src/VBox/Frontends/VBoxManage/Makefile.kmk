@@ -57,20 +57,21 @@ else # !VBOX_ONLY_DOCS
  endif
  VBoxManage_SOURCES = \
  	VBoxManage.cpp \
- 	VBoxManageHelp.cpp \
- 	VBoxManageModifyVM.cpp \
- 	VBoxManageInfo.cpp \
- 	VBoxManageImport.cpp \
- 	VBoxManageMetrics.cpp \
- 	VBoxManageList.cpp \
- 	VBoxManageDisk.cpp \
- 	VBoxManageStorageController.cpp \
- 	VBoxManageSnapshot.cpp \
- 	VBoxManageUSB.cpp \
  	VBoxInternalManage.cpp \
- 	VBoxManageHostonly.cpp \
+ 	VBoxManageControlVM.cpp \
  	VBoxManageDHCPServer.cpp \
- 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp)
+ 	VBoxManageDisk.cpp \
+ 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
+ 	VBoxManageHelp.cpp \
+ 	VBoxManageHostonly.cpp \
+ 	VBoxManageImport.cpp \
+ 	VBoxManageInfo.cpp \
+ 	VBoxManageList.cpp \
+ 	VBoxManageMetrics.cpp \
+ 	VBoxManageModifyVM.cpp \
+ 	VBoxManageSnapshot.cpp \
+ 	VBoxManageStorageController.cpp \
+ 	VBoxManageUSB.cpp
 endif # !VBOX_ONLY_DOCS
 ifneq ($(KBUILD_TARGET),win)
  # Workaround for buggy gcc-4.3 compilers, see
