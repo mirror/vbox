@@ -42,10 +42,11 @@
   <xsl:param name="safearray" />
 
   <xsl:choose>
-    <xsl:when test="$type='wstring'">(string)<xsl:value-of select="$value" /></xsl:when>
+    <xsl:when test="$type='wstring' or $type='uuid'">(string)<xsl:value-of select="$value" /></xsl:when>
     <xsl:when test="$type='boolean'">(bool)<xsl:value-of select="$value" /></xsl:when>
     <xsl:when test="$type='long' or $type='unsigned long' or $type='long long' or $type='short' or $type='unsigned short' or $type='unsigned long long' or $type='result'">(int)<xsl:value-of select="$value" /></xsl:when>
     <xsl:when test="$type='double' or $type='float'">(float)<xsl:value-of select="$value" /></xsl:when>
+    <xsl:when test="$type='octet'"><xsl:value-of select="$value" /></xsl:when>
     <xsl:otherwise>
         <xsl:choose>
             <xsl:when test="$safearray='yes'">
@@ -116,9 +117,12 @@
       </xsl:when>
    </xsl:choose>
    <xsl:for-each select="method">
-       <xsl:call-template name="method">
-           <xsl:with-param name="wsmap" select="$wsmap" />
-       </xsl:call-template>
+      <xsl:if test="not((param[@type=($G_setSuppressedInterfaces/@name)])
+                      or (param[@mod='ptr']))" >
+           <xsl:call-template name="method">
+               <xsl:with-param name="wsmap" select="$wsmap" />
+            </xsl:call-template>
+      </xsl:if>
   </xsl:for-each>
   <xsl:for-each select="attribute">
       <xsl:variable name="attrname"><xsl:value-of select="@name" /></xsl:variable>
@@ -254,8 +258,8 @@ class <xsl:value-of select="$ifname"/> extends VBox_Struct {
 * Generated VBoxWebService ENUM
 */</xsl:text>
 class <xsl:value-of select="@name"/> extends VBox_Enum {
-   public $NameMap = array(<xsl:for-each select="const"><xsl:value-of select="@value"/> => '<xsl:value-of select="@name"/>'<xsl:if test="not(position()=last())">, </xsl:if></xsl:for-each>);
-   public $ValueMap = array(<xsl:for-each select="const">'<xsl:value-of select="@name"/>' => <xsl:value-of select="@value"/><xsl:if test="not(position()=last())">, </xsl:if></xsl:for-each>);
+   public $NameMap = array(<xsl:for-each select="const"><xsl:if test="not(@wsmap='suppress')"><xsl:value-of select="@value"/> => '<xsl:value-of select="@name"/>'<xsl:if test="not(position()=last())">, </xsl:if></xsl:if></xsl:for-each>);
+   public $ValueMap = array(<xsl:for-each select="const"><xsl:if test="not(@wsmap='suppress')">'<xsl:value-of select="@name"/>' => <xsl:value-of select="@value"/><xsl:if test="not(position()=last())">, </xsl:if></xsl:if></xsl:for-each>);
 }
 </xsl:template>
 
