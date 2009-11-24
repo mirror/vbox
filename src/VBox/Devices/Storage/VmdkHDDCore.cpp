@@ -342,9 +342,11 @@ typedef struct VMDKEXTENT
 
 /**
  * Maximum number of lines in a descriptor file. Not worth the effort of
- * making it variable. Descriptor files are generally very short (~20 lines).
+ * making it variable. Descriptor files are generally very short (~20 lines),
+ * with the exception of sparse files split in 2G chunks, which need for the
+ * maximum size (almost 2T) exactly 1025 lines for the disk database.
  */
-#define VMDK_DESCRIPTOR_LINES_MAX   100U
+#define VMDK_DESCRIPTOR_LINES_MAX   1100U
 
 /**
  * Parsed descriptor information. Allows easy access and update of the
@@ -2992,7 +2994,20 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
     }
     else
     {
-        pImage->cbDescAlloc = VMDK_SECTOR2BYTE(20);
+        /* Allocate at least 10K, and make sure that there is 5K free space
+         * in case new entries need to be added to the descriptor. Never
+         * alocate more than 128K, because that's no valid descriptor file
+         * and will result in the correct "truncated read" error handling. */
+        uint64_t cbSize;
+        rc = vmdkFileGetSize(pFile, &cbSize);
+        if (RT_FAILURE(rc))
+            goto out;
+        if (cbSize % VMDK_SECTOR2BYTE(10))
+            cbSize += VMDK_SECTOR2BYTE(20) - cbSize % VMDK_SECTOR2BYTE(10);
+        else
+            cbSize += VMDK_SECTOR2BYTE(10);
+        cbSize = RT_MIN(cbSize, _128K);
+        pImage->cbDescAlloc = RT_MAX(VMDK_SECTOR2BYTE(20), cbSize);
         pImage->pDescData = (char *)RTMemAllocZ(pImage->cbDescAlloc);
         if (!pImage->pDescData)
         {
@@ -4548,7 +4563,13 @@ static int vmdkCreate(const char *pszFilename, uint64_t cbSize,
     pImage->pGTCache = NULL;
     pImage->pDescData = NULL;
     pImage->pVDIfsDisk = NULL;
-    pImage->cbDescAlloc = VMDK_SECTOR2BYTE(20);
+    /* Descriptors for split images can be pretty large, especially if the
+     * filename is long. So prepare for the worst, and allocate quite some
+     * memory for the descriptor in this case. */
+    if (uImageFlags & VD_VMDK_IMAGE_FLAGS_SPLIT_2G)
+        pImage->cbDescAlloc = VMDK_SECTOR2BYTE(200);
+    else
+        pImage->cbDescAlloc = VMDK_SECTOR2BYTE(20);
     pImage->pDescData = (char *)RTMemAllocZ(pImage->cbDescAlloc);
     if (!pImage->pDescData)
     {
