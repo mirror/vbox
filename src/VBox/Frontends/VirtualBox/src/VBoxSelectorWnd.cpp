@@ -487,7 +487,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     rightVLayout->setSpacing (0);
     rightVLayout->insertSpacing (0, 10);
 #else /* MAC_LEOPARD_STYLE */
-    leftVLayout->addWidget (vmTools);
+    leftVLayout->addWidget (mVMToolBar);
     centralLayout->setSpacing (9);
     VBoxGlobal::setLayoutMargin (centralLayout, 5);
     leftVLayout->setSpacing (5);
