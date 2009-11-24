@@ -269,6 +269,7 @@ Console::Console()
     , mVMZeroCallersSem(NIL_RTSEMEVENT)
     , mVMDestroying(false)
     , mVMPoweredOff(false)
+    , mVMIsAlreadyPoweringOff(false)
     , mVMMDev(NULL)
     , mAudioSniffer(NULL)
     , mVMStateChangeCallbackDisabled(false)
@@ -5660,8 +5661,8 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                 && that->mMachineState != MachineState_Restoring
                 && that->mMachineState != MachineState_TeleportingIn
                 && that->mMachineState != MachineState_LiveSnapshotting
-                && that->mMachineState != MachineState_Teleporting
                 && that->mMachineState != MachineState_TeleportingPausedVM
+                && !that->mVMIsAlreadyPoweringOff
                )
             {
                 LogFlowFunc(("VM has powered itself off but Console still thinks it is running. Notifying.\n"));
@@ -5760,7 +5761,6 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                     /* Teleportation failed or was cancelled.  Back to powered off. */
                     that->setMachineState(MachineState_PoweredOff);
                     break;
-                case MachineState_Teleporting:
                 case MachineState_TeleportingPausedVM:
                     /* Successfully teleported the VM. */
                     that->setMachineState(MachineState_Teleported);
@@ -5789,6 +5789,8 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                 case MachineState_TeleportingPausedVM:
                 case MachineState_Saving:
                 case MachineState_Restoring:
+                case MachineState_Stopping:
+                case MachineState_TeleportingIn:
                     /* The worker threads handles the transition. */
                     break;
 

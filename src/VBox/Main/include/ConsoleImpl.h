@@ -562,6 +562,8 @@ private:
     bool mVMDestroying : 1;
     /** true when power down is initiated by vmstateChangeCallback (EMT) */
     bool mVMPoweredOff : 1;
+    /** true when vmstateChangeCallback shouldn't initiate a power down.  */
+    bool mVMIsAlreadyPoweringOff : 1;
 
     /** The current network attachment type in the VM.
      * This doesn't have to match the network attachment type
