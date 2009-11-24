@@ -2425,6 +2425,9 @@ void VBoxGlobal::addMedium (const VBoxMedium &aMedium)
 
         for (; it != mMediaList.end(); ++ it)
         {
+            /* skip null medium that come first */
+            if ((*it).isNull()) continue;
+
             if ((*it).type() != VBoxDefs::MediumType_HardDisk)
                 break;
 
@@ -2453,6 +2456,9 @@ void VBoxGlobal::addMedium (const VBoxMedium &aMedium)
     {
         for (; it != mMediaList.end(); ++ it)
         {
+            /* skip null medium that come first */
+            if ((*it).isNull()) continue;
+
             /* skip HardDisks that come first */
             if ((*it).type() == VBoxDefs::MediumType_HardDisk)
                 continue;
