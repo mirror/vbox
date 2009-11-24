@@ -102,12 +102,25 @@ HRESULT Display::FinalConstruct()
     mLastWidth = 0;
     mLastHeight = 0;
 
+#ifdef VBOX_WITH_OLD_VBVA_LOCK
+    int rc = RTCritSectInit (&mVBVALock);
+    AssertRC (rc);
+#endif /* VBOX_WITH_OLD_VBVA_LOCK */
+
     return S_OK;
 }
 
 void Display::FinalRelease()
 {
     uninit();
+
+#ifdef VBOX_WITH_OLD_VBVA_LOCK
+    if (RTCritSectIsInitialized (&mVBVALock))
+    {
+        RTCritSectDelete (&mVBVALock);
+        memset (&mVBVALock, 0, sizeof (mVBVALock));
+    }
+#endif /* VBOX_WITH_OLD_VBVA_LOCK */
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -964,6 +977,12 @@ unsigned mapCoordsToScreen(DISPLAYFBINFO *pInfos, unsigned cInfos, int *px, int 
  *
  *  @thread EMT
  */
+#ifdef VBOX_WITH_OLD_VBVA_LOCK
+/*
+ * Always runs under VBVA or DevVGA lock.
+ * Safe to use VBVA vars and take the framebuffer lock.
+ */
+#endif /* VBOX_WITH_OLD_VBVA_LOCK */
 void Display::handleDisplayUpdate (int x, int y, int w, int h)
 {
 #ifdef DEBUG_sunlover
@@ -1164,7 +1183,22 @@ bool Display::VideoAccelAllowed (void)
 /**
  * @thread EMT
  */
+#ifdef VBOX_WITH_OLD_VBVA_LOCK
 int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
+{
+    int rc;
+    RTCritSectEnter(&mVBVALock);
+    rc = videoAccelEnable (fEnable, pVbvaMemory);
+    RTCritSectLeave(&mVBVALock);
+    return rc;
+}
+#endif /* VBOX_WITH_OLD_VBVA_LOCK */
+
+#ifdef VBOX_WITH_OLD_VBVA_LOCK
+int Display::videoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
+#else
+int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
+#endif /* !VBOX_WITH_OLD_VBVA_LOCK */
 {
     int rc = VINF_SUCCESS;
 
@@ -1217,7 +1251,11 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     if (mfVideoAccelEnabled)
     {
         /* Process any pending orders and empty the VBVA ring buffer. */
+#ifdef VBOX_WITH_OLD_VBVA_LOCK
+        videoAccelFlush ();
+#else
         VideoAccelFlush ();
+#endif /* !VBOX_WITH_OLD_VBVA_LOCK */
     }
 
     if (!fEnable && mpVbvaMemory)
@@ -1594,7 +1632,21 @@ void Display::vbvaReleaseCmd (VBVACMDHDR *pHdr, int32_t cbCmd)
  *
  * @thread EMT
  */
+#ifdef VBOX_WITH_OLD_VBVA_LOCK
 void Display::VideoAccelFlush (void)
+{
+    RTCritSectEnter(&mVBVALock);
+    videoAccelFlush();
+    RTCritSectLeave(&mVBVALock);
+}
+#endif /* VBOX_WITH_OLD_VBVA_LOCK */
+
+#ifdef VBOX_WITH_OLD_VBVA_LOCK
+/* Under VBVA lock. DevVGA is not taken. */
+void Display::videoAccelFlush (void)
+#else
+void Display::VideoAccelFlush (void)
+#endif /* !VBOX_WITH_OLD_VBVA_LOCK */
 {
 #ifdef DEBUG_sunlover_2
     LogFlowFunc (("mfVideoAccelEnabled = %d\n", mfVideoAccelEnabled));
@@ -1622,6 +1674,7 @@ void Display::VideoAccelFlush (void)
 
     /* Process the ring buffer */
     unsigned uScreenId;
+#ifndef VBOX_WITH_OLD_VBVA_LOCK
     for (uScreenId = 0; uScreenId < mcMonitors; uScreenId++)
     {
         if (!maFramebuffers[uScreenId].pFramebuffer.isNull())
@@ -1629,6 +1682,7 @@ void Display::VideoAccelFlush (void)
             maFramebuffers[uScreenId].pFramebuffer->Lock ();
         }
     }
+#endif /* !VBOX_WITH_OLD_VBVA_LOCK */
 
     /* Initialize dirty rectangles accumulator. */
     VBVADIRTYREGION rgn;
@@ -1646,7 +1700,11 @@ void Display::VideoAccelFlush (void)
                   mpVbvaMemory->off32Data, mpVbvaMemory->off32Free));
 
             /* Disable VBVA on those processing errors. */
+#ifdef VBOX_WITH_OLD_VBVA_LOCK
+            videoAccelEnable (false, NULL);
+#else
             VideoAccelEnable (false, NULL);
+#endif /* !VBOX_WITH_OLD_VBVA_LOCK */
 
             break;
         }
@@ -1709,10 +1767,12 @@ void Display::VideoAccelFlush (void)
 
     for (uScreenId = 0; uScreenId < mcMonitors; uScreenId++)
     {
+#ifndef VBOX_WITH_OLD_VBVA_LOCK
         if (!maFramebuffers[uScreenId].pFramebuffer.isNull())
         {
             maFramebuffers[uScreenId].pFramebuffer->Unlock ();
         }
+#endif /* !VBOX_WITH_OLD_VBVA_LOCK */
 
         if (maFramebuffers[uScreenId].u32ResizeStatus == ResizeStatus_Void)
         {
@@ -2598,7 +2658,12 @@ DECLCALLBACK(void) Display::displayLFBModeChangeCallback(PPDMIDISPLAYCONNECTOR p
     NOREF(fEnabled);
 
     /* Disable VBVA mode in any case. The guest driver reenables VBVA mode if necessary. */
+#ifdef VBOX_WITH_OLD_VBVA_LOCK
+    /* This is called under DevVGA lock. Postpone disabling VBVA. */
+    /* @todo vbva */
+#else
     pDrv->pDisplay->VideoAccelEnable (false, NULL);
+#endif /* !VBOX_WITH_OLD_VBVA_LOCK */
 }
 
 /**
