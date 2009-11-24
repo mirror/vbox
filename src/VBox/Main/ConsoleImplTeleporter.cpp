@@ -482,7 +482,7 @@ static DECLCALLBACK(int) teleporterTcpOpIsOk(void *pvUser)
         {
             if (RT_SUCCESS(rc))
             {
-                LogRel(("Teleporter/TCP: Incoming data detect by IsOk, assuming it's a cancel.\n"));
+                LogRel(("Teleporter/TCP: Incoming data detect by IsOk, assuming it is a cancellation NACK.\n"));
                 rc = VERR_SSM_CANCELLED;
             }
             else
