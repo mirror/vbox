@@ -2461,12 +2461,15 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
     if (hw.fSyntheticCpu)
         pelmCPU->createChild("SyntheticCpu")->setAttribute("enabled", hw.fSyntheticCpu);
     pelmCPU->setAttribute("count", hw.cCPUs);
-    xml::ElementNode *pelmCpuIdTree = pelmCPU->createChild("CpuIdTree");
+    xml::ElementNode *pelmCpuIdTree = NULL;
     for (CpuIdLeafsList::const_iterator it = hw.llCpuIdLeafs.begin();
          it != hw.llCpuIdLeafs.end();
          ++it)
     {
         const CpuIdLeaf &leaf = *it;
+
+        if (pelmCpuIdTree == NULL)
+             pelmCpuIdTree = pelmCPU->createChild("CpuIdTree");
 
         xml::ElementNode *pelmCpuIdLeaf = pelmCpuIdTree->createChild("CpuIdLeaf");
         pelmCpuIdLeaf->setAttribute("id",  leaf.ulId);
