@@ -642,7 +642,8 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE File, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD
  * Changes one or more of the timestamps associated of file system object.
  *
  * @returns iprt status code.
- * @returns VERR_NOT_SUPPORTED is returned if the operation isn't supported by the OS.
+ * @retval  VERR_NOT_SUPPORTED is returned if the operation isn't supported by
+ *          the OS.
  *
  * @param   File                Handle to the file.
  * @param   pAccessTime         Pointer to the new access time. NULL if not to be changed.
@@ -743,6 +744,24 @@ RTR3DECL(int) RTFileGetOwner(RTFILE File, uint32_t *pUid, uint32_t *pGid);
  * @param   piRet       Return value of the IOCTL request.
  */
 RTR3DECL(int) RTFileIoCtl(RTFILE File, int iRequest, void *pvData, unsigned cbData, int *piRet);
+
+/**
+ * Query the sizes of a filesystem.
+ *
+ * @returns iprt status code.
+ * @retval  VERR_NOT_SUPPORTED is returned if the operation isn't supported by
+ *          the OS.
+ *
+ * @param   hFile       The file handle.
+ * @param   pcbTotal    Where to store the total filesystem space. (Optional)
+ * @param   pcbFree     Where to store the remaining free space in the filesystem. (Optional)
+ * @param   pcbBlock    Where to store the block size. (Optional)
+ * @param   pcbSector   Where to store the sector size. (Optional)
+ *
+ * @sa      RTFsQuerySizes
+ */
+RTR3DECL(int) RTFileQueryFsSizes(RTFILE hFile, PRTFOFF pcbTotal, RTFOFF *pcbFree,
+                                 uint32_t *pcbBlock, uint32_t *pcbSector);
 
 /**
  * Reads the file into memory.
