@@ -63,18 +63,11 @@
 
 #ifndef VBOX_ONLY_DOCS
 using namespace com;
-
-/** command handler type */
-typedef int (*PFNHANDLER)(HandlerArg *a);
-
 #endif /* !VBOX_ONLY_DOCS */
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// global variables
-//
-////////////////////////////////////////////////////////////////////////////////
-
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 /*extern*/ bool g_fDetailedProgress = false;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -175,24 +168,6 @@ HRESULT showProgress(ComPtr<IProgress> progress)
     RTStrmFlush(g_pStdOut);
     return iRc;
 }
-#endif /* !VBOX_ONLY_DOCS */
-
-void showLogo(void)
-{
-    static bool fShown; /* show only once */
-
-    if (!fShown)
-    {
-        RTPrintf("VirtualBox Command Line Management Interface Version "
-                 VBOX_VERSION_STRING  "\n"
-                 "(C) 2005-2009 Sun Microsystems, Inc.\n"
-                 "All rights reserved.\n"
-                 "\n");
-        fShown = true;
-    }
-}
-
-#ifndef VBOX_ONLY_DOCS
 
 static int handleRegisterVM(HandlerArg *a)
 {
@@ -1888,26 +1863,29 @@ int main(int argc, char *argv[])
             printUsage(USAGE_ALL);
             return 0;
         }
-        else if (   !strcmp(argv[i], "-v")
-                 || !strcmp(argv[i], "-version")
-                 || !strcmp(argv[i], "-Version")
-                 || !strcmp(argv[i], "--version"))
+
+        if (   !strcmp(argv[i], "-v")
+            || !strcmp(argv[i], "-version")
+            || !strcmp(argv[i], "-Version")
+            || !strcmp(argv[i], "--version"))
         {
             /* Print version number, and do nothing else. */
             RTPrintf("%sr%d\n", VBOX_VERSION_STRING, RTBldCfgRevision());
             return 0;
         }
-        else if (   !strcmp(argv[i], "--dumpopts")
-                 || !strcmp(argv[i], "-dumpopts"))
+
+        if (   !strcmp(argv[i], "--dumpopts")
+            || !strcmp(argv[i], "-dumpopts"))
         {
             /* Special option to dump really all commands,
              * even the ones not understood on this platform. */
             printUsage(USAGE_DUMPOPTS);
             return 0;
         }
-        else if (   !strcmp(argv[i], "--nologo")
-                 || !strcmp(argv[i], "-nologo")
-                 || !strcmp(argv[i], "-q"))
+
+        if (   !strcmp(argv[i], "--nologo")
+            || !strcmp(argv[i], "-nologo")
+            || !strcmp(argv[i], "-q"))
         {
             /* suppress the logo */
             fShowLogo = false;
@@ -1993,11 +1971,11 @@ int main(int argc, char *argv[])
     /*
      * All registered command handlers
      */
-    struct
+    static const struct
     {
         const char *command;
-        PFNHANDLER handler;
-    } commandHandlers[] =
+        int (*handler)(HandlerArg *a);
+    } s_commandHandlers[] =
     {
         { "internalcommands", handleInternalCommands },
         { "list",             handleList },
@@ -2034,11 +2012,11 @@ int main(int argc, char *argv[])
         { "vmstatistics",     handleVMStatistics },
 #ifdef VBOX_WITH_GUEST_PROPS
         { "guestproperty",    handleGuestProperty },
-#endif /* VBOX_WITH_GUEST_PROPS defined */
+#endif
         { "metrics",          handleMetrics },
         { "import",           handleImportAppliance },
         { "export",           handleExportAppliance },
-#if defined(VBOX_WITH_NETFLT)
+#ifdef VBOX_WITH_NETFLT
         { "hostonlyif",       handleHostonlyIf },
 #endif
         { "dhcpserver",       handleDHCPServer},
@@ -2046,18 +2024,18 @@ int main(int argc, char *argv[])
     };
 
     int commandIndex;
-    for (commandIndex = 0; commandHandlers[commandIndex].command != NULL; commandIndex++)
+    for (commandIndex = 0; s_commandHandlers[commandIndex].command != NULL; commandIndex++)
     {
-        if (!strcmp(commandHandlers[commandIndex].command, argv[iCmd]))
+        if (!strcmp(s_commandHandlers[commandIndex].command, argv[iCmd]))
         {
             handlerArg.argc = argc - iCmdArg;
             handlerArg.argv = &argv[iCmdArg];
 
-            rc = commandHandlers[commandIndex].handler(&handlerArg);
+            rc = s_commandHandlers[commandIndex].handler(&handlerArg);
             break;
         }
     }
-    if (!commandHandlers[commandIndex].command)
+    if (!s_commandHandlers[commandIndex].command)
     {
         rc = errorSyntax(USAGE_ALL, "Invalid command '%s'", Utf8Str(argv[iCmd]).raw());
     }
