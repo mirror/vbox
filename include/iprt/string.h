@@ -1057,7 +1057,10 @@ RTDECL(bool) RTStrSimplePatternMultiMatch(const char *pszPatterns, size_t cchPat
  * @{ */
 
 /**
- * Converts a string representation of a version number to an unsigned number.
+ * Compares two version strings and returns the result. The version string has
+ * to be made of at least one number section, each section delimited by a ".",
+ * e.g. "123.45.67". Trailing zeros at the beginning and non-digits in a section
+ * will be skipped, so "12.foo006" becomes "12.6".
  *
  * @returns iprt status code.
  *          Warnings are used to indicate convertion problems.
@@ -1068,10 +1071,13 @@ RTDECL(bool) RTStrSimplePatternMultiMatch(const char *pszPatterns, size_t cchPat
  * @retval  VERR_NO_MEMORY
  * @retval  VERR_NO_DIGITS
  *
- * @param   pszValue    Pointer to the string value.
- * @param   pu32        Where to store the converted number.
+ * @todo    Deal with prefixes and suffixes!
+ * @param   pszVer1     First version string to compare.
+ * @param   pszVer2     First version string to compare.*
+ * @param   pui8Res     Pointer uint8_t value where to store the comparison result:
+ *                      0 if equal, 1 if pszVer1 is greater, 2 if pszVer2 is greater.
  */
-RTDECL(int) RTStrVersionToUInt32(const char *pszVer, uint32_t *pu32);
+RTDECL(int) RTStrVersionCompare(const char *pszVer1, const char *pszVer2, uint8_t *pui8Res);
 
 /**
  * Converts a string representation of a number to a 64-bit unsigned number.

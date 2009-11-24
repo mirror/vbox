@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT Testcase - String To Version Number Conversion.
+ * IPRT Testcase - Version String Comparison.
  */
 
 /*
@@ -29,19 +29,17 @@
  */
 
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
+#include <iprt/initterm.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
-#include <iprt/err.h>
 
 
-struct TstU32
+struct TstU8
 {
-    const char *psz;
+    const char *pszVer1;
+    const char *pszVer2;
     int         rc;
-    uint32_t    Result;
+    uint8_t     Result;
 };
 
 
@@ -49,19 +47,18 @@ struct TstU32
     do \
     { \
         Type Result; \
-        int rc = Fun(Test.psz, &Result); \
+        int rc = Fun(Test.pszVer1, Test.pszVer2, &Result); \
         if (Result != Test.Result) \
         { \
-            RTPrintf("failure: '%s' -> " Fmt " expected " Fmt ". (%s/%u)\n", Test.psz, Result, Test.Result, #Fun, iTest); \
+            RTPrintf("failure: '%s' <-> '%s' -> " Fmt ", expected " Fmt ". (%s/%u)\n", Test.pszVer1, Test.pszVer2, Result, Test.Result, #Fun, iTest); \
             cErrors++; \
         } \
         else if (rc != Test.rc) \
         { \
-            RTPrintf("failure: '%s' -> rc=%Rrc expected %Rrc. (%s/%u)\n", Test.psz, rc, Test.rc, #Fun, iTest); \
+            RTPrintf("failure: '%s' <-> '%s' -> rc=%Rrc, expected %Rrc. (%s/%u)\n", Test.pszVer1, Test.pszVer2, rc, Test.rc, #Fun, iTest); \
             cErrors++; \
         } \
     } while (0)
-
 
 #define RUN_TESTS(aTests, Type, Fmt, Fun) \
     do \
@@ -72,29 +69,48 @@ struct TstU32
         } \
     } while (0)
 
-
 int main()
 {
-    /** @todo r=bird: IPRT init is missing. Use the RTTest framework (see any
-     *        tstRT*.cpp file for examples of this). */
-    int cErrors = 0;
+    RTR3Init();
 
-    static const struct TstU32 aTstU32[] =
+    int cErrors = 0;
+    static const struct TstU8 aTstU8[] =
     {
-        { "asdf",                               VERR_NO_DIGITS, 0 },
-        { "asdf234",                            VERR_NO_DIGITS, 0 },
-        { "123",                                VINF_SUCCESS, 123 },
-        { "45.63",                              VINF_SUCCESS, 4563 },
-        { "68.54.123",                          VINF_SUCCESS, 6854123 },
-        { "1.0.3-asdf",                         VINF_SUCCESS, 103 },
-        { "aasdf-1",                            VINF_SUCCESS, 1 },
-        { "qwer-123.34",                        VINF_SUCCESS, 12334 },
-        { "aasdf45-r4545-5",                    VINF_SUCCESS, 5 },
-        { "foo41-r2431-6.9.8",                  VINF_SUCCESS, 698 },
-        { "bar43-r3517-7.1.2-beta",             VINF_SUCCESS, 712 },
-        { "bar43-r3517-7.1.2.53412344556-beta", VWRN_NUMBER_TOO_BIG, 0 },
+        { "", "",                         VERR_NO_DIGITS, 0 },
+        { "asdf", "",                     VERR_NO_DIGITS, 0 },
+        { "asdf234", "1.4.5",             VINF_SUCCESS, 1 },
+        { "12.foo006", "12.6",            VINF_SUCCESS, 0 },
+        { "1", "1",                       VINF_SUCCESS, 0 },
+        { "1", "100",                     VINF_SUCCESS, 2 },
+        { "100", "1",                     VINF_SUCCESS, 1 },
+        { "3", "4",                       VINF_SUCCESS, 2 },
+        { "1", "0.1",                     VINF_SUCCESS, 1 },
+        { "1", "0.0.0.0.10000",           VINF_SUCCESS, 1 },
+        { "0100", "100",                  VINF_SUCCESS, 0 },
+        { "1.0.0", "1",                   VINF_SUCCESS, 0 },
+        { "1.0.0", "100.0.0",             VINF_SUCCESS, 2 },
+        { "1", "1.0.3.0",                 VINF_SUCCESS, 2 },
+        { "1.4.5", "1.2.3",               VINF_SUCCESS, 1 },
+        { "1.2.3", "1.4.5",               VINF_SUCCESS, 2 },
+        { "1.2.3", "4.5.6",               VINF_SUCCESS, 2 },
+        { "1.0.4", "1.0.3",               VINF_SUCCESS, 1 },
+        { "0.1", "0.0.1",                 VINF_SUCCESS, 1 },
+        { "0.0.1", "0.1.1",               VINF_SUCCESS, 2 },
+        { "3.1.0", "3.0.14",              VINF_SUCCESS, 1 },
+        { "2.0.12", "3.0.14",             VINF_SUCCESS, 2 },
+        { "3.1", "3.0.22",                VINF_SUCCESS, 1 },
+        { "3.0.14", "3.1.0",              VINF_SUCCESS, 2 },
+        { "45.63", "04.560.30",           VINF_SUCCESS, 1 },
+        { "45.006", "45.6",               VINF_SUCCESS, 0 },
+        { "23.206", "23.06",              VINF_SUCCESS, 1 },
+        { "23.2", "23.060",               VINF_SUCCESS, 2 },
+
+        { "VirtualBox-2.0.8-Beta2", "VirtualBox-2.0.8_Beta3-r12345", VINF_SUCCESS, 0 },
+        { "VirtualBox-2.2.4-Beta2", "VirtualBox-2.2.2", VINF_SUCCESS, 1 },
+        { "VirtualBox-3.1.0", "VirtualBox-3.1.2_Beta1", VINF_SUCCESS, 2 },
+        { "3.1.0_BETA-r12345", "3.1.2", VINF_SUCCESS, 2 },
     };
-    RUN_TESTS(aTstU32, uint32_t, "%#ld", RTStrVersionToUInt32);
+    RUN_TESTS(aTstU8, uint8_t, "%#d", RTStrVersionCompare);
 
     /*
      * Summary.
