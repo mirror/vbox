@@ -1341,7 +1341,7 @@ DWORD APIENTRY DdDestroySurface(PDD_DESTROYSURFACEDATA lpDestroySurface)
 
             vboxVHWASurfDescFree(pDesc);
 
-            lpSurfaceGlobal->dwReserved1 = NULL;
+            lpSurfaceGlobal->dwReserved1 = (ULONG_PTR)NULL;
 
             lpDestroySurface->ddRVal = DD_OK;
         }

@@ -319,7 +319,8 @@ typedef struct _VBOXVHWACMD
 } VBOXVHWACMD;
 
 #define VBOXVHWACMD_HEADSIZE() (RT_OFFSETOF(VBOXVHWACMD, body))
-#define VBOXVHWACMD_SIZE(_tCmd) (VBOXVHWACMD_HEADSIZE() + sizeof(_tCmd))
+#define VBOXVHWACMD_SIZE_FROMBODYSIZE(_s) (VBOXVHWACMD_HEADSIZE() + (_s))
+#define VBOXVHWACMD_SIZE(_tCmd) (VBOXVHWACMD_SIZE_FROMBODYSIZE(sizeof(_tCmd)))
 typedef unsigned int VBOXVHWACMD_LENGTH;
 typedef uint64_t VBOXVHWA_SURFHANDLE;
 #define VBOXVHWA_SURFHANDLE_INVALID 0
@@ -733,6 +734,18 @@ typedef struct _VBOXVHWACMD_HH_CONSTRUCT
 {
     void * pVM;
 } VBOXVHWACMD_HH_CONSTRUCT;
+
+typedef DECLCALLBACK(void) FNVBOXVHWA_HH_CALLBACK(void*);
+typedef FNVBOXVHWA_HH_CALLBACK *PFNVBOXVHWA_HH_CALLBACK;
+
+#define VBOXVHWA_HH_CALLBACK_SET(_pCmd, _pfn, _parg) \
+    do { \
+        (_pCmd)->GuestVBVAReserved1 = (uint64_t)(_pfn); \
+        (_pCmd)->GuestVBVAReserved2 = (uint64_t)(_parg); \
+    }while(0)
+
+#define VBOXVHWA_HH_CALLBACK_GET(_pCmd) ((PFNVBOXVHWA_HH_CALLBACK)(_pCmd)->GuestVBVAReserved1)
+#define VBOXVHWA_HH_CALLBACK_GET_ARG(_pCmd) ((void*)(_pCmd)->GuestVBVAReserved2)
 
 #pragma pack()
 # endif /* #ifdef VBOX_WITH_VIDEOHWACCEL */
