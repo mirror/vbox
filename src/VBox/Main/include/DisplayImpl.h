@@ -341,6 +341,16 @@ private:
 
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
     RTCRITSECT mVBVALock;
+    volatile uint32_t mfu32PendingVideoAccelDisable;
+    
+    int vbvaLock(void);
+    void vbvaUnlock(void);
+
+public:
+    static int displayTakeScreenshotEMT(Display *pDisplay, uint8_t **ppu8Data, size_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height);
+
+private:
+    int videoAccelRefreshProcess(void);
 
     /* Functions run under VBVA lock. */
     int videoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory);
