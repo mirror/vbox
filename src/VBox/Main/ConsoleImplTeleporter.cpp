@@ -768,7 +768,11 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
         AssertLogRelMsg(enmMachineState == MachineState_TeleportingPausedVM, ("%s\n", Global::stringifyMachineState(enmMachineState)));
 
         autoVMCaller.release();
+
+        pState->mptrConsole->mVMIsAlreadyPoweringOff = true; /* (Make sure we stick in the TeleportingPausedVM state.) */
         hrc = pState->mptrConsole->powerDown();
+        pState->mptrConsole->mVMIsAlreadyPoweringOff = false;
+
         pState->mptrProgress->notifyComplete(hrc);
     }
     else
