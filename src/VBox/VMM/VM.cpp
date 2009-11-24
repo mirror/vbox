@@ -1501,19 +1501,21 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoSuspend(PVM pVM, PVMCPU pVCpu, void 
  *
  * @param   pVM             The VM handle.
  * @param   pVCpu           The VMCPU handle of the EMT.
- * @param   pvUser          Ignored.
+ * @param   pvUser          The pfSuspended argument of vmR3SaveTeleport.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoStep1Cleanup(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     LogFlow(("vmR3LiveDoStep1Cleanup: pVM=%p pVCpu=%p/#%u\n", pVM, pVCpu, pVCpu->idCpu));
-    NOREF(pvUser); NOREF(pVCpu);
+    bool *pfSuspended = (bool *)pvUser;
+    NOREF(pVCpu);
 
     int rc = vmR3TrySetState(pVM, "vmR3LiveDoStep1Cleanup", 6,
-                             VMSTATE_OFF,               VMSTATE_OFF_LS,
-                             VMSTATE_FATAL_ERROR,       VMSTATE_FATAL_ERROR_LS,
-                             VMSTATE_GURU_MEDITATION,   VMSTATE_GURU_MEDITATION_LS,
-                             VMSTATE_RUNNING,           VMSTATE_RUNNING_LS,
+                             VMSTATE_OFF,               VMSTATE_OFF_LS,                     /* 1 */
+                             VMSTATE_FATAL_ERROR,       VMSTATE_FATAL_ERROR_LS,             /* 2 */
+                             VMSTATE_GURU_MEDITATION,   VMSTATE_GURU_MEDITATION_LS,         /* 3 */
+                             VMSTATE_SUSPENDED,         VMSTATE_SUSPENDED_LS,               /* 4 */
                              VMSTATE_SUSPENDED,         VMSTATE_SUSPENDED_EXT_LS,
+                             VMSTATE_RUNNING,           VMSTATE_RUNNING_LS,
                              VMSTATE_DEBUGGING,         VMSTATE_DEBUGGING_LS);
     if (rc == 1)
         rc = VERR_SSM_LIVE_POWERED_OFF;
@@ -1521,6 +1523,11 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoStep1Cleanup(PVM pVM, PVMCPU pVCpu, 
         rc = VERR_SSM_LIVE_FATAL_ERROR;
     else if (rc == 3)
         rc = VERR_SSM_LIVE_GURU_MEDITATION;
+    else if (rc == 4)
+    {
+        *pfSuspended = true;
+        rc = VINF_SUCCESS;
+    }
     else if (rc > 0)
         rc = VINF_SUCCESS;
     return rc;
@@ -1704,7 +1711,7 @@ static int vmR3SaveTeleport(PVM pVM, uint32_t cMsMaxDowntime,
             int rc2 = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)SSMR3LiveDone, 1, pSSM);
             AssertMsg(rc2 == rc, ("%Rrc != %Rrc\n", rc2, rc));
 
-            rc2 = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, vmR3LiveDoStep1Cleanup, NULL);
+            rc2 = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, vmR3LiveDoStep1Cleanup, pfSuspended);
             if (RT_FAILURE(rc2) && rc == VERR_SSM_CANCELLED)
                 rc = rc2;
         }
