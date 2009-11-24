@@ -41,11 +41,13 @@
 #include <VBox/err.h>
 #include <VBox/version.h>
 
+#include <iprt/asm.h>
 #include <iprt/buildconfig.h>
-#include <iprt/env.h>
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+
+#include <signal.h>
 
 #include "VBoxManage.h"
 
@@ -53,10 +55,27 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/*extern*/ bool g_fDetailedProgress = false;
-
+/*extern*/ bool         g_fDetailedProgress = false;
 
 #ifndef VBOX_ONLY_DOCS
+/** Set by the signal handler. */
+static volatile bool    g_fCanceled = false;
+
+
+/**
+ * Signal handler that sets g_fCanceled.
+ *
+ * This can be executed on any thread in the process, on Windows it may even be
+ * a thread dedicated to delivering this signal.  Do not doing anything
+ * unnecessary here.
+ */
+static void showProgressSignalHandler(int iSignal)
+{
+    NOREF(iSignal);
+    ASMAtomicWriteBool(&g_fCanceled, true);
+}
+
+
 /**
  * Print out progress on the console
  */
@@ -83,6 +102,20 @@ HRESULT showProgress(ComPtr<IProgress> progress)
         RTStrmFlush(g_pStdOut);
     }
 
+    /* setup signal handling if cancelable */
+    bool fCanceledAlready = false;
+    BOOL fCancelable;
+    HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
+    if (FAILED(hrc))
+        fCancelable = FALSE;
+    if (fCancelable)
+    {
+        signal(SIGINT,   showProgressSignalHandler);
+#ifdef SIGBREAK
+        signal(SIGBREAK, showProgressSignalHandler);
+#endif
+    }
+
     while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
     {
         ULONG ulOperation;
@@ -100,8 +133,8 @@ HRESULT showProgress(ComPtr<IProgress> progress)
                 ulLastOperation = ulOperation;
             }
 
-            if (    (ulCurrentPercent != ulLastPercent)
-                 || (ulCurrentOperationPercent != ulLastOperationPercent)
+            if (    ulCurrentPercent != ulLastPercent
+                 || ulCurrentOperationPercent != ulLastOperationPercent
                )
             {
                 LONG lSecsRem;
@@ -132,8 +165,27 @@ HRESULT showProgress(ComPtr<IProgress> progress)
         if (fCompleted)
             break;
 
+        /* process async cancelation */
+        if (g_fCanceled && !fCanceledAlready)
+        {
+            hrc = progress->Cancel();
+            if (SUCCEEDED(hrc))
+                fCanceledAlready = true;
+            else
+                g_fCanceled = false;
+        }
+
         /* make sure the loop is not too tight */
         progress->WaitForCompletion(100);
+    }
+
+    /* undo signal handling */
+    if (fCancelable)
+    {
+        signal(SIGINT,   SIG_DFL);
+#ifdef SIGBREAK
+        signal(SIGBREAK, SIG_DFL);
+#endif
     }
 
     /* complete the line. */
@@ -142,6 +194,8 @@ HRESULT showProgress(ComPtr<IProgress> progress)
     {
         if (SUCCEEDED(iRc))
             RTPrintf("100%%\n");
+        else if (g_fCanceled)
+            RTPrintf("CANCELED\n");
         else
             RTPrintf("FAILED\n");
     }
@@ -150,8 +204,8 @@ HRESULT showProgress(ComPtr<IProgress> progress)
     RTStrmFlush(g_pStdOut);
     return iRc;
 }
-#endif /* !VBOX_ONLY_DOCS */
 
+#endif /* !VBOX_ONLY_DOCS */
 
 int main(int argc, char *argv[])
 {
