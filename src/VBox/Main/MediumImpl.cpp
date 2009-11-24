@@ -1530,8 +1530,8 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
             /* cannot change to writethrough if there are children */
             if (children().size() != 0)
                 return setError(E_FAIL,
-                                tr("Hard disk '%ls' has %d child hard disks"),
-                                children().size());
+                                tr("Cannot change type for hard disk '%s' since it has %d child hard disk(s)"),
+                                m->strLocationFull.raw(), children().size());
             break;
         }
         default:
@@ -4610,8 +4610,8 @@ HRESULT Medium::canClose()
 
     if (children().size() != 0)
         return setError(E_FAIL,
-                        tr("Hard disk '%ls' has %d child hard disks"),
-                        children().size());
+                        tr("Cannot close medium '%s' because it has %d child hard disk(s)"),
+                        m->strLocationFull.raw(), children().size());
 
     return S_OK;
 }
