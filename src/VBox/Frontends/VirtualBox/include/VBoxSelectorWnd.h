@@ -45,6 +45,7 @@ class VBoxVMListView;
 class VBoxVMModel;
 class VBoxVMItem;
 class VBoxTrayIcon;
+class VBoxToolBar;
 
 class QTabWidget;
 class QListView;
@@ -145,6 +146,9 @@ private:
     QMenu *mFileMenu;
     QMenu *mVMMenu;
     QMenu *mHelpMenu;
+
+    /* Main toolbar */
+    VBoxToolBar *mVMToolBar;
 
     /* VM list context menu */
     QMenu *mVMCtxtMenu;
