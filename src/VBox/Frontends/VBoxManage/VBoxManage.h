@@ -155,9 +155,10 @@ void showLogo(void);
 
 #ifndef VBOX_ONLY_DOCS
 int handleInternalCommands(HandlerArg *a);
-
-unsigned parseNum(const char *psz, unsigned cMaxNum, const char *name);
 #endif /* !VBOX_ONLY_DOCS */
+
+/* VBoxManageControlVM.cpp */
+int handleControlVM(HandlerArg *a);
 
 /* VBoxManageModifyVM.cpp */
 int handleModifyVM(HandlerArg *a);
