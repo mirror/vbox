@@ -1,8 +1,10 @@
 
 /*
- * Sample client for the VirtualBox webservice, written in Java.
- * Best consumed in conjunction with the explanations in the VirtualBox
- * User Manual, which describe in detail how to get this code running.
+ * Sample client for the VirtualBox web service, written in Java
+ * (raw web service variant).
+ *
+ * Run the VirtualBox web service server first; see the VirtualBOx
+ * SDK reference for details.
  *
  * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
