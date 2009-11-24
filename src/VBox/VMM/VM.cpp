@@ -1740,20 +1740,24 @@ static int vmR3SaveTeleport(PVM pVM, uint32_t cMsMaxDowntime,
  *                              When in doubt, set this to true.
  * @param   pfnProgress         Progress callback. Optional.
  * @param   pvUser              User argument for the progress callback.
+ * @param   pfSuspended         Set if we suspended the VM.
  *
  * @thread      Non-EMT.
  * @vmstate     Suspended or Running
  * @vmstateto   Saving+Suspended or
  *              RunningLS+SuspeningLS+SuspendedLS+Saving+Suspended.
  */
-VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwards, PFNVMPROGRESS pfnProgress, void *pvUser)
+VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwards,
+                        PFNVMPROGRESS pfnProgress, void *pvUser, bool *pfSuspended)
 {
-    LogFlow(("VMR3Save: pVM=%p pszFilename=%p:{%s} fContinueAfterwards=%RTbool pfnProgress=%p pvUser=%p\n",
-             pVM, pszFilename, pszFilename, fContinueAfterwards, pfnProgress, pvUser));
+    LogFlow(("VMR3Save: pVM=%p pszFilename=%p:{%s} fContinueAfterwards=%RTbool pfnProgress=%p pvUser=%p pfSuspended=%p\n",
+             pVM, pszFilename, pszFilename, fContinueAfterwards, pfnProgress, pvUser, pfSuspended));
 
     /*
      * Validate input.
      */
+    AssertPtr(pfSuspended);
+    *pfSuspended = false;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_OTHER_THREAD(pVM);
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
@@ -1763,12 +1767,11 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwar
     /*
      * Join paths with VMR3Teleport.
      */
-    bool fSuspended = false; /** @todo need this for live snapshots. */
     SSMAFTER enmAfter = fContinueAfterwards ? SSMAFTER_CONTINUE : SSMAFTER_DESTROY;
     int rc = vmR3SaveTeleport(pVM, 250 /*cMsMaxDowntime*/,
                               pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOpsUser*/,
-                              enmAfter, pfnProgress, pvUser, &fSuspended);
-    LogFlow(("VMR3Save: returns %Rrc\n", rc));
+                              enmAfter, pfnProgress, pvUser, pfSuspended);
+    LogFlow(("VMR3Save: returns %Rrc (*pfSuspended=%RTbool)\n", rc, *pfSuspended));
     return rc;
 }
 
