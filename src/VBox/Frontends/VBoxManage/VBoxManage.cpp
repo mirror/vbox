@@ -115,7 +115,7 @@ HRESULT showProgress(ComPtr<IProgress> progress)
         else
         {
             /* did we cross a 10% mark? */
-            if (((ulCurrentPercent / 10) > (ulLastPercent / 10)))
+            if (ulCurrentPercent / 10  >  ulLastPercent / 10)
             {
                 /* make sure to also print out missed steps */
                 for (ULONG curVal = (ulLastPercent / 10) * 10 + 10; curVal <= (ulCurrentPercent / 10) * 10; curVal += 10)
