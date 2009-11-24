@@ -792,6 +792,8 @@ RTR3DECL(int) RTFileSetMode(RTFILE File, RTFMODE fMode)
 RTR3DECL(int) RTFileQueryFsSizes(RTFILE hFile, PRTFOFF pcbTotal, RTFOFF *pcbFree,
                                  uint32_t *pcbBlock, uint32_t *pcbSector)
 {
+    /** @todo implement this using NtQueryVolumeInformationFile(hFile,,,,
+     *        FileFsSizeInformation). */
     return VERR_NOT_SUPPORTED;
 }
 
