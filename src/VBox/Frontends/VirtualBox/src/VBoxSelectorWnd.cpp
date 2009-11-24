@@ -476,11 +476,11 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     centralLayout->addLayout (rightVLayout, 2);
 
     /* VM list toolbar */
-    VBoxToolBar *vmTools = new VBoxToolBar (this);
+    mVMToolBar = new VBoxToolBar (this);
 #if MAC_LEOPARD_STYLE
     /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3 */
-    addToolBar (vmTools);
-    vmTools->setMacToolbar();
+    addToolBar (mVMToolBar);
+    mVMToolBar->setMacToolbar();
     /* No spacing/margin on the mac */
     VBoxGlobal::setLayoutMargin (centralLayout, 0);
     leftVLayout->setSpacing (0);
@@ -534,17 +534,17 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* add actions to the toolbar */
 
-    vmTools->setIconSize (QSize (32, 32));
-    vmTools->setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
-    vmTools->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
+    mVMToolBar->setIconSize (QSize (32, 32));
+    mVMToolBar->setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
+    mVMToolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
 
-    vmTools->addAction (mVmNewAction);
-    vmTools->addAction (mVmConfigAction);
+    mVMToolBar->addAction (mVmNewAction);
+    mVMToolBar->addAction (mVmConfigAction);
 #if 0 /* delete action is really rare */
-    vmTools->addAction (mVmDeleteAction);
+    mVMToolBar->addAction (mVmDeleteAction);
 #endif
-    vmTools->addAction (mVmStartAction);
-    vmTools->addAction (mVmDiscardAction);
+    mVMToolBar->addAction (mVmStartAction);
+    mVMToolBar->addAction (mVmDiscardAction);
 
     /* add actions to menubar */
 
@@ -720,9 +720,9 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
     {
         int y = mNormalGeo.y();
 #if defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
-        /* The toolbar counts to the content not to the frame. Unfortunaly the
-         * toolbar isn't fully initialized when this window will be moved to
-         * the last position after VBox starting. As a workaround just do
+        /* The toolbar counts to the content not to the frame. Unfortunately
+         * the toolbar isn't fully initialized when this window will be moved
+         * to the last position after VBox starting. As a workaround just do
          * remove the toolbar height part when save the last position. */
         y -= ::darwinWindowToolBarHeight (this);
 #endif /* Q_WS_MAC && !QT_MAC_USE_COCOA */
@@ -1474,6 +1474,12 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
            )
         {
             mVmStartAction->setText (tr ("S&tart"));
+#ifdef QT_MAC_USE_COCOA
+            /* There is a bug in Qt Cocoa which result in showing a "more
+             * arrow" when the necessary size of the toolbar is increased. So
+             * manually adjust the size after changing the text. */
+            mVMToolBar->adjustSize();
+#endif /* QT_MAC_USE_COCOA */
             mVmStartAction->setStatusTip (
                 tr ("Start the selected virtual machine"));
 
@@ -1482,6 +1488,12 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         else
         {
             mVmStartAction->setText (tr ("S&how"));
+#ifdef QT_MAC_USE_COCOA
+            /* There is a bug in Qt Cocoa which result in showing a "more
+             * arrow" when the necessary size of the toolbar is increased. So
+             * manually adjust the size after changing the text. */
+            mVMToolBar->adjustSize();
+#endif /* QT_MAC_USE_COCOA */
             mVmStartAction->setStatusTip (
                 tr ("Switch to the window of the selected virtual machine"));
 
