@@ -5599,7 +5599,7 @@ void Machine::ensureNoStateDependencies()
 HRESULT Machine::setMachineState (MachineState_T aMachineState)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aMachineState=%d\n", aMachineState));
+    LogFlowThisFunc(("aMachineState=%s\n", Global::stringifyMachineState(aMachineState) ));
 
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
@@ -9998,7 +9998,7 @@ void SessionMachine::unlockMedia()
 HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aMachineState=%d\n", aMachineState));
+    LogFlowThisFunc(("aMachineState=%s\n", Global::stringifyMachineState(aMachineState) ));
 
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
@@ -10007,9 +10007,10 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
 
     MachineState_T oldMachineState = mData->mMachineState;
 
-    AssertMsgReturn (oldMachineState != aMachineState,
-                     ("oldMachineState=%d, aMachineState=%d\n",
-                      oldMachineState, aMachineState), E_FAIL);
+    AssertMsgReturn(oldMachineState != aMachineState,
+                    ("oldMachineState=%s, aMachineState=%s\n",
+                     Global::stringifyMachineState(oldMachineState), Global::stringifyMachineState(aMachineState)),
+                    E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -10177,7 +10178,7 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
         /* no special action so far */
     }
 
-    LogFlowThisFunc(("rc=%08X\n", rc));
+    LogFlowThisFunc(("rc=%Rhrc [%s]\n", rc, Global::stringifyMachineState(mData->mMachineState) ));
     LogFlowThisFuncLeave();
     return rc;
 }
