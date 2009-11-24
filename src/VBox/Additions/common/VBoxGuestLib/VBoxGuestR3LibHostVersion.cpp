@@ -35,39 +35,6 @@
 #include "VBGLR3Internal.h"
 
 /**
- * Compares two VirtualBox version strings and returns the result.
- *
- * Requires strings in form of "majorVer.minorVer.build".
- *
- * @returns 0 if equal, 1 if Ver1 is greater, 2 if Ver2 is greater.
- *
- * @param   pszVer1     First version string to compare.
- * @param   pszVer2     First version string to compare.
- *
- * @todo Move this to IPRT and add support for more dots, suffixes and whatnot.
- */
-VBGLR3DECL(int) VbglR3HostVersionCompare(const char *pszVer1, const char *pszVer2)
-{
-    /** @todo r=bird: not checking the return code, may be using uninitialized
-     *        variables... I'll fix this when moving into the runtime.  */
-    int iVer1Major, iVer1Minor, iVer1Build;
-    sscanf(pszVer1, "%d.%d.%d", &iVer1Major, &iVer1Minor, &iVer1Build);
-    int iVer2Major, iVer2Minor, iVer2Build;
-    sscanf(pszVer2, "%d.%d.%d", &iVer2Major, &iVer2Minor, &iVer2Build);
-
-    int iVer1Final = (iVer1Major * 10000) + (iVer1Minor * 100) + iVer1Build;
-    int iVer2Final = (iVer2Major * 10000) + (iVer2Minor * 100) + iVer2Build;
-
-    int rc = 0;
-    if (iVer1Final > iVer2Final)
-        rc = 1;
-    else if (iVer2Final > iVer1Final)
-        rc = 2;
-    return rc;
-}
-
-
-/**
  * Checks for a Guest Additions update by comparing the installed version on the
  * guest and the reported host version.
  *
@@ -165,7 +132,13 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
     /* Do the actual version comparison (if needed, see block(s) above) */
     if (RT_SUCCESS(rc) && *pfUpdate)
     {
-        if (VbglR3HostVersionCompare(*ppszHostVersion, *ppszGuestVersion) == 1) /* Is host version greater than guest add version? */
+        uint8_t u8Res;
+        rc = RTStrVersionCompare(*ppszHostVersion, *ppszGuestVersion, &u8Res);
+        if (RT_FAILURE(rc))
+            LogFlow(("Error while comparing host versions! %s <-> %s, rc = %Rrc\n",
+                *ppszHostVersion, *ppszGuestVersion, rc));
+
+        if (u8Res == 1) /* Is host version greater than guest add version? */
         {
             /* Yay, we have an update! */
             LogRel(("Guest Additions update found! Please upgrade this machine to the latest Guest Additions.\n"));
