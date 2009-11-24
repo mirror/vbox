@@ -1268,7 +1268,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         if (RT_FAILURE(rc))
         {
             if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY)
-                &&  (rc == VERR_ACCESS_DENIED
+                &&  (   rc == VERR_ACCESS_DENIED
                      || rc == VERR_PERMISSION_DENIED
                      || rc == VERR_WRITE_PROTECT
                      || rc == VERR_SHARING_VIOLATION
@@ -1282,7 +1282,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
             if (RT_FAILURE(rc))
             {
                 rc = vdError(pDisk, rc, RT_SRC_POS,
-                             N_("VD: error %d opening image file '%s'"), rc, pszFilename);
+                             N_("VD: error %Rrc opening image file '%s'"), rc, pszFilename);
                 break;
             }
         }
