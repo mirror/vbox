@@ -609,12 +609,14 @@ static int vbvaMousePointerShape (PVGASTATE pVGAState, VBVACONTEXT *pCtx, const 
     pCtx->mouseShapeInfo.fSet = true;
     pCtx->mouseShapeInfo.fVisible = fVisible;
     pCtx->mouseShapeInfo.fAlpha = fAlpha;
-    pCtx->mouseShapeInfo.u32HotX = pShape->u32HotX;
-    pCtx->mouseShapeInfo.u32HotY = pShape->u32HotY;
-    pCtx->mouseShapeInfo.u32Width = pShape->u32Width;
-    pCtx->mouseShapeInfo.u32Height = pShape->u32Height;
     if (fShape)
     {
+        /* Data related to shape. */
+        pCtx->mouseShapeInfo.u32HotX = pShape->u32HotX;
+        pCtx->mouseShapeInfo.u32HotY = pShape->u32HotY;
+        pCtx->mouseShapeInfo.u32Width = pShape->u32Width;
+        pCtx->mouseShapeInfo.u32Height = pShape->u32Height;
+
         /* Reallocate memory buffer if necessary. */
         if (cbPointerData > pCtx->mouseShapeInfo.cbAllocated)
         {
