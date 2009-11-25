@@ -796,6 +796,7 @@ int handleControlVM(HandlerArg *a)
             Bstr        bstrHostname;
             uint32_t    uMaxDowntime = 250 /*ms*/;
             uint32_t    uPort        = UINT32_MAX;
+            uint32_t    cMsTimeout   = 0;
             Bstr        bstrPassword("");
             static const RTGETOPTDEF s_aTeleportOptions[] =
             {
@@ -803,7 +804,8 @@ int handleControlVM(HandlerArg *a)
                 { "--hostname",    'h', RTGETOPT_REQ_STRING }, /** @todo remove this */
                 { "--maxdowntime", 'd', RTGETOPT_REQ_UINT32 },
                 { "--port",        'p', RTGETOPT_REQ_UINT32 }, /** @todo RTGETOPT_FLAG_MANDATORY */
-                { "--password",    'P', RTGETOPT_REQ_STRING }
+                { "--password",    'P', RTGETOPT_REQ_STRING },
+                { "--timeout",     't', RTGETOPT_REQ_UINT32 }
             };
             RTGETOPTSTATE GetOptState;
             RTGetOptInit(&GetOptState, a->argc, a->argv, s_aTeleportOptions, RT_ELEMENTS(s_aTeleportOptions), 2, 0 /*fFlags*/);
@@ -818,6 +820,7 @@ int handleControlVM(HandlerArg *a)
                     case 'd': uMaxDowntime  = Value.u32; break;
                     case 'p': uPort         = Value.u32; break;
                     case 'P': bstrPassword  = Value.psz; break;
+                    case 't': cMsTimeout    = Value.u32; break;
                     default:
                         errorGetOpt(USAGE_CONTROLVM, ch, &Value);
                         rc = E_FAIL;
@@ -829,6 +832,14 @@ int handleControlVM(HandlerArg *a)
 
             ComPtr<IProgress> progress;
             CHECK_ERROR_BREAK(console, Teleport(bstrHostname, uPort, bstrPassword, uMaxDowntime, progress.asOutParam()));
+
+            if (cMsTimeout)
+            {
+                rc = progress->COMSETTER(Timeout)(cMsTimeout);
+                if (FAILED(rc) && rc != VBOX_E_INVALID_OBJECT_STATE)
+                    CHECK_ERROR_BREAK(progress, COMSETTER(Timeout)(cMsTimeout)); /* lazyness */
+            }
+
             rc = showProgress(progress);
             if (FAILED(rc))
             {
