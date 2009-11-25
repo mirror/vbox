@@ -1271,7 +1271,14 @@ bool VBoxConsoleView::event (QEvent *e)
                 VBoxResizeEvent *re = (VBoxResizeEvent *) e;
                 LogFlow (("VBoxDefs::ResizeEventType: %d x %d x %d bpp\n",
                           re->width(), re->height(), re->bitsPerPixel()));
+#ifdef DEBUG_michael
+                LogRel (("Resize event from guest: %d x %d x %d bpp\n",
+                         re->width(), re->height(), re->bitsPerPixel()));
+#endif
 
+                /* Store the new size to prevent unwanted resize hints being
+                 * sent back. */
+                storeConsoleSize(re->width(), re->height());
                 /* do frame buffer dependent resize */
 
                 /* restoreOverrideCursor() is broken in Qt 4.4.0 if WA_PaintOnScreen
@@ -1353,7 +1360,6 @@ bool VBoxConsoleView::event (QEvent *e)
                 if (mIgnoreFrameBufferResize)
                 {
                     mIgnoreFrameBufferResize = false;
-                    doResizeHint (mNormalSize);
                 }
 
                 return true;
@@ -2692,8 +2698,8 @@ QRect VBoxConsoleView::desktopGeometry()
         case DesktopGeo_Fixed:
         case DesktopGeo_Automatic:
             rc = QRect (0, 0,
-                        RT_MAX (mDesktopGeometry.width(), mLastSizeHint.width()),
-                        RT_MAX (mDesktopGeometry.height(), mLastSizeHint.height()));
+                        RT_MAX (mDesktopGeometry.width(), mStoredConsoleSize.width()),
+                        RT_MAX (mDesktopGeometry.height(), mStoredConsoleSize.height()));
             break;
         case DesktopGeo_Any:
             rc = QRect (0, 0, 0, 0);
@@ -4016,6 +4022,10 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
         QSize sz (aToSize.isValid() ? aToSize : mMainWnd->centralWidget()->size());
         if (!aToSize.isValid())
             sz -= QSize (frameWidth() * 2, frameWidth() * 2);
+        /* Do not send out useless hints. */
+        if ((sz.width() == mStoredConsoleSize.width()) &&
+            (sz.height() == mStoredConsoleSize.height()))
+            return;
         /* We only actually send the hint if
          * 1) the autoresize property is set to true and
          * 2) either an explicit new size was given (e.g. if the request
@@ -4028,8 +4038,8 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
         {
             LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
-            /* Increase the maximum allowed size to the new size if needed. */
-            setDesktopGeoHint (sz.width(), sz.height());
+            /* Remember the new size. */
+            storeConsoleSize (sz.width(), sz.height());
 
             mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
         }
@@ -4046,17 +4056,20 @@ void VBoxConsoleView::doResizeDesktop (int)
 }
 
 /**
- * Remember a geometry hint sent by the console window.  This is used to
- * determine the maximum supported guest resolution in the @a desktopGeometry
- * method.  A hint will always override other restrictions.
+ * Store the current size of the console (i.e. the viewport to the guest).
+ * This has two purposes.  One is to suppress unwanted resize events for
+ * which the new size is the same as the stored size.  The other is to expand
+ * the maximum size to which we will let the guest resize itself.  It makes
+ * no sense to forbid guest resizes which are less than the current resolution
+ * anyway.
  *
  * @param aWidth  width of the resolution hint
  * @param aHeight height of the resolution hint
  */
-void VBoxConsoleView::setDesktopGeoHint (int aWidth, int aHeight)
+void VBoxConsoleView::storeConsoleSize (int aWidth, int aHeight)
 {
     LogFlowThisFunc (("aWidth=%d, aHeight=%d\n", aWidth, aHeight));
-    mLastSizeHint = QRect (0, 0, aWidth, aHeight);
+    mStoredConsoleSize = QRect (0, 0, aWidth, aHeight);
 }
 
 /**
@@ -4091,12 +4104,12 @@ void VBoxConsoleView::setDesktopGeometry (DesktopGeo aGeo, int aWidth, int aHeig
                 mDesktopGeometry = QRect (0, 0, aWidth, aHeight);
             else
                 mDesktopGeometry = QRect (0, 0, 0, 0);
-            setDesktopGeoHint (0, 0);
+            storeConsoleSize (0, 0);
             break;
         case DesktopGeo_Automatic:
             mDesktopGeo = DesktopGeo_Automatic;
             mDesktopGeometry = QRect (0, 0, 0, 0);
-            setDesktopGeoHint (0, 0);
+            storeConsoleSize (0, 0);
             break;
         case DesktopGeo_Any:
             mDesktopGeo = DesktopGeo_Any;
