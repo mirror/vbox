@@ -1088,8 +1088,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     const bool      fIsBigPage  = PdeSrc.b.u1Size && (CPUMGetGuestCR4(pVCpu) & X86_CR4_PSE);
 # endif
 
-    Log(("InvalidatePage %RGv (%RGp big=%d)\n", GCPtrPage, PdeSrc.u & GST_PDE_PG_MASK, fIsBigPage));
-
 # ifdef IN_RING3
     /*
      * If a CR3 Sync is pending we may ignore the invalidate page operation
