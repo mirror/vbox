@@ -1088,6 +1088,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     const bool      fIsBigPage  = PdeSrc.b.u1Size && (CPUMGetGuestCR4(pVCpu) & X86_CR4_PSE);
 # endif
 
+    Log(("InvalidatePage %RGv (%RGp big=%d)\n", GCPtrPage, PdeSrc.u & GST_PDE_PG_MASK, fIsBigPage));
+
 # ifdef IN_RING3
     /*
      * If a CR3 Sync is pending we may ignore the invalidate page operation
@@ -1252,6 +1254,12 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
              */
             PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, PdeDst.u & SHW_PDE_PG_MASK);
             RTGCPHYS        GCPhys   = PdeSrc.u & GST_PDE_PG_MASK;
+
+# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+            /* Reset the modification counter (OpenSolaris trashes tlb entries very often) */
+            pShwPage->cModifications = 1;
+# endif
+
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
             GCPhys |= (iPDDst & 1) * (PAGE_SIZE/2);
