@@ -98,6 +98,7 @@ public:
     double calcTotalPercent();
 
 protected:
+    void checkForAutomaticTimeout(void);
 
 #if !defined (VBOX_COM_INPROC)
     /** Weak parent. */
