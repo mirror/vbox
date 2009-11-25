@@ -337,6 +337,7 @@ HRESULT Medium::Task::startThread()
  */
 HRESULT Medium::Task::runNow()
 {
+    /* NIL_RTTHREAD indicates synchronous call. */
     Medium::taskThread(NIL_RTTHREAD, this);
 
     return rc;
@@ -1932,13 +1933,13 @@ STDMETHODIMP Medium::LockWrite(MediumState_T *aState)
         {
             m->preLockState = m->state;
 
-            LogFlowThisFunc(("Okay - prev state=%d\n", m->state));
+            LogFlowThisFunc(("Okay - prev state=%d locationFull=%s\n", m->state, locationFull().c_str()));
             m->state = MediumState_LockedWrite;
             break;
         }
         default:
         {
-            LogFlowThisFunc(("Failing - state=%d\n", m->state));
+            LogFlowThisFunc(("Failing - state=%d locationFull=%s\n", m->state, locationFull().c_str()));
             rc = setStateError();
             break;
         }
@@ -1965,12 +1966,12 @@ STDMETHODIMP Medium::UnlockWrite(MediumState_T *aState)
         case MediumState_LockedWrite:
         {
             m->state = m->preLockState;
-            LogFlowThisFunc(("new state=%d\n", m->state));
+            LogFlowThisFunc(("new state=%d locationFull=%s\n", m->state, locationFull().c_str()));
             break;
         }
         default:
         {
-            LogFlowThisFunc(("Failing - state=%d\n", m->state));
+            LogFlowThisFunc(("Failing - state=%d locationFull=%s\n", m->state, locationFull().c_str()));
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
                           tr ("Medium '%s' is not locked for writing"),
                           m->strLocationFull.raw());
@@ -4023,6 +4024,7 @@ HRESULT Medium::deleteStorage(ComObjPtr <Progress> *aProgress, bool aWait)
      * it holds a mVirtualBox lock too of course). */
 
     AutoMultiWriteLock2 alock(mVirtualBox->lockHandle(), this->lockHandle());
+    LogFlowThisFunc(("aWait=%RTbool locationFull=%s\n", aWait, locationFull().c_str() ));
 
     if (    !(m->formatObj->capabilities() & (   MediumFormatCapabilities_CreateDynamic
                                                | MediumFormatCapabilities_CreateFixed)))

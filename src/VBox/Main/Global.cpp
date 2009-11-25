@@ -212,7 +212,6 @@ Global::stringifyMachineState(MachineState_T aState)
             RTStrPrintf(s_szMsg, sizeof(s_szMsg), "InvalidState-0x%08x\n", aState);
             return s_szMsg;
         }
-
     }
 }
 
@@ -233,7 +232,28 @@ Global::stringifySessionState(SessionState_T aState)
             RTStrPrintf(s_szMsg, sizeof(s_szMsg), "InvalidState-0x%08x\n", aState);
             return s_szMsg;
         }
+    }
+}
 
+/*static*/ const char *
+Global::stringifyDeviceType(DeviceType_T aType)
+{
+    switch (aType)
+    {
+        case DeviceType_Null:         return "Null";
+        case DeviceType_Floppy:       return "Floppy";
+        case DeviceType_DVD:          return "DVD";
+        case DeviceType_HardDisk:     return "HardDisk";
+        case DeviceType_Network:      return "Network";
+        case DeviceType_USB:          return "USB";
+        case DeviceType_SharedFolder: return "ShardFolder";
+        default:
+        {
+            AssertMsgFailed(("%d (%#x)\n", aType, aType));
+            static char s_szMsg[48];
+            RTStrPrintf(s_szMsg, sizeof(s_szMsg), "InvalidType-0x%08x\n", aType);
+            return s_szMsg;
+        }
     }
 }
 

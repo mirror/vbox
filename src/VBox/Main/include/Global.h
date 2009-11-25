@@ -162,6 +162,14 @@ public:
     static const char *stringifySessionState(SessionState_T aState);
 
     /**
+     * Stringify a device type.
+     *
+     * @returns Pointer to a read only string.
+     * @param   aType       The device type.
+     */
+    static const char *stringifyDeviceType(DeviceType_T aType);
+
+    /**
      * Try convert a COM status code to a VirtualBox status code (VBox/err.h).
      *
      * @returns VBox status code.
