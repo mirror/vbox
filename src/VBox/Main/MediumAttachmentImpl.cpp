@@ -95,7 +95,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
     mLogName = Utf8StrFmt("MA%p[%.*s:%u:%u:%s%s]",
                           this,
                           psz ? psz - ctlName.c_str() : 4, ctlName.c_str(),
-                          aPort, aDevice, Global::stringifySessionState(aType),
+                          aPort, aDevice, Global::stringifyDeviceType(aType),
                           aImplicit ? ":I" : "");
 
     LogFlowThisFunc(("LEAVE - %s\n", logName()));
