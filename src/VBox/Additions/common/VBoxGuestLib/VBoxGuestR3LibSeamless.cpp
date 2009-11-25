@@ -37,26 +37,12 @@
  *
  * @returns IPRT status value
  * @param   fState whether or not we support seamless mode
- *
- * @todo    Currently this will trample over any other capabilities the guest may have.
- *          This will have to be fixed when more capabilities are added at the latest.
  */
 VBGLR3DECL(int) VbglR3SeamlessSetCap(bool fState)
 {
-    VMMDevReqGuestCapabilities vmmreqGuestCaps;
-    int rc = VINF_SUCCESS;
-
-    RT_ZERO(vmmreqGuestCaps);
-    vmmdevInitRequest(&vmmreqGuestCaps.header, VMMDevReq_ReportGuestCapabilities);
-    vmmreqGuestCaps.caps = fState ? VMMDEV_GUEST_SUPPORTS_SEAMLESS : 0;
-    rc = vbglR3GRPerform(&vmmreqGuestCaps.header);
-#ifdef DEBUG /** @todo r=bird: Why the LogRel here? */
-    if (RT_SUCCESS(rc))
-        LogRel(("Successfully set the seamless capability on the host.\n"));
-    else
-        LogRel(("Failed to set the seamless capability on the host, rc = %Rrc.\n", rc));
-#endif
-    return rc;
+    if (fState)
+        return VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_SEAMLESS, 0);
+    return VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_SEAMLESS);
 }
 
 /**
