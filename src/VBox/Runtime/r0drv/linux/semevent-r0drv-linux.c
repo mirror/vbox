@@ -168,6 +168,8 @@ static int rtSemEventWait(PRTSEMEVENTINTERNAL pEventInt, unsigned cMillies, bool
         /* wait */
         lTimeout = schedule_timeout(lTimeout);
 
+        after_wait(&Wait);
+
         /* Check if someone destroyed the semaphore while we were waiting. */
         if (pEventInt->u32Magic != RTSEMEVENT_MAGIC)
         {

@@ -169,6 +169,8 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
             /* wait */
             lTimeout = schedule_timeout(lTimeout);
 
+            after_wait(&Wait);
+
             /* Check if someone destroyed the semaphore while we was waiting. */
             if (pMutexInt->u32Magic != RTSEMMUTEX_MAGIC)
             {
