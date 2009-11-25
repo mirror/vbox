@@ -312,7 +312,7 @@ setup()
     echo
     if ! sh /usr/share/$PACKAGE/test_drm/build_in_tmp \
         --no-dkms --no-print-directory >> $LOG 2>&1; then
-        printf "Your system does not seem to support OpenGL in the kernel (this requires\nLinux 2.6.27 or later).  The OpenGL support will not be built.\n\n"
+        printf "Your guest system does not seem to have sufficient OpenGL support to enable\naccelerated 3D effects (this requires Linux 2.6.27 or later in the guest\nsystem).  This Guest Additions feature will be disabled.\n\n"
         BUILDVBOXVIDEO=""
     fi
     begin "Building the main Guest Additions module"

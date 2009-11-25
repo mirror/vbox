@@ -306,13 +306,13 @@ setup()
             dox11config=""
             ;;
         1.6.99.* | 1.7.* )
-            begin "Installing experimental Xorg Server 1.7 modules"
+            begin "Installing experimental X.Org Server 1.7 modules"
             vboxvideo_src=vboxvideo_drv_17.so
             vboxmouse_src=vboxmouse_drv_17.so
             setupxorgconf=""
             ;;
         1.5.99.* | 1.6.* )
-            begin "Installing Xorg Server 1.6 modules"
+            begin "Installing X.Org Server 1.6 modules"
             vboxvideo_src=vboxvideo_drv_16.so
             vboxmouse_src=vboxmouse_drv_16.so
             # SUSE with X.Org Server 1.6 knows about vboxvideo
@@ -321,7 +321,7 @@ setup()
         1.4.99.* | 1.5.* )
             # Fedora 9 shipped X.Org Server version 1.4.99.9x (1.5.0 RC)
             # in its released version
-            begin "Installing Xorg Server 1.5 modules"
+            begin "Installing X.Org Server 1.5 modules"
             vboxvideo_src=vboxvideo_drv_15.so
             vboxmouse_src=vboxmouse_drv_15.so
             # SUSE with X.Org 1.5 is a special case, and is handled specially
@@ -329,7 +329,7 @@ setup()
             { usehal=""; newmouse="--newMouse"; }
             ;;
         1.4.* )
-            begin "Installing Xorg Server 1.4 modules"
+            begin "Installing X.Org Server 1.4 modules"
             vboxvideo_src=vboxvideo_drv_14.so
             vboxmouse_src=vboxmouse_drv_14.so
             usehal=""
@@ -337,20 +337,20 @@ setup()
         1.3.* )
             # This was the first release which gave the server version number
             # rather than the X11 release version when you did 'X -version'.
-            begin "Installing Xorg Server 1.3 modules"
+            begin "Installing X.Org Server 1.3 modules"
             vboxvideo_src=vboxvideo_drv_13.so
             vboxmouse_src=vboxmouse_drv_71.so
             usehal=""
             ;;
         7.1.* | 7.2.* )
-            begin "Installing Xorg 7.1 modules"
+            begin "Installing X.Org 7.1 modules"
             vboxvideo_src=vboxvideo_drv_71.so
             vboxmouse_src=vboxmouse_drv_71.so
             usehal=""
             testrandr=""
             ;;
         6.9.* | 7.0.* )
-            begin "Installing Xorg 6.9/7.0 modules"
+            begin "Installing X.Org 6.9/7.0 modules"
             vboxvideo_src=vboxvideo_drv_70.so
             vboxmouse_src=vboxmouse_drv_70.so
             usehal=""
@@ -358,7 +358,7 @@ setup()
             ;;
         6.7* | 6.8.* | 4.2.* | 4.3.* )
             # Assume X.Org post-fork or XFree86
-            begin "Installing XFree86 4.3/Xorg 6.8 modules"
+            begin "Installing XFree86 4.2/4.3 and X.Org 6.7/6.8 modules"
             ln -s "$lib_dir/vboxvideo_drv.o" "$modules_dir/drivers/vboxvideo_drv.o"
             ln -s "$lib_dir/vboxmouse_drv.o" "$modules_dir/input/vboxmouse_drv.o"
             usehal=""
@@ -458,7 +458,7 @@ Guest Additions.
 EOF
     fi
 
-    begin "Installing OpenGL and desktop services components"
+    begin "Installing graphics libraries and desktop services components"
     # Install selinux policy for Fedora 7 and 8 to allow the X server to
     # open device files
     case "$redhat_release" in
