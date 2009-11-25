@@ -1537,18 +1537,23 @@ int HGSMICreate (PHGSMIINSTANCE *ppIns,
     return rc;
 }
 
-void HGSMIReset (PHGSMIINSTANCE pIns)
+uint32_t HGSMIReset (PHGSMIINSTANCE pIns)
 {
+    uint32_t flags = 0;
     if(pIns->pHGFlags)
     {
         /* treat the abandoned commands as read.. */
         while(HGSMIHostRead (pIns) != HGSMIOFFSET_VOID)  {}
+        flags = pIns->pHGFlags->u32HostFlags;
+        pIns->pHGFlags->u32HostFlags = 0;
     }
 
     /* .. and complete them */
     while(hgsmiProcessHostCmdCompletion (pIns, 0, true)) {}
 
     HGSMIHeapSetupUnitialized (&pIns->hostHeap);
+
+    return flags;
 }
 
 void HGSMIDestroy (PHGSMIINSTANCE pIns)
