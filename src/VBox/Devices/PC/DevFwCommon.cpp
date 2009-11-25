@@ -629,4 +629,3 @@ void sharedfwPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t numCpus
     floatPtr.u8Checksum            = sharedfwChecksum((uint8_t*)&floatPtr, 16);
     PDMDevHlpPhysWrite (pDevIns, 0x9fff0, &floatPtr, 16);
 }
-
