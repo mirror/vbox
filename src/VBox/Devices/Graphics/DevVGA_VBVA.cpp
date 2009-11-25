@@ -1557,7 +1557,12 @@ void VBVAReset (PVGASTATE pVGAState)
     vbvaVHWAReset (pVGAState);
 #endif
 
-    HGSMIReset (pVGAState->pHGSMI);
+    uint32_t HgFlags = HGSMIReset (pVGAState->pHGSMI);
+    if(HgFlags & HGSMIHOSTFLAGS_IRQ)
+    {
+        /* this means the IRQ is LEVEL_HIGH, need to reset it */
+        PDMDevHlpPCISetIrq(pVGAState->pDevInsR3, 0, PDM_IRQ_LEVEL_LOW);
+    }
 
     if (pCtx)
     {
