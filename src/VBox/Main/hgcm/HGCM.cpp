@@ -1190,7 +1190,7 @@ void HGCMService::ReleaseService (void)
         /* Resolve the service instance. */
         HGCMService *pSvc;
         rc = ResolveService (&pSvc, pszServiceName);
-        AssertReturn(pSvc, VERR_SSM_UNEXPECTED_DATA);
+        AssertLogRelMsgReturn(pSvc, ("rc=%Rrc, %s\n", rc, pszServiceName), VERR_SSM_UNEXPECTED_DATA);
 
         /* Get the number of clients. */
         uint32_t cClients;
@@ -1219,7 +1219,7 @@ void HGCMService::ReleaseService (void)
             if (RT_FAILURE(rc))
             {
                 pSvc->ReleaseService ();
-                AssertFailed();
+                AssertLogRelMsgFailed(("rc=%Rrc %s\n", rc, pszServiceName));
                 return rc;
             }
 
@@ -1228,7 +1228,7 @@ void HGCMService::ReleaseService (void)
             if (RT_FAILURE(rc))
             {
                 pSvc->ReleaseService ();
-                AssertFailed();
+                AssertLogRelMsgFailed(("rc=%Rrc %s\n", rc, pszServiceName));
                 return rc;
             }
         }
