@@ -7366,6 +7366,10 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
                                                   MediumVariant_Standard,
                                                   NULL);
 
+            /** @todo r=bird: How is the locking and diff image cleaned up if we fail before
+             *        the push_back?  Looks like we're going to leave medium with the
+             *        wrong kind of lock (general issue with if we fail anywhere at all)
+             *        and an orphaned VDI in the snapshots folder. */
             // at this point, the old image is still locked for writing, but instead
             // we need the new diff image locked for writing and lock the previously
             // current one for reading only
@@ -7441,6 +7445,7 @@ HRESULT Machine::deleteImplicitDiffs()
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoWriteLock alock(this);
+    LogFlowThisFuncEnter();
 
     AssertReturn(mMediaData.isBackedUp(), E_FAIL);
 
@@ -7462,6 +7467,7 @@ HRESULT Machine::deleteImplicitDiffs()
         if ((*it)->isImplicit())
         {
             /* deassociate and mark for deletion */
+            LogFlowThisFunc(("Detaching '%s', pending deletion\n", (*it)->logName()));
             rc = hd->detachFrom(mData->mUuid);
             AssertComRC(rc);
             implicitAtts.push_back (*it);
@@ -7472,10 +7478,12 @@ HRESULT Machine::deleteImplicitDiffs()
         if (!findAttachment(oldAtts, hd))
         {
             /* no: de-associate */
+            LogFlowThisFunc(("Detaching '%s', no deletion\n", (*it)->logName()));
             rc = hd->detachFrom(mData->mUuid);
             AssertComRC(rc);
             continue;
         }
+        LogFlowThisFunc(("Not detaching '%s'\n", (*it)->logName()));
     }
 
     /* rollback hard disk changes */
@@ -7503,8 +7511,20 @@ HRESULT Machine::deleteImplicitDiffs()
              it != implicitAtts.end();
              ++it)
         {
+            LogFlowThisFunc(("Deleting '%s'\n", (*it)->logName()));
             ComObjPtr<Medium> hd = (*it)->medium();
-            mrc = hd->deleteStorageAndWait();
+
+            rc = hd->deleteStorageAndWait();
+#if 1 /* HACK ALERT: Just make it kind of work */ /** @todo Fix this hack properly. The LockWrite / UnlockWrite / LockRead changes aren't undone! */
+            if (rc == VBOX_E_INVALID_OBJECT_STATE)
+            {
+                LogFlowFunc(("Applying unlock hack on '%s'! FIXME!\n", (*it)->logName()));
+                hd->UnlockWrite(NULL);
+                rc = hd->deleteStorageAndWait();
+            }
+#endif
+            AssertMsg(SUCCEEDED(rc), ("rc=%Rhrc it=%s hd=%s\n", rc, (*it)->logName(), hd->locationFull().c_str() ));
+            mrc = rc;
         }
 
         alock.enter();
