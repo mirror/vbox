@@ -2636,6 +2636,8 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
 
     try
     {
+        mptrCancelableProgress = pProgress;
+
         /*
          * If we fail here it means a PowerDown() call happened on another
          * thread while we were doing Pause() (which leaves the Console lock).
@@ -2669,6 +2671,7 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
     {
         delete pTask;
         NOREF(rc);
+        mptrCancelableProgress.setNull();
     }
 
     LogFlowThisFunc(("rc=%Rhrc\n", rc));
@@ -7354,17 +7357,20 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
     //    done in VBoxSVC, also in SessionMachine::BeginTakingSnapshot)
     // 3) saving the state of the virtual machine (here, in the VM process, if the machine is online)
 
-    bool fBeganTakingSnapshot = false;
-    bool fSuspenededBySave = false;
+    Console    *that                 = pTask->mConsole;
+    bool        fBeganTakingSnapshot = false;
+    bool        fSuspenededBySave    = false;
 
-    AutoCaller autoCaller(pTask->mConsole);
-    CheckComRCReturnRC(autoCaller.rc());
+    AutoCaller autoCaller(that);
+    if (FAILED(autoCaller.rc()))
+    {
+        that->mptrCancelableProgress.setNull();
+        return autoCaller.rc();
+    }
 
-    AutoWriteLock alock(pTask->mConsole);
+    AutoWriteLock alock(that);
 
     HRESULT rc = S_OK;
-
-    Console *that = pTask->mConsole;
 
     try
     {
@@ -7373,12 +7379,12 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
          * (this will set the machine state to Saving on the server to block
          * others from accessing this machine)
          */
-        rc = pTask->mConsole->mControl->BeginTakingSnapshot(that,
-                                                            pTask->bstrName,
-                                                            pTask->bstrDescription,
-                                                            pTask->mProgress,
-                                                            pTask->fTakingSnapshotOnline,
-                                                            pTask->bstrSavedStateFile.asOutParam());
+        rc = that->mControl->BeginTakingSnapshot(that,
+                                                 pTask->bstrName,
+                                                 pTask->bstrDescription,
+                                                 pTask->mProgress,
+                                                 pTask->fTakingSnapshotOnline,
+                                                 pTask->bstrSavedStateFile.asOutParam());
         if (FAILED(rc))
             throw rc;
 
@@ -7424,6 +7430,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
             pTask->mProgress->setCancelCallback(NULL, NULL);
             if (!pTask->mProgress->notifyPointOfNoReturn())
                 throw setError(E_FAIL, tr("Cancelled"));
+            that->mptrCancelableProgress.setNull();
 
             // STEP 4: reattach hard disks
             LogFlowFunc(("Reattaching new differencing hard disks...\n"));
