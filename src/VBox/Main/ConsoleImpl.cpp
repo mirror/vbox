@@ -4852,17 +4852,28 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         task->mSavedStateFile = savedStateFile;
     task->mTeleporterEnabled = fTeleporterEnabled;
 
-    ULONG cSnapshots;
-    rc = mMachine->COMGETTER(SnapshotCount)(&cSnapshots);
+    /* Reset differencing hard disks for which autoReset is true,
+     * but only if the machine has no snapshots OR the current snapshot
+     * is an OFFLINE snapshot; otherwise we would reset the current differencing
+     * image of an ONLINE snapshot which contains the disk state of the machine
+     * while it was previously running, but without the corresponding machine
+     * state, which is equivalent to powering off a running machine and not
+     * good idea
+     */
+    ComPtr<ISnapshot> pCurrentSnapshot;
+    rc = mMachine->COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam());
     CheckComRCReturnRC(rc);
 
-    /* Reset differencing hard disks for which autoReset is true,
-     * but only if the machine does not have any snapshots (otherwise
-     * the behavior of differencing images would get very confusing)
-     */
-    if (0 == cSnapshots)
+    BOOL fCurrentSnapshotIsOnline = false;
+    if (pCurrentSnapshot)
     {
-        LogFlowThisFunc(("Machine has no snapshots, looking for immutable images to reset\n"));
+        rc = pCurrentSnapshot->COMGETTER(Online)(&fCurrentSnapshotIsOnline);
+        CheckComRCReturnRC(rc);
+    }
+
+    if (!fCurrentSnapshotIsOnline)
+    {
+        LogFlowThisFunc(("Looking for immutable images to reset\n"));
 
         com::SafeIfaceArray<IMediumAttachment> atts;
         rc = mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(atts));
@@ -4902,7 +4913,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         }
     }
     else
-        LogFlowThisFunc(("Machine has %d snapshots, skipping immutable images reset\n", cSnapshots));
+        LogFlowThisFunc(("Machine has a current snapshot which is online, skipping immutable images reset\n"));
 
     rc = consoleInitReleaseLog(mMachine);
     CheckComRCReturnRC(rc);
