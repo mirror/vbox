@@ -414,12 +414,14 @@ $(VBOX_LNX_ADD_INST_STAGE_DIR)VBoxGuestAdditions.tar.bz2: \
 ifdef VBOX_USE_PBZIP2
  	$(QUIET)tar --owner 0 --group 0 -cRf $(patsubst %.bz2,%,$@) \
  		-C $(VBOX_LNX_ADD_INST_OUT_DIR) \
- 		bin init lib sbin share src
+ 		bin init lib sbin share src \
+ 		$(if $(filter $(KBUILD_TYPE),debug),debug)
 	$(QUIET)pbzip2 $(patsubst %.bz2,%,$@)
 else
 	$(QUIET)tar --owner 0 --group 0 --ignore-failed-read -cjRf $@ \
  		-C $(VBOX_LNX_ADD_INST_OUT_DIR) \
- 		bin init lib sbin share src
+ 		bin init lib sbin share src \
+ 		$(if $(filter $(KBUILD_TYPE),debug),debug)
 endif
 	$(QUIET)$(CHMOD) 0644 $@
 
