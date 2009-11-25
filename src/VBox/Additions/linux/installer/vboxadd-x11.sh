@@ -568,11 +568,7 @@ EOF
 
 dmnstatus()
 {
-    if running_vboxguest; then
-        echo "The VirtualBox Additions are currently running."
-    else
-        echo "The VirtualBox Additions are not currently running."
-    fi
+    /bin/true
 }
 
 case "$1" in
