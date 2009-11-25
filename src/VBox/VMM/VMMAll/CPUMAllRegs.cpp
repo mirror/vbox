@@ -788,6 +788,7 @@ VMMDECL(uint64_t)  CPUMGetGuestMsr(PVMCPU pVCpu, unsigned idMsr)
 
         case MSR_IA32_PERF_STATUS:
             /** @todo: could really be not exactly correct, maybe use host's values */
+            /* Keep consistent with helper_rdmsr() in REM */
             u64 =     (1000ULL                /* TSC increment by tick */)
                     | (((uint64_t)4ULL) << 40 /* CPU multiplier */       );
             break;

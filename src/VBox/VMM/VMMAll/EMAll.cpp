@@ -2944,6 +2944,10 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
         val = CPUMGetGuestMsr(pVCpu, MSR_K8_TSC_AUX);
         break;
 
+    case MSR_IA32_PERF_STATUS:
+        val = CPUMGetGuestMsr(pVCpu, MSR_IA32_PERF_STATUS);
+        break;
+        
 #if 0 /*def IN_RING0 */
     case MSR_IA32_PLATFORM_ID:
     case MSR_IA32_BIOS_SIGN_ID:
