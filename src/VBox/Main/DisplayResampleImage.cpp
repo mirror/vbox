@@ -1,25 +1,46 @@
+/** @file
+ *
+ * Image resampling code, used for snapshot thumbnails.
+ */
+
+/*
+ * Copyright (C) 2009 Sun Microsystems, Inc.
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ * Clara, CA 95054 USA or visit http://www.sun.com if you need
+ * additional information or have any questions.
+ */
+
 /*
  * Based on gdImageCopyResampled from libgd.
- * Original copyright notice follow:
+ * Original copyright notice follows:
 
      Portions copyright 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
-		 Pierre-Alain Joye (pierre@libgd.org).
+     Pierre-Alain Joye (pierre@libgd.org).
 
      Permission has been granted to copy, distribute and modify gd in
      any context without fee, including a commercial application,
      provided that this notice is present in user-accessible supporting
      documentation.
 
-     This does not affect your ownership of the derived work itself, and 
+     This does not affect your ownership of the derived work itself, and
      the intent is to assure proper credit for the authors of gd, not to
      interfere with your productive use of gd. If you have questions,
-     ask. "Derived works" includes all programs that utilize the   
+     ask. "Derived works" includes all programs that utilize the
      library. Credit must be given in user-accessible documentation.
 
-     This software is provided "AS IS." The copyright holders disclaim  
+     This software is provided "AS IS." The copyright holders disclaim
      all warranties, either express or implied, including but not
      limited to implied warranties of merchantability and fitness for a
-     particular purpose, with respect to this code and accompanying  
+     particular purpose, with respect to this code and accompanying
      documentation.
  */
 
@@ -31,7 +52,7 @@
 
 #include <iprt/types.h>
 
-/* 2.0.10: cast instead of floor() yields 35% performance improvement. 
+/* 2.0.10: cast instead of floor() yields 35% performance improvement.
 	Thanks to John Buckman. */
 
 #define floor2(exp) ((long) exp)
@@ -129,7 +150,7 @@ void gdImageCopyResampled (uint8_t *dst,
 		      xportion = 1.0;
 		    }
 		  pcontribution = xportion * yportion;
-		  /* 2.08: previously srcX and srcY were ignored. 
+		  /* 2.08: previously srcX and srcY were ignored.
 		     Andrew Pattison */
 		  p = gdImageGetTrueColorPixel (src,
 						(int) sx + srcX,
