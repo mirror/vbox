@@ -1647,7 +1647,7 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
         STAM_COUNTER_INC(&pPool->StatForceFlushReused);
     }
     else
-        Log(("Removed dirty page %RGp cMods=%d\n", pPage->GCPhys, pPage->cModifications));
+        Log(("Removed dirty page %RGp cMods=%d cChanges=%d\n", pPage->GCPhys, pPage->cModifications, cChanges));
 }
 
 # ifndef IN_RING3
