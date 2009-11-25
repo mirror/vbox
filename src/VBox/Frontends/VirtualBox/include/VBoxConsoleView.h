@@ -258,7 +258,7 @@ private:
     };
 
     void setDesktopGeometry (DesktopGeo aGeo, int aWidth, int aHeight);
-    void setDesktopGeoHint (int aWidth, int aHeight);
+    void storeConsoleSize (int aWidth, int aHeight);
     void calculateDesktopGeometry();
     void maybeRestrictMinimumSize();
 
@@ -364,7 +364,7 @@ private:
 #endif
     DesktopGeo mDesktopGeo;
     QRect mDesktopGeometry;
-    QRect mLastSizeHint;
+    QRect mStoredConsoleSize;
     bool mPassCAD;
     bool mHideHostPointer;
     QCursor mLastCursor;
