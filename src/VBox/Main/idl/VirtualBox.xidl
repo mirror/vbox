@@ -8295,7 +8295,7 @@
 
   <interface
      name="IProgress" extends="$unknown"
-     uuid="62827ef1-c098-40eb-be96-36d0508489a6"
+     uuid="856aa038-853f-42e2-acf7-6e7b02dbe294"
      wsmap="managed"
      >
     <desc>
@@ -8417,6 +8417,14 @@
 
     <attribute name="operationPercent" type="unsigned long" readonly="yes">
         <desc>Progress value of the current sub-operation only, in percent.</desc>
+    </attribute>
+
+    <attribute name="timeout" type="unsigned long">
+      <desc>
+          When non-zero, this specifies the number of milliseconds after which
+          the operation will automatically be canceled.  This can only be set on
+          cancelable objects.
+      </desc>
     </attribute>
 
     <method name="setCurrentOperationProgress">

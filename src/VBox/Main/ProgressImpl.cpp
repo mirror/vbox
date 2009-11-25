@@ -59,12 +59,14 @@ HRESULT ProgressBase::FinalConstruct()
     mCanceled = FALSE;
     mResultCode = S_OK;
 
-    m_cOperations =
-    m_ulTotalOperationsWeight =
-    m_ulOperationsCompletedWeight =
-    m_ulCurrentOperation =
-    m_ulCurrentOperationWeight =
-    m_ulOperationPercent = 0;
+    m_cOperations
+        = m_ulTotalOperationsWeight
+        = m_ulOperationsCompletedWeight
+        = m_ulCurrentOperation
+        = m_ulCurrentOperationWeight
+        = m_ulOperationPercent
+        = m_cMsTimeout
+        = 0;
 
     // get creation timestamp
     m_ullTimestamp = RTTimeMilliTS();
@@ -466,6 +468,35 @@ STDMETHODIMP ProgressBase::COMGETTER(OperationPercent)(ULONG *aOperationPercent)
     else
         *aOperationPercent = m_ulOperationPercent;
 
+    return S_OK;
+}
+
+STDMETHODIMP ProgressBase::COMSETTER(Timeout)(ULONG aTimeout)
+{
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    if (!mCancelable)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Operation cannot be canceled"));
+
+    LogThisFunc(("%#x => %#x\n", m_cMsTimeout, aTimeout));
+    m_cMsTimeout = aTimeout;
+    return S_OK;
+}
+
+STDMETHODIMP ProgressBase::COMGETTER(Timeout)(ULONG *aTimeout)
+{
+    CheckComArgOutPointerValid(aTimeout);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    *aTimeout = m_cMsTimeout;
     return S_OK;
 }
 
@@ -1469,6 +1500,21 @@ STDMETHODIMP CombinedProgress::COMGETTER(OperationPercent)(ULONG *aOperationPerc
     CheckComRCReturnRC(rc);
 
     return ProgressBase::COMGETTER(OperationPercent) (aOperationPercent);
+}
+
+STDMETHODIMP CombinedProgress::COMSETTER(Timeout)(ULONG aTimeout)
+{
+    NOREF(aTimeout);
+    AssertFailed();
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP CombinedProgress::COMGETTER(Timeout)(ULONG *aTimeout)
+{
+    CheckComArgOutPointerValid(aTimeout);
+
+    AssertFailed();
+    return E_NOTIMPL;
 }
 
 // IProgress methods
