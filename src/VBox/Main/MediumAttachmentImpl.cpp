@@ -21,6 +21,7 @@
 
 #include "MediumAttachmentImpl.h"
 #include "MachineImpl.h"
+#include "Global.h"
 
 #include "Logging.h"
 
@@ -88,7 +89,16 @@ HRESULT MediumAttachment::init(Machine *aParent,
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
-    LogFlowThisFuncLeave();
+    /* Construct a short log name for this attachment. */
+    Utf8Str ctlName(aControllerName);
+    const char *psz = strpbrk(ctlName.c_str(), " \t:-");
+    mLogName = Utf8StrFmt("MA%p[%.*s:%u:%u:%s%s]",
+                          this,
+                          psz ? psz - ctlName.c_str() : 4, ctlName.c_str(),
+                          aPort, aDevice, Global::stringifySessionState(aType),
+                          aImplicit ? ":I" : "");
+
+    LogFlowThisFunc(("LEAVE - %s\n", logName()));
     return S_OK;
 }
 
@@ -98,7 +108,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
  */
 void MediumAttachment::uninit()
 {
-    LogFlowThisFuncEnter();
+    LogFlowThisFunc(("ENTER - %s\n", logName()));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
@@ -117,7 +127,7 @@ void MediumAttachment::uninit()
  */
 bool MediumAttachment::rollback()
 {
-    LogFlowThisFuncEnter();
+    LogFlowThisFunc(("ENTER - %s\n", logName()));
 
     /* sanity */
     AutoCaller autoCaller(this);
@@ -135,7 +145,7 @@ bool MediumAttachment::rollback()
         m.rollback();
     }
 
-    LogFlowThisFuncLeave();
+    LogFlowThisFunc(("LEAVE - %s - returning %RTbool\n", logName(), changed));
     return changed;
 }
 
