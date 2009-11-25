@@ -2619,7 +2619,7 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
     pProgress.createObject();
     rc = pProgress->init(static_cast<IConsole*>(this),
                          Bstr(tr("Taking a snapshot of the virtual machine")),
-                         FALSE /* aCancelable */,
+                         mMachineState == MachineState_Running /* aCancelable */,
                          cOperations,
                          ulTotalOperationsWeight,
                          Bstr(tr("Setting up snapshot operation")),      // first sub-op description
@@ -5846,16 +5846,15 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                 if (that->mVMStateChangeCallbackDisabled)
                     break;
 
-                /* Change the machine state from Starting, Restoring or Paused
-                 * to Running */
                 Assert(   (   (   that->mMachineState == MachineState_Starting
                                || that->mMachineState == MachineState_Paused)
                            && aOldState == VMSTATE_POWERING_ON)
                        || (   (   that->mMachineState == MachineState_Restoring
                                || that->mMachineState == MachineState_TeleportingIn
-                               || that->mMachineState == MachineState_Paused)
+                               || that->mMachineState == MachineState_Paused
+                               || that->mMachineState == MachineState_Saving
+                              )
                            && aOldState == VMSTATE_RESUMING));
-
                 that->setMachineState(MachineState_Running);
             }
 
@@ -7329,6 +7328,15 @@ static DECLCALLBACK(int) reconfigureMedium(PVM pVM, ULONG lInstance,
 }
 
 /**
+ * Progress cancelation callback employed by Console::fntTakeSnapshotWorker.
+ */
+static void takesnapshotProgressCancelCallback(void *pvUser)
+{
+    PVM pVM = (PVM)pvUser;
+    SSMR3Cancel(pVM);
+}
+
+/**
  * Worker thread created by Console::TakeSnapshot.
  * @param Thread The current thread (ignored).
  * @param pvUser The task.
@@ -7398,6 +7406,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
 
             pTask->mProgress->SetNextOperation(Bstr(tr("Saving the machine state")),
                                                pTask->ulMemSize);       // operation weight, same as computed when setting up progress object
+            pTask->mProgress->setCancelCallback(takesnapshotProgressCancelCallback, that->mpVM);
 
             alock.leave();
             LogFlowFunc(("VMR3Save...\n"));
@@ -7413,6 +7422,9 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                                tr("Failed to save the machine state to '%s' (%Rrc)"),
                                strSavedStateFile.c_str(), vrc);
 
+            pTask->mProgress->setCancelCallback(NULL, NULL);
+            if (!pTask->mProgress->notifyPointOfNoReturn())
+                throw setError(E_FAIL, tr("Cancelled"));
 
             // STEP 4: reattach hard disks
             LogFlowFunc(("Reattaching new differencing hard disks...\n"));
