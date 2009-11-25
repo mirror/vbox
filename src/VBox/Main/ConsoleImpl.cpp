@@ -5664,7 +5664,6 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                 && that->mMachineState != MachineState_Saving
                 && that->mMachineState != MachineState_Restoring
                 && that->mMachineState != MachineState_TeleportingIn
-                && that->mMachineState != MachineState_LiveSnapshotting
                 && that->mMachineState != MachineState_TeleportingPausedVM
                 && !that->mVMIsAlreadyPoweringOff
                )
