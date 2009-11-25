@@ -39,8 +39,8 @@ $connection = new SoapClient("vboxwebService.wsdl", array('location' => "http://
 
 //Logon to webservice
 $websessionManager = new IWebsessionManager($connection);
-// Enable if authentication is used.
-//$virtualbox = $websessionManager->logon("username","password");
+// Dummy username and password (change to appropriate values or set authentication method to null)
+$virtualbox = $websessionManager->logon("username","password");
 
 //Get a list of registered machines
 $machines = $virtualbox->machines;
