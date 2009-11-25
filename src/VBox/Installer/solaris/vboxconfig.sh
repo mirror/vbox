@@ -87,7 +87,7 @@ subprint()
 warnprint()
 {
     if test "$ISSILENT" != "$SILENTOP"; then
-        echo 1>&2 "* Warning!! $1"
+        echo 1>&2 "   * Warning!! $1"
     fi
 }
 
