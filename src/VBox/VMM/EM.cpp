@@ -84,6 +84,7 @@
 *******************************************************************************/
 static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+static const char *emR3GetStateName(EMSTATE enmState);
 static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc);
 static int emR3RemStep(PVM pVM, PVMCPU pVCpu);
 static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
@@ -448,6 +449,15 @@ VMMR3DECL(void) EMR3Reset(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         pVCpu->em.s.fForceRAW = false;
+
+        /* VMR3Reset may return VINF_EM_RESET or VINF_EM_SUSPEND, so transition
+           out of the HALTED state here so that enmPrevState doesn't end up as
+           HALTED when EMR3Execute returns. */
+        if (pVCpu->em.s.enmState == EMSTATE_HALTED)
+        {
+            Log(("EMR3Reset: Cpu#%u %s -> %s\n", i, emR3GetStateName(pVCpu->em.s.enmState), i == 0 ? "EMSTATE_NONE" : "EMSTATE_WAIT_SIPI"));
+            pVCpu->em.s.enmState = i == 0 ? EMSTATE_NONE : EMSTATE_WAIT_SIPI;
+        }
     }
 }
 
@@ -580,7 +590,7 @@ VMMR3DECL(void) EMR3FatalError(PVMCPU pVCpu, int rc)
  * @returns pointer to read only state name,
  * @param   enmState    The state.
  */
-VMMR3DECL(const char *) EMR3GetStateName(EMSTATE enmState)
+static const char *emR3GetStateName(EMSTATE enmState)
 {
     switch (enmState)
     {
@@ -1637,13 +1647,17 @@ VMMR3DECL(void) EMR3ReleaseOwnedLocks(PVM pVM)
  */
 VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
 {
-    LogFlow(("EMR3ExecuteVM: pVM=%p enmVMState=%d  enmState=%d (%s) fForceRAW=%d\n", pVM, pVM->enmVMState,
-             pVCpu->em.s.enmState, EMR3GetStateName(pVCpu->em.s.enmState), pVCpu->em.s.fForceRAW));
+    Log(("EMR3ExecuteVM: pVM=%p enmVMState=%d (%s)  enmState=%d (%s) enmPrevState=%d (%s) fForceRAW=%RTbool\n",
+         pVM,
+         pVM->enmVMState,          VMR3GetStateName(pVM->enmVMState),
+         pVCpu->em.s.enmState,     emR3GetStateName(pVCpu->em.s.enmState),
+         pVCpu->em.s.enmPrevState, emR3GetStateName(pVCpu->em.s.enmPrevState),
+         pVCpu->em.s.fForceRAW));
     VM_ASSERT_EMT(pVM);
     AssertMsg(   pVCpu->em.s.enmState == EMSTATE_NONE
               || pVCpu->em.s.enmState == EMSTATE_WAIT_SIPI
               || pVCpu->em.s.enmState == EMSTATE_SUSPENDED,
-              ("%s\n", EMR3GetStateName(pVCpu->em.s.enmState)));
+              ("%s\n", emR3GetStateName(pVCpu->em.s.enmState)));
 
     int rc = setjmp(pVCpu->em.s.u.FatalLongJump);
     if (rc == 0)
@@ -1760,7 +1774,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case VINF_EM_RESCHEDULE:
                 {
                     EMSTATE enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE: %d -> %d (%s)\n", pVCpu->em.s.enmState, enmState, EMR3GetStateName(enmState)));
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE: %d -> %d (%s)\n", pVCpu->em.s.enmState, enmState, emR3GetStateName(enmState)));
                     pVCpu->em.s.enmState = enmState;
                     break;
                 }
@@ -1801,7 +1815,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     if (pVCpu->idCpu == 0)
                     {
                         EMSTATE enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
-                        Log2(("EMR3ExecuteVM: VINF_EM_RESET: %d -> %d (%s)\n", pVCpu->em.s.enmState, enmState, EMR3GetStateName(enmState)));
+                        Log2(("EMR3ExecuteVM: VINF_EM_RESET: %d -> %d (%s)\n", pVCpu->em.s.enmState, enmState, emR3GetStateName(enmState)));
                         pVCpu->em.s.enmState = enmState;
                     }
                     else
@@ -1839,6 +1853,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_NO_MEMORY:
                     Log2(("EMR3ExecuteVM: VINF_EM_NO_MEMORY: %d -> %d\n", pVCpu->em.s.enmState, EMSTATE_SUSPENDED));
+                    pVCpu->em.s.enmPrevState = pVCpu->em.s.enmState;
                     pVCpu->em.s.enmState = EMSTATE_SUSPENDED;
                     TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
@@ -1907,8 +1922,8 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         AssertMsgFailed(("Unexpected warning or informational status code %Rra!\n", rc));
                         rc = VERR_EM_INTERNAL_ERROR;
                     }
+                    Log(("EMR3ExecuteVM: %Rrc: %d -> %d (EMSTATE_GURU_MEDITATION)\n", rc, pVCpu->em.s.enmState, EMSTATE_GURU_MEDITATION));
                     pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
-                    Log(("EMR3ExecuteVM returns %d\n", rc));
                     break;
             }
 
@@ -1974,6 +1989,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case EMSTATE_SUSPENDED:
                     TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
+                    Log(("EMR3ExecuteVM: actually returns %Rrc (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(pVCpu->em.s.enmPrevState)));
                     return VINF_EM_SUSPEND;
 
                 /*
@@ -2002,6 +2018,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         /* switch to guru meditation mode */
                         pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
                         VMMR3FatalDump(pVM, pVCpu, rc);
+                        Log(("EMR3ExecuteVM: actually returns %Rrc (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(pVCpu->em.s.enmPrevState)));
                         return rc;
                     }
 
@@ -2019,6 +2036,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     VMMR3FatalDump(pVM, pVCpu, rc);
                     emR3Debug(pVM, pVCpu, rc);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
+                    Log(("EMR3ExecuteVM: actually returns %Rrc (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(pVCpu->em.s.enmPrevState)));
                     return rc;
                 }
 
@@ -2032,6 +2050,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
                     TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
+                    Log(("EMR3ExecuteVM: actually returns %Rrc (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(pVCpu->em.s.enmPrevState)));
                     return VERR_EM_INTERNAL_ERROR;
             }
         } /* The Outer Main Loop */
@@ -2041,7 +2060,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
         /*
          * Fatal error.
          */
-        LogFlow(("EMR3ExecuteVM: returns %Rrc (longjmp / fatal error)\n", rc));
+        Log(("EMR3ExecuteVM: returns %Rrc because of longjmp / fatal error; (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(pVCpu->em.s.enmPrevState)));
         TMR3NotifySuspend(pVM, pVCpu);
         VMMR3FatalDump(pVM, pVCpu, rc);
         emR3Debug(pVM, pVCpu, rc);

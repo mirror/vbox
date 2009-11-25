@@ -125,12 +125,12 @@
 /** Indicating that the VM is being turned off and that the EM should
  * exit to the VM awaiting the destruction request. */
 #define VINF_EM_OFF                         1109
-/** Indicating that the VM has been reset and that scheduling goes
- * back to startup defaults. */
-#define VINF_EM_RESET                       1110
 /** Indicating that the VM has been suspended and that the the thread
  * should wait for request telling it what to do next. */
-#define VINF_EM_SUSPEND                     1111
+#define VINF_EM_SUSPEND                     1110
+/** Indicating that the VM has been reset and that scheduling goes
+ * back to startup defaults. */
+#define VINF_EM_RESET                       1111
 /** Indicating that the VM has executed a halt instruction and that
  * the emulation thread should wait for an interrupt before resuming
  * execution. */
