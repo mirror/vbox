@@ -774,7 +774,7 @@ static int efiLoadThunk(PDEVEFI pThis, PCFGMNODE pCfgHandle)
      * Make a copy of the page and set the values of the DEVEFIINFO structure
      * found at the beginning of it.
      */
-    
+
     if (f64BitEntry)
         LogRel(("Using 64-bit EFI firmware\n"));
 
