@@ -1787,6 +1787,60 @@ void pgmPoolResetDirtyPages(PVM pVM)
     Assert(pPool->aIdxDirtyPages[pPool->idxFreeDirtyPage] == NIL_PGMPOOL_IDX || pPool->cDirtyPages == RT_ELEMENTS(pPool->aIdxDirtyPages));
     return;
 }
+
+/**
+ * Reset all dirty pages by reinstating page monitoring.
+ *
+ * @param   pVM             VM Handle.
+ * @param   GCPhysPT        Physical address of the page table
+ */
+void pgmPoolInvalidateDirtyPage(PVM pVM, RTGCPHYS GCPhysPT)
+{
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    Assert(PGMIsLocked(pVM));
+    Assert(pPool->cDirtyPages <= RT_ELEMENTS(pPool->aIdxDirtyPages));
+    unsigned idxDirtyPage = RT_ELEMENTS(pPool->aIdxDirtyPages);
+
+    if (!pPool->cDirtyPages)
+        return;
+
+    GCPhysPT = GCPhysPT & ~(RTGCPHYS)(PAGE_SIZE - 1);
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+    {
+        if (pPool->aIdxDirtyPages[i] != NIL_PGMPOOL_IDX)
+        {
+            unsigned     idxPage = pPool->aIdxDirtyPages[i];
+
+            PPGMPOOLPAGE pPage = &pPool->aPages[idxPage];
+            if (pPage->GCPhys == GCPhysPT)
+            {
+                idxDirtyPage = i;
+                break;
+            }
+        }
+    }
+
+    if (idxDirtyPage != RT_ELEMENTS(pPool->aIdxDirtyPages))
+    {
+        pgmPoolFlushDirtyPage(pVM, pPool, idxDirtyPage, true /* allow removal of reused page tables*/);
+        if (    pPool->cDirtyPages != RT_ELEMENTS(pPool->aIdxDirtyPages)
+            &&  pPool->aIdxDirtyPages[pPool->idxFreeDirtyPage] != NIL_PGMPOOL_IDX)
+        {
+            unsigned i;
+            for (i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+            {
+                if (pPool->aIdxDirtyPages[i] == NIL_PGMPOOL_IDX)
+                {
+                    pPool->idxFreeDirtyPage = i;
+                    break;
+                }
+            }
+            AssertMsg(i != RT_ELEMENTS(pPool->aIdxDirtyPages), ("cDirtyPages %d", pPool->cDirtyPages));
+        }
+    }
+}
+
 # endif /* PGMPOOL_WITH_OPTIMIZED_DIRTY_PT */
 #endif  /* PGMPOOL_WITH_MONITORING */
 

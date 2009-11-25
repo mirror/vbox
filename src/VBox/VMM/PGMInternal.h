@@ -3373,6 +3373,7 @@ PPGMPOOLPAGE    pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys);
 int             pgmPoolSyncCR3(PVMCPU pVCpu);
 bool            pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys);
 int             pgmPoolTrackUpdateGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool fFlushPTEs, bool *pfFlushTLBs);
+void            pgmPoolInvalidateDirtyPage(PVM pVM, RTGCPHYS GCPhysPT);
 DECLINLINE(int) pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
 {
     return pgmPoolTrackUpdateGCPhys(pVM, pPhysPage, true /* flush PTEs */, pfFlushTLBs);
