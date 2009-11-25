@@ -720,7 +720,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     pScrn->chipset = "vbox";
 
-    /* I assume that this is no longer a requirement in the config file. */
+    /* This *is* still needed, at least for server version 1.3 */
     pScrn->monitor = pScrn->confScreen->monitor;
 
     pScrn->progClock = TRUE;
@@ -760,6 +760,12 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         return FALSE;
     memcpy(pVBox->Options, VBOXOptions, sizeof(VBOXOptions));
     xf86ProcessOptions(pScrn->scrnIndex, pScrn->options, pVBox->Options);
+
+    /* Work around a bug in the original X server modesetting code, which
+     * took the first valid values set to these two as maxima over the
+     * server lifetime. */
+    pScrn->virtualX = 32000;
+    pScrn->virtualY = 32000;
 
     /* Initialise CRTC and output configuration for use with randr1.2. */
     xf86CrtcConfigInit(pScrn, &VBOXCrtcConfigFuncs);
