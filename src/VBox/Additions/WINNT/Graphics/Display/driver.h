@@ -460,6 +460,7 @@ BOOL vrdpReportOrderGeneric (PPDEV ppdev,
 
 #include <iprt/assert.h>
 
+#ifdef DEBUG
 #define VBVA_ASSERT(expr) \
     do { \
         if (!(expr)) \
@@ -468,6 +469,9 @@ BOOL vrdpReportOrderGeneric (PPDEV ppdev,
             AssertMsg2("!!!\n"); \
         } \
     } while (0)
+#else
+#define VBVA_ASSERT(expr) do {} while (0)
+#endif
 
 #ifdef STAT_sunlover
 extern ULONG gStatCopyBitsOffscreenToScreen;
