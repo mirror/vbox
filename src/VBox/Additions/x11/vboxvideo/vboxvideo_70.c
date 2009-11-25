@@ -540,6 +540,21 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         pScrn->display->modes[i] = pcHostModeName;
         ++i;
     }
+    if (vboxHostLikesVideoMode(pScrn, 1600, 1200, pScrn->bitsPerPixel))
+    {
+        pScrn->display->modes[i] = "1600x1200";
+        ++i;
+    }
+    if (vboxHostLikesVideoMode(pScrn, 1440, 1050, pScrn->bitsPerPixel))
+    {
+        pScrn->display->modes[i] = "1440x1050";
+        ++i;
+    }
+    if (vboxHostLikesVideoMode(pScrn, 1280, 960, pScrn->bitsPerPixel))
+    {
+        pScrn->display->modes[i] = "1280x960";
+        ++i;
+    }
     if (vboxHostLikesVideoMode(pScrn, 1024, 768, pScrn->bitsPerPixel))
     {
         pScrn->display->modes[i] = "1024x768";
