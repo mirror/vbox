@@ -886,6 +886,10 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config value(s) for the EFI device"));
 
+    /* CPU count (optional). */
+    rc = CFGMR3QueryU32Def(pCfgHandle, "NumCPUs", &pThis->cCpus, 1);
+    AssertLogRelRCReturn(rc, rc);
+
     rc = CFGMR3QueryU8Def(pCfgHandle, "IOAPIC", &pThis->u8IOAPIC, 1);
     if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
@@ -923,9 +927,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->cbBelow4GB = RT_MIN(pThis->cbRam, _4G - pThis->cbRamHole);
     pThis->cbAbove4GB = pThis->cbRam - pThis->cbBelow4GB;
 
-    /* CPU count (optional). */
-    rc = CFGMR3QueryU32Def(pCfgHandle, "NumCPUs", &pThis->cCpus, 1);
-    AssertLogRelRCReturn(rc, rc);
+    
     /*
      * Get the system EFI ROM file name.
      */
