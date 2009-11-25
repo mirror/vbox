@@ -1816,10 +1816,6 @@ int Display::videoAccelRefreshProcess(void)
 {
     int rc = VWRN_INVALID_STATE; /* Default is to do a display update in VGA device. */
 
-#ifdef DEBUG_sunlover
-    LogFlowFunc(("\n"));
-#endif
-
     vbvaLock();
 
     if (ASMAtomicCmpXchgU32(&mfu32PendingVideoAccelDisable, false, true))
@@ -1864,10 +1860,6 @@ int Display::videoAccelRefreshProcess(void)
     }
 
     vbvaUnlock();
-
-#ifdef DEBUG_sunlover
-    LogFlowFunc(("rc = %d\n"));
-#endif
 
     return rc;
 }
