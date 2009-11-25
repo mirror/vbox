@@ -108,6 +108,9 @@ public:
         m->passthrough = aPassthrough;
     }
 
+    /** Get a unique and somewhat descriptive name for logging. */
+    const char *logName(void) const { return mLogName.c_str(); }
+
     /** For com::SupportErrorInfoImpl. */
     static const char *ComponentName() { return "MediumAttachment"; }
 
@@ -143,6 +146,8 @@ private:
     };
 
     Backupable<Data> m;
+
+    Utf8Str mLogName;                   /**< For logging purposes */
 };
 
 #endif // ____H_MEDIUMATTACHMENTIMPL
