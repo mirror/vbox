@@ -137,7 +137,7 @@ static int findEfiRom(IVirtualBox* vbox, FirmwareType_T aFirmwareType, Utf8Str& 
     int rc;
     BOOL fPresent = FALSE;
     Bstr aFilePath, empty;
-    
+
     rc = vbox->CheckFirmwarePresent(aFirmwareType, empty,
                                     empty.asOutParam(), aFilePath.asOutParam(), &fPresent);
     if (RT_FAILURE(rc))
@@ -784,8 +784,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     }
     else
     {
-        Utf8Str efiRomFile;        
-        
+        Utf8Str efiRomFile;
+
         /* Autodetect firmware type, basing on guest type */
         if (eFwType == FirmwareType_EFI)
         {
@@ -2946,13 +2946,12 @@ static void configSetProperty(VMMDev * const pVMMDev, const char *pszName,
         SafeArray<BSTR> valuesOut;
         SafeArray<ULONG64> timestampsOut;
         SafeArray<BSTR> flagsOut;
-        HRESULT hrc = pConsole->mControl->PullGuestProperties
-                                      (ComSafeArrayAsOutParam(namesOut),
-                                       ComSafeArrayAsOutParam(valuesOut),
-                                       ComSafeArrayAsOutParam(timestampsOut),
-                                       ComSafeArrayAsOutParam(flagsOut));
-        AssertMsgReturn(SUCCEEDED(hrc), ("hrc=%#x\n", hrc),
-                        VERR_GENERAL_FAILURE);
+        HRESULT hrc;
+        hrc = pConsole->mControl->PullGuestProperties(ComSafeArrayAsOutParam(namesOut),
+                                                      ComSafeArrayAsOutParam(valuesOut),
+                                                      ComSafeArrayAsOutParam(timestampsOut),
+                                                      ComSafeArrayAsOutParam(flagsOut));
+        AssertMsgReturn(SUCCEEDED(hrc), ("hrc=%Rrc\n", hrc), VERR_GENERAL_FAILURE);
         size_t cProps = namesOut.size();
         size_t cAlloc = cProps + 1;
         if (   valuesOut.size() != cProps
