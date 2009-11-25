@@ -4726,7 +4726,9 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     HRESULT rc = S_OK;
 
     /* the network cards will undergo a quick consistency check */
-    for (ULONG slot = 0; slot < SchemaDefs::NetworkAdapterCount; slot ++)
+    for (ULONG slot = 0;
+         slot < SchemaDefs::NetworkAdapterCount;
+         ++slot)
     {
         ComPtr<INetworkAdapter> adapter;
         mMachine->GetNetworkAdapter(slot, adapter.asOutParam());
@@ -4850,13 +4852,25 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         task->mSavedStateFile = savedStateFile;
     task->mTeleporterEnabled = fTeleporterEnabled;
 
-    /* Reset differencing hard disks for which autoReset is true */
+    ULONG cSnapshots;
+    rc = mMachine->COMGETTER(SnapshotCount)(&cSnapshots);
+    CheckComRCReturnRC(rc);
+
+    /* Reset differencing hard disks for which autoReset is true,
+     * but only if the machine does not have any snapshots (otherwise
+     * the behavior of differencing images would get very confusing)
+     */
+    if (0 == cSnapshots)
     {
+        LogFlowThisFunc(("Machine has no snapshots, looking for immutable images to reset\n"));
+
         com::SafeIfaceArray<IMediumAttachment> atts;
         rc = mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(atts));
         CheckComRCReturnRC(rc);
 
-        for (size_t i = 0; i < atts.size(); ++ i)
+        for (size_t i = 0;
+             i < atts.size();
+             ++i)
         {
             DeviceType_T devType;
             rc = atts[i]->COMGETTER(Type)(&devType);
@@ -4887,6 +4901,8 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
             }
         }
     }
+    else
+        LogFlowThisFunc(("Machine has %d snapshots, skipping immutable images reset\n", cSnapshots));
 
     rc = consoleInitReleaseLog(mMachine);
     CheckComRCReturnRC(rc);
