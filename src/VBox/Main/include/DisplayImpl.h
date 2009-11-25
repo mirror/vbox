@@ -350,6 +350,9 @@ public:
     static int displayTakeScreenshotEMT(Display *pDisplay, uint8_t **ppu8Data, size_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height);
 
 private:
+    static void InvalidateAndUpdateEMT(Display *pDisplay);
+    static int DrawToScreenEMT(Display *pDisplay, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
+
     int videoAccelRefreshProcess(void);
 
     /* Functions run under VBVA lock. */

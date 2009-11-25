@@ -1321,6 +1321,10 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
         mpVbvaMemory->indexRecordFirst = 0;
         mpVbvaMemory->indexRecordFree = 0;
 
+#ifdef VBOX_WITH_OLD_VBVA_LOCK
+        mfu32PendingVideoAccelDisable = false;
+#endif /* VBOX_WITH_OLD_VBVA_LOCK */
+
         LogRel(("VBVA: Enabled.\n"));
     }
     else
@@ -2280,6 +2284,16 @@ STDMETHODIMP Display::TakeScreenShotSlow (ULONG width, ULONG height,
     return rc;
 }
 
+#ifdef VBOX_WITH_OLD_VBVA_LOCK
+int Display::DrawToScreenEMT(Display *pDisplay, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height)
+{
+    int rc;
+    pDisplay->vbvaLock();
+    rc = pDisplay->mpDrv->pUpPort->pfnDisplayBlt(pDisplay->mpDrv->pUpPort, address, x, y, width, height);
+    pDisplay->vbvaUnlock();
+    return rc;
+}
+#endif /* VBOX_WITH_OLD_VBVA_LOCK */
 
 STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
                                     ULONG width, ULONG height)
@@ -2313,9 +2327,8 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
      * dirty conversion work.
      */
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
-    int rcVBox = 0;
-// @todo vbva   int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)Display::DrawToScreenEMT, 6,
-//                                  this, address, x, y, width, height);
+    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)Display::DrawToScreenEMT, 6,
+                                 this, address, x, y, width, height);
 #else
     int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)mpDrv->pUpPort->pfnDisplayBlt, 6,
                                  mpDrv->pUpPort, address, x, y, width, height);
@@ -2346,6 +2359,15 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
     return rc;
 }
 
+#ifdef VBOX_WITH_OLD_VBVA_LOCK
+void Display::InvalidateAndUpdateEMT(Display *pDisplay)
+{
+    pDisplay->vbvaLock();
+    pDisplay->mpDrv->pUpPort->pfnUpdateDisplayAll(pDisplay->mpDrv->pUpPort);
+    pDisplay->vbvaUnlock();
+}
+#endif /* VBOX_WITH_OLD_VBVA_LOCK */
+
 /**
  * Does a full invalidation of the VM display and instructs the VM
  * to update it immediately.
@@ -2375,9 +2397,8 @@ STDMETHODIMP Display::InvalidateAndUpdate()
 
     /* pdm.h says that this has to be called from the EMT thread */
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
-    int rcVBox = 0;
-// #todo vbva    int rcVBox = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
-//                                     1, this);
+    int rcVBox = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
+                                     1, this);
 #else
     int rcVBox = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY,
                                      (PFNRT)mpDrv->pUpPort->pfnUpdateDisplayAll, 1, mpDrv->pUpPort);
@@ -2708,11 +2729,12 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
             {
                 /* No VBVA do a display update. */
                 DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
-                if (!pFBInfo->pFramebuffer.isNull())
+                if (!pFBInfo->pFramebuffer.isNull() && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
                 {
                     Assert(pDrv->Connector.pu8Data);
-                    Assert(pFBInfo->u32ResizeStatus == ResizeStatus_Void);
+                    pDisplay->vbvaLock();
                     pDrv->pUpPort->pfnUpdateDisplay(pDrv->pUpPort);
+                    pDisplay->vbvaUnlock();
                 }
             }
 
