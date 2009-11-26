@@ -240,10 +240,10 @@ static int displayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
 {
     int rc = VINF_SUCCESS;
 
-    uint8_t *pu8Bitmap = NULL;
-    uint32_t cbBitmap = 0;
-    uint32_t cxBitmap = 0;
-    uint32_t cyBitmap = 0;
+    uint8_t * volatile pu8Bitmap = NULL; /* gcc setjmp  warning */
+    uint32_t volatile cbBitmap = 0; /* gcc setjmp warning */
+    uint32_t volatile cxBitmap = 0; /* gcc setjmp warning */
+    uint32_t volatile cyBitmap = 0; /* gcc setjmp warning */
 
     if (cx < kMaxSizePNG && cy < kMaxSizePNG)
     {
