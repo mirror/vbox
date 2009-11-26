@@ -294,11 +294,15 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
         /*
          * Emit wrapper code.
          */
+#if defined(LOG_USE_C99) && defined(RT_WITHOUT_EXEC_ALLOC)
+        pu8Code = (uint8_t *)RTMemAlloc(64);
+#else
         pu8Code = (uint8_t *)RTMemExecAlloc(64);
+#endif
         if (pu8Code)
         {
             pLogger->pfnLogger = *(PFNRTLOGGER*)&pu8Code;
-#ifdef RT_ARCH_AMD64
+#if defined(RT_ARCH_AMD64) || defined(RT_LOG_
             /* this wrapper will not be used on AMD64, we will be requiring C99 compilers there. */
             *pu8Code++ = 0xcc;
 #else
@@ -424,7 +428,11 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
 #ifdef IN_RING3
             RTFileClose(pLogger->File);
 #endif
+#if defined(LOG_USE_C99) && defined(RT_WITHOUT_EXEC_ALLOC)
+            RTMemFree(*(void **)&pLogger->pfnLogger);
+#else
             RTMemExecFree(*(void **)&pLogger->pfnLogger);
+#endif
         }
         else
         {
@@ -580,7 +588,11 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
 
     if (pLogger->pfnLogger)
     {
+#if defined(LOG_USE_C99) && defined(RT_WITHOUT_EXEC_ALLOC)
+        RTMemFree(*(void **)&pLogger->pfnLogger);
+#else
         RTMemExecFree(*(void **)&pLogger->pfnLogger);
+#endif
         pLogger->pfnLogger = NULL;
     }
     RTMemFree(pLogger);
