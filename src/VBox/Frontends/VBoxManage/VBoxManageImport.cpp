@@ -106,7 +106,7 @@ static const RTGETOPTDEF g_aImportApplianceOptions[] =
     { "-type",                  'T', RTGETOPT_REQ_UINT32 },     // deprecated
 };
 
-int handleImportAppliance(HandlerArg *a)
+int handleImportAppliance(HandlerArg *arg)
 {
     HRESULT rc = S_OK;
 
@@ -124,7 +124,7 @@ int handleImportAppliance(HandlerArg *a)
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     // start at 0 because main() has hacked both the argc and argv given to us
-    RTGetOptInit(&GetState, a->argc, a->argv, g_aImportApplianceOptions, RT_ELEMENTS(g_aImportApplianceOptions), 0, 0 /* fFlags */);
+    RTGetOptInit(&GetState, arg->argc, arg->argv, g_aImportApplianceOptions, RT_ELEMENTS(g_aImportApplianceOptions), 0, 0 /* fFlags */);
     while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (c)
@@ -230,7 +230,7 @@ int handleImportAppliance(HandlerArg *a)
     do
     {
         ComPtr<IAppliance> pAppliance;
-        CHECK_ERROR_BREAK(a->virtualBox, CreateAppliance(pAppliance.asOutParam()));
+        CHECK_ERROR_BREAK(arg->virtualBox, CreateAppliance(pAppliance.asOutParam()));
 
         char *pszAbsFilePath;
         if (strOvfFilename.startsWith("S3://", iprt::MiniString::CaseInsensitive) ||
@@ -878,11 +878,11 @@ int handleExportAppliance(HandlerArg *a)
                         Utf8Str strContent;
                         void *pvFile;
                         size_t cbFile;
-                        int rc = RTFileReadAll(itD->second.c_str(), &pvFile, &cbFile);
-                        if (RT_SUCCESS(rc))
+                        int irc = RTFileReadAll(itD->second.c_str(), &pvFile, &cbFile);
+                        if (RT_SUCCESS(irc))
                         {
-                            Bstr strContent((char*)pvFile);
-                            pVSD->AddDescription (VirtualSystemDescriptionType_License, strContent, strContent);
+                            Bstr bstrContent((char*)pvFile);
+                            pVSD->AddDescription(VirtualSystemDescriptionType_License, bstrContent, bstrContent);
                             RTFileReadAllFree(pvFile, cbFile);
                         }
                         else
