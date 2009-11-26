@@ -1991,7 +1991,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
             if (pHD->getType() == MediumType_Normal)
             {
                 ++ulOpCount;
-                ulTotalWeight += pHD->getSize() / _1M;
+                ulTotalWeight += (ULONG)(pHD->getSize() / _1M);
             }
             LogFlowThisFunc(("op %d: considering hard disk attachment %s\n", ulOpCount, pHD->getName().c_str()));
         }
@@ -2297,7 +2297,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
              it != toDiscard.end();)
         {
             rc = it->hd->discard(aTask.pProgress,
-                                 it->hd->getSize() / _1M,          // weight
+                                 (ULONG)(it->hd->getSize() / _1M),          // weight
                                  it->chain);
             CheckComRCBreakRC(rc);
 
