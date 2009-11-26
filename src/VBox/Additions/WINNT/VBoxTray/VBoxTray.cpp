@@ -35,6 +35,8 @@
 #include "helpers.h"
 #include <sddl.h>
 
+#include <iprt/buildconfig.h>
+
 /* global variables */
 HANDLE                gVBoxDriver;
 HANDLE                gStopSem;
@@ -539,7 +541,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     if (RT_FAILURE(rc))
         return rc;
 
-    LogRel(("VBoxTray: Started.\n"));
+    LogRel(("VBoxTray: %s r%s started.\n", RTBldCfgVersion(), RTBldCfgRevisionStr()));
 
     gInstance = hInstance;
     VBoxServiceStart();
