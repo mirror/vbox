@@ -28,91 +28,78 @@
  * additional information or have any questions.
  */
 
-
-#include <iprt/initterm.h>
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <iprt/string.h>
+
+#include <iprt/test.h>
 #include <iprt/stream.h>
 
 
-struct TstU8
-{
-    const char *pszVer1;
-    const char *pszVer2;
-    uint8_t     Result;
-};
-
-
-#define TEST(Test, Type, Fmt, Fun, iTest) \
-    do \
-    { \
-        Type Result = Fun(Test.pszVer1, Test.pszVer2); \
-        if (Result != Test.Result) \
-        { \
-            RTPrintf("failure: '%s' <-> '%s' -> " Fmt ", expected " Fmt ". (%s/%u)\n", Test.pszVer1, Test.pszVer2, Result, Test.Result, #Fun, iTest); \
-            cErrors++; \
-        } \
-    } while (0)
-
-#define RUN_TESTS(aTests, Type, Fmt, Fun) \
-    do \
-    { \
-        for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++) \
-        { \
-            TEST(aTests[iTest], Type, Fmt, Fun, iTest); \
-        } \
-    } while (0)
-
 int main()
 {
-    RTR3Init();
+    RTTEST hTest;
+    int rc = RTTestInitAndCreate("tstRTStrVersion", &hTest);
+    if (rc)
+        return rc;
+    RTTestBanner(hTest);
 
-    int cErrors = 0;
-    static const struct TstU8 aTstU8[] =
+    RTTestSub(hTest, "RTStrVersionCompare");
+    static struct
+    {
+        const char *pszVer1;
+        const char *pszVer2;
+        int         iResult;
+    } const aTests[] =
     {
         { "", "",                         0 },
         { "asdf", "",                     1 }, /* "asdf" is bigger than "" */
         { "asdf234", "1.4.5",             1 },
         { "12.foo006", "12.6",            1 }, /* "12.foo006" is bigger than "12.6" */
         { "1", "1",                       0 },
-        { "1", "100",                     2 },
+        { "1", "100",                     -1},
         { "100", "1",                     1 },
-        { "3", "4",                       2 },
+        { "3", "4",                       -1},
         { "1", "0.1",                     1 },
         { "1", "0.0.0.0.10000",           1 },
         { "0100", "100",                  0 },
         { "1.0.0", "1",                   0 },
-        { "1.0.0", "100.0.0",             2 },
-        { "1", "1.0.3.0",                 2 },
+        { "1.0.0", "100.0.0",             -1},
+        { "1", "1.0.3.0",                 -1},
         { "1.4.5", "1.2.3",               1 },
-        { "1.2.3", "1.4.5",               2 },
-        { "1.2.3", "4.5.6",               2 },
+        { "1.2.3", "1.4.5",               -1},
+        { "1.2.3", "4.5.6",               -1},
         { "1.0.4", "1.0.3",               1 },
         { "0.1", "0.0.1",                 1 },
-        { "0.0.1", "0.1.1",               2 },
+        { "0.0.1", "0.1.1",               -1},
         { "3.1.0", "3.0.14",              1 },
-        { "2.0.12", "3.0.14",             2 },
+        { "2.0.12", "3.0.14",             -1},
         { "3.1", "3.0.22",                1 },
-        { "3.0.14", "3.1.0",              2 },
+        { "3.0.14", "3.1.0",              -1},
         { "45.63", "04.560.30",           1 },
         { "45.006", "45.6",               0 },
         { "23.206", "23.06",              1 },
-        { "23.2", "23.060",               2 },
+        { "23.2", "23.060",               -1},
 
-        { "VirtualBox-2.0.8-Beta2", "VirtualBox-2.0.8_Beta3-r12345", 2 },
+        { "VirtualBox-2.0.8-Beta2", "VirtualBox-2.0.8_Beta3-r12345", -1},
         { "VirtualBox-2.2.4-Beta2", "VirtualBox-2.2.2", 1 },
         { "VirtualBox-2.2.4-Beta3", "VirtualBox-2.2.2-Beta4", 1 },
-        { "VirtualBox-3.1.8-Alpha1", "VirtualBox-3.1.8-Alpha1-r61454", 2 },
-        { "VirtualBox-3.1.0", "VirtualBox-3.1.2_Beta1", 2 },
-        { "3.1.0_BETA-r12345", "3.1.2", 2 },
+        { "VirtualBox-3.1.8-Alpha1", "VirtualBox-3.1.8-Alpha1-r61454", -1},
+        { "VirtualBox-3.1.0", "VirtualBox-3.1.2_Beta1", -1},
+        { "3.1.0_BETA-r12345", "3.1.2", -1},
     };
-    RUN_TESTS(aTstU8, int, "%#d", RTStrVersionCompare);
+    for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++)
+    {
+        int iResult = RTStrVersionCompare(aTests[iTest].pszVer1, aTests[iTest].pszVer2);
+        if (iResult != aTests[iTest].iResult)
+            RTTestFailed(hTest, "#%u: '%s' <-> '%s' -> %d, expected %d",
+                         iTest, aTests[iTest].pszVer1, aTests[iTest].pszVer2, iResult, aTests[iTest].iResult);
+    }
 
     /*
      * Summary.
      */
-    if (!cErrors)
-        RTPrintf("tstStrToVer: SUCCESS\n");
-    else
-        RTPrintf("tstStrToVer: FAILURE - %d errors\n", cErrors);
-    return !!cErrors;
+    return RTTestSummaryAndDestroy(hTest);
 }
+
