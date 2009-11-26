@@ -483,8 +483,8 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
         { "-startvm", 's', RTGETOPT_REQ_STRING },
         { "--startvm", 's', RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_VRDP
-        { "-vrdpport", 'p', RTGETOPT_REQ_UINT32 },
-        { "--vrdpport", 'p', RTGETOPT_REQ_UINT32 },
+        { "-vrdpport", 'p', RTGETOPT_REQ_STRING },
+        { "--vrdpport", 'p', RTGETOPT_REQ_STRING },
         { "-vrdpaddress", 'a', RTGETOPT_REQ_STRING },
         { "--vrdpaddress", 'a', RTGETOPT_REQ_STRING },
         { "-vrdp", 'v', RTGETOPT_REQ_STRING },
