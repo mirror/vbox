@@ -626,7 +626,7 @@ static int dbgfR3VMMWait(PVM pVM)
             if (    !VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_REQUEST)
                 &&  !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
             {
-                int rc = RTSemPingWait(&pVM->dbgf.s.PingPong, cPollHack);
+                rc = RTSemPingWait(&pVM->dbgf.s.PingPong, cPollHack);
                 if (RT_SUCCESS(rc))
                     break;
                 if (rc != VERR_TIMEOUT)
