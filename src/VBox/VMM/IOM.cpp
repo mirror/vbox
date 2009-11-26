@@ -928,17 +928,17 @@ VMMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
             }
             else
             {
-                 /*
-                  * Split the range, done.
-                  */
+                /*
+                 * Split the range, done.
+                 */
                 Assert(pRange->Core.KeyLast > PortLast && pRange->Core.Key < Port);
                 /* create tail. */
                 PIOMIOPORTRANGERC pRangeNew;
-                int rc = MMHyperAlloc(pVM, sizeof(*pRangeNew), 0, MM_TAG_IOM, (void **)&pRangeNew);
-                if (RT_FAILURE(rc))
+                int rc2 = MMHyperAlloc(pVM, sizeof(*pRangeNew), 0, MM_TAG_IOM, (void **)&pRangeNew);
+                if (RT_FAILURE(rc2))
                 {
                     iomUnlock(pVM);
-                    return rc;
+                    return rc2;
                 }
                 *pRangeNew = *pRange;
                 pRangeNew->Core.Key     = PortLast;
@@ -967,9 +967,8 @@ VMMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
 
 
     /*
-     * Remove any R0 ranges first.
+     * Remove any R0 ranges.
      */
-    rc = VINF_SUCCESS;
     Port = PortStart;
     while (Port <= PortLast && Port >= PortStart)
     {
@@ -1012,17 +1011,17 @@ VMMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
             }
             else
             {
-                 /*
-                  * Split the range, done.
-                  */
+                /*
+                 * Split the range, done.
+                 */
                 Assert(pRange->Core.KeyLast > PortLast && pRange->Core.Key < Port);
                 /* create tail. */
                 PIOMIOPORTRANGER0 pRangeNew;
-                int rc = MMHyperAlloc(pVM, sizeof(*pRangeNew), 0, MM_TAG_IOM, (void **)&pRangeNew);
-                if (RT_FAILURE(rc))
+                int rc2 = MMHyperAlloc(pVM, sizeof(*pRangeNew), 0, MM_TAG_IOM, (void **)&pRangeNew);
+                if (RT_FAILURE(rc2))
                 {
                     iomUnlock(pVM);
-                    return rc;
+                    return rc2;
                 }
                 *pRangeNew = *pRange;
                 pRangeNew->Core.Key     = PortLast;
@@ -1100,11 +1099,11 @@ VMMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
                 Assert(pRange->Core.KeyLast > PortLast && pRange->Core.Key < Port);
                 /* create tail. */
                 PIOMIOPORTRANGER3 pRangeNew;
-                int rc = MMHyperAlloc(pVM, sizeof(*pRangeNew), 0, MM_TAG_IOM, (void **)&pRangeNew);
-                if (RT_FAILURE(rc))
+                int rc2 = MMHyperAlloc(pVM, sizeof(*pRangeNew), 0, MM_TAG_IOM, (void **)&pRangeNew);
+                if (RT_FAILURE(rc2))
                 {
                     iomUnlock(pVM);
-                    return rc;
+                    return rc2;
                 }
                 *pRangeNew = *pRange;
                 pRangeNew->Core.Key     = PortLast;
