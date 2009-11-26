@@ -866,8 +866,6 @@ static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
         DBGFR3DisasInstrCurrentLog(pVCpu, "Patch code");
 
         DISCPUSTATE Cpu;
-        int         rc;
-
         rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->eip, &Cpu, "Patch code: ");
         if (    RT_SUCCESS(rc)
             &&  Cpu.pCurInstr->opcode == OP_IRET)
@@ -1006,7 +1004,6 @@ static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
  */
 static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
 {
-    STAM_PROFILE_START(&pVCpu->em.s.StatPrivEmu, a);
     PCPUMCTX    pCtx = pVCpu->em.s.pCtx;
 
     Assert(!pCtx->eflags.Bits.u1VM);
