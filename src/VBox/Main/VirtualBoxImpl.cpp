@@ -294,15 +294,15 @@ HRESULT VirtualBox::init()
 
     /* Get the VirtualBox home directory. */
     {
-        char homeDir[RTPATH_MAX];
-        int vrc = com::GetVBoxUserHomeDirectory(homeDir, sizeof(homeDir));
+        char szHomeDir[RTPATH_MAX];
+        int vrc = com::GetVBoxUserHomeDirectory(szHomeDir, sizeof(szHomeDir));
         if (RT_FAILURE(vrc))
             return setError (E_FAIL,
                 tr ("Could not create the VirtualBox home directory '%s'"
                     "(%Rrc)"),
-                homeDir, vrc);
+                szHomeDir, vrc);
 
-        unconst(m->strHomeDir) = homeDir;
+        unconst(m->strHomeDir) = szHomeDir;
     }
 
     /* compose the VirtualBox.xml file name */
@@ -943,6 +943,8 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
 
     const char * url = NULL;
 
+    NOREF(aVersion);
+
     static const struct {
         FirmwareType_T type;
         const char*    fileName;
@@ -1004,7 +1006,7 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
             break;
         }
 
-       
+
         url = firmwareDesc[i].url;
         /** @todo: account for version in the URL */
         if (aUrl != NULL)
@@ -1213,7 +1215,7 @@ STDMETHODIMP VirtualBox::RegisterMachine (IMachine *aMachine)
 
     /* fire an event */
     if (SUCCEEDED(rc))
-        onMachineRegistered (machine->id(), TRUE);
+        onMachineRegistered(machine->getId(), TRUE);
 
     return rc;
 }
@@ -1260,15 +1262,16 @@ STDMETHODIMP VirtualBox::FindMachine (IN_BSTR aName, IMachine **aMachine)
          !machine && it != machines.end();
          ++ it)
     {
-        AutoLimitedCaller machCaller (*it);
-        AssertComRC (machCaller.rc());
+        ComObjPtr<Machine> &pMachine2 = *it;
+        AutoLimitedCaller machCaller(pMachine2);
+        AssertComRC(machCaller.rc());
 
         /* skip inaccessible machines */
         if (machCaller.state() == Machine::Ready)
         {
-            AutoReadLock machLock (*it);
-            if ((*it)->name() == aName)
-                machine = *it;
+            AutoReadLock machLock(pMachine2);
+            if (pMachine2->getName() == aName)
+                machine = pMachine2;
         }
     }
 
@@ -2734,8 +2737,9 @@ void VirtualBox::getOpenedMachines(SessionMachineList &aMachines,
  *
  *  @note Locks this object for reading.
  */
-HRESULT VirtualBox::findMachine (const Guid &aId, bool aSetError,
-                                 ComObjPtr<Machine> *aMachine /* = NULL */)
+HRESULT VirtualBox::findMachine(const Guid &aId,
+                                bool aSetError,
+                                ComObjPtr<Machine> *aMachine /* = NULL */)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
@@ -2749,13 +2753,14 @@ HRESULT VirtualBox::findMachine (const Guid &aId, bool aSetError,
              !found && it != m->llMachines.end();
              ++ it)
         {
+            ComObjPtr<Machine> pMachine2 = *it;
             /* sanity */
-            AutoLimitedCaller machCaller (*it);
-            AssertComRC (machCaller.rc());
+            AutoLimitedCaller machCaller(pMachine2);
+            AssertComRC(machCaller.rc());
 
-            found = (*it)->id() == aId;
+            found = pMachine2->getId() == aId;
             if (found && aMachine)
-                *aMachine = *it;
+                *aMachine = pMachine2;
         }
     }
 
@@ -2895,10 +2900,10 @@ HRESULT VirtualBox::findDVDImage(const Guid *aId,
         /* no AutoCaller, registered image life time is bound to this */
         AutoReadLock imageLock (*it);
 
-        found = (aId && (*it)->id() == *aId) ||
+        found = (aId && (*it)->getId() == *aId) ||
                 (aLocation != NULL &&
                  RTPathCompare(location.c_str(),
-                               (*it)->locationFull().c_str()
+                               (*it)->getLocationFull().c_str()
                               ) == 0);
         if (found)
         {
@@ -2971,10 +2976,10 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId, CBSTR aLocation,
         /* no AutoCaller, registered image life time is bound to this */
         AutoReadLock imageLock (*it);
 
-        found = (aId && (*it)->id() == *aId) ||
+        found = (aId && (*it)->getId() == *aId) ||
                 (aLocation != NULL &&
                  RTPathCompare(location.c_str(),
-                               (*it)->locationFull().c_str()
+                               (*it)->getLocationFull().c_str()
                               ) == 0);
         if (found)
         {
@@ -3183,10 +3188,10 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
         if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
-            AutoReadLock mediaLock (hardDisk);
-            aConflict = Utf8StrFmt (
-                tr ("hard disk '%s' with UUID {%RTuuid}"),
-                hardDisk->locationFull().raw(), hardDisk->id().raw());
+            AutoReadLock mediaLock(hardDisk);
+            aConflict = Utf8StrFmt(tr("hard disk '%s' with UUID {%RTuuid}"),
+                                   hardDisk->getLocationFull().raw(),
+                                   hardDisk->getId().raw());
             return S_OK;
         }
     }
@@ -3198,9 +3203,9 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
         {
             /* Note: no AutoCaller since bound to this */
             AutoReadLock mediaLock (image);
-            aConflict = Utf8StrFmt (
-                tr ("CD/DVD image '%s' with UUID {%RTuuid}"),
-                image->locationFull().raw(), image->id().raw());
+            aConflict = Utf8StrFmt(tr("CD/DVD image '%s' with UUID {%RTuuid}"),
+                                   image->getLocationFull().raw(),
+                                   image->getId().raw());
             return S_OK;
         }
     }
@@ -3212,9 +3217,9 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
         {
             /* Note: no AutoCaller since bound to this */
             AutoReadLock mediaLock (image);
-            aConflict = Utf8StrFmt (
-                tr ("floppy image '%s' with UUID {%RTuuid}"),
-                image->locationFull().raw(), image->id().raw());
+            aConflict = Utf8StrFmt(tr("floppy image '%s' with UUID {%RTuuid}"),
+                                   image->getLocationFull().raw(),
+                                   image->getId().raw());
             return S_OK;
         }
     }
@@ -3338,7 +3343,7 @@ HRESULT VirtualBox::saveSettings()
  *
  *  @note Locks objects!
  */
-HRESULT VirtualBox::registerMachine (Machine *aMachine)
+HRESULT VirtualBox::registerMachine(Machine *aMachine)
 {
     ComAssertRet (aMachine, E_INVALIDARG);
 
@@ -3350,27 +3355,28 @@ HRESULT VirtualBox::registerMachine (Machine *aMachine)
     HRESULT rc = S_OK;
 
     {
-        ComObjPtr<Machine> m;
-        rc = findMachine (aMachine->id(), false /* aDoSetError */, &m);
+        ComObjPtr<Machine> pMachine;
+        rc = findMachine(aMachine->getId(), false /* aDoSetError */, &pMachine);
         if (SUCCEEDED(rc))
         {
             /* sanity */
-            AutoLimitedCaller machCaller (m);
-            AssertComRC (machCaller.rc());
+            AutoLimitedCaller machCaller(pMachine);
+            AssertComRC(machCaller.rc());
 
-            return setError (E_INVALIDARG,
-                tr ("Registered machine with UUID {%RTuuid} ('%ls') already exists"),
-                aMachine->id().raw(), m->settingsFileFull().raw());
+            return setError(E_INVALIDARG,
+                            tr("Registered machine with UUID {%RTuuid} ('%ls') already exists"),
+                            aMachine->getId().raw(),
+                            pMachine->getSettingsFileFull().raw());
         }
 
-        ComAssertRet (rc == VBOX_E_OBJECT_NOT_FOUND, rc);
+        ComAssertRet(rc == VBOX_E_OBJECT_NOT_FOUND, rc);
         rc = S_OK;
     }
 
     if (autoCaller.state() != InInit)
     {
         /* Machine::trySetRegistered() will commit and save machine settings */
-        rc = aMachine->trySetRegistered (TRUE);
+        rc = aMachine->trySetRegistered(TRUE);
         CheckComRCReturnRC(rc);
     }
 
@@ -3414,8 +3420,8 @@ HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
     AutoReadLock hardDiskLock (aHardDisk);
 
     Utf8Str strConflict;
-    HRESULT rc = checkMediaForConflicts2(aHardDisk->id(),
-                                         aHardDisk->locationFull(),
+    HRESULT rc = checkMediaForConflicts2(aHardDisk->getId(),
+                                         aHardDisk->getLocationFull(),
                                          strConflict);
     CheckComRCReturnRC(rc);
 
@@ -3423,21 +3429,20 @@ HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
     {
         return setError(E_INVALIDARG,
                         tr("Cannot register the hard disk '%s' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
-                        aHardDisk->locationFull().raw(),
-                        aHardDisk->id().raw(),
+                        aHardDisk->getLocationFull().raw(),
+                        aHardDisk->getId().raw(),
                         strConflict.raw(),
                         m->strSettingsFilePath.raw());
     }
 
-    if (aHardDisk->parent().isNull())
+    if (aHardDisk->getParent().isNull())
     {
         /* base (root) hard disk */
         m->llHardDisks.push_back (aHardDisk);
     }
 
-    m->mapHardDisks
-        .insert (HardDiskMap::value_type (
-            aHardDisk->id(), HardDiskMap::mapped_type (aHardDisk)));
+    m->mapHardDisks.insert(HardDiskMap::value_type(aHardDisk->getId(),
+                                                   HardDiskMap::mapped_type(aHardDisk)));
 
     if (aSaveRegistry)
     {
@@ -3479,14 +3484,14 @@ HRESULT VirtualBox::unregisterHardDisk(Medium *aHardDisk,
 
     AutoReadLock hardDiskLock (aHardDisk);
 
-    size_t cnt = m->mapHardDisks.erase (aHardDisk->id());
-    Assert (cnt == 1);
+    size_t cnt = m->mapHardDisks.erase(aHardDisk->getId());
+    Assert(cnt == 1);
     NOREF(cnt);
 
-    if (aHardDisk->parent().isNull())
+    if (aHardDisk->getParent().isNull())
     {
         /* base (root) hard disk */
-        m->llHardDisks.remove (aHardDisk);
+        m->llHardDisks.remove(aHardDisk);
     }
 
     HRESULT rc = S_OK;
@@ -3532,8 +3537,8 @@ HRESULT VirtualBox::registerDVDImage (Medium *aImage,
     AutoReadLock imageLock (aImage);
 
     Utf8Str strConflict;
-    HRESULT rc = checkMediaForConflicts2(aImage->id(),
-                                         aImage->locationFull(),
+    HRESULT rc = checkMediaForConflicts2(aImage->getId(),
+                                         aImage->getLocationFull(),
                                          strConflict);
     CheckComRCReturnRC(rc);
 
@@ -3541,8 +3546,8 @@ HRESULT VirtualBox::registerDVDImage (Medium *aImage,
     {
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Cannot register the CD/DVD image '%s' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
-                        aImage->locationFull().raw(),
-                        aImage->id().raw(),
+                        aImage->getLocationFull().raw(),
+                        aImage->getId().raw(),
                         strConflict.raw(),
                         m->strSettingsFilePath.raw());
     }
@@ -3635,8 +3640,8 @@ HRESULT VirtualBox::registerFloppyImage(Medium *aImage,
     AutoReadLock imageLock (aImage);
 
     Utf8Str strConflict;
-    HRESULT rc = checkMediaForConflicts2(aImage->id(),
-                                         aImage->locationFull(),
+    HRESULT rc = checkMediaForConflicts2(aImage->getId(),
+                                         aImage->getLocationFull(),
                                          strConflict);
     CheckComRCReturnRC(rc);
 
@@ -3644,8 +3649,8 @@ HRESULT VirtualBox::registerFloppyImage(Medium *aImage,
     {
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Cannot register the floppy image '%s' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
-                        aImage->locationFull().raw(),
-                        aImage->id().raw(),
+                        aImage->getLocationFull().raw(),
+                        aImage->getId().raw(),
                         strConflict.raw(),
                         m->strSettingsFilePath.raw());
     }

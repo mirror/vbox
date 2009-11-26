@@ -49,35 +49,37 @@ typedef enum
 class HGCMObject
 {
     private:
-    friend uint32_t hgcmObjMake (HGCMObject *pObject, uint32_t u32HandleIn);
+        friend uint32_t hgcmObjMake(HGCMObject *pObject, uint32_t u32HandleIn);
 
-        int32_t volatile cRef;
-        HGCMOBJ_TYPE     enmObjType;
+        int32_t volatile m_cRefs;
+        HGCMOBJ_TYPE     m_enmObjType;
 
-        ObjectAVLCore Core;
+        ObjectAVLCore   m_core;
 
     protected:
-        virtual ~HGCMObject (void) {};
+        virtual ~HGCMObject()
+        {};
 
     public:
-        HGCMObject (HGCMOBJ_TYPE enmObjType) : cRef (0)
+        HGCMObject(HGCMOBJ_TYPE enmObjType)
+            : m_cRefs(0)
         {
-            this->enmObjType  = enmObjType;
+            this->m_enmObjType  = enmObjType;
         };
 
-        void Reference (void)
+        void Reference()
         {
-            int32_t refCnt = ASMAtomicIncS32 (&cRef);
+            int32_t refCnt = ASMAtomicIncS32(&m_cRefs);
             NOREF(refCnt);
             Log(("Reference: refCnt = %d\n", refCnt));
         }
 
-        void Dereference (void)
+        void Dereference()
         {
-            int32_t refCnt = ASMAtomicDecS32 (&cRef);
+            int32_t refCnt = ASMAtomicDecS32(&m_cRefs);
 
             Log(("Dereference: refCnt = %d\n", refCnt));
-            
+
             AssertRelease(refCnt >= 0);
 
             if (refCnt)
@@ -88,31 +90,31 @@ class HGCMObject
             delete this;
         }
 
-        uint32_t Handle (void)
+        uint32_t Handle()
         {
-            return Core.AvlCore.Key;
+            return m_core.AvlCore.Key;
         };
 
-        HGCMOBJ_TYPE Type (void)
+        HGCMOBJ_TYPE Type()
         {
-            return enmObjType;
+            return m_enmObjType;
         };
 };
 
-int hgcmObjInit (void);
+int hgcmObjInit();
 
-void hgcmObjUninit (void);
+void hgcmObjUninit();
 
-uint32_t hgcmObjGenerateHandle (HGCMObject *pObject);
-uint32_t hgcmObjAssignHandle (HGCMObject *pObject, uint32_t u32Handle);
+uint32_t hgcmObjGenerateHandle(HGCMObject *pObject);
+uint32_t hgcmObjAssignHandle(HGCMObject *pObject, uint32_t u32Handle);
 
-void hgcmObjDeleteHandle (uint32_t handle);
+void hgcmObjDeleteHandle(uint32_t handle);
 
-HGCMObject *hgcmObjReference (uint32_t handle, HGCMOBJ_TYPE enmObjType);
+HGCMObject *hgcmObjReference(uint32_t handle, HGCMOBJ_TYPE enmObjType);
 
-void hgcmObjDereference (HGCMObject *pObject);
+void hgcmObjDereference(HGCMObject *pObject);
 
-uint32_t hgcmObjQueryHandleCount ();
-void     hgcmObjSetHandleCount (uint32_t u32HandleCount);
+uint32_t hgcmObjQueryHandleCount();
+void     hgcmObjSetHandleCount(uint32_t u32HandleCount);
 
 #endif /* __HGCMOBJECTS__H */

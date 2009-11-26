@@ -166,11 +166,11 @@ public:
     void dumpBackRefs();
 #endif
 
-    const Guid& id() const;
-    MediumState_T state() const;
-    const Utf8Str& location() const;
-    const Utf8Str& locationFull() const;
-    uint64_t size() const;
+    const Guid& getId() const;
+    MediumState_T getState() const;
+    const Utf8Str& getLocation() const;
+    const Utf8Str& getLocationFull() const;
+    uint64_t getSize() const;
 
     const Guid* getFirstMachineBackrefId() const;
     const Guid* getFirstMachineBackrefSnapshotId() const;
@@ -178,11 +178,11 @@ public:
     /**
      * Shortcut to VirtualBoxBaseWithTypedChildrenNEXT::dependentChildren().
      */
-    const List &children() const { return dependentChildren(); }
+    const List& getChildren() const { return dependentChildren(); }
 
     void updatePaths(const char *aOldPath, const char *aNewPath);
 
-    ComObjPtr<Medium> base(uint32_t *aLevel = NULL);
+    ComObjPtr<Medium> getBase(uint32_t *aLevel = NULL);
 
     bool isReadOnly();
 
@@ -243,7 +243,7 @@ public:
 
     void cancelMergeTo(MergeChain *aChain);
 
-    Utf8Str name();
+    Utf8Str getName();
 
     HRESULT prepareDiscard(MergeChain * &aChain);
     HRESULT discard(ComObjPtr<Progress> &aProgress, ULONG ulWeight, MergeChain *aChain);
@@ -255,19 +255,19 @@ public:
     // unsafe inline public methods for internal purposes only (ensure there is
     // a caller and a read lock before calling them!)
 
-    ComObjPtr<Medium> parent() const { return static_cast<Medium *>(mParent); }
-    MediumType_T type() const;
+    ComObjPtr<Medium> getParent() const { return static_cast<Medium *>(mParent); }
+    MediumType_T getType() const;
 
     /** For com::SupportErrorInfoImpl. */
     static const char *ComponentName() { return "Medium"; }
 
 protected:
 
-    RWLockHandle* treeLock();
+    RWLockHandle* getTreeLock();
 
     /** Reimplements VirtualBoxWithTypedChildren::childrenLock() to return
      *  treeLock(). */
-    RWLockHandle *childrenLock() { return treeLock(); }
+    RWLockHandle *childrenLock() { return getTreeLock(); }
 
 private:
 

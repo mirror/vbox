@@ -1347,10 +1347,10 @@ STDMETHODIMP Host::InsertUSBDeviceFilter(ULONG aPosition,
 
     /* notify the proxy (only when the filter is active) */
     if (    m->pUSBProxyService->isActive()
-         && pFilter->data().mActive)
+         && pFilter->getData().mActive)
     {
-        ComAssertRet(pFilter->id() == NULL, E_FAIL);
-        pFilter->id() = m->pUSBProxyService->insertFilter(&pFilter->data().mUSBFilter);
+        ComAssertRet(pFilter->getId() == NULL, E_FAIL);
+        pFilter->getId() = m->pUSBProxyService->insertFilter(&pFilter->getData().mUSBFilter);
     }
 
     /* save the global settings */
@@ -1401,11 +1401,11 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter(ULONG aPosition)
     }
 
     /* notify the proxy (only when the filter is active) */
-    if (m->pUSBProxyService->isActive() && filter->data().mActive)
+    if (m->pUSBProxyService->isActive() && filter->getData().mActive)
     {
-        ComAssertRet (filter->id() != NULL, E_FAIL);
-        m->pUSBProxyService->removeFilter (filter->id());
-        filter->id() = NULL;
+        ComAssertRet(filter->getId() != NULL, E_FAIL);
+        m->pUSBProxyService->removeFilter(filter->getId());
+        filter->getId() = NULL;
     }
 
     /* save the global settings */
@@ -1676,10 +1676,10 @@ HRESULT Host::loadSettings(const settings::Host &data)
         pFilter->mInList = true;
 
         /* notify the proxy (only when the filter is active) */
-        if (pFilter->data().mActive)
+        if (pFilter->getData().mActive)
         {
             HostUSBDeviceFilter *flt = pFilter; /* resolve ambiguity */
-            flt->id() = m->pUSBProxyService->insertFilter(&pFilter->data().mUSBFilter);
+            flt->getId() = m->pUSBProxyService->insertFilter(&pFilter->getData().mUSBFilter);
         }
     }
 #else
@@ -1774,26 +1774,26 @@ HRESULT Host::onUSBDeviceFilterChange(HostUSBDeviceFilter *aFilter,
         if (aActiveChanged)
         {
             // insert/remove the filter from the proxy
-            if (aFilter->data().mActive)
+            if (aFilter->getData().mActive)
             {
-                ComAssertRet (aFilter->id() == NULL, E_FAIL);
-                aFilter->id() = m->pUSBProxyService->insertFilter (&aFilter->data().mUSBFilter);
+                ComAssertRet(aFilter->getId() == NULL, E_FAIL);
+                aFilter->getId() = m->pUSBProxyService->insertFilter(&aFilter->getData().mUSBFilter);
             }
             else
             {
-                ComAssertRet (aFilter->id() != NULL, E_FAIL);
-                m->pUSBProxyService->removeFilter (aFilter->id());
-                aFilter->id() = NULL;
+                ComAssertRet(aFilter->getId() != NULL, E_FAIL);
+                m->pUSBProxyService->removeFilter(aFilter->getId());
+                aFilter->getId() = NULL;
             }
         }
         else
         {
-            if (aFilter->data().mActive)
+            if (aFilter->getData().mActive)
             {
                 // update the filter in the proxy
-                ComAssertRet (aFilter->id() != NULL, E_FAIL);
-                m->pUSBProxyService->removeFilter (aFilter->id());
-                aFilter->id() = m->pUSBProxyService->insertFilter (&aFilter->data().mUSBFilter);
+                ComAssertRet(aFilter->getId() != NULL, E_FAIL);
+                m->pUSBProxyService->removeFilter(aFilter->getId());
+                aFilter->getId() = m->pUSBProxyService->insertFilter(&aFilter->getData().mUSBFilter);
             }
         }
 

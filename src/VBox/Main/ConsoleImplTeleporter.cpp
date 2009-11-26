@@ -1053,21 +1053,21 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
             /*
              * Do the job, when it returns we're done.
              */
-            TeleporterStateTrg State(this, pVM, pProgress, pMachine, mControl, &hTimerLR, fStartPaused);
-            State.mstrPassword      = strPassword;
-            State.mhServer          = hServer;
+            TeleporterStateTrg theState(this, pVM, pProgress, pMachine, mControl, &hTimerLR, fStartPaused);
+            theState.mstrPassword      = strPassword;
+            theState.mhServer          = hServer;
 
-            void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(&State));
+            void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(&theState));
             if (pProgress->setCancelCallback(teleporterProgressCancelCallback, pvUser))
             {
                 LogRel(("Teleporter: Waiting for incoming VM...\n"));
-                vrc = RTTcpServerListen(hServer, Console::teleporterTrgServeConnection, &State);
+                vrc = RTTcpServerListen(hServer, Console::teleporterTrgServeConnection, &theState);
                 pProgress->setCancelCallback(NULL, NULL);
 
                 bool fPowerOff = false;
                 if (vrc == VERR_TCP_SERVER_STOP)
                 {
-                    vrc = State.mRc;
+                    vrc = theState.mRc;
                     /* Power off the VM on failure unless the state callback
                        already did that. */
                     if (RT_FAILURE(vrc))
@@ -1251,9 +1251,9 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
                 break;
 
             pState->moffStream = 0;
-            void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(pState));
-            vrc = VMR3LoadFromStream(pState->mpVM, &g_teleporterTcpOps, pvUser,
-                                     teleporterProgressCallback, pvUser);
+            void *pvUser2 = static_cast<void *>(static_cast<TeleporterState *>(pState));
+            vrc = VMR3LoadFromStream(pState->mpVM, &g_teleporterTcpOps, pvUser2,
+                                     teleporterProgressCallback, pvUser2);
             if (RT_FAILURE(vrc))
             {
                 LogRel(("Teleporter: VMR3LoadFromStream -> %Rrc\n", vrc));
@@ -1264,7 +1264,7 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
             /* The EOS might not have been read, make sure it is. */
             pState->mfStopReading = false;
             size_t cbRead;
-            vrc = teleporterTcpOpRead(pvUser, pState->moffStream, szCmd, 1, &cbRead);
+            vrc = teleporterTcpOpRead(pvUser2, pState->moffStream, szCmd, 1, &cbRead);
             if (vrc != VERR_EOF)
             {
                 LogRel(("Teleporter: Draining teleporterTcpOpRead -> %Rrc\n", vrc));

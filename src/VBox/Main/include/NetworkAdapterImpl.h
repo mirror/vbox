@@ -146,11 +146,6 @@ public:
     void copyFrom (NetworkAdapter *aThat);
     void applyDefaults (GuestOSType *aOsType);
 
-    // public methods for internal purposes only
-    // (ensure there is a caller and a read lock before calling them!)
-
-    const Backupable <Data> &data() const { return mData; }
-
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"NetworkAdapter"; }
 
@@ -162,7 +157,7 @@ private:
     const ComObjPtr<Machine, ComWeakRef> mParent;
     const ComObjPtr<NetworkAdapter> mPeer;
 
-    Backupable <Data> mData;
+    Backupable<Data> mData;
 };
 
 #endif // ____H_NETWORKADAPTER

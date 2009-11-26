@@ -124,7 +124,7 @@ private:
     const ComObjPtr<Machine, ComWeakRef> mParent;
     const ComObjPtr<ParallelPort> mPeer;
 
-    Backupable <Data> mData;
+    Backupable<Data> mData;
 };
 
 #endif // ____H_FLOPPYDRIVEIMPL

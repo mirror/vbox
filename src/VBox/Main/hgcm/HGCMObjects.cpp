@@ -89,7 +89,7 @@ uint32_t hgcmObjMake (HGCMObject *pObject, uint32_t u32HandleIn)
 
     if (RT_SUCCESS(rc))
     {
-        ObjectAVLCore *pCore = &pObject->Core;
+        ObjectAVLCore *pCore = &pObject->m_core;
 
         /* Generate a new handle value. */
 

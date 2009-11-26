@@ -1162,17 +1162,17 @@ private:
     virtual HRESULT addCaller(VirtualBoxBaseProto::State *aState = NULL, \
                               bool aLimited = false) \
     { \
-        VirtualBoxBaseProto::State state; \
-        HRESULT rc = VirtualBoxBaseProto::addCaller(&state, aLimited); \
+        VirtualBoxBaseProto::State protoState; \
+        HRESULT rc = VirtualBoxBaseProto::addCaller(&protoState, aLimited); \
         if (FAILED(rc)) \
         { \
-            if (state == VirtualBoxBaseProto::Limited) \
+            if (protoState == VirtualBoxBaseProto::Limited) \
                 rc = setError(rc, tr("The object functionality is limited")); \
             else \
                 rc = setError(rc, tr("The object is not ready")); \
         } \
         if (aState) \
-            *aState = state; \
+            *aState = protoState; \
         return rc; \
     } \
 
@@ -2232,47 +2232,47 @@ public:
         }
     }
 
-    void attach(D *data) {
-        AssertMsg(data, ("new data must not be NULL"));
-        if (data && mData != data) {
+    void attach(D *d) {
+        AssertMsg(d, ("new data must not be NULL"));
+        if (d && mData != d) {
             if (mData && !mIsShared)
                 delete mData;
-            mData = data;
+            mData = d;
             mIsShared = false;
         }
     }
 
-    void attach(Shareable &data) {
+    void attach(Shareable &d) {
         AssertMsg(
-            data.mData == mData || !data.mIsShared,
+            d.mData == mData || !d.mIsShared,
             ("new data must not be shared")
         );
-        if (this != &data && !data.mIsShared) {
-            attach (data.mData);
-            data.mIsShared = true;
+        if (this != &d && !d.mIsShared) {
+            attach(d.mData);
+            d.mIsShared = true;
         }
     }
 
-    void share(D *data) {
-        AssertMsg(data, ("new data must not be NULL"));
-        if (mData != data) {
+    void share(D *d) {
+        AssertMsg(d, ("new data must not be NULL"));
+        if (mData != d) {
             if (mData && !mIsShared)
                 delete mData;
-            mData = data;
+            mData = d;
             mIsShared = true;
         }
     }
 
-    void share(const Shareable &data) { share (data.mData); }
+    void share(const Shareable &d) { share(d.mData); }
 
-    void attachCopy(const D *data) {
-        AssertMsg(data, ("data to copy must not be NULL"));
-        if (data)
-            attach(new D(*data));
+    void attachCopy(const D *d) {
+        AssertMsg(d, ("data to copy must not be NULL"));
+        if (d)
+            attach(new D(*d));
     }
 
-    void attachCopy(const Shareable &data) {
-        attachCopy(data.mData);
+    void attachCopy(const Shareable &d) {
+        attachCopy(d.mData);
     }
 
     virtual D *detach() {
@@ -2329,11 +2329,11 @@ public:
         return Shareable<D>::detach();
     }
 
-    void share(const Backupable &data)
+    void share(const Backupable &d)
     {
-        AssertMsg(!data.isBackedUp(), ("data to share must not be backed up"));
-        if (!data.isBackedUp())
-            Shareable<D>::share(data.mData);
+        AssertMsg(!d.isBackedUp(), ("data to share must not be backed up"));
+        if (!d.isBackedUp())
+            Shareable<D>::share(d.mData);
     }
 
     /**
@@ -2409,26 +2409,26 @@ public:
         }
     }
 
-    void assignCopy(const D *data)
+    void assignCopy(const D *pData)
     {
         AssertMsg(this->mData, ("data must not be NULL"));
-        AssertMsg(data, ("data to copy must not be NULL"));
-        if (this->mData && data)
+        AssertMsg(pData, ("data to copy must not be NULL"));
+        if (this->mData && pData)
         {
             if (!mBackupData)
             {
-                D *pNewData = new D(*data);
+                D *pNewData = new D(*pData);
                 mBackupData = this->mData;
                 this->mData = pNewData;
             }
             else
-                *this->mData = *data;
+                *this->mData = *pData;
         }
     }
 
-    void assignCopy(const Backupable &data)
+    void assignCopy(const Backupable &d)
     {
-        assignCopy(data.mData);
+        assignCopy(d.mData);
     }
 
     bool isBackedUp() const

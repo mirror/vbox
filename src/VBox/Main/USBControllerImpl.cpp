@@ -458,13 +458,13 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
     filter->mInList = true;
 
     /* notify the proxy (only when it makes sense) */
-    if (filter->data().mActive && Global::IsOnline (adep.machineState()))
+    if (filter->getData().mActive && Global::IsOnline(adep.machineState()))
     {
-        USBProxyService *service = mParent->virtualBox()->host()->usbProxyService();
+        USBProxyService *service = mParent->getVirtualBox()->host()->usbProxyService();
         ComAssertRet (service, E_FAIL);
 
-        ComAssertRet (filter->id() == NULL, E_FAIL);
-        filter->id() = service->insertFilter (&filter->data().mUSBFilter);
+        ComAssertRet(filter->getId() == NULL, E_FAIL);
+        filter->getId() = service->insertFilter (&filter->getData().mUSBFilter);
     }
 
     return S_OK;
@@ -524,14 +524,14 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
     filter.queryInterfaceTo(aFilter);
 
     /* notify the proxy (only when it makes sense) */
-    if (filter->data().mActive && Global::IsOnline (adep.machineState()))
+    if (filter->getData().mActive && Global::IsOnline(adep.machineState()))
     {
-        USBProxyService *service = mParent->virtualBox()->host()->usbProxyService();
+        USBProxyService *service = mParent->getVirtualBox()->host()->usbProxyService();
         ComAssertRet (service, E_FAIL);
 
-        ComAssertRet (filter->id() != NULL, E_FAIL);
-        service->removeFilter (filter->id());
-        filter->id() = NULL;
+        ComAssertRet(filter->getId() != NULL, E_FAIL);
+        service->removeFilter(filter->getId());
+        filter->getId() = NULL;
     }
 
     return S_OK;
@@ -622,7 +622,7 @@ HRESULT USBController::saveSettings(settings::USBController &data)
          ++it)
     {
         AutoWriteLock filterLock (*it);
-        const USBDeviceFilter::Data &filterData = (*it)->data();
+        const USBDeviceFilter::Data &filterData = (*it)->getData();
 
         Bstr str;
 
@@ -727,7 +727,7 @@ bool USBController::isReallyModified()
         DeviceFilterList::iterator thatIt = backDevices.begin();
         while (thatIt != backDevices.end())
         {
-            if ((*it)->data() == (*thatIt)->data())
+            if ((*it)->getData() == (*thatIt)->getData())
             {
                 backDevices.erase (thatIt);
                 found = true;
@@ -774,7 +774,7 @@ bool USBController::rollback()
 
     if (mDeviceFilters.isBackedUp())
     {
-        USBProxyService *service = mParent->virtualBox()->host()->usbProxyService();
+        USBProxyService *service = mParent->getVirtualBox()->host()->usbProxyService();
         ComAssertRet (service, false);
 
         /* uninitialize all new filters (absent in the backed up list) */
@@ -786,13 +786,13 @@ bool USBController::rollback()
                 backedList->end())
             {
                 /* notify the proxy (only when it makes sense) */
-                if ((*it)->data().mActive &&
+                if ((*it)->getData().mActive &&
                     Global::IsOnline (adep.machineState()))
                 {
                     USBDeviceFilter *filter = *it;
-                    ComAssertRet (filter->id() != NULL, false);
-                    service->removeFilter (filter->id());
-                    filter->id() = NULL;
+                    ComAssertRet(filter->getId() != NULL, false);
+                    service->removeFilter(filter->getId());
+                    filter->getId() = NULL;
                 }
 
                 (*it)->uninit();
@@ -811,11 +811,11 @@ bool USBController::rollback()
                     mDeviceFilters->end())
                 {
                     /* notify the proxy (only when necessary) */
-                    if ((*it)->data().mActive)
+                    if ((*it)->getData().mActive)
                     {
                         USBDeviceFilter *flt = *it; /* resolve ambiguity */
-                        ComAssertRet (flt->id() == NULL, false);
-                        flt->id() = service->insertFilter (&flt->data().mUSBFilter);
+                        ComAssertRet(flt->getId() == NULL, false);
+                        flt->getId() = service->insertFilter(&flt->getData().mUSBFilter);
                     }
                 }
                 ++ it;
@@ -1028,32 +1028,32 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
 
     if (aFilter->mInList && mParent->isRegistered())
     {
-        USBProxyService *service = mParent->virtualBox()->host()->usbProxyService();
+        USBProxyService *service = mParent->getVirtualBox()->host()->usbProxyService();
         ComAssertRet (service, E_FAIL);
 
         if (aActiveChanged)
         {
             /* insert/remove the filter from the proxy */
-            if (aFilter->data().mActive)
+            if (aFilter->getData().mActive)
             {
-                ComAssertRet (aFilter->id() == NULL, E_FAIL);
-                aFilter->id() = service->insertFilter (&aFilter->data().mUSBFilter);
+                ComAssertRet(aFilter->getId() == NULL, E_FAIL);
+                aFilter->getId() = service->insertFilter(&aFilter->getData().mUSBFilter);
             }
             else
             {
-                ComAssertRet (aFilter->id() != NULL, E_FAIL);
-                service->removeFilter (aFilter->id());
-                aFilter->id() = NULL;
+                ComAssertRet(aFilter->getId() != NULL, E_FAIL);
+                service->removeFilter(aFilter->getId());
+                aFilter->getId() = NULL;
             }
         }
         else
         {
-            if (aFilter->data().mActive)
+            if (aFilter->getData().mActive)
             {
                 /* update the filter in the proxy */
-                ComAssertRet (aFilter->id() != NULL, E_FAIL);
-                service->removeFilter (aFilter->id());
-                aFilter->id() = service->insertFilter (&aFilter->data().mUSBFilter);
+                ComAssertRet(aFilter->getId() != NULL, E_FAIL);
+                service->removeFilter(aFilter->getId());
+                aFilter->getId() = service->insertFilter(&aFilter->getData().mUSBFilter);
             }
         }
     }
@@ -1086,9 +1086,9 @@ bool USBController::hasMatchingFilter (const ComObjPtr<HostUSBDevice> &aDevice, 
          ++ it)
     {
         AutoWriteLock filterLock (*it);
-        if (aDevice->isMatch ((*it)->data()))
+        if (aDevice->isMatch((*it)->getData()))
         {
-            *aMaskedIfs = (*it)->data().mMaskedIfs;
+            *aMaskedIfs = (*it)->getData().mMaskedIfs;
             return true;
         }
     }
@@ -1183,7 +1183,7 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
          ++ it)
     {
         AutoWriteLock filterLock (*it);
-        const USBDeviceFilter::Data &aData = (*it)->data();
+        const USBDeviceFilter::Data &aData = (*it)->getData();
 
         if (!aData.mActive)
             continue;
@@ -1220,7 +1220,7 @@ HRESULT USBController::notifyProxy (bool aInsertFilters)
 
     AutoReadLock alock(this);
 
-    USBProxyService *service = mParent->virtualBox()->host()->usbProxyService();
+    USBProxyService *service = mParent->getVirtualBox()->host()->usbProxyService();
     AssertReturn(service, E_FAIL);
 
     DeviceFilterList::const_iterator it = mDeviceFilters->begin();
@@ -1229,22 +1229,22 @@ HRESULT USBController::notifyProxy (bool aInsertFilters)
         USBDeviceFilter *flt = *it; /* resolve ambiguity (for ComPtr below) */
 
         /* notify the proxy (only if the filter is active) */
-        if (flt->data().mActive)
+        if (flt->getData().mActive)
         {
             if (aInsertFilters)
             {
-                AssertReturn(flt->id() == NULL, E_FAIL);
-                flt->id() = service->insertFilter (&flt->data().mUSBFilter);
+                AssertReturn(flt->getId() == NULL, E_FAIL);
+                flt->getId() = service->insertFilter(&flt->getData().mUSBFilter);
             }
             else
             {
                 /* It's possible that the given filter was not inserted the proxy
                  * when this method gets called (as a result of an early VM
                  * process crash for example. So, don't assert that ID != NULL. */
-                if (flt->id() != NULL)
+                if (flt->getId() != NULL)
                 {
-                    service->removeFilter (flt->id());
-                    flt->id() = NULL;
+                    service->removeFilter(flt->getId());
+                    flt->getId() = NULL;
                 }
             }
         }

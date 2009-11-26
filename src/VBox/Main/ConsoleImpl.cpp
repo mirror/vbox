@@ -1054,19 +1054,19 @@ Console::saveStateFileExec(PSSMHANDLE pSSM, void *pvUser)
         ComObjPtr<SharedFolder> folder = (*it).second;
         // don't lock the folder because methods we access are const
 
-        Utf8Str name = folder->name();
+        Utf8Str name = folder->getName();
         vrc = SSMR3PutU32(pSSM, (uint32_t)name.length() + 1 /* term. 0 */);
         AssertRC(vrc);
         vrc = SSMR3PutStrZ(pSSM, name.c_str());
         AssertRC(vrc);
 
-        Utf8Str hostPath = folder->hostPath();
+        Utf8Str hostPath = folder->getHostPath();
         vrc = SSMR3PutU32(pSSM, (uint32_t)hostPath.length() + 1 /* term. 0 */);
         AssertRC(vrc);
         vrc = SSMR3PutStrZ(pSSM, hostPath.c_str());
         AssertRC(vrc);
 
-        vrc = SSMR3PutBool(pSSM, !!folder->writable());
+        vrc = SSMR3PutBool(pSSM, !!folder->isWritable());
         AssertRC(vrc);
     }
 
@@ -2667,10 +2667,10 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
 
         pTask->mProgress.queryInterfaceTo(aProgress);
     }
-    catch (HRESULT rc)
+    catch (HRESULT erc)
     {
         delete pTask;
-        NOREF(rc);
+        NOREF(erc);
         mptrCancelableProgress.setNull();
     }
 
@@ -4791,7 +4791,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         /* third, insert console folders */
         for (SharedFolderMap::const_iterator it = mSharedFolders.begin();
              it != mSharedFolders.end(); ++ it)
-            sharedFolders[it->first] = SharedFolderData(it->second->hostPath(), it->second->writable());
+            sharedFolders[it->first] = SharedFolderData(it->second->getHostPath(), it->second->isWritable());
     }
 
     Bstr savedStateFile;
@@ -5193,7 +5193,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
         bool fHasUSBController = false;
         {
             PPDMIBASE pBase;
-            int vrc = PDMR3QueryLun(mpVM, "usb-ohci", 0, 0, &pBase);
+            vrc = PDMR3QueryLun(mpVM, "usb-ohci", 0, 0, &pBase);
             if (RT_SUCCESS(vrc))
             {
                 fHasUSBController = true;
@@ -6060,7 +6060,7 @@ Console::usbAttachCallback(Console *that, IUSBDevice *aHostDevice, PCRTUUID aUui
         /* Create a OUSBDevice and add it to the device list */
         ComObjPtr<OUSBDevice> device;
         device.createObject();
-        HRESULT hrc = device->init(aHostDevice);
+        hrc = device->init(aHostDevice);
         AssertComRC(hrc);
 
         AutoWriteLock alock(that);
@@ -6628,11 +6628,11 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDPUSBDEVICEDESC *p
     /*
      * Mark all existing remote USB devices as dirty.
      */
-    RemoteUSBDeviceList::iterator it = mRemoteUSBDevices.begin();
-    while (it != mRemoteUSBDevices.end())
+    for (RemoteUSBDeviceList::iterator it = mRemoteUSBDevices.begin();
+         it != mRemoteUSBDevices.end();
+         ++it)
     {
         (*it)->dirty(true);
-        ++ it;
     }
 
     /*
@@ -6652,8 +6652,9 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDPUSBDEVICEDESC *p
 
         bool fNewDevice = true;
 
-        it = mRemoteUSBDevices.begin();
-        while (it != mRemoteUSBDevices.end())
+        for (RemoteUSBDeviceList::iterator it = mRemoteUSBDevices.begin();
+             it != mRemoteUSBDevices.end();
+             ++it)
         {
             if ((*it)->devId() == e->id
                 && (*it)->clientId() == u32ClientId)
@@ -6663,8 +6664,6 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDPUSBDEVICEDESC *p
                fNewDevice = false;
                break;
             }
-
-            ++ it;
         }
 
         if (fNewDevice)
@@ -7308,22 +7307,22 @@ static DECLCALLBACK(int) reconfigureMedium(PVM pVM, ULONG lInstance,
         rc = CFGMR3InsertString(pCur,  "Format", Utf8Str(bstr).c_str());        RC_CHECK();
 
         /* Pass all custom parameters. */
-        SafeArray<BSTR> names;
-        SafeArray<BSTR> values;
+        SafeArray<BSTR> aNames;
+        SafeArray<BSTR> aValues;
         hrc = medium->GetProperties(NULL,
-                                    ComSafeArrayAsOutParam(names),
-                                    ComSafeArrayAsOutParam(values));            H();
+                                    ComSafeArrayAsOutParam(aNames),
+                                    ComSafeArrayAsOutParam(aValues));            H();
 
-        if (names.size() != 0)
+        if (aNames.size() != 0)
         {
             PCFGMNODE pVDC;
             rc = CFGMR3InsertNode(pCur, "VDConfig", &pVDC);             RC_CHECK();
-            for (size_t i = 0; i < names.size(); ++ i)
+            for (size_t i = 0; i < aNames.size(); ++ i)
             {
-                if (values[i])
+                if (aValues[i])
                 {
-                    Utf8Str name = names[i];
-                    Utf8Str value = values[i];
+                    Utf8Str name = aNames[i];
+                    Utf8Str value = aValues[i];
                     rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str());
                     if (    !(name.compare("HostIPStack"))
                         &&  !(value.compare("0")))
@@ -7507,16 +7506,16 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                  * don't leave the lock since reconfigureMedium isn't going
                  * to access Console.
                  */
-                int vrc = VMR3ReqCallWait(that->mpVM,
-                                          VMCPUID_ANY,
-                                          (PFNRT)reconfigureMedium,
-                                          6,
-                                          that->mpVM,
-                                          lInstance,
-                                          enmController,
-                                          enmBus,
-                                          atts[i],
-                                          &rc);
+                vrc = VMR3ReqCallWait(that->mpVM,
+                                      VMCPUID_ANY,
+                                      (PFNRT)reconfigureMedium,
+                                      6,
+                                      that->mpVM,
+                                      lInstance,
+                                      enmController,
+                                      enmBus,
+                                      atts[i],
+                                      &rc);
                 if (RT_FAILURE(vrc))
                     throw setError(E_FAIL, Console::tr("%Rrc"), vrc);
                 if (FAILED(rc))

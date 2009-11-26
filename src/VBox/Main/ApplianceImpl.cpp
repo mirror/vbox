@@ -1105,8 +1105,8 @@ int Appliance::importFS(TaskImportOVF *pTask)
     CheckComRCReturnRC(rc);
 
     const OVFReader reader = *m->pReader;
- 	// this is safe to access because this thread only gets started
- 	// if pReader != NULL
+    // this is safe to access because this thread only gets started
+    // if pReader != NULL
 
     /* If an manifest file exists, verify the content. Therefor we need all
      * files which are referenced by the OVF & the OVF itself */
@@ -1166,8 +1166,10 @@ int Appliance::importFS(TaskImportOVF *pTask)
                           RTPathFilename(strMfFile.c_str()),
                           vrc);
         /* Cleanup */
-        for (size_t i=1; i < filesList.size(); ++i)
-            RTStrFree(pTestList[i].pszTestDigest);
+        for (size_t j = 1;
+             j < filesList.size();
+             ++j)
+            RTStrFree(pTestList[j].pszTestDigest);
         RTMemFree(pTestList);
         if (FAILED(rc))
         {
@@ -1372,15 +1374,17 @@ int Appliance::importFS(TaskImportOVF *pTask)
                         if (FAILED(rc)) throw rc;
                         /* We search for the first host network interface which
                          * is usable for bridged networking */
-                        for (size_t i=0; i < nwInterfaces.size(); ++i)
+                        for (size_t j = 0;
+                             j < nwInterfaces.size();
+                             ++j)
                         {
                             HostNetworkInterfaceType_T itype;
-                            rc = nwInterfaces[i]->COMGETTER(InterfaceType)(&itype);
+                            rc = nwInterfaces[j]->COMGETTER(InterfaceType)(&itype);
                             if (FAILED(rc)) throw rc;
                             if (itype == HostNetworkInterfaceType_Bridged)
                             {
                                 Bstr name;
-                                rc = nwInterfaces[i]->COMGETTER(Name)(name.asOutParam());
+                                rc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
                                 if (FAILED(rc)) throw rc;
                                 /* Set the interface name to attach to */
                                 pNetworkAdapter->COMSETTER(HostInterface)(name);
@@ -1403,15 +1407,17 @@ int Appliance::importFS(TaskImportOVF *pTask)
                         if (FAILED(rc)) throw rc;
                         /* We search for the first host network interface which
                          * is usable for host only networking */
-                        for (size_t i=0; i < nwInterfaces.size(); ++i)
+                        for (size_t j = 0;
+                             j < nwInterfaces.size();
+                             ++j)
                         {
                             HostNetworkInterfaceType_T itype;
-                            rc = nwInterfaces[i]->COMGETTER(InterfaceType)(&itype);
+                            rc = nwInterfaces[j]->COMGETTER(InterfaceType)(&itype);
                             if (FAILED(rc)) throw rc;
                             if (itype == HostNetworkInterfaceType_HostOnly)
                             {
                                 Bstr name;
-                                rc = nwInterfaces[i]->COMGETTER(Name)(name.asOutParam());
+                                rc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
                                 if (FAILED(rc)) throw rc;
                                 /* Set the interface name to attach to */
                                 pNetworkAdapter->COMSETTER(HostInterface)(name);
@@ -1566,23 +1572,23 @@ int Appliance::importFS(TaskImportOVF *pTask)
 
 
                     // CD-ROMs next
-                    for (std::list<VirtualSystemDescriptionEntry*>::const_iterator it = vsdeCDROM.begin();
-                        it != vsdeCDROM.end();
-                        ++it)
+                    for (std::list<VirtualSystemDescriptionEntry*>::const_iterator jt = vsdeCDROM.begin();
+                         jt != vsdeCDROM.end();
+                         ++jt)
                     {
                         // for now always attach to secondary master on IDE controller;
                         // there seems to be no useful information in OVF where else to
-                        // attach it (@todo test with latest versions of OVF software)
+                        // attach jt (@todo test with latest versions of OVF software)
 
                         // find the IDE controller
                         const HardDiskController *pController = NULL;
-                        for (ControllersMap::const_iterator it = vsysThis.mapControllers.begin();
-                             it != vsysThis.mapControllers.end();
-                             ++it)
+                        for (ControllersMap::const_iterator kt = vsysThis.mapControllers.begin();
+                             kt != vsysThis.mapControllers.end();
+                             ++kt)
                         {
-                            if (it->second.system == HardDiskController::IDE)
+                            if (kt->second.system == HardDiskController::IDE)
                             {
-                                pController = &it->second;
+                                pController = &kt->second;
                             }
                         }
 
@@ -4387,13 +4393,13 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock1(this);
 
     ComObjPtr<VirtualSystemDescription> pNewDesc;
 
     try
     {
-        Bstr bstrName;
+        Bstr bstrName1;
         Bstr bstrDescription;
         Bstr bstrGuestOSType;
         uint32_t cCPUs;
@@ -4406,7 +4412,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         ComPtr<IAudioAdapter> pAudioAdapter;
 
         // get name
-        bstrName = mUserData->mName;
+        bstrName1 = mUserData->mName;
         // get description
         bstrDescription = mUserData->mDescription;
         // get guest OS
@@ -4453,7 +4459,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
                            strOsTypeVBox);
 
         /* VM name */
-        Utf8Str strVMName(bstrName);
+        Utf8Str strVMName(bstrName1);
         pNewDesc->addEntry(VirtualSystemDescriptionType_Name,
                            "",
                            strVMName,

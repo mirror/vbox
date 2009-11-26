@@ -676,11 +676,11 @@ NS_NewGenericFactoryEx(nsIGenericFactory **result,
  */
 static nsresult
 RegisterSelfComponents(nsIComponentRegistrar *registrar,
-                       const nsModuleComponentInfoEx *components,
+                       const nsModuleComponentInfoEx *aComponents,
                        PRUint32 count)
 {
     nsresult rc = NS_OK;
-    const nsModuleComponentInfoEx *info = components;
+    const nsModuleComponentInfoEx *info = aComponents;
     for (PRUint32 i = 0; i < count && NS_SUCCEEDED(rc); i++, info++)
     {
         /* skip components w/o a constructor */

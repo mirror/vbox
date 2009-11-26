@@ -93,8 +93,8 @@ public:
     // unsafe inline public methods for internal purposes only (ensure there is
     // a caller and a read lock before calling them!)
 
-    BOOL completed() const { return mCompleted; }
-    HRESULT resultCode() const { return mResultCode; }
+    BOOL getCompleted() const { return mCompleted; }
+    HRESULT getResultCode() const { return mResultCode; }
     double calcTotalPercent();
 
 protected:

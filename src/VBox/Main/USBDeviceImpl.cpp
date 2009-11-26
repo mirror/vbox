@@ -92,10 +92,10 @@ HRESULT OUSBDevice::init(IUSBDevice *aUSBDevice)
     hrc = aUSBDevice->COMGETTER(Remote)(&unconst(mData.remote));
     ComAssertComRCRet (hrc, hrc);
 
-    Bstr id;
-    hrc = aUSBDevice->COMGETTER(Id)(id.asOutParam());
-    ComAssertComRCRet (hrc, hrc);
-    unconst(mData.id) = Guid(id);
+    Bstr uuid;
+    hrc = aUSBDevice->COMGETTER(Id)(uuid.asOutParam());
+    ComAssertComRCRet(hrc, hrc);
+    unconst(mData.id) = Guid(uuid);
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
