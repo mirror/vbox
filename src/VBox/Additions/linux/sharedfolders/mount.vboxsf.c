@@ -561,6 +561,24 @@ main (int argc, char **argv)
     err = mount (NULL, mount_point, "vboxsf", flags, &mntinf);
     if (err == -1 && errno == EPROTO)
     {
+        /* Sometimes the mount utility messes up the share name.  Try to
+         * un-mangle it again. */
+        char szCWD[4096];
+        size_t cchCWD;
+        if (!getcwd(szCWD, sizeof(szCWD)))
+            panic_err("%s: failed to get the current working directory", argv[0]);
+        cchCWD = strlen(szCWD);
+        if (!strncmp(host_name, szCWD, cchCWD))
+        {
+            while (host_name[cchCWD] == '/')
+                ++cchCWD;
+            /* We checked before that we have enough space */
+            strcpy (mntinf.name, host_name + cchCWD);
+        }
+        err = mount (NULL, mount_point, "vboxsf", flags, &mntinf);
+    }
+    if (err == -1 && errno == EPROTO)
+    {
         /* New mount tool with old vboxsf module? Try again using the old
          * vbsf_mount_info_old structure. */
         struct vbsf_mount_info_old mntinf_old;
