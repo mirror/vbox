@@ -84,8 +84,9 @@ public:
     void setHostKey (int key);
 
     bool autoCapture() const { return data()->autoCapture; }
-    void setAutoCapture (bool autoCapture) {
-        mData()->autoCapture = autoCapture;
+    void setAutoCapture (bool aAutoCapture)
+    {
+        mData()->autoCapture = aAutoCapture;
         resetError();
     }
 

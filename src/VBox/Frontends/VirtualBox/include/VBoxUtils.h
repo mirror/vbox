@@ -52,8 +52,8 @@ protected:
     {
         if (aEvent->type() == QEvent::KeyPress || aEvent->type() == QEvent::KeyRelease)
         {
-            QKeyEvent *event = static_cast<QKeyEvent *> (aEvent);
-            if (event->modifiers() & Qt::AltModifier)
+            QKeyEvent *pEvent = static_cast<QKeyEvent *> (aEvent);
+            if (pEvent->modifiers() & Qt::AltModifier)
                 return true;
         }
         return false;

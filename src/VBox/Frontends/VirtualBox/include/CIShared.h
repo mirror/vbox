@@ -98,7 +98,7 @@ public:
     bool operator!() const { return isNull(); }
 
 private:
-    CIShared( Data *data ) : d( data ) {}
+    CIShared( Data *aData ) : d( aData ) {}
     Data *d;
 
     static CIShared Null;
