@@ -30,7 +30,7 @@
 # include <iprt/mem.h>
 #endif /* IN_RING3 */
 #include "../Builtins.h"
-#include "Virtio.h"
+#include "../VirtIO/Virtio.h"
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
