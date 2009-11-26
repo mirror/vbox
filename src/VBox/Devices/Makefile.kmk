@@ -317,7 +317,7 @@ endif
 ifdef VBOX_WITH_VIRTIO
  DevicesR3_DEFS        += VBOX_WITH_VIRTIO
  DevicesR3_SOURCES     += \
-	Virtio.cpp \
+	VirtIO/Virtio.cpp \
 	Network/DevVirtioNet.cpp
 endif
 
@@ -515,7 +515,7 @@ endif
 ifdef VBOX_WITH_VIRTIO
  VBoxDDGC_DEFS         += VBOX_WITH_VIRTIO
  VBoxDDGC_SOURCES      += \
-	Virtio.cpp \
+	VirtIO/Virtio.cpp \
 	Network/DevVirtioNet.cpp
 endif
 
@@ -613,7 +613,7 @@ endif
 ifdef VBOX_WITH_VIRTIO
  VBoxDDR0_DEFS         += VBOX_WITH_VIRTIO
  VBoxDDR0_SOURCES      += \
-        Virtio.cpp \
+        VirtIO/Virtio.cpp \
 	Network/DevVirtioNet.cpp
 endif
 
