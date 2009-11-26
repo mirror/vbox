@@ -504,19 +504,19 @@ static int handleMetricsCollect(int argc, char *argv[],
                                                  ComSafeArrayAsOutParam(retIndices),
                                                  ComSafeArrayAsOutParam(retLengths),
                                                  ComSafeArrayAsOutParam(retData)) );
-        for (unsigned i = 0; i < retNames.size(); i++)
+        for (unsigned j = 0; j < retNames.size(); j++)
         {
-            Bstr metricUnit(retUnits[i]);
-            Bstr metricName(retNames[i]);
-            RTPrintf("%-12s %-10ls %-20ls ", ts, getObjectName(aVirtualBox, retObjects[i]).raw(), metricName.raw());
+            Bstr metricUnit(retUnits[j]);
+            Bstr metricName(retNames[j]);
+            RTPrintf("%-12s %-10ls %-20ls ", ts, getObjectName(aVirtualBox, retObjects[j]).raw(), metricName.raw());
             const char *separator = "";
-            for (unsigned j = 0; j < retLengths[i]; j++)
+            for (unsigned k = 0; k < retLengths[j]; k++)
             {
-                if (retScales[i] == 1)
-                    RTPrintf("%s%d %ls", separator, retData[retIndices[i] + j], metricUnit.raw());
+                if (retScales[j] == 1)
+                    RTPrintf("%s%d %ls", separator, retData[retIndices[j] + k], metricUnit.raw());
                 else
-                    RTPrintf("%s%d.%02d%ls", separator, retData[retIndices[i] + j] / retScales[i],
-                             (retData[retIndices[i] + j] * 100 / retScales[i]) % 100, metricUnit.raw());
+                    RTPrintf("%s%d.%02d%ls", separator, retData[retIndices[j] + k] / retScales[j],
+                             (retData[retIndices[j] + k] * 100 / retScales[j]) % 100, metricUnit.raw());
                 separator = ", ";
             }
             RTPrintf("\n");
