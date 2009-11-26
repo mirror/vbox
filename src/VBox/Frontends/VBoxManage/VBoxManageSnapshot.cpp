@@ -239,15 +239,15 @@ int handleSnapshot(HandlerArg *a)
     }
     if (!pMachine)
         return 1;
-    Bstr guid;
-    pMachine->COMGETTER(Id)(guid.asOutParam());
+    Bstr guidMachine;
+    pMachine->COMGETTER(Id)(guidMachine.asOutParam());
 
     do
     {
         /* we have to open a session for this task. First try an existing session */
-        rc = a->virtualBox->OpenExistingSession(a->session, guid);
+        rc = a->virtualBox->OpenExistingSession(a->session, guidMachine);
         if (FAILED(rc))
-            CHECK_ERROR_BREAK(a->virtualBox, OpenSession(a->session, guid));
+            CHECK_ERROR_BREAK(a->virtualBox, OpenSession(a->session, guidMachine));
         ComPtr<IConsole> console;
         CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
 
@@ -351,22 +351,22 @@ int handleSnapshot(HandlerArg *a)
             ComPtr<ISnapshot> pSnapshot;
 
             /* assume it's a UUID */
-            Bstr guid(a->argv[2]);
-            if (!guid.isEmpty())
+            Bstr guidSnap(a->argv[2]);
+            if (!guidSnap.isEmpty())
             {
-                CHECK_ERROR_BREAK(pMachine, GetSnapshot(guid, pSnapshot.asOutParam()));
+                CHECK_ERROR_BREAK(pMachine, GetSnapshot(guidSnap, pSnapshot.asOutParam()));
             }
             else
             {
                 /* then it must be a name */
                 CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]), pSnapshot.asOutParam()));
-                pSnapshot->COMGETTER(Id)(guid.asOutParam());
+                pSnapshot->COMGETTER(Id)(guidSnap.asOutParam());
             }
 
             ComPtr<IProgress> pProgress;
             if (fDelete)
             {
-                CHECK_ERROR_BREAK(console, DeleteSnapshot(guid, pProgress.asOutParam()));
+                CHECK_ERROR_BREAK(console, DeleteSnapshot(guidSnap, pProgress.asOutParam()));
             }
             else
             {
@@ -403,10 +403,10 @@ int handleSnapshot(HandlerArg *a)
             else
             {
                 /* assume it's a UUID */
-                Bstr guid(a->argv[2]);
-                if (!guid.isEmpty())
+                Bstr guidSnap(a->argv[2]);
+                if (!guidSnap.isEmpty())
                 {
-                    CHECK_ERROR_BREAK(pMachine, GetSnapshot(guid, snapshot.asOutParam()));
+                    CHECK_ERROR_BREAK(pMachine, GetSnapshot(guidSnap, snapshot.asOutParam()));
                 }
                 else
                 {
@@ -466,10 +466,10 @@ int handleSnapshot(HandlerArg *a)
             ComPtr<ISnapshot> snapshot;
 
             /* assume it's a UUID */
-            Bstr guid(a->argv[2]);
-            if (!guid.isEmpty())
+            Bstr guidSnap(a->argv[2]);
+            if (!guidSnap.isEmpty())
             {
-                CHECK_ERROR_BREAK(pMachine, GetSnapshot(guid, snapshot.asOutParam()));
+                CHECK_ERROR_BREAK(pMachine, GetSnapshot(guidSnap, snapshot.asOutParam()));
             }
             else
             {

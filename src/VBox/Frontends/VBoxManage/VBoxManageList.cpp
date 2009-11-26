@@ -497,10 +497,10 @@ int handleList(HandlerArg *a)
                 com::SafeArray <BSTR> fileExtensions;
                 CHECK_ERROR(mediumFormats [i],
                             COMGETTER(FileExtensions) (ComSafeArrayAsOutParam (fileExtensions)));
-                for (size_t a = 0; a < fileExtensions.size(); ++ a)
+                for (size_t j = 0; j < fileExtensions.size(); ++ j)
                 {
-                    RTPrintf ("%ls", Bstr (fileExtensions [a]).raw());
-                    if (a != fileExtensions.size()-1)
+                    RTPrintf ("%ls", Bstr (fileExtensions [j]).raw());
+                    if (j != fileExtensions.size()-1)
                         RTPrintf (",");
                 }
                 RTPrintf ("'");
@@ -521,19 +521,19 @@ int handleList(HandlerArg *a)
                 RTPrintf (" properties=(");
                 if (propertyNames.size() > 0)
                 {
-                    for (size_t a = 0; a < propertyNames.size(); ++ a)
+                    for (size_t j = 0; j < propertyNames.size(); ++ j)
                     {
                         RTPrintf ("\n  name='%ls' desc='%ls' type=",
-                                Bstr (propertyNames [a]).raw(), Bstr (propertyDescriptions [a]).raw());
-                        switch (propertyTypes [a])
+                                Bstr (propertyNames [j]).raw(), Bstr (propertyDescriptions [j]).raw());
+                        switch (propertyTypes [j])
                         {
                             case DataType_Int32: RTPrintf ("int"); break;
                             case DataType_Int8: RTPrintf ("byte"); break;
                             case DataType_String: RTPrintf ("string"); break;
                         }
-                        RTPrintf (" flags=%#04x", propertyFlags [a]);
-                        RTPrintf (" default='%ls'", Bstr (propertyDefaults [a]).raw());
-                        if (a != propertyNames.size()-1)
+                        RTPrintf (" flags=%#04x", propertyFlags [j]);
+                        RTPrintf (" default='%ls'", Bstr (propertyDefaults [j]).raw());
+                        if (j != propertyNames.size()-1)
                             RTPrintf (", ");
                     }
                 }
