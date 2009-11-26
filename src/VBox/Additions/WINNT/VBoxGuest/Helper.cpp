@@ -192,6 +192,8 @@ void hlpVBoxUnmapVMMDevMemory (PVBOXGUESTDEVEXT pDevExt)
     pDevExt->memoryLength = 0;
 }
 
+/** @todo maybe we should drop this routine entirely later because we detecting
+ *        the running OS via VBoxService in ring 3 using guest properties since a while. */
 NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
 {
     VMMDevReportGuestInfo *req = NULL;
@@ -221,6 +223,9 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
                 break;
             case WINVISTA:
                 req->guestInfo.osType = VBOXOSTYPE_WinVista;
+                break;
+            case WIN7:
+                req->guestInfo.osType = VBOXOSTYPE_Win7;
                 break;
             default:
                 /* we don't know, therefore NT family */

@@ -237,7 +237,8 @@ typedef enum
     WIN2K    = 2,
     WINXP    = 3,
     WIN2K3   = 4,
-    WINVISTA = 5
+    WINVISTA = 5,
+    WIN7     = 6,
 } winVersion_t;
 extern winVersion_t winVersion;
 
