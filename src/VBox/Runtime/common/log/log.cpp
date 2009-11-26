@@ -302,7 +302,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
         if (pu8Code)
         {
             pLogger->pfnLogger = *(PFNRTLOGGER*)&pu8Code;
-#if defined(RT_ARCH_AMD64) || defined(RT_LOG_
+#if defined(RT_ARCH_AMD64) || (defined(LOG_USE_C99) && defined(RT_WITHOUT_EXEC_ALLOC))
             /* this wrapper will not be used on AMD64, we will be requiring C99 compilers there. */
             *pu8Code++ = 0xcc;
 #else
