@@ -488,7 +488,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumSymbols)(PRTLDRMODINTERNAL pMod, unsi
                  * Call back.
                  */
                 AssertMsgReturn(Value == (RTUINTPTR)Value, (FMT_ELF_ADDR "\n", Value), VERR_SYMBOL_VALUE_TOO_BIG);
-                int rc = pfnCallback(pMod, pszName, ~0, (RTUINTPTR)Value, pvUser);
+                rc = pfnCallback(pMod, pszName, ~0, (RTUINTPTR)Value, pvUser);
                 if (rc)
                     return rc;
             }
@@ -872,7 +872,7 @@ const char *RTLDRELF_NAME(GetSHdrName)(PRTLDRMODELF pModElf, Elf_Word offName, c
         /* read by for byte. */
         for (unsigned i = 0; i < cbName; i++, off++)
         {
-            int rc = pModElf->pReader->pfnRead(pModElf->pReader, pszName + i, 1, off);
+            rc = pModElf->pReader->pfnRead(pModElf->pReader, pszName + i, 1, off);
             if (RT_FAILURE(rc))
             {
                 pszName[i] = '\0';

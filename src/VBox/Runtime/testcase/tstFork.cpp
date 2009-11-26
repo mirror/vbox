@@ -68,14 +68,12 @@ int main()
      * Fork.
      */
     pid_t pid = fork();
-    if (pid == -1)
-        RTTestFailed(hTest, "fork() failed: %d - %s", errno, strerror(errno));
-    else if (pid == 0)
+    if (pid == 0)
     {
         /*
          * Check that the values has changed.
          */
-        int rc = 0;
+        rc = 0;
         if (ProcBefore == RTProcSelf())
         {
             RTTestFailed(hTest, "%RTproc == %RTproc [child]", ProcBefore, RTProcSelf());
@@ -83,7 +81,7 @@ int main()
         }
         return rc;
     }
-    else
+    if (pid != -1)
     {
         /*
          * Check that the values didn't change.
@@ -93,13 +91,15 @@ int main()
         /*
          * Wait for the child.
          */
-        int rc = 1;
+        rc = 1;
         while (   waitpid(pid, &rc, 0)
                && errno == EINTR)
             rc = 1;
         if (!WIFEXITED(rc) || WEXITSTATUS(rc) != 0)
             RTTestFailed(hTest, "rc=%#x", rc);
     }
+    else
+        RTTestFailed(hTest, "fork() failed: %d - %s", errno, strerror(errno));
 #endif
 
     /*

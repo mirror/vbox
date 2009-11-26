@@ -159,7 +159,7 @@ int main()
         /*
          * Start the timer an actively wait for it for the period requested.
          */
-        uint64_t uTSBegin = RTTimeNanoTS();
+        uTSBegin = RTTimeNanoTS();
         rc = RTTimerLRStart(hTimerLR, 0);
         if (RT_FAILURE(rc))
         {
@@ -179,7 +179,7 @@ int main()
         }
 
         uint64_t uTSEnd = RTTimeNanoTS();
-        uint64_t uTSDiff = uTSEnd - uTSBegin;
+        uTSDiff = uTSEnd - uTSBegin;
         RTPrintf("uTS=%RI64 (%RU64 - %RU64)\n", uTSDiff, uTSBegin, uTSEnd);
 
         /* Check that it really stopped. */

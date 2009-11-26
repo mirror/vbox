@@ -564,10 +564,12 @@ static DECLCALLBACK(int) rtZipZlibDecompress(PRTZIPDECOMP pZip, void *pvBuf, siz
 {
     pZip->u.Zlib.next_out = (Bytef *)pvBuf;
     pZip->u.Zlib.avail_out = (uInt)cbBuf;                   Assert(pZip->u.Zlib.avail_out == cbBuf);
-    int rc = Z_OK;
-    /* Be greedy reading input, even if no output buffer is left. It's possible
+
+    /*
+     * Be greedy reading input, even if no output buffer is left. It's possible
      * that it's just the end of stream marker which needs to be read. Happens
-     * for incompressible blocks just larger than the input buffer size.*/
+     * for incompressible blocks just larger than the input buffer size.
+     */
     while (pZip->u.Zlib.avail_out > 0 || pZip->u.Zlib.avail_in <= 0)
     {
         /*
@@ -586,7 +588,7 @@ static DECLCALLBACK(int) rtZipZlibDecompress(PRTZIPDECOMP pZip, void *pvBuf, siz
         /*
          * Pass it on to zlib.
          */
-        rc = inflate(&pZip->u.Zlib, Z_NO_FLUSH);
+        int rc = inflate(&pZip->u.Zlib, Z_NO_FLUSH);
         if (rc == Z_STREAM_END)
         {
             if (pcbWritten)

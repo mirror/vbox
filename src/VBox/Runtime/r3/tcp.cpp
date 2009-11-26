@@ -602,7 +602,7 @@ static int rtTcpServerListen(PRTTCPSERVER pServer)
                  * Reset the server socket and change the state to stopped. After that state change
                  * we cannot safely access the handle so we'll have to return here.
                  */
-                RTSOCKET SockServer = rtTcpAtomicXchgSock(&pServer->SockServer, NIL_RTSOCKET);
+                SockServer = rtTcpAtomicXchgSock(&pServer->SockServer, NIL_RTSOCKET);
                 rtTcpServerSetState(pServer, RTTCPSERVERSTATE_STOPPED, RTTCPSERVERSTATE_STOPPING);
                 rtTcpClose(SockServer, "Listener: server stopped", false /*fTryGracefulShutdown*/);
             }

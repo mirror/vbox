@@ -571,8 +571,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
              */
             case 'f':
             {
-                char ch = *(*ppszFormat)++;
-                switch (ch)
+                switch (*(*ppszFormat)++)
                 {
                     /*
                      * Pretty function / method name printing.
@@ -606,7 +605,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                     }
 
                     default:
-                        AssertMsgFailed(("Invalid status code format type '%.10s'!\n", ch, pszFormatOrg));
+                        AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
                         break;
                 }
                 break;
@@ -618,8 +617,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
              */
             case 'h':
             {
-                char ch = *(*ppszFormat)++;
-                switch (ch)
+                switch (*(*ppszFormat)++)
                 {
                     /*
                      * Hex stuff.
@@ -631,8 +629,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                             cchWidth = 16;
                         if (pu8)
                         {
-                            ch = *(*ppszFormat)++;
-                            switch (ch)
+                            switch (*(*ppszFormat)++)
                             {
                                 /*
                                  * Regular hex dump.
@@ -686,7 +683,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                                 }
 
                                 default:
-                                    AssertMsgFailed(("Invalid status code format type '%.10s'!\n", ch, pszFormatOrg));
+                                    AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
                                     break;
                             }
                         }
@@ -703,11 +700,9 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                      */
                     case 'r':
                     {
-
-                        char ch = *(*ppszFormat)++;
                         uint32_t hrc = va_arg(*pArgs, uint32_t);
                         PCRTCOMERRMSG pMsg = RTErrCOMGet(hrc);
-                        switch (ch)
+                        switch (*(*ppszFormat)++)
                         {
                             case 'c':
                                 return pfnOutput(pvArgOutput, pMsg->pszDefine, strlen(pMsg->pszDefine));
@@ -724,7 +719,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
 #endif /* IN_RING3 */
 
                     default:
-                        AssertMsgFailed(("Invalid status code format type '%.10s'!\n", ch, pszFormatOrg));
+                        AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
                         return 0;
 
                 }
@@ -737,10 +732,9 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
             case 'r':
             {
                 int rc = va_arg(*pArgs, int);
-                char ch = *(*ppszFormat)++;
 #ifdef IN_RING3                         /* we don't want this anywhere else yet. */
                 PCRTSTATUSMSG pMsg = RTErrGet(rc);
-                switch (ch)
+                switch (*(*ppszFormat)++)
                 {
                     case 'c':
                         return pfnOutput(pvArgOutput, pMsg->pszDefine,    strlen(pMsg->pszDefine));
@@ -755,7 +749,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                         return 0;
                 }
 #else /* !IN_RING3 */
-                switch (ch)
+                switch (*(*ppszFormat)++)
                 {
                     case 'c':
                     case 's':
@@ -777,11 +771,10 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
             case 'w':
             {
                 long rc = va_arg(*pArgs, long);
-                char ch = *(*ppszFormat)++;
 # if defined(RT_OS_WINDOWS)
                 PCRTWINERRMSG pMsg = RTErrWinGet(rc);
 # endif
-                switch (ch)
+                switch (*(*ppszFormat)++)
                 {
 # if defined(RT_OS_WINDOWS)
                     case 'c':

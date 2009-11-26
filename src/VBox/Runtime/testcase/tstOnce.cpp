@@ -142,7 +142,7 @@ int main()
     {
         char szName[16];
         RTStrPrintf(szName, sizeof(szName), "ONCE2-%d\n", i);
-        int rc = RTThreadCreate(&aThreads[i], Once2Thread, NULL, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, szName);
+        rc = RTThreadCreate(&aThreads[i], Once2Thread, NULL, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, szName);
         if (RT_FAILURE(rc))
         {
             RTPrintf("tstOnce: ERROR - failed to create thread #%d\n", i);
@@ -164,7 +164,7 @@ int main()
         if (aThreads[i] != NIL_RTTHREAD)
         {
             int rc2;
-            int rc = RTThreadWait(aThreads[i], 30*1000, &rc2);
+            rc = RTThreadWait(aThreads[i], 30*1000, &rc2);
             if (RT_FAILURE(rc))
             {
                 RTPrintf("tstOnce: ERROR - RTThreadWait on thread #%u returned %Rrc\n", i, rc);

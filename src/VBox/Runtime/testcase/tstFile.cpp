@@ -179,7 +179,7 @@ int main()
             }
             else
             {
-                size_t cbWritten = 0;
+                cbWritten = 0;
                 while (cbWritten < sizeof(szTestBuf))
                 {
                     size_t cbWrittenPart;

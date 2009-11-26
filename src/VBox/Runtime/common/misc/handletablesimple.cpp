@@ -169,7 +169,7 @@ RTDECL(int)     RTHandleTableAlloc(RTHANDLETABLE hHandleTable, void *pvObj, uint
 
                 /* link all entries into a free list. */
                 Assert(!(pThis->cCur % RTHT_LEVEL2_ENTRIES));
-                for (uint32_t i = 0; i < RTHT_LEVEL2_ENTRIES - 1; i++)
+                for (i = 0; i < RTHT_LEVEL2_ENTRIES - 1; i++)
                     RTHT_SET_FREE_IDX((PRTHTENTRYFREE)&paTable[i], i + 1 + pThis->cCur);
                 RTHT_SET_FREE_IDX((PRTHTENTRYFREE)&paTable[RTHT_LEVEL2_ENTRIES - 1], NIL_RTHT_INDEX);
 

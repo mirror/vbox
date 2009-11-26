@@ -244,12 +244,12 @@ RTDECL(int) RTEnvClone(PRTENV pEnv, RTENV EnvToClone)
             /* ASSUMES the default environment is in the current codepage. */
             for (size_t iVar = 0; iVar < cVars; iVar++)
             {
-                int rc = RTStrCurrentCPToUtf8(&pIntEnv->papszEnv[iVar], papszEnv[iVar]);
-                if (RT_FAILURE(rc))
+                int rc2 = RTStrCurrentCPToUtf8(&pIntEnv->papszEnv[iVar], papszEnv[iVar]);
+                if (RT_FAILURE(rc2))
                 {
                     pIntEnv->cVars = iVar;
                     RTEnvDestroy(pIntEnv);
-                    return rc;
+                    return rc2;
                 }
             }
         }
@@ -264,7 +264,7 @@ RTDECL(int) RTEnvClone(PRTENV pEnv, RTENV EnvToClone)
 
                     pIntEnv->cVars = iVar;
                     RTEnvDestroy(pIntEnv);
-                    return rc;
+                    return VERR_NO_STR_MEMORY;
                 }
                 pIntEnv->papszEnv[iVar] = pszVar;
             }

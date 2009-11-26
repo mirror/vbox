@@ -183,7 +183,7 @@ int main()
 
                 if (s_aRTPathAbsExTests[i].pcszOutput[1] == 'p')
                 {
-                    size_t cch = strlen(szTmp);
+                    cch = strlen(szTmp);
                     if (cch + strlen(s_aRTPathAbsExTests[i].pcszOutput) - 2 <= sizeof(szTmp))
                         strcpy(szTmp + cch, s_aRTPathAbsExTests[i].pcszOutput + 2);
                 }
