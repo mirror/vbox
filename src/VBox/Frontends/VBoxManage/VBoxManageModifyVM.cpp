@@ -159,7 +159,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--bioslogodisplaytime",      MODIFYVM_BIOSLOGODISPLAYTIME,       RTGETOPT_REQ_UINT64 },
     { "--bioslogoimagepath",        MODIFYVM_BIOSLOGOIMAGEPATH,         RTGETOPT_REQ_STRING },
     { "--biosbootmenu",             MODIFYVM_BIOSBOOTMENU,              RTGETOPT_REQ_STRING },
-    { "--biossystemtimeoffset",     MODIFYVM_BIOSSYSTEMTIMEOFFSET,      RTGETOPT_REQ_UINT64 },
+    { "--biossystemtimeoffset",     MODIFYVM_BIOSSYSTEMTIMEOFFSET,      RTGETOPT_REQ_INT64 },
     { "--biospxedebug",             MODIFYVM_BIOSPXEDEBUG,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--boot",                     MODIFYVM_BOOT,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--hda",                      MODIFYVM_HDA,                       RTGETOPT_REQ_STRING },
@@ -482,7 +482,7 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_BIOSSYSTEMTIMEOFFSET:
             {
-                CHECK_ERROR(biosSettings, COMSETTER(TimeOffset)(ValueUnion.u64));
+                CHECK_ERROR(biosSettings, COMSETTER(TimeOffset)(ValueUnion.i64));
                 break;
             }
 
