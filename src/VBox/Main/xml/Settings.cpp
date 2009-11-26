@@ -2534,7 +2534,10 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
 
     xml::ElementNode *pelmVRDP = pelmHardware->createChild("RemoteDisplay");
     pelmVRDP->setAttribute("enabled", hw.vrdpSettings.fEnabled);
-    pelmVRDP->setAttribute("port", hw.vrdpSettings.strPort);
+    Utf8Str strPort = hw.vrdpSettings.strPort;
+    if (!strPort.length())
+        strPort = "3389";
+    pelmVRDP->setAttribute("port", strPort);
     if (hw.vrdpSettings.strNetAddress.length())
         pelmVRDP->setAttribute("netAddress", hw.vrdpSettings.strNetAddress);
     const char *pcszAuthType;
