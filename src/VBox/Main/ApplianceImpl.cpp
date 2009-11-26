@@ -1104,7 +1104,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
     rc = session.createInprocObject(CLSID_Session);
     CheckComRCReturnRC(rc);
 
-    const OVFReader reader = *m->pReader;
+    const OVFReader &reader = *m->pReader;
     // this is safe to access because this thread only gets started
     // if pReader != NULL
 
