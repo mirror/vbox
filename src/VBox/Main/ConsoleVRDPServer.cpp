@@ -706,11 +706,8 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
         case VRDP_QP_NETWORK_PORT_RANGE:
         {
             com::Bstr bstr;
-            HRESULT hrc = server->mConsole->machine ()->GetExtraData(Bstr("VBoxInternal2/VRDPPortRange"), bstr.asOutParam());
-            if (hrc != S_OK || bstr == "")
-            {
-                hrc = server->mConsole->getVRDPServer ()->COMGETTER(Ports) (bstr.asOutParam());
-            }
+            HRESULT hrc = server->mConsole->getVRDPServer ()->COMGETTER(Ports) (bstr.asOutParam());
+
             if (hrc != S_OK)
             {
                 bstr = "";
@@ -769,10 +766,6 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
             ULONG port = *(uint32_t *)pvBuffer;
             
             server->mVRDPBindPort = port;
-
-            com::Bstr bstr = Utf8StrFmt("%d", port);
-
-            server->mConsole->machine ()->SetExtraData(Bstr("VBoxInternal2/VRDPBindPort"), bstr);
 
             rc = VINF_SUCCESS;
 
@@ -1142,7 +1135,6 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
     mConsoleCallback->AddRef();
     console->RegisterCallback(mConsoleCallback);
 
-    mConsole->machine ()->SetExtraData(Bstr("VBoxInternal2/VRDPPortRange"), Bstr(""));
     mVRDPBindPort = -1;
 #endif /* VBOX_WITH_VRDP */
 
