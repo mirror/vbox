@@ -110,7 +110,6 @@ RTDECL(int) RTStrVersionCompare(const char *pszVer1, const char *pszVer2)
     /*
      * Do a parallel parse of the strings.
      */
-    int iRes = 0;
     while (*pszVer1 || *pszVer2)
     {
         const char *pszBlock1 = pszVer1;
@@ -126,10 +125,7 @@ RTDECL(int) RTStrVersionCompare(const char *pszVer1, const char *pszVer2)
         if (fNumeric1 && fNumeric2)
         {
             if (uVal1 != uVal2)
-            {
-                iRes = uVal1 > uVal2 ? 1 : 2;
-                break;
-            }
+                return uVal1 < uVal2 ? -1 : 1;
         }
         else if (   !fNumeric1 && fNumeric2 && uVal2 == 0 && cchBlock1 == 0
                  || !fNumeric2 && fNumeric1 && uVal1 == 0 && cchBlock2 == 0
@@ -143,12 +139,9 @@ RTDECL(int) RTStrVersionCompare(const char *pszVer1, const char *pszVer2)
             if (!iDiff && cchBlock1 != cchBlock2)
                 iDiff = cchBlock1 < cchBlock2 ? -1 : 1;
             if (iDiff)
-            {
-                iRes = iDiff > 0 ? 1 : 2;
-                break;
-            }
+                return iDiff < 0 ? -1 : 1;
         }
     }
-    return iRes;
+    return 0;
 }
 RT_EXPORT_SYMBOL(RTStrVersionCompare);

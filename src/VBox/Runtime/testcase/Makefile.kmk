@@ -95,7 +95,7 @@ PROGRAMS += \
 	tstRTStrFormat \
 	tstStrSimplePattern \
 	tstStrToNum \
-	tstStrToVer \
+	tstRTStrVersion \
 	tstSystemQueryOsInfo \
 	tstRTTemp \
 	tstTermCallbacks \
@@ -374,7 +374,8 @@ tstStrSimplePattern_SOURCES = tstStrSimplePattern.cpp
 
 tstStrToNum_SOURCES = tstStrToNum.cpp
 
-tstStrToVer_SOURCES = tstStrToVer.cpp
+tstRTStrVersion_TEMPLATE = VBOXR3TSTEXE
+tstRTStrVersion_SOURCES = tstRTStrVersion.cpp
 
 tstSystemQueryOsInfo_SOURCES = tstSystemQueryOsInfo.cpp
 

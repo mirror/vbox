@@ -132,7 +132,7 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
     /* Do the actual version comparison (if needed, see block(s) above) */
     if (RT_SUCCESS(rc) && *pfUpdate)
     {
-        if (RTStrVersionCompare(*ppszHostVersion, *ppszGuestVersion) == 1) /* Is host version greater than guest add version? */
+        if (RTStrVersionCompare(*ppszHostVersion, *ppszGuestVersion) > 0) /* Is host version greater than guest add version? */
         {
             /* Yay, we have an update! */
             LogRel(("Guest Additions update found! Please upgrade this machine to the latest Guest Additions.\n"));

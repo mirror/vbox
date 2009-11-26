@@ -1052,20 +1052,19 @@ RTDECL(bool) RTStrSimplePatternMultiMatch(const char *pszPatterns, size_t cchPat
                                           size_t *poffPattern);
 
 /**
- * Compares two version strings stricmp fashion.
+ * Compares two version strings RTStrICmp fashion.
  *
  * The version string is split up into sections at punctuation, spaces,
  * underscores, dashes and pluss signs.  The sections are then split up into
  * numeric and string sub-sections.  Finally, the sub-sections are compared
  * in a numeric or case insesntivie fashion depending on what they are.
  *
- * The following strings are considered to be equal: "1.0.0", "1.0", "1".
- * There aren't: "1.0.0r993", "1.0", "1.0r993", "1.0_Beta3"
+ * The following strings are considered to be equal: "1.0.0", "1.00.0", "1.0",
+ * "1".  These aren't: "1.0.0r993", "1.0", "1.0r993", "1.0_Beta3", "1.1"
  *
- * @returns integer value indicating the relationship between the versions:
- * @retval  0, if both versions are equal.
- * @retval  1, if pszVer1 is greater.
- * @retval  2, if pszVer2 is greater.
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
  *
  * @param   pszVer1     First version string to compare.
  * @param   pszVer2     Second version string to compare first version with.
