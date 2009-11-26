@@ -41,7 +41,7 @@ if test -h "/dev/vboxguest" || test -f "/dev/vboxguest"; then
 fi
 
 # Try and restore xorg.conf!
-echo "Restoring Xorg..."
+echo "Restoring X.Org..."
 /opt/VirtualBoxAdditions/x11restore.pl
 
 # Restore crogl symlink mess

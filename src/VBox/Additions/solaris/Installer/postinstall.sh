@@ -115,7 +115,7 @@ if test "$currentzone" = "global"; then
 fi
 
 
-# check if Xorg exists
+# check if X.Org exists
 if test -f "/usr/X11/bin/Xorg"; then
     xorgbin="/usr/X11/bin/Xorg"
 else
@@ -188,7 +188,7 @@ if test ! -z "$xorgbin"; then
         # Exit as partially failed installation
         retval=2
     else
-        echo "Configuring Xorg..."
+        echo "Configuring X.Org..."
 
         # 32-bit x11 drivers
         if test -f "$vboxadditions_path/$vboxmouse_src"; then
@@ -270,7 +270,7 @@ if test ! -z "$xorgbin"; then
         retval=2
     fi
 else
-    echo "(*) Xorg not found, skipped configuring Xorg guest additions."
+    echo "(*) X.Org not found, skipped configuring X.Org guest additions."
 fi
 
 
@@ -302,7 +302,7 @@ if test -f "$vboxadditions_path/$vboxfsmod"; then
     rm -f $vboxadditions_path/$vboxfsunused
 fi
 
-# install openGL extensions for Xorg
+# install openGL extensions for X.Org
 if test ! -z "$xorgbin"; then
     # 32-bit crogl opengl library replacement
     if test -f "/usr/lib/VBoxOGL.so"; then
