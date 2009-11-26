@@ -1255,7 +1255,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
             /* Reset the modification counter (OpenSolaris trashes tlb entries very often) */
-            pShwPage->cModifications = 1;
+            if (pShwPage->cModifications)
+                pShwPage->cModifications = 1;
 # endif
 
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
