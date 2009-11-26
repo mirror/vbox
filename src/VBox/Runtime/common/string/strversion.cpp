@@ -74,47 +74,59 @@ static bool rtStrVersionParseBlock(const char **ppszVer, int32_t *pi32Value, siz
             psz++;
         while (*psz && RT_C_IS_DIGIT(*psz));
 
-        char *pszNext;
-        int rc = RTStrToInt32Ex(*ppszVer, &pszNext, 10, pi32Value);
-        AssertRC(rc);
-        Assert(pszNext == psz);
+        int rc = RTStrToInt32Ex(*ppszVer, NULL, 10, pi32Value);
         if (RT_FAILURE(rc) || rc == VWRN_NUMBER_TOO_BIG)
         {
+            AssertRC(rc);
             fNumeric = false;
             *pi32Value = 0;
         }
-        *pcchBlock = psz - *ppszVer;
     }
     else
     {
         do
             psz++;
         while (*psz && !RT_C_IS_DIGIT(*psz) && !RTSTRVER_IS_PUNCTUACTION(*psz));
-        *pcchBlock = psz - *ppszVer;
+        size_t cchBlock = psz - *ppszVer;
 
         /* Translate standard pre release terms to negative values. */
-        if (   *pcchBlock == 2
-            && !RTStrNICmp(*ppszVer, "RC", 4))
-            *pi32Value = -100;
-        else if (   *pcchBlock == 3
-            && !RTStrNICmp(*ppszVer, "PRE", 3))
-            *pi32Value = -200;
-        else if (   *pcchBlock == 5
-            && !RTStrNICmp(*ppszVer, "GAMMA", 5))
-            *pi32Value = -300;
-        else if (   *pcchBlock == 4
-            && !RTStrNICmp(*ppszVer, "BETA", 4))
-            *pi32Value = -400;
-        else if (   *pcchBlock == 5
-                 && !RTStrNICmp(*ppszVer, "ALPHA", 4))
-            *pi32Value = -500;
+        uint32_t iVal1;
+        if (     cchBlock == 2 && !RTStrNICmp(*ppszVer, "RC", 2))
+            iVal1 = -100000;
+        else if (cchBlock == 3 && !RTStrNICmp(*ppszVer, "PRE", 3))
+            iVal1 = -200000;
+        else if (cchBlock == 5 && !RTStrNICmp(*ppszVer, "GAMMA", 5))
+            iVal1 = -300000;
+        else if (cchBlock == 4 && !RTStrNICmp(*ppszVer, "BETA", 4))
+            iVal1 = -400000;
+        else if (cchBlock == 5 && !RTStrNICmp(*ppszVer, "ALPHA", 5))
+            iVal1 = -500000;
         else
-            *pi32Value = 0;
-        if (*pi32Value < 0)
+            iVal1 = 0;
+        if (iVal1 != 0)
         {
-            /* Trailing number, if so add it? */
+            /* Trailing number? Add it assuming BETA == BETA1. */
+            if (RT_C_IS_DIGIT(*psz))
+            {
+                const char *psz2 = psz;
+                do
+                    psz++;
+                while (*psz && !RT_C_IS_DIGIT(*psz) && !RTSTRVER_IS_PUNCTUACTION(*psz));
+
+                int rc = RTStrToInt32Ex(psz2, NULL, 10, pi32Value);
+                if (RT_SUCCESS(rc) && rc != VWRN_NUMBER_TOO_BIG && *pi32Value)
+                    iVal1 += *pi32Value - 1;
+                else
+                {    
+                    AssertRC(rc);
+                    psz = psz2;
+                }
+            }
+            fNumeric = true;
         }
+        *pi32Value = iVal1;
     }
+    *pcchBlock = psz - *ppszVer;
 
     /* skip punctuation */
     if (RTSTRVER_IS_PUNCTUACTION(*psz))
@@ -150,11 +162,19 @@ RTDECL(int) RTStrVersionCompare(const char *pszVer1, const char *pszVer2)
             if (iVal1 != iVal2)
                 return iVal1 < iVal2 ? -1 : 1;
         }
-        else if (   !fNumeric1 && fNumeric2 && iVal2 <= 0 && cchBlock1 == 0
-                 || !fNumeric2 && fNumeric1 && iVal1 <= 0 && cchBlock2 == 0
+        else if (   fNumeric1 != fNumeric2
+                 && (  fNumeric1 
+                     ? iVal1 == 0 && cchBlock2 == 0
+                     : iVal2 == 0 && cchBlock1 == 0)
                 )
         {
-            /* 1.0 == 1.0.0.0.0. */;
+            /*else: 1.0 == 1.0.0.0.0. */;
+        }
+        else if (   fNumeric1 != fNumeric2
+                 && (fNumeric1 ? iVal1 : iVal2) < 0)
+        {    
+            /* Pre-release indicators are smaller than all other strings. */
+            return fNumeric1 ? -1 : 1;
         }
         else
         {
@@ -162,16 +182,7 @@ RTDECL(int) RTStrVersionCompare(const char *pszVer1, const char *pszVer2)
             if (!iDiff && cchBlock1 != cchBlock2)
                 iDiff = cchBlock1 < cchBlock2 ? -1 : 1;
             if (iDiff)
-            {
-                /*
-                 * Special hacks for dealing with 3.1.0_BETA1-r99 vs 3.1.0r99.
-                 * Note that 3.1.0_BETA1 vs 3.0.1 is handled above with help of
-                 * negative values returned by the parser.
-                 */
-/** @todo finish at home */
-
                 return iDiff < 0 ? -1 : 1;
-            }
         }
     }
     return 0;
