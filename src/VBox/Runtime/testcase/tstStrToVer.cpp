@@ -38,7 +38,6 @@ struct TstU8
 {
     const char *pszVer1;
     const char *pszVer2;
-    int         rc;
     uint8_t     Result;
 };
 
@@ -46,16 +45,10 @@ struct TstU8
 #define TEST(Test, Type, Fmt, Fun, iTest) \
     do \
     { \
-        Type Result; \
-        int rc = Fun(Test.pszVer1, Test.pszVer2, &Result); \
+        Type Result = Fun(Test.pszVer1, Test.pszVer2); \
         if (Result != Test.Result) \
         { \
             RTPrintf("failure: '%s' <-> '%s' -> " Fmt ", expected " Fmt ". (%s/%u)\n", Test.pszVer1, Test.pszVer2, Result, Test.Result, #Fun, iTest); \
-            cErrors++; \
-        } \
-        else if (rc != Test.rc) \
-        { \
-            RTPrintf("failure: '%s' <-> '%s' -> rc=%Rrc, expected %Rrc. (%s/%u)\n", Test.pszVer1, Test.pszVer2, rc, Test.rc, #Fun, iTest); \
             cErrors++; \
         } \
     } while (0)
@@ -76,41 +69,43 @@ int main()
     int cErrors = 0;
     static const struct TstU8 aTstU8[] =
     {
-        { "", "",                         VERR_NO_DIGITS, 0 },
-        { "asdf", "",                     VERR_NO_DIGITS, 0 },
-        { "asdf234", "1.4.5",             VINF_SUCCESS, 1 },
-        { "12.foo006", "12.6",            VINF_SUCCESS, 0 },
-        { "1", "1",                       VINF_SUCCESS, 0 },
-        { "1", "100",                     VINF_SUCCESS, 2 },
-        { "100", "1",                     VINF_SUCCESS, 1 },
-        { "3", "4",                       VINF_SUCCESS, 2 },
-        { "1", "0.1",                     VINF_SUCCESS, 1 },
-        { "1", "0.0.0.0.10000",           VINF_SUCCESS, 1 },
-        { "0100", "100",                  VINF_SUCCESS, 0 },
-        { "1.0.0", "1",                   VINF_SUCCESS, 0 },
-        { "1.0.0", "100.0.0",             VINF_SUCCESS, 2 },
-        { "1", "1.0.3.0",                 VINF_SUCCESS, 2 },
-        { "1.4.5", "1.2.3",               VINF_SUCCESS, 1 },
-        { "1.2.3", "1.4.5",               VINF_SUCCESS, 2 },
-        { "1.2.3", "4.5.6",               VINF_SUCCESS, 2 },
-        { "1.0.4", "1.0.3",               VINF_SUCCESS, 1 },
-        { "0.1", "0.0.1",                 VINF_SUCCESS, 1 },
-        { "0.0.1", "0.1.1",               VINF_SUCCESS, 2 },
-        { "3.1.0", "3.0.14",              VINF_SUCCESS, 1 },
-        { "2.0.12", "3.0.14",             VINF_SUCCESS, 2 },
-        { "3.1", "3.0.22",                VINF_SUCCESS, 1 },
-        { "3.0.14", "3.1.0",              VINF_SUCCESS, 2 },
-        { "45.63", "04.560.30",           VINF_SUCCESS, 1 },
-        { "45.006", "45.6",               VINF_SUCCESS, 0 },
-        { "23.206", "23.06",              VINF_SUCCESS, 1 },
-        { "23.2", "23.060",               VINF_SUCCESS, 2 },
+        { "", "",                         0 },
+        { "asdf", "",                     1 }, /* "asdf" is bigger than "" */
+        { "asdf234", "1.4.5",             1 },
+        { "12.foo006", "12.6",            1 }, /* "12.foo006" is bigger than "12.6" */
+        { "1", "1",                       0 },
+        { "1", "100",                     2 },
+        { "100", "1",                     1 },
+        { "3", "4",                       2 },
+        { "1", "0.1",                     1 },
+        { "1", "0.0.0.0.10000",           1 },
+        { "0100", "100",                  0 },
+        { "1.0.0", "1",                   0 },
+        { "1.0.0", "100.0.0",             2 },
+        { "1", "1.0.3.0",                 2 },
+        { "1.4.5", "1.2.3",               1 },
+        { "1.2.3", "1.4.5",               2 },
+        { "1.2.3", "4.5.6",               2 },
+        { "1.0.4", "1.0.3",               1 },
+        { "0.1", "0.0.1",                 1 },
+        { "0.0.1", "0.1.1",               2 },
+        { "3.1.0", "3.0.14",              1 },
+        { "2.0.12", "3.0.14",             2 },
+        { "3.1", "3.0.22",                1 },
+        { "3.0.14", "3.1.0",              2 },
+        { "45.63", "04.560.30",           1 },
+        { "45.006", "45.6",               0 },
+        { "23.206", "23.06",              1 },
+        { "23.2", "23.060",               2 },
 
-        { "VirtualBox-2.0.8-Beta2", "VirtualBox-2.0.8_Beta3-r12345", VINF_SUCCESS, 0 },
-        { "VirtualBox-2.2.4-Beta2", "VirtualBox-2.2.2", VINF_SUCCESS, 1 },
-        { "VirtualBox-3.1.0", "VirtualBox-3.1.2_Beta1", VINF_SUCCESS, 2 },
-        { "3.1.0_BETA-r12345", "3.1.2", VINF_SUCCESS, 2 },
+        { "VirtualBox-2.0.8-Beta2", "VirtualBox-2.0.8_Beta3-r12345", 2 },
+        { "VirtualBox-2.2.4-Beta2", "VirtualBox-2.2.2", 1 },
+        { "VirtualBox-2.2.4-Beta3", "VirtualBox-2.2.2-Beta4", 1 },
+        { "VirtualBox-3.1.8-Alpha1", "VirtualBox-3.1.8-Alpha1-r61454", 2 },
+        { "VirtualBox-3.1.0", "VirtualBox-3.1.2_Beta1", 2 },
+        { "3.1.0_BETA-r12345", "3.1.2", 2 },
     };
-    RUN_TESTS(aTstU8, uint8_t, "%#d", RTStrVersionCompare);
+    RUN_TESTS(aTstU8, int, "%#d", RTStrVersionCompare);
 
     /*
      * Summary.
