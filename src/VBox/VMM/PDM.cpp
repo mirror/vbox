@@ -679,12 +679,12 @@ static DECLCALLBACK(int) pdmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
-        SSMR3PutUInt(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC));
-        SSMR3PutUInt(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
-        SSMR3PutUInt(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_NMI));
-        SSMR3PutUInt(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_SMI));
+        SSMR3PutU32(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC));
+        SSMR3PutU32(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
+        SSMR3PutU32(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_NMI));
+        SSMR3PutU32(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_SMI));
     }
-    SSMR3PutUInt(pSSM, VM_FF_ISSET(pVM, VM_FF_PDM_DMA));
+    SSMR3PutU32(pSSM, VM_FF_ISSET(pVM, VM_FF_PDM_DMA));
 
     pdmR3SaveBoth(pVM, pSSM);
     return VINF_SUCCESS;
@@ -772,8 +772,8 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
             PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
             /* APIC interrupt */
-            RTUINT fInterruptPending = 0;
-            rc = SSMR3GetUInt(pSSM, &fInterruptPending);
+            uint32_t fInterruptPending = 0;
+            rc = SSMR3GetU32(pSSM, &fInterruptPending);
             if (RT_FAILURE(rc))
                 return rc;
             if (fInterruptPending & ~1)
@@ -787,7 +787,7 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
 
             /* PIC interrupt */
             fInterruptPending = 0;
-            rc = SSMR3GetUInt(pSSM, &fInterruptPending);
+            rc = SSMR3GetU32(pSSM, &fInterruptPending);
             if (RT_FAILURE(rc))
                 return rc;
             if (fInterruptPending & ~1)
@@ -802,8 +802,8 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
             if (uVersion > PDM_SAVED_STATE_VERSION_PRE_NMI_FF)
             {
                 /* NMI interrupt */
-                RTUINT fInterruptPending = 0;
-                rc = SSMR3GetUInt(pSSM, &fInterruptPending);
+                fInterruptPending = 0;
+                rc = SSMR3GetU32(pSSM, &fInterruptPending);
                 if (RT_FAILURE(rc))
                     return rc;
                 if (fInterruptPending & ~1)
@@ -817,7 +817,7 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
 
                 /* SMI interrupt */
                 fInterruptPending = 0;
-                rc = SSMR3GetUInt(pSSM, &fInterruptPending);
+                rc = SSMR3GetU32(pSSM, &fInterruptPending);
                 if (RT_FAILURE(rc))
                     return rc;
                 if (fInterruptPending & ~1)
@@ -832,8 +832,8 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
         }
 
         /* DMA pending */
-        RTUINT fDMAPending = 0;
-        rc = SSMR3GetUInt(pSSM, &fDMAPending);
+        uint32_t fDMAPending = 0;
+        rc = SSMR3GetU32(pSSM, &fDMAPending);
         if (RT_FAILURE(rc))
             return rc;
         if (fDMAPending & ~1)
@@ -856,7 +856,7 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
     {
         /* Get the sequence number / terminator. */
         uint32_t    u32Sep;
-        int rc = SSMR3GetU32(pSSM, &u32Sep);
+        rc = SSMR3GetU32(pSSM, &u32Sep);
         if (RT_FAILURE(rc))
             return rc;
         if (u32Sep == UINT32_MAX)
@@ -869,8 +869,8 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
         rc = SSMR3GetStrZ(pSSM, szDeviceName, sizeof(szDeviceName));
         if (RT_FAILURE(rc))
             return rc;
-        RTUINT iInstance;
-        rc = SSMR3GetUInt(pSSM, &iInstance);
+        uint32_t iInstance;
+        rc = SSMR3GetU32(pSSM, &iInstance);
         if (RT_FAILURE(rc))
             return rc;
 
