@@ -175,8 +175,6 @@ RTDECL(int)     RTHandleTableAllocWithCtx(RTHANDLETABLE hHandleTable, void *pvOb
             if (    iLevel1New < pThis->cLevel1
                 &&  pThis->cCur < pThis->cMax)
             {
-                uint32_t i;
-
                 pThis->papvLevel1[iLevel1New] = paTable;
 
                 /* link all entries into a free list. */

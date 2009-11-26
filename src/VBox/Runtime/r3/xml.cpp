@@ -339,14 +339,14 @@ uint64_t MemoryBuf::pos() const
 
 void MemoryBuf::setPos (uint64_t aPos)
 {
-    size_t pos = (size_t) aPos;
-    if ((uint64_t) pos != aPos)
+    size_t off = (size_t) aPos;
+    if ((uint64_t) off != aPos)
         throw EInvalidArg();
 
-    if (pos > m->len)
+    if (off > m->len)
         throw EInvalidArg();
 
-    m->pos = pos;
+    m->pos = off;
 }
 
 int MemoryBuf::read (char *aBuf, int aLen)

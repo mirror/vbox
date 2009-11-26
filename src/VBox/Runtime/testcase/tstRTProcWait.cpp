@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     {
         /* Wait for it to complete. */
         int rc2;
-        int rc = RTThreadWait(Thread, RT_INDEFINITE_WAIT, &rc2);
+        rc = RTThreadWait(Thread, RT_INDEFINITE_WAIT, &rc2);
         if (RT_SUCCESS(rc))
             rc = rc2;
         if (RT_SUCCESS(rc))

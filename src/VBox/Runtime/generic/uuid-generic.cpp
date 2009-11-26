@@ -323,7 +323,6 @@ RT_EXPORT_SYMBOL(RTUuidFromStr);
 
 RTDECL(int)  RTUuidToUtf16(PCRTUUID pUuid, PRTUTF16 pwszString, size_t cwcString)
 {
-    static const char g_achDigits[17] = "0123456789abcdef";
     uint32_t u32TimeLow;
     unsigned u;
 

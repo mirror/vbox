@@ -468,7 +468,6 @@ void test2(RTTEST hTest)
         if (mymemcmp(pwszUtf16, g_wszAll, sizeof(g_wszAll), 16))
             RTTestFailed(hTest, "UTF-8 -> UTF-16 failed compare!");
 
-        char *pszUtf8;
         rc = RTUtf16ToUtf8(pwszUtf16, &pszUtf8);
         if (rc == VINF_SUCCESS)
         {

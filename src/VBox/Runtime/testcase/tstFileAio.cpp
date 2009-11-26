@@ -185,7 +185,7 @@ void tstFileAioTestReadWriteBasic(RTFILE File, bool fWrite, void *pvTestBuf, siz
                         }
 
                         NanoTS = RTTimeNanoTS() - NanoTS;
-                        unsigned SpeedKBs = cbTestFile / (NanoTS / 1000000000.0) / 1024;
+                        unsigned SpeedKBs = (unsigned)(cbTestFile / (NanoTS / 1000000000.0) / 1024);
 
                         RTPrintf("tstFileAio: Completed simple %s test: %d.%03d MB/sec\n",
                                  fWrite ? "write" : "read",

@@ -202,7 +202,7 @@ static int testLdrOne(const char *pszFilename)
             RTMemExecFree(aLoads[i].pvBits);
         if (aLoads[i].hLdrMod)
         {
-            int rc = RTLdrClose(aLoads[i].hLdrMod);
+            rc = RTLdrClose(aLoads[i].hLdrMod);
             if (RT_FAILURE(rc))
             {
                 RTPrintf("tstLdr-4: Failed to close '%s' i=%d, rc=%Rrc.\n", pszFilename, i, rc);

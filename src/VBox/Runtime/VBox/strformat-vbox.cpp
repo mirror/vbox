@@ -106,7 +106,7 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
             case 'r':
             {
                 int rc = va_arg(*pArgs, int);
-                char ch = *(*ppszFormat)++;
+                ch = *(*ppszFormat)++;
 #ifdef IN_RING3                         /* we don't want this anywhere else yet. */
                 PCRTSTATUSMSG pMsg = RTErrGet(rc);
                 switch (ch)
@@ -151,7 +151,7 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
 
             case 'h':
             {
-                char ch = *(*ppszFormat)++;
+                ch = *(*ppszFormat)++;
                 switch (ch)
                 {
                     /*

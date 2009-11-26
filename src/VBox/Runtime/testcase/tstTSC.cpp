@@ -389,7 +389,7 @@ static int tstTSCCalcFrequency(uint32_t cMsDuration)
      * Calc the frequency.
      */
     RTPrintf("tstTSC: %RU64 ticks in %RU64 ns\n", uTSC, uNanoTS);
-    uint64_t cHz = uTSC / ((long double)uNanoTS / (long double)1000000000);
+    uint64_t cHz = (uint64_t)(uTSC / ((long double)uNanoTS / (long double)1000000000));
     RTPrintf("tstTSC: Frequency %RU64 Hz", cHz);
     if (cHz > _1G)
     {

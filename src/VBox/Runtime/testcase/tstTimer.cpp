@@ -166,7 +166,7 @@ int main()
         /*
          * Start the timer and active waiting for the requested test period.
          */
-        uint64_t uTSBegin = RTTimeNanoTS();
+        uTSBegin = RTTimeNanoTS();
 #ifndef RT_OS_WINDOWS
         rc = RTTimerStart(pTimer, 0);
         if (RT_FAILURE(rc))
@@ -181,7 +181,7 @@ int main()
 
         /* destroy the timer */
         uint64_t uTSEnd = RTTimeNanoTS();
-        uint64_t uTSDiff = uTSEnd - uTSBegin;
+        uTSDiff = uTSEnd - uTSBegin;
         rc = RTTimerDestroy(pTimer);
         if (RT_FAILURE(rc))
         {
