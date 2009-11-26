@@ -4881,7 +4881,7 @@ void VBoxGlobal::init()
         {
             mhVBoxDbg = NIL_RTLDRMOD;
             mDbgAutoShow =  mDbgAutoShowCommandLine = mDbgAutoShowStatistics = false;
-            LogRel(("Failed to load VBoxDbg, rc=%Rrc\n", rc));
+            LogRel(("Failed to load VBoxDbg, rc=%Rrc\n", vrc));
         }
     }
 #endif
