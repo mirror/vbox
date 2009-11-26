@@ -75,18 +75,28 @@ void darwinSetHidesAllTitleButtonsImpl (NativeWindowRef aWindow)
 {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
-    NSButton *closeButton = [aWindow standardWindowButton:NSWindowCloseButton];
-    if (closeButton != Nil)
-        [closeButton setHidden:YES];
-    NSButton *minButton = [aWindow standardWindowButton:NSWindowMiniaturizeButton];
-    if (minButton != Nil)
-        [minButton setHidden:YES];
-    NSButton *zoomButton = [aWindow standardWindowButton:NSWindowZoomButton];
-    if (zoomButton != Nil)
-        [zoomButton setHidden:YES];
-    NSButton *iconButton = [aWindow standardWindowButton:NSWindowDocumentIconButton];
-    if (iconButton != Nil)
-        [iconButton setHidden:YES];
+    /* Remove all title buttons by changing the style mask. This method is
+       available from 10.6 on only. */
+    if ([aWindow respondsToSelector: @selector(setStyleMask:)])
+        [aWindow performSelector: @selector(setStyleMask:) withObject: (id)NSTitledWindowMask];
+    else
+    {
+        /* On pre 10.6 disable all the buttons currently displayed. Don't use
+           setHidden cause this remove the buttons, but didn't release the
+           place used for the buttons. */
+        NSButton *pButton = [aWindow standardWindowButton:NSWindowCloseButton];
+        if (pButton != Nil)
+            [pButton setEnabled: NO];
+        pButton = [aWindow standardWindowButton:NSWindowMiniaturizeButton];
+        if (pButton != Nil)
+            [pButton setEnabled: NO];
+        pButton = [aWindow standardWindowButton:NSWindowZoomButton];
+        if (pButton != Nil)
+            [pButton setEnabled: NO];
+        pButton = [aWindow standardWindowButton:NSWindowDocumentIconButton];
+        if (pButton != Nil)
+            [pButton setEnabled: NO];
+    }
 
     [pool release];
 }
