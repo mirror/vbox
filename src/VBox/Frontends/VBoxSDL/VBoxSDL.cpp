@@ -857,7 +857,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     HRESULT rc;
     int vrc;
-    Guid uuid;
+    Guid uuidVM;
     char *vmName = NULL;
     DeviceType_T bootDevice = DeviceType_Null;
     uint32_t memorySize = 0;
@@ -1044,7 +1044,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             }
             // first check if a UUID was supplied
-            if (RT_FAILURE(RTUuidFromStr(uuid.ptr(), argv[curArg])))
+            if (RT_FAILURE(RTUuidFromStr(uuidVM.ptr(), argv[curArg])))
             {
                 LogFlow(("invalid UUID format, assuming it's a VM name\n"));
                 vmName = argv[curArg];
@@ -1455,7 +1455,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     /*
      * Do we have a name but no UUID?
      */
-    if (vmName && uuid.isEmpty())
+    if (vmName && uuidVM.isEmpty())
     {
         ComPtr<IMachine> aMachine;
         Bstr  bstrVMName = vmName;
@@ -1464,7 +1464,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             Bstr id;
             aMachine->COMGETTER(Id)(id.asOutParam());
-            uuid = Guid(id);
+            uuidVM = Guid(id);
         }
         else
         {
@@ -1472,7 +1472,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             goto leave;
         }
     }
-    else if (uuid.isEmpty())
+    else if (uuidVM.isEmpty())
     {
         RTPrintf("Error: no machine specified!\n");
         goto leave;
@@ -1482,7 +1482,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     vrc = RTSemEventCreate(&g_EventSemSDLEvents);
     AssertReleaseRC(vrc);
 
-    rc = virtualBox->OpenSession(session, uuid.toUtf16());
+    rc = virtualBox->OpenSession(session, uuidVM.toUtf16());
     if (FAILED(rc))
     {
         com::ErrorInfo info;
@@ -1543,9 +1543,9 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             /*
              * Go and attach it!
              */
-            Bstr uuid;
+            Bstr uuidHD;
             Bstr storageCtlName;
-            hardDisk->COMGETTER(Id)(uuid.asOutParam());
+            hardDisk->COMGETTER(Id)(uuidHD.asOutParam());
 
             /* get the first IDE controller to attach the harddisk to
              * and if there is none, add one temporarily
@@ -1580,7 +1580,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 }
             }
 
-            gMachine->AttachDevice(storageCtlName, 0, 0, DeviceType_HardDisk, uuid);
+            gMachine->AttachDevice(storageCtlName, 0, 0, DeviceType_HardDisk, uuidHD);
             /// @todo why is this attachment saved?
         }
         else
@@ -2405,13 +2405,13 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                         if (event.type == SDL_KEYDOWN)
                         {
                             /* potential host key combination, try execute it */
-                            int rc = HandleHostKey(&event.key);
-                            if (rc == VINF_SUCCESS)
+                            int irc = HandleHostKey(&event.key);
+                            if (irc == VINF_SUCCESS)
                             {
                                 enmHKeyState = HKEYSTATE_USED;
                                 break;
                             }
-                            if (RT_SUCCESS(rc))
+                            if (RT_SUCCESS(irc))
                                 goto leave;
                         }
                         else /* SDL_KEYUP */
@@ -2447,8 +2447,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                             enmHKeyState = HKEYSTATE_NORMAL;
                         if (event.type == SDL_KEYDOWN)
                         {
-                            int rc = HandleHostKey(&event.key);
-                            if (RT_SUCCESS(rc) && rc != VINF_SUCCESS)
+                            int irc = HandleHostKey(&event.key);
+                            if (RT_SUCCESS(irc) && irc != VINF_SUCCESS)
                                 goto leave;
                         }
                         break;
