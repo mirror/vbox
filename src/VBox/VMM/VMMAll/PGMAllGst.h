@@ -62,6 +62,12 @@ PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
 
 #elif PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
 
+#if PGM_GST_MODE != PGM_MODE_AMD64
+    /* Boundary check. */
+    if (GCPtr >= _4G)
+        return VERR_INVALID_ADDRESS;
+# endif
+
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     /*
      * Get the PDE.
@@ -181,6 +187,12 @@ PGM_GST_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t f
 
     Assert((cb & PAGE_OFFSET_MASK) == 0);
 
+#if PGM_GST_MODE != PGM_MODE_AMD64
+    /* Boundary check. */
+    if (GCPtr >= _4G)
+        return VERR_INVALID_ADDRESS;
+# endif
+
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     for (;;)
     {
@@ -285,6 +297,12 @@ PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE   \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
+
+#if PGM_GST_MODE != PGM_MODE_AMD64
+    /* Boundary check. */
+    if (GCPtr >= _4G)
+        return VERR_INVALID_ADDRESS;
+# endif
 
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
     X86PDE    Pde = pgmGstGet32bitPDE(&pVCpu->pgm.s, GCPtr);
