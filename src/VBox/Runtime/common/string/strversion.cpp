@@ -52,17 +52,17 @@
  *
  * @returns true if numeric, false if not.
  * @param   ppszVer             The string cursor, IN/OUT.
- * @param   pu32Value           Where to return the value if numeric.
+ * @param   pi32Value           Where to return the value if numeric.
  * @param   pcchBlock           Where to return the block length.
  */
-static bool rtStrVersionParseBlock(const char **ppszVer, uint32_t *pu32Value, size_t *pcchBlock)
+static bool rtStrVersionParseBlock(const char **ppszVer, int32_t *pi32Value, size_t *pcchBlock)
 {
     const char *psz = *ppszVer;
 
     /* Check for end-of-string. */
     if (!*psz)
     {
-        *pu32Value = 0;
+        *pi32Value = 0;
         *pcchBlock = 0;
         return false;
     }
@@ -75,23 +75,46 @@ static bool rtStrVersionParseBlock(const char **ppszVer, uint32_t *pu32Value, si
         while (*psz && RT_C_IS_DIGIT(*psz));
 
         char *pszNext;
-        int rc = RTStrToUInt32Ex(*ppszVer, &pszNext, 10, pu32Value);
+        int rc = RTStrToInt32Ex(*ppszVer, &pszNext, 10, pi32Value);
         AssertRC(rc);
         Assert(pszNext == psz);
         if (RT_FAILURE(rc) || rc == VWRN_NUMBER_TOO_BIG)
         {
             fNumeric = false;
-            *pu32Value = 0;
+            *pi32Value = 0;
         }
+        *pcchBlock = psz - *ppszVer;
     }
     else
     {
         do
             psz++;
         while (*psz && !RT_C_IS_DIGIT(*psz) && !RTSTRVER_IS_PUNCTUACTION(*psz));
-        *pu32Value = 0;
+        *pcchBlock = psz - *ppszVer;
+
+        /* Translate standard pre release terms to negative values. */
+        if (   *pcchBlock == 2
+            && !RTStrNICmp(*ppszVer, "RC", 4))
+            *pi32Value = -100;
+        else if (   *pcchBlock == 3
+            && !RTStrNICmp(*ppszVer, "PRE", 3))
+            *pi32Value = -200;
+        else if (   *pcchBlock == 5
+            && !RTStrNICmp(*ppszVer, "GAMMA", 5))
+            *pi32Value = -300;
+        else if (   *pcchBlock == 4
+            && !RTStrNICmp(*ppszVer, "BETA", 4))
+            *pi32Value = -400;
+        else if (   *pcchBlock == 5
+                 && !RTStrNICmp(*ppszVer, "ALPHA", 4))
+            *pi32Value = -500;
+        else
+            *pi32Value = 0;
+        if (*pi32Value < 0)
+        {
+            /* Trailing number, if so add it? */
+        }
     }
-    *pcchBlock = psz - *ppszVer;
 
     /* skip punctuation */
     if (RTSTRVER_IS_PUNCTUACTION(*psz))
@@ -114,21 +137,21 @@ RTDECL(int) RTStrVersionCompare(const char *pszVer1, const char *pszVer2)
     {
         const char *pszBlock1 = pszVer1;
         size_t      cchBlock1;
-        uint32_t    uVal1;
-        bool        fNumeric1 = rtStrVersionParseBlock(&pszVer1, &uVal1, &cchBlock1);
+        int32_t     iVal1;
+        bool        fNumeric1 = rtStrVersionParseBlock(&pszVer1, &iVal1, &cchBlock1);
 
         const char *pszBlock2 = pszVer2;
         size_t      cchBlock2;
-        uint32_t    uVal2;
-        bool        fNumeric2 = rtStrVersionParseBlock(&pszVer2, &uVal2, &cchBlock2);
+        int32_t     iVal2;
+        bool        fNumeric2 = rtStrVersionParseBlock(&pszVer2, &iVal2, &cchBlock2);
 
         if (fNumeric1 && fNumeric2)
         {
-            if (uVal1 != uVal2)
-                return uVal1 < uVal2 ? -1 : 1;
+            if (iVal1 != iVal2)
+                return iVal1 < iVal2 ? -1 : 1;
         }
-        else if (   !fNumeric1 && fNumeric2 && uVal2 == 0 && cchBlock1 == 0
-                 || !fNumeric2 && fNumeric1 && uVal1 == 0 && cchBlock2 == 0
+        else if (   !fNumeric1 && fNumeric2 && iVal2 <= 0 && cchBlock1 == 0
+                 || !fNumeric2 && fNumeric1 && iVal1 <= 0 && cchBlock2 == 0
                 )
         {
             /* 1.0 == 1.0.0.0.0. */;
@@ -139,7 +162,16 @@ RTDECL(int) RTStrVersionCompare(const char *pszVer1, const char *pszVer2)
             if (!iDiff && cchBlock1 != cchBlock2)
                 iDiff = cchBlock1 < cchBlock2 ? -1 : 1;
             if (iDiff)
+            {
+                /*
+                 * Special hacks for dealing with 3.1.0_BETA1-r99 vs 3.1.0r99.
+                 * Note that 3.1.0_BETA1 vs 3.0.1 is handled above with help of
+                 * negative values returned by the parser.
+                 */
+/** @todo finish at home */
+
                 return iDiff < 0 ? -1 : 1;
+            }
         }
     }
     return 0;
