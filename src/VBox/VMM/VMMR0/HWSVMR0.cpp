@@ -1456,6 +1456,7 @@ ResumeExecution:
     SVM_ASSERT_SEL_GRANULARITY(fs);
     SVM_ASSERT_SEL_GRANULARITY(gs);
 #undef  SVM_ASSERT_SEL_GRANULARITY
+
     /* Remaining guest CPU context: TR, IDTR, GDTR, LDTR; must sync everything otherwise we can get out of sync when jumping to ring 3. */
     SVM_READ_SELREG(LDTR, ldtr);
     SVM_READ_SELREG(TR, tr);
