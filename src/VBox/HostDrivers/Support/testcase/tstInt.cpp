@@ -174,9 +174,9 @@ int main(int argc, char **argv)
                         {
                             uint64_t OneStartTick = ASMReadTSC();
                             rc = SUPR3CallVMMR0Ex(pVMR0, NIL_VMCPUID, VMMR0_DO_SLOW_NOP, 0, NULL);
-                            uint64_t Ticks = ASMReadTSC() - OneStartTick;
-                            if (Ticks < MinTicks)
-                                MinTicks = Ticks;
+                            uint64_t OneTicks = ASMReadTSC() - OneStartTick;
+                            if (OneTicks < MinTicks)
+                                MinTicks = OneTicks;
 
                             if (RT_UNLIKELY(rc != VINF_SUCCESS))
                             {
