@@ -125,14 +125,25 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
     ULONG minorVersion;
     ULONG buildNumber;
     PsGetVersion(&majorVersion, &minorVersion, &buildNumber, NULL);
-    dprintf(("VBoxGuest::DriverEntry: running on Windows NT version %d.%d, build %d\n", majorVersion, minorVersion, buildNumber));
+    dprintf(("VBoxGuest::DriverEntry: Running on Windows NT version %d.%d, build %d\n", majorVersion, minorVersion, buildNumber));
 #ifdef DEBUG
     testVBoxGuest();
 #endif
     switch (majorVersion)
     {
-        case 6:
-            winVersion = WINVISTA;
+        case 6: /* Windows Vista or Windows 7 (based on minor ver) */
+            switch (minorVersion)
+            {
+                case 0: /* Note: Also could be Windows 2008 Server! */
+                    winVersion = WINVISTA;
+                    break;
+                case 1: /* Note: Also could be Windows 2008 Server R2! */
+                    winVersion = WIN7;
+                    break;
+                default:
+                    dprintf(("VBoxGuest::DriverEntry: Unknown version of Windows, refusing!\n"));
+                    return STATUS_DRIVER_UNABLE_TO_LOAD;
+            }
             break;
         case 5:
             switch (minorVersion)
@@ -147,7 +158,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                     winVersion = WIN2K;
                     break;
                 default:
-                    dprintf(("VBoxGuest::DriverEntry: unknown version of Windows, refusing!\n"));
+                    dprintf(("VBoxGuest::DriverEntry: Unknown version of Windows, refusing!\n"));
                     return STATUS_DRIVER_UNABLE_TO_LOAD;
             }
             break;
@@ -155,7 +166,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
             winVersion = WINNT4;
             break;
         default:
-            dprintf(("VBoxGuest::DriverEntry: NT4 required!\n"));
+            dprintf(("VBoxGuest::DriverEntry: At least Windows NT4 required!\n"));
             return STATUS_DRIVER_UNABLE_TO_LOAD;
     }
 
@@ -1838,7 +1849,7 @@ VOID unreserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
             {
                 dprintf(("VBoxGuest::reserveHypervisorMemory: VMMDevReq_DeregisterPatchMemory error!"
                             "rc = %d, VMMDev rc = %Rrc\n", rc, req->header.rc));
-                /* We intentially leak the memory object here as there still could 
+                /* We intentially leak the memory object here as there still could
                  * be references to it!!!
                  */
             }
