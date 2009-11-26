@@ -774,8 +774,8 @@ bool VBoxGlobal::brandingIsActive (bool aForce /* = false*/)
   */
 QString VBoxGlobal::brandingGetKey (QString aKey)
 {
-    QSettings settings(mBrandingConfig, QSettings::IniFormat);
-    return settings.value(QString("%1").arg(aKey)).toString();
+    QSettings s(mBrandingConfig, QSettings::IniFormat);
+    return s.value(QString("%1").arg(aKey)).toString();
 }
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
@@ -1448,12 +1448,12 @@ QString VBoxGlobal::details (const CMedium &aMedium, bool aPredictDiff)
  */
 QString VBoxGlobal::details (const CUSBDevice &aDevice) const
 {
-    QString details;
+    QString sDetails;
     QString m = aDevice.GetManufacturer().trimmed();
     QString p = aDevice.GetProduct().trimmed();
     if (m.isEmpty() && p.isEmpty())
     {
-        details =
+        sDetails =
             tr ("Unknown device %1:%2", "USB device details")
             .arg (QString().sprintf ("%04hX", aDevice.GetVendorId()))
             .arg (QString().sprintf ("%04hX", aDevice.GetProductId()));
@@ -1461,15 +1461,15 @@ QString VBoxGlobal::details (const CUSBDevice &aDevice) const
     else
     {
         if (p.toUpper().startsWith (m.toUpper()))
-            details = p;
+            sDetails = p;
         else
-            details = m + " " + p;
+            sDetails = m + " " + p;
     }
     ushort r = aDevice.GetRevision();
     if (r != 0)
-        details += QString().sprintf (" [%04hX]", r);
+        sDetails += QString().sprintf (" [%04hX]", r);
 
-    return details.trimmed();
+    return sDetails.trimmed();
 }
 
 /**
@@ -2421,7 +2421,7 @@ void VBoxGlobal::addMedium (const VBoxMedium &aMedium)
 
     if (aMedium.type() == VBoxDefs::MediumType_HardDisk)
     {
-        VBoxMediaList::iterator parent = mMediaList.end();
+        VBoxMediaList::iterator itParent = mMediaList.end();
 
         for (; it != mMediaList.end(); ++ it)
         {
@@ -2431,16 +2431,16 @@ void VBoxGlobal::addMedium (const VBoxMedium &aMedium)
             if ((*it).type() != VBoxDefs::MediumType_HardDisk)
                 break;
 
-            if (aMedium.parent() != NULL && parent == mMediaList.end())
+            if (aMedium.parent() != NULL && itParent == mMediaList.end())
             {
                 if (&*it == aMedium.parent())
-                    parent = it;
+                    itParent = it;
             }
             else
             {
                 /* break if met a parent's sibling (will insert before it) */
                 if (aMedium.parent() != NULL &&
-                    (*it).parent() == (*parent).parent())
+                    (*it).parent() == (*itParent).parent())
                     break;
 
                 /* compare to aMedium's siblings */
@@ -2450,7 +2450,7 @@ void VBoxGlobal::addMedium (const VBoxMedium &aMedium)
             }
         }
 
-        AssertReturnVoid (aMedium.parent() == NULL || parent != mMediaList.end());
+        AssertReturnVoid (aMedium.parent() == NULL || itParent != mMediaList.end());
     }
     else
     {
@@ -2525,7 +2525,7 @@ void VBoxGlobal::removeMedium (VBoxDefs::MediumType aType, const QString &aId)
     }
 #endif
 
-    VBoxMedium *parent = (*it).parent();
+    VBoxMedium *pParent = (*it).parent();
 
     /* remove the medium from the list to keep it in sync with the server "for
      * free" when the medium is deleted from one of our UIs */
@@ -2535,10 +2535,10 @@ void VBoxGlobal::removeMedium (VBoxDefs::MediumType aType, const QString &aId)
 
     /* also emit the parent update signal because some attributes like
      * isReadOnly() may have been changed after child removal */
-    if (parent != NULL)
+    if (pParent != NULL)
     {
-        parent->refresh();
-        emit mediumUpdated (*parent);
+        pParent->refresh();
+        emit mediumUpdated (*pParent);
     }
 }
 
@@ -4239,9 +4239,9 @@ bool VBoxGlobal::openURL (const QString &aURL)
             {
                 if (aEvent->type() == QEvent::User)
                 {
-                    ServiceEvent *event = static_cast <ServiceEvent*> (aEvent);
-                    mResult = event->result();
-                    event->accept();
+                    ServiceEvent *pEvent = static_cast <ServiceEvent*> (aEvent);
+                    mResult = pEvent->result();
+                    pEvent->accept();
                     quit();
                     return true;
                 }
@@ -4256,8 +4256,8 @@ bool VBoxGlobal::openURL (const QString &aURL)
     {
         public:
 
-            ServiceServer (ServiceClient &aClient, const QString &aURL)
-                : mClient (aClient), mURL (aURL) {}
+            ServiceServer (ServiceClient &aClient, const QString &sURL)
+                : mClient (aClient), mURL (sURL) {}
 
         private:
 
@@ -4570,9 +4570,9 @@ void VBoxGlobal::init()
 
     /* Load the customized language as early as possible to get possible error
      * messages translated */
-    QString languageId = gset.languageId();
-    if (!languageId.isNull())
-        loadLanguage (languageId);
+    QString sLanguageId = gset.languageId();
+    if (!sLanguageId.isNull())
+        loadLanguage (sLanguageId);
 
     retranslateUi();
 
@@ -4876,8 +4876,8 @@ void VBoxGlobal::init()
         mDbgEnabled = mDbgAutoShow =  mDbgAutoShowCommandLine = mDbgAutoShowStatistics = false;
     if (mDbgEnabled)
     {
-        int rc = SUPR3HardenedLdrLoadAppPriv("VBoxDbg", &mhVBoxDbg);
-        if (RT_FAILURE(rc))
+        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxDbg", &mhVBoxDbg);
+        if (RT_FAILURE(vrc))
         {
             mhVBoxDbg = NIL_RTLDRMOD;
             mDbgAutoShow =  mDbgAutoShowCommandLine = mDbgAutoShowStatistics = false;
