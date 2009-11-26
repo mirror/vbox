@@ -88,15 +88,31 @@ int main()
         { "VirtualBox-3.1.8-Alpha1",    "VirtualBox-3.1.8-Alpha1-r61454",   -1 },
         { "VirtualBox-3.1.0",           "VirtualBox-3.1.2_Beta1",           -1 },
         { "3.1.0_BETA-r12345",          "3.1.2",                            -1 },
+        { "3.1.0_BETA1r12345",          "3.1.0",                            -1 },
+        { "3.1.0_BETAr12345",           "3.1.0",                             1 }, /* not considered a beta because of missing punctuation */
         { "3.1.0_BETA-r12345",          "3.1.0",                            -1 },
         { "3.1.0_BETA-r12345",          "3.1.0",                            -1 },
+        { "3.1.0_BETA-r12345",          "3.1.0.0",                          -1 },
+        { "3.1.0_BETA",                 "3.1.0.0",                          -1 },
+        { "3.1.0_BETA1",                "3.1.0",                            -1 },
         { "3.1.0_BETA-r12345",          "3.1.0r12345",                      -1 },
+        { "3.1.0_BETA1-r12345",         "3.1.0_BETA-r12345",                 0 },
+        { "3.1.0_BETA1-r12345",         "3.1.0_BETA1-r12345",                0 },
+        { "3.1.0_BETA2-r12345",         "3.1.0_BETA1-r12345",                1 },
+        { "3.1.0_BETA2-r12345",         "3.1.0_BETA999-r12345",             -1 },
+        { "3.1.0_BETA2",                "3.1.0_ABC",                        -1 }, /* ABC isn't indicating a prerelease, BETA does */
+        { "3.1.0_BETA",                 "3.1.0_ATEB",                       -1 },
     };
     for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++)
     {
         int iResult = RTStrVersionCompare(aTests[iTest].pszVer1, aTests[iTest].pszVer2);
         if (iResult != aTests[iTest].iResult)
             RTTestFailed(hTest, "#%u: '%s' <-> '%s' -> %d, expected %d",
+                         iTest, aTests[iTest].pszVer1, aTests[iTest].pszVer2, iResult, aTests[iTest].iResult);
+
+        iResult = -RTStrVersionCompare(aTests[iTest].pszVer2, aTests[iTest].pszVer1);
+        if (iResult != aTests[iTest].iResult)
+            RTTestFailed(hTest, "#%u: '%s' <-> '%s' -> %d, expected %d [inv]",
                          iTest, aTests[iTest].pszVer1, aTests[iTest].pszVer2, iResult, aTests[iTest].iResult);
     }
 
