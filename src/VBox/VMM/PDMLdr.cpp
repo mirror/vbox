@@ -497,7 +497,7 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
                             if (pUVM->pdm.s.pModules)
                             {
                                 /* we don't expect this list to be very long, so rather save the tail pointer. */
-                                PPDMMOD pCur = pUVM->pdm.s.pModules;
+                                pCur = pUVM->pdm.s.pModules;
                                 while (pCur->pNext)
                                     pCur = pCur->pNext;
                                 pCur->pNext = pModule;
@@ -602,7 +602,7 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName)
         if (pUVM->pdm.s.pModules)
         {
             /* we don't expect this list to be very long, so rather save the tail pointer. */
-            PPDMMOD pCur = pUVM->pdm.s.pModules;
+            pCur = pUVM->pdm.s.pModules;
             while (pCur->pNext)
                 pCur = pCur->pNext;
             pCur->pNext = pModule;
