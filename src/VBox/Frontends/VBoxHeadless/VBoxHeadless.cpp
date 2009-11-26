@@ -779,14 +779,14 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
                 continue;
             }
 #endif /* defined(VBOX_FFMPEG) */
-            VRDPFramebuffer *pFramebuffer = new VRDPFramebuffer ();
-            if (!pFramebuffer)
+            VRDPFramebuffer *pVRDPFramebuffer = new VRDPFramebuffer ();
+            if (!pVRDPFramebuffer)
             {
                 RTPrintf("Error: could not create framebuffer object %d\n", uScreenId);
                 return -1;
             }
-            pFramebuffer->AddRef();
-            display->SetFramebuffer(uScreenId, pFramebuffer);
+            pVRDPFramebuffer->AddRef();
+            display->SetFramebuffer(uScreenId, pVRDPFramebuffer);
         }
 #endif
 
