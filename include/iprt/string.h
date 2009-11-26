@@ -1051,16 +1051,16 @@ RTDECL(bool) RTStrSimplePatternMultiMatch(const char *pszPatterns, size_t cchPat
                                           const char *pszString, size_t cchString,
                                           size_t *poffPattern);
 
-
-/** @defgroup rt_str_conv   String To/From Number Conversions
- * @ingroup grp_rt_str
- * @{ */
-
 /**
- * Compares two version strings and returns the result. The version string has
- * to be made of at least one number section, each section delimited by a ".",
- * e.g. "123.45.67". Trailing zeros at the beginning and non-digits in a section
- * will be skipped, so "12.foo006" becomes "12.6".
+ * Compares two version strings stricmp fashion.
+ *
+ * The version string is split up into sections at punctuation, spaces,
+ * underscores, dashes and pluss signs.  The sections are then split up into
+ * numeric and string sub-sections.  Finally, the sub-sections are compared
+ * in a numeric or case insesntivie fashion depending on what they are.
+ *
+ * The following strings are considered to be equal: "1.0.0", "1.0", "1".
+ * There aren't: "1.0.0r993", "1.0", "1.0r993", "1.0_Beta3"
  *
  * @returns integer value indicating the relationship between the versions:
  * @retval  0, if both versions are equal.
@@ -1071,6 +1071,11 @@ RTDECL(bool) RTStrSimplePatternMultiMatch(const char *pszPatterns, size_t cchPat
  * @param   pszVer2     Second version string to compare first version with.
  */
 RTDECL(int) RTStrVersionCompare(const char *pszVer1, const char *pszVer2);
+
+
+/** @defgroup rt_str_conv   String To/From Number Conversions
+ * @ingroup grp_rt_str
+ * @{ */
 
 /**
  * Converts a string representation of a number to a 64-bit unsigned number.
