@@ -74,9 +74,9 @@ void QILabelSeparator::init()
     // separator->setStyleSheet ("QFrame {border: 1px outset black; }");
     separator->setSizePolicy (QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 
-    QHBoxLayout *layout = new QHBoxLayout (this);
-    VBoxGlobal::setLayoutMargin (layout, 0);
-    layout->addWidget (mLabel);
-    layout->addWidget (separator, Qt::AlignBottom);
+    QHBoxLayout *pLayout = new QHBoxLayout (this);
+    VBoxGlobal::setLayoutMargin (pLayout, 0);
+    pLayout->addWidget (mLabel);
+    pLayout->addWidget (separator, Qt::AlignBottom);
 }
 
