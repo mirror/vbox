@@ -124,8 +124,6 @@ public:
     HRESULT loadSettings(const settings::BIOSSettings &data);
     HRESULT saveSettings(settings::BIOSSettings &data);
 
-    const Backupable <Data> &data() const { return mData; }
-
     bool isModified() { AutoWriteLock alock (this); return mData.isBackedUp(); }
     bool isReallyModified() { AutoWriteLock alock (this); return mData.hasActualChanges(); }
     void rollback() { AutoWriteLock alock (this); mData.rollback(); }
@@ -140,7 +138,7 @@ private:
 
     ComObjPtr<Machine, ComWeakRef> mParent;
     ComObjPtr<BIOSSettings> mPeer;
-    Backupable <Data> mData;
+    Backupable<Data> mData;
 };
 
 #endif // ____H_BIOSSETTINGS

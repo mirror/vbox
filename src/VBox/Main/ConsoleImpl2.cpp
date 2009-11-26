@@ -1145,22 +1145,22 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         STR_FREE();
 
                         /* Pass all custom parameters. */
-                        SafeArray<BSTR> names;
-                        SafeArray<BSTR> values;
+                        SafeArray<BSTR> aNames;
+                        SafeArray<BSTR> aValues;
                         hrc = medium->GetProperties(NULL,
-                                                    ComSafeArrayAsOutParam(names),
-                                                    ComSafeArrayAsOutParam(values));            H();
+                                                    ComSafeArrayAsOutParam(aNames),
+                                                    ComSafeArrayAsOutParam(aValues));           H();
 
-                        if (names.size() != 0)
+                        if (aNames.size() != 0)
                         {
                             PCFGMNODE pVDC;
                             rc = CFGMR3InsertNode(pCur, "VDConfig", &pVDC);                     RC_CHECK();
-                            for (size_t ii = 0; ii < names.size(); ++ii)
+                            for (size_t ii = 0; ii < aNames.size(); ++ii)
                             {
-                                if (values[ii])
+                                if (aValues[ii])
                                 {
-                                    Utf8Str name = names[ii];
-                                    Utf8Str value = values[ii];
+                                    Utf8Str name = aNames[ii];
+                                    Utf8Str value = aValues[ii];
                                     rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str()); AssertRC(rc); /** @todo r=bird: why not RC_HCECK here? (I added the AssertRC.)*/
                                     if (    name.compare("HostIPStack") == 0
                                         &&  value.compare("0") == 0)

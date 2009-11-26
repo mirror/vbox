@@ -824,7 +824,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
          ++it)
     {
         MediumAttachment *pAtt = *it;
-        Medium *pMedium = pAtt->medium();
+        Medium *pMedium = pAtt->getMedium();
         if (pMedium) // can be NULL for non-harddisk
         {
             rc = pMedium->attachTo(mData->mUuid, mSnapshotId);
@@ -1535,12 +1535,12 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
     {
         ComObjPtr<MediumAttachment> &pAttach = *it;
         AutoReadLock attachLock(pAttach);
-        if (pAttach->type() == DeviceType_HardDisk)
+        if (pAttach->getType() == DeviceType_HardDisk)
         {
             ++ulOpCount;
             ++ulTotalWeight;         // assume one MB weight for each differencing hard disk to manage
-            Assert(pAttach->medium());
-            LogFlowThisFunc(("op %d: considering hard disk attachment %s\n", ulOpCount, pAttach->medium()->name().c_str()));
+            Assert(pAttach->getMedium());
+            LogFlowThisFunc(("op %d: considering hard disk attachment %s\n", ulOpCount, pAttach->getMedium()->getName().c_str()));
         }
     }
 
@@ -1769,17 +1769,17 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
              ++it)
         {
             ComObjPtr<MediumAttachment> pAttach = *it;
-            ComObjPtr<Medium> pMedium = pAttach->medium();
+            ComObjPtr<Medium> pMedium = pAttach->getMedium();
 
             /* while the hard disk is attached, the number of children or the
              * parent cannot change, so no lock */
             if (    !pMedium.isNull()
-                 && pAttach->type() == DeviceType_HardDisk
-                 && !pMedium->parent().isNull()
-                 && pMedium->children().size() == 0
+                 && pAttach->getType() == DeviceType_HardDisk
+                 && !pMedium->getParent().isNull()
+                 && pMedium->getChildren().size() == 0
                )
             {
-                LogFlowThisFunc(("Picked differencing image '%s' for deletion\n", pMedium->name().raw()));
+                LogFlowThisFunc(("Picked differencing image '%s' for deletion\n", pMedium->getName().raw()));
 
                 llDiffAttachmentsToDelete.push_back(pAttach);
             }
@@ -1819,11 +1819,11 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
              ++it)
         {
             ComObjPtr<MediumAttachment> pAttach = *it;        // guaranteed to have only attachments where medium != NULL
-            ComObjPtr<Medium> pMedium = pAttach->medium();
+            ComObjPtr<Medium> pMedium = pAttach->getMedium();
 
             AutoWriteLock mlock(pMedium);
 
-            LogFlowThisFunc(("Detaching old current state in differencing image '%s'\n", pMedium->name().raw()));
+            LogFlowThisFunc(("Detaching old current state in differencing image '%s'\n", pMedium->getName().raw()));
 
             // Normally we "detach" the medium by removing the attachment object
             // from the current machine data; saveSettings() below would then
@@ -1851,7 +1851,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
              ++it)
         {
             ComObjPtr<Medium> &pMedium = *it;
-            LogFlowThisFunc(("Deleting old current state in differencing image '%s'\n", pMedium->name().raw()));
+            LogFlowThisFunc(("Deleting old current state in differencing image '%s'\n", pMedium->getName().raw()));
 
             HRESULT rc2 = pMedium->deleteStorageAndWait();
             // ignore errors here because we cannot roll back after saveSettings() above
@@ -1983,17 +1983,17 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     {
         ComObjPtr<MediumAttachment> &pAttach = *it;
         AutoReadLock attachLock(pAttach);
-        if (pAttach->type() == DeviceType_HardDisk)
+        if (pAttach->getType() == DeviceType_HardDisk)
         {
-            Assert(pAttach->medium());
-            ComObjPtr<Medium> pHD = pAttach->medium();
+            ComObjPtr<Medium> pHD = pAttach->getMedium();
+            Assert(pHD);
             AutoReadLock mlock(pHD);
-            if (pHD->type() == MediumType_Normal)
+            if (pHD->getType() == MediumType_Normal)
             {
                 ++ulOpCount;
-                ulTotalWeight += pHD->size() / _1M;
+                ulTotalWeight += pHD->getSize() / _1M;
             }
-            LogFlowThisFunc(("op %d: considering hard disk attachment %s\n", ulOpCount, pHD->name().c_str()));
+            LogFlowThisFunc(("op %d: considering hard disk attachment %s\n", ulOpCount, pHD->getName().c_str()));
         }
     }
 
@@ -2115,7 +2115,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
     HRESULT rc = S_OK;
 
     /* save the snapshot ID (for callbacks) */
-    Guid snapshotId = aTask.pSnapshot->getId();
+    Guid snapshotId1 = aTask.pSnapshot->getId();
 
     MediumDiscardRecList toDiscard;
 
@@ -2137,10 +2137,10 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         {
             ComObjPtr<MediumAttachment> &pAttach = *it;
             AutoReadLock attachLock(pAttach);
-            if (pAttach->type() == DeviceType_HardDisk)
+            if (pAttach->getType() == DeviceType_HardDisk)
             {
-                Assert(pAttach->medium());
-                ComObjPtr<Medium> pHD = pAttach->medium();
+                Assert(pAttach->getMedium());
+                ComObjPtr<Medium> pHD = pAttach->getMedium();
                         // do not lock, prepareDiscared() has a write lock which will hang otherwise
 
 #ifdef DEBUG
@@ -2158,7 +2158,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 // for the machine that follows the snapshot (next snapshot or real machine),
                 // unless it's a base image:
 
-                if (    pHD->parent().isNull()
+                if (    pHD->getParent().isNull()
                      && chain != NULL
                    )
                 {
@@ -2174,9 +2174,9 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
                     // prepareDiscard() should have raised an error already
                     // if there was more than one child
-                    Assert(pHD->children().size() == 1);
+                    Assert(pHD->getChildren().size() == 1);
 
-                    ComObjPtr<Medium> pReplaceHD = pHD->children().front();
+                    ComObjPtr<Medium> pReplaceHD = pHD->getChildren().front();
 
                     const Guid *pReplaceMachineId = pReplaceHD->getFirstMachineBackrefId();
                     NOREF(pReplaceMachineId);
@@ -2297,7 +2297,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
              it != toDiscard.end();)
         {
             rc = it->hd->discard(aTask.pProgress,
-                                 it->hd->size() / _1M,          // weight
+                                 it->hd->getSize() / _1M,          // weight
                                  it->chain);
             CheckComRCBreakRC(rc);
 
@@ -2327,7 +2327,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             {
                 /* undo hard disk replacement */
 
-                rc2 = it->replaceHd->attachTo (mData->mUuid, it->snapshotId);
+                rc2 = it->replaceHd->attachTo(mData->mUuid, it->snapshotId);
                 AssertComRC(rc2);
 
                 rc2 = it->hd->detachFrom (mData->mUuid, it->snapshotId);
@@ -2368,7 +2368,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
     aTask.pProgress->notifyComplete(rc);
 
     if (SUCCEEDED(rc))
-        mParent->onSnapshotDeleted(mData->mUuid, snapshotId);
+        mParent->onSnapshotDeleted(mData->mUuid, snapshotId1);
 
     LogFlowThisFunc(("Done deleting snapshot (rc=%08X)\n", rc));
     LogFlowThisFuncLeave();

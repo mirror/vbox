@@ -828,19 +828,19 @@ STDMETHODIMP Progress::WaitForCompletion (LONG aTimeout)
     if (!mCompleted)
     {
         RTTIMESPEC time;
-        RTTimeNow (&time); /** @todo r=bird: Use monotonic time (RTTimeMilliTS()) here because of daylight saving and things like that. */
+        RTTimeNow(&time); /** @todo r=bird: Use monotonic time (RTTimeMilliTS()) here because of daylight saving and things like that. */
 
         int vrc = VINF_SUCCESS;
         bool fForever = aTimeout < 0;
         int64_t timeLeft = aTimeout;
-        int64_t lastTime = RTTimeSpecGetMilli (&time);
+        int64_t lastTime = RTTimeSpecGetMilli(&time);
 
         while (!mCompleted && (fForever || timeLeft > 0))
         {
             mWaitersCount++;
             alock.leave();
-            int vrc = RTSemEventMultiWait(mCompletedSem,
-                                          fForever ? RT_INDEFINITE_WAIT : (unsigned)timeLeft);
+            vrc = RTSemEventMultiWait(mCompletedSem,
+                                      fForever ? RT_INDEFINITE_WAIT : (unsigned)timeLeft);
             alock.enter();
             mWaitersCount--;
 
@@ -906,8 +906,8 @@ STDMETHODIMP Progress::WaitForOperationCompletion(ULONG aOperation, LONG aTimeou
         {
             mWaitersCount ++;
             alock.leave();
-            int vrc = RTSemEventMultiWait(mCompletedSem,
-                                          fForever ? RT_INDEFINITE_WAIT : (unsigned) timeLeft);
+            vrc = RTSemEventMultiWait(mCompletedSem,
+                                      fForever ? RT_INDEFINITE_WAIT : (unsigned) timeLeft);
             alock.enter();
             mWaitersCount--;
 
@@ -1728,26 +1728,26 @@ HRESULT CombinedProgress::checkProgress()
 
     AssertReturn(mProgress < mProgresses.size(), E_FAIL);
 
-    ComPtr<IProgress> progress = mProgresses [mProgress];
+    ComPtr<IProgress> progress = mProgresses[mProgress];
     ComAssertRet (!progress.isNull(), E_FAIL);
 
     HRESULT rc = S_OK;
-    BOOL completed = FALSE;
+    BOOL fCompleted = FALSE;
 
     do
     {
-        rc = progress->COMGETTER(Completed) (&completed);
+        rc = progress->COMGETTER(Completed)(&fCompleted);
         if (FAILED (rc))
             return rc;
 
-        if (completed)
+        if (fCompleted)
         {
-            rc = progress->COMGETTER(Canceled) (&mCanceled);
+            rc = progress->COMGETTER(Canceled)(&mCanceled);
             if (FAILED (rc))
                 return rc;
 
             LONG iRc;
-            rc = progress->COMGETTER(ResultCode) (&iRc);
+            rc = progress->COMGETTER(ResultCode)(&iRc);
             if (FAILED (rc))
                 return rc;
             mResultCode = iRc;
@@ -1780,7 +1780,7 @@ HRESULT CombinedProgress::checkProgress()
             }
         }
     }
-    while (completed && !mCompleted);
+    while (fCompleted && !mCompleted);
 
     rc = progress->COMGETTER(OperationPercent) (&m_ulOperationPercent);
     if (SUCCEEDED(rc))

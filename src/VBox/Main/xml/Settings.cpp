@@ -178,7 +178,7 @@ public:
     {
         va_list args;
         va_start(args, pcszFormat);
-        Utf8StrFmtVA what(pcszFormat, args);
+        Utf8StrFmtVA strWhat(pcszFormat, args);
         va_end(args);
 
         Utf8Str strLine;
@@ -189,7 +189,7 @@ public:
         Utf8StrFmt str(N_("Error in %s%s -- %s"),
                        file->m->strFilename.c_str(),
                        (pcsz) ? pcsz : "",
-                       what.c_str());
+                       strWhat.c_str());
 
         setWhat(str.c_str());
     }
@@ -1088,20 +1088,20 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
  * @param level
  */
 void MainConfigFile::writeHardDisk(xml::ElementNode &elmMedium,
-                                   const Medium &m,
+                                   const Medium &mdm,
                                    uint32_t level)          // 0 for "root" call, incremented with each recursion
 {
     xml::ElementNode *pelmHardDisk = elmMedium.createChild("HardDisk");
-    pelmHardDisk->setAttribute("uuid", makeString(m.uuid));
-    pelmHardDisk->setAttribute("location", m.strLocation);
-    pelmHardDisk->setAttribute("format", m.strFormat);
-    if (m.fAutoReset)
-        pelmHardDisk->setAttribute("autoReset", m.fAutoReset);
-    if (m.strDescription.length())
-        pelmHardDisk->setAttribute("Description", m.strDescription);
+    pelmHardDisk->setAttribute("uuid", makeString(mdm.uuid));
+    pelmHardDisk->setAttribute("location", mdm.strLocation);
+    pelmHardDisk->setAttribute("format", mdm.strFormat);
+    if (mdm.fAutoReset)
+        pelmHardDisk->setAttribute("autoReset", mdm.fAutoReset);
+    if (mdm.strDescription.length())
+        pelmHardDisk->setAttribute("Description", mdm.strDescription);
 
-    for (PropertiesMap::const_iterator it = m.properties.begin();
-         it != m.properties.end();
+    for (PropertiesMap::const_iterator it = mdm.properties.begin();
+         it != mdm.properties.end();
          ++it)
     {
         xml::ElementNode *pelmProp = pelmHardDisk->createChild("Property");
@@ -1113,14 +1113,14 @@ void MainConfigFile::writeHardDisk(xml::ElementNode &elmMedium,
     if (level == 0)
     {
         const char *pcszType =
-            m.hdType == MediumType_Normal ? "Normal" :
-            m.hdType == MediumType_Immutable ? "Immutable" :
-            /*m.hdType == MediumType_Writethrough ?*/ "Writethrough";
+            mdm.hdType == MediumType_Normal ? "Normal" :
+            mdm.hdType == MediumType_Immutable ? "Immutable" :
+            /*mdm.hdType == MediumType_Writethrough ?*/ "Writethrough";
         pelmHardDisk->setAttribute("type", pcszType);
     }
 
-    for (MediaList::const_iterator it = m.llChildren.begin();
-         it != m.llChildren.end();
+    for (MediaList::const_iterator it = mdm.llChildren.begin();
+         it != mdm.llChildren.end();
          ++it)
     {
         // recurse for children
@@ -1170,12 +1170,12 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
          it != llDvdImages.end();
          ++it)
     {
-        const Medium &m = *it;
+        const Medium &mdm = *it;
         xml::ElementNode *pelmMedium = pelmDVDImages->createChild("Image");
-        pelmMedium->setAttribute("uuid", makeString(m.uuid));
-        pelmMedium->setAttribute("location", m.strLocation);
-        if (m.strDescription.length())
-            pelmMedium->setAttribute("Description", m.strDescription);
+        pelmMedium->setAttribute("uuid", makeString(mdm.uuid));
+        pelmMedium->setAttribute("location", mdm.strLocation);
+        if (mdm.strDescription.length())
+            pelmMedium->setAttribute("Description", mdm.strDescription);
     }
 
     xml::ElementNode *pelmFloppyImages = pelmMediaRegistry->createChild("FloppyImages");
@@ -1183,12 +1183,12 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
          it != llFloppyImages.end();
          ++it)
     {
-        const Medium &m = *it;
+        const Medium &mdm = *it;
         xml::ElementNode *pelmMedium = pelmFloppyImages->createChild("Image");
-        pelmMedium->setAttribute("uuid", makeString(m.uuid));
-        pelmMedium->setAttribute("location", m.strLocation);
-        if (m.strDescription.length())
-            pelmMedium->setAttribute("Description", m.strDescription);
+        pelmMedium->setAttribute("uuid", makeString(mdm.uuid));
+        pelmMedium->setAttribute("location", mdm.strLocation);
+        if (mdm.strDescription.length())
+            pelmMedium->setAttribute("Description", mdm.strDescription);
     }
 
     xml::ElementNode *pelmNetserviceRegistry = pelmGlobal->createChild("NetserviceRegistry");

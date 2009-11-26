@@ -84,9 +84,9 @@ public:
     // public methods that don't need a lock (because access constant data)
     // (ensure there is a caller added before calling them!)
 
-    const Bstr &name() const { return m.name; }
-    const Bstr &hostPath() const { return m.hostPath; }
-    BOOL writable() const { return m.writable; }
+    const Bstr& getName() const { return m.name; }
+    const Bstr& getHostPath() const { return m.hostPath; }
+    BOOL isWritable() const { return m.writable; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"SharedFolder"; }

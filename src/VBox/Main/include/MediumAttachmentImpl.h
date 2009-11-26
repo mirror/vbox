@@ -79,12 +79,12 @@ public:
     bool isImplicit() const { return m->implicit; }
     void setImplicit(bool aImplicit) { m->implicit = aImplicit; }
 
-    const ComObjPtr<Medium> &medium() const { return m->medium; }
-    Bstr controllerName() const { return m->controllerName; }
-    LONG port() const { return m->port; }
-    LONG device() const { return m->device; }
-    DeviceType_T type() const { return m->type; }
-    bool passthrough() const { AutoReadLock lock(this); return m->passthrough; }
+    const ComObjPtr<Medium>& getMedium() const { return m->medium; }
+    Bstr getControllerName() const { return m->controllerName; }
+    LONG getPort() const { return m->port; }
+    LONG getDevice() const { return m->device; }
+    DeviceType_T getType() const { return m->type; }
+    bool getPassthrough() const { AutoReadLock lock(this); return m->passthrough; }
 
     bool matches(CBSTR aControllerName, LONG aPort, LONG aDevice)
     {
@@ -109,7 +109,7 @@ public:
     }
 
     /** Get a unique and somewhat descriptive name for logging. */
-    const char *logName(void) const { return mLogName.c_str(); }
+    const char* getLogName(void) const { return mLogName.c_str(); }
 
     /** For com::SupportErrorInfoImpl. */
     static const char *ComponentName() { return "MediumAttachment"; }

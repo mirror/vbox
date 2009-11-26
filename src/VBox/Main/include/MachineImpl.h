@@ -635,7 +635,7 @@ public:
 
     // public methods only for internal purposes
 
-    InstanceType type() const { return mType; }
+    InstanceType getType() const { return mType; }
 
     /// @todo (dmik) add lock and make non-inlined after revising classes
     //  that use it. Note: they should enter Machine lock to keep the returned
@@ -652,7 +652,7 @@ public:
      * used by ready Machine children (whose readiness is bound to the parent's
      * one) or after doing addCaller() manually.
      */
-    const ComObjPtr<VirtualBox, ComWeakRef> &virtualBox() const { return mParent; }
+    const ComObjPtr<VirtualBox, ComWeakRef>& getVirtualBox() const { return mParent; }
 
     /**
      * Returns this machine ID.
@@ -661,7 +661,7 @@ public:
      * used by ready Machine children (whose readiness is bound to the parent's
      * one) or after adding a caller manually.
      */
-    const Guid &id() const { return mData->mUuid; }
+    const Guid& getId() const { return mData->mUuid; }
 
     /**
      * Returns the snapshot ID this machine represents or an empty UUID if this
@@ -671,7 +671,7 @@ public:
      * used by ready Machine children (whose readiness is bound to the parent's
      * one) or after adding a caller manually.
      */
-    inline const Guid &snapshotId() const;
+    inline const Guid& getSnapshotId() const;
 
     /**
      * Returns this machine's full settings file path.
@@ -680,7 +680,7 @@ public:
      * Intended to be used only after doing addCaller() manually and locking it
      * for reading.
      */
-    const Utf8Str &settingsFileFull() const { return mData->m_strConfigFileFull; }
+    const Utf8Str& getSettingsFileFull() const { return mData->m_strConfigFileFull; }
 
     /**
      * Returns this machine name.
@@ -689,7 +689,7 @@ public:
      * Intended to be used only after doing addCaller() manually and locking it
      * for reading.
      */
-    const Bstr &name() const { return mUserData->mName; }
+    const Bstr& getName() const { return mUserData->mName; }
 
     // callback handlers
     virtual HRESULT onNetworkAdapterChange(INetworkAdapter * /* networkAdapter */, BOOL /* changeAdapter */) { return S_OK; }
@@ -797,7 +797,7 @@ protected:
 
     HRESULT checkStateDependency(StateDependency aDepType);
 
-    inline Machine *machine();
+    inline Machine *getMachine();
 
     void ensureNoStateDependencies();
 
@@ -1148,7 +1148,7 @@ public:
     // unsafe inline public methods for internal purposes only (ensure there is
     // a caller and a read lock before calling them!)
 
-    const Guid &snapshotId() const { return mSnapshotId; }
+    const Guid& getSnapshotId() const { return mSnapshotId; }
 
 private:
 
@@ -1159,10 +1159,10 @@ private:
 
 // third party methods that depend on SnapshotMachine definiton
 
-inline const Guid &Machine::snapshotId() const
+inline const Guid &Machine::getSnapshotId() const
 {
     return mType != IsSnapshotMachine ? Guid::Empty :
-                    static_cast<const SnapshotMachine *>(this)->snapshotId();
+                    static_cast<const SnapshotMachine *>(this)->getSnapshotId();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1175,7 +1175,7 @@ inline const Guid &Machine::snapshotId() const
  *  object's pointer itself. For SessoinMachine objects, returns the peer
  *  (primary) machine pointer.
  */
-inline Machine *Machine::machine()
+inline Machine *Machine::getMachine()
 {
     if (mType == IsSessionMachine)
         return mPeer;

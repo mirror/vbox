@@ -98,7 +98,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
                           aPort, aDevice, Global::stringifyDeviceType(aType),
                           aImplicit ? ":I" : "");
 
-    LogFlowThisFunc(("LEAVE - %s\n", logName()));
+    LogFlowThisFunc(("LEAVE - %s\n", getLogName()));
     return S_OK;
 }
 
@@ -108,7 +108,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
  */
 void MediumAttachment::uninit()
 {
-    LogFlowThisFunc(("ENTER - %s\n", logName()));
+    LogFlowThisFunc(("ENTER - %s\n", getLogName()));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
@@ -127,7 +127,7 @@ void MediumAttachment::uninit()
  */
 bool MediumAttachment::rollback()
 {
-    LogFlowThisFunc(("ENTER - %s\n", logName()));
+    LogFlowThisFunc(("ENTER - %s\n", getLogName()));
 
     /* sanity */
     AutoCaller autoCaller(this);
@@ -145,7 +145,7 @@ bool MediumAttachment::rollback()
         m.rollback();
     }
 
-    LogFlowThisFunc(("LEAVE - %s - returning %RTbool\n", logName(), changed));
+    LogFlowThisFunc(("LEAVE - %s - returning %RTbool\n", getLogName(), changed));
     return changed;
 }
 

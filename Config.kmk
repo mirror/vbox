@@ -2882,11 +2882,11 @@ ifeq ($(KBUILD_TARGET),win)
 else # the GCC guys:
 
 TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g -pipe $(VBOX_GCC_WARN) -Wno-long-long -Wno-non-virtual-dtor -fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
+TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g -pipe $(VBOX_GCC_WARN) -Wno-long-long -Wno-non-virtual-dtor -fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) -Wshadow
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.x86        = -m32
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.amd64      = -m64
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile   = -finstrument-functions
-TEMPLATE_VBOXMAINEXE_CFLAGS              = -g -pipe $(VBOX_GCC_WARN) -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden)
+TEMPLATE_VBOXMAINEXE_CFLAGS              = -g -pipe $(VBOX_GCC_WARN) -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden) -Wshadow
 TEMPLATE_VBOXMAINEXE_CFLAGS.x86          = -m32
 TEMPLATE_VBOXMAINEXE_CFLAGS.amd64        = -m64
 TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
