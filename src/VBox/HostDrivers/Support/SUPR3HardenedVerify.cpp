@@ -444,7 +444,7 @@ static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFi
     if (RT_SUCCESS(rc))
     {
         char szPath[RTPATH_MAX];
-        int rc = supR3HardenedMakeFilePath(pFile, szPath, sizeof(szPath), true, fFatal);
+        rc = supR3HardenedMakeFilePath(pFile, szPath, sizeof(szPath), true, fFatal);
         if (RT_SUCCESS(rc))
         {
 #if defined(RT_OS_WINDOWS)
