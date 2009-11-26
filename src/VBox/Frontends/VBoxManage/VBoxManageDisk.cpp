@@ -459,8 +459,8 @@ int handleModifyHardDisk(HandlerArg *a)
             if (rc == VBOX_E_FILE_ERROR)
             {
                 char szFilenameAbs[RTPATH_MAX] = "";
-                int vrc = RTPathAbs(FilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
-                if (RT_FAILURE(vrc))
+                int irc = RTPathAbs(FilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
+                if (RT_FAILURE(irc))
                 {
                     RTPrintf("Cannot convert filename \"%s\" to absolute path\n", FilenameOrUuid);
                     return 1;
@@ -619,8 +619,8 @@ int handleCloneHardDisk(HandlerArg *a)
         if (rc == VBOX_E_FILE_ERROR)
         {
             char szFilenameAbs[RTPATH_MAX] = "";
-            int vrc = RTPathAbs(Utf8Str(src).c_str(), szFilenameAbs, sizeof(szFilenameAbs));
-            if (RT_FAILURE(vrc))
+            int irc = RTPathAbs(Utf8Str(src).c_str(), szFilenameAbs, sizeof(szFilenameAbs));
+            if (RT_FAILURE(irc))
             {
                 RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Utf8Str(src).raw());
                 return 1;
@@ -653,8 +653,8 @@ int handleCloneHardDisk(HandlerArg *a)
                 if (rc == VBOX_E_FILE_ERROR)
                 {
                     char szFilenameAbs[RTPATH_MAX] = "";
-                    int vrc = RTPathAbs(Utf8Str(dst).c_str(), szFilenameAbs, sizeof(szFilenameAbs));
-                    if (RT_FAILURE(vrc))
+                    int irc = RTPathAbs(Utf8Str(dst).c_str(), szFilenameAbs, sizeof(szFilenameAbs));
+                    if (RT_FAILURE(irc))
                     {
                         RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Utf8Str(dst).raw());
                         return 1;
@@ -1404,8 +1404,8 @@ int handleOpenMedium(HandlerArg *a)
         if (rc == VBOX_E_FILE_ERROR)
         {
             char szFilenameAbs[RTPATH_MAX] = "";
-            int vrc = RTPathAbs(Filename, szFilenameAbs, sizeof(szFilenameAbs));
-            if (RT_FAILURE(vrc))
+            int irc = RTPathAbs(Filename, szFilenameAbs, sizeof(szFilenameAbs));
+            if (RT_FAILURE(irc))
             {
                 RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Filename);
                 return 1;
@@ -1433,8 +1433,8 @@ int handleOpenMedium(HandlerArg *a)
         if (rc == VBOX_E_FILE_ERROR)
         {
             char szFilenameAbs[RTPATH_MAX] = "";
-            int vrc = RTPathAbs(Filename, szFilenameAbs, sizeof(szFilenameAbs));
-            if (RT_FAILURE(vrc))
+            int irc = RTPathAbs(Filename, szFilenameAbs, sizeof(szFilenameAbs));
+            if (RT_FAILURE(irc))
             {
                 RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Filename);
                 return 1;
@@ -1454,8 +1454,8 @@ int handleOpenMedium(HandlerArg *a)
         if (rc == VBOX_E_FILE_ERROR)
         {
             char szFilenameAbs[RTPATH_MAX] = "";
-            int vrc = RTPathAbs(Filename, szFilenameAbs, sizeof(szFilenameAbs));
-            if (RT_FAILURE(vrc))
+            int irc = RTPathAbs(Filename, szFilenameAbs, sizeof(szFilenameAbs));
+            if (RT_FAILURE(irc))
             {
                 RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Filename);
                 return 1;

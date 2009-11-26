@@ -193,8 +193,8 @@ int handleControlVM(HandlerArg *a)
                     && a->argv[i][2] == 0)
                 {
                     uint8_t u8Scancode;
-                    int rc = RTStrToUInt8Ex(a->argv[i], NULL, 16, &u8Scancode);
-                    if (RT_FAILURE (rc))
+                    int irc = RTStrToUInt8Ex(a->argv[i], NULL, 16, &u8Scancode);
+                    if (RT_FAILURE (irc))
                     {
                         RTPrintf("Error: converting '%s' returned %Rrc!\n", a->argv[i], rc);
                         rc = E_FAIL;
