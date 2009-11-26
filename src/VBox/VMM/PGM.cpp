@@ -1196,9 +1196,9 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     pVM->pgm.s.offVCpuPGM  = RT_OFFSETOF(VMCPU, pgm.s);
 
     /* Init the per-CPU part. */
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
         PPGMCPU pPGM = &pVCpu->pgm.s;
 
         pPGM->offVM      = (uintptr_t)&pVCpu->pgm.s - (uintptr_t)pVM;
@@ -1375,8 +1375,8 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         static bool s_fRegisteredCmds = false;
         if (!s_fRegisteredCmds)
         {
-            int rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
-            if (RT_SUCCESS(rc))
+            int rc2 = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
+            if (RT_SUCCESS(rc2))
                 s_fRegisteredCmds = true;
         }
 #endif

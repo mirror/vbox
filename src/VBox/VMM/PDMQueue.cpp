@@ -122,7 +122,7 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
      */
     if (cMilliesInterval)
     {
-        int rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, pdmR3QueueTimer, pQueue, "Queue timer", &pQueue->pTimer);
+        rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, pdmR3QueueTimer, pQueue, "Queue timer", &pQueue->pTimer);
         if (RT_SUCCESS(rc))
         {
             rc = TMTimerSetMillies(pQueue->pTimer, cMilliesInterval);
@@ -157,7 +157,7 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
          * Insert into the queue list for forced action driven queues.
          * This is a FIFO, so insert at the end.
          */
-        /** @todo we should add a priority priority to the queues so we don't have to rely on
+        /** @todo we should add a priority to the queues so we don't have to rely on
          * the initialization order to deal with problems like #1605 (pgm/pcnet deadlock
          * caused by the critsect queue to be last in the chain).
          * - Update, the critical sections are no longer using queues, so this isn't a real
