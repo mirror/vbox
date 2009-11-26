@@ -1710,6 +1710,7 @@ DECLINLINE(int) gvmmR0SchedPokeOne(PGVM pGVM, PVMCPU pVCpu)
         return VINF_GVM_NOT_BUSY_IN_GC;
     }
 
+    /* Note: this function is not implemented on Darwin and Linux (kernel < 2.6.19) */
     RTMpPokeCpu(idHostCpu);
     return VINF_SUCCESS;
 }
