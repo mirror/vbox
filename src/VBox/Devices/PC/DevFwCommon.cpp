@@ -42,6 +42,30 @@
 
 #pragma pack(1)
 
+typedef struct SMBIOSHDR
+{
+    uint8_t         au8Signature[4];
+    uint8_t         u8Checksum;
+    uint8_t         u8Eps;
+    uint8_t         u8VersionMajor;
+    uint8_t         u8VersionMinor;
+    uint16_t        u16MaxStructureSize;
+    uint8_t         u8EntryPointRevision;
+    uint8_t         u8Pad[5];
+} *SMBIOSHDRPTR;
+AssertCompileSize(SMBIOSHDR, 16);
+
+typedef struct DMIMAINHDR
+{
+    uint8_t         au8Signature[5];
+    uint8_t         u8Checksum;
+    uint16_t        u16TablesLength;
+    uint32_t        u32TableBase;
+    uint16_t        u16TableEntries;
+    uint16_t        u8TableVersion;
+    uint8_t         u8Pad;
+} *DMIMAINHDRPTR;
+
 /** DMI header */
 typedef struct DMIHDR
 {
@@ -252,7 +276,7 @@ static uint8_t sharedfwChecksum(const uint8_t * const au8Data, uint32_t u32Lengt
  *                      configuration string isn't present.
  * @param   pCfgHandle  The handle to our config node.
  */
-int sharedfwPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PRTUUID pUuid, PCFGMNODE pCfgHandle)
+int sharedfwPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PRTUUID pUuid, PCFGMNODE pCfgHandle, bool fPutSmbiosHeaders)
 {
     char *pszStr = (char *)pTable;
     int iStrNr;
@@ -495,6 +519,43 @@ int sharedfwPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
     MMR3HeapFree(pszDmiChassisAssetTag);
     MMR3HeapFree(pszDmiOEMVBoxVer);
     MMR3HeapFree(pszDmiOEMVBoxRev);
+
+    if (fPutSmbiosHeaders)
+    {
+        struct {
+            struct SMBIOSHDR     smbios;
+            struct DMIMAINHDR    dmi;
+        } aBiosHeaders =
+        {
+            // The SMBIOS header
+            {
+                { 0x5f, 0x53, 0x4d, 0x5f},         // "_SM_" signature
+                0x00,                              // checksum
+                0x1f,                              // EPS length, defined by standard
+                VBOX_SMBIOS_MAJOR_VER,             // SMBIOS major version
+                VBOX_SMBIOS_MINOR_VER,             // SMBIOS minor version
+                VBOX_SMBIOS_MAXSS,                 // Maximum structure size
+                0x00,                              // Entry point revision
+                { 0x00, 0x00, 0x00, 0x00, 0x00 }   // padding
+            },
+            // The DMI header
+            {
+                { 0x5f, 0x44, 0x4d, 0x49, 0x5f },  // "_DMI_" signature
+                0x00,                              // checksum
+                VBOX_DMI_TABLE_SIZE,               // DMI tables length
+                VBOX_DMI_TABLE_BASE,               // DMI tables base
+                VBOX_DMI_TABLE_ENTR,               // DMI tables entries
+                VBOX_DMI_TABLE_VER,                // DMI version
+                0x00
+            }
+        };
+
+        aBiosHeaders.smbios.u8Checksum = sharedfwChecksum((uint8_t*)&aBiosHeaders.smbios, sizeof(aBiosHeaders.smbios));
+        aBiosHeaders.dmi.u8Checksum = sharedfwChecksum((uint8_t*)&aBiosHeaders.dmi, sizeof(aBiosHeaders.dmi));
+
+        //Log(("Write SMBIOS\n"));
+        PDMDevHlpPhysWrite (pDevIns, 0xff30, &aBiosHeaders, sizeof(aBiosHeaders));
+    }
 
     return VINF_SUCCESS;
 }
