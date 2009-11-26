@@ -2907,6 +2907,10 @@ leave:
     }
     while (0);
 
+    /* Must be before com::Shutdown() */
+    callback.setNull();
+    consoleCallback.setNull();
+    
     LogFlow(("Uninitializing COM...\n"));
     com::Shutdown();
 
