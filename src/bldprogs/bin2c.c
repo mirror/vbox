@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 {
     FILE          *pFileIn;
     FILE          *pFileOut;
-    int           i;
+    int           iArg;
     size_t        cbMin = 0;
     size_t        cbMax = ~0U;
     size_t        uMask = 0;
@@ -87,79 +87,79 @@ int main(int argc, char *argv[])
     if (argc < 2)
         return usage(argv[0]);
 
-    for (i = 1; i < argc; i++)
+    for (iArg = 1; iArg < argc; iArg++)
     {
-        if (!strcmp(argv[i], "-min"))
+        if (!strcmp(argv[iArg], "-min"))
         {
-            if (++i >= argc)
+            if (++iArg >= argc)
                 return usage(argv[0]);
-            cbMin = 1024 * strtoul(argv[i], NULL, 0);
+            cbMin = 1024 * strtoul(argv[iArg], NULL, 0);
         }
-        else if (!strcmp(argv[i], "-max"))
+        else if (!strcmp(argv[iArg], "-max"))
         {
-            if (++i >= argc)
+            if (++iArg >= argc)
                 return usage(argv[0]);
-            cbMax = 1024 * strtoul(argv[i], NULL, 0);
+            cbMax = 1024 * strtoul(argv[iArg], NULL, 0);
         }
-        else if (!strcmp(argv[i], "-mask"))
+        else if (!strcmp(argv[iArg], "-mask"))
         {
-            if (++i >= argc)
+            if (++iArg >= argc)
                 return usage(argv[0]);
-            uMask = strtoul(argv[i], NULL, 0);
+            uMask = strtoul(argv[iArg], NULL, 0);
         }
-        else if (!strcmp(argv[i], "-ascii"))
+        else if (!strcmp(argv[iArg], "-ascii"))
         {
             fAscii = 1;
         }
-        else if (!strcmp(argv[i], "-export"))
+        else if (!strcmp(argv[iArg], "-export"))
         {
             fExport = 1;
         }
-        else if (!strcmp(argv[i], "-width"))
+        else if (!strcmp(argv[iArg], "-width"))
         {
-            if (++i >= argc)
+            if (++iArg >= argc)
                 return usage(argv[0]);
-            cbLine = strtoul(argv[i], NULL, 0);
+            cbLine = strtoul(argv[iArg], NULL, 0);
             if (cbLine == 0 || cbLine > sizeof(abLine))
             {
                 fprintf(stderr, "%s: '%s' is too wide, max %u\n",
-                        argv[0], argv[i], (unsigned)sizeof(abLine));
+                        argv[0], argv[iArg], (unsigned)sizeof(abLine));
                 return 1;
             }
         }
-        else if (!strcmp(argv[i], "-break"))
+        else if (!strcmp(argv[iArg], "-break"))
         {
-            if (++i >= argc)
+            if (++iArg >= argc)
                 return usage(argv[0]);
-            iBreakEvery = strtol(argv[i], NULL, 0);
+            iBreakEvery = strtol(argv[iArg], NULL, 0);
             if (iBreakEvery <= 0 && iBreakEvery != -1)
             {
                 fprintf(stderr, "%s: -break value '%s' is not >= 1 or -1.\n",
-                        argv[0], argv[i]);
+                        argv[0], argv[iArg]);
                 return 1;
             }
         }
-        else if (i == argc - 3)
+        else if (iArg == argc - 3)
             break;
         else
         {
             fprintf(stderr, "%s: syntax error: Unknown argument '%s'\n",
-                    argv[0], argv[i]);
+                    argv[0], argv[iArg]);
             return usage(argv[0]);
         }
     }
 
-    pFileIn = fopen(argv[i+1], "rb");
+    pFileIn = fopen(argv[iArg+1], "rb");
     if (!pFileIn)
     {
-        fprintf(stderr, "Error: failed to open input file '%s'!\n", argv[i+1]);
+        fprintf(stderr, "Error: failed to open input file '%s'!\n", argv[iArg+1]);
         return 1;
     }
 
-    pFileOut = fopen(argv[i+2], "wb");
+    pFileOut = fopen(argv[iArg+2], "wb");
     if (!pFileOut)
     {
-        fprintf(stderr, "Error: failed to open output file '%s'!\n", argv[i+2]);
+        fprintf(stderr, "Error: failed to open output file '%s'!\n", argv[iArg+2]);
         fclose(pFileIn);
         return 1;
     }
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
            "\n"
            "%sconst unsigned char%s g_ab%s[] =\n"
            "{\n",
-           argv[i+1], argv[0], fExport ? "DECLEXPORT(" : "", fExport ? ")" : "", argv[i]);
+           argv[iArg+1], argv[0], fExport ? "DECLEXPORT(" : "", fExport ? ")" : "", argv[iArg]);
 
     /* check size restrictions */
     if (uMask && (cbBin & uMask))
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
         off = 0;
         while ((cbRead = fread(&abLine[0], 1, cbLine, pFileIn)) > 0)
         {
-            size_t i;
+            size_t j;
 
             if (    iBreakEvery > 0
                 &&  off
@@ -199,18 +199,18 @@ int main(int argc, char *argv[])
                 fprintf(pFileOut, "\n");
 
             fprintf(pFileOut, "   ");
-            for (i = 0; i < cbRead; i++)
-                fprintf(pFileOut, " 0x%02x,", abLine[i]);
-            for (; i < cbLine; i++)
+            for (j = 0; j < cbRead; j++)
+                fprintf(pFileOut, " 0x%02x,", abLine[j]);
+            for (; j < cbLine; j++)
                 fprintf(pFileOut, "      ");
             if (fAscii)
             {
                 fprintf(pFileOut, " /* 0x%08lx: ", (long)off);
-                for (i = 0; i < cbRead; i++)
+                for (j = 0; j < cbRead; j++)
                     /* be careful with '/' prefixed/followed by a '*'! */
                     fprintf(pFileOut, "%c",
-                            isprint(abLine[i]) && abLine[i] != '/' ? abLine[i] : '.');
-                for (; i < cbLine; i++)
+                            isprint(abLine[j]) && abLine[j] != '/' ? abLine[j] : '.');
+                for (; j < cbLine; j++)
                     fprintf(pFileOut, " ");
                 fprintf(pFileOut, " */");
             }
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
                     "\n"
                     "%sconst unsigned%s g_cb%s = sizeof(g_ab%s);\n"
                     "/* end of file */\n",
-                    fExport ? "DECLEXPORT(" : "", fExport ? ")" : "", argv[i], argv[i]);
+                    fExport ? "DECLEXPORT(" : "", fExport ? ")" : "", argv[iArg], argv[iArg]);
 
             /* flush output and check for error. */
             fflush(pFileOut);
@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
     fclose(pFileOut);
     fclose(pFileIn);
     if (rc)
-        remove(argv[i+2]);
+        remove(argv[iArg+2]);
 
     return rc;
 }
