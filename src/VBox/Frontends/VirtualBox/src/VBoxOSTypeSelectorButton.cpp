@@ -20,9 +20,11 @@
  * additional information or have any questions.
  */
 
+/* VBox includes */
 #include "VBoxOSTypeSelectorButton.h"
 #include "VBoxGlobal.h"
 
+/* Qt includes */
 #include <QMenu>
 #include <QSignalMapper>
 
@@ -53,6 +55,11 @@ void VBoxOSTypeSelectorButton::setOSTypeId (const QString& aOSTypeId)
     setIcon (vboxGlobal().vmGuestOSTypeIcon (type.GetId()));
 #endif /* Q_WS_MAC */
     setText (type.GetDescription());
+}
+
+bool VBoxOSTypeSelectorButton::isMenuShown() const
+{
+    return mMainMenu->isVisible();
 }
 
 void VBoxOSTypeSelectorButton::retranslateUi()

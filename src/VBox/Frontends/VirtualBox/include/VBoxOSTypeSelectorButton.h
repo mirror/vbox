@@ -23,8 +23,10 @@
 #ifndef __VBoxOSTypeSelectorButton_h__
 #define __VBoxOSTypeSelectorButton_h__
 
+/* VBox includes */
 #include "QIWithRetranslateUI.h"
 
+/* Qt includes */
 #include <QPushButton>
 
 class QSignalMapper;
@@ -37,6 +39,8 @@ public:
     VBoxOSTypeSelectorButton (QWidget *aParent);
     QString osTypeId() const { return mOSTypeId; }
 
+    bool isMenuShown() const;
+
     void retranslateUi();
 
 public slots:
@@ -45,6 +49,7 @@ public slots:
 private:
     void populateMenu();
 
+    /* Private member vars */
     QString mOSTypeId;
     QMenu *mMainMenu;
     QSignalMapper *mSignalMapper;

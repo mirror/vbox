@@ -356,6 +356,13 @@ QWidget * HardwareItem::createEditor (QWidget *aParent, const QStyleOptionViewIt
                     /* Fill the background with the highlight color in the case
                      * the button hasn't a rectangle shape. This prevents the
                      * display of parts from the current text on the Mac. */
+#ifdef QT_MAC_USE_COCOA
+                    /* Use the palette from the tree view, not the one from the
+                     * editor. */
+                    QPalette p = e->palette();
+                    p.setBrush (QPalette::Highlight, aParent->palette().brush (QPalette::Highlight));
+                    e->setPalette(p);
+#endif /* QT_MAC_USE_COCOA */
                     e->setAutoFillBackground (true);
                     e->setBackgroundRole (QPalette::Highlight);
                     editor = e;
@@ -889,6 +896,27 @@ void VirtualSystemDelegate::updateEditorGeometry (QWidget *aEditor, const QStyle
     if (aEditor)
         aEditor->setGeometry (aOption.rect);
 }
+
+#ifdef QT_MAC_USE_COCOA
+bool VirtualSystemDelegate::eventFilter (QObject *aObject, QEvent *aEvent)
+{
+    if (aEvent->type() == QEvent::FocusOut)
+    {
+        /* On Mac OS X Cocoa the OS type selector widget loses it focus when
+         * the popup menu is shown. Prevent this here, cause otherwise the new
+         * selected OS will not be updated. */
+        VBoxOSTypeSelectorButton *button = qobject_cast<VBoxOSTypeSelectorButton*> (aObject);
+        if (button && button->isMenuShown())
+            return false;
+        /* The same counts for the text edit buttons of the license or
+         * description fields. */
+        else if (qobject_cast<VBoxLineTextEdit*> (aObject))
+            return false;
+    }
+
+    return QItemDelegate::eventFilter (aObject, aEvent);
+}
+#endif /* QT_MAC_USE_COCOA */
 
 ////////////////////////////////////////////////////////////////////////////////
 // VirtualSystemSortProxyModel

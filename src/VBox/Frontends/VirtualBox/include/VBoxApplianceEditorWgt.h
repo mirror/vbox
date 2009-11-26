@@ -210,6 +210,12 @@ public:
         size.setHeight (RT_MAX (h, size.height()));
         return size;
     }
+
+protected:
+#ifdef QT_MAC_USE_COCOA
+    bool eventFilter (QObject *aObject, QEvent *aEvent);
+#endif /* QT_MAC_USE_COCOA */
+
 private:
     /* Private member vars */
     QAbstractProxyModel *mProxy;
