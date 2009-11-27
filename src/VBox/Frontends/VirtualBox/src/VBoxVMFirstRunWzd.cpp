@@ -98,12 +98,21 @@ void VBoxVMFirstRunWzd::retranslateUi()
 void VBoxVMFirstRunWzd::accept()
 {
     /* Composing default controller name */
-    QString ctrName (mRbCdType->isChecked() ? "IDE Controller" : "Floppy Controller");
+    KStorageBus ctrBus (mRbCdType->isChecked() ? KStorageBus_IDE : KStorageBus_Floppy);
     LONG ctrPort = mRbCdType->isChecked() ? 1 : 0;
     LONG ctrDevice = 0;
-    /* Default should present */
-    CStorageController ctr = mMachine.GetStorageControllerByName (ctrName);
-    Assert (!ctr.isNull());
+    QString ctrName;
+    /* Search for the first controller of the given type */
+    QVector<CStorageController> ctrs = mMachine.GetStorageControllers();
+    foreach (CStorageController ctr, ctrs)
+    {
+        if (ctr.GetBus() == ctrBus)
+        {
+            ctrName = ctr.GetName();
+            break;
+        }
+    }
+    Assert (!ctrName.isEmpty());
     /* Mount medium to the predefined port/device */
     mMachine.MountMedium (ctrName, ctrPort, ctrDevice, mCbMedia->id(), false /* force */);
     if (mMachine.isOk())
