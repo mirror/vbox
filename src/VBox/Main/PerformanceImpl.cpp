@@ -493,6 +493,7 @@ void PerformanceCollector::unregisterBaseMetricsFor (const ComPtr<IUnknown> &aOb
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end();)
         if ((*it)->associatedWith(aObject))
         {
+            /** @todo r=bird: This looks dodgy and needs to be tested with a VBOX_WITH_DEBUG_VCC_CRT. How to reproduce? */
             delete *it;
             m.baseMetrics.erase(it++);
         }
@@ -514,6 +515,7 @@ void PerformanceCollector::unregisterMetricsFor (const ComPtr<IUnknown> &aObject
     for (it = m.metrics.begin(); it != m.metrics.end();)
         if ((*it)->associatedWith(aObject))
         {
+            /** @todo r=bird: This looks dodgy and needs to be tested with a VBOX_WITH_DEBUG_VCC_CRT. How to reproduce? */
             delete *it;
             m.metrics.erase(it++);
         }
