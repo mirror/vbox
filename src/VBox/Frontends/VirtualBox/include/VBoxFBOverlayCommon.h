@@ -22,7 +22,7 @@
 #ifndef __VBoxFBOverlayCommon_h__
 #define __VBoxFBOverlayCommon_h__
 
-#if defined(DEBUG) && !defined(DEBUG_sandervl) && !defined(DEBUG_bird);
+#if defined(DEBUG) && !defined(DEBUG_sandervl) && !defined(DEBUG_bird)
 # include "iprt/stream.h"
 # define VBOXQGLLOG(_m) RTPrintf _m
 # define VBOXQGLLOGREL(_m) do { RTPrintf _m ; LogRel( _m ); } while(0)
