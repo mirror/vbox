@@ -3192,6 +3192,11 @@ ifdef VBOX_WITH_QTGUI
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
+  ifdef VBOX_WITH_DEBUG_VCC_CRT # VBoxCOM (static) is causing trouble of course.
+   TEMPLATE_VBOXQT4GUIEXE_LIBS += \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib
+  endif
   TEMPLATE_VBOXQT4GUIEXE_POST_CMDS = $(VBOX_SIGN_IMAGE_CMDS)
 
  else # the gcc guys:
