@@ -260,7 +260,8 @@ RTDECL(void *) RTHeapOffsetAllocZ(RTHEAPOFFSET hHeap, size_t cb, size_t cbAlignm
 /**
  * Reallocates / Allocates / Frees a heap block.
  *
- * @param   hHeap       The heap, mandatory.
+ * @param   hHeap       The heap handle. This is optional and will only be used
+ *                      for strict assertions.
  * @param   pv          The heap block returned by RTHeapOffset. If NULL it
  *                      behaves like RTHeapOffsetAlloc().
  * @param   cbNew       The new size of the heap block. If NULL it behaves like
@@ -274,7 +275,8 @@ RTDECL(void *) RTHeapOffsetRealloc(RTHEAPOFFSET hHeap, void *pv, size_t cbNew, s
 /**
  * Reallocates / Allocates / Frees a heap block, zeroing any new bits.
  *
- * @param   hHeap       The heap, mandatory.
+ * @param   hHeap       The heap handle. This is optional and will only be used
+ *                      for strict assertions.
  * @param   pv          The heap block returned by RTHeapOffset. If NULL it
  *                      behaves like RTHeapOffsetAllocZ().
  * @param   cbNew       The new size of the heap block. If NULL it behaves like
@@ -288,7 +290,8 @@ RTDECL(void *) RTHeapOffsetReallocZ(RTHEAPOFFSET hHeap, void *pv, size_t cbNew, 
 /**
  * Frees memory allocated from a simple heap.
  *
- * @param   hHeap       The heap handle, mandatory.
+ * @param   hHeap       The heap handle. This is optional and will only be used
+ *                      for strict assertions.
  * @param   pv          The heap block returned by RTHeapOffset
  */
 RTDECL(void) RTHeapOffsetFree(RTHEAPOFFSET hHeap, void *pv);
@@ -300,7 +303,8 @@ RTDECL(void) RTHeapOffsetFree(RTHEAPOFFSET hHeap, void *pv);
  * @returns 0 if \a pv is NULL or it doesn't point to a valid heap block. An
  *          invalid \a pv can also cause traps or trigger assertions.
  *
- * @param   hHeap       The heap handle, mandatory.
+ * @param   hHeap       The heap handle. This is optional and will only be used
+ *                      for strict assertions.
  * @param   pv          The heap block returned by RTHeapOffset
  */
 RTDECL(size_t) RTHeapOffsetSize(RTHEAPOFFSET hHeap, void *pv);
