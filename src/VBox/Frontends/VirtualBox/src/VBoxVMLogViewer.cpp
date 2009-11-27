@@ -300,6 +300,11 @@ void VBoxVMLogViewer::showEvent (QShowEvent *aEvent)
             mFirstRun = false;
         }
     }
+
+    /* Make sure the log view widget has the focus */
+    QWidget *w = currentLogPage();
+    if (w)
+        w->setFocus();
 }
 
 void VBoxVMLogViewer::loadLogFile (const QString &aFileName)
@@ -491,6 +496,12 @@ void VBoxLogSearchPanel::search (bool aForward,
 
 bool VBoxLogSearchPanel::eventFilter (QObject *aObject, QEvent *aEvent)
 {
+    /* Check that the object is a child of the parent of the search panel. If
+     * not do not proceed, cause we get all key events from all windows here. */
+    QObject *pp = aObject;
+    while(pp && pp != parentWidget()) { pp = pp->parent(); };
+    if (!pp)
+        return false;
     switch (aEvent->type())
     {
         case QEvent::KeyPress:
