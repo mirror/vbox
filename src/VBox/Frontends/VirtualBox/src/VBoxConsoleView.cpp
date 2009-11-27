@@ -1793,7 +1793,15 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             {
                 QWheelEvent *we = (QWheelEvent *) e;
                 if (mouseEvent (we->type(), we->pos(), we->globalPos(),
-                                we->buttons(), we->modifiers(),
+#ifdef QT_MAC_USE_COCOA
+                                /* Qt Cocoa is buggy. It always reports a left
+                                 * button pressed when the mouse wheel event
+                                 * occurs. */
+                                0,
+#else /* QT_MAC_USE_COCOA */
+                                we->buttons(),
+#endif /* QT_MAC_USE_COCOA */
+                                we->modifiers(),
                                 we->delta(), we->orientation()))
                     return true; /* stop further event handling */
                 break;
