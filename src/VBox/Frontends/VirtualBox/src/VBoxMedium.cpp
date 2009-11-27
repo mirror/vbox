@@ -134,10 +134,10 @@ void VBoxMedium::refresh()
         mIsReadOnly = mMedium.GetReadOnly();
 
         /* Adjust the parent if its possible */
-        CMedium parent = mMedium.GetParent();
-        Assert (!parent.isNull() || mParent == NULL);
+        CMedium parentMedium = mMedium.GetParent();
+        Assert (!parentMedium.isNull() || mParent == NULL);
 
-        if (!parent.isNull() && (mParent == NULL || mParent->mMedium != parent))
+        if (!parentMedium.isNull() && (mParent == NULL || mParent->mMedium != parentMedium))
         {
             /* Search for the parent (might be there) */
             const VBoxMediaList &list = vboxGlobal().currentMediaList();
@@ -146,7 +146,7 @@ void VBoxMedium::refresh()
                 if ((*it).mType != VBoxDefs::MediumType_HardDisk)
                     break;
 
-                if ((*it).mMedium == parent)
+                if ((*it).mMedium == parentMedium)
                 {
                     mParent = unconst (&*it);
                     break;
@@ -183,7 +183,7 @@ void VBoxMedium::refresh()
         QVector <QString> machineIds = mMedium.GetMachineIds();
         if (machineIds.size() > 0)
         {
-            QString usage;
+            QString sUsage;
 
             CVirtualBox vbox = vboxGlobal().virtualBox();
 
@@ -191,8 +191,8 @@ void VBoxMedium::refresh()
             {
                 CMachine machine = vbox.GetMachine (*it);
 
-                QString name = machine.GetName();
-                QString snapshots;
+                QString sName = machine.GetName();
+                QString sSnapshots;
 
                 QVector <QString> snapIds = mMedium.GetSnapshotIds (*it);
                 for (QVector <QString>::ConstIterator jt = snapIds.begin(); jt != snapIds.end(); ++ jt)
@@ -209,28 +209,28 @@ void VBoxMedium::refresh()
                     CSnapshot snapshot = machine.GetSnapshot (*jt);
                     if (!snapshot.isNull())           // can be NULL while takeSnaphot is in progress
                     {
-                        if (!snapshots.isNull())
-                            snapshots += ", ";
-                        snapshots += snapshot.GetName();
+                        if (!sSnapshots.isNull())
+                            sSnapshots += ", ";
+                        sSnapshots += snapshot.GetName();
                     }
                 }
 
-                if (!usage.isNull())
-                    usage += ", ";
+                if (!sUsage.isNull())
+                    sUsage += ", ";
 
-                usage += name;
+                sUsage += sName;
 
-                if (!snapshots.isNull())
+                if (!sSnapshots.isNull())
                 {
-                    usage += QString (" (%2)").arg (snapshots);
+                    sUsage += QString (" (%2)").arg (sSnapshots);
                     mIsUsedInSnapshots = true;
                 }
                 else
                     mIsUsedInSnapshots = false;
             }
 
-            Assert (!usage.isEmpty());
-            mUsage = usage;
+            Assert (!sUsage.isEmpty());
+            mUsage = sUsage;
         }
     }
 
@@ -285,11 +285,11 @@ void VBoxMedium::refresh()
  */
 VBoxMedium &VBoxMedium::root() const
 {
-    VBoxMedium *root = unconst (this);
-    while (root->mParent != NULL)
-        root = root->mParent;
+    VBoxMedium *pRoot = unconst (this);
+    while (pRoot->mParent != NULL)
+        pRoot = pRoot->mParent;
 
-    return *root;
+    return *pRoot;
 }
 
 /**
@@ -306,28 +306,28 @@ VBoxMedium &VBoxMedium::root() const
  */
 QString VBoxMedium::toolTip (bool aNoDiffs /* = false */, bool aCheckRO /* = false */, bool aNullAllowed /* = false */) const
 {
-    QString tip;
+    QString sTip;
 
     if (mMedium.isNull())
     {
-        tip = aNullAllowed ? mRow.arg (VBoxGlobal::tr ("<b>No medium selected</b>", "medium")) +
-                             mRow.arg (VBoxGlobal::tr ("You can also change this while the machine is running.")) :
-                             mRow.arg (VBoxGlobal::tr ("<b>No media available</b>", "medium")) +
-                             mRow.arg (VBoxGlobal::tr ("You can create media images using the virtual media manager."));
+        sTip = aNullAllowed ? mRow.arg (VBoxGlobal::tr ("<b>No medium selected</b>", "medium")) +
+                              mRow.arg (VBoxGlobal::tr ("You can also change this while the machine is running.")) :
+                              mRow.arg (VBoxGlobal::tr ("<b>No media available</b>", "medium")) +
+                              mRow.arg (VBoxGlobal::tr ("You can create media images using the virtual media manager."));
     }
     else
     {
         unconst (this)->checkNoDiffs (aNoDiffs);
 
-        tip = aNoDiffs ? mNoDiffs.toolTip : mToolTip;
+        sTip = aNoDiffs ? mNoDiffs.toolTip : mToolTip;
 
         if (aCheckRO && mIsReadOnly)
-            tip += mRow.arg ("<hr>") +
-                   mRow.arg (VBoxGlobal::tr ("Attaching this hard disk will be performed indirectly using "
-                                             "a newly created differencing hard disk.", "medium"));
+            sTip += mRow.arg ("<hr>") +
+                    mRow.arg (VBoxGlobal::tr ("Attaching this hard disk will be performed indirectly using "
+                                              "a newly created differencing hard disk.", "medium"));
     }
 
-    return mTable.arg (tip);
+    return mTable.arg (sTip);
 }
 
 /**
@@ -346,15 +346,15 @@ QString VBoxMedium::toolTip (bool aNoDiffs /* = false */, bool aCheckRO /* = fal
  */
 QPixmap VBoxMedium::icon (bool aNoDiffs /* = false */, bool aCheckRO /* = false */) const
 {
-    QPixmap icon;
+    QPixmap pixmap;
 
     if (state (aNoDiffs) == KMediumState_Inaccessible)
-        icon = result (aNoDiffs).isOk() ? vboxGlobal().warningIcon() : vboxGlobal().errorIcon();
+        pixmap = result (aNoDiffs).isOk() ? vboxGlobal().warningIcon() : vboxGlobal().errorIcon();
 
     if (aCheckRO && mIsReadOnly)
-        icon = VBoxGlobal::joinPixmaps (icon, QPixmap (":/new_16px.png"));
+        pixmap = VBoxGlobal::joinPixmaps (pixmap, QPixmap (":/new_16px.png"));
 
-    return icon;
+    return pixmap;
 }
 
 /**
@@ -406,56 +406,56 @@ QString VBoxMedium::details (bool aNoDiffs /* = false */,
     if (!mMedium.isOk())
         return QString::null;
 
-    QString details, str;
+    QString sDetails, sStr;
 
-    VBoxMedium *root = unconst (this);
-    KMediumState state = mState;
+    VBoxMedium *pRoot = unconst (this);
+    KMediumState eState = mState;
 
     if (mType == VBoxDefs::MediumType_HardDisk)
     {
         if (aNoDiffs)
         {
-            root = &this->root();
+            pRoot = &this->root();
 
             bool isDiff = (!aPredictDiff && mParent != NULL) || (aPredictDiff && mIsReadOnly);
 
-            details = isDiff && aUseHTML ?
-                QString ("<i>%1</i>, ").arg (root->mHardDiskType) :
-                QString ("%1, ").arg (root->mHardDiskType);
+            sDetails = isDiff && aUseHTML ?
+                QString ("<i>%1</i>, ").arg (pRoot->mHardDiskType) :
+                QString ("%1, ").arg (pRoot->mHardDiskType);
 
-            state = this->state (true /* aNoDiffs */);
+            eState = this->state (true /* aNoDiffs */);
 
-            if (root->mState == KMediumState_NotCreated)
-                state = KMediumState_NotCreated;
+            if (pRoot->mState == KMediumState_NotCreated)
+                eState = KMediumState_NotCreated;
         }
         else
         {
-            details = QString ("%1, ").arg (root->mHardDiskType);
+            sDetails = QString ("%1, ").arg (pRoot->mHardDiskType);
         }
     }
 
     // @todo prepend the details with the warning/error icon when not accessible
 
-    switch (state)
+    switch (eState)
     {
         case KMediumState_NotCreated:
-            str = VBoxGlobal::tr ("Checking...", "medium");
-            details += aUseHTML ? QString ("<i>%1</i>").arg (str) : str;
+            sStr = VBoxGlobal::tr ("Checking...", "medium");
+            sDetails += aUseHTML ? QString ("<i>%1</i>").arg (sStr) : sStr;
             break;
         case KMediumState_Inaccessible:
-            str = VBoxGlobal::tr ("Inaccessible", "medium");
-            details += aUseHTML ? QString ("<b>%1</b>").arg (str) : str;
+            sStr = VBoxGlobal::tr ("Inaccessible", "medium");
+            sDetails += aUseHTML ? QString ("<b>%1</b>").arg (sStr) : sStr;
             break;
         default:
-            details += mType == VBoxDefs::MediumType_HardDisk ? root->mLogicalSize : root->mSize;
+            sDetails += mType == VBoxDefs::MediumType_HardDisk ? pRoot->mLogicalSize : pRoot->mSize;
             break;
     }
 
-    details = aUseHTML ?
-        QString ("%1 (<nobr>%2</nobr>)").arg (VBoxGlobal::locationForHTML (root->mName), details) :
-        QString ("%1 (%2)").arg (VBoxGlobal::locationForHTML (root->mName), details);
+    sDetails = aUseHTML ?
+        QString ("%1 (<nobr>%2</nobr>)").arg (VBoxGlobal::locationForHTML (pRoot->mName), sDetails) :
+        QString ("%1 (%2)").arg (VBoxGlobal::locationForHTML (pRoot->mName), sDetails);
 
-    return details;
+    return sDetails;
 }
 
 /**

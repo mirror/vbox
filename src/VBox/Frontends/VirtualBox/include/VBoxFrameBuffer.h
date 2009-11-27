@@ -89,9 +89,9 @@ private:
 class VBoxRepaintEvent : public QEvent
 {
 public:
-    VBoxRepaintEvent (int x, int y, int w, int h) :
+    VBoxRepaintEvent (int iX, int iY, int iW, int iH) :
         QEvent ((QEvent::Type) VBoxDefs::RepaintEventType),
-        ex (x), ey (y), ew (w), eh (h)
+        ex (iX), ey (iY), ew (iW), eh (iH)
     {}
     int x() { return ex; }
     int y() { return ey; }
