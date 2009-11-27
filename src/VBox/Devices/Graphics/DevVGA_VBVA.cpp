@@ -484,7 +484,10 @@ static int vbvaEnable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCt
 
     if (pVGAState->pDrv->pfnVBVAEnable)
     {
-        rc = pVGAState->pDrv->pfnVBVAEnable (pVGAState->pDrv, uScreenId);
+        pVBVA->hostFlags.u32HostEvents = 0;
+        pVBVA->hostFlags.u32SupportedOrders = 0;
+
+        rc = pVGAState->pDrv->pfnVBVAEnable (pVGAState->pDrv, uScreenId, &pVBVA->hostFlags);
     }
     else
     {
@@ -493,12 +496,9 @@ static int vbvaEnable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCt
 
     if (RT_SUCCESS (rc))
     {
-        /* Setup flags. */
-        pVBVA->u32HostEvents = VBVA_F_MODE_ENABLED |
-                               VBVA_F_MODE_VRDP |
-                               VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
-
-        pVBVA->u32SupportedOrders = ~0;
+        /* pVBVA->hostFlags has been set up by pfnVBVAEnable. */
+        LogFlowFunc(("u32HostEvents 0x%08X, u32SupportedOrders %0x%08X\n",
+                     pVBVA->hostFlags.u32HostEvents, pVBVA->hostFlags.u32SupportedOrders));
 
         pCtx->aViews[uScreenId].partialRecord.pu8 = NULL;
         pCtx->aViews[uScreenId].partialRecord.cb = 0;
@@ -519,8 +519,8 @@ static int vbvaDisable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pC
 
     if (pView->pVBVA)
     {
-        pView->pVBVA->u32HostEvents = 0;
-        pView->pVBVA->u32SupportedOrders = 0;
+        pView->pVBVA->hostFlags.u32HostEvents = 0;
+        pView->pVBVA->hostFlags.u32SupportedOrders = 0;
 
         pView->partialRecord.pu8 = NULL;
         pView->partialRecord.cb = 0;

@@ -88,6 +88,7 @@ typedef struct _DISPLAYFBINFO
        int32_t xRight;
        int32_t yBottom;
     } vbvaSkippedRect;
+    PVBVAHOSTFLAGS pVBVAHostFlags;
 #endif /* VBOX_WITH_HGSMI */
 } DISPLAYFBINFO;
 
@@ -285,7 +286,7 @@ private:
 #endif
 
 #ifdef VBOX_WITH_HGSMI
-    static DECLCALLBACK(int)  displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId);
+    static DECLCALLBACK(int)  displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, PVBVAHOSTFLAGS pHostFlags);
     static DECLCALLBACK(void) displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId);
     static DECLCALLBACK(void) displayVBVAUpdateBegin(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId);
     static DECLCALLBACK(void) displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, const PVBVACMDHDR pCmd, size_t cbCmd);

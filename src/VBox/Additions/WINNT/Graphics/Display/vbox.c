@@ -404,8 +404,8 @@ BOOL vboxVbvaEnable (PPDEV ppdev)
 
         DISPDBG((1, "VBoxDisp::vboxVbvaEnable screen %p vbva off 0x%x\n", ppdev->pjScreen, ppdev->layout.offVBVABuffer));
 
-        pVBVA->u32HostEvents      = 0;
-        pVBVA->u32SupportedOrders = 0;
+        pVBVA->hostFlags.u32HostEvents      = 0;
+        pVBVA->hostFlags.u32SupportedOrders = 0;
         pVBVA->off32Data          = 0;
         pVBVA->off32Free          = 0;
         RtlZeroMemory (pVBVA->aRecords, sizeof (pVBVA->aRecords));
@@ -450,7 +450,7 @@ BOOL vboxHwBufferBeginUpdate (PPDEV ppdev)
     //          ppdev->pVBVA? ppdev->pVBVA->u32HostEvents: -1));
 
     if (   ppdev->pVBVA
-        && (ppdev->pVBVA->u32HostEvents & VBVA_F_MODE_ENABLED))
+        && (ppdev->pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_ENABLED))
     {
         uint32_t indexRecordNext;
 
@@ -658,7 +658,7 @@ BOOL vboxOrderSupported (PPDEV ppdev, unsigned code)
         return FALSE;
     }
 
-    if (pVBVA->u32SupportedOrders & (1 << code))
+    if (pVBVA->hostFlags.u32SupportedOrders & (1 << code))
     {
         return TRUE;
     }

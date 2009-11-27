@@ -1179,6 +1179,30 @@ static void vbvaSetMemoryFlags (VBVAMEMORY *pVbvaMemory,
             paFBInfos[uScreenId].pHostEvents->fu32Events |= VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
         }
     }
+
+#ifdef VBOX_WITH_HGSMI
+    for (uScreenId = 0; uScreenId < cFBInfos; uScreenId++)
+    {
+        LogFlowFunc(("HGSMI[%d]: %p\n", uScreenId, paFBInfos[uScreenId].pVBVAHostFlags));
+        if (paFBInfos[uScreenId].pVBVAHostFlags)
+        {
+            uint32_t fu32HostEvents = VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
+
+            if (fVideoAccelEnabled)
+            {
+                fu32HostEvents |= VBVA_F_MODE_ENABLED;
+
+                if (fVideoAccelVRDP)
+                {
+                    fu32HostEvents |= VBVA_F_MODE_VRDP;
+                }
+            }
+
+            paFBInfos[uScreenId].pVBVAHostFlags->u32HostEvents |= fu32HostEvents;
+            paFBInfos[uScreenId].pVBVAHostFlags->u32SupportedOrders = fu32SupportedOrders;
+        }
+    }
+#endif /* VBOX_WITH_HGSMI */
 }
 
 bool Display::VideoAccelAllowed (void)
@@ -1338,6 +1362,8 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
  */
 void Display::VideoAccelVRDP (bool fEnable)
 {
+    LogFlowFunc(("fEnable = %d\n", fEnable));
+
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
     vbvaLock();
 #endif /* VBOX_WITH_OLD_VBVA_LOCK */
@@ -3122,7 +3148,7 @@ DECLCALLBACK(void) Display::displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInt
 #endif
 
 #ifdef VBOX_WITH_HGSMI
-DECLCALLBACK(int) Display::displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId)
+DECLCALLBACK(int) Display::displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, PVBVAHOSTFLAGS pHostFlags)
 {
     LogFlowFunc(("uScreenId %d\n", uScreenId));
 
@@ -3130,6 +3156,9 @@ DECLCALLBACK(int) Display::displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, u
     Display *pThis = pDrv->pDisplay;
 
     pThis->maFramebuffers[uScreenId].fVBVAEnabled = true;
+    pThis->maFramebuffers[uScreenId].pVBVAHostFlags = pHostFlags;
+
+    vbvaSetMemoryFlags(NULL, true, pThis->mfVideoAccelVRDP, pThis->mfu32SupportedOrders, pThis->maFramebuffers, pThis->mcMonitors);
 
     return VINF_SUCCESS;
 }
