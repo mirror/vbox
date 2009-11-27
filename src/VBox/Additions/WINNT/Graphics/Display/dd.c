@@ -1183,21 +1183,34 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
         DD_SURFACE_GLOBAL*  lpSurfaceGlobal = lpSurfaceLocal->lpGbl;
         PVBOXVHWASURFDESC pDesc = (PVBOXVHWASURFDESC)lpSurfaceGlobal->dwReserved1;
 
-        //TODO: hadle vrdp properly
-        if (  pDev->pVBVA->u32HostEvents
-            & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)
-        {
-            vrdpReset (pDev);
-
-            pDev->pVBVA->u32HostEvents &=
-                      ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
-        }
-
 //        /* ensure we have host cmds processed to update pending blits and flips */
 //        vboxVHWACommandCheckHostCmds(pDev);
+        if(!!(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+                && pDesc->UpdatedMemRegion.bValid
+                && vboxHwBufferBeginUpdate (pDev))
+        {
+            vbvaReportDirtyRect (pDev, &pDesc->UpdatedMemRegion.Rect);
 
-        if(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_VISIBLE
-                || lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE
+            if (  pDev->pVBVA->u32HostEvents
+                & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)
+            {
+                vrdpReset (pDev);
+
+                pDev->pVBVA->u32HostEvents &=
+                          ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
+            }
+
+            if (pDev->pVBVA->u32HostEvents
+                & VBVA_F_MODE_VRDP)
+            {
+                vrdpReportDirtyRect (pDev, &pDesc->UpdatedMemRegion.Rect);
+            }
+
+            vboxHwBufferEndUpdate (pDev);
+
+            lpUnlock->ddRVal = DD_OK;
+        }
+        else if(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_VISIBLE
 //                || !!(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_FRONTBUFFER)
                 || (    !!(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_OVERLAY)
                      && pDesc->bVisible
