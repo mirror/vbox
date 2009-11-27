@@ -2422,7 +2422,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>All new releases and &amp;pre-releases</source>
-        <translation>Tutti le versioni finali e &amp;pre-rilascio</translation>
+        <translation>Tutte le versioni finali e &amp;pre-rilascio</translation>
     </message>
 </context>
 <context>
@@ -10030,7 +10030,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
     <message>
         <source>&amp;Passthrough</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Modalità diretta</translation>
     </message>
     <message>
         <source>Virtual Size:</source>
