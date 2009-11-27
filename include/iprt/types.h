@@ -1236,6 +1236,13 @@ typedef RTHEAPSIMPLE                               *PRTHEAPSIMPLE;
 /** NIL simple heap handle. */
 #define NIL_RTHEAPSIMPLE                            ((RTHEAPSIMPLE)0)
 
+/** Handle to a offset based heap. */
+typedef R3R0PTRTYPE(struct RTHEAPOFFSETINTERNAL *)  RTHEAPOFFSET;
+/** Pointer to a handle to a offset based heap. */
+typedef RTHEAPOFFSET                               *PRTHEAPOFFSET;
+/** NIL offset based heap handle. */
+#define NIL_RTHEAPOFFSET                            ((RTHEAPOFFSET)0)
+
 /** Handle to an environment block. */
 typedef R3PTRTYPE(struct RTENVINTERNAL *)           RTENV;
 /** Pointer to a handle to an environment block. */
