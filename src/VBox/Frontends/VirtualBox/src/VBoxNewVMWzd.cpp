@@ -22,12 +22,12 @@
 
 /* VBox includes */
 #include "VBoxNewVMWzd.h"
+#include "VBoxVMSettingsHD.h"
 #include "VBoxUtils.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxNewHDWzd.h"
 #include "VBoxMediaManagerDlg.h"
-#include "VBoxVMSettingsHD.h"
 
 VBoxNewVMWzd::VBoxNewVMWzd (QWidget *aParent)
     : QIWithRetranslateUI<QIAbstractWizard> (aParent)
