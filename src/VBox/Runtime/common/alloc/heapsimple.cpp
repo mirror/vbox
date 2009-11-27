@@ -281,15 +281,7 @@ static PRTHEAPSIMPLEBLOCK rtHeapSimpleAllocBlock(PRTHEAPSIMPLEINTERNAL pHeapInt,
 static void rtHeapSimpleFreeBlock(PRTHEAPSIMPLEINTERNAL pHeapInt, PRTHEAPSIMPLEBLOCK pBlock);
 
 
-/**
- * Initializes the heap.
- *
- * @returns IPRT status code.
- * @param   pHeap       Where to store the heap anchor block on success.
- * @param   pvMemory    Pointer to the heap memory.
- * @param   cbMemory    The size of the heap memory.
- */
-RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE pHeap, void *pvMemory, size_t cbMemory)
+RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE phHeap, void *pvMemory, size_t cbMemory)
 {
     PRTHEAPSIMPLEINTERNAL pHeapInt;
     PRTHEAPSIMPLEFREE pFree;
@@ -337,7 +329,7 @@ RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE pHeap, void *pvMemory, size_t cbMemor
     pFree->pPrev = NULL;
     pFree->cb = pHeapInt->cbFree;
 
-    *pHeap = pHeapInt;
+    *phHeap = pHeapInt;
 
 #ifdef RTHEAPSIMPLE_STRICT
     rtHeapSimpleAssertAll(pHeapInt);
@@ -347,21 +339,6 @@ RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE pHeap, void *pvMemory, size_t cbMemor
 RT_EXPORT_SYMBOL(RTHeapSimpleInit);
 
 
-/** 
- * Relocater the heap internal structures after copying it to a new location. 
- *  
- * This can be used when loading a saved heap. 
- *  
- * @returns IPRT status code. 
- * @param   hHeap       Heap handle that has already been adjusted by to the new
- *                      location.  That is to say, when calling
- *                      RTHeapSimpleInit, the caller must note the offset of the
- *                      returned heap handle into the heap memory.  This offset
- *                      must be used when calcuating the handle value for the
- *                      new location.  The offset may in some cases not be zero!
- * @param   offDelta    The delta between the new and old location, i.e. what 
- *                      should be added to the internal pointers.
- */
 RTDECL(int) RTHeapSimpleRelocate(RTHEAPSIMPLE hHeap, uintptr_t offDelta)
 {
     PRTHEAPSIMPLEINTERNAL   pHeapInt = hHeap;
@@ -372,8 +349,8 @@ RTDECL(int) RTHeapSimpleRelocate(RTHEAPSIMPLE hHeap, uintptr_t offDelta)
      */
     AssertPtrReturn(pHeapInt, VERR_INVALID_HANDLE);
     AssertReturn(pHeapInt->uMagic == RTHEAPSIMPLE_MAGIC, VERR_INVALID_HANDLE);
-    AssertMsgReturn((uintptr_t)pHeapInt - (uintptr_t)pHeapInt->pvEnd + pHeapInt->cbHeap == offDelta, 
-                    ("offDelta=%p, expected=%p\n", offDelta, (uintptr_t)pHeapInt->pvEnd - pHeapInt->cbHeap - (uintptr_t)pHeapInt), 
+    AssertMsgReturn((uintptr_t)pHeapInt - (uintptr_t)pHeapInt->pvEnd + pHeapInt->cbHeap == offDelta,
+                    ("offDelta=%p, expected=%p\n", offDelta, (uintptr_t)pHeapInt->pvEnd - pHeapInt->cbHeap - (uintptr_t)pHeapInt),
                     VERR_INVALID_PARAMETER);
 
     /*
@@ -387,8 +364,8 @@ RTDECL(int) RTHeapSimpleRelocate(RTHEAPSIMPLE hHeap, uintptr_t offDelta)
     /*
      * Walk the heap blocks.
      */
-    for (pCur = (PRTHEAPSIMPLEFREE)(pHeapInt + 1); 
-         pCur && (uintptr_t)pCur < (uintptr_t)pHeapInt->pvEnd; 
+    for (pCur = (PRTHEAPSIMPLEFREE)(pHeapInt + 1);
+         pCur && (uintptr_t)pCur < (uintptr_t)pHeapInt->pvEnd;
          pCur = (PRTHEAPSIMPLEFREE)pCur->Core.pNext)
     {
         RELOCATE_IT(pCur->Core.pNext, PRTHEAPSIMPLEBLOCK,    offDelta);
@@ -408,26 +385,14 @@ RTDECL(int) RTHeapSimpleRelocate(RTHEAPSIMPLE hHeap, uintptr_t offDelta)
      */
     rtHeapSimpleAssertAll(pHeapInt);
 #endif
-    return VINF_SUCCESS; 
+    return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTHeapSimpleRelocate);
 
 
-
-/**
- * Allocates memory from the specified simple heap.
- *
- * @returns Pointer to the allocated memory block on success.
- * @returns NULL if the request cannot be satisfied. (A VERR_NO_MEMORY condition.)
- *
- * @param   Heap        The heap to allocate the memory on.
- * @param   cb          The requested heap block size.
- * @param   cbAlignment The requested heap block alignment. Pass 0 for default alignment.
- *                      Must be a power of 2.
- */
-RTDECL(void *) RTHeapSimpleAlloc(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignment)
+RTDECL(void *) RTHeapSimpleAlloc(RTHEAPSIMPLE hHeap, size_t cb, size_t cbAlignment)
 {
-    PRTHEAPSIMPLEINTERNAL pHeapInt = Heap;
+    PRTHEAPSIMPLEINTERNAL pHeapInt = hHeap;
     PRTHEAPSIMPLEBLOCK pBlock;
 
     /*
@@ -462,20 +427,9 @@ RTDECL(void *) RTHeapSimpleAlloc(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignmen
 RT_EXPORT_SYMBOL(RTHeapSimpleAlloc);
 
 
-/**
- * Allocates zeroed memory from the specified simple heap.
- *
- * @returns Pointer to the allocated memory block on success.
- * @returns NULL if the request cannot be satisfied. (A VERR_NO_MEMORY condition.)
- *
- * @param   Heap        The heap to allocate the memory on.
- * @param   cb          The requested heap block size.
- * @param   cbAlignment The requested heap block alignment. Pass 0 for default alignment.
- *                      Must be a power of 2.
- */
-RTDECL(void *) RTHeapSimpleAllocZ(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignment)
+RTDECL(void *) RTHeapSimpleAllocZ(RTHEAPSIMPLE hHeap, size_t cb, size_t cbAlignment)
 {
-    PRTHEAPSIMPLEINTERNAL pHeapInt = Heap;
+    PRTHEAPSIMPLEINTERNAL pHeapInt = hHeap;
     PRTHEAPSIMPLEBLOCK pBlock;
 
     /*
@@ -518,6 +472,7 @@ RT_EXPORT_SYMBOL(RTHeapSimpleAllocZ);
  *
  * @returns Pointer to the allocated block.
  * @returns NULL on failure.
+ *
  * @param   pHeapInt    The heap.
  * @param   cb     	Size of the memory block to allocate.
  * @param   uAlignment  The alignment specifications for the allocated block.
@@ -685,15 +640,7 @@ static PRTHEAPSIMPLEBLOCK rtHeapSimpleAllocBlock(PRTHEAPSIMPLEINTERNAL pHeapInt,
 }
 
 
-
-
-/**
- * Frees memory allocated from a simple heap.
- *
- * @param   Heap    The heap. This is optional and will only be used for strict assertions.
- * @param   pv      The heap block returned by RTHeapSimple
- */
-RTDECL(void) RTHeapSimpleFree(RTHEAPSIMPLE Heap, void *pv)
+RTDECL(void) RTHeapSimpleFree(RTHEAPSIMPLE hHeap, void *pv)
 {
     PRTHEAPSIMPLEINTERNAL pHeapInt;
     PRTHEAPSIMPLEBLOCK pBlock;
@@ -713,7 +660,7 @@ RTDECL(void) RTHeapSimpleFree(RTHEAPSIMPLE Heap, void *pv)
     pHeapInt = pBlock->pHeap;
     ASSERT_BLOCK_USED(pHeapInt, pBlock);
     ASSERT_ANCHOR(pHeapInt);
-    Assert(pHeapInt == (PRTHEAPSIMPLEINTERNAL)Heap || !Heap);
+    Assert(pHeapInt == (PRTHEAPSIMPLEINTERNAL)hHeap || !hHeap);
 
 #ifdef RTHEAPSIMPLE_FREE_POISON
     /*
@@ -886,16 +833,7 @@ static void rtHeapSimpleAssertAll(PRTHEAPSIMPLEINTERNAL pHeapInt)
 #endif
 
 
-/**
- * Gets the size of the specified heap block.
- *
- * @returns The actual size of the heap block.
- * @returns 0 if \a pv is NULL or it doesn't point to a valid heap block. An invalid \a pv
- *          can also cause traps or trigger assertions.
- * @param   Heap    The heap. This is optional and will only be used for strict assertions.
- * @param   pv      The heap block returned by RTHeapSimple
- */
-RTDECL(size_t) RTHeapSimpleSize(RTHEAPSIMPLE Heap, void *pv)
+RTDECL(size_t) RTHeapSimpleSize(RTHEAPSIMPLE hHeap, void *pv)
 {
     PRTHEAPSIMPLEINTERNAL pHeapInt;
     PRTHEAPSIMPLEBLOCK pBlock;
@@ -916,7 +854,7 @@ RTDECL(size_t) RTHeapSimpleSize(RTHEAPSIMPLE Heap, void *pv)
     pHeapInt = pBlock->pHeap;
     ASSERT_BLOCK_USED(pHeapInt, pBlock);
     ASSERT_ANCHOR(pHeapInt);
-    Assert(pHeapInt == (PRTHEAPSIMPLEINTERNAL)Heap || !Heap);
+    Assert(pHeapInt == (PRTHEAPSIMPLEINTERNAL)hHeap || !hHeap);
 
     /*
      * Calculate the block size.
@@ -928,25 +866,14 @@ RTDECL(size_t) RTHeapSimpleSize(RTHEAPSIMPLE Heap, void *pv)
 RT_EXPORT_SYMBOL(RTHeapSimpleSize);
 
 
-/**
- * Gets the size of the heap.
- *
- * This size includes all the internal heap structures. So, even if the heap is
- * empty the RTHeapSimpleGetFreeSize() will never reach the heap size returned
- * by this function.
- *
- * @returns The heap size.
- * @returns 0 if heap was safely detected as being bad.
- * @param   Heap    The heap.
- */
-RTDECL(size_t) RTHeapSimpleGetHeapSize(RTHEAPSIMPLE Heap)
+RTDECL(size_t) RTHeapSimpleGetHeapSize(RTHEAPSIMPLE hHeap)
 {
     PRTHEAPSIMPLEINTERNAL pHeapInt;
 
-    if (Heap == NIL_RTHEAPSIMPLE)
+    if (hHeap == NIL_RTHEAPSIMPLE)
         return 0;
 
-    pHeapInt = Heap;
+    pHeapInt = hHeap;
     AssertPtrReturn(pHeapInt, 0);
     ASSERT_ANCHOR(pHeapInt);
     return pHeapInt->cbHeap;
@@ -954,24 +881,14 @@ RTDECL(size_t) RTHeapSimpleGetHeapSize(RTHEAPSIMPLE Heap)
 RT_EXPORT_SYMBOL(RTHeapSimpleGetHeapSize);
 
 
-/**
- * Returns the sum of all free heap blocks.
- *
- * This is the amount of memory you can theoretically allocate
- * if you do allocations exactly matching the free blocks.
- *
- * @returns The size of the free blocks.
- * @returns 0 if heap was safely detected as being bad.
- * @param   Heap    The heap.
- */
-RTDECL(size_t) RTHeapSimpleGetFreeSize(RTHEAPSIMPLE Heap)
+RTDECL(size_t) RTHeapSimpleGetFreeSize(RTHEAPSIMPLE hHeap)
 {
     PRTHEAPSIMPLEINTERNAL pHeapInt;
 
-    if (Heap == NIL_RTHEAPSIMPLE)
+    if (hHeap == NIL_RTHEAPSIMPLE)
         return 0;
 
-    pHeapInt = Heap;
+    pHeapInt = hHeap;
     AssertPtrReturn(pHeapInt, 0);
     ASSERT_ANCHOR(pHeapInt);
     return pHeapInt->cbFree;
@@ -979,19 +896,13 @@ RTDECL(size_t) RTHeapSimpleGetFreeSize(RTHEAPSIMPLE Heap)
 RT_EXPORT_SYMBOL(RTHeapSimpleGetFreeSize);
 
 
-/**
- * Dumps the hypervisor heap.
- *
- * @param   Heap        The heap handle.
- * @param   pfnPrintf   Printf like function that groks IPRT formatting.
- */
-RTDECL(void) RTHeapSimpleDump(RTHEAPSIMPLE Heap, PFNRTHEAPSIMPLEPRINTF pfnPrintf)
+RTDECL(void) RTHeapSimpleDump(RTHEAPSIMPLE hHeap, PFNRTHEAPSIMPLEPRINTF pfnPrintf)
 {
-    PRTHEAPSIMPLEINTERNAL pHeapInt = (PRTHEAPSIMPLEINTERNAL)Heap;
+    PRTHEAPSIMPLEINTERNAL pHeapInt = (PRTHEAPSIMPLEINTERNAL)hHeap;
     PRTHEAPSIMPLEFREE pBlock;
 
     pfnPrintf("**** Dumping Heap %p - cbHeap=%zx cbFree=%zx ****\n",
-              Heap, pHeapInt->cbHeap, pHeapInt->cbFree);
+              hHeap, pHeapInt->cbHeap, pHeapInt->cbFree);
 
     for (pBlock = (PRTHEAPSIMPLEFREE)(pHeapInt + 1);
          pBlock;
@@ -1007,7 +918,7 @@ RTDECL(void) RTHeapSimpleDump(RTHEAPSIMPLE Heap, PFNRTHEAPSIMPLEPRINTF pfnPrintf
             pfnPrintf("%p  %06x USED pNext=%p pPrev=%p fFlags=%#x cb=%#06x\n",
                       pBlock, (uintptr_t)pBlock - (uintptr_t)(pHeapInt + 1), pBlock->Core.pNext, pBlock->Core.pPrev, pBlock->Core.fFlags, cb);
     }
-    pfnPrintf("**** Done dumping Heap %p ****\n", Heap);
+    pfnPrintf("**** Done dumping Heap %p ****\n", hHeap);
 }
 RT_EXPORT_SYMBOL(RTHeapSimpleDump);
 
