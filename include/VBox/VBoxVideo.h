@@ -98,8 +98,8 @@
  * runtime heapsimple API. Use minimum 2 pages here, because the info area also may
  * contain other data (for example HGSMIHOSTFLAGS structure).
  */
-#define VBVA_ADAPTER_INFORMATION_SIZE  (8*_1K)
-#define VBVA_DISPLAY_INFORMATION_SIZE  (8*_1K)
+#define VBVA_ADAPTER_INFORMATION_SIZE  (16*_1K)
+#define VBVA_DISPLAY_INFORMATION_SIZE  (64*_1K)
 #define VBVA_MIN_BUFFER_SIZE           (64*_1K)
 #endif /* VBOX_WITH_HGSMI */
 
