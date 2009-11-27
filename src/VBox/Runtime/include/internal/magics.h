@@ -56,7 +56,9 @@
 #define RTENV_MAGIC                 0x19571010
 /** Magic number for RTHANDLETABLEINT::u32Magic. (Hitomi Kanehara) */
 #define RTHANDLETABLE_MAGIC         0x19830808
-/** Magic number for RTHEAPSIMPLEINTERNAL::u32Magic. (Kyoichi Katayama) */
+/** Magic number for RTHEAPOFFSETINTERNAL::u32Magic. (Neal Town Stephenson) */
+#define RTHEAPOFFSET_MAGIC          0x19591031
+/** Magic number for RTHEAPSIMPLEINTERNAL::uMagic. (Kyoichi Katayama) */
 #define RTHEAPSIMPLE_MAGIC          0x19590105
 /** The magic value for RTLDRMODINTERNAL::u32Magic. (Alan Moore) */
 #define RTLDRMOD_MAGIC              0x19531118

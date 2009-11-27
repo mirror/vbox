@@ -67,6 +67,7 @@ PROGRAMS += \
 	tstFork \
 	tstGetOpt \
 	tstHandleTable \
+	tstRTHeapOffset \
 	tstRTHeapSimple \
 	tstInlineAsm \
 	tstLdr \
@@ -199,6 +200,9 @@ tstFork_SOURCES = tstFork.cpp
 tstGetOpt_SOURCES = tstGetOpt.cpp
 
 tstHandleTable_SOURCES = tstHandleTable.cpp
+
+tstRTHeapOffset_TEMPLATE = VBOXR3TSTEXE
+tstRTHeapOffset_SOURCES = tstRTHeapOffset.cpp
 
 tstRTHeapSimple_TEMPLATE = VBOXR3TSTEXE
 tstRTHeapSimple_SOURCES = tstRTHeapSimple.cpp

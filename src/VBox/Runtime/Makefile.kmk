@@ -204,6 +204,7 @@ RuntimeR3_INCS.l4       = \
 RuntimeR3_SOURCES       = \
 	common/alloc/alloc.cpp \
 	common/alloc/heapsimple.cpp \
+	common/alloc/heapoffset.cpp \
 	common/checksum/adler32.cpp \
 	common/checksum/crc32-zlib.cpp \
 	common/checksum/crc64.cpp \
@@ -1143,6 +1144,7 @@ RuntimeR0Drv_INCS.solaris = \
 RuntimeR0Drv_SOURCES    = \
 	common/alloc/alloc.cpp \
 	common/alloc/heapsimple.cpp \
+	common/alloc/heapoffset.cpp \
 	common/misc/RTAssertMsg2.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
