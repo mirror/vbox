@@ -211,7 +211,7 @@ VBoxNetFltNotify_SOURCES    = \
 	win/notifyobj/VBoxNetFltNotify.def \
 	win/notifyobj/VBoxNetFltNotify.rc
 VBoxNetFltNotify_LIBS       = \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls$(VBOX_VCC_CRT_TYPE).lib
 #VBoxNetFltNotify_INTERMEDIATES =
 VBoxNetFltNotify_DEPS       = \
 	$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn_i.c \
