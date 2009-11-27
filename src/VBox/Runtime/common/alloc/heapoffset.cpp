@@ -73,7 +73,7 @@ typedef struct RTHEAPOFFSETBLOCK
     /** Flags + magic. */
     uint32_t                            fFlags;
 } RTHEAPOFFSETBLOCK;
-AssertCompileSizeAlignment(RTHEAPOFFSETBLOCK, 16);
+AssertCompileSize(RTHEAPOFFSETBLOCK, 16);
 
 /** The block is free if this flag is set. When cleared it's allocated. */
 #define RTHEAPOFFSETBLOCK_FLAGS_FREE        (RT_BIT_32(0))
@@ -133,7 +133,7 @@ typedef struct RTHEAPOFFSETFREE
     /** An alignment filler to make it a multiple of 16 bytes. */
     uint32_t                        Alignment;
 } RTHEAPOFFSETFREE;
-AssertCompileSizeAlignment(RTHEAPOFFSETFREE, 16);
+AssertCompileSize(RTHEAPOFFSETFREE, 16+16);
 
 
 /**
@@ -153,10 +153,10 @@ typedef struct RTHEAPOFFSETINTERNAL
     uint32_t /*PRTHEAPOFFSETFREE*/  offFreeHead;
     /** Free tail pointer. */
     uint32_t /*PRTHEAPOFFSETFREE*/  offFreeTail;
-    /** Make the size of this structure is a multiple of 32. */
+    /** Make the size of this structure 32 bytes. */
     uint32_t                        au32Alignment[3];
 } RTHEAPOFFSETINTERNAL;
-AssertCompileSizeAlignment(RTHEAPOFFSETINTERNAL, 32);
+AssertCompileSize(RTHEAPOFFSETINTERNAL, 32);
 
 
 /** The minimum allocation size. */
