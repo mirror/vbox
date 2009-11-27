@@ -73,10 +73,11 @@
 #include <VBox/ssm.h>
 
 #include "HGSMIHost.h"
-#include "VBox/HGSMI/HGSMIChannels.h"
-#include "VBox/HGSMI/HGSMIChSetup.h"
+#include <VBox/HGSMI/HGSMIChannels.h>
+#include <VBox/HGSMI/HGSMIChSetup.h>
 
 #include "HGSMIHostHlp.h"
+#include "../DevVGASavedState.h"
 
 #ifdef DEBUG_sunlover
 #define HGSMI_STRICT 1
@@ -370,7 +371,7 @@ static bool hgsmiProcessHostCmdCompletion (HGSMIINSTANCE *pIns,
 #ifdef DEBUGVHWASTRICT
             /* guest usually completes commands in the order it receives it
              * if we're here this would typically means there is some cmd loss */
-            Assert(0);
+            AssertFailed();
 #endif
 
             pPrev = pEntry;
@@ -1062,16 +1063,17 @@ int HGSMISetupHostHeap (PHGSMIINSTANCE pIns,
         {
             if (pIns->hostHeap.cRefs)
             {
-                Assert(0);
+                AssertFailed();
                 /* It is possible to change the heap only if there is no pending allocations. */
                 rc = VERR_ACCESS_DENIED;
             }
             else
             {
                 rc = HGSMIHeapSetup (&pIns->hostHeap,
-                                        pIns->area.pu8Base+offHeap,
-                                        cbHeap,
-                                        offHeap);
+                                     pIns->area.pu8Base+offHeap,
+                                     cbHeap,
+                                     offHeap,
+                                     true /*fOffsetBased*/);
             }
 
             hgsmiHostHeapUnlock (pIns);
@@ -1188,7 +1190,7 @@ int HGSMIHostSaveStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM)
 
 int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Version)
 {
-    if(u32Version < 3)
+    if(u32Version < VGA_SAVEDSTATE_VERSION_HGSMI)
         return VINF_SUCCESS;
 
     VBOXHGSMI_LOAD_START(pSSM);
@@ -1217,12 +1219,14 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
         {
             Assert(!pIns->hostHeap.cRefs);
             pIns->hostHeap.cRefs = 0;
+
             rc = HGSMIHeapRelocate(&pIns->hostHeap,
-                                    pIns->area.pu8Base+offHeap,
-                                    off,
-                                    uintptr_t(pIns->area.pu8Base) - uintptr_t(oldMem),
-                                    cbHeap,
-                                    offHeap);
+                                   pIns->area.pu8Base+offHeap,
+                                   off,
+                                   uintptr_t(pIns->area.pu8Base) - uintptr_t(oldMem),
+                                   cbHeap,
+                                   offHeap,
+                                   u32Version > VGA_SAVEDSTATE_VERSION_HOST_HEAP);
 
             hgsmiHostHeapUnlock (pIns);
         }
@@ -1525,10 +1529,10 @@ int HGSMICreate (PHGSMIINSTANCE *ppIns,
     }
 
     rc = HGSMIHostChannelRegister (pIns,
-								   HGSMI_CH_HGSMI,
-								   hgsmiChannelHandler,
-								   pIns,
-								   &sOldChannelHandler);
+                                   HGSMI_CH_HGSMI,
+                                   hgsmiChannelHandler,
+                                   pIns,
+                                   &sOldChannelHandler);
 
     if (RT_SUCCESS (rc))
     {

@@ -154,10 +154,10 @@ int HGSMIAreaInitialize (HGSMIAREA *pArea, void *pvBase, HGSMISIZE cbArea, HGSMI
 {
     uint8_t *pu8Base = (uint8_t *)pvBase;
 
-    if (  !pArea                                 /* Check that the area: */
-        || cbArea < HGSMIBufferMinimumSize ()    /* Large enough. */
-        || pu8Base + cbArea < pu8Base            /* No address space wrap. */
-        || offBase > 0xFFFFFFFFU - cbArea        /* Area within the 32 bit space: offBase + cbMem <= 0xFFFFFFFF */
+    if (  !pArea                                   /* Check that the area: */
+        || cbArea < HGSMIBufferMinimumSize ()      /* Large enough. */
+        || pu8Base + cbArea < pu8Base              /* No address space wrap. */
+        || offBase > UINT32_C(0xFFFFFFFF) - cbArea /* Area within the 32 bit space: offBase + cbMem <= 0xFFFFFFFF */
        )
     {
         return VERR_INVALID_PARAMETER;
@@ -198,26 +198,28 @@ HGSMIOFFSET HGSMIBufferInitializeSingle (const HGSMIAREA *pArea,
 
 void HGSMIHeapSetupUnitialized (HGSMIHEAP *pHeap)
 {
-    pHeap->heap             = NIL_RTHEAPSIMPLE;
+    pHeap->u.hPtr = NIL_RTHEAPSIMPLE;
     pHeap->cRefs = 0;
     pHeap->area.cbArea = 0;
     pHeap->area.offBase = HGSMIOFFSET_VOID;
     pHeap->area.offLast = HGSMIOFFSET_VOID;
     pHeap->area.pu8Base = 0;
+    pHeap->fOffsetBased = false;
 }
 
 bool HGSMIHeapIsItialized (HGSMIHEAP *pHeap)
 {
-    return pHeap->heap != NIL_RTHEAPSIMPLE;
+    return pHeap->u.hPtr != NIL_RTHEAPSIMPLE;
 }
 
 int HGSMIHeapRelocate (HGSMIHEAP *pHeap,
-                    void *pvBase,
-                    uint32_t offHeapHandle,
-                    uintptr_t offDelta,
-                    HGSMISIZE cbArea,
-                    HGSMIOFFSET offBase
-                    )
+                       void *pvBase,
+                       uint32_t offHeapHandle,
+                       uintptr_t offDelta,
+                       HGSMISIZE cbArea,
+                       HGSMIOFFSET offBase,
+                       bool fOffsetBased
+                       )
 {
     if (   !pHeap
         || !pvBase)
@@ -229,11 +231,17 @@ int HGSMIHeapRelocate (HGSMIHEAP *pHeap,
 
     if (RT_SUCCESS (rc))
     {
-        pHeap->heap = (RTHEAPSIMPLE)(((uint8_t*)pvBase) + offHeapHandle);
-        rc = RTHeapSimpleRelocate (pHeap->heap, offDelta); AssertRC(rc);
+        if (fOffsetBased)
+            pHeap->u.hOff = (RTHEAPOFFSET)((uint8_t *)pvBase + offHeapHandle);
+        else
+        {
+            pHeap->u.hPtr = (RTHEAPSIMPLE)((uint8_t *)pvBase + offHeapHandle);
+            rc = RTHeapSimpleRelocate (pHeap->u.hPtr, offDelta); AssertRC(rc);
+        }
         if (RT_SUCCESS (rc))
         {
             pHeap->cRefs = 0;
+            pHeap->fOffsetBased = fOffsetBased;
         }
         else
         {
@@ -247,7 +255,8 @@ int HGSMIHeapRelocate (HGSMIHEAP *pHeap,
 int HGSMIHeapSetup (HGSMIHEAP *pHeap,
                     void *pvBase,
                     HGSMISIZE cbArea,
-                    HGSMIOFFSET offBase)
+                    HGSMIOFFSET offBase,
+                    bool fOffsetBased)
 {
     if (   !pHeap
         || !pvBase)
@@ -259,11 +268,15 @@ int HGSMIHeapSetup (HGSMIHEAP *pHeap,
 
     if (RT_SUCCESS (rc))
     {
-        rc = RTHeapSimpleInit (&pHeap->heap, pvBase, cbArea);
+        if (!fOffsetBased)
+            rc = RTHeapSimpleInit (&pHeap->u.hPtr, pvBase, cbArea);
+        else
+            rc = RTHeapOffsetInit (&pHeap->u.hOff, pvBase, cbArea);
 
         if (RT_SUCCESS (rc))
         {
             pHeap->cRefs = 0;
+            pHeap->fOffsetBased = fOffsetBased;
         }
         else
         {
@@ -278,7 +291,7 @@ void HGSMIHeapDestroy (HGSMIHEAP *pHeap)
 {
     if (pHeap)
     {
-        pHeap->heap = NIL_RTHEAPSIMPLE;
+        pHeap->u.hPtr = NIL_RTHEAPSIMPLE;
         HGSMIAreaClear (&pHeap->area);
         pHeap->cRefs = 0;
     }
@@ -289,14 +302,18 @@ void *HGSMIHeapAlloc (HGSMIHEAP *pHeap,
                       uint8_t u8Channel,
                       uint16_t u16ChannelInfo)
 {
-    if (pHeap->heap == NIL_RTHEAPSIMPLE)
+    if (pHeap->u.hPtr == NIL_RTHEAPSIMPLE)
     {
         return NULL;
     }
 
     size_t cbAlloc = HGSMIBufferRequiredSize (cbData);
 
-    HGSMIBUFFERHEADER *pHeader = (HGSMIBUFFERHEADER *)RTHeapSimpleAlloc (pHeap->heap, cbAlloc, 0);
+    HGSMIBUFFERHEADER *pHeader;
+    if (!pHeap->fOffsetBased)
+        pHeader = (HGSMIBUFFERHEADER *)RTHeapSimpleAlloc (pHeap->u.hPtr, cbAlloc, 0);
+    else
+        pHeader = (HGSMIBUFFERHEADER *)RTHeapOffsetAlloc (pHeap->u.hOff, cbAlloc, 0);
 
     if (!pHeader)
     {
@@ -324,11 +341,14 @@ void HGSMIHeapFree (HGSMIHEAP *pHeap,
                     void *pvData)
 {
     if (   pvData
-        && pHeap->heap != NIL_RTHEAPSIMPLE)
+        && pHeap->u.hPtr != NIL_RTHEAPSIMPLE)
     {
         HGSMIBUFFERHEADER *pHeader = HGSMIBufferHeaderFromData (pvData);
 
-        RTHeapSimpleFree (pHeap->heap, pHeader);
+        if (!pHeap->fOffsetBased)
+            RTHeapSimpleFree (pHeap->u.hPtr, pHeader);
+        else
+            RTHeapOffsetFree (pHeap->u.hOff, pHeader);
 
         --pHeap->cRefs;
     }

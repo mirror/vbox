@@ -45,14 +45,9 @@
  */
 
 #ifdef VBOX_WITH_HGSMI
-#include "HGSMI/HGSMIHost.h"
+# include "HGSMI/HGSMIHost.h"
 #endif /* VBOX_WITH_HGSMI */
-
-#define VGA_SAVEDSTATE_VERSION              5
-#define VGA_SAVEDSTATE_VERSION_WITH_CONFIG  4
-#define VGA_SAVEDSTATE_VERSION_HGSMI        3
-#define VGA_SAVEDSTATE_VERSION_PRE_HGSMI    2
-#define VGA_SAVEDSTATE_VERSION_ANCIENT      1
+#include "DevVGASavedState.h"
 
 #define MSR_COLOR_EMULATION 0x01
 #define MSR_PAGE_SELECT     0x20
