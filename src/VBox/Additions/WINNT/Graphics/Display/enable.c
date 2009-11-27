@@ -145,11 +145,11 @@ ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG
 #else
         if (ppdev && ppdev->pVBVA)
         {
-            if (ppdev->pVBVA->u32HostEvents & VBVA_F_MODE_VRDP)
+            if (ppdev->pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_VRDP)
             {
                 ret = 1;
             }
-            DISPDBG((0, "VBOXESC_ISVRDPACTIVE -> %d (%x)\n", ret, ppdev->pVBVA->u32HostEvents));
+            DISPDBG((0, "VBOXESC_ISVRDPACTIVE -> %d (%x)\n", ret, ppdev->pVBVA->hostFlags.u32HostEvents));
         }
         else
             DISPDBG((0, "VBOXESC_ISVRDPACTIVE -> 0\n"));

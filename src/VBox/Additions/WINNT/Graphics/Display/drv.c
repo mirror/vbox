@@ -143,16 +143,16 @@ BOOL bIsScreenSurface (SURFOBJ *pso)
         {                                                              \
             vbva##__fn __a;                                            \
                                                                        \
-            if (  ppdev->pVBVA->u32HostEvents                           \
+            if (  ppdev->pVBVA->hostFlags.u32HostEvents                \
                 & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)            \
             {                                                          \
                 vrdpReset (ppdev);                                     \
                                                                        \
-                ppdev->pVBVA->u32HostEvents &=                          \
+                ppdev->pVBVA->hostFlags.u32HostEvents &=               \
                           ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;   \
             }                                                          \
                                                                        \
-            if (ppdev->pVBVA->u32HostEvents                             \
+            if (ppdev->pVBVA->hostFlags.u32HostEvents                  \
                 & VBVA_F_MODE_VRDP)                                    \
             {                                                          \
                 vrdp##__fn __a;                                        \
@@ -365,7 +365,7 @@ BOOL APIENTRY DrvCopyBits(
         DISPDBG((1, "offscreen->screen\n"));
 
         if (   ppdev->pVBVA
-            && (ppdev->pVBVA->u32HostEvents & VBVA_F_MODE_ENABLED))
+            && (ppdev->pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_ENABLED))
 #endif /* VBOX_WITH_HGSMI */
         {
             if (   (psoSrc->fjBitmap & BMF_DONTCACHE) != 0
@@ -792,18 +792,18 @@ BOOL APIENTRY DrvRealizeBrush(
         }
 #else
         if (   ppdev->pVBVA
-            && (ppdev->pVBVA->u32HostEvents & VBVA_F_MODE_ENABLED))
+            && (ppdev->pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_ENABLED))
         {
-            if (ppdev->pVBVA->u32HostEvents
+            if (ppdev->pVBVA->hostFlags.u32HostEvents
                 & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)
             {
                 vrdpReset (ppdev);
 
-                ppdev->pVBVA->u32HostEvents &=
+                ppdev->pVBVA->hostFlags.u32HostEvents &=
                     ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
             }
 
-            if (ppdev->pVBVA->u32HostEvents
+            if (ppdev->pVBVA->hostFlags.u32HostEvents
                 & VBVA_F_MODE_VRDP)
             {
                 bRc = vrdpRealizeBrush (pbo, psoTarget, psoPattern, psoMask, pxlo, iHatch);

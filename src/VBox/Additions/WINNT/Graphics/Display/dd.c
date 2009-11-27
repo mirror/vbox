@@ -1191,16 +1191,16 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
         {
             vbvaReportDirtyRect (pDev, &pDesc->UpdatedMemRegion.Rect);
 
-            if (  pDev->pVBVA->u32HostEvents
+            if (  pDev->pVBVA->hostFlags.u32HostEvents
                 & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)
             {
                 vrdpReset (pDev);
 
-                pDev->pVBVA->u32HostEvents &=
+                pDev->pVBVA->hostFlags.u32HostEvents &=
                           ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
             }
 
-            if (pDev->pVBVA->u32HostEvents
+            if (pDev->pVBVA->hostFlags.u32HostEvents
                 & VBVA_F_MODE_VRDP)
             {
                 vrdpReportDirtyRect (pDev, &pDesc->UpdatedMemRegion.Rect);
@@ -1283,16 +1283,16 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
         {
             vbvaReportDirtyRect (pDev, &pDev->ddLock.rArea);
 
-            if (  pDev->pVBVA->u32HostEvents
+            if (  pDev->pVBVA->hostFlags.u32HostEvents
                 & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)
             {
                 vrdpReset (pDev);
 
-                pDev->pVBVA->u32HostEvents &=
+                pDev->pVBVA->hostFlags.u32HostEvents &=
                           ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
             }
 
-            if (pDev->pVBVA->u32HostEvents
+            if (pDev->pVBVA->hostFlags.u32HostEvents
                 & VBVA_F_MODE_VRDP)
             {
                 vrdpReportDirtyRect (pDev, &pDev->ddLock.rArea);

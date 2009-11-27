@@ -757,10 +757,15 @@ typedef FNVBOXVHWA_HH_CALLBACK *PFNVBOXVHWA_HH_CALLBACK;
 /* All structures are without alignment. */
 #pragma pack(1)
 
-typedef struct _VBVABUFFER
+typedef struct VBVAHOSTFLAGS
 {
     uint32_t u32HostEvents;
     uint32_t u32SupportedOrders;
+} VBVAHOSTFLAGS;
+
+typedef struct _VBVABUFFER
+{
+    VBVAHOSTFLAGS hostFlags;
 
     /* The offset where the data start in the buffer. */
     uint32_t off32Data;
