@@ -1031,7 +1031,13 @@ PDMBOTHCBDECL(int) apicLocalInterrupt(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t
                 enmType = PDMAPICIRQ_SMI;
                 break;
             case APIC_DM_FIXED:
+            {
                 /** @todo implement APIC_DM_FIXED! */
+                static unsigned s_c = 0;
+                if (s_c++ < 5)
+                    LogRel(("delivery type APIC_DM_FIXED not implemented. u8Pin=%d u8Level=%d", u8Pin, u8Level));
+                return  VINF_SUCCESS;
+            }
             case APIC_DM_INIT:
                 /** @todo implement APIC_DM_INIT? */
             default:

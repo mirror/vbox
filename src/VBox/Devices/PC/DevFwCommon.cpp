@@ -66,9 +66,9 @@ typedef struct DMIMAINHDR
     uint16_t        u16TablesLength;
     uint32_t        u32TableBase;
     uint16_t        u16TableEntries;
-    uint16_t        u8TableVersion;
-    uint8_t         u8Pad;
+    uint8_t         u8TableVersion;
 } *DMIMAINHDRPTR;
+AssertCompileSize(DMIMAINHDR, 15);
 
 /** DMI header */
 typedef struct DMIHDR
@@ -268,6 +268,15 @@ static uint8_t fwCommonChecksum(const uint8_t * const au8Data, uint32_t u32Lengt
         u8Sum += au8Data[i];
     return -u8Sum;
 }
+
+static bool sharedfwChecksumOk(const uint8_t * const au8Data, uint32_t u32Length)
+{
+    uint8_t u8Sum = 0;
+    for (size_t i = 0; i < u32Length; i++)
+        u8Sum += au8Data[i];
+    return (u8Sum == 0);
+}
+
 
 /**
  * Construct the DMI table.
@@ -551,15 +560,13 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
                 VBOX_DMI_TABLE_BASE,               // DMI tables base
                 VBOX_DMI_TABLE_ENTR,               // DMI tables entries
                 VBOX_DMI_TABLE_VER,                // DMI version
-                0x00
             }
         };
 
         aBiosHeaders.smbios.u8Checksum = fwCommonChecksum((uint8_t*)&aBiosHeaders.smbios, sizeof(aBiosHeaders.smbios));
         aBiosHeaders.dmi.u8Checksum = fwCommonChecksum((uint8_t*)&aBiosHeaders.dmi, sizeof(aBiosHeaders.dmi));
 
-        //Log(("Write SMBIOS\n"));
-        PDMDevHlpPhysWrite (pDevIns, 0xff30, &aBiosHeaders, sizeof(aBiosHeaders));
+        PDMDevHlpPhysWrite (pDevIns, 0xfe300, &aBiosHeaders, sizeof(aBiosHeaders));
     }
 
     return VINF_SUCCESS;
