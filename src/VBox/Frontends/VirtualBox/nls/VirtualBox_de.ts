@@ -826,7 +826,7 @@
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation>Experimentelle Version %1r%2 - %3</translation>
+        <translation> Experimentelle Version %1r%2 - %3</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Devices</source>
@@ -3841,27 +3841,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 konnte nicht an den Slot &lt;i&gt;%2&lt;/i&gt; der Maschine &lt;b&gt;%3&lt;/b&gt; angeschlossen werden.</translation>
     </message>
     <message>
         <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 konnte nicht vom Slot &lt;i&gt;%2&lt;/i&gt; der Maschine &lt;b&gt;%3&lt;/b&gt; getrennt werden.</translation>
     </message>
     <message>
         <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; konnte nicht an die Maschine &lt;b&gt;%3&lt;/b&gt; gebunden werden.</translation>
     </message>
     <message>
         <source> Would you like to force mounting of this medium?</source>
-        <translation type="unfinished"></translation>
+        <translation> Möchten Sie die Anbindung des Mediums erzwingen?</translation>
     </message>
     <message>
         <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; der Maschine &lt;b&gt;%3&lt;/b&gt; konnte nicht ausgeworfen werden.</translation>
     </message>
     <message>
         <source> Would you like to force unmounting of this medium?</source>
-        <translation type="unfinished"></translation>
+        <translation> Möchten Sie den Auswurf dieses Mediums erzwingen?</translation>
     </message>
     <message>
         <source>Force Unmount</source>
@@ -3873,7 +3873,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das CD-Abbild mit den Gast-Erweiterungen konnte nicht an die Maschine &lt;b&gt;%1&lt;/b&gt; gebunden werden, da diese Maschine kein CD/DVD-Laufwerk besitzt. Bitte fügen Sie ein solches auf der Seite Massenspeicher der Einstellungen für die virtuelle Maschine hinzu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -3887,42 +3887,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>hard disk</source>
         <comment>failed to mount ...</comment>
-        <translation>die Festplatte</translation>
+        <translation>Die Festplatte</translation>
     </message>
     <message>
         <source>CD/DVD</source>
         <comment>failed to mount ... host-drive</comment>
-        <translation>CD/DVD</translation>
+        <translation>Dass CD/DVD-Laufwerk</translation>
     </message>
     <message>
         <source>CD/DVD image</source>
         <comment>failed to mount ...</comment>
-        <translation>das CD/DVD-Abbild</translation>
+        <translation>Das CD/DVD-Abbild</translation>
     </message>
     <message>
         <source>floppy</source>
         <comment>failed to mount ... host-drive</comment>
-        <translation>Diskette</translation>
+        <translation>Das Diskettenlaufwerk</translation>
     </message>
     <message>
         <source>floppy image</source>
         <comment>failed to mount ...</comment>
-        <translation>das Diskettenabbild</translation>
+        <translation>Das Diskettenabbild</translation>
     </message>
     <message>
         <source>hard disk</source>
         <comment>failed to attach ...</comment>
-        <translation>die Festplatte</translation>
+        <translation>Die Festplatte</translation>
     </message>
     <message>
         <source>CD/DVD device</source>
         <comment>failed to attach ...</comment>
-        <translation>CD/DVD-Laufwerk</translation>
+        <translation>Das CD/DVD-Laufwerk</translation>
     </message>
     <message>
         <source>floppy device</source>
         <comment>failed to close ...</comment>
-        <translation>Diskettenlaufwerk</translation>
+        <translation>Das Diskettenlaufwerk</translation>
     </message>
 </context>
 <context>
@@ -4347,7 +4347,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source> (current, </source>
         <comment>Snapshot details</comment>
-        <translation>(aktuell,</translation>
+        <translation> (aktuell,</translation>
     </message>
     <message>
         <source>online)</source>
@@ -4396,33 +4396,33 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> (%1)</source>
-        <translation></translation>
+        <translation> (%1)</translation>
     </message>
     <message numerus="yes">
         <source> (%n day(s) ago)</source>
         <translation>
-            <numerusform>(vor %n Tag(en))</numerusform>
+            <numerusform> (vor %n Tag(en))</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n hour(s) ago)</source>
         <translation>
-            <numerusform>(vor %n Stunde(n))</numerusform>
+            <numerusform> (vor %n Stunde(n))</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n minute(s) ago)</source>
         <translation>
-            <numerusform>(vor %n Minute(n))</numerusform>
+            <numerusform> (vor %n Minute(n))</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n second(s) ago)</source>
         <translation>
-            <numerusform>(vor %n Sekunde(n))</numerusform>
+            <numerusform> (vor %n Sekunde(n))</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -5368,15 +5368,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählt den Slot des Controllers, der für diesen Anschluss benutzt wird. Anzahl und Art der verfügbaren Slots sind abhängig vom Typ des Controllers.</translation>
     </message>
     <message>
         <source>Selects the virtual disk image or the host drive used by this attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählt das virtuelle Abbild oder das Host-Laufwerk aus, das für diesen Anschluss benutzt wird.</translation>
     </message>
     <message>
         <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet den Manager für virtuelle Medien, um ein Abbild für diesen Anschluss auszuwählen.</translation>
     </message>
     <message>
         <source>Open Virtual Media Manager</source>
@@ -5384,7 +5384,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>D&amp;ifferencing Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Differenz-Abbilder</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
@@ -5578,11 +5578,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> Machine Folders</source>
-        <translation>Ordner der virtuellen Maschine</translation>
+        <translation> Ordner der virtuellen Maschine</translation>
     </message>
     <message>
         <source> Transient Folders</source>
-        <translation>Transiente Ordner</translation>
+        <translation> Transiente Ordner</translation>
     </message>
     <message>
         <source>Full</source>
@@ -5610,7 +5610,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> Global Folders</source>
-        <translation>Globale Ordner</translation>
+        <translation> Globale Ordner</translation>
     </message>
     <message>
         <source>&amp;Add Shared Folder</source>
