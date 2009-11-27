@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevFwCommon - shared header for code common between different firmware types (EFI, BIOS).
+ * FwCommon - Shared firmware code, header.
  */
 
 /*
@@ -19,8 +19,8 @@
  * additional information or have any questions.
  */
 
-#ifndef DEV_FWCOMMON_H
-#define DEV_FWCOMMON_H
+#ifndef ___PC_FwCommon_h
+#define ___PC_FwCommon_h
 
 #include "DevPcBios.h"
 
@@ -31,9 +31,10 @@
 #define VBOX_MPS_TABLE_BASE          0xe1100
 
 /* Plant DMI table */
-int sharedfwPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PRTUUID pUuid, PCFGMNODE pCfgHandle, bool fPutSmbiosHeaders = false);
+int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PCRTUUID pUuid, PCFGMNODE pCfgHandle, bool fPutSmbiosHeaders);
 
 /* Plant MPS table */
-void sharedfwPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t numCpus);
+void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t cCpus);
 
 #endif
+

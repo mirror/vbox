@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Shared firmware code.
+ * FwCommon - Shared firmware code (used by DevPcBios & DevEFI).
  */
 
 /*
@@ -22,24 +22,28 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-/** @todo: what should it be? */
-#define LOG_GROUP LOG_GROUP_DEV_PC_BIOS
+#define LOG_GROUP LOG_GROUP_DEV
 #include <VBox/pdmdev.h>
 
 #include <VBox/log.h>
-#include <iprt/assert.h>
-#include <iprt/alloc.h>
-#include <iprt/buildconfig.h>
-#include <iprt/file.h>
-#include <iprt/string.h>
-#include <iprt/uuid.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
+
+#include <iprt/assert.h>
+#include <iprt/buildconfig.h>
+#include <iprt/file.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
+#include <iprt/uuid.h>
 
 #include "../Builtins.h"
 #include "../Builtins2.h"
 #include "DevFwCommon.h"
 
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 #pragma pack(1)
 
 typedef struct SMBIOSHDR
@@ -257,7 +261,7 @@ AssertCompileSize(MPSIOINTERRUPTENTRY, 8);
  * @param   data            data
  * @param   len             size of data
  */
-static uint8_t sharedfwChecksum(const uint8_t * const au8Data, uint32_t u32Length)
+static uint8_t fwCommonChecksum(const uint8_t * const au8Data, uint32_t u32Length)
 {
     uint8_t u8Sum = 0;
     for (size_t i = 0; i < u32Length; ++i)
@@ -269,14 +273,15 @@ static uint8_t sharedfwChecksum(const uint8_t * const au8Data, uint32_t u32Lengt
  * Construct the DMI table.
  *
  * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pTable      Where to create the DMI table.
- * @param   cbMax       The max size of the DMI table.
- * @param   pUuid       Pointer to the UUID to use if the DmiUuid
- *                      configuration string isn't present.
- * @param   pCfgHandle  The handle to our config node.
+ * @param   pDevIns             The device instance.
+ * @param   pTable              Where to create the DMI table.
+ * @param   cbMax               The max size of the DMI table.
+ * @param   pUuid               Pointer to the UUID to use if the DmiUuid
+ *                              configuration string isn't present.
+ * @param   pCfgHandle          The handle to our config node.
+ * @param   fPutSmbiosHeaders   Plant SMBIOS headers if true.
  */
-int sharedfwPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PRTUUID pUuid, PCFGMNODE pCfgHandle, bool fPutSmbiosHeaders)
+int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PCRTUUID pUuid, PCFGMNODE pCfgHandle, bool fPutSmbiosHeaders)
 {
     char *pszStr = (char *)pTable;
     int iStrNr;
@@ -420,7 +425,7 @@ int sharedfwPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
     RTUUID uuid;
     if (pszDmiSystemUuid)
     {
-        int rc = RTUuidFromStr(&uuid, pszDmiSystemUuid);
+        rc = RTUuidFromStr(&uuid, pszDmiSystemUuid);
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Invalid UUID for DMI tables specified"));
@@ -550,8 +555,8 @@ int sharedfwPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
             }
         };
 
-        aBiosHeaders.smbios.u8Checksum = sharedfwChecksum((uint8_t*)&aBiosHeaders.smbios, sizeof(aBiosHeaders.smbios));
-        aBiosHeaders.dmi.u8Checksum = sharedfwChecksum((uint8_t*)&aBiosHeaders.dmi, sizeof(aBiosHeaders.dmi));
+        aBiosHeaders.smbios.u8Checksum = fwCommonChecksum((uint8_t*)&aBiosHeaders.smbios, sizeof(aBiosHeaders.smbios));
+        aBiosHeaders.dmi.u8Checksum = fwCommonChecksum((uint8_t*)&aBiosHeaders.dmi, sizeof(aBiosHeaders.dmi));
 
         //Log(("Write SMBIOS\n"));
         PDMDevHlpPhysWrite (pDevIns, 0xff30, &aBiosHeaders, sizeof(aBiosHeaders));
@@ -588,7 +593,7 @@ AssertCompile(VBOX_DMI_TABLE_ENTR == 5);
  * @param   pDevIns    The device instance data.
  * @param   addr       physical address in guest memory.
  */
-void sharedfwPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t numCpus)
+void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t cCpus)
 {
     /* configuration table */
     PMPSCFGTBLHEADER pCfgTab      = (MPSCFGTBLHEADER*)pTable;
@@ -598,7 +603,7 @@ void sharedfwPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t numCpus
     memcpy(pCfgTab->au8ProductId, "VirtualBox  ", 12);
     pCfgTab->u32OemTablePtr        =  0;
     pCfgTab->u16OemTableSize       =  0;
-    pCfgTab->u16EntryCount         =  numCpus /* Processors */
+    pCfgTab->u16EntryCount         =  cCpus /* Processors */
                                    +  1 /* ISA Bus */
                                    +  1 /* I/O-APIC */
                                    + 16 /* Interrupts */;
@@ -621,7 +626,7 @@ void sharedfwPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t numCpus
     }
     /* Construct MPS table for each VCPU. */
     PMPSPROCENTRY pProcEntry = (PMPSPROCENTRY)(pCfgTab+1);
-    for (int i = 0; i<numCpus; i++)
+    for (int i = 0; i < cCpus; i++)
     {
         pProcEntry->u8EntryType        = 0; /* processor entry */
         pProcEntry->u8LocalApicId      = i;
@@ -646,7 +651,7 @@ void sharedfwPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t numCpus
      * MP spec: "The configuration table contains one or more entries for I/O APICs.
      *           ... At least one I/O APIC must be enabled." */
     PMPSIOAPICENTRY pIOAPICEntry   = (PMPSIOAPICENTRY)(pBusEntry+1);
-    uint16_t apicId = numCpus;
+    uint16_t apicId = cCpus;
     pIOAPICEntry->u8EntryType      = 2; /* I/O-APIC entry */
     pIOAPICEntry->u8Id             = apicId; /* this ID is referenced by the interrupt entries */
     pIOAPICEntry->u8Version        = 0x11;
@@ -667,7 +672,7 @@ void sharedfwPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t numCpus
     }
 
     pCfgTab->u16Length             = (uint8_t*)pIrqEntry - pTable;
-    pCfgTab->u8Checksum            = sharedfwChecksum(pTable, pCfgTab->u16Length);
+    pCfgTab->u8Checksum            = fwCommonChecksum(pTable, pCfgTab->u16Length);
 
     AssertMsg(pCfgTab->u16Length < 0x1000 - 0x100,
               ("VBOX_MPS_TABLE_SIZE=%d, maximum allowed size is %d",
@@ -687,6 +692,7 @@ void sharedfwPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t numCpus
     floatPtr.au8Feature[2]         = 0;
     floatPtr.au8Feature[3]         = 0;
     floatPtr.au8Feature[4]         = 0;
-    floatPtr.u8Checksum            = sharedfwChecksum((uint8_t*)&floatPtr, 16);
+    floatPtr.u8Checksum            = fwCommonChecksum((uint8_t*)&floatPtr, 16);
     PDMDevHlpPhysWrite (pDevIns, 0x9fff0, &floatPtr, 16);
 }
+
