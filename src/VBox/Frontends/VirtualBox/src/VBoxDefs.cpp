@@ -60,3 +60,4 @@ const char* VBoxDefs::GUI_Export_StorageType = "GUI/Export/StorageType";
 const char* VBoxDefs::GUI_Export_Username = "GUI/Export/Username";
 const char* VBoxDefs::GUI_Export_Hostname = "GUI/Export/Hostname";
 const char* VBoxDefs::GUI_Export_Bucket = "GUI/Export/Bucket";
+const char* VBoxDefs::GUI_PreventBetaWarning = "GUI/PreventBetaWarning";

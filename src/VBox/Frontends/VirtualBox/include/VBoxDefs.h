@@ -178,6 +178,7 @@ struct VBoxDefs
     static const char* GUI_Export_Username;
     static const char* GUI_Export_Hostname;
     static const char* GUI_Export_Bucket;
+    static const char* GUI_PreventBetaWarning;
 };
 
 #define MAC_LEOPARD_STYLE defined(Q_WS_MAC) && (QT_VERSION >= 0x040300)
