@@ -297,8 +297,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
     HRESULT hrc = COMBase::InitializeCOM();
 #endif
 
-    int i;
-    for (i=0; i<argc; i++)
+    for (int i=0; i<argc; i++)
         if (   !strcmp(argv[i], "-h")
             || !strcmp(argv[i], "-?")
             || !strcmp(argv[i], "-help")
