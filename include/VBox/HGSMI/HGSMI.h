@@ -152,9 +152,14 @@ AssertCompile(sizeof (HGSMIBUFFERTAIL) == 8);
 #pragma pack(1)
 typedef struct _HGSMIHEAP
 {
-    RTHEAPSIMPLE  heap;            /* Heap instance. */
-    HGSMIAREA     area;            /* Description. */
-    int           cRefs;           /* Number of heap allocations. */
+    union
+    {
+        RTHEAPSIMPLE  hPtr;         /**< Pointer based heap. */
+        RTHEAPOFFSET  hOff;         /**< Offset based heap. */
+    } u;
+    HGSMIAREA     area;             /**< Description. */
+    int           cRefs;            /**< Number of heap allocations. */
+    bool          fOffsetBased;     /**< Set if offset based. */
 } HGSMIHEAP;
 #pragma pack()
 
@@ -261,15 +266,16 @@ HGSMIOFFSET HGSMIBufferInitializeSingle (const HGSMIAREA *pArea,
 int HGSMIHeapSetup (HGSMIHEAP *pHeap,
                     void *pvBase,
                     HGSMISIZE cbArea,
-                    HGSMIOFFSET offBase);
+                    HGSMIOFFSET offBase,
+                    bool fOffsetBased);
 
 int HGSMIHeapRelocate (HGSMIHEAP *pHeap,
-                    void *pvBase,
-                    uint32_t offHeapHandle,
-                    uintptr_t offDelta,
-                    HGSMISIZE cbArea,
-                    HGSMIOFFSET offBase
-                    );
+                       void *pvBase,
+                       uint32_t offHeapHandle,
+                       uintptr_t offDelta,
+                       HGSMISIZE cbArea,
+                       HGSMIOFFSET offBase,
+                       bool fOffsetBased);
 
 void HGSMIHeapSetupUnitialized (HGSMIHEAP *pHeap);
 bool HGSMIHeapIsItialized (HGSMIHEAP *pHeap);
@@ -295,7 +301,10 @@ DECLINLINE(HGSMIOFFSET) HGSMIHeapOffset(HGSMIHEAP *pHeap)
 /* needed for heap relocation */
 DECLINLINE(HGSMIOFFSET) HGSMIHeapHandleLocationOffset(HGSMIHEAP *pHeap)
 {
-    return pHeap->heap != NIL_RTHEAPSIMPLE ? (uint32_t)(pHeap->area.pu8Base - (uint8_t*)pHeap->heap) : HGSMIOFFSET_VOID;
+    AssertCompile((uintptr_t)NIL_RTHEAPSIMPLE == (uintptr_t)NIL_RTHEAPOFFSET);
+    return pHeap->u.hPtr != NIL_RTHEAPSIMPLE
+        ? (HGSMIOFFSET)(pHeap->area.pu8Base - (uint8_t*)pHeap->u.hPtr)
+        : HGSMIOFFSET_VOID;
 }
 
 DECLINLINE(HGSMISIZE) HGSMIHeapSize(HGSMIHEAP *pHeap)

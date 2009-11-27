@@ -691,7 +691,8 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONF
             rc = HGSMIHeapSetup (&PrimaryExtension->u.primary.hgsmiAdapterHeap,
                                  PrimaryExtension->u.primary.pvAdapterInformation,
                                  VBVA_ADAPTER_INFORMATION_SIZE - sizeof(HGSMIHOSTFLAGS),
-                                 PrimaryExtension->u.primary.cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE);
+                                 PrimaryExtension->u.primary.cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE,
+                                 false /*fOffsetBased*/);
 
             if (RT_FAILURE (rc))
             {

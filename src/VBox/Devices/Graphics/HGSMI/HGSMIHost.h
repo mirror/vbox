@@ -21,8 +21,8 @@
  */
 
 
-#ifndef __HGSMIHost_h__
-#define __HGSMIHost_h__
+#ifndef ___HGSMIHost_h
+#define ___HGSMIHost_h
 
 #include <VBox/vm.h>
 
@@ -142,4 +142,5 @@ int HGSMIHostBufferProcessAsync (PHGSMIINSTANCE pIns,
                                  PFNHGSMIBUFFERPROCESSED);
 #endif
 
-#endif /* __HGSMIHost_h__*/
+#endif /* !___HGSMIHost_h*/
+
