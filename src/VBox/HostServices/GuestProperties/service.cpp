@@ -476,16 +476,12 @@ int Service::setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     {
         ++itEnd;
         for (unsigned i = 0; ppNames[i] != NULL; ++i)
-        {
-            bool found = false;
-            for (PropertyList::iterator it = mProperties.begin();
-                !found && it != itEnd; ++it)
+            for (PropertyList::iterator it = mProperties.begin(); it != itEnd; ++it)
                 if (it->mName.compare(ppNames[i]) == 0)
                 {
-                    found = true;
                     mProperties.erase(it);
+                    break;
                 }
-        }
     }
 
     /*
