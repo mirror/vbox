@@ -260,7 +260,7 @@ typedef struct _VBOXVIDEOINFOQUERYCONF32
 
 #define VBOXVHWA_VERSION_MAJ 0
 #define VBOXVHWA_VERSION_MIN 0
-#define VBOXVHWA_VERSION_BLD 5
+#define VBOXVHWA_VERSION_BLD 6
 #define VBOXVHWA_VERSION_RSV 0
 
 typedef enum
@@ -373,6 +373,8 @@ typedef struct _VBOXVHWA_PIXELFORMAT
     {
         uint32_t rgbABitMask;
     } m4;
+
+    uint32_t Reserved;
 } VBOXVHWA_PIXELFORMAT;
 
 typedef struct _VBOXVHWA_SURFACEDESC
