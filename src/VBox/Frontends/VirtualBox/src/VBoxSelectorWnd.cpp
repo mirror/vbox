@@ -1401,6 +1401,13 @@ void VBoxSelectorWnd::retranslateUi()
         mTrayIcon->refresh();
     }
 #endif
+
+#ifdef QT_MAC_USE_COCOA
+    /* There is a bug in Qt Cocoa which result in showing a "more
+     * arrow" when the necessary size of the toolbar is increased. So
+     * manually adjust the size after changing the text. */
+    mVMToolBar->adjustSize();
+#endif QT_MAC_USE_COCOA
 }
 
 
