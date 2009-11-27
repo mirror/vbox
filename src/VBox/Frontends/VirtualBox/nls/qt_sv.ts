@@ -1707,7 +1707,7 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>Unknown protocol specified</source>
-        <translation type="unfinished"></translation>
+        <translation>Okänt protokoll angivet</translation>
     </message>
     <message>
         <source>SSL handshake failed</source>
@@ -2521,11 +2521,11 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Skrivfel vid skrivning till %1: %2</translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Läsfel vid läsning från %1: %2</translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
@@ -2869,7 +2869,7 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>Write %1 file</source>
-        <translation type="unfinished"></translation>
+        <translation>Skriv %1-fil</translation>
     </message>
 </context>
 <context>
@@ -3311,11 +3311,11 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>%1: already exists</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: finns redan</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: finns inte</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
@@ -3347,7 +3347,7 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>%1: not attached</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: inte ansluten</translation>
     </message>
 </context>
 <context>

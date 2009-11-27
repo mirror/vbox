@@ -64,7 +64,7 @@
     </message>
     <message>
         <source>Please try reinstalling VirtualBox.</source>
-        <translation>Поновно инсталирање VirtualBox-а може помоћи.</translation>
+        <translation>Поново инсталирати VirtualBox.</translation>
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
@@ -72,7 +72,7 @@
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation>VirtualBox Linux kernel driver (vboxdrv) или није учитан или нема довољно права са /dev/vboxdrv. Поново поставити модул са&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;као root. Корисници Ubuntu, Fedora или Mandriva требају да прво инсталирају DKMS пакет. Пакет компилује vboxdrv ако потребно према промене језгра.</translation>
+        <translation>VirtualBox Linux kernel driver (vboxdrv) или није учитан или нема довољно права са /dev/vboxdrv. Поново инсталирати модул са&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;као root. Корисници Ubuntu, Fedora или Mandriva требају да прво инсталирају DKMS пакет. Пакет компилује vboxdrv ако потребно према промене језгра.</translation>
     </message>
     <message>
         <source>Make sure the kernel module has been loaded successfully.</source>
@@ -88,15 +88,15 @@
     </message>
     <message>
         <source>Unknown error %2 during initialization of the Runtime</source>
-        <translation>Непозната %2 грешка при иницијализовања &apos;Runtime&apos;</translation>
+        <translation>Непозната грешка %2 при иницијализовања &apos;Runtime&apos;</translation>
     </message>
     <message>
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Please try completely uninstalling and reinstalling VirtualBox.</source>
-        <translation>Кернел VirtualBox-а не одговара овој верзији. Можда је инсталација програма погрешна. Може помоћи да се уклони и поново инсталира програм.</translation>
+        <translation>Кернел VirtualBox-а није исти као у овој верзији. Можда је инсталација програма погрешна. Може помоћи да се уклони и поново инсталира програм.</translation>
     </message>
     <message>
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
-        <translation>Кернел VirtualBox-а не одговара овој верзији. Можда је инсталација програма погрешна. Покретање&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;требало би да поправи проблем. Проверите да не промешате верзију OSE и PUEL „VirtualBox-а“.</translation>
+        <translation>Кернел VirtualBox-а није исти као у овој верзији. Можда је инсталација програма погрешна. Покретање&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;требало би да поправи проблем. Проверите да не промешате верзију OSE и PUEL „VirtualBox-а“.</translation>
     </message>
     <message>
         <source>Kernel driver not accessible</source>
@@ -104,7 +104,7 @@
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Грешка знаћи да или кернел ноије успео да алоцира довољно меморије или да је нека мапажа погрешна.</translation>
     </message>
 </context>
 <context>
@@ -330,7 +330,7 @@
     <name>QILabel</name>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished">Копирај</translation>
+        <translation>Копирај</translation>
     </message>
 </context>
 <context>
@@ -505,15 +505,15 @@
     </message>
     <message>
         <source>Hard Disk Controller (IDE)</source>
-        <translation>IDE контролер хард диска</translation>
+        <translation>Контролер хард диска (IDE)</translation>
     </message>
     <message>
         <source>Hard Disk Controller (SATA)</source>
-        <translation>SATA контролер хард диска</translation>
+        <translation>Контролер хард диска (SATA)</translation>
     </message>
     <message>
         <source>Hard Disk Controller (SCSI)</source>
-        <translation>SCSI контролер хард диска</translation>
+        <translation>Контролер хард диска (SCSI)</translation>
     </message>
     <message>
         <source>DVD</source>
@@ -608,7 +608,7 @@
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Врача статус машине из актуелне слике</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
@@ -1029,96 +1029,96 @@
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation type="unfinished"></translation>
+        <translation> ЕКСПЕРИМЕНТАЛНА ВЕРЗИЈА %1r%2 - %3</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD Уређаји</translation>
     </message>
     <message>
         <source>&amp;Floppy Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Флопи уређаји</translation>
     </message>
     <message>
         <source>&amp;Network Adapters...</source>
-        <translation type="unfinished"></translation>
+        <translation>Мрежни адаптери...</translation>
     </message>
     <message>
         <source>Change the settings of network adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>Промени поставке мрежних адаптера</translation>
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation type="unfinished">удаљен дисплеј</translation>
+        <translation>удаљен дисплеј</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation type="unfinished"></translation>
+        <translation>Remote Desktop (RDP) Server</translation>
     </message>
     <message>
         <source>More CD/DVD Images...</source>
-        <translation type="unfinished"></translation>
+        <translation>Више CD/DVD слике...</translation>
     </message>
     <message>
         <source>Unmount CD/DVD Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Демонтирај CD/DVD уређај</translation>
     </message>
     <message>
         <source>More Floppy Images...</source>
-        <translation type="unfinished"></translation>
+        <translation>Више флопи слике...</translation>
     </message>
     <message>
         <source>Unmount Floppy Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Демонтирај флопи уређај</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
-        <translation type="unfinished"></translation>
+        <translation>Нема прикачена CD/DVD уређаја</translation>
     </message>
     <message>
         <source>No Floppy Devices Attached</source>
-        <translation type="unfinished"></translation>
+        <translation>Нема прикачена флопи уређаја</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност виртуелног хард диска:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност CD/DVD уређаја:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No CD/DVD devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Нема прикачена CD/DVD уређаја&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност флопи уређаја:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No floppy devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Нема прикачених флопи уређаја&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност мрежних интерфејса:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност прикачених USB уређаја:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активно дељених фасцикла машине:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1217,11 +1217,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation>Попунити додатна поља као име, лозинка и букет. Онда требате да унесете датотеку за OVF циљ.</translation>
+        <translation>Попунити додатна поља као име, лозинка и букет, и унесите датотеку за OVF циљ.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation>Попунити додатна поља као име, лозинка, хост име и букет. Онда требате да унесете датотеку за OVF циљ.</translation>
+        <translation>Попунити додатна поља као име, лозинка, хост име и букет, и унесите датотеку за OVF циљ.</translation>
     </message>
     <message>
         <source>Checking files ...</source>
@@ -1284,7 +1284,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a path.</source>
-        <translation>Користити &lt;b&gt;Остало...&lt;/b&gt; са списка за одабирања жељене путање.</translation>
+        <translation>Користити &lt;b&gt;Остало...&lt;/b&gt; са списка за одабирања путање.</translation>
     </message>
     <message>
         <source>Other...</source>
@@ -1316,11 +1316,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please type the folder path here.</source>
-        <translation>Унети жељену путању фасцикле овде.</translation>
+        <translation>Унети путању фасцикле овде.</translation>
     </message>
     <message>
         <source>Please type the file path here.</source>
-        <translation>Унети жељену путању датотеке овде.</translation>
+        <translation>Унети путању датотеке овде.</translation>
     </message>
 </context>
 <context>
@@ -1735,31 +1735,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Check for:</source>
-        <translation type="unfinished"></translation>
+        <translation>Провери за:</translation>
     </message>
     <message>
         <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Одабрати ово ако желите да будете обавештени само о стабилних ажурирања VirtualBox-а.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Stable release versions</source>
-        <translation type="unfinished"></translation>
+        <translation>Стабилна верзија</translation>
     </message>
     <message>
         <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Одабрати ово ако желите да будете обавештени о свим ажурирања VirtualBox-а.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;All new releases</source>
-        <translation type="unfinished"></translation>
+        <translation>Сва ажурирања</translation>
     </message>
     <message>
         <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Одабрати ово ако желите да будете обавештени о свим ажурирања VirtualBox-а и верзијама пре обнављивања.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>All new releases and &amp;pre-releases</source>
-        <translation type="unfinished"></translation>
+        <translation>Све верзије и пре-онвављивање</translation>
     </message>
 </context>
 <context>
@@ -2682,32 +2682,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>details report (2D Video Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Упаљено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (2D Video Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Угашено</translation>
     </message>
     <message>
         <source>2D Video Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>2D видео акселератор</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details report (Storage)</comment>
-        <translation type="unfinished">Није привезано</translation>
+        <translation>Није привезано</translation>
     </message>
     <message>
         <source>Storage</source>
         <comment>details report</comment>
-        <translation type="unfinished">Стовариште</translation>
+        <translation>Стовариште</translation>
     </message>
     <message>
         <source>Teleported</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Teleported</translation>
     </message>
     <message>
         <source>Guru Meditation</source>
@@ -2722,7 +2722,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Taking Live Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Узимање уживу слику</translation>
     </message>
     <message>
         <source>Teleporting Paused VM</source>
@@ -2732,57 +2732,57 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Restoring Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Врачање слике</translation>
     </message>
     <message>
         <source>Deleting Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Брисање слике</translation>
     </message>
     <message>
         <source>Floppy</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished">Флопи</translation>
+        <translation>Флопи</translation>
     </message>
     <message>
         <source>Device %1</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished"></translation>
+        <translation>Уређај %1</translation>
     </message>
     <message>
         <source>IDE Primary Master</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>IDE примарно главно</translation>
     </message>
     <message>
         <source>IDE Primary Slave</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>IDE примарно роб</translation>
     </message>
     <message>
         <source>IDE Secondary Master</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>IDE други главни</translation>
     </message>
     <message>
         <source>IDE Secondary Slave</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>IDE други роб</translation>
     </message>
     <message>
         <source>SATA Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>SATA порт %1</translation>
     </message>
     <message>
         <source>SCSI Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>SCSI порт %1</translation>
     </message>
     <message>
         <source>Floppy Device %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Флопи уређај %1</translation>
     </message>
     <message>
         <source>Paravirtualized Network (virtio-net)</source>
@@ -2792,80 +2792,80 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>I82078</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>I82078</translation>
     </message>
     <message>
         <source>Empty</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Празно</translation>
     </message>
     <message>
         <source>Host Drive &apos;%1&apos;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Хост драјв &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host Drive %1 (%2)</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Хост драјв %1 (%2)</translation>
     </message>
     <message>
         <source>&lt;p style=white-space:pre&gt;Type (Format):  %1 (%2)&lt;/p&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=white-space:pre&gt;Тип (Формат):  %1 (%2)&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Attached to:  %1&lt;/p&gt;</source>
         <comment>image</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Прикачено на:  %1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not Attached&lt;/i&gt;</source>
         <comment>image</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Није прикачено&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Провера доступност...&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Failed to check media accessibility.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Погрешна провера доступност медија</translation>
     </message>
     <message>
         <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Медијум није одабран&lt;/b&gt;</translation>
     </message>
     <message>
         <source>You can also change this while the machine is running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Можете исто ово променити док машина ради</translation>
     </message>
     <message>
         <source>&lt;b&gt;No media available&lt;/b&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Медиј није доступан&lt;/b&gt;</translation>
     </message>
     <message>
         <source>You can create media images using the virtual media manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>Можете да креирате медијске слике са виртуелним менаџером</translation>
     </message>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Привезивање овог хард диска ће бити индиректан користечи новог креираног различитог хард диска.</translation>
     </message>
     <message>
         <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Меки медиј из хард диска није доступан. Користити витуелни менаџер медија у &lt;b&gt;Покажи различит хард диск&lt;/b&gt; за проверу овог медија.</translation>
     </message>
     <message>
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Овај базни хард диск је индиректно прикачен са овим различитим диском:</translation>
     </message>
 </context>
 <context>
@@ -2887,7 +2887,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxHelpButton</name>
     <message>
         <source>&amp;Help</source>
-        <translation type="unfinished">&amp;Помоћ</translation>
+        <translation>&amp;Помоћ</translation>
     </message>
 </context>
 <context>
@@ -2926,7 +2926,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to import an appliance, you have to select a file describing the appliance first. Currently VirtualBox supports the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Аистент помаже у процесу извоза средства. &lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Користити &lt;span style=&quot; font-weight:600;&quot;&gt;Даље&lt;/span&gt; за следећи лист асистента и &lt;span style=&quot; font-weight:600;&quot;&gt;Назад&lt;/span&gt; за предходни лист.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;За увоз средства требате да одаберете датотеку која описујее средство. За сада VirtualBox подржава &apos;Open Virtualization Format (OVF)&apos;. за наставак, одабрати датотеку за увоз:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
@@ -2948,7 +2948,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ово су виртуелне машине које су у поставке VirtualBox машине. Можете променити пуно поставке са дуплим-кликом на елементе и да онемогучите друге са кутијицом.</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
@@ -3208,17 +3208,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Attached to</source>
         <comment>VMM: Virtual Disk</comment>
-        <translation type="unfinished">Привезан на</translation>
+        <translation>Привезано на</translation>
     </message>
     <message>
         <source>Attached to</source>
         <comment>VMM: CD/DVD Image</comment>
-        <translation type="unfinished">Привезан на</translation>
+        <translation>Привезано на</translation>
     </message>
     <message>
         <source>Attached to</source>
         <comment>VMM: Floppy Image</comment>
-        <translation type="unfinished">Привезан на</translation>
+        <translation>Привезано на</translation>
     </message>
 </context>
 <context>
@@ -3275,7 +3275,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxNetworkDialog</name>
     <message>
         <source>Network Adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>Мрежни адаптери</translation>
     </message>
 </context>
 <context>
@@ -3714,7 +3714,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Машина је &lt;b&gt;Паузирана&lt;/b&gt; и за то не прима унос тастатуре или миша. Ако желите да радите у тој машини, требате да наставите рад машине преко траке менија.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Машина је &lt;b&gt;Паузирана&lt;/b&gt; и за то не види унос тастатуре или миша. Ако желите да радите у тој машини, требате да наставите рад машине преко траке менија.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -3748,7 +3748,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Фатална грешка се појавила при рада машине! Машина ће бити искључена. Препоручено је да копирате ову поруку гршке за даље испитивање:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Фатална грешка се појавила при рада машине! Машина ће бити искључена. Копирати ову грешку за помоћ дијагностиком проблема:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
@@ -3756,7 +3756,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Покретање машине може да доведе до грешке објашнене испод. Можете да игноришете ту грешку али је препоручено да урадите нешто да се овај проблем не догоди.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Покретање машине може да доведе до грешке објашнене испод. Препоручујемо да да урадите нешто да се овај проблем не догоди више.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Result&amp;nbsp;Code: </source>
@@ -3941,7 +3941,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Сигурно да се рисетује виртуелна машина?&lt;/p&gt;&lt;p&gt;Када је машине рисетована, несачувани податци су изгубљени.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Сигурно да се рисетује виртуелна машина?&lt;/p&gt;&lt;p&gt;Сви не сачувани податци из програма ће бити изгубљени.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -3982,7 +3982,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Већ сте инсталирали задњу верзију VirtualBox-а. Касније поновити проверу верзије.</translation>
+        <translation>Већ имате задњу верзију VirtualBox-а.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
@@ -4054,7 +4054,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Нађена новија верзија VirtualBox-а! Верзија &lt;b&gt;%1&lt;/b&gt; је доступна на &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Можете преузети ову верзију са овим директним линком:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Нађена новија верзија VirtualBox-а! Верзија &lt;b&gt;%1&lt;/b&gt; је доступна на &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Можете преузети ову верзију са овим линком:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
@@ -4224,7 +4224,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
-        <translation>Пробате да угасите гост са ACPI дугме. То није могуће пошто гост не користи ACPI под-систем.</translation>
+        <translation>Пробате да угасите гост са ACPI дугме. То није могуће пошто гост не подржава софтверско системско гашење.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
@@ -4337,141 +4337,141 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Радите са ЕКСПЕРИМЕНТАЛНОЈ верзији VirtualBox-а. Ова верзија није за продукцију.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Сигурно вратити слику &lt;b&gt;%1&lt;/b&gt;? То доводо до губљења актуелног статуса машине, што не може да се поврати.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Restore</source>
-        <translation type="unfinished"></translation>
+        <translation>Врати</translation>
     </message>
     <message>
         <source>&lt;p&gt;By deleting a snapshot, the state information stored in the snapshot will be thrown away, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Са брисањем слике, статус из слике ће бити одбачен, и податци који су на више слика ће бити састављени у једну датотеку. То може потрајати, и информације из слике на могу да се поврате.&lt;/p&gt;&lt;/p&gt;Сигурно избрисати одабрану слику &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">Избриши</translation>
+        <translation>Избриши</translation>
     </message>
     <message>
         <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Грешка у врачање слике &lt;b&gt;%1&lt;/b&gt; од машине &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Погрешно брисање слике &lt;b&gt;%1&lt;/b&gt; од машине &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Нема некоришћених медија за новог креираног прикључка.&lt;/p&gt;&lt;p&gt;Стиснути дугме &lt;b&gt;Креирај&lt;/b&gt; за покретање асистента &lt;i&gt;Нов виртуални диск&lt;/i&gt; и креирање новог медијума, или стиснути &lt;b&gt;Одабери&lt;/b&gt; ако желите да отворите &lt;i&gt;Менаџер виртуелног медија&lt;/i&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>medium</comment>
-        <translation type="unfinished">Креирај</translation>
+        <translation>&amp;Креирај</translation>
     </message>
     <message>
         <source>&amp;Select</source>
         <comment>medium</comment>
-        <translation type="unfinished">&amp;Одабери</translation>
+        <translation>&amp;Одабери</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Нема некоришћених медија за новог креираног прикључка.&lt;/p&gt;&lt;p&gt;Стиснути &lt;b&gt;Одабери&lt;/b&gt; ако желите да отворите &lt;i&gt;Менаџер виртуелног медија&lt;/i&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неуспешно прикључивање %1 у слоту &lt;i&gt;%2&lt;/i&gt; машине &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неуспешно одкачење %1 из слота &lt;i&gt;%2&lt;/i&gt; машине &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Погрешно монтирање %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; на машини &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source> Would you like to force mounting of this medium?</source>
-        <translation type="unfinished"></translation>
+        <translation> Да ли да се натера монтирање овог медијума?</translation>
     </message>
     <message>
         <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неуспешно демонтирање %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; из машине &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source> Would you like to force unmounting of this medium?</source>
-        <translation type="unfinished"></translation>
+        <translation> Да ли да се натера демонтирање овог медијума?</translation>
     </message>
     <message>
         <source>Force Unmount</source>
-        <translation type="unfinished"></translation>
+        <translation>Натерај демонтирање</translation>
     </message>
     <message>
         <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Погрешно одбацивање диска са виртуелног драјва. Можда је драј блокиран са стране госта. Проверити то и поновити.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не може да се инсталира VirtualBox гост додатак у машини &lt;b&gt;%1&lt;/b&gt;, пошто машина нема CD/DVD-ROM драјв. Додати драј машини.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
         <comment>warnAboutSettingsAutoConversion message box</comment>
-        <translation type="unfinished">И&amp;злаз</translation>
+        <translation>И&amp;злаз</translation>
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ове датотеке подешавања VirtualBox-а ће бити конвертиране у новом формату.&lt;/p&gt;&lt;p&gt;Стиснути &lt;b&gt;У реду&lt;/b&gt; за покретање VirtualBox-а или стиснути &lt;b&gt;Излаз&lt;/b&gt; ако желите да затворите VirtualBox без икакве акције.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>hard disk</source>
         <comment>failed to mount ...</comment>
-        <translation type="unfinished">хард диск</translation>
+        <translation>хард диск</translation>
     </message>
     <message>
         <source>CD/DVD</source>
         <comment>failed to mount ... host-drive</comment>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD</translation>
     </message>
     <message>
         <source>CD/DVD image</source>
         <comment>failed to mount ...</comment>
-        <translation type="unfinished">CD/DVD слика</translation>
+        <translation>CD/DVD слика</translation>
     </message>
     <message>
         <source>floppy</source>
         <comment>failed to mount ... host-drive</comment>
-        <translation type="unfinished"></translation>
+        <translation>флопи</translation>
     </message>
     <message>
         <source>floppy image</source>
         <comment>failed to mount ...</comment>
-        <translation type="unfinished">флопи слика</translation>
+        <translation>флопи слика</translation>
     </message>
     <message>
         <source>hard disk</source>
         <comment>failed to attach ...</comment>
-        <translation type="unfinished">хард диск</translation>
+        <translation>хард диск</translation>
     </message>
     <message>
         <source>CD/DVD device</source>
         <comment>failed to attach ...</comment>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD уређај</translation>
     </message>
     <message>
         <source>floppy device</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished"></translation>
+        <translation>флопи уређај</translation>
     </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">Поништи</translation>
+        <translation>Поништи</translation>
     </message>
     <message>
         <source>Time remaining: %1</source>
@@ -4479,67 +4479,67 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>%1 days, %2 hours remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>Преостало %1 дана, %2 сата</translation>
     </message>
     <message>
         <source>%1 days, %2 minutes remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>Преостало %1 дана, %2 минута</translation>
     </message>
     <message>
         <source>%1 days remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>Преостао %1 дан</translation>
     </message>
     <message>
         <source>1 day, %1 hours remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>Преостало 1 дан, %1 сата</translation>
     </message>
     <message>
         <source>1 day, %1 minutes remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>Преостало 1 дан, %1 минута</translation>
     </message>
     <message>
         <source>1 day remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>Преостало 1 дан</translation>
     </message>
     <message>
         <source>%1 hours, %2 minutes remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>Преостало %1 дата, %2 минута</translation>
     </message>
     <message>
         <source>1 hour, %1 minutes remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>Преостало 1 дан, %1 минута</translation>
     </message>
     <message>
         <source>1 hour remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>Преостало 1 сат</translation>
     </message>
     <message>
         <source>%1 minutes remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>Преостало %1 минута</translation>
     </message>
     <message>
         <source>1 minute, %2 seconds remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>Преостало минут, %1 секунда</translation>
     </message>
     <message>
         <source>1 minute remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>Преостало минут</translation>
     </message>
     <message>
         <source>%1 seconds remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>Преостало %1 секунда</translation>
     </message>
     <message>
         <source>A few seconds remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>Преостало неколико секунда</translation>
     </message>
     <message>
         <source>Canceling...</source>
-        <translation type="unfinished"></translation>
+        <translation>Поништавање...</translation>
     </message>
     <message>
         <source>Cancel the current operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Поништи актуелни рад</translation>
     </message>
 </context>
 <context>
@@ -4562,7 +4562,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enter your e-mail address. Please use a valid address here.</source>
-        <translation>Унети ваш имејл.</translation>
+        <translation>Унети ваш имејл. Унети важечу адресу.</translation>
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
@@ -4598,7 +4598,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Молимо вас да попунити овај формулар да би знали да користите VirtualBox и, необавезно, да будете информисани о ажурирања VirtualBox-а.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Молимо вас да попунити овај формулар да би знали да користите VirtualBox и, необавезно, да будете информисани о ажурирања VirtualBox-а.&lt;/p&gt;&lt;p&gt;Унети само латинске карактере. Sun Microsystems користи ове информације само за статистике и да вам пошаље VirtualBox новости. Sun Microsystems неће никада попустити Ваше податке другима. Детаљи о употреби личних информацијама може се наћи у &lt;b&gt;Политика приватности&lt;/b&gt; руковника или на &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Политика приватности&lt;/a&gt; сајта.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>I &amp;already have a Sun Online account:</source>
@@ -4660,15 +4660,15 @@ p, li { white-space: pre-wrap; }
     <name>VBoxScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Слика од %1 (%2)</translation>
     </message>
     <message>
         <source>Click to view non-scaled screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Кликнути за преглед без зума слике</translation>
     </message>
     <message>
         <source>Click to view scaled screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Кликнути за преглед слике са зумом</translation>
     </message>
 </context>
 <context>
@@ -4837,7 +4837,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>Извези средство са ВМ од VirtualBox-а</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
@@ -4895,23 +4895,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Click to enlarge the screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Кликнути за увеличавање слике</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">Име:</translation>
+        <translation>Име:</translation>
     </message>
     <message>
         <source>Taken:</source>
-        <translation type="unfinished"></translation>
+        <translation>Узето</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation type="unfinished"></translation>
+        <translation>Опис</translation>
     </message>
     <message>
         <source>D&amp;etails:</source>
-        <translation type="unfinished"></translation>
+        <translation>Детаљи</translation>
     </message>
 </context>
 <context>
@@ -5018,55 +5018,55 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation> (%1)</translation>
     </message>
     <message numerus="yes">
         <source> (%n day(s) ago)</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+          <numerusform></numerusform>
+          <numerusform></numerusform>
+          <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n hour(s) ago)</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+          <numerusform></numerusform>
+          <numerusform></numerusform>
+          <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n minute(s) ago)</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+          <numerusform></numerusform>
+          <numerusform></numerusform>
+          <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n second(s) ago)</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+          <numerusform></numerusform>
+          <numerusform></numerusform>
+          <numerusform></numerusform>
         </translation>
     </message>
     <message>
         <source>&amp;Restore Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Врати слику</translation>
     </message>
     <message>
         <source>&amp;Delete Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Бриши слику</translation>
     </message>
     <message>
         <source>Restore the selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Врати одабрану слику виртуелне машине</translation>
     </message>
     <message>
         <source>Delete the selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Бриши одабрану слику виртуелне машине</translation>
     </message>
 </context>
 <context>
@@ -5147,7 +5147,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;no devices available&gt;</source>
         <comment>USB devices</comment>
-        <translation>&lt;нема уређаја&gt;</translation>
+        <translation>&lt;нема доступних уређаја&gt;</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
@@ -5227,7 +5227,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Нађена новија верзија VirtualBox-а! Верзија &lt;b&gt;%1&lt;/b&gt; је доступна на &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Можете преузети ову верзију са овим директним линком:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Нађена новија верзија VirtualBox-а! Верзија &lt;b&gt;%1&lt;/b&gt; је доступна на &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Можете преузети ову верзију са овим линком:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
@@ -5235,7 +5235,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Већ сте инсталирали задњу верзију VirtualBox-а. Касније поновити проверу верзије.</translation>
+        <translation>Већ користите задњу верзију VirtualBox-а.</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
@@ -5396,7 +5396,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ако је ово коректно, стиснути &lt;b&gt;Заврши&lt;/b&gt; . После тога, одабран медиј ће бити привремено монтиран на машину и машина ће покренути.&lt;/p&gt;&lt;p&gt;Знајте да када затворите машину, медиј ће аутоматско бити демонтиран и бут ће бити постављен на први хард диск.&lt;/p&gt;&lt;p&gt;У зависности сетапа програма, можда требате да ручно демонтирате (избацивање) медиј после поновног покретања машине, да инсталација не би се поново покренула. Можете то да урадите преко акције &lt;b&gt;Демонтирај...&lt;/b&gt; из менија &lt;b&gt;Уређаји&lt;/b&gt; .&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5509,19 +5509,19 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not Available</source>
         <comment>details report (VRDP server port)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Недоступно</translation>
     </message>
     <message>
         <source>Storage Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Статистике стоваришта</translation>
     </message>
     <message>
         <source>No Storage Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Нема стоваришна уређаја</translation>
     </message>
     <message>
         <source>Network Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Мрежне статистике</translation>
     </message>
 </context>
 <context>
@@ -5766,19 +5766,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
-        <translation type="unfinished"></translation>
+        <translation>поставили сте мање од &lt;b&gt;%1&lt;/b&gt; видео меморије што је најмање потребно за HD Video.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
-        <translation type="unfinished"></translation>
+        <translation>Када одабрано, машина ће кориситит видео убрзавање из хоста.</translation>
     </message>
     <message>
         <source>Enable &amp;2D Video Acceleration</source>
-        <translation type="unfinished"></translation>
+        <translation>Упали &amp;2D видео убрзавање</translation>
     </message>
     <message>
         <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Број порта VRDP сервера. Можете унети &lt;tt&gt;0&lt;/tt&gt; (нула), за одабир порта 3389, стандардни порт за RDP.</translation>
     </message>
 </context>
 <context>
@@ -5861,7 +5861,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>имате 2D видео убрзавање упаљено. Пошто је 2D видео убрзавање је подршана само са тране Windows госта, опција ће бити онемогућена.</translation>
     </message>
 </context>
 <context>
@@ -6011,7 +6011,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">На унос, машина подржава &apos;Input Output APIC&apos; (IO APIC), који може да мало умањи перформансе VM. &lt;b&gt;Белешка:&lt;/b&gt; не угасити ову опцију после инсталирање Windows гост система!</translation>
+        <translation type="obsolete">На унос, машина подржава &apos;Input Output APIC&apos; (IO APIC), који може да мало умањи перформансе. &lt;b&gt;Белешка:&lt;/b&gt; не угасити ову опцију после инсталирање Windows гост система!</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
@@ -6039,7 +6039,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Дефинише мод дељења клипборда између госта и хоста. За то је потребна инсталација &apos;Додатка госта&apos; на гост систему.</translation>
+        <translation>одабрати који клипборд же бити копиран између мазине. Опцијји је потребу да буде инсталиран на госту додатни гост CD.</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
@@ -6135,11 +6135,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ако унето, покажи малу алатну траку на врх екрана, уместо на дну.</translation>
     </message>
     <message>
         <source>Show At &amp;Top Of Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Покажи на врх екрана</translation>
     </message>
 </context>
 <context>
@@ -6194,7 +6194,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ако унето, покажи разлику хард дискова који су прикачени на слотовима уместо њихове базе и дозволи експлицитно прикачење различитог хард диска. Одабрати само ако вам је потребно комплексно подешавање хард диска.</translation>
     </message>
     <message>
         <source>&amp;Show Differencing Hard Disks</source>
@@ -6218,183 +6218,183 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Бус:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Тип:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Повечај/Умањи&amp;nbsp;Ставку&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Додај&amp;nbsp;хард&amp;nbsp;диск&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Додај&amp;nbsp;CD/DVD&amp;nbsp;уређај&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Додај&amp;nbsp;флопи&amp;nbsp;уређај&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Хард диск није одабран за &lt;i&gt;%1&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; користи медиј који је већ прикачен на &lt;i&gt;%2&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Add Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Додај контролер</translation>
     </message>
     <message>
         <source>Add IDE Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Додај IDE контролер</translation>
     </message>
     <message>
         <source>Add SATA Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Додај SATA контролер</translation>
     </message>
     <message>
         <source>Add SCSI Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Додај SCSI контролер</translation>
     </message>
     <message>
         <source>Add Floppy Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Додај флопи контролер</translation>
     </message>
     <message>
         <source>Remove Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Уклони контролер</translation>
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Додај прикључак</translation>
     </message>
     <message>
         <source>Add Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Додај хард диск</translation>
     </message>
     <message>
         <source>Add CD/DVD Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Додај CD/DVD уређај</translation>
     </message>
     <message>
         <source>Add Floppy Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Додај флопи уређај</translation>
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Уклони прикључак</translation>
     </message>
     <message>
         <source>Adds a new controller to the end of the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Нов контролер на крај дрва стоваришта.</translation>
     </message>
     <message>
         <source>Removes the controller highlighted in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Уклони одабран контролер из дрва.</translation>
     </message>
     <message>
         <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Додај нови користећиактуелни одабран контролер као родитељ.</translation>
     </message>
     <message>
         <source>Removes the attachment highlighted in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Уклони одабран прикључак из дрва.</translation>
     </message>
     <message>
         <source>IDE Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>IDE контролер</translation>
     </message>
     <message>
         <source>SATA Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>SATA контролер</translation>
     </message>
     <message>
         <source>SCSI Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>SCSI контролер</translation>
     </message>
     <message>
         <source>Floppy Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Флопи контролер</translation>
     </message>
     <message>
         <source>Hard &amp;Disk:</source>
-        <translation type="unfinished"></translation>
+        <translation>Хард диск</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Device:</source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD уређај:</translation>
     </message>
     <message>
         <source>&amp;Floppy Device:</source>
-        <translation type="unfinished"></translation>
+        <translation>Флопи уређај:</translation>
     </message>
     <message>
         <source>&amp;Storage Tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Дрво стоваришта</translation>
     </message>
     <message>
         <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation type="unfinished"></translation>
+        <translation>Садржава сва контролера ставаришта за ову машину и виртуелне слике и хост драјвови прикачени.</translation>
     </message>
     <message>
         <source>Information</source>
-        <translation type="unfinished"></translation>
+        <translation>Информација</translation>
     </message>
     <message>
         <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation type="unfinished"></translation>
+        <translation>Дрво може да садржи више контролера различитих типа. Актуелно машина нема контролера</translation>
     </message>
     <message>
         <source>Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Атрибути</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">Име:</translation>
+        <translation>Име:</translation>
     </message>
     <message>
         <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Мења име контролера актуелно одабран из дрва.</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип</translation>
     </message>
     <message>
         <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Одабир под-типа контролера који је актуелно одабран из дрва.</translation>
     </message>
     <message>
         <source>S&amp;lot:</source>
-        <translation type="unfinished"></translation>
+        <translation>Слот</translation>
     </message>
     <message>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Одабир слота контролера што користи овај додатак. Доступни слотови зависе од типа контролера и остала додатка.</translation>
     </message>
     <message>
         <source>Selects the virtual disk image or the host drive used by this attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Одабир виртуелне слике диска или хост драј који је употребљен са стране додатка.</translation>
     </message>
     <message>
         <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Отвара менаџер виртуелног медија за одабир слике за овог додатка.</translation>
     </message>
     <message>
         <source>Open Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Отвори Менаџер виртуелног медија</translation>
     </message>
     <message>
         <source>D&amp;ifferencing Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Разликовање дискова</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Када одабрано, дозвољава да гост шаље ATAPI команде хост-драјву што дозвољава да се користи CD/DVD писач са хоста у VM. Писање аудио CD-а није за сада доступно.</translation>
     </message>
     <message>
         <source>&amp;Passthrough</source>
@@ -6402,27 +6402,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Virtual Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуелне величина:</translation>
     </message>
     <message>
         <source>Actual Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Актуална величина:</translation>
     </message>
     <message>
         <source>Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Величина:</translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation type="unfinished"></translation>
+        <translation>Смештај:</translation>
     </message>
     <message>
         <source>Type (Format):</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип (Формат):</translation>
     </message>
     <message>
         <source>Attached To:</source>
-        <translation type="unfinished"></translation>
+        <translation>Прикачено на:</translation>
     </message>
 </context>
 <context>
@@ -6473,11 +6473,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">Показује MAC адресу адаптера. Садржава 12 слова од {0-9,A-F}. Друго слова мора да буде дигитални.</translation>
+        <translation>Показује MAC адресу адаптера. Садржава 12 слова од {0-9,A-F}. Друго слова мора да буде дигитални.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">Генерише нову MAC адресу.</translation>
+        <translation>Генерише нову MAC адресу.</translation>
     </message>
     <message>
         <source>&amp;Generate</source>
@@ -6485,7 +6485,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished">Показује да ли је виртуелни мрежни кабал прикључен или не.</translation>
+        <translation>Показује да ли је виртуелни мрежни кабал прикључен или не.</translation>
     </message>
     <message>
         <source>Ca&amp;ble Connected</source>
@@ -6563,19 +6563,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
-        <translation>Одабрати име мрежног адаптера ако је тиш &lt;b&gt;Мост адаптер&lt;/b&gt; или &lt;b&gt;Саом хост адаптер&lt;/b&gt; и име интерне мреже је &lt;b&gt;Интерна мрежа&lt;/b&gt;.</translation>
+        <translation>одабрати име мређног адаптера за &lt;b&gt;Мостни адаптер&lt;/b&gt; или &lt;b&gt;Само-хост адаптер&lt;/b&gt; и име мреже &lt;b&gt;интерна мрежа&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>A&amp;dvanced</source>
-        <translation type="unfinished"></translation>
+        <translation>Напредно</translation>
     </message>
     <message>
         <source>Shows or hides additional network adapter options.</source>
-        <translation type="unfinished"></translation>
+        <translation>Поажи/сакри додатне опције мрежног адаптера.</translation>
     </message>
     <message>
         <source>&amp;Mac Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac адреса</translation>
     </message>
     <message>
         <source>&amp;Cable connected</source>
@@ -6673,11 +6673,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показује IRQ број паралелног порта. То треба бити цела цифра између &lt;tt&gt;0&lt;/tt&gt; и &lt;tt&gt;255&lt;/tt&gt;. Вредности веће од &lt;tt&gt;15&lt;/tt&gt; можда нису коришћене ако је &lt;b&gt;IO APIC&lt;/b&gt; упаљено за ову машину.</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показује базну I/O порт адресу овог паралелног порта. Опсег цифре је од &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
 </context>
 <context>
@@ -6688,11 +6688,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Port path not specified </source>
-        <translation>Путања порта није унето</translation>
+        <translation>Путања порта није унето </translation>
     </message>
     <message>
         <source>Duplicate port path entered </source>
-        <translation>Унета дупла путљња порта</translation>
+        <translation>Унета дупла путања порта </translation>
     </message>
 </context>
 <context>
@@ -6755,23 +6755,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> Global Folders</source>
-        <translation type="unfinished"></translation>
+        <translation> Глобалне фасцикле</translation>
     </message>
     <message>
         <source>&amp;Add Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Додај дељену фасциклу</translation>
     </message>
     <message>
         <source>&amp;Edit Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>уреди дељену фасциклу</translation>
     </message>
     <message>
         <source>&amp;Remove Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Уклони дељену фасциклу</translation>
     </message>
     <message>
         <source>&amp;Folders List</source>
-        <translation type="unfinished"></translation>
+        <translation>Списак фасцикла</translation>
     </message>
 </context>
 <context>
@@ -6862,7 +6862,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
-        <translation>Ако одабрано, туба специфирана у &lt;b&gt;Путања порта&lt;/b&gt; ће бити креирана на покретање машине. Инаће, машина ће да проба да користи постојећу тубу.</translation>
+        <translation>Ако одабрано, туба специфирана у &lt;b&gt;Путања порта&lt;/b&gt; ће бити креирана на покретање машине. Инаће, машина ће мислити да тзба постоји и пробаће да је користи.</translation>
     </message>
     <message>
         <source>&amp;Create Pipe</source>
@@ -6882,7 +6882,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показује IRQ број овог порта. Треба бити цифра између &lt;tt&gt;0&lt;/tt&gt; и &lt;tt&gt;255&lt;/tt&gt;. Цифе веће од &lt;tt&gt;15&lt;/tt&gt; можда нису употребљене ако је упаљено &lt;b&gt;IO APIC&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
@@ -6893,15 +6893,15 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsSerialPage</name>
     <message>
         <source>Duplicate port number selected </source>
-        <translation>Дупликат порта је одабрано</translation>
+        <translation>Дупликат порта је одабрано </translation>
     </message>
     <message>
         <source>Port path not specified </source>
-        <translation>Путања порта није унето</translation>
+        <translation>Путања порта није унето </translation>
     </message>
     <message>
         <source>Duplicate port path entered </source>
-        <translation>Унета дупла путљња порта</translation>
+        <translation>Унета дупла путљња порта </translation>
     </message>
 </context>
 <context>
@@ -6998,7 +6998,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>На унос, машина подржава &apos;Input Output APIC&apos; (IO APIC), који може да мало умањи перформансе VM. &lt;b&gt;Белешка:&lt;/b&gt; не угасити ову опцију после инсталирање Windows гост система!</translation>
+        <translation>На унос, машина подржава &apos;Input Output APIC&apos; (IO APIC), који може да мало умањи перформансе. &lt;b&gt;Белешка:&lt;/b&gt; не угасити ову опцију после инсталирање Windows гост система!</translation>
     </message>
     <message>
         <source>Enable &amp;IO APIC</source>
@@ -7051,15 +7051,15 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is host cpu count * 2 for now</comment>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbspЦПУ-а&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp,ЦПУ-а&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Када унето, гост ће подржати 'Extended Firmware Interface (EFI)', што је потребно за покретање неких ОС-а. Не-EFI ОС-и неће моћи да се покрену ако опција није активна.</translation>
     </message>
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
-        <translation type="unfinished"></translation>
+        <translation>Упали &amp;EFI (само специјални ОС-и)</translation>
     </message>
 </context>
 <context>
