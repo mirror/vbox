@@ -97,7 +97,7 @@ foreach $arg (@ARGV)
             {
                 print TMP <<EOF;
 Section "InputDevice"
-  Identifier   "keyboard[0]"
+  Identifier   "Keyboard[0]"
   Driver       "$kb_driver"
 $xkbopts  Option       "Protocol" "Standard"
   Option       "CoreKeyboard"
@@ -109,15 +109,23 @@ EOF
                 print TMP <<EOF;
 
 Section "InputDevice"
-  Identifier  "mouse"
+  Identifier  "Mouse[1]"
   Driver      "vboxmouse"
   Option      "Buttons" "9"
   Option      "Device" "/dev/input/mice"
-  Option      "Name" "VirtualBox Mouse Buttons"
+  Option      "Name" "VirtualBox Mouse"
   Option      "Protocol" "explorerps/2"
   Option      "Vendor" "Sun Microsystems Inc"
   Option      "ZAxisMapping" "4 5"
   Option      "CorePointer"
+EndSection
+
+Section "ServerLayout"
+  Identifier   "Layout[all]"
+  InputDevice  "Mouse[1]" "CorePointer"
+  Option       "Clone" "off"
+  Option       "Xinerama" "off"
+  Screen       "Screen[0]"
 EndSection
 EOF
             }
