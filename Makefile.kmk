@@ -106,36 +106,35 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
  ifdef VBOX_USE_VCC80
   include $(KBUILD_PATH)/tools/VCC80X86.kmk
   include $(KBUILD_PATH)/tools/VCC80AMD64.kmk
+  bin_SOURCES.x86 += \
+  	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
+  	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcr80.dll=>Microsoft.VC80.CRT/msvcr80.dll \
+  	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcp80.dll=>Microsoft.VC80.CRT/msvcp80.dll \
+  	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>testcase/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
+  	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcr80.dll=>testcase/Microsoft.VC80.CRT/msvcr80.dll \
+  	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcp80.dll=>testcase/Microsoft.VC80.CRT/msvcp80.dll
+  bin_SOURCES.amd64 += \
+  	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
+  	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcr80.dll=>Microsoft.VC80.CRT/msvcr80.dll \
+  	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcp80.dll=>Microsoft.VC80.CRT/msvcp80.dll \
+  	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>testcase/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
+  	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcr80.dll=>testcase/Microsoft.VC80.CRT/msvcr80.dll \
+  	$(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcp80.dll=>testcase/Microsoft.VC80.CRT/msvcp80.dll
   ifeq ($(VBOX_VCC_CRT_TYPE),d)
    bin_SOURCES.x86 += \
-         $(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest=>Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest \
-         $(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/msvcr80d.dll=>Microsoft.VC80.DebugCRT/msvcr80d.dll \
-         $(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/msvcp80d.dll=>Microsoft.VC80.DebugCRT/msvcp80d.dll \
-         $(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest=>testcase/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest \
-         $(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/msvcr80d.dll=>testcase/Microsoft.VC80.DebugCRT/msvcr80d.dll \
-         $(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/msvcp80d.dll=>testcase/Microsoft.VC80.DebugCRT/msvcp80d.dll
+   	$(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest=>Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest \
+   	$(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/msvcr80d.dll=>Microsoft.VC80.DebugCRT/msvcr80d.dll \
+   	$(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/msvcp80d.dll=>Microsoft.VC80.DebugCRT/msvcp80d.dll \
+   	$(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest=>testcase/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest \
+   	$(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/msvcr80d.dll=>testcase/Microsoft.VC80.DebugCRT/msvcr80d.dll \
+   	$(PATH_TOOL_VCC80X86)/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT/msvcp80d.dll=>testcase/Microsoft.VC80.DebugCRT/msvcp80d.dll
    bin_SOURCES.amd64 += \
-         $(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest=>Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest \
-         $(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/msvcr80d.dll=>Microsoft.VC80.DebugCRT/msvcr80d.dll \
-         $(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/msvcp80d.dll=>Microsoft.VC80.DebugCRT/msvcp80d.dll \
-         $(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest=>testcase/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest \
-         $(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/msvcr80d.dll=>testcase/Microsoft.VC80.DebugCRT/msvcr80d.dll \
-         $(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/msvcp80d.dll=>testcase/Microsoft.VC80.DebugCRT/msvcp80d.dll
-  else
-   bin_SOURCES.x86 += \
-         $(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
-         $(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcr80.dll=>Microsoft.VC80.CRT/msvcr80.dll \
-         $(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcp80.dll=>Microsoft.VC80.CRT/msvcp80.dll \
-         $(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>testcase/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
-         $(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcr80.dll=>testcase/Microsoft.VC80.CRT/msvcr80.dll \
-         $(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcp80.dll=>testcase/Microsoft.VC80.CRT/msvcp80.dll
-   bin_SOURCES.amd64 += \
-         $(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
-         $(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcr80.dll=>Microsoft.VC80.CRT/msvcr80.dll \
-         $(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcp80.dll=>Microsoft.VC80.CRT/msvcp80.dll \
-         $(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>testcase/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
-         $(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcr80.dll=>testcase/Microsoft.VC80.CRT/msvcr80.dll \
-         $(PATH_TOOL_VCC80AMD64)/redist/amd64/Microsoft.VC80.CRT/msvcp80.dll=>testcase/Microsoft.VC80.CRT/msvcp80.dll
+   	$(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest=>Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest \
+   	$(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/msvcr80d.dll=>Microsoft.VC80.DebugCRT/msvcr80d.dll \
+   	$(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/msvcp80d.dll=>Microsoft.VC80.DebugCRT/msvcp80d.dll \
+   	$(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest=>testcase/Microsoft.VC80.DebugCRT/Microsoft.VC80.DebugCRT.manifest \
+   	$(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/msvcr80d.dll=>testcase/Microsoft.VC80.DebugCRT/msvcr80d.dll \
+   	$(PATH_TOOL_VCC80AMD64)/redist/Debug_NonRedist/amd64/Microsoft.VC80.DebugCRT/msvcp80d.dll=>testcase/Microsoft.VC80.DebugCRT/msvcp80d.dll
   endif
  endif
  ifndef VBOX_USE_VCC80
@@ -146,24 +145,43 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
  endif
  ifdef VBOX_INSTALL_VCC70_RT
   include $(KBUILD_PATH)/tools/VCC70.kmk
+
   ## @todo Move these defines to VCC70.
-  DLL_TOOL_VCC70_MSVCR71 ?= $(PATH_TOOL_VCC70)/bin/msvcr71$(VBOX_VCC_CRT_TYPE).dll
+  DLL_TOOL_VCC70_MSVCR71 ?= $(PATH_TOOL_VCC70)/bin/msvcr71.dll
   ifneq ($(wildcard $(DLL_TOOL_VCC70_MSVCR71)),)
    bin_SOURCES += \
-	$(DLL_TOOL_VCC70_MSVCR71)=>msvcr71.dll \
-	$(DLL_TOOL_VCC70_MSVCR71)=>testcase/msvcr71.dll
+   	$(DLL_TOOL_VCC70_MSVCR71)=>msvcr71.dll \
+   	$(DLL_TOOL_VCC70_MSVCR71)=>testcase/msvcr71.dll
   endif
-  DLL_TOOL_VCC70_MSVCP71 ?= $(PATH_TOOL_VCC70)/bin/msvcp71$(VBOX_VCC_CRT_TYPE).dll
+  ifeq ($(VBOX_VCC_CRT_TYPE),d)
+   DLL_TOOL_VCC70_MSVCR71D ?= $(PATH_TOOL_VCC70)/bin/msvcr71d.dll
+   ifneq ($(wildcard $(DLL_TOOL_VCC70_MSVCR71D)),)
+    bin_SOURCES += \
+    	$(DLL_TOOL_VCC70_MSVCR71D)=>msvcr71d.dll \
+    	$(DLL_TOOL_VCC70_MSVCR71D)=>testcase/msvcr71d.dll
+   endif
+  endif
+
+  DLL_TOOL_VCC70_MSVCP71 ?= $(PATH_TOOL_VCC70)/bin/msvcp71.dll
   ifneq ($(wildcard $(DLL_TOOL_VCC70_MSVCP71)),)
    bin_SOURCES += \
-	$(DLL_TOOL_VCC70_MSVCP71)=>msvcp71$(VBOX_VCC_CRT_TYPE).dll \
-	$(DLL_TOOL_VCC70_MSVCP71)=>testcase/msvcp71$(VBOX_VCC_CRT_TYPE).dll
+	$(DLL_TOOL_VCC70_MSVCP71)=>msvcp71.dll \
+	$(DLL_TOOL_VCC70_MSVCP71)=>testcase/msvcp71.dll
+  endif
+  ifeq ($(VBOX_VCC_CRT_TYPE),d)
+   DLL_TOOL_VCC70_MSVCP71D ?= $(PATH_TOOL_VCC70)/bin/msvcp71d.dll
+   ifneq ($(wildcard $(DLL_TOOL_VCC70_MSVCP71D)),)
+    bin_SOURCES += \
+ 	$(DLL_TOOL_VCC70_MSVCP71D)=>msvcp71d.dll \
+ 	$(DLL_TOOL_VCC70_MSVCP71D)=>testcase/msvcp71d.dll
    endif
-  DLL_TOOL_VCC70_MSVCRT  ?= $(PATH_TOOL_VCC70)/bin/msvcrt$(VBOX_VCC_CRT_TYPE).dll
+  endif
+
+  DLL_TOOL_VCC70_MSVCRT  ?= $(PATH_TOOL_VCC70)/bin/msvcrt.dll
   ifneq ($(wildcard $(DLL_TOOL_VCC70_MSVCRT)),)
    bin_SOURCES += \
-	$(DLL_TOOL_VCC70_MSVCRT)=>msvcrt$(VBOX_VCC_CRT_TYPE).dll \
-	$(DLL_TOOL_VCC70_MSVCRT)=>testcase/msvcrt$(VBOX_VCC_CRT_TYPE).dll
+	$(DLL_TOOL_VCC70_MSVCRT)=>msvcrt.dll \
+	$(DLL_TOOL_VCC70_MSVCRT)=>testcase/msvcrt.dll
   endif
  endif
 endif
