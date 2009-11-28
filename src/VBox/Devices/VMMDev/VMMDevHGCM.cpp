@@ -81,7 +81,13 @@ struct VBOXHGCMCMD
     /* Size of memory buffer for this command structure, including trailing paHostParms.
      * This field simplifies loading of saved state.
      */
+/** @todo @bugref{4500} - Now that we require states to be portable between
+ * systems and between 32-bit/64-bit variants of the same OS, this field no
+ * longer simplifies loading of saved state. :-(  Needs proper fixing... */
     uint32_t cbCmd;
+/** HACK ALERT! (TEMPORARY)
+ * Factor to muliply cbCmd by when reading it from a saved state.  */
+#define CMD_SIZE_HACK_FACTOR    4
 
     /* The type of the command. */
     VBOXHGCMCMDTYPE enmCmdType;
@@ -495,7 +501,11 @@ static int vmmdevHGCMConnectSaved (VMMDevState *pVMMDevState, VMMDevHGCMConnect 
 
     uint32_t cbCmdSize = sizeof (struct VBOXHGCMCMD) + pHGCMConnect->header.header.size;
 
+#ifdef CMD_SIZE_HACK_FACTOR /*HACK ALERT!*/
+    if (pSavedCmd->cbCmd * CMD_SIZE_HACK_FACTOR < cbCmdSize)
+#else
     if (pSavedCmd->cbCmd < cbCmdSize)
+#endif
     {
         logRelSavedCmdSizeMismatch ("HGCMConnect", pSavedCmd->cbCmd, cbCmdSize);
         return VERR_INVALID_PARAMETER;
@@ -551,7 +561,11 @@ static int vmmdevHGCMDisconnectSaved (VMMDevState *pVMMDevState, VMMDevHGCMDisco
 
     uint32_t cbCmdSize = sizeof (struct VBOXHGCMCMD);
 
+#ifdef CMD_SIZE_HACK_FACTOR  /*HACK ALERT!*/
+    if (pSavedCmd->cbCmd * CMD_SIZE_HACK_FACTOR < cbCmdSize)
+#else
     if (pSavedCmd->cbCmd < cbCmdSize)
+#endif
     {
         logRelSavedCmdSizeMismatch ("HGCMConnect", pSavedCmd->cbCmd, cbCmdSize);
         return VERR_INVALID_PARAMETER;
@@ -2092,6 +2106,7 @@ int vmmdevHGCMSaveState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
              */
 
             /* Size of entire command. */
+/** @todo @bugref{4500} - Not portable, see other todos. */
             rc = SSMR3PutU32(pSSM, pIter->cbCmd);
             AssertRCReturn(rc, rc);
 
@@ -2161,7 +2176,7 @@ int vmmdevHGCMSaveState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
     return rc;
 }
 
-/* @thread EMT */
+/** @thread EMT(0) */
 int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM, uint32_t uVersion)
 {
     int rc = VINF_SUCCESS;
@@ -2221,10 +2236,11 @@ int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM, uint32_t uVe
             LogFlowFunc (("Restoring %RGp size %x bytes\n", GCPhys, cbSize));
 
             /* Size of entire command. */
+/** @todo @bugref{4500} - Not portable, see other todos. */
             rc = SSMR3GetU32(pSSM, &u32);
             AssertRCReturn(rc, rc);
 
-            PVBOXHGCMCMD pCmd = (PVBOXHGCMCMD)RTMemAllocZ (u32);
+            PVBOXHGCMCMD pCmd = (PVBOXHGCMCMD)RTMemAllocZ (u32 * CMD_SIZE_HACK_FACTOR); /*HACK ALERT!*/
             AssertReturn(pCmd, VERR_NO_MEMORY);
             pCmd->cbCmd = u32;
 
