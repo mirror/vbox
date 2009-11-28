@@ -340,14 +340,16 @@ setup()
             vboxvideo_src=vboxvideo_drv_14.so
             vboxmouse_src=vboxmouse_drv_14.so
             usehal=""
+            newmouse="--newMouse"
             ;;
         1.3.* )
             # This was the first release which gave the server version number
             # rather than the X11 release version when you did 'X -version'.
             begin "Installing X.Org Server 1.3 modules"
             vboxvideo_src=vboxvideo_drv_13.so
-            vboxmouse_src=vboxmouse_drv_71.so
+            vboxmouse_src=vboxmouse_drv_13.so
             usehal=""
+            newmouse="--newMouse"
             ;;
         7.1.* | 7.2.* )
             begin "Installing X.Org 7.1 modules"

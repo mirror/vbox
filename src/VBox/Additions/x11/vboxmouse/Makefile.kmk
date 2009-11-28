@@ -97,6 +97,21 @@ vboxmouse_drv_71_SOURCES = \
 
 
 #
+# vboxmouse_drv_13
+#
+DLLS += vboxmouse_drv_13
+vboxmouse_drv_13_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_13_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
+vboxmouse_drv_13_INCS := \
+	$(VBOX_PATH_X11_XORG_1_3) \
+	$(VBOX_PATH_X11_XORG_1_3)/X11 \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.3.0.0 \
+	$(PATH_SUB_CURRENT)
+vboxmouse_drv_13_SOURCES = \
+	vboxmouse_15.c
+
+
+#
 # vboxmouse_drv_14
 #
 DLLS += vboxmouse_drv_14
@@ -108,9 +123,7 @@ vboxmouse_drv_14_INCS := \
 	$(VBOX_PATH_X11_XORG_1_4)/xorg \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_14_SOURCES = \
-	xorg14/mouse.c \
-	xorg14/pnp.c \
-	VBoxUtils.c
+	vboxmouse_15.c
 
 
 #
@@ -196,11 +209,18 @@ $$(PATH_vboxmouse_drv_71)/tstvboxmouse71.run: $$(INSTARGET_vboxmouse_drv_71)
 	    $(INSTARGET_vboxmouse_drv_71) $(OUR_PATH_VBOXMOUSE)/undefined_71
 	$(QUIET)$(APPEND) -t "$@" "done"
 
+     TESTING  += $(PATH_vboxmouse_drv_13)/tstvboxmouse13.run
+     OTHERS += $(PATH_vboxmouse_drv_13)/tstvboxmouse13.run
+$$(PATH_vboxmouse_drv_13)/tstvboxmouse13.run: $$(INSTARGET_vboxmouse_drv_13)
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET) \
+	    $(INSTARGET_vboxmouse_drv_13) $(OUR_PATH_VBOXMOUSE)/undefined_15
+	$(QUIET)$(APPEND) -t "$@" "done"
+
      TESTING  += $(PATH_vboxmouse_drv_14)/tstvboxmouse14.run
      OTHERS += $(PATH_vboxmouse_drv_14)/tstvboxmouse14.run
 $$(PATH_vboxmouse_drv_14)/tstvboxmouse14.run: $$(INSTARGET_vboxmouse_drv_14)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET) \
-	    $(INSTARGET_vboxmouse_drv_14) $(OUR_PATH_VBOXMOUSE)/undefined_14
+	    $(INSTARGET_vboxmouse_drv_14) $(OUR_PATH_VBOXMOUSE)/undefined_15
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING  += $(PATH_vboxmouse_drv_15)/tstvboxmouse15.run
