@@ -121,6 +121,7 @@ VBOX_ADD_STRIP_LIB += \
 VBOX_ADD_STRIP_MOD.linux = \
 	vboxmouse_drv_70.so \
 	vboxmouse_drv_71.so \
+	vboxmouse_drv_13.so \
 	vboxmouse_drv_14.so \
 	vboxmouse_drv_15.so \
 	vboxmouse_drv_16.so \
@@ -133,6 +134,13 @@ VBOX_ADD_STRIP_MOD.linux = \
 	vboxvideo_drv_16.so \
 	vboxvideo_drv_17.so \
 	mount.vboxsf
+
+VBOX_ADD_MOD.linux = \
+	vboxadd-service.sh \
+	98vboxadd-xclient \
+	vboxadd.sh \
+	x11config-new.pl \
+	routines.sh
 
 VBOX_ADD_STRIP_OBJ.linux = \
 	vboxmouse_drv.o \
@@ -155,6 +163,7 @@ VBOX_LNX_ADD_BIN       = $(VBOX_ADD_BIN) $(VBOX_ADD_BIN.linux)
 VBOX_LNX_ADD_STRIP_SBIN= $(VBOX_ADD_STRIP_SBIN) $(VBOX_ADD_STRIP_SBIN.linux)
 VBOX_LNX_ADD_STRIP_LIB = $(VBOX_ADD_STRIP_LIB) $(VBOX_ADD_STRIP_LIB.linux)
 VBOX_LNX_ADD_STRIP_MOD = $(VBOX_ADD_STRIP_MOD) $(VBOX_ADD_STRIP_MOD.linux)
+VBOX_LNX_ADD_MOD       = $(VBOX_ADD_MOD) $(VBOX_ADD_MOD.linux)
 VBOX_LNX_ADD_STRIP_OBJ = $(VBOX_ADD_STRIP_OBJ) $(VBOX_ADD_STRIP_OBJ.linux)
 VBOX_LNX_ADD_KMOD      = $(VBOX_ADD_KMOD) $(VBOX_ADD_KMOD.linux)
 VBOX_LNX_ADD_INIT      = $(VBOX_ADD_INIT) $(VBOX_ADD_INIT.linux)
@@ -170,6 +179,7 @@ VBOX_LNX_ADD_INST_FILES := \
 	$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),$(VBOX_LNX_ADD_STRIP_SBIN)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_LIB_DIR),$(VBOX_LNX_ADD_STRIP_LIB)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_MOD)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_MOD)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_OBJ)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_VERSIONED)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT))
