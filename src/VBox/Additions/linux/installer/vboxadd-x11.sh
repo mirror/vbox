@@ -459,8 +459,8 @@ $generated
 
 EOF
         cat << EOF
-You may need to restart the hal service and the Window System to enable the
-Guest Additions.
+You may need to restart the hal service and the Window System (or just restart
+the guest system) to enable the Guest Additions.
 
 EOF
     fi
