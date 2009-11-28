@@ -536,8 +536,6 @@ static PRTHEAPOFFSETBLOCK rtHeapOffsetAllocBlock(PRTHEAPOFFSETINTERNAL pHeapInt,
         offAlign = (uintptr_t)(&pFree->Core + 1) & (uAlignment - 1);
         if (offAlign)
         {
-#define DONT_DONATE_ALIGNMENT
-#ifdef DONT_DONATE_ALIGNMENT
             PRTHEAPOFFSETFREE pPrev;
 
             offAlign = (uintptr_t)(&pFree[1].Core + 1) & (uAlignment - 1);
@@ -574,71 +572,6 @@ static PRTHEAPOFFSETBLOCK rtHeapOffsetAllocBlock(PRTHEAPOFFSETINTERNAL pHeapInt,
             pHeapInt->cbFree -= sizeof(RTHEAPOFFSETBLOCK);
             ASSERT_BLOCK_FREE(pHeapInt, pPrev);
             ASSERT_BLOCK_FREE(pHeapInt, pFree);
-
-#else  /* !DONT_DONATE_ALIGNMENT */
-            RTHEAPOFFSETFREE Free;
-            PRTHEAPOFFSETBLOCK pPrev;
-
-            offAlign = uAlignment - offAlign;
-            if (pFree->cb - offAlign < cb)
-                continue;
-
-            /*
-             * Make a stack copy of the free block header and adjust the pointer.
-             */
-            Free = *pFree;
-            pFree = (PRTHEAPOFFSETFREE)((uintptr_t)pFree + offAlign);
-
-            /*
-             * Donate offAlign bytes to the node in front of us.
-             * If we're the head node, we'll have to create a fake node. We'll
-             * mark it USED for simplicity.
-             *
-             * (Should this policy of donating memory to the guy in front of us
-             * cause big 'leaks', we could create a new free node if there is room
-             * for that.)
-             */
-            pPrev = RTHEAPOFF_TO_PTR_N(pHeapInt, Free.Core.offPrev, PRTHEAPOFFSETBLOCK);
-            if (pPrev)
-            {
-                AssertMsg(!RTHEAPOFFSETBLOCK_IS_FREE(pPrev), ("Impossible!\n"));
-                pPrev->offNext = RTHEAPOFF_TO_OFF(pHeapInt, pFree);
-            }
-            else
-            {
-                pPrev = (PRTHEAPOFFSETBLOCK)(pHeapInt + 1);
-                Assert(pPrev == &pFree->Core);
-                pPrev->offPrev = 0;
-                pPrev->offNext = RTHEAPOFF_TO_OFF(pHeapInt, pFree);
-                pPrev->offSelf = RTHEAPOFF_TO_OFF(pHeapInt, pPrev);
-                pPrev->fFlags = RTHEAPOFFSETBLOCK_FLAGS_MAGIC;
-            }
-            pHeapInt->cbFree -= offAlign;
-
-            /*
-             * Recreate pFree in the new position and adjust the neighbors.
-             */
-            *pFree = Free;
-            pFree->Core.offSelf = RTHEAPOFF_TO_OFF(pHeapInt, pFree);
-
-            /* the core */
-            if (pFree->Core.offNext)
-                RTHEAPOFF_TO_PTR(pHeapInt, pFree->Core.offNext, PRTHEAPOFFSETBLOCK)->offPrev = pFree->Core.offSelf;
-            pFree->Core.offPrev = RTHEAPOFF_TO_OFF(pHeapInt, pPrev);
-
-            /* the free part */
-            pFree->cb -= offAlign;
-            if (pFree->offNext)
-                RTHEAPOFF_TO_PTR(pHeapInt, pFree->offNext, PRTHEAPOFFSETFREE)->offPrev = pFree->Core.offSelf;
-            else
-                pHeapInt->offFreeTail = pFree->Core.offSelf;
-            if (pFree->offPrev)
-                RTHEAPOFF_TO_PTR(pHeapInt, pFree->offPrev, PRTHEAPOFFSETFREE)->offNext = pFree->Core.offSelf;
-            else
-                pHeapInt->offFreeHead = pFree->Core.offSelf;
-            ASSERT_BLOCK_FREE(pHeapInt, pFree);
-            ASSERT_BLOCK_USED(pHeapInt, pPrev);
-#endif /* !DONT_DONATE_ALIGNMENT */
         }
 
         /*
