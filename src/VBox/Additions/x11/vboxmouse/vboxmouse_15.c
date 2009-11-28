@@ -52,7 +52,6 @@
 #include <iprt/err.h>
 #include <xf86.h>
 #include <xf86Xinput.h>
-#include <exevents.h>
 #include <mipointer.h>
 
 #include <xf86Module.h>
@@ -66,8 +65,13 @@ VBoxReadInput(InputInfoPtr pInfo)
     uint32_t cx, cy, fFeatures;
 
     /* The first test here is a workaround for an apparent bug in Xorg Server 1.5 */
-    if (   miPointerGetScreen(pInfo->dev) != NULL
-        && RT_SUCCESS(VbglR3GetMouseStatus(&fFeatures, &cx, &cy))
+    if (
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 2
+           miPointerCurrentScreen() != NULL
+#else
+           miPointerGetScreen(pInfo->dev) != NULL
+#endif
+        &&  RT_SUCCESS(VbglR3GetMouseStatus(&fFeatures, &cx, &cy))
         && (fFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE))
         /* send absolute movement */
         xf86PostMotionEvent(pInfo->dev, 1, 0, 2, cx, cy);
@@ -89,12 +93,21 @@ VBoxInit(DeviceIntPtr device)
 
     pInfo = device->public.devicePrivate;
     if (!InitValuatorClassDeviceStruct(device, 2,
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 3
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 2
+                                       miPointerGetMotionEvents,
+                                       miPointerGetMotionBufferSize(),
+#elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 3
                                        GetMotionHistory,
+                                       GetMotionHistorySize(),
+#elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 7
+                                       GetMotionHistorySize(),
 #elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
                                        axis_labels,
+                                       GetMotionHistorySize(),
+#else
+# error Unsupported version of X.Org
 #endif
-                                       GetMotionHistorySize(), Absolute))
+                                       Absolute))
         return !Success;
 
     /* Pretend we have buttons so the server accepts us as a pointing device. */
@@ -145,9 +158,6 @@ VBoxProc(DeviceIntPtr device, int what)
             VbglR3Term();
             return xrc;
         }
-        xf86Msg(X_CONFIG, "%s: Mouse Integration associated with screen %d\n",
-                pInfo->name,
-                xf86SetIntOption(pInfo->options, "ScreenNumber", 0));
         break;
 
     case DEVICE_ON:
@@ -203,6 +213,20 @@ VBoxProbe(InputInfoPtr pInfo)
     return Success;
 }
 
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 2
+static Bool
+VBoxConvert(InputInfoPtr pInfo, int first, int num, int v0, int v1, int v2,
+            int v3, int v4, int v5, int *x, int *y)
+{
+    if (first == 0) {
+        *x = xf86ScaleAxis(v0, 0, screenInfo.screens[0]->width, 0, 65536);
+        *y = xf86ScaleAxis(v1, 0, screenInfo.screens[0]->height, 0, 65536);
+        return TRUE;
+    } else
+        return FALSE;
+}
+#endif
+
 static InputInfoPtr
 VBoxPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
 {
@@ -219,6 +243,9 @@ VBoxPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     pInfo->conf_idev = dev;
     /* Unlike evdev, we set this unconditionally, as we don't handle keyboards. */
     pInfo->type_name = XI_MOUSE;
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 2
+    pInfo->conversion_proc = VBoxConvert;
+#endif
     pInfo->flags = XI86_POINTER_CAPABLE | XI86_SEND_DRAG_EVENTS |
             XI86_ALWAYS_CORE;
 
