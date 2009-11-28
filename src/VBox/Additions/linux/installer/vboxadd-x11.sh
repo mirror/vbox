@@ -470,7 +470,15 @@ EOF
     # open device files
     case "$redhat_release" in
         Fedora\ release\ 7* | Fedora\ release\ 8* )
-            semodule -i vbox_x11.pp > /dev/null 2>&1
+            semodule -i "$share_dir/vbox_x11.pp" > /dev/null 2>&1
+            ;;
+    esac
+
+    # Install selinux policy for Fedora 8 to allow the X server to
+    # open our drivers
+    case "$redhat_release" in
+        Fedora\ release\ 8* )
+            chcon -u system_u -t lib_t "$lib_dir"/*.so
             ;;
     esac
 
