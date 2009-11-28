@@ -1144,8 +1144,8 @@ PVOID pvData)
     switch(iType)
     {
         case DN_DEVICE_ORIGIN:
-            ppdev->ptlDevOrg = *(PPOINTL)pvData;
 #ifndef VBOX_WITH_HGSMI
+            ppdev->ptlDevOrg = *(PPOINTL)pvData;
             DISPDBG((3, "DN_DEVICE_ORIGIN: %d, %d (PSO = %p, pInfo = %p)\n", ppdev->ptlDevOrg.x,
                      ppdev->ptlDevOrg.y, pso, ppdev->pInfo));
             if (ppdev->pInfo)
@@ -1154,12 +1154,19 @@ PVOID pvData)
                 ppdev->pInfo->screen.yOrigin = ppdev->ptlDevOrg.y;
                 VBoxProcessDisplayInfo(ppdev);
             }
-#else
-            DISPDBG((3, "DN_DEVICE_ORIGIN: %d, %d (PSO = %p)\n", ppdev->ptlDevOrg.x,
-                     ppdev->ptlDevOrg.y, pso));
-            VBoxProcessDisplayInfo(ppdev);
-#endif /* VBOX_WITH_HGSMI */
             break;
+#else
+        {
+            POINTL ptlDevOrg = *(PPOINTL)pvData;
+            DISPDBG((3, "DN_DEVICE_ORIGIN: current @%d,%d, new @%d,%d, (PSO = %p)\n", ppdev->ptlDevOrg.x,
+                     ppdev->ptlDevOrg.y, ptlDevOrg.x, ptlDevOrg.y, pso));
+            if (ppdev->ptlDevOrg.x != ptlDevOrg.x || ppdev->ptlDevOrg.y != ptlDevOrg.y)
+            {
+                ppdev->ptlDevOrg = ptlDevOrg;
+                VBoxProcessDisplayInfo(ppdev);
+            }
+         } break;
+#endif /* VBOX_WITH_HGSMI */
         case DN_DRAWING_BEGIN:
             DISPDBG((3, "DN_DRAWING_BEGIN (PSO = %p)\n", pso));
             break;
