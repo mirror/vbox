@@ -1514,6 +1514,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoStep1Cleanup(PVM pVM, PVMCPU pVCpu, 
                              VMSTATE_FATAL_ERROR,       VMSTATE_FATAL_ERROR_LS,             /* 2 */
                              VMSTATE_GURU_MEDITATION,   VMSTATE_GURU_MEDITATION_LS,         /* 3 */
                              VMSTATE_SUSPENDED,         VMSTATE_SUSPENDED_LS,               /* 4 */
+                             VMSTATE_SUSPENDED,         VMSTATE_SAVING,
                              VMSTATE_SUSPENDED,         VMSTATE_SUSPENDED_EXT_LS,
                              VMSTATE_RUNNING,           VMSTATE_RUNNING_LS,
                              VMSTATE_DEBUGGING,         VMSTATE_DEBUGGING_LS);
