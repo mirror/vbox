@@ -497,7 +497,7 @@ static int vbvaEnable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCt
     if (RT_SUCCESS (rc))
     {
         /* pVBVA->hostFlags has been set up by pfnVBVAEnable. */
-        LogFlowFunc(("u32HostEvents 0x%08X, u32SupportedOrders %0x%08X\n",
+        LogFlowFunc(("u32HostEvents 0x%08X, u32SupportedOrders 0x%08X\n",
                      pVBVA->hostFlags.u32HostEvents, pVBVA->hostFlags.u32SupportedOrders));
 
         pCtx->aViews[uScreenId].partialRecord.pu8 = NULL;
