@@ -32,14 +32,17 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/heap.h>
-#include <iprt/initterm.h>
+
+#include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/initterm.h>
+#include <iprt/log.h>
+#include <iprt/rand.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/param.h>
-#include <iprt/assert.h>
-#include <iprt/log.h>
 #include <iprt/test.h>
+#include <iprt/time.h>
 
 
 int main(int argc, char *argv[])
@@ -100,7 +103,7 @@ int main(int argc, char *argv[])
     unsigned i;
     RTHeapOffsetDump(Heap, (PFNRTHEAPOFFSETPRINTF)RTPrintf); /** @todo Add some detail info output with a signature identical to RTPrintf. */
     size_t cbBefore = RTHeapOffsetGetFreeSize(Heap);
-    static char szFill[] = "01234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    static char const s_szFill[] = "01234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     /* allocate */
     for (i = 0; i < RT_ELEMENTS(s_aOps); i++)
@@ -110,7 +113,7 @@ int main(int argc, char *argv[])
         if (!s_aOps[i].pvAlloc)
             return RTTestSummaryAndDestroy(hTest);
 
-        memset(s_aOps[i].pvAlloc, szFill[i], s_aOps[i].cb);
+        memset(s_aOps[i].pvAlloc, s_szFill[i], s_aOps[i].cb);
         RTTESTI_CHECK_MSG(RT_ALIGN_P(s_aOps[i].pvAlloc, (s_aOps[i].uAlignment ? s_aOps[i].uAlignment : 8)) == s_aOps[i].pvAlloc,
                           ("RTHeapOffsetAlloc(%p, %#x, %#x,) -> %p\n", (void *)Heap, s_aOps[i].cb, s_aOps[i].uAlignment, i));
         if (!s_aOps[i].pvAlloc)
@@ -209,6 +212,97 @@ int main(int argc, char *argv[])
     size_t cbAfterCopy = RTHeapOffsetGetFreeSize(hHeapCopy);
     RTTESTI_CHECK_MSG(cbAfterCopy == cbAfter, ("cbAfterCopy=%zu cbAfter=%zu\n", cbAfterCopy, cbAfter));
 
+    /*
+     * Use random allocation pattern
+     */
+    RTTestSub(hTest, "Random Test");
+    RTTESTI_CHECK_RC(rc = RTHeapOffsetInit(&Heap, &s_abMem[1], sizeof(s_abMem) - 1), VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+        return RTTestSummaryAndDestroy(hTest);
+
+    RTRAND hRand;
+    RTTESTI_CHECK_RC(rc = RTRandAdvCreateParkMiller(&hRand), VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+        return RTTestSummaryAndDestroy(hTest);
+#if 0
+    RTRandAdvSeed(hRand, 42);
+#else
+    RTRandAdvSeed(hRand, RTTimeNanoTS());
+#endif
+
+    static struct
+    {
+        size_t  cb;
+        void   *pv;
+    } s_aHistory[1536];
+    RT_ZERO(s_aHistory);
+
+    for (unsigned iTest = 0; iTest < 131072; iTest++)
+    {
+        uint32_t i = RTRandAdvU32Ex(hRand, 0, RT_ELEMENTS(s_aHistory) - 1);
+        if (!s_aHistory[i].pv)
+        {
+            uint32_t uAlignment = 1 << RTRandAdvU32Ex(hRand, 0, 7);
+            s_aHistory[i].cb = RTRandAdvU32Ex(hRand, 9, 1024);
+            s_aHistory[i].pv = RTHeapOffsetAlloc(Heap, s_aHistory[i].cb, uAlignment);
+            if (!s_aHistory[i].pv)
+            {
+                s_aHistory[i].cb = 9;
+                s_aHistory[i].pv = RTHeapOffsetAlloc(Heap, s_aHistory[i].cb, 0);
+            }
+            if (s_aHistory[i].pv)
+                memset(s_aHistory[i].pv, 0xbb, s_aHistory[i].cb);
+        }
+        else
+        {
+            RTHeapOffsetFree(Heap, s_aHistory[i].pv);
+            s_aHistory[i].pv = NULL;
+        }
+
+        if ((iTest % 7777) == 7776)
+        {
+            /* exhaust the heap */
+            for (unsigned i = 0; i < RT_ELEMENTS(s_aHistory) && RTHeapOffsetGetFreeSize(Heap) >= 256; i++)
+                if (!s_aHistory[i].pv)
+                {
+                    s_aHistory[i].cb = RTRandAdvU32Ex(hRand, 256, 16384);
+                    s_aHistory[i].pv = RTHeapOffsetAlloc(Heap, s_aHistory[i].cb, 0);
+                }
+            for (unsigned i = 0; i < RT_ELEMENTS(s_aHistory) && RTHeapOffsetGetFreeSize(Heap); i++)
+            {
+                if (!s_aHistory[i].pv)
+                {
+                    s_aHistory[i].cb = 1;
+                    s_aHistory[i].pv = RTHeapOffsetAlloc(Heap, s_aHistory[i].cb, 1);
+                }
+                if (s_aHistory[i].pv)
+                    memset(s_aHistory[i].pv, 0x55, s_aHistory[i].cb);
+            }
+            RTTESTI_CHECK_MSG(RTHeapOffsetGetFreeSize(Heap) == 0, ("%zu\n", RTHeapOffsetGetFreeSize(Heap)));
+        }
+        else if ((iTest % 7777) == 1111)
+        {
+            /* free all */
+            for (unsigned i = 0; i < RT_ELEMENTS(s_aHistory); i++)
+            {
+                RTHeapOffsetFree(Heap, s_aHistory[i].pv);
+                s_aHistory[i].pv = NULL;
+            }
+            size_t cbAfterRand = RTHeapOffsetGetFreeSize(Heap);
+            RTTESTI_CHECK_MSG(cbAfterRand == cbAfter, ("cbAfterRand=%zu cbAfter=%zu\n", cbAfterRand, cbAfter));
+        }
+    }
+
+    /* free the rest. */
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aHistory); i++)
+    {
+        RTHeapOffsetFree(Heap, s_aHistory[i].pv);
+        s_aHistory[i].pv = NULL;
+    }
+
+    /* check that we're back at the right amount of free memory. */
+    size_t cbAfterRand = RTHeapOffsetGetFreeSize(Heap);
+    RTTESTI_CHECK_MSG(cbAfterRand == cbAfter, ("cbAfterRand=%zu cbAfter=%zu\n", cbAfterRand, cbAfter));
 
     return RTTestSummaryAndDestroy(hTest);
 }
