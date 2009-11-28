@@ -160,10 +160,12 @@ recheck_zone:
     STAM_COUNTER_INC(&pData->StatMBufAllocation);
     /* Insert it in the used list */
     mbuf_alloced++;
+#if 0
     if (mbuf_alloced >= MBUF_ZONE_SIZE/2)
     {
         pData->fmbuf_water_line = 1;
     }
+#endif
     insque(pData, m, &m_usedlist);
     m->m_flags = (flags | M_USEDLIST);
 
