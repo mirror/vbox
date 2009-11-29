@@ -122,8 +122,15 @@ vboxmouse_drv_14_INCS := \
 	$(VBOX_PATH_X11_XORG_1_4)/X11 \
 	$(VBOX_PATH_X11_XORG_1_4)/xorg \
 	$(PATH_SUB_CURRENT)
+ifeq ($(KBUILD_TARGET),linux)
 vboxmouse_drv_14_SOURCES = \
 	vboxmouse_15.c
+else  # Don't enable this for other platforms yet
+vboxmouse_drv_14_SOURCES = \
+	xorg14/mouse.c \
+	xorg14/pnp.c \
+	VBoxUtils.c
+endif
 
 
 #
@@ -216,12 +223,14 @@ $$(PATH_vboxmouse_drv_13)/tstvboxmouse13.run: $$(INSTARGET_vboxmouse_drv_13)
 	    $(INSTARGET_vboxmouse_drv_13) $(OUR_PATH_VBOXMOUSE)/undefined_15
 	$(QUIET)$(APPEND) -t "$@" "done"
 
+ifeq ($(KBUILD_TARGET),linux)
      TESTING  += $(PATH_vboxmouse_drv_14)/tstvboxmouse14.run
      OTHERS += $(PATH_vboxmouse_drv_14)/tstvboxmouse14.run
 $$(PATH_vboxmouse_drv_14)/tstvboxmouse14.run: $$(INSTARGET_vboxmouse_drv_14)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET) \
 	    $(INSTARGET_vboxmouse_drv_14) $(OUR_PATH_VBOXMOUSE)/undefined_15
 	$(QUIET)$(APPEND) -t "$@" "done"
+endif
 
      TESTING  += $(PATH_vboxmouse_drv_15)/tstvboxmouse15.run
      OTHERS += $(PATH_vboxmouse_drv_15)/tstvboxmouse15.run
