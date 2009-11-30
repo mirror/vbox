@@ -1983,6 +1983,16 @@ void VBoxVMSettingsHD::addFDAttachment()
 void VBoxVMSettingsHD::delAttachment()
 {
     QModelIndex index = mTwStorageTree->currentIndex();
+
+    KDeviceType device = mStorageModel->data (index, StorageModel::R_AttDevice).value <KDeviceType>();
+    /* Check if this would be the last DVD. If so let the user confirm this again. */
+    if (   device == KDeviceType_DVD
+        && deviceCount (KDeviceType_DVD) == 1)
+    {
+        if (vboxProblem().confirmRemovingOfLastDVDDevice() != QIMessageBox::Ok)
+            return;
+    }
+
     QModelIndex parent = index.parent();
     if (!index.isValid() || !parent.isValid() ||
         !mStorageModel->data (index, StorageModel::R_IsAttachment).toBool() ||
@@ -2537,5 +2547,24 @@ QString VBoxVMSettingsHD::generateUniqueName (const QString &aTemplate) const
         }
     }
     return maxNumber ? QString ("%1 %2").arg (aTemplate).arg (++ maxNumber) : aTemplate;
+}
+
+uint32_t VBoxVMSettingsHD::deviceCount (KDeviceType aType) const
+{
+    uint32_t cDevices = 0;
+    QModelIndex rootIndex = mStorageModel->root();
+    for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
+    {
+        QModelIndex ctrIndex = rootIndex.child (i, 0);
+        for (int j = 0; j < mStorageModel->rowCount (ctrIndex); ++ j)
+        {
+            QModelIndex attIndex = ctrIndex.child (j, 0);
+            KDeviceType attDevice = mStorageModel->data (attIndex, StorageModel::R_AttDevice).value <KDeviceType>();
+            if (attDevice == aType)
+                ++cDevices;
+        }
+    }
+
+    return cDevices;
 }
 

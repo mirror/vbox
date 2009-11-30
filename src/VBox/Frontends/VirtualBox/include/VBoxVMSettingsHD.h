@@ -581,6 +581,8 @@ private:
 
     QString generateUniqueName (const QString &aTemplate) const;
 
+    uint32_t deviceCount (KDeviceType aType) const;
+
     CMachine mMachine;
     QIWidgetValidator *mValidator;
 
