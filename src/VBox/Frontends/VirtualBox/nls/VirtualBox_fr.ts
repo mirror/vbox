@@ -5297,6 +5297,15 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
         <translation>&lt;p&gt;L&apos;image optique virtuel contenant les Additions Invité VirtualBox n&apos;a pas pû être insérée dans la machine virtuelle &lt;b&gt;%1&lt;/b&gt;, car celle-ci ne possède pas de périphériques optiques. Veuillez en ajouter un en utilisant la section Stockage de la boîte de dialogue Préférences de la machine virtuelle.&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CDROM device? You will not be able to mount any CDs or ISO images without it.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Voulez-vous vraiement supprimer le périphérique optique? Sans périphérique optique, vous ne pourrez utiliser les supports optiques virtuels.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation>&amp;Enlever</translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
