@@ -6130,7 +6130,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation>Restaurar</translation>
     </message>
     <message>
-        <source>&lt;p&gt;By deleting a snapshot, the state information stored in the snapshot will be thrown away, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ao apagar um snapshot, a informação de estados armazenada no snapshot será descartada, e todos os dados de disco associados (que podem estar presentes em múltiplos arquivos de imagem criados pelo VirtualBox) serão combinados em um arquivo único. Isto pode ser um processo longo, e as informações do snapshot não poderão ser recuperadas posteriormente.&lt;/p&gt;&lt;/p&gt;Tem certeza que deseja apagar o snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>

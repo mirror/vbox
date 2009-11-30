@@ -5266,7 +5266,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>le lecteur de disquettes</translation>
     </message>
     <message>
-        <source>&lt;p&gt;By deleting a snapshot, the state information stored in the snapshot will be thrown away, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Effacer cet instantané entrainera la perte de toutes les informations d&apos;état qui y sont sauvegardés, et la réecriture de donnés de disques virtuels actuellement répartis sur plusieurs fichiers dans un seul fichier. Ce procéssus peut durer longtemps et les informations perdus ne pourront plus être récupérés.&lt;/p&gt;&lt;/p&gt;Voulez vous vraiment effacer l&apos;instantané sélectionné &lt;b&gt;%1&lt;/b&gt; ?&lt;/p&gt;</translation>
     </message>
     <message>
