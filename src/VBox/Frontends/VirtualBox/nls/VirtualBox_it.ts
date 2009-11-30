@@ -6051,7 +6051,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
         <translation>Ripristina</translation>
     </message>
     <message>
-        <source>&lt;p&gt;By deleting a snapshot, the state information stored in the snapshot will be thrown away, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Eliminando un&apos;istantanea, le informazioni di stato memorizzate nell&apos;istante andranno perse, e i dati su disco sparsi sui diversi file immagine creati da VirtualBox insieme all&apos;istantanea saranno riuniti in un singolo file. Tale processo può risultare lungo, e le informazioni nell&apos;istantanea non possono essere ripristinate.&lt;/p&gt;&lt;/p&gt;Sei sicuro di voler eliminare l&apos;istantanea selezionata &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>

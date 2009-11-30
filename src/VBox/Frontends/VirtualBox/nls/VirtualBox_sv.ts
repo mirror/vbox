@@ -4849,7 +4849,7 @@ p, li { white-space: pre-wrap; }
         <translation>Återställ</translation>
     </message>
     <message>
-        <source>&lt;p&gt;By deleting a snapshot, the state information stored in the snapshot will be thrown away, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Genom att ta bort en ögonblicksbild så kommer tillståndsinformationen som lagrats i ögonblicksbilden att förkastas samt diskdata som spridits ut över flera avbildningsfiler som VirtualBox har skapat tillsammans med ögonblicksbilden, kommer att sammanfogas till en enda fil. Detta kan vara en tidskrävande process och informationen i ögonblicksbilden kommer inte att kunna återställas.&lt;/p&gt;&lt;/p&gt;Är du säker på att du vill ta bort den markerade ögonblicksbilden &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>

@@ -5933,7 +5933,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation>Restaura</translation>
     </message>
     <message>
-        <source>&lt;p&gt;By deleting a snapshot, the state information stored in the snapshot will be thrown away, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Si s&apos;esborra una captura, la informació d&apos;estat desada a la mateixa es perdrà i les dades del disc, repartides en diversos arxius d&apos;imatges que VirtualBox ha creat juntament amb la captura es fusionaran en un sol fitxer. Això pot ser un procés llarg, i la informació de la captura no es podrà recuperar. &lt;/p&gt;&lt;p&gt;Segur que voleu eliminar la captura seleccionada &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>

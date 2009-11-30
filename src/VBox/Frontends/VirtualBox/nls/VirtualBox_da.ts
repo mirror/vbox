@@ -4202,7 +4202,7 @@ p, li { white-space: pre-wrap; }
         <translation>Genskab</translation>
     </message>
     <message>
-        <source>&lt;p&gt;By deleting a snapshot, the state information stored in the snapshot will be thrown away, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Når du sletter et øjebliksbillede, mistes informationen om dens tilstand og data spredt over adskellige filer, som VirtualBox har dannet sammen med øjebliksbilledet vil blive lagt sammen i én fil. Dette kan tage en del tid og informationen i øjebliksbilledet kan ikke genskabes.&lt;/p&gt;&lt;/p&gt;Er du sikker på at du vil slette det valgte øjebliksbillede &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>

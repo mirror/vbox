@@ -843,7 +843,7 @@ bool VBoxProblemReporter::askAboutSnapshotRestoring (const QString &aSnapshotNam
 bool VBoxProblemReporter::askAboutSnapshotDeleting (const QString &aSnapshotName)
 {
     return messageOkCancel (mainWindowShown(), Question,
-        tr ("<p>By deleting a snapshot, the state information stored in the snapshot will be thrown away, and disk data spread over "
+        tr ("<p>Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over "
             "several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information "
             "in the snapshot cannot be recovered.</p></p>Are you sure you want to delete the selected snapshot <b>%1</b>?</p>")
             .arg (aSnapshotName),
