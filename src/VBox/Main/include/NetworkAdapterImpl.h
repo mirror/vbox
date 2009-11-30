@@ -44,11 +44,11 @@ public:
 
     struct Data
     {
-        Data()
-            : mSlot (0), mEnabled (FALSE)
-            , mAttachmentType (NetworkAttachmentType_Null)
-            ,  mCableConnected (TRUE), mLineSpeed (0), mTraceEnabled (FALSE)
-            , mHostInterface ("") /* cannot be null */
+        Data() : mSlot(0), mEnabled(FALSE),
+                 mAttachmentType(NetworkAttachmentType_Null),
+                 mCableConnected(TRUE), mLineSpeed(0), mTraceEnabled(FALSE),
+                 mHostInterface("") /* cannot be null */,
+                 mNATNetwork("") /* cannot be null */
         {}
 
         bool operator== (const Data &that) const

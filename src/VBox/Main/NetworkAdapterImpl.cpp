@@ -505,6 +505,10 @@ STDMETHODIMP NetworkAdapter::COMGETTER(NATNetwork) (BSTR *aNATNetwork)
 
 STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork) (IN_BSTR aNATNetwork)
 {
+    Bstr bstrEmpty("");
+    if (!aNATNetwork)
+        aNATNetwork = bstrEmpty;
+
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
@@ -934,6 +938,8 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
     {
         case NetworkAttachmentType_NAT:
             mData->mNATNetwork = data.strName;
+            if (mData->mNATNetwork.isNull())
+                mData->mNATNetwork = "";
             rc = AttachToNAT();
             CheckComRCReturnRC(rc);
         break;
