@@ -211,7 +211,7 @@ $(MODULE):
 install: $(MODULE)
 	@mkdir -p $(MODULE_DIR); \
 	install -m 0664 -o root -g root $(MODULE).$(MODULE_EXT) $(MODULE_DIR); \
-	PATH="$(PATH):/bin:/sbin" depmod -ae; \
+	PATH="$(PATH):/bin:/sbin" depmod -a; \
 	rm -f /etc/vbox/module_not_compiled
 
 install_rpm: $(MODULE)
