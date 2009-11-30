@@ -1061,4 +1061,3 @@ sdk:
 sdk-fetch:
 	+ $(KMK) KBUILD_TARGET=win  KBUILD_TARGET_ARCH=x86  -C tools fetch
 
-
