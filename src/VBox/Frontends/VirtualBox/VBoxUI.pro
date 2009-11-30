@@ -61,6 +61,7 @@ FORMS = \
     ui/VBoxExportApplianceWzd.ui
 
 TRANSLATIONS = \
+	nls/VirtualBox_en.ts \
 	nls/VirtualBox_el.ts \
 	nls/VirtualBox_tr.ts \
 	nls/VirtualBox_id.ts \

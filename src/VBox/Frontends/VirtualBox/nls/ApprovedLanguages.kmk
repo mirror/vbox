@@ -19,8 +19,9 @@
 # additional information or have any questions.
 #
 
-# The list of approved GUI languages without 'en' (English).
+# The list of approved GUI languages.
 VBOX_APPROVED_GUI_LANGUAGES := \
+	en \
 	de    \
 	zh_TW \
 	zh_CN \
@@ -49,7 +50,4 @@ VBOX_APPROVED_GUI_LANGUAGES := \
 	bg    \
 	uk    \
 	da
-
-# The list of approved GUI languages including the default 'en'.
-VBOX_APPROVED_GUI_LANGUAGES_ALL := en $(VBOX_APPROVED_GUI_LANGUAGES)
 

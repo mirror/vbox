@@ -240,6 +240,11 @@ void VBoxGLSettingsLanguage::reload (const QString &aLangId)
         if (pos == -1)
             continue;
 
+        /* Skip any English version, cause this is extra handled. */
+        QString lang = regExp.cap (2);
+        if (lang.toLower() == "en")
+            continue;
+
         bool loadOk = translator.load (fileName, nlsPath);
         if (!loadOk)
             continue;
