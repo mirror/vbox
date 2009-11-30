@@ -122,6 +122,7 @@ EndSection
 
 Section "ServerLayout"
   Identifier   "Layout[all]"
+  InputDevice  "Keyboard[0]" "CoreKeyboard"
   InputDevice  "Mouse[1]" "CorePointer"
   Option       "Clone" "off"
   Option       "Xinerama" "off"
