@@ -1809,7 +1809,7 @@ Wilt u het toch verwijderen?</translation>
     </message>
     <message>
         <source>Could not get statement info</source>
-        <translation>Es ist keine Information zum Befehl verfügbar</translation>
+        <translation>Kan geen informatie over de instructie krijgen</translation>
     </message>
 </context>
 <context>
