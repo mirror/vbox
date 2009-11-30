@@ -2026,7 +2026,7 @@ void VBoxConsoleWnd::vmTakeSnapshot()
 
     CMachine machine = mSession.GetMachine();
 
-    VBoxTakeSnapshotDlg dlg (this);
+    VBoxTakeSnapshotDlg dlg (this, machine);
 
     QString typeId = machine.GetOSTypeId();
     dlg.mLbIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));

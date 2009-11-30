@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,17 +23,18 @@
 #ifndef __VBoxTakeSnapshotDlg_h__
 #define __VBoxTakeSnapshotDlg_h__
 
+/* Local includes */
 #include "VBoxTakeSnapshotDlg.gen.h"
 #include "QIWithRetranslateUI.h"
+#include "COMDefs.h"
 
-class VBoxTakeSnapshotDlg : public QIWithRetranslateUI<QDialog>,
-                            public Ui::VBoxTakeSnapshotDlg
+class VBoxTakeSnapshotDlg : public QIWithRetranslateUI<QDialog>, public Ui::VBoxTakeSnapshotDlg
 {
     Q_OBJECT;
 
 public:
 
-    VBoxTakeSnapshotDlg (QWidget *aParent);
+    VBoxTakeSnapshotDlg(QWidget *pParent, const CMachine &machine);
 
 protected:
 
@@ -41,7 +42,7 @@ protected:
 
 private slots:
 
-    void nameChanged (const QString &aName);
+    void nameChanged(const QString &strName);
 };
 
 #endif // __VBoxTakeSnapshotDlg_h__
