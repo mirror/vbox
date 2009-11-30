@@ -128,7 +128,7 @@
  *        where we don't do this yet.)
  *
  *      - Always break SOURCES, LIBS, long target list and other lists the
- *        manner Debugger_SOURCES is broeken into multiple lines in
+ *        manner Debugger_SOURCES is broken into multiple lines in
  *        src/VBox/Debugger/Makefile.kmk. I.e. exactly one tab, the file name /
  *        list item, another space, the slash and then the newline.
  *
