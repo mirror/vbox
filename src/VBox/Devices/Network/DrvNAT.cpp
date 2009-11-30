@@ -240,10 +240,10 @@ static DECLCALLBACK(int) drvNATRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
         rc = RTCritSectEnter(&pThis->csEventRecv);
-        AssertReleaseRC(rc);
+        AssertRC(rc);
         RTReqProcess(pThis->pRecvReqQueue, 0);
         rc = RTCritSectLeave(&pThis->csEventRecv);
-        AssertReleaseRC(rc);
+        AssertRC(rc);
         if (ASMAtomicReadU32(&pThis->cPkt) == 0) 
         {
             RTSemEventWait(pThis->EventRecv, RT_INDEFINITE_WAIT);
@@ -260,9 +260,9 @@ static DECLCALLBACK(int) drvNATRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread
     if (ASMAtomicReadU32(&pThis->cPkt) > 0) 
     {
         rc = RTCritSectEnter(&pThis->csEventRecv);
-        AssertReleaseRC(rc);
+        AssertRC(rc);
         rc = RTSemEventSignal(pThis->EventRecv);
-        AssertReleaseRC(rc);
+        AssertRC(rc);
         rc = RTCritSectLeave(&pThis->csEventRecv);
     }
 
@@ -281,14 +281,14 @@ static DECLCALLBACK(int) drvNATUrgRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
     {
         int rc;
         rc = RTCritSectEnter(&pThis->csEventUrgRecv);
-        AssertReleaseRC(rc);
+        AssertRC(rc);
         RTReqProcess(pThis->pUrgRecvReqQueue, 0);
         rc = RTCritSectLeave(&pThis->csEventUrgRecv);
-        AssertReleaseRC(rc);
+        AssertRC(rc);
         if (ASMAtomicReadU32(&pThis->cUrgPkt) == 0) 
         {
             rc = RTSemEventWait(pThis->EventUrgRecv, RT_INDEFINITE_WAIT);
-            AssertReleaseRC(rc);
+            AssertRC(rc);
         }
     }
     return VINF_SUCCESS;
@@ -300,11 +300,11 @@ static DECLCALLBACK(int) drvNATUrgRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     {
         int rc;
         rc = RTCritSectEnter(&pThis->csEventUrgRecv);
-        AssertReleaseRC(rc);
+        AssertRC(rc);
         rc = RTSemEventSignal(pThis->EventUrgRecv);
-        AssertReleaseRC(rc);
+        AssertRC(rc);
         rc = RTCritSectLeave(&pThis->csEventUrgRecv);
-        AssertReleaseRC(rc);
+        AssertRC(rc);
     }
 
     return VINF_SUCCESS;
@@ -313,22 +313,22 @@ static DECLCALLBACK(int) drvNATUrgRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 static DECLCALLBACK(void) drvNATUrgRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int cb, void *pvArg)
 {
     int rc = RTCritSectEnter(&pThis->csDevAccess);
-    AssertReleaseRC(rc);
+    AssertRC(rc);
     rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
     {
         rc = pThis->pPort->pfnReceive(pThis->pPort, pu8Buf, cb);
-        AssertReleaseRC(rc);
+        AssertRC(rc);
     }
     else if (   RT_FAILURE(rc) 
              && (  rc == VERR_TIMEOUT
                 && rc == VERR_INTERRUPTED))
     {
-        AssertReleaseRC(rc);
+        AssertRC(rc);
     } 
 
     rc = RTCritSectLeave(&pThis->csDevAccess);
-    AssertReleaseRC(rc);
+    AssertRC(rc);
 
     slirp_ext_m_free(pThis->pNATState, pvArg);
     if (ASMAtomicDecU32(&pThis->cUrgPkt) == 0) 
@@ -349,14 +349,14 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
     while(ASMAtomicReadU32(&pThis->cUrgPkt) != 0)
     {
         rc = RTCritSectLeave(&pThis->csEventRecv);
-        AssertReleaseRC(rc);
+        AssertRC(rc);
         rc = RTSemEventWait(pThis->EventRecv, RT_INDEFINITE_WAIT);
         if (   RT_FAILURE(rc) 
             && ( rc == VERR_TIMEOUT
                  || rc == VERR_INTERRUPTED))
             goto done_unlocked; 
         rc = RTCritSectEnter(&pThis->csEventRecv);
-        AssertReleaseRC(rc);
+        AssertRC(rc);
     }
 
     rc = RTCritSectEnter(&pThis->csDevAccess);
@@ -365,17 +365,17 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
     if (RT_SUCCESS(rc))
     {
         rc = pThis->pPort->pfnReceive(pThis->pPort, pu8Buf, cb);
-        AssertReleaseRC(rc);
+        AssertRC(rc);
     } 
     else if (   RT_FAILURE(rc) 
              && (  rc != VERR_TIMEOUT
                 && rc != VERR_INTERRUPTED))
     {
-        AssertReleaseRC(rc);
+        AssertRC(rc);
     }
 
     rc = RTCritSectLeave(&pThis->csDevAccess);
-    AssertReleaseRC(rc);
+    AssertRC(rc);
 done_unlocked:
     slirp_ext_m_free(pThis->pNATState, pvArg);
     ASMAtomicDecU32(&pThis->cPkt);
@@ -427,7 +427,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
 #else
     rc = RTReqAlloc((PRTREQQUEUE)slirp_get_queue(pThis->pNATState), &pReq, RTREQTYPE_INTERNAL);
 #endif
-    AssertReleaseRC(rc);
+    AssertRC(rc);
 
     /* @todo: Here we should get mbuf instead temporal buffer */
 #if 0
@@ -451,7 +451,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     pReq->fFlags              = RTREQFLAGS_VOID|RTREQFLAGS_NO_WAIT;
 
     rc = RTReqQueue(pReq, 0); /* don't wait, we have to wakeup the NAT thread fist */
-    AssertReleaseRC(rc);
+    AssertRC(rc);
     drvNATNotifyNATThread(pThis);
     LogFlow(("drvNATSend: end\n"));
     return VINF_SUCCESS;
@@ -471,7 +471,7 @@ static void drvNATNotifyNATThread(PDRVNAT pThis)
     /* kick WSAWaitForMultipleEvents */
     rc = WSASetEvent(pThis->hWakeupEvent);
 #endif
-    AssertReleaseRC(rc);
+    AssertRC(rc);
 }
 
 
@@ -538,7 +538,7 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
         return;
 
     int rc = RTReqAlloc(pThis->pSlirpReqQueue, &pReq, RTREQTYPE_INTERNAL);
-    AssertReleaseRC(rc);
+    AssertRC(rc);
     pReq->u.Internal.pfn      = (PFNRT)drvNATNotifyLinkChangedWorker;
     pReq->u.Internal.cArgs    = 2;
     pReq->u.Internal.aArgs[0] = (uintptr_t)pThis;
@@ -549,10 +549,10 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
     {
         drvNATNotifyNATThread(pThis);
         rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);
-        AssertReleaseRC(rc);
+        AssertRC(rc);
     }
     else
-        AssertReleaseRC(rc);
+        AssertRC(rc);
     RTReqFree(pReq);
 }
 
@@ -672,7 +672,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         {
             int error = WSAGetLastError();
             LogRel(("NAT: WSAWaitForMultipleEvents returned %d (error %d)\n", event, error));
-            RTAssertReleasePanic();
+            RTAssertPanic();
         }
 
         if (event == WSA_WAIT_TIMEOUT)
@@ -783,7 +783,7 @@ void slirp_urg_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
         return;
 
     int rc = RTReqAlloc(pThis->pUrgRecvReqQueue, &pReq, RTREQTYPE_INTERNAL);
-    AssertReleaseRC(rc);
+    AssertRC(rc);
     ASMAtomicIncU32(&pThis->cUrgPkt);
     pReq->u.Internal.pfn      = (PFNRT)drvNATUrgRecvWorker;
     pReq->u.Internal.cArgs    = 4;
@@ -793,7 +793,7 @@ void slirp_urg_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     pReq->u.Internal.aArgs[3] = (uintptr_t)pvArg;
     pReq->fFlags              = RTREQFLAGS_VOID|RTREQFLAGS_NO_WAIT;
     rc = RTReqQueue(pReq, 0);
-    AssertReleaseRC(rc);
+    AssertRC(rc);
     drvNATUrgRecvWakeup(pThis->pDrvIns, pThis->pUrgRecvThread);
 }
 
@@ -815,7 +815,7 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
         return;
 
     int rc = RTReqAlloc(pThis->pRecvReqQueue, &pReq, RTREQTYPE_INTERNAL);
-    AssertReleaseRC(rc);
+    AssertRC(rc);
     ASMAtomicIncU32(&pThis->cPkt);
     pReq->u.Internal.pfn      = (PFNRT)drvNATRecvWorker;
     pReq->u.Internal.cArgs    = 4;
@@ -825,7 +825,7 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     pReq->u.Internal.aArgs[3] = (uintptr_t)pvArg;
     pReq->fFlags              = RTREQFLAGS_VOID|RTREQFLAGS_NO_WAIT;
     rc = RTReqQueue(pReq, 0);
-    AssertReleaseRC(rc);
+    AssertRC(rc);
     drvNATRecvWakeup(pThis->pDrvIns, pThis->pRecvThread);
     STAM_COUNTER_INC(&pThis->StatQueuePktSent);
 }
@@ -1162,12 +1162,12 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             }
             rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pRecvThread, pThis, drvNATRecv,
                                           drvNATRecvWakeup, 128 * _1K, RTTHREADTYPE_IO, "NATRX");
-            AssertReleaseRC(rc);
+            AssertRC(rc);
             rc = RTSemEventCreate(&pThis->EventRecv);
 
             rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pUrgRecvThread, pThis, drvNATUrgRecv,
                                           drvNATUrgRecvWakeup, 128 * _1K, RTTHREADTYPE_IO, "NATURGRX");
-            AssertReleaseRC(rc);
+            AssertRC(rc);
             rc = RTSemEventCreate(&pThis->EventRecv);
             rc = RTSemEventCreate(&pThis->EventUrgRecv);
             rc = RTCritSectInit(&pThis->csEventRecv);
@@ -1199,12 +1199,12 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 
             rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pSlirpThread, pThis, drvNATAsyncIoThread,
                                           drvNATAsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "NAT");
-            AssertReleaseRC(rc);
+            AssertRC(rc);
 
 #ifdef VBOX_WITH_SLIRP_MT
             rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pGuestThread, pThis, drvNATAsyncIoGuest,
                                           drvNATAsyncIoGuestWakeup, 128 * _1K, RTTHREADTYPE_IO, "NATGUEST");
-            AssertReleaseRC(rc);
+            AssertRC(rc);
 #endif
 
             pThis->enmLinkState = PDMNETWORKLINKSTATE_UP;
