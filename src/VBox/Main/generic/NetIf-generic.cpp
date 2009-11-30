@@ -209,6 +209,9 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IHostNetworkInterfac
     return hrc;
 
 #else
+    NOREF(pVBox);
+    NOREF(aHostNetworkInterface);
+    NOREF(aProgress);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
@@ -254,6 +257,9 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId,
     }
     return rc;
 #else
+    NOREF(pVBox);
+    NOREF(aId);
+    NOREF(aProgress);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
