@@ -3924,6 +3924,15 @@ p, li { white-space: pre-wrap; }
         <comment>failed to close ...</comment>
         <translation>Das Diskettenlaufwerk</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Möchten Sie wirklich das CD/DVD-ROM-Laufwerk löschen?&lt;/p&gt;&lt;p&gt;Ohne CD/DVD-ROM-Laufwerk können Sie keine CDs oder CD-Abbilder einbinden und die Gast-Erweiterungen nicht installieren!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation>&amp;Entfernen</translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
@@ -4401,29 +4410,29 @@ p, li { white-space: pre-wrap; }
     <message numerus="yes">
         <source> (%n day(s) ago)</source>
         <translation>
-            <numerusform> (vor %n Tag(en))</numerusform>
-            <numerusform></numerusform>
+            <numerusform> (vor %n Tag)</numerusform>
+            <numerusform> (vor %n Tagen)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n hour(s) ago)</source>
         <translation>
-            <numerusform> (vor %n Stunde(n))</numerusform>
-            <numerusform></numerusform>
+            <numerusform> (vor %n Stunde)</numerusform>
+            <numerusform> (vor %n Stunden)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n minute(s) ago)</source>
         <translation>
-            <numerusform> (vor %n Minute(n))</numerusform>
-            <numerusform></numerusform>
+            <numerusform> (vor %n Minute)</numerusform>
+            <numerusform> (vor %n Minuten)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n second(s) ago)</source>
         <translation>
-            <numerusform> (vor %n Sekunde(n))</numerusform>
-            <numerusform></numerusform>
+            <numerusform> (vor %n Sekunde)</numerusform>
+            <numerusform> (vor %n Sekunden)</numerusform>
         </translation>
     </message>
     <message>
