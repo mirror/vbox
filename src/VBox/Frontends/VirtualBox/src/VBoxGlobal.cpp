@@ -2941,6 +2941,16 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     QString languageFileName;
     QString selectedLangId = gVBoxBuiltInLangName;
 
+    /* If C is selected we change it temporary to en. This makes sure any extra
+     * "en" translation file will be loaded. This is necessary for loading the
+     * plural forms of some of our translations. */
+    bool fResetToC = false;
+    if (langId == "C")
+    {
+        langId = "en";
+        fResetToC = true;
+    }
+
     char szNlsPath[RTPATH_MAX];
     int rc;
 
@@ -2977,7 +2987,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
             /* Never complain when the default language is requested.  In any
              * case, if no explicit language file exists, we will simply
              * fall-back to English (built-in). */
-            if (!aLangId.isNull())
+            if (!aLangId.isNull() && langId != "en")
                 vboxProblem().cannotFindLanguage (langId, nlsPath);
             /* selectedLangId remains built-in here */
             AssertReturnVoid (selectedLangId == gVBoxBuiltInLangName);
@@ -3048,13 +3058,15 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
         Assert (qtTr);
         if (qtTr && (loadOk = qtTr->load (languageFileName)))
             qApp->installTranslator (qtTr);
-        /* The below message doesn't fit 100% (because it's an additonal
+        /* The below message doesn't fit 100% (because it's an additional
          * language and the main one won't be reset to built-in on failure)
          * but the load failure is so rare here that it's not worth a separate
          * message (but still, having something is better than having none) */
         if (!loadOk && !aLangId.isNull())
             vboxProblem().cannotLoadLanguage (languageFileName);
     }
+    if (fResetToC)
+        sLoadedLangId = "C";
 }
 
 QString VBoxGlobal::helpFile() const
