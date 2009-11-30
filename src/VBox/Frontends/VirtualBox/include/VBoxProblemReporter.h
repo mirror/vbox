@@ -244,6 +244,8 @@ public:
     int confirmChangeAddControllerSlots (QWidget *aParent) const;
     int confirmRunNewHDWzdOrVDM (KDeviceType aDeviceType);
 
+    int confirmRemovingOfLastDVDDevice() const;
+
     void cannotCreateHardDiskStorage (QWidget *aParent, const CVirtualBox &aVBox,
                                       const QString &aLocaiton,
                                       const CMedium &aHD,
