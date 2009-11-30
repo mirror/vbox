@@ -330,6 +330,13 @@
  *
  *      - The 'm_' (or 'm') prefix means a class data member.
  *
+ *        In new code in Main, use "m_" (and common sense). As an exception, in Main,
+ *        if a class encapsulates its member variables in an anonymous
+ *        structure which is declared in the class, but defined only in the
+ *        implementation (like this: "class X { struct Data; Data *m; }"), then
+ *        the pointer to that struct is called "m" itself and its members then need no prefix,
+ *        because the members are accessed with "m->member" already which is clear enough.
+ *
  *      - The 'p' prefix means pointer. For instance 'pVM' is pointer to VM.
  *
  *      - The 'a' prefix means array. For instance 'aPages' could be read as array
@@ -367,6 +374,10 @@
  *      - The 'wsz' prefix means zero terminated wide/windows character string (array of RTUTF16).
  *
  *      - The 'usz' prefix means zero terminated Unicode string (array of RTUNICP).
+ *
+ *      - The 'str' prefix means C++ string; either a std::string or, in Main, a Utf8Str.
+ *
+ *      - The 'bstr' prefix, in Main, means a UTF-16 Bstr.
  *
  *      - The 'pfn' prefix means pointer to function. Common usage is 'pfnCallback'
  *        and such like.
