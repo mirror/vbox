@@ -1407,7 +1407,7 @@ void VBoxSelectorWnd::retranslateUi()
      * arrow" when the necessary size of the toolbar is increased. So
      * manually adjust the size after changing the text. */
     mVMToolBar->adjustSize();
-#endif QT_MAC_USE_COCOA
+#endif /* QT_MAC_USE_COCOA */
 }
 
 
