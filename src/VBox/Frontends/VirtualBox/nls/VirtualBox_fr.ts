@@ -119,7 +119,7 @@
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.</source>
-        <translation>Cette erreur signifie que le module noyau n&apos;a pas pû allouer suffisament de mémoire, ou bien qu&apos;une opération de mappage a échoué</translation>
+        <translation>Cette erreur signifie que le module noyau n&apos;a pas pû allouer suffisament de mémoire, ou bien qu&apos;une opération de mappage a échoué.</translation>
     </message>
 </context>
 <context>
@@ -719,7 +719,7 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
-        <translation>Eteindre la machine</translation>
+        <translation>&amp;Eteindre la machine</translation>
     </message>
     <message>
         <source>&amp;Revert to the current snapshot</source>
@@ -1023,7 +1023,7 @@ Version %1</source>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation>Indique que le clavier du système d&apos;exploitation invité est capturé (&lt;img src=:/hostkey_captured_16px.png/&gt;) ou ne l&apos;est pas (&lt;img src=:/hostkey_16px.png/&gt;)</translation>
+        <translation>Indique que le clavier du système d&apos;exploitation invité est capturé (&lt;img src=:/hostkey_captured_16px.png/&gt;) ou ne l&apos;est pas (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -1083,7 +1083,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Carte %1 (%2)&lt;/b&gt;&amp;nbsp;: cable %3&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Carte %1 (%2)&lt;/b&gt; : cable %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
@@ -1117,7 +1117,7 @@ Version %1</source>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>Indique si l&apos;écran à distance (serveur VRDP) est activé (&lt;img src=:/vrdp_16px.png/&gt;) ou désactivé  (&lt;img src=:/vrdp_disabled_16px.png/&gt;)</translation>
+        <translation>Indique si l&apos;écran à distance (serveur VRDP) est activé (&lt;img src=:/vrdp_16px.png/&gt;) ou désactivé  (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine&apos;sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -1545,7 +1545,7 @@ Version %1</source>
     </message>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant d&apos;exportation d&apos;applications virtuelles</translation>
+        <translation>Bienvenue sur l&apos;assistant d&apos;exportation d&apos;applications virtuelles!</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -1814,7 +1814,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Dock Icon Realtime Preview</source>
-        <translation>&apos;Icône Dock aperçu temps réel</translation>
+        <translation>&amp;Icône Dock aperçu temps réel</translation>
     </message>
 </context>
 <context>
@@ -1864,7 +1864,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Interface Language:</source>
-        <translation>Langue de l&apos;interface:</translation>
+        <translation>Langue de l&apos;&amp;interface:</translation>
     </message>
     <message>
         <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
@@ -2159,11 +2159,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Check for updates</source>
-        <translation>Vérifier si une version actualisée est disponible</translation>
+        <translation>&amp;Vérifier si une version actualisée est disponible</translation>
     </message>
     <message>
         <source>&amp;Once per:</source>
-        <translation>Tous les :</translation>
+        <translation>&amp;Tous les :</translation>
     </message>
     <message>
         <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
@@ -2217,7 +2217,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;nobr&gt;ID Fabricant&amp;nbsp;: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID Produit&amp;nbsp;: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Révision&amp;nbsp;: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID Fabricant : %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID Produit : %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Révision : %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
@@ -2227,7 +2227,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Etat&amp;nbsp;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Etat : %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Name</source>
@@ -2909,42 +2909,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;ID fabricant&amp;nbsp;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID fabricant : %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;ID produit&amp;nbsp;: %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID produit : %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Révision&amp;nbsp;: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Révision : %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Produit&amp;nbsp;: %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Produit : %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Fabricant&amp;nbsp;: %5&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Fabricant : %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;No. de série&amp;nbsp;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;No. de série : %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Port&amp;nbsp;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Port : %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;État&amp;nbsp;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;État : %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>host interface, %1</source>
@@ -3367,7 +3367,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You can also change this while the machine is running.</source>
-        <translation>Vous pouvez également changer ceci pendant l&apos;execution de la machine</translation>
+        <translation>Vous pouvez également changer ceci pendant l&apos;execution de la machine.</translation>
     </message>
     <message>
         <source>&lt;b&gt;No media available&lt;/b&gt;</source>
@@ -3376,12 +3376,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You can create media images using the virtual media manager.</source>
-        <translation>Vous pouvez créer des images de support en utilisant le gestionnaire de supports virtuels</translation>
+        <translation>Vous pouvez créer des images de support en utilisant le gestionnaire de supports virtuels.</translation>
     </message>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation>Ce disque sera connecté indirectement à travers un disque dur dérivé nouvellement créé</translation>
+        <translation>Ce disque sera connecté indirectement à travers un disque dur dérivé nouvellement créé.</translation>
     </message>
     <message>
         <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
@@ -3527,7 +3527,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant d&apos;importation d&apos;applications virtuelles</translation>
+        <translation>Bienvenue sur l&apos;assistant d&apos;importation d&apos;applications virtuelles!</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -4053,11 +4053,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Dynamically expanding storage</source>
-        <translation>Image disque à taille dynamique</translation>
+        <translation>Image disque à taille &amp;dynamique</translation>
     </message>
     <message>
         <source>&amp;Fixed-size storage</source>
-        <translation>Image disque à taille fixe</translation>
+        <translation>Image disque à taille &amp;fixe</translation>
     </message>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
@@ -4092,7 +4092,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant nouvelle machine virtuelle:</translation>
+        <translation>Bienvenue sur l&apos;assistant nouvelle machine virtuelle!</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
@@ -5299,12 +5299,16 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CDROM device? You will not be able to mount any CDs or ISO images without it.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Voulez-vous vraiement supprimer le périphérique optique? Sans périphérique optique, vous ne pourrez utiliser les supports optiques virtuels.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Voulez-vous vraiement supprimer le périphérique optique? Sans périphérique optique, vous ne pourrez utiliser les supports optiques virtuels.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
         <comment>medium</comment>
         <translation>&amp;Enlever</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Voulez-vous vraiement supprimer le périphérique optique?&lt;/p&gt;&lt;p&gt;Sans périphérique optique, vous ne pourrez pas utiliser les supports optiques, ni installer les Additions invité dans la machine virtuelle.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5891,29 +5895,29 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message numerus="yes">
         <source> (%n day(s) ago)</source>
         <translation>
-            <numerusform> (il y a %n jour(s))</numerusform>
-            <numerusform></numerusform>
+            <numerusform> (il y a %n jour)</numerusform>
+            <numerusform> (il y a %n jours)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n hour(s) ago)</source>
         <translation>
-            <numerusform> (il y a %n heure(s))</numerusform>
-            <numerusform></numerusform>
+            <numerusform> (il y a %n heure)</numerusform>
+            <numerusform> (il y a %n heures)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n minute(s) ago)</source>
         <translation>
-            <numerusform> (il y a %n minute(s))</numerusform>
-            <numerusform></numerusform>
+            <numerusform> (il y a %n minutes)</numerusform>
+            <numerusform> (il y a %n minutes)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n second(s) ago)</source>
         <translation>
-            <numerusform> (il y a %n seconde(s))</numerusform>
-            <numerusform></numerusform>
+            <numerusform> (il y a %n seconde)</numerusform>
+            <numerusform> (il y a %n secondes)</numerusform>
         </translation>
     </message>
 </context>
