@@ -1545,7 +1545,7 @@ Version %1</source>
     </message>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant d&apos;exportation d&apos;applications virtuelles!</translation>
+        <translation>Bienvenue sur l&apos;assistant d&apos;exportation d&apos;applications virtuelles !</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -3527,7 +3527,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant d&apos;importation d&apos;applications virtuelles!</translation>
+        <translation>Bienvenue sur l&apos;assistant d&apos;importation d&apos;applications virtuelles !</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -4092,7 +4092,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant nouvelle machine virtuelle!</translation>
+        <translation>Bienvenue sur l&apos;assistant nouvelle machine virtuelle !</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
@@ -4496,7 +4496,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;ID Erreur&amp;nbsp;: &lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID Erreur : &lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity: </source>
@@ -4505,11 +4505,11 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une erreur fatale s&apos;est produite pendant l&apos;exécution de la machine virtuelle: La machine virtuelle sera mise hors tension. Veuillez copier le message suivant en utilisant le presse-papiers afin dCopier le message si vous désirer examiné celui ci ultérieurementapos;aider la diagnostique&amp;nbsp;: &lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une erreur fatale s&apos;est produite pendant l&apos;exécution de la machine virtuelle: La machine virtuelle sera mise hors tension. Veuillez copier le message suivant en utilisant le presse-papiers afin dCopier le message si vous désirer examiné celui ci ultérieurementapos;aider la diagnostique : &lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une erreur s&apos;est produite pendant l&apos;exécution de la machine virtuelle&amp;nbsp;! Les détails pour cette erreur se trouvent plus bas. Vous pouvez essayer de corrigé l&apos;erreur et de reprendre l&apos;exécution de la machine virtuelle.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une erreur s&apos;est produite pendant l&apos;exécution de la machine virtuelle ! Les détails pour cette erreur se trouvent plus bas. Vous pouvez essayer de corrigé l&apos;erreur et de reprendre l&apos;exécution de la machine virtuelle.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
@@ -4523,17 +4523,17 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>Composant&amp;nbsp;:</translation>
+        <translation>Composant :</translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>Interface&amp;nbsp;: </translation>
+        <translation>Interface : </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>Fonction Appelée&amp;nbsp;:</translation>
+        <translation>Fonction Appelée :</translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
@@ -5414,7 +5414,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation>Bienvenue sur le formulaire d&apos;inscription VirtualBox:</translation>
+        <translation>Bienvenue sur le formulaire d&apos;inscription VirtualBox !</translation>
     </message>
     <message>
         <source>Connection timed out.</source>
@@ -5516,11 +5516,11 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Click to view non-scaled screenshot.</source>
-        <translation>Cliquer pour vour la prise d&apos;écran en taille réelle</translation>
+        <translation>Cliquer pour vour la prise d&apos;écran en taille réelle.</translation>
     </message>
     <message>
         <source>Click to view scaled screenshot.</source>
-        <translation>Cliquer pour vour la prise d&apos;écran en taille réduite</translation>
+        <translation>Cliquer pour vour la prise d&apos;écran en taille réduite.</translation>
     </message>
 </context>
 <context>
@@ -5751,7 +5751,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Click to enlarge the screenshot.</source>
-        <translation>Cliquer pour élargir la prise d&apos;écran</translation>
+        <translation>Cliquer pour élargir la prise d&apos;écran.</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -5998,7 +5998,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation>menu zone de notification</translation>
+        <translation>&amp;Autres machines...</translation>
     </message>
 </context>
 <context>
@@ -6102,11 +6102,11 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible! Version &lt;b&gt;%1&lt;/b&gt; est disponible à &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version en utilisant le lien suivant&amp;nbsp;: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible! Version &lt;b&gt;%1&lt;/b&gt; est disponible à &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version en utilisant le lien suivant : &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La recherche d&apos;actualisations a échoué en raison de l&apos;erreur de réseau suivante&amp;nbsp;: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La recherche d&apos;actualisations a échoué en raison de l&apos;erreur de réseau suivante : &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>You are already running the most recent version of VirtualBox.</source>
@@ -6151,7 +6151,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Welcome to the First Run Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant du premier lancement:</translation>
+        <translation>Bienvenue sur l&apos;assistant du premier lancement !</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
@@ -6191,7 +6191,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous avez choisi le média de démarrage suivant&amp;nbsp;: &lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous avez choisi le média de démarrage suivant : &lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -6223,7 +6223,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous avez choisis le média suivant pour amorcer un système d&apos;exploitation&amp;nbsp;: &lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous avez choisis le média suivant pour amorcer un système d&apos;exploitation : &lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
@@ -6491,7 +6491,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enable &amp;Audio</source>
-        <translation>Activer le son</translation>
+        <translation>Activer le &amp;son</translation>
     </message>
     <message>
         <source>Host Audio &amp;Driver:</source>
