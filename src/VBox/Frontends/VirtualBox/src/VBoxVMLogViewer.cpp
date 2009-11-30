@@ -421,12 +421,12 @@ void VBoxLogSearchPanel::retranslateUi()
     mSearchString->setToolTip (tr ("Enter a search string here"));
 
     mButtonsNextPrev->setTitle (0, tr ("&Next"));
-    mButtonsNextPrev->setToolTip (0, tr ("Search for the previous occurrence "
-                                         "of the string"));
+    mButtonsNextPrev->setToolTip (0, tr ("Search for the next occurrence of "
+                                         "the string"));
 
     mButtonsNextPrev->setTitle (1, tr ("&Previous"));
-    mButtonsNextPrev->setToolTip (1, tr ("Search for the next occurrence of "
-                                         "the string"));
+    mButtonsNextPrev->setToolTip (1, tr ("Search for the previous occurrence "
+                                         "of the string"));
 
 
     mCaseSensitive->setText (tr ("C&ase Sensitive"));
