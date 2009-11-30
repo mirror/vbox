@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,27 +20,58 @@
  * additional information or have any questions.
  */
 
+/* Global includes */
+#include <QPushButton>
+
+/* Local includes */
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxUtils.h"
 
-/* Qt includes */
-#include <QPushButton>
-
-VBoxTakeSnapshotDlg::VBoxTakeSnapshotDlg (QWidget *aParent)
-    : QIWithRetranslateUI<QDialog> (aParent)
+VBoxTakeSnapshotDlg::VBoxTakeSnapshotDlg(QWidget *pParent, const CMachine &machine)
+    : QIWithRetranslateUI<QDialog>(pParent)
 {
     /* Apply UI decorations */
-    Ui::VBoxTakeSnapshotDlg::setupUi (this);
+    Ui::VBoxTakeSnapshotDlg::setupUi(this);
 
-    QIAltKeyFilter *af = new QIAltKeyFilter (this);
-    af->watchOn (mLeName);
+    /* Alt key filter */
+    QIAltKeyFilter *altKeyFilter = new QIAltKeyFilter(this);
+    altKeyFilter->watchOn(mLeName);
 
     /* Setup connections */
-    connect (mButtonBox, SIGNAL (helpRequested()),
-             &vboxProblem(), SLOT (showHelpHelpDialog()));
-    connect (mLeName, SIGNAL (textChanged (const QString &)),
-             this, SLOT (nameChanged (const QString &)));
+    connect (mButtonBox, SIGNAL(helpRequested()), &vboxProblem(), SLOT(showHelpHelpDialog()));
+    connect (mLeName, SIGNAL(textChanged(const QString &)), this, SLOT(nameChanged(const QString &)));
+
+    /* Check if machine have immutable attachments */
+    int immutableMediums = 0;
+
+    if (machine.GetState() == KMachineState_Paused)
+    {
+        foreach (const CMediumAttachment &attachment, machine.GetMediumAttachments())
+        {
+            CMedium medium = attachment.GetMedium();
+            if (!medium.isNull() && !medium.GetParent().isNull() && medium.GetBase().GetType() == KMediumType_Immutable)
+                ++ immutableMediums;
+        }
+    }
+
+    if (immutableMediums)
+    {
+        mLbInfo->setText(tr("Warning: You are taking a snapshot of a running machine which has %n immutable image(s) "
+                            "attached to it. The automatic resetting of the immutable image(s) will not occur while "
+                            "the snapshot you are taking is the current snapshot to avoid data corruption.", "",
+                            immutableMediums));
+        mLbInfo->useSizeHintForWidth(400);
+    }
+    else
+    {
+        QGridLayout *lt = qobject_cast<QGridLayout*>(layout());
+        lt->removeWidget (mLbInfo);
+        mLbInfo->setHidden (true);
+
+        lt->removeWidget (mButtonBox);
+        lt->addWidget (mButtonBox, 2, 0, 1, 2);
+    }
 
     retranslateUi();
 }
@@ -48,11 +79,11 @@ VBoxTakeSnapshotDlg::VBoxTakeSnapshotDlg (QWidget *aParent)
 void VBoxTakeSnapshotDlg::retranslateUi()
 {
     /* Translate uic generated strings */
-    Ui::VBoxTakeSnapshotDlg::retranslateUi (this);
+    Ui::VBoxTakeSnapshotDlg::retranslateUi(this);
 }
 
-void VBoxTakeSnapshotDlg::nameChanged (const QString &aName)
+void VBoxTakeSnapshotDlg::nameChanged(const QString &strName)
 {
-    mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (!aName.trimmed().isEmpty());
+    mButtonBox->button(QDialogButtonBox::Ok)->setEnabled(!strName.trimmed().isEmpty());
 }
 

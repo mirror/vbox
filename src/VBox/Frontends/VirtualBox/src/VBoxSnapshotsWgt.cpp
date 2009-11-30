@@ -575,7 +575,7 @@ void VBoxSnapshotsWgt::takeSnapshot()
         static_cast <SnapshotWgtItem*> (mTreeWidget->currentItem());
     AssertReturn (item, (void) 0);
 
-    VBoxTakeSnapshotDlg dlg (this);
+    VBoxTakeSnapshotDlg dlg (this, mMachine);
 
     QString typeId = mMachine.GetOSTypeId();
     dlg.mLbIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));

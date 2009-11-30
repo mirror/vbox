@@ -2,7 +2,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
- Copyright (C) 2008 Sun Microsystems, Inc.
+ Copyright (C) 2008-2009 Sun Microsystems, Inc.
 
  This file is part of VirtualBox Open Source Edition (OSE), as
  available from http://www.virtualbox.org. This file is free software;
@@ -17,103 +17,102 @@
  additional information or have any questions.
  </comment>
  <class>VBoxTakeSnapshotDlg</class>
- <widget class="QDialog" name="VBoxTakeSnapshotDlg" >
-  <property name="geometry" >
+ <widget class="QDialog" name="VBoxTakeSnapshotDlg">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>314</width>
-    <height>239</height>
+    <width>300</width>
+    <height>240</height>
    </rect>
   </property>
   <property name="windowTitle" >
    <string>Take Snapshot of Virtual Machine</string>
   </property>
-  <layout class="QVBoxLayout" >
-   <item>
-    <layout class="QHBoxLayout" >
+  <layout class="QGridLayout">
+   <item rowspan="2" row="0" column="0">
+    <layout class="QVBoxLayout">
      <item>
-      <layout class="QVBoxLayout" >
-       <item>
-        <widget class="QLabel" name="mLbIcon" >
-         <property name="sizePolicy" >
-          <sizepolicy vsizetype="Preferred" hsizetype="Maximum" >
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text" >
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer>
-         <property name="orientation" >
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" >
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
+      <widget class="QLabel" name="mLbIcon">
+       <property name="sizePolicy" >
+        <sizepolicy vsizetype="Preferred" hsizetype="Maximum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
      </item>
      <item>
-      <layout class="QVBoxLayout" >
-       <property name="spacing" >
-        <number>10</number>
+      <spacer>
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
        </property>
-       <item>
-        <layout class="QVBoxLayout" >
-         <property name="spacing" >
-          <number>2</number>
-         </property>
-         <item>
-          <widget class="QLabel" name="mLbName" >
-           <property name="text" >
-            <string>Snapshot &amp;Name</string>
-           </property>
-           <property name="buddy" >
-            <cstring>mLeName</cstring>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="mLeName" />
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QVBoxLayout" >
-         <property name="spacing" >
-          <number>2</number>
-         </property>
-         <item>
-          <widget class="QLabel" name="mLbDescription" >
-           <property name="text" >
-            <string>Snapshot &amp;Description</string>
-           </property>
-           <property name="buddy" >
-            <cstring>mTeDescription</cstring>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QTextEdit" name="mTeDescription" />
-         </item>
-        </layout>
-       </item>
-      </layout>
+       <property name="sizeHint">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+      </spacer>
      </item>
     </layout>
    </item>
-   <item>
-    <widget class="QIDialogButtonBox" name="mButtonBox" >
-     <property name="standardButtons" >
+   <item row="0" column="1">
+    <layout class="QVBoxLayout">
+     <property name="spacing">
+      <number>2</number>
+     </property>
+     <item>
+      <widget class="QLabel" name="mLbName">
+       <property name="text" >
+        <string>Snapshot &amp;Name</string>
+       </property>
+       <property name="buddy" >
+        <cstring>mLeName</cstring>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="mLeName"/>
+     </item>
+    </layout>
+   </item>
+   <item row="1" column="1">
+    <layout class="QVBoxLayout">
+     <property name="spacing">
+      <number>2</number>
+     </property>
+     <item>
+      <widget class="QLabel" name="mLbDescription">
+       <property name="text">
+        <string>Snapshot &amp;Description</string>
+       </property>
+       <property name="buddy">
+        <cstring>mTeDescription</cstring>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QTextEdit" name="mTeDescription"/>
+     </item>
+    </layout>
+   </item>
+   <item row="2" column="0" colspan="2">
+    <widget class="QILabel" name="mLbInfo">
+     <property name="sizePolicy" >
+      <sizepolicy vsizetype="Preferred" hsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <widget class="QIDialogButtonBox" name="mButtonBox">
+     <property name="standardButtons">
       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
      </property>
     </widget>
@@ -121,6 +120,11 @@
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>QILabel</class>
+   <extends>QLabel</extends>
+   <header>QILabel.h</header>
+  </customwidget>
   <customwidget>
    <class>QIDialogButtonBox</class>
    <extends>QDialogButtonBox</extends>
@@ -135,11 +139,11 @@
    <receiver>VBoxTakeSnapshotDlg</receiver>
    <slot>accept()</slot>
    <hints>
-    <hint type="sourcelabel" >
+    <hint type="sourcelabel">
      <x>156</x>
      <y>216</y>
     </hint>
-    <hint type="destinationlabel" >
+    <hint type="destinationlabel">
      <x>156</x>
      <y>119</y>
     </hint>
@@ -151,11 +155,11 @@
    <receiver>VBoxTakeSnapshotDlg</receiver>
    <slot>reject()</slot>
    <hints>
-    <hint type="sourcelabel" >
+    <hint type="sourcelabel">
      <x>156</x>
      <y>216</y>
     </hint>
-    <hint type="destinationlabel" >
+    <hint type="destinationlabel">
      <x>156</x>
      <y>119</y>
     </hint>
