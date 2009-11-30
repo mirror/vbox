@@ -460,7 +460,6 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--username <username>]\n"
                  "                            [--password <password>]\n"
                  "                            [--type normal|writethrough|immutable]\n"
-                 "                            [--comment <comment>]\n"
                  "                            [--intnet]\n"
                  "\n");
     }
