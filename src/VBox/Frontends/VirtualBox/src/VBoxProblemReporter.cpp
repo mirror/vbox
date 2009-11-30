@@ -1146,9 +1146,10 @@ int VBoxProblemReporter::confirmRunNewHDWzdOrVDM (KDeviceType aDeviceType)
 int VBoxProblemReporter::confirmRemovingOfLastDVDDevice() const
 {
     return messageOkCancel (QApplication::activeWindow(), Info,
-                            tr ("<p>Are you sure you want to delete the CDROM device? "
-                                "You will not be able to mount any CDs or ISO images "
-                                "without it.</p>"),
+                            tr ("<p>Are you sure you want to delete the CDROM device?</p>"
+                                "<p>You will not be able to mount any CDs or ISO images "
+                                "without it. That also applies to the image containing the "
+                                "Guest Additions!</p>"),
                             0, /* aAutoConfirmId */
                             tr ("&Remove", "medium"));
 }
