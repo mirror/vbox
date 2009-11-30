@@ -494,7 +494,7 @@ static int __init VBoxDrvLinuxInit(void)
                  * which hopefilly prevents any usage of hardware performance counters
                  * and therefore triggering of NMIs. */
                 printk(KERN_ERR DEVICE_NAME
-                       ": Warning: 2.6.31+ kernel detected. Most likely the hwardware performance\n"
+                       ": Warning: 2.6.31+ kernel detected. Most likely the hardware performance\n"
                                 DEVICE_NAME
                        ": counter framework which can generate NMIs is active. You have to prevent\n"
                                 DEVICE_NAME
