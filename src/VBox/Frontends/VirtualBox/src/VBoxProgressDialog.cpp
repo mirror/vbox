@@ -213,8 +213,8 @@ void VBoxProgressDialog::timerEvent (QTimerEvent * /* aEvent */)
         QString strMinutes = VBoxGlobal::minutesToString(minutes);
         QString strSeconds = VBoxGlobal::secondsToString(seconds);
 
-        QString strTwoComp = tr ("%1, %2 remaining");
-        QString strOneComp = tr ("%1 remaining");
+        QString strTwoComp = tr ("%1, %2 remaining", "You may wish to translate this more like \"Time remaining: %1, %2\"");
+        QString strOneComp = tr ("%1 remaining", "You may wish to translate this more like \"Time remaining: %1\"");
 
         if (newTime > VBOX_DAY * 2 + VBOX_HOUR)
             mETA->setText (strTwoComp.arg (strDays).arg (strHours));
