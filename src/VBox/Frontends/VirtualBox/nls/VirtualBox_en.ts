@@ -29,10 +29,18 @@
     </message>
     <message numerus="yes">
         <location filename="../include/VBoxGlobal.h" line="365"/>
-        <source>%n hours(s)</source>
+        <source>%n hour(s)</source>
         <translation>
             <numerusform>%n hour</numerusform>
             <numerusform>%n hours</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../include/VBoxGlobal.h" line="375"/>
+        <source>%n second(s)</source>
+        <translation>
+            <numerusform>%n second</numerusform>
+            <numerusform>%n seconds</numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -41,14 +49,6 @@
         <translation>
             <numerusform>%n minute</numerusform>
             <numerusform>%n minutes</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <location filename="../include/VBoxGlobal.h" line="375"/>
-        <source>%n seconds(s)</source>
-        <translation>
-            <numerusform>%n second</numerusform>
-            <numerusform>%n seconds</numerusform>
         </translation>
     </message>
 </context>

@@ -362,7 +362,7 @@ public:
 
     static inline QString hoursToString (uint32_t cVal)
     {
-        return tr("%n hours(s)", "", cVal);
+        return tr("%n hour(s)", "", cVal);
     }
 
     static inline QString minutesToString (uint32_t cVal)
@@ -372,7 +372,7 @@ public:
 
     static inline QString secondsToString (uint32_t cVal)
     {
-        return tr("%n seconds(s)", "", cVal);
+        return tr("%n second(s)", "", cVal);
     }
 
     const QColor &toColor (KMachineState s) const
