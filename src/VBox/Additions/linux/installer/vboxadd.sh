@@ -39,6 +39,23 @@ BUILDVBOXVFS=`/bin/ls /usr/src/vboxvfs*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
 BUILDVBOXVIDEO=`/bin/ls /usr/src/vboxvideo*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
 LOG="/var/log/vboxadd-install.log"
 
+# Check architecture
+cpu=`uname -m`;
+case "$cpu" in
+  i[3456789]86|x86)
+    cpu="x86"
+    lib_path="/usr/lib"
+    ;;
+  x86_64|amd64)
+    cpu="amd64"
+    if test -d "/usr/lib64"; then
+      lib_path="/usr/lib64"
+    else
+      lib_path="/usr/lib"
+    fi
+    ;;
+esac
+
 if [ -f /etc/arch-release ]; then
     system=arch
 elif [ -f /etc/redhat-release ]; then
@@ -377,7 +394,7 @@ setup()
     fi
 
     # Put mount.vboxsf in the right place
-    ln -sf /usr/lib/$PACKAGE/mount.vboxsf /sbin
+    ln -sf "$lib_path/$PACKAGE/mount.vboxsf" /sbin
 
     succ_msg
     if running_vboxguest || running_vboxadd; then
