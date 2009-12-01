@@ -2995,6 +2995,7 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
 
         default:
             AssertReleaseMsgFailed(("enmGuestMode=%d\n", enmGuestMode));
+            *penmSwitcher = VMMSWITCHER_INVALID;
             return PGMMODE_INVALID;
     }
     /* Override the shadow mode is nested paging is active. */
