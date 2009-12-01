@@ -186,22 +186,22 @@ public:
         }
         else if (mTimestamp.secsTo (QDateTime::currentDateTime()) > 60 * 60 * 24)
         {
-            age = VBoxSnapshotsWgt::tr (" (%n day(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()) / 60 / 60 / 24);
+            age = VBoxSnapshotsWgt::tr (" (%1 ago)").arg(VBoxGlobal::daysToString(mTimestamp.secsTo (QDateTime::currentDateTime()) / 60 / 60 / 24));
             ageFormat = AgeInDays;
         }
         else if (mTimestamp.secsTo (QDateTime::currentDateTime()) > 60 * 60)
         {
-            age = VBoxSnapshotsWgt::tr (" (%n hour(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()) / 60 / 60);
+            age = VBoxSnapshotsWgt::tr (" (%1 ago)").arg(VBoxGlobal::hoursToString(mTimestamp.secsTo (QDateTime::currentDateTime()) / 60 / 60));
             ageFormat = AgeInHours;
         }
         else if (mTimestamp.secsTo (QDateTime::currentDateTime()) > 60)
         {
-            age = VBoxSnapshotsWgt::tr (" (%n minute(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()) / 60);
+            age = VBoxSnapshotsWgt::tr (" (%1 ago)").arg(VBoxGlobal::minutesToString(mTimestamp.secsTo (QDateTime::currentDateTime()) / 60));
             ageFormat = AgeInMinutes;
         }
         else
         {
-            age = VBoxSnapshotsWgt::tr (" (%n second(s) ago)", "", mTimestamp.secsTo (QDateTime::currentDateTime()));
+            age = VBoxSnapshotsWgt::tr (" (%1 ago)").arg(VBoxGlobal::secondsToString(mTimestamp.secsTo (QDateTime::currentDateTime())));
             ageFormat = AgeInSeconds;
         }
 

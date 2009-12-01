@@ -208,10 +208,10 @@ void VBoxProgressDialog::timerEvent (QTimerEvent * /* aEvent */)
         int minutes = time.addDays (-days).time().minute();
         int seconds = time.addDays (-days).time().second();
 
-        QString strDays = tr ("%n day(s)", "", days);
-        QString strHours = tr ("%n hour(s)", "", hours);
-        QString strMinutes = tr ("%n minute(s)", "", minutes);
-        QString strSeconds = tr ("%n second(s)", "", seconds);
+        QString strDays = VBoxGlobal::daysToString(days);
+        QString strHours = VBoxGlobal::hoursToString(hours);
+        QString strMinutes = VBoxGlobal::minutesToString(minutes);
+        QString strSeconds = VBoxGlobal::secondsToString(seconds);
 
         QString strTwoComp = tr ("%1, %2 remaining");
         QString strOneComp = tr ("%1 remaining");
