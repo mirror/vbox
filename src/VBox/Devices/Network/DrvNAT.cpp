@@ -169,10 +169,8 @@ typedef struct DRVNAT
     PPDMTHREAD              pUrgRecvThread;
     /** event to wakeup the guest receive thread */
     RTSEMEVENT              EventRecv;
-    RTCRITSECT              csEventRecv;
     /** event to wakeup the guest urgent receive thread */
     RTSEMEVENT              EventUrgRecv;
-    RTCRITSECT              csEventUrgRecv;
     /** Receive Req queue (deliver packets to the guest) */
     PRTREQQUEUE             pRecvReqQueue;
     /** Receive Urgent Req queue (deliver packets to the guest) */
@@ -232,22 +230,15 @@ static DECLCALLBACK(void) drvNATFastTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer, v
 static DECLCALLBACK(int) drvNATRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-    int rc;
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        rc = RTCritSectEnter(&pThis->csEventRecv);
-        AssertRC(rc);
         RTReqProcess(pThis->pRecvReqQueue, 0);
-        rc = RTCritSectLeave(&pThis->csEventRecv);
-        AssertRC(rc);
         if (ASMAtomicReadU32(&pThis->cPkt) == 0) 
-        {
             RTSemEventWait(pThis->EventRecv, RT_INDEFINITE_WAIT);
-        }
     }
     return VINF_SUCCESS;
 }
@@ -259,11 +250,7 @@ static DECLCALLBACK(int) drvNATRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread
     int rc;
     if (ASMAtomicReadU32(&pThis->cPkt) > 0) 
     {
-        rc = RTCritSectEnter(&pThis->csEventRecv);
-        AssertRC(rc);
         rc = RTSemEventSignal(pThis->EventRecv);
-        AssertRC(rc);
-        rc = RTCritSectLeave(&pThis->csEventRecv);
     }
 
     STAM_COUNTER_INC(&pThis->StatNATRecvWakeups);
@@ -279,15 +266,10 @@ static DECLCALLBACK(int) drvNATUrgRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        int rc;
-        rc = RTCritSectEnter(&pThis->csEventUrgRecv);
-        AssertRC(rc);
         RTReqProcess(pThis->pUrgRecvReqQueue, 0);
-        rc = RTCritSectLeave(&pThis->csEventUrgRecv);
-        AssertRC(rc);
         if (ASMAtomicReadU32(&pThis->cUrgPkt) == 0) 
         {
-            rc = RTSemEventWait(pThis->EventUrgRecv, RT_INDEFINITE_WAIT);
+            int rc = RTSemEventWait(pThis->EventUrgRecv, RT_INDEFINITE_WAIT);
             AssertRC(rc);
         }
     }
@@ -298,12 +280,7 @@ static DECLCALLBACK(int) drvNATUrgRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     if (ASMAtomicReadU32(&pThis->cUrgPkt) > 0) 
     {
-        int rc;
-        rc = RTCritSectEnter(&pThis->csEventUrgRecv);
-        AssertRC(rc);
-        rc = RTSemEventSignal(pThis->EventUrgRecv);
-        AssertRC(rc);
-        rc = RTCritSectLeave(&pThis->csEventUrgRecv);
+        int rc = RTSemEventSignal(pThis->EventUrgRecv);
         AssertRC(rc);
     }
 
@@ -348,15 +325,11 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
 
     while(ASMAtomicReadU32(&pThis->cUrgPkt) != 0)
     {
-        rc = RTCritSectLeave(&pThis->csEventRecv);
-        AssertRC(rc);
         rc = RTSemEventWait(pThis->EventRecv, RT_INDEFINITE_WAIT);
         if (   RT_FAILURE(rc) 
             && ( rc == VERR_TIMEOUT
                  || rc == VERR_INTERRUPTED))
             goto done_unlocked; 
-        rc = RTCritSectEnter(&pThis->csEventRecv);
-        AssertRC(rc);
     }
 
     rc = RTCritSectEnter(&pThis->csDevAccess);
@@ -1170,8 +1143,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             AssertRC(rc);
             rc = RTSemEventCreate(&pThis->EventRecv);
             rc = RTSemEventCreate(&pThis->EventUrgRecv);
-            rc = RTCritSectInit(&pThis->csEventRecv);
-            rc = RTCritSectInit(&pThis->csEventUrgRecv);
             rc = RTCritSectInit(&pThis->csDevAccess);
             rc = PDMDrvHlpTMTimerCreate(pThis->pDrvIns, TMCLOCK_REAL/*enmClock*/, drvNATSlowTimer, 
                     pThis, TMTIMER_FLAGS_NO_CRIT_SECT/*flags*/, "NATSlowTmr", &pThis->pTmrSlow);
