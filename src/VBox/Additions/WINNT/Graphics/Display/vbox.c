@@ -779,7 +779,7 @@ void vboxVHWACommandCheckHostCmds(PPDEV ppdev)
 {
     VBVAHOSTCMD * pCmd, * pNextCmd;
     int rc = ppdev->pfnHGSMIRequestCommands(ppdev->hMpHGSMI, HGSMI_CH_VBVA, &pCmd);
-    Assert(RT_SUCCESS(rc));
+    /* Don't assert here, otherwise NT4 will be unhappy */
     if(RT_SUCCESS(rc))
     {
         for(;pCmd; pCmd = pNextCmd)
