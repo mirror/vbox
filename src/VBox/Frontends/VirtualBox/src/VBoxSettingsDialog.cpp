@@ -20,7 +20,7 @@
  * additional information or have any questions.
  */
 #include "VBoxSettingsDialog.h"
-#include "VBoxSettingsUtils.h"
+#include "VBoxWarningPane.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "QIWidgetValidator.h"
@@ -46,7 +46,7 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     , mPolished (false)
     , mValid (true)
     , mSilent (true)
-    , mIconLabel (new VBoxWarnIconLabel (this))
+    , mIconLabel (new VBoxWarningPane (this))
     , mWhatsThisTimer (new QTimer (this))
     , mWhatsThisCandidate (0)
 {

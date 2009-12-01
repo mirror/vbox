@@ -20,9 +20,13 @@
  * additional information or have any questions.
  */
 
-#include "QIWidgetValidator.h"
-#include "VBoxVMSettingsSystem.h"
+/* Global includes */
+#include <QHeaderView>
 
+/* Local includes */
+#include "VBoxVMSettingsSystem.h"
+#include "VBoxGlobal.h"
+#include "QIWidgetValidator.h"
 #include <iprt/cdefs.h>
 
 #define ITEM_TYPE_ROLE Qt::UserRole + 1

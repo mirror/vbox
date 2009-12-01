@@ -22,7 +22,6 @@
 
 #include "VBoxVMSettingsUSB.h"
 #include "VBoxVMSettingsUSBFilterDetails.h"
-#include "VBoxSettingsUtils.h"
 #include "QIWidgetValidator.h"
 #include "VBoxToolBar.h"
 #include "VBoxGlobal.h"
@@ -312,7 +311,7 @@ void VBoxVMSettingsUSB::newClicked()
     QTreeWidgetItemIterator iterator (mTwFilters);
     while (*iterator)
     {
-        QString filterName = (*iterator)->text (twUSBFilters_Name);
+        QString filterName = (*iterator)->text (0);
         int pos = regExp.indexIn (filterName);
         if (pos != -1)
             maxFilterIndex = regExp.cap (1).toInt() > maxFilterIndex ?
@@ -461,7 +460,7 @@ void VBoxVMSettingsUSB::edtClicked()
     if (fd.exec() == QDialog::Accepted)
     {
         filter.SetName (fd.mLeName->text().isEmpty() ? QString::null : fd.mLeName->text());
-        item->setText (twUSBFilters_Name, fd.mLeName->text());
+        item->setText (0, fd.mLeName->text());
         filter.SetVendorId (fd.mLeVendorID->text().isEmpty() ? QString::null : fd.mLeVendorID->text());
         filter.SetProductId (fd.mLeProductID->text().isEmpty() ? QString::null : fd.mLeProductID->text());
         filter.SetRevision (fd.mLeRevision->text().isEmpty() ? QString::null : fd.mLeRevision->text());
@@ -566,7 +565,7 @@ void VBoxVMSettingsUSB::addUSBFilter (const CUSBDeviceFilter &aFilter,
         new QTreeWidgetItem (mTwFilters, mTwFilters->topLevelItem (pos)) :
         new QTreeWidgetItem (mTwFilters);
     item->setCheckState (0, aFilter.GetActive() ? Qt::Checked : Qt::Unchecked);
-    item->setText (twUSBFilters_Name, aFilter.GetName());
+    item->setText (0, aFilter.GetName());
     item->setToolTip (0, vboxGlobal().toolTip (aFilter));
 
     if (isNew)

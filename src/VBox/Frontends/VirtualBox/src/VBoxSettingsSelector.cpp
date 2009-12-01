@@ -20,14 +20,16 @@
  * additional information or have any questions.
  */
 
-#include "VBoxSettingsSelector.h"
-#include "VBoxSettingsUtils.h"
-#include "VBoxSettingsPage.h"
-#include "QITreeWidget.h"
-#include "VBoxToolBar.h"
-
-/* Qt includes */
+/* Global includes */
+#include <QHeaderView>
 #include <QTabWidget>
+
+/* Local includes */
+#include "VBoxSettingsSelector.h"
+#include "VBoxSettingsPage.h"
+#include "VBoxGlobal.h"
+#include "VBoxToolBar.h"
+#include "QITreeWidget.h"
 
 enum
 {

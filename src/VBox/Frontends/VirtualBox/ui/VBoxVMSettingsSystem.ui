@@ -175,7 +175,7 @@
           <number>1</number>
          </property>
          <item>
-          <widget class="BootItemsTable" name="mTwBootOrder">
+          <widget class="VBoxBootTable" name="mTwBootOrder">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -578,9 +578,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>BootItemsTable</class>
+   <class>VBoxBootTable</class>
    <extends>QTreeWidget</extends>
-   <header>VBoxSettingsUtils.h</header>
+   <header>VBoxBootTable.h</header>
   </customwidget>
   <customwidget>
    <class>QILineEdit</class>

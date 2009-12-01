@@ -34,7 +34,7 @@ class QStackedWidget;
 class QTimer;
 
 /* VBox forwards*/
-class VBoxWarnIconLabel;
+class VBoxWarningPane;
 class VBoxSettingsSelector;
 class VBoxSettingsPage;
 
@@ -105,7 +105,7 @@ private:
     QString mWarnString;
     QPixmap mErrorIcon;
     QPixmap mWarnIcon;
-    VBoxWarnIconLabel *mIconLabel;
+    VBoxWarningPane *mIconLabel;
 
     /* WhatsThis Stuff */
     QTimer *mWhatsThisTimer;

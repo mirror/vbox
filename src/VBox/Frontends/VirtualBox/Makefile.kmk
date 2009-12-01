@@ -306,7 +306,6 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxSnapshotsWgt.h \
 	include/VBoxVMLogViewer.h \
 	include/VBoxMediaManagerDlg.h \
-	include/VBoxSettingsUtils.h \
 	include/VBoxVMSettingsGeneral.h \
 	include/VBoxVMSettingsSystem.h \
 	include/VBoxVMSettingsDisplay.h \
@@ -334,7 +333,9 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxImportApplianceWzd.h \
 	include/VBoxExportApplianceWgt.h \
 	include/VBoxExportApplianceWzd.h \
-	include/VBoxSpecialControls.h
+	include/VBoxSpecialControls.h \
+	include/VBoxBootTable.h \
+	include/VBoxWarningPane.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
@@ -434,7 +435,9 @@ VirtualBox_SOURCES = \
 	src/VBoxImportApplianceWzd.cpp \
 	src/VBoxExportApplianceWgt.cpp \
 	src/VBoxExportApplianceWzd.cpp \
-	src/VBoxSpecialControls.cpp
+	src/VBoxSpecialControls.cpp \
+	src/VBoxBootTable.cpp \
+	src/VBoxWarningPane.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
  ifndef VBOX_OSE
