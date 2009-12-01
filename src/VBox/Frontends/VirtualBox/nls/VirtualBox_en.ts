@@ -56,10 +56,10 @@
     <name>VBoxTakeSnapshotDlg</name>
     <message numerus="yes">
         <location filename="../src/VBoxTakeSnapshotDlg.cpp" line="60"/>
-        <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. The automatic resetting of the immutable image(s) will not occur while the snapshot you are taking is the current snapshot to avoid data corruption.</source>
+        <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation>
-            <numerusform>Warning: You are taking a snapshot of a running machine which has %n immutable image attached to it. The automatic resetting of the immutable image will not occur while the snapshot you are taking is the current snapshot to avoid data corruption.</numerusform>
-            <numerusform>Warning: You are taking a snapshot of a running machine which has %n immutable images attached to it. The automatic resetting of the immutable images will not occur while the snapshot you are taking is the current snapshot to avoid data corruption.</numerusform>
+            <numerusform>Warning: You are taking a snapshot of a running machine which has %n immutable image attached to it. As long as you are working from this snapshot the immutable image will not be reset to avoid loss of data.</numerusform>
+            <numerusform>Warning: You are taking a snapshot of a running machine which has %n immutable images attached to it. As long as you are working from this snapshot the immutable images will not be reset to avoid loss of data.</numerusform>
         </translation>
     </message>
 </context>
