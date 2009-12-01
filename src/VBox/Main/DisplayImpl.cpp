@@ -308,9 +308,9 @@ static int displayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
         {
             png_infop info_ptr = NULL;
             png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
-                                                          png_voidp_NULL, /* error/warning context pointer */
-                                                          png_error_ptr_NULL /* error function */,
-                                                          png_error_ptr_NULL /* warning function */);
+                                                          (png_voidp)NULL, /* error/warning context pointer */
+                                                          (png_error_ptr)NULL, /* error function */
+                                                          (png_error_ptr)NULL /* warning function */);
             if (png_ptr)
             {
                 info_ptr = png_create_info_struct(png_ptr);
@@ -372,7 +372,8 @@ static int displayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
                     rc = VERR_NO_MEMORY;
                 }
 
-                png_destroy_write_struct(&png_ptr, info_ptr? &info_ptr: png_infopp_NULL);
+                png_destroy_write_struct(&png_ptr, info_ptr ? &info_ptr 
+                                                            : (png_infopp)NULL);
             }
             else
             {
