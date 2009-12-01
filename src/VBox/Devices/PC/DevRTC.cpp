@@ -808,7 +808,7 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
     Tm.tm_year = Time.i32Year - 1900;
     Tm.tm_mon  = Time.u8Month - 1;
     Tm.tm_mday = Time.u8MonthDay;
-    Tm.tm_wday = (Time.u8WeekDay - 1 + 7) % 7; /* 0 = monday -> sunday */
+    Tm.tm_wday = (Time.u8WeekDay + 1 + 7) % 7; /* 0 = monday -> sunday */
     Tm.tm_yday = Time.u16YearDay - 1;
     Tm.tm_hour = Time.u8Hour;
     Tm.tm_min  = Time.u8Minute;
