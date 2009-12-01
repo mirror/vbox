@@ -345,6 +345,36 @@ public:
         return pm ? *pm : QPixmap();
     }
 
+    static inline QString yearsToString (uint32_t cVal)
+    {
+        return tr("%n year(s)", "", cVal);
+    }
+
+    static inline QString monthsToString (uint32_t cVal)
+    {
+        return tr("%n month(s)", "", cVal);
+    }
+
+    static inline QString daysToString (uint32_t cVal)
+    {
+        return tr("%n day(s)", "", cVal);
+    }
+
+    static inline QString hoursToString (uint32_t cVal)
+    {
+        return tr("%n hours(s)", "", cVal);
+    }
+
+    static inline QString minutesToString (uint32_t cVal)
+    {
+        return tr("%n minute(s)", "", cVal);
+    }
+
+    static inline QString secondsToString (uint32_t cVal)
+    {
+        return tr("%n seconds(s)", "", cVal);
+    }
+
     const QColor &toColor (KMachineState s) const
     {
         static const QColor none;

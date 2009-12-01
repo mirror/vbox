@@ -2,9 +2,25 @@
 <!DOCTYPE TS>
 <TS version="2.0" language="en">
 <context>
-    <name>VBoxProgressDialog</name>
+    <name>VBoxGlobal</name>
     <message numerus="yes">
-        <location filename="../src/VBoxProgressDialog.cpp" line="211"/>
+        <location filename="../include/VBoxGlobal.h" line="350"/>
+        <source>%n year(s)</source>
+        <translation>
+            <numerusform>%n year</numerusform>
+            <numerusform>%n years</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../include/VBoxGlobal.h" line="355"/>
+        <source>%n month(s)</source>
+        <translation>
+            <numerusform>%n month</numerusform>
+            <numerusform>%n months</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../include/VBoxGlobal.h" line="360"/>
         <source>%n day(s)</source>
         <translation>
             <numerusform>%n day</numerusform>
@@ -12,15 +28,15 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/VBoxProgressDialog.cpp" line="212"/>
-        <source>%n hour(s)</source>
+        <location filename="../include/VBoxGlobal.h" line="365"/>
+        <source>%n hours(s)</source>
         <translation>
             <numerusform>%n hour</numerusform>
             <numerusform>%n hours</numerusform>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/VBoxProgressDialog.cpp" line="213"/>
+        <location filename="../include/VBoxGlobal.h" line="370"/>
         <source>%n minute(s)</source>
         <translation>
             <numerusform>%n minute</numerusform>
@@ -28,46 +44,11 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/VBoxProgressDialog.cpp" line="214"/>
-        <source>%n second(s)</source>
+        <location filename="../include/VBoxGlobal.h" line="375"/>
+        <source>%n seconds(s)</source>
         <translation>
             <numerusform>%n second</numerusform>
             <numerusform>%n seconds</numerusform>
-        </translation>
-    </message>
-</context>
-<context>
-    <name>VBoxSnapshotsWgt</name>
-    <message numerus="yes">
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="189"/>
-        <source> (%n day(s) ago)</source>
-        <translation>
-            <numerusform> (%n day ago)</numerusform>
-            <numerusform> (%n days ago)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="194"/>
-        <source> (%n hour(s) ago)</source>
-        <translation>
-            <numerusform> (%n hour ago)</numerusform>
-            <numerusform> (%n hours ago)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="199"/>
-        <source> (%n minute(s) ago)</source>
-        <translation>
-            <numerusform> (%n minute ago)</numerusform>
-            <numerusform> (%n minutes ago)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="204"/>
-        <source> (%n second(s) ago)</source>
-        <translation>
-            <numerusform> (%n second ago)</numerusform>
-            <numerusform> (%n seconds ago)</numerusform>
         </translation>
     </message>
 </context>
