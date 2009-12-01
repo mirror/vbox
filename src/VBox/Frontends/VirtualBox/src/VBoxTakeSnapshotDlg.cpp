@@ -58,8 +58,8 @@ VBoxTakeSnapshotDlg::VBoxTakeSnapshotDlg(QWidget *pParent, const CMachine &machi
     if (immutableMediums)
     {
         mLbInfo->setText(tr("Warning: You are taking a snapshot of a running machine which has %n immutable image(s) "
-                            "attached to it. The automatic resetting of the immutable image(s) will not occur while "
-                            "the snapshot you are taking is the current snapshot to avoid data corruption.", "",
+                            "attached to it. As long as you are working from this snapshot the immutable image(s) "
+                            "will not be reset to avoid loss of data.", "",
                             immutableMediums));
         mLbInfo->useSizeHintForWidth(400);
     }

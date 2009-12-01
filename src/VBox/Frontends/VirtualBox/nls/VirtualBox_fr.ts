@@ -6010,7 +6010,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>&amp;Description de l&apos;instantané</translation>
     </message>
     <message numerus="yes">
-        <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. The automatic resetting of the immutable image(s) will not occur while the snapshot you are taking is the current snapshot to avoid data corruption.</source>
+        <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation>
             <numerusform>Avertissement: vous êtes en train de saisir un instantané d&apos;une machine en cours d&apos;exécution avec %n image disque immuable connecté. Tant que vous travaillez sous cet instantané, l&apos;image ne sera pas réinitialisé pour éviter la perte de donnés.</numerusform>
             <numerusform>Avertissement: vous êtes en train de saisir un instantané d&apos;une machine en cours d&apos;exécution avec %n images disque immuable connecté. Tant que vous travaillez sous cet instantané, les image ne sera pas réinitialisé pour éviter la perte de donnés.</numerusform>
