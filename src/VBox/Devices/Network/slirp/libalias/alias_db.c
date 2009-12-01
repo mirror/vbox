@@ -753,7 +753,7 @@ GetSocket(struct libalias *la, u_short port_net, int *sockfd, int link_type)
     if (sock < 0) {
 #ifdef LIBALIAS_DEBUG
         fprintf(stderr, "PacketAlias/GetSocket(): ");
-# ifdef VBOX
+# ifndef VBOX
         fprintf(stderr, "socket() error %d\n", *sockfd);
 # else
         fprintf(stderr, "socket() error %d\n", errno);
