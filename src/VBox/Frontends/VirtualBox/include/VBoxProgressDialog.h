@@ -75,7 +75,6 @@ private:
     CProgress &mProgress;
     QILabel *mLabel;
     QILabel *mETA;
-    QString mETAText[14];
     QString mCancelText;
     QProgressBar *mProgressBar;
     VBoxMiniCancelButton *mCancelBtn;

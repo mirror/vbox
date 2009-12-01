@@ -112,21 +112,6 @@ VBoxProgressDialog::VBoxProgressDialog (CProgress &aProgress,
 
 void VBoxProgressDialog::retranslateUi()
 {
-    mETAText[ 0] = tr ("%1 days, %2 hours remaining");
-    mETAText[ 1] = tr ("%1 days, %2 minutes remaining");
-    mETAText[ 2] = tr ("%1 days remaining");
-    mETAText[ 3] = tr ("1 day, %1 hours remaining");
-    mETAText[ 4] = tr ("1 day, %1 minutes remaining");
-    mETAText[ 5] = tr ("1 day remaining");
-    mETAText[ 6] = tr ("%1 hours, %2 minutes remaining");
-    mETAText[ 7] = tr ("1 hour, %1 minutes remaining");
-    mETAText[ 8] = tr ("1 hour remaining");
-    mETAText[ 9] = tr ("%1 minutes remaining");
-    mETAText[10] = tr ("1 minute, %2 seconds remaining");
-    mETAText[11] = tr ("1 minute remaining");
-    mETAText[12] = tr ("%1 seconds remaining");
-    mETAText[13] = tr ("A few seconds remaining");
-
     mCancelText = tr ("Canceling...");
     if (mCancelBtn)
     {
@@ -222,34 +207,43 @@ void VBoxProgressDialog::timerEvent (QTimerEvent * /* aEvent */)
         int hours = time.addDays (-days).time().hour();
         int minutes = time.addDays (-days).time().minute();
         int seconds = time.addDays (-days).time().second();
+
+        QString strDays = tr ("%n day(s)", "", days);
+        QString strHours = tr ("%n hour(s)", "", hours);
+        QString strMinutes = tr ("%n minute(s)", "", minutes);
+        QString strSeconds = tr ("%n second(s)", "", seconds);
+
+        QString strTwoComp = tr ("%1, %2 remaining");
+        QString strOneComp = tr ("%1 remaining");
+
         if (newTime > VBOX_DAY * 2 + VBOX_HOUR)
-            mETA->setText (mETAText[ 0].arg (days).arg (hours));
+            mETA->setText (strTwoComp.arg (strDays).arg (strHours));
         else if (newTime > VBOX_DAY * 2 + VBOX_MINUTE * 5)
-            mETA->setText (mETAText[ 1].arg (days).arg (minutes));
+            mETA->setText (strTwoComp.arg (strDays).arg (strMinutes));
         else if (newTime > VBOX_DAY * 2)
-            mETA->setText (mETAText[ 2].arg (days));
+            mETA->setText (strOneComp.arg (strDays));
         else if (newTime > VBOX_DAY + VBOX_HOUR)
-            mETA->setText (mETAText[ 3].arg (hours));
+            mETA->setText (strTwoComp.arg (strDays).arg (strHours));
         else if (newTime > VBOX_DAY + VBOX_MINUTE * 5)
-            mETA->setText (mETAText[ 4].arg (minutes));
+            mETA->setText (strTwoComp.arg (strDays).arg (strMinutes));
         else if (newTime > VBOX_HOUR * 23 + VBOX_MINUTE * 55)
-            mETA->setText (mETAText[ 5]);
+            mETA->setText (strOneComp.arg (strDays));
         else if (newTime >= VBOX_HOUR * 2)
-            mETA->setText (mETAText[ 6].arg (hours).arg (minutes));
+            mETA->setText (strTwoComp.arg (strHours).arg (strMinutes));
         else if (newTime > VBOX_HOUR + VBOX_MINUTE * 5)
-            mETA->setText (mETAText[ 7].arg (minutes));
+            mETA->setText (strTwoComp.arg (strHours).arg (strMinutes));
         else if (newTime > VBOX_MINUTE * 55)
-            mETA->setText (mETAText[ 8]);
+            mETA->setText (strOneComp.arg (strHours));
         else if (newTime > VBOX_MINUTE * 2)
-            mETA->setText (mETAText[ 9].arg (minutes));
+            mETA->setText (strOneComp.arg (strMinutes));
         else if (newTime > VBOX_MINUTE + VBOX_SECOND * 5)
-            mETA->setText (mETAText[10].arg (seconds));
+            mETA->setText (strTwoComp.arg (strMinutes).arg (strSeconds));
         else if (newTime > VBOX_SECOND * 55)
-            mETA->setText (mETAText[11]);
+            mETA->setText (strOneComp.arg (strMinutes));
         else if (newTime > VBOX_SECOND * 5)
-            mETA->setText (mETAText[12].arg (seconds));
+            mETA->setText (strOneComp.arg (strSeconds));
         else if (newTime >= 0)
-            mETA->setText (mETAText[13]);
+            mETA->setText (tr ("A few seconds remaining"));
         else
             mETA->clear();
 
