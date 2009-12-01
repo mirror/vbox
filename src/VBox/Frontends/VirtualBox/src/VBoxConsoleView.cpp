@@ -1796,8 +1796,10 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
 #ifdef QT_MAC_USE_COCOA
                                 /* Qt Cocoa is buggy. It always reports a left
                                  * button pressed when the mouse wheel event
-                                 * occurs. */
-                                0,
+                                 * occurs. A workaround is to ask the
+                                 * application which buttons are pressed
+                                 * currently. */
+                                QApplication::mouseButtons(),
 #else /* QT_MAC_USE_COCOA */
                                 we->buttons(),
 #endif /* QT_MAC_USE_COCOA */
