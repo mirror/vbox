@@ -323,15 +323,18 @@ typedef struct PDMACFILECACHEGLOBAL
 typedef struct PDMACFILEENDPOINTCACHE
 {
     /** AVL tree managing cache entries. */
-    PAVLRFOFFTREE         pTree;
+    PAVLRFOFFTREE                        pTree;
     /** R/W semaphore protecting cached entries for this endpoint. */
-    RTSEMRW               SemRWEntries;
+    RTSEMRW                              SemRWEntries;
     /** Pointer to the gobal cache data */
-    PPDMACFILECACHEGLOBAL pCache;
-
+    PPDMACFILECACHEGLOBAL                pCache;
+    /** Number of writes outstanding. */
+    volatile uint32_t                    cWritesOutstanding;
+    /** Handle of the flush request if one is active */
+    volatile PPDMASYNCCOMPLETIONTASKFILE pTaskFlush;
 #ifdef VBOX_WITH_STATISTICS
     /** Number of times a write was deferred because the cache entry was still in progress */
-    STAMCOUNTER           StatWriteDeferred;
+    STAMCOUNTER                          StatWriteDeferred;
 #endif
 } PDMACFILEENDPOINTCACHE, *PPDMACFILEENDPOINTCACHE;
 
@@ -591,6 +594,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
 int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONTASKFILE pTask,
                           RTFOFF off, PCPDMDATASEG paSegments, size_t cSegments,
                           size_t cbWrite);
+int pdmacFileEpCacheFlush(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONTASKFILE pTask);
 
 RT_C_DECLS_END
 
