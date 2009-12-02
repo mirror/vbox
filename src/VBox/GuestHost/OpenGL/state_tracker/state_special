@@ -374,3 +374,4 @@ DeleteProgram
 ValidateProgram
 BindAttribLocation
 GetUniformLocation
+CopyTexImage2D

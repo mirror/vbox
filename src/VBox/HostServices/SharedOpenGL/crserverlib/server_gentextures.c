@@ -100,5 +100,6 @@ crServerDispatchCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat
         crServerDispatchTexImage2D(target, level, internalFormat, width, height, border, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
     }
 
+    crStateCopyTexImage2D(target, level, internalFormat, x, y, width, height, border);
     cr_server.head_spu->dispatch_table.CopyTexImage2D(target, level, internalFormat, x, y, width, height, border);
 }

@@ -13,10 +13,6 @@
 #include "cr_version.h"
 #include "state_internals.h"
 
-
-#define MAX_MIPMAP_LEVELS 20
-
-
 #define UNUSED(x) ((void) (x))
 
 #define GET_TOBJ(tobj, state, id) \
@@ -204,9 +200,9 @@ crStateTextureInitTextureObj(CRContext *ctx, CRTextureObj *tobj,
 	/* XXX don't always need all six faces */
 	for (face = 0; face < 6; face++) {
 		/* allocate array of mipmap levels */
-		CRASSERT(t->maxLevel < MAX_MIPMAP_LEVELS);
+		CRASSERT(t->maxLevel < CR_MAX_MIPMAP_LEVELS);
 		tobj->level[face] = (CRTextureLevel *)
-			crCalloc(sizeof(CRTextureLevel) * MAX_MIPMAP_LEVELS);
+			crCalloc(sizeof(CRTextureLevel) * CR_MAX_MIPMAP_LEVELS);
 
 		if (!tobj->level[face])
 			return; /* out of memory */
@@ -568,7 +564,7 @@ crStateDeleteTextureObjectData(CRTextureObj *tobj)
 		levels = tobj->level[face];
 		if (levels) {
 			/* free all mipmap levels for this face */
-			for (k = 0; k < MAX_MIPMAP_LEVELS; k++) {
+			for (k = 0; k < CR_MAX_MIPMAP_LEVELS; k++) {
 				CRTextureLevel *tl = levels + k;
 				if (tl->img) {
 					crFree(tl->img);

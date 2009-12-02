@@ -14,6 +14,64 @@
 #include "cr_version.h"
 #include "state_internals.h"
 
+#ifndef IN_GUEST
+/*# define CR_DUMP_TEXTURES_2D*/
+#endif
+
+#ifdef CR_DUMP_TEXTURES_2D
+static int _tnum = 0;
+
+#pragma pack(1)
+typedef struct tgaheader_tag
+{
+    char  idlen;
+
+    char  colormap;
+
+    char  imagetype;
+
+    short cm_index;
+    short cm_len;
+    char  cm_entrysize;
+
+    short x, y, w, h;
+    char  depth;
+    char  imagedesc;
+    
+} tgaheader_t;
+#pragma pack()
+
+static crDumpTGA(short w, short h, char* data)
+{
+    char fname[200];
+    tgaheader_t header;
+    FILE *out;
+
+    if (!w || !h) return;
+
+    sprintf(fname, "tex%i.tga", _tnum++);
+    out = fopen(fname, "w");
+    if (!out) crError("can't create %s!", fname);
+
+    header.idlen = 0;
+    header.colormap = 0;
+    header.imagetype = 2;
+    header.cm_index = 0;
+    header.cm_len = 0;
+    header.cm_entrysize = 0;
+    header.x = 0;
+    header.y = 0;
+    header.w = w;
+    header.h = h;
+    header.depth = 32;
+    header.imagedesc = 0x08;
+    fwrite(&header, sizeof(header), 1, out);
+
+    fwrite(data, w*h*4, 1, out);
+
+    fclose(out);
+}
+#endif
 
 
 static int
@@ -592,6 +650,73 @@ crStateTexImage1D(GLenum target, GLint level, GLint internalFormat,
     DIRTY(tb->dirty, g->neg_bitid);
 }
 
+static void crStateNukeMipmaps(CRTextureObj *tobj)
+{
+    int i, face;
+
+    for (face = 0; face < 6; face++)
+    {
+        CRTextureLevel *levels = tobj->level[face];
+
+        if (levels) 
+        {
+            for (i = 0; i < CR_MAX_MIPMAP_LEVELS; i++)
+            {
+                if (levels[i].img) 
+                {
+                    crFree(levels[i].img);
+                }
+                levels[i].img = NULL;
+                levels[i].bytes = 0;
+                levels[i].internalFormat = GL_ONE;
+                levels[i].format = GL_RGBA;
+                levels[i].type = GL_UNSIGNED_BYTE;
+
+            }
+        }
+    }
+}
+
+void STATE_APIENTRY
+crStateCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
+{
+    CRContext *g = GetCurrentContext();
+    CRTextureObj *tobj = NULL;
+    CRTextureLevel *tl = NULL;
+    
+    crStateGetTextureObjectAndImage(g, target, level, &tobj, &tl);
+    CRASSERT(tobj);
+    CRASSERT(tl);
+
+    crStateNukeMipmaps(tobj);
+
+    tl->bytes = crImageSize(GL_RGBA, GL_UNSIGNED_BYTE, width, height);
+
+    tl->width = width;
+    tl->height = height;
+    tl->depth = 1;
+    tl->format = GL_RGBA;
+    tl->internalFormat = internalFormat;
+    crStateTextureInitTextureFormat(tl, internalFormat);
+    tl->border = border;
+    tl->type = GL_UNSIGNED_BYTE;
+    tl->compressed = GL_FALSE;
+    if (width && height)
+    {
+        tl->bytesPerPixel = tl->bytes / (width * height);
+    }
+    else
+        tl->bytesPerPixel = 0;
+
+#ifdef CR_SGIS_generate_mipmap
+    if (level == tobj->baseLevel && tobj->generateMipmap) {
+        generate_mipmap(tobj, target);
+    }
+    else {
+        tl->generateMipmap = GL_FALSE;
+    }
+#endif
+}
 
 void STATE_APIENTRY
 crStateTexImage2D(GLenum target, GLint level, GLint internalFormat,
@@ -627,6 +752,11 @@ crStateTexImage2D(GLenum target, GLint level, GLint internalFormat,
     crStateGetTextureObjectAndImage(g, target, level, &tobj, &tl);
     CRASSERT(tobj);
     CRASSERT(tl);
+
+    if (level==tobj->baseLevel && (tl->width!=width || tl->height!=height))
+    {
+        crStateNukeMipmaps(tobj);
+    }
 
     /* compute size of image buffer */
     if (is_distrib) {
@@ -703,8 +833,24 @@ crStateTexImage2D(GLenum target, GLint level, GLint internalFormat,
     DIRTY(tobj->imageBit, g->neg_bitid);
     DIRTY(tl->dirty, g->neg_bitid);
     DIRTY(tb->dirty, g->neg_bitid);
-}
 
+#ifdef CR_DUMP_TEXTURES_2D
+    if (pixels)
+    {
+        GLint w,h;
+        char *data;
+
+        diff_api.GetTexLevelParameteriv(target, level, GL_TEXTURE_WIDTH, &w);
+        diff_api.GetTexLevelParameteriv(target, level, GL_TEXTURE_HEIGHT, &h);
+
+        data = crAlloc(w*h*4);
+        if (!data) crError("no memory!");
+        diff_api.GetTexImage(target, level, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        crDumpTGA(w, h, data);
+        crFree(data);
+    }
+#endif
+}
 
 #if defined( CR_OPENGL_VERSION_1_2 ) || defined( GL_EXT_texture3D )
 void STATE_APIENTRY
@@ -916,6 +1062,22 @@ crStateTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
     DIRTY(tobj->imageBit, g->neg_bitid);
     DIRTY(tl->dirty, g->neg_bitid);
     DIRTY(tb->dirty, g->neg_bitid);
+
+#ifdef CR_DUMP_TEXTURES_2D
+    {
+        GLint w,h;
+        char *data;
+
+        diff_api.GetTexLevelParameteriv(target, level, GL_TEXTURE_WIDTH, &w);
+        diff_api.GetTexLevelParameteriv(target, level, GL_TEXTURE_HEIGHT, &h);
+
+        data = crAlloc(w*h*4);
+        if (!data) crError("no memory!");
+        diff_api.GetTexImage(target, level, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        crDumpTGA(w, h, data);
+        crFree(data);
+    }
+#endif
 }
 
 #if defined( CR_OPENGL_VERSION_1_2 )
