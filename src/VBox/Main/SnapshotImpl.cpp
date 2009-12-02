@@ -86,7 +86,12 @@ struct Snapshot::Data
     RTTIMESPEC                  timeStamp;
     ComObjPtr<SnapshotMachine>  pMachine;
 
-    SnapshotsList               llChildren;             // protected by VirtualBox::snapshotTreeLockHandle()
+    /** weak VirtualBox parent */
+    const ComObjPtr<VirtualBox, ComWeakRef> pVirtualBox;
+
+    // pParent and llChildren are protected by Machine::snapshotsTreeLockHandle()
+    ComObjPtr<Snapshot>         pParent;
+    SnapshotsList               llChildren;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -136,9 +141,9 @@ HRESULT Snapshot::init(VirtualBox *aVirtualBox,
     m = new Data;
 
     /* share parent weakly */
-    unconst(mVirtualBox) = aVirtualBox;
+    unconst(m->pVirtualBox) = aVirtualBox;
 
-    mParent = aParent;
+    m->pParent = aParent;
 
     m->uuid = aId;
     m->strName = aName;
@@ -176,28 +181,13 @@ void Snapshot::uninit()
          ++it)
     {
         Snapshot *pChild = *it;
-        pChild->mParent.setNull();
+        pChild->m->pParent.setNull();
         pChild->uninit();
     }
     m->llChildren.clear();          // this unsets all the ComPtrs and probably calls delete
 
-    if (mParent)
-    {
-        SnapshotsList &llParent = mParent->m->llChildren;
-        for (it = llParent.begin();
-            it != llParent.end();
-            ++it)
-        {
-            Snapshot *pParentsChild = *it;
-            if (this == pParentsChild)
-            {
-                llParent.erase(it);
-                break;
-            }
-        }
-
-        mParent.setNull();
-    }
+    if (m->pParent)
+        deparent();
 
     if (m->pMachine)
     {
@@ -230,7 +220,7 @@ void Snapshot::beginDiscard()
         * or no children at all */
     AssertReturnVoid(m->llChildren.size() <= 1);
 
-    ComObjPtr<Snapshot> parentSnapshot = parent();
+    ComObjPtr<Snapshot> parentSnapshot = m->pParent;
 
     /// @todo (dmik):
     //  when we introduce clones later, discarding the snapshot
@@ -267,13 +257,37 @@ void Snapshot::beginDiscard()
         ComObjPtr<Snapshot> child = *it;
         AutoWriteLock childLock(child);
 
-        child->mParent = mParent;
-        if (mParent)
-            mParent->m->llChildren.push_back(child);
+        child->m->pParent = m->pParent;
+        if (m->pParent)
+            m->pParent->m->llChildren.push_back(child);
     }
 
     // clear our own children list (since we reparented the children)
     m->llChildren.clear();
+}
+
+/**
+ * Internal helper that removes "this" from the list of children of its
+ * parent. Used in uninit() and other places when reparenting is necessary.
+ *
+ * The caller must hold the snapshots tree lock!
+ */
+void Snapshot::deparent()
+{
+    SnapshotsList &llParent = m->pParent->m->llChildren;
+    for (SnapshotsList::iterator it = llParent.begin();
+         it != llParent.end();
+         ++it)
+    {
+        Snapshot *pParentsChild = *it;
+        if (this == pParentsChild)
+        {
+            llParent.erase(it);
+            break;
+        }
+    }
+
+    m->pParent.setNull();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -419,7 +433,7 @@ STDMETHODIMP Snapshot::COMGETTER(Parent) (ISnapshot **aParent)
 
     AutoReadLock alock(this);
 
-    mParent.queryInterfaceTo(aParent);
+    m->pParent.queryInterfaceTo(aParent);
     return S_OK;
 }
 
@@ -444,6 +458,15 @@ STDMETHODIMP Snapshot::COMGETTER(Children) (ComSafeArrayOut(ISnapshot *, aChildr
 // Snapshot public internal methods
 //
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Returns the parent snapshot or NULL if there's none.  Must have caller + locking!
+ * @return
+ */
+const ComObjPtr<Snapshot>& Snapshot::getParent() const
+{
+    return m->pParent;
+}
 
 /**
  *  @note
@@ -508,9 +531,9 @@ ULONG Snapshot::getAllChildrenCount()
  * Caller must hold the snapshot's object lock!
  * @return
  */
-ComPtr<SnapshotMachine> Snapshot::getSnapshotMachine()
+const ComObjPtr<SnapshotMachine>& Snapshot::getSnapshotMachine() const
 {
-    return (SnapshotMachine*)m->pMachine;
+    return m->pMachine;
 }
 
 /**
@@ -1521,7 +1544,7 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
                  E_FAIL);
 
     ComObjPtr<Snapshot> pSnapshot(static_cast<Snapshot*>(aSnapshot));
-    ComPtr<SnapshotMachine> pSnapMachine = pSnapshot->getSnapshotMachine();
+    ComObjPtr<SnapshotMachine> pSnapMachine = pSnapshot->getSnapshotMachine();
 
     // create a progress object. The number of operations is:
     // 1 (preparing) + # of hard disks + 1 (if we need to copy the saved state file) */
@@ -1960,7 +1983,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
         }
     }
 
-    ComPtr<SnapshotMachine> pSnapMachine = pSnapshot->getSnapshotMachine();
+    ComObjPtr<SnapshotMachine> pSnapMachine = pSnapshot->getSnapshotMachine();
 
     /* create a progress object. The number of operations is:
      *   1 (preparing) + 1 if the snapshot is online + # of normal hard disks
@@ -2109,7 +2132,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                               this->snapshotsTreeLockHandle(),
                               aTask.pSnapshot->lockHandle());
 
-    ComPtr<SnapshotMachine> pSnapMachine = aTask.pSnapshot->getSnapshotMachine();
+    ComObjPtr<SnapshotMachine> pSnapMachine = aTask.pSnapshot->getSnapshotMachine();
     /* no need to lock the snapshot machine since it is const by definiton */
 
     HRESULT rc = S_OK;
@@ -2246,7 +2269,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         LogFlowThisFunc(("2: Discarding snapshot...\n"));
 
         {
-            ComObjPtr<Snapshot> parentSnapshot = aTask.pSnapshot->parent();
+            ComObjPtr<Snapshot> parentSnapshot = aTask.pSnapshot->getParent();
             Utf8Str stateFilePath = aTask.pSnapshot->stateFilePath();
 
             /* Note that discarding the snapshot will deassociate it from the

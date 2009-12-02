@@ -72,6 +72,8 @@ public:
 
     void beginDiscard();
 
+    void deparent();
+
     // ISnapshot properties
     STDMETHOD(COMGETTER(Id)) (BSTR *aId);
     STDMETHOD(COMGETTER(Name)) (BSTR *aName);
@@ -87,19 +89,15 @@ public:
     // ISnapshot methods
 
     // public methods only for internal purposes
+    const ComObjPtr<Snapshot>& getParent() const;
 
     const Utf8Str& stateFilePath() const;
-
-    ComObjPtr<Snapshot> parent() const
-    {
-        return (Snapshot*)mParent;
-    }
 
     ULONG getChildrenCount();
     ULONG getAllChildrenCount();
     ULONG getAllChildrenCountImpl();
 
-    ComPtr<SnapshotMachine> getSnapshotMachine();
+    const ComObjPtr<SnapshotMachine>& getSnapshotMachine() const;
 
     Guid getId() const;
     const Utf8Str& getName() const;
@@ -123,12 +121,6 @@ public:
     }
 
 private:
-
-    /** weak VirtualBox parent */
-    const ComObjPtr<VirtualBox, ComWeakRef> mVirtualBox;
-
-    ComObjPtr<Snapshot, ComWeakRef> mParent;
-
     struct Data;            // opaque, defined in SnapshotImpl.cpp
     Data *m;
 };

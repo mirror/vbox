@@ -105,6 +105,9 @@ struct Medium::Data
           vdDiskIfaces(NULL)
     {}
 
+    /** weak VirtualBox parent */
+    const ComObjPtr<VirtualBox, ComWeakRef> pVirtualBox;
+
     const Guid id;
     Utf8Str strDescription;
     MediumState_T state;
@@ -112,6 +115,10 @@ struct Medium::Data
     Utf8Str strLocationFull;
     uint64_t size;
     Utf8Str strLastAccessError;
+
+    // pParent and llChildren are protected by VirtualBox::hardDiskTreeLockHandle()
+    ComObjPtr<Medium> pParent;
+    MediaList llChildren;           // to add a child, just call push_back; to remove a child, call child->deparent() which does a lookup
 
     BackRefList backRefs;
 
@@ -365,7 +372,7 @@ HRESULT Medium::Task::runNow()
  * @note It is assumed that when modifying methods of this class are called,
  *       Medium::getTreeLock() is held in read mode.
  */
-class Medium::MergeChain : public Medium::List,
+class Medium::MergeChain : public MediaList,
                            public com::SupportErrorInfoBase
 {
 public:
@@ -439,18 +446,18 @@ public:
         if (mForward)
         {
             /* we will need parent to reparent target */
-            if (!aMedium->mParent.isNull())
+            if (!aMedium->m->pParent.isNull())
             {
-                rc = aMedium->mParent->addCaller();
+                rc = aMedium->m->pParent->addCaller();
                 if (FAILED(rc)) return rc;
 
-                mParent = aMedium->mParent;
+                mParent = aMedium->m->pParent;
             }
         }
         else
         {
             /* we will need to reparent children */
-            for (List::const_iterator it = aMedium->getChildren().begin();
+            for (MediaList::const_iterator it = aMedium->getChildren().begin();
                  it != aMedium->getChildren().end();
                  ++it)
             {
@@ -534,7 +541,7 @@ public:
 
     bool isForward() const { return mForward; }
     Medium *parent() const { return mParent; }
-    const List &children() const { return mChildren; }
+    const MediaList& children() const { return mChildren; }
 
     Medium *source() const
     { AssertReturn(size() > 0, NULL); return mForward ? front() : back(); }
@@ -605,7 +612,7 @@ private:
     /** Parent of the source when forward merge (if any) */
     ComObjPtr <Medium> mParent;
     /** Children of the source when backward merge (if any) */
-    List mChildren;
+    MediaList mChildren;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -620,7 +627,7 @@ private:
  * @note It is assumed that when modifying methods of this class are called,
  *       Medium::getTreeLock() is held in read mode.
  */
-class Medium::ImageChain : public Medium::List,
+class Medium::ImageChain : public MediaList,
                            public com::SupportErrorInfoBase
 {
 public:
@@ -632,9 +639,9 @@ public:
         /* empty? */
         if (begin() != end())
         {
-            List::const_iterator last = end();
+            MediaList::const_iterator last = end();
             last--;
-            for (List::const_iterator it = begin(); it != end(); ++ it)
+            for (MediaList::const_iterator it = begin(); it != end(); ++ it)
             {
                 AutoWriteLock alock(*it);
                 if (it == last)
@@ -675,7 +682,7 @@ public:
         /// @todo code duplication with SessionMachine::lockMedia, see below
         ErrorInfoKeeper eik(true /* aIsNull */);
         MultiResult mrc(S_OK);
-        for (List::const_iterator it = begin(); it != end(); ++ it)
+        for (MediaList::const_iterator it = begin(); it != end(); ++ it)
         {
             HRESULT rc = S_OK;
             MediumState_T mediumState = (*it)->getState();
@@ -728,9 +735,9 @@ public:
         /// @todo code duplication with SessionMachine::lockMedia, see below
         ErrorInfoKeeper eik(true /* aIsNull */);
         MultiResult mrc(S_OK);
-        List::const_iterator last = end();
+        MediaList::const_iterator last = end();
         last--;
-        for (List::const_iterator it = begin(); it != end(); ++ it)
+        for (MediaList::const_iterator it = begin(); it != end(); ++ it)
         {
             HRESULT rc = S_OK;
             MediumState_T mediumState = (*it)->getState();
@@ -886,7 +893,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     HRESULT rc = S_OK;
 
     /* share VirtualBox weakly (parent remains NULL so far) */
-    unconst(mVirtualBox) = aVirtualBox;
+    unconst(m->pVirtualBox) = aVirtualBox;
 
     /* register with VirtualBox early, since uninit() will
      * unconditionally unregister on failure */
@@ -928,7 +935,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
          * Created state here and also add it to the registry */
         m->state = MediumState_Created;
         unconst(m->id).create();
-        rc = mVirtualBox->registerHardDisk(this);
+        rc = m->pVirtualBox->registerHardDisk(this);
 
         /// @todo later we may want to use a pfnIsConfigSufficient backend info
         /// callback that would tell us when we have enough properties to work
@@ -985,7 +992,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     HRESULT rc = S_OK;
 
     /* share VirtualBox weakly (parent remains NULL so far) */
-    unconst(mVirtualBox) = aVirtualBox;
+    unconst(m->pVirtualBox) = aVirtualBox;
 
     /* register with VirtualBox early, since uninit() will
      * unconditionally unregister on failure */
@@ -1070,19 +1077,19 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     HRESULT rc = S_OK;
 
     /* share VirtualBox and parent weakly */
-    unconst(mVirtualBox) = aVirtualBox;
+    unconst(m->pVirtualBox) = aVirtualBox;
 
     /* register with VirtualBox/parent early, since uninit() will
      * unconditionally unregister on failure */
     if (aParent == NULL)
+        // base disk: add to global list
         aVirtualBox->addDependentChild(this);
     else
     {
-        /* we set mParent */
-        AutoWriteLock treeLock(this->getTreeLock());
-
-        mParent = aParent;
-        aParent->addDependentChild(this);
+        // differencing image: add to parent
+        AutoWriteLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+        m->pParent = aParent;
+        aParent->m->llChildren.push_back(this);
     }
 
     /* see below why we don't call queryInfo() (and therefore treat the medium
@@ -1144,7 +1151,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     if (aDeviceType == DeviceType_HardDisk)
     {
         /* type is only for base hard disks */
-        if (mParent.isNull())
+        if (m->pParent.isNull())
             m->type = data.hdType;
     }
     else
@@ -1178,7 +1185,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
                        med);              // child data
         if (FAILED(rc)) break;
 
-        rc = mVirtualBox->registerHardDisk(pHD, false /* aSaveRegistry */);
+        rc = m->pVirtualBox->registerHardDisk(pHD, false /* aSaveRegistry */);
         if (FAILED(rc)) break;
     }
 
@@ -1217,7 +1224,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     /* share VirtualBox weakly (parent remains NULL so far) */
-    unconst(mVirtualBox) = aVirtualBox;
+    unconst(m->pVirtualBox) = aVirtualBox;
     aVirtualBox->addDependentChild(this);
 
     /* fake up a UUID which is unique, but also reproducible */
@@ -1281,31 +1288,64 @@ void Medium::uninit()
         /* we are being uninitialized after've been deleted by merge.
          * Reparenting has already been done so don't touch it here (we are
          * now orphans and remoeDependentChild() will assert) */
-
-        Assert(mParent.isNull());
+        Assert(m->pParent.isNull());
     }
     else
     {
         /* we uninit children and reset mParent
          * and VirtualBox::removeDependentChild() needs a write lock */
-        AutoMultiWriteLock2 alock(mVirtualBox->lockHandle(), this->getTreeLock());
+        AutoWriteLock alock1(m->pVirtualBox->lockHandle());
+        AutoWriteLock alock2(m->pVirtualBox->hardDiskTreeLockHandle());
 
-        uninitDependentChildren();
-
-        if (!mParent.isNull())
+        MediaList::iterator it;
+        for (it = m->llChildren.begin();
+            it != m->llChildren.end();
+            ++it)
         {
-            mParent->removeDependentChild(this);
-            mParent.setNull();
+            Medium *pChild = *it;
+            pChild->m->pParent.setNull();
+            pChild->uninit();
+        }
+        m->llChildren.clear();          // this unsets all the ComPtrs and probably calls delete
+
+        if (m->pParent)
+        {
+            // this is a differencing disk: then remove it from the parent's children list
+            deparent();
         }
         else
-            mVirtualBox->removeDependentChild(this);
+            // base image: remove it from the global list
+            m->pVirtualBox->removeDependentChild(this);
     }
 
     RTSemEventMultiSignal(m->queryInfoSem);
     RTSemEventMultiDestroy(m->queryInfoSem);
     m->queryInfoSem = NIL_RTSEMEVENTMULTI;
 
-    unconst(mVirtualBox).setNull();
+    unconst(m->pVirtualBox).setNull();
+}
+
+/**
+ * Internal helper that removes "this" from the list of children of its
+ * parent. Used in uninit() and other places when reparenting is necessary.
+ *
+ * The caller must hold the hard disk tree lock!
+ */
+void Medium::deparent()
+{
+    MediaList &llParent = m->pParent->m->llChildren;
+    for (MediaList::iterator it = llParent.begin();
+         it != llParent.end();
+         ++it)
+    {
+        Medium *pParentsChild = *it;
+        if (this == pParentsChild)
+        {
+            llParent.erase(it);
+            break;
+        }
+    }
+    m->pParent.setNull();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1501,7 +1541,7 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(mVirtualBox, this);
+    AutoMultiWriteLock2 alock(m->pVirtualBox, this);
 
     switch (m->state)
     {
@@ -1519,18 +1559,18 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
     }
 
     /* we access mParent & children() */
-    AutoReadLock treeLock(this->getTreeLock());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
     /* cannot change the type of a differencing hard disk */
-    if (!mParent.isNull())
+    if (m->pParent)
         return setError(E_FAIL,
-                        tr("Hard disk '%s' is a differencing hard disk"),
+                        tr("Cannot change the type of hard disk '%s' because it is a differencing hard disk"),
                         m->strLocationFull.raw());
 
     /* cannot change the type of a hard disk being in use */
     if (m->backRefs.size() != 0)
         return setError(E_FAIL,
-                        tr("Hard disk '%s' is attached to %d virtual machines"),
+                        tr("Cannot change the type of hard disk '%s' because it is attached to %d virtual machines"),
                         m->strLocationFull.raw(), m->backRefs.size());
 
     switch (aType)
@@ -1558,7 +1598,7 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
 
     m->type = aType;
 
-    HRESULT rc = mVirtualBox->saveSettings();
+    HRESULT rc = m->pVirtualBox->saveSettings();
 
     return rc;
 }
@@ -1572,9 +1612,9 @@ STDMETHODIMP Medium::COMGETTER(Parent)(IMedium **aParent)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* we access mParent */
-    AutoReadLock treeLock(this->getTreeLock());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
-    mParent.queryInterfaceTo(aParent);
+    m->pParent.queryInterfaceTo(aParent);
 
     return S_OK;
 }
@@ -1588,7 +1628,7 @@ STDMETHODIMP Medium::COMGETTER(Children)(ComSafeArrayOut(IMedium *, aChildren))
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* we access children */
-    AutoReadLock treeLock(this->getTreeLock());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
     SafeIfaceArray<IMedium> children(this->getChildren());
     children.detachTo(ComSafeArrayOutArg(aChildren));
@@ -1634,9 +1674,9 @@ STDMETHODIMP Medium::COMGETTER(LogicalSize)(ULONG64 *aLogicalSize)
         AutoReadLock alock(this);
 
         /* we access mParent */
-        AutoReadLock treeLock(this->getTreeLock());
+        AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
-        if (mParent.isNull())
+        if (m->pParent.isNull())
         {
             *aLogicalSize = m->logicalSize;
 
@@ -1662,7 +1702,7 @@ STDMETHODIMP Medium::COMGETTER(AutoReset)(BOOL *aAutoReset)
 
     AutoReadLock alock(this);
 
-    if (mParent.isNull())
+    if (m->pParent)
         *aAutoReset = FALSE;
 
     *aAutoReset = m->autoReset;
@@ -1676,9 +1716,9 @@ STDMETHODIMP Medium::COMSETTER(AutoReset)(BOOL aAutoReset)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(mVirtualBox, this);
+    AutoMultiWriteLock2 alock(m->pVirtualBox, this);
 
-    if (mParent.isNull())
+    if (m->pParent.isNull())
         return setError(VBOX_E_NOT_SUPPORTED,
                         tr("Hard disk '%s' is not differencing"),
                         m->strLocationFull.raw());
@@ -1687,7 +1727,7 @@ STDMETHODIMP Medium::COMSETTER(AutoReset)(BOOL aAutoReset)
     {
         m->autoReset = aAutoReset;
 
-        return mVirtualBox->saveSettings();
+        return m->pVirtualBox->saveSettings();
     }
 
     return S_OK;
@@ -2018,7 +2058,7 @@ STDMETHODIMP Medium::Close()
      * VirtualBox::find*() but before it starts using us (provided that it holds
      * a mVirtualBox lock of course). */
 
-    AutoWriteLock vboxLock(mVirtualBox);
+    AutoWriteLock vboxLock(m->pVirtualBox);
 
     bool wasCreated = true;
 
@@ -2089,7 +2129,7 @@ STDMETHODIMP Medium::SetProperty(IN_BSTR aName, IN_BSTR aValue)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(mVirtualBox, this);
+    AutoMultiWriteLock2 alock(m->pVirtualBox, this);
 
     switch (m->state)
     {
@@ -2111,7 +2151,7 @@ STDMETHODIMP Medium::SetProperty(IN_BSTR aName, IN_BSTR aValue)
     else
         it->second = aValue;
 
-    HRESULT rc = mVirtualBox->saveSettings();
+    HRESULT rc = m->pVirtualBox->saveSettings();
 
     return rc;
 }
@@ -2163,7 +2203,7 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(mVirtualBox, this);
+    AutoMultiWriteLock2 alock(m->pVirtualBox, this);
 
     com::SafeArray<IN_BSTR> names(ComSafeArrayInArg(aNames));
     com::SafeArray<IN_BSTR> values(ComSafeArrayInArg(aValues));
@@ -2192,7 +2232,7 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
             it->second = values [i];
     }
 
-    HRESULT rc = mVirtualBox->saveSettings();
+    HRESULT rc = m->pVirtualBox->saveSettings();
 
     return rc;
 }
@@ -2231,11 +2271,12 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
     ComObjPtr <Progress> progress;
     progress.createObject();
     /// @todo include fixed/dynamic
-    HRESULT rc = progress->init(mVirtualBox, static_cast<IMedium*>(this),
-        (aVariant & MediumVariant_Fixed)
-          ? BstrFmt(tr("Creating fixed hard disk storage unit '%s'"), m->strLocationFull.raw())
-          : BstrFmt(tr("Creating dynamic hard disk storage unit '%s'"), m->strLocationFull.raw()),
-        TRUE /* aCancelable */);
+    HRESULT rc = progress->init(m->pVirtualBox,
+                                static_cast<IMedium*>(this),
+                                (aVariant & MediumVariant_Fixed)
+                                        ? BstrFmt(tr("Creating fixed hard disk storage unit '%s'"), m->strLocationFull.raw())
+                                        : BstrFmt(tr("Creating dynamic hard disk storage unit '%s'"), m->strLocationFull.raw()),
+                                TRUE /* aCancelable */);
     if (FAILED(rc)) return rc;
 
     /* setup task object and thread to carry out the operation
@@ -2292,7 +2333,7 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr<Medium> diff;
-    HRESULT rc = mVirtualBox->cast(aTarget, diff);
+    HRESULT rc = m->pVirtualBox->cast(aTarget, diff);
     if (FAILED(rc)) return rc;
 
     AutoWriteLock alock(this);
@@ -2345,12 +2386,12 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr <Medium> target;
-    HRESULT rc = mVirtualBox->cast(aTarget, target);
+    HRESULT rc = m->pVirtualBox->cast(aTarget, target);
     if (FAILED(rc)) return rc;
     ComObjPtr <Medium> parent;
     if (aParent)
     {
-        rc = mVirtualBox->cast(aParent, parent);
+        rc = m->pVirtualBox->cast(aParent, parent);
         if (FAILED(rc)) return rc;
     }
 
@@ -2372,8 +2413,10 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         std::auto_ptr <ImageChain> srcChain(new ImageChain());
 
         /* we walk the source tree */
-        AutoReadLock srcTreeLock(this->getTreeLock());
-        for (Medium *hd = this; hd; hd = hd->mParent)
+        AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+        for (Medium *hd = this;
+             hd;
+             hd = hd->m->pParent)
         {
             rc = srcChain->addImage(hd);
             if (FAILED(rc)) throw rc;
@@ -2384,11 +2427,9 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         /* Build the parent chain and lock images in the proper order. */
         std::auto_ptr <ImageChain> parentChain(new ImageChain());
 
-        /* we walk the future parent tree */
-        AutoReadLock parentTreeLock;
-        if (parent)
-            parentTreeLock.attach(parent->getTreeLock());
-        for (Medium *hd = parent; hd; hd = hd->mParent)
+        for (Medium *hd = parent;
+             hd;
+             hd = hd->m->pParent)
         {
             rc = parentChain->addImage(hd);
             if (FAILED(rc)) throw rc;
@@ -2409,16 +2450,16 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         }
 
         progress.createObject();
-        rc = progress->init(mVirtualBox, static_cast <IMedium *>(this),
-            BstrFmt(tr("Creating clone hard disk '%s'"),
-                    target->m->strLocationFull.raw()),
-            TRUE /* aCancelable */);
+        rc = progress->init(m->pVirtualBox,
+                            static_cast <IMedium *>(this),
+                            BstrFmt(tr("Creating clone hard disk '%s'"), target->m->strLocationFull.raw()),
+                            TRUE /* aCancelable */);
         if (FAILED(rc)) throw rc;
 
         /* setup task object and thread to carry out the operation
          * asynchronously */
 
-        std::auto_ptr <Task> task(new Task(this, progress, Task::Clone));
+        std::auto_ptr<Task> task(new Task(this, progress, Task::Clone));
         AssertComRCThrowRC(task->m_autoCaller.rc());
 
         task->setData(target, parent);
@@ -2474,8 +2515,10 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
         std::auto_ptr <ImageChain> imgChain(new ImageChain());
 
         /* we walk the image tree */
-        AutoReadLock srcTreeLock(this->getTreeLock());
-        for (Medium *hd = this; hd; hd = hd->mParent)
+        AutoReadLock srcTreeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+        for (Medium *hd = this;
+             hd;
+             hd = hd->m->pParent)
         {
             rc = imgChain->addImage(hd);
             if (FAILED(rc)) throw rc;
@@ -2484,9 +2527,10 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
         if (FAILED(rc)) throw rc;
 
         progress.createObject();
-        rc = progress->init(mVirtualBox, static_cast <IMedium *>(this),
-             BstrFmt(tr("Compacting hard disk '%s'"), m->strLocationFull.raw()),
-             TRUE /* aCancelable */);
+        rc = progress->init(m->pVirtualBox,
+                            static_cast <IMedium *>(this),
+                            BstrFmt(tr("Compacting hard disk '%s'"), m->strLocationFull.raw()),
+                            TRUE /* aCancelable */);
         if (FAILED(rc)) throw rc;
 
         /* setup task object and thread to carry out the operation
@@ -2540,7 +2584,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
 
     LogFlowThisFunc(("ENTER for medium %s\n", m->strLocationFull.c_str()));
 
-    if (mParent.isNull())
+    if (m->pParent.isNull())
         return setError(VBOX_E_NOT_SUPPORTED,
                         tr ("Hard disk '%s' is not differencing"),
                         m->strLocationFull.raw());
@@ -2556,10 +2600,10 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
     try
     {
         progress.createObject();
-        rc = progress->init(mVirtualBox, static_cast <IMedium *>(this),
-            BstrFmt(tr("Resetting differencing hard disk '%s'"),
-                     m->strLocationFull.raw()),
-            FALSE /* aCancelable */);
+        rc = progress->init(m->pVirtualBox,
+                            static_cast <IMedium *>(this),
+                            BstrFmt(tr("Resetting differencing hard disk '%s'"), m->strLocationFull.raw()),
+                            FALSE /* aCancelable */);
         if (FAILED(rc)) throw rc;
 
         /* setup task object and thread to carry out the operation
@@ -2603,43 +2647,66 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Checks if the given change of \a aOldPath to \a aNewPath affects the location
- * of this media and updates it if necessary to reflect the new location.
- *
- * @param aOldPath  Old path (full).
- * @param aNewPath  New path (full).
- *
- * @note Locks this object for writing.
+ * Internal method to return the medium's parent medium. Must have caller + locking!
+ * @return
  */
-HRESULT Medium::updatePath(const char *aOldPath, const char *aNewPath)
+const ComObjPtr<Medium>& Medium::getParent() const
 {
-    AssertReturn(aOldPath, E_FAIL);
-    AssertReturn(aNewPath, E_FAIL);
+    return m->pParent;
+}
 
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+/**
+ * Internal method to return the medium's list of child media. Must have caller + locking!
+ * @return
+ */
+const MediaList& Medium::getChildren() const
+{
+    return m->llChildren;
+}
 
-    AutoWriteLock alock(this);
+/**
+ * Internal method to return the medium's GUID. Must have caller + locking!
+ * @return
+ */
+const Guid& Medium::getId() const
+{
+    return m->id;
+}
 
-    LogFlowThisFunc(("locationFull.before='%s'\n", m->strLocationFull.raw()));
+/**
+ * Internal method to return the medium's GUID. Must have caller + locking!
+ * @return
+ */
+MediumState_T Medium::getState() const
+{
+    return m->state;
+}
 
-    Utf8Str path = m->strLocationFull;
+/**
+ * Internal method to return the medium's location. Must have caller + locking!
+ * @return
+ */
+const Utf8Str& Medium::getLocation() const
+{
+    return m->strLocation;
+}
 
-    if (RTPathStartsWith(path.c_str(), aOldPath))
-    {
-        Utf8Str newPath = Utf8StrFmt("%s%s", aNewPath,
-                                     path.raw() + strlen(aOldPath));
-        path = newPath;
+/**
+ * Internal method to return the medium's full location. Must have caller + locking!
+ * @return
+ */
+const Utf8Str& Medium::getLocationFull() const
+{
+    return m->strLocationFull;
+}
 
-        mVirtualBox->calculateRelativePath(path, path);
-
-        unconst(m->strLocationFull) = newPath;
-        unconst(m->strLocation) = path;
-
-        LogFlowThisFunc(("locationFull.after='%s'\n", m->strLocationFull.raw()));
-    }
-
-    return S_OK;
+/**
+ * Internal method to return the medium's size. Must have caller + locking!
+ * @return
+ */
+uint64_t Medium::getSize() const
+{
+    return m->size;
 }
 
 /**
@@ -2774,6 +2841,30 @@ HRESULT Medium::detachFrom(const Guid &aMachineId,
     return S_OK;
 }
 
+/**
+ * Internal method to return the medium's list of backrefs. Must have caller + locking!
+ * @return
+ */
+const Guid* Medium::getFirstMachineBackrefId() const
+{
+    if (!m->backRefs.size())
+        return NULL;
+
+    return &m->backRefs.front().machineId;
+}
+
+const Guid* Medium::getFirstMachineBackrefSnapshotId() const
+{
+    if (!m->backRefs.size())
+        return NULL;
+
+    const BackRef &ref = m->backRefs.front();
+    if (!ref.llSnapshotIds.size())
+        return NULL;
+
+    return &ref.llSnapshotIds.front();
+}
+
 #ifdef DEBUG
 /**
  * Debugging helper that gets called after VirtualBox initialization that writes all
@@ -2805,72 +2896,43 @@ void Medium::dumpBackRefs()
 #endif
 
 /**
- * Internal method to return the medium's GUID. Must have caller + locking!
- * @return
+ * Checks if the given change of \a aOldPath to \a aNewPath affects the location
+ * of this media and updates it if necessary to reflect the new location.
+ *
+ * @param aOldPath  Old path (full).
+ * @param aNewPath  New path (full).
+ *
+ * @note Locks this object for writing.
  */
-const Guid& Medium::getId() const
+HRESULT Medium::updatePath(const char *aOldPath, const char *aNewPath)
 {
-    return m->id;
-}
+    AssertReturn(aOldPath, E_FAIL);
+    AssertReturn(aNewPath, E_FAIL);
 
-/**
- * Internal method to return the medium's GUID. Must have caller + locking!
- * @return
- */
-MediumState_T Medium::getState() const
-{
-    return m->state;
-}
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-/**
- * Internal method to return the medium's location. Must have caller + locking!
- * @return
- */
-const Utf8Str& Medium::getLocation() const
-{
-    return m->strLocation;
-}
+    AutoWriteLock alock(this);
 
-/**
- * Internal method to return the medium's full location. Must have caller + locking!
- * @return
- */
-const Utf8Str& Medium::getLocationFull() const
-{
-    return m->strLocationFull;
-}
+    LogFlowThisFunc(("locationFull.before='%s'\n", m->strLocationFull.raw()));
 
-/**
- * Internal method to return the medium's size. Must have caller + locking!
- * @return
- */
-uint64_t Medium::getSize() const
-{
-    return m->size;
-}
+    Utf8Str path = m->strLocationFull;
 
-/**
- * Internal method to return the medium's list of backrefs. Must have caller + locking!
- * @return
- */
-const Guid* Medium::getFirstMachineBackrefId() const
-{
-    if (!m->backRefs.size())
-        return NULL;
+    if (RTPathStartsWith(path.c_str(), aOldPath))
+    {
+        Utf8Str newPath = Utf8StrFmt("%s%s", aNewPath,
+                                     path.raw() + strlen(aOldPath));
+        path = newPath;
 
-    return &m->backRefs.front().machineId;
-}
+        m->pVirtualBox->calculateRelativePath(path, path);
 
-const Guid* Medium::getFirstMachineBackrefSnapshotId() const
-{
-    if (!m->backRefs.size())
-        return NULL;
+        unconst(m->strLocationFull) = newPath;
+        unconst(m->strLocation) = path;
 
-    const BackRef &ref = m->backRefs.front();
-    if (!ref.llSnapshotIds.size())
-        return NULL;
+        LogFlowThisFunc(("locationFull.after='%s'\n", m->strLocationFull.raw()));
+    }
 
-    return &ref.llSnapshotIds.front();
+    return S_OK;
 }
 
 /**
@@ -2894,12 +2956,12 @@ void Medium::updatePaths(const char *aOldPath, const char *aNewPath)
     AutoWriteLock alock(this);
 
     /* we access children() */
-    AutoReadLock treeLock(this->getTreeLock());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
     updatePath(aOldPath, aNewPath);
 
     /* update paths of all children */
-    for (List::const_iterator it = getChildren().begin();
+    for (MediaList::const_iterator it = getChildren().begin();
          it != getChildren().end();
          ++ it)
     {
@@ -2928,22 +2990,22 @@ ComObjPtr<Medium> Medium::getBase(uint32_t *aLevel /*= NULL*/)
     AssertReturn(autoCaller.isOk(), pBase);
 
     /* we access mParent */
-    AutoReadLock treeLock(this->getTreeLock());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
     pBase = this;
     level = 0;
 
-    if (!mParent.isNull())
+    if (m->pParent)
     {
         for (;;)
         {
             AutoCaller baseCaller(pBase);
             AssertReturn(baseCaller.isOk(), pBase);
 
-            if (pBase->mParent.isNull())
+            if (pBase->m->pParent.isNull())
                 break;
 
-            pBase = pBase->mParent;
+            pBase = pBase->m->pParent;
             ++level;
         }
     }
@@ -2969,7 +3031,7 @@ bool Medium::isReadOnly()
     AutoReadLock alock(this);
 
     /* we access children */
-    AutoReadLock treeLock(this->getTreeLock());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
     switch (m->type)
     {
@@ -3016,14 +3078,14 @@ HRESULT Medium::saveSettings(settings::Medium &data)
     AutoReadLock alock(this);
 
     /* we access mParent */
-    AutoReadLock treeLock(this->getTreeLock());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
     data.uuid = m->id;
     data.strLocation = m->strLocation;
     data.strFormat = m->strFormat;
 
     /* optional, only for diffs, default is false */
-    if (!mParent.isNull())
+    if (m->pParent)
         data.fAutoReset = !!m->autoReset;
     else
         data.fAutoReset = false;
@@ -3047,11 +3109,11 @@ HRESULT Medium::saveSettings(settings::Medium &data)
     }
 
     /* only for base hard disks */
-    if (mParent.isNull())
+    if (m->pParent.isNull())
         data.hdType = m->type;
 
     /* save all children */
-    for (List::const_iterator it = getChildren().begin();
+    for (MediaList::const_iterator it = getChildren().begin();
          it != getChildren().end();
          ++it)
     {
@@ -3096,12 +3158,12 @@ HRESULT Medium::compareLocationTo(const char *aLocation, int &aResult)
         if (!RTPathHavePath(aLocation))
         {
             location = Utf8StrFmt("%s%c%s",
-                                  mVirtualBox->getDefaultHardDiskFolder().raw(),
+                                  m->pVirtualBox->getDefaultHardDiskFolder().raw(),
                                   RTPATH_DELIMITER,
                                   aLocation);
         }
 
-        int vrc = mVirtualBox->calculateFullPath(location, location);
+        int vrc = m->pVirtualBox->calculateFullPath(location, location);
         if (RT_FAILURE(vrc))
             return setError(E_FAIL,
                             tr("Invalid hard disk storage file location '%s' (%Rrc)"),
@@ -3143,7 +3205,7 @@ HRESULT Medium::prepareDiscard(MergeChain * &aChain)
     AutoWriteLock alock(this);
 
     /* we access mParent & children() */
-    AutoReadLock treeLock(this->getTreeLock());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
     AssertReturn(m->type == MediumType_Normal, E_FAIL);
 
@@ -3151,7 +3213,7 @@ HRESULT Medium::prepareDiscard(MergeChain * &aChain)
     {
         /* special treatment of the last hard disk in the chain: */
 
-        if (mParent.isNull())
+        if (m->pParent.isNull())
         {
             /* lock only, to prevent any usage; discard() will unlock */
             return LockWrite(NULL);
@@ -3196,10 +3258,9 @@ HRESULT Medium::prepareDiscard(MergeChain * &aChain)
     AutoWriteLock childLock(child);
 
     /* delegate the rest to the profi */
-    if (mParent.isNull())
+    if (m->pParent.isNull())
     {
         /* base hard disk, backward merge */
-
         Assert(child->m->backRefs.size() == 1);
         if (child->m->backRefs.front().machineId != m->backRefs.front().machineId)
         {
@@ -3281,13 +3342,13 @@ HRESULT Medium::discard(ComObjPtr<Progress> &aProgress, ULONG ulWeight, MergeCha
             AutoWriteLock alock(this);
 
             /* we access mParent & children() */
-            AutoReadLock treeLock(this->getTreeLock());
+            AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
             Assert(getChildren().size() == 0);
 
             /* special treatment of the last hard disk in the chain: */
 
-            if (mParent.isNull())
+            if (m->pParent.isNull())
             {
                 rc = UnlockWrite(NULL);
                 AssertComRC(rc);
@@ -3349,13 +3410,13 @@ void Medium::cancelDiscard(MergeChain *aChain)
         AutoWriteLock alock(this);
 
         /* we access mParent & children() */
-        AutoReadLock treeLock(this->getTreeLock());
+        AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
         Assert(getChildren().size() == 0);
 
         /* special treatment of the last hard disk in the chain: */
 
-        if (mParent.isNull())
+        if (m->pParent.isNull())
         {
             HRESULT rc = UnlockWrite(NULL);
             AssertComRC(rc);
@@ -3392,8 +3453,8 @@ Bstr Medium::preferredDiffFormat()
     if (!(m->formatObj->capabilities() & MediumFormatCapabilities_Differencing))
     {
         /* use the default format if not */
-        AutoReadLock propsLock(mVirtualBox->systemProperties());
-        strFormat = mVirtualBox->getDefaultHardDiskFormat();
+        AutoReadLock propsLock(m->pVirtualBox->systemProperties());
+        strFormat = m->pVirtualBox->getDefaultHardDiskFormat();
     }
 
     return strFormat;
@@ -3406,23 +3467,6 @@ Bstr Medium::preferredDiffFormat()
 MediumType_T Medium::getType() const
 {
     return m->type;
-}
-
-/**
- * Returns VirtualBox::hardDiskTreeHandle(), for convenience. Don't forget
- * to follow these locking rules:
- *
- * 1. The write lock on this handle must be either held alone on the thread
- *    or requested *after* the VirtualBox object lock. Mixing with other
- *    locks is prohibited.
- *
- * 2. The read lock on this handle may be intermixed with any other lock
- *    with the exception that it must be requested *after* the VirtualBox
- *    object lock.
- */
-RWLockHandle* Medium::getTreeLock()
-{
-    return &mVirtualBox->hardDiskTreeLockHandle();
 }
 
 // private methods
@@ -3519,13 +3563,13 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
         /* append the default folder if no path is given */
         if (!RTPathHavePath(location.c_str()))
             location = Utf8StrFmt("%s%c%s",
-                                  mVirtualBox->getDefaultHardDiskFolder().raw(),
+                                  m->pVirtualBox->getDefaultHardDiskFolder().raw(),
                                   RTPATH_DELIMITER,
                                   location.raw());
 
         /* get the full file name */
         Utf8Str locationFull;
-        int vrc = mVirtualBox->calculateFullPath(location, locationFull);
+        int vrc = m->pVirtualBox->calculateFullPath(location, locationFull);
         if (RT_FAILURE(vrc))
             return setError(VBOX_E_FILE_ERROR,
                             tr("Invalid medium storage file location '%s' (%Rrc)"),
@@ -3777,7 +3821,7 @@ HRESULT Medium::queryInfo()
                             &uuid,
                             location.c_str(),
                             mediumId.raw(),
-                            mVirtualBox->settingsFilePath().c_str());
+                            m->pVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
                     }
                 }
@@ -3819,7 +3863,7 @@ HRESULT Medium::queryInfo()
 
                     Guid id = parentId;
                     ComObjPtr<Medium> parent;
-                    rc = mVirtualBox->findHardDisk(&id, NULL,
+                    rc = m->pVirtualBox->findHardDisk(&id, NULL,
                                                    false /* aSetError */,
                                                    &parent);
                     if (FAILED(rc))
@@ -3827,48 +3871,48 @@ HRESULT Medium::queryInfo()
                         lastAccessError = Utf8StrFmt(
                             tr("Parent hard disk with UUID {%RTuuid} of the hard disk '%s' is not found in the media registry ('%s')"),
                             &parentId, location.c_str(),
-                            mVirtualBox->settingsFilePath().c_str());
+                            m->pVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
                     }
 
                     /* deassociate from VirtualBox, associate with parent */
 
-                    mVirtualBox->removeDependentChild(this);
+                    m->pVirtualBox->removeDependentChild(this);
 
                     /* we set mParent & children() */
-                    AutoWriteLock treeLock(this->getTreeLock());
+                    AutoWriteLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
-                    Assert(mParent.isNull());
-                    mParent = parent;
-                    mParent->addDependentChild(this);
+                    Assert(m->pParent.isNull());
+                    m->pParent = parent;
+                    m->pParent->m->llChildren.push_back(this);
                 }
                 else
                 {
                     /* we access mParent */
-                    AutoReadLock treeLock(this->getTreeLock());
+                    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
                     /* check that parent UUIDs match. Note that there's no need
                      * for the parent's AutoCaller (our lifetime is bound to
                      * it) */
 
-                    if (mParent.isNull())
+                    if (m->pParent.isNull())
                     {
                         lastAccessError = Utf8StrFmt(
                             tr("Hard disk '%s' is differencing but it is not associated with any parent hard disk in the media registry ('%s')"),
                             location.c_str(),
-                            mVirtualBox->settingsFilePath().c_str());
+                            m->pVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
                     }
 
-                    AutoReadLock parentLock(mParent);
-                    if (    mParent->getState() != MediumState_Inaccessible
-                         && mParent->getId() != parentId)
+                    AutoReadLock parentLock(m->pParent);
+                    if (    m->pParent->getState() != MediumState_Inaccessible
+                         && m->pParent->getId() != parentId)
                     {
                         lastAccessError = Utf8StrFmt(
-                            tr ("Parent UUID {%RTuuid} of the hard disk '%s' does not match UUID {%RTuuid} of its parent hard disk stored in the media registry ('%s')"),
+                            tr("Parent UUID {%RTuuid} of the hard disk '%s' does not match UUID {%RTuuid} of its parent hard disk stored in the media registry ('%s')"),
                             &parentId, location.c_str(),
-                            mParent->getId().raw(),
-                            mVirtualBox->settingsFilePath().c_str());
+                            m->pParent->getId().raw(),
+                            m->pVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
                     }
 
@@ -4042,7 +4086,7 @@ HRESULT Medium::deleteStorage(ComObjPtr <Progress> *aProgress, bool aWait)
      * VirtualBox::findHardDisk() but before it starts using us (provided that
      * it holds a mVirtualBox lock too of course). */
 
-    AutoMultiWriteLock2 alock(mVirtualBox->lockHandle(), this->lockHandle());
+    AutoMultiWriteLock2 alock(m->pVirtualBox->lockHandle(), this->lockHandle());
     LogFlowThisFunc(("aWait=%RTbool locationFull=%s\n", aWait, getLocationFull().c_str() ));
 
     if (    !(m->formatObj->capabilities() & (   MediumFormatCapabilities_CreateDynamic
@@ -4124,10 +4168,10 @@ HRESULT Medium::deleteStorage(ComObjPtr <Progress> *aProgress, bool aWait)
         if (progress.isNull())
         {
             progress.createObject();
-            rc = progress->init(mVirtualBox, static_cast<IMedium*>(this),
-                BstrFmt(tr("Deleting hard disk storage unit '%s'"),
-                         m->strLocationFull.raw()),
-                FALSE /* aCancelable */);
+            rc = progress->init(m->pVirtualBox,
+                                static_cast<IMedium*>(this),
+                                BstrFmt(tr("Deleting hard disk storage unit '%s'"), m->strLocationFull.raw()),
+                                FALSE /* aCancelable */);
             if (FAILED(rc)) return rc;
         }
     }
@@ -4262,10 +4306,10 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
         if (progress.isNull())
         {
             progress.createObject();
-            rc = progress->init(mVirtualBox, static_cast<IMedium*>(this),
-                BstrFmt(tr("Creating differencing hard disk storage unit '%s'"),
-                         aTarget->m->strLocationFull.raw()),
-                TRUE /* aCancelable */);
+            rc = progress->init(m->pVirtualBox,
+                                static_cast<IMedium*>(this),
+                                BstrFmt(tr("Creating differencing hard disk storage unit '%s'"), aTarget->m->strLocationFull.raw()),
+                                TRUE /* aCancelable */);
             if (FAILED(rc)) return rc;
         }
     }
@@ -4349,23 +4393,23 @@ HRESULT Medium::prepareMergeTo(Medium *aTarget,
     aChain = NULL;
 
     /* we walk the tree */
-    AutoReadLock treeLock(this->getTreeLock());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
     HRESULT rc = S_OK;
 
     /* detect the merge direction */
     bool forward;
     {
-        Medium *parent = mParent;
+        Medium *parent = m->pParent;
         while (parent != NULL && parent != aTarget)
-            parent = parent->mParent;
+            parent = parent->m->pParent;
         if (parent == aTarget)
             forward = false;
         else
         {
-            parent = aTarget->mParent;
+            parent = aTarget->m->pParent;
             while (parent != NULL && parent != this)
-                parent = parent->mParent;
+                parent = parent->m->pParent;
             if (parent == this)
                 forward = true;
             else
@@ -4404,7 +4448,7 @@ HRESULT Medium::prepareMergeTo(Medium *aTarget,
             if (last == first)
                 break;
 
-            last = last->mParent;
+            last = last->m->pParent;
         }
     }
 
@@ -4508,11 +4552,12 @@ HRESULT Medium::mergeTo(MergeChain *aChain,
             AutoReadLock alock(this);
 
             progress.createObject();
-            rc = progress->init(mVirtualBox, static_cast<IMedium*>(this),
-                BstrFmt(tr("Merging hard disk '%s' to '%s'"),
-                        getName().raw(),
-                        aChain->target()->getName().raw()),
-                TRUE /* aCancelable */);
+            rc = progress->init(m->pVirtualBox,
+                                static_cast<IMedium*>(this),
+                                BstrFmt(tr("Merging hard disk '%s' to '%s'"),
+                                        getName().raw(),
+                                        aChain->target()->getName().raw()),
+                                TRUE /* aCancelable */);
             if (FAILED(rc)) return rc;
         }
     }
@@ -4584,10 +4629,10 @@ HRESULT Medium::setFormat(CBSTR aFormat)
 {
     /* get the format object first */
     {
-        AutoReadLock propsLock(mVirtualBox->systemProperties());
+        AutoReadLock propsLock(m->pVirtualBox->systemProperties());
 
         unconst(m->formatObj)
-            = mVirtualBox->systemProperties()->mediumFormat(aFormat);
+            = m->pVirtualBox->systemProperties()->mediumFormat(aFormat);
         if (m->formatObj.isNull())
             return setError(E_INVALIDARG,
                             tr("Invalid hard disk storage format '%ls'"), aFormat);
@@ -4628,7 +4673,7 @@ HRESULT Medium::setFormat(CBSTR aFormat)
 HRESULT Medium::canClose()
 {
     /* we access children */
-    AutoReadLock treeLock(this->getTreeLock());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
     if (getChildren().size() != 0)
         return setError(E_FAIL,
@@ -4650,31 +4695,30 @@ HRESULT Medium::unregisterWithVirtualBox()
      * unregisterHardDisk() properly save the registry */
 
     /* we modify mParent and access children */
-    AutoWriteLock treeLock(this->getTreeLock());
+    AutoWriteLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
-    const ComObjPtr<Medium, ComWeakRef> parent = mParent;
+    Medium *pParentBackup = m->pParent;
 
     AssertReturn(getChildren().size() == 0, E_FAIL);
 
-    if (!mParent.isNull())
+    if (m->pParent)
     {
         /* deassociate from the parent, associate with VirtualBox */
-        mVirtualBox->addDependentChild(this);
-        mParent->removeDependentChild(this);
-        mParent.setNull();
+        m->pVirtualBox->addDependentChild(this);
+        deparent();
     }
 
     HRESULT rc = E_FAIL;
     switch (m->devType)
     {
         case DeviceType_DVD:
-            rc = mVirtualBox->unregisterDVDImage(this);
+            rc = m->pVirtualBox->unregisterDVDImage(this);
             break;
         case DeviceType_Floppy:
-            rc = mVirtualBox->unregisterFloppyImage(this);
+            rc = m->pVirtualBox->unregisterFloppyImage(this);
             break;
         case DeviceType_HardDisk:
-            rc = mVirtualBox->unregisterHardDisk(this);
+            rc = m->pVirtualBox->unregisterHardDisk(this);
             break;
         default:
             break;
@@ -4682,13 +4726,13 @@ HRESULT Medium::unregisterWithVirtualBox()
 
     if (FAILED(rc))
     {
-        if (!parent.isNull())
+        if (pParentBackup)
         {
             /* re-associate with the parent as we are still relatives in the
              * registry */
-            mParent = parent;
-            mParent->addDependentChild(this);
-            mVirtualBox->removeDependentChild(this);
+            m->pParent = pParentBackup;
+            m->pParent->m->llChildren.push_back(this);
+            m->pVirtualBox->removeDependentChild(this);
         }
     }
 
@@ -4971,7 +5015,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 /* register with mVirtualBox as the last step and move to
                  * Created state only on success (leaving an orphan file is
                  * better than breaking media registry consistency) */
-                rc = that->mVirtualBox->registerHardDisk(that);
+                rc = that->m->pVirtualBox->registerHardDisk(that);
             }
 
             thatLock.maybeEnter();
@@ -5089,16 +5133,16 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
             {
                 /* we set mParent & children() (note that thatLock is released
                  * here), but lock VirtualBox first to follow the rule */
-                AutoMultiWriteLock2 alock(that->mVirtualBox->lockHandle(),
-                                          that->getTreeLock());
+                AutoWriteLock alock1(that->m->pVirtualBox);
+                AutoWriteLock alock2(that->m->pVirtualBox->hardDiskTreeLockHandle());
 
-                Assert(target->mParent.isNull());
+                Assert(target->m->pParent.isNull());
 
                 /* associate the child with the parent and deassociate from
                  * VirtualBox */
-                target->mParent = that;
-                that->addDependentChild(target);
-                target->mVirtualBox->removeDependentChild(target);
+                target->m->pParent = that;
+                that->m->llChildren.push_back(target);
+                target->m->pVirtualBox->removeDependentChild(target);
 
                 /** @todo r=klaus neither target nor that->base() are locked,
                  * potential race! */
@@ -5110,14 +5154,13 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 /* register with mVirtualBox as the last step and move to
                  * Created state only on success (leaving an orphan file is
                  * better than breaking media registry consistency) */
-                rc = that->mVirtualBox->registerHardDisk(target);
+                rc = that->m->pVirtualBox->registerHardDisk(target);
 
                 if (FAILED(rc))
                 {
                     /* break the parent association on failure to register */
-                    target->mVirtualBox->addDependentChild(target);
-                    that->removeDependentChild(target);
-                    target->mParent.setNull();
+                    target->m->pVirtualBox->addDependentChild(target);
+                    that->deparent();
                 }
             }
 
@@ -5257,8 +5300,9 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                          * add each one in there individually */
                         if (chain->children().size() > 0)
                         {
-                            for (List::const_iterator it = chain->children().begin();
-                                 it != chain->children().end(); ++ it)
+                            for (MediaList::const_iterator it = chain->children().begin();
+                                 it != chain->children().end();
+                                 ++it)
                             {
                                 /* VD_OPEN_FLAGS_INFO since UUID is wrong yet */
                                 vrc = VDOpen(hdd, (*it)->m->strFormat.c_str(),
@@ -5305,8 +5349,8 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
 
                 /* we set mParent & children() (note that thatLock is released
                  * here), but lock VirtualBox first to follow the rule */
-                AutoMultiWriteLock2 alock(that->mVirtualBox->lockHandle(),
-                                          that->getTreeLock());
+                AutoWriteLock alock1(that->m->pVirtualBox);
+                AutoWriteLock alock2(that->m->pVirtualBox->hardDiskTreeLockHandle());
 
                 Medium *source = chain->source();
                 Medium *target = chain->target();
@@ -5315,28 +5359,26 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 {
                     /* first, unregister the target since it may become a base
                      * hard disk which needs re-registration */
-                    rc2 = target->mVirtualBox->
-                        unregisterHardDisk(target, false /* aSaveSettings */);
+                    rc2 = target->m->pVirtualBox->unregisterHardDisk(target, false /* aSaveSettings */);
                     AssertComRC(rc2);
 
                     /* then, reparent it and disconnect the deleted branch at
                      * both ends (chain->parent() is source's parent) */
-                    target->mParent->removeDependentChild(target);
-                    target->mParent = chain->parent();
-                    if (!target->mParent.isNull())
+                    target->deparent();
+                    target->m->pParent = chain->parent();
+                    if (target->m->pParent)
                     {
-                        target->mParent->addDependentChild(target);
-                        target->mParent->removeDependentChild(source);
-                        source->mParent.setNull();
+                        target->m->pParent->m->llChildren.push_back(target);
+                        source->deparent();
                     }
                     else
                     {
-                        target->mVirtualBox->addDependentChild(target);
-                        target->mVirtualBox->removeDependentChild(source);
+                        target->m->pVirtualBox->addDependentChild(target);
+                        target->m->pVirtualBox->removeDependentChild(source);
                     }
 
                     /* then, register again */
-                    rc2 = target->mVirtualBox->
+                    rc2 = target->m->pVirtualBox->
                         registerHardDisk(target, false /* aSaveSettings */);
                     AssertComRC(rc2);
                 }
@@ -5346,10 +5388,9 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                     Medium *targetChild = target->getChildren().front();
 
                     /* disconnect the deleted branch at the elder end */
-                    target->removeDependentChild(targetChild);
-                    targetChild->mParent.setNull();
+                    targetChild->deparent();
 
-                    const List &children = chain->children();
+                    const MediaList &children = chain->children();
 
                     /* reparent source's chidren and disconnect the deleted
                      * branch at the younger end m*/
@@ -5358,20 +5399,22 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                         /* obey {parent,child} lock order */
                         AutoWriteLock sourceLock(source);
 
-                        for (List::const_iterator it = children.begin();
-                             it != children.end(); ++ it)
+                        for (MediaList::const_iterator it = children.begin();
+                             it != children.end();
+                             ++it)
                         {
                             AutoWriteLock childLock(*it);
 
-                            (*it)->mParent = target;
-                            (*it)->mParent->addDependentChild(*it);
-                            source->removeDependentChild(*it);
+                            Medium *p = *it;
+                            p->deparent();  // removes p from source
+                            target->m->llChildren.push_back(p);
+                            p->m->pParent = target;
                         }
                     }
                 }
 
                 /* try to save the hard disk registry */
-                rc = that->mVirtualBox->saveSettings();
+                rc = that->m->pVirtualBox->saveSettings();
 
                 if (SUCCEEDED(rc))
                 {
@@ -5387,7 +5430,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                             continue;
                         }
 
-                        rc2 = (*it)->mVirtualBox->
+                        rc2 = (*it)->m->pVirtualBox->
                             unregisterHardDisk(*it, false /* aSaveSettings */);
                         AssertComRC(rc2);
 
@@ -5494,8 +5537,9 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 try
                 {
                     /* Open all hard disk images in the source chain. */
-                    for (List::const_iterator it = srcChain->begin();
-                         it != srcChain->end(); ++ it)
+                    for (MediaList::const_iterator it = srcChain->begin();
+                         it != srcChain->end();
+                         ++it)
                     {
                         /* sanity check */
                         Assert((*it)->m->state == MediumState_LockedRead);
@@ -5536,8 +5580,9 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                     try
                     {
                         /* Open all hard disk images in the parent chain. */
-                        for (List::const_iterator it = parentChain->begin();
-                             it != parentChain->end(); ++ it)
+                        for (MediaList::const_iterator it = parentChain->begin();
+                             it != parentChain->end();
+                             ++it)
                         {
                             /** @todo r=klaus (*it) is not locked, lots of
                              * race opportunities below */
@@ -5593,36 +5638,35 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 {
                     /* we set mParent & children() (note that thatLock is released
                      * here), but lock VirtualBox first to follow the rule */
-                    AutoMultiWriteLock2 alock(that->mVirtualBox->lockHandle(),
-                                               that->getTreeLock());
+                    AutoWriteLock alock1(that->m->pVirtualBox);
+                    AutoWriteLock alock2(that->m->pVirtualBox->hardDiskTreeLockHandle());
 
-                    Assert(target->mParent.isNull());
+                    Assert(target->m->pParent.isNull());
 
                     if (parent)
                     {
                         /* associate the clone with the parent and deassociate
                          * from VirtualBox */
-                        target->mParent = parent;
-                        parent->addDependentChild(target);
-                        target->mVirtualBox->removeDependentChild(target);
+                        target->m->pParent = parent;
+                        parent->m->llChildren.push_back(target);
+                        target->m->pVirtualBox->removeDependentChild(target);
 
                         /* register with mVirtualBox as the last step and move to
                          * Created state only on success (leaving an orphan file is
                          * better than breaking media registry consistency) */
-                        rc = parent->mVirtualBox->registerHardDisk(target);
+                        rc = parent->m->pVirtualBox->registerHardDisk(target);
 
                         if (FAILED(rc))
                         {
                             /* break parent association on failure to register */
-                            target->mVirtualBox->addDependentChild(target);
-                            parent->removeDependentChild(target);
-                            target->mParent.setNull();
+                            target->m->pVirtualBox->addDependentChild(target);
+                            target->deparent();     // removes target from parent
                         }
                     }
                     else
                     {
                         /* just register  */
-                        rc = that->mVirtualBox->registerHardDisk(target);
+                        rc = that->m->pVirtualBox->registerHardDisk(target);
                     }
                 }
             }
@@ -5738,9 +5782,10 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 Utf8Str format(that->m->strFormat);
                 Utf8Str location(that->m->strLocationFull);
 
-                Guid parentId = that->mParent->m->id;
-                Utf8Str parentFormat(that->mParent->m->strFormat);
-                Utf8Str parentLocation(that->mParent->m->strLocationFull);
+                Medium *pParent = that->m->pParent;
+                Guid parentId = pParent->m->id;
+                Utf8Str parentFormat(pParent->m->strFormat);
+                Utf8Str parentLocation(pParent->m->strLocationFull);
 
                 Assert(that->m->state == MediumState_LockedWrite);
 
@@ -5836,10 +5881,11 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 try
                 {
                     /* Open all hard disk images in the chain. */
-                    List::const_iterator last = imgChain->end();
+                    MediaList::const_iterator last = imgChain->end();
                     last--;
-                    for (List::const_iterator it = imgChain->begin();
-                         it != imgChain->end(); ++ it)
+                    for (MediaList::const_iterator it = imgChain->begin();
+                         it != imgChain->end();
+                         ++it)
                     {
                         /* sanity check */
                         if (it == last)
