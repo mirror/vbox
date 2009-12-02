@@ -182,7 +182,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
     pDrvObj->MajorFunction[IRP_MJ_READ]               = VBoxGuestNotSupportedStub;
     pDrvObj->MajorFunction[IRP_MJ_WRITE]              = VBoxGuestNotSupportedStub;
 #ifdef TARGET_NT4
-    rc = ntCreateDevice(pDrvObj, NULL, pRegPath);
+    rc = ntCreateDevice(pDrvObj, NULL /* pDevObj */, pRegPath);
 #else
     pDrvObj->MajorFunction[IRP_MJ_PNP]                = VBoxGuestPnP;
     pDrvObj->MajorFunction[IRP_MJ_POWER]              = VBoxGuestPower;
@@ -319,7 +319,10 @@ void VBoxGuestUnload(PDRIVER_OBJECT pDrvObj)
 
 #ifdef VBOX_WITH_HGCM
     if (pDevExt->SessionSpinlock != NIL_RTSPINLOCK)
-        RTSpinlockDestroy(pDevExt->SessionSpinlock);
+    {
+        int rc2 = RTSpinlockDestroy(pDevExt->SessionSpinlock);
+        dprintf(("VBoxGuest::VBoxGuestUnload: spinlock destroyed with rc=%Rrc\n", rc2));
+    }
 #endif
     IoDeleteDevice(pDrvObj->DeviceObject);
 #endif

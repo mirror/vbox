@@ -57,12 +57,14 @@ static void                freeDeviceResources(PDRIVER_OBJECT pDrvObj, PDEVICE_O
 NTSTATUS ntCreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath)
 {
     ULONG busNumber, slotNumber;
-//    ULONG i;
     NTSTATUS rc = STATUS_SUCCESS;
 
-    dprintf(("VBoxGuest::ntCreateDevice: entered\n"));
+    dprintf(("VBoxGuest::ntCreateDevice: entered, pDrvObj=%x, pDevObj=%x, pRegPath=%x\n",
+        pDrvObj, pDevObj, pRegPath));
 
-    // find our virtual PCI device
+    /*
+     * Find our virtual PCI device
+     */
     rc = findPCIDevice(&busNumber, (PCI_SLOT_NUMBER*)&slotNumber);
     if (!NT_SUCCESS(rc))
     {
@@ -100,7 +102,7 @@ NTSTATUS ntCreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)deviceObject->DeviceExtension;
     RtlZeroMemory(pDevExt, sizeof(VBOXGUESTDEVEXT));
 
-    if (pDevObj)
+    if (pDevObj) /* pDevObj always is NULL at the moment, so don't attach to the driver stack */
     {
         pDevExt->nextLowerDriver = IoAttachDeviceToDeviceStack(deviceObject, pDevObj);
         if (pDevExt->nextLowerDriver == NULL)
@@ -110,22 +112,26 @@ NTSTATUS ntCreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE
             IoDeleteDevice(deviceObject);
             return STATUS_NO_SUCH_DEVICE;
         }
+        dprintf(("VBoxGuest::ntCreateDevice: device attached to stack\n"));
+    }
 
 #ifdef VBOX_WITH_HGCM
-        int rc2 = RTSpinlockCreate(&pDevExt->SessionSpinlock);
-        if (RT_FAILURE(rc2))
-        {
-            dprintf(("VBoxGuest::ntCreateDevice: RTSpinlockCreate failed\n"));
-            IoDetachDevice(pDevExt->nextLowerDriver);
-            IoDeleteSymbolicLink(&DosName);
-            IoDeleteDevice(deviceObject);
-            return STATUS_DRIVER_UNABLE_TO_LOAD;
-        }
-#endif
+    /* Create global spinlock for all driver sessions */
+    int rc2 = RTSpinlockCreate(&pDevExt->SessionSpinlock);
+    if (RT_FAILURE(rc2))
+    {
+        dprintf(("VBoxGuest::ntCreateDevice: RTSpinlockCreate failed\n"));
+        IoDetachDevice(pDevExt->nextLowerDriver);
+        IoDeleteSymbolicLink(&DosName);
+        IoDeleteDevice(deviceObject);
+        return STATUS_DRIVER_UNABLE_TO_LOAD;
     }
-    // store a reference to ourself
+    dprintf(("VBoxGuest::ntCreateDevice: spinlock created\n"));
+#endif
+
+    /* Store a reference to ourself */
     pDevExt->deviceObject = deviceObject;
-    // store bus and slot number we've queried before
+    /* Store bus and slot number we've queried before */
     pDevExt->busNumber = busNumber;
     pDevExt->slotNumber = slotNumber;
 
