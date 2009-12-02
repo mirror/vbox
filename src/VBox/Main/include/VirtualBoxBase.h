@@ -676,8 +676,8 @@ public:
      * <code>
      * STDMETHODIMP Component::Foo()
      * {
-     *     AutoCaller autoCaller (this);
-     *     CheckComRCReturnRC (autoCaller.rc());
+     *     AutoCaller autoCaller(this);
+     *     if (FAILED(autoCaller.rc())) return autoCaller.rc();
      *     ...
      * </code>
      *
@@ -701,8 +701,8 @@ public:
      * <code>
      * STDMETHODIMP Component::Bar()
      * {
-     *     AutoLimitedCaller autoCaller (this);
-     *     CheckComRCReturnRC (autoCaller.rc());
+     *     AutoLimitedCaller autoCaller(this);
+     *     if (FAILED(autoCaller.rc())) return autoCaller.rc();
      *     ...
      * </code>
      *
@@ -981,7 +981,7 @@ protected:
      * void Component::uninit()
      * {
      *     AutoMayUninitSpan mayUninitSpan (this);
-     *     CheckComRCReturnRC (mayUninitSpan.rc());
+     *     if (FAILED(mayUninitSpan.rc())) return mayUninitSpan.rc();
      *     if (mayUninitSpan.alreadyInProgress())
      *          return S_OK;
      *     ...
@@ -1304,7 +1304,7 @@ protected:
                 MultiResult rc = foo->method1();
 
                 // return on fatal error, but continue on warning or on success
-                CheckComRCReturnRC (rc);
+                if (FAILED(rc)) return rc;
 
                 rc = foo->method2();
                 // no matter what result, stack it and continue

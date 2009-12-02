@@ -1065,7 +1065,7 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox,
                              FALSE /* aCancelable */);
         if(SUCCEEDED(rc))
         {
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
             progress.queryInterfaceTo(aProgress);
 
             /* create a new uninitialized host interface object */
@@ -1119,7 +1119,7 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId,
                             FALSE /* aCancelable */);
         if(SUCCEEDED(rc))
         {
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
             progress.queryInterfaceTo(aProgress);
 
             /* create the networkInterfaceHelperClient() argument */
@@ -1174,7 +1174,7 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
                                     FALSE /* aCancelable */);
                 if(SUCCEEDED(rc))
                 {
-                    CheckComRCReturnRC(rc);
+                    if (FAILED(rc)) return rc;
 //                    progress.queryInterfaceTo(aProgress);
 
                     /* create the networkInterfaceHelperClient() argument */
@@ -1236,7 +1236,7 @@ int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN
                                     FALSE /* aCancelable */);
                 if(SUCCEEDED(rc))
                 {
-                    CheckComRCReturnRC(rc);
+                    if (FAILED(rc)) return rc;
 //                    progress.queryInterfaceTo(aProgress);
 
                     /* create the networkInterfaceHelperClient() argument */
@@ -1298,7 +1298,7 @@ int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
                                     FALSE /* aCancelable */);
                 if(SUCCEEDED(rc))
                 {
-                    CheckComRCReturnRC(rc);
+                    if (FAILED(rc)) return rc;
 //                    progress.queryInterfaceTo(aProgress);
 
                     /* create the networkInterfaceHelperClient() argument */
@@ -1358,7 +1358,7 @@ int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
                                     FALSE /* aCancelable */);
                 if(SUCCEEDED(rc))
                 {
-                    CheckComRCReturnRC(rc);
+                    if (FAILED(rc)) return rc;
 //                    progress.queryInterfaceTo(aProgress);
 
                     /* create the networkInterfaceHelperClient() argument */

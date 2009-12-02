@@ -352,7 +352,7 @@ public:
      *      if (FAILED(autoCaller.rc())) return autoCaller.rc();
      *
      *      Machine::AutoStateDependency<MutableStateDep> adep(mParent);
-     *      CheckComRCReturnRC(stateDep.rc());
+     *      if (FAILED(stateDep.rc())) return stateDep.rc();
      *      ...
      *      // code that depends on the particular machine state
      *      ...
