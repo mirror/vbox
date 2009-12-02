@@ -243,7 +243,7 @@ STDMETHODIMP StorageController::COMGETTER(Name) (BSTR *aName)
     CheckComArgOutPointerValid(aName);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mName is constant during life time, no need to lock */
     mData.data()->strName.cloneTo(aName);
@@ -256,7 +256,7 @@ STDMETHODIMP StorageController::COMGETTER(Bus) (StorageBus_T *aBus)
     CheckComArgOutPointerValid(aBus);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -270,7 +270,7 @@ STDMETHODIMP StorageController::COMGETTER(ControllerType) (StorageControllerType
     CheckComArgOutPointerValid(aControllerType);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -282,7 +282,7 @@ STDMETHODIMP StorageController::COMGETTER(ControllerType) (StorageControllerType
 STDMETHODIMP StorageController::COMSETTER(ControllerType) (StorageControllerType_T aControllerType)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -336,7 +336,7 @@ STDMETHODIMP StorageController::COMGETTER(MaxDevicesPerPortCount) (ULONG *aMaxDe
     CheckComArgOutPointerValid(aMaxDevices);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -359,7 +359,7 @@ STDMETHODIMP StorageController::COMGETTER(MinPortCount) (ULONG *aMinPortCount)
     CheckComArgOutPointerValid(aMinPortCount);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -382,7 +382,7 @@ STDMETHODIMP StorageController::COMGETTER(MaxPortCount) (ULONG *aMaxPortCount)
     CheckComArgOutPointerValid(aMaxPortCount);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -406,7 +406,7 @@ STDMETHODIMP StorageController::COMGETTER(PortCount) (ULONG *aPortCount)
     CheckComArgOutPointerValid(aPortCount);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -473,11 +473,11 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
     }
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -498,7 +498,7 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
 STDMETHODIMP StorageController::COMGETTER(Instance) (ULONG *aInstance)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* The machine doesn't need to be mutable. */
 
@@ -512,7 +512,7 @@ STDMETHODIMP StorageController::COMGETTER(Instance) (ULONG *aInstance)
 STDMETHODIMP StorageController::COMSETTER(Instance) (ULONG aInstance)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* The machine doesn't need to be mutable. */
 
@@ -531,7 +531,7 @@ STDMETHODIMP StorageController::GetIDEEmulationPort(LONG DevicePosition, LONG *a
     CheckComArgOutPointerValid(aPortNumber);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -563,11 +563,11 @@ STDMETHODIMP StorageController::GetIDEEmulationPort(LONG DevicePosition, LONG *a
 STDMETHODIMP StorageController::SetIDEEmulationPort(LONG DevicePosition, LONG aPortNumber)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
     AutoWriteLock alock(this);
 
     if (mData->mStorageControllerType != StorageControllerType_IntelAhci)

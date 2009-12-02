@@ -818,7 +818,7 @@ HRESULT Appliance::readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &a
     task->progress = aProgress;
 
     rc = task->startThread();
-    CheckComRCThrowRC(rc);
+    if (FAILED(rc)) throw rc;
 
     /* Don't destruct on success */
     task.release();
@@ -850,7 +850,7 @@ HRESULT Appliance::importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
     task->progress = aProgress;
 
     rc = task->startThread();
-    CheckComRCThrowRC(rc);
+    if (FAILED(rc)) throw rc;
 
     /* Don't destruct on success */
     task.release();
@@ -920,7 +920,7 @@ int Appliance::readFS(TaskImportOVF *pTask)
     LogFlowFunc(("Appliance %p\n", this));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock appLock(this);
 
@@ -963,7 +963,7 @@ int Appliance::readS3(TaskImportOVF *pTask)
     LogFlowFunc(("Appliance %p\n", this));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock appLock(this);
 
@@ -1087,7 +1087,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
     LogFlowFunc(("Appliance %p\n", this));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock appLock(this);
 
@@ -1102,7 +1102,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
     ComPtr<ISession> session;
     bool fSessionOpen = false;
     rc = session.createInprocObject(CLSID_Session);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     const OVFReader &reader = *m->pReader;
     // this is safe to access because this thread only gets started
@@ -1975,7 +1975,7 @@ int Appliance::importS3(TaskImportOVF *pTask)
     LogFlowFunc(("Appliance %p\n", this));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock appLock(this);
 
@@ -2178,7 +2178,7 @@ HRESULT Appliance::writeImpl(int aFormat, const LocationInfo &aLocInfo, ComObjPt
         task->progress = aProgress;
 
         rc = task->startThread();
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* Don't destruct on success */
         task.release();
@@ -2239,7 +2239,7 @@ int Appliance::writeFS(TaskExportOVF *pTask)
     LogFlowFunc(("Appliance %p\n", this));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock appLock(this);
 
@@ -3081,7 +3081,7 @@ int Appliance::writeS3(TaskExportOVF *pTask)
     LogFlowFunc(("Appliance %p\n", this));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = S_OK;
 
@@ -3258,7 +3258,7 @@ STDMETHODIMP Appliance::COMGETTER(Path)(BSTR *aPath)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -3278,7 +3278,7 @@ STDMETHODIMP Appliance::COMGETTER(Disks)(ComSafeArrayOut(BSTR, aDisks))
     CheckComArgOutSafeArrayPointerValid(aDisks);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -3336,7 +3336,7 @@ STDMETHODIMP Appliance::COMGETTER(VirtualSystemDescriptions)(ComSafeArrayOut(IVi
     CheckComArgOutSafeArrayPointerValid(aVirtualSystemDescriptions);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -3357,7 +3357,7 @@ STDMETHODIMP Appliance::Read(IN_BSTR path, IProgress **aProgress)
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -3403,7 +3403,7 @@ STDMETHODIMP Appliance::Interpret()
     //  - don't use COM methods but the methods directly (faster, but needs appropriate locking of that objects itself (s. HardDisk))
     //  - Appropriate handle errors like not supported file formats
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock(this);
 
@@ -3415,10 +3415,10 @@ STDMETHODIMP Appliance::Interpret()
     /* We need the default path for storing disk images */
     ComPtr<ISystemProperties> systemProps;
     rc = mVirtualBox->COMGETTER(SystemProperties)(systemProps.asOutParam());
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
     Bstr bstrDefaultHardDiskLocation;
     rc = systemProps->COMGETTER(DefaultHardDiskFolder)(bstrDefaultHardDiskLocation.asOutParam());
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (!m->pReader)
         return setError(E_FAIL,
@@ -3437,9 +3437,9 @@ STDMETHODIMP Appliance::Interpret()
 
             ComObjPtr<VirtualSystemDescription> pNewDesc;
             rc = pNewDesc.createObject();
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
             rc = pNewDesc->init();
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
 
             /* Guest OS type */
             Utf8Str strOsTypeVBox,
@@ -3514,7 +3514,7 @@ STDMETHODIMP Appliance::Interpret()
             /* Now that we know the OS type, get our internal defaults based on that. */
             ComPtr<IGuestOSType> pGuestOSType;
             rc = mVirtualBox->GetGuestOSType(Bstr(strOsTypeVBox), pGuestOSType.asOutParam());
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
 
             /* CPU count */
             ULONG cpuCountVBox = vsysThis.cCPUs;
@@ -3548,7 +3548,7 @@ STDMETHODIMP Appliance::Interpret()
                 /* If the RAM of the OVF is zero, use our predefined values */
                 ULONG memSizeVBox2;
                 rc = pGuestOSType->COMGETTER(RecommendedRAM)(&memSizeVBox2);
-                CheckComRCThrowRC(rc);
+                if (FAILED(rc)) throw rc;
                 /* VBox stores that in MByte */
                 ullMemSizeVBox = (uint64_t)memSizeVBox2;
             }
@@ -3584,7 +3584,7 @@ STDMETHODIMP Appliance::Interpret()
                 /* Get the default network adapter type for the selected guest OS */
                 NetworkAdapterType_T defaultAdapterVBox = NetworkAdapterType_Am79C970A;
                 rc = pGuestOSType->COMGETTER(AdapterType)(&defaultAdapterVBox);
-                CheckComRCThrowRC(rc);
+                if (FAILED(rc)) throw rc;
 
                 EthernetAdaptersList::const_iterator itEA;
                 /* Iterate through all abstract networks. We support 8 network
@@ -3850,7 +3850,7 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock(this);
 
@@ -3881,7 +3881,7 @@ STDMETHODIMP Appliance::CreateVFSExplorer(IN_BSTR aURI, IVFSExplorer **aExplorer
     CheckComArgOutPointerValid(aExplorer);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock(this);
 
@@ -3915,7 +3915,7 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, IN_BSTR path, IProgress **aProgres
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock(this);
 
@@ -3965,7 +3965,7 @@ STDMETHODIMP Appliance::GetWarnings(ComSafeArrayOut(BSTR, aWarnings))
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -4039,7 +4039,7 @@ STDMETHODIMP VirtualSystemDescription::COMGETTER(Count)(ULONG *aCount)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -4066,7 +4066,7 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -4128,7 +4128,7 @@ STDMETHODIMP VirtualSystemDescription::GetDescriptionByType(VirtualSystemDescrip
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -4184,7 +4184,7 @@ STDMETHODIMP VirtualSystemDescription::GetValuesByType(VirtualSystemDescriptionT
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -4233,7 +4233,7 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnab
     CheckComArgSafeArrayNotNull(argExtraConfigValues);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -4279,7 +4279,7 @@ STDMETHODIMP VirtualSystemDescription::AddDescription(VirtualSystemDescriptionTy
     CheckComArgNotNull(aExtraConfigValue);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -4391,7 +4391,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock1(this);
 
@@ -4446,9 +4446,9 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 
         // create a new virtual system
         rc = pNewDesc.createObject();
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
         rc = pNewDesc->init();
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* Guest OS type */
         Utf8Str strOsTypeVBox(bstrGuestOSType);
@@ -4823,7 +4823,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         // finally, add the virtual system to the appliance
         Appliance *pAppliance = static_cast<Appliance*>(aAppliance);
         AutoCaller autoCaller1(pAppliance);
-        CheckComRCReturnRC(autoCaller1.rc());
+        if (FAILED(autoCaller1.rc())) return autoCaller1.rc();
 
         /* We return the new description to the caller */
         ComPtr<IVirtualSystemDescription> copy(pNewDesc);

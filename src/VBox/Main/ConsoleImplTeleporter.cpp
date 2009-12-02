@@ -609,7 +609,7 @@ HRESULT
 Console::teleporterSrc(TeleporterStateSrc *pState)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /*
      * Wait for Console::Teleport to change the state.
@@ -905,7 +905,7 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, ULONG aMaxD
     CheckComArgExprMsg(aMaxDowntime, aMaxDowntime > 0, ("is %u", aMaxDowntime));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock autoLock(this);
     LogFlowThisFunc(("mMachineState=%d\n", mMachineState));
@@ -931,9 +931,9 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, ULONG aMaxD
 
     ComObjPtr<Progress> ptrProgress;
     HRESULT hrc = ptrProgress.createObject();
-    CheckComRCReturnRC(hrc);
+    if (FAILED(hrc)) return hrc;
     hrc = ptrProgress->init(static_cast<IConsole *>(this), Bstr(tr("Teleporter")), TRUE /*aCancelable*/);
-    CheckComRCReturnRC(hrc);
+    if (FAILED(hrc)) return hrc;
 
     TeleporterStateSrc *pState = new TeleporterStateSrc(this, mpVM, ptrProgress, mMachineState);
     pState->mstrPassword    = aPassword;

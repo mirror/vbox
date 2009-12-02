@@ -150,7 +150,7 @@ STDMETHODIMP Session::COMGETTER(State) (SessionState_T *aState)
     CheckComArgOutPointerValid(aState);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -164,7 +164,7 @@ STDMETHODIMP Session::COMGETTER(Type) (SessionType_T *aType)
     CheckComArgOutPointerValid(aType);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -179,7 +179,7 @@ STDMETHODIMP Session::COMGETTER(Machine) (IMachine **aMachine)
     CheckComArgOutPointerValid(aMachine);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -201,7 +201,7 @@ STDMETHODIMP Session::COMGETTER(Console) (IConsole **aConsole)
     CheckComArgOutPointerValid(aConsole);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -226,7 +226,7 @@ STDMETHODIMP Session::Close()
     LogFlowThisFunc(("mState=%d, mType=%d\n", mState, mType));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* close() needs write lock */
     AutoWriteLock alock(this);
@@ -332,7 +332,7 @@ STDMETHODIMP Session::AssignMachine (IMachine *aMachine)
        rc = aMachine->COMGETTER(Parent) (mVirtualBox.asOutParam());
 
     if (SUCCEEDED(rc))
-    {        
+    {
         mType = SessionType_Direct;
         mState = SessionState_Open;
     }

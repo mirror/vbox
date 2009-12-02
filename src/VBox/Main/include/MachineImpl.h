@@ -349,7 +349,7 @@ public:
      *
      *  @code
      *      AutoCaller autoCaller(this);
-     *      CheckComRCReturnRC(autoCaller.rc());
+     *      if (FAILED(autoCaller.rc())) return autoCaller.rc();
      *
      *      Machine::AutoStateDependency<MutableStateDep> adep(mParent);
      *      CheckComRCReturnRC(stateDep.rc());

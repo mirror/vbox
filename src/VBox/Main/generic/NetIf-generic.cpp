@@ -241,7 +241,6 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId,
                             FALSE /* aCancelable */);
         if(SUCCEEDED(rc))
         {
-            CheckComRCReturnRC(rc);
             progress.queryInterfaceTo(aProgress);
             rc = NetIfAdpCtl(Utf8Str(ifname).c_str(), "remove", NULL, NULL);
             if (RT_FAILURE(rc))

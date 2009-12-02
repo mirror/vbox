@@ -204,7 +204,7 @@ HRESULT SerialPort::loadSettings(const settings::SerialPort &data)
     /* pipe/device path (optional, defaults to null) */
     Bstr path(data.strPath);
     HRESULT rc = checkSetPath(path);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
     mData->mPath = path;
 
     /* server mode (optional, defaults to false) */
@@ -347,7 +347,7 @@ STDMETHODIMP SerialPort::COMGETTER(Enabled) (BOOL *aEnabled)
     CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -361,11 +361,11 @@ STDMETHODIMP SerialPort::COMSETTER(Enabled) (BOOL aEnabled)
     LogFlowThisFunc(("aEnabled=%RTbool\n", aEnabled));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -388,7 +388,7 @@ STDMETHODIMP SerialPort::COMGETTER(HostMode) (PortMode_T *aHostMode)
     CheckComArgOutPointerValid(aHostMode);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -400,11 +400,11 @@ STDMETHODIMP SerialPort::COMGETTER(HostMode) (PortMode_T *aHostMode)
 STDMETHODIMP SerialPort::COMSETTER(HostMode) (PortMode_T aHostMode)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -462,7 +462,7 @@ STDMETHODIMP SerialPort::COMGETTER(Slot) (ULONG *aSlot)
     CheckComArgOutPointerValid(aSlot);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -476,7 +476,7 @@ STDMETHODIMP SerialPort::COMGETTER(IRQ) (ULONG *aIRQ)
     CheckComArgOutPointerValid(aIRQ);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -496,11 +496,11 @@ STDMETHODIMP SerialPort::COMSETTER(IRQ)(ULONG aIRQ)
             mData->mSlot, aIRQ, 255);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -530,7 +530,7 @@ STDMETHODIMP SerialPort::COMGETTER(IOBase) (ULONG *aIOBase)
     CheckComArgOutPointerValid(aIOBase);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -550,11 +550,11 @@ STDMETHODIMP SerialPort::COMSETTER(IOBase)(ULONG aIOBase)
             mData->mSlot, aIOBase, 0, 0xFFFF);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -584,7 +584,7 @@ STDMETHODIMP SerialPort::COMGETTER(Path) (BSTR *aPath)
     CheckComArgOutPointerValid(aPath);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -615,11 +615,11 @@ HRESULT SerialPort::checkSetPath (CBSTR aPath)
 STDMETHODIMP SerialPort::COMSETTER(Path) (IN_BSTR aPath)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -630,7 +630,7 @@ STDMETHODIMP SerialPort::COMSETTER(Path) (IN_BSTR aPath)
     if (mData->mPath != aPath)
     {
         HRESULT rc = checkSetPath (aPath);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         mData.backup();
         mData->mPath = aPath;
@@ -649,7 +649,7 @@ STDMETHODIMP SerialPort::COMGETTER(Server) (BOOL *aServer)
     CheckComArgOutPointerValid(aServer);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -661,11 +661,11 @@ STDMETHODIMP SerialPort::COMGETTER(Server) (BOOL *aServer)
 STDMETHODIMP SerialPort::COMSETTER(Server) (BOOL aServer)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 

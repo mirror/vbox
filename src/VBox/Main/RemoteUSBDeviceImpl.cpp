@@ -136,7 +136,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Id) (BSTR *aId)
     CheckComArgOutPointerValid(aId);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     Bstr(mData.id).cloneTo(aId);
@@ -149,7 +149,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(VendorId) (USHORT *aVendorId)
     CheckComArgOutPointerValid(aVendorId);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     *aVendorId = mData.vendorId;
@@ -162,7 +162,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(ProductId) (USHORT *aProductId)
     CheckComArgOutPointerValid(aProductId);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     *aProductId = mData.productId;
@@ -175,7 +175,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Revision) (USHORT *aRevision)
     CheckComArgOutPointerValid(aRevision);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     *aRevision = mData.revision;
@@ -188,7 +188,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Manufacturer) (BSTR *aManufacturer)
     CheckComArgOutPointerValid(aManufacturer);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     mData.manufacturer.cloneTo(aManufacturer);
@@ -201,7 +201,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Product) (BSTR *aProduct)
     CheckComArgOutPointerValid(aProduct);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     mData.product.cloneTo(aProduct);
@@ -214,7 +214,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(SerialNumber) (BSTR *aSerialNumber)
     CheckComArgOutPointerValid(aSerialNumber);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     mData.serialNumber.cloneTo(aSerialNumber);
@@ -227,7 +227,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Address) (BSTR *aAddress)
     CheckComArgOutPointerValid(aAddress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     mData.address.cloneTo(aAddress);
@@ -240,7 +240,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Port) (USHORT *aPort)
     CheckComArgOutPointerValid(aPort);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     *aPort = mData.port;
@@ -253,7 +253,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Version) (USHORT *aVersion)
     CheckComArgOutPointerValid(aVersion);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     *aVersion = mData.version;
@@ -266,7 +266,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(PortVersion) (USHORT *aPortVersion)
     CheckComArgOutPointerValid(aPortVersion);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     *aPortVersion = mData.portVersion;
@@ -279,7 +279,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Remote) (BOOL *aRemote)
     CheckComArgOutPointerValid(aRemote);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* RemoteUSBDevice is always remote. */
     /* this is const, no need to lock */
@@ -296,7 +296,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(State) (USBDeviceState_T *aState)
     CheckComArgOutPointerValid(aState);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 

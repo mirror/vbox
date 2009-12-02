@@ -146,7 +146,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
     BOOL accessible = FALSE;
     CHECK_ERROR(machine, COMGETTER(Accessible)(&accessible));
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     Bstr uuid;
     rc = machine->COMGETTER(Id)(uuid.asOutParam());

@@ -764,7 +764,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
             }
 
             ULONG port = *(uint32_t *)pvBuffer;
-            
+
             server->mVRDPBindPort = port;
 
             rc = VINF_SUCCESS;
@@ -2171,11 +2171,11 @@ void RemoteDisplayInfo::uninit()
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
                                                                           \
-        AutoCaller autoCaller(this);                                     \
-        CheckComRCReturnRC(autoCaller.rc());                             \
+        AutoCaller autoCaller(this);                                      \
+        if (FAILED(autoCaller.rc())) return autoCaller.rc();              \
                                                                           \
         /* todo: Not sure if a AutoReadLock would be sufficient. */       \
-        AutoWriteLock alock(this);                                       \
+        AutoWriteLock alock(this);                                        \
                                                                           \
         uint32_t value;                                                   \
         uint32_t cbOut = 0;                                               \
@@ -2194,11 +2194,11 @@ void RemoteDisplayInfo::uninit()
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
                                                                           \
-        AutoCaller autoCaller(this);                                     \
-        CheckComRCReturnRC(autoCaller.rc());                             \
+        AutoCaller autoCaller(this);                                      \
+        if (FAILED(autoCaller.rc())) return autoCaller.rc();              \
                                                                           \
         /* todo: Not sure if a AutoReadLock would be sufficient. */       \
-        AutoWriteLock alock(this);                                       \
+        AutoWriteLock alock(this);                                        \
                                                                           \
         _aType value;                                                     \
         uint32_t cbOut = 0;                                               \
@@ -2217,11 +2217,11 @@ void RemoteDisplayInfo::uninit()
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
                                                                           \
-        AutoCaller autoCaller(this);                                     \
-        CheckComRCReturnRC(autoCaller.rc());                             \
+        AutoCaller autoCaller(this);                                      \
+        if (FAILED(autoCaller.rc())) return autoCaller.rc();              \
                                                                           \
         /* todo: Not sure if a AutoReadLock would be sufficient. */       \
-        AutoWriteLock alock(this);                                       \
+        AutoWriteLock alock(this);                                        \
                                                                           \
         uint32_t cbOut = 0;                                               \
                                                                           \
@@ -2231,7 +2231,7 @@ void RemoteDisplayInfo::uninit()
         if (cbOut == 0)                                                   \
         {                                                                 \
             Bstr str("");                                                 \
-            str.cloneTo(a##_aName);                                      \
+            str.cloneTo(a##_aName);                                       \
             return S_OK;                                                  \
         }                                                                 \
                                                                           \
@@ -2250,7 +2250,7 @@ void RemoteDisplayInfo::uninit()
                                                                           \
         Bstr str(pchBuffer);                                              \
                                                                           \
-        str.cloneTo(a##_aName);                                          \
+        str.cloneTo(a##_aName);                                           \
                                                                           \
         RTMemTmpFree (pchBuffer);                                         \
                                                                           \

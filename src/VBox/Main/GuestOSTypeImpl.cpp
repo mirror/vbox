@@ -130,7 +130,7 @@ STDMETHODIMP GuestOSType::COMGETTER(FamilyId) (BSTR *aFamilyId)
     CheckComArgOutPointerValid(aFamilyId);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mFamilyID is constant during life time, no need to lock */
     mFamilyID.cloneTo(aFamilyId);
@@ -143,7 +143,7 @@ STDMETHODIMP GuestOSType::COMGETTER(FamilyDescription) (BSTR *aFamilyDescription
     CheckComArgOutPointerValid(aFamilyDescription);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mFamilyDescription is constant during life time, no need to lock */
     mFamilyDescription.cloneTo(aFamilyDescription);
@@ -156,7 +156,7 @@ STDMETHODIMP GuestOSType::COMGETTER(Id) (BSTR *aId)
     CheckComArgOutPointerValid(aId);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mID is constant during life time, no need to lock */
     mID.cloneTo(aId);
@@ -169,7 +169,7 @@ STDMETHODIMP GuestOSType::COMGETTER(Description) (BSTR *aDescription)
     CheckComArgOutPointerValid(aDescription);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mDescription is constant during life time, no need to lock */
     mDescription.cloneTo(aDescription);
@@ -182,7 +182,7 @@ STDMETHODIMP GuestOSType::COMGETTER(Is64Bit) (BOOL *aIs64Bit)
     CheckComArgOutPointerValid(aIs64Bit);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mIs64Bit is constant during life time, no need to lock */
     *aIs64Bit = !!(mOSHint & VBOXOSHINT_64BIT);
@@ -195,7 +195,7 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedIOAPIC) (BOOL *aRecommendedIOAPIC
     CheckComArgOutPointerValid(aRecommendedIOAPIC);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mRecommendedIOAPIC is constant during life time, no need to lock */
     *aRecommendedIOAPIC = !!(mOSHint & VBOXOSHINT_IOAPIC);
@@ -208,7 +208,7 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedVirtEx) (BOOL *aRecommendedVirtEx
     CheckComArgOutPointerValid(aRecommendedVirtEx);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mRecommendedVirtEx is constant during life time, no need to lock */
     *aRecommendedVirtEx = !!(mOSHint & VBOXOSHINT_HWVIRTEX);
@@ -221,7 +221,7 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedRAM) (ULONG *aRAMSize)
     CheckComArgOutPointerValid(aRAMSize);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mRAMSize is constant during life time, no need to lock */
     *aRAMSize = mRAMSize;
@@ -234,7 +234,7 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedVRAM) (ULONG *aVRAMSize)
     CheckComArgOutPointerValid(aVRAMSize);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mVRAMSize is constant during life time, no need to lock */
     *aVRAMSize = mVRAMSize;
@@ -247,7 +247,7 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedHDD) (ULONG *aHDDSize)
     CheckComArgOutPointerValid(aHDDSize);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mHDDSize is constant during life time, no need to lock */
     *aHDDSize = mHDDSize;
@@ -260,7 +260,7 @@ STDMETHODIMP GuestOSType::COMGETTER(AdapterType) (NetworkAdapterType_T *aNetwork
     CheckComArgOutPointerValid(aNetworkAdapterType);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mNetworkAdapterType is constant during life time, no need to lock */
     *aNetworkAdapterType = mNetworkAdapterType;
