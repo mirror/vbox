@@ -1811,7 +1811,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         // detach the current-state diffs that we detected above and build a list of
         // images to delete _after_ saveSettings()
 
-        std::list< ComObjPtr<Medium> > llDiffsToDelete;
+        MediaList llDiffsToDelete;
 
         for (std::list< ComObjPtr<MediumAttachment> >::iterator it = llDiffAttachmentsToDelete.begin();
              it != llDiffAttachmentsToDelete.end();
@@ -1846,7 +1846,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 
         // from here on we cannot roll back on failure any more
 
-        for (std::list< ComObjPtr<Medium> >::iterator it = llDiffsToDelete.begin();
+        for (MediaList::iterator it = llDiffsToDelete.begin();
              it != llDiffsToDelete.end();
              ++it)
         {

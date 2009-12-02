@@ -90,9 +90,6 @@ typedef std::list< ComObjPtr<GuestOSType> > GuestOSTypeList;
 
 typedef std::map<Guid, ComPtr<IProgress> > ProgressMap;
 
-typedef std::list <ComObjPtr<Medium> > HardDiskList;
-typedef std::list <ComObjPtr<Medium> > DVDImageList;
-typedef std::list <ComObjPtr<Medium> > FloppyImageList;
 typedef std::list <ComObjPtr<SharedFolder> > SharedFolderList;
 typedef std::list <ComObjPtr<DHCPServer> > DHCPServerList;
 
@@ -205,9 +202,9 @@ struct VirtualBox::Data
 
     ProgressMap                         mapProgressOperations;
 
-    HardDiskList                        llHardDisks;
-    DVDImageList                        llDVDImages;
-    FloppyImageList                     llFloppyImages;
+    MediaList                           llHardDisks,
+                                        llDVDImages,
+                                        llFloppyImages;
     SharedFolderList                    llSharedFolders;
     DHCPServerList                      llDHCPServers;
 
@@ -2008,14 +2005,14 @@ STDMETHODIMP VirtualBox::WaitForPropertyChange(IN_BSTR /* aWhat */,
 #ifdef DEBUG
 void VirtualBox::dumpAllBackRefs()
 {
-    for (HardDiskList::const_iterator mt = m->llHardDisks.begin();
+    for (MediaList::const_iterator mt = m->llHardDisks.begin();
          mt != m->llHardDisks.end();
          ++mt)
     {
         ComObjPtr<Medium> pMedium = *mt;
         pMedium->dumpBackRefs();
     }
-    for (DVDImageList::const_iterator mt = m->llDVDImages.begin();
+    for (MediaList::const_iterator mt = m->llDVDImages.begin();
          mt != m->llDVDImages.end();
          ++mt)
     {
@@ -2893,7 +2890,7 @@ HRESULT VirtualBox::findDVDImage(const Guid *aId,
 
     bool found = false;
 
-    for (DVDImageList::const_iterator it = m->llDVDImages.begin();
+    for (MediaList::const_iterator it = m->llDVDImages.begin();
          it != m->llDVDImages.end();
          ++ it)
     {
@@ -2969,7 +2966,7 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId, CBSTR aLocation,
 
     bool found = false;
 
-    for (FloppyImageList::const_iterator it = m->llFloppyImages.begin();
+    for (MediaList::const_iterator it = m->llFloppyImages.begin();
          it != m->llFloppyImages.end();
          ++ it)
     {
@@ -3259,7 +3256,7 @@ HRESULT VirtualBox::saveSettings()
 
         // hard disks
         m->pMainConfigFile->llHardDisks.clear();
-        for (HardDiskList::const_iterator it = m->llHardDisks.begin();
+        for (MediaList::const_iterator it = m->llHardDisks.begin();
              it != m->llHardDisks.end();
              ++it)
         {
@@ -3271,7 +3268,7 @@ HRESULT VirtualBox::saveSettings()
 
         /* CD/DVD images */
         m->pMainConfigFile->llDvdImages.clear();
-        for (DVDImageList::const_iterator it = m->llDVDImages.begin();
+        for (MediaList::const_iterator it = m->llDVDImages.begin();
              it != m->llDVDImages.end();
              ++it)
         {
@@ -3283,7 +3280,7 @@ HRESULT VirtualBox::saveSettings()
 
         /* floppy images */
         m->pMainConfigFile->llFloppyImages.clear();
-        for (FloppyImageList::const_iterator it = m->llFloppyImages.begin();
+        for (MediaList::const_iterator it = m->llFloppyImages.begin();
              it != m->llFloppyImages.end();
              ++it)
         {
@@ -3769,27 +3766,27 @@ HRESULT VirtualBox::updateSettings (const char *aOldPath, const char *aNewPath)
     AutoWriteLock alock(this);
 
     /* check DVD paths */
-    for (DVDImageList::iterator it = m->llDVDImages.begin();
+    for (MediaList::iterator it = m->llDVDImages.begin();
          it != m->llDVDImages.end();
          ++ it)
     {
-        (*it)->updatePath (aOldPath, aNewPath);
+        (*it)->updatePath(aOldPath, aNewPath);
     }
 
     /* check Floppy paths */
-    for (FloppyImageList::iterator it = m->llFloppyImages.begin();
+    for (MediaList::iterator it = m->llFloppyImages.begin();
          it != m->llFloppyImages  .end();
          ++ it)
     {
-        (*it)->updatePath (aOldPath, aNewPath);
+        (*it)->updatePath(aOldPath, aNewPath);
     }
 
     /* check HardDisk paths */
-    for (HardDiskList::const_iterator it = m->llHardDisks.begin();
+    for (MediaList::const_iterator it = m->llHardDisks.begin();
          it != m->llHardDisks.end();
          ++ it)
     {
-        (*it)->updatePaths (aOldPath, aNewPath);
+        (*it)->updatePaths(aOldPath, aNewPath);
     }
 
     HRESULT rc = saveSettings();

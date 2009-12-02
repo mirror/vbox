@@ -389,7 +389,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives)(ComSafeArrayOut(IMedium *, aDrives))
 
     AutoWriteLock alock(this);
 
-    std::list< ComObjPtr<Medium> > list;
+    MediaList list;
     HRESULT rc = S_OK;
     try
     {
@@ -513,7 +513,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives)(ComSafeArrayOut(IMedium *, aDrives))
 
     AutoWriteLock alock(this);
 
-    std::list<ComObjPtr<Medium> > list;
+    MediaList list;
     HRESULT rc = S_OK;
 
     try

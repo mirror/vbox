@@ -7284,8 +7284,7 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
 
     HRESULT rc = S_OK;
 
-    typedef std::list< ComObjPtr<Medium> > LockedMedia;
-    LockedMedia lockedMedia;
+    MediaList lockedMedia;
 
     try
     {
@@ -7416,7 +7415,7 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
     {
         ErrorInfoKeeper eik;
 
-        for (LockedMedia::const_iterator it = lockedMedia.begin();
+        for (MediaList::const_iterator it = lockedMedia.begin();
              it != lockedMedia.end();
              ++it)
         {
