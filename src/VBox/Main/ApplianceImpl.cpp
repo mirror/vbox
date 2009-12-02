@@ -4490,36 +4490,67 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         int32_t lSATAControllerIndex = 0;
         int32_t lSCSIControllerIndex = 0;
 
-//     <const name="HardDiskControllerIDE" value="6" />
-        ComPtr<IStorageController> pController;
-        rc = GetStorageControllerByName(Bstr("IDE Controller"), pController.asOutParam());
+        /* Fetch all available storage controllers */
+        com::SafeIfaceArray<IStorageController> nwControllers;
+        rc = COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(nwControllers));
         if (FAILED(rc)) throw rc;
-        Utf8Str strVbox;
-        StorageControllerType_T ctlr;
-        rc = pController->COMGETTER(ControllerType)(&ctlr);
-        if (FAILED(rc)) throw rc;
-        switch(ctlr)
+
+        ComPtr<IStorageController> pIDEController;
+#ifdef VBOX_WITH_AHCI
+        ComPtr<IStorageController> pSATAController;
+#endif /* VBOX_WITH_AHCI */
+#ifdef VBOX_WITH_LSILOGIC
+        ComPtr<IStorageController> pSCSIController;
+#endif /* VBOX_WITH_LSILOGIC */
+        for (size_t j = 0; j < nwControllers.size(); ++j)
         {
-            case StorageControllerType_PIIX3: strVbox = "PIIX3"; break;
-            case StorageControllerType_PIIX4: strVbox = "PIIX4"; break;
-            case StorageControllerType_ICH6: strVbox = "ICH6"; break;
+            StorageBus_T eType;
+            rc = nwControllers[j]->COMGETTER(Bus)(&eType);
+            if (FAILED(rc)) throw rc;
+            if (   eType == StorageBus_IDE
+                && pIDEController.isNull())
+                pIDEController = nwControllers[j];
+#ifdef VBOX_WITH_AHCI
+            else if (   eType == StorageBus_SATA
+                     && pSATAController.isNull())
+                pSATAController = nwControllers[j];
+#endif /* VBOX_WITH_AHCI */
+#ifdef VBOX_WITH_LSILOGIC
+            else if (   eType == StorageBus_SCSI
+                     && pSATAController.isNull())
+                pSCSIController = nwControllers[j];
+#endif /* VBOX_WITH_LSILOGIC */
         }
 
-        if (strVbox.length())
+//     <const name="HardDiskControllerIDE" value="6" />
+        if (!pIDEController.isNull())
         {
-            lIDEControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
-            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
-                               Utf8StrFmt("%d", lIDEControllerIndex),
-                               strVbox,
-                               strVbox);
+            Utf8Str strVbox;
+            StorageControllerType_T ctlr;
+            rc = pIDEController->COMGETTER(ControllerType)(&ctlr);
+            if (FAILED(rc)) throw rc;
+            switch(ctlr)
+            {
+                case StorageControllerType_PIIX3: strVbox = "PIIX3"; break;
+                case StorageControllerType_PIIX4: strVbox = "PIIX4"; break;
+                case StorageControllerType_ICH6: strVbox = "ICH6"; break;
+            }
+
+            if (strVbox.length())
+            {
+                lIDEControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
+                pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
+                                   Utf8StrFmt("%d", lIDEControllerIndex),
+                                   strVbox,
+                                   strVbox);
+            }
         }
 
 #ifdef VBOX_WITH_AHCI
 //     <const name="HardDiskControllerSATA" value="7" />
-        rc = GetStorageControllerByName(Bstr("SATA Controller"), pController.asOutParam());
-        if (SUCCEEDED(rc))
+        if (!pSATAController.isNull())
         {
-            strVbox = "AHCI";
+            Utf8Str strVbox = "AHCI";
             lSATAControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
             pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
                                Utf8StrFmt("%d", lSATAControllerIndex),
@@ -4530,13 +4561,13 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 
 #ifdef VBOX_WITH_LSILOGIC
 //     <const name="HardDiskControllerSCSI" value="8" />
-        rc = GetStorageControllerByName(Bstr("SCSI Controller"), pController.asOutParam());
-        if (SUCCEEDED(rc))
+        if (!pSCSIController.isNull())
         {
-            rc = pController->COMGETTER(ControllerType)(&ctlr);
+            StorageControllerType_T ctlr;
+            rc = pSCSIController->COMGETTER(ControllerType)(&ctlr);
             if (SUCCEEDED(rc))
             {
-                strVbox = "LsiLogic";       // the default in VBox
+                Utf8Str strVbox = "LsiLogic";       // the default in VBox
                 switch(ctlr)
                 {
                     case StorageControllerType_LsiLogic: strVbox = "LsiLogic"; break;
