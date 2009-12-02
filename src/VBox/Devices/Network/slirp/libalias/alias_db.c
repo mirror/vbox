@@ -810,7 +810,8 @@ GetSocket(struct libalias *la, u_short port_net, int *sockfd, int link_type)
 #endif
         return (1);
     } else {
-        close(sock);
+        if (sock > 0)
+            closesocket(sock);
         return (0);
     }
 }
