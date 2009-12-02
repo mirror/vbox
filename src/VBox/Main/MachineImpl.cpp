@@ -2624,7 +2624,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                     break;
                 }
 
-                snap = snap->parent();
+                snap = snap->getParent();
             }
 
             /* found a suitable diff, use it as a base */

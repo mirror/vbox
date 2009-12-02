@@ -45,15 +45,12 @@ typedef std::list< ComObjPtr<Medium> > MediaList;
  * Medium component class for all media types.
  */
 class ATL_NO_VTABLE Medium :
-    public VirtualBoxBaseWithTypedChildren<Medium>,
+    public VirtualBoxBase,
     public com::SupportErrorInfoImpl<Medium, IMedium>,
     public VirtualBoxSupportTranslation<Medium>,
     VBOX_SCRIPTABLE_IMPL(IMedium)
 {
 public:
-
-    typedef VirtualBoxBaseWithTypedChildren<Medium>::DependentChildren List;
-
     class MergeChain;
     class ImageChain;
 
@@ -69,6 +66,9 @@ public:
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR(Medium)
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
 
     enum HDDOpenMode  { OpenReadWrite, OpenReadOnly };
                 // have to use a special enum for the overloaded init() below;
@@ -98,6 +98,8 @@ public:
                  CBSTR aLocation,
                  CBSTR aDescription = NULL);
     void uninit();
+
+    void deparent();
 
     // IMedium properties
     STDMETHOD(COMGETTER(Id))(BSTR *aId);
@@ -154,20 +156,8 @@ public:
     STDMETHOD(Reset)(IProgress **aProgress);
 
     // public methods for internal purposes only
-
-    HRESULT FinalConstruct();
-    void FinalRelease();
-
-    HRESULT updatePath(const char *aOldPath, const char *aNewPath);
-
-    HRESULT attachTo(const Guid &aMachineId,
-                     const Guid &aSnapshotId = Guid::Empty);
-    HRESULT detachFrom(const Guid &aMachineId,
-                       const Guid &aSnapshotId = Guid::Empty);
-
-#ifdef DEBUG
-    void dumpBackRefs();
-#endif
+    const ComObjPtr<Medium>& getParent() const;
+    const MediaList& getChildren() const;
 
     const Guid& getId() const;
     MediumState_T getState() const;
@@ -175,14 +165,19 @@ public:
     const Utf8Str& getLocationFull() const;
     uint64_t getSize() const;
 
+    HRESULT attachTo(const Guid &aMachineId,
+                     const Guid &aSnapshotId = Guid::Empty);
+    HRESULT detachFrom(const Guid &aMachineId,
+                       const Guid &aSnapshotId = Guid::Empty);
+
     const Guid* getFirstMachineBackrefId() const;
     const Guid* getFirstMachineBackrefSnapshotId() const;
 
-    /**
-     * Shortcut to VirtualBoxBaseWithTypedChildrenNEXT::dependentChildren().
-     */
-    const List& getChildren() const { return dependentChildren(); }
+#ifdef DEBUG
+    void dumpBackRefs();
+#endif
 
+    HRESULT updatePath(const char *aOldPath, const char *aNewPath);
     void updatePaths(const char *aOldPath, const char *aNewPath);
 
     ComObjPtr<Medium> getBase(uint32_t *aLevel = NULL);
@@ -257,20 +252,10 @@ public:
 
     // unsafe inline public methods for internal purposes only (ensure there is
     // a caller and a read lock before calling them!)
-
-    ComObjPtr<Medium> getParent() const { return static_cast<Medium *>(mParent); }
     MediumType_T getType() const;
 
     /** For com::SupportErrorInfoImpl. */
     static const char *ComponentName() { return "Medium"; }
-
-protected:
-
-    RWLockHandle* getTreeLock();
-
-    /** Reimplements VirtualBoxWithTypedChildren::childrenLock() to return
-     *  treeLock(). */
-    RWLockHandle *childrenLock() { return getTreeLock(); }
 
 private:
 
@@ -291,9 +276,6 @@ private:
     HRESULT unregisterWithVirtualBox();
 
     HRESULT setStateError();
-
-    /** weak VirtualBox parent */
-    const ComObjPtr<VirtualBox, ComWeakRef> mVirtualBox;
 
     HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait);
 
@@ -325,9 +307,6 @@ private:
                                            char *pszValue, size_t cchValue);
 
     static DECLCALLBACK(int) taskThread(RTTHREAD thread, void *pvUser);
-
-    /** weak parent */
-    ComObjPtr<Medium, ComWeakRef> mParent;
 
     struct Task;
     friend struct Task;
