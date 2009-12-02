@@ -562,6 +562,41 @@ static void pdmacFileCacheWriteToEndpoint(PPDMACFILECACHEENTRY pEntry)
 }
 
 /**
+ * Completes a task segment freeing all ressources and completes the task handle
+ * if everything was transfered.
+ *
+ * @returns Next task segment handle.
+ * @param   pEndpointCache    The endpoint cache.
+ * @param   pTaskSeg          Task segment to complete.
+ */
+static PPDMACFILETASKSEG pdmacFileCacheTaskComplete(PPDMACFILEENDPOINTCACHE pEndpointCache, PPDMACFILETASKSEG pTaskSeg)
+{
+    PPDMACFILETASKSEG pNext = pTaskSeg->pNext;
+
+    uint32_t uOld = ASMAtomicSubU32(&pTaskSeg->pTask->cbTransferLeft, pTaskSeg->cbTransfer);
+    AssertMsg(uOld >= pTaskSeg->cbTransfer, ("New value would overflow\n"));
+    if (!(uOld - pTaskSeg->cbTransfer)
+        && !ASMAtomicXchgBool(&pTaskSeg->pTask->fCompleted, true))
+    {
+        pdmR3AsyncCompletionCompleteTask(&pTaskSeg->pTask->Core);
+
+        if (pTaskSeg->fWrite)
+        {
+            /* Complete a pending flush if all writes have completed */
+            uint32_t cWritesOutstanding = ASMAtomicDecU32(&pEndpointCache->cWritesOutstanding);
+            PPDMASYNCCOMPLETIONTASKFILE pTaskFlush = (PPDMASYNCCOMPLETIONTASKFILE)ASMAtomicXchgPtr((void * volatile *)&pEndpointCache->pTaskFlush, NULL);
+
+            if (!cWritesOutstanding && pTaskFlush)
+                pdmR3AsyncCompletionCompleteTask(&pTaskFlush->Core);
+        }
+    }
+
+    RTMemFree(pTaskSeg);
+
+    return pNext;
+}
+
+/**
  * Completion callback for I/O tasks.
  *
  * @returns nothing.
@@ -612,16 +647,7 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
                 memcpy(pEntry->pbData + pCurr->uBufOffset, pCurr->pvBuf, pCurr->cbTransfer);
                 pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
 
-                uint32_t uOld = ASMAtomicSubU32(&pCurr->pTask->cbTransferLeft, pCurr->cbTransfer);
-                AssertMsg(uOld >= pCurr->cbTransfer, ("New value would overflow\n"));
-                if (!(uOld - pCurr->cbTransfer)
-                    && !ASMAtomicXchgBool(&pCurr->pTask->fCompleted, true))
-                    pdmR3AsyncCompletionCompleteTask(&pCurr->pTask->Core);
-
-                PPDMACFILETASKSEG pFree = pCurr;
-                pCurr = pCurr->pNext;
-
-                RTMemFree(pFree);
+                pCurr = pdmacFileCacheTaskComplete(pEndpointCache, pCurr);
             }
         }
     }
@@ -640,16 +666,7 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
             else
                 memcpy(pCurr->pvBuf, pEntry->pbData + pCurr->uBufOffset, pCurr->cbTransfer);
 
-            uint32_t uOld = ASMAtomicSubU32(&pCurr->pTask->cbTransferLeft, pCurr->cbTransfer);
-            AssertMsg(uOld >= pCurr->cbTransfer, ("New value would overflow\n"));
-            if (!(uOld - pCurr->cbTransfer)
-                && !ASMAtomicXchgBool(&pCurr->pTask->fCompleted, true))
-                pdmR3AsyncCompletionCompleteTask(&pCurr->pTask->Core);
-
-            PPDMACFILETASKSEG pFree = pCurr;
-            pCurr = pCurr->pNext;
-
-            RTMemFree(pFree);
+            pCurr = pdmacFileCacheTaskComplete(pEndpointCache, pCurr);
         }
     }
 
@@ -1507,6 +1524,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
     pTask->cbTransferLeft = cbWrite;
     /* Set to completed to make sure that the task is valid while we access it. */
     ASMAtomicWriteBool(&pTask->fCompleted, true);
+    ASMAtomicIncU32(&pEndpointCache->cWritesOutstanding);
 
     int iSegCurr       = 0;
     uint8_t *pbSegBuf  = (uint8_t *)paSegments[iSegCurr].pvSeg;
@@ -1908,10 +1926,36 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
 
     if (ASMAtomicReadS32(&pTask->cbTransferLeft) == 0
         && !ASMAtomicXchgBool(&pTask->fCompleted, true))
+    {
         pdmR3AsyncCompletionCompleteTask(&pTask->Core);
+
+        /* Complete a pending flush if all writes have completed */
+        uint32_t cWritesOutstanding = ASMAtomicDecU32(&pEndpointCache->cWritesOutstanding);
+        PPDMASYNCCOMPLETIONTASKFILE pTaskFlush = (PPDMASYNCCOMPLETIONTASKFILE)ASMAtomicXchgPtr((void * volatile *)&pEndpointCache->pTaskFlush, NULL);
+
+        if (!cWritesOutstanding && pTaskFlush)
+            pdmR3AsyncCompletionCompleteTask(&pTaskFlush->Core);
+    }
 
     return VINF_SUCCESS;
 }
 
 #undef ADVANCE_SEGMENT_BUFFER
+
+int pdmacFileEpCacheFlush(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONTASKFILE pTask)
+{
+    int rc = VINF_SUCCESS;
+
+    if (ASMAtomicReadPtr((void * volatile *)&pEndpoint->DataCache.pTaskFlush))
+        rc = VERR_RESOURCE_BUSY;
+    else
+    {
+        if (ASMAtomicReadU32(&pEndpoint->DataCache.cWritesOutstanding) > 0)
+            ASMAtomicWritePtr((void * volatile *)&pEndpoint->DataCache.pTaskFlush, pTask);
+        else
+            pdmR3AsyncCompletionCompleteTask(&pTask->Core);
+    }
+
+    return rc;
+}
 
