@@ -106,7 +106,7 @@ check_bin_path()
         exit 1
     fi
 
-    if test !  -x "$1"; then
+    if test ! -x "$1"; then
         errorprint "$1 missing or is not an executable"
         exit 1
     fi
@@ -381,7 +381,7 @@ install_drivers()
         if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$HOST_OS_MAJORVERSION" != "5.10"; then
             # For VirtualBox 3.1 the new USB code requires Nevada > 123
             if test "$HOST_OS_MINORVERSION" -gt 123; then
-                add_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
+                add_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP" "not-$NULLOP" "'* 0666 root sys'"
                 load_module "drv/$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
 
                 # Add vboxusbmon to devlink.tab
