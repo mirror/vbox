@@ -93,6 +93,9 @@ static const RTGETOPTDEF g_aImportApplianceOptions[] =
     { "-ostype",                'o', RTGETOPT_REQ_STRING },     // deprecated
     { "--vmname",               'V', RTGETOPT_REQ_STRING },
     { "-vmname",                'V', RTGETOPT_REQ_STRING },     // deprecated
+    { "--memory",               'm', RTGETOPT_REQ_STRING },
+    { "-memory",                'm', RTGETOPT_REQ_STRING },     // deprecated
+    { "--cpus",                 'c', RTGETOPT_REQ_STRING },
     { "--description",          'd', RTGETOPT_REQ_STRING },
     { "--eula",                 'L', RTGETOPT_REQ_STRING },
     { "-eula",                  'L', RTGETOPT_REQ_STRING },     // deprecated
@@ -170,6 +173,12 @@ int handleImportAppliance(HandlerArg *arg)
                 if (ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys]["memory"] = ValueUnion.psz;
+                break;
+
+            case 'c':   // --cpus
+                if (ulCurVsys == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys]["cpus"] = ValueUnion.psz;
                 break;
 
             case 'u':   // --unit
@@ -452,8 +461,25 @@ int handleImportAppliance(HandlerArg *arg)
                         break;
 
                         case VirtualSystemDescriptionType_CPU:
-                            RTPrintf("%2u: Number of CPUs (ignored): %ls\n",
-                                     a, aVboxValues[a]);
+                            if (findArgValue(strOverride, pmapArgs, "cpus"))
+                            {
+                                uint32_t cCPUs;
+                                if (    (VINF_SUCCESS == strOverride.toInt(cCPUs))
+                                     && (cCPUs > 0)
+                                     && (cCPUs < 33)
+                                   )
+                                {
+                                    bstrFinalValue = strOverride;
+                                    RTPrintf("%2u: No. of CPUs specified with --cpus: %ls\n",
+                                             a, bstrFinalValue.raw());
+                                }
+                                else
+                                    return errorSyntax(USAGE_IMPORTAPPLIANCE,
+                                                       "Argument to --cpus option must be a number greater than 0 and less than 33.");
+                            }
+                            else
+                                RTPrintf("%2u: Number of CPUs: %ls\n    (change with \"--vsys %u --cpus <n>\")\n",
+                                         a, bstrFinalValue.raw(), i);
                         break;
 
                         case VirtualSystemDescriptionType_Memory:
