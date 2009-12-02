@@ -1234,7 +1234,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
             }
 
             /* CPU count */
-            std::list<VirtualSystemDescriptionEntry*> vsdeCPU = vsdescThis->findByType (VirtualSystemDescriptionType_CPU);
+            std::list<VirtualSystemDescriptionEntry*> vsdeCPU = vsdescThis->findByType(VirtualSystemDescriptionType_CPU);
             ComAssertMsgThrow(vsdeCPU.size() == 1, ("CPU count missing"), E_FAIL);
             const Utf8Str &cpuVBox = vsdeCPU.front()->strVbox;
             ULONG tmpCount = (ULONG)RTStrToUInt64(cpuVBox.c_str());
