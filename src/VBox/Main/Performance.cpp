@@ -294,13 +294,13 @@ void MachineRamUsage::collect()
         mUsed->put(used);
 }
 
-void CircularBuffer::init(ULONG length)
+void CircularBuffer::init(ULONG ulLength)
 {
     if (mData)
         RTMemFree(mData);
-    mLength = length;
+    mLength = ulLength;
     if (mLength)
-        mData = (ULONG *)RTMemAllocZ(length * sizeof(ULONG));
+        mData = (ULONG*)RTMemAllocZ(ulLength * sizeof(ULONG));
     else
         mData = NULL;
     mWrapped = false;

@@ -114,7 +114,7 @@ HRESULT DHCPServer::init(VirtualBox *aVirtualBox,
 HRESULT DHCPServer::saveSettings(settings::DHCPServer &data)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -133,7 +133,7 @@ STDMETHODIMP DHCPServer::COMGETTER(NetworkName) (BSTR *aName)
     CheckComArgOutPointerValid(aName);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     mName.cloneTo(aName);
 
@@ -145,7 +145,7 @@ STDMETHODIMP DHCPServer::COMGETTER(Enabled) (BOOL *aEnabled)
     CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     *aEnabled = m.enabled;
 
@@ -155,7 +155,7 @@ STDMETHODIMP DHCPServer::COMGETTER(Enabled) (BOOL *aEnabled)
 STDMETHODIMP DHCPServer::COMSETTER(Enabled) (BOOL aEnabled)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock (mVirtualBox, this);
@@ -172,7 +172,7 @@ STDMETHODIMP DHCPServer::COMGETTER(IPAddress) (BSTR *aIPAddress)
     CheckComArgOutPointerValid(aIPAddress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     m.IPAddress.cloneTo(aIPAddress);
 
@@ -184,7 +184,7 @@ STDMETHODIMP DHCPServer::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
     CheckComArgOutPointerValid(aNetworkMask);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     m.networkMask.cloneTo(aNetworkMask);
 
@@ -196,7 +196,7 @@ STDMETHODIMP DHCPServer::COMGETTER(LowerIP) (BSTR *aIPAddress)
     CheckComArgOutPointerValid(aIPAddress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     m.lowerIP.cloneTo(aIPAddress);
 
@@ -208,7 +208,7 @@ STDMETHODIMP DHCPServer::COMGETTER(UpperIP) (BSTR *aIPAddress)
     CheckComArgOutPointerValid(aIPAddress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     m.upperIP.cloneTo(aIPAddress);
 
@@ -223,7 +223,7 @@ STDMETHODIMP DHCPServer::SetConfiguration (IN_BSTR aIPAddress, IN_BSTR aNetworkM
     AssertReturn(aUpperIP != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock (mVirtualBox, this);

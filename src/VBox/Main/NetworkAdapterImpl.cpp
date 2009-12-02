@@ -180,7 +180,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(AdapterType) (NetworkAdapterType_T *aAdap
     CheckComArgOutPointerValid(aAdapterType);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -192,11 +192,11 @@ STDMETHODIMP NetworkAdapter::COMGETTER(AdapterType) (NetworkAdapterType_T *aAdap
 STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapterType)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -239,7 +239,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(Slot) (ULONG *aSlot)
     CheckComArgOutPointerValid(aSlot);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -253,7 +253,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(Enabled) (BOOL *aEnabled)
     CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -265,11 +265,11 @@ STDMETHODIMP NetworkAdapter::COMGETTER(Enabled) (BOOL *aEnabled)
 STDMETHODIMP NetworkAdapter::COMSETTER(Enabled) (BOOL aEnabled)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -292,7 +292,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(MACAddress)(BSTR *aMACAddress)
     CheckComArgOutPointerValid(aMACAddress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -306,11 +306,11 @@ STDMETHODIMP NetworkAdapter::COMGETTER(MACAddress)(BSTR *aMACAddress)
 STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(IN_BSTR aMACAddress)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -389,7 +389,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(AttachmentType)(
     CheckComArgOutPointerValid(aAttachmentType);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -403,7 +403,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(HostInterface)(BSTR *aHostInterface)
     CheckComArgOutPointerValid(aHostInterface);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -419,11 +419,11 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(IN_BSTR aHostInterface)
         aHostInterface = bstrEmpty;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -446,7 +446,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(InternalNetwork) (BSTR *aInternalNetwork)
     CheckComArgOutPointerValid(aInternalNetwork);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -458,11 +458,11 @@ STDMETHODIMP NetworkAdapter::COMGETTER(InternalNetwork) (BSTR *aInternalNetwork)
 STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (IN_BSTR aInternalNetwork)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -494,7 +494,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(NATNetwork) (BSTR *aNATNetwork)
     CheckComArgOutPointerValid(aNATNetwork);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -510,11 +510,11 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork) (IN_BSTR aNATNetwork)
         aNATNetwork = bstrEmpty;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -537,7 +537,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(CableConnected) (BOOL *aConnected)
     CheckComArgOutPointerValid(aConnected);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -549,11 +549,11 @@ STDMETHODIMP NetworkAdapter::COMGETTER(CableConnected) (BOOL *aConnected)
 STDMETHODIMP NetworkAdapter::COMSETTER(CableConnected) (BOOL aConnected)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -576,7 +576,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(LineSpeed) (ULONG *aSpeed)
     CheckComArgOutPointerValid(aSpeed);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -588,11 +588,11 @@ STDMETHODIMP NetworkAdapter::COMGETTER(LineSpeed) (ULONG *aSpeed)
 STDMETHODIMP NetworkAdapter::COMSETTER(LineSpeed) (ULONG aSpeed)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -615,7 +615,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TraceEnabled) (BOOL *aEnabled)
     CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -626,11 +626,11 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TraceEnabled) (BOOL *aEnabled)
 STDMETHODIMP NetworkAdapter::COMSETTER(TraceEnabled) (BOOL aEnabled)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -653,7 +653,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TraceFile) (BSTR *aTraceFile)
     CheckComArgOutPointerValid(aTraceFile);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -665,11 +665,11 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TraceFile) (BSTR *aTraceFile)
 STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile) (IN_BSTR aTraceFile)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -693,11 +693,11 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile) (IN_BSTR aTraceFile)
 STDMETHODIMP NetworkAdapter::AttachToNAT()
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -733,11 +733,11 @@ STDMETHODIMP NetworkAdapter::AttachToNAT()
 STDMETHODIMP NetworkAdapter::AttachToBridgedInterface()
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -775,11 +775,11 @@ STDMETHODIMP NetworkAdapter::AttachToBridgedInterface()
 STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -825,11 +825,11 @@ STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
 STDMETHODIMP NetworkAdapter::AttachToHostOnlyInterface()
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -867,11 +867,11 @@ STDMETHODIMP NetworkAdapter::AttachToHostOnlyInterface()
 STDMETHODIMP NetworkAdapter::Detach()
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -925,7 +925,7 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
     mData->mEnabled = data.fEnabled;
     /* MAC address (can be null) */
     rc = COMSETTER(MACAddress)(Bstr(data.strMACAddress));
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
     /* cable (required) */
     mData->mCableConnected = data.fCableConnected;
     /* line speed (defaults to 100 Mbps) */
@@ -941,14 +941,14 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
             if (mData->mNATNetwork.isNull())
                 mData->mNATNetwork = "";
             rc = AttachToNAT();
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
         break;
 
         case NetworkAttachmentType_Bridged:
             rc = COMSETTER(HostInterface)(Bstr(data.strName));
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
             rc = AttachToBridgedInterface();
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
         break;
 
         case NetworkAttachmentType_Internal:
@@ -956,21 +956,21 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
             Assert(!mData->mInternalNetwork.isNull());
 
             rc = AttachToInternalNetwork();
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
         break;
 
         case NetworkAttachmentType_HostOnly:
 #if defined(VBOX_WITH_NETFLT)
             rc = COMSETTER(HostInterface)(Bstr(data.strName));
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
 #endif
             rc = AttachToHostOnlyInterface();
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
         break;
 
         case NetworkAttachmentType_Null:
             rc = Detach();
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
         break;
     }
 

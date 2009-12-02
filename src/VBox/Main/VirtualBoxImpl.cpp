@@ -346,7 +346,7 @@ HRESULT VirtualBox::init()
         ComAssertComRCThrowRC(rc);
 
         rc = m->pHost->loadSettings(m->pMainConfigFile->host);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* create the system properties object, someone may need it too */
         unconst(m->pSystemProperties).createObject();
@@ -354,7 +354,7 @@ HRESULT VirtualBox::init()
         ComAssertComRCThrowRC (rc);
 
         rc = m->pSystemProperties->loadSettings(m->pMainConfigFile->systemProperties);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* guest OS type objects, needed by machines */
         for (size_t i = 0; i < RT_ELEMENTS (Global::sOSTypes); ++ i)
@@ -404,10 +404,10 @@ HRESULT VirtualBox::init()
             ComObjPtr<DHCPServer> pDhcpServer;
             if (SUCCEEDED(rc = pDhcpServer.createObject()))
                 rc = pDhcpServer->init(this, data);
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
 
             rc = registerDHCPServer(pDhcpServer, false /* aSaveRegistry */);
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
         }
     }
     catch (HRESULT err)
@@ -518,10 +518,10 @@ HRESULT VirtualBox::initMedia()
                                  NULL,           // parent
                                  DeviceType_HardDisk,
                                  xmlHD);         // XML data; this recurses to processes the children
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         rc = registerHardDisk(pHardDisk, false /* aSaveRegistry */);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     for (it = m->pMainConfigFile->llDvdImages.begin();
@@ -533,10 +533,10 @@ HRESULT VirtualBox::initMedia()
         ComObjPtr<Medium> pImage;
         if (SUCCEEDED(pImage.createObject()))
             rc = pImage->init(this, NULL, DeviceType_DVD, xmlDvd);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         rc = registerDVDImage(pImage, false /* aSaveRegistry */);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     for (it = m->pMainConfigFile->llFloppyImages.begin();
@@ -548,10 +548,10 @@ HRESULT VirtualBox::initMedia()
         ComObjPtr<Medium> pImage;
         if (SUCCEEDED(pImage.createObject()))
             rc = pImage->init(this, NULL, DeviceType_Floppy, xmlFloppy);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         rc = registerFloppyImage(pImage, false /* aSaveRegistry */);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     return S_OK;
@@ -704,7 +704,7 @@ STDMETHODIMP VirtualBox::COMGETTER(Version) (BSTR *aVersion)
     CheckComArgNotNull(aVersion);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     sVersion.cloneTo(aVersion);
     return S_OK;
@@ -715,7 +715,7 @@ STDMETHODIMP VirtualBox::COMGETTER(Revision) (ULONG *aRevision)
     CheckComArgNotNull(aRevision);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     *aRevision = sRevision;
     return S_OK;
@@ -726,7 +726,7 @@ STDMETHODIMP VirtualBox::COMGETTER(PackageType) (BSTR *aPackageType)
     CheckComArgNotNull(aPackageType);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     sPackageType.cloneTo(aPackageType);
     return S_OK;
@@ -737,7 +737,7 @@ STDMETHODIMP VirtualBox::COMGETTER(HomeFolder) (BSTR *aHomeFolder)
     CheckComArgNotNull(aHomeFolder);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mHomeDir is const and doesn't need a lock */
     m->strHomeDir.cloneTo(aHomeFolder);
@@ -749,7 +749,7 @@ STDMETHODIMP VirtualBox::COMGETTER(SettingsFilePath) (BSTR *aSettingsFilePath)
     CheckComArgNotNull(aSettingsFilePath);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mCfgFile.mName is const and doesn't need a lock */
     m->strSettingsFilePath.cloneTo(aSettingsFilePath);
@@ -761,7 +761,7 @@ STDMETHODIMP VirtualBox::COMGETTER(Host) (IHost **aHost)
     CheckComArgOutSafeArrayPointerValid(aHost);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mHost is const, no need to lock */
     m->pHost.queryInterfaceTo(aHost);
@@ -774,7 +774,7 @@ VirtualBox::COMGETTER(SystemProperties) (ISystemProperties **aSystemProperties)
     CheckComArgOutSafeArrayPointerValid(aSystemProperties);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mSystemProperties is const, no need to lock */
     m->pSystemProperties.queryInterfaceTo(aSystemProperties);
@@ -788,7 +788,7 @@ VirtualBox::COMGETTER(Machines) (ComSafeArrayOut(IMachine *, aMachines))
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -804,7 +804,7 @@ STDMETHODIMP VirtualBox::COMGETTER(HardDisks) (ComSafeArrayOut(IMedium *, aHardD
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -821,7 +821,7 @@ VirtualBox::COMGETTER(DVDImages) (ComSafeArrayOut(IMedium *, aDVDImages))
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -838,7 +838,7 @@ VirtualBox::COMGETTER(FloppyImages) (ComSafeArrayOut(IMedium *, aFloppyImages))
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -853,7 +853,7 @@ STDMETHODIMP VirtualBox::COMGETTER(ProgressOperations) (ComSafeArrayOut(IProgres
     CheckComArgOutSafeArrayPointerValid(aOperations);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* protect mProgressOperations */
     AutoReadLock safeLock(m->mtxProgressOperations);
@@ -869,7 +869,7 @@ STDMETHODIMP VirtualBox::COMGETTER(GuestOSTypes) (ComSafeArrayOut(IGuestOSType *
     CheckComArgOutSafeArrayPointerValid(aGuestOSTypes);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -889,7 +889,7 @@ VirtualBox::COMGETTER(SharedFolders) (ComSafeArrayOut(ISharedFolder *, aSharedFo
     CheckComArgOutSafeArrayPointerValid(aSharedFolders);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     return setError (E_NOTIMPL, "Not yet implemented");
 }
@@ -901,7 +901,7 @@ VirtualBox::COMGETTER(PerformanceCollector) (IPerformanceCollector **aPerformanc
     CheckComArgOutSafeArrayPointerValid(aPerformanceCollector);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mPerformanceCollector is const, no need to lock */
     m->pPerformanceCollector.queryInterfaceTo(aPerformanceCollector);
@@ -919,7 +919,7 @@ VirtualBox::COMGETTER(DHCPServers) (ComSafeArrayOut(IDHCPServer *, aDHCPServers)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -939,7 +939,7 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
     CheckComArgNotNull(aResult);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     const char * url = NULL;
 
@@ -1037,7 +1037,7 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
     CheckComArgOutPointerValid(aMachine);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* Compose the settings file name using the following scheme:
      *
@@ -1063,7 +1063,7 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
     /* create a new object */
     ComObjPtr<Machine> machine;
     rc = machine.createObject();
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* Create UUID if an empty one was specified. */
     Guid id(aId);
@@ -1072,7 +1072,7 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
 
     GuestOSType *osType;
     rc = findGuestOSType(aOsTypeId, osType);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* initialize the machine object */
     rc = machine->init(this,
@@ -1106,7 +1106,7 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine(IN_BSTR aName,
     CheckComArgOutPointerValid(aMachine);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = E_FAIL;
 
@@ -1118,7 +1118,7 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine(IN_BSTR aName,
     /* create a new object */
     ComObjPtr<Machine> machine;
     rc = machine.createObject();
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* Create UUID if an empty one was specified. */
     Guid id(aId);
@@ -1127,7 +1127,7 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine(IN_BSTR aName,
 
     GuestOSType *osType;
     rc = findGuestOSType(aOsTypeId, osType);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* initialize the machine object */
     rc = machine->init(this,
@@ -1154,7 +1154,7 @@ STDMETHODIMP VirtualBox::OpenMachine(IN_BSTR aSettingsFile,
     CheckComArgOutSafeArrayPointerValid(aMachine);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = E_FAIL;
 
@@ -1184,13 +1184,13 @@ STDMETHODIMP VirtualBox::RegisterMachine (IMachine *aMachine)
     CheckComArgNotNull(aMachine);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc;
 
     Bstr name;
     rc = aMachine->COMGETTER(Name) (name.asOutParam());
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* We need the children map lock here to keep the getDependentChild() result
      * valid until we finish */
@@ -1226,7 +1226,7 @@ STDMETHODIMP VirtualBox::GetMachine (IN_BSTR aId, IMachine **aMachine)
     CheckComArgOutSafeArrayPointerValid(aMachine);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr<Machine> machine;
     HRESULT rc = findMachine (Guid (aId), true /* setError */, &machine);
@@ -1247,7 +1247,7 @@ STDMETHODIMP VirtualBox::FindMachine (IN_BSTR aName, IMachine **aMachine)
     CheckComArgOutSafeArrayPointerValid(aMachine);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* start with not found */
     ComObjPtr<Machine> machine;
@@ -1298,17 +1298,17 @@ STDMETHODIMP VirtualBox::UnregisterMachine (IN_BSTR  aId,
         return E_INVALIDARG;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     ComObjPtr<Machine> machine;
 
     HRESULT rc = findMachine (id, true /* setError */, &machine);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     rc = machine->trySetRegistered (FALSE);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* remove from the collection of registered machines */
     m->llMachines.remove (machine);
@@ -1332,7 +1332,7 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
     CheckComArgOutPointerValid(aHardDisk);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* we don't access non-const data members so no need to lock */
 
@@ -1364,7 +1364,7 @@ STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
     CheckComArgOutSafeArrayPointerValid(aHardDisk);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* we don't access non-const data members so no need to lock */
 
@@ -1411,7 +1411,7 @@ STDMETHODIMP VirtualBox::GetHardDisk(IN_BSTR   aId,
     CheckComArgOutSafeArrayPointerValid(aHardDisk);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     Guid id(aId);
     ComObjPtr<Medium> hardDisk;
@@ -1430,7 +1430,7 @@ STDMETHODIMP VirtualBox::FindHardDisk(IN_BSTR aLocation,
     CheckComArgOutSafeArrayPointerValid(aHardDisk);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr<Medium> hardDisk;
     HRESULT rc = findHardDisk(NULL, aLocation, true /* setError */, &hardDisk);
@@ -1449,7 +1449,7 @@ STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_BSTR aId,
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = VBOX_E_FILE_ERROR;
 
@@ -1478,7 +1478,7 @@ STDMETHODIMP VirtualBox::GetDVDImage (IN_BSTR aId, IMedium **aDVDImage)
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     Guid id(aId);
     ComObjPtr<Medium> image;
@@ -1497,7 +1497,7 @@ STDMETHODIMP VirtualBox::FindDVDImage (IN_BSTR aLocation, IMedium **aDVDImage)
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr<Medium> image;
     HRESULT rc = findDVDImage (NULL, aLocation, true /* setError */, &image);
@@ -1516,7 +1516,7 @@ STDMETHODIMP VirtualBox::OpenFloppyImage (IN_BSTR aLocation, IN_BSTR aId,
     CheckComArgOutSafeArrayPointerValid(aFloppyImage);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = VBOX_E_FILE_ERROR;
 
@@ -1547,7 +1547,7 @@ STDMETHODIMP VirtualBox::GetFloppyImage (IN_BSTR aId,
     CheckComArgOutSafeArrayPointerValid(aFloppyImage);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     Guid id(aId);
     ComObjPtr<Medium> image;
@@ -1567,7 +1567,7 @@ STDMETHODIMP VirtualBox::FindFloppyImage (IN_BSTR aLocation,
     CheckComArgOutSafeArrayPointerValid(aFloppyImage);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr<Medium> image;
     HRESULT rc = findFloppyImage(NULL, aLocation, true /* setError */, &image);
@@ -1603,7 +1603,7 @@ STDMETHODIMP VirtualBox::GetGuestOSType (IN_BSTR aId, IGuestOSType **aType)
     CheckComArgNotNull (aType);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* first, look for a substitution */
     Bstr id = aId;
@@ -1646,7 +1646,7 @@ VirtualBox::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL /* aWrita
     CheckComArgNotNull(aHostPath);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     return setError (E_NOTIMPL, "Not yet implemented");
 }
@@ -1656,7 +1656,7 @@ STDMETHODIMP VirtualBox::RemoveSharedFolder (IN_BSTR aName)
     CheckComArgNotNull(aName);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     return setError (E_NOTIMPL, "Not yet implemented");
 }
@@ -1671,8 +1671,8 @@ STDMETHODIMP VirtualBox::GetExtraDataKeys(ComSafeArrayOut(BSTR, aKeys))
     if (ComSafeArrayOutIsNull(aKeys))
         return E_POINTER;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock (this);
 
@@ -1700,7 +1700,7 @@ STDMETHODIMP VirtualBox::GetExtraData(IN_BSTR aKey,
     CheckComArgNotNull(aValue);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* start with nothing found */
     Bstr bstrResult("");
@@ -1725,7 +1725,7 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
     CheckComArgNotNull(aKey);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     Utf8Str strKey(aKey);
     Utf8Str strValue(aValue);
@@ -1785,7 +1785,7 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
 
         /* save settings on success */
         HRESULT rc = saveSettings();
-        CheckComRCReturnRC (rc);
+        if (FAILED(rc)) return rc;
     }
 
     // fire notification outside the lock
@@ -1803,18 +1803,18 @@ STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, IN_BSTR aMachineId)
     CheckComArgNotNull(aSession);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     Guid id(aMachineId);
     ComObjPtr<Machine> machine;
 
     HRESULT rc = findMachine (id, true /* setError */, &machine);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* check the session state */
     SessionState_T state;
     rc = aSession->COMGETTER(State) (&state);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (state != SessionState_Closed)
         return setError (VBOX_E_INVALID_OBJECT_STATE,
@@ -1859,18 +1859,18 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
     CheckComArgOutSafeArrayPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     Guid id(aMachineId);
     ComObjPtr<Machine> machine;
 
     HRESULT rc = findMachine (id, true /* setError */, &machine);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* check the session state */
     SessionState_T state;
     rc = aSession->COMGETTER(State) (&state);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (state != SessionState_Closed)
         return setError (VBOX_E_INVALID_OBJECT_STATE,
@@ -1913,18 +1913,18 @@ STDMETHODIMP VirtualBox::OpenExistingSession (ISession *aSession,
     CheckComArgNotNull(aSession);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     Guid id(aMachineId);
     ComObjPtr<Machine> machine;
 
     HRESULT rc = findMachine (id, true /* setError */, &machine);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* check the session state */
     SessionState_T state;
     rc = aSession->COMGETTER(State) (&state);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (state != SessionState_Closed)
         return setError (VBOX_E_INVALID_OBJECT_STATE,
@@ -1950,7 +1950,7 @@ STDMETHODIMP VirtualBox::RegisterCallback (IVirtualBoxCallback *aCallback)
     CheckComArgNotNull(aCallback);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
 #if 0 /** @todo r=bird,r=pritesh: must check that the interface id match correct or we might screw up with old code! */
     void *dummy;
@@ -1974,7 +1974,7 @@ STDMETHODIMP VirtualBox::UnregisterCallback (IVirtualBoxCallback *aCallback)
     CheckComArgNotNull(aCallback);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = S_OK;
 
@@ -2075,7 +2075,7 @@ HRESULT VirtualBox::addProgress(IProgress *aProgress)
     CheckComArgNotNull(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     Bstr id;
     HRESULT rc = aProgress->COMGETTER(Id) (id.asOutParam());
@@ -2099,7 +2099,7 @@ HRESULT VirtualBox::addProgress(IProgress *aProgress)
 HRESULT VirtualBox::removeProgress(IN_GUID aId)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComPtr<IProgress> progress;
 
@@ -2180,7 +2180,7 @@ HRESULT VirtualBox::startSVCHelperClient (bool aPrivileged,
     AssertReturn(aProgress, E_POINTER);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* create the SVCHelperClientThread() argument */
     std::auto_ptr <StartSVCHelperClientData>
@@ -2825,7 +2825,7 @@ HRESULT VirtualBox::findHardDisk(const Guid *aId,
             const ComObjPtr<Medium> &hd = (*it).second;
 
             HRESULT rc = hd->compareLocationTo(location.c_str(), result);
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
 
             if (result == 0)
             {
@@ -3234,7 +3234,7 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
  */
 HRESULT VirtualBox::saveSettings()
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AssertReturn(!m->strSettingsFilePath.isEmpty(), E_FAIL);
@@ -3266,7 +3266,7 @@ HRESULT VirtualBox::saveSettings()
             settings::Medium med;
             rc = (*it)->saveSettings(med);
             m->pMainConfigFile->llHardDisks.push_back(med);
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
         }
 
         /* CD/DVD images */
@@ -3277,7 +3277,7 @@ HRESULT VirtualBox::saveSettings()
         {
             settings::Medium med;
             rc = (*it)->saveSettings(med);
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
             m->pMainConfigFile->llDvdImages.push_back(med);
         }
 
@@ -3289,7 +3289,7 @@ HRESULT VirtualBox::saveSettings()
         {
             settings::Medium med;
             rc = (*it)->saveSettings(med);
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
             m->pMainConfigFile->llFloppyImages.push_back(med);
         }
 
@@ -3301,16 +3301,16 @@ HRESULT VirtualBox::saveSettings()
         {
             settings::DHCPServer d;
             rc = (*it)->saveSettings(d);
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
             m->pMainConfigFile->llDhcpServers.push_back(d);
         }
 
         /* host data (USB filters) */
         rc = m->pHost->saveSettings(m->pMainConfigFile->host);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         rc = m->pSystemProperties->saveSettings(m->pMainConfigFile->systemProperties);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         // now write out the XML
         m->pMainConfigFile->write(m->strSettingsFilePath);
@@ -3348,7 +3348,7 @@ HRESULT VirtualBox::registerMachine(Machine *aMachine)
     ComAssertRet (aMachine, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -3377,7 +3377,7 @@ HRESULT VirtualBox::registerMachine(Machine *aMachine)
     {
         /* Machine::trySetRegistered() will commit and save machine settings */
         rc = aMachine->trySetRegistered(TRUE);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     /* add to the collection of registered machines */
@@ -3423,7 +3423,7 @@ HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
     HRESULT rc = checkMediaForConflicts2(aHardDisk->getId(),
                                          aHardDisk->getLocationFull(),
                                          strConflict);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (strConflict.length())
     {
@@ -3540,7 +3540,7 @@ HRESULT VirtualBox::registerDVDImage (Medium *aImage,
     HRESULT rc = checkMediaForConflicts2(aImage->getId(),
                                          aImage->getLocationFull(),
                                          strConflict);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (strConflict.length())
     {
@@ -3643,7 +3643,7 @@ HRESULT VirtualBox::registerFloppyImage(Medium *aImage,
     HRESULT rc = checkMediaForConflicts2(aImage->getId(),
                                          aImage->getLocationFull(),
                                          strConflict);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (strConflict.length())
     {
@@ -4477,15 +4477,15 @@ STDMETHODIMP VirtualBox::CreateDHCPServer (IN_BSTR aName, IDHCPServer ** aServer
     CheckComArgNotNull(aServer);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr<DHCPServer> dhcpServer;
     dhcpServer.createObject();
     HRESULT rc = dhcpServer->init (this, aName);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     rc = registerDHCPServer(dhcpServer, true);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     dhcpServer.queryInterfaceTo(aServer);
 
@@ -4503,7 +4503,7 @@ STDMETHODIMP VirtualBox::FindDHCPServerByNetworkName (IN_BSTR aName, IDHCPServer
     CheckComArgNotNull(aServer);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -4517,7 +4517,7 @@ STDMETHODIMP VirtualBox::FindDHCPServerByNetworkName (IN_BSTR aName, IDHCPServer
          ++ it)
     {
         rc = (*it)->COMGETTER(NetworkName) (bstr.asOutParam());
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         if(bstr == aName)
         {
@@ -4537,7 +4537,7 @@ STDMETHODIMP VirtualBox::RemoveDHCPServer (IDHCPServer * aServer)
     CheckComArgNotNull(aServer);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = unregisterDHCPServer(static_cast<DHCPServer *>(aServer), true);
 
@@ -4577,7 +4577,7 @@ HRESULT VirtualBox::registerDHCPServer(DHCPServer *aDHCPServer,
     Bstr name;
     HRESULT rc;
     rc = aDHCPServer->COMGETTER(NetworkName) (name.asOutParam());
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     ComPtr<IDHCPServer> existing;
     rc = FindDHCPServerByNetworkName(name.mutableRaw(), existing.asOutParam());

@@ -173,7 +173,7 @@ PerformanceCollector::COMGETTER(MetricNames) (ComSafeArrayOut(BSTR, theMetricNam
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -225,7 +225,7 @@ PerformanceCollector::GetMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
     HRESULT rc = S_OK;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));
@@ -264,7 +264,7 @@ PerformanceCollector::SetupMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
                                                      outMetrics))
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));
@@ -313,7 +313,7 @@ PerformanceCollector::EnableMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
                                                       outMetrics))
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));
@@ -350,7 +350,7 @@ PerformanceCollector::DisableMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
                                                        outMetrics))
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));
@@ -393,7 +393,7 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (IN_BSTR, metricNames),
                                         ComSafeArrayOut(LONG, outData))
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));

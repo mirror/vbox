@@ -127,7 +127,7 @@ STDMETHODIMP VFSExplorer::COMGETTER(Path)(BSTR *aPath)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -143,7 +143,7 @@ STDMETHODIMP VFSExplorer::COMGETTER(Type)(VFSType_T *aType)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -273,7 +273,7 @@ HRESULT VFSExplorer::updateFS(TaskVFSExplorer *aTask)
     LogFlowFuncEnter();
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock appLock(this);
 
@@ -341,7 +341,7 @@ HRESULT VFSExplorer::deleteFS(TaskVFSExplorer *aTask)
     LogFlowFuncEnter();
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock appLock(this);
 
@@ -388,7 +388,7 @@ HRESULT VFSExplorer::updateS3(TaskVFSExplorer *aTask)
     LogFlowFuncEnter();
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock appLock(this);
 
@@ -464,7 +464,7 @@ HRESULT VFSExplorer::deleteS3(TaskVFSExplorer *aTask)
     LogFlowFuncEnter();
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock appLock(this);
 
@@ -517,7 +517,7 @@ STDMETHODIMP VFSExplorer::Update(IProgress **aProgress)
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock(this);
 
@@ -579,7 +579,7 @@ STDMETHODIMP VFSExplorer::EntryList(ComSafeArrayOut(BSTR, aNames), ComSafeArrayO
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -609,7 +609,7 @@ STDMETHODIMP VFSExplorer::Exists(ComSafeArrayIn(IN_BSTR, aNames), ComSafeArrayOu
     CheckComArgSafeArrayNotNull(aNames);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -646,7 +646,7 @@ STDMETHODIMP VFSExplorer::Remove(ComSafeArrayIn(IN_BSTR, aNames), IProgress **aP
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock(this);
 

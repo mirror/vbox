@@ -109,31 +109,4 @@
 #define AssertComRCThrowRC(rc)          \
     if (!SUCCEEDED (rc)) { AssertComRC (rc); throw rc; } else do {} while (0)
 
-/**
- *  Checks whether the given COM result code is successful.
- *  If not, executes the return statement with this result code.
- *
- *  @param rc   COM result code
- */
-#define CheckComRCReturnRC(rc)      \
-    if (!SUCCEEDED (rc)) { return (rc); } else do {} while (0)
-
-/**
- *  Checks whether the given COM result code is successful.
- *  If not, executes the break statement.
- *
- *  @param rc   COM result code
- */
-#define CheckComRCBreakRC(rc)      \
-    if (!SUCCEEDED (rc)) { break; } else do {} while (0)
-
-/**
- *  Checks whether the given COM result code is successful.
- *  If not, throws the given COM result.
- *
- *  @param rc   COM result code
- */
-#define CheckComRCThrowRC(rc)      \
-    if (!SUCCEEDED (rc)) { throw rc; } else do {} while (0)
-
 #endif // !___VBox_com_assert_h

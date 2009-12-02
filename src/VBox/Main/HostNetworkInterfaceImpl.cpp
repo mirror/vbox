@@ -166,7 +166,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Name) (BSTR *aInterfaceName)
     CheckComArgOutPointerValid(aInterfaceName);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     mInterfaceName.cloneTo(aInterfaceName);
 
@@ -184,7 +184,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Id) (BSTR *aGuid)
     CheckComArgOutPointerValid(aGuid);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     mGuid.toUtf16().cloneTo(aGuid);
 
@@ -196,7 +196,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(DhcpEnabled) (BOOL *aDhcpEnabled)
     CheckComArgOutPointerValid(aDhcpEnabled);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     *aDhcpEnabled = m.dhcpEnabled;
 
@@ -215,7 +215,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPAddress) (BSTR *aIPAddress)
     CheckComArgOutPointerValid(aIPAddress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (m.IPAddress == 0)
     {
@@ -250,7 +250,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
     CheckComArgOutPointerValid(aNetworkMask);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (m.networkMask == 0)
     {
@@ -297,7 +297,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6Address) (BSTR *aIPV6Address)
     CheckComArgOutPointerValid(aIPV6Address);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     m.IPV6Address.cloneTo(aIPV6Address);
 
@@ -315,7 +315,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6NetworkMaskPrefixLength) (ULONG
     CheckComArgOutPointerValid(aIPV6NetworkMaskPrefixLength);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     *aIPV6NetworkMaskPrefixLength = m.IPV6NetworkMaskPrefixLength;
 
@@ -333,7 +333,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(HardwareAddress) (BSTR *aHardwareAd
     CheckComArgOutPointerValid(aHardwareAddress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     m.hardwareAddress.cloneTo(aHardwareAddress);
 
@@ -351,7 +351,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(MediumType) (HostNetworkInterfaceMe
     CheckComArgOutPointerValid(aType);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     *aType = m.mediumType;
 
@@ -369,7 +369,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Status) (HostNetworkInterfaceStatus
     CheckComArgOutPointerValid(aStatus);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     *aStatus = m.status;
 
@@ -387,7 +387,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(InterfaceType) (HostNetworkInterfac
     CheckComArgOutPointerValid(aType);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     *aType = mIfType;
 
@@ -398,7 +398,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(InterfaceType) (HostNetworkInterfac
 STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkName) (BSTR *aNetworkName)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     Utf8Str utf8Name("HostInterfaceNetworking-");
     utf8Name.append(Utf8Str(mInterfaceName)) ;
@@ -414,7 +414,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
     return E_NOTIMPL;
 #else
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (Bstr(aIPAddress).isEmpty())
     {
@@ -481,7 +481,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address,
         return E_INVALIDARG;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     int rc = S_OK;
     if (m.realIPV6Address != aIPV6Address || m.realIPV6PrefixLength != aIPV6MaskPrefixLength)
@@ -516,7 +516,7 @@ STDMETHODIMP HostNetworkInterface::EnableDynamicIpConfig ()
     return E_NOTIMPL;
 #else
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     int rc = NetIfEnableDynamicIpConfig(mVBox, this);
     if (RT_FAILURE(rc))
@@ -534,7 +534,7 @@ STDMETHODIMP HostNetworkInterface::DhcpRediscover ()
     return E_NOTIMPL;
 #else
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     int rc = NetIfDhcpRediscover(mVBox, this);
     if (RT_FAILURE(rc))
@@ -550,7 +550,7 @@ HRESULT HostNetworkInterface::setVirtualBox(VirtualBox *pVBox)
 {
     HRESULT hrc;
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
     mVBox = pVBox;
 
     /* If IPv4 address hasn't been initialized */

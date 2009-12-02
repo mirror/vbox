@@ -1404,7 +1404,7 @@ STDMETHODIMP Console::COMGETTER(Machine)(IMachine **aMachine)
     CheckComArgOutPointerValid(aMachine);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mMachine is constant during life time, no need to lock */
     mMachine.queryInterfaceTo(aMachine);
@@ -1421,7 +1421,7 @@ STDMETHODIMP Console::COMGETTER(State)(MachineState_T *aMachineState)
     CheckComArgOutPointerValid(aMachineState);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1436,7 +1436,7 @@ STDMETHODIMP Console::COMGETTER(Guest)(IGuest **aGuest)
     CheckComArgOutPointerValid(aGuest);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mGuest is constant during life time, no need to lock */
     mGuest.queryInterfaceTo(aGuest);
@@ -1449,7 +1449,7 @@ STDMETHODIMP Console::COMGETTER(Keyboard)(IKeyboard **aKeyboard)
     CheckComArgOutPointerValid(aKeyboard);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mKeyboard is constant during life time, no need to lock */
     mKeyboard.queryInterfaceTo(aKeyboard);
@@ -1462,7 +1462,7 @@ STDMETHODIMP Console::COMGETTER(Mouse)(IMouse **aMouse)
     CheckComArgOutPointerValid(aMouse);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mMouse is constant during life time, no need to lock */
     mMouse.queryInterfaceTo(aMouse);
@@ -1475,7 +1475,7 @@ STDMETHODIMP Console::COMGETTER(Display)(IDisplay **aDisplay)
     CheckComArgOutPointerValid(aDisplay);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mDisplay is constant during life time, no need to lock */
     mDisplay.queryInterfaceTo(aDisplay);
@@ -1488,7 +1488,7 @@ STDMETHODIMP Console::COMGETTER(Debugger)(IMachineDebugger **aDebugger)
     CheckComArgOutPointerValid(aDebugger);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* we need a write lock because of the lazy mDebugger initialization*/
     AutoWriteLock alock(this);
@@ -1510,7 +1510,7 @@ STDMETHODIMP Console::COMGETTER(USBDevices)(ComSafeArrayOut(IUSBDevice *, aUSBDe
     CheckComArgOutSafeArrayPointerValid(aUSBDevices);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1525,7 +1525,7 @@ STDMETHODIMP Console::COMGETTER(RemoteUSBDevices)(ComSafeArrayOut(IHostUSBDevice
     CheckComArgOutSafeArrayPointerValid(aRemoteUSBDevices);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1540,7 +1540,7 @@ STDMETHODIMP Console::COMGETTER(RemoteDisplayInfo)(IRemoteDisplayInfo **aRemoteD
     CheckComArgOutPointerValid(aRemoteDisplayInfo);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mDisplay is constant during life time, no need to lock */
     mRemoteDisplayInfo.queryInterfaceTo(aRemoteDisplayInfo);
@@ -1554,14 +1554,14 @@ Console::COMGETTER(SharedFolders)(ComSafeArrayOut(ISharedFolder *, aSharedFolder
     CheckComArgOutSafeArrayPointerValid(aSharedFolders);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* loadDataFromSavedState() needs a write lock */
     AutoWriteLock alock(this);
 
     /* Read console data stored in the saved state file (if not yet done) */
     HRESULT rc = loadDataFromSavedState();
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     SafeIfaceArray<ISharedFolder> sf(mSharedFolders);
     sf.detachTo(ComSafeArrayOutArg(aSharedFolders));
@@ -1593,7 +1593,7 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
     LogFlowThisFunc(("mMachineState=%d\n", mMachineState));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -1675,7 +1675,7 @@ STDMETHODIMP Console::Reset()
     LogFlowThisFunc(("mMachineState=%d\n", mMachineState));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -1690,7 +1690,7 @@ STDMETHODIMP Console::Reset()
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     /* leave the lock before a VMR3* call (EMT will call us back)! */
     alock.leave();
@@ -1712,7 +1712,7 @@ STDMETHODIMP Console::Pause()
     LogFlowThisFuncEnter();
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -1736,7 +1736,7 @@ STDMETHODIMP Console::Pause()
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     LogFlowThisFunc(("Sending PAUSE request...\n"));
 
@@ -1759,7 +1759,7 @@ STDMETHODIMP Console::Resume()
     LogFlowThisFuncEnter();
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -1770,7 +1770,7 @@ STDMETHODIMP Console::Resume()
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     LogFlowThisFunc(("Sending RESUME request...\n"));
 
@@ -1798,7 +1798,7 @@ STDMETHODIMP Console::PowerButton()
     LogFlowThisFuncEnter();
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -1812,7 +1812,7 @@ STDMETHODIMP Console::PowerButton()
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     PPDMIBASE pBase;
     int vrc = PDMR3QueryDeviceLun(mpVM, "acpi", 0, 0, &pBase);
@@ -1856,7 +1856,7 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     PPDMIBASE pBase;
     int vrc = PDMR3QueryDeviceLun(mpVM, "acpi", 0, 0, &pBase);
@@ -1903,7 +1903,7 @@ STDMETHODIMP Console::GetGuestEnteredACPIMode(BOOL *aEntered)
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     PPDMIBASE pBase;
     int vrc = PDMR3QueryDeviceLun(mpVM, "acpi", 0, 0, &pBase);
@@ -1927,7 +1927,7 @@ STDMETHODIMP Console::SleepButton()
     LogFlowThisFuncEnter();
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -1938,7 +1938,7 @@ STDMETHODIMP Console::SleepButton()
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     PPDMIBASE pBase;
     int vrc = PDMR3QueryDeviceLun(mpVM, "acpi", 0, 0, &pBase);
@@ -1968,7 +1968,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -1986,7 +1986,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
     if (mMachineState == MachineState_Running)
     {
         HRESULT rc = Pause();
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     HRESULT rc = S_OK;
@@ -2026,7 +2026,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
          * others from accessing this machine)
          */
         rc = mControl->BeginSavingState(progress, stateFilePath.asOutParam());
-        CheckComRCBreakRC(rc);
+        if (FAILED(rc)) break;
 
         fBeganSavingState = true;
 
@@ -2106,7 +2106,7 @@ STDMETHODIMP Console::AdoptSavedState(IN_BSTR aSavedStateFile)
     CheckComArgNotNull(aSavedStateFile);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2124,7 +2124,7 @@ STDMETHODIMP Console::AdoptSavedState(IN_BSTR aSavedStateFile)
 STDMETHODIMP Console::ForgetSavedState(BOOL aRemove)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2136,7 +2136,7 @@ STDMETHODIMP Console::ForgetSavedState(BOOL aRemove)
     HRESULT rc = S_OK;
 
     rc = mControl->SetRemoveSavedState(aRemove);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /*
      * Saved -> PoweredOff transition will be detected in the SessionMachine
@@ -2163,7 +2163,7 @@ STDMETHODIMP Console::GetDeviceActivity(DeviceType_T aDeviceType,
     CheckComArgNotNull(aDeviceActivity);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /*
      * Note: we don't lock the console object here because
@@ -2247,7 +2247,7 @@ STDMETHODIMP Console::AttachUSBDevice(IN_BSTR aId)
 {
 #ifdef VBOX_WITH_USB
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2259,7 +2259,7 @@ STDMETHODIMP Console::AttachUSBDevice(IN_BSTR aId)
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     /* Don't proceed unless we've found the usb controller. */
     PPDMIBASE pBase = NULL;
@@ -2274,7 +2274,7 @@ STDMETHODIMP Console::AttachUSBDevice(IN_BSTR aId)
 
     /* Request the device capture */
     HRESULT rc = mControl->CaptureUSBDevice(aId);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     return rc;
 
@@ -2290,7 +2290,7 @@ STDMETHODIMP Console::DetachUSBDevice(IN_BSTR aId, IUSBDevice **aDevice)
     CheckComArgOutPointerValid(aDevice);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2355,13 +2355,13 @@ STDMETHODIMP Console::FindUSBDeviceByAddress(IN_BSTR aAddress, IUSBDevice **aDev
 
     SafeIfaceArray<IUSBDevice> devsvec;
     HRESULT rc = COMGETTER(USBDevices)(ComSafeArrayAsOutParam(devsvec));
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     for (size_t i = 0; i < devsvec.size(); ++i)
     {
         Bstr address;
         rc = devsvec[i]->COMGETTER(Address)(address.asOutParam());
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
         if (address == aAddress)
         {
             ComObjPtr<OUSBDevice> found;
@@ -2390,13 +2390,13 @@ STDMETHODIMP Console::FindUSBDeviceById(IN_BSTR aId, IUSBDevice **aDevice)
 
     SafeIfaceArray<IUSBDevice> devsvec;
     HRESULT rc = COMGETTER(USBDevices)(ComSafeArrayAsOutParam(devsvec));
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     for (size_t i = 0; i < devsvec.size(); ++i)
     {
         Bstr id;
         rc = devsvec[i]->COMGETTER(Id)(id.asOutParam());
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
         if (id == aId)
         {
             ComObjPtr<OUSBDevice> found;
@@ -2422,7 +2422,7 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
     CheckComArgNotNull(aHostPath);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2449,7 +2449,7 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
 
     sharedFolder.createObject();
     rc = sharedFolder->init(this, aName, aHostPath, aWritable);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* protect mpVM (if not NULL) */
     AutoVMCallerQuietWeak autoVMCaller(this);
@@ -2464,12 +2464,12 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
         if (findOtherSharedFolder(aName, it))
         {
             rc = removeSharedFolder(aName);
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
         }
 
         /* second, create the given folder */
         rc = createSharedFolder(aName, SharedFolderData(aHostPath, aWritable));
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     mSharedFolders.insert(std::make_pair(aName, sharedFolder));
@@ -2489,7 +2489,7 @@ STDMETHODIMP Console::RemoveSharedFolder(IN_BSTR aName)
     CheckComArgNotNull(aName);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2509,7 +2509,7 @@ STDMETHODIMP Console::RemoveSharedFolder(IN_BSTR aName)
 
     ComObjPtr<SharedFolder> sharedFolder;
     HRESULT rc = findSharedFolder(aName, sharedFolder, true /* aSetError */);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* protect mpVM (if not NULL) */
     AutoVMCallerQuietWeak autoVMCaller(this);
@@ -2521,7 +2521,7 @@ STDMETHODIMP Console::RemoveSharedFolder(IN_BSTR aName)
 
         /* first, remove the given folder */
         rc = removeSharedFolder(aName);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         /* first, remove the machine or the global folder if there is any */
         SharedFolderDataMap::const_iterator it;
@@ -2556,7 +2556,7 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2685,7 +2685,7 @@ STDMETHODIMP Console::DeleteSnapshot(IN_BSTR aId, IProgress **aProgress)
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2696,7 +2696,7 @@ STDMETHODIMP Console::DeleteSnapshot(IN_BSTR aId, IProgress **aProgress)
 
     MachineState_T machineState = MachineState_Null;
     HRESULT rc = mControl->DeleteSnapshot(this, aId, &machineState, aProgress);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     setMachineStateLocally(machineState);
     return S_OK;
@@ -2705,7 +2705,7 @@ STDMETHODIMP Console::DeleteSnapshot(IN_BSTR aId, IProgress **aProgress)
 STDMETHODIMP Console::RestoreSnapshot(ISnapshot *aSnapshot, IProgress **aProgress)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2716,7 +2716,7 @@ STDMETHODIMP Console::RestoreSnapshot(ISnapshot *aSnapshot, IProgress **aProgres
 
     MachineState_T machineState = MachineState_Null;
     HRESULT rc = mControl->RestoreSnapshot(this, aSnapshot, &machineState, aProgress);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     setMachineStateLocally(machineState);
     return S_OK;
@@ -2727,7 +2727,7 @@ STDMETHODIMP Console::RegisterCallback(IConsoleCallback *aCallback)
     CheckComArgNotNull(aCallback);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
 #if 0 /** @todo r=bird,r=pritesh: must check that the interface id match correct or we might screw up with old code! */
     void *dummy;
@@ -2776,7 +2776,7 @@ STDMETHODIMP Console::UnregisterCallback(IConsoleCallback *aCallback)
     CheckComArgNotNull(aCallback);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -3035,7 +3035,7 @@ DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, un
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(pThis);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     PVM pVM = pThis->mpVM;
 
@@ -3268,7 +3268,7 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     /* Get the properties we need from the adapter */
     BOOL fCableConnected, fTraceEnabled;
@@ -3407,7 +3407,7 @@ HRESULT Console::doNetworkAdapterChange(const char *pszDevice,
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     /*
      * Call worker in EMT, that's faster and safer than doing everything
@@ -3481,7 +3481,7 @@ DECLCALLBACK(int) Console::changeNetworkAttachment(Console *pThis,
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(pThis);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     PVM pVM = pThis->mpVM;
 
@@ -3581,7 +3581,7 @@ HRESULT Console::onSerialPortChange(ISerialPort *aSerialPort)
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     /* nothing to do so far */
 
@@ -3619,7 +3619,7 @@ HRESULT Console::onParallelPortChange(IParallelPort *aParallelPort)
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     /* nothing to do so far */
 
@@ -3657,7 +3657,7 @@ HRESULT Console::onStorageControllerChange()
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     /* nothing to do so far */
 
@@ -3695,7 +3695,7 @@ HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForc
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     rc = doMediumChange(aMediumAttachment, !!aForce);
 
@@ -3821,7 +3821,7 @@ HRESULT Console::onUSBControllerChange()
 //
 //    /* protect mpVM */
 //    AutoVMCaller autoVMCaller(this);
-//    CheckComRCReturnRC(autoVMCaller.rc());
+//    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
@@ -4042,7 +4042,7 @@ HRESULT Console::getGuestProperty(IN_BSTR aName, BSTR *aValue,
 
     /* protect mpVM (if not NULL) */
     AutoVMCallerWeak autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
      * autoVMCaller, so there is no need to hold a lock of this */
@@ -4117,7 +4117,7 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
 
     /* protect mpVM (if not NULL) */
     AutoVMCallerWeak autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
      * autoVMCaller, so there is no need to hold a lock of this */
@@ -4197,7 +4197,7 @@ HRESULT Console::enumerateGuestProperties(IN_BSTR aPatterns,
 
     /* protect mpVM (if not NULL) */
     AutoVMCallerWeak autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
      * autoVMCaller, so there is no need to hold a lock of this */
@@ -4575,7 +4575,7 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
 
     Bstr logFolder;
     hrc = aMachine->COMGETTER(LogFolder)(logFolder.asOutParam());
-    CheckComRCReturnRC(hrc);
+    if (FAILED(hrc)) return hrc;
 
     Utf8Str logDir = logFolder;
 
@@ -4714,7 +4714,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     LogFlowThisFunc(("mMachineState=%d\n", mMachineState));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -4773,7 +4773,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 
     /* Read console data stored in the saved state file (if not yet done) */
     rc = loadDataFromSavedState();
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* Check all types of shared folders and compose a single list */
     SharedFolderDataMap sharedFolders;
@@ -4802,7 +4802,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     if (mMachineState == MachineState_Saved)
     {
         rc = mMachine->COMGETTER(StateFilePath)(savedStateFile.asOutParam());
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
         ComAssertRet(!!savedStateFile, E_FAIL);
         int vrc = SSMR3ValidateFile(Utf8Str(savedStateFile).c_str(), false /* fChecksumIt */);
         if (RT_FAILURE(vrc))
@@ -4814,12 +4814,12 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     /* test and clear the TeleporterEnabled property  */
     BOOL fTeleporterEnabled;
     rc = mMachine->COMGETTER(TeleporterEnabled)(&fTeleporterEnabled);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 #if 0 /** @todo we should save it afterwards, but that isn't necessarily a good idea. Find a better place for this (VBoxSVC).  */
     if (fTeleporterEnabled)
     {
         rc = mMachine->COMSETTER(TeleporterEnabled)(FALSE);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 #endif
 
@@ -4836,7 +4836,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     rc = powerupProgress->init(static_cast<IConsole *>(this),
                                progressDesc,
                                fTeleporterEnabled /* aCancelable */);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* setup task object and thread to carry out the operation
      * asynchronously */
@@ -4862,13 +4862,13 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
      */
     ComPtr<ISnapshot> pCurrentSnapshot;
     rc = mMachine->COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam());
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     BOOL fCurrentSnapshotIsOnline = false;
     if (pCurrentSnapshot)
     {
         rc = pCurrentSnapshot->COMGETTER(Online)(&fCurrentSnapshotIsOnline);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     if (!fCurrentSnapshotIsOnline)
@@ -4877,7 +4877,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 
         com::SafeIfaceArray<IMediumAttachment> atts;
         rc = mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(atts));
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         for (size_t i = 0;
              i < atts.size();
@@ -4890,7 +4890,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
             {
                 ComPtr<IMedium> medium;
                 rc = atts[i]->COMGETTER(Medium)(medium.asOutParam());
-                CheckComRCReturnRC(rc);
+                if (FAILED(rc)) return rc;
 
                 /* save for later use on the powerup thread */
                 task->hardDisks.push_back(medium);
@@ -4898,13 +4898,13 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
                 /* needs autoreset? */
                 BOOL autoReset = FALSE;
                 rc = medium->COMGETTER(AutoReset)(&autoReset);
-                CheckComRCReturnRC(rc);
+                if (FAILED(rc)) return rc;
 
                 if (autoReset)
                 {
                     ComPtr<IProgress> resetProgress;
                     rc = medium->Reset(resetProgress.asOutParam());
-                    CheckComRCReturnRC(rc);
+                    if (FAILED(rc)) return rc;
 
                     /* save for later use on the powerup thread */
                     task->hardDiskProgresses.push_back(resetProgress);
@@ -4916,7 +4916,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         LogFlowThisFunc(("Machine has a current snapshot which is online, skipping immutable images reset\n"));
 
     rc = consoleInitReleaseLog(mMachine);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* pass the progress object to the caller if requested */
     if (aProgress)
@@ -5422,9 +5422,9 @@ HRESULT Console::fetchSharedFolders(BOOL aGlobal)
             BOOL writable;
 
             rc = folder->COMGETTER(Name)(name.asOutParam());
-            CheckComRCBreakRC(rc);
+            if (FAILED(rc)) break;
             rc = folder->COMGETTER(HostPath)(hostPath.asOutParam());
-            CheckComRCBreakRC(rc);
+            if (FAILED(rc)) break;
             rc = folder->COMGETTER(Writable)(&writable);
 
             mMachineSharedFolders.insert(std::make_pair(name, SharedFolderData(hostPath, writable)));
@@ -5976,7 +5976,7 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     LogFlowThisFunc(("Proxying USB device '%s' {%RTuuid}...\n",
                       Address.raw(), uuid.ptr()));
@@ -6095,7 +6095,7 @@ HRESULT Console::detachUSBDevice(USBDeviceList::iterator &aIt)
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     /* if the device is attached, then there must at least one USB hub. */
     AssertReturn(PDMR3USBHasHub(mpVM), E_FAIL);
@@ -6426,7 +6426,7 @@ HRESULT Console::powerDownHostInterfaces()
     {
         ComPtr<INetworkAdapter> networkAdapter;
         rc = mMachine->GetNetworkAdapter(slot, networkAdapter.asOutParam());
-        CheckComRCBreakRC(rc);
+        if (FAILED(rc)) break;
 
         BOOL enabled = FALSE;
         networkAdapter->COMGETTER(Enabled)(&enabled);
@@ -6839,7 +6839,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
         if (!task->mTeleporterEnabled)
         {
             rc = console->mControl->LockMedia();
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
         }
 
 #ifdef VBOX_WITH_VRDP
@@ -6957,20 +6957,19 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                          ++ it)
                     {
                         rc = console->createSharedFolder((*it).first, (*it).second);
-                        CheckComRCBreakRC(rc);
+                        if (FAILED(rc)) break;
                     }
+                    if (FAILED(rc)) break;
 
                     /* enter the lock again */
                     alock.enter();
-
-                    CheckComRCBreakRC(rc);
                 }
 
                 /*
                  * Capture USB devices.
                  */
                 rc = console->captureUSBDevices(pVM);
-                CheckComRCBreakRC(rc);
+                if (FAILED(rc)) break;
 
                 /* leave the lock before a lengthy operation */
                 alock.leave();

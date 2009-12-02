@@ -174,8 +174,8 @@ STDMETHODIMP MediumFormat::COMGETTER(Id)(BSTR *aId)
 {
     CheckComArgOutPointerValid(aId);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     m.id.cloneTo (aId);
@@ -187,8 +187,8 @@ STDMETHODIMP MediumFormat::COMGETTER(Name)(BSTR *aName)
 {
     CheckComArgOutPointerValid(aName);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     m.name.cloneTo (aName);
@@ -202,8 +202,8 @@ COMGETTER(FileExtensions)(ComSafeArrayOut (BSTR, aFileExtensions))
     if (ComSafeArrayOutIsNull (aFileExtensions))
         return E_POINTER;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     com::SafeArray <BSTR> fileExtentions (m.fileExtensions.size());
@@ -220,8 +220,8 @@ STDMETHODIMP MediumFormat::COMGETTER(Capabilities)(ULONG *aCaps)
 {
     CheckComArgOutPointerValid(aCaps);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* m.capabilities is const, no need to lock */
 
@@ -248,8 +248,8 @@ STDMETHODIMP MediumFormat::DescribeProperties(ComSafeArrayOut (BSTR, aNames),
     CheckComArgSafeArrayNotNull(aFlags);
     CheckComArgSafeArrayNotNull(aDefaults);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
     com::SafeArray <BSTR> propertyNames (m.properties.size());

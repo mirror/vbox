@@ -261,7 +261,7 @@ STDMETHODIMP SharedFolder::COMGETTER(Name) (BSTR *aName)
     CheckComArgOutPointerValid(aName);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mName is constant during life time, no need to lock */
     m.name.cloneTo(aName);
@@ -274,7 +274,7 @@ STDMETHODIMP SharedFolder::COMGETTER(HostPath) (BSTR *aHostPath)
     CheckComArgOutPointerValid(aHostPath);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mHostPath is constant during life time, no need to lock */
     m.hostPath.cloneTo(aHostPath);
@@ -287,7 +287,7 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
     CheckComArgOutPointerValid(aAccessible);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mName and mHostPath are constant during life time, no need to lock */
 
@@ -329,7 +329,7 @@ STDMETHODIMP SharedFolder::COMGETTER(LastAccessError) (BSTR *aLastAccessError)
     CheckComArgOutPointerValid(aLastAccessError);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 

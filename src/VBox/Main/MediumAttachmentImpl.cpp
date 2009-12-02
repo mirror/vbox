@@ -179,7 +179,7 @@ STDMETHODIMP MediumAttachment::COMGETTER(Medium)(IMedium **aHardDisk)
     CheckComArgOutPointerValid(aHardDisk);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -196,7 +196,7 @@ STDMETHODIMP MediumAttachment::COMGETTER(Controller)(BSTR *aController)
     CheckComArgOutPointerValid(aController);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* m->controller is constant during life time, no need to lock */
     m->controllerName.cloneTo(aController);
@@ -212,7 +212,7 @@ STDMETHODIMP MediumAttachment::COMGETTER(Port)(LONG *aPort)
     CheckComArgOutPointerValid(aPort);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* m->port is constant during life time, no need to lock */
     *aPort = m->port;
@@ -228,7 +228,7 @@ STDMETHODIMP MediumAttachment::COMGETTER(Device)(LONG *aDevice)
     CheckComArgOutPointerValid(aDevice);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* m->device is constant during life time, no need to lock */
     *aDevice = m->device;
@@ -244,7 +244,7 @@ STDMETHODIMP MediumAttachment::COMGETTER(Type)(DeviceType_T *aType)
     CheckComArgOutPointerValid(aType);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* m->type is constant during life time, no need to lock */
     *aType = m->type;
@@ -260,7 +260,7 @@ STDMETHODIMP MediumAttachment::COMGETTER(Passthrough)(BOOL *aPassthrough)
     CheckComArgOutPointerValid(aPassthrough);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock lock(this);
 

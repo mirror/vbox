@@ -105,10 +105,10 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
         {
             ComObjPtr<MediumFormat> hdf;
             rc = hdf.createObject();
-            CheckComRCBreakRC (rc);
+            if (FAILED(rc)) break;
 
             rc = hdf->init (&aVDInfo [i]);
-            CheckComRCBreakRC (rc);
+            if (FAILED(rc)) break;
 
             mMediumFormats.push_back (hdf);
         }
@@ -181,7 +181,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MinGuestRAM)(ULONG *minRAM)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     AssertCompile(MM_RAM_MIN_IN_MB >= SchemaDefs::MinGuestRAM);
@@ -196,7 +196,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestRAM)(ULONG *maxRAM)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     AssertCompile(MM_RAM_MAX_IN_MB <= SchemaDefs::MaxGuestRAM);
@@ -220,7 +220,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MinGuestVRAM)(ULONG *minVRAM)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     *minVRAM = SchemaDefs::MinGuestVRAM;
@@ -234,7 +234,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestVRAM)(ULONG *maxVRAM)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     *maxVRAM = SchemaDefs::MaxGuestVRAM;
@@ -248,7 +248,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MinGuestCPUCount)(ULONG *minCPUCount)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     *minCPUCount = SchemaDefs::MinCPUCount; // VMM_MIN_CPU_COUNT
@@ -262,7 +262,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestCPUCount)(ULONG *maxCPUCount)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     *maxCPUCount = SchemaDefs::MaxCPUCount; // VMM_MAX_CPU_COUNT
@@ -276,7 +276,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestMonitors)(ULONG *maxMonitors)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     *maxMonitors = SchemaDefs::MaxGuestMonitors;
@@ -290,7 +290,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxVDISize)(ULONG64 *maxVDISize)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /** The BIOS supports currently 32 bit LBA numbers (implementing the full
      * 48 bit range is in theory trivial, but the crappy compiler makes things
@@ -313,7 +313,7 @@ STDMETHODIMP SystemProperties::COMGETTER(NetworkAdapterCount)(ULONG *count)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     *count = SchemaDefs::NetworkAdapterCount;
@@ -327,7 +327,7 @@ STDMETHODIMP SystemProperties::COMGETTER(SerialPortCount)(ULONG *count)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     *count = SchemaDefs::SerialPortCount;
@@ -341,7 +341,7 @@ STDMETHODIMP SystemProperties::COMGETTER(ParallelPortCount)(ULONG *count)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     *count = SchemaDefs::ParallelPortCount;
@@ -354,7 +354,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxBootPosition)(ULONG *aMaxBootPositio
     CheckComArgOutPointerValid(aMaxBootPosition);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     *aMaxBootPosition = SchemaDefs::MaxBootPosition;
@@ -367,7 +367,7 @@ STDMETHODIMP SystemProperties::GetMaxDevicesPerPortForStorageBus (StorageBus_T a
     CheckComArgOutPointerValid(aMaxDevicesPerPort);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     switch (aBus)
@@ -399,7 +399,7 @@ STDMETHODIMP SystemProperties::GetMinPortCountForStorageBus (StorageBus_T aBus, 
     CheckComArgOutPointerValid(aMinPortCount);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     switch (aBus)
@@ -436,7 +436,7 @@ STDMETHODIMP SystemProperties::GetMaxPortCountForStorageBus (StorageBus_T aBus, 
     CheckComArgOutPointerValid(aMaxPortCount);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     switch (aBus)
@@ -473,7 +473,7 @@ STDMETHODIMP SystemProperties::GetMaxInstancesOfStorageBus(StorageBus_T aBus, UL
     CheckComArgOutPointerValid(aMaxInstances);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     switch (aBus)
@@ -500,7 +500,7 @@ STDMETHODIMP SystemProperties::GetDeviceTypesForStorageBus(StorageBus_T aBus,
     CheckComArgOutSafeArrayPointerValid(aDeviceTypes);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, this is const */
     switch (aBus)
@@ -540,7 +540,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMa
     CheckComArgOutPointerValid(aDefaultMachineFolder);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -552,7 +552,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMa
 STDMETHODIMP SystemProperties::COMSETTER(DefaultMachineFolder) (IN_BSTR aDefaultMachineFolder)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock (mParent, this);
@@ -569,7 +569,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFolder) (BSTR *aDefaultH
     CheckComArgOutPointerValid(aDefaultHardDiskFolder);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -581,7 +581,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFolder) (BSTR *aDefaultH
 STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFolder) (IN_BSTR aDefaultHardDiskFolder)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock (mParent, this);
@@ -600,7 +600,7 @@ COMGETTER(MediumFormats) (ComSafeArrayOut(IMediumFormat *, aMediumFormats))
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -615,7 +615,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFormat) (BSTR *aDefaultH
     CheckComArgOutPointerValid(aDefaultHardDiskFormat);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -627,7 +627,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFormat) (BSTR *aDefaultH
 STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFormat) (IN_BSTR aDefaultHardDiskFormat)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock (mParent, this);
@@ -644,7 +644,7 @@ STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary) (BSTR *aRemot
     CheckComArgOutPointerValid(aRemoteDisplayAuthLibrary);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -656,7 +656,7 @@ STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary) (BSTR *aRemot
 STDMETHODIMP SystemProperties::COMSETTER(RemoteDisplayAuthLibrary) (IN_BSTR aRemoteDisplayAuthLibrary)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock (mParent, this);
@@ -673,7 +673,7 @@ STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary) (BSTR *aWebServi
     CheckComArgOutPointerValid(aWebServiceAuthLibrary);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -685,7 +685,7 @@ STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary) (BSTR *aWebServi
 STDMETHODIMP SystemProperties::COMSETTER(WebServiceAuthLibrary) (IN_BSTR aWebServiceAuthLibrary)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock (mParent, this);
@@ -703,7 +703,7 @@ STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount) (ULONG *count)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -715,7 +715,7 @@ STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount) (ULONG *count)
 STDMETHODIMP SystemProperties::COMSETTER(LogHistoryCount) (ULONG count)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock (mParent, this);
@@ -733,7 +733,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultAudioDriver) (AudioDriverType_T 
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -748,26 +748,26 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultAudioDriver) (AudioDriverType_T 
 HRESULT SystemProperties::loadSettings(const settings::SystemProperties &data)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = S_OK;
 
     rc = setDefaultMachineFolder(data.strDefaultMachineFolder);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     rc = setDefaultHardDiskFolder(data.strDefaultHardDiskFolder);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     rc = setDefaultHardDiskFormat(data.strDefaultHardDiskFormat);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     rc = setRemoteDisplayAuthLibrary(data.strRemoteDisplayAuthLibrary);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     rc = setWebServiceAuthLibrary(data.strWebServiceAuthLibrary);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mLogHistoryCount = data.ulLogHistoryCount;
 
@@ -777,7 +777,7 @@ HRESULT SystemProperties::loadSettings(const settings::SystemProperties &data)
 HRESULT SystemProperties::saveSettings(settings::SystemProperties &data)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 

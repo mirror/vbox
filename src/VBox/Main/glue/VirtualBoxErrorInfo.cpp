@@ -253,7 +253,7 @@ NS_IMETHODIMP VirtualBoxErrorInfo::GetInner (nsIException **aInner)
 {
     ComPtr<IVirtualBoxErrorInfo> info;
     nsresult rv = COMGETTER(Next) (info.asOutParam());
-    CheckComRCReturnRC(rv);
+    if (FAILED(rv)) return rv;
     return info.queryInterfaceTo(aInner);
 }
 
@@ -304,7 +304,7 @@ HRESULT VirtualBoxErrorInfoGlue::init (IVirtualBoxErrorInfo *aHead,
     {
         ComPtr<IVirtualBoxErrorInfo> next;
         rc = cur->COMGETTER(Next) (next.asOutParam());
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         if (next.isNull())
             break;
@@ -326,7 +326,7 @@ HRESULT VirtualBoxErrorInfoGlue::init (IVirtualBoxErrorInfo *aHead,
     {
         ComObjPtr<VirtualBoxErrorInfoGlue> wrapper;
         rc = wrapper.createObject();
-        CheckComRCBreakRC (rc);
+        if (FAILED(rc)) break;
 
         -- prev;
 
@@ -337,7 +337,7 @@ HRESULT VirtualBoxErrorInfoGlue::init (IVirtualBoxErrorInfo *aHead,
 
         *prev = wrapper;
 
-        CheckComRCBreakRC (rc);
+        if (FAILED(rc)) break;
     }
 
     mReal = aHead;

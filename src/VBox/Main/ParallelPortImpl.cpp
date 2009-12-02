@@ -200,7 +200,7 @@ HRESULT ParallelPort::loadSettings(const settings::ParallelPort &data)
     /* device path (optional, defaults to null) */
     Bstr path(data.strPath);
     HRESULT rc = checkSetPath (path);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
     mData->mPath = path;
 
     return S_OK;
@@ -315,7 +315,7 @@ STDMETHODIMP ParallelPort::COMGETTER(Enabled) (BOOL *aEnabled)
     CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -329,11 +329,11 @@ STDMETHODIMP ParallelPort::COMSETTER(Enabled) (BOOL aEnabled)
     LogFlowThisFunc(("aEnabled=%RTbool\n", aEnabled));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -363,7 +363,7 @@ STDMETHODIMP ParallelPort::COMGETTER(Slot) (ULONG *aSlot)
     CheckComArgOutPointerValid(aSlot);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -377,7 +377,7 @@ STDMETHODIMP ParallelPort::COMGETTER(IRQ) (ULONG *aIRQ)
     CheckComArgOutPointerValid(aIRQ);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -397,11 +397,11 @@ STDMETHODIMP ParallelPort::COMSETTER(IRQ)(ULONG aIRQ)
             mData->mSlot, aIRQ, 255);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -431,7 +431,7 @@ STDMETHODIMP ParallelPort::COMGETTER(IOBase) (ULONG *aIOBase)
     CheckComArgOutPointerValid(aIOBase);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -451,11 +451,11 @@ STDMETHODIMP ParallelPort::COMSETTER(IOBase)(ULONG aIOBase)
             mData->mSlot, aIOBase, 0, 0xFFFF);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -485,7 +485,7 @@ STDMETHODIMP ParallelPort::COMGETTER(Path) (BSTR *aPath)
     CheckComArgOutPointerValid(aPath);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -514,11 +514,11 @@ HRESULT ParallelPort::checkSetPath (CBSTR aPath)
 STDMETHODIMP ParallelPort::COMSETTER(Path) (IN_BSTR aPath)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -529,7 +529,7 @@ STDMETHODIMP ParallelPort::COMSETTER(Path) (IN_BSTR aPath)
     if (mData->mPath != aPath)
     {
         HRESULT rc = checkSetPath (aPath);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         mData.backup();
         mData->mPath = aPath;

@@ -138,7 +138,7 @@ STDMETHODIMP Mouse::COMGETTER(AbsoluteSupported) (BOOL *absoluteSupported)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -168,7 +168,7 @@ STDMETHODIMP Mouse::COMGETTER(NeedsHostCursor) (BOOL *needsHostCursor)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -202,7 +202,7 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
     HRESULT rc = S_OK;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -265,7 +265,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     HRESULT rc = S_OK;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -412,7 +412,7 @@ DECLCALLBACK(int) Mouse::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, 
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "Object\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
@@ -484,9 +484,9 @@ const PDMDRVREG Mouse::DrvReg =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

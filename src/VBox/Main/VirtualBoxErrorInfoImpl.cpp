@@ -227,7 +227,7 @@ NS_IMETHODIMP VirtualBoxErrorInfo::GetInner (nsIException **aInner)
 {
     ComPtr<IVirtualBoxErrorInfo> info;
     nsresult rv = COMGETTER(Next) (info.asOutParam());
-    CheckComRCReturnRC(rv);
+    if (FAILED(rv)) return rv;
     return info.queryInterfaceTo(aInner);
 }
 

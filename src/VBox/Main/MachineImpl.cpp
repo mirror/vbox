@@ -700,7 +700,7 @@ STDMETHODIMP Machine::COMGETTER(Parent) (IVirtualBox **aParent)
     CheckComArgOutPointerValid(aParent);
 
     AutoLimitedCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mParent is constant during life time, no need to lock */
     mParent.queryInterfaceTo(aParent);
@@ -713,7 +713,7 @@ STDMETHODIMP Machine::COMGETTER(Accessible) (BOOL *aAccessible)
     CheckComArgOutPointerValid(aAccessible);
 
     AutoLimitedCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     LogFlowThisFunc(("ENTER\n"));
 
@@ -767,7 +767,7 @@ STDMETHODIMP Machine::COMGETTER(AccessError) (IVirtualBoxErrorInfo **aAccessErro
     CheckComArgOutPointerValid(aAccessError);
 
     AutoLimitedCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -799,7 +799,7 @@ STDMETHODIMP Machine::COMGETTER(Name) (BSTR *aName)
     CheckComArgOutPointerValid(aName);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -817,12 +817,12 @@ STDMETHODIMP Machine::COMSETTER(Name) (IN_BSTR aName)
                         tr("Machine name cannot be empty"));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mUserData.backup();
     mUserData->mName = aName;
@@ -835,7 +835,7 @@ STDMETHODIMP Machine::COMGETTER(Description) (BSTR *aDescription)
     CheckComArgOutPointerValid(aDescription);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -847,12 +847,12 @@ STDMETHODIMP Machine::COMGETTER(Description) (BSTR *aDescription)
 STDMETHODIMP Machine::COMSETTER(Description) (IN_BSTR aDescription)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mUserData.backup();
     mUserData->mDescription = aDescription;
@@ -865,7 +865,7 @@ STDMETHODIMP Machine::COMGETTER(Id) (BSTR *aId)
     CheckComArgOutPointerValid(aId);
 
     AutoLimitedCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -879,7 +879,7 @@ STDMETHODIMP Machine::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
     CheckComArgOutPointerValid(aOSTypeId);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -893,24 +893,24 @@ STDMETHODIMP Machine::COMSETTER(OSTypeId) (IN_BSTR aOSTypeId)
     CheckComArgNotNull (aOSTypeId);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* look up the object by Id to check it is valid */
     ComPtr<IGuestOSType> guestOSType;
     HRESULT rc = mParent->GetGuestOSType (aOSTypeId,
                                           guestOSType.asOutParam());
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* when setting, always use the "etalon" value for consistency -- lookup
      * by ID is case-insensitive and the input value may have different case */
     Bstr osTypeId;
     rc = guestOSType->COMGETTER(Id) (osTypeId.asOutParam());
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     AutoWriteLock alock(this);
 
     rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mUserData.backup();
     mUserData->mOSTypeId = osTypeId;
@@ -924,7 +924,7 @@ STDMETHODIMP Machine::COMGETTER(FirmwareType) (FirmwareType_T *aFirmwareType)
     CheckComArgOutPointerValid(aFirmwareType);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -936,11 +936,11 @@ STDMETHODIMP Machine::COMGETTER(FirmwareType) (FirmwareType_T *aFirmwareType)
 STDMETHODIMP Machine::COMSETTER(FirmwareType) (FirmwareType_T aFirmwareType)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoWriteLock alock(this);
 
     int rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mHWData.backup();
     mHWData->mFirmwareType = aFirmwareType;
@@ -954,7 +954,7 @@ STDMETHODIMP Machine::COMGETTER(HardwareVersion) (BSTR *aHWVersion)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -973,12 +973,12 @@ STDMETHODIMP Machine::COMSETTER(HardwareVersion) (IN_BSTR aHWVersion)
                         tr("Invalid hardware version: %ls\n"), aHWVersion);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mHWData.backup();
     mHWData->mHWVersion = hwVersion;
@@ -991,7 +991,7 @@ STDMETHODIMP Machine::COMGETTER(HardwareUUID)(BSTR *aUUID)
     CheckComArgOutPointerValid(aUUID);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1010,12 +1010,12 @@ STDMETHODIMP Machine::COMSETTER(HardwareUUID) (IN_BSTR aUUID)
         return E_INVALIDARG;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mHWData.backup();
     if (hardwareUUID == mData->mUuid)
@@ -1032,7 +1032,7 @@ STDMETHODIMP Machine::COMGETTER(MemorySize) (ULONG *memorySize)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1052,12 +1052,12 @@ STDMETHODIMP Machine::COMSETTER(MemorySize) (ULONG memorySize)
                         memorySize, MM_RAM_MIN_IN_MB, MM_RAM_MAX_IN_MB);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mHWData.backup();
     mHWData->mMemorySize = memorySize;
@@ -1071,7 +1071,7 @@ STDMETHODIMP Machine::COMGETTER(CPUCount) (ULONG *CPUCount)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1091,12 +1091,12 @@ STDMETHODIMP Machine::COMSETTER(CPUCount) (ULONG CPUCount)
                         CPUCount, SchemaDefs::MinCPUCount, SchemaDefs::MaxCPUCount);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mHWData.backup();
     mHWData->mCPUCount = CPUCount;
@@ -1110,7 +1110,7 @@ STDMETHODIMP Machine::COMGETTER(VRAMSize) (ULONG *memorySize)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1129,12 +1129,12 @@ STDMETHODIMP Machine::COMSETTER(VRAMSize) (ULONG memorySize)
                         memorySize, SchemaDefs::MinGuestVRAM, SchemaDefs::MaxGuestVRAM);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mHWData.backup();
     mHWData->mVRAMSize = memorySize;
@@ -1149,7 +1149,7 @@ STDMETHODIMP Machine::COMGETTER(MemoryBalloonSize) (ULONG *memoryBalloonSize)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1168,12 +1168,12 @@ STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize) (ULONG memoryBalloonSize)
                         memoryBalloonSize, 0, VMMDEV_MAX_MEMORY_BALLOON (mHWData->mMemorySize));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mHWData.backup();
     mHWData->mMemoryBalloonSize = memoryBalloonSize;
@@ -1188,7 +1188,7 @@ STDMETHODIMP Machine::COMGETTER(StatisticsUpdateInterval) (ULONG *statisticsUpda
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1201,12 +1201,12 @@ STDMETHODIMP Machine::COMGETTER(StatisticsUpdateInterval) (ULONG *statisticsUpda
 STDMETHODIMP Machine::COMSETTER(StatisticsUpdateInterval) (ULONG statisticsUpdateInterval)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mHWData.backup();
     mHWData->mStatisticsUpdateInterval = statisticsUpdateInterval;
@@ -1221,7 +1221,7 @@ STDMETHODIMP Machine::COMGETTER(Accelerate3DEnabled)(BOOL *enabled)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1233,12 +1233,12 @@ STDMETHODIMP Machine::COMGETTER(Accelerate3DEnabled)(BOOL *enabled)
 STDMETHODIMP Machine::COMSETTER(Accelerate3DEnabled)(BOOL enable)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /** @todo check validity! */
 
@@ -1255,7 +1255,7 @@ STDMETHODIMP Machine::COMGETTER(Accelerate2DVideoEnabled)(BOOL *enabled)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1267,12 +1267,12 @@ STDMETHODIMP Machine::COMGETTER(Accelerate2DVideoEnabled)(BOOL *enabled)
 STDMETHODIMP Machine::COMSETTER(Accelerate2DVideoEnabled)(BOOL enable)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /** @todo check validity! */
 
@@ -1288,7 +1288,7 @@ STDMETHODIMP Machine::COMGETTER(MonitorCount) (ULONG *monitorCount)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1306,12 +1306,12 @@ STDMETHODIMP Machine::COMSETTER(MonitorCount) (ULONG monitorCount)
                         monitorCount, 1, SchemaDefs::MaxGuestMonitors);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mHWData.backup();
     mHWData->mMonitorCount = monitorCount;
@@ -1325,7 +1325,7 @@ STDMETHODIMP Machine::COMGETTER(BIOSSettings)(IBIOSSettings **biosSettings)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mBIOSSettings is constant during life time, no need to lock */
     mBIOSSettings.queryInterfaceTo(biosSettings);
@@ -1339,7 +1339,7 @@ STDMETHODIMP Machine::GetCpuProperty(CpuPropertyType_T property, BOOL *aVal)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1362,12 +1362,12 @@ STDMETHODIMP Machine::GetCpuProperty(CpuPropertyType_T property, BOOL *aVal)
 STDMETHODIMP Machine::SetCpuProperty(CpuPropertyType_T property, BOOL aVal)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     switch(property)
     {
@@ -1393,7 +1393,7 @@ STDMETHODIMP Machine::GetCpuIdLeaf(ULONG aId, ULONG *aValEax, ULONG *aValEbx, UL
     CheckComArgOutPointerValid(aValEdx);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1448,12 +1448,12 @@ STDMETHODIMP Machine::GetCpuIdLeaf(ULONG aId, ULONG *aValEax, ULONG *aValEbx, UL
 STDMETHODIMP Machine::SetCpuIdLeaf(ULONG aId, ULONG aValEax, ULONG aValEbx, ULONG aValEcx, ULONG aValEdx)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     switch(aId)
     {
@@ -1506,12 +1506,12 @@ STDMETHODIMP Machine::SetCpuIdLeaf(ULONG aId, ULONG aValEax, ULONG aValEbx, ULON
 STDMETHODIMP Machine::RemoveCpuIdLeaf(ULONG aId)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     switch(aId)
     {
@@ -1558,12 +1558,12 @@ STDMETHODIMP Machine::RemoveCpuIdLeaf(ULONG aId)
 STDMETHODIMP Machine::RemoveAllCpuIdLeafs()
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* Invalidate all standard leafs. */
     for (unsigned i = 0; i < RT_ELEMENTS(mHWData->mCpuIdStdLeafs); i++)
@@ -1582,7 +1582,7 @@ STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1613,12 +1613,12 @@ STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
 STDMETHODIMP Machine::SetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL aVal)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     switch(property)
     {
@@ -1653,7 +1653,7 @@ STDMETHODIMP Machine::COMGETTER(SnapshotFolder) (BSTR *aSnapshotFolder)
     CheckComArgOutPointerValid(aSnapshotFolder);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1673,12 +1673,12 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder) (IN_BSTR aSnapshotFolder)
      */
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (!mData->mCurrentSnapshot.isNull())
         return setError(E_FAIL,
@@ -1720,7 +1720,7 @@ STDMETHODIMP Machine::COMGETTER(MediumAttachments)(ComSafeArrayOut(IMediumAttach
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1737,7 +1737,7 @@ STDMETHODIMP Machine::COMGETTER(VRDPServer)(IVRDPServer **vrdpServer)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1757,7 +1757,7 @@ STDMETHODIMP Machine::COMGETTER(AudioAdapter)(IAudioAdapter **audioAdapter)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1771,10 +1771,10 @@ STDMETHODIMP Machine::COMGETTER(USBController) (IUSBController **aUSBController)
     CheckComArgOutPointerValid(aUSBController);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     MultiResult rc = mParent->host()->checkUSBProxyService();
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     AutoReadLock alock(this);
 
@@ -1793,7 +1793,7 @@ STDMETHODIMP Machine::COMGETTER(SettingsFilePath) (BSTR *aFilePath)
     CheckComArgOutPointerValid(aFilePath);
 
     AutoLimitedCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1806,12 +1806,12 @@ STDMETHODIMP Machine::COMGETTER(SettingsModified) (BOOL *aModified)
     CheckComArgOutPointerValid(aModified);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (mData->mInitMode == Init_New)
           /*
@@ -1829,7 +1829,7 @@ STDMETHODIMP Machine::COMGETTER(SessionState) (SessionState_T *aSessionState)
     CheckComArgOutPointerValid(aSessionState);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1843,7 +1843,7 @@ STDMETHODIMP Machine::COMGETTER(SessionType) (BSTR *aSessionType)
     CheckComArgOutPointerValid(aSessionType);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1860,7 +1860,7 @@ STDMETHODIMP Machine::COMGETTER(SessionPid) (ULONG *aSessionPid)
     CheckComArgOutPointerValid(aSessionPid);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1875,7 +1875,7 @@ STDMETHODIMP Machine::COMGETTER(State) (MachineState_T *machineState)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1889,7 +1889,7 @@ STDMETHODIMP Machine::COMGETTER(LastStateChange) (LONG64 *aLastStateChange)
     CheckComArgOutPointerValid(aLastStateChange);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1903,7 +1903,7 @@ STDMETHODIMP Machine::COMGETTER(StateFilePath) (BSTR *aStateFilePath)
     CheckComArgOutPointerValid(aStateFilePath);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1937,7 +1937,7 @@ STDMETHODIMP Machine::COMGETTER(CurrentSnapshot) (ISnapshot **aCurrentSnapshot)
     CheckComArgOutPointerValid(aCurrentSnapshot);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1951,7 +1951,7 @@ STDMETHODIMP Machine::COMGETTER(SnapshotCount)(ULONG *aSnapshotCount)
     CheckComArgOutPointerValid(aSnapshotCount);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1967,7 +1967,7 @@ STDMETHODIMP Machine::COMGETTER(CurrentStateModified) (BOOL *aCurrentStateModifi
     CheckComArgOutPointerValid(aCurrentStateModified);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1987,7 +1987,7 @@ STDMETHODIMP Machine::COMGETTER(SharedFolders) (ComSafeArrayOut(ISharedFolder *,
     CheckComArgOutSafeArrayPointerValid(aSharedFolders);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -2002,7 +2002,7 @@ STDMETHODIMP Machine::COMGETTER(ClipboardMode) (ClipboardMode_T *aClipboardMode)
     CheckComArgOutPointerValid(aClipboardMode);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -2015,12 +2015,12 @@ STDMETHODIMP
 Machine::COMSETTER(ClipboardMode) (ClipboardMode_T aClipboardMode)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mHWData.backup();
     mHWData->mClipboardMode = aClipboardMode;
@@ -2034,7 +2034,7 @@ Machine::COMGETTER(GuestPropertyNotificationPatterns)(BSTR *aPatterns)
     CheckComArgOutPointerValid(aPatterns);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -2055,12 +2055,12 @@ Machine::COMSETTER(GuestPropertyNotificationPatterns)(IN_BSTR aPatterns)
 {
     CheckComArgNotNull(aPatterns);
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     try
     {
@@ -2080,7 +2080,7 @@ Machine::COMGETTER(StorageControllers) (ComSafeArrayOut(IStorageController *, aS
     CheckComArgOutSafeArrayPointerValid(aStorageControllers);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -2096,7 +2096,7 @@ Machine::COMGETTER(TeleporterEnabled)(BOOL *aEnabled)
     CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -2109,7 +2109,7 @@ STDMETHODIMP
 Machine::COMSETTER(TeleporterEnabled)(BOOL aEnabled)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2140,7 +2140,7 @@ Machine::COMGETTER(TeleporterPort)(ULONG *aPort)
     CheckComArgOutPointerValid(aPort);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -2156,12 +2156,12 @@ Machine::COMSETTER(TeleporterPort)(ULONG aPort)
         return setError(E_INVALIDARG, tr("Invalid port number %d"), aPort);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mUserData.backup();
     mUserData->mTeleporterPort = aPort;
@@ -2175,7 +2175,7 @@ Machine::COMGETTER(TeleporterAddress)(BSTR *aAddress)
     CheckComArgOutPointerValid(aAddress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -2188,12 +2188,12 @@ STDMETHODIMP
 Machine::COMSETTER(TeleporterAddress)(IN_BSTR aAddress)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mUserData.backup();
     mUserData->mTeleporterAddress = aAddress;
@@ -2207,7 +2207,7 @@ Machine::COMGETTER(TeleporterPassword)(BSTR *aPassword)
     CheckComArgOutPointerValid(aPassword);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -2220,12 +2220,12 @@ STDMETHODIMP
 Machine::COMSETTER(TeleporterPassword)(IN_BSTR aPassword)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mUserData.backup();
     mUserData->mTeleporterPassword = aPassword;
@@ -2249,12 +2249,12 @@ STDMETHODIMP Machine::SetBootOrder (ULONG aPosition, DeviceType_T aDevice)
                         tr("Booting from USB device is currently not supported"));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mHWData.backup();
     mHWData->mBootOrder [aPosition - 1] = aDevice;
@@ -2270,7 +2270,7 @@ STDMETHODIMP Machine::GetBootOrder (ULONG aPosition, DeviceType_T *aDevice)
                        aPosition, SchemaDefs::MaxBootPosition);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -2292,7 +2292,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     CheckComArgNotNull(aId);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::findHardDisk() and the corresponding other methods for
      * DVD and floppy media need *write* lock (for getting rid of unneeded
@@ -2301,7 +2301,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     AutoMultiWriteLock2 alock(mParent, this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /// @todo NEWMEDIA implicit machine registration
     if (!mData->mRegistered)
@@ -2318,15 +2318,15 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     /* Check for an existing controller. */
     ComObjPtr<StorageController> ctl;
     rc = getStorageControllerByName(aControllerName, ctl, true /* aSetError */);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* check that the port and device are not out of range. */
     ULONG portCount;
     ULONG devicesPerPort;
     rc = ctl->COMGETTER(PortCount)(&portCount);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
     rc = ctl->COMGETTER(MaxDevicesPerPortCount)(&devicesPerPort);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (   (aControllerPort < 0)
         || (aControllerPort >= (LONG)portCount)
@@ -2370,7 +2370,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         case DeviceType_HardDisk:
             /* find a hard disk by UUID */
             rc = mParent->findHardDisk(&uuid, NULL, true /* aSetError */, &medium);
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
             break;
 
         case DeviceType_DVD:
@@ -2397,7 +2397,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                 {
                     /* find a DVD image by UUID */
                     rc = mParent->findDVDImage(&uuid, NULL, true /* aSetError */, &medium);
-                    CheckComRCReturnRC(rc);
+                    if (FAILED(rc)) return rc;
                 }
             }
             else
@@ -2430,7 +2430,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                 {
                     /* find a floppy image by UUID */
                     rc = mParent->findFloppyImage(&uuid, NULL, true /* aSetError */, &medium);
-                    CheckComRCReturnRC(rc);
+                    if (FAILED(rc)) return rc;
                 }
             }
             else
@@ -2446,7 +2446,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     }
 
     AutoCaller mediumCaller(medium);
-    CheckComRCReturnRC(mediumCaller.rc());
+    if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
 
     AutoWriteLock mediumLock(medium);
 
@@ -2558,7 +2558,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                     /* use the previously attached hard disk */
                     medium = (*foundIt)->getMedium();
                     mediumCaller.attach(medium);
-                    CheckComRCReturnRC(mediumCaller.rc());
+                    if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
                     mediumLock.attach(medium);
                     /* not implicit, doesn't require association with this VM */
                     indirect = false;
@@ -2632,7 +2632,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             {
                 medium = base;
                 mediumCaller.attach(medium);
-                CheckComRCReturnRC(mediumCaller.rc());
+                if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
                 mediumLock.attach(medium);
             }
         }
@@ -2643,11 +2643,11 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                         medium->preferredDiffFormat().raw(),
                         BstrFmt("%ls"RTPATH_SLASH_STR,
                                  mUserData->mSnapshotFolderFull.raw()).raw());
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         /* make sure the hard disk is not modified before createDiffStorage() */
         rc = medium->LockRead(NULL);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         /* will leave the lock before the potentially lengthy operation, so
          * protect with the special state */
@@ -2666,12 +2666,12 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
         medium->UnlockRead(NULL);
 
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         /* use the created diff for the actual attachment */
         medium = diff;
         mediumCaller.attach(medium);
-        CheckComRCReturnRC(mediumCaller.rc());
+        if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
         mediumLock.attach(medium);
     }
     while (0);
@@ -2679,7 +2679,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     ComObjPtr<MediumAttachment> attachment;
     attachment.createObject();
     rc = attachment->init(this, medium, aControllerName, aControllerPort, aDevice, aType, indirect);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (associate && !medium.isNull())
     {
@@ -2687,7 +2687,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         rc = medium->attachTo(mData->mUuid);
         /* here we can fail because of Deleting, or being in process of
          * creating a Diff */
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     /* success: finally remember the attachment */
@@ -2706,12 +2706,12 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
                      aControllerName, aControllerPort, aDevice));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     AssertReturn(mData->mMachineState != MachineState_Saved, E_FAIL);
 
@@ -2755,7 +2755,7 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
         setMachineState(oldState);
 
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     mMediaData.backup();
@@ -2781,12 +2781,12 @@ STDMETHODIMP Machine::PassthroughDevice(IN_BSTR aControllerName, LONG aControlle
                      aControllerName, aControllerPort, aDevice, aPassthrough));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     AssertReturn(mData->mMachineState != MachineState_Saved, E_FAIL);
 
@@ -2832,7 +2832,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     CheckComArgNotNull(aId);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2878,7 +2878,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
                 if (medium.isNull())
                     rc = mParent->findDVDImage(&uuid, NULL, true /* aDoSetError */, &medium);
             }
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
             break;
         case DeviceType_Floppy:
             if (!uuid.isEmpty())
@@ -2903,7 +2903,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
                 if (medium.isNull())
                     rc = mParent->findFloppyImage(&uuid, NULL, true /* aDoSetError */, &medium);
             }
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
             break;
         default:
             return setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -2968,7 +2968,7 @@ STDMETHODIMP Machine::GetMedium(IN_BSTR aControllerName,
     CheckComArgOutPointerValid(aMedium);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -2994,7 +2994,7 @@ STDMETHODIMP Machine::GetSerialPort (ULONG slot, ISerialPort **port)
     CheckComArgExpr (slot, slot < RT_ELEMENTS (mSerialPorts));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -3009,7 +3009,7 @@ STDMETHODIMP Machine::GetParallelPort (ULONG slot, IParallelPort **port)
     CheckComArgExpr (slot, slot < RT_ELEMENTS (mParallelPorts));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -3024,7 +3024,7 @@ STDMETHODIMP Machine::GetNetworkAdapter (ULONG slot, INetworkAdapter **adapter)
     CheckComArgExpr (slot, slot < RT_ELEMENTS (mNetworkAdapters));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -3038,8 +3038,8 @@ STDMETHODIMP Machine::GetExtraDataKeys(ComSafeArrayOut(BSTR, aKeys))
     if (ComSafeArrayOutIsNull(aKeys))
         return E_POINTER;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock (this);
 
@@ -3066,8 +3066,8 @@ STDMETHODIMP Machine::GetExtraData(IN_BSTR aKey,
     CheckComArgNotNull(aKey);
     CheckComArgOutPointerValid(aValue);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* start with nothing found */
     Bstr bstrResult("");
@@ -3093,7 +3093,7 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
     CheckComArgNotNull(aKey);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC (autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     Utf8Str strKey(aKey);
     Utf8Str strValue(aValue);
@@ -3149,7 +3149,7 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
         if (mType == IsSnapshotMachine)
         {
             HRESULT rc = checkStateDependency(MutableStateDep);
-            CheckComRCReturnRC (rc);
+            if (FAILED(rc)) return rc;
         }
 
         if (strValue.isEmpty())
@@ -3160,7 +3160,7 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
 
         /* save settings on success */
         HRESULT rc = saveSettings();
-        CheckComRCReturnRC (rc);
+        if (FAILED(rc)) return rc;
     }
 
     // fire notification outside the lock
@@ -3173,7 +3173,7 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
 STDMETHODIMP Machine::SaveSettings()
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* saveSettings() needs mParent lock */
     AutoMultiWriteLock2 alock(mParent, this);
@@ -3181,7 +3181,7 @@ STDMETHODIMP Machine::SaveSettings()
     /* when there was auto-conversion, we want to save the file even if
      * the VM is saved */
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* the settings file path may never be null */
     ComAssertRet(!mData->m_strConfigFileFull.isEmpty(), E_FAIL);
@@ -3193,12 +3193,12 @@ STDMETHODIMP Machine::SaveSettings()
 STDMETHODIMP Machine::DiscardSettings()
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /*
      *  during this rollback, the session will be notified if data has
@@ -3212,12 +3212,12 @@ STDMETHODIMP Machine::DiscardSettings()
 STDMETHODIMP Machine::DeleteSettings()
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (mData->mRegistered)
         return setError(VBOX_E_INVALID_VM_STATE,
@@ -3286,7 +3286,7 @@ STDMETHODIMP Machine::GetSnapshot (IN_BSTR aId, ISnapshot **aSnapshot)
     CheckComArgOutPointerValid(aSnapshot);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -3305,7 +3305,7 @@ STDMETHODIMP Machine::FindSnapshot (IN_BSTR aName, ISnapshot **aSnapshot)
     CheckComArgOutPointerValid(aSnapshot);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -3331,12 +3331,12 @@ STDMETHODIMP Machine::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL
     CheckComArgNotNull(aHostPath);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     ComObjPtr<SharedFolder> sharedFolder;
     rc = findSharedFolder (aName, sharedFolder, false /* aSetError */);
@@ -3347,7 +3347,7 @@ STDMETHODIMP Machine::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL
 
     sharedFolder.createObject();
     rc = sharedFolder->init(getMachine(), aName, aHostPath, aWritable);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mHWData.backup();
     mHWData->mSharedFolders.push_back (sharedFolder);
@@ -3364,16 +3364,16 @@ STDMETHODIMP Machine::RemoveSharedFolder (IN_BSTR aName)
     CheckComArgNotNull (aName);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     ComObjPtr<SharedFolder> sharedFolder;
     rc = findSharedFolder (aName, sharedFolder, true /* aSetError */);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mHWData.backup();
     mHWData->mSharedFolders.remove (sharedFolder);
@@ -3456,7 +3456,7 @@ STDMETHODIMP Machine::GetGuestProperty(IN_BSTR aName,
     CheckComArgOutPointerValid(aFlags);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -3542,12 +3542,12 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
         Utf8Str utf8Flags(aFlags);
 
         AutoCaller autoCaller(this);
-        CheckComRCReturnRC(autoCaller.rc());
+        if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
         AutoWriteLock alock(this);
 
         rc = checkStateDependency(MutableStateDep);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         rc = S_OK;
         uint32_t fFlags = NILFLAG;
@@ -3675,7 +3675,7 @@ STDMETHODIMP Machine::EnumerateGuestProperties(IN_BSTR aPatterns,
     CheckComArgOutSafeArrayPointerValid(aFlags);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -3755,7 +3755,7 @@ STDMETHODIMP Machine::GetMediumAttachmentsOfController(IN_BSTR aName,
     MediaData::AttachmentList atts;
 
     HRESULT rc = getMediumAttachmentsOfController(aName, atts);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     SafeIfaceArray<IMediumAttachment> attachments(atts);
     attachments.detachTo(ComSafeArrayOutArg(aAttachments));
@@ -3775,7 +3775,7 @@ STDMETHODIMP Machine::GetMediumAttachment(IN_BSTR aControllerName,
     CheckComArgOutPointerValid(aAttachment);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -3808,12 +3808,12 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
                 aConnectionType);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* try to find one with the name first. */
     ComObjPtr<StorageController> ctrl;
@@ -3841,7 +3841,7 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
     }
 
     rc = ctrl->init(this, aName, aConnectionType, ulInstance);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     mStorageControllers.backup();
     mStorageControllers->push_back (ctrl);
@@ -3861,7 +3861,7 @@ STDMETHODIMP Machine::GetStorageControllerByName(IN_BSTR aName,
     CheckComArgStrNotEmptyOrNull(aName);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -3878,7 +3878,7 @@ STDMETHODIMP Machine::GetStorageControllerByInstance(ULONG aInstance,
                                                      IStorageController **aStorageController)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -3903,16 +3903,16 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
     CheckComArgStrNotEmptyOrNull(aName);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     ComObjPtr<StorageController> ctrl;
     rc = getStorageControllerByName (aName, ctrl, true /* aSetError */);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* We can remove the controller only if there is no device attached. */
     /* check if the device slot is already busy */
@@ -4068,7 +4068,7 @@ STDMETHODIMP Machine::QuerySavedThumbnailSize(ULONG *aSize, ULONG *aWidth, ULONG
     CheckComArgNotNull(aHeight);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -4101,7 +4101,7 @@ STDMETHODIMP Machine::ReadSavedThumbnailToArray(BOOL aBGR, ULONG *aWidth, ULONG 
     CheckComArgExpr(aData, !ComSafeArrayOutIsNull(aData));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -4159,7 +4159,7 @@ STDMETHODIMP Machine::QuerySavedScreenshotPNGSize(ULONG *aSize, ULONG *aWidth, U
     CheckComArgNotNull(aHeight);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -4192,7 +4192,7 @@ STDMETHODIMP Machine::ReadSavedScreenshotPNGToArray(ULONG *aWidth, ULONG *aHeigh
     CheckComArgExpr(aData, !ComSafeArrayOutIsNull(aData));
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -4345,7 +4345,7 @@ HRESULT Machine::openSession(IInternalSessionControl *aControl)
     AssertReturn(aControl, E_FAIL);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -4575,7 +4575,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
     AssertReturn(aProgress, E_FAIL);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -4814,7 +4814,7 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
     AssertReturn(aControl, E_FAIL);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -5180,7 +5180,7 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
        )
     {
         rc = saveSettings();
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     /* more config checking goes here */
@@ -5230,7 +5230,7 @@ HRESULT Machine::addStateDependency (StateDependency aDepType /* = AnyStateDep *
     AutoWriteLock alock(this);
 
     HRESULT rc = checkStateDependency(aDepType);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     {
         if (mData->mMachineStateChangePending != 0)
@@ -5724,7 +5724,7 @@ HRESULT Machine::loadSettings(bool aRegistered)
         ComPtr<IGuestOSType> guestOSType;
         rc = mParent->GetGuestOSType(mUserData->mOSTypeId,
                                      guestOSType.asOutParam());
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         // stateFile (optional)
         if (mData->m_pMachineConfigFile->strStateFile.isEmpty())
@@ -5743,7 +5743,7 @@ HRESULT Machine::loadSettings(bool aRegistered)
 
         /* snapshotFolder (optional) */
         rc = COMSETTER(SnapshotFolder)(Bstr(mData->m_pMachineConfigFile->strSnapshotFolder));
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* currentStateModified (optional, default is true) */
         mData->mCurrentStateModified = mData->m_pMachineConfigFile->fCurrentStateModified;
@@ -5774,16 +5774,16 @@ HRESULT Machine::loadSettings(bool aRegistered)
             rc = loadSnapshot(snap,
                               mData->m_pMachineConfigFile->uuidCurrentSnapshot,
                               NULL);        // no parent == first snapshot
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
         }
 
         /* Hardware node (required) */
         rc = loadHardware(mData->m_pMachineConfigFile->hardwareMachine);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* Load storage controllers */
         rc = loadStorageControllers(mData->m_pMachineConfigFile->storageMachine, aRegistered);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /*
          *  NOTE: the assignment below must be the last thing to do,
@@ -5857,7 +5857,7 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
                                 data.storage,
                                 data.uuid,
                                 strStateFile);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* create a snapshot object */
     ComObjPtr<Snapshot> pSnapshot;
@@ -5870,7 +5870,7 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
                          data.timestamp,
                          pSnapshotMachine,
                          aParentSnapshot);
-    CheckComRCReturnRC (rc);
+    if (FAILED(rc)) return rc;
 
     /* memorize the first snapshot if necessary */
     if (!mData->mFirstSnapshot)
@@ -5892,7 +5892,7 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
         rc = loadSnapshot(childData,
                           aCurSnapshotId,
                           pSnapshot);       // parent = the one we created above
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     return rc;
@@ -5988,16 +5988,16 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
 #ifdef VBOX_WITH_VRDP
         /* RemoteDisplay */
         rc = mVRDPServer->loadSettings(data.vrdpSettings);
-        CheckComRCReturnRC (rc);
+        if (FAILED(rc)) return rc;
 #endif
 
         /* BIOS */
         rc = mBIOSSettings->loadSettings(data.biosSettings);
-        CheckComRCReturnRC (rc);
+        if (FAILED(rc)) return rc;
 
         /* USB Controller */
         rc = mUSBController->loadSettings(data.usbController);
-        CheckComRCReturnRC (rc);
+        if (FAILED(rc)) return rc;
 
         // network adapters
         for (settings::NetworkAdaptersList::const_iterator it = data.llNetworkAdapters.begin();
@@ -6009,7 +6009,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
             /* slot unicity is guaranteed by XML Schema */
             AssertBreak(nic.ulSlot < RT_ELEMENTS(mNetworkAdapters));
             rc = mNetworkAdapters[nic.ulSlot]->loadSettings(nic);
-            CheckComRCReturnRC (rc);
+            if (FAILED(rc)) return rc;
         }
 
         // serial ports
@@ -6021,7 +6021,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
 
             AssertBreak(s.ulSlot < RT_ELEMENTS(mSerialPorts));
             rc = mSerialPorts[s.ulSlot]->loadSettings(s);
-            CheckComRCReturnRC (rc);
+            if (FAILED(rc)) return rc;
         }
 
         // parallel ports (optional)
@@ -6033,12 +6033,12 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
 
             AssertBreak(p.ulSlot < RT_ELEMENTS(mParallelPorts));
             rc = mParallelPorts[p.ulSlot]->loadSettings(p);
-            CheckComRCReturnRC (rc);
+            if (FAILED(rc)) return rc;
         }
 
         /* AudioAdapter */
         rc = mAudioAdapter->loadSettings(data.audioAdapter);
-        CheckComRCReturnRC (rc);
+        if (FAILED(rc)) return rc;
 
         for (settings::SharedFoldersList::const_iterator it = data.llSharedFolders.begin();
              it != data.llSharedFolders.end();
@@ -6046,7 +6046,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         {
             const settings::SharedFolder &sf = *it;
             rc = CreateSharedFolder(Bstr(sf.strName), Bstr(sf.strHostPath), sf.fWritable);
-            CheckComRCReturnRC (rc);
+            if (FAILED(rc)) return rc;
         }
 
         // Clipboard
@@ -6117,15 +6117,15 @@ HRESULT Machine::loadStorageControllers(const settings::Storage &data,
                         ctlData.strName,
                         ctlData.storageBus,
                         ctlData.ulInstance);
-        CheckComRCReturnRC (rc);
+        if (FAILED(rc)) return rc;
 
         mStorageControllers->push_back(pCtl);
 
         rc = pCtl->COMSETTER(ControllerType)(ctlData.controllerType);
-        CheckComRCReturnRC (rc);
+        if (FAILED(rc)) return rc;
 
         rc = pCtl->COMSETTER(PortCount)(ctlData.ulPortCount);
-        CheckComRCReturnRC (rc);
+        if (FAILED(rc)) return rc;
 
         /* Set IDE emulation settings (only for AHCI controller). */
         if (ctlData.controllerType == StorageControllerType_IntelAhci)
@@ -6143,7 +6143,7 @@ HRESULT Machine::loadStorageControllers(const settings::Storage &data,
                                 ctlData,
                                 aRegistered,
                                 aSnapshotId);
-        CheckComRCReturnRC (rc);
+        if (FAILED(rc)) return rc;
     }
 
     return S_OK;
@@ -6348,7 +6348,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                dev.lPort,
                                dev.lDevice,
                                dev.deviceType);
-        CheckComRCBreakRC(rc);
+        if (FAILED(rc)) break;
 
         /* associate the medium with this machine and snapshot */
         if (!medium.isNull())
@@ -6480,7 +6480,7 @@ HRESULT Machine::getMediumAttachmentsOfController(CBSTR aName,
                                                   MediaData::AttachmentList &atts)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -6665,7 +6665,7 @@ HRESULT Machine::prepareSaveSettings(bool &aRenamed,
                 RTPathRename(newConfigDir.raw(), configDir.raw(), 0);
         }
 
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     if (aNew)
@@ -6769,7 +6769,7 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
     bool isRenamed = false;
     bool isNew = false;
     rc = prepareSaveSettings(isRenamed, isNew);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     try
     {
@@ -6815,14 +6815,14 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
         mData->m_pMachineConfigFile->strTeleporterPassword = mUserData->mTeleporterPassword;
 
         rc = saveHardware(mData->m_pMachineConfigFile->hardwareMachine);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         rc = saveStorageControllers(mData->m_pMachineConfigFile->storageMachine);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         // save snapshots
         rc = saveAllSnapshots();
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         // now spit it all out
         mData->m_pMachineConfigFile->write(mData->m_strConfigFileFull);
@@ -6881,7 +6881,7 @@ HRESULT Machine::saveAllSnapshots()
             settings::Snapshot &snap = mData->m_pMachineConfigFile->llFirstSnapshot.front();
 
             rc = mData->mFirstSnapshot->saveSnapshot(snap, false /*aAttrsOnly*/);
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
         }
 
 //         if (mType == IsSessionMachine)
@@ -6968,16 +6968,16 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
 #ifdef VBOX_WITH_VRDP
         /* VRDP settings (optional) */
         rc = mVRDPServer->saveSettings(data.vrdpSettings);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 #endif
 
         /* BIOS (required) */
         rc = mBIOSSettings->saveSettings(data.biosSettings);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* USB Controller (required) */
         rc = mUSBController->saveSettings(data.usbController);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* Network adapters (required) */
         data.llNetworkAdapters.clear();
@@ -6988,7 +6988,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
             settings::NetworkAdapter nic;
             nic.ulSlot = slot;
             rc = mNetworkAdapters[slot]->saveSettings(nic);
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
 
             data.llNetworkAdapters.push_back(nic);
         }
@@ -7002,7 +7002,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
             settings::SerialPort s;
             s.ulSlot = slot;
             rc = mSerialPorts[slot]->saveSettings(s);
-            CheckComRCReturnRC (rc);
+            if (FAILED(rc)) return rc;
 
             data.llSerialPorts.push_back(s);
         }
@@ -7016,14 +7016,14 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
             settings::ParallelPort p;
             p.ulSlot = slot;
             rc = mParallelPorts[slot]->saveSettings(p);
-            CheckComRCReturnRC (rc);
+            if (FAILED(rc)) return rc;
 
             data.llParallelPorts.push_back(p);
         }
 
         /* Audio adapter */
         rc = mAudioAdapter->saveSettings(data.audioAdapter);
-        CheckComRCReturnRC (rc);
+        if (FAILED(rc)) return rc;
 
         /* Shared folders */
         data.llSharedFolders.clear();
@@ -7137,7 +7137,7 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
     MediaData::AttachmentList atts;
 
     HRESULT rc = getMediumAttachmentsOfController(Bstr(aStorageController->name()), atts);
-    CheckComRCReturnRC (rc);
+    if (FAILED(rc)) return rc;
 
     data.llAttachedDevices.clear();
     for (MediaData::AttachmentList::const_iterator it = atts.begin();
@@ -7184,7 +7184,7 @@ HRESULT Machine::saveStateSettings(int aFlags)
     if (aFlags == 0)
         return S_OK;
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     /* This object's write lock is also necessary to serialize file access
@@ -7303,7 +7303,7 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
                     Medium* pHD = pAtt->getMedium();
                     Assert(pHD);
                     rc = pHD->LockRead (NULL);
-                    CheckComRCThrowRC(rc);
+                    if (FAILED(rc)) throw rc;
                     lockedMedia.push_back(pHD);
                 }
             }
@@ -7362,7 +7362,7 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
                             medium->preferredDiffFormat().raw(),
                             BstrFmt("%ls"RTPATH_SLASH_STR,
                                     mUserData->mSnapshotFolderFull.raw()).raw());
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
 
             /* leave the lock before the potentially lengthy operation */
             alock.leave();
@@ -7387,9 +7387,9 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
                 mData->mSession.mLockedMedia.push_back(Data::Session::LockedMedia::value_type(ComPtr<IMedium>(medium), false));
             }
 
-            alock.enter();
+            if (FAILED(rc)) throw rc;
 
-            CheckComRCThrowRC(rc);
+            alock.enter();
 
             rc = diff->attachTo(mData->mUuid);
             AssertComRCThrowRC(rc);
@@ -7404,7 +7404,7 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
                                   pAtt->getDevice(),
                                   DeviceType_HardDisk,
                                   true /* aImplicit */);
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
 
             mMediaData->mAttachments.push_back(attachment);
         }
@@ -8904,7 +8904,7 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice (IN_BSTR aId)
 #ifdef VBOX_WITH_USB
     /* if captureDeviceForVM() fails, it must have set extended error info */
     MultiResult rc = mParent->host()->checkUSBProxyService();
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     USBProxyService *service = mParent->host()->usbProxyService();
     AssertReturn(service, E_FAIL);
@@ -9013,7 +9013,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
      *  We don't assert below because it might happen that a non-direct session
      *  informs us it is closed right after we've been uninitialized -- it's ok.
      */
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* get IInternalSessionControl interface */
     ComPtr<IInternalSessionControl> control (aSession);
@@ -9343,7 +9343,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
          * Now grab the object lock, validate the state and do the update.
          */
         AutoCaller autoCaller(this);
-        CheckComRCReturnRC(autoCaller.rc());
+        if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
         AutoWriteLock alock(this);
 
@@ -9739,7 +9739,7 @@ HRESULT SessionMachine::onUSBDeviceAttach (IUSBDevice *aDevice,
 
     /* This notification may happen after the machine object has been
      * uninitialized (the session was closed), so don't assert. */
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -9771,7 +9771,7 @@ HRESULT SessionMachine::onUSBDeviceDetach (IN_BSTR aId,
 
     /* This notification may happen after the machine object has been
      * uninitialized (the session was closed), so don't assert. */
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -9902,17 +9902,17 @@ HRESULT SessionMachine::lockMedia()
                 if (mediumState == MediumState_Inaccessible)
                 {
                     rc = medium->RefreshState(&mediumState);
-                    CheckComRCThrowRC(rc);
+                    if (FAILED(rc)) throw rc;
 
                     if (mediumState == MediumState_Inaccessible)
                     {
                         Bstr error;
                         rc = medium->COMGETTER(LastAccessError)(error.asOutParam());
-                        CheckComRCThrowRC(rc);
+                        if (FAILED(rc)) throw rc;
 
                         Bstr loc;
                         rc = medium->COMGETTER(Location)(loc.asOutParam());
-                        CheckComRCThrowRC(rc);
+                        if (FAILED(rc)) throw rc;
 
                         /* collect multiple errors */
                         eik.restore();
@@ -9934,13 +9934,13 @@ HRESULT SessionMachine::lockMedia()
                     {
                         /* HardDisk and Floppy medium must be locked for writing */
                         rc = medium->LockWrite(NULL);
-                        CheckComRCThrowRC(rc);
+                        if (FAILED(rc)) throw rc;
                     }
                     else
                     {
                         /* DVD medium must be locked for reading */
                         rc = medium->LockRead(NULL);
-                        CheckComRCThrowRC(rc);
+                        if (FAILED(rc)) throw rc;
                     }
 
                     mData->mSession.mLockedMedia.push_back(
@@ -9952,7 +9952,7 @@ HRESULT SessionMachine::lockMedia()
                 else
                 {
                     rc = medium->LockRead(NULL);
-                    CheckComRCThrowRC(rc);
+                    if (FAILED(rc)) throw rc;
 
                     mData->mSession.mLockedMedia.push_back(
                         Data::Session::LockedMedia::value_type(
@@ -9967,8 +9967,10 @@ HRESULT SessionMachine::lockMedia()
             }
         }
 
+        /* @todo r=dj is this correct? first restoring the eik and then throwing? */
         eik.restore();
-        CheckComRCThrowRC((HRESULT)mrc);
+        HRESULT rc2 = (HRESULT)mrc;
+        if (FAILED(rc2)) throw rc2;
     }
     catch (HRESULT aRC)
     {

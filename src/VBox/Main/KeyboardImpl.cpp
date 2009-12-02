@@ -134,7 +134,7 @@ STDMETHODIMP Keyboard::PutScancode (LONG scancode)
     HRESULT rc = S_OK;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -169,7 +169,7 @@ STDMETHODIMP Keyboard::PutScancodes (ComSafeArrayIn (LONG, scancodes),
         return E_INVALIDARG;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -283,7 +283,7 @@ DECLCALLBACK(int) Keyboard::drvConstruct (PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
      */
     if (!CFGMR3AreValuesValid (pCfgHandle, "Object\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
@@ -357,9 +357,9 @@ const PDMDRVREG Keyboard::DrvReg =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

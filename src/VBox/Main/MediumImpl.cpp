@@ -404,7 +404,7 @@ public:
     HRESULT addSource(Medium *aMedium)
     {
         HRESULT rc = aMedium->addCaller();
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         AutoWriteLock alock(aMedium);
 
@@ -422,7 +422,7 @@ public:
            that the medium isn't fully initialized yet. */
         MediumState_T m;
         rc = aMedium->RefreshState(&m);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
         /* go to Deleting */
         switch (m)
         {
@@ -442,7 +442,7 @@ public:
             if (!aMedium->mParent.isNull())
             {
                 rc = aMedium->mParent->addCaller();
-                CheckComRCReturnRC(rc);
+                if (FAILED(rc)) return rc;
 
                 mParent = aMedium->mParent;
             }
@@ -456,7 +456,7 @@ public:
             {
                 ComObjPtr<Medium> pMedium = *it;
                 rc = pMedium->addCaller();
-                CheckComRCReturnRC(rc);
+                if (FAILED(rc)) return rc;
 
                 rc = pMedium->LockWrite(NULL);
                 if (FAILED(rc))
@@ -475,7 +475,7 @@ public:
     HRESULT addTarget(Medium *aMedium)
     {
         HRESULT rc = aMedium->addCaller();
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         AutoWriteLock alock(aMedium);
 
@@ -505,7 +505,7 @@ public:
     HRESULT addIntermediate(Medium *aMedium)
     {
         HRESULT rc = aMedium->addCaller();
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         AutoWriteLock alock(aMedium);
 
@@ -661,7 +661,7 @@ public:
     HRESULT addImage(Medium *aMedium)
     {
         HRESULT rc = aMedium->addCaller();
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         push_front(aMedium);
 
@@ -685,17 +685,17 @@ public:
             if (mediumState == MediumState_Inaccessible)
             {
                 rc = (*it)->RefreshState(&mediumState);
-                CheckComRCReturnRC(rc);
+                if (FAILED(rc)) return rc;
 
                 if (mediumState == MediumState_Inaccessible)
                 {
                     Bstr error;
                     rc = (*it)->COMGETTER(LastAccessError)(error.asOutParam());
-                    CheckComRCReturnRC(rc);
+                    if (FAILED(rc)) return rc;
 
                     Bstr loc;
                     rc = (*it)->COMGETTER(Location)(loc.asOutParam());
-                    CheckComRCReturnRC(rc);
+                    if (FAILED(rc)) return rc;
 
                     /* collect multiple errors */
                     eik.restore();
@@ -711,11 +711,12 @@ public:
             }
 
             rc = (*it)->LockRead(&mediumState);
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
         }
 
         eik.restore();
-        CheckComRCReturnRC((HRESULT)mrc);
+        HRESULT rc2 = (HRESULT)mrc;
+        if (FAILED(rc2)) return rc2;
 
         return S_OK;
     }
@@ -739,17 +740,17 @@ public:
             if (mediumState == MediumState_Inaccessible)
             {
                 rc = (*it)->RefreshState(&mediumState);
-                CheckComRCReturnRC(rc);
+                if (FAILED(rc)) return rc;
 
                 if (mediumState == MediumState_Inaccessible)
                 {
                     Bstr error;
                     rc = (*it)->COMGETTER(LastAccessError)(error.asOutParam());
-                    CheckComRCReturnRC(rc);
+                    if (FAILED(rc)) return rc;
 
                     Bstr loc;
                     rc = (*it)->COMGETTER(Location)(loc.asOutParam());
-                    CheckComRCReturnRC(rc);
+                    if (FAILED(rc)) return rc;
 
                     /* collect multiple errors */
                     eik.restore();
@@ -771,7 +772,8 @@ public:
         }
 
         eik.restore();
-        CheckComRCReturnRC((HRESULT) mrc);
+        HRESULT rc2 = (HRESULT)mrc;
+        if (FAILED(rc2)) return rc2;
 
         return S_OK;
     }
@@ -899,17 +901,17 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     /* No storage unit is created yet, no need to queryInfo() */
 
     rc = setFormat(aFormat);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (m->formatObj->capabilities() & MediumFormatCapabilities_File)
     {
         rc = setLocation(aLocation);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
     else
     {
         rc = setLocation(aLocation);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         /// @todo later we may want to use a pfnComposeLocation backend info
         /// callback to generate a well-formed location value (based on the hard
@@ -1005,7 +1007,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         rc = setLocation(aLocation);
     else
         rc = setLocation(aLocation, "RAW");
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* save the new uuid values, will be used by queryInfo() */
     m->setImageId = aSetImageId;
@@ -1102,7 +1104,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     {
         AssertReturn(!data.strFormat.isEmpty(), E_FAIL);
         rc = setFormat(Bstr(data.strFormat));
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
     else
     {
@@ -1111,7 +1113,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
             rc = setFormat(Bstr(data.strFormat));
         else
             rc = setFormat(Bstr("RAW"));
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     /* optional, only for diffs, default is false;
@@ -1137,7 +1139,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 
     /* required */
     rc = setLocation(data.strLocation);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (aDeviceType == DeviceType_HardDisk)
     {
@@ -1163,7 +1165,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 
     /* load all children */
     for (settings::MediaList::const_iterator it = data.llChildren.begin();
-         it != data.llChildren.end(); ++ it)
+         it != data.llChildren.end();
+         ++it)
     {
         const settings::Medium &med = *it;
 
@@ -1173,10 +1176,10 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
                        this,            // parent
                        aDeviceType,
                        med);              // child data
-        CheckComRCBreakRC(rc);
+        if (FAILED(rc)) break;
 
         rc = mVirtualBox->registerHardDisk(pHD, false /* aSaveRegistry */);
-        CheckComRCBreakRC(rc);
+        if (FAILED(rc)) break;
     }
 
     /* Confirm a successful initialization when it's the case */
@@ -1238,9 +1241,9 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     m->state = MediumState_Created;
     m->hostDrive = true;
     HRESULT rc = setFormat(Bstr("RAW"));
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
     rc = setLocation(aLocation);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
     m->strDescription = aDescription;
 
 /// @todo generate uuid (similarly to host network interface uuid) from location and device type
@@ -1316,7 +1319,7 @@ STDMETHODIMP Medium::COMGETTER(Id)(BSTR *aId)
     CheckComArgOutPointerValid(aId);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1330,7 +1333,7 @@ STDMETHODIMP Medium::COMGETTER(Description)(BSTR *aDescription)
     CheckComArgOutPointerValid(aDescription);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1347,7 +1350,7 @@ STDMETHODIMP Medium::COMSETTER(Description)(IN_BSTR aDescription)
     CheckComArgNotNull(aDescription);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -1363,7 +1366,7 @@ STDMETHODIMP Medium::COMGETTER(State)(MediumState_T *aState)
     CheckComArgOutPointerValid(aState);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
     *aState = m->state;
@@ -1377,7 +1380,7 @@ STDMETHODIMP Medium::COMGETTER(Location)(BSTR *aLocation)
     CheckComArgOutPointerValid(aLocation);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1391,7 +1394,7 @@ STDMETHODIMP Medium::COMSETTER(Location)(IN_BSTR aLocation)
     CheckComArgNotNull(aLocation);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -1412,7 +1415,7 @@ STDMETHODIMP Medium::COMGETTER(Name)(BSTR *aName)
     CheckComArgOutPointerValid(aName);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1426,7 +1429,7 @@ STDMETHODIMP Medium::COMGETTER(DeviceType)(DeviceType_T *aDeviceType)
     CheckComArgOutPointerValid(aDeviceType);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1440,7 +1443,7 @@ STDMETHODIMP Medium::COMGETTER(HostDrive)(BOOL *aHostDrive)
     CheckComArgOutPointerValid(aHostDrive);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1454,7 +1457,7 @@ STDMETHODIMP Medium::COMGETTER(Size)(ULONG64 *aSize)
     CheckComArgOutPointerValid(aSize);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1469,7 +1472,7 @@ STDMETHODIMP Medium::COMGETTER(Format)(BSTR *aFormat)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* no need to lock, m->format is const */
     m->strFormat.cloneTo(aFormat);
@@ -1483,7 +1486,7 @@ STDMETHODIMP Medium::COMGETTER(Type)(MediumType_T *aType)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1495,7 +1498,7 @@ STDMETHODIMP Medium::COMGETTER(Type)(MediumType_T *aType)
 STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock(mVirtualBox, this);
@@ -1566,7 +1569,7 @@ STDMETHODIMP Medium::COMGETTER(Parent)(IMedium **aParent)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* we access mParent */
     AutoReadLock treeLock(this->getTreeLock());
@@ -1582,7 +1585,7 @@ STDMETHODIMP Medium::COMGETTER(Children)(ComSafeArrayOut(IMedium *, aChildren))
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* we access children */
     AutoReadLock treeLock(this->getTreeLock());
@@ -1611,7 +1614,7 @@ STDMETHODIMP Medium::COMGETTER(ReadOnly)(BOOL *aReadOnly)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* isRadOnly() will do locking */
 
@@ -1626,7 +1629,7 @@ STDMETHODIMP Medium::COMGETTER(LogicalSize)(ULONG64 *aLogicalSize)
 
     {
         AutoCaller autoCaller(this);
-        CheckComRCReturnRC(autoCaller.rc());
+        if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
         AutoReadLock alock(this);
 
@@ -1655,7 +1658,7 @@ STDMETHODIMP Medium::COMGETTER(AutoReset)(BOOL *aAutoReset)
     CheckComArgOutPointerValid(aAutoReset);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1670,7 +1673,7 @@ STDMETHODIMP Medium::COMGETTER(AutoReset)(BOOL *aAutoReset)
 STDMETHODIMP Medium::COMSETTER(AutoReset)(BOOL aAutoReset)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock(mVirtualBox, this);
@@ -1694,7 +1697,7 @@ STDMETHODIMP Medium::COMGETTER(LastAccessError)(BSTR *aLastAccessError)
     CheckComArgOutPointerValid(aLastAccessError);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1712,7 +1715,7 @@ STDMETHODIMP Medium::COMGETTER(MachineIds)(ComSafeArrayOut(BSTR,aMachineIds))
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1740,7 +1743,7 @@ STDMETHODIMP Medium::RefreshState(MediumState_T *aState)
     CheckComArgOutPointerValid(aState);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* queryInfo() locks this for writing. */
     AutoWriteLock alock(this);
@@ -1772,7 +1775,7 @@ STDMETHODIMP Medium::GetSnapshotIds(IN_BSTR aMachineId,
     CheckComArgOutSafeArrayPointerValid(aSnapshotIds);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -1823,7 +1826,7 @@ STDMETHODIMP Medium::GetSnapshotIds(IN_BSTR aMachineId,
 STDMETHODIMP Medium::LockRead(MediumState_T *aState)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -1878,7 +1881,7 @@ STDMETHODIMP Medium::LockRead(MediumState_T *aState)
 STDMETHODIMP Medium::UnlockRead(MediumState_T *aState)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -1922,7 +1925,7 @@ STDMETHODIMP Medium::UnlockRead(MediumState_T *aState)
 STDMETHODIMP Medium::LockWrite(MediumState_T *aState)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -1969,7 +1972,7 @@ STDMETHODIMP Medium::LockWrite(MediumState_T *aState)
 STDMETHODIMP Medium::UnlockWrite(MediumState_T *aState)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2003,7 +2006,7 @@ STDMETHODIMP Medium::UnlockWrite(MediumState_T *aState)
 STDMETHODIMP Medium::Close()
 {
     AutoMayUninitSpan mayUninitSpan(this);
-    CheckComRCReturnRC(mayUninitSpan.rc());
+    if (FAILED(mayUninitSpan.rc())) return mayUninitSpan.rc();
 
     if (mayUninitSpan.alreadyInProgress())
         return S_OK;
@@ -2038,7 +2041,7 @@ STDMETHODIMP Medium::Close()
 
     /* perform extra media-dependent close checks */
     HRESULT rc = canClose();
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     if (wasCreated)
     {
@@ -2046,7 +2049,7 @@ STDMETHODIMP Medium::Close()
          * uninitialization (to keep the media registry consistent on
          * failure to do so) */
         rc = unregisterWithVirtualBox();
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     /* cause uninit() to happen on success */
@@ -2061,7 +2064,7 @@ STDMETHODIMP Medium::GetProperty(IN_BSTR aName, BSTR *aValue)
     CheckComArgOutPointerValid(aValue);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -2083,7 +2086,7 @@ STDMETHODIMP Medium::SetProperty(IN_BSTR aName, IN_BSTR aValue)
     CheckComArgStrNotEmptyOrNull(aName);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock(mVirtualBox, this);
@@ -2121,7 +2124,7 @@ STDMETHODIMP Medium::GetProperties(IN_BSTR aNames,
     CheckComArgOutSafeArrayPointerValid(aReturnValues);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -2157,7 +2160,7 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
     CheckComArgSafeArrayNotNull(aValues);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock(mVirtualBox, this);
@@ -2201,7 +2204,7 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2233,7 +2236,7 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
           ? BstrFmt(tr("Creating fixed hard disk storage unit '%s'"), m->strLocationFull.raw())
           : BstrFmt(tr("Creating dynamic hard disk storage unit '%s'"), m->strLocationFull.raw()),
         TRUE /* aCancelable */);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* setup task object and thread to carry out the operation
      * asynchronously */
@@ -2245,7 +2248,7 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
     task->d.variant = aVariant;
 
     rc = task->startThread();
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* go to Creating state on success */
     m->state = MediumState_Creating;
@@ -2264,7 +2267,7 @@ STDMETHODIMP Medium::DeleteStorage(IProgress **aProgress)
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr <Progress> progress;
 
@@ -2286,11 +2289,11 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr<Medium> diff;
     HRESULT rc = mVirtualBox->cast(aTarget, diff);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     AutoWriteLock alock(this);
 
@@ -2302,7 +2305,7 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
     /* We want to be locked for reading as long as our diff child is being
      * created */
     rc = LockRead(NULL);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     ComObjPtr <Progress> progress;
 
@@ -2325,7 +2328,7 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
 STDMETHODIMP Medium::MergeTo(IN_BSTR /* aTargetId */, IProgress ** /* aProgress */)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ReturnComNotImplemented();
 }
@@ -2339,16 +2342,16 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr <Medium> target;
     HRESULT rc = mVirtualBox->cast(aTarget, target);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
     ComObjPtr <Medium> parent;
     if (aParent)
     {
         rc = mVirtualBox->cast(aParent, parent);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     AutoMultiWriteLock3 alock(this, target, parent);
@@ -2373,10 +2376,10 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         for (Medium *hd = this; hd; hd = hd->mParent)
         {
             rc = srcChain->addImage(hd);
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
         }
         rc = srcChain->lockImagesRead();
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* Build the parent chain and lock images in the proper order. */
         std::auto_ptr <ImageChain> parentChain(new ImageChain());
@@ -2388,21 +2391,21 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         for (Medium *hd = parent; hd; hd = hd->mParent)
         {
             rc = parentChain->addImage(hd);
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
         }
         if (target->m->state == MediumState_Created)
         {
             /* If we're cloning to an existing image the parent chain also
              * contains the target image, and it gets locked for writing. */
             rc = parentChain->addImage(target);
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
             rc = parentChain->lockImagesReadAndLastWrite();
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
         }
         else
         {
             rc = parentChain->lockImagesRead();
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
         }
 
         progress.createObject();
@@ -2410,7 +2413,7 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
             BstrFmt(tr("Creating clone hard disk '%s'"),
                     target->m->strLocationFull.raw()),
             TRUE /* aCancelable */);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* setup task object and thread to carry out the operation
          * asynchronously */
@@ -2423,7 +2426,7 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         task->setData(srcChain.release(), parentChain.release());
 
         rc = task->startThread();
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         if (target->m->state == MediumState_NotCreated)
         {
@@ -2453,7 +2456,7 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2475,16 +2478,16 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
         for (Medium *hd = this; hd; hd = hd->mParent)
         {
             rc = imgChain->addImage(hd);
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
         }
         rc = imgChain->lockImagesReadAndLastWrite();
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         progress.createObject();
         rc = progress->init(mVirtualBox, static_cast <IMedium *>(this),
              BstrFmt(tr("Compacting hard disk '%s'"), m->strLocationFull.raw()),
              TRUE /* aCancelable */);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* setup task object and thread to carry out the operation
          * asynchronously */
@@ -2495,7 +2498,7 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
         task->setData(imgChain.release());
 
         rc = task->startThread();
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* task is now owned (or already deleted) by taskThread() so release it */
         task.release();
@@ -2519,7 +2522,7 @@ STDMETHODIMP Medium::Resize(ULONG64 aLogicalSize, IProgress **aProgress)
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     NOREF(aLogicalSize);
     NOREF(aProgress);
@@ -2531,7 +2534,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2543,10 +2546,10 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
                         m->strLocationFull.raw());
 
     HRESULT rc = canClose();
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     rc = LockWrite(NULL);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     ComObjPtr <Progress> progress;
 
@@ -2557,7 +2560,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
             BstrFmt(tr("Resetting differencing hard disk '%s'"),
                      m->strLocationFull.raw()),
             FALSE /* aCancelable */);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* setup task object and thread to carry out the operation
          * asynchronously */
@@ -2566,7 +2569,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
         AssertComRCThrowRC(task->m_autoCaller.rc());
 
         rc = task->startThread();
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
 
         /* task is now owned (or already deleted) by taskThread() so release it */
         task.release();
@@ -2614,7 +2617,7 @@ HRESULT Medium::updatePath(const char *aOldPath, const char *aNewPath)
     AssertReturn(aNewPath, E_FAIL);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -3008,7 +3011,7 @@ bool Medium::isReadOnly()
 HRESULT Medium::saveSettings(settings::Medium &data)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -3679,7 +3682,7 @@ HRESULT Medium::queryInfo()
         rc = LockRead(NULL);
     else
         rc = LockWrite(NULL);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* Copies of the input state fields which are not read-only,
      * as we're dropping the lock. CAUTION: be extremely careful what
@@ -3926,7 +3929,7 @@ HRESULT Medium::queryInfo()
         rc = UnlockRead(NULL);
     else
         rc = UnlockWrite(NULL);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     return rc;
 }
@@ -4087,7 +4090,7 @@ HRESULT Medium::deleteStorage(ComObjPtr <Progress> *aProgress, bool aWait)
     }
 
     HRESULT rc = canClose();
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     /* go to Deleting state before leaving the lock */
     m->state = MediumState_Deleting;
@@ -4108,7 +4111,7 @@ HRESULT Medium::deleteStorage(ComObjPtr <Progress> *aProgress, bool aWait)
     /* restore the state because we may fail below; we will set it later again*/
     m->state = MediumState_Created;
 
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     ComObjPtr <Progress> progress;
 
@@ -4125,7 +4128,7 @@ HRESULT Medium::deleteStorage(ComObjPtr <Progress> *aProgress, bool aWait)
                 BstrFmt(tr("Deleting hard disk storage unit '%s'"),
                          m->strLocationFull.raw()),
                 FALSE /* aCancelable */);
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
         }
     }
 
@@ -4142,7 +4145,7 @@ HRESULT Medium::deleteStorage(ComObjPtr <Progress> *aProgress, bool aWait)
     else
     {
         rc = task->startThread();
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         /* go to Deleting state before leaving the lock */
         m->state = MediumState_Deleting;
@@ -4204,10 +4207,10 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
     AssertReturn(aProgress != NULL || aWait == true, E_FAIL);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoCaller targetCaller(aTarget);
-    CheckComRCReturnRC(targetCaller.rc());
+    if (FAILED(targetCaller.rc())) return targetCaller.rc();
 
     AutoMultiWriteLock2 alock(this, aTarget);
 
@@ -4263,7 +4266,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
                 BstrFmt(tr("Creating differencing hard disk storage unit '%s'"),
                          aTarget->m->strLocationFull.raw()),
                 TRUE /* aCancelable */);
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
         }
     }
 
@@ -4290,7 +4293,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
     else
     {
         rc = task->startThread();
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
 
         /* go to Creating state before leaving the lock */
         aTarget->m->state = MediumState_Creating;
@@ -4396,7 +4399,7 @@ HRESULT Medium::prepareMergeTo(Medium *aTarget,
                 rc = chain->addSource(last);
             else
                 rc = chain->addIntermediate(last);
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
 
             if (last == first)
                 break;
@@ -4488,7 +4491,7 @@ HRESULT Medium::mergeTo(MergeChain *aChain,
     AssertReturn(aProgress != NULL || aWait == true, E_FAIL);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = S_OK;
 
@@ -4510,7 +4513,7 @@ HRESULT Medium::mergeTo(MergeChain *aChain,
                         getName().raw(),
                         aChain->target()->getName().raw()),
                 TRUE /* aCancelable */);
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
         }
     }
 
@@ -4534,7 +4537,7 @@ HRESULT Medium::mergeTo(MergeChain *aChain,
     else
     {
         rc = task->startThread();
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     /* task is now owned (or already deleted) by taskThread() so release it */
@@ -4937,7 +4940,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 {
                     /* ensure the directory exists */
                     rc = VirtualBox::ensureFilePathExists(location);
-                    CheckComRCThrowRC(rc);
+                    if (FAILED(rc)) throw rc;
 
                     PDMMEDIAGEOMETRY geo = { 0 }; /* auto-detect */
 
@@ -5054,7 +5057,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
 
                     /* ensure the target directory exists */
                     rc = VirtualBox::ensureFilePathExists(targetLocation);
-                    CheckComRCThrowRC(rc);
+                    if (FAILED(rc)) throw rc;
 
                     /** @todo add VD_IMAGE_FLAGS_DIFF to the image flags, to
                      * be on the safe side. */
@@ -5524,7 +5527,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
 
                     /* ensure the target directory exists */
                     rc = VirtualBox::ensureFilePathExists(targetLocation);
-                    CheckComRCThrowRC(rc);
+                    if (FAILED(rc)) throw rc;
 
                     PVBOXHDD targetHdd;
                     vrc = VDCreate(that->m->vdDiskIfaces, &targetHdd);

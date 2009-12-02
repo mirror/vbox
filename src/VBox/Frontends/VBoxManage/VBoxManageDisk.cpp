@@ -1030,7 +1030,7 @@ int handleAddiSCSIDisk(HandlerArg *a)
                                BstrFmt ("%ls|%ls|%ls", server.raw(), target.raw(), lun.raw()),
                                hardDisk.asOutParam()));
         }
-        CheckComRCBreakRC (rc);
+        if (FAILED(rc)) break;
 
         if (!port.isNull())
             server = BstrFmt ("%ls:%ls", server.raw(), port.raw());

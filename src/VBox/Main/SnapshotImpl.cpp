@@ -287,7 +287,7 @@ STDMETHODIMP Snapshot::COMGETTER(Id) (BSTR *aId)
     CheckComArgOutPointerValid(aId);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -300,7 +300,7 @@ STDMETHODIMP Snapshot::COMGETTER(Name) (BSTR *aName)
     CheckComArgOutPointerValid(aName);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -317,7 +317,7 @@ STDMETHODIMP Snapshot::COMSETTER(Name)(IN_BSTR aName)
     CheckComArgNotNull(aName);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     Utf8Str strName(aName);
 
@@ -340,7 +340,7 @@ STDMETHODIMP Snapshot::COMGETTER(Description) (BSTR *aDescription)
     CheckComArgOutPointerValid(aDescription);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -353,7 +353,7 @@ STDMETHODIMP Snapshot::COMSETTER(Description) (IN_BSTR aDescription)
     CheckComArgNotNull(aDescription);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     Utf8Str strDescription(aDescription);
 
@@ -376,7 +376,7 @@ STDMETHODIMP Snapshot::COMGETTER(TimeStamp) (LONG64 *aTimeStamp)
     CheckComArgOutPointerValid(aTimeStamp);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -389,7 +389,7 @@ STDMETHODIMP Snapshot::COMGETTER(Online)(BOOL *aOnline)
     CheckComArgOutPointerValid(aOnline);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -402,7 +402,7 @@ STDMETHODIMP Snapshot::COMGETTER(Machine) (IMachine **aMachine)
     CheckComArgOutPointerValid(aMachine);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -415,7 +415,7 @@ STDMETHODIMP Snapshot::COMGETTER(Parent) (ISnapshot **aParent)
     CheckComArgOutPointerValid(aParent);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -428,7 +428,7 @@ STDMETHODIMP Snapshot::COMGETTER(Children) (ComSafeArrayOut(ISnapshot *, aChildr
     CheckComArgOutSafeArrayPointerValid(aChildren);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(m->pMachine->snapshotsTreeLockHandle());
     AutoReadLock block(this->lockHandle());
@@ -690,10 +690,10 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
         data.strStateFile.setNull();
 
     HRESULT rc = m->pMachine->saveHardware(data.hardware);
-    CheckComRCReturnRC (rc);
+    if (FAILED(rc)) return rc;
 
     rc = m->pMachine->saveStorageControllers(data.storage);
-    CheckComRCReturnRC (rc);
+    if (FAILED(rc)) return rc;
 
     alock.unlock();
 
@@ -707,7 +707,7 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
         {
             settings::Snapshot snap;
             rc = (*it)->saveSnapshotImpl(snap, aAttrsOnly);
-            CheckComRCReturnRC (rc);
+            if (FAILED(rc)) return rc;
 
             data.llChildSnapshots.push_back(snap);
         }
@@ -813,7 +813,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
         ComObjPtr<SharedFolder> folder;
         folder.createObject();
         rc = folder->initCopy (this, *it);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
         *it = folder;
     }
 
@@ -1218,7 +1218,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         /* save all current settings to ensure current changes are committed and
          * hard disks are fixed up */
         HRESULT rc = saveSettings();
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     /* create an ID for the snapshot */
@@ -1236,7 +1236,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
                                       snapshotId.ptr());
         /* ensure the directory for the saved state file exists */
         HRESULT rc = VirtualBox::ensureFilePathExists(strStateFilePath);
-        CheckComRCReturnRC(rc);
+        if (FAILED(rc)) return rc;
     }
 
     /* create a snapshot machine object */
@@ -1670,7 +1670,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             mSSData->mStateFilePath.setNull();
             aTask.modifyBackedUpState(MachineState_PoweredOff);
             rc = saveStateSettings(SaveSTS_StateFilePath);
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
         }
 
         RTTIMESPEC snapshotTimeStamp;
@@ -1701,11 +1701,10 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                                      aTask.pProgress,
                                      1,
                                      false /* aOnline */);
+            if (FAILED(rc)) throw rc;
 
             alock.enter();
             snapshotLock.lock();
-
-            CheckComRCThrowRC(rc);
 
             /* Note: on success, current (old) hard disks will be
              * deassociated/deleted on #commit() called from #saveSettings() at
@@ -1843,7 +1842,8 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 
         // save all settings, reset the modified flag and commit;
         rc = saveSettings(SaveS_ResetCurStateModified | saveFlags);
-        CheckComRCThrowRC(rc);
+        if (FAILED(rc)) throw rc;
+
         // from here on we cannot roll back on failure any more
 
         for (std::list< ComObjPtr<Medium> >::iterator it = llDiffsToDelete.begin();
@@ -1936,7 +1936,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
 
     ComObjPtr<Snapshot> pSnapshot;
     HRESULT rc = findSnapshot(id, pSnapshot, true /* aSetError */);
-    CheckComRCReturnRC(rc);
+    if (FAILED(rc)) return rc;
 
     AutoWriteLock snapshotLock(pSnapshot);
 
@@ -1956,7 +1956,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
         if (isModified())
         {
             rc = saveSettings();
-            CheckComRCReturnRC(rc);
+            if (FAILED(rc)) return rc;
         }
     }
 
@@ -2151,7 +2151,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
                 // needs to be discarded (merged with the child if any), check prerequisites
                 rc = pHD->prepareDiscard(chain);
-                CheckComRCThrowRC(rc);
+                if (FAILED(rc)) throw rc;
 
                 // for simplicity, we merge pHd onto its child (forward merge), not the
                 // other way round, because that saves us from updating the attachments
@@ -2255,7 +2255,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             aTask.pSnapshot->uninit();
 
             rc = saveAllSnapshots();
-            CheckComRCThrowRC(rc);
+            if (FAILED(rc)) throw rc;
 
             /// @todo (dmik)
             //  if we implement some warning mechanism later, we'll have
@@ -2299,7 +2299,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             rc = it->hd->discard(aTask.pProgress,
                                  (ULONG)(it->hd->getSize() / _1M),          // weight
                                  it->chain);
-            CheckComRCBreakRC(rc);
+            if (FAILED(rc)) throw rc;
 
             /* prevent from calling cancelDiscard() */
             it = toDiscard.erase(it);
@@ -2308,8 +2308,6 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         LogFlowThisFunc(("Entering locks again...\n"));
         alock.enter();
         LogFlowThisFunc(("Entered locks OK\n"));
-
-        CheckComRCThrowRC(rc);
     }
     catch (HRESULT aRC) { rc = aRC; }
 

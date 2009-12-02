@@ -143,7 +143,7 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
             /* get the current error info if any */
             ComPtr<IErrorInfo> err;
             rc = ::GetErrorInfo (0, err.asOutParam());
-            CheckComRCBreakRC (rc);
+            if (FAILED(rc)) break;
             rc = err.queryInterfaceTo(curInfo.asOutParam());
             if (FAILED (rc))
             {
@@ -160,7 +160,7 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
             }
         }
         /* On failure, curInfo will stay null */
-        Assert (SUCCEEDED(rc) || curInfo.isNull());
+        Assert(SUCCEEDED(rc) || curInfo.isNull());
 
         /* set the current error info and preserve the previous one if any */
         if (aInfo != NULL)
@@ -173,26 +173,26 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
             {
                 ComObjPtr<VirtualBoxErrorInfoGlue> infoObj;
                 rc = infoObj.createObject();
-                CheckComRCBreakRC (rc);
+                if (FAILED(rc)) break;
 
                 rc = infoObj->init (aInfo, curInfo);
-                CheckComRCBreakRC (rc);
+                if (FAILED(rc)) break;
 
                 info = infoObj;
             }
 
             /* we want to return the head's result code */
             rc = info->COMGETTER(ResultCode) (&aResultCode);
-            CheckComRCBreakRC (rc);
+            if (FAILED(rc)) break;
         }
         else
         {
             ComObjPtr<VirtualBoxErrorInfo> infoObj;
             rc = infoObj.createObject();
-            CheckComRCBreakRC (rc);
+            if (FAILED(rc)) break;
 
             rc = infoObj->init (aResultCode, aIID, aComponent, strText.c_str(), curInfo);
-            CheckComRCBreakRC (rc);
+            if (FAILED(rc)) break;
 
             info = infoObj;
         }
@@ -210,7 +210,7 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
         {
             nsCOMPtr <nsIExceptionManager> em;
             rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
-            CheckComRCBreakRC (rc);
+            if (FAILED(rc)) break;
 
             ComPtr<IVirtualBoxErrorInfo> curInfo;
             if (preserve)
@@ -218,7 +218,7 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
                 /* get the current error info if any */
                 ComPtr<nsIException> ex;
                 rc = em->GetCurrentException (ex.asOutParam());
-                CheckComRCBreakRC (rc);
+                if (FAILED(rc)) break;
                 rc = ex.queryInterfaceTo(curInfo.asOutParam());
                 if (FAILED (rc))
                 {
@@ -248,10 +248,10 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
                 {
                     ComObjPtr<VirtualBoxErrorInfoGlue> infoObj;
                     rc = infoObj.createObject();
-                    CheckComRCBreakRC (rc);
+                    if (FAILED(rc)) break;
 
                     rc = infoObj->init (aInfo, curInfo);
-                    CheckComRCBreakRC (rc);
+                    if (FAILED(rc)) break;
 
                     info = infoObj;
                 }
@@ -259,16 +259,16 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
                 /* we want to return the head's result code */
                 PRInt32 lrc;
                 rc = info->COMGETTER(ResultCode) (&lrc); aResultCode = lrc;
-                CheckComRCBreakRC (rc);
+                if (FAILED(rc)) break;
             }
             else
             {
                 ComObjPtr<VirtualBoxErrorInfo> infoObj;
                 rc = infoObj.createObject();
-                CheckComRCBreakRC (rc);
+                if (FAILED(rc)) break;
 
                 rc = infoObj->init(aResultCode, aIID, aComponent, strText, curInfo);
-                CheckComRCBreakRC (rc);
+                if (FAILED(rc)) break;
 
                 info = infoObj;
             }

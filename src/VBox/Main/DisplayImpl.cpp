@@ -223,7 +223,7 @@ static void PNGAPI png_write_data_fn(png_structp png_ptr, png_bytep p, png_size_
                 pCtx->rc = VERR_NO_MEMORY;
                 return;
             }
-            
+
             pCtx->pu8PNG = (uint8_t *)pNew;
             pCtx->cbAllocated = cbNew;
         }
@@ -372,7 +372,7 @@ static int displayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
                     rc = VERR_NO_MEMORY;
                 }
 
-                png_destroy_write_struct(&png_ptr, info_ptr ? &info_ptr 
+                png_destroy_write_struct(&png_ptr, info_ptr ? &info_ptr
                                                             : (png_infopp)NULL);
             }
             else
@@ -1246,7 +1246,7 @@ void Display::vbvaUnlock(void)
     RTCritSectLeave(&mVBVALock);
 }
 #endif /* VBOX_WITH_OLD_VBVA_LOCK */
-    
+
 /**
  * @thread EMT
  */
@@ -1939,7 +1939,7 @@ STDMETHODIMP Display::COMGETTER(Width) (ULONG *width)
     CheckComArgNotNull(width);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -1961,7 +1961,7 @@ STDMETHODIMP Display::COMGETTER(Height) (ULONG *height)
     CheckComArgNotNull(height);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -1984,7 +1984,7 @@ STDMETHODIMP Display::COMGETTER(BitsPerPixel) (ULONG *bitsPerPixel)
         return E_INVALIDARG;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2011,7 +2011,7 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
         CheckComArgOutPointerValid(aFramebuffer);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2048,7 +2048,7 @@ STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId,
     CheckComArgOutPointerValid(aFramebuffer);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2070,7 +2070,7 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight,
     ULONG aBitsPerPixel, ULONG aDisplay)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2120,7 +2120,7 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight,
 STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
@@ -2217,14 +2217,14 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
     CheckComArgExpr(height, height != 0);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    Console::SafeVMPtr pVM (mParent);
-    CheckComRCReturnRC(pVM.rc());
+    Console::SafeVMPtr pVM(mParent);
+    if (FAILED(pVM.rc())) return pVM.rc();
 
     HRESULT rc = S_OK;
 
@@ -2267,14 +2267,14 @@ STDMETHODIMP Display::TakeScreenShotSlow (ULONG width, ULONG height,
     CheckComArgExpr(height, height != 0);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    Console::SafeVMPtr pVM (mParent);
-    CheckComRCReturnRC(pVM.rc());
+    Console::SafeVMPtr pVM(mParent);
+    if (FAILED(pVM.rc())) return pVM.rc();
 
     HRESULT rc = S_OK;
 
@@ -2360,14 +2360,14 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
     CheckComArgExpr(height, height != 0);
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    Console::SafeVMPtr pVM (mParent);
-    CheckComRCReturnRC(pVM.rc());
+    Console::SafeVMPtr pVM(mParent);
+    if (FAILED(pVM.rc())) return pVM.rc();
 
     /*
      * Again we're lazy and make the graphics device do all the
@@ -2426,14 +2426,14 @@ STDMETHODIMP Display::InvalidateAndUpdate()
     LogFlowFuncEnter();
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    Console::SafeVMPtr pVM (mParent);
-    CheckComRCReturnRC(pVM.rc());
+    Console::SafeVMPtr pVM(mParent);
+    if (FAILED(pVM.rc())) return pVM.rc();
 
     HRESULT rc = S_OK;
 
@@ -2480,7 +2480,7 @@ STDMETHODIMP Display::ResizeCompleted(ULONG aScreenId)
     //  (and therefore don't use Display lock at all here to save some
     //  milliseconds).
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is only valid for external framebuffers */
     if (maFramebuffers[aScreenId].pFramebuffer == NULL)
@@ -2516,7 +2516,7 @@ STDMETHODIMP Display::UpdateCompleted()
     //  (and therefore don't use Display lock at all here to save some
     //  milliseconds).
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is only valid for external framebuffers */
     if (maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer == NULL)
@@ -2645,7 +2645,7 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
     AssertReturn(uScreenId < that->mcMonitors, VERR_INVALID_PARAMETER);
 
     AutoCaller autoCaller(that);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(that);
 

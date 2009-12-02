@@ -159,7 +159,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoFadeIn)(BOOL *enabled)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -171,11 +171,11 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoFadeIn)(BOOL *enabled)
 STDMETHODIMP BIOSSettings::COMSETTER(LogoFadeIn)(BOOL enable)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -191,7 +191,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoFadeOut)(BOOL *enabled)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -203,11 +203,11 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoFadeOut)(BOOL *enabled)
 STDMETHODIMP BIOSSettings::COMSETTER(LogoFadeOut)(BOOL enable)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -223,7 +223,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoDisplayTime)(ULONG *displayTime)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -235,11 +235,11 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoDisplayTime)(ULONG *displayTime)
 STDMETHODIMP BIOSSettings::COMSETTER(LogoDisplayTime)(ULONG displayTime)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -255,7 +255,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoImagePath)(BSTR *imagePath)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -270,11 +270,11 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoImagePath)(IN_BSTR imagePath)
         return E_INVALIDARG;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -290,7 +290,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(BootMenuMode)(BIOSBootMenuMode_T *bootMenuM
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -301,11 +301,11 @@ STDMETHODIMP BIOSSettings::COMGETTER(BootMenuMode)(BIOSBootMenuMode_T *bootMenuM
 STDMETHODIMP BIOSSettings::COMSETTER(BootMenuMode)(BIOSBootMenuMode_T bootMenuMode)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -321,7 +321,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(ACPIEnabled)(BOOL *enabled)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -333,11 +333,11 @@ STDMETHODIMP BIOSSettings::COMGETTER(ACPIEnabled)(BOOL *enabled)
 STDMETHODIMP BIOSSettings::COMSETTER(ACPIEnabled)(BOOL enable)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -353,7 +353,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(IOAPICEnabled)(BOOL *enabled)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -365,11 +365,11 @@ STDMETHODIMP BIOSSettings::COMGETTER(IOAPICEnabled)(BOOL *enabled)
 STDMETHODIMP BIOSSettings::COMSETTER(IOAPICEnabled)(BOOL enable)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -385,7 +385,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(PXEDebugEnabled)(BOOL *enabled)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -397,11 +397,11 @@ STDMETHODIMP BIOSSettings::COMGETTER(PXEDebugEnabled)(BOOL *enabled)
 STDMETHODIMP BIOSSettings::COMSETTER(PXEDebugEnabled)(BOOL enable)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 
@@ -417,7 +417,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(TimeOffset)(LONG64 *offset)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this);
 
@@ -429,11 +429,11 @@ STDMETHODIMP BIOSSettings::COMGETTER(TimeOffset)(LONG64 *offset)
 STDMETHODIMP BIOSSettings::COMSETTER(TimeOffset)(LONG64 offset)
 {
     AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC(adep.rc());
+    Machine::AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this);
 

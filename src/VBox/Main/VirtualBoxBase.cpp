@@ -802,7 +802,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
     {
         ComObjPtr<VirtualBoxErrorInfo> info;
         rc = info.createObject();
-        CheckComRCBreakRC (rc);
+        if (FAILED(rc)) break;
 
 #if !defined (VBOX_WITH_XPCOM)
 
@@ -812,7 +812,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
             /* get the current error info if any */
             ComPtr<IErrorInfo> err;
             rc = ::GetErrorInfo (0, err.asOutParam());
-            CheckComRCBreakRC (rc);
+            if (FAILED(rc)) break;
             rc = err.queryInterfaceTo(curInfo.asOutParam());
             if (FAILED (rc))
             {
@@ -833,7 +833,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
 
         /* set the current error info and preserve the previous one if any */
         rc = info->init (aResultCode, aIID, aComponent, aText, curInfo);
-        CheckComRCBreakRC (rc);
+        if (FAILED(rc)) break;
 
         ComPtr<IErrorInfo> err;
         rc = info.queryInterfaceTo(err.asOutParam());
@@ -848,7 +848,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
         {
             nsCOMPtr <nsIExceptionManager> em;
             rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
-            CheckComRCBreakRC (rc);
+            if (FAILED(rc)) break;
 
             ComPtr<IVirtualBoxErrorInfo> curInfo;
             if (preserve)
@@ -856,9 +856,9 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
                 /* get the current error info if any */
                 ComPtr<nsIException> ex;
                 rc = em->GetCurrentException (ex.asOutParam());
-                CheckComRCBreakRC (rc);
+                if (FAILED(rc)) break;
                 rc = ex.queryInterfaceTo(curInfo.asOutParam());
-                if (FAILED (rc))
+                if (FAILED(rc))
                 {
                     /* create a IVirtualBoxErrorInfo wrapper for the native
                      * nsIException object */
@@ -877,7 +877,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
 
             /* set the current error info and preserve the previous one if any */
             rc = info->init (aResultCode, aIID, aComponent, aText, curInfo);
-            CheckComRCBreakRC (rc);
+            if (FAILED(rc)) break;
 
             ComPtr<nsIException> ex;
             rc = info.queryInterfaceTo(ex.asOutParam());
