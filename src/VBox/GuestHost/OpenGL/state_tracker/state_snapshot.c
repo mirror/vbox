@@ -53,9 +53,6 @@
  * It could be done for the first way as well, but requires tons of bit checks.
  */
 
-/*@todo move with the one from state_texture.c to some header*/
-#define MAX_MIPMAP_LEVELS 20
-
 static int32_t crStateAllocAndSSMR3GetMem(PSSMHANDLE pSSM, void **pBuffer, size_t cbBuffer)
 {
     CRASSERT(pSSM && pBuffer && cbBuffer>0);
@@ -70,14 +67,16 @@ static int32_t crStateAllocAndSSMR3GetMem(PSSMHANDLE pSSM, void **pBuffer, size_
 static int32_t crStateSaveTextureObjData(CRTextureObj *pTexture, PSSMHANDLE pSSM)
 {
     int32_t rc, face, i;
+    GLboolean bound = GL_FALSE;
     
     CRASSERT(pTexture && pSSM);
+
+    crDebug("crStateSaveTextureObjData %u. START", pTexture->name);
 
     for (face = 0; face < 6; face++) {
         CRASSERT(pTexture->level[face]);
 
-        /*@todo, check if safe to go till MAX_MIPMAP_LEVELS intead of TextureState->maxLevel*/
-        for (i = 0; i < MAX_MIPMAP_LEVELS; i++) {
+        for (i = 0; i < CR_MAX_MIPMAP_LEVELS; i++) {
             CRTextureLevel *ptl = &(pTexture->level[face][i]);
             rc = SSMR3PutMem(pSSM, ptl, sizeof(*ptl));
             AssertRCReturn(rc, rc);
@@ -97,12 +96,65 @@ static int32_t crStateSaveTextureObjData(CRTextureObj *pTexture, PSSMHANDLE pSSM
             else if (ptl->bytes)
             {
                 char *pImg;
+                GLenum target;
 
+                if (!bound)
+                {
+                    diff_api.BindTexture(pTexture->target, pTexture->name);
+                    bound = GL_TRUE;
+                }
+
+                if (pTexture->target!=GL_TEXTURE_CUBE_MAP_ARB)
+                {
+                    target = pTexture->target;
+                }
+                else
+                {
+                    target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + face;
+                }
+
+#ifdef DEBUG
+                pImg = crAlloc(ptl->bytes+4);
+#else
                 pImg = crAlloc(ptl->bytes);
+#endif
                 if (!pImg) return VERR_NO_MEMORY;
 
-                diff_api.BindTexture(pTexture->target, pTexture->name);
-                diff_api.GetTexImage(pTexture->target, i, ptl->format, ptl->type, pImg);
+#ifdef DEBUG
+                {
+                    GLint w,h=0;
+                    *(int*)((char*)pImg+ptl->bytes) = 0xDEADDEAD;
+                    crDebug("get image: compressed %i, face %i, level %i, width %i, height %i, bytes %i",
+                            ptl->compressed, face, i, ptl->width, ptl->height, ptl->bytes);
+                    diff_api.GetTexLevelParameteriv(target, i, GL_TEXTURE_WIDTH, &w);
+                    diff_api.GetTexLevelParameteriv(target, i, GL_TEXTURE_HEIGHT, &h);
+                    if (w!=ptl->width || h!=ptl->height)
+                    {
+                        crWarning("!!!tex size mismatch %i, %i!!!", w, h);
+                    }
+                }
+#endif
+
+                /*@todo: ugly workaround for crashes inside ati driver,
+                 *       they overwrite their own allocated memory in cases where texlevel >=4
+                         and width or height <=2.
+                 */
+                if (i<4 || (ptl->width>2 && ptl->height>2))
+                    if (!ptl->compressed)
+                    {
+                        diff_api.GetTexImage(target, i, ptl->format, ptl->type, pImg);
+                    }
+                    else
+                    {
+                        diff_api.GetCompressedTexImageARB(target, i, pImg);
+                    }
+
+#ifdef DEBUG
+                if (*(int*)((char*)pImg+ptl->bytes) != 0xDEADDEAD)
+                {
+                    crWarning("Texture is bigger than expected!!!");
+                }
+#endif
 
                 rc = SSMR3PutMem(pSSM, pImg, ptl->bytes);
                 crFree(pImg);
@@ -111,6 +163,8 @@ static int32_t crStateSaveTextureObjData(CRTextureObj *pTexture, PSSMHANDLE pSSM
 #endif
         }
     }
+
+    crDebug("crStateSaveTextureObjData %u. END", pTexture->name);
 
     return VINF_SUCCESS;
 }
@@ -124,7 +178,7 @@ static int32_t crStateLoadTextureObjData(CRTextureObj *pTexture, PSSMHANDLE pSSM
     for (face = 0; face < 6; face++) {
         CRASSERT(pTexture->level[face]);
 
-        for (i = 0; i < MAX_MIPMAP_LEVELS; i++) {
+        for (i = 0; i < CR_MAX_MIPMAP_LEVELS; i++) {
             CRTextureLevel *ptl = &(pTexture->level[face][i]);
             CRASSERT(!ptl->img);
 
@@ -1329,7 +1383,7 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
 
         /*allocate actual memory*/
         for (i=0; i<6; ++i) {
-            pTexture->level[i] = (CRTextureLevel *) crCalloc(sizeof(CRTextureLevel) * MAX_MIPMAP_LEVELS);
+            pTexture->level[i] = (CRTextureLevel *) crCalloc(sizeof(CRTextureLevel) * CR_MAX_MIPMAP_LEVELS);
             if (!pTexture->level[i]) return VERR_NO_MEMORY;
         }
 

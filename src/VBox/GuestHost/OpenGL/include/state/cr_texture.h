@@ -22,6 +22,8 @@ extern "C" {
  */
 #define CR_STATE_NO_TEXTURE_IMAGE_STORE
 
+#define CR_MAX_MIPMAP_LEVELS 20
+
 typedef struct {
     GLubyte redbits;
     GLubyte greenbits;
