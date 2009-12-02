@@ -274,7 +274,7 @@ DECLEXPORT(void) STATE_APIENTRY crStateCreateProgram(GLuint id)
     CRContext *g = GetCurrentContext();
 
     pProgram = crStateGetProgramObj(id);
-    if (!pProgram)
+    if (pProgram)
     {
         crWarning("Program object %d already exists!", id);
         crStateDeleteProgram(id);
