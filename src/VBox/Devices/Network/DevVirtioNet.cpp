@@ -113,6 +113,8 @@ struct VNetState_st
     /* VPCISTATE must be the first member! */
     VPCISTATE               VPCI;
 
+    PDMCRITSECT             csRx;                           /**< Protects RX queue. */
+
     PDMINETWORKPORT         INetworkPort;
     PDMINETWORKCONFIG       INetworkConfig;
     R3PTRTYPE(PPDMIBASE)    pDrvBase;                 /**< Attached network driver. */
@@ -249,6 +251,16 @@ DECLINLINE(void) vnetCsLeave(PVNETSTATE pState)
     vpciCsLeave(&pState->VPCI);
 }
 
+DECLINLINE(int) vnetCsRxEnter(PVNETSTATE pState, int rcBusy)
+{
+    return PDMCritSectEnter(&pState->csRx, rcBusy);
+}
+
+DECLINLINE(void) vnetCsRxLeave(PVNETSTATE pState)
+{
+    PDMCritSectLeave(&pState->csRx);
+}
+
 
 PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pvState)
 {
@@ -312,7 +324,16 @@ PDMBOTHCBDECL(void) vnetReset(void *pvState)
 {
     VNETSTATE *pState = (VNETSTATE*)pvState;
     Log(("%s Reset triggered\n", INSTANCE(pState)));
+
+    int rc = vnetCsRxEnter(pState, VERR_SEM_BUSY);
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    {
+        LogRel(("vnetReset failed to enter RX critical section!\n"));
+        return;
+    }
     vpciReset(&pState->VPCI);
+    vnetCsRxLeave(pState);
+
     // TODO: Implement reset
     if (pState->fCableConnected)
         STATUS = VNET_S_LINK_UP;
@@ -357,9 +378,13 @@ static DECLCALLBACK(void) vnetLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
 {
     VNETSTATE *pState = (VNETSTATE *)pvUser;
 
+    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+        return;
     STATUS |= VNET_S_LINK_UP;
     vpciRaiseInterrupt(&pState->VPCI, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
     vnetWakeupReceive(pDevIns);
+    vnetCsLeave(pState);
 }
 
 
@@ -456,7 +481,9 @@ PDMBOTHCBDECL(int) vnetIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
  */
 static int vnetCanReceive(VNETSTATE *pState)
 {
-    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
+    int rc = vnetCsRxEnter(pState, VERR_SEM_BUSY);
+    AssertRCReturn(rc, rc);
+
     LogFlow(("%s vnetCanReceive\n", INSTANCE(pState)));
     if (!(pState->VPCI.uStatus & VPCI_STATUS_DRV_OK))
         rc = VERR_NET_NO_BUFFER_SPACE;
@@ -474,7 +501,7 @@ static int vnetCanReceive(VNETSTATE *pState)
     }
 
     LogFlow(("%s vnetCanReceive -> %Vrc\n", INSTANCE(pState), rc));
-    vnetCsLeave(pState);
+    vnetCsRxLeave(pState);
     return rc;
 }
 
@@ -674,10 +701,9 @@ static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb)
 static DECLCALLBACK(int) vnetReceive(PPDMINETWORKPORT pInterface, const void *pvBuf, size_t cb)
 {
     VNETSTATE *pState = IFACE_TO_STATE(pInterface, INetworkPort);
-    int        rc = VINF_SUCCESS;
 
     Log2(("%s vnetReceive: pvBuf=%p cb=%u\n", INSTANCE(pState), pvBuf, cb));
-    rc = vnetCanReceive(pState);
+    int rc = vnetCanReceive(pState);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -692,12 +718,16 @@ static DECLCALLBACK(int) vnetReceive(PPDMINETWORKPORT pInterface, const void *pv
     vpciSetReadLed(&pState->VPCI, true);
     if (vnetAddressFilter(pState, pvBuf, cb))
     {
-        rc = vnetHandleRxPacket(pState, pvBuf, cb);
-        STAM_REL_COUNTER_ADD(&pState->StatReceiveBytes, cb);
+        rc = vnetCsRxEnter(pState, VERR_SEM_BUSY);
+        if (RT_SUCCESS(rc))
+        {
+            rc = vnetHandleRxPacket(pState, pvBuf, cb);
+            STAM_REL_COUNTER_ADD(&pState->StatReceiveBytes, cb);
+            vnetCsRxLeave(pState);
+        }
     }
     vpciSetReadLed(&pState->VPCI, false);
     STAM_PROFILE_ADV_STOP(&pState->StatReceive, a);
-
     return rc;
 }
 
@@ -855,10 +885,14 @@ static DECLCALLBACK(void) vnetTxTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 {
     VNETSTATE *pState = (VNETSTATE*)pvUser;
 
+    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+        return;
     vringSetNotification(&pState->VPCI, &pState->pTxQueue->VRing, true);
     Log3(("%s vnetTxTimer: Expired, %d packets pending\n", INSTANCE(pState), 
           vringReadAvailIndex(&pState->VPCI, &pState->pTxQueue->VRing) - pState->pTxQueue->uNextAvailIndex));
     vnetTransmitPendingPackets(pState, pState->pTxQueue);
+    vnetCsLeave(pState);
 }
 
 #else /* !VNET_TX_DELAY */
@@ -1113,10 +1147,10 @@ static DECLCALLBACK(int) vnetSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     VNETSTATE* pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
 
-    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
+    int rc = vnetCsRxEnter(pState, VERR_SEM_BUSY);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
-    vnetCsLeave(pState);
+    vnetCsRxLeave(pState);
     return VINF_SUCCESS;
 }
 
@@ -1167,10 +1201,10 @@ static DECLCALLBACK(int) vnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     VNETSTATE* pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
 
-    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
+    int rc = vnetCsRxEnter(pState, VERR_SEM_BUSY);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
-    vnetCsLeave(pState);
+    vnetCsRxLeave(pState);
     return VINF_SUCCESS;
 }
 
@@ -1394,6 +1428,13 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     AssertMsgReturn(pState->pTxBuf, 
                     ("Cannot allocate TX buffer for virtio-net device\n"), VERR_NO_MEMORY);
 
+    /* Initialize critical section. */
+    char szTmp[sizeof(pState->VPCI.szInstance) + 2];
+    RTStrPrintf(szTmp, sizeof(szTmp), "%sRX", pState->VPCI.szInstance);
+    rc = PDMDevHlpCritSectInit(pDevIns, &pState->csRx, szTmp);
+    if (RT_FAILURE(rc))
+        return rc;
+
     /* Map our ports to IO space. */
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0,
                                       VPCI_CONFIG + sizeof(VNetPCIConfig),
@@ -1504,6 +1545,8 @@ static DECLCALLBACK(int) vnetDestruct(PPDMDEVINS pDevIns)
         RTMemFree(pState->pTxBuf);
         pState->pTxBuf = NULL;
     }
+    if (PDMCritSectIsInitialized(&pState->csRx))
+        PDMR3CritSectDelete(&pState->csRx);
 
     return vpciDestruct(&pState->VPCI);
 }
@@ -1562,7 +1605,12 @@ static DECLCALLBACK(void) vnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 
     AssertLogRelReturnVoid(iLUN == 0);
 
-    vnetCsEnter(pState, VERR_SEM_BUSY);
+    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("vnetDetach failed to enter critical section!\n"));
+        return;
+    }
 
     /*
      * Zero some important members.
@@ -1593,12 +1641,17 @@ static DECLCALLBACK(int) vnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
 
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
-    vnetCsEnter(pState, VERR_SEM_BUSY);
+    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("vnetAttach failed to enter critical section!\n"));
+        return rc;
+    }
 
     /*
      * Attach the driver.
      */
-    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pState->VPCI.IBase, &pState->pDrvBase, "Network Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pState->VPCI.IBase, &pState->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))
     {
         if (rc == VINF_NAT_DNS)

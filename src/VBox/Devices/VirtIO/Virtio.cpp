@@ -257,9 +257,9 @@ void vpciReset(PVPCISTATE pState)
  */
 int vpciRaiseInterrupt(VPCISTATE *pState, int rcBusy, uint8_t u8IntCause)
 {
-    int rc = vpciCsEnter(pState, rcBusy);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
-        return rc;
+    // int rc = vpciCsEnter(pState, rcBusy);
+    // if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    //     return rc;
 
     STAM_COUNTER_INC(&pState->StatIntsRaised);
     LogFlow(("%s vpciRaiseInterrupt: u8IntCause=%x\n",
@@ -267,7 +267,7 @@ int vpciRaiseInterrupt(VPCISTATE *pState, int rcBusy, uint8_t u8IntCause)
 
     pState->uISR |= u8IntCause;
     PDMDevHlpPCISetIrq(pState->CTX_SUFF(pDevIns), 0, 1);
-    vpciCsLeave(pState);
+    // vpciCsLeave(pState);
     return VINF_SUCCESS;
 }
 
@@ -313,6 +313,22 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
     int         rc     = VINF_SUCCESS;
     const char *szInst = INSTANCE(pState);
     STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatIORead), a);
+
+    /*
+     * We probably do not need to enter critical section when reading registers
+     * as the most of them are either constant or being changed during
+     * initialization only, the exception being ISR which can be raced by all
+     * threads but I see no big harm in it. It also happens to be the most read
+     * register as it gets read in interrupt handler. By dropping cs protection
+     * here we gain the ability to deliver RX packets to the guest while TX is
+     * holding cs transmitting queued packets.
+     *
+    rc = vpciCsEnter(pState, VINF_IOM_HC_IOPORT_READ);
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    {
+        STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatIORead), a);
+        return rc;
+        }*/
 
     port -= pState->addrIOPort;
     switch (port)
@@ -370,6 +386,7 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
     Log3(("%s vpciIOPortIn:  At %RTiop in  %0*x\n",
           szInst, port, cb*2, *pu32));
     STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatIORead), a);
+    //vpciCsLeave(pState);
     return rc;
 }
 
@@ -404,6 +421,14 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
     const char *szInst = INSTANCE(pState);
     bool        fHasBecomeReady;
     STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatIOWrite), a);
+
+    rc = vpciCsEnter(pState, VINF_IOM_HC_IOPORT_WRITE);
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    {
+        STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatIOWrite), a);
+        return rc;
+    }
+
 
     port -= pState->addrIOPort;
     Log3(("%s virtioIOPortOut: At %RTiop out          %0*x\n", szInst, port, cb*2, u32));
@@ -493,6 +518,7 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
     }
 
     STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatIOWrite), a);
+    vpciCsLeave(pState);
     return rc;
 }
 
