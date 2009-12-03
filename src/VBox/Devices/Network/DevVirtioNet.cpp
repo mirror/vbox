@@ -846,10 +846,13 @@ static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE 
                                   pState->pTxBuf + uOffset, uSize);
                 uOffset += uSize;
             }
-            STAM_PROFILE_START(&pState->StatTransmitSend, a);
-            int rc = pState->pDrv->pfnSend(pState->pDrv, pState->pTxBuf, uOffset);
-            STAM_PROFILE_STOP(&pState->StatTransmitSend, a);
-            STAM_REL_COUNTER_ADD(&pState->StatTransmitBytes, uOffset);
+            if (pState->pDrv)
+            {
+                STAM_PROFILE_START(&pState->StatTransmitSend, a);
+                int rc = pState->pDrv->pfnSend(pState->pDrv, pState->pTxBuf, uOffset);
+                STAM_PROFILE_STOP(&pState->StatTransmitSend, a);
+                STAM_REL_COUNTER_ADD(&pState->StatTransmitBytes, uOffset);
+            }
         }
         vqueuePut(&pState->VPCI, pQueue, &elem, sizeof(VNETHDR) + uOffset);
         vqueueSync(&pState->VPCI, pQueue);
