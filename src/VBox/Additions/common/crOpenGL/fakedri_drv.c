@@ -198,7 +198,7 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
             return;
         }
 
-        shift = pStart-(dlip.dli_saddr+5);
+        shift = (void*)((intptr_t)pStart-((intptr_t)dlip.dli_saddr+5));
 # ifndef VBOX_NO_MESA_PATCH_REPORTS
         crDebug("Size is small, inserting jmpq with shift %p instead", shift);
 # endif
