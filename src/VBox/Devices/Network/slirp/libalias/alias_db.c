@@ -810,8 +810,14 @@ GetSocket(struct libalias *la, u_short port_net, int *sockfd, int link_type)
 #endif
         return (1);
     } else {
-        if (sock > 0)
+#ifdef VBOX
+        if (sock > 0) 
             closesocket(sock);
+        /* socket wasn't enqueued so we shouldn't use sofree */
+        RTMemFree(so);
+#else
+            close(sock);
+#endif
         return (0);
     }
 }
