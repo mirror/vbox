@@ -432,7 +432,9 @@ VBOX_WITH_EFIFW_PACKING = 1
 # Enable SCSI drivers
 VBOX_WITH_SCSI = 1
 # Enable changing network attachments dynamically.
-VBOX_DYNAMIC_NET_ATTACH=1
+VBOX_DYNAMIC_NET_ATTACH = 1
+# Enable this setting to force a fallback to default DMI data on configuration errors
+VBOX_BIOS_DMI_FALLBACK =
 # Enable host network interface API.
 if1of ($(KBUILD_TARGET), darwin solaris linux win freebsd)
  VBOX_WITH_HOSTNETIF_API = 1
