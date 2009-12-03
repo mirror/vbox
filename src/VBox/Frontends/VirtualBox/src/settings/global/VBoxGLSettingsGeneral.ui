@@ -1,0 +1,176 @@
+<ui version="4.0" >
+ <comment>
+ VBox frontends: Qt4 GUI ("VirtualBox"):
+
+ Copyright (C) 2008 Sun Microsystems, Inc.
+
+ This file is part of VirtualBox Open Source Edition (OSE), as
+ available from http://www.virtualbox.org. This file is free software;
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License (GPL) as published by the Free Software
+ Foundation, in version 2 as it comes in the "COPYING" file of the
+ VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+
+ Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ Clara, CA 95054 USA or visit http://www.sun.com if you need
+ additional information or have any questions.
+ </comment>
+ <class>VBoxGLSettingsGeneral</class>
+ <widget class="QWidget" name="VBoxGLSettingsGeneral" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>390</width>
+    <height>172</height>
+   </rect>
+  </property>
+  <layout class="QGridLayout" >
+   <property name="leftMargin" >
+    <number>0</number>
+   </property>
+   <property name="topMargin" >
+    <number>0</number>
+   </property>
+   <property name="rightMargin" >
+    <number>0</number>
+   </property>
+   <property name="bottomMargin" >
+    <number>0</number>
+   </property>
+   <item row="0" column="0" colspan="2">
+    <widget class="QLabel" name="mLbHardDisk" >
+     <property name="text" >
+      <string>Default &amp;Hard Disk Folder:</string>
+     </property>
+     <property name="alignment" >
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+     <property name="buddy" >
+      <cstring>mPsHardDisk</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="2" >
+    <widget class="VBoxFilePathSelectorWidget" name="mPsHardDisk" >
+     <property name="sizePolicy" >
+      <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0" colspan="2">
+    <widget class="QLabel" name="mLbMach" >
+     <property name="text" >
+      <string>Default &amp;Machine Folder:</string>
+     </property>
+     <property name="alignment" >
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+     <property name="buddy" >
+      <cstring>mPsMach</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2" >
+    <widget class="VBoxFilePathSelectorWidget" name="mPsMach" >
+     <property name="sizePolicy" >
+      <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="3" >
+    <widget class="Line" name="mLnSeparator" >
+     <property name="orientation" >
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <widget class="QLabel" name="mLbVRDP" >
+     <property name="text" >
+      <string>V&amp;RDP Authentication Library:</string>
+     </property>
+     <property name="alignment" >
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+     <property name="buddy" >
+      <cstring>mPsVRDP</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="2" >
+    <widget class="VBoxFilePathSelectorWidget" name="mPsVRDP" >
+     <property name="sizePolicy" >
+      <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0" colspan="3" >
+    <widget class="Line" name="mLnSeparator2" >
+     <property name="orientation" >
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1" colspan="2" >
+    <widget class="QCheckBox" name="mCbCheckTrayIcon" >
+     <property name="whatsThis" >
+      <string>When checked, the application will provide an icon with the context menu in the system tray.</string>
+     </property>
+     <property name="text" >
+      <string>&amp;Show System Tray Icon</string>
+     </property>
+     <property name="checked" >
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="1" colspan="2" >
+    <widget class="QCheckBox" name="mCbCheckDockPreview" >
+     <property name="whatsThis" >
+      <string>When checked, the Dock Icon will reflect the VM window content in realtime.</string>
+     </property>
+     <property name="text" >
+      <string>&amp;Dock Icon Realtime Preview</string>
+     </property>
+     <property name="checked" >
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0" colspan="3" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>VBoxFilePathSelectorWidget</class>
+   <extends>QComboBox</extends>
+   <header>VBoxFilePathSelectorWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

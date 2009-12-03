@@ -1,0 +1,164 @@
+<ui version="4.0" >
+ <comment>
+ VBox frontends: Qt4 GUI ("VirtualBox"):
+
+ Copyright (C) 2008 Sun Microsystems, Inc.
+
+ This file is part of VirtualBox Open Source Edition (OSE), as
+ available from http://www.virtualbox.org. This file is free software;
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License (GPL) as published by the Free Software
+ Foundation, in version 2 as it comes in the "COPYING" file of the
+ VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+
+ Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ Clara, CA 95054 USA or visit http://www.sun.com if you need
+ additional information or have any questions.
+ </comment>
+ <class>VBoxVMSettingsUSB</class>
+ <widget class="QWidget" name="VBoxVMSettingsUSB" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>468</width>
+    <height>328</height>
+   </rect>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" colspan="2" >
+    <widget class="QCheckBox" name="mGbUSB" >
+     <property name="whatsThis" >
+      <string>When checked, enables the virtual USB controller of this machine.</string>
+     </property>
+     <property name="text" >
+      <string>Enable &amp;USB Controller</string>
+     </property>
+     <property name="checked" >
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeType" >
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>20</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="1" column="1" >
+    <widget class="QWidget" native="1" name="mUSBChild" >
+     <layout class="QGridLayout" >
+      <property name="leftMargin" >
+       <number>0</number>
+      </property>
+      <property name="topMargin" >
+       <number>0</number>
+      </property>
+      <property name="rightMargin" >
+       <number>0</number>
+      </property>
+      <property name="bottomMargin" >
+       <number>0</number>
+      </property>
+      <item row="0" column="0" >
+       <widget class="QCheckBox" name="mCbUSB2" >
+        <property name="whatsThis" >
+         <string>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</string>
+        </property>
+        <property name="text" >
+         <string>Enable USB 2.0 (E&amp;HCI) Controller</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" >
+       <widget class="QILabelSeparator" name="mGbUSBFilters" >
+        <property name="text" >
+         <string>USB Device &amp;Filters</string>
+        </property>
+        <property name="buddy" >
+         <cstring>mTwFilters</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" >
+       <widget class="QWidget" native="1" name="mWtFilterHandler" >
+        <layout class="QHBoxLayout" >
+         <property name="leftMargin" >
+          <number>0</number>
+         </property>
+         <property name="topMargin" >
+          <number>0</number>
+         </property>
+         <property name="rightMargin" >
+          <number>0</number>
+         </property>
+         <property name="bottomMargin" >
+          <number>0</number>
+         </property>
+         <property name="spacing" >
+          <number>1</number>
+         </property>
+         <item>
+          <widget class="QTreeWidget" name="mTwFilters" >
+           <property name="contextMenuPolicy" >
+            <enum>Qt::CustomContextMenu</enum>
+           </property>
+           <property name="whatsThis" >
+            <string>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</string>
+           </property>
+           <property name="rootIsDecorated" >
+            <bool>false</bool>
+           </property>
+           <column>
+            <property name="text" >
+             <string>[filter]</string>
+            </property>
+           </column>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QILabelSeparator</class>
+   <extends>QLabel</extends>
+   <header>QILabelSeparator.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>mGbUSB</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>mUSBChild</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>233</x>
+     <y>19</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>246</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

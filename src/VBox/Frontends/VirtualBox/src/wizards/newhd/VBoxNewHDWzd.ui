@@ -1,0 +1,976 @@
+<ui version="4.0" >
+ <comment>
+ VBox frontends: Qt4 GUI ("VirtualBox"):
+
+ Copyright (C) 2008 Sun Microsystems, Inc.
+
+ This file is part of VirtualBox Open Source Edition (OSE), as
+ available from http://www.virtualbox.org. This file is free software;
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License (GPL) as published by the Free Software
+ Foundation, in version 2 as it comes in the "COPYING" file of the
+ VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+
+ Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ Clara, CA 95054 USA or visit http://www.sun.com if you need
+ additional information or have any questions.
+ </comment>
+ <class>VBoxNewHDWzd</class>
+ <widget class="QDialog" name="VBoxNewHDWzd" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>506</width>
+    <height>413</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Create New Virtual Disk</string>
+  </property>
+  <layout class="QVBoxLayout" >
+   <property name="leftMargin" >
+    <number>0</number>
+   </property>
+   <property name="topMargin" >
+    <number>0</number>
+   </property>
+   <property name="rightMargin" >
+    <number>0</number>
+   </property>
+   <property name="bottomMargin" >
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QStackedWidget" name="mPageStack" >
+     <property name="currentIndex" >
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="mPageWelcome" >
+      <layout class="QVBoxLayout" >
+       <item>
+        <widget class="QLabel" name="mPageWelcomeHdr" >
+         <property name="font" >
+          <font>
+           <family>Arial</family>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text" >
+          <string>Welcome to the Create New Virtual Disk Wizard!</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line11" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" >
+         <property name="spacing" >
+          <number>10</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="mLogoWelcome" >
+           <property name="sizePolicy" >
+            <sizepolicy vsizetype="Minimum" hsizetype="Maximum" >
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="autoFillBackground" >
+            <bool>true</bool>
+           </property>
+           <property name="text" >
+            <string/>
+           </property>
+           <property name="pixmap" >
+            <pixmap resource="../VirtualBox1.qrc" >:/vmw_new_harddisk.png</pixmap>
+           </property>
+           <property name="alignment" >
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" >
+           <property name="spacing" >
+            <number>10</number>
+           </property>
+           <item>
+            <widget class="QILabel" name="mTextWelcome" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize" >
+              <size>
+               <width>300</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text" >
+              <string>&lt;p>This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p>&lt;p>Use the &lt;b>Next&lt;/b> button to go to the next page of the wizard and the &lt;b>Back&lt;/b> button to return to the previous page.&lt;/p></string>
+             </property>
+             <property name="alignment" >
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
+             <property name="wordWrap" >
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>0</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="Line" name="line12" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" >
+         <item>
+          <spacer>
+           <property name="orientation" >
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" >
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnBack1" >
+           <property name="enabled" >
+            <bool>false</bool>
+           </property>
+           <property name="text" >
+            <string>&lt; &amp;Back</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnNext1" >
+           <property name="text" >
+            <string>&amp;Next ></string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer>
+           <property name="orientation" >
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType" >
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" >
+            <size>
+             <width>5</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnCancel1" >
+           <property name="text" >
+            <string>Cancel</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="mPageType" >
+      <layout class="QVBoxLayout" >
+       <item>
+        <widget class="QLabel" name="mPageTypeHdr" >
+         <property name="font" >
+          <font>
+           <family>Arial</family>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text" >
+          <string>Hard Disk Storage Type</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line21" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" >
+         <property name="spacing" >
+          <number>10</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="mLogoType" >
+           <property name="sizePolicy" >
+            <sizepolicy vsizetype="Minimum" hsizetype="Maximum" >
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="autoFillBackground" >
+            <bool>true</bool>
+           </property>
+           <property name="text" >
+            <string/>
+           </property>
+           <property name="pixmap" >
+            <pixmap resource="../VirtualBox1.qrc" >:/vmw_new_harddisk.png</pixmap>
+           </property>
+           <property name="alignment" >
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" >
+           <property name="spacing" >
+            <number>10</number>
+           </property>
+           <item>
+            <widget class="QILabel" name="mTextType" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize" >
+              <size>
+               <width>300</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text" >
+              <string>&lt;p>Select the type of virtual hard disk you want to create.&lt;/p>&lt;p>A &lt;b>dynamically expanding storage&lt;/b> initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p>&lt;p>A &lt;b>fixed-size storage&lt;/b> does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p></string>
+             </property>
+             <property name="alignment" >
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
+             <property name="wordWrap" >
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="mGbType" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="title" >
+              <string>Storage Type</string>
+             </property>
+             <layout class="QVBoxLayout" >
+              <property name="topMargin" >
+               <number>4</number>
+              </property>
+              <item>
+               <widget class="QRadioButton" name="mRbDynamicType" >
+                <property name="sizePolicy" >
+                 <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text" >
+                 <string>&amp;Dynamically expanding storage</string>
+                </property>
+                <property name="checked" >
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="mRbFixedType" >
+                <property name="sizePolicy" >
+                 <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text" >
+                 <string>&amp;Fixed-size storage</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>0</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="Line" name="line22" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" >
+         <item>
+          <spacer>
+           <property name="orientation" >
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" >
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnBack2" >
+           <property name="text" >
+            <string>&lt; &amp;Back</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnNext2" >
+           <property name="text" >
+            <string>&amp;Next ></string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer>
+           <property name="orientation" >
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType" >
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" >
+            <size>
+             <width>5</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnCancel2" >
+           <property name="text" >
+            <string>Cancel</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="mPageNameAndSize" >
+      <layout class="QVBoxLayout" >
+       <item>
+        <widget class="QLabel" name="mPageNameAndSizeHdr" >
+         <property name="font" >
+          <font>
+           <family>Arial</family>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text" >
+          <string>Virtual Disk Location and Size</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line31" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" >
+         <property name="spacing" >
+          <number>10</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="mLogoNameAndSize" >
+           <property name="sizePolicy" >
+            <sizepolicy vsizetype="Minimum" hsizetype="Maximum" >
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="autoFillBackground" >
+            <bool>true</bool>
+           </property>
+           <property name="text" >
+            <string/>
+           </property>
+           <property name="pixmap" >
+            <pixmap resource="../VirtualBox1.qrc" >:/vmw_new_harddisk.png</pixmap>
+           </property>
+           <property name="alignment" >
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" >
+           <property name="spacing" >
+            <number>10</number>
+           </property>
+           <item>
+            <widget class="QILabel" name="mTextNameComment" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize" >
+              <size>
+               <width>300</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text" >
+              <string>&lt;p>Press the &lt;b>Select&lt;/b> button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p></string>
+             </property>
+             <property name="alignment" >
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
+             <property name="wordWrap" >
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="mGbName" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="title" >
+              <string>&amp;Location</string>
+             </property>
+             <layout class="QHBoxLayout" >
+              <property name="topMargin" >
+               <number>4</number>
+              </property>
+              <item>
+               <widget class="QLineEdit" name="mLeName" />
+              </item>
+              <item>
+               <widget class="QToolButton" name="mTbNameSelect" >
+                <property name="text" >
+                 <string/>
+                </property>
+                <property name="icon" >
+                 <iconset resource="../VirtualBox1.qrc" >:/select_file_16px.png</iconset>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QILabel" name="mTextSizeComment" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize" >
+              <size>
+               <width>300</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text" >
+              <string>&lt;p>Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p></string>
+             </property>
+             <property name="alignment" >
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
+             <property name="wordWrap" >
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="mGbSize" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="title" >
+              <string>&amp;Size</string>
+             </property>
+             <layout class="QGridLayout" >
+              <item row="0" column="0" colspan="3" >
+               <widget class="QSlider" name="mSlSize" >
+                <property name="sizePolicy" >
+                 <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="orientation" >
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="tickPosition" >
+                 <enum>QSlider::TicksBelow</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="3" >
+               <widget class="QILineEdit" name="mLeSize" >
+                <property name="sizePolicy" >
+                 <sizepolicy vsizetype="Fixed" hsizetype="Maximum" >
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0" >
+               <widget class="QLabel" name="mTxSizeMin" >
+                <property name="sizePolicy" >
+                 <sizepolicy vsizetype="Preferred" hsizetype="Minimum" >
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="alignment" >
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1" >
+               <spacer>
+                <property name="orientation" >
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeType" >
+                 <enum>QSizePolicy::Expanding</enum>
+                </property>
+                <property name="sizeHint" >
+                 <size>
+                  <width>221</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="1" column="2" >
+               <widget class="QLabel" name="mTxSizeMax" >
+                <property name="sizePolicy" >
+                 <sizepolicy vsizetype="Preferred" hsizetype="Minimum" >
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="alignment" >
+                 <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>0</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="Line" name="line32" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" >
+         <item>
+          <spacer>
+           <property name="orientation" >
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" >
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnBack3" >
+           <property name="text" >
+            <string>&lt; &amp;Back</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnNext3" >
+           <property name="text" >
+            <string>&amp;Next ></string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer>
+           <property name="orientation" >
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType" >
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" >
+            <size>
+             <width>5</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnCancel3" >
+           <property name="text" >
+            <string>Cancel</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="mPageSummary" >
+      <layout class="QVBoxLayout" >
+       <item>
+        <widget class="QLabel" name="mPageSummaryHdr" >
+         <property name="font" >
+          <font>
+           <family>Arial</family>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text" >
+          <string>Summary</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line41" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" >
+         <property name="spacing" >
+          <number>10</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="mLogoSummary" >
+           <property name="sizePolicy" >
+            <sizepolicy vsizetype="Minimum" hsizetype="Maximum" >
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="autoFillBackground" >
+            <bool>true</bool>
+           </property>
+           <property name="text" >
+            <string/>
+           </property>
+           <property name="pixmap" >
+            <pixmap resource="../VirtualBox1.qrc" >:/vmw_new_harddisk.png</pixmap>
+           </property>
+           <property name="alignment" >
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" >
+           <property name="spacing" >
+            <number>10</number>
+           </property>
+           <item>
+            <widget class="QILabel" name="mTextSummaryHdr" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize" >
+              <size>
+               <width>300</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text" >
+              <string>You are going to create a new virtual hard disk with the following parameters:</string>
+             </property>
+             <property name="alignment" >
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
+             <property name="wordWrap" >
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QITextEdit" name="mTeSummary" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize" >
+              <size>
+               <width>300</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="frameShape" >
+              <enum>QFrame::NoFrame</enum>
+             </property>
+             <property name="autoFormatting" >
+              <set>QTextEdit::AutoAll</set>
+             </property>
+             <property name="readOnly" >
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QILabel" name="mTextSummaryFtr" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize" >
+              <size>
+               <width>300</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text" >
+              <string>If the above settings are correct, press the &lt;b>Finish&lt;/b> button. Once you press it, a new hard disk will be created.</string>
+             </property>
+             <property name="alignment" >
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
+             <property name="wordWrap" >
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation" >
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeType" >
+              <enum>QSizePolicy::Expanding</enum>
+             </property>
+             <property name="sizeHint" >
+              <size>
+               <width>0</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="Line" name="line42" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" >
+         <item>
+          <spacer>
+           <property name="orientation" >
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" >
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnBack4" >
+           <property name="text" >
+            <string>&lt; &amp;Back</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnFinish" >
+           <property name="text" >
+            <string>&amp;Finish</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer>
+           <property name="orientation" >
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType" >
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" >
+            <size>
+             <width>5</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnCancel4" >
+           <property name="text" >
+            <string>Cancel</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QILabel</class>
+   <extends>QLabel</extends>
+   <header>QILabel.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QITextEdit</class>
+   <extends>QTextEdit</extends>
+   <header>QIAbstractWizard.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QILineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>QILineEdit.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>mBtnNext1</tabstop>
+  <tabstop>mBtnCancel1</tabstop>
+  <tabstop>mBtnBack2</tabstop>
+  <tabstop>mBtnNext2</tabstop>
+  <tabstop>mBtnCancel2</tabstop>
+  <tabstop>mSlSize</tabstop>
+  <tabstop>mLeSize</tabstop>
+  <tabstop>mBtnBack3</tabstop>
+  <tabstop>mBtnNext3</tabstop>
+  <tabstop>mBtnCancel3</tabstop>
+  <tabstop>mBtnBack4</tabstop>
+  <tabstop>mBtnFinish</tabstop>
+  <tabstop>mBtnCancel4</tabstop>
+ </tabstops>
+ <resources>
+  <include location="../VirtualBox1.qrc" />
+ </resources>
+ <connections/>
+</ui>
