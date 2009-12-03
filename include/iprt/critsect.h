@@ -40,6 +40,22 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_critsect       RTCritSect - Critical Sections
+ *
+ * A "critical section" synchronization primitive. This can be used to
+ * protect a section of code or data to which access must be exclusive.
+ * Only one thread can hold access to a critical section at one time.
+ *
+ * A critical section is a fast write lock; if the critical section is
+ * not acquired, then entering it is fast (requires no system call).
+ *
+ * Use RTCritSectInit to initialize a critical section; use RTCritSectEnter
+ * and RTCritSectLeave to acquire and release access. IPRT uses the Windows
+ * terminology here; on other platform, this might be called a "futex" or a
+ * "fast mutex".
+ *
+ * If you need a read/write semaphore which allows multiple readers
+ * but only writer, use RTSEMRW instead.
+ *
  * @ingroup grp_rt
  * @{
  */
