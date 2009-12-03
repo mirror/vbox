@@ -870,6 +870,49 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                         IRQNoFlags () {7}
                     })
                 }
+
+                // RTC and CMOS
+                Device (RTC) 
+                {
+                    Name (_HID, EisaId ("PNP0B00"))
+                    Name (_CRS, ResourceTemplate ()
+                    {
+                      IO (Decode16,
+                          0x0070,             // Range Minimum
+                          0x0070,             // Range Maximum
+                          0x01,               // Alignment
+                          0x02,               // Length
+                      )
+                    })
+                    Method (_STA, 0, NotSerialized)
+                    {
+                       Return (0x0f)
+                    }
+                }
+
+                // System Management Controller
+                Device (SMC)
+                {
+                    Name (_HID, EisaId ("APP0001"))
+                    Name (_CID, "smc-napa")
+
+                    Method (_STA, 0, NotSerialized)
+                    {
+                       Return (USMC)
+                    }
+                    Name (_CRS, ResourceTemplate ()
+                    {
+                       IO (Decode16,
+                           0x0300,             // Range Minimum
+                           0x0300,             // Range Maximum
+                           0x01,               // Alignment
+                           0x20,               // Length
+                    )
+                    // This line seriously confuses Windows ACPI driver, so not even try to
+                    // enable SMC for Windows guests
+                    IRQNoFlags () {8}
+                 })
+               }
             }
 
             // Control method battery
@@ -1164,49 +1207,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 )
             })
         }
-
-        // Conditionally enabled, as lead to hang of Windows 7 and Vista guests 
-        Device (RTC) {
-            Name (_HID, EisaId ("PNP0B00"))
-            Name (_CRS, ResourceTemplate ()
-            {
-                IO (Decode16,
-                    0x0070,             // Range Minimum
-                    0x0070,             // Range Maximum
-                    0x01,               // Alignment
-                    0x08,               // Length
-                    )
-            })
-            Method (_STA, 0, NotSerialized)
-            {
-                Return (URTC)
-            }
-        }
-
-       // System Management Controller
-       Device (SMC)
-       {
-            Name (_HID, EisaId ("APP0001"))
-            Name (_CID, "smc-napa")
-
-            Method (_STA, 0, NotSerialized)
-            {
-                Return (USMC)
-            }
-            Name (_CRS, ResourceTemplate ()
-            {
-                IO (Decode16,
-                    0x0300,             // Range Minimum
-                    0x0300,             // Range Maximum
-                    0x01,               // Alignment
-                    0x20,               // Length
-                    )
-                // This line seriously confuses Windows ACPI driver, so not even try to
-                // enable SMC for Windows guests
-                IRQNoFlags () {8}
-            })
-        }
-
+        
         // Fields within PIIX3 configuration[0x60..0x63] with
         // IRQ mappings
         Field (\_SB.PCI0.SBRG.PCIC, ByteAcc, NoLock, Preserve)
