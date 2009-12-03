@@ -270,6 +270,9 @@ static bool VBoxServiceTimeSyncAdjust(PCRTTIMESPEC pDrift)
 {
 #ifdef RT_OS_WINDOWS
 /** @todo r=bird: NT4 doesn't have GetSystemTimeAdjustment. */
+    if (g_hTokenProcess == NULL) /* Is the token already closed when shutting down? */
+        return false;
+
     DWORD dwWinTimeAdjustment, dwWinNewTimeAdjustment, dwWinTimeIncrement;
     BOOL  fWinTimeAdjustmentDisabled;
     if (GetSystemTimeAdjustment(&dwWinTimeAdjustment, &dwWinTimeIncrement, &fWinTimeAdjustmentDisabled))

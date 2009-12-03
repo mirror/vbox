@@ -282,7 +282,6 @@ int VBoxServiceStartServices(unsigned iMain)
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
         if (g_aServices[j].fEnabled)
         {
-
             rc = g_aServices[j].pDesc->pfnInit();
             if (RT_FAILURE(rc))
             {
@@ -316,7 +315,10 @@ int VBoxServiceStartServices(unsigned iMain)
         /* wait for the thread to initialize */
         RTThreadUserWait(g_aServices[j].Thread, 60 * 1000);
         if (g_aServices[j].fShutdown)
+        {
+            VBoxServiceError("Service '%s' failed to start!\n", g_aServices[j].pDesc->pszName);
             rc = VERR_GENERAL_FAILURE;
+        }
     }
     if (RT_SUCCESS(rc))
     {
@@ -328,8 +330,6 @@ int VBoxServiceStartServices(unsigned iMain)
             VBoxServiceError("Service '%s' stopped unexpected; rc=%Rrc\n", g_aServices[iMain].pDesc->pszName, rc);
         }
     }
-
-    /* Should never get here. */
     return rc;
 }
 
@@ -354,10 +354,22 @@ int VBoxServiceStopServices(void)
         {
             if (g_aServices[j].Thread != NIL_RTTHREAD)
             {
-                int rc = RTThreadWait(g_aServices[j].Thread, 30*1000, NULL);
+                int rc;
+                VBoxServiceVerbose(2, "Waiting for service '%s' to stop ...\n", g_aServices[j].pDesc->pszName);
+                for (int i=0; i<30; i++) /* Wait 30 seconds in total */
+                {
+                    rc = RTThreadWait(g_aServices[j].Thread, 1000 /* Wait 1 second */, NULL);
+                    if (RT_SUCCESS(rc))
+                        break;
+#ifdef RT_OS_WINDOWS
+                    /* Notify SCM that it takes a bit longer ... */
+                    VBoxServiceWinSetStatus(SERVICE_STOP_PENDING, i);
+#endif
+                }
                 if (RT_FAILURE(rc))
                     VBoxServiceError("Service '%s' failed to stop. (%Rrc)\n", g_aServices[j].pDesc->pszName, rc);
             }
+            VBoxServiceVerbose(3, "Terminating service '%s' (%d) ...\n", g_aServices[j].pDesc->pszName, j);
             g_aServices[j].pDesc->pfnTerm();
         }
 
