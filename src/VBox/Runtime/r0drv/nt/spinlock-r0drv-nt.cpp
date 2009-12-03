@@ -104,7 +104,7 @@ RTDECL(int)  RTSpinlockDestroy(RTSPINLOCK Spinlock)
 RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 {
     PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    Assert(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
+    AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC, ("magic=%#x\n", pSpinlockInt->u32Magic));
 
     KeAcquireSpinLock(&pSpinlockInt->Spinlock, &pTmp->uchIrqL);
     pTmp->uFlags = ASMGetFlags();
@@ -115,7 +115,7 @@ RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 {
     PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    Assert(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
+    AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC, ("magic=%#x\n", pSpinlockInt->u32Magic));
 
     ASMSetFlags(pTmp->uFlags);
     KeReleaseSpinLock(&pSpinlockInt->Spinlock, pTmp->uchIrqL);
@@ -125,7 +125,7 @@ RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 {
     PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    Assert(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
+    AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC, ("magic=%#x\n", pSpinlockInt->u32Magic));
 
     KeAcquireSpinLock(&pSpinlockInt->Spinlock, &pTmp->uchIrqL);
 }
@@ -134,8 +134,7 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 {
     PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    Assert(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
+    AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC, ("magic=%#x\n", pSpinlockInt->u32Magic));
 
     KeReleaseSpinLock(&pSpinlockInt->Spinlock, pTmp->uchIrqL);
 }
-
