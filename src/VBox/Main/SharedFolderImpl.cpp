@@ -160,7 +160,7 @@ HRESULT SharedFolder::init (VirtualBox *aVirtualBox,
 
     unconst(mVirtualBox) = aVirtualBox;
 
-    HRESULT rc = protectedInit (aVirtualBox, aName, aHostPath, aWritable);
+    HRESULT rc = protectedInit(aVirtualBox, aName, aHostPath, aWritable);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -175,8 +175,10 @@ HRESULT SharedFolder::init (VirtualBox *aVirtualBox,
  *  @note
  *      Must be called from under the object's lock!
  */
-HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
-                                     CBSTR aName, CBSTR aHostPath, BOOL aWritable)
+HRESULT SharedFolder::protectedInit(VirtualBoxBase *aParent,
+                                    CBSTR aName,
+                                    CBSTR aHostPath,
+                                    BOOL aWritable)
 {
     LogFlowThisFunc(("aName={%ls}, aHostPath={%ls}, aWritable={%d}\n",
                       aName, aHostPath, aWritable));
@@ -220,9 +222,6 @@ HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
 
     unconst(mParent) = aParent;
 
-    /* register with parent */
-    mParent->addDependentChild (this);
-
     unconst(m.name) = aName;
     unconst(m.hostPath) = hostPath;
     m.writable = aWritable;
@@ -242,9 +241,6 @@ void SharedFolder::uninit()
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
-
-    if (mParent)
-        mParent->removeDependentChild (this);
 
     unconst(mParent) = NULL;
 
