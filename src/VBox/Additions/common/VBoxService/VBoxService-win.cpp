@@ -68,7 +68,7 @@ DWORD VBoxServiceWinAddAceToObjectsSecurityDescriptor (LPTSTR pszObjName,
     dwRes = GetNamedSecurityInfo(pszObjName, ObjectType,
                                  DACL_SECURITY_INFORMATION,
                                  NULL, NULL, &pOldDACL, NULL, &pSD);
-    if (ERROR_SUCCESS != dwRes) 
+    if (ERROR_SUCCESS != dwRes)
     {
         if (dwRes == ERROR_FILE_NOT_FOUND)
             VBoxServiceError("AddAceToObjectsSecurityDescriptor: Object not found/installed: %s\n", pszObjName);
@@ -87,7 +87,7 @@ DWORD VBoxServiceWinAddAceToObjectsSecurityDescriptor (LPTSTR pszObjName,
 
     /* Create a new ACL that merges the new ACE into the existing DACL. */
     dwRes = SetEntriesInAcl(1, &ea, pOldDACL, &pNewDACL);
-    if (ERROR_SUCCESS != dwRes)  
+    if (ERROR_SUCCESS != dwRes)
     {
         VBoxServiceError("AddAceToObjectsSecurityDescriptor: SetEntriesInAcl: Error %u\n", dwRes);
         goto Cleanup;
@@ -97,7 +97,7 @@ DWORD VBoxServiceWinAddAceToObjectsSecurityDescriptor (LPTSTR pszObjName,
     dwRes = SetNamedSecurityInfo(pszObjName, ObjectType,
                                  DACL_SECURITY_INFORMATION,
                                  NULL, NULL, pNewDACL, NULL);
-    if (ERROR_SUCCESS != dwRes)  
+    if (ERROR_SUCCESS != dwRes)
     {
         VBoxServiceError("AddAceToObjectsSecurityDescriptor: SetNamedSecurityInfo: Error %u\n", dwRes);
         goto Cleanup;
@@ -114,21 +114,21 @@ Cleanup:
     return dwRes;
 }
 
-BOOL VBoxServiceWinSetStatus (DWORD a_dwStatus)
+BOOL VBoxServiceWinSetStatus (DWORD dwStatus, DWORD dwCheckPoint /*= 0 */)
 {
     if (NULL == g_hWinServiceStatus) /* Program could be in testing mode, so no service environment available. */
         return FALSE;
 
-    VBoxServiceVerbose(2, "Setting service status to: %ld\n", a_dwStatus);
-    g_rcWinService  = a_dwStatus;
+    VBoxServiceVerbose(2, "Setting service status to: %ld\n", dwStatus);
+    g_rcWinService  = dwStatus;
 
     SERVICE_STATUS ss;
     ss.dwServiceType              = SERVICE_WIN32_OWN_PROCESS;
     ss.dwCurrentState             = g_rcWinService;
     ss.dwControlsAccepted	      = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
-    ss.dwWin32ExitCode            = NOERROR;
-    ss.dwServiceSpecificExitCode  = NOERROR;
-    ss.dwCheckPoint               = 0;
+    ss.dwWin32ExitCode            = NO_ERROR;
+    ss.dwServiceSpecificExitCode  = 0; /* Not used */
+    ss.dwCheckPoint               = dwCheckPoint;
     ss.dwWaitHint                 = 3000;
 
     return SetServiceStatus (g_hWinServiceStatus, &ss);

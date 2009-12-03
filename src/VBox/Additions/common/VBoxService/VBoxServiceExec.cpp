@@ -346,7 +346,7 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
             char szSysprepCmd[RTPATH_MAX] = "C:\\sysprep\\sysprep.exe";
             OSVERSIONINFOEX OSInfoEx;
             RT_ZERO(OSInfoEx);
-            OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+            OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
             if (    GetVersionEx((LPOSVERSIONINFO) &OSInfoEx)
                 &&  OSInfoEx.dwPlatformId == VER_PLATFORM_WIN32_NT
                 &&  OSInfoEx.dwMajorVersion >= 6 /* Vista or later */)
@@ -504,8 +504,11 @@ static DECLCALLBACK(void) VBoxServiceExecTerm(void)
     VbglR3GuestPropDisconnect(g_uExecGuestPropSvcClientID);
     g_uExecGuestPropSvcClientID = 0;
 
-    RTSemEventMultiDestroy(g_hExecEvent);
-    g_hExecEvent = NIL_RTSEMEVENTMULTI;
+    if (g_hExecEvent != NIL_RTSEMEVENTMULTI)
+    {
+        RTSemEventMultiDestroy(g_hExecEvent);
+        g_hExecEvent = NIL_RTSEMEVENTMULTI;
+    }
 }
 
 

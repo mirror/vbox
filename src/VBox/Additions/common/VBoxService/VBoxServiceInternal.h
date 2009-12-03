@@ -145,6 +145,8 @@ extern SERVICE_TABLE_ENTRY const g_aServiceTable[];     /** @todo generate on th
 extern int VBoxServiceWinInstall(void);
 /** Uninstalls the service from the registry. */
 extern int VBoxServiceWinUninstall(void);
+/** Reports our current status to the SCM. */
+extern BOOL VBoxServiceWinSetStatus (DWORD dwStatus, DWORD dwCheckPoint = 0);
 #ifdef VBOX_WITH_GUEST_PROPS
 /** Detects wheter a user is logged on based on the enumerated processes. */
 extern BOOL VBoxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
