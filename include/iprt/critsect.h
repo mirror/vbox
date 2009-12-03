@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,20 +41,23 @@ RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_critsect       RTCritSect - Critical Sections
  *
- * A "critical section" synchronization primitive. This can be used to
- * protect a section of code or data to which access must be exclusive.
- * Only one thread can hold access to a critical section at one time.
+ * "Critical section" synchronization primitives can be used to
+ * protect a section of code or data to which access must be exclusive;
+ * only one thread can hold access to a critical section at one time.
  *
- * A critical section is a fast write lock; if the critical section is
- * not acquired, then entering it is fast (requires no system call).
+ * A critical section is a fast recursive write lock; if the critical
+ * section is not acquired, then entering it is fast (requires no system
+ * call). IPRT uses the Windows terminology here; on other platform, this
+ * might be called a "futex" or a "fast mutex". As opposed to IPRT
+ * "fast mutexes" (see @ref grp_rt_sems_fast_mutex ), critical sections
+ * are recursive.
  *
  * Use RTCritSectInit to initialize a critical section; use RTCritSectEnter
- * and RTCritSectLeave to acquire and release access. IPRT uses the Windows
- * terminology here; on other platform, this might be called a "futex" or a
- * "fast mutex".
+ * and RTCritSectLeave to acquire and release access.
  *
- * If you need a read/write semaphore which allows multiple readers
- * but only writer, use RTSEMRW instead.
+ * For an overview of all types of synchronization primitives provided
+ * by IPRT (event, mutex/fast mutex/read-write mutex semaphores), see
+ * @ref grp_rt_sems .
  *
  * @ingroup grp_rt
  * @{

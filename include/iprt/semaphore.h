@@ -37,12 +37,24 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_sems    RTSem - Semaphores
+ *
+ * This module implements all kinds of event and mutex semaphores; in addition
+ * to these, IPRT implements "critical sections", which are fast recursive
+ * mutexes (see @ref grp_rt_critsect ).
+ *
  * @ingroup grp_rt
  * @{
  */
 
 
 /** @defgroup grp_rt_sems_event    RTSemEvent - Single Release Event Semaphores
+ *
+ * Event semaphores can be used for inter-process communication when
+ * one thread wants to notify another thread that something happened.
+ * A thread can block ("wait") on an event semaphore until it is
+ * signalled by another thread; see RTSemEventCreate, RTSemEventSignal
+ * and RTSemEventWait.
+ *
  * @{ */
 
 /**
@@ -165,8 +177,14 @@ RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned
 
 /** @defgroup grp_rt_sems_mutex     RTMutex - Mutex semaphores.
  *
- * @remarks These can be pretty heavy handed. Fast mutexes or critical sections
- *          is usually what you need.
+ * Mutex semaphores protect a section of code or data to which access
+ * must be exclusive. Only one thread can hold access to a critical
+ * section at one time. See RTSemMutexCreate, RTSemMutexRequest and
+ * RTSemMutexRelease.
+ *
+ * @remarks These are less efficient than "fast mutexes" and "critical sections",
+ *          which IPRT implements as well; see @ref grp_rt_sems_fast_mutex and
+ *          @ref grp_rt_critsect .
  *
  * @{ */
 
@@ -231,6 +249,13 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem);
 
 
 /** @defgroup grp_rt_sems_fast_mutex    RTSemFastMutex - Fast Mutex Semaphores
+ *
+ * Fast mutexes work like regular mutexes in that they allow only
+ * a single thread access to a critical piece of code or data.
+ * As opposed to mutexes, they require no syscall if the fast mutex
+ * is not held (like critical sections). Unlike critical sections however,
+ * they are *not* recursive.
+ *
  * @{ */
 
 /**
@@ -369,6 +394,13 @@ RTDECL(int) RTSemSpinMutexRelease(RTSEMSPINMUTEX hSpinMtx);
 
 
 /** @defgroup grp_rt_sem_rw             RTSemRW - Read / Write Semaphores
+ *
+ * Read/write semaphores are a fancier version of mutexes in that they
+ * grant read access to the protected data to several threads
+ * at the same time but allow only one writer at a time. This can make
+ * code scale better at the expense of slightly more overhead in
+ * mutex management.
+ *
  * @{ */
 
 /**
