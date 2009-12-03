@@ -157,6 +157,9 @@ struct CRContext {
     CRGLSLState        glsl;
 #endif
 
+    /*@todo add back buffer, depth and fbos and move out of here*/
+    GLvoid *pImage; /*stored front buffer image*/
+
     /** For buffering vertices for selection/feedback */
     /*@{*/
     GLuint    vCount;
