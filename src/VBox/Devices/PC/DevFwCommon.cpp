@@ -42,6 +42,32 @@
 
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+
+/*
+ * Default DMI data (legacy).
+ * Don't change this information otherwise Windows guests will demand re-activation!
+ */
+static const int32_t s_iDefDmiBIOSReleaseMajor  = 0;
+static const int32_t s_iDefDmiBIOSReleaseMinor  = 0;
+static const int32_t s_iDefDmiBIOSFirmwareMajor = 0;
+static const int32_t s_iDefDmiBIOSFirmwareMinor = 0;
+static const char   *s_szDefDmiBIOSVendor       = "innotek GmbH";
+static const char   *s_szDefDmiBIOSVersion      = "VirtualBox";
+static const char   *s_szDefDmiBIOSReleaseDate  = "12/01/2006";
+static const char   *s_szDefDmiSystemVendor     = "innotek GmbH";
+static const char   *s_szDefDmiSystemProduct    = "VirtualBox";
+static const char   *s_szDefDmiSystemVersion    = "1.2";
+static const char   *s_szDefDmiSystemSerial     = "0";
+static const char   *s_szDefDmiSystemFamily     = "Virtual Machine";
+static const char   *s_szDefDmiChassisVendor    = "Sun Microsystems, Inc.";
+static const char   *s_szDefDmiChassisVersion   = "";
+static const char   *s_szDefDmiChassisSerial    = "";
+static const char   *s_szDefDmiChassisAssetTag  = "";
+
+
+/*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 #pragma pack(1)
@@ -288,258 +314,300 @@ static bool sharedfwChecksumOk(const uint8_t * const au8Data, uint32_t u32Length
  * @param   pUuid               Pointer to the UUID to use if the DmiUuid
  *                              configuration string isn't present.
  * @param   pCfgHandle          The handle to our config node.
+ * @param   fForceDefault       Don't read DMI information from the environment, use default values.
  * @param   fPutSmbiosHeaders   Plant SMBIOS headers if true.
  */
 int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PCRTUUID pUuid, PCFGMNODE pCfgHandle, bool fPutSmbiosHeaders)
 {
-    char *pszStr = (char *)pTable;
-    int iStrNr;
-    int rc;
-    char *pszDmiBIOSVendor, *pszDmiBIOSVersion, *pszDmiBIOSReleaseDate;
-    int  iDmiBIOSReleaseMajor, iDmiBIOSReleaseMinor, iDmiBIOSFirmwareMajor, iDmiBIOSFirmwareMinor;
-    char *pszDmiSystemVendor, *pszDmiSystemProduct, *pszDmiSystemVersion, *pszDmiSystemSerial, *pszDmiSystemUuid, *pszDmiSystemFamily;
-    char *pszDmiChassisVendor, *pszDmiChassisVersion, *pszDmiChassisSerial, *pszDmiChassisAssetTag;
-    char *pszDmiOEMVBoxVer, *pszDmiOEMVBoxRev;
-
-#define CHECKSIZE(want) \
-    do { \
-        size_t _max = (size_t)(pszStr + want - (char *)pTable) + 5; /* +1 for strtab terminator +4 for end-of-table entry */ \
-        if (_max > cbMax) \
+#define CHECKSIZE(cbWant) \
+    { \
+        size_t cbNeed = (size_t)(pszStr + cbWant - (char *)pTable) + 5; /* +1 for strtab terminator +4 for end-of-table entry */ \
+        if (cbNeed > cbMax) \
         { \
+            if (fHideErrors) \
+            { \
+                LogRel(("One of the DMI strings is too long -- using default DMI data!\n")); \
+                continue; \
+            } \
             return PDMDevHlpVMSetError(pDevIns, VERR_TOO_MUCH_DATA, RT_SRC_POS, \
-                   N_("One of the DMI strings is too long. Check all bios/Dmi* configuration entries. At least %zu bytes are needed but there is no space for more than %d bytes"), _max, cbMax); \
+                                       N_("One of the DMI strings is too long. Check all bios/Dmi* configuration entries. At least %zu bytes are needed but there is no space for more than %d bytes"), cbNeed, cbMax); \
         } \
-    } while (0)
-#define SETSTRING(memb, str) \
-    do { \
-        if (!str[0]) \
-            memb = 0; /* empty string */ \
+    }
+
+#define READCFGSTRDEF(variable, name, default_value) \
+    { \
+        if (fForceDefault) \
+            pszTmp = default_value; \
         else \
         { \
-            memb = iStrNr++; \
-            size_t _len = strlen(str) + 1; \
-            CHECKSIZE(_len); \
-            memcpy(pszStr, str, _len); \
-            pszStr += _len; \
+            rc = CFGMR3QueryStringDef(pCfgHandle, name, szBuf, sizeof(szBuf), default_value); \
+            if (RT_FAILURE(rc)) \
+            { \
+                if (fHideErrors) \
+                { \
+                    LogRel(("Configuration error: Querying \"" name "\" as a string failed -- using default DMI data!\n")); \
+                    continue; \
+                } \
+                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, \
+                                           N_("Configuration error: Querying \"" name "\" as a string failed")); \
+            } \
+            else if (!strcmp(szBuf, "<EMPTY>")) \
+                pszTmp = ""; \
+            else \
+                pszTmp = szBuf; \
         } \
-    } while (0)
-#define READCFGSTR(name, variable, default_value) \
-    do { \
-        rc = CFGMR3QueryStringAlloc(pCfgHandle, name, & variable); \
-        if (rc == VERR_CFGM_VALUE_NOT_FOUND) \
-            variable = MMR3HeapStrDup(PDMDevHlpGetVM(pDevIns), MM_TAG_CFGM, default_value); \
-        else if (RT_FAILURE(rc)) \
-            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, \
-                    N_("Configuration error: Querying \"" name "\" as a string failed")); \
-        else if (!strcmp(variable, "<EMPTY>")) \
-            variable[0] = '\0'; \
-    } while (0)
-#define READCFGINT(name, variable, default_value) \
-    do { \
-        rc = CFGMR3QueryS32(pCfgHandle, name, & variable); \
-        if (rc == VERR_CFGM_VALUE_NOT_FOUND) \
-            variable = default_value; \
-        else if (RT_FAILURE(rc)) \
-            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, \
-                    N_("Configuration error: Querying \"" name "\" as a Int failed")); \
-    } while (0)
+        if (!pszTmp[0]) \
+            variable = 0; /* empty string */ \
+        else \
+        { \
+            variable = iStrNr++; \
+            size_t cStr = strlen(pszTmp) + 1; \
+            CHECKSIZE(cStr); \
+            memcpy(pszStr, pszTmp, cStr); \
+            pszStr += cStr ; \
+        } \
+    }
 
+#define READCFGSTR(variable, name) \
+    READCFGSTRDEF(variable, # name, s_szDef ## name)
 
+#define READCFGINT(variable, name) \
+    { \
+        if (fForceDefault) \
+            variable = s_iDef ## name; \
+        else \
+        { \
+            rc = CFGMR3QueryS32Def(pCfgHandle, # name, & variable, s_iDef ## name); \
+            if (RT_FAILURE(rc)) \
+            { \
+                if (fHideErrors) \
+                { \
+                    LogRel(("Configuration error: Querying \"" # name "\" as an int failed -- using default DMI data!\n")); \
+                    continue; \
+                } \
+                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, \
+                                           N_("Configuration error: Querying \"" # name "\" as an int failed")); \
+            } \
+        } \
+    }
+
+    bool fForceDefault = false;
+#ifdef VBOX_BIOS_DMI_FALLBACK
     /*
-     * Don't change this information otherwise Windows guests will demand re-activation!
+     * There will be two passes. If an error occurs during the first pass, a
+     * message will be written to the release log and we fall back to default
+     * DMI data and start a second pass.
      */
-    READCFGSTR("DmiBIOSVendor",        pszDmiBIOSVendor,      "innotek GmbH");
-    READCFGSTR("DmiBIOSVersion",       pszDmiBIOSVersion,     "VirtualBox");
-    READCFGSTR("DmiBIOSReleaseDate",   pszDmiBIOSReleaseDate, "12/01/2006");
-    READCFGINT("DmiBIOSReleaseMajor",  iDmiBIOSReleaseMajor,   0);
-    READCFGINT("DmiBIOSReleaseMinor",  iDmiBIOSReleaseMinor,   0);
-    READCFGINT("DmiBIOSFirmwareMajor", iDmiBIOSFirmwareMajor,  0);
-    READCFGINT("DmiBIOSFirmwareMinor", iDmiBIOSFirmwareMinor,  0);
-    READCFGSTR("DmiSystemVendor",      pszDmiSystemVendor,    "innotek GmbH");
-    READCFGSTR("DmiSystemProduct",     pszDmiSystemProduct,   "VirtualBox");
-    READCFGSTR("DmiSystemVersion",     pszDmiSystemVersion,   "1.2");
-    READCFGSTR("DmiSystemSerial",      pszDmiSystemSerial,    "0");
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "DmiSystemUuid", &pszDmiSystemUuid);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pszDmiSystemUuid = NULL;
-    else if (RT_FAILURE(rc))
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("Configuration error: Querying \"DmiUuid\" as a string failed"));
-    READCFGSTR("DmiSystemFamily",      pszDmiSystemFamily,    "Virtual Machine");
-    READCFGSTR("DmiChassisVendor",     pszDmiChassisVendor,   "Sun Microsystems, Inc.");
-    READCFGSTR("DmiChassisVersion",    pszDmiChassisVersion,  ""); /* default not specified */
-    READCFGSTR("DmiChassisSerial",     pszDmiChassisSerial,   ""); /* default not specified */
-    READCFGSTR("DmiChassisAssetTag",   pszDmiChassisAssetTag, ""); /* default not specified */
+    bool fHideErrors = true;
+#else
+    /*
+     * There will be one pass, every error is fatal and will prevent the VM
+     * from starting.
+     */
+    bool fHideErrors = false;
+#endif
 
-    /* DMI BIOS information (Type 0) */
-    PDMIBIOSINF pBIOSInf         = (PDMIBIOSINF)pszStr;
-    CHECKSIZE(sizeof(*pBIOSInf));
-
-    pszStr                       = (char *)&pBIOSInf->u8ReleaseMajor;
-    pBIOSInf->header.u8Length    = RT_OFFSETOF(DMIBIOSINF, u8ReleaseMajor);
-
-    /* don't set these fields by default for legacy compatibility */
-    if (iDmiBIOSReleaseMajor != 0 || iDmiBIOSReleaseMinor != 0)
+    for  (;; fForceDefault = true, fHideErrors = false)
     {
-        pszStr = (char *)&pBIOSInf->u8FirmwareMajor;
-        pBIOSInf->header.u8Length = RT_OFFSETOF(DMIBIOSINF, u8FirmwareMajor);
-        pBIOSInf->u8ReleaseMajor  = iDmiBIOSReleaseMajor;
-        pBIOSInf->u8ReleaseMinor  = iDmiBIOSReleaseMinor;
-        if (iDmiBIOSFirmwareMajor != 0 || iDmiBIOSFirmwareMinor != 0)
+        int  iStrNr;
+        int  rc;
+        char szBuf[256];
+        char *pszStr = (char *)pTable;
+        char szDmiSystemUuid[64];
+        char *pszDmiSystemUuid;
+        const char *pszTmp;
+
+        if (fForceDefault)
+            pszDmiSystemUuid = NULL;
+        else
         {
-            pszStr = (char *)(pBIOSInf + 1);
-            pBIOSInf->header.u8Length = sizeof(DMIBIOSINF);
-            pBIOSInf->u8FirmwareMajor = iDmiBIOSFirmwareMajor;
-            pBIOSInf->u8FirmwareMinor = iDmiBIOSFirmwareMinor;
+            rc = CFGMR3QueryString(pCfgHandle, "DmiSystemUuid", szDmiSystemUuid, sizeof(szDmiSystemUuid));
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+                pszDmiSystemUuid = NULL;
+            else if (RT_FAILURE(rc))
+            {
+                if (fHideErrors)
+                {
+                    LogRel(("Configuration error: Querying \"DmiSystemUuid\" as a string failed, using default DMI data\n"));
+                    continue;
+                }
+                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                           N_("Configuration error: Querying \"DmiSystemUuid\" as a string failed"));
+            }
+            else
+                pszDmiSystemUuid = szDmiSystemUuid;
         }
-    }
 
-    iStrNr                       = 1;
-    pBIOSInf->header.u8Type      = 0; /* BIOS Information */
-    pBIOSInf->header.u16Handle   = 0x0000;
-    SETSTRING(pBIOSInf->u8Vendor,  pszDmiBIOSVendor);
-    SETSTRING(pBIOSInf->u8Version, pszDmiBIOSVersion);
-    pBIOSInf->u16Start           = 0xE000;
-    SETSTRING(pBIOSInf->u8Release, pszDmiBIOSReleaseDate);
-    pBIOSInf->u8ROMSize          = 1; /* 128K */
-    pBIOSInf->u64Characteristics = RT_BIT(4)   /* ISA is supported */
-                                 | RT_BIT(7)   /* PCI is supported */
-                                 | RT_BIT(15)  /* Boot from CD is supported */
-                                 | RT_BIT(16)  /* Selectable Boot is supported */
-                                 | RT_BIT(27)  /* Int 9h, 8042 Keyboard services supported */
-                                 | RT_BIT(30)  /* Int 10h, CGA/Mono Video Services supported */
-                                 /* any more?? */
-                                 ;
-    pBIOSInf->u8CharacteristicsByte1 = RT_BIT(0)   /* ACPI is supported */
+        /*********************************
+         * DMI BIOS information (Type 0) *
+         *********************************/
+        PDMIBIOSINF pBIOSInf         = (PDMIBIOSINF)pszStr;
+        CHECKSIZE(sizeof(*pBIOSInf));
+
+        pszStr                       = (char *)&pBIOSInf->u8ReleaseMajor;
+        pBIOSInf->header.u8Length    = RT_OFFSETOF(DMIBIOSINF, u8ReleaseMajor);
+
+        /* don't set these fields by default for legacy compatibility */
+        int iDmiBIOSReleaseMajor, iDmiBIOSReleaseMinor;
+        READCFGINT(iDmiBIOSReleaseMajor, DmiBIOSReleaseMajor);
+        READCFGINT(iDmiBIOSReleaseMinor, DmiBIOSReleaseMinor);
+        if (iDmiBIOSReleaseMajor != 0 || iDmiBIOSReleaseMinor != 0)
+        {
+            pszStr = (char *)&pBIOSInf->u8FirmwareMajor;
+            pBIOSInf->header.u8Length = RT_OFFSETOF(DMIBIOSINF, u8FirmwareMajor);
+            pBIOSInf->u8ReleaseMajor  = iDmiBIOSReleaseMajor;
+            pBIOSInf->u8ReleaseMinor  = iDmiBIOSReleaseMinor;
+
+            int iDmiBIOSFirmwareMajor, iDmiBIOSFirmwareMinor;
+            READCFGINT(iDmiBIOSFirmwareMajor, DmiBIOSFirmwareMajor);
+            READCFGINT(iDmiBIOSFirmwareMinor, DmiBIOSFirmwareMinor);
+            if (iDmiBIOSFirmwareMajor != 0 || iDmiBIOSFirmwareMinor != 0)
+            {
+                pszStr = (char *)(pBIOSInf + 1);
+                pBIOSInf->header.u8Length = sizeof(DMIBIOSINF);
+                pBIOSInf->u8FirmwareMajor = iDmiBIOSFirmwareMajor;
+                pBIOSInf->u8FirmwareMinor = iDmiBIOSFirmwareMinor;
+            }
+        }
+
+        iStrNr                       = 1;
+        pBIOSInf->header.u8Type      = 0; /* BIOS Information */
+        pBIOSInf->header.u16Handle   = 0x0000;
+        READCFGSTR(pBIOSInf->u8Vendor,  DmiBIOSVendor);
+        READCFGSTR(pBIOSInf->u8Version, DmiBIOSVersion);
+        pBIOSInf->u16Start           = 0xE000;
+        READCFGSTR(pBIOSInf->u8Release, DmiBIOSReleaseDate);
+        pBIOSInf->u8ROMSize          = 1; /* 128K */
+        pBIOSInf->u64Characteristics = RT_BIT(4)   /* ISA is supported */
+                                     | RT_BIT(7)   /* PCI is supported */
+                                     | RT_BIT(15)  /* Boot from CD is supported */
+                                     | RT_BIT(16)  /* Selectable Boot is supported */
+                                     | RT_BIT(27)  /* Int 9h, 8042 Keyboard services supported */
+                                     | RT_BIT(30)  /* Int 10h, CGA/Mono Video Services supported */
                                      /* any more?? */
                                      ;
-    pBIOSInf->u8CharacteristicsByte2 = 0
-                                     /* any more?? */
-                                     ;
-    *pszStr++                    = '\0';
-
-    /* DMI system information (Type 1) */
-    PDMISYSTEMINF pSystemInf     = (PDMISYSTEMINF)pszStr;
-    CHECKSIZE(sizeof(*pSystemInf));
-    pszStr                       = (char *)(pSystemInf + 1);
-    iStrNr                       = 1;
-    pSystemInf->header.u8Type    = 1; /* System Information */
-    pSystemInf->header.u8Length  = sizeof(*pSystemInf);
-    pSystemInf->header.u16Handle = 0x0001;
-    SETSTRING(pSystemInf->u8Manufacturer, pszDmiSystemVendor);
-    SETSTRING(pSystemInf->u8ProductName,  pszDmiSystemProduct);
-    SETSTRING(pSystemInf->u8Version,      pszDmiSystemVersion);
-    SETSTRING(pSystemInf->u8SerialNumber, pszDmiSystemSerial);
-
-    RTUUID uuid;
-    if (pszDmiSystemUuid)
-    {
-        rc = RTUuidFromStr(&uuid, pszDmiSystemUuid);
-        if (RT_FAILURE(rc))
-            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                       N_("Invalid UUID for DMI tables specified"));
-        uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
-        uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
-        uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
-        pUuid = &uuid;
-    }
-    memcpy(pSystemInf->au8Uuid, pUuid, sizeof(RTUUID));
-
-    pSystemInf->u8WakeupType     = 6; /* Power Switch */
-    pSystemInf->u8SKUNumber      = 0;
-    SETSTRING(pSystemInf->u8Family, pszDmiSystemFamily);
-    *pszStr++                    = '\0';
-
-    /* DMI System Enclosure or Chassis (Type 3) */
-    PDMICHASSIS pChassis         = (PDMICHASSIS)pszStr;
-    CHECKSIZE(sizeof(*pChassis));
-    pszStr                       = (char*)&pChassis->u32OEMdefined;
-    iStrNr                       = 1;
+        pBIOSInf->u8CharacteristicsByte1 = RT_BIT(0)   /* ACPI is supported */
+                                         /* any more?? */
+                                         ;
+        pBIOSInf->u8CharacteristicsByte2 = 0
+                                         /* any more?? */
+                                         ;
+        *pszStr++                    = '\0';
+    
+        /***********************************
+         * DMI system information (Type 1) *
+         ***********************************/
+        PDMISYSTEMINF pSystemInf     = (PDMISYSTEMINF)pszStr;
+        CHECKSIZE(sizeof(*pSystemInf));
+        pszStr                       = (char *)(pSystemInf + 1);
+        iStrNr                       = 1;
+        pSystemInf->header.u8Type    = 1; /* System Information */
+        pSystemInf->header.u8Length  = sizeof(*pSystemInf);
+        pSystemInf->header.u16Handle = 0x0001;
+        READCFGSTR(pSystemInf->u8Manufacturer, DmiSystemVendor);
+        READCFGSTR(pSystemInf->u8ProductName,  DmiSystemProduct);
+        READCFGSTR(pSystemInf->u8Version,      DmiSystemVersion);
+        READCFGSTR(pSystemInf->u8SerialNumber, DmiSystemSerial);
+    
+        RTUUID uuid;
+        if (pszDmiSystemUuid)
+        {
+            rc = RTUuidFromStr(&uuid, pszDmiSystemUuid);
+            if (RT_FAILURE(rc))
+                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                           N_("Invalid UUID for DMI tables specified"));
+            uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
+            uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
+            uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
+            pUuid = &uuid;
+        }
+        memcpy(pSystemInf->au8Uuid, pUuid, sizeof(RTUUID));
+    
+        pSystemInf->u8WakeupType     = 6; /* Power Switch */
+        pSystemInf->u8SKUNumber      = 0;
+        READCFGSTR(pSystemInf->u8Family, DmiSystemFamily);
+        *pszStr++                    = '\0';
+    
+        /********************************************
+         * DMI System Enclosure or Chassis (Type 3) *
+         ********************************************/
+        PDMICHASSIS pChassis         = (PDMICHASSIS)pszStr;
+        CHECKSIZE(sizeof(*pChassis));
+        pszStr                       = (char*)&pChassis->u32OEMdefined;
+        iStrNr                       = 1;
 #ifdef VBOX_WITH_DMI_CHASSIS
-    pChassis->header.u8Type      = 3; /* System Enclosure or Chassis */
+        pChassis->header.u8Type      = 3; /* System Enclosure or Chassis */
 #else
-    pChassis->header.u8Type      = 0x7e; /* inactive */
+        pChassis->header.u8Type      = 0x7e; /* inactive */
 #endif
-    pChassis->header.u8Length    = RT_OFFSETOF(DMICHASSIS, u32OEMdefined);
-    pChassis->header.u16Handle   = 0x0003;
-    SETSTRING(pChassis->u8Manufacturer, pszDmiChassisVendor);
-    pChassis->u8Type             = 0x01; /* ''other'', no chassis lock present */
-    SETSTRING(pChassis->u8Version, pszDmiChassisVersion);
-    SETSTRING(pChassis->u8SerialNumber, pszDmiChassisSerial);
-    SETSTRING(pChassis->u8AssetTag, pszDmiChassisAssetTag);
-    pChassis->u8BootupState      = 0x03; /* safe */
-    pChassis->u8PowerSupplyState = 0x03; /* safe */
-    pChassis->u8ThermalState     = 0x03; /* safe */
-    pChassis->u8SecurityStatus   = 0x03; /* none XXX */
+        pChassis->header.u8Length    = RT_OFFSETOF(DMICHASSIS, u32OEMdefined);
+        pChassis->header.u16Handle   = 0x0003;
+        READCFGSTR(pChassis->u8Manufacturer, DmiChassisVendor);
+        pChassis->u8Type             = 0x01; /* ''other'', no chassis lock present */
+        READCFGSTR(pChassis->u8Version, DmiChassisVersion);
+        READCFGSTR(pChassis->u8SerialNumber, DmiChassisSerial);
+        READCFGSTR(pChassis->u8AssetTag, DmiChassisAssetTag);
+        pChassis->u8BootupState      = 0x03; /* safe */
+        pChassis->u8PowerSupplyState = 0x03; /* safe */
+        pChassis->u8ThermalState     = 0x03; /* safe */
+        pChassis->u8SecurityStatus   = 0x03; /* none XXX */
 # if 0
-    /* v2.3+, currently not supported */
-    pChassis->u32OEMdefined      = 0;
-    pChassis->u8Height           = 0; /* unspecified */
-    pChassis->u8NumPowerChords   = 0; /* unspecified */
-    pChassis->u8ContElems        = 0; /* no contained elements */
-    pChassis->u8ContElemRecLen   = 0; /* no contained elements */
+        /* v2.3+, currently not supported */
+        pChassis->u32OEMdefined      = 0;
+        pChassis->u8Height           = 0; /* unspecified */
+        pChassis->u8NumPowerChords   = 0; /* unspecified */
+        pChassis->u8ContElems        = 0; /* no contained elements */
+        pChassis->u8ContElemRecLen   = 0; /* no contained elements */
 # endif
-    *pszStr++                    = '\0';
-
-    /* DMI OEM strings */
-    PDMIOEMSTRINGS pOEMStrings    = (PDMIOEMSTRINGS)pszStr;
-    CHECKSIZE(sizeof(*pOEMStrings));
-    pszStr                        = (char *)(pOEMStrings + 1);
-    iStrNr                        = 1;
+        *pszStr++                    = '\0';
+    
+        /*****************************
+         * DMI OEM strings (Type 11) *
+         *****************************/
+        PDMIOEMSTRINGS pOEMStrings    = (PDMIOEMSTRINGS)pszStr;
+        CHECKSIZE(sizeof(*pOEMStrings));
+        pszStr                        = (char *)(pOEMStrings + 1);
+        iStrNr                        = 1;
 #ifdef VBOX_WITH_DMI_OEMSTRINGS
-    pOEMStrings->header.u8Type    = 0xb; /* OEM Strings */
+        pOEMStrings->header.u8Type    = 0xb; /* OEM Strings */
 #else
-    pOEMStrings->header.u8Type    = 0x7e; /* inactive */
+        pOEMStrings->header.u8Type    = 0x7e; /* inactive */
 #endif
-    pOEMStrings->header.u8Length  = sizeof(*pOEMStrings);
-    pOEMStrings->header.u16Handle = 0x0002;
-    pOEMStrings->u8Count          = 2;
+        pOEMStrings->header.u8Length  = sizeof(*pOEMStrings);
+        pOEMStrings->header.u16Handle = 0x0002;
+        pOEMStrings->u8Count          = 2;
+    
+        char szTmp[64];
+        RTStrPrintf(szTmp, sizeof(szTmp), "vboxVer_%u.%u.%u",
+                    RTBldCfgVersionMajor(), RTBldCfgVersionMinor(), RTBldCfgVersionBuild());
+        READCFGSTRDEF(pOEMStrings->u8VBoxVersion, "DmiOEMVBoxVer", szTmp);
+        RTStrPrintf(szTmp, sizeof(szTmp), "vboxRev_%u", RTBldCfgRevision());
+        READCFGSTRDEF(pOEMStrings->u8VBoxRevision, "DmiOEMVBoxRev", szTmp);
+        *pszStr++                    = '\0';
+    
+        /* End-of-table marker - includes padding to account for fixed table size. */
+        PDMIHDR pEndOfTable          = (PDMIHDR)pszStr;
+        pEndOfTable->u8Type          = 0x7f;
+        pEndOfTable->u8Length        = cbMax - ((char *)pszStr - (char *)pTable) - 2;
+        pEndOfTable->u16Handle       = 0xFEFF;
+    
+        /* If more fields are added here, fix the size check in READCFGSTR */
 
-    char szTmp[64];
-    RTStrPrintf(szTmp, sizeof(szTmp), "vboxVer_%u.%u.%u",
-                RTBldCfgVersionMajor(), RTBldCfgVersionMinor(), RTBldCfgVersionBuild());
-    READCFGSTR("DmiOEMVBoxVer", pszDmiOEMVBoxVer, szTmp);
-    RTStrPrintf(szTmp, sizeof(szTmp), "vboxRev_%u", RTBldCfgRevision());
-    READCFGSTR("DmiOEMVBoxRev", pszDmiOEMVBoxRev, szTmp);
-    SETSTRING(pOEMStrings->u8VBoxVersion, pszDmiOEMVBoxVer);
-    SETSTRING(pOEMStrings->u8VBoxRevision, pszDmiOEMVBoxRev);
-    *pszStr++                    = '\0';
+        /* Success! */
+        break;
+    }
 
-    /* End-of-table marker - includes padding to account for fixed table size. */
-    PDMIHDR pEndOfTable          = (PDMIHDR)pszStr;
-    pEndOfTable->u8Type          = 0x7f;
-    pEndOfTable->u8Length        = cbMax - ((char *)pszStr - (char *)pTable) - 2;
-    pEndOfTable->u16Handle       = 0xFEFF;
-
-    /* If more fields are added here, fix the size check in SETSTRING */
-
-#undef SETSTRING
 #undef READCFGSTR
 #undef READCFGINT
 #undef CHECKSIZE
-
-    MMR3HeapFree(pszDmiBIOSVendor);
-    MMR3HeapFree(pszDmiBIOSVersion);
-    MMR3HeapFree(pszDmiBIOSReleaseDate);
-    MMR3HeapFree(pszDmiSystemVendor);
-    MMR3HeapFree(pszDmiSystemProduct);
-    MMR3HeapFree(pszDmiSystemVersion);
-    MMR3HeapFree(pszDmiSystemSerial);
-    MMR3HeapFree(pszDmiSystemUuid);
-    MMR3HeapFree(pszDmiSystemFamily);
-    MMR3HeapFree(pszDmiChassisVendor);
-    MMR3HeapFree(pszDmiChassisVersion);
-    MMR3HeapFree(pszDmiChassisSerial);
-    MMR3HeapFree(pszDmiChassisAssetTag);
-    MMR3HeapFree(pszDmiOEMVBoxVer);
-    MMR3HeapFree(pszDmiOEMVBoxRev);
 
     if (fPutSmbiosHeaders)
     {
         struct {
             struct SMBIOSHDR     smbios;
             struct DMIMAINHDR    dmi;
-        } aBiosHeaders =
+        } aBiosHeaders
+        =
         {
             // The SMBIOS header
             {
