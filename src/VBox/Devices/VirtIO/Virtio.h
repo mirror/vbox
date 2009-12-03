@@ -211,6 +211,8 @@ struct VPCIState_st
     STAMPROFILEADV         StatIOWriteHC;
     STAMCOUNTER            StatIntsRaised;
     STAMCOUNTER            StatIntsSkipped;
+    STAMPROFILE            StatCsGC;
+    STAMPROFILE            StatCsHC;
 #endif /* VBOX_WITH_STATISTICS */
 };
 typedef struct VPCIState_st VPCISTATE;
@@ -266,15 +268,24 @@ PVQUEUE vpciAddQueue(VPCISTATE* pState, unsigned uSize,
                      void (*pfnCallback)(void *pvState, PVQUEUE pQueue),
                      const char *pcszName);
 
-
+#define VPCI_CS
 DECLINLINE(int) vpciCsEnter(VPCISTATE *pState, int iBusyRc)
 {
-    return PDMCritSectEnter(&pState->cs, iBusyRc);
+#ifdef VPCI_CS
+    STAM_PROFILE_START(&pState->CTXSUFF(StatCs), a);
+    int rc = PDMCritSectEnter(&pState->cs, iBusyRc);
+    STAM_PROFILE_STOP(&pState->CTXSUFF(StatCs), a);
+    return rc;
+#else
+    return VINF_SUCCESS;
+#endif
 }
 
 DECLINLINE(void) vpciCsLeave(VPCISTATE *pState)
 {
+#ifdef VPCI_CS
     PDMCritSectLeave(&pState->cs);
+#endif
 }
 
 void vringSetNotification(PVPCISTATE pState, PVRING pVRing, bool fEnabled);

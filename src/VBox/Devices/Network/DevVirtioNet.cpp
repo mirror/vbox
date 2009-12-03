@@ -113,7 +113,7 @@ struct VNetState_st
     /* VPCISTATE must be the first member! */
     VPCISTATE               VPCI;
 
-    PDMCRITSECT             csRx;                           /**< Protects RX queue. */
+//    PDMCRITSECT             csRx;                           /**< Protects RX queue. */
 
     PDMINETWORKPORT         INetworkPort;
     PDMINETWORKCONFIG       INetworkConfig;
@@ -186,9 +186,10 @@ struct VNetState_st
     STAMCOUNTER             StatReceiveBytes;
     STAMCOUNTER             StatTransmitBytes;
 #if defined(VBOX_WITH_STATISTICS)
-    STAMPROFILEADV          StatReceive;
+    STAMPROFILE             StatReceive;
+    STAMPROFILE             StatReceiveStore;
     STAMPROFILEADV          StatTransmit;
-    STAMPROFILEADV          StatTransmitSend;
+    STAMPROFILE             StatTransmitSend;
     STAMPROFILE             StatRxOverflow;
     STAMCOUNTER             StatRxOverflowWakeup;
 #endif /* VBOX_WITH_STATISTICS */
@@ -253,12 +254,16 @@ DECLINLINE(void) vnetCsLeave(PVNETSTATE pState)
 
 DECLINLINE(int) vnetCsRxEnter(PVNETSTATE pState, int rcBusy)
 {
-    return PDMCritSectEnter(&pState->csRx, rcBusy);
+    // STAM_PROFILE_START(&pState->CTXSUFF(StatCsRx), a);
+    // int rc = PDMCritSectEnter(&pState->csRx, rcBusy);
+    // STAM_PROFILE_STOP(&pState->CTXSUFF(StatCsRx), a);
+    // return rc;
+    return VINF_SUCCESS;
 }
 
 DECLINLINE(void) vnetCsRxLeave(PVNETSTATE pState)
 {
-    PDMCritSectLeave(&pState->csRx);
+    // PDMCritSectLeave(&pState->csRx);
 }
 
 
@@ -682,7 +687,9 @@ static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb)
             uOffset += uSize;
             uElemSize += uSize;
         }
+        STAM_PROFILE_START(&pState->StatReceiveStore, a);
         vqueuePut(&pState->VPCI, pState->pRxQueue, &elem, uElemSize);
+        STAM_PROFILE_STOP(&pState->StatReceiveStore, a);
     }
     vqueueSync(&pState->VPCI, pState->pRxQueue);
 
@@ -714,7 +721,7 @@ static DECLCALLBACK(int) vnetReceive(PPDMINETWORKPORT pInterface, const void *pv
         || !(STATUS & VNET_S_LINK_UP))
         return VINF_SUCCESS;
 
-    STAM_PROFILE_ADV_START(&pState->StatReceive, a);
+    STAM_PROFILE_START(&pState->StatReceive, a);
     vpciSetReadLed(&pState->VPCI, true);
     if (vnetAddressFilter(pState, pvBuf, cb))
     {
@@ -727,7 +734,7 @@ static DECLCALLBACK(int) vnetReceive(PPDMINETWORKPORT pInterface, const void *pv
         }
     }
     vpciSetReadLed(&pState->VPCI, false);
-    STAM_PROFILE_ADV_STOP(&pState->StatReceive, a);
+    STAM_PROFILE_STOP(&pState->StatReceive, a);
     return rc;
 }
 
@@ -839,9 +846,9 @@ static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE 
                                   pState->pTxBuf + uOffset, uSize);
                 uOffset += uSize;
             }
-            STAM_PROFILE_ADV_START(&pState->StatTransmitSend, a);
+            STAM_PROFILE_START(&pState->StatTransmitSend, a);
             int rc = pState->pDrv->pfnSend(pState->pDrv, pState->pTxBuf, uOffset);
-            STAM_PROFILE_ADV_STOP(&pState->StatTransmitSend, a);
+            STAM_PROFILE_STOP(&pState->StatTransmitSend, a);
             STAM_REL_COUNTER_ADD(&pState->StatTransmitBytes, uOffset);
         }
         vqueuePut(&pState->VPCI, pQueue, &elem, sizeof(VNETHDR) + uOffset);
@@ -859,15 +866,15 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
     if (TMTimerIsActive(pState->CTX_SUFF(pTxTimer)))
     {
         int rc = TMTimerStop(pState->CTX_SUFF(pTxTimer));
-        vringSetNotification(&pState->VPCI, &pState->pTxQueue->VRing, true);
         Log3(("%s vnetQueueTransmit: Got kicked with notification disabled, "
               "re-enable notification and flush TX queue\n", INSTANCE(pState)));
         vnetTransmitPendingPackets(pState, pQueue);
+        vringSetNotification(&pState->VPCI, &pState->pTxQueue->VRing, true);
     }
     else
     {
-        TMTimerSetMicro(pState->CTX_SUFF(pTxTimer), VNET_TX_DELAY);
         vringSetNotification(&pState->VPCI, &pState->pTxQueue->VRing, false);
+        TMTimerSetMicro(pState->CTX_SUFF(pTxTimer), VNET_TX_DELAY);
     }
 }
 
@@ -1429,11 +1436,11 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                     ("Cannot allocate TX buffer for virtio-net device\n"), VERR_NO_MEMORY);
 
     /* Initialize critical section. */
-    char szTmp[sizeof(pState->VPCI.szInstance) + 2];
-    RTStrPrintf(szTmp, sizeof(szTmp), "%sRX", pState->VPCI.szInstance);
-    rc = PDMDevHlpCritSectInit(pDevIns, &pState->csRx, szTmp);
-    if (RT_FAILURE(rc))
-        return rc;
+    // char szTmp[sizeof(pState->VPCI.szInstance) + 2];
+    // RTStrPrintf(szTmp, sizeof(szTmp), "%sRX", pState->VPCI.szInstance);
+    // rc = PDMDevHlpCritSectInit(pDevIns, &pState->csRx, szTmp);
+    // if (RT_FAILURE(rc))
+    //     return rc;
 
     /* Map our ports to IO space. */
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0,
@@ -1510,6 +1517,7 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Devices/VNet%d/TransmitBytes", iInstance);
 #if defined(VBOX_WITH_STATISTICS)
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceive,            STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive",                  "/Devices/VNet%d/Receive/Total", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceiveStore,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive storing",          "/Devices/VNet%d/Receive/Store", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatRxOverflow,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling RX overflows",        "/Devices/VNet%d/RxOverflow", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatRxOverflowWakeup,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of RX overflow wakeups",          "/Devices/VNet%d/RxOverflowWakeup", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmit,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in HC",          "/Devices/VNet%d/Transmit/Total", iInstance);
@@ -1545,8 +1553,8 @@ static DECLCALLBACK(int) vnetDestruct(PPDMDEVINS pDevIns)
         RTMemFree(pState->pTxBuf);
         pState->pTxBuf = NULL;
     }
-    if (PDMCritSectIsInitialized(&pState->csRx))
-        PDMR3CritSectDelete(&pState->csRx);
+    // if (PDMCritSectIsInitialized(&pState->csRx))
+    //     PDMR3CritSectDelete(&pState->csRx);
 
     return vpciDestruct(&pState->VPCI);
 }
