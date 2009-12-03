@@ -424,8 +424,6 @@ crServerServiceClient(const RunQueue *qEntry)
 #if 0
         crStateMakeCurrent( cr_server.curClient->currentCtx );
 #else
-        crStateMakeCurrent( cr_server.curClient->currentCtx );
-
         /* Check if the current window is the one that the client wants to
          * draw into.  If not, dispatch a MakeCurrent to activate the proper
          * window.
@@ -440,6 +438,8 @@ crServerServiceClient(const RunQueue *qEntry)
                  */
              }
         }
+
+        crStateMakeCurrent( cr_server.curClient->currentCtx );
 #endif
 
         /* Force scissor, viewport and projection matrix update in
