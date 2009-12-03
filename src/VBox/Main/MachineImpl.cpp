@@ -390,10 +390,6 @@ HRESULT Machine::init(VirtualBox *aParent,
     /* share the parent weakly */
     unconst(mParent) = aParent;
 
-    /* register with parent early, since uninit() will unconditionally
-     * unregister on failure */
-    mParent->addDependentChild (this);
-
     /* allocate the essential machine data structure (the rest will be
      * allocated later by initDataAndChildObjects() */
     mData.allocate();
@@ -686,8 +682,6 @@ void Machine::uninit()
 
     /* free the essential data structure last */
     mData.free();
-
-    mParent->removeDependentChild (this);
 
     LogFlowThisFuncLeave();
 }
@@ -5459,10 +5453,10 @@ void Machine::uninitDataAndChildObjects()
 
     for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
     {
-        if (mNetworkAdapters [slot])
+        if (mNetworkAdapters[slot])
         {
-            mNetworkAdapters [slot]->uninit();
-            unconst(mNetworkAdapters [slot]).setNull();
+            mNetworkAdapters[slot]->uninit();
+            unconst(mNetworkAdapters[slot]).setNull();
         }
     }
 
@@ -5480,19 +5474,19 @@ void Machine::uninitDataAndChildObjects()
 
     for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
     {
-        if (mParallelPorts [slot])
+        if (mParallelPorts[slot])
         {
-            mParallelPorts [slot]->uninit();
-            unconst(mParallelPorts [slot]).setNull();
+            mParallelPorts[slot]->uninit();
+            unconst(mParallelPorts[slot]).setNull();
         }
     }
 
     for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
     {
-        if (mSerialPorts [slot])
+        if (mSerialPorts[slot])
         {
-            mSerialPorts [slot]->uninit();
-            unconst(mSerialPorts [slot]).setNull();
+            mSerialPorts[slot]->uninit();
+            unconst(mSerialPorts[slot]).setNull();
         }
     }
 
@@ -9019,11 +9013,11 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
 
     ComAssertRet (!control.isNull(), E_INVALIDARG);
 
-    /* Creating a Progress object requires the VirtualBox children lock, and
+    /* Creating a Progress object requires the VirtualBox lock, and
      * thus locking it here is required by the lock order rules. */
-    AutoMultiWriteLock2 alock(mParent->childrenLock(), this->lockHandle());
+    AutoMultiWriteLock2 alock(mParent->lockHandle(), this->lockHandle());
 
-    if (control.equalsTo (mData->mSession.mDirectControl))
+    if (control.equalsTo(mData->mSession.mDirectControl))
     {
         ComAssertRet (aProgress, E_POINTER);
 
