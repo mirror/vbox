@@ -422,14 +422,6 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
     bool        fHasBecomeReady;
     STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatIOWrite), a);
 
-    rc = vpciCsEnter(pState, VINF_IOM_HC_IOPORT_WRITE);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
-    {
-        STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatIOWrite), a);
-        return rc;
-    }
-
-
     port -= pState->addrIOPort;
     Log3(("%s virtioIOPortOut: At %RTiop out          %0*x\n", szInst, port, cb*2, u32));
 
@@ -486,7 +478,14 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
             u32 &= 0xFFFF;
             if (u32 < pState->nQueues)
                 if (pState->Queues[u32].VRing.addrDescriptors)
-                    pState->Queues[u32].pfnCallback(pState, &pState->Queues[u32]);
+                {
+                    rc = vpciCsEnter(pState, VERR_SEM_BUSY);
+                    if (RT_LIKELY(rc == VINF_SUCCESS))
+                    {
+                        pState->Queues[u32].pfnCallback(pState, &pState->Queues[u32]);
+                        vpciCsLeave(pState);
+                    }
+                }
                 else
                     Log(("%s The queue (#%d) being notified has not been initialized.\n",
                          INSTANCE(pState), u32));
@@ -518,7 +517,6 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
     }
 
     STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatIOWrite), a);
-    vpciCsLeave(pState);
     return rc;
 }
 
@@ -856,6 +854,8 @@ DECLCALLBACK(int) vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteHC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in HC",     vpciCounter(pcszNameFmt, "IO/WriteHC"), iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIntsRaised,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of raised interrupts",   vpciCounter(pcszNameFmt, "Interrupts/Raised"), iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIntsSkipped,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of skipped interrupts",   vpciCounter(pcszNameFmt, "Interrupts/Skipped"), iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatCsGC,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in GC",      vpciCounter(pcszNameFmt, "Cs/CsGC"), iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatCsHC,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in HC",      vpciCounter(pcszNameFmt, "Cs/CsHC"), iInstance);
 #endif /* VBOX_WITH_STATISTICS */
 
     return rc;
