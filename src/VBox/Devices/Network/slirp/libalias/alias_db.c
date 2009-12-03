@@ -745,7 +745,7 @@ GetSocket(struct libalias *la, u_short port_net, int *sockfd, int link_type)
         fprintf(stderr, "incorrect link type\n");
 #endif
 #ifdef VBOX
-        free(so);
+        RTMemFree(so);
 #endif
         return (0);
     }
