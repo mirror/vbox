@@ -22,6 +22,7 @@
 my $use_hal = 0;
 my $new_mouse = 0;
 my $no_bak = 0;
+my $old_mouse_dev = "/dev/psaux";
 
 foreach $arg (@ARGV)
 {
@@ -36,6 +37,10 @@ foreach $arg (@ARGV)
     elsif (lc($arg) eq "--nobak")
     {
         $no_bak = 1;
+    }
+    elsif (lc($arg) eq "--nopsaux")
+    {
+        $old_mouse_dev = "/dev/input/mice";
     }
     else
     {
@@ -112,7 +117,7 @@ Section "InputDevice"
   Identifier  "Mouse[1]"
   Driver      "vboxmouse"
   Option      "Buttons" "9"
-  Option      "Device" "/dev/input/mice"
+  Option      "Device" "$old_mouse_dev"
   Option      "Name" "VirtualBox Mouse"
   Option      "Protocol" "explorerps/2"
   Option      "Vendor" "Sun Microsystems Inc"
