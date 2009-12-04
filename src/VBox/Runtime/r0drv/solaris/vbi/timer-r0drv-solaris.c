@@ -196,13 +196,13 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     }
     else
     {
-        int cpu = VBI_ANY_CPU;
+        int iCpu = VBI_ANY_CPU;
         if (pTimer->fSpecificCpu)
-            cpu = pTimer->iCpu;
-        pTimer->stimer = vbi_stimer_begin(rtTimerSolarisCallbackWrapper, pTimer, u64First, pTimer->interval, cpu);
+            iCpu = pTimer->iCpu;
+        pTimer->stimer = vbi_stimer_begin(rtTimerSolarisCallbackWrapper, pTimer, u64First, pTimer->interval, iCpu);
         if (pTimer->stimer == NULL)
         {
-            if (cpu != VBI_ANY_CPU)
+            if (iCpu != VBI_ANY_CPU)
                 return VERR_CPU_OFFLINE;
             return VERR_INVALID_PARAMETER;
         }

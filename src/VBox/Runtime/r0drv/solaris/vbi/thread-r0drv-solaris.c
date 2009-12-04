@@ -52,7 +52,6 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 RTDECL(int) RTThreadSleep(unsigned cMillies)
 {
     clock_t cTicks;
-    unsigned long timeout;
     RT_ASSERT_PREEMPTIBLE();
 
     if (!cMillies)

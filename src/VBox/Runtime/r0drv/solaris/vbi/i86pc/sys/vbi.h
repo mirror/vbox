@@ -229,7 +229,7 @@ extern uint_t vbi_revision_level;
  * Install/remove a call back for CPU online/offline event notification.
  *
  * The call back func is invoked with 3 arguments:
- *      void func(void *arg, int cpu, int online);
+ *      void func(void *arg, int icpu, int online);
  * - arg is passed through from vbi_watch_cpus()
  * - cpu is the CPU id involved
  * - online is non-zero for a CPU that comes online and 0 for a CPU that is
@@ -276,7 +276,7 @@ extern void vbi_ignore_cpus(vbi_cpu_watch_t *);
 
 typedef struct vbi_stimer vbi_stimer_t;
 extern vbi_stimer_t *vbi_stimer_begin(void (*func)(void *, uint64_t), void *arg,
-    uint64_t when, uint64_t interval, int cpu);
+    uint64_t when, uint64_t interval, int icpu);
 extern void vbi_stimer_end(vbi_stimer_t *);
 #pragma weak vbi_stimer_begin
 #pragma weak vbi_stimer_end

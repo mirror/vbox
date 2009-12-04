@@ -110,13 +110,15 @@ typedef struct vbi_cpuset {
 /*
  * module linkage stuff
  */
+#if 0
 static struct modlmisc vbi_modlmisc = {
 	&mod_miscops, "VirtualBox Interfaces V6"
 };
 
 static struct modlinkage vbi_modlinkage = {
-	MODREV_1, (void *)&vbi_modlmisc, NULL
+	MODREV_1, { (void *)&vbi_modlmisc, NULL }
 };
+#endif
 
 extern uintptr_t kernelbase;
 #define	IS_KERNEL(v)	((uintptr_t)(v) >= kernelbase)
@@ -200,8 +202,6 @@ _init(void)
 int
 vbi_init(void)
 {
-	int err;
-
 	/*
 	 * Check to see if this version of virtualbox interface module will work
 	 * with the kernel.
@@ -987,7 +987,7 @@ struct vbi_cpu_watch {
 };
 
 static int
-vbi_watcher(cpu_setup_t state, int cpu, void *arg)
+vbi_watcher(cpu_setup_t state, int icpu, void *arg)
 {
 	vbi_cpu_watch_t *w = arg;
 	int online;
@@ -998,7 +998,7 @@ vbi_watcher(cpu_setup_t state, int cpu, void *arg)
 		online = 0;
 	else
 		return (0);
-	w->vbi_cpu_func(w->vbi_cpu_arg, cpu, online);
+	w->vbi_cpu_func(w->vbi_cpu_arg, icpu, online);
 	return (0);
 }
 
@@ -1121,12 +1121,12 @@ vbi_gtimer_func(void *arg)
  * Whenever a cpu is onlined, need to reset the g_counters[] for it to zero.
  */
 static void
-vbi_gtimer_online(void *arg, cpu_t *cpu, cyc_handler_t *h, cyc_time_t *ct)
+vbi_gtimer_online(void *arg, cpu_t *pcpu, cyc_handler_t *h, cyc_time_t *ct)
 {
 	vbi_gtimer_t *t = arg;
 	hrtime_t now;
 
-	t->g_counters[cpu->cpu_id] = 0;
+	t->g_counters[pcpu->cpu_id] = 0;
 	h->cyh_func = vbi_gtimer_func;
 	h->cyh_arg = t;
 	h->cyh_level = CY_LOCK_LEVEL;
