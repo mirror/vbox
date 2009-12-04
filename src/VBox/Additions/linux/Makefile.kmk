@@ -136,11 +136,8 @@ VBOX_ADD_STRIP_MOD.linux = \
 	mount.vboxsf
 
 VBOX_ADD_MOD.linux = \
-	vboxadd-service.sh \
 	98vboxadd-xclient \
-	vboxadd.sh \
-	x11config-new.pl \
-	routines.sh
+	x11config-new.pl
 
 VBOX_ADD_STRIP_OBJ.linux = \
 	vboxmouse_drv.o \
@@ -182,7 +179,8 @@ VBOX_LNX_ADD_INST_FILES := \
 	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_MOD)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_OBJ)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_VERSIONED)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT))
+	$(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_INIT))
 
 VBOX_LNX_ADD_DBG_FILES := \
 	$(addprefix $(VBOX_LNX_ADD_DBG_BIN_DIR),$(VBOX_LNX_ADD_STRIP_BIN)) \
@@ -280,6 +278,15 @@ $(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT)): \
 	$(QUIET)$(RM) -Rf $@
 	$(QUIET)cp -af $< $@
 
+# pattern rule for copying the VBOX_LNX_ADD_INIT files to the module directory
+$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_INIT)): \
+		$(VBOX_LNX_ADD_INST_MOD_DIR)% : $(PATH_BIN)/additions/% | $$(dir $$@)
+	$(call MSG_INST_FILE,$<,$@)
+# Remove target directories first, otherwise the behaviour of cp will not be
+# what we want if it already exists. See the cp manual page for more details.
+	$(QUIET)$(RM) -Rf $@
+	$(QUIET)cp -af $< $@
+
 
 INSTALLS += GuestDrivers-src
 GuestDrivers-src_INST = bin/additions/src/
@@ -292,11 +299,8 @@ ifndef VBOX_OSE
  lnx_add_inst-exec_INST = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_MOD_DIR))
  lnx_add_inst-exec_MODE = a+rx,u+w
  lnx_add_inst-exec_SOURCES = \
-	$(VBOX_REL_LNX_ADD_INST)vboxadd-service.sh \
 	$(VBOX_REL_X11_ADD_INST)98vboxadd-xclient \
-	$(VBOX_REL_LNX_ADD_INST)vboxadd.sh \
-	$(VBOX_REL_X11_ADD_INST)x11config-new.pl \
-	$(VBOX_REL_LNX_INST_SRC)routines.sh
+	$(VBOX_REL_X11_ADD_INST)x11config-new.pl
 
 
  INSTALLS += lnx_add_inst-noexec
