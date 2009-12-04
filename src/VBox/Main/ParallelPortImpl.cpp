@@ -373,24 +373,6 @@ STDMETHODIMP ParallelPort::COMGETTER(Path) (BSTR *aPath)
     return S_OK;
 }
 
-/**
- *  Validates COMSETTER(Path) arguments.
- */
-HRESULT ParallelPort::checkSetPath(const Utf8Str &str)
-{
-    AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
-
-    if (    m->bd->fEnabled
-         && str.isEmpty()
-       )
-        return setError(E_INVALIDARG,
-                        tr("Path of the parallel port %d may not be empty or null "
-                           "when the port is enabled"),
-                        m->bd->ulSlot);
-
-    return S_OK;
-}
-
 STDMETHODIMP ParallelPort::COMSETTER(Path) (IN_BSTR aPath)
 {
     AutoCaller autoCaller(this);
@@ -414,7 +396,7 @@ STDMETHODIMP ParallelPort::COMSETTER(Path) (IN_BSTR aPath)
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        return m->pMachine->onParallelPortChange (this);
+        return m->pMachine->onParallelPortChange(this);
     }
 
     return S_OK;
@@ -535,7 +517,7 @@ void ParallelPort::commit()
  *  @note Locks this object for writing, together with the peer object
  *  represented by @a aThat (locked for reading).
  */
-void ParallelPort::copyFrom (ParallelPort *aThat)
+void ParallelPort::copyFrom(ParallelPort *aThat)
 {
     AssertReturnVoid (aThat != NULL);
 
@@ -553,6 +535,24 @@ void ParallelPort::copyFrom (ParallelPort *aThat)
 
     /* this will back up current data */
     m->bd.assignCopy(aThat->m->bd);
+}
+
+/**
+ *  Validates COMSETTER(Path) arguments.
+ */
+HRESULT ParallelPort::checkSetPath(const Utf8Str &str)
+{
+    AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
+
+    if (    m->bd->fEnabled
+         && str.isEmpty()
+       )
+        return setError(E_INVALIDARG,
+                        tr("Path of the parallel port %d may not be empty or null "
+                           "when the port is enabled"),
+                        m->bd->ulSlot);
+
+    return S_OK;
 }
 
 

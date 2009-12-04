@@ -331,12 +331,26 @@ typedef std::list<NetworkAdapter> NetworkAdaptersList;
 struct SerialPort
 {
     SerialPort()
-        : fEnabled(false),
-          ulIOBase(0),
-          ulIRQ(0),
+        : ulSlot(0),
+          fEnabled(false),
+          ulIOBase(4),
+          ulIRQ(0x3f8),
           portMode(PortMode_Disconnected),
           fServer(false)
     {}
+
+    bool operator==(const SerialPort &d) const
+    {
+        return     (this == &d)
+                || (    ulSlot      == d.ulSlot
+                     && fEnabled    == d.fEnabled
+                     && ulIOBase    == d.ulIOBase
+                     && ulIRQ       == d.ulIRQ
+                     && portMode    == d.portMode
+                     && strPath     == d.strPath
+                     && fServer     == d.fServer
+                   );
+    }
 
     uint32_t        ulSlot;
 
@@ -363,9 +377,10 @@ struct ParallelPort
         return     (this == &d)
                 || (    ulSlot      == d.ulSlot
                      && fEnabled    == d.fEnabled
-                     && ulIRQ       == d.ulIRQ
                      && ulIOBase    == d.ulIOBase
-                     && strPath     == d.strPath);
+                     && ulIRQ       == d.ulIRQ
+                     && strPath     == d.strPath
+                   );
     }
 
     uint32_t        ulSlot;

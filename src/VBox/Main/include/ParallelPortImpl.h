@@ -92,7 +92,6 @@ public:
     static const wchar_t *getComponentName() { return L"ParallelPort"; }
 
 private:
-
     HRESULT checkSetPath(const Utf8Str &str);
 
     struct Data;
