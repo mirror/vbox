@@ -176,8 +176,10 @@ static struct modldrv g_VBoxNetAdpSolarisDriver =
 static struct modlinkage g_VBoxNetAdpSolarisModLinkage =
 {
     MODREV_1,                       /* loadable module system revision */
-    &g_VBoxNetAdpSolarisDriver,     /* adapter streams driver framework */
-    NULL                            /* terminate array of linkage structures */
+    {
+        &g_VBoxNetAdpSolarisDriver, /* adapter streams driver framework */
+        NULL                        /* terminate array of linkage structures */
+    }
 };
 
 
@@ -247,7 +249,6 @@ int _init(void)
 
 int _fini(void)
 {
-    int rc;
     LogFlow((DEVICE_NAME ":_fini\n"));
 
     /*
@@ -366,8 +367,11 @@ static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             /* Nothing to do here... */
             return DDI_SUCCESS;
         }
+
+        /* case DDI_PM_RESUME: */
+        default:
+            return DDI_FAILURE;
     }
-    return DDI_FAILURE;
 }
 
 
@@ -420,8 +424,12 @@ static int VBoxNetAdpSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
             /* Nothing to do here... */
             return DDI_SUCCESS;
         }
+
+        /* case DDI_SUSPEND: */
+        /* case DDI_HOTPLUG_DETACH: */
+        default:
+            return DDI_FAILURE;
     }
-    return DDI_FAILURE;
 }
 
 

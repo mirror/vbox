@@ -149,9 +149,11 @@ static struct modldrv g_VBoxDrvSolarisModule =
  */
 static struct modlinkage g_VBoxDrvSolarisModLinkage =
 {
-    MODREV_1,               /* loadable module system revision */
-    &g_VBoxDrvSolarisModule,
-    NULL                    /* terminate array of linkage structures */
+    MODREV_1,                     /* loadable module system revision */
+    {
+        &g_VBoxDrvSolarisModule,
+        NULL                     /* terminate array of linkage structures */
+    }
 };
 
 #ifndef USE_SESSION_HASH
@@ -219,7 +221,7 @@ int _init(void)
             rc = RTSpinlockCreate(&g_Spinlock);
             if (RT_SUCCESS(rc))
             {
-                int rc = ddi_soft_state_init(&g_pVBoxDrvSolarisState, sizeof(vbox_devstate_t), 8);
+                rc = ddi_soft_state_init(&g_pVBoxDrvSolarisState, sizeof(vbox_devstate_t), 8);
                 if (!rc)
                 {
                     rc = mod_install(&g_VBoxDrvSolarisModLinkage);
@@ -377,17 +379,15 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
  */
 static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 {
-    int rc = VINF_SUCCESS;
-
     LogFlow((DEVICE_NAME ":VBoxDrvSolarisDetach\n"));
     switch (enmCmd)
     {
         case DDI_DETACH:
         {
-            int instance = ddi_get_instance(pDip);
 #ifndef USE_SESSION_HASH
             ddi_remove_minor_node(pDip, NULL);
 #else
+            int instance = ddi_get_instance(pDip);
             vbox_devstate_t *pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, instance);
             ddi_remove_minor_node(pDip, NULL);
             ddi_soft_state_free(g_pVBoxDrvSolarisState, instance);
@@ -511,9 +511,9 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     }
 
     *pDev = makedevice(getmajor(*pDev), instance);
+#endif
 
     return VBoxSupDrvErr2SolarisErr(rc);
-#endif
 }
 
 
