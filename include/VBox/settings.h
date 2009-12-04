@@ -261,6 +261,21 @@ struct BIOSSettings
           llTimeOffset(0)
     {}
 
+    bool operator==(const BIOSSettings &d) const
+    {
+        return (    this == &d
+                 || (    fACPIEnabled        == d.fACPIEnabled
+                      && fIOAPICEnabled      == d.fIOAPICEnabled
+                      && fLogoFadeIn         == d.fLogoFadeIn
+                      && fLogoFadeOut        == d.fLogoFadeOut
+                      && ulLogoDisplayTime   == d.ulLogoDisplayTime
+                      && strLogoImagePath    == d.strLogoImagePath
+                      && biosBootMenuMode    == d.biosBootMenuMode
+                      && fPXEDebugEnabled    == d.fPXEDebugEnabled
+                      && llTimeOffset        == d.llTimeOffset)
+               );
+    }
+
     bool            fACPIEnabled,
                     fIOAPICEnabled,
                     fLogoFadeIn,
