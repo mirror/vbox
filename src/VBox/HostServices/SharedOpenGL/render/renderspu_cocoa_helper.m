@@ -370,6 +370,13 @@ while(0);
     [super dealloc];
 }
 
+-(bool)isDoubleBuffer
+{
+    GLint val;
+    [m_pPixelFormat getValues:&val forAttribute:NSOpenGLPFADoubleBuffer forVirtualScreen:0];
+    return val == GL_TRUE ? YES : NO;
+}
+
 -(void)setView:(NSView*)view
 {
 #ifdef FBO
@@ -929,7 +936,9 @@ while(0);
     GLint tmpFB;
     glGetIntegerv(GL_FRAMEBUFFER_BINDING_EXT, &tmpFB);
     DEBUG_MSG_1(("Swap GetINT %d\n", tmpFB));
-    [m_pGLCtx flushBuffer];
+    /* Don't use flush buffers cause we are using FBOs here */
+//    [m_pGLCtx flushBuffer];
+    glFlush();
 //    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	if (tmpFB == m_FBOId)
     {
@@ -951,7 +960,7 @@ while(0);
     glGetIntegerv(GL_FRAMEBUFFER_BINDING_EXT, &tmpFB);
     glFlush();
 //    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-    DEBUG_MSG_1 (("Flusj GetINT %d\n", tmpFB));
+    DEBUG_MSG_1 (("Flush GetINT %d\n", tmpFB));
 	if (tmpFB == m_FBOId)
     {
         if ([self lockFocusIfCanDraw])
