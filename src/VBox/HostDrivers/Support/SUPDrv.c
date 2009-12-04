@@ -841,7 +841,6 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
         {
             if (pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ)
             {
-                int rc;
                 Log2(("eType=%d pvR0=%p pvR3=%p cb=%ld\n", pBundle->aMem[i].eType, RTR0MemObjAddress(pBundle->aMem[i].MemObj),
                       (void *)RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3), (long)RTR0MemObjSize(pBundle->aMem[i].MemObj)));
                 if (pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ)

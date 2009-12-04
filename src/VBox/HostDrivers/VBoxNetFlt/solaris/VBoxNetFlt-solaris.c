@@ -261,10 +261,12 @@ static struct modlstrmod g_VBoxNetFltSolarisModule =
  */
 static struct modlinkage g_VBoxNetFltSolarisModLinkage =
 {
-    MODREV_1,                       /* loadable module system revision */
-    &g_VBoxNetFltSolarisDriver,     /* streams driver framework */
-    &g_VBoxNetFltSolarisModule,     /* streams module framework */
-    NULL                            /* terminate array of linkage structures */
+    MODREV_1,                        /* loadable module system revision */
+    {
+        &g_VBoxNetFltSolarisDriver,  /* streams driver framework */
+        &g_VBoxNetFltSolarisModule,  /* streams module framework */
+        NULL                         /* terminate array of linkage structures */
+    }
 };
 
 struct vboxnetflt_state_t;
@@ -565,8 +567,11 @@ static int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             /* Nothing to do here... */
             return DDI_SUCCESS;
         }
+
+        /* case DDI_PM_RESUME: */
+        default:
+            return DDI_FAILURE;
     }
-    return DDI_FAILURE;
 }
 
 
@@ -586,7 +591,6 @@ static int VBoxNetFltSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
     {
         case DDI_DETACH:
         {
-            int instance = ddi_get_instance(pDip);
             ddi_remove_minor_node(pDip, NULL);
             return DDI_SUCCESS;
         }
@@ -596,8 +600,12 @@ static int VBoxNetFltSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
             /* Nothing to do here... */
             return DDI_SUCCESS;
         }
+
+        /* case DDI_PM_SUSPEND: */
+        /* case DDI_HOT_PLUG_DETACH: */
+        default:
+            return DDI_FAILURE;
     }
-    return DDI_FAILURE;
 }
 
 
@@ -2053,7 +2061,6 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                      * We need to I_PUNLINK on these multiplexor IDs before we can start
                      * operating on the lower stream as insertions are direct operations on the lower stream.
                      */
-                    int ret;
                     rc = strioctl(pUdp4VNode, I_PUNLINK, (intptr_t)Ip4Interface.lifr_ip_muxid, 0, K_TO_K, kcred, &ret);
                     rc2 = strioctl(pUdp4VNode, I_PUNLINK, (intptr_t)Ip4Interface.lifr_arp_muxid, 0, K_TO_K, kcred, &ret);
                     if (   !rc
@@ -2253,11 +2260,9 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
     StrMod.pos = -1;        /* this is filled in later. */
 
     int rc;
-    int rc2;
     int ret;
     ldi_ident_t DeviceIdent = ldi_ident_from_anon();
     ldi_handle_t Ip6DevHandle;
-    ldi_handle_t Udp6DevHandle;
 
     /*
      * Open the IPv6 stream as a layered devices.
@@ -2304,7 +2309,6 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
                      * We need to I_PUNLINK on these multiplexor IDs before we can start
                      * operating on the lower stream as insertions are direct operations on the lower stream.
                      */
-                    int ret;
                     rc = strioctl(pUdp6VNode, I_PUNLINK, (intptr_t)Ip6Interface.lifr_ip_muxid, 0, K_TO_K, kcred, &ret);
                     if (!rc)
                     {
@@ -2391,7 +2395,7 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
                                 }
                             }
                             else
-                                LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to find position. rc=%d rc2=%d\n", rc, rc2));
+                                LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to find position. rc=%d\n", rc));
 
                             releasef(Ip6MuxFd);
                         }
@@ -2399,10 +2403,10 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
                              LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to get vnode from MuxFd.\n"));
                     }
                     else
-                        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to unlink upper stream rc=%d rc2=%d.\n", rc, rc2));
+                        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to unlink upper stream rc=%d.\n", rc));
                 }
                 else
-                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to get MuxFd from MuxId. rc=%d rc2=%d\n", rc, rc2));
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to get MuxFd from MuxId. rc=%d\n", rc));
             }
             else
                 LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to get Mux Ids. rc=%d\n", rc));
@@ -3508,7 +3512,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     if (RT_SUCCESS(rc))
     {
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
-        int rc = RTSemFastMutexCreate(&pThis->u.s.hPollMtx);
+        rc = RTSemFastMutexCreate(&pThis->u.s.hPollMtx);
         if (RT_SUCCESS(rc))
         {
 #endif
@@ -3693,7 +3697,7 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
                      * Construct a DL_UNITDATA_IND style message for ARP as it doesn't understand fast path.
                      */
                     mblk_t *pDlpiMsg;
-                    int rc = vboxNetFltSolarisRawToUnitData(pMsg, &pDlpiMsg);
+                    rc = vboxNetFltSolarisRawToUnitData(pMsg, &pDlpiMsg);
                     if (RT_SUCCESS(rc))
                     {
                         pMsg = pDlpiMsg;
