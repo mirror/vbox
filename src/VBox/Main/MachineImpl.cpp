@@ -8247,7 +8247,7 @@ void Machine::commit()
  * @note This method doesn't call #commit(), so all data remains backed up and
  *       unsaved.
  */
-void Machine::copyFrom (Machine *aThat)
+void Machine::copyFrom(Machine *aThat)
 {
     AssertReturnVoid (mType == IsMachine || mType == IsSessionMachine);
     AssertReturnVoid (aThat->mType == IsSnapshotMachine);
@@ -8269,12 +8269,12 @@ void Machine::copyFrom (Machine *aThat)
         *it = folder;
     }
 
-    mBIOSSettings->copyFrom (aThat->mBIOSSettings);
+    mBIOSSettings->copyFrom(aThat->mBIOSSettings);
 #ifdef VBOX_WITH_VRDP
-    mVRDPServer->copyFrom (aThat->mVRDPServer);
+    mVRDPServer->copyFrom(aThat->mVRDPServer);
 #endif
-    mAudioAdapter->copyFrom (aThat->mAudioAdapter);
-    mUSBController->copyFrom (aThat->mUSBController);
+    mAudioAdapter->copyFrom(aThat->mAudioAdapter);
+    mUSBController->copyFrom(aThat->mUSBController);
 
     /* create private copies of all controllers */
     mStorageControllers.backup();
@@ -8534,13 +8534,13 @@ HRESULT SessionMachine::init (Machine *aMachine)
     }
     /* create another USB controller object that will be mutable */
     unconst(mUSBController).createObject();
-    mUSBController->init (this, aMachine->mUSBController);
+    mUSBController->init(this, aMachine->mUSBController);
 
     /* create a list of network adapters that will be mutable */
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
     {
         unconst(mNetworkAdapters [slot]).createObject();
-        mNetworkAdapters [slot]->init (this, aMachine->mNetworkAdapters [slot]);
+        mNetworkAdapters[slot]->init (this, aMachine->mNetworkAdapters [slot]);
     }
 
     /* default is to delete saved state on Saved -> PoweredOff transition */

@@ -66,6 +66,13 @@ public:
         uninitAll();
     }
 
+private:
+    // prohibit copying and assignment
+    ObjectsList(const ObjectsList &d);
+    ObjectsList& operator=(const ObjectsList &d);
+
+public:
+
     /**
      * Returns the lock handle which protects this list, for use with
      * AutoReadLock or AutoWriteLock.
@@ -115,6 +122,23 @@ public:
     }
 
     /**
+     * Calls uninit() on every COM object on the list and then
+     * clears the list, with locking.
+     */
+    void uninitAll()
+    {
+        AutoWriteLock al(m_lock);
+        for (iterator it = m_ll.begin();
+             it != m_ll.end();
+             ++it)
+        {
+            MyType &q = *it;
+            q->uninit();
+        }
+        m_ll.clear();
+    }
+
+    /**
      * Returns the no. of objects on the list (std::list compatibility)
      * with locking.
      */
@@ -125,16 +149,6 @@ public:
     }
 
     /**
-     * Returns the first object on the list (std::list compatibility)
-     * with locking.
-     */
-    MyType front()
-    {
-        AutoReadLock al(m_lock);
-        return m_ll.front();
-    }
-
-    /**
      * Returns a raw pointer to the member list of objects.
      * Does not lock!
      * @return
@@ -142,6 +156,16 @@ public:
     MyList& getList()
     {
         return m_ll;
+    }
+
+    /**
+     * Returns the first object on the list (std::list compatibility)
+     * with locking.
+     */
+    MyType front()
+    {
+        AutoReadLock al(m_lock);
+        return m_ll.front();
     }
 
     /**
@@ -163,21 +187,14 @@ public:
         return m_ll.end();
     }
 
-    /**
-     * Calls uninit() on every COM object on the list and then
-     * clears the list, with locking.
-     */
-    void uninitAll()
+    void insert(iterator it, MyType &p)
     {
-        AutoWriteLock al(m_lock);
-        for (iterator it = m_ll.begin();
-             it != m_ll.end();
-             ++it)
-        {
-            MyType &q = *it;
-            q->uninit();
-        }
-        m_ll.clear();
+        m_ll.insert(it, p);
+    }
+
+    void erase(iterator it)
+    {
+        m_ll.erase(it);
     }
 
 private:
