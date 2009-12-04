@@ -26,8 +26,6 @@
 
 #include "VirtualBoxBase.h"
 
-#include <list>
-
 class Machine;
 
 class ATL_NO_VTABLE StorageController :
@@ -36,54 +34,6 @@ class ATL_NO_VTABLE StorageController :
     public VirtualBoxSupportTranslation<StorageController>,
     VBOX_SCRIPTABLE_IMPL(IStorageController)
 {
-private:
-
-    struct Data
-    {
-        /* Constructor. */
-        Data() : mStorageBus (StorageBus_IDE),
-                 mStorageControllerType (StorageControllerType_PIIX4),
-                 mInstance (0),
-                 mPortCount (2),
-                 mPortIde0Master (0),
-                 mPortIde0Slave (1),
-                 mPortIde1Master (2),
-                 mPortIde1Slave (3) { }
-
-        bool operator== (const Data &that) const
-        {
-            return    this == &that
-                   || (    (mStorageControllerType == that.mStorageControllerType)
-                        && (strName           == that.strName)
-                        && (mPortCount   == that.mPortCount)
-                        && (mPortIde0Master == that.mPortIde0Master)
-                        && (mPortIde0Slave  == that.mPortIde0Slave)
-                        && (mPortIde1Master == that.mPortIde1Master)
-                        && (mPortIde1Slave  == that.mPortIde1Slave));
-        }
-
-        /** Unique name of the storage controller. */
-        Utf8Str strName;
-        /** The connection type of thestorage controller. */
-        StorageBus_T mStorageBus;
-        /** Type of the Storage controller. */
-        StorageControllerType_T mStorageControllerType;
-        /** Instance number of the storage controller. */
-        ULONG mInstance;
-        /** Number of usable ports. */
-        ULONG mPortCount;
-
-        /** The following is only for the SATA controller atm. */
-        /** Port which acts as primary master for ide emulation. */
-        ULONG mPortIde0Master;
-        /** Port which acts as primary slave for ide emulation. */
-        ULONG mPortIde0Slave;
-        /** Port which acts as secondary master for ide emulation. */
-        ULONG mPortIde1Master;
-        /** Port which acts as secondary slave for ide emulation. */
-        ULONG mPortIde1Slave;
-    };
-
 public:
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (StorageController)
@@ -98,7 +48,8 @@ public:
         COM_INTERFACE_ENTRY2 (IDispatch, IStorageController)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR (StorageController)
+    StorageController() { };
+    ~StorageController() { };
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -134,13 +85,13 @@ public:
 
     // public methods only for internal purposes
 
-    const Utf8Str &name() const { return mData->strName; }
-    StorageControllerType_T controllerType() const { return mData->mStorageControllerType; }
-    StorageBus_T storageBus() const { return mData->mStorageBus; }
-    ULONG instance() const { return mData->mInstance; }
+    const Utf8Str &getName() const;
+    StorageControllerType_T getControllerType() const;
+    StorageBus_T getStorageBus() const;
+    ULONG getInstance() const;
 
-    bool isModified() { AutoWriteLock alock (this); return mData.isBackedUp(); }
-    bool isReallyModified() { AutoWriteLock alock (this); return mData.hasActualChanges(); }
+    bool isModified();
+    bool isReallyModified();
     bool rollback();
     void commit();
 
@@ -150,10 +101,9 @@ public:
     void unshare();
 
     /** @note this doesn't require a read lock since mParent is constant. */
-    const ComObjPtr<Machine, ComWeakRef> &parent() { return mParent; };
+    const ComObjPtr<Machine, ComWeakRef>& getMachine();
 
-    const Backupable<Data> &data() { return mData; }
-    ComObjPtr<StorageController> peer() { return mPeer; }
+    ComObjPtr<StorageController> getPeer();
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"StorageController"; }
@@ -162,12 +112,8 @@ private:
 
     void printList();
 
-    /** Parent object. */
-    const ComObjPtr<Machine, ComWeakRef> mParent;
-    /** Peer object. */
-    const ComObjPtr<StorageController> mPeer;
-    /** Data. */
-    Backupable<Data> mData;
+    struct Data;
+    Data *m;
 };
 
 #endif //!____H_STORAGECONTROLLERIMPL

@@ -24,8 +24,6 @@
 #define ____H_USBDEVICEIMPL
 
 #include "VirtualBoxBase.h"
-#include "Logging.h"
-
 
 /**
  * Object class used for maintaining devices attached to a USB controller.

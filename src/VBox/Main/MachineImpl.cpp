@@ -3829,9 +3829,9 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
          it != mStorageControllers->end();
          ++it)
     {
-        if ((*it)->storageBus() == aConnectionType)
+        if ((*it)->getStorageBus() == aConnectionType)
         {
-            ULONG ulCurInst = (*it)->instance();
+            ULONG ulCurInst = (*it)->getInstance();
 
             if (ulCurInst >= ulInstance)
                 ulInstance = ulCurInst + 1;
@@ -3884,7 +3884,7 @@ STDMETHODIMP Machine::GetStorageControllerByInstance(ULONG aInstance,
          it != mStorageControllers->end();
          ++it)
     {
-        if ((*it)->instance() == aInstance)
+        if ((*it)->getInstance() == aInstance)
         {
             (*it).queryInterfaceTo(aStorageController);
             return S_OK;
@@ -6193,7 +6193,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             {
                 return setError(E_FAIL,
                                 tr("Duplicate attachments for storage controller '%s', port %d, device %d of the virtual machine '%ls'"),
-                                aStorageController->name().raw(), (*it).lPort, (*it).lDevice, mUserData->mName.raw());
+                                aStorageController->getName().raw(), (*it).lPort, (*it).lDevice, mUserData->mName.raw());
             }
         }
     }
@@ -6337,7 +6337,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
         if (FAILED(rc))
             break;
 
-        const Bstr controllerName = aStorageController->name();
+        const Bstr controllerName = aStorageController->getName();
         ComObjPtr<MediumAttachment> pAttachment;
         pAttachment.createObject();
         rc = pAttachment->init(this,
@@ -6460,7 +6460,7 @@ HRESULT Machine::getStorageControllerByName(const Utf8Str &aName,
          it != mStorageControllers->end();
          ++it)
     {
-        if ((*it)->name() == aName)
+        if ((*it)->getName() == aName)
         {
             aStorageController = (*it);
             return S_OK;
@@ -7094,10 +7094,10 @@ HRESULT Machine::saveStorageControllers(settings::Storage &data)
         ComObjPtr<StorageController> pCtl = *it;
 
         settings::StorageController ctl;
-        ctl.strName = pCtl->name();
-        ctl.controllerType = pCtl->controllerType();
-        ctl.storageBus = pCtl->storageBus();
-        ctl.ulInstance = pCtl->instance();
+        ctl.strName = pCtl->getName();
+        ctl.controllerType = pCtl->getControllerType();
+        ctl.storageBus = pCtl->getStorageBus();
+        ctl.ulInstance = pCtl->getInstance();
 
         /* Save the port count. */
         ULONG portCount;
@@ -7134,7 +7134,7 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
 {
     MediaData::AttachmentList atts;
 
-    HRESULT rc = getMediumAttachmentsOfController(Bstr(aStorageController->name()), atts);
+    HRESULT rc = getMediumAttachmentsOfController(Bstr(aStorageController->getName()), atts);
     if (FAILED(rc)) return rc;
 
     data.llAttachedDevices.clear();
@@ -8170,7 +8170,7 @@ void Machine::commit()
                 (*it)->commit();
 
                 /* look if this controller has a peer device */
-                ComObjPtr<StorageController> peer = (*it)->peer();
+                ComObjPtr<StorageController> peer = (*it)->getPeer();
                 if (!peer)
                 {
                     /* no peer means the device is a newly created one;
