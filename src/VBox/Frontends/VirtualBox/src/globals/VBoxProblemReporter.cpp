@@ -36,6 +36,7 @@
 #endif
 
 /* Qt includes */
+#include <QDesktopWidget>
 #include <QFileInfo>
 #ifdef Q_WS_MAC
 # include <QPushButton>
@@ -900,7 +901,7 @@ void VBoxProblemReporter::cannotFindMachineByName (const CVirtualBox &vbox,
                                                    const QString &name)
 {
     message (
-        mainWindowShown(),
+        QApplication::desktop()->screen(QApplication::desktop()->primaryScreen()),
         Error,
         tr ("There is no virtual machine named <b>%1</b>.")
             .arg (name),
