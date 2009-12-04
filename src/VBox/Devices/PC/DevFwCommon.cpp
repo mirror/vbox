@@ -513,8 +513,15 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         {
             rc = RTUuidFromStr(&uuid, pszDmiSystemUuid);
             if (RT_FAILURE(rc))
+            {
+                if (fHideErrors)
+                {
+                    LogRel(("Configuration error: Invalid UUID for DMI tables specified, using default DMI data\n"));
+                    continue;
+                }
                 return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                           N_("Invalid UUID for DMI tables specified"));
+                                           N_("Configuration error: Invalid UUID for DMI tables specified"));
+            }
             uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
             uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
             uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
