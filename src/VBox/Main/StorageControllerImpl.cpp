@@ -87,6 +87,9 @@ struct BackupableStorageControllerData
 
 struct StorageController::Data
 {
+    Data()
+    { }
+
     const ComObjPtr<Machine, ComWeakRef>    pParent;
     const ComObjPtr<StorageController>      pPeer;
 
