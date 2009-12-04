@@ -227,7 +227,6 @@ static int rtmpOnOthersSolarisWrapper(void *uArg, void *uIgnored1, void *uIgnore
 
 RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
-    int rc;
     RTMPARGS Args;
     RT_ASSERT_INTS_ON();
 
@@ -274,7 +273,6 @@ static int rtmpOnSpecificSolarisWrapper(void *uArg, void *uIgnored1, void *uIgno
 
 RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
-    int rc;
     RTMPARGS Args;
     RT_ASSERT_INTS_ON();
 
