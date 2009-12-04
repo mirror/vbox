@@ -2934,10 +2934,10 @@ SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3)
  */
 SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGip)
 {
-    int             rc = VINF_SUCCESS;
+    int             rc;
     PSUPDRVDEVEXT   pDevExt = pSession->pDevExt;
-    RTR3PTR         pGip = NIL_RTR3PTR;
-    RTHCPHYS        HCPhys = NIL_RTHCPHYS;
+    RTR3PTR         pGipR3  = NIL_RTR3PTR;
+    RTHCPHYS        HCPhys  = NIL_RTHCPHYS;
     LogFlow(("SUPR0GipMap: pSession=%p ppGipR3=%p pHCPhysGip=%p\n", pSession, ppGipR3, pHCPhysGip));
 
     /*
@@ -2953,41 +2953,39 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
         /*
          * Map it?
          */
+        rc = VINF_SUCCESS;
         if (ppGipR3)
         {
             if (pSession->GipMapObjR3 == NIL_RTR0MEMOBJ)
                 rc = RTR0MemObjMapUser(&pSession->GipMapObjR3, pDevExt->GipMemObj, (RTR3PTR)-1, 0,
                                        RTMEM_PROT_READ, RTR0ProcHandleSelf());
             if (RT_SUCCESS(rc))
-            {
-                pGip = RTR0MemObjAddressR3(pSession->GipMapObjR3);
-                rc = VINF_SUCCESS; /** @todo remove this and replace the !rc below with RT_SUCCESS(rc). */
-            }
+                pGipR3 = RTR0MemObjAddressR3(pSession->GipMapObjR3);
         }
 
         /*
          * Get physical address.
          */
-        if (pHCPhysGip && !rc)
+        if (pHCPhysGip && RT_SUCCESS(rc))
             HCPhys = pDevExt->HCPhysGip;
 
         /*
          * Reference globally.
          */
-        if (!pSession->fGipReferenced && !rc)
+        if (!pSession->fGipReferenced && RT_SUCCESS(rc))
         {
             pSession->fGipReferenced = 1;
             pDevExt->cGipUsers++;
             if (pDevExt->cGipUsers == 1)
             {
-                PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+                PSUPGLOBALINFOPAGE pGipR0 = pDevExt->pGip;
                 unsigned i;
 
                 LogFlow(("SUPR0GipMap: Resumes GIP updating\n"));
 
-                for (i = 0; i < RT_ELEMENTS(pGip->aCPUs); i++)
-                    ASMAtomicXchgU32(&pGip->aCPUs[i].u32TransactionId, pGip->aCPUs[i].u32TransactionId & ~(GIP_UPDATEHZ_RECALC_FREQ * 2 - 1));
-                ASMAtomicXchgU64(&pGip->u64NanoTSLastUpdateHz, 0);
+                for (i = 0; i < RT_ELEMENTS(pGipR0->aCPUs); i++)
+                    ASMAtomicXchgU32(&pGipR0->aCPUs[i].u32TransactionId, pGipR0->aCPUs[i].u32TransactionId & ~(GIP_UPDATEHZ_RECALC_FREQ * 2 - 1));
+                ASMAtomicXchgU64(&pGipR0->u64NanoTSLastUpdateHz, 0);
 
                 rc = RTTimerStart(pDevExt->pGipTimer, 0);
                 AssertRC(rc); rc = VINF_SUCCESS;
@@ -3007,12 +3005,12 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
     if (pHCPhysGip)
         *pHCPhysGip = HCPhys;
     if (ppGipR3)
-        *ppGipR3 = pGip;
+        *ppGipR3 = pGipR3;
 
 #ifdef DEBUG_DARWIN_GIP
-    OSDBGPRINT(("SUPR0GipMap: returns %d *pHCPhysGip=%lx pGip=%p\n", rc, (unsigned long)HCPhys, (void *)pGip));
+    OSDBGPRINT(("SUPR0GipMap: returns %d *pHCPhysGip=%lx pGipR3=%p\n", rc, (unsigned long)HCPhys, (void *)pGipR3));
 #else
-    LogFlow((   "SUPR0GipMap: returns %d *pHCPhysGip=%lx pGip=%p\n", rc, (unsigned long)HCPhys, (void *)pGip));
+    LogFlow((   "SUPR0GipMap: returns %d *pHCPhysGip=%lx pGipR3=%p\n", rc, (unsigned long)HCPhys, (void *)pGipR3));
 #endif
     return rc;
 }
