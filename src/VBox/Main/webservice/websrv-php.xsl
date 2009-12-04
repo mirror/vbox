@@ -9,8 +9,9 @@
         VirtualBox.xidl. This PHP file represents our
         web service API. Depends on WSDL file for actual SOAP bindings.
 
+    Contributed by James Lucas (mjlucas at eng.uts.edu.au).
+
      Copyright (C) 2009 Sun Microsystems, Inc.
-     Contributed by James Lucas (mjlucas at eng.uts.edu.au).
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
