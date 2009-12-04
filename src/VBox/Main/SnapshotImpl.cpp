@@ -22,6 +22,7 @@
 #include "SnapshotImpl.h"
 
 #include "MachineImpl.h"
+#include "MediumImpl.h"
 #include "Global.h"
 
 // @todo these three includes are required for about one or two lines, try

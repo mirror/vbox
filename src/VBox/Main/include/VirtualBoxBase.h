@@ -28,6 +28,7 @@
 #include <map>
 
 #include "VBox/com/ErrorInfo.h"
+#include <VBox/com/SupportErrorInfo.h>
 
 #include "VBox/com/VirtualBox.h"
 

@@ -25,8 +25,6 @@
 
 #include "VirtualBoxBase.h"
 
-#include <VBox/com/SupportErrorInfo.h>
-
 class VirtualBox;
 class Progress;
 struct VM;

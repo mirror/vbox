@@ -29,6 +29,7 @@
 # include "VirtualBoxImpl.h"
 #endif // VBOX_WITH_USB
 
+#include "MediumImpl.h"
 #include "HostPower.h"
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
