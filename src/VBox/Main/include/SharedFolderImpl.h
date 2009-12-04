@@ -30,7 +30,7 @@ class Console;
 class VirtualBox;
 
 class ATL_NO_VTABLE SharedFolder :
-    public VirtualBoxBaseWithChildrenNEXT,
+    public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<SharedFolder, ISharedFolder>,
     public VirtualBoxSupportTranslation<SharedFolder>,
     VBOX_SCRIPTABLE_IMPL(ISharedFolder)
@@ -93,12 +93,12 @@ public:
 
 protected:
 
-    HRESULT protectedInit(VirtualBoxBase *aParent,
-                          CBSTR aName, CBSTR aHostPath, BOOL aWritable);
+    HRESULT protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
+                           CBSTR aName, CBSTR aHostPath, BOOL aWritable);
 
 private:
 
-    VirtualBoxBase *const mParent;
+    VirtualBoxBaseWithChildrenNEXT *const mParent;
 
     /* weak parents (only one of them is not null) */
     const ComObjPtr<Machine, ComWeakRef> mMachine;

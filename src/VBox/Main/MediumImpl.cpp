@@ -895,6 +895,10 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     /* share VirtualBox weakly (parent remains NULL so far) */
     unconst(m->pVirtualBox) = aVirtualBox;
 
+    /* register with VirtualBox early, since uninit() will
+     * unconditionally unregister on failure */
+    aVirtualBox->addDependentChild(this);
+
     /* no storage yet */
     m->state = MediumState_NotCreated;
 
@@ -990,6 +994,10 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     /* share VirtualBox weakly (parent remains NULL so far) */
     unconst(m->pVirtualBox) = aVirtualBox;
 
+    /* register with VirtualBox early, since uninit() will
+     * unconditionally unregister on failure */
+    aVirtualBox->addDependentChild(this);
+
     /* there must be a storage unit */
     m->state = MediumState_Created;
 
@@ -1073,7 +1081,10 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 
     /* register with VirtualBox/parent early, since uninit() will
      * unconditionally unregister on failure */
-    if (aParent)
+    if (aParent == NULL)
+        // base disk: add to global list
+        aVirtualBox->addDependentChild(this);
+    else
     {
         // differencing image: add to parent
         AutoWriteLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
@@ -1214,6 +1225,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 
     /* share VirtualBox weakly (parent remains NULL so far) */
     unconst(m->pVirtualBox) = aVirtualBox;
+    aVirtualBox->addDependentChild(this);
 
     /* fake up a UUID which is unique, but also reproducible */
     RTUUID uuid;
@@ -1301,6 +1313,9 @@ void Medium::uninit()
             // this is a differencing disk: then remove it from the parent's children list
             deparent();
         }
+        else
+            // base image: remove it from the global list
+            m->pVirtualBox->removeDependentChild(this);
     }
 
     RTSemEventMultiSignal(m->queryInfoSem);
@@ -2317,7 +2332,9 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ComObjPtr<Medium> diff = static_cast<Medium*>(aTarget);
+    ComObjPtr<Medium> diff;
+    HRESULT rc = m->pVirtualBox->cast(aTarget, diff);
+    if (FAILED(rc)) return rc;
 
     AutoWriteLock alock(this);
 
@@ -2328,7 +2345,7 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
 
     /* We want to be locked for reading as long as our diff child is being
      * created */
-    HRESULT rc = LockRead(NULL);
+    rc = LockRead(NULL);
     if (FAILED(rc)) return rc;
 
     ComObjPtr <Progress> progress;
@@ -2368,15 +2385,19 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ComObjPtr<Medium> target = static_cast<Medium*>(aTarget);
-    ComObjPtr<Medium> parent;
+    ComObjPtr <Medium> target;
+    HRESULT rc = m->pVirtualBox->cast(aTarget, target);
+    if (FAILED(rc)) return rc;
+    ComObjPtr <Medium> parent;
     if (aParent)
-        parent = static_cast<Medium*>(aParent);
+    {
+        rc = m->pVirtualBox->cast(aParent, parent);
+        if (FAILED(rc)) return rc;
+    }
 
     AutoMultiWriteLock3 alock(this, target, parent);
 
-    ComObjPtr<Progress> progress;
-    HRESULT rc = S_OK;
+    ComObjPtr <Progress> progress;
 
     try
     {
@@ -3854,6 +3875,10 @@ HRESULT Medium::queryInfo()
                         throw S_OK;
                     }
 
+                    /* deassociate from VirtualBox, associate with parent */
+
+                    m->pVirtualBox->removeDependentChild(this);
+
                     /* we set mParent & children() */
                     AutoWriteLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
 
@@ -4677,16 +4702,20 @@ HRESULT Medium::unregisterWithVirtualBox()
     AssertReturn(getChildren().size() == 0, E_FAIL);
 
     if (m->pParent)
+    {
+        /* deassociate from the parent, associate with VirtualBox */
+        m->pVirtualBox->addDependentChild(this);
         deparent();
+    }
 
     HRESULT rc = E_FAIL;
     switch (m->devType)
     {
         case DeviceType_DVD:
-            rc = m->pVirtualBox->unregisterImage(this, DeviceType_DVD);
+            rc = m->pVirtualBox->unregisterDVDImage(this);
             break;
         case DeviceType_Floppy:
-            rc = m->pVirtualBox->unregisterImage(this, DeviceType_Floppy);
+            rc = m->pVirtualBox->unregisterFloppyImage(this);
             break;
         case DeviceType_HardDisk:
             rc = m->pVirtualBox->unregisterHardDisk(this);
@@ -4703,6 +4732,7 @@ HRESULT Medium::unregisterWithVirtualBox()
              * registry */
             m->pParent = pParentBackup;
             m->pParent->m->llChildren.push_back(this);
+            m->pVirtualBox->removeDependentChild(this);
         }
     }
 
@@ -5108,9 +5138,11 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
 
                 Assert(target->m->pParent.isNull());
 
-                /* associate the child with the parent */
+                /* associate the child with the parent and deassociate from
+                 * VirtualBox */
                 target->m->pParent = that;
                 that->m->llChildren.push_back(target);
+                target->m->pVirtualBox->removeDependentChild(target);
 
                 /** @todo r=klaus neither target nor that->base() are locked,
                  * potential race! */
@@ -5125,8 +5157,11 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 rc = that->m->pVirtualBox->registerHardDisk(target);
 
                 if (FAILED(rc))
+                {
                     /* break the parent association on failure to register */
+                    target->m->pVirtualBox->addDependentChild(target);
                     that->deparent();
+                }
             }
 
             thatLock.maybeEnter();
@@ -5335,6 +5370,11 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                     {
                         target->m->pParent->m->llChildren.push_back(target);
                         source->deparent();
+                    }
+                    else
+                    {
+                        target->m->pVirtualBox->addDependentChild(target);
+                        target->m->pVirtualBox->removeDependentChild(source);
                     }
 
                     /* then, register again */
@@ -5609,6 +5649,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                          * from VirtualBox */
                         target->m->pParent = parent;
                         parent->m->llChildren.push_back(target);
+                        target->m->pVirtualBox->removeDependentChild(target);
 
                         /* register with mVirtualBox as the last step and move to
                          * Created state only on success (leaving an orphan file is
@@ -5616,8 +5657,11 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                         rc = parent->m->pVirtualBox->registerHardDisk(target);
 
                         if (FAILED(rc))
+                        {
                             /* break parent association on failure to register */
+                            target->m->pVirtualBox->addDependentChild(target);
                             target->deparent();     // removes target from parent
+                        }
                     }
                     else
                     {
