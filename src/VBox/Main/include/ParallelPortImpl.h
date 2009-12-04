@@ -39,33 +39,6 @@ class ATL_NO_VTABLE ParallelPort :
     VBOX_SCRIPTABLE_IMPL(IParallelPort)
 {
 public:
-
-    struct Data
-    {
-        Data()
-            : mSlot (0)
-            , mEnabled (FALSE)
-            , mIRQ (4)
-            , mIOBase (0x378)
-        {}
-
-        bool operator== (const Data &that) const
-        {
-            return this == &that ||
-                   (mSlot == that.mSlot &&
-                    mEnabled == that.mEnabled &&
-                    mIRQ == that.mIRQ &&
-                    mIOBase == that.mIOBase &&
-                    mPath == that.mPath);
-        }
-
-        ULONG mSlot;
-        BOOL  mEnabled;
-        ULONG mIRQ;
-        ULONG mIOBase;
-        Bstr  mPath;
-    };
-
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (ParallelPort)
 
     DECLARE_NOT_AGGREGATABLE(ParallelPort)
@@ -78,7 +51,8 @@ public:
         COM_INTERFACE_ENTRY2 (IDispatch, IParallelPort)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR (ParallelPort)
+    ParallelPort() {}
+    ~ParallelPort() {}
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -105,11 +79,11 @@ public:
     HRESULT loadSettings(const settings::ParallelPort &data);
     HRESULT saveSettings(settings::ParallelPort &data);
 
-    bool isModified() { AutoWriteLock alock (this); return mData.isBackedUp(); }
-    bool isReallyModified() { AutoWriteLock alock (this); return mData.hasActualChanges(); }
+    bool isModified();
+    bool isReallyModified();
     bool rollback();
     void commit();
-    void copyFrom (ParallelPort *aThat);
+    void copyFrom(ParallelPort *aThat);
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
@@ -119,12 +93,10 @@ public:
 
 private:
 
-    HRESULT checkSetPath (CBSTR aPath);
+    HRESULT checkSetPath(const Utf8Str &str);
 
-    const ComObjPtr<Machine, ComWeakRef> mParent;
-    const ComObjPtr<ParallelPort> mPeer;
-
-    Backupable<Data> mData;
+    struct Data;
+    Data *m;
 };
 
 #endif // ____H_FLOPPYDRIVEIMPL
