@@ -31,7 +31,7 @@
 class Machine;
 
 class ATL_NO_VTABLE StorageController :
-    public VirtualBoxBaseWithChildrenNEXT,
+    public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<StorageController, IStorageController>,
     public VirtualBoxSupportTranslation<StorageController>,
     VBOX_SCRIPTABLE_IMPL(IStorageController)
