@@ -883,24 +883,24 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     mAudioAdapter->initCopy (this, mPeer->mAudioAdapter);
 
     unconst(mUSBController).createObject();
-    mUSBController->initCopy (this, mPeer->mUSBController);
+    mUSBController->init(this, mPeer->mUSBController);
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot++)
     {
-        unconst(mNetworkAdapters [slot]).createObject();
-        mNetworkAdapters [slot]->initCopy (this, mPeer->mNetworkAdapters [slot]);
+        unconst(mNetworkAdapters[slot]).createObject();
+        mNetworkAdapters[slot]->initCopy (this, mPeer->mNetworkAdapters [slot]);
     }
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot++)
     {
         unconst(mSerialPorts [slot]).createObject();
-        mSerialPorts [slot]->initCopy (this, mPeer->mSerialPorts [slot]);
+        mSerialPorts[slot]->initCopy (this, mPeer->mSerialPorts[slot]);
     }
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot++)
     {
-        unconst(mParallelPorts [slot]).createObject();
-        mParallelPorts [slot]->initCopy (this, mPeer->mParallelPorts [slot]);
+        unconst(mParallelPorts[slot]).createObject();
+        mParallelPorts[slot]->initCopy (this, mPeer->mParallelPorts[slot]);
     }
 
     /* Confirm a successful initialization when it's the case */

@@ -47,32 +47,12 @@ namespace settings
  */
 
 class ATL_NO_VTABLE USBController :
-    public VirtualBoxBaseWithChildrenNEXT,
+    public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<USBController, IUSBController>,
     public VirtualBoxSupportTranslation<USBController>,
     VBOX_SCRIPTABLE_IMPL(IUSBController)
 {
-private:
-
-    struct Data
-    {
-        /* Constructor. */
-        Data() : mEnabled (FALSE), mEnabledEhci (FALSE) { }
-
-        bool operator== (const Data &that) const
-        {
-            return this == &that || (mEnabled == that.mEnabled && mEnabledEhci == that.mEnabledEhci);
-        }
-
-        /** Enabled indicator. */
-        BOOL mEnabled;
-
-        /** Enabled indicator for EHCI. */
-        BOOL mEnabledEhci;
-    };
-
 public:
-
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (USBController)
 
     DECLARE_NOT_AGGREGATABLE (USBController)
@@ -132,44 +112,17 @@ public:
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
-
-    /** @note this doesn't require a read lock since mParent is constant. */
-    const ComObjPtr<Machine, ComWeakRef> &parent() { return mParent; };
-
-    const Backupable<Data>& getData() { return mData; }
+    Machine* getMachine();
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"USBController"; }
 
 private:
 
-#ifdef VBOX_WITH_USB
-    /** specialization for IUSBDeviceFilter */
-    ComObjPtr<USBDeviceFilter> getDependentChild (IUSBDeviceFilter *aFilter)
-    {
-        VirtualBoxBase *child = VirtualBoxBaseWithChildrenNEXT::
-                                getDependentChild (ComPtr<IUnknown> (aFilter));
-        return child ? static_cast <USBDeviceFilter *> (child)
-                     : NULL;
-    }
-#endif /* VBOX_WITH_USB */
-
     void printList();
 
-    /** Parent object. */
-    const ComObjPtr<Machine, ComWeakRef> mParent;
-    /** Peer object. */
-    const ComObjPtr<USBController> mPeer;
-    /** Data. */
-    Backupable<Data> mData;
-
-#ifdef VBOX_WITH_USB
-    // the following fields need special backup/rollback/commit handling,
-    // so they cannot be a part of Data
-
-    typedef std::list <ComObjPtr<USBDeviceFilter> > DeviceFilterList;
-    Backupable <DeviceFilterList> mDeviceFilters;
-#endif /* VBOX_WITH_USB */
+    struct Data;
+    Data *m;
 };
 
 #endif //!____H_USBCONTROLLERIMPL
