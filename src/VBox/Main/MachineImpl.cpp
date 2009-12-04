@@ -394,10 +394,6 @@ HRESULT Machine::init(VirtualBox *aParent,
     /* share the parent weakly */
     unconst(mParent) = aParent;
 
-    /* register with parent early, since uninit() will unconditionally
-     * unregister on failure */
-    mParent->addDependentChild (this);
-
     /* allocate the essential machine data structure (the rest will be
      * allocated later by initDataAndChildObjects() */
     mData.allocate();
@@ -690,8 +686,6 @@ void Machine::uninit()
 
     /* free the essential data structure last */
     mData.free();
-
-    mParent->removeDependentChild (this);
 
     LogFlowThisFuncLeave();
 }
@@ -5098,7 +5092,7 @@ bool Machine::checkForSpawnFailure()
  *  @note Must be called from mParent's write lock. Locks this object and
  *  children for writing.
  */
-HRESULT Machine::trySetRegistered (BOOL aRegistered)
+HRESULT Machine::trySetRegistered(BOOL argNewRegistered)
 {
     AssertReturn(mParent->isWriteLockOnCurrentThread(), E_FAIL);
 
@@ -5110,14 +5104,14 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
     /* wait for state dependants to drop to zero */
     ensureNoStateDependencies();
 
-    ComAssertRet (mData->mRegistered != aRegistered, E_FAIL);
+    ComAssertRet(mData->mRegistered != argNewRegistered, E_FAIL);
 
     if (!mData->mAccessible)
     {
         /* A special case: the machine is not accessible. */
 
         /* inaccessible machines can only be unregistered */
-        AssertReturn(!aRegistered, E_FAIL);
+        AssertReturn(!argNewRegistered, E_FAIL);
 
         /* Uninitialize ourselves here because currently there may be no
          * unregistered that are inaccessible (this state combination is not
@@ -5134,7 +5128,7 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
 
     AssertReturn(autoCaller.state() == Ready, E_FAIL);
 
-    if (aRegistered)
+    if (argNewRegistered)
     {
         if (mData->mRegistered)
             return setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -5180,7 +5174,7 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
      * isConfigLocked() is FALSE then it means that no config file exists yet,
      * so create it by calling saveSettings() too. */
     if (    isModified()
-         || (aRegistered && !mData->m_pMachineConfigFile->fileExists())
+         || (argNewRegistered && !mData->m_pMachineConfigFile->fileExists())
        )
     {
         rc = saveSettings();
@@ -5194,7 +5188,7 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
         /* we may have had implicit modifications we want to fix on success */
         commit();
 
-        mData->mRegistered = aRegistered;
+        mData->mRegistered = argNewRegistered;
     }
     else
     {
@@ -5463,10 +5457,10 @@ void Machine::uninitDataAndChildObjects()
 
     for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
     {
-        if (mNetworkAdapters [slot])
+        if (mNetworkAdapters[slot])
         {
-            mNetworkAdapters [slot]->uninit();
-            unconst(mNetworkAdapters [slot]).setNull();
+            mNetworkAdapters[slot]->uninit();
+            unconst(mNetworkAdapters[slot]).setNull();
         }
     }
 
@@ -5484,19 +5478,19 @@ void Machine::uninitDataAndChildObjects()
 
     for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
     {
-        if (mParallelPorts [slot])
+        if (mParallelPorts[slot])
         {
-            mParallelPorts [slot]->uninit();
-            unconst(mParallelPorts [slot]).setNull();
+            mParallelPorts[slot]->uninit();
+            unconst(mParallelPorts[slot]).setNull();
         }
     }
 
     for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
     {
-        if (mSerialPorts [slot])
+        if (mSerialPorts[slot])
         {
-            mSerialPorts [slot]->uninit();
-            unconst(mSerialPorts [slot]).setNull();
+            mSerialPorts[slot]->uninit();
+            unconst(mSerialPorts[slot]).setNull();
         }
     }
 
@@ -9023,11 +9017,11 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
 
     ComAssertRet (!control.isNull(), E_INVALIDARG);
 
-    /* Creating a Progress object requires the VirtualBox children lock, and
+    /* Creating a Progress object requires the VirtualBox lock, and
      * thus locking it here is required by the lock order rules. */
-    AutoMultiWriteLock2 alock(mParent->childrenLock(), this->lockHandle());
+    AutoMultiWriteLock2 alock(mParent->lockHandle(), this->lockHandle());
 
-    if (control.equalsTo (mData->mSession.mDirectControl))
+    if (control.equalsTo(mData->mSession.mDirectControl))
     {
         ComAssertRet (aProgress, E_POINTER);
 
