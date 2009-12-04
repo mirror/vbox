@@ -352,10 +352,21 @@ typedef std::list<SerialPort> SerialPortsList;
 struct ParallelPort
 {
     ParallelPort()
-        : fEnabled(false),
-          ulIOBase(0),
-          ulIRQ(0)
+        : ulSlot(0),
+          fEnabled(false),
+          ulIOBase(0x378),
+          ulIRQ(4)
     {}
+
+    bool operator==(const ParallelPort &d) const
+    {
+        return     (this == &d)
+                || (    ulSlot      == d.ulSlot
+                     && fEnabled    == d.fEnabled
+                     && ulIRQ       == d.ulIRQ
+                     && ulIOBase    == d.ulIOBase
+                     && strPath     == d.strPath);
+    }
 
     uint32_t        ulSlot;
 
