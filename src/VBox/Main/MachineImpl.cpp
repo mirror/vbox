@@ -499,12 +499,12 @@ HRESULT Machine::init(VirtualBox *aParent,
                     mBIOSSettings->applyDefaults (aOsType);
 
                     /* Apply network adapters defaults */
-                    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); ++slot)
-                        mNetworkAdapters [slot]->applyDefaults (aOsType);
+                    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); ++slot)
+                        mNetworkAdapters[slot]->applyDefaults(aOsType);
 
                     /* Apply serial port defaults */
-                    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); ++slot)
-                        mSerialPorts [slot]->applyDefaults (aOsType);
+                    for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
+                        mSerialPorts[slot]->applyDefaults(aOsType);
                 }
             }
 
