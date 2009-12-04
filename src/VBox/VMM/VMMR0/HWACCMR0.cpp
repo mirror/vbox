@@ -1392,7 +1392,7 @@ VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled)
 
     if (    HWACCMR0Globals.enmHwAccmState != HWACCMSTATE_ENABLED
         ||  !HWACCMR0Globals.vmx.fSupported /* no such issues with AMD-V */
-        ||  !pVM->hwaccm.s.fGlobalInit      /* Local init implies the CPU is currently not in VMX root mode. */)
+        ||  !HWACCMR0Globals.fGlobalInit    /* Local init implies the CPU is currently not in VMX root mode. */)
         return VINF_SUCCESS;    /* nothing to do */
 
     switch(VMMGetSwitcher(pVM))
@@ -1440,7 +1440,7 @@ VMMR0DECL(int) HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
 
     Assert(   HWACCMR0Globals.enmHwAccmState == HWACCMSTATE_ENABLED
            && HWACCMR0Globals.vmx.fSupported
-           && pVM->hwaccm.s.fGlobalInit);
+           && HWACCMR0Globals.fGlobalInit);
 
     PHWACCM_CPUINFO pCpu = HWACCMR0GetCurrentCpu();
     void           *pvPageCpu;
