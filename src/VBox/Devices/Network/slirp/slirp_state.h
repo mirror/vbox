@@ -318,6 +318,7 @@ typedef struct NATState
     LIST_HEAD(handler_chain, proto_handler) handler_chain;
     struct port_forward_rule_list port_forward_rule_head;
     int port_forwarding_activated;
+    int port_forwarding_count;
     struct arp_cache_head arp_cache;
     /*libalis modules' handlers*/
     struct proto_handler *ftp_module;
