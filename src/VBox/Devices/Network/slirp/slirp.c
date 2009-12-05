@@ -1502,7 +1502,8 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 }
                 slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]);
                 /* good opportunity to activate port-forwarding on address (self)asignment*/
-                activate_port_forwarding(pData, eh);
+                if (pData->port_forwarding_activated != pData->port_forwarding_count)
+                    activate_port_forwarding(pData, eh);
             }
             break;
         case ARPOP_REPLY:
@@ -1514,7 +1515,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
             }
             slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_sip, ah->ar_sha);
             /*after/save restore we need up port forwarding again*/
-            if (pData->port_forwarding_activated == 0)
+            if (pData->port_forwarding_activated != pData->port_forwarding_count)
                 activate_port_forwarding(pData, eh);
             m_free(pData, m);
         }
@@ -1602,7 +1603,7 @@ void slirp_input(PNATState pData, void *pvArg)
     /* Note: we add to align the IP header */
 
 
-    if (pData->port_forwarding_activated == 0)
+    if (pData->port_forwarding_activated != pData->port_forwarding_count)
         activate_port_forwarding(pData, mtod(m, struct ethhdr *));
 
     switch(proto)
@@ -1741,7 +1742,6 @@ static void activate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
 {
     struct port_forward_rule *rule = NULL;
 
-    pData->port_forwarding_activated = 1;
     /* check mac here */
     LIST_FOREACH(rule, &pData->port_forward_rule_head, list)
     {
@@ -1772,11 +1772,13 @@ static void activate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
         if (guest_addr == INADDR_ANY)
         {
             /* the address wasn't granted */
-            pData->port_forwarding_activated = 0;
             return;
         }
-#if defined(DEBUG_vvl) && !defined(VBOX_WITH_NAT_SERVICE)
-        Assert(rule->guest_addr.s_addr == guest_addr);
+#if !defined(VBOX_WITH_NAT_SERVICE)
+        if (rule->guest_addr.s_addr != guest_addr)
+        {
+            continue;
+        }
 #endif
 
         LogRel(("NAT: set redirect %s hp:%d gp:%d\n", (rule->proto == IPPROTO_UDP?"UDP":"TCP"),
@@ -1785,11 +1787,13 @@ static void activate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
         {
             so = udp_listen(pData, rule->bind_ip.s_addr, htons(rule->host_port), guest_addr,
                             htons(rule->guest_port), 0);
+            pData->port_forwarding_activated++;
         }
         else
         {
             so = solisten(pData, rule->bind_ip.s_addr, htons(rule->host_port), guest_addr,
                           htons(rule->guest_port), 0);
+            pData->port_forwarding_activated++;
         }
         if (so == NULL)
         {
@@ -1836,6 +1840,7 @@ static void activate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
         continue;
     remove_port_forwarding:
         LIST_REMOVE(rule, list);
+        pData->port_forwarding_count--;
         RTMemFree(rule);
     }
 }
@@ -1870,6 +1875,7 @@ int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_
     memcpy(rule->mac_address, ethaddr, ETH_ALEN);
     /* @todo add mac address */
     LIST_INSERT_HEAD(&pData->port_forward_rule_head, rule, list);
+    pData->port_forwarding_count++;
     return 0;
 }
 
@@ -2060,7 +2066,7 @@ int slirp_arp_lookup_ip_by_ether(PNATState pData, const uint8_t *ether, uint32_t
         return rc;
     LIST_FOREACH(ac, &pData->arp_cache, list)
     {
-        if (memcmp(ether, ac->ether, ETH_ALEN))
+        if (memcmp(ether, ac->ether, ETH_ALEN) == 0)
         {
             *ip = ac->ip;
             rc = 0;
