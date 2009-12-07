@@ -1363,4 +1363,3 @@ const PDMDEVREG g_DevicePcBios =
     /* u32VersionEnd */
     PDM_DEVREG_VERSION
 };
-
