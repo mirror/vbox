@@ -711,6 +711,14 @@ VBOX_ADDITIONS_BUILD_SUBDIRNAME := $(lastword $(subst /, ,$(PATH_ROOT)))
 
 VBOX_KMK_TIME = $(KBUILD_BIN_PATH)/kmk_time
 
+# When building in parallel on a Windows host, make sure we finish the host
+# bit before kicking off any UNIX guest or we'll run into file sharing issues.
+ifeq ($(KBUILD_TARGET),win)
+VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST = additions-build-win.x86 additions-build-win.amd64
+else
+VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST =
+endif
+
 # ASSUMES the 32-bit edition has been built already. Also for serializing VM access.
 additions-build-win.amd64: additions-build-win.x86
 ifeq ($(KBUILD_TARGET),win)
@@ -744,8 +752,7 @@ else
 additions-build-solaris.rsync-into-vm:
 	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude .svn --exclude FetchDir --exclude tinderclient.log --exclude win.amd64 --exclude win.x86 . 192.168.27.4:/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
 
-# trying to weed out who is locking files so that windows cannot open them...
-additions-build-solaris.build-it: additions-build-solaris.rsync-into-vm	  additions-build-win.x86 additions-build-win.amd64
+additions-build-solaris.build-it: $(VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST)
 	$(call MSG_L1,Building Solaris/amd64 additions)
 	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " echo $@/amd64 && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing"
 	$(call MSG_L1,Building Solaris/x86 additions)
@@ -770,8 +777,7 @@ additions-build-os2.x86:
 #	$(VBOX_KMK_TIME) ssh vbox@192.168.27.3 " cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) "
 #endif
 
-# trying to weed out who is locking files so that windows cannot open them...
-additions-build-linux.amd64:   additions-build-win.x86 additions-build-win.amd64
+additions-build-linux.amd64:   $(VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST)
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) packing
@@ -780,8 +786,7 @@ else
 	$(VBOX_KMK_TIME) ssh vbox@192.168.27.12 " echo $@ && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing"
 endif
 
-# trying to weed out who is locking files so that windows cannot open them...
-additions-build-linux.x86:   additions-build-win.x86 additions-build-win.amd64
+additions-build-linux.x86:   $(VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST)
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.x86)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) packing
