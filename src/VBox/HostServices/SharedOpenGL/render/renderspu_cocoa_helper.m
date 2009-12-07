@@ -1317,16 +1317,19 @@ void cocoaViewDestroy(NativeViewRef pView)
     [win setContentView: nil];
     [[win parentWindow] removeChildWindow: win];
     int b = [win retainCount];
-    for (; b > 1; --b)
-        [win release];
+//    for (; b > 1; --b)
+//        [win performSelector:@selector(release)]
+    [win performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:NO];
+//        [win release];
 
     /* There seems to be a bug in the performSelector method which is called in
      * parentWindowChanged above. The object is retained but not released. This
      * results in an unbalanced reference count, which is here manually
      * decremented. */
     int a = [pView retainCount];
-    for (; a > 1; --a)
-        [pView release];
+//    for (; a > 1; --a)
+    [pView performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:NO];
+//        [pView release];
 
     [pPool release];
 }
