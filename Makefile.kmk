@@ -770,7 +770,8 @@ additions-build-os2.x86:
 #	$(VBOX_KMK_TIME) ssh vbox@192.168.27.3 " cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) "
 #endif
 
-additions-build-linux.amd64:
+# trying to weed out who is locking files so that windows cannot open them...
+additions-build-linux.amd64:   additions-build-win.x86 additions-build-win.amd64
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) packing
@@ -779,7 +780,8 @@ else
 	$(VBOX_KMK_TIME) ssh vbox@192.168.27.12 " echo $@ && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing"
 endif
 
-additions-build-linux.x86:
+# trying to weed out who is locking files so that windows cannot open them...
+additions-build-linux.x86:   additions-build-win.x86 additions-build-win.amd64
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.x86)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) packing
