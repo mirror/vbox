@@ -1955,10 +1955,16 @@ static int acpiUpdatePmHandlers(ACPIState *pThis, RTIOPORT uNewBase)
         rc = acpiUnregisterPmHandlers(pThis);
         if (RT_FAILURE(rc))
             return rc;
-
+        
         pThis->uPmIoPortBase = uNewBase;
 
         rc = acpiRegisterPmHandlers(pThis);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /* We have to update FADT table acccording to the new base */
+        rc = acpiPlantTables(pThis);
+        Assert(RT_SUCCESS(rc));
         if (RT_FAILURE(rc))
             return rc;
     }
