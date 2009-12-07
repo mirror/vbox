@@ -851,6 +851,51 @@ static void crStateSaveGLSLProgramCB(unsigned long key, void *data1, void *data2
     }
 }
 
+static int32_t crStateSaveClientPointer(CRVertexArrays *pArrays, int32_t index, PSSMHANDLE pSSM)
+{
+    int32_t rc;
+    CRClientPointer *cp;
+
+    cp = crStateGetClientPointerByIndex(index, pArrays);
+
+    rc = SSMR3PutU32(pSSM, cp->buffer->name);
+    AssertRCReturn(rc, rc);
+
+#ifdef CR_EXT_compiled_vertex_array
+    if (cp->locked)
+    {
+        CRASSERT(cp->p);
+        rc = SSMR3PutMem(pSSM, cp->p, cp->stride*(pArrays->lockFirst+pArrays->lockCount));
+        AssertRCReturn(rc, rc);
+    }
+#endif
+
+    return VINF_SUCCESS;
+}
+
+static int32_t crStateLoadClientPointer(CRVertexArrays *pArrays, int32_t index, CRContext *pContext, PSSMHANDLE pSSM)
+{
+    int32_t rc;
+    uint32_t ui;
+    CRClientPointer *cp;
+
+    cp = crStateGetClientPointerByIndex(index, pArrays);
+
+    rc = SSMR3GetU32(pSSM, &ui);
+    AssertRCReturn(rc, rc);
+    cp->buffer = ui==0 ? pContext->bufferobject.nullBuffer : crHashtableSearch(pContext->bufferobject.buffers, ui);
+
+#ifdef CR_EXT_compiled_vertex_array
+    if (cp->locked)
+    {
+        rc = crStateAllocAndSSMR3GetMem(pSSM, &cp->p, cp->stride*(pArrays->lockFirst+pArrays->lockCount));
+        AssertRCReturn(rc, rc);
+    }
+#endif
+
+    return VINF_SUCCESS;
+}
+
 int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
 {
     int32_t rc, i;
@@ -1026,33 +1071,23 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
     rc = SSMR3PutU32(pSSM, pContext->bufferobject.elementsBuffer->name);
     AssertRCReturn(rc, rc);
-    /* Save bound array buffers*/ /*@todo vertexArrayStack*/
-    rc = SSMR3PutU32(pSSM, pContext->client.array.v.buffer->name);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pContext->client.array.c.buffer->name);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pContext->client.array.f.buffer->name);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pContext->client.array.s.buffer->name);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pContext->client.array.e.buffer->name);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pContext->client.array.i.buffer->name);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pContext->client.array.n.buffer->name);
-    AssertRCReturn(rc, rc);
-    for (i = 0; i < CR_MAX_TEXTURE_UNITS; i++)
+    /* Save clint pointers and buffer bindings*/
+    for (i=0; i<CRSTATECLIENT_MAX_VERTEXARRAYS; ++i)
     {
-        rc = SSMR3PutU32(pSSM, pContext->client.array.t[i].buffer->name);
+        rc = crStateSaveClientPointer(&pContext->client.array, i, pSSM);
         AssertRCReturn(rc, rc);
     }
-# ifdef CR_NV_vertex_program
-    for (i = 0; i < CR_MAX_VERTEX_ATTRIBS; i++)
+
+    crDebug("client.vertexArrayStackDepth %i", pContext->client.vertexArrayStackDepth);
+    for (i=0; i<pContext->client.vertexArrayStackDepth; ++i)
     {
-        rc = SSMR3PutU32(pSSM, pContext->client.array.a[i].buffer->name);
-        AssertRCReturn(rc, rc);
+        CRVertexArrays *pArray = &pContext->client.vertexArrayStack[i];
+        for (j=0; j<CRSTATECLIENT_MAX_VERTEXARRAYS; ++j)
+        {
+            rc = crStateSaveClientPointer(pArray, j, pSSM);
+            AssertRCReturn(rc, rc);
+        }
     }
-# endif
 #endif /*CR_ARB_vertex_buffer_object*/
 
     /* Save pixel/vertex programs */
@@ -1530,51 +1565,23 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
     rc = SSMR3GetU32(pSSM, &ui);
     AssertRCReturn(rc, rc);
     pContext->bufferobject.elementsBuffer = CRS_GET_BO(ui);
-
-    /* Load bound array buffers*/
-    rc = SSMR3GetU32(pSSM, &ui);
-    AssertRCReturn(rc, rc);
-    pContext->client.array.v.buffer = CRS_GET_BO(ui);
-
-    rc = SSMR3GetU32(pSSM, &ui);
-    AssertRCReturn(rc, rc);
-    pContext->client.array.c.buffer = CRS_GET_BO(ui);
-
-    rc = SSMR3GetU32(pSSM, &ui);
-    AssertRCReturn(rc, rc);
-    pContext->client.array.f.buffer = CRS_GET_BO(ui);
-
-    rc = SSMR3GetU32(pSSM, &ui);
-    AssertRCReturn(rc, rc);
-    pContext->client.array.s.buffer = CRS_GET_BO(ui);
-
-    rc = SSMR3GetU32(pSSM, &ui);
-    AssertRCReturn(rc, rc);
-    pContext->client.array.e.buffer = CRS_GET_BO(ui);
-
-    rc = SSMR3GetU32(pSSM, &ui);
-    AssertRCReturn(rc, rc);
-    pContext->client.array.i.buffer = CRS_GET_BO(ui);
-
-    rc = SSMR3GetU32(pSSM, &ui);
-    AssertRCReturn(rc, rc);
-    pContext->client.array.n.buffer = CRS_GET_BO(ui);
-
-    for (i = 0; i < CR_MAX_TEXTURE_UNITS; i++)
-    {
-        rc = SSMR3GetU32(pSSM, &ui);
-        AssertRCReturn(rc, rc);
-        pContext->client.array.t[i].buffer = CRS_GET_BO(ui);
-    }
-# ifdef CR_NV_vertex_program
-    for (i = 0; i < CR_MAX_VERTEX_ATTRIBS; i++)
-    {
-        rc = SSMR3GetU32(pSSM, &ui);
-        AssertRCReturn(rc, rc);
-        pContext->client.array.a[i].buffer = CRS_GET_BO(ui);
-    }
-# endif
 #undef CRS_GET_BO
+
+    /* Load client pointers and array buffer bindings*/
+    for (i=0; i<CRSTATECLIENT_MAX_VERTEXARRAYS; ++i)
+    {
+        rc = crStateLoadClientPointer(&pContext->client.array, i, pContext, pSSM);
+        AssertRCReturn(rc, rc);
+    }
+    for (j=0; j<pContext->client.vertexArrayStackDepth; ++j)
+    {
+        CRVertexArrays *pArray = &pContext->client.vertexArrayStack[j];
+        for (i=0; i<CRSTATECLIENT_MAX_VERTEXARRAYS; ++i)
+        {
+            rc = crStateLoadClientPointer(pArray, i, pContext, pSSM);
+            AssertRCReturn(rc, rc);
+        }
+    }
 
     pContext->bufferobject.bResyncNeeded = GL_TRUE;
 #endif
