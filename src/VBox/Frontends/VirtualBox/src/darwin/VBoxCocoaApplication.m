@@ -339,6 +339,45 @@ const char *VBoxCocoaApplication_eventTypeName(unsigned long eEvtType)
     }
 }
 
+/**
+ * Check for some default application key combinations a Mac user expect, like
+ * CMD+Q or CMD+H.
+ *
+ * @returns true if such a key combo was hit, false otherwise.
+ * @param   eEvtType        The Cocoa event type.
+ */
+bool VBoxCocoaApplication_isApplicationCommand(const void *pvEvent)
+{
+    NSEvent     *pEvent = (NSEvent *)pvEvent;
+    NSEventType  eEvtType = [pEvent type];
+    bool         fGlobalHotkey = false;
+
+    switch (eEvtType)
+    {
+        case NSKeyDown:
+        case NSKeyUp:
+        {
+            NSUInteger fEvtMask = [pEvent modifierFlags];
+            unsigned short KeyCode = [pEvent keyCode];
+            if (   fEvtMask & (NX_NONCOALSESCEDMASK | NX_COMMANDMASK | NX_DEVICELCMDKEYMASK)  // L+CMD
+                || fEvtMask & (NX_NONCOALSESCEDMASK | NX_COMMANDMASK | NX_DEVICERCMDKEYMASK)) // R+CMD
+            {
+                if (   KeyCode == 0x0c  // CMD+Q (Quit)
+                    || KeyCode == 0x04) // CMD+H (Hide)
+                    fGlobalHotkey = true;
+            } 
+            else if (   fEvtMask & (NX_NONCOALSESCEDMASK | NX_ALTERNATEMASK | NX_DEVICELALTKEYMASK | NX_COMMANDMASK | NX_DEVICELCMDKEYMASK)  // L+ALT+CMD
+                     || fEvtMask & (NX_NONCOALSESCEDMASK | NX_ALTERNATEMASK | NX_DEVICERCMDKEYMASK | NX_COMMANDMASK | NX_DEVICERCMDKEYMASK)) // R+ALT+CMD
+            {
+                if (KeyCode == 0x04)    // ALT+CMD+H (Hide-Others)
+                    fGlobalHotkey = true;
+            }
+            break;
+        }
+        default: break;
+    }
+    return fGlobalHotkey;
+}
 
 /**
  * Debug helper function for dumping a Cocoa event to stdout.

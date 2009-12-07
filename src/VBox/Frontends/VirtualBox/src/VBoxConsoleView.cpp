@@ -137,15 +137,10 @@ bool VBoxConsoleView::darwinEventHandlerProc (const void *pvCocoaEvent,
     if (eventClass != 'cute')
         ::VBoxCocoaApplication_printEvent ("view: ", pvCocoaEvent);
 #endif
-
-    /*
-     * Not sure but this seems an triggered event if the spotlight searchbar is
-     * displayed. So flag that the host key isn't pressed alone.
-     */
-    if (   eventClass == 'cgs '
-        && view->mIsHostkeyPressed
-        && ::GetEventKind (inEvent) == 0x15)
-        view->mIsHostkeyAlone = false;
+    /* Check if this is an application key combo. In that case we will not pass
+       the event to the guest, but let the host process it. */
+    if (VBoxCocoaApplication_isApplicationCommand(pvCocoaEvent))
+        return false;
 
     /*
      * All keyboard class events needs to be handled.
@@ -153,18 +148,6 @@ bool VBoxConsoleView::darwinEventHandlerProc (const void *pvCocoaEvent,
     if (eventClass == kEventClassKeyboard)
     {
         if (view->darwinKeyboardEvent (pvCocoaEvent, inEvent))
-            return true;
-    }
-    /*
-     * Command-H and Command-Q aren't properly disabled yet, and it's still
-     * possible to use the left command key to invoke them when the keyboard
-     * is captured. We discard the events these if the keyboard is captured
-     * as a half measure to prevent unexpected behaviour. However, we don't
-     * get any key down/up events, so these combinations are dead to the guest...
-     */
-    else if (eventClass == kEventClassCommand)
-    {
-        if (view->mKbdCaptured)
             return true;
     }
     /* Pass the event along. */
