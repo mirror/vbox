@@ -492,7 +492,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
                                          /* any more?? */
                                          ;
         *pszStr++                    = '\0';
-    
+
         /***********************************
          * DMI system information (Type 1) *
          ***********************************/
@@ -507,7 +507,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         READCFGSTR(pSystemInf->u8ProductName,  DmiSystemProduct);
         READCFGSTR(pSystemInf->u8Version,      DmiSystemVersion);
         READCFGSTR(pSystemInf->u8SerialNumber, DmiSystemSerial);
-    
+
         RTUUID uuid;
         if (pszDmiSystemUuid)
         {
@@ -528,12 +528,12 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
             pUuid = &uuid;
         }
         memcpy(pSystemInf->au8Uuid, pUuid, sizeof(RTUUID));
-    
+
         pSystemInf->u8WakeupType     = 6; /* Power Switch */
         pSystemInf->u8SKUNumber      = 0;
         READCFGSTR(pSystemInf->u8Family, DmiSystemFamily);
         *pszStr++                    = '\0';
-    
+
         /********************************************
          * DMI System Enclosure or Chassis (Type 3) *
          ********************************************/
@@ -566,7 +566,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         pChassis->u8ContElemRecLen   = 0; /* no contained elements */
 # endif
         *pszStr++                    = '\0';
-    
+
         /*****************************
          * DMI OEM strings (Type 11) *
          *****************************/
@@ -582,7 +582,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         pOEMStrings->header.u8Length  = sizeof(*pOEMStrings);
         pOEMStrings->header.u16Handle = 0x0002;
         pOEMStrings->u8Count          = 2;
-    
+
         char szTmp[64];
         RTStrPrintf(szTmp, sizeof(szTmp), "vboxVer_%u.%u.%u",
                     RTBldCfgVersionMajor(), RTBldCfgVersionMinor(), RTBldCfgVersionBuild());
@@ -590,13 +590,13 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         RTStrPrintf(szTmp, sizeof(szTmp), "vboxRev_%u", RTBldCfgRevision());
         READCFGSTRDEF(pOEMStrings->u8VBoxRevision, "DmiOEMVBoxRev", szTmp);
         *pszStr++                    = '\0';
-    
+
         /* End-of-table marker - includes padding to account for fixed table size. */
         PDMIHDR pEndOfTable          = (PDMIHDR)pszStr;
         pEndOfTable->u8Type          = 0x7f;
         pEndOfTable->u8Length        = cbMax - ((char *)pszStr - (char *)pTable) - 2;
         pEndOfTable->u16Handle       = 0xFEFF;
-    
+
         /* If more fields are added here, fix the size check in READCFGSTR */
 
         /* Success! */
@@ -776,4 +776,3 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t cCpus)
     floatPtr.u8Checksum            = fwCommonChecksum((uint8_t*)&floatPtr, 16);
     PDMDevHlpPhysWrite (pDevIns, 0x9fff0, &floatPtr, 16);
 }
-
