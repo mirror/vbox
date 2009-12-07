@@ -712,7 +712,7 @@ VBOX_ADDITIONS_BUILD_SUBDIRNAME := $(lastword $(subst /, ,$(PATH_ROOT)))
 VBOX_KMK_TIME = $(KBUILD_BIN_PATH)/kmk_time
 
 # ASSUMES the 32-bit edition has been built already. Also for serializing VM access.
-additions-build-win.amd64: | additions-build-win.x86
+additions-build-win.amd64: additions-build-win.x86
 ifeq ($(KBUILD_TARGET),win)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) packing
@@ -730,27 +730,34 @@ else
 	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " cd e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.x86) all packing"
 endif
 
-additions-build-solaris.amd64:
+# ASSUMES the 64-bit edition are built first. This also serializes VM access.
 ifeq ($(KBUILD_TARGET),solaris)
+additions-build-solaris.amd64:
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) packing
-else
-	$(call MSG_L1,Building Solaris/amd64 additions)
-	rsync -a --delete --delete-excluded --exclude .svn --exclude FetchDir --exclude tinderclient.log --exclude win.amd64 --exclude win.x86 . 192.168.27.4:/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing"
-	rsync -a --delete 192.168.27.4:/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
-endif
 
-# ASSUMES the 64-bit edition has been built already. Also for serializing VM access.
-additions-build-solaris.x86: | additions-build-solaris.amd64
-ifeq ($(KBUILD_TARGET),solaris)
+additions-build-solaris.x86: additions-build-solaris.amd64
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1 all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1 packing
+
 else
-	$(call MSG_L1,Building Solaris/x86 additions)
+additions-build-solaris.rsync-into-vm:
 	rsync -a --delete --delete-excluded --exclude .svn --exclude FetchDir --exclude tinderclient.log --exclude win.amd64 --exclude win.x86 . 192.168.27.4:/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
+
+additions-build-solaris.rsync-out-of-vm: additions-build-solaris.amd64  additions-build-solaris.x86
+	rsync -a --delete 192.168.27.4:/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
+
+.NOTPARALLEL: additions-build-solaris.rsync-out-of-vm additions-build-solaris.rsync-into-vm
+.PHONY:       additions-build-solaris.rsync-out-of-vm additions-build-solaris.rsync-into-vm
+
+additions-build-solaris.amd64: additions-build-solaris.rsync-into-vm
+	$(call MSG_L1,Building Solaris/amd64 additions)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing"
+
+additions-build-solaris.x86: additions-build-solaris.rsync-into-vm additions-build-solaris.amd64
+	$(call MSG_L1,Building Solaris/x86 additions)
 	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1"
-	rsync -a --delete 192.168.27.4:/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.x86 out/
+
 endif
 
 additions-build-os2.x86:
@@ -794,6 +801,15 @@ additions-packing:
 		-C src/VBox/Additions \
 		$(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso
 
+.PHONY: \
+	additions-build-win.x86 \
+	additions-build-win.amd64 \
+	additions-build-solaris.amd64 \
+	additions-build-solaris.x86 \
+	additions-build-os2.x86 \
+	additions-build-linux.amd64 \
+	additions-build-linux.x86 \
+	additions-packing
 
 
 #
