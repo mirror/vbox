@@ -784,56 +784,64 @@ void crStateBufferObjectSwitch(CRBufferObjectBits *bb, CRbitvalue *bitID,
     if (to->bResyncNeeded)
     {
         CRClientPointer *cp;
+        GLboolean locked = toCtx->client.array.locked;
 
         crHashtableWalk(to->buffers, crStateBufferObjectSyncCB, to);
         to->bResyncNeeded = GL_FALSE;
 
         /*@todo, move to state_client.c*/
 
+
+        /*@todo, patch dirty bits after snapshot loading instead*/
+        if (toCtx->client.array.v.enabled)
+        {
+            diff_api.EnableClientState(GL_VERTEX_ARRAY);
+        }
+
         cp = &toCtx->client.array.v;
-        if (cp->buffer->name)
+        if (cp->buffer->name || locked)
         {
             diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
             diff_api.VertexPointer(cp->size, cp->type, cp->stride, cp->p);
         }
 
         cp = &toCtx->client.array.c;
-        if (cp->buffer->name)
+        if (cp->buffer->name || locked)
         {
             diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
             diff_api.ColorPointer(cp->size, cp->type, cp->stride, cp->p);
         }
 
         cp = &toCtx->client.array.f;
-        if (cp->buffer->name)
+        if (cp->buffer->name || locked)
         {
             diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
             diff_api.FogCoordPointerEXT(cp->type, cp->stride, cp->p);
         }
 
         cp = &toCtx->client.array.s;
-        if (cp->buffer->name)
+        if (cp->buffer->name || locked)
         {
             diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
             diff_api.SecondaryColorPointerEXT(cp->size, cp->type, cp->stride, cp->p);
         }
 
         cp = &toCtx->client.array.e;
-        if (cp->buffer->name)
+        if (cp->buffer->name || locked)
         {
             diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
             diff_api.EdgeFlagPointer(cp->stride, cp->p);
         }
 
         cp = &toCtx->client.array.i;
-        if (cp->buffer->name)
+        if (cp->buffer->name || locked)
         {
             diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
             diff_api.IndexPointer(cp->type, cp->stride, cp->p);
         }
 
         cp = &toCtx->client.array.n;
-        if (cp->buffer->name)
+        if (cp->buffer->name || locked)
         {
             diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
             diff_api.NormalPointer(cp->type, cp->stride, cp->p);
@@ -842,7 +850,7 @@ void crStateBufferObjectSwitch(CRBufferObjectBits *bb, CRbitvalue *bitID,
         for (i = 0; i < CR_MAX_TEXTURE_UNITS; i++)
         {
             cp = &toCtx->client.array.t[i];
-            if (cp->buffer->name)
+            if (cp->buffer->name || locked)
             {
                 if (diff_api.ActiveTextureARB)
                     diff_api.ActiveTextureARB(i+GL_TEXTURE0_ARB);
@@ -858,7 +866,7 @@ void crStateBufferObjectSwitch(CRBufferObjectBits *bb, CRbitvalue *bitID,
         for (i = 0; i < CR_MAX_VERTEX_ATTRIBS; i++)
         {
             cp = &toCtx->client.array.a[i];
-            if (cp->buffer->name)
+            if (cp->buffer->name || locked)
             {
                 diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
                 diff_api.VertexAttribPointerARB(i, cp->size, cp->type, cp->normalized, cp->stride, cp->p);
