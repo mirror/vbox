@@ -851,7 +851,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
          * ASSUMES that the entire GDT is in memory.
          */
         RTUINT      cbEffLimit = GDTR.cbGdt;
-        PX86DESC   pGDTE = &pVM->selm.s.paGdtR3[1];
+        PX86DESC    pGDTE = &pVM->selm.s.paGdtR3[1];
         rc = PGMPhysSimpleReadGCPtr(pVCpu, pGDTE, GDTR.pGdt + sizeof(X86DESC), cbEffLimit + 1 - sizeof(X86DESC));
         if (RT_FAILURE(rc))
         {
@@ -922,18 +922,18 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
         RTSEL aHyperSel[SELM_HYPER_SEL_MAX];
         if (cbEffLimit >= SELM_HYPER_DEFAULT_BASE)
         {
-            PX86DESC pGDTEStart = pVM->selm.s.paGdtR3;
-            PX86DESC pGDTE = (PX86DESC)((char *)pGDTEStart + GDTR.cbGdt + 1 - sizeof(X86DESC));
-            int       iGDT = 0;
+            PX86DESC    pGDTEStart = pVM->selm.s.paGdtR3;
+            PX86DESC    pGDTECur   = (PX86DESC)((char *)pGDTEStart + GDTR.cbGdt + 1 - sizeof(X86DESC));
+            int         iGDT       = 0;
 
             Log(("Internal SELM GDT conflict: use non-present entries\n"));
             STAM_COUNTER_INC(&pVM->selm.s.StatScanForHyperSels);
-            while (pGDTE > pGDTEStart)
+            while (pGDTECur > pGDTEStart)
             {
                 /* We can reuse non-present entries */
-                if (!pGDTE->Gen.u1Present)
+                if (!pGDTECur->Gen.u1Present)
                 {
-                    aHyperSel[iGDT] = ((uintptr_t)pGDTE - (uintptr_t)pVM->selm.s.paGdtR3) / sizeof(X86DESC);
+                    aHyperSel[iGDT] = ((uintptr_t)pGDTECur - (uintptr_t)pVM->selm.s.paGdtR3) / sizeof(X86DESC);
                     aHyperSel[iGDT] = aHyperSel[iGDT] << X86_SEL_SHIFT;
                     Log(("SELM: Found unused GDT %04X\n", aHyperSel[iGDT]));
                     iGDT++;
@@ -941,7 +941,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
                         break;
                 }
 
-                pGDTE--;
+                pGDTECur--;
             }
             if (iGDT != SELM_HYPER_SEL_MAX)
             {
@@ -1752,7 +1752,7 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
     while (pLDTE < pLDTEEnd)
     {
         X86DESC    LDTEGuest;
-        int rc = PGMPhysSimpleReadGCPtr(pVCpu, &LDTEGuest, GCPtrLDTEGuest, sizeof(LDTEGuest));
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, &LDTEGuest, GCPtrLDTEGuest, sizeof(LDTEGuest));
         if (RT_SUCCESS(rc))
         {
             if (   pLDTE->Gen.u16LimitLow != LDTEGuest.Gen.u16LimitLow
@@ -2618,7 +2618,7 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
     for (unsigned iLdt = 0; iLdt < cLdts; iLdt++, GCPtrLdt += sizeof(X86DESC))
     {
         X86DESC LdtE;
-        int rc = PGMPhysSimpleReadGCPtr(pVCpu, &LdtE, GCPtrLdt, sizeof(LdtE));
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, &LdtE, GCPtrLdt, sizeof(LdtE));
         if (RT_SUCCESS(rc))
         {
             if (LdtE.Gen.u1Present)
