@@ -224,7 +224,7 @@ vboxNetFltWinPtRegisterDevice(
             }
 #endif
 
-            Status = ObReferenceObjectByPointer(g_pControlDeviceObject, FILE_READ_DATA, *IoFileObjectType, KernelMode);
+            Status = ObReferenceObjectByPointer(g_pControlDeviceObject, FILE_READ_DATA, NULL, KernelMode);
             Assert(Status == NDIS_STATUS_SUCCESS);
             if(Status == NDIS_STATUS_SUCCESS)
             {
