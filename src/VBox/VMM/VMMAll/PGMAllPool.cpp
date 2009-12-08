@@ -1192,7 +1192,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     PDISCPUSTATE pDis = &pVCpu->pgm.s.DisState;
     int rc = EMInterpretDisasOne(pVM, pVCpu, pRegFrame, pDis, NULL);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
-    {        
+    {
         AssertMsg(rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("Unexpected rc %d\n", rc));
         pgmUnlock(pVM);
         return rc;
@@ -1424,7 +1424,7 @@ flushPage:
      * the reuse detection must be fixed.
      */
     rc = pgmPoolAccessHandlerFlush(pVM, pVCpu, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault);
-    if (    rc == VINF_EM_RAW_EMULATE_INSTR 
+    if (    rc == VINF_EM_RAW_EMULATE_INSTR
         &&  fReused)
     {
         /* Make sure that the current instruction still has shadow page backing, otherwise we'll end up in a loop. */
@@ -1476,12 +1476,12 @@ static void pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PT
                 LastHCPhys  = HCPhys;
                 cErrors++;
 
-                int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pPage->GCPhys, &HCPhysPT);
+                rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pPage->GCPhys, &HCPhysPT);
                 AssertRC(rc);
 
-                for (unsigned i = 0; i < pPool->cCurPages; i++)
+                for (unsigned iPage = 0; iPage < pPool->cCurPages; iPage++)
                 {
-                    PPGMPOOLPAGE pTempPage = &pPool->aPages[i];
+                    PPGMPOOLPAGE pTempPage = &pPool->aPages[iPage];
 
                     if (pTempPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
                     {
@@ -2736,7 +2736,7 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
     uint16_t i = pPool->iUserFreeHead;
     if (i == NIL_PGMPOOL_USER_INDEX)
     {
-        int rc = pgmPoolTrackFreeOneUser(pPool, iUser);
+        rc = pgmPoolTrackFreeOneUser(pPool, iUser);
         if (RT_FAILURE(rc))
             return rc;
         i = pPool->iUserFreeHead;
