@@ -652,11 +652,10 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
     pVM->pgm.s.GCPtrMappingFixed = GCPtrBase;
     pVM->pgm.s.cbMappingFixed    = cb;
 
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-        pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+        pVM->aCpus[idCpu].pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
+        VMCPU_FF_SET(&pVM->aCpus[idCpu], VMCPU_FF_PGM_SYNC_CR3);
     }
     return VINF_SUCCESS;
 }
@@ -688,11 +687,10 @@ VMMR3DECL(int) PGMR3MappingsDisable(PVM pVM)
     pVM->pgm.s.fMappingsFixed    = true;
     pVM->pgm.s.GCPtrMappingFixed = MM_HYPER_AREA_ADDRESS;
     pVM->pgm.s.cbMappingFixed    = cb;
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-        pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+        pVM->aCpus[idCpu].pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
+        VMCPU_FF_SET(&pVM->aCpus[idCpu], VMCPU_FF_PGM_SYNC_CR3);
     }
     return VINF_SUCCESS;
 }
