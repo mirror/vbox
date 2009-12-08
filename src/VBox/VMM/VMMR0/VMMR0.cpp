@@ -533,6 +533,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 if (RT_UNLIKELY(pVM->cCpus > 1))
                 {
                     pVCpu->vmm.s.iLastGZRc = VERR_RAW_MODE_INVALID_SMP;
+                    ASMSetFlags(uFlags);
                     return;
                 }
 
@@ -540,6 +541,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 if (RT_UNLIKELY(!PGMGetHyperCR3(pVCpu)))
                 {
                     pVCpu->vmm.s.iLastGZRc = VERR_PGM_NO_CR3_SHADOW_ROOT;
+                    ASMSetFlags(uFlags);
                     return;
                 }
 #endif
@@ -549,6 +551,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 if (RT_FAILURE(rc))
                 {
                     pVCpu->vmm.s.iLastGZRc = rc;
+                    ASMSetFlags(uFlags);
                     return;
                 }
 
