@@ -547,7 +547,7 @@ static NDIS_STATUS vboxNetFltWinMpReadApplyConfig(PADAPT pAdapt, NDIS_HANDLE hMi
             {
 
                 rc = vboxNetFltWinMACFromNdisString(&mac, &pParameterValue->ParameterData.StringData);
-                Assert(RT_SUCCESS(rc));
+                AssertRC(rc);
                 if(RT_SUCCESS(rc))
                 {
                     break;

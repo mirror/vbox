@@ -477,7 +477,7 @@ VMMR0DECL(int) HWACCMR0Term(void)
         if (!HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx)
         {
             rc = RTPowerNotificationDeregister(hwaccmR0PowerCallback, 0);
-            Assert(RT_SUCCESS(rc));
+            AssertRC(rc);
         }
         else
             rc = VINF_SUCCESS;

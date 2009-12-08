@@ -877,7 +877,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
 
             cpu.mode = (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT;
             rc = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, NULL);
-            Assert(RT_SUCCESS(rc));
+            AssertRC(rc);
             if (RT_FAILURE(rc))
                 break;
         }

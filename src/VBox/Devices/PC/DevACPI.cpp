@@ -1955,7 +1955,7 @@ static int acpiUpdatePmHandlers(ACPIState *pThis, RTIOPORT uNewBase)
         rc = acpiUnregisterPmHandlers(pThis);
         if (RT_FAILURE(rc))
             return rc;
-        
+
         pThis->uPmIoPortBase = uNewBase;
 
         rc = acpiRegisterPmHandlers(pThis);
@@ -1964,7 +1964,7 @@ static int acpiUpdatePmHandlers(ACPIState *pThis, RTIOPORT uNewBase)
 
         /* We have to update FADT table acccording to the new base */
         rc = acpiPlantTables(pThis);
-        Assert(RT_SUCCESS(rc));
+        AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -2003,7 +2003,7 @@ static void acpiPciConfigWrite(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u3
             uNewBase &= 0xffc0;
 
             rc = acpiUpdatePmHandlers(pThis, uNewBase);
-            Assert(RT_SUCCESS(rc));
+            AssertRC(rc);
         }
     }
 }

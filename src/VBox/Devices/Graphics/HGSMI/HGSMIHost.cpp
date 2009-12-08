@@ -436,7 +436,7 @@ HGSMIOFFSET HGSMIHostRead (HGSMIINSTANCE *pIns)
     VM_ASSERT_EMT(pIns->pVM);
 
     int rc = hgsmiFIFOLock(pIns);
-    Assert(RT_SUCCESS(rc));
+    AssertRC(rc);
     if(RT_SUCCESS(rc))
     {
         /* Get the host FIFO head entry. */
