@@ -139,14 +139,11 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
     int rv;
     void *alPatch;
     void *pMesaEntry;
-#ifdef RT_ARCH_AMD64
     char patch[5];
     void *shift;
-#endif
 
 #ifndef VBOX_NO_MESA_PATCH_REPORTS
-    crDebug("");
-    crDebug("vboxPatchMesaExport: %s", psFuncName);
+    crDebug("\nvboxPatchMesaExport: %s", psFuncName);
 #endif
 
     pMesaEntry = dlsym(RTLD_DEFAULT, psFuncName);
@@ -171,7 +168,7 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
         int rv;
 
         rv = dladdr1(pStart, &dlip1, (void**)&sym1, RTLD_DL_SYMENT);
-        if (!rv || !sym)
+        if (!rv || !sym1)
         {
             crError("Failed to get size for %p", pStart);
             return;
@@ -187,10 +184,11 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
     crDebug("Vbox code: start: %p, end %p, size: %i", pStart, pEnd, pEnd-pStart);
 #endif
 
+#ifndef VBOX_OGL_GLX_USE_CSTUBS
     if (sym->st_size<(pEnd-pStart))
+#endif
     {
-#ifdef RT_ARCH_AMD64
-        /* Try to insert 5 bytes jmpq to our stub code */
+        /* Try to insert 5 bytes jmp/jmpq to our stub code */
 
     	if (5>(pEnd-pStart))
         {
@@ -200,14 +198,21 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
 
         shift = (void*)((intptr_t)pStart-((intptr_t)dlip.dli_saddr+5));
 # ifndef VBOX_NO_MESA_PATCH_REPORTS
-        crDebug("Size is small, inserting jmpq with shift %p instead", shift);
+        crDebug("Inserting jmp[q] with shift %p instead", shift);
 # endif
 
-        if ( ((((long)shift)&0x00000000) != 0) 
-             && ((((long)shift)&0x00000000) != 0xFFFFFFFF00000000))
         {
-            crDebug("Can't patch offset is too big.(%s)", psFuncName);
-            return;
+#ifdef RT_ARCH_AMD64
+            int64_t offset = (intptr_t)shift;            
+#else
+            int64_t offset = (int64_t)((intptr_t)pStart)-((int64_t)((intptr_t)dlip.dli_saddr)+5);
+#endif
+            if ( (RT_HIDWORD(offset) != 0) && (RT_HIDWORD(offset) != 0xFFFFFFFF)
+                 && (((int32_t)offset > INT32_MAX) || ((int32_t)offset < INT32_MIN)))
+            {
+                crDebug("Can't patch offset is too big.(%s)", psFuncName);
+                return;
+            }
         }
 
         patch[0] = 0xE9;
@@ -221,10 +226,6 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
 # endif
         pStart = &patch[0];
         pEnd = &patch[5];
-#else
-        crDebug("Can't patch size too small.(%s)", psFuncName);
-        return;
-#endif //ifdef RT_ARCH_AMD64
     }
 
     /* Get aligned start adress we're going to patch*/

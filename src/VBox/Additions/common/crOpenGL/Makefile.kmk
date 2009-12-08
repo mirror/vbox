@@ -54,8 +54,8 @@ if1of ($(KBUILD_TARGET),linux solaris)
 
  # Only Solaris right now needs C stubs because I can't figure out how to
  # generate the GOT based relocation ASM yet.
- ifeq ($(KBUILD_TARGET),solaris)
-  ifdef VBoxOGL_FAKEDRI
+ ifdef VBoxOGL_FAKEDRI
+  if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),solaris.x86 solaris.amd64 linux.x86)
    VBOX_OGL_GLX_USE_CSTUBS = 1
   endif
  endif
@@ -86,12 +86,16 @@ if1of ($(KBUILD_TARGET),linux solaris)
 	$(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.13
  VBoxOGL_DEFS     += VBOX_NO_NATIVEGL
 endif
+
 ifdef VBoxOGL_DRI
  VBoxOGL_DEFS          += VBOXOGL_DRI IN_DRI_DRIVER
 else ifdef VBoxOGL_FAKEDRI
  VBoxOGL_DEFS          += VBOXOGL_FAKEDRI
- VBoxOGL_DEFS.solaris  += VBOX_OGL_GLX_USE_CSTUBS
+ ifdef VBOX_OGL_GLX_USE_CSTUBS
+  VBoxOGL_DEFS         += VBOX_OGL_GLX_USE_CSTUBS
+ endif
 endif
+
 ifeq ($(KBUILD_TARGET),win)
 #fixme?, INTERMEDIATES.win ain't working
  VBoxOGL_INTERMEDIATES += $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h
@@ -131,16 +135,18 @@ if1of ($(KBUILD_TARGET),linux solaris)
  else ifdef VBoxOGL_FAKEDRI
   VBoxOGL_SOURCES += \
  	fakedri_drv.c
-  VBoxOGL_SOURCES.linux += \
- 	$(VBOX_PATH_CROGL_GENFILES)/linux_glxapi_exports.asm \
- 	$(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm
   ifndef VBOX_OGL_GLX_USE_CSTUBS
    VBoxOGL_SOURCES.solaris += \
  	$(VBOX_PATH_CROGL_GENFILES)/solaris_glxapi_exports.asm \
  	$(VBOX_PATH_CROGL_GENFILES)/solaris_exports_dri.asm
+  VBoxOGL_SOURCES.linux += \
+ 	$(VBOX_PATH_CROGL_GENFILES)/linux_glxapi_exports.asm \
+ 	$(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm
   else
    VBoxOGL_SOURCES.solaris += \
   	$(VBOX_PATH_CROGL_GENFILES)/solaris_exports.c  
+  VBoxOGL_SOURCES.linux += \
+  	$(VBOX_PATH_CROGL_GENFILES)/linux_exports.c  
   endif
  else
   VBoxOGL_SOURCES.linux += \
@@ -294,10 +300,16 @@ $(VBOX_PATH_CROGL_GENFILES)/linux_glxapi_exports.asm: $(PATH_SUB_CURRENT)/Linux_
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $<
   endif
  else
-  # @todo linux if required
   ifeq ($(KBUILD_TARGET),solaris)
 $(VBOX_PATH_CROGL_GENFILES)/solaris_exports.c: \
 		$(PATH_SUB_CURRENT)/SunOS_exports.py \
+		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
+		| $$(dir $$@)
+	$(call MSG_GENERATE,python,$@,$<)
+	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+  else
+$(VBOX_PATH_CROGL_GENFILES)/linux_exports.c: \
+		$(PATH_SUB_CURRENT)/Linux_exports.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
