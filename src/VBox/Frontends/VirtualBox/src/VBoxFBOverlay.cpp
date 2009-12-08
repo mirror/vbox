@@ -3723,6 +3723,20 @@ int VBoxGLWidget::vhwaSurfaceColorkeySet(struct _VBOXVHWACMD_SURF_COLORKEY_SET *
         pSurf->setDefaultSrcOverlayCKey(&ckey);
     }
 
+    /* ensure all overlays programs & display lists are updated */
+    const OverlayList & overlays = mDisplay.overlays();
+    for (OverlayList::const_iterator it = overlays.begin();
+         it != overlays.end(); ++ it)
+    {
+        VBoxVHWASurfList * pSurfList = *it;
+        const SurfList & surfaces = pSurfList->surfaces();
+        for (SurfList::const_iterator sit = surfaces.begin();
+             sit != surfaces.end(); ++ sit)
+        {
+            VBoxVHWASurfaceBase *pOverlaySurf = *sit;
+            pOverlaySurf->setVisibilityReinitFlag();
+        }
+    }
     return VINF_SUCCESS;
 }
 
@@ -5614,6 +5628,8 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
             VBOXVHWACMD_SURF_COLORKEY_SET * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_COLORKEY_SET);
             makeCurrent();
             pCmd->rc = mpOverlayWidget->vhwaSurfaceColorkeySet(pBody);
+            /* this is here to ensure we have color key changes picked up */
+            vboxDoCheckUpdateViewport();
             mNeedOverlayRepaint = true;
         } break;
         case VBOXVHWACMD_TYPE_QUERY_INFO1:
