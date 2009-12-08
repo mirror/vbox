@@ -121,16 +121,13 @@ int main(int argc, char *argv[])
         /*
          * Create the temporary buffers.
          */
-        int i;
-
-        for (i=0; i < NR_TASKS; i++)
+        for (unsigned i=0; i < NR_TASKS; i++)
         {
             g_AsyncCompletionTasksBuffer[i] = (uint8_t *)RTMemAllocZ(BUFFER_SIZE);
             if (!g_AsyncCompletionTasksBuffer[i])
             {
                 RTPrintf(TESTCASE ": out of memory!\n");
-                rcRet++;
-                return rcRet;
+                return ++rcRet;
             }
         }
 
@@ -140,9 +137,7 @@ int main(int argc, char *argv[])
         if (RT_FAILURE(rc))
         {
             RTPrintf(TESTCASE ": Error while creating the destination!! rc=%d\n", rc);
-            return 1;
-            rcRet++;
-            return rcRet;
+            return ++rcRet;
         }
         RTFileClose(FileTmp);
 
