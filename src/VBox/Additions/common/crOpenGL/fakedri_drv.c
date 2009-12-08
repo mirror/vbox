@@ -201,19 +201,17 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
         crDebug("Inserting jmp[q] with shift %p instead", shift);
 # endif
 
-        {
 #ifdef RT_ARCH_AMD64
-            int64_t offset = (intptr_t)shift;            
-#else
-            int64_t offset = (int64_t)((intptr_t)pStart)-((int64_t)((intptr_t)dlip.dli_saddr)+5);
-#endif
-            if ( (RT_HIDWORD(offset) != 0) && (RT_HIDWORD(offset) != 0xFFFFFFFF)
-                 && (((int32_t)offset > INT32_MAX) || ((int32_t)offset < INT32_MIN)))
+        {
+            int64_t offset = (intptr_t)shift;
+
+            if (offset>INT32_MAX || offset<INT32_MIN)
             {
                 crDebug("Can't patch offset is too big.(%s)", psFuncName);
                 return;
             }
         }
+#endif
 
         patch[0] = 0xE9;
         patch[1] = ((char*)&shift)[0];
