@@ -538,8 +538,8 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
 
                 if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pCur->Core))
                 {
-                    PGMPHYSHANDLERTYPE  enmType = pCur->enmType;
-                    RTGCPHYS            GCPhysLast = pCur->Core.KeyLast - GCPhys + 1;
+                    PGMPHYSHANDLERTYPE  enmType       = pCur->enmType;
+                    RTGCPHYS            cb            = GCPhysLast - GCPhys + 1;
                     bool                fHasHCHandler = !!pCur->pfnHandlerR3;
 
                     /*
@@ -549,11 +549,11 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
                     pgmUnlock(pVM);
 
 #ifndef IN_RING3
-                    REMNotifyHandlerPhysicalModify(pVM, enmType, GCPhysCurrent, GCPhys,
-                                                   GCPhysLast - GCPhys + 1, fHasHCHandler, fRestoreAsRAM);
+                    REMNotifyHandlerPhysicalModify(pVM, enmType, GCPhysCurrent, GCPhys, cb,
+                                                   fHasHCHandler, fRestoreAsRAM);
 #else
-                    REMR3NotifyHandlerPhysicalModify(pVM, enmType, GCPhysCurrent, GCPhys,
-                                                     GCPhysLast, fHasHCHandler, fRestoreAsRAM);
+                    REMR3NotifyHandlerPhysicalModify(pVM, enmType, GCPhysCurrent, GCPhys, cb,
+                                                     fHasHCHandler, fRestoreAsRAM);
 #endif
                     PGM_INVL_ALL_VCPU_TLBS(pVM);
                     Log(("PGMHandlerPhysicalModify: GCPhysCurrent=%RGp -> GCPhys=%RGp GCPhysLast=%RGp\n",
