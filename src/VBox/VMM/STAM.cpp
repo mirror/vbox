@@ -253,7 +253,7 @@ VMMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
     static bool fRegisteredCmds = false;
     if (!fRegisteredCmds)
     {
-        int rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
+        rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
         if (RT_SUCCESS(rc))
             fRegisteredCmds = true;
     }
