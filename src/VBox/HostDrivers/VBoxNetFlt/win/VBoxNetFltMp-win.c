@@ -61,6 +61,7 @@ typedef struct {
 
 static PUCHAR vboxNetFltWinMpDbgGetOidName(ULONG oid);
 
+#ifdef VBOXNETFLT_WITH_IOCTL_SECURITY
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -135,6 +136,7 @@ static NTSTATUS vboxNetFltWinSetSecurity(PNDIS_STRING pDevName)
 
     return Status;
 }
+#endif
 /**
  * Register an ioctl interface - a device object to be used for this
  * purpose is created by NDIS when we call NdisMRegisterDevice.
@@ -209,6 +211,7 @@ vboxNetFltWinPtRegisterDevice(
         Assert(Status == NDIS_STATUS_SUCCESS);
         if(Status == NDIS_STATUS_SUCCESS)
         {
+#ifdef VBOXNETFLT_WITH_IOCTL_SECURITY
             /* NdisMRegisterDevice does not offers us the ability to set security attributes */
             /* need to do this "manualy" for the device to be accessible by the non-privileged users */
             Status = vboxNetFltWinSetSecurity(&DeviceLinkUnicodeString);
@@ -219,6 +222,7 @@ vboxNetFltWinPtRegisterDevice(
                 /* ignore the failure */
                 Status = NDIS_STATUS_SUCCESS;
             }
+#endif
 
             Status = ObReferenceObjectByPointer(g_pControlDeviceObject, FILE_READ_DATA, *IoFileObjectType, KernelMode);
             Assert(Status == NDIS_STATUS_SUCCESS);

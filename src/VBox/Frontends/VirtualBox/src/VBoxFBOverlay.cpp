@@ -2459,6 +2459,22 @@ int VBoxVHWASurfaceBase::createDisplay(VBoxVHWASurfaceBase *pPrimary, GLuint *pD
     if(pPrimary)
     {
         pProgram = calcProgram(pPrimary);
+        if(pProgram)
+        {
+            const VBoxVHWAColorKey *pResSrcCKey = getActiveSrcOverlayCKey();
+            const VBoxVHWAColorKey *pResDstCKey = getActiveDstOverlayCKey(pPrimary);
+
+            pProgram->start();
+            if(pResSrcCKey)
+            {
+                VBoxVHWASurfaceBase::setCKey(pProgram, &colorFormat(), pResSrcCKey, false);
+            }
+            if(pResDstCKey)
+            {
+                VBoxVHWASurfaceBase::setCKey(pProgram, &pPrimary->colorFormat(), pResDstCKey, true);
+            }
+            pProgram->stop();
+        }
     }
 
     glGetError(); /* clear the err flag */
@@ -3438,36 +3454,8 @@ int VBoxGLWidget::vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd)
 
 int VBoxGLWidget::vhwaSurfaceBlt(struct _VBOXVHWACMD_SURF_BLT *pCmd)
 {
-    /**/
     Q_UNUSED(pCmd);
     return VERR_NOT_IMPLEMENTED;
-//    VBoxVHWASurfaceBase *pDstSurf = (VBoxVHWASurfaceBase*)pCmd->u.in.hDstSurf;
-//    VBoxVHWASurfaceBase *pSrcSurf = (VBoxVHWASurfaceBase*)pCmd->u.in.hSrcSurf;
-//    VBOXQGLLOG_ENTER(("pDstSurf (0x%x), pSrcSurf (0x%x)\n",pDstSurf,pSrcSurf));
-//    QRect dstRect = VBOXVHWA_CONSTRUCT_QRECT_FROM_RECTL(&pCmd->u.in.dstRect);
-//    QRect srcRect = VBOXVHWA_CONSTRUCT_QRECT_FROM_RECTL(&pCmd->u.in.srcRect);
-//    vboxCheckUpdateAddress (pSrcSurf, pCmd->u.in.offSrcSurface);
-//    vboxCheckUpdateAddress (pDstSurf, pCmd->u.in.offDstSurface);
-////    pDstSurf->makeCurrent();
-////    const VBoxVHWAColorKey DstCKey, *pDstCKey = NULL;
-////    const VBoxVHWAColorKey SrcCKey, *pSrcCKey = NULL;
-////    if(pCmd->u.in.flags & VBOXVHWA_BLT_KEYSRCOVERRIDE)
-////    {
-////        pSrcCKey = &
-////    }
-////    if(pCmd->u.in.flags & VBOXVHWA_BLT_KEYDESTOVERRIDE)
-////    {
-////
-////    }
-//    if(pCmd->u.in.xUpdatedSrcMemValid)
-//    {
-//        QRect r = VBOXVHWA_CONSTRUCT_QRECT_FROM_RECTL(&pCmd->u.in.xUpdatedSrcMemRect);
-//        pSrcSurf->updatedMem(&r);
-//    }
-//
-//    return pDstSurf->blt(&dstRect, pSrcSurf, &srcRect,
-//            pCmd->u.in.flags & VBOXVHWA_BLT_KEYSRCOVERRIDE ? &VBoxVHWAColorKey(pCmd->u.in.desc.SrcCK.high, pCmd->u.in.desc.SrcCK.low) : NULL,
-//            pCmd->u.in.flags & VBOXVHWA_BLT_KEYDESTOVERRIDE ? &VBoxVHWAColorKey(pCmd->u.in.desc.DstCK.high, pCmd->u.in.desc.DstCK.low) : NULL);
 }
 
 int VBoxGLWidget::vhwaSurfaceFlip(struct _VBOXVHWACMD_SURF_FLIP *pCmd)
@@ -3478,8 +3466,7 @@ int VBoxGLWidget::vhwaSurfaceFlip(struct _VBOXVHWACMD_SURF_FLIP *pCmd)
     vboxCheckUpdateAddress (pCurrSurf, pCmd->u.in.offCurrSurface);
     vboxCheckUpdateAddress (pTargSurf, pCmd->u.in.offTargSurface);
 
-//    Assert(pTargSurf->isYInverted());
-//    Assert(!pCurrSurf->isYInverted());
+
     if(pCmd->u.in.xUpdatedTargMemValid)
     {
         QRect r = VBOXVHWA_CONSTRUCT_QRECT_FROM_RECTL_WH(&pCmd->u.in.xUpdatedTargMemRect);
@@ -3492,14 +3479,21 @@ int VBoxGLWidget::vhwaSurfaceFlip(struct _VBOXVHWACMD_SURF_FLIP *pCmd)
     pCurrSurf->cFlipsCurr++;
     pTargSurf->cFlipsTarg++;
 #endif
-//    mDisplay.flip(pTargSurf, pCurrSurf);
-//    Assert(!pTargSurf->isYInverted());
-//    Assert(pCurrSurf->isYInverted());
+
     return VINF_SUCCESS;
 }
 
 void VBoxGLWidget::vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBoxVHWASurfaceBase *pSrcSurf, struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmd)
 {
+    /* get old values first to check whether we need to re-init display and program values */
+    bool bHadSrcCKey = false, bHadDstCKey = false;
+
+    if(pDstSurf)
+    {
+        bHadSrcCKey = !!(pSrcSurf->getActiveSrcOverlayCKey());
+        bHadDstCKey = !!(pSrcSurf->getActiveDstOverlayCKey(pDstSurf));
+    }
+
     if(pCmd->u.in.flags & VBOXVHWA_OVER_KEYDEST)
     {
         VBOXQGLLOG((", KEYDEST"));
@@ -3575,13 +3569,16 @@ void VBoxGLWidget::vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBo
         const VBoxVHWAColorKey *pResSrcCKey = pSrcSurf->getActiveSrcOverlayCKey();
         const VBoxVHWAColorKey *pResDstCKey = pSrcSurf->getActiveDstOverlayCKey(pDstSurf);
 
-        /* @todo: may need to update glDisplayList here !! */
-        VBoxVHWAGlProgramVHWA *pProgram = pSrcSurf->getProgram(pDstSurf);
-        if(pProgram)
+        if(bHadSrcCKey != !!pResSrcCKey || bHadDstCKey != !!pResDstCKey)
         {
-            pProgram->start();
-            if(pResSrcCKey || pResDstCKey)
+            pSrcSurf->setVisibilityReinitFlag();
+        }
+        else if(pResSrcCKey || pResDstCKey)
+        {
+            VBoxVHWAGlProgramVHWA *pProgram = pSrcSurf->getProgram(pDstSurf);
+            if(pProgram)
             {
+                pProgram->start();
                 if(pResSrcCKey)
                 {
                     VBoxVHWASurfaceBase::setCKey(pProgram, &pSrcSurf->colorFormat(), pResSrcCKey, false);
@@ -3590,28 +3587,12 @@ void VBoxGLWidget::vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBo
                 {
                     VBoxVHWASurfaceBase::setCKey(pProgram, &pDstSurf->colorFormat(), pResDstCKey, true);
                 }
-
+                pProgram->stop();
             }
-
-            switch(pSrcSurf->fourcc())
-            {
-                case 0:
-                case FOURCC_AYUV:
-                case FOURCC_YV12:
-                    break;
-                case FOURCC_UYVY:
-                case FOURCC_YUY2:
-                    break;
-                default:
-                    Assert(0);
-                    break;
-            }
-
-            pProgram->stop();
         }
 
         pSrcSurf->setRects(dstRect, srcRect);
-        pSrcSurf->setVisibilityReinitFlag();
+
     }
 }
 
@@ -4191,7 +4172,6 @@ void VBoxGLWidget::vhwaSaveExecVoid(struct SSMHANDLE * pSSM)
 {
     VBOXQGL_SAVE_START(pSSM);
     int rc = SSMR3PutU32(pSSM, 0);         AssertRC(rc); /* 0 primaries */
-    rc = SSMR3PutU32(pSSM, 0);         AssertRC(rc); /* 0 overlays */
     VBOXQGL_SAVE_STOP(pSSM);
 }
 
