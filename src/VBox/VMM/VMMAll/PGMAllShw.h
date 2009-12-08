@@ -215,9 +215,9 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     PSHWPT          pPT;
     if (!(Pde.u & PGM_PDFLAGS_MAPPING))
     {
-        int rc = PGM_HCPHYS_2_PTR(pVM, Pde.u & SHW_PDE_PG_MASK, &pPT);
-        if (RT_FAILURE(rc))
-            return rc;
+        int rc2 = PGM_HCPHYS_2_PTR(pVM, Pde.u & SHW_PDE_PG_MASK, &pPT);
+        if (RT_FAILURE(rc2))
+            return rc2;
     }
     else /* mapping: */
     {
