@@ -86,8 +86,8 @@ DECLCALLBACK(int) tstTMWorker(PVM pVM, RTTEST hTest)
     PTMTIMER apTimers[5];
     for (size_t i = 0; i < RT_ELEMENTS(apTimers); i++)
     {
-        int rc = TMR3TimerCreateInternal(pVM, i & 1 ? TMCLOCK_VIRTUAL :  TMCLOCK_VIRTUAL_SYNC,
-                                         tstTMDummyCallback, NULL, "test timer",  &apTimers[i]);
+        rc = TMR3TimerCreateInternal(pVM, i & 1 ? TMCLOCK_VIRTUAL :  TMCLOCK_VIRTUAL_SYNC,
+                                     tstTMDummyCallback, NULL, "test timer",  &apTimers[i]);
         RTTEST_CHECK_RET(hTest, RT_SUCCESS(rc), rc);
     }
 
