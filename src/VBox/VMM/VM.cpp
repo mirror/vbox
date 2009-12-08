@@ -1987,18 +1987,18 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOff(PVM pVM, PVMCPU pVCpu, void *pvUs
      */
     if (pVCpu->idCpu == pVM->cCpus - 1)
     {
-        int rc = vmR3TrySetState(pVM, "VMR3PowerOff", 10,
-                                 VMSTATE_POWERING_OFF,    VMSTATE_RUNNING,
-                                 VMSTATE_POWERING_OFF,    VMSTATE_SUSPENDED,
-                                 VMSTATE_POWERING_OFF,    VMSTATE_DEBUGGING,
-                                 VMSTATE_POWERING_OFF,    VMSTATE_LOAD_FAILURE,
-                                 VMSTATE_POWERING_OFF,    VMSTATE_GURU_MEDITATION,
-                                 VMSTATE_POWERING_OFF,    VMSTATE_FATAL_ERROR,
-                                 VMSTATE_POWERING_OFF,    VMSTATE_CREATED, /** @todo update the diagram! */
-                                 VMSTATE_POWERING_OFF_LS, VMSTATE_RUNNING_LS,
-                                 VMSTATE_POWERING_OFF_LS, VMSTATE_DEBUGGING_LS,
-                                 VMSTATE_POWERING_OFF_LS, VMSTATE_GURU_MEDITATION_LS,
-                                 VMSTATE_POWERING_OFF_LS, VMSTATE_FATAL_ERROR_LS);
+        int rc = vmR3TrySetState(pVM, "VMR3PowerOff", 11,
+                                 VMSTATE_POWERING_OFF,    VMSTATE_RUNNING,           /* 1 */
+                                 VMSTATE_POWERING_OFF,    VMSTATE_SUSPENDED,         /* 2 */
+                                 VMSTATE_POWERING_OFF,    VMSTATE_DEBUGGING,         /* 3 */
+                                 VMSTATE_POWERING_OFF,    VMSTATE_LOAD_FAILURE,      /* 4 */
+                                 VMSTATE_POWERING_OFF,    VMSTATE_GURU_MEDITATION,   /* 5 */
+                                 VMSTATE_POWERING_OFF,    VMSTATE_FATAL_ERROR,       /* 6 */
+                                 VMSTATE_POWERING_OFF,    VMSTATE_CREATED,           /* 7 */   /** @todo update the diagram! */
+                                 VMSTATE_POWERING_OFF_LS, VMSTATE_RUNNING_LS,        /* 8 */
+                                 VMSTATE_POWERING_OFF_LS, VMSTATE_DEBUGGING_LS,      /* 9 */
+                                 VMSTATE_POWERING_OFF_LS, VMSTATE_GURU_MEDITATION_LS,/* 10 */
+                                 VMSTATE_POWERING_OFF_LS, VMSTATE_FATAL_ERROR_LS);   /* 11 */
         if (RT_FAILURE(rc))
             return rc;
         if (rc >= 7)
@@ -2027,8 +2027,6 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOff(PVM pVM, PVMCPU pVCpu, void *pvUs
         if (enmVMState != VMSTATE_GURU_MEDITATION)
         {
             /** @todo SMP support? */
-            PVMCPU pVCpu = VMMGetCpu(pVM);
-
             /** @todo make the state dumping at VMR3PowerOff optional. */
             RTLogRelPrintf("****************** Guest state at power off ******************\n");
             DBGFR3Info(pVM, "cpumguest", "verbose", DBGFR3InfoLogRelHlp());
@@ -2197,14 +2195,14 @@ VMMR3DECL(int) VMR3Destroy(PVM pVM)
         /* Terminate the other EMTs. */
         for (VMCPUID idCpu = 1; idCpu < pVM->cCpus; idCpu++)
         {
-            int rc = VMR3ReqCallWaitU(pUVM, idCpu, (PFNRT)vmR3Destroy, 1, pVM);
+            rc = VMR3ReqCallWaitU(pUVM, idCpu, (PFNRT)vmR3Destroy, 1, pVM);
             AssertLogRelRC(rc);
         }
     }
     else
     {
         /* vmR3Destroy on all EMTs, ending with EMT(0). */
-        int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ALL_REVERSE, (PFNRT)vmR3Destroy, 1, pVM);
+        rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ALL_REVERSE, (PFNRT)vmR3Destroy, 1, pVM);
         AssertLogRelRC(rc);
 
         /* Wait for EMTs and destroy the UVM. */
@@ -2433,7 +2431,7 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
      */
     for (unsigned i = 0; i < 10; i++)
     {
-        PVMREQ pReqHead = (PVMREQ)ASMAtomicXchgPtr((void *volatile *)&pUVM->vm.s.pReqs, NULL);
+        PVMREQ pReqHead = (PVMREQ)ASMAtomicXchgPtr((void * volatile *)&pUVM->vm.s.pReqs, NULL);
         AssertMsg(!pReqHead, ("This isn't supposed to happen! VMR3Destroy caller has to serialize this.\n"));
         if (!pReqHead)
             break;
@@ -2452,13 +2450,13 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
     /*
      * Now all queued VCPU requests (again, there shouldn't be any).
      */
-    for (VMCPUID i = 0; i < pUVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pUVM->cCpus; idCpu++)
     {
-        PUVMCPU pUVCpu = &pUVM->aCpus[i];
+        PUVMCPU pUVCpu = &pUVM->aCpus[idCpu];
 
         for (unsigned i = 0; i < 10; i++)
         {
-            PVMREQ pReqHead = (PVMREQ)ASMAtomicXchgPtr((void *volatile *)&pUVCpu->vm.s.pReqs, NULL);
+            PVMREQ pReqHead = (PVMREQ)ASMAtomicXchgPtr((void * volatile *)&pUVCpu->vm.s.pReqs, NULL);
             AssertMsg(!pReqHead, ("This isn't supposed to happen! VMR3Destroy caller has to serialize this.\n"));
             if (!pReqHead)
                 break;
