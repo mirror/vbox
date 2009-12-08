@@ -1627,7 +1627,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_
         rcStrict = IOMIOPortRead(pVM, uPort, &u32Value, cbTransfer);
         if (!IOM_SUCCESS(rcStrict))
             break;
-        int rc2 = iomRamWrite(pVCpu, pRegFrame, GCPtrDst, &u32Value, cbTransfer);
+        rc2 = iomRamWrite(pVCpu, pRegFrame, GCPtrDst, &u32Value, cbTransfer);
         Assert(rc2 == VINF_SUCCESS); NOREF(rc2);
         GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + cbTransfer);
         pRegFrame->rdi += cbTransfer;
