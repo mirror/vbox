@@ -386,7 +386,7 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
      *
      *  Default false for Mac OS X and Windows due to the higher risk of conflicts with other hypervisors.
      */
-    rc = CFGMR3QueryBoolDef(pHWVirtExt, "Exclusive", &pVM->hwaccm.s.fGlobalInit, 
+    rc = CFGMR3QueryBoolDef(pHWVirtExt, "Exclusive", &pVM->hwaccm.s.fGlobalInit,
 #if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
                             false
 #else
@@ -850,7 +850,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT)
-                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT\n"));               
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT\n"));
 
                 val = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.disallowed0;
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
@@ -870,7 +870,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE)
                     LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE *must* be set\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT)
-                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT *must* be set\n"));               
+                    LogRel(("HWACCM:    VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT *must* be set\n"));
             }
 
             LogRel(("HWACCM: MSR_IA32_VMX_ENTRY_CTLS       = %RX64\n", pVM->hwaccm.s.vmx.msr.vmx_entry.u));
@@ -1207,7 +1207,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_SSE_3_5_DISABLE)
                 LogRel(("HWACCM:    AMD_CPUID_SVM_FEATURE_EDX_SSE_3_5_DISABLE\n"));
             if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER)
-                LogRel(("HWACCM:    AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER\n"));           
+                LogRel(("HWACCM:    AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER\n"));
 
             /* Only try once. */
             pVM->hwaccm.s.fInitialized = true;
@@ -1645,7 +1645,6 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
 {
     VMCPUID      idCpu  = (VMCPUID)(uintptr_t)pvUser;
     PCPUMCTX     pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
-    RTGCPTR      oldrip = pCtx->rip;
     PDISCPUSTATE pDis   = &pVCpu->hwaccm.s.DisState;
     unsigned     cbOp;
 
@@ -1670,7 +1669,8 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
     {
         uint8_t         aVMMCall[3] = { 0xf, 0x1, 0xd9};
         uint32_t        idx = pVM->hwaccm.s.cPatches;
-        PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.aPatches[idx];
+
+        pPatch = &pVM->hwaccm.s.aPatches[idx];
 
         rc = PGMPhysSimpleReadGCPtr(pVCpu, pPatch->aOpcode, pCtx->rip, cbOp);
         AssertRC(rc);
@@ -1833,9 +1833,10 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
         &&  cbOp >= 5)
     {
         uint32_t        idx = pVM->hwaccm.s.cPatches;
-        PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.aPatches[idx];
         uint8_t         aPatch[64];
         uint32_t        off = 0;
+
+        pPatch = &pVM->hwaccm.s.aPatches[idx];
 
 #ifdef LOG_ENABLED
         rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
