@@ -411,7 +411,7 @@ int pgmR3PoolInit(PVM pVM)
     static bool s_fRegisteredCmds = false;
     if (!s_fRegisteredCmds)
     {
-        int rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
+        rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
         if (RT_SUCCESS(rc))
             s_fRegisteredCmds = true;
     }
@@ -747,7 +747,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pV
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
     {
-        unsigned iPage = pRam->cb >> PAGE_SHIFT;
+        iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
             PGM_PAGE_SET_TRACKING(&pRam->aPages[iPage], 0);
     }
@@ -775,10 +775,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pV
 
     /* Clear the PGM_SYNC_CLEAR_PGM_POOL flag on all VCPUs to prevent redundant flushes. */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
-        pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
-    }
+        pVM->aCpus[idCpu].pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
 
     pPool->cPresent = 0;
     pgmUnlock(pVM);
