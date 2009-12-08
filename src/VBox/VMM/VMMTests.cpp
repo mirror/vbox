@@ -452,8 +452,8 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         if (pHyperCtx->reg)                                                             \
         {                                                                               \
             DBGFSELINFO selInfo;                                                        \
-            int rc = SELMR3GetShadowSelectorInfo(pVM, pHyperCtx->reg, &selInfo);        \
-            AssertRC(rc);                                                               \
+            int rc2 = SELMR3GetShadowSelectorInfo(pVM, pHyperCtx->reg, &selInfo);       \
+            AssertRC(rc2);                                                              \
                                                                                         \
             pHyperCtx->reg##Hid.u64Base              = selInfo.GCPtrBase;               \
             pHyperCtx->reg##Hid.u32Limit             = selInfo.cbLimit;                 \
