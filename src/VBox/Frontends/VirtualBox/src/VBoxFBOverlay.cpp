@@ -439,7 +439,7 @@ int VBoxVHWAGlShader::init()
     {
         length[i] = -1;
         rc = maComponents[i]->init();
-        Assert(RT_SUCCESS(rc));
+        AssertRC(rc);
         if(RT_FAILURE(rc))
             return rc;
         sources[i] = maComponents[i]->contents();
@@ -551,7 +551,7 @@ int VBoxVHWAGlProgram::init()
     for(int i = 0; i < mcShaders; i++)
     {
         int rc = mShaders[i].init();
-        Assert(RT_SUCCESS(rc));
+        AssertRC(rc);
         if(RT_FAILURE(rc))
         {
             break;
@@ -4403,7 +4403,7 @@ int VBoxGLWidget::vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd)
             NULL,            /* Done load callback, optional. */
             this             /* User argument. */
             );
-    Assert(RT_SUCCESS(rc));
+    AssertRC(rc);
     return rc;
 }
 
@@ -5100,15 +5100,15 @@ void VBoxQGLOverlay::initGl()
 {
 	if(mpOverlayWidget)
 		return;
-	
+
     mpOverlayWidget = new VBoxGLWidget (mView, mView->viewport());
-	
+
     VBoxGLContext *pc = (VBoxGLContext*)mpOverlayWidget->context();
     pc->allowDoneCurrent(false);
-	
+
     mOverlayWidgetVisible = true; /* to ensure it is set hidden with vboxShowOverlay */
     vboxShowOverlay(false);
-	
+
     mpOverlayWidget->setMouseTracking(true);
 }
 
@@ -5726,7 +5726,7 @@ int VBoxQGLOverlay::vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd)
             NULL,            /* Done load callback, optional. */
             this             /* User argument. */
             );
-    Assert(RT_SUCCESS(rc));
+    AssertRC(rc);
     return rc;
 }
 
