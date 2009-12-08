@@ -682,15 +682,14 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 
         if (ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], iTrap))
         {
-            PVBOXIDTE   pIdte = &pVM->trpm.s.aIdt[iTrap];
-            RTGCPTR     pHandler = VBOXIDTE_OFFSET(*pIdte);
+            PVBOXIDTE   pIdteCur = &pVM->trpm.s.aIdt[iTrap];
+            RTGCPTR     pHandler = VBOXIDTE_OFFSET(*pIdteCur);
 
             Log(("TRPMR3Relocate: *iGate=%2X Handler %RGv -> %RGv\n", iTrap, pHandler, pHandler + offDelta));
             pHandler += offDelta;
 
-            pIdte->Gen.u16OffsetHigh = pHandler >> 16;
-            pIdte->Gen.u16OffsetLow  = pHandler & 0xFFFF;
-
+            pIdteCur->Gen.u16OffsetHigh = pHandler >> 16;
+            pIdteCur->Gen.u16OffsetLow  = pHandler & 0xFFFF;
         }
     }
 
