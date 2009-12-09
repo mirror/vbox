@@ -1497,7 +1497,11 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
      */
     if (    pszModule
         &&  *pszModule
+#if defined(VBOX_WITH_NATIVE_R0_LOADER) && defined(RT_OS_WINDOWS)
+        &&  strcmp(pszModule, "VBoxDrv.sys")
+#else
         &&  strcmp(pszModule, "SUPR0.dll")
+#endif
         &&  strcmp(pszModule, "VMMR0.r0"))
     {
         AssertMsgFailed(("%s is importing from %s! (expected 'SUPR0.dll' or 'VMMR0.r0', case-sensitiv)\n", pvUser, pszModule));
