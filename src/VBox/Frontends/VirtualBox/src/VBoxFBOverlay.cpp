@@ -340,12 +340,8 @@ public:
         mInitialized(false)
     {}
 
-//    virtual ~VBoxVHWAGlShaderComponent();
-
 
     int init();
-//    virtual int initUniforms(class VBoxVHWAGlProgram * pProgram){}
-//    void uninit();
 
     const char * contents() { return mSource.constData(); }
     bool isInitialized() { return mInitialized; }
@@ -358,7 +354,6 @@ private:
 
 int VBoxVHWAGlShaderComponent::init()
 {
-//    Assert(!isInitialized());
     if(isInitialized())
         return VINF_ALREADY_INITIALIZED;
 
@@ -1816,7 +1811,6 @@ void VBoxVHWATextureNP2RectPBO::load()
     Assert(buf);
     if(buf)
     {
-    //  updateBuffer((uchar*)buf, &mRect);
         memcpy(buf, mAddress, memSize());
 
         bool unmapped = vboxglUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
@@ -1826,239 +1820,100 @@ void VBoxVHWATextureNP2RectPBO::load()
     vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 }
 
-#if 0
-void VBoxVHWASurfaceBase::synch(const QRect * aRect)
+uchar* VBoxVHWATextureNP2RectPBOMapped::mapAlignedBuffer()
 {
-    synchFB(aRect);
-    synchTex(aRect);
-    synchMem(aRect);
+    Assert(!mpMappedAllignedBuffer);
+    if(!mpMappedAllignedBuffer)
+    {
+        VBOXQGL_CHECKERR(
+                vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, mPBO);
+            );
+
+        uchar* buf;
+        VBOXQGL_CHECKERR(
+                buf = (uchar*)vboxglMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_READ_WRITE);
+        );
+
+        Assert(buf);
+
+        VBOXQGL_CHECKERR(
+                vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+            );
+
+        mpMappedAllignedBuffer = (uchar*)alignBuffer(buf);
+
+        mcbOffset = calcOffset(buf, mpMappedAllignedBuffer);
+    }
+    return mpMappedAllignedBuffer;
 }
 
-void VBoxVHWASurfaceBase::synchFB(const QRect * pRect)
+void   VBoxVHWATextureNP2RectPBOMapped::unmapBuffer()
 {
-    Assert(isYInverted());
-
-    if(pRect)
+    Assert(mpMappedAllignedBuffer);
+    if(mpMappedAllignedBuffer)
     {
-        Assert(mRect.contains(*pRect));
+        VBOXQGL_CHECKERR(
+                vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, mPBO);
+        );
+
+        bool unmapped;
+        VBOXQGL_CHECKERR(
+                unmapped = vboxglUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+                );
+
+        Assert(unmapped);
+
+        VBOXQGL_CHECKERR(
+                vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        );
+
+        mpMappedAllignedBuffer = NULL;
     }
+}
 
-    synchTexMem(pRect);
-
-    if(mUpdateTex2FBRect.isClear())
-        return;
-
-    if(pRect && !mUpdateTex2FBRect.rect().intersects(*pRect))
-        return;
-
-    mState->makeCurrent(this);
+void VBoxVHWATextureNP2RectPBOMapped::load()
+{
+    VBoxVHWATextureNP2Rect::load();
 
     VBOXQGL_CHECKERR(
-            glBindTexture(GL_TEXTURE_2D, mTexture);
-            );
-
-    VBoxVHWAGlProgramMngr * pMngr = getGlProgramMngr();
-    pMngr->stopCurrentProgram();
-
-    doTex2FB(&mUpdateTex2FBRect.rect(), &mUpdateTex2FBRect.rect());
-
-    mUpdateTex2FBRect.clear();
-    Assert(mUpdateTex2FBRect.isClear());
-}
-
-void VBoxVHWASurfaceBase::synchMem(const QRect * pRect)
-{
-    if(pRect)
-    {
-        Assert(mRect.contains(*pRect));
-    }
-
-    if(mUpdateFB2MemRect.isClear())
-        return;
-
-    if(pRect && !mUpdateFB2MemRect.rect().intersects(*pRect))
-        return;
-
-    mState->makeYInvertedCurrent(this);
-//    mState->makeCurrent(this);
-
-    uchar * address = pointAddress(mUpdateFB2MemRect.rect().x(), mUpdateFB2MemRect.rect().y());
+            vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, mPBO);
+        );
 
     VBOXQGL_CHECKERR(
-            glPixelStorei(GL_PACK_ROW_LENGTH, mRect.width());
-            );
+            vboxglBufferData(GL_PIXEL_UNPACK_BUFFER, mcbActualBufferSize, NULL, GL_STREAM_DRAW);
+        );
+
+    vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+}
+
+void VBoxVHWATextureNP2RectPBOMapped::doUpdate(uchar * pAddress, const QRect * pRect)
+{
+    Q_UNUSED(pAddress);
+    Q_UNUSED(pRect);
+
     VBOXQGL_CHECKERR(
-            glReadPixels(
-                mUpdateFB2MemRect.rect().x(),
-                mUpdateFB2MemRect.rect().y(),
-                mUpdateFB2MemRect.rect().width(),
-                mUpdateFB2MemRect.rect().height(),
-                mColorFormat.format(),
-                mColorFormat.type(),
-                address);
-            );
+            vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, mPBO);
+    );
 
-    mUpdateFB2MemRect.clear();
-    Assert(mUpdateFB2TexRect.isClear());
+    if(mpMappedAllignedBuffer)
+    {
+        bool unmapped;
+        VBOXQGL_CHECKERR(
+                unmapped = vboxglUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+                );
+
+        Assert(unmapped);
+
+        mpMappedAllignedBuffer = NULL;
+    }
+
+    VBoxVHWATextureNP2Rect::doUpdate((uchar *)mcbOffset, &mRect);
+
+    VBOXQGL_CHECKERR(
+            vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    );
 }
 
-int VBoxVHWASurfaceBase::performBlt(const QRect * pDstRect, VBoxVHWASurfaceBase * pSrcSurface, const QRect * pSrcRect, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool blt)
-{
-//    pDstCKey = NULL;
-//    pSrcCKey = NULL;
-
-    GLuint tex = pSrcSurface->textureSynched(pSrcRect);
-
-    if(pDstCKey)
-    {
-        synchTex(pDstRect);
-    }
-
-    mState->makeCurrent(this, blt);
-
-    VBoxVHWAGlProgramMngr * pMngr = getGlProgramMngr();
-    VBoxVHWAGlProgramVHWA * pProgram = pMngr->getProgram(pSrcCKey != NULL, &pSrcSurface->colorFormat(), &colorFormat());
-    if(pProgram)
-    {
-        if(pSrcCKey != NULL)
-        {
-            pProgram->start();
-            setCKey(pProgram, &pSrcSurface->colorFormat(), pSrcCKey);
-
-            vboxglActiveTexture(GL_TEXTURE0);
-        }
-    }
-    else
-    {
-        pMngr->stopCurrentProgram();
-    }
-
-//    if(blt)
-    {
-        VBOXQGL_CHECKERR(
-                glBindTexture(GL_TEXTURE_2D, tex);
-                );
-
-        //TODO: setup strething params
-        GLsizei wdt = pSrcSurface->mTexRect.width();
-        GLsizei hgt = pSrcSurface->mTexRect.height();
-
-        VBOXQGL_CHECKERR(
-                glMatrixMode(GL_TEXTURE);
-                );
-        VBOXQGL_CHECKERR(
-                glPushMatrix();
-            );
-
-        VBoxGLWidget::doSetupMatrix(QSize(wdt, hgt), true);
-        VBOXQGL_CHECKERR(
-                glMatrixMode(GL_MODELVIEW);
-                );
-
-        doTex2FB(pDstRect, pSrcRect);
-
-        VBOXQGL_CHECKERR(
-                glMatrixMode(GL_TEXTURE);
-                );
-        VBOXQGL_CHECKERR(
-                glPopMatrix();
-                );
-        VBOXQGL_CHECKERR(
-                glMatrixMode(GL_MODELVIEW);
-                );
-    }
-//    else
-//    {
-//
-//    }
-
-    /* if dst color key */
-    /* setup ckey shader */
-    if(pDstCKey)
-    {
-        VBOXQGL_CHECKERR(
-                glBindTexture(GL_TEXTURE_2D, mTexture);
-                );
-        pProgram = pMngr->getProgram(true, NULL, NULL);
-        /* setup ckey values*/
-        setCKey(pProgram, &colorFormat(), pDstCKey);
-        pProgram->start();
-        doTex2FB(pDstRect, pDstRect);
-    }
-
-    return VINF_SUCCESS;
-}
-
-int VBoxVHWASurfaceBase::overlay(VBoxVHWASurfaceBase * pOverlaySurface)
-{
-    VBOXQGLLOG(("overlay src(0x%x) ", pOverlaySurface));
-    VBOXQGLLOG_QRECT("dst: ", &pOverlaySurface->mTargRect, "\n");
-    VBOXQGLLOG_QRECT("src: ", &pOverlaySurface->mSrcRect,  "\n");
-    VBOXQGLLOG_METHODTIME("time:");
-
-    Assert(!pOverlaySurface->isHidden());
-
-    if(pOverlaySurface->isHidden())
-    {
-        VBOXQGLLOG(("!!!hidden!!!\n"));
-        return VINF_SUCCESS;
-    }
-
-    const QRect * pSrcRect = &pOverlaySurface->mSrcRect;
-    const QRect * pDstRect = &pOverlaySurface->mTargRect;
-    const VBoxVHWAColorKey * pSrcCKey = pOverlaySurface->srcOverlayCKey();
-    /* we use src (overlay) surface to maintain overridden dst ckey info
-     * to allow multiple overlays have different overridden dst keys for one primary surface */
-    /* non-null dstOverlayCKey for overlay would mean the overlay surface contains the overridden
-     * dst ckey value in defaultDstOverlayCKey
-     * this allows the NULL to be a valid overridden value as well */
-    const VBoxVHWAColorKey * pDstCKey = pOverlaySurface->dstOverlayCKey() ? pOverlaySurface->defaultDstOverlayCKey() : dstOverlayCKey();
-
-    return performBlt(pDstRect, pOverlaySurface, pSrcRect, pDstCKey, pSrcCKey, false);
-}
-
-int VBoxVHWASurfaceBase::blt(const QRect * pDstRect, VBoxVHWASurfaceBase * pSrcSurface, const QRect * pSrcRect, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey)
-{
-    if(pDstRect)
-    {
-        Assert(mRect.contains(*pDstRect));
-    }
-    else
-    {
-        pDstRect = &mRect;
-    }
-
-    if(pSrcRect)
-    {
-        Assert(pSrcSurface->mRect.contains(*pSrcRect));
-    }
-    else
-    {
-        pSrcRect = &pSrcSurface->mRect;
-    }
-
-    if(!pSrcCKey)
-        pSrcCKey = pSrcSurface->srcBltCKey();
-    if(!pDstCKey)
-        pDstCKey = dstBltCKey();
-
-    VBOXQGLLOG(("blt dst(0x%x), src(0x%x)", this, pSrcSurface));
-    VBOXQGLLOG_QRECT("dst: ", pDstRect, "\n");
-    VBOXQGLLOG_QRECT("src: ", pSrcRect, "\n");
-    VBOXQGLLOG_METHODTIME("time:");
-    int rc = performBlt(pDstRect, pSrcSurface, pSrcRect, pDstCKey, pSrcCKey, true);
-
-    mUpdateFB2TexRect.add(*pDstRect);
-    Assert(!mUpdateFB2TexRect.isClear());
-    Assert(mRect.contains(mUpdateFB2TexRect.rect()));
-//    synchTexture(pDstRect);
-    mUpdateFB2MemRect.add(*pDstRect);
-    Assert(!mUpdateFB2MemRect.isClear());
-    Assert(mRect.contains(mUpdateFB2MemRect.rect()));
-
-    return rc;
-}
-#endif
 void VBoxVHWASurfaceBase::doTex2FB(const QRect * pDstRect, const QRect * pSrcRect)
 {
     int tx1, ty1, tx2, ty2;
@@ -2067,41 +1922,17 @@ void VBoxVHWASurfaceBase::doTex2FB(const QRect * pDstRect, const QRect * pSrcRec
     pDstRect->getCoords(&bx1, &by1, &bx2, &by2);
     tx2++; ty2++;bx2++; by2++;
 
-#if 1
-//    VBOXQGL_CHECKERR(
-            VBOXQGLLOG_QRECT("texRect: ", &mpTex[0]->texRect(), "\n");
-            glBegin(GL_QUADS);
-//            glTexCoord2d(((double)tx1)/mpTex[0]->texRect().width(), ((double)ty1)/mpTex[0]->texRect().height());
-//            glVertex2i(bx1, by1);
-//            glTexCoord2d(((double)tx1)/mpTex[0]->texRect().width(), ((double)ty2)/mpTex[0]->texRect().height());
-//            glVertex2i(bx1, by2);
-//            glTexCoord2d(((double)tx2)/mpTex[0]->texRect().width(), ((double)ty2)/mpTex[0]->texRect().height());
-//            glVertex2i(bx2, by2);
-//            glTexCoord2d(((double)tx2)/mpTex[0]->texRect().width(), ((double)ty1)/mpTex[0]->texRect().height());
-//            glVertex2i(bx2, by1);
-            mpTex[0]->texCoord(tx1, ty1);
-            glVertex2i(bx1, by1);
-            mpTex[0]->texCoord(tx1, ty2);
-            glVertex2i(bx1, by2);
-            mpTex[0]->texCoord(tx2, ty2);
-            glVertex2i(bx2, by2);
-            mpTex[0]->texCoord(tx2, ty1);
-            glVertex2i(bx2, by1);
-
-            glEnd();
-//            );
-#else
-        glBegin(GL_QUADS);
-        glTexCoord2d(0.0, 0.0);
-        glVertex2i(0, 0);
-        glTexCoord2d(0.0, 1.0);
-        glVertex2i(0, mRect.height());
-        glTexCoord2d(1.0, 1.0);
-        glVertex2i(mRect.width(), mRect.height());
-        glTexCoord2d(1.0, 0.0);
-        glVertex2i(mRect.width(), 0);
-        glEnd();
-#endif
+    VBOXQGLLOG_QRECT("texRect: ", &mpTex[0]->texRect(), "\n");
+    glBegin(GL_QUADS);
+    mpTex[0]->texCoord(tx1, ty1);
+    glVertex2i(bx1, by1);
+    mpTex[0]->texCoord(tx1, ty2);
+    glVertex2i(bx1, by2);
+    mpTex[0]->texCoord(tx2, ty2);
+    glVertex2i(bx2, by2);
+    mpTex[0]->texCoord(tx2, ty1);
+    glVertex2i(bx2, by1);
+    glEnd();
 }
 
 
