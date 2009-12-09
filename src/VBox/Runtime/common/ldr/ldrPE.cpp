@@ -1118,7 +1118,11 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
                 cb = (size_t)cbRawImage; Assert((RTFOFF)cb == cbRawImage);
                 Log(("rtldrPEOpen: %s: dir no. %d (SECURITY) VirtualAddress=%#x Size=%#x is not supported!!!\n",
                      pszLogName, i, pDir->VirtualAddress, pDir->Size));
+#if 0 /** @todo correctly validate this! Ignoring it for the present. */
                 return VERR_LDRPE_SECURITY;
+#else
+                break;
+#endif
 
             case IMAGE_DIRECTORY_ENTRY_GLOBALPTR:     // 8   /* (MIPS GP) */
                 Log(("rtldrPEOpen: %s: dir no. %d (GLOBALPTR) VirtualAddress=%#x Size=%#x is not supported!!!\n",
