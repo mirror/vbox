@@ -639,7 +639,7 @@ int VBoxVHWAGlProgram::stop()
 class VBoxVHWAGlProgramVHWA : public VBoxVHWAGlProgram
 {
 public:
-    VBoxVHWAGlProgramVHWA(/*class VBoxVHWAGlProgramMngr *aMngr, */uint32_t type, uint32_t fourcc, VBoxVHWAGlShader ** apShaders, int acShaders);
+    VBoxVHWAGlProgramVHWA(uint32_t type, uint32_t fourcc, VBoxVHWAGlShader ** apShaders, int acShaders);
 
     uint32_t type() const {return mType;}
     uint32_t fourcc() const {return mFourcc;}
@@ -692,13 +692,9 @@ private:
 
     GLint mUTex;
     GLint mUniUTex;
-
-//    VBoxVHWAGlProgram *mpProgram;
-//
-//    class VBoxVHWAGlProgramMngr *mpMngr;
 };
 
-VBoxVHWAGlProgramVHWA::VBoxVHWAGlProgramVHWA(/*VBoxVHWAGlProgramMngr *aMngr, */uint32_t type, uint32_t fourcc, VBoxVHWAGlShader ** apShaders, int acShaders) :
+VBoxVHWAGlProgramVHWA::VBoxVHWAGlProgramVHWA(uint32_t type, uint32_t fourcc, VBoxVHWAGlShader ** apShaders, int acShaders) :
     VBoxVHWAGlProgram(apShaders, acShaders),
     mType(type),
     mFourcc(fourcc),
@@ -710,7 +706,6 @@ VBoxVHWAGlProgramVHWA::VBoxVHWAGlProgramVHWA(/*VBoxVHWAGlProgramMngr *aMngr, */u
     mUniSrcUpperColor(-1),
     mSrcLowerR(0.0), mSrcLowerG(0.0), mSrcLowerB(0.0),
     mUniSrcLowerColor(-1),
-//    mpMngr(aMngr),
     mDstTex(-1),
     mUniDstTex(-1),
     mSrcTex(-1),
@@ -860,7 +855,6 @@ int VBoxVHWAGlProgramVHWA::setDstCKeyLowerRange(GLfloat r, GLfloat g, GLfloat b)
     if(mDstLowerR == r && mDstLowerG == g && mDstLowerB == b)
         return VINF_ALREADY_INITIALIZED;
 
-//    VBOXQGLLOG(("setDstCKeyLowerRange: r(%f), g(%f), b(%f)\n", r, g, b));
     VBOXQGL_CHECKERR(
             vboxglUniform4f(mUniDstLowerColor, r, g, b, 0.0);
             );
