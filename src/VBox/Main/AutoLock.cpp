@@ -25,6 +25,7 @@
 
 #include <iprt/string.h>
 
+#include <vector>
 
 namespace util
 {
@@ -93,22 +94,28 @@ uint32_t RWLockHandle::writeLockLevel() const
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+typedef std::vector<LockHandle*> HandlesVector;
+
 struct AutoLockBase::Data
 {
-    Data(LockHandle *argpHandle)
-        : pHandle(argpHandle),
+    Data(size_t cHandles)
+        : aHandles(cHandles),       // size of array
           fIsLocked(false),
           cUnlockedInLeave(0)
     { }
 
-    LockHandle      *pHandle;
-    bool            fIsLocked;
+    HandlesVector   aHandles;           // array (vector) of LockHandle instances; in the case of AutoWriteLock
+                                        // and AutoReadLock, there will only be one item on the list; with the
+                                        // AutoMulti* derivatives, there will be multiple
+    bool            fIsLocked;          // if true, then all items in aHandles are locked by this AutoLock and
+                                        // need to be unlocked in the destructor
     uint32_t        cUnlockedInLeave;   // how many times the handle was unlocked in leave(); otherwise 0
 };
 
 AutoLockBase::AutoLockBase(LockHandle *pHandle)
 {
-    m = new Data(pHandle);
+    m = new Data(1);
+    m->aHandles[0] = pHandle;
 }
 
 AutoLockBase::~AutoLockBase()
@@ -118,38 +125,90 @@ AutoLockBase::~AutoLockBase()
 
 /**
  * Requests ownership of all contained lock handles by calling
- * the pure virtual acquireImpl() function on each of them,
+ * the pure virtual callLockImpl() function on each of them,
  * which must be implemented by the descendant class; in the
  * implementation, AutoWriteLock will request a write lock
  * whereas AutoReadLock will request a read lock.
+ *
+ * Does *not* modify the lock counts in the member variables.
  */
-void AutoLockBase::acquire()
+void AutoLockBase::callLockOnAllHandles()
 {
-    if (m->pHandle)
+    for (HandlesVector::iterator it = m->aHandles.begin();
+         it != m->aHandles.end();
+         ++it)
     {
-        AssertMsg(!m->fIsLocked, ("m->fIsLocked is true, attempting to lock twice!"));
-        // call virtual function implemented in AutoWriteLock or AutoReadLock
-        this->acquireImpl(*m->pHandle);
-        m->fIsLocked = true;
+        LockHandle *pHandle = *it;
+        if (pHandle)
+            // call virtual function implemented in AutoWriteLock or AutoReadLock
+            this->callLockImpl(*pHandle);
     }
 }
 
 /**
  * Releases ownership of all contained lock handles by calling
- * the pure virtual releaseImpl() function on each of them,
+ * the pure virtual callUnlockImpl() function on each of them,
  * which must be implemented by the descendant class; in the
  * implementation, AutoWriteLock will release a write lock
  * whereas AutoReadLock will release a read lock.
+ *
+ * Does *not* modify the lock counts in the member variables.
+ */
+void AutoLockBase::callUnlockOnAllHandles()
+{
+    for (HandlesVector::iterator it = m->aHandles.begin();
+         it != m->aHandles.end();
+         ++it)
+    {
+        LockHandle *pHandle = *it;
+        if (pHandle)
+            // call virtual function implemented in AutoWriteLock or AutoReadLock
+            this->callUnlockImpl(*pHandle);
+    }
+}
+
+/**
+ * Destructor implementation that can also be called explicitly, if required.
+ * Restores the exact state before the AutoLock was created; that is, unlocks
+ * all contained semaphores and might actually lock them again if leave()
+ * was called during the AutoLock's lifetime.
+ */
+void AutoLockBase::cleanup()
+{
+    if (m->cUnlockedInLeave)
+    {
+        // there was a leave() before the destruction: then restore the
+        // lock level that might have been set by locks other than our own
+        if (m->fIsLocked)
+            --m->cUnlockedInLeave;       // no lock for our own
+        m->fIsLocked = false;
+        for (; m->cUnlockedInLeave; --m->cUnlockedInLeave)
+            callLockOnAllHandles();
+    }
+
+    if (m->fIsLocked)
+        callUnlockOnAllHandles();
+}
+
+/**
+ * Requests ownership of all contained semaphores. Public method that can
+ * only be called once and that also gets called by the AutoLock constructors.
+ */
+void AutoLockBase::acquire()
+{
+    AssertMsg(!m->fIsLocked, ("m->fIsLocked is true, attempting to lock twice!"));
+    callLockOnAllHandles();
+    m->fIsLocked = true;
+}
+
+/**
+ * Releases ownership of all contained semaphores. Public method.
  */
 void AutoLockBase::release()
 {
-    if (m->pHandle)
-    {
-        AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot release!"));
-        // call virtual function implemented in AutoWriteLock or AutoReadLock
-        this->releaseImpl(*m->pHandle);
-        m->fIsLocked = false;
-    }
+    AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot release!"));
+    callUnlockOnAllHandles();
+    m->fIsLocked = false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -158,35 +217,13 @@ void AutoLockBase::release()
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void AutoWriteLock::cleanup()
-{
-    if (m->pHandle)
-    {
-        if (m->cUnlockedInLeave)
-        {
-            // there was a leave() before the destruction: then restore the
-            // lock level that might have been set by locks other than our own
-            if (m->fIsLocked)
-                --m->cUnlockedInLeave;       // no lock for our own
-            m->fIsLocked = false;
-            for (; m->cUnlockedInLeave; --m->cUnlockedInLeave)
-                m->pHandle->lockWrite();
-
-                // @todo r=dj is this really desirable behavior? maybe leave/enter should go altogether?
-        }
-
-        if (m->fIsLocked)
-            m->pHandle->unlockWrite();
-    }
-}
-
 /**
  * Implementation of the pure virtual declared in AutoLockBase.
  * This gets called by AutoLockBase.acquire() to actually request
  * the semaphore; in the AutoWriteLock implementation, we request
  * the semaphore in write mode.
  */
-/*virtual*/ void AutoWriteLock::acquireImpl(LockHandle &l)
+/*virtual*/ void AutoWriteLock::callLockImpl(LockHandle &l)
 {
     l.lockWrite();
 }
@@ -197,7 +234,7 @@ void AutoWriteLock::cleanup()
  * the semaphore; in the AutoWriteLock implementation, we release
  * the semaphore in write mode.
  */
-/*virtual*/ void AutoWriteLock::releaseImpl(LockHandle &l)
+/*virtual*/ void AutoWriteLock::callUnlockImpl(LockHandle &l)
 {
     l.unlockWrite();
 }
@@ -225,18 +262,20 @@ void AutoWriteLock::cleanup()
  */
 void AutoWriteLock::leave()
 {
-    if (m->pHandle)
+    LockHandle *pHandle = m->aHandles[0];
+
+    if (pHandle)
     {
         AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot leave()!"));
         AssertMsg(m->cUnlockedInLeave == 0, ("m->cUnlockedInLeave is %d, must be 0! Called leave() twice?", m->cUnlockedInLeave));
 
-        m->cUnlockedInLeave = m->pHandle->writeLockLevel();
+        m->cUnlockedInLeave = pHandle->writeLockLevel();
         AssertMsg(m->cUnlockedInLeave >= 1, ("m->cUnlockedInLeave is %d, must be >=1!", m->cUnlockedInLeave));
 
         for (uint32_t left = m->cUnlockedInLeave;
-                left;
-                --left)
-            m->pHandle->unlockWrite();
+             left;
+             --left)
+            pHandle->unlockWrite();
     }
 }
 
@@ -248,13 +287,15 @@ void AutoWriteLock::leave()
  */
 void AutoWriteLock::enter()
 {
-    if (m->pHandle)
+    LockHandle *pHandle = m->aHandles[0];
+
+    if (pHandle)
     {
         AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot enter()!"));
         AssertMsg(m->cUnlockedInLeave != 0, ("m->cUnlockedInLeave is 0! enter() without leave()?"));
 
         for (; m->cUnlockedInLeave; --m->cUnlockedInLeave)
-            m->pHandle->lockWrite();
+            pHandle->lockWrite();
     }
 }
 
@@ -270,25 +311,27 @@ void AutoWriteLock::enter()
  */
 void AutoWriteLock::attach(LockHandle *aHandle)
 {
+    LockHandle *pHandle = m->aHandles[0];
+
     /* detect simple self-reattachment */
-    if (m->pHandle != aHandle)
+    if (pHandle != aHandle)
     {
         bool fWasLocked = m->fIsLocked;
 
         cleanup();
 
-        m->pHandle = aHandle;
+        m->aHandles[0] = aHandle;
         m->fIsLocked = fWasLocked;
 
-        if (m->pHandle)
+        if (aHandle)
             if (fWasLocked)
-                m->pHandle->lockWrite();
+                aHandle->lockWrite();
     }
 }
 
 void AutoWriteLock::attachRaw(LockHandle *ph)
 {
-    m->pHandle = ph;
+    m->aHandles[0] = ph;
 }
 
 /**
@@ -300,7 +343,7 @@ void AutoWriteLock::attachRaw(LockHandle *ph)
  */
 bool AutoWriteLock::isWriteLockOnCurrentThread() const
 {
-    return m->pHandle ? m->pHandle->isWriteLockOnCurrentThread() : false;
+    return m->aHandles[0] ? m->aHandles[0]->isWriteLockOnCurrentThread() : false;
 }
 
  /**
@@ -316,7 +359,7 @@ bool AutoWriteLock::isWriteLockOnCurrentThread() const
  */
 uint32_t AutoWriteLock::writeLockLevel() const
 {
-    return m->pHandle ? m->pHandle->writeLockLevel() : 0;
+    return m->aHandles[0] ? m->aHandles[0]->writeLockLevel() : 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -336,10 +379,12 @@ uint32_t AutoWriteLock::writeLockLevel() const
  */
 /*virtual*/ AutoReadLock::~AutoReadLock()
 {
-    if (m->pHandle)
+    LockHandle *pHandle = m->aHandles[0];
+
+    if (pHandle)
     {
         if (m->fIsLocked)
-            m->pHandle->unlockRead();
+            pHandle->unlockRead();
     }
 }
 
@@ -349,7 +394,7 @@ uint32_t AutoWriteLock::writeLockLevel() const
  * the semaphore; in the AutoReadLock implementation, we request
  * the semaphore in read mode.
  */
-/*virtual*/ void AutoReadLock::acquireImpl(LockHandle &l)
+/*virtual*/ void AutoReadLock::callLockImpl(LockHandle &l)
 {
     l.lockRead();
 }
@@ -360,7 +405,7 @@ uint32_t AutoWriteLock::writeLockLevel() const
  * the semaphore; in the AutoReadLock implementation, we release
  * the semaphore in read mode.
  */
-/*virtual*/ void AutoReadLock::releaseImpl(LockHandle &l)
+/*virtual*/ void AutoReadLock::callUnlockImpl(LockHandle &l)
 {
     l.unlockRead();
 }
