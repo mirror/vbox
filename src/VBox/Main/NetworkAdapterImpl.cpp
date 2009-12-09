@@ -226,7 +226,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapt
         mData->mAdapterType = aAdapterType;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         mParent->onNetworkAdapterChange (this, FALSE);
     }
@@ -279,7 +279,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(Enabled) (BOOL aEnabled)
         mData->mEnabled = aEnabled;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         mParent->onNetworkAdapterChange (this, FALSE);
     }
@@ -375,7 +375,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(IN_BSTR aMACAddress)
     if (emitChangeEvent)
     {
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         mParent->onNetworkAdapterChange (this, FALSE);
     }
@@ -433,7 +433,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(IN_BSTR aHostInterface)
         mData->mHostInterface = aHostInterface;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         mParent->onNetworkAdapterChange (this, FALSE);
     }
@@ -481,7 +481,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (IN_BSTR aInternalNetwor
         mData->mInternalNetwork = aInternalNetwork;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         mParent->onNetworkAdapterChange (this, FALSE);
     }
@@ -524,7 +524,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork) (IN_BSTR aNATNetwork)
         mData->mNATNetwork = aNATNetwork;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         mParent->onNetworkAdapterChange (this, FALSE);
     }
@@ -563,7 +563,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(CableConnected) (BOOL aConnected)
         mData->mCableConnected = aConnected;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         mParent->onNetworkAdapterChange (this, FALSE);
     }
@@ -602,7 +602,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(LineSpeed) (ULONG aSpeed)
         mData->mLineSpeed = aSpeed;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         mParent->onNetworkAdapterChange (this, FALSE);
     }
@@ -640,7 +640,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceEnabled) (BOOL aEnabled)
         mData->mTraceEnabled = aEnabled;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         mParent->onNetworkAdapterChange (this, TRUE);
     }
@@ -679,7 +679,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile) (IN_BSTR aTraceFile)
         mData->mTraceFile = aTraceFile;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         mParent->onNetworkAdapterChange (this, FALSE);
     }
@@ -712,7 +712,7 @@ STDMETHODIMP NetworkAdapter::AttachToNAT()
         mData->mAttachmentType = NetworkAttachmentType_NAT;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
         if (FAILED (rc))
@@ -754,7 +754,7 @@ STDMETHODIMP NetworkAdapter::AttachToBridgedInterface()
         mData->mAttachmentType = NetworkAttachmentType_Bridged;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
         if (FAILED (rc))
@@ -804,7 +804,7 @@ STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
         mData->mAttachmentType = NetworkAttachmentType_Internal;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
         if (FAILED (rc))
@@ -846,7 +846,7 @@ STDMETHODIMP NetworkAdapter::AttachToHostOnlyInterface()
         mData->mAttachmentType = NetworkAttachmentType_HostOnly;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
         if (FAILED (rc))
@@ -882,7 +882,7 @@ STDMETHODIMP NetworkAdapter::Detach()
         detach();
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         mParent->onNetworkAdapterChange (this, TRUE);
     }

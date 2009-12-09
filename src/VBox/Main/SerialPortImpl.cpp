@@ -225,7 +225,7 @@ STDMETHODIMP SerialPort::COMSETTER(Enabled) (BOOL aEnabled)
         m->bd->fEnabled = aEnabled;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         m->pMachine->onSerialPortChange (this);
     }
@@ -299,7 +299,7 @@ STDMETHODIMP SerialPort::COMSETTER(HostMode) (PortMode_T aHostMode)
     if (emitChangeEvent)
     {
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         m->pMachine->onSerialPortChange (this);
     }
@@ -367,7 +367,7 @@ STDMETHODIMP SerialPort::COMSETTER(IRQ)(ULONG aIRQ)
     if (emitChangeEvent)
     {
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         m->pMachine->onSerialPortChange (this);
     }
@@ -421,7 +421,7 @@ STDMETHODIMP SerialPort::COMSETTER(IOBase)(ULONG aIOBase)
     if (emitChangeEvent)
     {
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         m->pMachine->onSerialPortChange (this);
     }
@@ -468,7 +468,7 @@ STDMETHODIMP SerialPort::COMSETTER(Path) (IN_BSTR aPath)
         m->bd->strPath = str;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         return m->pMachine->onSerialPortChange(this);
     }
@@ -507,7 +507,7 @@ STDMETHODIMP SerialPort::COMSETTER(Server) (BOOL aServer)
         m->bd->fServer = aServer;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         m->pMachine->onSerialPortChange (this);
     }

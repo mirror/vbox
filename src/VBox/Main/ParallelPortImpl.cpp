@@ -229,7 +229,7 @@ STDMETHODIMP ParallelPort::COMSETTER(Enabled) (BOOL aEnabled)
         m->bd->fEnabled = aEnabled;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         m->pMachine->onParallelPortChange (this);
     }
@@ -297,7 +297,7 @@ STDMETHODIMP ParallelPort::COMSETTER(IRQ)(ULONG aIRQ)
     if (emitChangeEvent)
     {
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         m->pMachine->onParallelPortChange (this);
     }
@@ -351,7 +351,7 @@ STDMETHODIMP ParallelPort::COMSETTER(IOBase)(ULONG aIOBase)
     if (emitChangeEvent)
     {
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         m->pMachine->onParallelPortChange (this);
     }
@@ -394,7 +394,7 @@ STDMETHODIMP ParallelPort::COMSETTER(Path) (IN_BSTR aPath)
         m->bd->strPath = str;
 
         /* leave the lock before informing callbacks */
-        alock.unlock();
+        alock.release();
 
         return m->pMachine->onParallelPortChange(this);
     }

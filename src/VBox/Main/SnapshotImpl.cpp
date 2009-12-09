@@ -585,7 +585,7 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
         child = this;
     else
     {
-        alock.unlock();
+        alock.release();
         for (SnapshotsList::const_iterator it = m->llChildren.begin();
              it != m->llChildren.end();
              ++it)
@@ -618,7 +618,7 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(const Utf8Str &aName)
         child = this;
     else
     {
-        alock.unlock();
+        alock.release();
         for (SnapshotsList::const_iterator it = m->llChildren.begin();
              it != m->llChildren.end();
              ++it)
@@ -719,7 +719,7 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
     rc = m->pMachine->saveStorageControllers(data.storage);
     if (FAILED(rc)) return rc;
 
-    alock.unlock();
+    alock.release();
 
     data.llChildSnapshots.clear();
 
@@ -1669,7 +1669,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
     /* @todo We don't need mParent lock so far so unlock() it. Better is to
      * provide an AutoWriteLock argument that lets create a non-locking
      * instance */
-    vboxLock.unlock();
+    vboxLock.release();
 
     AutoWriteLock alock(this);
 
@@ -1718,7 +1718,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             mMediaData->mAttachments = pSnapshotMachine->mMediaData->mAttachments;
 
             /* leave the locks before the potentially lengthy operation */
-            snapshotLock.unlock();
+            snapshotLock.release();
             alock.leave();
 
             rc = createImplicitDiffs(mUserData->mSnapshotFolderFull,
@@ -1728,7 +1728,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             if (FAILED(rc)) throw rc;
 
             alock.enter();
-            snapshotLock.lock();
+            snapshotLock.acquire();
 
             /* Note: on success, current (old) hard disks will be
              * deassociated/deleted on #commit() called from #saveSettings() at
@@ -1754,7 +1754,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                                                   aTask.m_ulStateFileSizeMB);        // weight
 
                 /* leave the lock before the potentially lengthy operation */
-                snapshotLock.unlock();
+                snapshotLock.release();
                 alock.leave();
 
                 /* copy the state file */
@@ -1765,7 +1765,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                                        static_cast<IProgress*>(aTask.pProgress));
 
                 alock.enter();
-                snapshotLock.lock();
+                snapshotLock.acquire();
 
                 if (RT_SUCCESS(vrc))
                     mSSData->mStateFilePath = stateFilePath;
@@ -1814,9 +1814,9 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
          * to leave this object's lock to do this to follow the {parent-child}
          * locking rule. This is the last chance to do that while we are still
          * in a protective state which allows us to temporarily leave the lock*/
-        alock.unlock();
-        vboxLock.lock();
-        alock.lock();
+        alock.release();
+        vboxLock.acquire();
+        alock.acquire();
 
         /* we have already discarded the current state, so set the execution
          * state accordingly no matter of the discard snapshot result */
@@ -2214,7 +2214,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
                     HRESULT rc2 = S_OK;
 
-                    attachLock.unlock();
+                    attachLock.release();
 
                     // First we must detach the child (otherwise mergeTo() called
                     // by discard() will assert because it will be going to delete
@@ -2361,7 +2361,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         }
     }
 
-    alock.unlock();
+    alock.release();
 
     // whether we were successful or not, we need to set the machine
     // state and save the machine settings;
@@ -2380,7 +2380,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             // saveSettings needs VirtualBox write lock in addition to our own
             // (parent -> child locking order!)
             AutoWriteLock vboxLock(mParent);
-            alock.lock();
+            alock.acquire();
 
             saveSettings(SaveS_InformCallbacksAnyway);
         }
