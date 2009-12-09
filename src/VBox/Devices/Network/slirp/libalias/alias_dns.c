@@ -57,7 +57,7 @@ fingerprint(struct libalias *la, struct ip *pip, struct alias_data *ah)
         &ah->oaddr, &ah->aaddr);
     if (   (ntohs(*ah->dport) == DNS_CONTROL_PORT_NUMBER
         || ntohs(*ah->sport) == DNS_CONTROL_PORT_NUMBER)
-        && (ah->oaddr->s_addr == htonl(ntohl(la->special_addr.s_addr)|CTL_DNS)))
+        && (ah->oaddr->s_addr == htonl(ntohl(la->pData->special_addr.s_addr)|CTL_DNS)))
         return (0);
     return (-1);
 }

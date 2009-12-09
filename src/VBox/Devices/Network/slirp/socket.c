@@ -764,7 +764,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 #endif
     paddr = (struct sockaddr_in *)&addr;
     paddr->sin_family = AF_INET;
-    if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr)
+    if ((so->so_faddr.s_addr & htonl(pData->netmask)) == pData->special_addr.s_addr)
     {
         /* It's an alias */
         uint32_t last_byte = ntohl(so->so_faddr.s_addr) & ~pData->netmask;

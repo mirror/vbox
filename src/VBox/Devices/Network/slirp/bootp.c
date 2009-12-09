@@ -83,7 +83,7 @@ static BOOTPClient *get_new_addr(PNATState pData, struct in_addr *paddr)
     bc = bc_alloc_client(pData);
     if (bc == NULL)
         return NULL;
-    paddr->s_addr = htonl(ntohl(special_addr.s_addr) | (bc->number + START_ADDR));
+    paddr->s_addr = htonl(ntohl(pData->special_addr.s_addr) | (bc->number + START_ADDR));
     bc->addr.s_addr = paddr->s_addr;
     return bc;
 }
@@ -162,7 +162,7 @@ static BOOTPClient *find_addr(PNATState pData, struct in_addr *paddr, const uint
 
             bc = &bootp_clients[i];
             bc->allocated = 1;
-            paddr->s_addr = htonl(ntohl(special_addr.s_addr) | (i + START_ADDR));
+            paddr->s_addr = htonl(ntohl(pData->special_addr.s_addr) | (i + START_ADDR));
             return bc;
         }
     }
@@ -240,9 +240,9 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
         rbp->bp_ciaddr.s_addr = bc->addr.s_addr; /* Client IP address */
     }
 #ifndef VBOX_WITH_NAT_SERVICE
-    saddr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
+    saddr.s_addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_ALIAS);
 #else
-    saddr.s_addr = special_addr.s_addr;
+    saddr.s_addr = pData->special_addr.s_addr;
 #endif
     Log(("NAT: DHCP: s_addr:%R[IP4]\n", &saddr));
 
@@ -270,27 +270,27 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
 
     if (pData->use_dns_proxy || pData->use_host_resolver)
     {
-        uint32_t addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
+        uint32_t addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_DNS);
         FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &addr);
         goto skip_dns_servers;
     }
 
-    if (!TAILQ_EMPTY(&pData->dns_list_head))
+    if (!TAILQ_EMPTY(&pData->pDnsList))
     {
-        de = TAILQ_LAST(&pData->dns_list_head, dns_list_head);
+        de = TAILQ_LAST(&pData->pDnsList, dns_list_head);
         q_dns_header = q;
         FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &de->de_addr.s_addr);
     }
 
-    TAILQ_FOREACH_REVERSE(de, &pData->dns_list_head, dns_list_head, de_list)
+    TAILQ_FOREACH_REVERSE(de, &pData->pDnsList, dns_list_head, de_list)
     {
-        if (TAILQ_LAST(&pData->dns_list_head, dns_list_head) == de)
+        if (TAILQ_LAST(&pData->pDnsList, dns_list_head) == de)
             continue; /* first value with head we've ingected before */
         FILL_BOOTP_APP(q_dns_header, q, RFC1533_DNS, 4, &de->de_addr.s_addr);
     }
 
 skip_dns_servers:
-    if (LIST_EMPTY(&pData->dns_domain_list_head))
+    if (LIST_EMPTY(&pData->pDomainList))
     {
             /* Microsoft dhcp client doen't like domain-less dhcp and trimmed packets*/
             /* dhcpcd client very sad if no domain name is passed */
@@ -298,7 +298,7 @@ skip_dns_servers:
     }
     if (pData->fPassDomain && !pData->use_host_resolver)
     {
-        LIST_FOREACH(dd, &pData->dns_domain_list_head, dd_list)
+        LIST_FOREACH(dd, &pData->pDomainList, dd_list)
         {
 
             if (dd->dd_pszDomain == NULL)
@@ -426,7 +426,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
             }
             else
             {
-               if ((bp->bp_ciaddr.s_addr & htonl(pData->netmask)) != special_addr.s_addr)
+               if ((bp->bp_ciaddr.s_addr & htonl(pData->netmask)) != pData->special_addr.s_addr)
                {
                     off = dhcp_send_nack(pData, bp, bc, m);
                     return off;
@@ -448,7 +448,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
             Assert(server_ip == NULL);
             Assert(req_ip != NULL);
             ui32 = *(uint32_t *)(req_ip + 2);
-            if ((ui32 & htonl(pData->netmask)) != special_addr.s_addr)
+            if ((ui32 & htonl(pData->netmask)) != pData->special_addr.s_addr)
             {
                 LogRel(("NAT: address %R[IP4] has been req.\n", &ui32));
                  off = dhcp_send_nack(pData, bp, bc, m);
@@ -596,17 +596,19 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
     struct mbuf *m = NULL;
 
     pmsg_type = 0;
-
     p = buf;
     p_end = buf + size;
     if (size < 5)
         return;
+
     if (memcmp(p, rfc1533_cookie, 4) != 0)
         return;
+
     p = dhcp_find_option(bp->bp_vend, RFC2132_MSG_TYPE);
     Assert(p);
     if (p == NULL)
         return;
+
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
     if ((m = m_get(pData)) == NULL)
 #else
@@ -616,7 +618,7 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
         LogRel(("NAT: can't alocate memory for response!\n"));
         return;
     }
-    switch(*(p+2))
+    switch (*(p+2))
     {
         case DHCPDISCOVER:
             flag = 1;
@@ -625,21 +627,24 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
             rc = dhcp_decode_discover(pData, bp, buf, size, flag, m);
             if (rc > 0)
                 goto reply;
-        break;
+            break;
+
         case DHCPREQUEST:
             rc = dhcp_decode_request(pData, bp, buf, size, m);
             if (rc > 0)
                 goto reply;
-        break;
+            break;
+
         case DHCPRELEASE:
             rc = dhcp_decode_release(pData, bp, buf, size); 
             /* no reply required */
-        break;
+            break;
+
         case DHCPDECLINE:
             p = dhcp_find_option(&bp->bp_vend[0], RFC2132_REQ_ADDR);
             req_ip.s_addr = *(uint32_t *)(p + 2);
             rc = bootp_cache_lookup_ether_by_ip(pData, req_ip.s_addr, NULL);
-            if (rc != 0)
+            if (RT_FAILURE(rc))
             {
                 /* Not registered */
                 BOOTPClient *bc;
@@ -650,7 +655,8 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
                 LogRel(("NAT: %R[IP4] has been already registered\n", &req_ip));
             }
             /* no response required */
-        break;
+            break;
+
         default:
             AssertMsgFailed(("unsupported DHCP message type"));
     }
@@ -658,6 +664,7 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
     /*silently ignore*/
     m_free(pData, m);
     return;
+
 reply:
     bootp_reply(pData, m, rc, bp->bp_flags);
     return;
@@ -677,9 +684,9 @@ static void bootp_reply(PNATState pData, struct mbuf *m, int off, uint16_t flags
     q += off;
 
 #ifndef VBOX_WITH_NAT_SERVICE
-    saddr.sin_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
+    saddr.sin_addr.s_addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_ALIAS);
 #else
-    saddr.sin_addr.s_addr = special_addr.s_addr;
+    saddr.sin_addr.s_addr = pData->special_addr.s_addr;
 #endif
 
     FILL_BOOTP_EXT(q, RFC2132_SRV_ID, 4, &saddr.sin_addr);
@@ -710,47 +717,45 @@ void bootp_input(PNATState pData, struct mbuf *m)
     struct bootp_t *bp = mtod(m, struct bootp_t *);
 
     if (bp->bp_op == BOOTP_REQUEST)
-    {
         dhcp_decode(pData, bp, bp->bp_vend, DHCP_OPT_LEN);
-    }
 }
 
 int bootp_cache_lookup_ip_by_ether(PNATState pData,const uint8_t* ether, uint32_t *pip)
 {
-    int rc = 1;
-    uint32_t ip = INADDR_ANY;
     int i;
+
     if (ether == NULL || pip == NULL)
-        return rc;
+        return VERR_INVALID_PARAMETER;
+
     for (i = 0; i < NB_ADDR; i++)
     {
         if (   bootp_clients[i].allocated
             && memcmp(bootp_clients[i].macaddr, ether, ETH_ALEN) == 0)
         {
-            ip = bootp_clients[i].addr.s_addr;
-            rc = 0;
-            break;
+            *pip = bootp_clients[i].addr.s_addr;
+            return VINF_SUCCESS;
         }
     }
-    *pip = ip;
-    return rc;
+
+    *pip = INADDR_ANY;
+    return VERR_NOT_FOUND;
 }
 
 int bootp_cache_lookup_ether_by_ip(PNATState pData, uint32_t ip, uint8_t *ether)
 {
-    int rc = 1;
     int i;
     for (i = 0; i < NB_ADDR; i++)
     {
         if (   bootp_clients[i].allocated
             && ip == bootp_clients[i].addr.s_addr)
         {
-            if(ether != NULL) memcpy(ether, bootp_clients[i].macaddr, ETH_ALEN);
-            rc = 0;
-            break;
+            if (ether != NULL)
+                memcpy(ether, bootp_clients[i].macaddr, ETH_ALEN);
+            return VINF_SUCCESS;
         }
     }
-    return rc;
+
+    return VERR_NOT_FOUND;
 }
 
 /*
@@ -759,16 +764,17 @@ int bootp_cache_lookup_ether_by_ip(PNATState pData, uint32_t ip, uint8_t *ether)
  */
 int bootp_dhcp_init(PNATState pData)
 {
-    int rc = 1;
     pData->pbootp_clients = RTMemAllocZ(sizeof(BOOTPClient) * NB_ADDR);
-    if (pData->pbootp_clients != NULL)
-        rc = 0;
-    return rc;
+    if (!pData->pbootp_clients)
+        return VERR_NO_MEMORY;
+
+    return VINF_SUCCESS;
 }
 
 int bootp_dhcp_fini(PNATState pData)
 {
     if (pData->pbootp_clients != NULL)
         RTMemFree(pData->pbootp_clients);
-    return 0;
+
+    return VINF_SUCCESS;
 }

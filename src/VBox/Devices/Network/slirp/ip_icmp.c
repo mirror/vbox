@@ -371,7 +371,7 @@ freeit:
                 int error;
 #endif
                 addr.sin_family = AF_INET;
-                if ((ip->ip_dst.s_addr & htonl(pData->netmask)) == special_addr.s_addr)
+                if ((ip->ip_dst.s_addr & htonl(pData->netmask)) == pData->special_addr.s_addr)
                 {
                     /* It's an alias */
                     switch (ntohl(ip->ip_dst.s_addr) & ~pData->netmask)

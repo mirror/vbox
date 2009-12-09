@@ -258,7 +258,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
      * DNS proxy
      */
     if (   pData->use_dns_proxy
-        && (ip->ip_dst.s_addr == htonl(ntohl(special_addr.s_addr) | CTL_DNS))
+        && (ip->ip_dst.s_addr == htonl(ntohl(pData->special_addr.s_addr) | CTL_DNS))
         && (ntohs(uh->uh_dport) == 53))
     {
         dnsproxy_query(pData, so, m, iphlen);
@@ -376,7 +376,7 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
     struct sockaddr_in saddr, daddr;
 
     saddr = *addr;
-    if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr)
+    if ((so->so_faddr.s_addr & htonl(pData->netmask)) == pData->special_addr.s_addr)
     {
         saddr.sin_addr.s_addr = so->so_faddr.s_addr;
         if ((so->so_faddr.s_addr & htonl(~pData->netmask)) == htonl(~pData->netmask))
