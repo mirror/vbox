@@ -116,6 +116,42 @@ AutoLockBase::~AutoLockBase()
     delete m;
 }
 
+/**
+ * Requests ownership of all contained lock handles by calling
+ * the pure virtual acquireImpl() function on each of them,
+ * which must be implemented by the descendant class; in the
+ * implementation, AutoWriteLock will request a write lock
+ * whereas AutoReadLock will request a read lock.
+ */
+void AutoLockBase::acquire()
+{
+    if (m->pHandle)
+    {
+        AssertMsg(!m->fIsLocked, ("m->fIsLocked is true, attempting to lock twice!"));
+        // call virtual function implemented in AutoWriteLock or AutoReadLock
+        this->acquireImpl(*m->pHandle);
+        m->fIsLocked = true;
+    }
+}
+
+/**
+ * Releases ownership of all contained lock handles by calling
+ * the pure virtual releaseImpl() function on each of them,
+ * which must be implemented by the descendant class; in the
+ * implementation, AutoWriteLock will release a write lock
+ * whereas AutoReadLock will release a read lock.
+ */
+void AutoLockBase::release()
+{
+    if (m->pHandle)
+    {
+        AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot release!"));
+        // call virtual function implemented in AutoWriteLock or AutoReadLock
+        this->releaseImpl(*m->pHandle);
+        m->fIsLocked = false;
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // AutoWriteLock
@@ -144,24 +180,26 @@ void AutoWriteLock::cleanup()
     }
 }
 
-void AutoWriteLock::acquire()
+/**
+ * Implementation of the pure virtual declared in AutoLockBase.
+ * This gets called by AutoLockBase.acquire() to actually request
+ * the semaphore; in the AutoWriteLock implementation, we request
+ * the semaphore in write mode.
+ */
+/*virtual*/ void AutoWriteLock::acquireImpl(LockHandle &l)
 {
-    if (m->pHandle)
-    {
-        AssertMsg(!m->fIsLocked, ("m->fIsLocked is true, attempting to lock twice!"));
-        m->pHandle->lockWrite();
-        m->fIsLocked = true;
-    }
+    l.lockWrite();
 }
 
-void AutoWriteLock::release()
+/**
+ * Implementation of the pure virtual declared in AutoLockBase.
+ * This gets called by AutoLockBase.release() to actually release
+ * the semaphore; in the AutoWriteLock implementation, we release
+ * the semaphore in write mode.
+ */
+/*virtual*/ void AutoWriteLock::releaseImpl(LockHandle &l)
 {
-    if (m->pHandle)
-    {
-        AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot release!"));
-        m->pHandle->unlockWrite();
-        m->fIsLocked = false;
-    }
+    l.unlockWrite();
 }
 
 /**
@@ -306,43 +344,26 @@ uint32_t AutoWriteLock::writeLockLevel() const
 }
 
 /**
- * Requests a read (shared) lock. If a read lock is already owned by
- * this thread, increases the lock level (allowing for nested read locks on
- * the same thread). Blocks indefinitely if a write lock is already owned by
- * another thread until that tread releases the write lock, otherwise
- * returns immediately.
- *
- * Note that this method returns immediately even if any number of other
- * threads owns read locks on the same semaphore. Also returns immediately
- * if a write lock on this semaphore is owned by the current thread which
- * allows for read locks nested into write locks on the same thread.
+ * Implementation of the pure virtual declared in AutoLockBase.
+ * This gets called by AutoLockBase.acquire() to actually request
+ * the semaphore; in the AutoReadLock implementation, we request
+ * the semaphore in read mode.
  */
-void AutoReadLock::acquire()
+/*virtual*/ void AutoReadLock::acquireImpl(LockHandle &l)
 {
-    if (m->pHandle)
-    {
-        AssertMsg(!m->fIsLocked, ("m->fIsLocked is true, attempting to lock twice!"));
-        m->pHandle->lockRead();
-        m->fIsLocked = true;
-    }
+    l.lockRead();
 }
 
 /**
- * Decreases the read lock level increased by #lock(). If the level drops to
- * zero (e.g. the number of nested #unlock() calls matches the number of
- * nested #lock() calls), releases the lock making the managed semaphore
- * available for locking by other threads.
+ * Implementation of the pure virtual declared in AutoLockBase.
+ * This gets called by AutoLockBase.release() to actually release
+ * the semaphore; in the AutoReadLock implementation, we release
+ * the semaphore in read mode.
  */
-void AutoReadLock::release()
+/*virtual*/ void AutoReadLock::releaseImpl(LockHandle &l)
 {
-    if (m->pHandle)
-    {
-        AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot release!"));
-        m->pHandle->unlockRead();
-        m->fIsLocked = false;
-    }
+    l.unlockRead();
 }
-
 
 } /* namespace util */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
