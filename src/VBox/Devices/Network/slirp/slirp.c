@@ -1525,9 +1525,6 @@ static void arp_input(PNATState pData, struct mbuf *m)
                     break;
                 }
                 slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]);
-                /* good opportunity to activate port-forwarding on address (self)asignment*/
-                if (pData->cRedirectionsActive != pData->cRedirectionsStored)
-                    activate_port_forwarding(pData, eh->h_source);
             }
             break;
 
@@ -1538,9 +1535,6 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 break;
             }
             slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_sip, ah->ar_sha);
-            /* after/save restore we need up port forwarding again */
-            if (pData->cRedirectionsActive != pData->cRedirectionsStored)
-                activate_port_forwarding(pData, eh->h_source);
             m_free(pData, m);
             break;
 
