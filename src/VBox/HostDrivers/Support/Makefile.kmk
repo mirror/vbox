@@ -83,9 +83,6 @@ SUPR3_DEFS          = \
 	IN_SUP_R3 IN_RT_R3 \
         $(if $(VBOX_WITH_SUPSVC),VBOX_WITH_SUPSVC) \
         $(if $(VBOX_WITH_MAIN),VBOX_WITH_MAIN,)
-ifdef VBOX_WITH_NATIVE_R0_LOADER
- SUPR3_DEFS        += VBOX_WITH_NATIVE_R0_LOADER
-endif
 SUPR3_INCS         := $(PATH_SUB_CURRENT)
 SUPR3_INCS.l4       = $(L4_INCDIR)
 SUPR3_SOURCES       = \
@@ -104,9 +101,6 @@ SUPR3HardenedStatic_DEFS     = IN_SUP_HARDENED_R3
 SUPR3HardenedStatic_DEFS    += \
 	$(if $(VBOX_WITH_SUPSVC),VBOX_WITH_SUPSVC,) \
 	$(if $(VBOX_WITH_MAIN),VBOX_WITH_MAIN,)
-ifdef VBOX_WITH_NATIVE_R0_LOADER
- SUPR3HardenedStatic_DEFS   += VBOX_WITH_NATIVE_R0_LOADER
-endif
 SUPR3HardenedStatic_INCS     = .
 SUPR3HardenedStatic_SOURCES  = \
 	SUPR3HardenedMain.cpp \
@@ -178,9 +172,6 @@ VBoxDrv_DEFS.amd64    = RT_WITH_W64_UNWIND_HACK
 ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
 VBoxDrv_DEFS         += VBOX_WITH_VMMR0_DISABLE_PREEMPTION
 endif
-ifdef VBOX_WITH_NATIVE_R0_LOADER
- VBoxDrv_DEFS        += VBOX_WITH_NATIVE_R0_LOADER
-endif
 VBoxDrv_SDKS          = W2K3DDK WINPSDKINCS
 VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
 VBoxDrv_SOURCES       = \
@@ -235,9 +226,6 @@ vboxdrv_NOINST        = true
 vboxdrv_DEFS          = KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE IN_RT_R0 IN_SUP_R0 CONFIG_VBOXDRV_AS_MISC
 ifdef VBOX_LINUX_VERSION_2_4
 vboxdrv_DEFS         += EXPORT_SYMTAB
-endif
-ifdef VBOX_WITH_NATIVE_R0_LOADER
- VBoxDrv_DEFS        += VBOX_WITH_NATIVE_R0_LOADER
 endif
 vboxdrv_INCS         := \
 	$(PATH_SUB_CURRENT) \
@@ -325,9 +313,6 @@ SYSMODS.x86 += VBoxDrvTiger
 VBoxDrvTiger_TEMPLATE    = VBOXR0DRV
 VBoxDrvTiger_INST        = $(INST_VBOXDRV_TIGER)Contents/MacOS/
 VBoxDrvTiger_DEFS       := IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
-ifdef VBOX_WITH_NATIVE_R0_LOADER
- VBoxDrvTiger_DEFS      += VBOX_WITH_NATIVE_R0_LOADER
-endif
 VBoxDrvTiger_DEFS.debug += DEBUG_DARWIN_GIP
 VBoxDrvTiger_INCS        = .
 VBoxDrvTiger_LIBS        = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
@@ -393,9 +378,6 @@ ifeq ($(KBUILD_TARGET),os2)
 #
 VBoxDrv_TEMPLATE      = VBOXR0DRV
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0
-ifdef VBOX_WITH_NATIVE_R0_LOADER
- VBoxDrv_DEFS        += VBOX_WITH_NATIVE_R0_LOADER
-endif
 VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
 #VBoxDrv_LDFLAGS       = -s -t -v
 VBoxDrv_SOURCES       = \
@@ -412,9 +394,6 @@ LIBRARIES += VBoxDrvLib
 VBoxDrvLib_TEMPLATE   = VBOXR0DRV
 VBoxDrvLib_NOINST     = 1
 VBoxDrvLib_DEFS       = IN_RT_R0 IN_SUP_R0
-ifdef VBOX_WITH_NATIVE_R0_LOADER
- VBoxDrvLib_DEFS     += VBOX_WITH_NATIVE_R0_LOADER
-endif
 VBoxDrvLib_INCS      := \
 	. \
 	$(PATH_ROOT)/src/VBox/Runtime/include
@@ -431,9 +410,6 @@ ifeq ($(KBUILD_TARGET),freebsd)
 #
 vboxdrv_TEMPLATE      = VBOXR0DRV
 vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
-ifdef VBOX_WITH_NATIVE_R0_LOADER
- vboxdrv_DEFS        += VBOX_WITH_NATIVE_R0_LOADER
-endif
 vboxdrv_INCS         := $(PATH_SUB_CURRENT)
 vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_SOURCES      := \
@@ -477,9 +453,6 @@ ifdef VBOX_WITH_NETFLT
  vboxdrv_DEFS        += VBOX_WITH_NETFLT
 endif
 vboxdrv_DEFS         += VBOX_SVN_REV=$(VBOX_SVN_REV)
-ifdef VBOX_WITH_NATIVE_R0_LOADER
- vboxdrv_DEFS        += VBOX_WITH_NATIVE_R0_LOADER
-endif
 vboxdrv_DEPS         += $(VBOX_SVN_REV_KMK)
 vboxdrv_INCS         := $(PATH_SUB_CURRENT)
 vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)

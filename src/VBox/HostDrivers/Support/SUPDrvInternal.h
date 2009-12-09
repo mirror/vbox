@@ -427,14 +427,12 @@ typedef struct SUPDRVLDRIMAGE
     uint32_t                        uState;
     /** Usage count. */
     uint32_t volatile               cUsage;
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
-# ifdef RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS
     /** The section object for the loaded image (fNative=true). */
     void                           *pvNtSectionObj;
-# endif
+#endif
     /** Whether it's loaded by the native loader or not. */
     bool                            fNative;
-#endif
     /** Image name. */
     char                            szName[32];
 } SUPDRVLDRIMAGE, *PSUPDRVLDRIMAGE;
@@ -665,8 +663,6 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
 bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt);
 int  VBOXCALL   supdrvOSEnableVTx(bool fEnabled);
 
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
-
 /**
  * Try open the image using the native loader.
  *
@@ -716,7 +712,6 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
  */
 void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 
-#endif /* VBOX_WITH_NATIVE_R0_LOADER */
 
 /*******************************************************************************
 *   Shared Functions                                                           *

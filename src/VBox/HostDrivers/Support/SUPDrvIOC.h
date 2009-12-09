@@ -31,8 +31,6 @@
 #ifndef ___SUPDrvIOC_h___
 #define ___SUPDrvIOC_h___
 
-/*#define VBOX_WITH_NATIVE_R0_LOADER*/
-
 /*
  * Basic types.
  */
@@ -197,15 +195,8 @@ typedef SUPREQHDR *PSUPREQHDR;
  *
  * @todo Pending work on next major version change:
  *          - Nothing.
- *
- * @remarks Major version 0x0011YYYY was consumed by the 3.0.12 release. The
- *          next major version used on the trunk will be 0x00120000!
  */
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
 #define SUPDRV_IOC_VERSION                              0x00120000
-#else
-#define SUPDRV_IOC_VERSION                              0x00100001
-#endif
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -299,19 +290,15 @@ typedef struct SUPLDROPEN
         {
             /** Size of the image we'll be loading (includeing tables). */
             uint32_t        cbImageWithTabs;
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
             /** The size of the image bits. (Less or equal to cbImageWithTabs.) */
             uint32_t        cbImageBits;
-#endif
             /** Image name.
              * This is the NAME of the image, not the file name. It is used
              * to share code with other processes. (Max len is 32 chars!)  */
             char            szName[32];
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
             /** Image file name.
              * This can be used to load the image using a native loader. */
             char            szFilename[196];
-#endif
         } In;
         struct
         {
@@ -319,10 +306,8 @@ typedef struct SUPLDROPEN
             RTR0PTR         pvImageBase;
             /** Indicate whether or not the image requires loading. */
             bool            fNeedsLoading;
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
             /** Indicates that we're using the native ring-0 loader. */
             bool            fNativeLoader;
-#endif
         } Out;
     } u;
 } SUPLDROPEN, *PSUPLDROPEN;
@@ -424,11 +409,9 @@ typedef struct SUPLDRLOAD
             RTR0PTR         pvImageBase;
             /** Entry point type. */
             SUPLDRLOADEP    eEPType;
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
             /** The size of the image bits (starting at offset 0 and
              * approaching offSymbols). */
             uint32_t        cbImageBits;
-#endif
             /** The offset of the symbol table. */
             uint32_t        offSymbols;
             /** The number of entries in the symbol table. */

@@ -593,7 +593,6 @@ bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
     return false;
 }
 
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
 
 #define MY_SystemLoadGdiDriverInformation               26
 #define MY_SystemLoadGdiDriverInSystemSpaceInformation  54
@@ -613,6 +612,7 @@ extern "C" __declspec(dllimport) NTSTATUS NTAPI ZwSetSystemInformation(ULONG, PV
 
 int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
 {
+#if 0
     MYSYSTEMGDIDRIVERINFO Info;
 
     /** @todo fix this horrible stuff. */
@@ -656,6 +656,10 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
     NOREF(pDevExt); NOREF(pszFilename);
     pImage->pvNtSectionObj = NULL;
     return VERR_INTERNAL_ERROR_5; /** @todo convert status, making sure it isn't NOT_SUPPORTED. */
+#else
+    NOREF(pDevExt); NOREF(pszFilename); NOREF(pImage);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
@@ -688,7 +692,6 @@ void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
     NOREF(pDevExt);
 }
 
-#endif /* VBOX_WITH_NATIVE_R0_LOADER */
 
 /**
  * Converts a supdrv error code to an nt status code.

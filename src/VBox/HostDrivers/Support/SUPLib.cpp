@@ -271,15 +271,9 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
         CookieReq.Hdr.rc = VERR_INTERNAL_ERROR;
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
         const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00120000
                                    ?  0x00120000
                                    :  SUPDRV_IOC_VERSION & 0xffff0000;
-#else
-       const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00100001
-                                       ?  0x00100001
-                                   :  SUPDRV_IOC_VERSION & 0xffff0000;
-#endif
         CookieReq.u.In.u32MinVersion = uMinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
         if (    RT_SUCCESS(rc)
@@ -1497,11 +1491,7 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
      */
     if (    pszModule
         &&  *pszModule
-#if defined(VBOX_WITH_NATIVE_R0_LOADER) && defined(RT_OS_WINDOWS)
         &&  strcmp(pszModule, "VBoxDrv.sys")
-#else
-        &&  strcmp(pszModule, "SUPR0.dll")
-#endif
         &&  strcmp(pszModule, "VMMR0.r0"))
     {
         AssertMsgFailed(("%s is importing from %s! (expected 'SUPR0.dll' or 'VMMR0.r0', case-sensitiv)\n", pvUser, pszModule));
@@ -1520,6 +1510,7 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
     /*
      * Lookup symbol.
      */
+    /** @todo is this actually used??? */
     /* skip the 64-bit ELF import prefix first. */
     if (!strncmp(pszSymbol, "SUPR0$", sizeof("SUPR0$") - 1))
         pszSymbol += sizeof("SUPR0$") - 1;
@@ -1555,11 +1546,11 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
     /*
      * The GIP.
      */
-    /** @todo R0 mapping? */
     if (    pszSymbol
         &&  g_pSUPGlobalInfoPage
         &&  g_pSUPGlobalInfoPageR0
-        &&  !strcmp(pszSymbol, "g_SUPGlobalInfoPage"))
+        &&  !strcmp(pszSymbol, "g_SUPGlobalInfoPage")
+       )
     {
         *pValue = (uintptr_t)g_pSUPGlobalInfoPageR0;
         return VINF_SUCCESS;
@@ -1662,13 +1653,11 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
     AssertPtrReturn(pszModule, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppvImageBase, VERR_INVALID_PARAMETER);
     AssertReturn(strlen(pszModule) < RT_SIZEOFMEMB(SUPLDROPEN, u.In.szName), VERR_FILENAME_TOO_LONG);
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
     char szAbsFilename[RT_SIZEOFMEMB(SUPLDROPEN, u.In.szFilename)];
     rc = RTPathAbs(pszFilename, szAbsFilename, sizeof(szAbsFilename));
     if (RT_FAILURE(rc))
         return rc;
     pszFilename = szAbsFilename;
-#endif
 
     const bool fIsVMMR0 = !strcmp(pszModule, "VMMR0.r0");
     AssertReturn(!pszSrvReqHandler || !fIsVMMR0, VERR_INTERNAL_ERROR);
@@ -1704,13 +1693,9 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
         OpenReq.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
         OpenReq.Hdr.rc = VERR_INTERNAL_ERROR;
         OpenReq.u.In.cbImageWithTabs = cbImageWithTabs;
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
         OpenReq.u.In.cbImageBits = (uint32_t)CalcArgs.cbImage;
-#endif
         strcpy(OpenReq.u.In.szName, pszModule);
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
         strcpy(OpenReq.u.In.szFilename, pszFilename);
-#endif
         if (!g_u32FakeMode)
         {
             rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_LDR_OPEN, &OpenReq, SUP_IOCTL_LDR_OPEN_SIZE);
@@ -1819,9 +1804,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                             pLoadReq->u.In.offStrTab                  = offStrTab;
                             pLoadReq->u.In.cbStrTab                   = (uint32_t)CalcArgs.cbStrings;
                             AssertRelease(pLoadReq->u.In.cbStrTab == CalcArgs.cbStrings);
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
                             pLoadReq->u.In.cbImageBits                = (uint32_t)CalcArgs.cbImage;
-#endif
                             pLoadReq->u.In.offSymbols                 = offSymTab;
                             pLoadReq->u.In.cSymbols                   = CalcArgs.cSymbols;
                             pLoadReq->u.In.cbImageWithTabs            = cbImageWithTabs;
@@ -1838,8 +1821,9 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                                 ||  rc == VERR_ALREADY_LOADED /* A competing process. */
                                )
                             {
-                                LogRel(("SUP: Loaded %s (%s) at %#p - ModuleInit at %RTptr and ModuleTerm at %RTptr\n", pszModule, pszFilename,
-                                        OpenReq.u.Out.pvImageBase, ModuleInit, ModuleTerm));
+                                LogRel(("SUP: Loaded %s (%s) at %#p - ModuleInit at %RTptr and ModuleTerm at %RTptr%s\n",
+                                        pszModule, pszFilename, OpenReq.u.Out.pvImageBase, ModuleInit, ModuleTerm,
+                                        OpenReq.u.Out.fNativeLoader ? " using the native ring-0 loader" : ""));
                                 if (fIsVMMR0)
                                 {
                                     g_pvVMMR0 = OpenReq.u.Out.pvImageBase;
@@ -1869,7 +1853,8 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
         {
             if (fIsVMMR0)
                 g_pvVMMR0 = OpenReq.u.Out.pvImageBase;
-            LogRel(("SUP: Opened %s (%s) at %#p.\n", pszModule, pszFilename, OpenReq.u.Out.pvImageBase));
+            LogRel(("SUP: Opened %s (%s) at %#p.\n", pszModule, pszFilename, OpenReq.u.Out.pvImageBase,
+                    OpenReq.u.Out.fNativeLoader ? " loaded by the native ring-0 loader" : ""));
 #ifdef RT_OS_WINDOWS
             LogRel(("SUP: windbg> .reload /f %s=%#p\n", pszFilename, OpenReq.u.Out.pvImageBase));
 #endif

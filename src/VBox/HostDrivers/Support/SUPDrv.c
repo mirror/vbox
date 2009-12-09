@@ -261,7 +261,11 @@ DECLASM(void)  UNWIND_WRAP(AssertMsg1)(const char *pszExpr, unsigned uLine, cons
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Pointer to the global info page for implementing SUPGetGIP(). */
-static PSUPGLOBALINFOPAGE g_pSUPGlobalInfoPageInternal = NULL;
+static PSUPGLOBALINFOPAGE      g_pSUPGlobalInfoPageInternal = NULL;
+#if defined(RT_OS_WINDOWS)
+DECLEXPORT(PSUPGLOBALINFOPAGE) g_pSUPGlobalInfoPage = NULL;
+# define SUPR0_EXPORT_GIP_POINTER
+#endif
 
 /**
  * Array of the R0 SUP API.
@@ -316,6 +320,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0GetPagingMode",                     (void *)UNWIND_WRAP(SUPR0GetPagingMode) },
     { "SUPR0EnableVTx",                         (void *)SUPR0EnableVTx },
     { "SUPGetGIP",                              (void *)SUPGetGIP },
+    { "g_pSUPGlobalInfoPage",                   (void *)&g_pSUPGlobalInfoPageInternal },
     { "RTMemAlloc",                             (void *)UNWIND_WRAP(RTMemAlloc) },
     { "RTMemAllocZ",                            (void *)UNWIND_WRAP(RTMemAllocZ) },
     { "RTMemFree",                              (void *)UNWIND_WRAP(RTMemFree) },
@@ -1293,17 +1298,13 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             REQ_CHECK_SIZES(SUP_IOCTL_LDR_OPEN);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageWithTabs > 0);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageWithTabs < 16*_1M);
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits > 0);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits > 0);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits < pReq->u.In.cbImageWithTabs);
-#endif
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.szName[0]);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, memchr(pReq->u.In.szName, '\0', sizeof(pReq->u.In.szName)));
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, !supdrvCheckInvalidChar(pReq->u.In.szName, ";:()[]{}/\\|&*%#@!~`\"'"));
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, memchr(pReq->u.In.szFilename, '\0', sizeof(pReq->u.In.szFilename)));
-#endif
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_LdrOpen(pDevExt, pSession, pReq);
@@ -3469,9 +3470,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             pImage->cUsage++;
             pReq->u.Out.pvImageBase   = pImage->pvImage;
             pReq->u.Out.fNeedsLoading = pImage->uState == SUP_IOCTL_LDR_OPEN;
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
             pReq->u.Out.fNativeLoader = pImage->fNative;
-#endif
             supdrvLdrAddUsage(pSession, pImage);
             RTSemFastMutexRelease(pDevExt->mtxLdr);
             return VINF_SUCCESS;
@@ -3497,11 +3496,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     pImage->pvImage         = NULL;
     pImage->pvImageAlloc    = NULL;
     pImage->cbImageWithTabs = pReq->u.In.cbImageWithTabs;
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
     pImage->cbImageBits     = pReq->u.In.cbImageBits;
-#else
-    pImage->cbImageBits     = pReq->u.In.cbImageWithTabs;
-#endif
     pImage->cSymbols        = 0;
     pImage->paSymbols       = NULL;
     pImage->pachStrTab      = NULL;
@@ -3517,21 +3512,13 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      * Try load it using the native loader, if that isn't supported, fall back
      * on the older method.
      */
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
     pImage->fNative         = true;
-    RTSemFastMutexRelease(pDevExt->mtxLdr); /*hack*/
     rc = supdrvOSLdrOpen(pDevExt, pImage, pReq->u.In.szFilename);
-    RTSemFastMutexRequest(pDevExt->mtxLdr); /*hack*/
-#else
-    rc = VERR_NOT_SUPPORTED;
-#endif
     if (rc == VERR_NOT_SUPPORTED)
     {
         pImage->pvImageAlloc = RTMemExecAlloc(pImage->cbImageBits + 31);
         pImage->pvImage     = RT_ALIGN_P(pImage->pvImageAlloc, 32);
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
         pImage->fNative     = false;
-#endif
         rc = pImage->pvImageAlloc ? VINF_SUCCESS : VERR_NO_MEMORY;
     }
     if (RT_FAILURE(rc))
@@ -3553,9 +3540,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
 
     pReq->u.Out.pvImageBase   = pImage->pvImage;
     pReq->u.Out.fNeedsLoading = true;
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
     pReq->u.Out.fNativeLoader = pImage->fNative;
-#endif
     RTSemFastMutexRelease(pDevExt->mtxLdr);
 
 #if defined(RT_OS_WINDOWS) && defined(DEBUG)
@@ -3590,7 +3575,6 @@ static int supdrvLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImag
             return VERR_INVALID_PARAMETER;
         }
 
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
         if (pImage->fNative)
         {
             int rc = supdrvOSLdrValidatePointer(pDevExt, pImage, pv, pbImageBits);
@@ -3601,7 +3585,6 @@ static int supdrvLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImag
                 return rc;
             }
         }
-#endif
     }
     return VINF_SUCCESS;
 }
@@ -3642,20 +3625,12 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     /*
      * Validate input.
      */
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
     if (   pImage->cbImageWithTabs != pReq->u.In.cbImageWithTabs
         || pImage->cbImageBits     != pReq->u.In.cbImageBits)
-#else
-    if (pImage->cbImageWithTabs != pReq->u.In.cbImageWithTabs)
-#endif
     {
         RTSemFastMutexRelease(pDevExt->mtxLdr);
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
         Log(("SUP_IOCTL_LDR_LOAD: image size mismatch!! %d(prep) != %d(load) or %d != %d\n",
              pImage->cbImageWithTabs, pReq->u.In.cbImageWithTabs, pImage->cbImageBits, pReq->u.In.cbImageBits));
-#else
-        Log(("SUP_IOCTL_LDR_LOAD: image size mismatch!! %d(prep) != %d(load)\n", pImage->cbImageWithTabs, pReq->u.In.cbImageWithTabs));
-#endif
         return VERR_INVALID_HANDLE;
     }
 
@@ -3750,11 +3725,9 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         pImage->pfnModuleInit = pReq->u.In.pfnModuleInit;
         pImage->pfnModuleTerm = pReq->u.In.pfnModuleTerm;
 
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
         if (pImage->fNative)
             rc = supdrvOSLdrLoad(pDevExt, pImage, pReq->u.In.achImage);
         else
-#endif
             memcpy(pImage->pvImage, &pReq->u.In.achImage[0], pImage->cbImageBits);
     }
 
@@ -4246,11 +4219,9 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 #endif
     }
 
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
     /* do native unload if appropriate. */
     if (pImage->fNative)
         supdrvOSLdrUnload(pDevExt, pImage);
-#endif
 
     /* free the image */
     pImage->cUsage = 0;
@@ -4564,6 +4535,9 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
              */
             dprintf(("supdrvGipCreate: %ld ns interval.\n", (long)u32Interval));
             g_pSUPGlobalInfoPageInternal = pGip;
+#ifdef SUPR0_EXPORT_GIP_POINTER
+            g_pSUPGlobalInfoPage = pGip;
+#endif
             return VINF_SUCCESS;
         }
 
@@ -4602,6 +4576,9 @@ static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
         pDevExt->pGip = NULL;
     }
     g_pSUPGlobalInfoPageInternal = NULL;
+#ifdef SUPR0_EXPORT_GIP_POINTER
+    g_pSUPGlobalInfoPage = NULL;
+#endif
 
     /*
      * Destroy the timer and free the GIP memory object.
