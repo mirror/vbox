@@ -832,7 +832,6 @@ public:
             mPrimary.add(pVga);
             mPrimary.setCurrentVisible(pVga);
         }
-//        mSurfPrimary = pVga;
         mOverlays.clear();
         return old;
     }
@@ -1177,7 +1176,6 @@ public:
 
     void vboxDoResize(void *re);
 
-//    void vboxPaintEvent (QPaintEvent *pe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoPaint, pe); }
     void vboxResizeEvent (class VBoxResizeEvent *re) {vboxPerformGLOp(&VBoxGLWidget::vboxDoResize, re); }
 
     void vboxProcessVHWACommands(class VBoxVHWACommandElementProcessor * pPipe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoProcessVHWACommands, pPipe);}
@@ -1201,8 +1199,6 @@ public:
 
     bool performDisplayAndSwap(bool bForce)
     {
-//    	VBOXQGLLOG_METHODTIME("t:");
-
     	bForce = mDisplay.performDisplay(bForce | mRepaintNeeded);
         if(bForce)
         {
@@ -1235,10 +1231,8 @@ protected:
             mpfnOp = NULL;
         }
         VBOXQGLLOG(("paintGL\n"));
-//        else
-//        {
-            mDisplay.performDisplay(true);
-//        }
+
+        mDisplay.performDisplay(true);
     }
 
     void initializeGL();
@@ -1246,7 +1240,6 @@ protected:
 private:
     static void setupMatricies(const QSize &display);
     static void adjustViewport(const QSize &display, const QRect &viewport);
-//    void vboxDoPaint(void *rec);
 
 
 #ifdef VBOXQGL_DBG_SURF
@@ -1292,10 +1285,6 @@ private:
         updateGL();
     }
 
-//    /* posts op to UI thread */
-//    int vboxExecOpSynch(PFNVBOXQGLOP pfn, void* pContext);
-//    void vboxExecOnResize(PFNVBOXQGLOP pfn, void* pContext);
-
     void vboxDoProcessVHWACommands(void *pContext);
 
     class VBoxVHWACommandElement * processCmdList(class VBoxVHWACommandElement * pCmd);
@@ -1317,7 +1306,6 @@ private:
 
     bool mRepaintNeeded;
 
-//    bool   mbVGASurfCreated;
     QRect mViewport;
 
     class VBoxConsoleView *mView;
@@ -1337,13 +1325,6 @@ private:
 #endif
 };
 
-
-//typedef enum
-//{
-//    VBOXFBOVERLAY_DONE = 1,
-//    VBOXFBOVERLAY_MODIFIED,
-//    VBOXFBOVERLAY_UNTOUCHED
-//} VBOXFBOVERLAY_RESUT;
 
 class VBoxQGLOverlay
 {
@@ -1445,13 +1426,6 @@ private:
         }
     }
 
-//    void vboxOpExit()
-//    {
-//        performDisplayOverlay();
-//        mGlCurrent = false;
-//    }
-
-
     void vboxSetGlOn(bool on);
     bool vboxGetGlOn() { return mGlOn; }
     bool vboxSynchGl();
@@ -1460,7 +1434,6 @@ private:
     void vboxDoCheckUpdateViewport();
     void vboxDoVHWACmd(void *cmd);
     void addMainDirtyRect(const QRect & aRect);
-//    void vboxUpdateOverlayPosition(const QPoint & pos);
     void vboxCheckUpdateOverlay(const QRect & rect);
     VBoxVHWACommandElement * processCmdList(VBoxVHWACommandElement * pCmd);
 
@@ -1538,25 +1511,6 @@ public:
             return S_OK;
         return T::NotifyUpdate(aX, aY, aW, aH);
     }
-
-//    void paintEvent (QPaintEvent *pe)
-//    {
-//        QRect rect;
-//        VBOXFBOVERLAY_RESUT res = mOverlay.onPaintEvent(pe, &rect);
-//        switch(res)
-//        {
-//            case VBOXFBOVERLAY_MODIFIED:
-//            {
-//                QPaintEvent modified(rect);
-//                T::paintEvent(&modified);
-//            } break;
-//            case VBOXFBOVERLAY_UNTOUCHED:
-//                T::paintEvent(pe);
-//                break;
-//            default:
-//                break;
-//        }
-//    }
 
     void resizeEvent (VBoxResizeEvent *re)
     {
