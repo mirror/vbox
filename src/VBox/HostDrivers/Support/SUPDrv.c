@@ -1289,7 +1289,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             REQ_CHECK_SIZES(SUP_IOCTL_LDR_OPEN);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageWithTabs > 0);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageWithTabs < 16*_1M);
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits > 0);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits > 0);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits < pReq->u.In.cbImageWithTabs);
@@ -1297,7 +1297,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.szName[0]);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, memchr(pReq->u.In.szName, '\0', sizeof(pReq->u.In.szName)));
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, !supdrvCheckInvalidChar(pReq->u.In.szName, ";:()[]{}/\\|&*%#@!~`\"'"));
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, memchr(pReq->u.In.szFilename, '\0', sizeof(pReq->u.In.szFilename)));
 #endif
 
@@ -3479,7 +3479,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     pImage->pvImage         = NULL;
     pImage->pvImageAlloc    = NULL;
     pImage->cbImageWithTabs = pReq->u.In.cbImageWithTabs;
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
     pImage->cbImageBits     = pReq->u.In.cbImageBits;
 #else
     pImage->cbImageBits     = pReq->u.In.cbImageWithTabs;
@@ -3499,7 +3499,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      * Try load it using the native loader, if that isn't supported, fall back
      * on the older method.
      */
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
     pImage->fNative         = true;
     rc = supdrvOSLdrOpen(pDevExt, pImage, pReq->u.In.szFilename);
 #else
@@ -3509,7 +3509,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     {
         pImage->pvImageAlloc = RTMemExecAlloc(pImage->cbImageBits + 31);
         pImage->pvImage     = RT_ALIGN_P(pImage->pvImageAlloc, 32);
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
         pImage->fNative     = false;
 #endif
         rc = pImage->pvImageAlloc ? VINF_SUCCESS : VERR_NO_MEMORY;
@@ -3567,7 +3567,7 @@ static int supdrvLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImag
             return VERR_INVALID_PARAMETER;
         }
 
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
         if (pImage->fNative)
         {
             int rc = supdrvOSLdrValidatePointer(pDevExt, pImage, pv, pbImageBits);
@@ -3619,7 +3619,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     /*
      * Validate input.
      */
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
     if (   pImage->cbImageWithTabs != pReq->u.In.cbImageWithTabs
         || pImage->cbImageBits     != pReq->u.In.cbImageBits)
 #else
@@ -3627,7 +3627,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
 #endif
     {
         RTSemFastMutexRelease(pDevExt->mtxLdr);
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
         Log(("SUP_IOCTL_LDR_LOAD: image size mismatch!! %d(prep) != %d(load) or %d != %d\n",
              pImage->cbImageWithTabs, pReq->u.In.cbImageWithTabs, pImage->cbImageBits, pReq->u.In.cbImageBits));
 #else
@@ -3727,7 +3727,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         pImage->pfnModuleInit = pReq->u.In.pfnModuleInit;
         pImage->pfnModuleTerm = pReq->u.In.pfnModuleTerm;
 
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
         if (pImage->fNative)
             rc = supdrvOSLdrLoad(pDevExt, pImage, pReq->u.In.achImage);
         else
@@ -4223,7 +4223,7 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 #endif
     }
 
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
     /* do native unload if appropriate. */
     if (pImage->fNative)
         supdrvOSLdrUnload(pDevExt, pImage);

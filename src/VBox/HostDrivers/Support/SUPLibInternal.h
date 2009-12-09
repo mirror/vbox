@@ -31,8 +31,6 @@
 #ifndef ___SUPLibInternal_h___
 #define ___SUPLibInternal_h___
 
-/*#define SUPDRV_USE_NATIVE_LOADER*/
-
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <iprt/stdarg.h>

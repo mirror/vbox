@@ -381,7 +381,7 @@ bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
     return false;
 }
 
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
 
 int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
 {
@@ -409,7 +409,7 @@ void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
     NOREF(pDevExt); NOREF(pImage);
 }
 
-#endif /* SUPDRV_USE_NATIVE_LOADER */
+#endif /* VBOX_WITH_NATIVE_R0_LOADER */
 
 /**
  * Callback for writing to the log buffer.

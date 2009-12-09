@@ -31,7 +31,7 @@
 #ifndef ___SUPDrvIOC_h___
 #define ___SUPDrvIOC_h___
 
-/*#define SUPDRV_USE_NATIVE_LOADER*/
+/*#define VBOX_WITH_NATIVE_R0_LOADER*/
 
 /*
  * Basic types.
@@ -201,7 +201,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @remarks Major version 0x0011YYYY was consumed by the 3.0.12 release. The
  *          next major version used on the trunk will be 0x00120000!
  */
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
 #define SUPDRV_IOC_VERSION                              0x00120000
 #else
 #define SUPDRV_IOC_VERSION                              0x00100001
@@ -299,7 +299,7 @@ typedef struct SUPLDROPEN
         {
             /** Size of the image we'll be loading (includeing tables). */
             uint32_t        cbImageWithTabs;
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
             /** The size of the image bits. (Less or equal to cbImageWithTabs.) */
             uint32_t        cbImageBits;
 #endif
@@ -307,7 +307,7 @@ typedef struct SUPLDROPEN
              * This is the NAME of the image, not the file name. It is used
              * to share code with other processes. (Max len is 32 chars!)  */
             char            szName[32];
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
             /** Image file name.
              * This can be used to load the image using a native loader. */
             char            szFilename[196];
@@ -420,7 +420,7 @@ typedef struct SUPLDRLOAD
             RTR0PTR         pvImageBase;
             /** Entry point type. */
             SUPLDRLOADEP    eEPType;
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
             /** The size of the image bits (starting at offset 0 and
              * approaching offSymbols). */
             uint32_t        cbImageBits;
