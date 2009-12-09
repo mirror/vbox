@@ -306,7 +306,7 @@ VMMR3DECL(int) CSAMR3Init(PVM pVM)
     static bool fRegisteredCmds = false;
     if (!fRegisteredCmds)
     {
-        int rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
+        rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
         if (RT_SUCCESS(rc))
             fRegisteredCmds = true;
     }
@@ -1784,9 +1784,9 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
     case CSAM_TAG_CSAM:
 #endif
     {
-        int rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, GCPtr, GCPtr + (PAGE_SIZE - 1) /* inclusive! */,
-                                             (fMonitorInvalidation) ? CSAMCodePageInvalidate : 0, CSAMCodePageWriteHandler, "CSAMGCCodePageWriteHandler", 0,
-                                             csamGetMonitorDescription(enmTag));
+        rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, GCPtr, GCPtr + (PAGE_SIZE - 1) /* inclusive! */,
+                                         (fMonitorInvalidation) ? CSAMCodePageInvalidate : 0, CSAMCodePageWriteHandler, "CSAMGCCodePageWriteHandler", 0,
+                                         csamGetMonitorDescription(enmTag));
         AssertMsg(RT_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT, ("PGMR3HandlerVirtualRegisterEx %RRv failed with %Rrc\n", GCPtr, rc));
         if (RT_FAILURE(rc))
             Log(("PGMR3HandlerVirtualRegisterEx for %RRv failed with %Rrc\n", GCPtr, rc));
@@ -2546,9 +2546,9 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
                 Log(("CSAMCheckGates: check interrupt gate %d at %04X:%08X (flat %RRv)\n", iGate, pGuestIdte->Gen.u16SegSel, VBOXIDTE_OFFSET(*pGuestIdte), pHandler));
             }
 
-            STAM_PROFILE_START(&pVM->csam.s.StatTime, a);
+            STAM_PROFILE_START(&pVM->csam.s.StatTime, b);
             rc = csamAnalyseCodeStream(pVM, pHandler, pHandler, true, CSAMR3AnalyseCallback, pPage, &cacheRec);
-            STAM_PROFILE_STOP(&pVM->csam.s.StatTime, a);
+            STAM_PROFILE_STOP(&pVM->csam.s.StatTime, b);
             if (rc != VINF_SUCCESS)
             {
                 Log(("CSAMCheckGates: csamAnalyseCodeStream failed with %d\n", rc));
