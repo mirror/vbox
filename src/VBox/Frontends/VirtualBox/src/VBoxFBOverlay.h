@@ -191,7 +191,6 @@ class VBoxVHWAColorFormat
 {
 public:
 
-//    VBoxVHWAColorFormat(GLint aInternalFormat, GLenum aFormat, GLenum aType, uint32_t aDataFormat);
     VBoxVHWAColorFormat(uint32_t bitsPerPixel, uint32_t r, uint32_t g, uint32_t b);
     VBoxVHWAColorFormat(uint32_t fourcc);
     VBoxVHWAColorFormat(){}
@@ -202,7 +201,6 @@ public:
     uint32_t fourcc() const {return mDataFormat;}
     uint32_t bitsPerPixel() const { return mBitsPerPixel; }
     uint32_t bitsPerPixelTex() const { return mBitsPerPixelTex; }
-//    uint32_t bitsPerPixelDd() const { return mBitsPerPixelDd; }
     void pixel2Normalized(uint32_t pix, float *r, float *g, float *b) const;
     uint32_t widthCompression() const {return mWidthCompression;}
     uint32_t heightCompression() const {return mHeightCompression;}
@@ -224,7 +222,6 @@ private:
 
     uint32_t mBitsPerPixel;
     uint32_t mBitsPerPixelTex;
-//    uint32_t mBitsPerPixelDd;
     uint32_t mWidthCompression;
     uint32_t mHeightCompression;
     VBoxVHWAColorComponent mR;
@@ -310,17 +307,84 @@ protected:
 class VBoxVHWATextureNP2RectPBO : public VBoxVHWATextureNP2Rect
 {
 public:
-    VBoxVHWATextureNP2RectPBO() : VBoxVHWATextureNP2Rect() {}
+    VBoxVHWATextureNP2RectPBO() :
+        VBoxVHWATextureNP2Rect(),
+        mPBO(0)
+    {}
     VBoxVHWATextureNP2RectPBO(const QRect & aRect, const VBoxVHWAColorFormat &aFormat) :
-        VBoxVHWATextureNP2Rect(aRect, aFormat){}
+        VBoxVHWATextureNP2Rect(aRect, aFormat),
+        mPBO(0)
+    {}
+
     virtual ~VBoxVHWATextureNP2RectPBO();
 
     virtual void init(uchar *pvMem);
 protected:
     virtual void load();
     virtual void doUpdate(uchar * pAddress, const QRect * pRect);
-private:
     GLuint mPBO;
+};
+
+class VBoxVHWATextureNP2RectPBOMapped : public VBoxVHWATextureNP2RectPBO
+{
+public:
+    VBoxVHWATextureNP2RectPBOMapped() :
+        VBoxVHWATextureNP2RectPBO(),
+        mpMappedAllignedBuffer(NULL),
+        mcbAllignedBufferSize(0),
+        mcbOffset(0)
+    {}
+    VBoxVHWATextureNP2RectPBOMapped(const QRect & aRect, const VBoxVHWAColorFormat &aFormat) :
+            VBoxVHWATextureNP2RectPBO(aRect, aFormat),
+            mpMappedAllignedBuffer(NULL),
+            mcbOffset(0)
+    {
+        mcbAllignedBufferSize = alignSize((size_t)memSize());
+        mcbActualBufferSize = mcbAllignedBufferSize + 0x1fff;
+    }
+
+    uchar* mapAlignedBuffer();
+    void   unmapBuffer();
+    size_t alignedBufferSize() { return mcbAllignedBufferSize; }
+
+    static size_t alignSize(size_t size)
+    {
+        size_t alSize = size & ~((size_t)0xfff);
+        return alSize == size ? alSize : alSize + 0x1000;
+    }
+
+    static void* alignBuffer(void* pvMem) { return (void*)(((uintptr_t)pvMem) & ~((uintptr_t)0xfff)); }
+    static size_t calcOffset(void* pvBase, void* pvOffset) { return (size_t)(((uintptr_t)pvBase) - ((uintptr_t)pvOffset)); }
+protected:
+    virtual void load();
+    virtual void doUpdate(uchar * pAddress, const QRect * pRect);
+private:
+    uchar* mpMappedAllignedBuffer;
+    size_t mcbAllignedBufferSize;
+    size_t mcbOffset;
+    size_t mcbActualBufferSize;
+};
+
+class VBoxVHWAAlignedPBO
+{
+public:
+    void init(size_t size)
+    {
+
+    }
+
+    size_t alignedSize() { return mAlignedSize; }
+    size_t actualSize() { return mActualSize; }
+    size_t requestedSize() { return mRequestedSize; }
+    void* alignedBuffer() { return mAlignedBuffer; }
+    void* actualBuffer() { return mActualBuffer; }
+
+private:
+    void* mAlignedBuffer;
+    void* mActualBuffer;
+    size_t mAlignedSize;
+    size_t mActualSize;
+    size_t mRequestedSize;
 };
 
 #ifdef VBOXVHWA_USE_TEXGROUP
