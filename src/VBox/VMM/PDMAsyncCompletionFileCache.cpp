@@ -991,7 +991,7 @@ static PPDMACFILECACHEENTRY pdmacFileEpCacheGetCacheBestFitEntryByOffset(PPDMACF
     STAM_PROFILE_ADV_START(&pCache->StatTreeGet, Cache);
 
     RTSemRWRequestRead(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
-    pEntry = (PPDMACFILECACHEENTRY)RTAvlrFileOffsetGetBestFit(pEndpointCache->pTree, off, true);
+    pEntry = (PPDMACFILECACHEENTRY)RTAvlrFileOffsetGetBestFit(pEndpointCache->pTree, off, true /*fAbove*/);
     if (pEntry)
         pdmacFileEpCacheEntryRef(pEntry);
     RTSemRWReleaseRead(pEndpointCache->SemRWEntries);
@@ -1024,7 +1024,7 @@ static void pdmacFileEpCacheInsertEntry(PPDMACFILEENDPOINTCACHE pEndpointCache, 
  * @param   cbData    Size of the cache entry.
  * @param   pbBuffer  Pointer to the buffer to use.
  *                    NULL if a new buffer should be allocated.
- *                    The buffer needs to have the same size of the entry. 
+ *                    The buffer needs to have the same size of the entry.
  */
 static PPDMACFILECACHEENTRY pdmacFileCacheEntryAlloc(PPDMACFILECACHEGLOBAL pCache,
                                                      PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
@@ -1312,7 +1312,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
 
                 /* Move the entry to Am and fetch it to the cache. */
                 pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
-                RTCritSectLeave(&pCache->CritSect);                
+                RTCritSectLeave(&pCache->CritSect);
 #else
                 RTCritSectEnter(&pCache->CritSect);
                 pdmacFileCacheUpdate(pCache, pEntry);
@@ -1368,7 +1368,8 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
                      pEntryBestFit ? pEntryBestFit->Core.KeyLast : 0,
                      pEntryBestFit ? pEntryBestFit->cbData : 0));
 
-            if (pEntryBestFit && ((off + (RTFOFF)cbRead) > pEntryBestFit->Core.Key))
+            if (    pEntryBestFit
+                &&  off + (RTFOFF)cbRead > pEntryBestFit->Core.Key)
             {
                 cbToRead = pEntryBestFit->Core.Key - off;
                 pdmacFileEpCacheEntryRelease(pEntryBestFit);
@@ -1376,22 +1377,23 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
             }
             else
             {
-                 if (pEntryBestFit)
-                    pdmacFileEpCacheEntryRelease(pEntryBestFit);
-
                 /*
                  * Align the size to a 4KB boundary.
                  * Memory size is aligned to a page boundary
                  * and memory is wasted if the size is rahter small.
                  * (For example reads with a size of 512 bytes.
                  */
-                cbToRead = cbRead; 
+                cbToRead = cbRead;
                 cbToReadAligned = RT_ALIGN_Z(cbRead, PAGE_SIZE);
 
                 /* Clip read to file size */
                 cbToReadAligned = RT_MIN(pEndpoint->cbFile - off, cbToReadAligned);
                 if (pEntryBestFit)
-                    cbToReadAligned = RT_MIN(cbToReadAligned, pEntryBestFit->Core.Key - off);
+                {
+                    Assert(pEntryBestFit->Core.Key >= off);
+                    cbToReadAligned = RT_MIN(cbToReadAligned, (uint64_t)pEntryBestFit->Core.Key - off);
+                    pdmacFileEpCacheEntryRelease(pEntryBestFit);
+                }
             }
 
             cbRead -= cbToRead;
@@ -1752,7 +1754,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
 
                 /* Move the entry to Am and fetch it to the cache. */
                 pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
-                RTCritSectLeave(&pCache->CritSect);                
+                RTCritSectLeave(&pCache->CritSect);
 #else
                 RTCritSectEnter(&pCache->CritSect);
                 pdmacFileCacheUpdate(pCache, pEntry);
