@@ -3488,7 +3488,7 @@ STDMETHODIMP Machine::GetGuestProperty(IN_BSTR aName,
             mData->mSession.mDirectControl;
 
         /* just be on the safe side when calling another process */
-        alock.unlock();
+        alock.release();
 
         /* fail if we were called after #OnSessionEnd() is called.  This is a
          * silly race condition. */
@@ -3732,7 +3732,7 @@ STDMETHODIMP Machine::EnumerateGuestProperties(IN_BSTR aPatterns,
         ComPtr<IInternalSessionControl> directControl = mData->mSession.mDirectControl;
 
         /* just be on the safe side when calling another process */
-        alock.unlock();
+        alock.release();
 
         if (!directControl)
             rc = E_FAIL;
@@ -9295,11 +9295,11 @@ STDMETHODIMP SessionMachine::PushGuestProperties(ComSafeArrayIn(IN_BSTR, aNames)
 
     mHWData->mPropertyServiceActive = false;
 
-    alock.unlock();
+    alock.release();
     SaveSettings();
 
     /* Restore the mRegistered flag. */
-    alock.lock();
+    alock.acquire();
     mData->mRegistered = TRUE;
 
     return S_OK;

@@ -3345,8 +3345,8 @@ HRESULT Medium::discard(ComObjPtr<Progress> &aProgress, ULONG ulWeight, MergeCha
 
             // deleteStorageAndWait calls unregisterWithVirtualBox which gets
             // a write tree lock, so don't deadlock
-            treeLock.unlock();
-            alock.unlock();
+            treeLock.release();
+            alock.release();
 
             rc = deleteStorageAndWait(&aProgress);
         }

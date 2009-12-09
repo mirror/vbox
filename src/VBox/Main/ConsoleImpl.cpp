@@ -3216,7 +3216,7 @@ DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, un
        Unlock before resuming because the vmstateChangeCallback problem
        described above.
      */
-    alock.unlock();
+    alock.release();
 
     /*
      * Resume the VM if necessary.

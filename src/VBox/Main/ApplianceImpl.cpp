@@ -1036,14 +1036,14 @@ int Appliance::readS3(TaskImportOVF *pTask)
         if (FAILED(rc)) throw rc;
 
         /* Unlock the appliance for the reading thread */
-        appLock.unlock();
+        appLock.release();
         /* Wait until the reading is done, but report the progress back to the
            caller */
         ComPtr<IProgress> progressInt(progress);
         waitForAsyncProgress(pTask->progress, progressInt); /* Any errors will be thrown */
 
         /* Again lock the appliance for the next steps */
-        appLock.lock();
+        appLock.acquire();
     }
     catch(HRESULT aRC)
     {
@@ -2103,14 +2103,14 @@ int Appliance::importS3(TaskImportOVF *pTask)
         if (FAILED(rc)) throw rc;
 
         /* Unlock the appliance for the fs import thread */
-        appLock.unlock();
+        appLock.release();
         /* Wait until the import is done, but report the progress back to the
            caller */
         ComPtr<IProgress> progressInt(progress);
         waitForAsyncProgress(pTask->progress, progressInt); /* Any errors will be thrown */
 
         /* Again lock the appliance for the next steps */
-        appLock.lock();
+        appLock.acquire();
     }
     catch(HRESULT aRC)
     {
@@ -3125,14 +3125,14 @@ int Appliance::writeS3(TaskExportOVF *pTask)
         if (FAILED(rc)) throw rc;
 
         /* Unlock the appliance for the writing thread */
-        appLock.unlock();
+        appLock.release();
         /* Wait until the writing is done, but report the progress back to the
            caller */
         ComPtr<IProgress> progressInt(progress);
         waitForAsyncProgress(pTask->progress, progressInt); /* Any errors will be thrown */
 
         /* Again lock the appliance for the next steps */
-        appLock.lock();
+        appLock.acquire();
 
         vrc = RTPathExists(strTmpOvf.c_str()); /* Paranoid check */
         if(RT_FAILURE(vrc))

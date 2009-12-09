@@ -40,6 +40,12 @@
 namespace util
 {
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// LockHandle and friends
+//
+////////////////////////////////////////////////////////////////////////////////
+
 /**
  * Abstract lock operations. See LockHandle and AutoWriteLock for details.
  */
@@ -244,6 +250,12 @@ private:
     mutable RTCRITSECT mCritSect;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// Lockable
+//
+////////////////////////////////////////////////////////////////////////////////
+
 /**
  * Lockable interface.
  *
@@ -295,165 +307,33 @@ public:
     }
 };
 
-/**
- * Provides safe management of read/write semaphores in write mode.
- *
- * A read/write semaphore is represented by the LockHandle class. This semaphore
- * can be requested ("locked") in two different modes: for reading and for
- * writing. A write lock is exclusive and acts like a mutex: only one thread can
- * acquire a write lock on the given semaphore at a time; all other threads
- * trying to request a write lock or a read lock (see below) on the same
- * semaphore will be indefinitely blocked until the owning thread releases the
- * write lock.
- *
- * A read lock is shared. This means that several threads can acquire a read
- * lock on the same semaphore at the same time provided that there is no thread
- * that holds a write lock on that semaphore. Note that when there are one or
- * more threads holding read locks, a request for a write lock on another thread
- * will be indefinitely blocked until all threads holding read locks release
- * them.
- *
- * Note that write locks can be nested -- the same thread can request a write
- * lock on the same semaphore several times. In this case, the corresponding
- * number of release calls must be done in order to completely release all
- * nested write locks and make the semaphore available for locking by other
- * threads.
- *
- * Read locks can be nested too in which case the same rule of the equal number
- * of the release calls applies. Read locks can be also nested into write
- * locks which means that the same thread can successfully request a read lock
- * if it already holds a write lock. However, please note that the opposite is
- * <b>not possible</b>: if a thread tries to request a write lock on the same
- * semaphore it is already holding a read lock, it will definitely produce a
- * <b>deadlock</b> (i.e. it will block forever waiting for itself).
- *
- * Note that instances of the AutoWriteLock class manage write locks of
- * read/write semaphores only. In order to manage read locks, please use the
- * AutoReadLock class.
- *
- * Safe semaphore management consists of the following:
- * <ul>
- *   <li>When an instance of the AutoWriteLock class is constructed given a
- *   valid semaphore handle, it will automatically request a write lock on that
- *   semaphore.
- *   </li>
- *   <li>When an instance of the AutoWriteLock class constructed given a valid
- *   semaphore handle is destroyed (e.g. goes out of scope), it will
- *   automatically release the write lock that was requested upon construction
- *   and also all nested write locks requested later using the #lock() call
- *   (note that the latter is considered to be a program logic error, see the
- *   #~AutoWriteLock() description for details).
- *   </li>
- * </ul>
- *
- * Note that the LockHandle class taken by AutoWriteLock constructors is an
- * abstract base of the read/write semaphore. You should choose one of the
- * existing subclasses of this abstract class or create your own subclass that
- * implements necessary read and write lock semantics. The most suitable choice
- * is the RWLockHandle class which provides full support for both read and write
- * locks as describerd above. Alternatively, you can use the WriteLockHandle
- * class if you only need write (exclusive) locking (WriteLockHandle requires
- * less system resources and works faster).
- *
- * A typical usage pattern of the AutoWriteLock class is as follows:
- * <code>
- *  struct Struct : public RWLockHandle
- *  {
- *      ...
- *  };
- *
- *  void foo (Struct &aStruct)
- *  {
- *      {
- *          // acquire a write lock of aStruct
- *          AutoWriteLock alock (aStruct);
- *
- *          // now we can modify aStruct in a thread-safe manner
- *          aStruct.foo = ...;
- *
- *          // note that the write lock will be automatically released upon
- *          // execution of the return statement below
- *          if (!aStruct.bar)
- *              return;
- *
- *          ...
- *      }
- *
- *      // note that the write lock is automatically released here
- *  }
- * </code>
- *
- * <b>Locking policy</b>
- *
- * When there are multiple threads and multiple objects to lock, there is always
- * a potential possibility to produce a deadlock if the lock order is mixed up.
- * Here is a classical example of a deadlock when two threads need to lock the
- * same two objects in a row but do it in different order:
- * <code>
- *  Thread 1:
- *    #1: AutoWriteLock (mFoo);
- *        ...
- *    #2: AutoWriteLock (mBar);
- *        ...
- *  Thread 2:
- *    #3: AutoWriteLock (mBar);
- *        ...
- *    #4: AutoWriteLock (mFoo);
- *        ...
- * </code>
- *
- * If the threads happen to be scheduled so that #3 completes after #1 has
- * completed but before #2 got control, the threads will hit a deadlock: Thread
- * 2 will be holding mBar and waiting for mFoo at #4 forever because Thread 1 is
- * holding mFoo and won't release it until it acquires mBar at #2 that will
- * never happen because mBar is held by Thread 2.
- *
- * One of ways to avoid the described behavior is to never lock more than one
- * obhect in a row. While it is definitely a good and safe practice, it's not
- * always possible: the application logic may require several simultaneous locks
- * in order to provide data integrity.
- *
- * One of the possibilities to solve the deadlock problem is to make sure that
- * the locking order is always the same across the application. In the above
- * example, it would mean that <b>both</b> threads should first requiest a lock
- * of mFoo and then mBar (or vice versa). One of the methods to guarantee the
- * locking order consistent is to introduce a set of locking rules. The
- * advantage of this method is that it doesn't require any special semaphore
- * implementation or additional control structures. The disadvantage is that
- * it's the programmer who must make sure these rules are obeyed across the
- * whole application so the human factor applies. Taking the simplicity of this
- * method into account, it is chosen to solve potential deadlock problems when
- * using AutoWriteLock and AutoReadLock classes. Here are the locking rules
- * that must be obeyed by <b>all</b> users of these classes. Note that if more
- * than one rule matches the given group of objects to lock, all of these rules
- * must be met:
- * <ol>
- *     <li>If there is a parent-child (or master-slave) relationship between the
- *     locked objects, parent (master) objects must be locked before child
- *     (slave) objects.
- *     </li>
- *     <li>When a group of equal objects (in terms of parent-child or
- *     master-slave relationsip) needs to be locked in a raw, the lock order
- *     must match the sort order (which must be consistent for the given group).
- * </ol>
- * Note that if there is no pragrammatically expressed sort order (e.g.
- * the objects are not part of the sorted vector or list but instead are
- * separate data members of a class), object class names sorted in alphabetical
- * order must be used to determine the lock order. If there is more than one
- * object of the given class, the object variable names' alphabetical order must
- * be used as a lock order. When objects are not represented as individual
- * variables, as in case of unsorted arrays/lists, the list of alphabetically
- * sorted object UUIDs must be used to determine the sort order.
- *
- * All non-standard locking order must be avoided by all means, but when
- * absolutely necessary, it must be clearly documented at relevant places so it
- * is well seen by other developers. For example, if a set of instances of some
- * class needs to be locked but these instances are not part of the sorted list
- * and don't have UUIDs, then the class description must state what to use to
- * determine the lock order (maybe some property that returns an unique value
- * per every object).
- */
-class AutoWriteLock
+////////////////////////////////////////////////////////////////////////////////
+//
+// AutoLockBase
+//
+////////////////////////////////////////////////////////////////////////////////
+
+class AutoLockBase
+{
+protected:
+    AutoLockBase(LockHandle *pHandle)
+        : mHandle(pHandle),
+          mLockLevel(0),
+          mGlobalLockLevel(0)
+    { }
+
+    LockHandle *mHandle;
+    uint32_t mLockLevel;
+    uint32_t mGlobalLockLevel;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// AutoWriteLock
+//
+////////////////////////////////////////////////////////////////////////////////
+
+class AutoWriteLock : public AutoLockBase
 {
 public:
 
@@ -465,40 +345,49 @@ public:
      * have the code where lock protection can be selected (or omitted) at
      * runtime.
      */
-    AutoWriteLock() : mHandle (NULL), mLockLevel (0), mGlobalLockLevel (0) {}
+    AutoWriteLock()
+        : AutoLockBase(NULL)
+    { }
 
     /**
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a write lock.
      */
-    AutoWriteLock (LockHandle *aHandle)
-        : mHandle (aHandle), mLockLevel (0), mGlobalLockLevel (0)
-    { lock(); }
+    AutoWriteLock(LockHandle *aHandle)
+        : AutoLockBase(aHandle)
+    {
+        acquire();
+    }
 
     /**
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a write lock.
      */
-    AutoWriteLock (LockHandle &aHandle)
-        : mHandle (&aHandle), mLockLevel (0), mGlobalLockLevel (0)
-    { lock(); }
+    AutoWriteLock(LockHandle &aHandle)
+        : AutoLockBase(&aHandle)
+    {
+        acquire();
+    }
 
     /**
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a write lock.
      */
-    AutoWriteLock (const Lockable &aLockable)
-        : mHandle (aLockable.lockHandle()), mLockLevel (0), mGlobalLockLevel (0)
-    { lock(); }
+    AutoWriteLock(const Lockable &aLockable)
+        : AutoLockBase(aLockable.lockHandle())
+    {
+        acquire();
+    }
 
     /**
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a write lock.
      */
-    AutoWriteLock (const Lockable *aLockable)
-        : mHandle (aLockable ? aLockable->lockHandle() : NULL)
-        , mLockLevel (0), mGlobalLockLevel (0)
-    { lock(); }
+    AutoWriteLock(const Lockable *aLockable)
+        : AutoLockBase(aLockable ? aLockable->lockHandle() : NULL)
+    {
+        acquire();
+    }
 
     /**
      * Release all write locks acquired by this instance through the #lock()
@@ -517,12 +406,12 @@ public:
             {
                 mGlobalLockLevel -= mLockLevel;
                 mLockLevel = 0;
-                for (; mGlobalLockLevel; -- mGlobalLockLevel)
+                for (; mGlobalLockLevel; --mGlobalLockLevel)
                     mHandle->lockWrite();
             }
 
-            AssertMsg (mLockLevel <= 1, ("Lock level > 1: %d\n", mLockLevel));
-            for (; mLockLevel; -- mLockLevel)
+            AssertMsg(mLockLevel <= 1, ("Lock level > 1: %d\n", mLockLevel));
+            for (; mLockLevel; --mLockLevel)
                 mHandle->unlockWrite();
         }
     }
@@ -534,13 +423,13 @@ public:
      * already owned by another thread until that tread releases the locks,
      * otherwise returns immediately.
      */
-    void lock()
+    void acquire()
     {
         if (mHandle)
         {
             mHandle->lockWrite();
-            ++ mLockLevel;
-            Assert (mLockLevel != 0 /* overflow? */);
+            ++mLockLevel;
+            Assert(mLockLevel != 0 /* overflow? */);
         }
     }
 
@@ -550,13 +439,13 @@ public:
      * nested #lock() calls), releases the lock making the managed semaphore
      * available for locking by other threads.
      */
-    void unlock()
+    void release()
     {
         if (mHandle)
         {
-            AssertReturnVoid (mLockLevel != 0 /* unlock() w/o preceding lock()? */);
+            AssertReturnVoid(mLockLevel != 0 /* unlock() w/o preceding lock()? */);
             mHandle->unlockWrite();
-            -- mLockLevel;
+            --mLockLevel;
         }
     }
 
@@ -585,13 +474,13 @@ public:
     {
         if (mHandle)
         {
-            AssertReturnVoid (mLockLevel != 0 /* leave() w/o preceding lock()? */);
-            AssertReturnVoid (mGlobalLockLevel == 0 /* second leave() in a row? */);
+            AssertReturnVoid(mLockLevel != 0 /* leave() w/o preceding lock()? */);
+            AssertReturnVoid(mGlobalLockLevel == 0 /* second leave() in a row? */);
 
             mGlobalLockLevel = mHandle->writeLockLevel();
-            AssertReturnVoid (mGlobalLockLevel >= mLockLevel /* logic error! */);
+            AssertReturnVoid(mGlobalLockLevel >= mLockLevel /* logic error! */);
 
-            for (uint32_t left = mGlobalLockLevel; left; -- left)
+            for (uint32_t left = mGlobalLockLevel; left; --left)
                 mHandle->unlockWrite();
         }
     }
@@ -628,10 +517,10 @@ public:
     {
         if (mHandle)
         {
-            AssertReturnVoid (mLockLevel != 0 /* enter() w/o preceding lock()+leave()? */);
-            AssertReturnVoid (mGlobalLockLevel != 0 /* enter() w/o preceding leave()? */);
+            AssertReturnVoid(mLockLevel != 0 /* enter() w/o preceding lock()+leave()? */);
+            AssertReturnVoid(mGlobalLockLevel != 0 /* enter() w/o preceding leave()? */);
 
-            for (; mGlobalLockLevel; -- mGlobalLockLevel)
+            for (; mGlobalLockLevel; --mGlobalLockLevel)
                 mHandle->lockWrite();
         }
     }
@@ -646,7 +535,7 @@ public:
      *
      * @param aHandle   New handle to attach.
      */
-    void attach (LockHandle *aHandle)
+    void attach(LockHandle *aHandle)
     {
         /* detect simple self-reattachment */
         if (mHandle != aHandle)
@@ -660,12 +549,12 @@ public:
                 {
                     mGlobalLockLevel -= mLockLevel;
                     mLockLevel = 0;
-                    for (; mGlobalLockLevel; -- mGlobalLockLevel)
+                    for (; mGlobalLockLevel; --mGlobalLockLevel)
                         mHandle->lockWrite();
                 }
 
-                AssertMsg (mLockLevel <= 1, ("Lock level > 1: %d\n", mLockLevel));
-                for (; mLockLevel; -- mLockLevel)
+                AssertMsg(mLockLevel <= 1, ("Lock level > 1: %d\n", mLockLevel));
+                for (; mLockLevel; --mLockLevel)
                     mHandle->unlockWrite();
             }
 
@@ -673,27 +562,28 @@ public:
             mLockLevel = lockLevel;
 
             if (mHandle)
-                for (; lockLevel; -- lockLevel)
+                for (; lockLevel; --lockLevel)
                     mHandle->lockWrite();
         }
     }
 
     /** @see attach (LockHandle *) */
-    void attach (LockHandle &aHandle) { attach (&aHandle); }
+    void attach(LockHandle &aHandle)
+    {
+        attach(&aHandle);
+    }
 
     /** @see attach (LockHandle *) */
-    void attach (const Lockable &aLockable) { attach (aLockable.lockHandle()); }
+    void attach(const Lockable &aLockable)
+    {
+        attach(aLockable.lockHandle());
+    }
 
     /** @see attach (LockHandle *) */
-    void attach (const Lockable *aLockable)
-    { attach (aLockable ? aLockable->lockHandle() : NULL); }
-
-    /** Verbose equivalent to <tt>attach (NULL)</tt>. */
-    void detach() { attach ((LockHandle *) NULL); }
-
-    /** Returns @c true if this instance manages a null semaphore handle. */
-    bool isNull() const { return mHandle == NULL; }
-    bool operator !() const { return isNull(); }
+    void attach(const Lockable *aLockable)
+    {
+        attach(aLockable ? aLockable->lockHandle() : NULL);
+    }
 
     /**
      * Returns @c true if the current thread holds a write lock on the managed
@@ -723,124 +613,21 @@ public:
         return mHandle ? mHandle->writeLockLevel() : 0;
     }
 
-    /**
-     * Returns @c true if this instance manages the given semaphore handle.
-     *
-     * @note Intended for debugging only.
-     */
-    bool belongsTo (const LockHandle &aHandle) const { return mHandle == &aHandle; }
-
-    /**
-     * Returns @c true if this instance manages the given semaphore handle.
-     *
-     * @note Intended for debugging only.
-     */
-    bool belongsTo (const LockHandle *aHandle) const { return mHandle == aHandle; }
-
-    /**
-     * Returns @c true if this instance manages the given lockable object.
-     *
-     * @note Intended for debugging only.
-     */
-    bool belongsTo (const Lockable &aLockable)
-    {
-         return belongsTo (aLockable.lockHandle());
-    }
-
-    /**
-     * Returns @c true if this instance manages the given lockable object.
-     *
-     * @note Intended for debugging only.
-     */
-    bool belongsTo (const Lockable *aLockable)
-    {
-         return aLockable && belongsTo (aLockable->lockHandle());
-    }
-
 private:
 
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (AutoWriteLock)
     DECLARE_CLS_NEW_DELETE_NOOP (AutoWriteLock)
 
-    LockHandle *mHandle;
-    uint32_t mLockLevel;
-    uint32_t mGlobalLockLevel;
-
     template <size_t> friend class AutoMultiWriteLockBase;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+//
+// AutoReadLock
+//
+////////////////////////////////////////////////////////////////////////////////
 
-/**
- * Provides safe management of read/write semaphores in read mode.
- *
- * This class differs from the AutoWriteLock class is so that it's #lock() and
- * #unlock() methods requests and release read (shared) locks on the managed
- * read/write semaphore instead of write (exclusive) locks. See the
- * AutoWriteLock class description for more information about read and write
- * locks.
- *
- * Safe semaphore management consists of the following:
- * <ul>
- *   <li>When an instance of the AutoReadLock class is constructed given a
- *   valid semaphore handle, it will automatically request a read lock on that
- *   semaphore.
- *   </li>
- *   <li>When an instance of the AutoReadLock class constructed given a valid
- *   semaphore handle is destroyed (e.g. goes out of scope), it will
- *   automatically release the read lock that was requested upon construction
- *   and also all nested read locks requested later using the #lock() call (note
- *   that the latter is considered to be a program logic error, see the
- *   #~AutoReadLock() description for details).
- *   </li>
- * </ul>
- *
- * Note that the LockHandle class taken by AutoReadLock constructors is an
- * abstract base of the read/write semaphore. You should choose one of the
- * existing subclasses of this abstract class or create your own subclass that
- * implements necessary read and write lock semantics. The most suitable choice
- * is the RWLockHandle class which provides full support for both read and write
- * locks as describerd in AutoWriteLock docs. Alternatively, you can use the
- * WriteLockHandle class if you only need write (exclusive) locking
- * (WriteLockHandle requires less system resources and works faster).
- *
- * However, please note that it absolutely does not make sense to manage
- * WriteLockHandle semaphores with AutoReadLock instances because
- * AutoReadLock instances will behave like AutoWriteLock instances in this
- * case since WriteLockHandle provides only exclusive write locking. You have
- * been warned.
-
- * A typical usage pattern of the AutoReadLock class is as follows:
- * <code>
- *  struct Struct : public RWLockHandle
- *  {
- *      ...
- *  };
- *
- *  void foo (Struct &aStruct)
- *  {
- *      {
- *          // acquire a read lock of aStruct (note that two foo() calls may be
- *          executed on separate threads simultaneously w/o blocking each other)
- *          AutoReadLock alock (aStruct);
- *
- *          // now we can read aStruct in a thread-safe manner
- *          if (aStruct.foo)
- *              ...;
- *
- *          // note that the read lock will be automatically released upon
- *          // execution of the return statement below
- *          if (!aStruct.bar)
- *              return;
- *
- *          ...
- *      }
- *
- *      // note that the read lock is automatically released here
- *  }
- * </code>
- */
-class AutoReadLock
+class AutoReadLock : public AutoLockBase
 {
 public:
 
@@ -852,40 +639,49 @@ public:
      * have the code where lock protection can be selected (or omitted) at
      * runtime.
      */
-    AutoReadLock() : mHandle (NULL), mLockLevel (0) {}
+    AutoReadLock()
+        : AutoLockBase(NULL)
+    { }
 
     /**
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a read lock.
      */
-    AutoReadLock (LockHandle *aHandle)
-        : mHandle (aHandle), mLockLevel (0)
-    { lock(); }
+    AutoReadLock(LockHandle *aHandle)
+        : AutoLockBase(aHandle)
+    {
+        acquire();
+    }
 
     /**
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a read lock.
      */
-    AutoReadLock (LockHandle &aHandle)
-        : mHandle (&aHandle), mLockLevel (0)
-    { lock(); }
+    AutoReadLock(LockHandle &aHandle)
+        : AutoLockBase(&aHandle)
+    {
+        acquire();
+    }
 
     /**
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a read lock.
      */
-    AutoReadLock (const Lockable &aLockable)
-        : mHandle (aLockable.lockHandle()), mLockLevel (0)
-    { lock(); }
+    AutoReadLock(const Lockable &aLockable)
+        : AutoLockBase(aLockable.lockHandle())
+    {
+        acquire();
+    }
 
     /**
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a read lock.
      */
-    AutoReadLock (const Lockable *aLockable)
-        : mHandle (aLockable ? aLockable->lockHandle() : NULL)
-        , mLockLevel (0)
-    { lock(); }
+    AutoReadLock(const Lockable *aLockable)
+        : AutoLockBase(aLockable ? aLockable->lockHandle() : NULL)
+    {
+        acquire();
+    }
 
     /**
      * Release all read locks acquired by this instance through the #lock()
@@ -900,8 +696,8 @@ public:
     {
         if (mHandle)
         {
-            AssertMsg (mLockLevel <= 1, ("Lock level > 1: %d\n", mLockLevel));
-            for (; mLockLevel; -- mLockLevel)
+            AssertMsg(mLockLevel <= 1, ("Lock level > 1: %d\n", mLockLevel));
+            for (; mLockLevel; --mLockLevel)
                 mHandle->unlockRead();
         }
     }
@@ -918,13 +714,13 @@ public:
      * if a write lock on this semaphore is owned by the current thread which
      * allows for read locks nested into write locks on the same thread.
      */
-    void lock()
+    void acquire()
     {
         if (mHandle)
         {
             mHandle->lockRead();
-            ++ mLockLevel;
-            Assert (mLockLevel != 0 /* overflow? */);
+            ++mLockLevel;
+            Assert(mLockLevel != 0 /* overflow? */);
         }
     }
 
@@ -934,13 +730,13 @@ public:
      * nested #lock() calls), releases the lock making the managed semaphore
      * available for locking by other threads.
      */
-    void unlock()
+    void release()
     {
         if (mHandle)
         {
-            AssertReturnVoid (mLockLevel != 0 /* unlock() w/o preceding lock()? */);
+            AssertReturnVoid(mLockLevel != 0 /* unlock() w/o preceding lock()? */);
             mHandle->unlockRead();
-            -- mLockLevel;
+            --mLockLevel;
         }
     }
 
@@ -954,83 +750,51 @@ public:
      *
      * @param aHandle   New handle to attach.
      */
-    void attach (LockHandle *aHandle)
+    void attach(LockHandle *aHandle)
     {
         /* detect simple self-reattachment */
         if (mHandle != aHandle)
         {
             uint32_t lockLevel = mLockLevel;
             if (mHandle)
-                for (; mLockLevel; -- mLockLevel)
+                for (; mLockLevel; --mLockLevel)
                     mHandle->unlockRead();
             mHandle = aHandle;
             mLockLevel = lockLevel;
             if (mHandle)
-                for (; lockLevel; -- lockLevel)
+                for (; lockLevel; --lockLevel)
                     mHandle->lockRead();
         }
     }
 
     /** @see attach (LockHandle *) */
-    void attach (LockHandle &aHandle) { attach (&aHandle); }
-
-    /** @see attach (LockHandle *) */
-    void attach (const Lockable &aLockable) { attach (aLockable.lockHandle()); }
-
-    /** @see attach (LockHandle *) */
-    void attach (const Lockable *aLockable)
-    { attach (aLockable ? aLockable->lockHandle() : NULL); }
-
-    /** Verbose equivalent to <tt>attach (NULL)</tt>. */
-    void detach() { attach ((LockHandle *) NULL); }
-
-    /** Returns @c true if this instance manages a null semaphore handle. */
-    bool isNull() const { return mHandle == NULL; }
-    bool operator !() const { return isNull(); }
-
-    /**
-     * Returns @c true if this instance manages the given semaphore handle.
-     *
-     * @note Intended for debugging only.
-     */
-    bool belongsTo (const LockHandle &aHandle) const { return mHandle == &aHandle; }
-
-    /**
-     * Returns @c true if this instance manages the given semaphore handle.
-     *
-     * @note Intended for debugging only.
-     */
-    bool belongsTo (const LockHandle *aHandle) const { return mHandle == aHandle; }
-
-    /**
-     * Returns @c true if this instance manages the given lockable object.
-     *
-     * @note Intended for debugging only.
-     */
-    bool belongsTo (const Lockable &aLockable)
+    void attach(LockHandle &aHandle)
     {
-         return belongsTo (aLockable.lockHandle());
+        attach(&aHandle);
     }
 
-    /**
-     * Returns @c true if this instance manages the given lockable object.
-     *
-     * @note Intended for debugging only.
-     */
-    bool belongsTo (const Lockable *aLockable)
+    /** @see attach (LockHandle *) */
+    void attach(const Lockable &aLockable)
     {
-         return aLockable && belongsTo (aLockable->lockHandle());
+        attach(aLockable.lockHandle());
+    }
+
+    /** @see attach (LockHandle *) */
+    void attach(const Lockable *aLockable)
+    {
+        attach(aLockable ? aLockable->lockHandle() : NULL);
     }
 
 private:
 
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (AutoReadLock)
     DECLARE_CLS_NEW_DELETE_NOOP (AutoReadLock)
-
-    LockHandle *mHandle;
-    uint32_t mLockLevel;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// AutoMulti*
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -1188,29 +952,29 @@ public:
 template <size_t Cnt>
 class AutoMultiWriteLockBase
 {
-public:
 
+public:
     /**
-     * Calls AutoWriteLock::lock() methods for all managed semaphore handles in
+     * Calls AutoWriteLock::acquire() methods for all managed semaphore handles in
      * order they were passed to the constructor.
      */
-    void lock()
+    void acquire()
     {
         size_t i = 0;
-        while (i < RT_ELEMENTS (mLocks))
-            mLocks [i ++].lock();
+        while (i < RT_ELEMENTS(mLocks))
+            mLocks[i++].acquire();
     }
 
     /**
      * Calls AutoWriteLock::unlock() methods for all managed semaphore handles
      * in reverse to the order they were passed to the constructor.
      */
-    void unlock()
+    void release()
     {
-        AssertReturnVoid (RT_ELEMENTS (mLocks) > 0);
-        size_t i = RT_ELEMENTS (mLocks);
+        AssertReturnVoid(RT_ELEMENTS(mLocks) > 0);
+        size_t i = RT_ELEMENTS(mLocks);
         do
-            mLocks [-- i].unlock();
+            mLocks[--i].release();
         while (i != 0);
     }
 
@@ -1220,10 +984,10 @@ public:
      */
     void leave()
     {
-        AssertReturnVoid (RT_ELEMENTS (mLocks) > 0);
-        size_t i = RT_ELEMENTS (mLocks);
+        AssertReturnVoid(RT_ELEMENTS(mLocks) > 0);
+        size_t i = RT_ELEMENTS(mLocks);
         do
-            mLocks [-- i].leave();
+            mLocks[--i].leave();
         while (i != 0);
     }
 
@@ -1233,8 +997,8 @@ public:
      */
     void maybeLeave()
     {
-        AssertReturnVoid (RT_ELEMENTS (mLocks) > 0);
-        size_t i = RT_ELEMENTS (mLocks);
+        AssertReturnVoid(RT_ELEMENTS(mLocks) > 0);
+        size_t i = RT_ELEMENTS(mLocks);
         do
             mLocks [-- i].maybeLeave();
         while (i != 0);
@@ -1247,8 +1011,8 @@ public:
     void maybeEnter()
     {
         size_t i = 0;
-        while (i < RT_ELEMENTS (mLocks))
-            mLocks [i ++].maybeEnter();
+        while (i < RT_ELEMENTS(mLocks))
+            mLocks[i++].maybeEnter();
     }
 
     /**
@@ -1258,8 +1022,8 @@ public:
     void enter()
     {
         size_t i = 0;
-        while (i < RT_ELEMENTS (mLocks))
-            mLocks [i ++].enter();
+        while (i < RT_ELEMENTS(mLocks))
+            mLocks[i++].enter();
     }
 
 protected:
@@ -1337,9 +1101,9 @@ class AutoMultiWriteLock2 : public AutoMultiWriteLockBase <2>
 {
 public:
     AutoMultiWriteLock2 (A(0), A(1))
-    { B(0); B(1); lock(); }
+    { B(0); B(1); acquire(); }
     AutoMultiWriteLock2 (C(0), C(1))
-    { D(0); D(1); lock(); }
+    { D(0); D(1); acquire(); }
 };
 
 /** AutoMultiWriteLock for 3 locks. See AutoMultiWriteLock2 for more details. */
@@ -1347,9 +1111,9 @@ class AutoMultiWriteLock3 : public AutoMultiWriteLockBase <3>
 {
 public:
     AutoMultiWriteLock3 (A(0), A(1), A(2))
-    { B(0); B(1); B(2); lock(); }
+    { B(0); B(1); B(2); acquire(); }
     AutoMultiWriteLock3 (C(0), C(1), C(2))
-    { D(0); D(1); D(2); lock(); }
+    { D(0); D(1); D(2); acquire(); }
 };
 
 /** AutoMultiWriteLock for 4 locks. See AutoMultiWriteLock2 for more details. */
@@ -1357,9 +1121,9 @@ class AutoMultiWriteLock4 : public AutoMultiWriteLockBase <4>
 {
 public:
     AutoMultiWriteLock4 (A(0), A(1), A(2), A(3))
-    { B(0); B(1); B(2); B(3); lock(); }
+    { B(0); B(1); B(2); B(3); acquire(); }
     AutoMultiWriteLock4 (C(0), C(1), C(2), C(3))
-    { D(0); D(1); D(2); D(3); lock(); }
+    { D(0); D(1); D(2); D(3); acquire(); }
 };
 
 #undef D
