@@ -271,7 +271,7 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
         CookieReq.Hdr.rc = VERR_INTERNAL_ERROR;
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
         const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00120000
                                    ?  0x00120000
                                    :  SUPDRV_IOC_VERSION & 0xffff0000;
@@ -1658,7 +1658,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
     AssertPtrReturn(pszModule, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppvImageBase, VERR_INVALID_PARAMETER);
     AssertReturn(strlen(pszModule) < RT_SIZEOFMEMB(SUPLDROPEN, u.In.szName), VERR_FILENAME_TOO_LONG);
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
     char szAbsFilename[RT_SIZEOFMEMB(SUPLDROPEN, u.In.szFilename)];
     rc = RTPathAbs(pszFilename, szAbsFilename, sizeof(szAbsFilename));
     if (RT_FAILURE(rc))
@@ -1700,11 +1700,11 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
         OpenReq.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
         OpenReq.Hdr.rc = VERR_INTERNAL_ERROR;
         OpenReq.u.In.cbImageWithTabs = cbImageWithTabs;
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
         OpenReq.u.In.cbImageBits = (uint32_t)CalcArgs.cbImage;
 #endif
         strcpy(OpenReq.u.In.szName, pszModule);
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
         strcpy(OpenReq.u.In.szFilename, pszFilename);
 #endif
         if (!g_u32FakeMode)
@@ -1815,7 +1815,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                             pLoadReq->u.In.offStrTab                  = offStrTab;
                             pLoadReq->u.In.cbStrTab                   = (uint32_t)CalcArgs.cbStrings;
                             AssertRelease(pLoadReq->u.In.cbStrTab == CalcArgs.cbStrings);
-#ifdef SUPDRV_USE_NATIVE_LOADER
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
                             pLoadReq->u.In.cbImageBits                = (uint32_t)CalcArgs.cbImage;
 #endif
                             pLoadReq->u.In.offSymbols                 = offSymTab;
