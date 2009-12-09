@@ -153,7 +153,7 @@ timeout(PNATState pData, struct socket *so, void *arg)
         m->m_len += sizeof(struct udphdr);
         m->m_len += req->nbyte;
         ip->ip_src.s_addr = so->so_laddr.s_addr;
-        ip->ip_dst.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
+        ip->ip_dst.s_addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_DNS);
         udp->uh_dport = ntohs(53);
         udp->uh_sport = so->so_lport;
         memcpy(data, req->byte, req->nbyte); /* coping initial req */
@@ -272,7 +272,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
         req->id = QUERYID;
         memcpy(&req->client, &fromaddr, sizeof(struct sockaddr_in));
         memcpy(&req->clientid, &buf[0], 2);
-        req->dns_server = TAILQ_LAST(&pData->dns_list_head, dns_list_head);
+        req->dns_server = TAILQ_LAST(&pData->pDnsList, dns_list_head);
         if (req->dns_server == NULL)
         {
             static int fail_counter = 0;

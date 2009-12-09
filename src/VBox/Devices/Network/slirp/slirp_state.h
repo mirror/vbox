@@ -174,8 +174,8 @@ typedef struct NATState
 #ifdef RT_OS_WINDOWS
     ULONG (WINAPI * pfGetAdaptersAddresses)(ULONG, ULONG, PVOID, PIP_ADAPTER_ADDRESSES, PULONG);
 #endif
-    struct dns_list_head dns_list_head;
-    struct dns_domain_list_head dns_domain_list_head;
+    struct dns_list_head pDnsList;
+    struct dns_domain_list_head pDomainList;
     struct in_addr tftp_server;
     struct in_addr loopback_addr;
     uint32_t netmask;
@@ -403,7 +403,6 @@ typedef struct NATState
 #else
 # define handler_chain pData->handler_chain
 #endif
-#define special_addr pData->special_addr
 #define dns_addr pData->dns_addr
 #define loopback_addr pData->loopback_addr
 #define client_ethaddr pData->client_ethaddr
