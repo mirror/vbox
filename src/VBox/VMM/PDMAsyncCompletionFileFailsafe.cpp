@@ -57,7 +57,7 @@ static int pdmacFileAioMgrFailsafeProcessEndpointTaskList(PPDMASYNCCOMPLETIONEND
                 }
                 else
                 {
-                    if (RT_UNLIKELY(pCurr->Off + pCurr->DataSeg.cbSeg > (RTFOFF)pEndpoint->cbFile))
+                    if (RT_UNLIKELY((uint64_t)pCurr->Off + pCurr->DataSeg.cbSeg > pEndpoint->cbFile))
                     {
                         ASMAtomicWriteU64(&pEndpoint->cbFile, pCurr->Off + pCurr->DataSeg.cbSeg);
                         RTFileSetSize(pEndpoint->File, pCurr->Off + pCurr->DataSeg.cbSeg);
