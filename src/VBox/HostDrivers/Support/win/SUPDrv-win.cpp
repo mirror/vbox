@@ -595,30 +595,96 @@ bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 
 #ifdef VBOX_WITH_NATIVE_R0_LOADER
 
+#define MY_SystemLoadGdiDriverInformation               26
+#define MY_SystemLoadGdiDriverInSystemSpaceInformation  54
+#define MY_SystemUnloadGdiDriverInformation             27
+
+typedef struct MYSYSTEMGDIDRIVERINFO
+{
+    UNICODE_STRING  Name;                   /**< In:  image file name. */
+    PVOID           ImageAddress;           /**< Out: the load address. */
+    PVOID           SectionPointer;         /**< Out: section object. */
+    PVOID           EntryPointer;           /**< Out: entry point address. */
+    PVOID           ExportSectionPointer;   /**< Out: export directory/section. */
+    ULONG           ImageLength;            /**< Out: SizeOfImage. */
+} MYSYSTEMGDIDRIVERINFO;
+
+extern "C" __declspec(dllimport) NTSTATUS NTAPI ZwSetSystemInformation(ULONG, PVOID, ULONG);
+
 int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
 {
-    NOREF(pDevExt); NOREF(pImage); NOREF(pszFilename);
-    return VERR_NOT_SUPPORTED;
+    MYSYSTEMGDIDRIVERINFO Info;
+
+    /** @todo fix this horrible stuff. */
+    WCHAR wszConv[192 + 32];
+    unsigned i = 0;
+    wszConv[i++] = '\\';
+    wszConv[i++] = '?';
+    wszConv[i++] = '?';
+    wszConv[i++] = '\\';
+    unsigned cchPref = i;
+    char ch;
+    do
+    {
+        ch = pszFilename[i - cchPref];
+        wszConv[i++] = ch == '/' ? '\\' : ch;
+    } while (ch);
+    RtlInitUnicodeString(&Info.Name, wszConv);
+
+    Info.ImageAddress           = NULL;
+    Info.SectionPointer         = NULL;
+    Info.EntryPointer           = NULL;
+    Info.ExportSectionPointer   = NULL;
+    Info.ImageLength            = 0;
+
+    NTSTATUS rc = ZwSetSystemInformation(MY_SystemLoadGdiDriverInSystemSpaceInformation, &Info, sizeof(Info));
+    if (NT_SUCCESS(rc))
+    {
+        pImage->pvImage = Info.ImageAddress;
+        pImage->pvNtSectionObj = Info.SectionPointer;
+        SUPR0Printf("ImageAddress=%p SectionPointer=%p ImageLength=%#x cbImageBits=%#x rc=%#x '%ws'\n",
+                    Info.ImageAddress, Info.SectionPointer, Info.ImageLength, pImage->cbImageBits, rc, Info.Name.Buffer);
+        if (pImage->cbImageBits == Info.ImageLength)
+            return VINF_SUCCESS;
+        supdrvOSLdrUnload(pDevExt, pImage);
+        rc = STATUS_INFO_LENGTH_MISMATCH;
+    }
+    SUPR0Printf("rc=%#x '%ws'\n", rc, Info.Name.Buffer);
+    //STATUS_OBJECT_NAME_NOT_FOUND == 0xc0000034 -> SUPR0
+
+    NOREF(pDevExt); NOREF(pszFilename);
+    pImage->pvNtSectionObj = NULL;
+    return VERR_INTERNAL_ERROR_5; /** @todo convert status, making sure it isn't NOT_SUPPORTED. */
 }
 
 
 int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, void *pv, const uint8_t *pbImageBits)
 {
     NOREF(pDevExt); NOREF(pImage); NOREF(pv); NOREF(pbImageBits);
-    return VERR_NOT_SUPPORTED;
+    return VINF_SUCCESS;
 }
 
 
 int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits)
 {
     NOREF(pDevExt); NOREF(pImage); NOREF(pbImageBits);
-    return VERR_NOT_SUPPORTED;
+    if (pImage->pvNtSectionObj)
+    {
+        /** @todo check that the two image versions matches. */
+        return VINF_SUCCESS;
+    }
+    return VERR_INTERNAL_ERROR_4;
 }
 
 
 void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 {
-    NOREF(pDevExt); NOREF(pImage);
+    if (pImage->pvNtSectionObj)
+    {
+        NTSTATUS rc = ZwSetSystemInformation(MY_SystemUnloadGdiDriverInformation,
+                                             &pImage->pvNtSectionObj, sizeof(pImage->pvNtSectionObj));
+    }
+    NOREF(pDevExt);
 }
 
 #endif /* VBOX_WITH_NATIVE_R0_LOADER */
