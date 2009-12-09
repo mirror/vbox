@@ -193,7 +193,7 @@
 
 #define LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) DO_LOG_NAT_SOCK((so), proto, (winevent), r_fdset, w_fdset, x_fdset)
 
-static void activate_port_forwarding(PNATState, struct ethhdr *);
+static void activate_port_forwarding(PNATState, uint8_t *pEther);
 
 static const uint8_t special_ethaddr[6] =
 {
@@ -661,6 +661,7 @@ void slirp_link_up(PNATState pData)
 void slirp_link_down(PNATState pData)
 {
     struct socket *so;
+    struct port_forward_rule *rule = NULL;
 
     while ((so = tcb.so_next) != &tcb)
     {
@@ -672,6 +673,16 @@ void slirp_link_down(PNATState pData)
 
     while ((so = udb.so_next) != &udb)
         udp_detach(pData, so);
+
+    /*
+     *  Clear the active state of port-forwarding rules to force
+     *  re-setup on restoration of communications.
+     */
+    LIST_FOREACH(rule, &pData->port_forward_rule_head, list)
+    {
+        rule->activated = 0;
+    }
+    pData->cRedirectionsActive = 0;
 
     link_up = 0;
 }
@@ -1515,8 +1526,8 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 }
                 slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]);
                 /* good opportunity to activate port-forwarding on address (self)asignment*/
-                if (pData->port_forwarding_activated != pData->port_forwarding_count)
-                    activate_port_forwarding(pData, eh);
+                if (pData->cRedirectionsActive != pData->cRedirectionsStored)
+                    activate_port_forwarding(pData, eh->h_source);
             }
             break;
 
@@ -1528,8 +1539,8 @@ static void arp_input(PNATState pData, struct mbuf *m)
             }
             slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_sip, ah->ar_sha);
             /* after/save restore we need up port forwarding again */
-            if (pData->port_forwarding_activated != pData->port_forwarding_count)
-                activate_port_forwarding(pData, eh);
+            if (pData->cRedirectionsActive != pData->cRedirectionsStored)
+                activate_port_forwarding(pData, eh->h_source);
             m_free(pData, m);
             break;
 
@@ -1553,6 +1564,7 @@ void slirp_input(PNATState pData, void *pvArg)
 #else
     struct ethhdr *eh;
 #endif
+    uint8_t au8Ether[ETH_ALEN];
 
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m = (struct mbuf *)pvArg;
@@ -1606,8 +1618,7 @@ void slirp_input(PNATState pData, void *pvArg)
 #endif
     /* Note: we add to align the IP header */
 
-    if (pData->port_forwarding_activated != pData->port_forwarding_count)
-        activate_port_forwarding(pData, mtod(m, struct ethhdr *));
+    memcpy(au8Ether, eh->h_source, ETH_ALEN);
 
     switch(proto)
     {
@@ -1651,6 +1662,9 @@ void slirp_input(PNATState pData, void *pvArg)
             m_free(pData, m);
             break;
     }
+
+    if (pData->cRedirectionsActive != pData->cRedirectionsStored)
+        activate_port_forwarding(pData, au8Ether);
 
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
     RTMemFree((void *)pkt);
@@ -1728,7 +1742,7 @@ static uint32_t find_guest_ip(PNATState pData, const uint8_t *eth_addr)
 {
     uint32_t ip = INADDR_ANY;
     int rc;
-    
+
     if (eth_addr == NULL)
         return INADDR_ANY;
 
@@ -1751,7 +1765,7 @@ static uint32_t find_guest_ip(PNATState pData, const uint8_t *eth_addr)
  * service mode
  * @todo finish this for service case
  */
-static void activate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
+static void activate_port_forwarding(PNATState pData, uint8_t *h_source)
 {
     struct port_forward_rule *rule = NULL;
 
@@ -1770,50 +1784,43 @@ static void activate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
         uint32_t guest_addr; /* need to understand if we already give address to guest */
 
         if (rule->activated)
-            continue; /*already activated */
+            continue;
+
 #ifdef VBOX_WITH_NAT_SERVICE
-        if (memcmp(rule->mac_address, ethdr->h_source, ETH_ALEN) != 0)
+        if (memcmp(rule->mac_address, h_source, ETH_ALEN) != 0)
             continue; /*not right mac, @todo: it'd be better do the list port forwarding per mac */
-        guest_addr = find_guest_ip(pData, ethdr->h_source);
+        guest_addr = find_guest_ip(pData, h_source);
 #else
 #if 0
-        if (memcmp(client_ethaddr, ethdr->h_source, ETH_ALEN) != 0)
+        if (memcmp(client_ethaddr, h_source, ETH_ALEN) != 0)
             continue;
 #endif
-        guest_addr = find_guest_ip(pData, ethdr->h_source);
+        guest_addr = find_guest_ip(pData, h_source);
 #endif
         if (guest_addr == INADDR_ANY)
         {
             /* the address wasn't granted */
             return;
         }
+
 #if !defined(VBOX_WITH_NAT_SERVICE)
         if (rule->guest_addr.s_addr != guest_addr)
             continue;
 #endif
 
-        LogRel(("NAT: set redirect %s hp:%d gp:%d\n", (rule->proto == IPPROTO_UDP?"UDP":"TCP"),
-            rule->host_port, rule->guest_port));
+        LogRel(("NAT: set redirect %s host port %d => guest port %d @ %R[IP4]\n",
+               (rule->proto == IPPROTO_UDP?"UDP":"TCP"),
+               rule->host_port, rule->guest_port, &guest_addr));
 
         if (rule->proto == IPPROTO_UDP)
-        {
             so = udp_listen(pData, rule->bind_ip.s_addr, htons(rule->host_port), guest_addr,
                             htons(rule->guest_port), 0);
-            pData->port_forwarding_activated++;
-        }
         else
-        {
             so = solisten(pData, rule->bind_ip.s_addr, htons(rule->host_port), guest_addr,
                           htons(rule->guest_port), 0);
-            pData->port_forwarding_activated++;
-        }
 
         if (so == NULL)
-        {
-            LogRel(("NAT: failed redirect %s hp:%d gp:%d\n", (rule->proto == IPPROTO_UDP?"UDP":"TCP"),
-                rule->host_port, rule->guest_port));
             goto remove_port_forwarding;
-        }
 
         psin = (struct sockaddr_in *)&sa;
         psin->sin_family = AF_INET;
@@ -1823,11 +1830,7 @@ static void activate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
 
         rc = getsockname(so->s, &sa, &socketlen);
         if (rc < 0 || sa.sa_family != AF_INET)
-        {
-            LogRel(("NAT: failed redirect %s hp:%d gp:%d\n", (rule->proto == IPPROTO_UDP?"UDP":"TCP"),
-                rule->host_port, rule->guest_port));
             goto remove_port_forwarding;
-        }
 
         psin = (struct sockaddr_in *)&sa;
 
@@ -1843,19 +1846,18 @@ static void activate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
                                     pData->special_addr,  -1, /* not very clear for now */
                                     rule->proto);
         if (!link)
-        {
-            LogRel(("NAT: failed redirect %s hp:%d gp:%d\n", (rule->proto == IPPROTO_UDP?"UDP":"TCP"),
-                   rule->host_port, rule->guest_port));
             goto remove_port_forwarding;
-        }
 
         so->so_la = lib;
         rule->activated = 1;
+        pData->cRedirectionsActive++;
         continue;
 
     remove_port_forwarding:
+        LogRel(("NAT: failed to redirect %s %d => %d\n",
+                (rule->proto == IPPROTO_UDP?"UDP":"TCP"), rule->host_port, rule->guest_port));
         LIST_REMOVE(rule, list);
-        pData->port_forwarding_count--;
+        pData->cRedirectionsStored--;
         RTMemFree(rule);
     }
 }
@@ -1877,9 +1879,11 @@ int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_
 {
     struct port_forward_rule *rule = NULL;
     Assert(memcmp(ethaddr, zerro_ethaddr, ETH_ALEN) == 0);
+
     rule = RTMemAllocZ(sizeof(struct port_forward_rule));
     if (rule == NULL)
         return 1;
+
     rule->proto = (is_udp ? IPPROTO_UDP : IPPROTO_TCP);
     rule->host_port = host_port;
     rule->guest_port = guest_port;
@@ -1890,12 +1894,12 @@ int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_
     memcpy(rule->mac_address, ethaddr, ETH_ALEN);
     /* @todo add mac address */
     LIST_INSERT_HEAD(&pData->port_forward_rule_head, rule, list);
-    pData->port_forwarding_count++;
+    pData->cRedirectionsStored++;
     return 0;
 }
 
 int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_byte,
-                  int guest_port)
+                   int guest_port)
 {
     return add_exec(&exec_list, do_pty, (char *)args,
                     addr_low_byte, htons(guest_port));
@@ -1998,9 +2002,7 @@ void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy)
         pData->use_dns_proxy = fDNSProxy;
     }
     else
-    {
         LogRel(("NAT: Host Resolver conflicts with DNS proxy, the last one was forcely ignored\n"));
-    }
 }
 
 #define CHECK_ARG(name, val, lim_min, lim_max)                                      \
@@ -2012,9 +2014,7 @@ void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy)
             return;                                                                 \
         }                                                                           \
         else                                                                        \
-        {                                                                           \
             LogRel(("NAT: (" #name ":%d)\n", (val)));                               \
-        }                                                                           \
     } while (0)
 
 /* don't allow user set less 8kB and more than 1M values */

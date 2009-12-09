@@ -39,7 +39,8 @@ typedef struct
 
 /* XXX: only DHCP is supported */
 static const uint8_t rfc1533_cookie[] = { RFC1533_COOKIE };
-static void bootp_reply(PNATState pData, struct mbuf *m0, int off, uint16_t flags);
+
+static void bootp_reply(PNATState pData, struct mbuf *m0, int offReply, uint16_t flags);
 
 static uint8_t *dhcp_find_option(uint8_t *vend, uint8_t tag)
 {
@@ -59,6 +60,7 @@ static uint8_t *dhcp_find_option(uint8_t *vend, uint8_t tag)
     }
     return NULL;
 }
+
 static BOOTPClient *bc_alloc_client(PNATState pData)
 {
     int i;
@@ -77,12 +79,14 @@ static BOOTPClient *bc_alloc_client(PNATState pData)
     }
     return NULL;
 }
+
 static BOOTPClient *get_new_addr(PNATState pData, struct in_addr *paddr)
 {
     BOOTPClient *bc;
     bc = bc_alloc_client(pData);
-    if (bc == NULL)
+    if (!bc)
         return NULL;
+
     paddr->s_addr = htonl(ntohl(pData->special_addr.s_addr) | (bc->number + START_ADDR));
     bc->addr.s_addr = paddr->s_addr;
     return bc;
@@ -96,10 +100,10 @@ static int release_addr(PNATState pData, struct in_addr *paddr)
         if (paddr->s_addr == bootp_clients[i].addr.s_addr)
         {
             memset(&bootp_clients[i], 0, sizeof(BOOTPClient));
-            return 1;
+            return VINF_SUCCESS;
         }
     }
-    return 0;
+    return VERR_NOT_FOUND;
 }
 
 /*
@@ -204,9 +208,8 @@ static struct mbuf *dhcp_create_msg(PNATState pData, struct bootp_t *bp, struct 
     return m;
 }
 
-static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, int is_from_request)
+static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, int fDhcpRequest)
 {
-    int off = 0;
     struct bootp_t *rbp = NULL;
     uint8_t *q;
     struct in_addr saddr;
@@ -235,7 +238,7 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
     Log(("NAT: DHCP: bp_yiaddr:%R[IP4]\n", &rbp->bp_yiaddr));
     rbp->bp_siaddr = pData->tftp_server; /* Next Server IP address, i.e. TFTP */
     Log(("NAT: DHCP: bp_siaddr:%R[IP4]\n", &rbp->bp_siaddr));
-    if (is_from_request)
+    if (fDhcpRequest)
     {
         rbp->bp_ciaddr.s_addr = bc->addr.s_addr; /* Client IP address */
     }
@@ -330,25 +333,26 @@ static int dhcp_send_nack(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, 
     rbp = mtod(m, struct bootp_t *);
 
     dhcp_create_msg(pData, bp, m, DHCPNAK);
-
     return 7;
 }
-static int dhcp_send_ack(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, struct mbuf *m, int is_from_request)
+
+static int dhcp_send_ack(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, struct mbuf *m, int fDhcpRequest)
 {
     struct bootp_t *rbp;
-    int off = 0; /* boot_reply will fill general options and add END before sending response*/
+    int offReply = 0; /* boot_reply will fill general options and add END before sending response */
 
     dhcp_create_msg(pData, bp, m, DHCPACK);
-    off = dhcp_do_ack_offer(pData, m, bc, is_from_request);
-    return off;
+    offReply = dhcp_do_ack_offer(pData, m, bc, fDhcpRequest);
+    return offReply;
 }
+
 static int dhcp_send_offer(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, struct mbuf *m)
 {
-    int off = 0; /* boot_reply will fill general options and add END before sending response*/
+    int offReply = 0; /* boot_reply will fill general options and add END before sending response */
 
     dhcp_create_msg(pData, bp, m, DHCPOFFER);
-    off = dhcp_do_ack_offer(pData, m, bc, 0);
-    return off;
+    offReply = dhcp_do_ack_offer(pData, m, bc, /* fDhcpRequest=*/ 0);
+    return offReply;
 }
 
 /**
@@ -363,30 +367,41 @@ static int dhcp_send_offer(PNATState pData, struct bootp_t *bp, BOOTPClient *bc,
  *  ---------------------------------------------------------------------
  *
  */
-enum DHCP_REQUEST_STATES{INIT_REBOOT, SELECTING, RENEWING, REBINDING, NONE};
+
+enum DHCP_REQUEST_STATES
+{
+    INIT_REBOOT,
+    SELECTING,
+    RENEWING,
+    REBINDING,
+    NONE
+};
+
 static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_t *buf, int size, struct mbuf *m)
 {
     BOOTPClient *bc = NULL;
     struct in_addr daddr;
-    int off;
+    int offReply;
     uint8_t *opt;
     uint8_t *req_ip = NULL;
     uint8_t *server_ip = NULL;
     uint32_t ui32;
     enum DHCP_REQUEST_STATES dhcp_stat = NONE;
-    /*need to understand which type of request we get */
+
+    /* need to understand which type of request we get */
     req_ip = dhcp_find_option(&bp->bp_vend[0], RFC2132_REQ_ADDR);
     server_ip = dhcp_find_option(&bp->bp_vend[0], RFC2132_SRV_ID);
     bc = find_addr(pData, &daddr, bp->bp_hwaddr);
 
     if (server_ip != NULL)
     {
-        /*selecting*/
+        /* selecting */
         if (!bc)
         {
-             LogRel(("NAT: DHCP no IP wasn't allocated\n"));
+             LogRel(("NAT: DHCP no IP was allocated\n"));
              return -1;
         }
+
         dhcp_stat = SELECTING;
         Assert((bp->bp_ciaddr.s_addr == INADDR_ANY));
         Assert((*(uint32_t *)(req_ip + 2) == bc->addr.s_addr)); /*the same address as in offer*/
@@ -411,14 +426,12 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
                 dhcp_stat = RENEWING;
         }
     }
-        /*?? renewing ??*/
+
+    /*?? renewing ??*/
     switch (dhcp_stat)
     {
         case RENEWING:
-        {
-            Assert((   server_ip == NULL
-                && req_ip == NULL
-                && bp->bp_ciaddr.s_addr != INADDR_ANY));
+            Assert((server_ip == NULL && req_ip == NULL && bp->bp_ciaddr.s_addr != INADDR_ANY));
             if (bc != NULL)
             {
                 Assert((bc->addr.s_addr == bp->bp_ciaddr.s_addr));
@@ -428,34 +441,38 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
             {
                if ((bp->bp_ciaddr.s_addr & htonl(pData->netmask)) != pData->special_addr.s_addr)
                {
-                    off = dhcp_send_nack(pData, bp, bc, m);
-                    return off;
+                   LogRel(("NAT: Client %R[IP4] requested IP -- sending NAK\n", &bp->bp_ciaddr));
+                   offReply = dhcp_send_nack(pData, bp, bc, m);
+                   return offReply;
                }
+
                bc = bc_alloc_client(pData);
-               if (bc == NULL)
+               if (!bc)
                {
-                   LogRel(("NAT: can't alloc address. RENEW has been silently ignored\n"));
+                   LogRel(("NAT: can't alloc address. RENEW has been silently ignored.\n"));
                    return -1;
                }
+
                Assert((bp->bp_hlen == ETH_ALEN));
                memcpy(bc->macaddr, bp->bp_hwaddr, bp->bp_hlen);
                bc->addr.s_addr = bp->bp_ciaddr.s_addr;
                slirp_arp_cache_update(pData, bp->bp_ciaddr.s_addr, bp->bp_hwaddr);
             }
-        }
-        break;
+            break;
+
         case INIT_REBOOT:
             Assert(server_ip == NULL);
             Assert(req_ip != NULL);
             ui32 = *(uint32_t *)(req_ip + 2);
             if ((ui32 & htonl(pData->netmask)) != pData->special_addr.s_addr)
             {
-                LogRel(("NAT: address %R[IP4] has been req.\n", &ui32));
-                 off = dhcp_send_nack(pData, bp, bc, m);
-                 return off;
+                LogRel(("NAT: address %R[IP4] has been requested -- sending NAK\n", &ui32));
+                offReply = dhcp_send_nack(pData, bp, bc, m);
+                return offReply;
             }
+
             bc = bc_alloc_client(pData);
-            if (bc == NULL)
+            if (!bc)
             {
                 LogRel(("NAT: can't alloc address. RENEW has been silently ignored\n"));
                 return -1;
@@ -464,24 +481,28 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
             memcpy(bc->macaddr, bp->bp_hwaddr, bp->bp_hlen);
             bc->addr.s_addr = ui32;
             slirp_arp_cache_update(pData, bp->bp_ciaddr.s_addr, bp->bp_hwaddr);
-        break;
+            break;
+
         case NONE:
             Assert((dhcp_stat != NONE));
             return -1;
+
         default:
-        break;
+            break;
     }
-    off = dhcp_send_ack(pData, bp, bc, m, 1);
-    return off;
+
+    LogRel(("NAT: DHCP offered IP address %R[IP4]\n", &bc->addr));
+    offReply = dhcp_send_ack(pData, bp, bc, m, /* fDhcpRequest=*/ 1);
+    return offReply;
 }
 
-static int dhcp_decode_discover(PNATState pData, struct bootp_t *bp, const uint8_t *buf, int size, int flag, struct mbuf *m)
+static int dhcp_decode_discover(PNATState pData, struct bootp_t *bp, const uint8_t *buf, int size, int fDhcpDiscover, struct mbuf *m)
 {
     BOOTPClient *bc;
     struct in_addr daddr;
-    int off;
-    /* flag == 1 discover */
-    if (flag == 1)
+    int offReply;
+
+    if (fDhcpDiscover)
     {
         bc = find_addr(pData, &daddr, bp->bp_hwaddr);
         if (!bc)
@@ -495,29 +516,35 @@ static int dhcp_decode_discover(PNATState pData, struct bootp_t *bp, const uint8
             }
             memcpy(bc->macaddr, bp->bp_hwaddr, 6);
         }
+
         bc->xid = bp->bp_xid;
-        /*bc isn't NULL */
-        off = dhcp_send_offer(pData, bp, bc, m);
-        return off;
+        LogRel(("NAT: DHCP offered IP address %R[IP4]\n", &bc->addr));
+        offReply = dhcp_send_offer(pData, bp, bc, m);
+        return offReply;
     }
     else
     {
-        /* flag == 0 inform */
         bc = find_addr(pData, &daddr, bp->bp_hwaddr);
-        if (bc == NULL)
+        if (!bc)
         {
             LogRel(("NAT: DHCP Inform was ignored no boot client was found\n"));
             return -1;
         }
-        off = dhcp_send_ack(pData, bp, bc, m, 0);
-        return off;
+
+        LogRel(("NAT: DHCP offered IP address %R[IP4]\n", &bc->addr));
+        offReply = dhcp_send_ack(pData, bp, bc, m, /* fDhcpRequest=*/ 0);
+        return offReply;
     }
+
     return -1;
 }
 
 static int dhcp_decode_release(PNATState pData, struct bootp_t *bp, const uint8_t *buf, int size)
 {
-    release_addr(pData, &bp->bp_ciaddr);
+    int rc = release_addr(pData, &bp->bp_ciaddr);
+    LogRel(("NAT: %s %R[IP4]\n",
+            RT_SUCCESS(rc) ? "DHCP released IP address" : "Ignored DHCP release for IP address",
+            &bp->bp_ciaddr));
     return 0;
 }
 /**
@@ -591,7 +618,7 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
     int rc;
     int pmsg_type;
     struct in_addr req_ip;
-    int flag = 0;
+    int fDhcpDiscover = 0;
     int len, tag;
     struct mbuf *m = NULL;
 
@@ -618,13 +645,14 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
         LogRel(("NAT: can't alocate memory for response!\n"));
         return;
     }
+
     switch (*(p+2))
     {
         case DHCPDISCOVER:
-            flag = 1;
+            fDhcpDiscover = 1;
             /**/
         case DHCPINFORM:
-            rc = dhcp_decode_discover(pData, bp, buf, size, flag, m);
+            rc = dhcp_decode_discover(pData, bp, buf, size, fDhcpDiscover, m);
             if (rc > 0)
                 goto reply;
             break;
@@ -670,7 +698,7 @@ reply:
     return;
 }
 
-static void bootp_reply(PNATState pData, struct mbuf *m, int off, uint16_t flags)
+static void bootp_reply(PNATState pData, struct mbuf *m, int offReply, uint16_t flags)
 {
     struct sockaddr_in saddr, daddr;
     struct bootp_t *rbp = NULL;
@@ -681,7 +709,7 @@ static void bootp_reply(PNATState pData, struct mbuf *m, int off, uint16_t flags
     Assert((rbp));
     q = rbp->bp_vend;
     nack = (q[6] == DHCPNAK);
-    q += off;
+    q += offReply;
 
 #ifndef VBOX_WITH_NAT_SERVICE
     saddr.sin_addr.s_addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_ALIAS);
@@ -691,9 +719,7 @@ static void bootp_reply(PNATState pData, struct mbuf *m, int off, uint16_t flags
 
     FILL_BOOTP_EXT(q, RFC2132_SRV_ID, 4, &saddr.sin_addr);
 
-
-    *q++ = RFC1533_END; /*end of message */
-
+    *q++ = RFC1533_END; /* end of message */
 
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
     m->m_pkthdr.header = mtod(m, void *);
@@ -724,7 +750,7 @@ int bootp_cache_lookup_ip_by_ether(PNATState pData,const uint8_t* ether, uint32_
 {
     int i;
 
-    if (ether == NULL || pip == NULL)
+    if (!ether || !pip)
         return VERR_INVALID_PARAMETER;
 
     for (i = 0; i < NB_ADDR; i++)
