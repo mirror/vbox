@@ -322,8 +322,13 @@ protected:
     struct Data;
     Data *m;
 
-    virtual void acquireImpl(LockHandle &l) = 0;
-    virtual void releaseImpl(LockHandle &l) = 0;
+    virtual void callLockImpl(LockHandle &l) = 0;
+    virtual void callUnlockImpl(LockHandle &l) = 0;
+
+    void callLockOnAllHandles();
+    void callUnlockOnAllHandles();
+
+    void cleanup();
 
 public:
     void acquire();
@@ -411,10 +416,8 @@ public:
         cleanup();
     }
 
-    void cleanup();
-
-    virtual void acquireImpl(LockHandle &l);
-    virtual void releaseImpl(LockHandle &l);
+    virtual void callLockImpl(LockHandle &l);
+    virtual void callUnlockImpl(LockHandle &l);
 
     void leave();
     void enter();
@@ -531,8 +534,8 @@ public:
 
     virtual ~AutoReadLock();
 
-    virtual void acquireImpl(LockHandle &l);
-    virtual void releaseImpl(LockHandle &l);
+    virtual void callLockImpl(LockHandle &l);
+    virtual void callUnlockImpl(LockHandle &l);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
