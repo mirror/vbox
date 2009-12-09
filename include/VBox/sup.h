@@ -218,12 +218,15 @@ typedef enum SUPGIPMODE
  */
 #if defined(IN_SUP_R0) || defined(IN_SUP_R3) || defined(IN_SUP_GC)
 extern DECLEXPORT(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPage;
-#elif defined(IN_RING0)
-# if 0 /* VBOX_WITH_NATIVE_R0_LOADER */
-#  define g_pSUPGlobalInfoPage          (SUPGetGIP())
+
+#elif !defined(IN_RING0) || defined(RT_OS_WINDOWS)
+extern DECLIMPORT(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPage;
+
+#else /* IN_RING0 && !RT_OS_WINDOWS */
+# if !defined(__GNUC__) || defined(RT_OS_DARWIN) || !defined(RT_ARCH_AMD64)
+#  define g_pSUPGlobalInfoPage          (&g_SUPGlobalInfoPage)
 # else
-extern DECLIMPORT(SUPGLOBALINFOPAGE)    g_SUPGlobalInfoPage;
-#  if defined(__GNUC__) && !defined(RT_OS_DARWIN) && defined(RT_ARCH_AMD64)
+#  define g_pSUPGlobalInfoPage          (SUPGetGIPHlp())
 /** Workaround for ELF+GCC problem on 64-bit hosts.
  * (GCC emits a mov with a R_X86_64_32 reloc, we need R_X86_64_64.) */
 DECLINLINE(PSUPGLOBALINFOPAGE) SUPGetGIPHlp(void)
@@ -233,13 +236,11 @@ DECLINLINE(PSUPGLOBALINFOPAGE) SUPGetGIPHlp(void)
                           : "=a" (pGIP));
     return pGIP;
 }
-#   define g_pSUPGlobalInfoPage          (SUPGetGIPHlp())
-#  else
-#   define g_pSUPGlobalInfoPage          (&g_SUPGlobalInfoPage)
-#  endif
 # endif
-#else
-extern DECLIMPORT(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPage;
+/** The GIP.
+ * We save a level of indirection by exporting the GIP instead of a variable
+ * pointing to it. */
+extern DECLIMPORT(SUPGLOBALINFOPAGE)    g_SUPGlobalInfoPage;
 #endif
 
 /**

@@ -2066,6 +2066,7 @@ ifeq ($(VBOX_LDR_FMT32),pe)
  endif
  TEMPLATE_VBOXGC_LIBS               = \
  	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
+ TEMPLATE_VBOXGC_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
 endif # pe
 
 ifeq ($(VBOX_LDR_FMT32),elf)
@@ -2183,9 +2184,7 @@ TEMPLATE_VBOXR0_CFLAGS              = $(TEMPLATE_VBOXR0_CXXFLAGS)
 TEMPLATE_VBOXR0_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Exports -NoD
 TEMPLATE_VBOXR0_LIBS.x86            = \
 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
- ifdef VBOX_WITH_NATIVE_R0_LOADER
 TEMPLATE_VBOXR0_POST_CMDS           = $(VBOX_SIGN_DRIVER_CMDS)
- endif
 endif # pe
 
 ifeq ($(VBOX_LDR_FMT),elf)

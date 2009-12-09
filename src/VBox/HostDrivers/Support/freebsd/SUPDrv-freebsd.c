@@ -599,7 +599,6 @@ bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
     return false;
 }
 
-#ifdef VBOX_WITH_NATIVE_R0_LOADER
 
 int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
 {
@@ -627,7 +626,6 @@ void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
     NOREF(pDevExt); NOREF(pImage);
 }
 
-#endif /* VBOX_WITH_NATIVE_R0_LOADER */
 
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...)
 {
