@@ -322,6 +322,13 @@ protected:
     struct Data;
     Data *m;
 
+    virtual void acquireImpl(LockHandle &l) = 0;
+    virtual void releaseImpl(LockHandle &l) = 0;
+
+public:
+    void acquire();
+    void release();
+
 private:
     // prohibit copy + assignment
     AutoLockBase(const AutoLockBase&);
@@ -406,8 +413,9 @@ public:
 
     void cleanup();
 
-    void acquire();
-    void release();
+    virtual void acquireImpl(LockHandle &l);
+    virtual void releaseImpl(LockHandle &l);
+
     void leave();
     void enter();
 
@@ -523,8 +531,8 @@ public:
 
     virtual ~AutoReadLock();
 
-    void acquire();
-    void release();
+    virtual void acquireImpl(LockHandle &l);
+    virtual void releaseImpl(LockHandle &l);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
