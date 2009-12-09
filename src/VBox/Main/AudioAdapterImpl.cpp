@@ -476,7 +476,8 @@ void AudioAdapter::copyFrom (AudioAdapter *aThat)
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
-    AutoMultiLock2 alock (aThat->rlock(), this->wlock());
+    AutoReadLock rl(aThat);
+    AutoWriteLock wl(this);
 
     /* this will back up current data */
     mData.assignCopy (aThat->mData);
