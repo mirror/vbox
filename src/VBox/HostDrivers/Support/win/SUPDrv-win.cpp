@@ -650,7 +650,8 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
         rc = STATUS_INFO_LENGTH_MISMATCH;
     }
     SUPR0Printf("rc=%#x '%ws'\n", rc, Info.Name.Buffer);
-    //STATUS_OBJECT_NAME_NOT_FOUND == 0xc0000034 -> SUPR0
+    //STATUS_OBJECT_NAME_NOT_FOUND       == 0xc0000034 -> SUPR0
+    //STATUS_DRIVER_ENTRYPOINT_NOT_FOUND == 0xC0000263 -> SUPR0
 
     NOREF(pDevExt); NOREF(pszFilename);
     pImage->pvNtSectionObj = NULL;
