@@ -95,25 +95,38 @@ uint32_t RWLockHandle::writeLockLevel() const
 ////////////////////////////////////////////////////////////////////////////////
 
 typedef std::vector<LockHandle*> HandlesVector;
+typedef std::vector<uint32_t> CountsVector;
 
 struct AutoLockBase::Data
 {
     Data(size_t cHandles)
-        : aHandles(cHandles),       // size of array
-          fIsLocked(false),
-          cUnlockedInLeave(0)
-    { }
+        : fIsLocked(false),
+          aHandles(cHandles),       // size of array
+          acUnlockedInLeave(cHandles)
+    {
+        for (uint32_t i = 0; i < cHandles; ++i)
+        {
+            acUnlockedInLeave[i] = 0;
+            aHandles[i] = NULL;
+        }
+    }
 
+    bool            fIsLocked;          // if true, then all items in aHandles are locked by this AutoLock and
+                                        // need to be unlocked in the destructor
     HandlesVector   aHandles;           // array (vector) of LockHandle instances; in the case of AutoWriteLock
                                         // and AutoReadLock, there will only be one item on the list; with the
                                         // AutoMulti* derivatives, there will be multiple
-    bool            fIsLocked;          // if true, then all items in aHandles are locked by this AutoLock and
-                                        // need to be unlocked in the destructor
-    uint32_t        cUnlockedInLeave;   // how many times the handle was unlocked in leave(); otherwise 0
+    CountsVector    acUnlockedInLeave;  // for each lock handle, how many times the handle was unlocked in leave(); otherwise 0
 };
 
-AutoLockBase::AutoLockBase(LockHandle *pHandle)
+AutoLockBase::AutoLockBase(uint32_t cHandles)
 {
+    m = new Data(cHandles);
+}
+
+AutoLockBase::AutoLockBase(uint32_t cHandles, LockHandle *pHandle)
+{
+    Assert(cHandles == 1);
     m = new Data(1);
     m->aHandles[0] = pHandle;
 }
@@ -175,18 +188,33 @@ void AutoLockBase::callUnlockOnAllHandles()
  */
 void AutoLockBase::cleanup()
 {
-    if (m->cUnlockedInLeave)
+    bool fAnyUnlockedInLeave = false;
+
+    uint32_t i = 0;
+    for (HandlesVector::iterator it = m->aHandles.begin();
+         it != m->aHandles.end();
+         ++it)
     {
-        // there was a leave() before the destruction: then restore the
-        // lock level that might have been set by locks other than our own
-        if (m->fIsLocked)
-            --m->cUnlockedInLeave;       // no lock for our own
-        m->fIsLocked = false;
-        for (; m->cUnlockedInLeave; --m->cUnlockedInLeave)
-            callLockOnAllHandles();
+        LockHandle *pHandle = *it;
+        if (pHandle)
+        {
+            if (m->acUnlockedInLeave[i])
+            {
+                // there was a leave() before the destruction: then restore the
+                // lock level that might have been set by locks other than our own
+                if (m->fIsLocked)
+                {
+                    --m->acUnlockedInLeave[i];
+                    fAnyUnlockedInLeave = true;
+                }
+                for (; m->acUnlockedInLeave[i]; --m->acUnlockedInLeave[i])
+                    callLockImpl(*pHandle);
+            }
+        }
+        ++i;
     }
 
-    if (m->fIsLocked)
+    if (m->fIsLocked && !fAnyUnlockedInLeave)
         callUnlockOnAllHandles();
 }
 
@@ -288,34 +316,6 @@ void AutoLockBase::release()
 }
 
 /**
- * Returns @c true if the current thread holds a write lock on the managed
- * read/write semaphore. Returns @c false if the managed semaphore is @c
- * NULL.
- *
- * @note Intended for debugging only.
- */
-bool AutoWriteLockBase::isWriteLockOnCurrentThread() const
-{
-    return m->aHandles[0] ? m->aHandles[0]->isWriteLockOnCurrentThread() : false;
-}
-
- /**
- * Returns the current write lock level of the managed smaphore. The lock
- * level determines the number of nested #lock() calls on the given
- * semaphore handle. Returns @c 0 if the managed semaphore is @c
- * NULL.
- *
- * Note that this call is valid only when the current thread owns a write
- * lock on the given semaphore handle and will assert otherwise.
- *
- * @note Intended for debugging only.
- */
-uint32_t AutoWriteLockBase::writeLockLevel() const
-{
-    return m->aHandles[0] ? m->aHandles[0]->writeLockLevel() : 0;
-}
-
-/**
  * Causes the current thread to completely release the write lock to make
  * the managed semaphore immediately available for locking by other threads.
  *
@@ -339,8 +339,8 @@ uint32_t AutoWriteLockBase::writeLockLevel() const
 void AutoWriteLockBase::leave()
 {
     AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot leave()!"));
-    AssertMsg(m->cUnlockedInLeave == 0, ("m->cUnlockedInLeave is %d, must be 0! Called leave() twice?", m->cUnlockedInLeave));
 
+    uint32_t i = 0;
     for (HandlesVector::iterator it = m->aHandles.begin();
          it != m->aHandles.end();
          ++it)
@@ -348,14 +348,16 @@ void AutoWriteLockBase::leave()
         LockHandle *pHandle = *it;
         if (pHandle)
         {
-            m->cUnlockedInLeave = pHandle->writeLockLevel();
-            AssertMsg(m->cUnlockedInLeave >= 1, ("m->cUnlockedInLeave is %d, must be >=1!", m->cUnlockedInLeave));
+            AssertMsg(m->acUnlockedInLeave[i] == 0, ("m->cUnlockedInLeave[%d] is %d, must be 0! Called leave() twice?", i, m->acUnlockedInLeave[i]));
+            m->acUnlockedInLeave[i] = pHandle->writeLockLevel();
+            AssertMsg(m->acUnlockedInLeave[i] >= 1, ("m->cUnlockedInLeave[%d] is %d, must be >=1!", i, m->acUnlockedInLeave[i]));
 
-            for (uint32_t left = m->cUnlockedInLeave;
+            for (uint32_t left = m->acUnlockedInLeave[i];
                  left;
                  --left)
                 pHandle->unlockWrite();
         }
+        ++i;
     }
 }
 
@@ -368,8 +370,8 @@ void AutoWriteLockBase::leave()
 void AutoWriteLockBase::enter()
 {
     AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot enter()!"));
-    AssertMsg(m->cUnlockedInLeave != 0, ("m->cUnlockedInLeave is 0! enter() without leave()?"));
 
+    uint32_t i = 0;
     for (HandlesVector::iterator it = m->aHandles.begin();
          it != m->aHandles.end();
          ++it)
@@ -377,9 +379,67 @@ void AutoWriteLockBase::enter()
         LockHandle *pHandle = *it;
         if (pHandle)
         {
-            for (; m->cUnlockedInLeave; --m->cUnlockedInLeave)
+            AssertMsg(m->acUnlockedInLeave[i] != 0, ("m->cUnlockedInLeave[%d] is 0! enter() without leave()?", i));
+
+            for (; m->acUnlockedInLeave[i]; --m->acUnlockedInLeave[i])
                 pHandle->lockWrite();
         }
+        ++i;
+    }
+}
+
+/**
+ * Same as #leave() but checks if the current thread actally owns the lock
+ * and only proceeds in this case. As a result, as opposed to #leave(),
+ * doesn't assert when called with no lock being held.
+ */
+void AutoWriteLockBase::maybeLeave()
+{
+    uint32_t i = 0;
+    for (HandlesVector::iterator it = m->aHandles.begin();
+         it != m->aHandles.end();
+         ++it)
+    {
+        LockHandle *pHandle = *it;
+        if (pHandle)
+        {
+            if (pHandle->isWriteLockOnCurrentThread())
+            {
+                m->acUnlockedInLeave[i] = pHandle->writeLockLevel();
+                AssertMsg(m->acUnlockedInLeave[i] >= 1, ("m->cUnlockedInLeave[%d] is %d, must be >=1!", i, m->acUnlockedInLeave[i]));
+
+                for (uint32_t left = m->acUnlockedInLeave[i];
+                     left;
+                     --left)
+                    pHandle->unlockWrite();
+            }
+        }
+        ++i;
+    }
+}
+
+/**
+ * Same as #enter() but checks if the current thread actally owns the lock
+ * and only proceeds if not. As a result, as opposed to #enter(), doesn't
+ * assert when called with the lock already being held.
+ */
+void AutoWriteLockBase::maybeEnter()
+{
+    uint32_t i = 0;
+    for (HandlesVector::iterator it = m->aHandles.begin();
+         it != m->aHandles.end();
+         ++it)
+    {
+        LockHandle *pHandle = *it;
+        if (pHandle)
+        {
+            if (!pHandle->isWriteLockOnCurrentThread())
+            {
+                for (; m->acUnlockedInLeave[i]; --m->acUnlockedInLeave[i])
+                    pHandle->lockWrite();
+            }
+        }
+        ++i;
     }
 }
 
@@ -422,6 +482,79 @@ void AutoWriteLock::attach(LockHandle *aHandle)
 void AutoWriteLock::attachRaw(LockHandle *ph)
 {
     m->aHandles[0] = ph;
+}
+
+/**
+ * Returns @c true if the current thread holds a write lock on the managed
+ * read/write semaphore. Returns @c false if the managed semaphore is @c
+ * NULL.
+ *
+ * @note Intended for debugging only.
+ */
+bool AutoWriteLock::isWriteLockOnCurrentThread() const
+{
+    return m->aHandles[0] ? m->aHandles[0]->isWriteLockOnCurrentThread() : false;
+}
+
+ /**
+ * Returns the current write lock level of the managed smaphore. The lock
+ * level determines the number of nested #lock() calls on the given
+ * semaphore handle. Returns @c 0 if the managed semaphore is @c
+ * NULL.
+ *
+ * Note that this call is valid only when the current thread owns a write
+ * lock on the given semaphore handle and will assert otherwise.
+ *
+ * @note Intended for debugging only.
+ */
+uint32_t AutoWriteLock::writeLockLevel() const
+{
+    return m->aHandles[0] ? m->aHandles[0]->writeLockLevel() : 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// AutoMultiWriteLock*
+//
+////////////////////////////////////////////////////////////////////////////////
+
+AutoMultiWriteLock2::AutoMultiWriteLock2(Lockable *pl1, Lockable *pl2)
+    : AutoWriteLockBase(2)
+{
+    if (pl1)
+        m->aHandles[0] = pl1->lockHandle();
+    if (pl2)
+        m->aHandles[1] = pl2->lockHandle();
+    acquire();
+}
+
+AutoMultiWriteLock2::AutoMultiWriteLock2(LockHandle *pl1, LockHandle *pl2)
+    : AutoWriteLockBase(2)
+{
+    m->aHandles[0] = pl1;
+    m->aHandles[1] = pl2;
+    acquire();
+}
+
+AutoMultiWriteLock3::AutoMultiWriteLock3(Lockable *pl1, Lockable *pl2, Lockable *pl3)
+    : AutoWriteLockBase(3)
+{
+    if (pl1)
+        m->aHandles[0] = pl1->lockHandle();
+    if (pl2)
+        m->aHandles[1] = pl2->lockHandle();
+    if (pl3)
+        m->aHandles[2] = pl3->lockHandle();
+    acquire();
+}
+
+AutoMultiWriteLock3::AutoMultiWriteLock3(LockHandle *pl1, LockHandle *pl2, LockHandle *pl3)
+    : AutoWriteLockBase(3)
+{
+    m->aHandles[0] = pl1;
+    m->aHandles[1] = pl2;
+    m->aHandles[2] = pl3;
+    acquire();
 }
 
 } /* namespace util */

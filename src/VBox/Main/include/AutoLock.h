@@ -317,7 +317,8 @@ public:
 class AutoLockBase
 {
 protected:
-    AutoLockBase(LockHandle *pHandle);
+    AutoLockBase(uint32_t cHandles);
+    AutoLockBase(uint32_t cHandles, LockHandle *pHandle);
     virtual ~AutoLockBase();
 
     struct Data;
@@ -360,7 +361,7 @@ public:
      * runtime.
      */
     AutoReadLock()
-        : AutoLockBase(NULL)
+        : AutoLockBase(1, NULL)
     { }
 
     /**
@@ -368,7 +369,7 @@ public:
      * semaphore by requesting a read lock.
      */
     AutoReadLock(LockHandle *aHandle)
-        : AutoLockBase(aHandle)
+        : AutoLockBase(1, aHandle)
     {
         acquire();
     }
@@ -378,7 +379,7 @@ public:
      * semaphore by requesting a read lock.
      */
     AutoReadLock(LockHandle &aHandle)
-        : AutoLockBase(&aHandle)
+        : AutoLockBase(1, &aHandle)
     {
         acquire();
     }
@@ -388,7 +389,7 @@ public:
      * semaphore by requesting a read lock.
      */
     AutoReadLock(const Lockable &aLockable)
-        : AutoLockBase(aLockable.lockHandle())
+        : AutoLockBase(1, aLockable.lockHandle())
     {
         acquire();
     }
@@ -398,7 +399,7 @@ public:
      * semaphore by requesting a read lock.
      */
     AutoReadLock(const Lockable *aLockable)
-        : AutoLockBase(aLockable ? aLockable->lockHandle() : NULL)
+        : AutoLockBase(1, aLockable ? aLockable->lockHandle() : NULL)
     {
         acquire();
     }
@@ -418,8 +419,12 @@ public:
 class AutoWriteLockBase : public AutoLockBase
 {
 protected:
-    AutoWriteLockBase(LockHandle *pHandle)
-        : AutoLockBase(pHandle)
+    AutoWriteLockBase(uint32_t cHandles)
+        : AutoLockBase(cHandles)
+    { }
+
+    AutoWriteLockBase(uint32_t cHandles, LockHandle *pHandle)
+        : AutoLockBase(cHandles, pHandle)
     { }
 
     virtual ~AutoWriteLockBase()
@@ -429,34 +434,10 @@ protected:
     virtual void callUnlockImpl(LockHandle &l);
 
 public:
-    bool isWriteLockOnCurrentThread() const;
-    uint32_t writeLockLevel() const;
-
     void leave();
     void enter();
-
-    /**
-     * Same as #leave() but checks if the current thread actally owns the lock
-     * and only proceeds in this case. As a result, as opposed to #leave(),
-     * doesn't assert when called with no lock being held.
-     */
-    void maybeLeave()
-    {
-        if (isWriteLockOnCurrentThread())
-            leave();
-    }
-
-    /**
-     * Same as #enter() but checks if the current thread actally owns the lock
-     * and only proceeds if not. As a result, as opposed to #enter(), doesn't
-     * assert when called with the lock already being held.
-     */
-    void maybeEnter()
-    {
-        if (!isWriteLockOnCurrentThread())
-            enter();
-    }
-
+    void maybeLeave();
+    void maybeEnter();
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -478,7 +459,7 @@ public:
      * runtime.
      */
     AutoWriteLock()
-        : AutoWriteLockBase(NULL)
+        : AutoWriteLockBase(1, NULL)
     { }
 
     /**
@@ -486,7 +467,7 @@ public:
      * semaphore by requesting a write lock.
      */
     AutoWriteLock(LockHandle *aHandle)
-        : AutoWriteLockBase(aHandle)
+        : AutoWriteLockBase(1, aHandle)
     {
         acquire();
     }
@@ -496,7 +477,7 @@ public:
      * semaphore by requesting a write lock.
      */
     AutoWriteLock(LockHandle &aHandle)
-        : AutoWriteLockBase(&aHandle)
+        : AutoWriteLockBase(1, &aHandle)
     {
         acquire();
     }
@@ -506,7 +487,7 @@ public:
      * semaphore by requesting a write lock.
      */
     AutoWriteLock(const Lockable &aLockable)
-        : AutoWriteLockBase(aLockable.lockHandle())
+        : AutoWriteLockBase(1, aLockable.lockHandle())
     {
         acquire();
     }
@@ -516,7 +497,7 @@ public:
      * semaphore by requesting a write lock.
      */
     AutoWriteLock(const Lockable *aLockable)
-        : AutoWriteLockBase(aLockable ? aLockable->lockHandle() : NULL)
+        : AutoWriteLockBase(1, aLockable ? aLockable->lockHandle() : NULL)
     {
         acquire();
     }
@@ -556,7 +537,41 @@ public:
     }
 
     void attachRaw(LockHandle *ph);
+
+    bool isWriteLockOnCurrentThread() const;
+    uint32_t writeLockLevel() const;
 };
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// AutoMultiWriteLock*
+//
+////////////////////////////////////////////////////////////////////////////////
+
+class AutoMultiWriteLock2 : public AutoWriteLockBase
+{
+public:
+    AutoMultiWriteLock2(Lockable *pl1, Lockable *pl2);
+    AutoMultiWriteLock2(LockHandle *pl1, LockHandle *pl2);
+
+    virtual ~AutoMultiWriteLock2()
+    {
+        cleanup();
+    }
+};
+
+class AutoMultiWriteLock3 : public AutoWriteLockBase
+{
+public:
+    AutoMultiWriteLock3(Lockable *pl1, Lockable *pl2, Lockable *pl3);
+    AutoMultiWriteLock3(LockHandle *pl1, LockHandle *pl2, LockHandle *pl3);
+
+    virtual ~AutoMultiWriteLock3()
+    {
+        cleanup();
+    }
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -706,197 +721,6 @@ public:
     { B(0); B(1); B(2); B(3); lock(); }
 };
 
-#undef B
-#undef A
-
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Helper template class for AutoMultiWriteLockN classes.
- *
- * @param Cnt number of write semaphores to manage.
- */
-template <size_t Cnt>
-class AutoMultiWriteLockBase
-{
-
-public:
-    /**
-     * Calls AutoWriteLock::acquire() methods for all managed semaphore handles in
-     * order they were passed to the constructor.
-     */
-    void acquire()
-    {
-        size_t i = 0;
-        while (i < RT_ELEMENTS(mLocks))
-            mLocks[i++].acquire();
-    }
-
-    /**
-     * Calls AutoWriteLock::unlock() methods for all managed semaphore handles
-     * in reverse to the order they were passed to the constructor.
-     */
-    void release()
-    {
-        AssertReturnVoid(RT_ELEMENTS(mLocks) > 0);
-        size_t i = RT_ELEMENTS(mLocks);
-        do
-            mLocks[--i].release();
-        while (i != 0);
-    }
-
-    /**
-     * Calls AutoWriteLock::leave() methods for all managed semaphore handles in
-     * reverse to the order they were passed to the constructor.
-     */
-    void leave()
-    {
-        AssertReturnVoid(RT_ELEMENTS(mLocks) > 0);
-        size_t i = RT_ELEMENTS(mLocks);
-        do
-            mLocks[--i].leave();
-        while (i != 0);
-    }
-
-    /**
-    * Calls AutoWriteLock::maybeLeave() methods for all managed semaphore
-    * handles in reverse to the order they were passed to the constructor.
-     */
-    void maybeLeave()
-    {
-        AssertReturnVoid(RT_ELEMENTS(mLocks) > 0);
-        size_t i = RT_ELEMENTS(mLocks);
-        do
-            mLocks [-- i].maybeLeave();
-        while (i != 0);
-    }
-
-    /**
-     * Calls AutoWriteLock::maybeEnter() methods for all managed semaphore
-     * handles in order they were passed to the constructor.
-     */
-    void maybeEnter()
-    {
-        size_t i = 0;
-        while (i < RT_ELEMENTS(mLocks))
-            mLocks[i++].maybeEnter();
-    }
-
-    /**
-     * Calls AutoWriteLock::enter() methods for all managed semaphore handles in
-     * order they were passed to the constructor.
-     */
-    void enter()
-    {
-        size_t i = 0;
-        while (i < RT_ELEMENTS(mLocks))
-            mLocks[i++].enter();
-    }
-
-protected:
-
-    AutoMultiWriteLockBase() {}
-
-    void setLockHandle(size_t aIdx, LockHandle *aHandle)
-    {
-        mLocks[aIdx].attachRaw(aHandle);
-    }
-
-private:
-
-    AutoWriteLock mLocks[Cnt];
-
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (AutoMultiWriteLockBase)
-    DECLARE_CLS_NEW_DELETE_NOOP (AutoMultiWriteLockBase)
-};
-
-/** AutoMultiWriteLockBase <0> is meaningless and forbidden. */
-template<>
-class AutoMultiWriteLockBase <0> { private : AutoMultiWriteLockBase(); };
-
-/** AutoMultiWriteLockBase <1> is meaningless and forbidden. */
-template<>
-class AutoMultiWriteLockBase <1> { private : AutoMultiWriteLockBase(); };
-
-////////////////////////////////////////////////////////////////////////////////
-
-/* AutoMultiLockN class definitions */
-
-#define A(n) LockHandle *l##n
-#define B(n) setLockHandle (n, l##n)
-
-#define C(n) Lockable *l##n
-#define D(n) setLockHandle (n, l##n ? l##n->lockHandle() : NULL)
-
-/**
- * AutoMultiWriteLock for 2 locks.
- *
- * The AutoMultiWriteLockN family of classes provides a possibility to manage
- * several read/write semaphores at once. This is handy if all managed
- * semaphores need to be locked and unlocked synchronously and will also help to
- * avoid locking order errors.
- *
- * The functionality of the AutoMultiWriteLockN class family is similar to the
- * functionality of the AutoMultiLockN class family (see the AutoMultiLock2
- * class for details) with two important differences:
- * <ol>
- *     <li>Instances of AutoMultiWriteLockN classes are constructed from a list
- *     of LockHandle or Lockable arguments directly instead of getting
- *     intermediate LockOps interface pointers.
- *     </li>
- *     <li>All locks are requested in <b>write</b> mode.
- *     </li>
- *     <li>Since all locks are requested in write mode, bulk
- *     AutoMultiWriteLockBase::leave() and AutoMultiWriteLockBase::enter()
- *     operations are also available, that will leave and enter all managed
- *     semaphores at once in the proper order (similarly to
- *     AutoMultiWriteLockBase::lock() and AutoMultiWriteLockBase::unlock()).
- *     </li>
- * </ol>
- *
- * Here is a typical usage pattern:
- * <code>
- *  ...
- *  LockHandle data1, data2;
- *  ...
- *  {
- *      AutoMultiWriteLock2 multiLock (&data1, &data2);
- *      // both locks are held in write mode here
- *  }
- *  // both locks are released here
- * </code>
- */
-class AutoMultiWriteLock2 : public AutoMultiWriteLockBase <2>
-{
-public:
-    AutoMultiWriteLock2 (A(0), A(1))
-    { B(0); B(1); acquire(); }
-    AutoMultiWriteLock2 (C(0), C(1))
-    { D(0); D(1); acquire(); }
-};
-
-/** AutoMultiWriteLock for 3 locks. See AutoMultiWriteLock2 for more details. */
-class AutoMultiWriteLock3 : public AutoMultiWriteLockBase <3>
-{
-public:
-    AutoMultiWriteLock3 (A(0), A(1), A(2))
-    { B(0); B(1); B(2); acquire(); }
-    AutoMultiWriteLock3 (C(0), C(1), C(2))
-    { D(0); D(1); D(2); acquire(); }
-};
-
-/** AutoMultiWriteLock for 4 locks. See AutoMultiWriteLock2 for more details. */
-class AutoMultiWriteLock4 : public AutoMultiWriteLockBase <4>
-{
-public:
-    AutoMultiWriteLock4 (A(0), A(1), A(2), A(3))
-    { B(0); B(1); B(2); B(3); acquire(); }
-    AutoMultiWriteLock4 (C(0), C(1), C(2), C(3))
-    { D(0); D(1); D(2); D(3); acquire(); }
-};
-
-#undef D
-#undef C
 #undef B
 #undef A
 
