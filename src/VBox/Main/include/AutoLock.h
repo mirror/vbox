@@ -152,6 +152,7 @@ private:
 
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (LockHandle)
 
+    friend class AutoWriteLockBase;
     friend class AutoWriteLock;
     friend class AutoReadLock;
 };
@@ -342,136 +343,6 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// AutoWriteLock
-//
-////////////////////////////////////////////////////////////////////////////////
-
-class AutoWriteLock : public AutoLockBase
-{
-public:
-
-    /**
-     * Constructs a null instance that does not manage any read/write
-     * semaphore.
-     *
-     * Note that all method calls on a null instance are no-ops. This allows to
-     * have the code where lock protection can be selected (or omitted) at
-     * runtime.
-     */
-    AutoWriteLock()
-        : AutoLockBase(NULL)
-    { }
-
-    /**
-     * Constructs a new instance that will start managing the given read/write
-     * semaphore by requesting a write lock.
-     */
-    AutoWriteLock(LockHandle *aHandle)
-        : AutoLockBase(aHandle)
-    {
-        acquire();
-    }
-
-    /**
-     * Constructs a new instance that will start managing the given read/write
-     * semaphore by requesting a write lock.
-     */
-    AutoWriteLock(LockHandle &aHandle)
-        : AutoLockBase(&aHandle)
-    {
-        acquire();
-    }
-
-    /**
-     * Constructs a new instance that will start managing the given read/write
-     * semaphore by requesting a write lock.
-     */
-    AutoWriteLock(const Lockable &aLockable)
-        : AutoLockBase(aLockable.lockHandle())
-    {
-        acquire();
-    }
-
-    /**
-     * Constructs a new instance that will start managing the given read/write
-     * semaphore by requesting a write lock.
-     */
-    AutoWriteLock(const Lockable *aLockable)
-        : AutoLockBase(aLockable ? aLockable->lockHandle() : NULL)
-    {
-        acquire();
-    }
-
-    /**
-     * Release all write locks acquired by this instance through the #lock()
-     * call and destroys the instance.
-     *
-     * Note that if there there are nested #lock() calls without the
-     * corresponding number of #unlock() calls when the destructor is called, it
-     * will assert. This is because having an unbalanced number of nested locks
-     * is a program logic error which must be fixed.
-     */
-    virtual ~AutoWriteLock()
-    {
-        cleanup();
-    }
-
-    virtual void callLockImpl(LockHandle &l);
-    virtual void callUnlockImpl(LockHandle &l);
-
-    void leave();
-    void enter();
-
-    /**
-     * Same as #leave() but checks if the current thread actally owns the lock
-     * and only proceeds in this case. As a result, as opposed to #leave(),
-     * doesn't assert when called with no lock being held.
-     */
-    void maybeLeave()
-    {
-        if (isWriteLockOnCurrentThread())
-            leave();
-    }
-
-    /**
-     * Same as #enter() but checks if the current thread actally owns the lock
-     * and only proceeds if not. As a result, as opposed to #enter(), doesn't
-     * assert when called with the lock already being held.
-     */
-    void maybeEnter()
-    {
-        if (!isWriteLockOnCurrentThread())
-            enter();
-    }
-
-    void attach(LockHandle *aHandle);
-
-    /** @see attach (LockHandle *) */
-    void attach(LockHandle &aHandle)
-    {
-        attach(&aHandle);
-    }
-
-    /** @see attach (LockHandle *) */
-    void attach(const Lockable &aLockable)
-    {
-        attach(aLockable.lockHandle());
-    }
-
-    /** @see attach (LockHandle *) */
-    void attach(const Lockable *aLockable)
-    {
-        attach(aLockable ? aLockable->lockHandle() : NULL);
-    }
-
-    void attachRaw(LockHandle *ph);
-
-    bool isWriteLockOnCurrentThread() const;
-    uint32_t writeLockLevel() const;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-//
 // AutoReadLock
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -536,6 +407,155 @@ public:
 
     virtual void callLockImpl(LockHandle &l);
     virtual void callUnlockImpl(LockHandle &l);
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// AutoWriteLockBase
+//
+////////////////////////////////////////////////////////////////////////////////
+
+class AutoWriteLockBase : public AutoLockBase
+{
+protected:
+    AutoWriteLockBase(LockHandle *pHandle)
+        : AutoLockBase(pHandle)
+    { }
+
+    virtual ~AutoWriteLockBase()
+    { }
+
+    virtual void callLockImpl(LockHandle &l);
+    virtual void callUnlockImpl(LockHandle &l);
+
+public:
+    bool isWriteLockOnCurrentThread() const;
+    uint32_t writeLockLevel() const;
+
+    void leave();
+    void enter();
+
+    /**
+     * Same as #leave() but checks if the current thread actally owns the lock
+     * and only proceeds in this case. As a result, as opposed to #leave(),
+     * doesn't assert when called with no lock being held.
+     */
+    void maybeLeave()
+    {
+        if (isWriteLockOnCurrentThread())
+            leave();
+    }
+
+    /**
+     * Same as #enter() but checks if the current thread actally owns the lock
+     * and only proceeds if not. As a result, as opposed to #enter(), doesn't
+     * assert when called with the lock already being held.
+     */
+    void maybeEnter()
+    {
+        if (!isWriteLockOnCurrentThread())
+            enter();
+    }
+
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// AutoWriteLock
+//
+////////////////////////////////////////////////////////////////////////////////
+
+class AutoWriteLock : public AutoWriteLockBase
+{
+public:
+
+    /**
+     * Constructs a null instance that does not manage any read/write
+     * semaphore.
+     *
+     * Note that all method calls on a null instance are no-ops. This allows to
+     * have the code where lock protection can be selected (or omitted) at
+     * runtime.
+     */
+    AutoWriteLock()
+        : AutoWriteLockBase(NULL)
+    { }
+
+    /**
+     * Constructs a new instance that will start managing the given read/write
+     * semaphore by requesting a write lock.
+     */
+    AutoWriteLock(LockHandle *aHandle)
+        : AutoWriteLockBase(aHandle)
+    {
+        acquire();
+    }
+
+    /**
+     * Constructs a new instance that will start managing the given read/write
+     * semaphore by requesting a write lock.
+     */
+    AutoWriteLock(LockHandle &aHandle)
+        : AutoWriteLockBase(&aHandle)
+    {
+        acquire();
+    }
+
+    /**
+     * Constructs a new instance that will start managing the given read/write
+     * semaphore by requesting a write lock.
+     */
+    AutoWriteLock(const Lockable &aLockable)
+        : AutoWriteLockBase(aLockable.lockHandle())
+    {
+        acquire();
+    }
+
+    /**
+     * Constructs a new instance that will start managing the given read/write
+     * semaphore by requesting a write lock.
+     */
+    AutoWriteLock(const Lockable *aLockable)
+        : AutoWriteLockBase(aLockable ? aLockable->lockHandle() : NULL)
+    {
+        acquire();
+    }
+
+    /**
+     * Release all write locks acquired by this instance through the #lock()
+     * call and destroys the instance.
+     *
+     * Note that if there there are nested #lock() calls without the
+     * corresponding number of #unlock() calls when the destructor is called, it
+     * will assert. This is because having an unbalanced number of nested locks
+     * is a program logic error which must be fixed.
+     */
+    virtual ~AutoWriteLock()
+    {
+        cleanup();
+    }
+
+    void attach(LockHandle *aHandle);
+
+    /** @see attach (LockHandle *) */
+    void attach(LockHandle &aHandle)
+    {
+        attach(&aHandle);
+    }
+
+    /** @see attach (LockHandle *) */
+    void attach(const Lockable &aLockable)
+    {
+        attach(aLockable.lockHandle());
+    }
+
+    /** @see attach (LockHandle *) */
+    void attach(const Lockable *aLockable)
+    {
+        attach(aLockable ? aLockable->lockHandle() : NULL);
+    }
+
+    void attachRaw(LockHandle *ph);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
