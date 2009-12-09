@@ -316,15 +316,16 @@ public:
 class AutoLockBase
 {
 protected:
-    AutoLockBase(LockHandle *pHandle)
-        : mHandle(pHandle),
-          m_fIsLocked(false),
-          m_cUnlockedInLeave(0)
-    { }
+    AutoLockBase(LockHandle *pHandle);
+    virtual ~AutoLockBase();
 
-    LockHandle      *mHandle;
-    bool            m_fIsLocked;
-    uint32_t        m_cUnlockedInLeave;   // how many times the handle was unlocked in leave(); otherwise 0
+    struct Data;
+    Data *m;
+
+private:
+    // prohibit copy + assignment
+    AutoLockBase(const AutoLockBase&);
+    AutoLockBase& operator=(AutoLockBase&);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -398,103 +399,17 @@ public:
      * will assert. This is because having an unbalanced number of nested locks
      * is a program logic error which must be fixed.
      */
-    ~AutoWriteLock()
+    virtual ~AutoWriteLock()
     {
         cleanup();
     }
 
-    void cleanup()
-    {
-        if (mHandle)
-        {
-            if (m_cUnlockedInLeave)
-            {
-                // there was a leave() before the destruction: then restore the
-                // lock level that might have been set by locks other than our own
-                if (m_fIsLocked)
-                    --m_cUnlockedInLeave;       // no lock for our own
-                m_fIsLocked = false;
-                for (; m_cUnlockedInLeave; --m_cUnlockedInLeave)
-                    mHandle->lockWrite();
+    void cleanup();
 
-                    // @todo r=dj is this really desirable behavior? maybe leave/enter should go altogether?
-            }
-
-            if (m_fIsLocked)
-                mHandle->unlockWrite();
-        }
-    }
-
-    /**
-     * Requests a write (exclusive) lock. If a write lock is already owned by
-     * this thread, increases the lock level (allowing for nested write locks on
-     * the same thread). Blocks indefinitely if a write lock or a read lock is
-     * already owned by another thread until that tread releases the locks,
-     * otherwise returns immediately.
-     */
-    void acquire()
-    {
-        if (mHandle)
-        {
-            AssertMsg(!m_fIsLocked, ("m_fIsLocked is true, attempting to lock twice!"));
-            mHandle->lockWrite();
-            m_fIsLocked = true;
-        }
-    }
-
-    /**
-     * Decreases the write lock level increased by #lock(). If the level drops
-     * to zero (e.g. the number of nested #unlock() calls matches the number of
-     * nested #lock() calls), releases the lock making the managed semaphore
-     * available for locking by other threads.
-     */
-    void release()
-    {
-        if (mHandle)
-        {
-            AssertMsg(m_fIsLocked, ("m_fIsLocked is false, cannot release!"));
-            mHandle->unlockWrite();
-            m_fIsLocked = false;
-        }
-    }
-
-    /**
-     * Causes the current thread to completely release the write lock to make
-     * the managed semaphore immediately available for locking by other threads.
-     *
-     * This implies that all nested write locks on the semaphore will be
-     * released, even those that were acquired through the calls to #lock()
-     * methods of all other AutoWriteLock/AutoReadLock instances managing the
-     * <b>same</b> read/write semaphore.
-     *
-     * After calling this method, the only method you are allowed to call is
-     * #enter(). It will acquire the write lock again and restore the same
-     * level of nesting as it had before calling #leave().
-     *
-     * If this instance is destroyed without calling #enter(), the destructor
-     * will try to restore the write lock level that existed when #leave() was
-     * called minus the number of nested #lock() calls made on this instance
-     * itself. This is done to preserve lock levels of other
-     * AutoWriteLock/AutoReadLock instances managing the same semaphore (if
-     * any). Tiis also means that the destructor may indefinitely block if a
-     * write or a read lock is owned by some other thread by that time.
-     */
-    void leave()
-    {
-        if (mHandle)
-        {
-            AssertMsg(m_fIsLocked, ("m_fIsLocked is false, cannot leave()!"));
-            AssertMsg(m_cUnlockedInLeave == 0, ("m_cUnlockedInLeave is %d, must be 0! Called leave() twice?", m_cUnlockedInLeave));
-
-            m_cUnlockedInLeave = mHandle->writeLockLevel();
-            AssertMsg(m_cUnlockedInLeave >= 1, ("m_cUnlockedInLeave is %d, must be >=1!", m_cUnlockedInLeave));
-
-            for (uint32_t left = m_cUnlockedInLeave;
-                 left;
-                 --left)
-                mHandle->unlockWrite();
-        }
-    }
+    void acquire();
+    void release();
+    void leave();
+    void enter();
 
     /**
      * Same as #leave() but checks if the current thread actally owns the lock
@@ -518,51 +433,7 @@ public:
             enter();
     }
 
-    /**
-     * Causes the current thread to restore the write lock level after the
-     * #leave() call. This call will indefinitely block if another thread has
-     * successfully acquired a write or a read lock on the same semaphore in
-     * between.
-     */
-    void enter()
-    {
-        if (mHandle)
-        {
-            AssertMsg(m_fIsLocked, ("m_fIsLocked is false, cannot enter()!"));
-            AssertMsg(m_cUnlockedInLeave != 0, ("m_cUnlockedInLeave is 0! enter() without leave()?"));
-
-            for (; m_cUnlockedInLeave; --m_cUnlockedInLeave)
-                mHandle->lockWrite();
-        }
-    }
-
-    /**
-     * Attaches another handle to this auto lock instance.
-     *
-     * The previous object's lock is completely released before the new one is
-     * acquired. The lock level of the new handle will be the same. This
-     * also means that if the lock was not acquired at all before #attach(), it
-     * will not be acquired on the new handle too.
-     *
-     * @param aHandle   New handle to attach.
-     */
-    void attach(LockHandle *aHandle)
-    {
-        /* detect simple self-reattachment */
-        if (mHandle != aHandle)
-        {
-            bool fWasLocked = m_fIsLocked;
-
-            cleanup();
-
-            mHandle = aHandle;
-            m_fIsLocked = fWasLocked;
-
-            if (mHandle)
-                if (fWasLocked)
-                    mHandle->lockWrite();
-        }
-    }
+    void attach(LockHandle *aHandle);
 
     /** @see attach (LockHandle *) */
     void attach(LockHandle &aHandle)
@@ -582,40 +453,10 @@ public:
         attach(aLockable ? aLockable->lockHandle() : NULL);
     }
 
-    /**
-     * Returns @c true if the current thread holds a write lock on the managed
-     * read/write semaphore. Returns @c false if the managed semaphore is @c
-     * NULL.
-     *
-     * @note Intended for debugging only.
-     */
-    bool isWriteLockOnCurrentThread() const
-    {
-        return mHandle ? mHandle->isWriteLockOnCurrentThread() : false;
-    }
+    void attachRaw(LockHandle *ph);
 
-    /**
-     * Returns the current write lock level of the managed smaphore. The lock
-     * level determines the number of nested #lock() calls on the given
-     * semaphore handle. Returns @c 0 if the managed semaphore is @c
-     * NULL.
-     *
-     * Note that this call is valid only when the current thread owns a write
-     * lock on the given semaphore handle and will assert otherwise.
-     *
-     * @note Intended for debugging only.
-     */
-    uint32_t writeLockLevel() const
-    {
-        return mHandle ? mHandle->writeLockLevel() : 0;
-    }
-
-private:
-
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (AutoWriteLock)
-    DECLARE_CLS_NEW_DELETE_NOOP (AutoWriteLock)
-
-    template <size_t> friend class AutoMultiWriteLockBase;
+    bool isWriteLockOnCurrentThread() const;
+    uint32_t writeLockLevel() const;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -680,66 +521,10 @@ public:
         acquire();
     }
 
-    /**
-     * Release all read locks acquired by this instance through the #lock()
-     * call and destroys the instance.
-     *
-     * Note that if there there are nested #lock() calls without the
-     * corresponding number of #unlock() calls when the destructor is called, it
-     * will assert. This is because having an unbalanced number of nested locks
-     * is a program logic error which must be fixed.
-     */
-    ~AutoReadLock()
-    {
-        if (mHandle)
-        {
-            if (m_fIsLocked)
-                mHandle->unlockRead();
-        }
-    }
+    virtual ~AutoReadLock();
 
-    /**
-     * Requests a read (shared) lock. If a read lock is already owned by
-     * this thread, increases the lock level (allowing for nested read locks on
-     * the same thread). Blocks indefinitely if a write lock is already owned by
-     * another thread until that tread releases the write lock, otherwise
-     * returns immediately.
-     *
-     * Note that this method returns immediately even if any number of other
-     * threads owns read locks on the same semaphore. Also returns immediately
-     * if a write lock on this semaphore is owned by the current thread which
-     * allows for read locks nested into write locks on the same thread.
-     */
-    void acquire()
-    {
-        if (mHandle)
-        {
-            AssertMsg(!m_fIsLocked, ("m_fIsLocked is true, attempting to lock twice!"));
-            mHandle->lockRead();
-            m_fIsLocked = true;
-        }
-    }
-
-    /**
-     * Decreases the read lock level increased by #lock(). If the level drops to
-     * zero (e.g. the number of nested #unlock() calls matches the number of
-     * nested #lock() calls), releases the lock making the managed semaphore
-     * available for locking by other threads.
-     */
-    void release()
-    {
-        if (mHandle)
-        {
-            AssertMsg(m_fIsLocked, ("m_fIsLocked is false, cannot release!"));
-            mHandle->unlockRead();
-            m_fIsLocked = false;
-        }
-    }
-
-private:
-
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (AutoReadLock)
-    DECLARE_CLS_NEW_DELETE_NOOP (AutoReadLock)
+    void acquire();
+    void release();
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -981,12 +766,14 @@ protected:
 
     AutoMultiWriteLockBase() {}
 
-    void setLockHandle (size_t aIdx, LockHandle *aHandle)
-    { mLocks [aIdx].mHandle = aHandle; }
+    void setLockHandle(size_t aIdx, LockHandle *aHandle)
+    {
+        mLocks[aIdx].attachRaw(aHandle);
+    }
 
 private:
 
-    AutoWriteLock mLocks [Cnt];
+    AutoWriteLock mLocks[Cnt];
 
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (AutoMultiWriteLockBase)
     DECLARE_CLS_NEW_DELETE_NOOP (AutoMultiWriteLockBase)
