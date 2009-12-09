@@ -264,7 +264,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
         for (pDnsAddr = pAddr->FirstDnsServerAddress; pDnsAddr != NULL; pDnsAddr = pDnsAddr->Next)
         {
             struct sockaddr *SockAddr = pDnsAddr->Address.lpSockaddr;
-            struct in_addr  *InAddr;
+            struct in_addr  InAddr;
             struct dns_entry *pDns;
 
             if (SockAddr->sa_family != AF_INET)
@@ -282,18 +282,18 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             }
 
             LogRel(("NAT: adding %R[IP4] to DNS server list\n", &InAddr));
-            if (InAddr.s_addr & htonl(IN_CLASSA_NET) == ntohl(INADDR_LOOPBACK & IN_CLASSA_NET))
+            if ((InAddr.s_addr & htonl(IN_CLASSA_NET)) == ntohl(INADDR_LOOPBACK & IN_CLASSA_NET))
                 pDns->de_addr.s_addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_ALIAS);
             else
                 pDns->de_addr.s_addr = InAddr.s_addr;
 
             TAILQ_INSERT_HEAD(&pData->pDnsList, pDns, de_list);
 
-            if (pAdddr->DnsSuffix == NULL)
+            if (pAddr->DnsSuffix == NULL)
                 continue;
 
             /* uniq */
-            RTUtf16ToUtf8(pAdddr->DnsSuffix, &pszSuffix);
+            RTUtf16ToUtf8(pAddr->DnsSuffix, &pszSuffix);
             if (!pszSuffix || strlen(pszSuffix) == 0)
             {
                 RTStrFree(pszSuffix);
