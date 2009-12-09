@@ -213,157 +213,6 @@ void AutoLockBase::release()
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// AutoWriteLock
-//
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Implementation of the pure virtual declared in AutoLockBase.
- * This gets called by AutoLockBase.acquire() to actually request
- * the semaphore; in the AutoWriteLock implementation, we request
- * the semaphore in write mode.
- */
-/*virtual*/ void AutoWriteLock::callLockImpl(LockHandle &l)
-{
-    l.lockWrite();
-}
-
-/**
- * Implementation of the pure virtual declared in AutoLockBase.
- * This gets called by AutoLockBase.release() to actually release
- * the semaphore; in the AutoWriteLock implementation, we release
- * the semaphore in write mode.
- */
-/*virtual*/ void AutoWriteLock::callUnlockImpl(LockHandle &l)
-{
-    l.unlockWrite();
-}
-
-/**
- * Causes the current thread to completely release the write lock to make
- * the managed semaphore immediately available for locking by other threads.
- *
- * This implies that all nested write locks on the semaphore will be
- * released, even those that were acquired through the calls to #lock()
- * methods of all other AutoWriteLock/AutoReadLock instances managing the
- * <b>same</b> read/write semaphore.
- *
- * After calling this method, the only method you are allowed to call is
- * #enter(). It will acquire the write lock again and restore the same
- * level of nesting as it had before calling #leave().
- *
- * If this instance is destroyed without calling #enter(), the destructor
- * will try to restore the write lock level that existed when #leave() was
- * called minus the number of nested #lock() calls made on this instance
- * itself. This is done to preserve lock levels of other
- * AutoWriteLock/AutoReadLock instances managing the same semaphore (if
- * any). Tiis also means that the destructor may indefinitely block if a
- * write or a read lock is owned by some other thread by that time.
- */
-void AutoWriteLock::leave()
-{
-    LockHandle *pHandle = m->aHandles[0];
-
-    if (pHandle)
-    {
-        AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot leave()!"));
-        AssertMsg(m->cUnlockedInLeave == 0, ("m->cUnlockedInLeave is %d, must be 0! Called leave() twice?", m->cUnlockedInLeave));
-
-        m->cUnlockedInLeave = pHandle->writeLockLevel();
-        AssertMsg(m->cUnlockedInLeave >= 1, ("m->cUnlockedInLeave is %d, must be >=1!", m->cUnlockedInLeave));
-
-        for (uint32_t left = m->cUnlockedInLeave;
-             left;
-             --left)
-            pHandle->unlockWrite();
-    }
-}
-
-/**
- * Causes the current thread to restore the write lock level after the
- * #leave() call. This call will indefinitely block if another thread has
- * successfully acquired a write or a read lock on the same semaphore in
- * between.
- */
-void AutoWriteLock::enter()
-{
-    LockHandle *pHandle = m->aHandles[0];
-
-    if (pHandle)
-    {
-        AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot enter()!"));
-        AssertMsg(m->cUnlockedInLeave != 0, ("m->cUnlockedInLeave is 0! enter() without leave()?"));
-
-        for (; m->cUnlockedInLeave; --m->cUnlockedInLeave)
-            pHandle->lockWrite();
-    }
-}
-
-/**
- * Attaches another handle to this auto lock instance.
- *
- * The previous object's lock is completely released before the new one is
- * acquired. The lock level of the new handle will be the same. This
- * also means that if the lock was not acquired at all before #attach(), it
- * will not be acquired on the new handle too.
- *
- * @param aHandle   New handle to attach.
- */
-void AutoWriteLock::attach(LockHandle *aHandle)
-{
-    LockHandle *pHandle = m->aHandles[0];
-
-    /* detect simple self-reattachment */
-    if (pHandle != aHandle)
-    {
-        bool fWasLocked = m->fIsLocked;
-
-        cleanup();
-
-        m->aHandles[0] = aHandle;
-        m->fIsLocked = fWasLocked;
-
-        if (aHandle)
-            if (fWasLocked)
-                aHandle->lockWrite();
-    }
-}
-
-void AutoWriteLock::attachRaw(LockHandle *ph)
-{
-    m->aHandles[0] = ph;
-}
-
-/**
- * Returns @c true if the current thread holds a write lock on the managed
- * read/write semaphore. Returns @c false if the managed semaphore is @c
- * NULL.
- *
- * @note Intended for debugging only.
- */
-bool AutoWriteLock::isWriteLockOnCurrentThread() const
-{
-    return m->aHandles[0] ? m->aHandles[0]->isWriteLockOnCurrentThread() : false;
-}
-
- /**
- * Returns the current write lock level of the managed smaphore. The lock
- * level determines the number of nested #lock() calls on the given
- * semaphore handle. Returns @c 0 if the managed semaphore is @c
- * NULL.
- *
- * Note that this call is valid only when the current thread owns a write
- * lock on the given semaphore handle and will assert otherwise.
- *
- * @note Intended for debugging only.
- */
-uint32_t AutoWriteLock::writeLockLevel() const
-{
-    return m->aHandles[0] ? m->aHandles[0]->writeLockLevel() : 0;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//
 // AutoReadLock
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -408,6 +257,171 @@ uint32_t AutoWriteLock::writeLockLevel() const
 /*virtual*/ void AutoReadLock::callUnlockImpl(LockHandle &l)
 {
     l.unlockRead();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// AutoWriteLockBase
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Implementation of the pure virtual declared in AutoLockBase.
+ * This gets called by AutoLockBase.acquire() to actually request
+ * the semaphore; in the AutoWriteLock implementation, we request
+ * the semaphore in write mode.
+ */
+/*virtual*/ void AutoWriteLockBase::callLockImpl(LockHandle &l)
+{
+    l.lockWrite();
+}
+
+/**
+ * Implementation of the pure virtual declared in AutoLockBase.
+ * This gets called by AutoLockBase.release() to actually release
+ * the semaphore; in the AutoWriteLock implementation, we release
+ * the semaphore in write mode.
+ */
+/*virtual*/ void AutoWriteLockBase::callUnlockImpl(LockHandle &l)
+{
+    l.unlockWrite();
+}
+
+/**
+ * Returns @c true if the current thread holds a write lock on the managed
+ * read/write semaphore. Returns @c false if the managed semaphore is @c
+ * NULL.
+ *
+ * @note Intended for debugging only.
+ */
+bool AutoWriteLockBase::isWriteLockOnCurrentThread() const
+{
+    return m->aHandles[0] ? m->aHandles[0]->isWriteLockOnCurrentThread() : false;
+}
+
+ /**
+ * Returns the current write lock level of the managed smaphore. The lock
+ * level determines the number of nested #lock() calls on the given
+ * semaphore handle. Returns @c 0 if the managed semaphore is @c
+ * NULL.
+ *
+ * Note that this call is valid only when the current thread owns a write
+ * lock on the given semaphore handle and will assert otherwise.
+ *
+ * @note Intended for debugging only.
+ */
+uint32_t AutoWriteLockBase::writeLockLevel() const
+{
+    return m->aHandles[0] ? m->aHandles[0]->writeLockLevel() : 0;
+}
+
+/**
+ * Causes the current thread to completely release the write lock to make
+ * the managed semaphore immediately available for locking by other threads.
+ *
+ * This implies that all nested write locks on the semaphore will be
+ * released, even those that were acquired through the calls to #lock()
+ * methods of all other AutoWriteLock/AutoReadLock instances managing the
+ * <b>same</b> read/write semaphore.
+ *
+ * After calling this method, the only method you are allowed to call is
+ * #enter(). It will acquire the write lock again and restore the same
+ * level of nesting as it had before calling #leave().
+ *
+ * If this instance is destroyed without calling #enter(), the destructor
+ * will try to restore the write lock level that existed when #leave() was
+ * called minus the number of nested #lock() calls made on this instance
+ * itself. This is done to preserve lock levels of other
+ * AutoWriteLock/AutoReadLock instances managing the same semaphore (if
+ * any). Tiis also means that the destructor may indefinitely block if a
+ * write or a read lock is owned by some other thread by that time.
+ */
+void AutoWriteLockBase::leave()
+{
+    AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot leave()!"));
+    AssertMsg(m->cUnlockedInLeave == 0, ("m->cUnlockedInLeave is %d, must be 0! Called leave() twice?", m->cUnlockedInLeave));
+
+    for (HandlesVector::iterator it = m->aHandles.begin();
+         it != m->aHandles.end();
+         ++it)
+    {
+        LockHandle *pHandle = *it;
+        if (pHandle)
+        {
+            m->cUnlockedInLeave = pHandle->writeLockLevel();
+            AssertMsg(m->cUnlockedInLeave >= 1, ("m->cUnlockedInLeave is %d, must be >=1!", m->cUnlockedInLeave));
+
+            for (uint32_t left = m->cUnlockedInLeave;
+                 left;
+                 --left)
+                pHandle->unlockWrite();
+        }
+    }
+}
+
+/**
+ * Causes the current thread to restore the write lock level after the
+ * #leave() call. This call will indefinitely block if another thread has
+ * successfully acquired a write or a read lock on the same semaphore in
+ * between.
+ */
+void AutoWriteLockBase::enter()
+{
+    AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot enter()!"));
+    AssertMsg(m->cUnlockedInLeave != 0, ("m->cUnlockedInLeave is 0! enter() without leave()?"));
+
+    for (HandlesVector::iterator it = m->aHandles.begin();
+         it != m->aHandles.end();
+         ++it)
+    {
+        LockHandle *pHandle = *it;
+        if (pHandle)
+        {
+            for (; m->cUnlockedInLeave; --m->cUnlockedInLeave)
+                pHandle->lockWrite();
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// AutoWriteLock
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Attaches another handle to this auto lock instance.
+ *
+ * The previous object's lock is completely released before the new one is
+ * acquired. The lock level of the new handle will be the same. This
+ * also means that if the lock was not acquired at all before #attach(), it
+ * will not be acquired on the new handle too.
+ *
+ * @param aHandle   New handle to attach.
+ */
+void AutoWriteLock::attach(LockHandle *aHandle)
+{
+    LockHandle *pHandle = m->aHandles[0];
+
+    /* detect simple self-reattachment */
+    if (pHandle != aHandle)
+    {
+        bool fWasLocked = m->fIsLocked;
+
+        cleanup();
+
+        m->aHandles[0] = aHandle;
+        m->fIsLocked = fWasLocked;
+
+        if (aHandle)
+            if (fWasLocked)
+                aHandle->lockWrite();
+    }
+}
+
+void AutoWriteLock::attachRaw(LockHandle *ph)
+{
+    m->aHandles[0] = ph;
 }
 
 } /* namespace util */
