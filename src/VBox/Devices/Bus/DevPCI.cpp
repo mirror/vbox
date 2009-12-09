@@ -1515,7 +1515,7 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, uint
      * The register value is restored afterwards so we can do proper
      * LogRels in pciR3CommonRestoreConfig.
      */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->devices); i++)
+    for (i = 0; i < RT_ELEMENTS(pBus->devices); i++)
     {
         PPCIDEVICE pDev = pBus->devices[i];
         if (pDev)
