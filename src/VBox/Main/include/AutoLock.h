@@ -318,13 +318,13 @@ class AutoLockBase
 protected:
     AutoLockBase(LockHandle *pHandle)
         : mHandle(pHandle),
-          mLockLevel(0),
-          mGlobalLockLevel(0)
+          m_fIsLocked(false),
+          m_cUnlockedInLeave(0)
     { }
 
-    LockHandle *mHandle;
-    uint32_t mLockLevel;
-    uint32_t mGlobalLockLevel;
+    LockHandle      *mHandle;
+    bool            m_fIsLocked;
+    uint32_t        m_cUnlockedInLeave;   // how many times the handle was unlocked in leave(); otherwise 0
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -400,18 +400,27 @@ public:
      */
     ~AutoWriteLock()
     {
+        cleanup();
+    }
+
+    void cleanup()
+    {
         if (mHandle)
         {
-            if (mGlobalLockLevel)
+            if (m_cUnlockedInLeave)
             {
-                mGlobalLockLevel -= mLockLevel;
-                mLockLevel = 0;
-                for (; mGlobalLockLevel; --mGlobalLockLevel)
+                // there was a leave() before the destruction: then restore the
+                // lock level that might have been set by locks other than our own
+                if (m_fIsLocked)
+                    --m_cUnlockedInLeave;       // no lock for our own
+                m_fIsLocked = false;
+                for (; m_cUnlockedInLeave; --m_cUnlockedInLeave)
                     mHandle->lockWrite();
+
+                    // @todo r=dj is this really desirable behavior? maybe leave/enter should go altogether?
             }
 
-            AssertMsg(mLockLevel <= 1, ("Lock level > 1: %d\n", mLockLevel));
-            for (; mLockLevel; --mLockLevel)
+            if (m_fIsLocked)
                 mHandle->unlockWrite();
         }
     }
@@ -427,9 +436,9 @@ public:
     {
         if (mHandle)
         {
+            AssertMsg(!m_fIsLocked, ("m_fIsLocked is true, attempting to lock twice!"));
             mHandle->lockWrite();
-            ++mLockLevel;
-            Assert(mLockLevel != 0 /* overflow? */);
+            m_fIsLocked = true;
         }
     }
 
@@ -443,9 +452,9 @@ public:
     {
         if (mHandle)
         {
-            AssertReturnVoid(mLockLevel != 0 /* unlock() w/o preceding lock()? */);
+            AssertMsg(m_fIsLocked, ("m_fIsLocked is false, cannot release!"));
             mHandle->unlockWrite();
-            --mLockLevel;
+            m_fIsLocked = false;
         }
     }
 
@@ -474,13 +483,15 @@ public:
     {
         if (mHandle)
         {
-            AssertReturnVoid(mLockLevel != 0 /* leave() w/o preceding lock()? */);
-            AssertReturnVoid(mGlobalLockLevel == 0 /* second leave() in a row? */);
+            AssertMsg(m_fIsLocked, ("m_fIsLocked is false, cannot leave()!"));
+            AssertMsg(m_cUnlockedInLeave == 0, ("m_cUnlockedInLeave is %d, must be 0! Called leave() twice?", m_cUnlockedInLeave));
 
-            mGlobalLockLevel = mHandle->writeLockLevel();
-            AssertReturnVoid(mGlobalLockLevel >= mLockLevel /* logic error! */);
+            m_cUnlockedInLeave = mHandle->writeLockLevel();
+            AssertMsg(m_cUnlockedInLeave >= 1, ("m_cUnlockedInLeave is %d, must be >=1!", m_cUnlockedInLeave));
 
-            for (uint32_t left = mGlobalLockLevel; left; --left)
+            for (uint32_t left = m_cUnlockedInLeave;
+                 left;
+                 --left)
                 mHandle->unlockWrite();
         }
     }
@@ -517,10 +528,10 @@ public:
     {
         if (mHandle)
         {
-            AssertReturnVoid(mLockLevel != 0 /* enter() w/o preceding lock()+leave()? */);
-            AssertReturnVoid(mGlobalLockLevel != 0 /* enter() w/o preceding leave()? */);
+            AssertMsg(m_fIsLocked, ("m_fIsLocked is false, cannot enter()!"));
+            AssertMsg(m_cUnlockedInLeave != 0, ("m_cUnlockedInLeave is 0! enter() without leave()?"));
 
-            for (; mGlobalLockLevel; --mGlobalLockLevel)
+            for (; m_cUnlockedInLeave; --m_cUnlockedInLeave)
                 mHandle->lockWrite();
         }
     }
@@ -540,29 +551,15 @@ public:
         /* detect simple self-reattachment */
         if (mHandle != aHandle)
         {
-            uint32_t lockLevel = mLockLevel;
+            bool fWasLocked = m_fIsLocked;
 
-            /* perform the destructor part */
-            if (mHandle)
-            {
-                if (mGlobalLockLevel)
-                {
-                    mGlobalLockLevel -= mLockLevel;
-                    mLockLevel = 0;
-                    for (; mGlobalLockLevel; --mGlobalLockLevel)
-                        mHandle->lockWrite();
-                }
-
-                AssertMsg(mLockLevel <= 1, ("Lock level > 1: %d\n", mLockLevel));
-                for (; mLockLevel; --mLockLevel)
-                    mHandle->unlockWrite();
-            }
+            cleanup();
 
             mHandle = aHandle;
-            mLockLevel = lockLevel;
+            m_fIsLocked = fWasLocked;
 
             if (mHandle)
-                for (; lockLevel; --lockLevel)
+                if (fWasLocked)
                     mHandle->lockWrite();
         }
     }
@@ -696,8 +693,7 @@ public:
     {
         if (mHandle)
         {
-            AssertMsg(mLockLevel <= 1, ("Lock level > 1: %d\n", mLockLevel));
-            for (; mLockLevel; --mLockLevel)
+            if (m_fIsLocked)
                 mHandle->unlockRead();
         }
     }
@@ -718,9 +714,9 @@ public:
     {
         if (mHandle)
         {
+            AssertMsg(!m_fIsLocked, ("m_fIsLocked is true, attempting to lock twice!"));
             mHandle->lockRead();
-            ++mLockLevel;
-            Assert(mLockLevel != 0 /* overflow? */);
+            m_fIsLocked = true;
         }
     }
 
@@ -734,55 +730,10 @@ public:
     {
         if (mHandle)
         {
-            AssertReturnVoid(mLockLevel != 0 /* unlock() w/o preceding lock()? */);
+            AssertMsg(m_fIsLocked, ("m_fIsLocked is false, cannot release!"));
             mHandle->unlockRead();
-            --mLockLevel;
+            m_fIsLocked = false;
         }
-    }
-
-    /**
-     * Attaches another handle to this auto lock instance.
-     *
-     * The previous object's lock is completely released before the new one is
-     * acquired. The lock level of the new handle will be the same. This also
-     * means that if the lock was not acquired at all before #attach(), it will
-     * not be acquired on the new handle too.
-     *
-     * @param aHandle   New handle to attach.
-     */
-    void attach(LockHandle *aHandle)
-    {
-        /* detect simple self-reattachment */
-        if (mHandle != aHandle)
-        {
-            uint32_t lockLevel = mLockLevel;
-            if (mHandle)
-                for (; mLockLevel; --mLockLevel)
-                    mHandle->unlockRead();
-            mHandle = aHandle;
-            mLockLevel = lockLevel;
-            if (mHandle)
-                for (; lockLevel; --lockLevel)
-                    mHandle->lockRead();
-        }
-    }
-
-    /** @see attach (LockHandle *) */
-    void attach(LockHandle &aHandle)
-    {
-        attach(&aHandle);
-    }
-
-    /** @see attach (LockHandle *) */
-    void attach(const Lockable &aLockable)
-    {
-        attach(aLockable.lockHandle());
-    }
-
-    /** @see attach (LockHandle *) */
-    void attach(const Lockable *aLockable)
-    {
-        attach(aLockable ? aLockable->lockHandle() : NULL);
     }
 
 private:
