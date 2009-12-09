@@ -854,7 +854,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
          */
         pPatchRec->patch.FixupTree = 0;
         pPatchRec->patch.nrFixups  = 0;    /* increased by patmPatchAddReloc32 */
-        for (int i=0;i<patch.patch.nrFixups;i++)
+        for (int j=0;j<patch.patch.nrFixups;j++)
         {
             RELOCREC rec;
             int32_t offset;
@@ -880,13 +880,13 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
                     &&  (pPatchRec->patch.flags & PATMFL_PATCHED_GUEST_CODE))
                 {
                     Assert(pPatchRec->patch.cbPatchJump == SIZEOF_NEARJUMP32 || pPatchRec->patch.cbPatchJump == SIZEOF_NEAR_COND_JUMP32);
-                    unsigned offset = (pPatchRec->patch.cbPatchJump == SIZEOF_NEARJUMP32) ? 1 : 2;
+                    unsigned offset2 = (pPatchRec->patch.cbPatchJump == SIZEOF_NEARJUMP32) ? 1 : 2;
 
                     /** @todo This will fail & crash in patmCorrectFixup if the page isn't present
                      *        when we restore. Happens with my XP image here
                      *        (pPrivInstrGC=0x8069e051). */
                     AssertLogRelMsg(pPatchRec->patch.pPrivInstrHC, ("%RRv rc=%Rrc uState=%u\n", pPatchRec->patch.pPrivInstrGC, rc2, pPatchRec->patch.uState));
-                    rec.pRelocPos = pPatchRec->patch.pPrivInstrHC + offset;
+                    rec.pRelocPos = pPatchRec->patch.pPrivInstrHC + offset2;
                     pFixup        = (RTRCPTR *)rec.pRelocPos;
                 }
 
@@ -908,7 +908,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
             uint32_t        nrPatch2GuestRecs = pPatchRec->patch.nrPatch2GuestRecs;
 
             pPatchRec->patch.nrPatch2GuestRecs = 0;    /* incremented by patmr3AddP2GLookupRecord */
-            for (uint32_t i=0;i<nrPatch2GuestRecs;i++)
+            for (uint32_t j=0;j<nrPatch2GuestRecs;j++)
             {
 #if 0
                 rc = SSMR3GetMem(pSSM, &rec, sizeof(rec));
