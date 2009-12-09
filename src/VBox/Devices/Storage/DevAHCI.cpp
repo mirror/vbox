@@ -2878,8 +2878,6 @@ static const PAtapiFunc g_apfnAtapiFuncs[ATAFN_SS_MAX] =
 static int atapiIdentifySS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort pAhciPort, int *pcbData)
 {
     uint16_t p[256];
-    RTUUID Uuid;
-    int rc;
 
     memset(p, 0, 512);
     /* Removable CDROM, 50us response, 12 byte packets */
