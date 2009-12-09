@@ -3501,7 +3501,9 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      */
 #ifdef VBOX_WITH_NATIVE_R0_LOADER
     pImage->fNative         = true;
+    RTSemFastMutexRelease(pDevExt->mtxLdr); /*hack*/
     rc = supdrvOSLdrOpen(pDevExt, pImage, pReq->u.In.szFilename);
+    RTSemFastMutexRequest(pDevExt->mtxLdr); /*hack*/
 #else
     rc = VERR_NOT_SUPPORTED;
 #endif
@@ -3519,7 +3521,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         RTSemFastMutexRelease(pDevExt->mtxLdr);
         RTMemFree(pImage);
         Log(("supdrvIOCtl_LdrOpen(%s): failed - %Rrc\n", pReq->u.In.szName, rc));
-        return VERR_NO_MEMORY;
+        return rc;
     }
     Assert(VALID_PTR(pImage->pvImage) || RT_FAILURE(rc));
 

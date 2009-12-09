@@ -428,6 +428,10 @@ typedef struct SUPDRVLDRIMAGE
     /** Usage count. */
     uint32_t volatile               cUsage;
 #ifdef VBOX_WITH_NATIVE_R0_LOADER
+# ifdef RT_OS_WINDOWS
+    /** The section object for the loaded image (fNative=true). */
+    void                           *pvNtSectionObj;
+# endif
     /** Whether it's loaded by the native loader or not. */
     bool                            fNative;
 #endif
