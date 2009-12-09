@@ -260,6 +260,9 @@ DECLASM(void)  UNWIND_WRAP(AssertMsg1)(const char *pszExpr, unsigned uLine, cons
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+/** Pointer to the global info page for implementing SUPGetGIP(). */
+static PSUPGLOBALINFOPAGE g_pSUPGlobalInfoPageInternal = NULL;
+
 /**
  * Array of the R0 SUP API.
  */
@@ -312,6 +315,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPSemEventMultiWaitNoResume",           (void *)UNWIND_WRAP(SUPSemEventMultiWaitNoResume) },
     { "SUPR0GetPagingMode",                     (void *)UNWIND_WRAP(SUPR0GetPagingMode) },
     { "SUPR0EnableVTx",                         (void *)SUPR0EnableVTx },
+    { "SUPGetGIP",                              (void *)SUPGetGIP },
     { "RTMemAlloc",                             (void *)UNWIND_WRAP(RTMemAlloc) },
     { "RTMemAllocZ",                            (void *)UNWIND_WRAP(RTMemAllocZ) },
     { "RTMemFree",                              (void *)UNWIND_WRAP(RTMemFree) },
@@ -3078,6 +3082,17 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
 
 
 /**
+ * Gets the GIP pointer.
+ *
+ * @returns Pointer to the GIP or NULL.
+ */
+SUPDECL(PSUPGLOBALINFOPAGE) SUPGetGIP(void)
+{
+    return g_pSUPGlobalInfoPageInternal;
+}
+
+
+/**
  * Register a component factory with the support driver.
  *
  * This is currently restricted to kernel sessions only.
@@ -3454,6 +3469,9 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             pImage->cUsage++;
             pReq->u.Out.pvImageBase   = pImage->pvImage;
             pReq->u.Out.fNeedsLoading = pImage->uState == SUP_IOCTL_LDR_OPEN;
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
+            pReq->u.Out.fNativeLoader = pImage->fNative;
+#endif
             supdrvLdrAddUsage(pSession, pImage);
             RTSemFastMutexRelease(pDevExt->mtxLdr);
             return VINF_SUCCESS;
@@ -3533,8 +3551,11 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
 
     supdrvLdrAddUsage(pSession, pImage);
 
-    pReq->u.Out.pvImageBase = pImage->pvImage;
+    pReq->u.Out.pvImageBase   = pImage->pvImage;
     pReq->u.Out.fNeedsLoading = true;
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
+    pReq->u.Out.fNativeLoader = pImage->fNative;
+#endif
     RTSemFastMutexRelease(pDevExt->mtxLdr);
 
 #if defined(RT_OS_WINDOWS) && defined(DEBUG)
@@ -4542,6 +4563,7 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
              * We're good.
              */
             dprintf(("supdrvGipCreate: %ld ns interval.\n", (long)u32Interval));
+            g_pSUPGlobalInfoPageInternal = pGip;
             return VINF_SUCCESS;
         }
 
@@ -4579,6 +4601,7 @@ static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
         supdrvGipTerm(pDevExt->pGip);
         pDevExt->pGip = NULL;
     }
+    g_pSUPGlobalInfoPageInternal = NULL;
 
     /*
      * Destroy the timer and free the GIP memory object.

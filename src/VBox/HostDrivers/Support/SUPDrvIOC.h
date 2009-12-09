@@ -319,6 +319,10 @@ typedef struct SUPLDROPEN
             RTR0PTR         pvImageBase;
             /** Indicate whether or not the image requires loading. */
             bool            fNeedsLoading;
+#ifdef VBOX_WITH_NATIVE_R0_LOADER
+            /** Indicates that we're using the native ring-0 loader. */
+            bool            fNativeLoader;
+#endif
         } Out;
     } u;
 } SUPLDROPEN, *PSUPLDROPEN;
