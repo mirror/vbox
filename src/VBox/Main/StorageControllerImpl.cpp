@@ -771,7 +771,8 @@ void StorageController::unshare()
 
     /* peer is not modified, lock it for reading (m->pPeer is "master" so locked
      * first) */
-    AutoMultiLock2 alock (m->pPeer->rlock(), this->wlock());
+    AutoReadLock rl(m->pPeer);
+    AutoWriteLock wl(this);
 
     if (m->bd.isShared())
     {

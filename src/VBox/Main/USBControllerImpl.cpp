@@ -1030,7 +1030,8 @@ void USBController::copyFrom (USBController *aThat)
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
-    AutoMultiLock2 alock (aThat->rlock(), this->wlock());
+    AutoReadLock rl(aThat);
+    AutoWriteLock wl(this);
 
     /* this will back up current data */
     m->bd.assignCopy(aThat->m->bd);
