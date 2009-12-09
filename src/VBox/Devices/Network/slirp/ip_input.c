@@ -232,6 +232,7 @@ ip_input(PNATState pData, struct mbuf *m)
     }
     STAM_PROFILE_STOP(&pData->StatIP_input, a);
     return;
+
 bad:
     Log2(("NAT: IP datagram to %R[IP4] with size(%d) claimed as bad\n",
         &ip->ip_dst, ip->ip_len));
