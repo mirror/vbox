@@ -1287,11 +1287,19 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             /* validate */
             PSUPLDROPEN pReq = (PSUPLDROPEN)pReqHdr;
             REQ_CHECK_SIZES(SUP_IOCTL_LDR_OPEN);
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImage > 0);
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImage < _1M*16);
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageWithTabs > 0);
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageWithTabs < 16*_1M);
+#ifdef SUPDRV_USE_NATIVE_LOADER
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits > 0);
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits > 0);
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits < pReq->u.In.cbImageWithTabs);
+#endif
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.szName[0]);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, memchr(pReq->u.In.szName, '\0', sizeof(pReq->u.In.szName)));
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, !supdrvCheckInvalidChar(pReq->u.In.szName, ";:()[]{}/\\|&*%#@!~`\"'"));
+#ifdef SUPDRV_USE_NATIVE_LOADER
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, memchr(pReq->u.In.szFilename, '\0', sizeof(pReq->u.In.szFilename)));
+#endif
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_LdrOpen(pDevExt, pSession, pReq);
@@ -1303,19 +1311,19 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             /* validate */
             PSUPLDRLOAD pReq = (PSUPLDRLOAD)pReqHdr;
             REQ_CHECK_EXPR(Name, pReq->Hdr.cbIn >= sizeof(*pReq));
-            REQ_CHECK_SIZES_EX(SUP_IOCTL_LDR_LOAD, SUP_IOCTL_LDR_LOAD_SIZE_IN(pReq->u.In.cbImage), SUP_IOCTL_LDR_LOAD_SIZE_OUT);
+            REQ_CHECK_SIZES_EX(SUP_IOCTL_LDR_LOAD, SUP_IOCTL_LDR_LOAD_SIZE_IN(pReq->u.In.cbImageWithTabs), SUP_IOCTL_LDR_LOAD_SIZE_OUT);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_LOAD, pReq->u.In.cSymbols <= 16384);
             REQ_CHECK_EXPR_FMT(     !pReq->u.In.cSymbols
-                               ||   (   pReq->u.In.offSymbols < pReq->u.In.cbImage
-                                     && pReq->u.In.offSymbols + pReq->u.In.cSymbols * sizeof(SUPLDRSYM) <= pReq->u.In.cbImage),
-                               ("SUP_IOCTL_LDR_LOAD: offSymbols=%#lx cSymbols=%#lx cbImage=%#lx\n", (long)pReq->u.In.offSymbols,
-                                (long)pReq->u.In.cSymbols, (long)pReq->u.In.cbImage));
+                               ||   (   pReq->u.In.offSymbols < pReq->u.In.cbImageWithTabs
+                                     && pReq->u.In.offSymbols + pReq->u.In.cSymbols * sizeof(SUPLDRSYM) <= pReq->u.In.cbImageWithTabs),
+                               ("SUP_IOCTL_LDR_LOAD: offSymbols=%#lx cSymbols=%#lx cbImageWithTabs=%#lx\n", (long)pReq->u.In.offSymbols,
+                                (long)pReq->u.In.cSymbols, (long)pReq->u.In.cbImageWithTabs));
             REQ_CHECK_EXPR_FMT(     !pReq->u.In.cbStrTab
-                               ||   (   pReq->u.In.offStrTab < pReq->u.In.cbImage
-                                     && pReq->u.In.offStrTab + pReq->u.In.cbStrTab <= pReq->u.In.cbImage
-                                     && pReq->u.In.cbStrTab <= pReq->u.In.cbImage),
-                               ("SUP_IOCTL_LDR_LOAD: offStrTab=%#lx cbStrTab=%#lx cbImage=%#lx\n", (long)pReq->u.In.offStrTab,
-                                (long)pReq->u.In.cbStrTab, (long)pReq->u.In.cbImage));
+                               ||   (   pReq->u.In.offStrTab < pReq->u.In.cbImageWithTabs
+                                     && pReq->u.In.offStrTab + pReq->u.In.cbStrTab <= pReq->u.In.cbImageWithTabs
+                                     && pReq->u.In.cbStrTab <= pReq->u.In.cbImageWithTabs),
+                               ("SUP_IOCTL_LDR_LOAD: offStrTab=%#lx cbStrTab=%#lx cbImageWithTabs=%#lx\n", (long)pReq->u.In.offStrTab,
+                                (long)pReq->u.In.cbStrTab, (long)pReq->u.In.cbImageWithTabs));
 
             if (pReq->u.In.cSymbols)
             {
@@ -1323,12 +1331,12 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                 PSUPLDRSYM paSyms = (PSUPLDRSYM)&pReq->u.In.achImage[pReq->u.In.offSymbols];
                 for (i = 0; i < pReq->u.In.cSymbols; i++)
                 {
-                    REQ_CHECK_EXPR_FMT(paSyms[i].offSymbol < pReq->u.In.cbImage,
-                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: symb off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offSymbol, (long)pReq->u.In.cbImage));
+                    REQ_CHECK_EXPR_FMT(paSyms[i].offSymbol < pReq->u.In.cbImageWithTabs,
+                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: symb off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offSymbol, (long)pReq->u.In.cbImageWithTabs));
                     REQ_CHECK_EXPR_FMT(paSyms[i].offName < pReq->u.In.cbStrTab,
-                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: name off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImage));
+                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: name off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithTabs));
                     REQ_CHECK_EXPR_FMT(memchr(&pReq->u.In.achImage[pReq->u.In.offStrTab + paSyms[i].offName], '\0', pReq->u.In.cbStrTab - paSyms[i].offName),
-                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: unterminated name! (%#lx / %#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImage));
+                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: unterminated name! (%#lx / %#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithTabs));
                 }
             }
 
@@ -3427,11 +3435,11 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
  */
 static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDROPEN pReq)
 {
+    int             rc;
     PSUPDRVLDRIMAGE pImage;
-    unsigned        cb;
     void           *pv;
     size_t          cchName = strlen(pReq->u.In.szName); /* (caller checked < 32). */
-    LogFlow(("supdrvIOCtl_LdrOpen: szName=%s cbImage=%d\n", pReq->u.In.szName, pReq->u.In.cbImage));
+    LogFlow(("supdrvIOCtl_LdrOpen: szName=%s cbImageWithTabs=%d\n", pReq->u.In.szName, pReq->u.In.cbImageWithTabs));
 
     /*
      * Check if we got an instance of the image already.
@@ -3442,6 +3450,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         if (    pImage->szName[cchName] == '\0'
             &&  !memcmp(pImage->szName, pReq->u.In.szName, cchName))
         {
+            /** @todo check cbImageBits and cbImageWithTabs here, if they differs that indicates that the images are different. */
             pImage->cUsage++;
             pReq->u.Out.pvImageBase   = pImage->pvImage;
             pReq->u.Out.fNeedsLoading = pImage->uState == SUP_IOCTL_LDR_OPEN;
@@ -3455,12 +3464,11 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     /*
      * Allocate memory.
      */
-    cb = pReq->u.In.cbImage + sizeof(SUPDRVLDRIMAGE) + 31;
-    pv = RTMemExecAlloc(cb);
+    pv = RTMemAlloc(RT_OFFSETOF(SUPDRVLDRIMAGE, szName[cchName + 1]));
     if (!pv)
     {
         RTSemFastMutexRelease(pDevExt->mtxLdr);
-        Log(("supdrvIOCtl_LdrOpen: RTMemExecAlloc(%u) failed\n", cb));
+        Log(("supdrvIOCtl_LdrOpen: RTMemAlloc() failed\n"));
         return VERR_NO_MEMORY;
     }
 
@@ -3468,8 +3476,18 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      * Setup and link in the LDR stuff.
      */
     pImage = (PSUPDRVLDRIMAGE)pv;
-    pImage->pvImage         = RT_ALIGN_P(pImage + 1, 32);
-    pImage->cbImage         = pReq->u.In.cbImage;
+    pImage->pvImage         = NULL;
+    pImage->pvImageAlloc    = NULL;
+    pImage->cbImageWithTabs = pReq->u.In.cbImageWithTabs;
+#ifdef SUPDRV_USE_NATIVE_LOADER
+    pImage->cbImageBits     = pReq->u.In.cbImageBits;
+#else
+    pImage->cbImageBits     = pReq->u.In.cbImageWithTabs;
+#endif
+    pImage->cSymbols        = 0;
+    pImage->paSymbols       = NULL;
+    pImage->pachStrTab      = NULL;
+    pImage->cbStrTab        = 0;
     pImage->pfnModuleInit   = NULL;
     pImage->pfnModuleTerm   = NULL;
     pImage->pfnServiceReqHandler = NULL;
@@ -3477,6 +3495,37 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     pImage->cUsage          = 1;
     memcpy(pImage->szName, pReq->u.In.szName, cchName + 1);
 
+    /*
+     * Try load it using the native loader, if that isn't supported, fall back
+     * on the older method.
+     */
+#ifdef SUPDRV_USE_NATIVE_LOADER
+    pImage->fNative         = true;
+    rc = supdrvOSLdrOpen(pDevExt, pImage, pReq->u.In.szFilename);
+#else
+    rc = VERR_NOT_SUPPORTED;
+#endif
+    if (rc == VERR_NOT_SUPPORTED)
+    {
+        pImage->pvImageAlloc = RTMemExecAlloc(pImage->cbImageBits + 31);
+        pImage->pvImage     = RT_ALIGN_P(pImage->pvImageAlloc, 32);
+#ifdef SUPDRV_USE_NATIVE_LOADER
+        pImage->fNative     = false;
+#endif
+        rc = pImage->pvImageAlloc ? VINF_SUCCESS : VERR_NO_MEMORY;
+    }
+    if (RT_FAILURE(rc))
+    {
+        RTSemFastMutexRelease(pDevExt->mtxLdr);
+        RTMemFree(pImage);
+        Log(("supdrvIOCtl_LdrOpen(%s): failed - %Rrc\n", pReq->u.In.szName, rc));
+        return VERR_NO_MEMORY;
+    }
+    Assert(VALID_PTR(pImage->pvImage) || RT_FAILURE(rc));
+
+    /*
+     * Link it.
+     */
     pImage->pNext           = pDevExt->pLdrImages;
     pDevExt->pLdrImages     = pImage;
 
@@ -3489,6 +3538,48 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
 #if defined(RT_OS_WINDOWS) && defined(DEBUG)
     SUPR0Printf("VBoxDrv: windbg> .reload /f %s=%#p\n", pImage->szName, pImage->pvImage);
 #endif
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Worker that validates a pointer to an image entrypoint.
+ *
+ * @returns IPRT status code.
+ * @param   pDevExt     The device globals.
+ * @param   pImage      The loader image.
+ * @param   pv          The pointer into the image.
+ * @param   fMayBeNull  Whether it may be NULL.
+ * @param   pszWhat     What is this entrypoint? (for logging)
+ * @param   pbImageBits The image bits prepared by ring-3.
+ *
+ * @remarks Will leave the lock on failure.
+ */
+static int supdrvLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, void *pv,
+                                    bool fMayBeNull, const uint8_t *pbImageBits, const char *pszWhat)
+{
+    if (!fMayBeNull || pv)
+    {
+        if ((uintptr_t)pv - (uintptr_t)pImage->pvImage >= pImage->cbImageBits)
+        {
+            RTSemFastMutexRelease(pDevExt->mtxLdr);
+            Log(("Out of range (%p LB %#x): %s=%p\n", pImage->pvImage, pImage->cbImageBits, pszWhat, pv));
+            return VERR_INVALID_PARAMETER;
+        }
+
+#ifdef SUPDRV_USE_NATIVE_LOADER
+        if (pImage->fNative)
+        {
+            int rc = supdrvOSLdrValidatePointer(pDevExt, pImage, pv, pbImageBits);
+            if (RT_FAILURE(rc))
+            {
+                RTSemFastMutexRelease(pDevExt->mtxLdr);
+                Log(("Bad entry point address: %s=%p (rc=%Rrc)\n", pszWhat, pv, rc));
+                return rc;
+            }
+        }
+#endif
+    }
     return VINF_SUCCESS;
 }
 
@@ -3508,7 +3599,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     PSUPDRVLDRUSAGE pUsage;
     PSUPDRVLDRIMAGE pImage;
     int             rc;
-    LogFlow(("supdrvIOCtl_LdrLoad: pvImageBase=%p cbImage=%d\n", pReq->u.In.pvImageBase, pReq->u.In.cbImage));
+    LogFlow(("supdrvIOCtl_LdrLoad: pvImageBase=%p cbImageWithBits=%d\n", pReq->u.In.pvImageBase, pReq->u.In.cbImageWithTabs));
 
     /*
      * Find the ldr image.
@@ -3524,12 +3615,27 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         return VERR_INVALID_HANDLE;
     }
     pImage = pUsage->pImage;
-    if (pImage->cbImage != pReq->u.In.cbImage)
+
+    /*
+     * Validate input.
+     */
+#ifdef SUPDRV_USE_NATIVE_LOADER
+    if (   pImage->cbImageWithTabs != pReq->u.In.cbImageWithTabs
+        || pImage->cbImageBits     != pReq->u.In.cbImageBits)
+#else
+    if (pImage->cbImageWithTabs != pReq->u.In.cbImageWithTabs)
+#endif
     {
         RTSemFastMutexRelease(pDevExt->mtxLdr);
-        Log(("SUP_IOCTL_LDR_LOAD: image size mismatch!! %d(prep) != %d(load)\n", pImage->cbImage, pReq->u.In.cbImage));
+#ifdef SUPDRV_USE_NATIVE_LOADER
+        Log(("SUP_IOCTL_LDR_LOAD: image size mismatch!! %d(prep) != %d(load) or %d != %d\n",
+             pImage->cbImageWithTabs, pReq->u.In.cbImageWithTabs, pImage->cbImageBits, pReq->u.In.cbImageBits));
+#else
+        Log(("SUP_IOCTL_LDR_LOAD: image size mismatch!! %d(prep) != %d(load)\n", pImage->cbImageWithTabs, pReq->u.In.cbImageWithTabs));
+#endif
         return VERR_INVALID_HANDLE;
     }
+
     if (pImage->uState != SUP_IOCTL_LDR_OPEN)
     {
         unsigned uState = pImage->uState;
@@ -3538,57 +3644,35 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             AssertMsgFailed(("SUP_IOCTL_LDR_LOAD: invalid image state %d (%#x)!\n", uState, uState));
         return SUPDRV_ERR_ALREADY_LOADED;
     }
+
     switch (pReq->u.In.eEPType)
     {
         case SUPLDRLOADEP_NOTHING:
             break;
 
         case SUPLDRLOADEP_VMMR0:
-            if (    !pReq->u.In.EP.VMMR0.pvVMMR0
-                ||  !pReq->u.In.EP.VMMR0.pvVMMR0EntryInt
-                ||  !pReq->u.In.EP.VMMR0.pvVMMR0EntryFast
-                ||  !pReq->u.In.EP.VMMR0.pvVMMR0EntryEx)
-            {
-                RTSemFastMutexRelease(pDevExt->mtxLdr);
-                Log(("NULL pointer: pvVMMR0=%p pvVMMR0EntryInt=%p pvVMMR0EntryFast=%p pvVMMR0EntryEx=%p!\n",
-                     pReq->u.In.EP.VMMR0.pvVMMR0, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,
-                     pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx));
-                return VERR_INVALID_PARAMETER;
-            }
-            /** @todo validate pReq->u.In.EP.VMMR0.pvVMMR0 against pvImage! */
-            if (    (uintptr_t)pReq->u.In.EP.VMMR0.pvVMMR0EntryInt  - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage
-                ||  (uintptr_t)pReq->u.In.EP.VMMR0.pvVMMR0EntryFast - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage
-                ||  (uintptr_t)pReq->u.In.EP.VMMR0.pvVMMR0EntryEx   - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage)
-            {
-                RTSemFastMutexRelease(pDevExt->mtxLdr);
-                Log(("Out of range (%p LB %#x): pvVMMR0EntryInt=%p, pvVMMR0EntryFast=%p or pvVMMR0EntryEx=%p is NULL!\n",
-                     pImage->pvImage, pReq->u.In.cbImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,
-                     pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx));
-                return VERR_INVALID_PARAMETER;
-            }
+            rc = supdrvLdrValidatePointer(    pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0,          false, pReq->u.In.achImage, "pvVMMR0");
+            if (RT_SUCCESS(rc))
+                rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,  false, pReq->u.In.achImage, "pvVMMR0EntryInt");
+            if (RT_SUCCESS(rc))
+                rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, false, pReq->u.In.achImage, "pvVMMR0EntryFast");
+            if (RT_SUCCESS(rc))
+                rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx,   false, pReq->u.In.achImage, "pvVMMR0EntryEx");
+            if (RT_FAILURE(rc))
+                return rc;
             break;
 
         case SUPLDRLOADEP_SERVICE:
-            if (!pReq->u.In.EP.Service.pfnServiceReq)
-            {
-                RTSemFastMutexRelease(pDevExt->mtxLdr);
-                Log(("NULL pointer: pfnServiceReq=%p!\n", pReq->u.In.EP.Service.pfnServiceReq));
-                return VERR_INVALID_PARAMETER;
-            }
-            if ((uintptr_t)pReq->u.In.EP.Service.pfnServiceReq  - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage)
-            {
-                RTSemFastMutexRelease(pDevExt->mtxLdr);
-                Log(("Out of range (%p LB %#x): pfnServiceReq=%p, pvVMMR0EntryFast=%p or pvVMMR0EntryEx=%p is NULL!\n",
-                     pImage->pvImage, pReq->u.In.cbImage, pReq->u.In.EP.Service.pfnServiceReq));
-                return VERR_INVALID_PARAMETER;
-            }
+            rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.Service.pfnServiceReq, false, pReq->u.In.achImage, "pfnServiceReq");
+            if (RT_FAILURE(rc))
+                return rc;
             if (    pReq->u.In.EP.Service.apvReserved[0] != NIL_RTR0PTR
                 ||  pReq->u.In.EP.Service.apvReserved[1] != NIL_RTR0PTR
                 ||  pReq->u.In.EP.Service.apvReserved[2] != NIL_RTR0PTR)
             {
                 RTSemFastMutexRelease(pDevExt->mtxLdr);
                 Log(("Out of range (%p LB %#x): apvReserved={%p,%p,%p} MBZ!\n",
-                     pImage->pvImage, pReq->u.In.cbImage,
+                     pImage->pvImage, pReq->u.In.cbImageWithTabs,
                      pReq->u.In.EP.Service.apvReserved[0],
                      pReq->u.In.EP.Service.apvReserved[1],
                      pReq->u.In.EP.Service.apvReserved[2]));
@@ -3601,53 +3685,76 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             Log(("Invalid eEPType=%d\n", pReq->u.In.eEPType));
             return VERR_INVALID_PARAMETER;
     }
-    if (    pReq->u.In.pfnModuleInit
-        &&  (uintptr_t)pReq->u.In.pfnModuleInit - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage)
+
+    rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.pfnModuleInit, true, pReq->u.In.achImage, "pfnModuleInit");
+    if (RT_FAILURE(rc))
+        return rc;
+    rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.pfnModuleTerm, true, pReq->u.In.achImage, "pfnModuleTerm");
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Allocate and copy the tables.
+     * (No need to do try/except as this is a buffered request.)
+     */
+    pImage->cbStrTab = pReq->u.In.cbStrTab;
+    if (pImage->cbStrTab)
     {
-        RTSemFastMutexRelease(pDevExt->mtxLdr);
-        Log(("SUP_IOCTL_LDR_LOAD: pfnModuleInit=%p is outside the image (%p %d bytes)\n",
-             pReq->u.In.pfnModuleInit, pImage->pvImage, pReq->u.In.cbImage));
-        return VERR_INVALID_PARAMETER;
+        pImage->pachStrTab = (char *)RTMemAlloc(pImage->cbStrTab);
+        if (pImage->pachStrTab)
+            memcpy(pImage->pachStrTab, &pReq->u.In.achImage[pReq->u.In.offStrTab], pImage->cbStrTab);
+        else
+            rc = VERR_NO_MEMORY;
     }
-    if (    pReq->u.In.pfnModuleTerm
-        &&  (uintptr_t)pReq->u.In.pfnModuleTerm - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage)
+
+    pImage->cSymbols = pReq->u.In.cSymbols;
+    if (RT_SUCCESS(rc) && pImage->cSymbols)
     {
-        RTSemFastMutexRelease(pDevExt->mtxLdr);
-        Log(("SUP_IOCTL_LDR_LOAD: pfnModuleTerm=%p is outside the image (%p %d bytes)\n",
-             pReq->u.In.pfnModuleTerm, pImage->pvImage, pReq->u.In.cbImage));
-        return VERR_INVALID_PARAMETER;
+        size_t  cbSymbols = pImage->cSymbols * sizeof(SUPLDRSYM);
+        pImage->paSymbols = (PSUPLDRSYM)RTMemAlloc(cbSymbols);
+        if (pImage->paSymbols)
+            memcpy(pImage->paSymbols, &pReq->u.In.achImage[pReq->u.In.offSymbols], cbSymbols);
+        else
+            rc = VERR_NO_MEMORY;
     }
 
     /*
-     * Copy the memory.
+     * Copy the bits / complete native loading.
      */
-    /* no need to do try/except as this is a buffered request. */
-    memcpy(pImage->pvImage, &pReq->u.In.achImage[0], pImage->cbImage);
-    pImage->uState = SUP_IOCTL_LDR_LOAD;
-    pImage->pfnModuleInit = pReq->u.In.pfnModuleInit;
-    pImage->pfnModuleTerm = pReq->u.In.pfnModuleTerm;
-    pImage->offSymbols    = pReq->u.In.offSymbols;
-    pImage->cSymbols      = pReq->u.In.cSymbols;
-    pImage->offStrTab     = pReq->u.In.offStrTab;
-    pImage->cbStrTab      = pReq->u.In.cbStrTab;
+    if (RT_SUCCESS(rc))
+    {
+        pImage->uState = SUP_IOCTL_LDR_LOAD;
+        pImage->pfnModuleInit = pReq->u.In.pfnModuleInit;
+        pImage->pfnModuleTerm = pReq->u.In.pfnModuleTerm;
+
+#ifdef SUPDRV_USE_NATIVE_LOADER
+        if (pImage->fNative)
+            rc = supdrvOSLdrLoad(pDevExt, pImage, pReq->u.In.achImage);
+        else
+#endif
+            memcpy(pImage->pvImage, &pReq->u.In.achImage[0], pImage->cbImageBits);
+    }
 
     /*
      * Update any entry points.
      */
-    switch (pReq->u.In.eEPType)
+    if (RT_SUCCESS(rc))
     {
-        default:
-        case SUPLDRLOADEP_NOTHING:
-            rc = VINF_SUCCESS;
-            break;
-        case SUPLDRLOADEP_VMMR0:
-            rc = supdrvLdrSetVMMR0EPs(pDevExt, pReq->u.In.EP.VMMR0.pvVMMR0, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,
-                                      pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx);
-            break;
-        case SUPLDRLOADEP_SERVICE:
-            pImage->pfnServiceReqHandler = pReq->u.In.EP.Service.pfnServiceReq;
-            rc = VINF_SUCCESS;
-            break;
+        switch (pReq->u.In.eEPType)
+        {
+            default:
+            case SUPLDRLOADEP_NOTHING:
+                rc = VINF_SUCCESS;
+                break;
+            case SUPLDRLOADEP_VMMR0:
+                rc = supdrvLdrSetVMMR0EPs(pDevExt, pReq->u.In.EP.VMMR0.pvVMMR0, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,
+                                          pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx);
+                break;
+            case SUPLDRLOADEP_SERVICE:
+                pImage->pfnServiceReqHandler = pReq->u.In.EP.Service.pfnServiceReq;
+                rc = VINF_SUCCESS;
+                break;
+        }
     }
 
     /*
@@ -3666,8 +3773,19 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             supdrvLdrUnsetVMMR0EPs(pDevExt);
     }
 
-    if (rc)
-        pImage->uState = SUP_IOCTL_LDR_OPEN;
+    if (RT_FAILURE(rc))
+    {
+        pImage->uState              = SUP_IOCTL_LDR_OPEN;
+        pImage->pfnModuleInit       = NULL;
+        pImage->pfnModuleTerm       = NULL;
+        pImage->pfnServiceReqHandler= NULL;
+        pImage->cbStrTab            = 0;
+        RTMemFree(pImage->pachStrTab);
+        pImage->pachStrTab          = NULL;
+        RTMemFree(pImage->paSymbols);
+        pImage->paSymbols           = NULL;
+        pImage->cSymbols            = 0;
+    }
 
     RTSemFastMutexRelease(pDevExt->mtxLdr);
     return rc;
@@ -3726,7 +3844,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         {
             PSUPDRVOBJ pObj;
             for (pObj = pDevExt->pObjs; pObj; pObj = pObj->pNext)
-                if (RT_UNLIKELY((uintptr_t)pObj->pfnDestructor - (uintptr_t)pImage->pvImage < pImage->cbImage))
+                if (RT_UNLIKELY((uintptr_t)pObj->pfnDestructor - (uintptr_t)pImage->pvImage < pImage->cbImageBits))
                 {
                     rc = VERR_DANGLING_OBJECTS;
                     break;
@@ -3736,7 +3854,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         {
             PSUPDRVUSAGE pGenUsage;
             for (pGenUsage = pSession->pUsage; pGenUsage; pGenUsage = pGenUsage->pNext)
-                if (RT_UNLIKELY((uintptr_t)pGenUsage->pObj->pfnDestructor - (uintptr_t)pImage->pvImage < pImage->cbImage))
+                if (RT_UNLIKELY((uintptr_t)pGenUsage->pObj->pfnDestructor - (uintptr_t)pImage->pvImage < pImage->cbImageBits))
                 {
                     rc = VERR_DANGLING_OBJECTS;
                     break;
@@ -3757,7 +3875,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             RTMemFree(pUsage);
 
             /*
-             * Derefrence the image.
+             * Dereference the image.
              */
             if (pImage->cUsage <= 1)
                 supdrvLdrFree(pDevExt, pImage);
@@ -3830,11 +3948,11 @@ static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
     /*
      * Search the symbol strings.
      */
-    pchStrings = (const char *)((uint8_t *)pImage->pvImage + pImage->offStrTab);
-    paSyms     =   (PSUPLDRSYM)((uint8_t *)pImage->pvImage + pImage->offSymbols);
+    pchStrings = pImage->pachStrTab;
+    paSyms     = pImage->paSymbols;
     for (i = 0; i < pImage->cSymbols; i++)
     {
-        if (    paSyms[i].offSymbol < pImage->cbImage /* paranoia */
+        if (    paSyms[i].offSymbol < pImage->cbImageBits /* paranoia */
             &&  paSyms[i].offName + cbSymbol <= pImage->cbStrTab
             &&  !memcmp(pchStrings + paSyms[i].offName, pReq->u.In.szSymbol, cbSymbol))
         {
@@ -3914,11 +4032,11 @@ static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
             /*
              * Search the symbol strings.
              */
-            const char *pchStrings = (const char *)((uint8_t *)pImage->pvImage + pImage->offStrTab);
-            PCSUPLDRSYM paSyms     =  (PCSUPLDRSYM)((uint8_t *)pImage->pvImage + pImage->offSymbols);
+            const char *pchStrings = pImage->pachStrTab;
+            PCSUPLDRSYM paSyms     = pImage->paSymbols;
             for (i = 0; i < pImage->cSymbols; i++)
             {
-                if (    paSyms[i].offSymbol < pImage->cbImage /* paranoia */
+                if (    paSyms[i].offSymbol < pImage->cbImageBits /* paranoia */
                     &&  paSyms[i].offName + cbSymbol <= pImage->cbStrTab
                     &&  !memcmp(pchStrings + paSyms[i].offName, pszSymbol, cbSymbol))
                 {
@@ -4083,7 +4201,7 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
         RTSPINLOCKTMP   SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
         RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
         for (pObj = pDevExt->pObjs; pObj; pObj = pObj->pNext)
-            if (RT_UNLIKELY((uintptr_t)pObj->pfnDestructor - (uintptr_t)pImage->pvImage < pImage->cbImage))
+            if (RT_UNLIKELY((uintptr_t)pObj->pfnDestructor - (uintptr_t)pImage->pvImage < pImage->cbImageBits))
             {
                 pObj->pfnDestructor = NULL;
                 cObjs++;
@@ -4105,11 +4223,23 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 #endif
     }
 
+#ifdef SUPDRV_USE_NATIVE_LOADER
+    /* do native unload if appropriate. */
+    if (pImage->fNative)
+        supdrvOSLdrUnload(pDevExt, pImage);
+#endif
+
     /* free the image */
     pImage->cUsage = 0;
     pImage->pNext  = 0;
     pImage->uState = SUP_IOCTL_LDR_FREE;
-    RTMemExecFree(pImage);
+    RTMemExecFree(pImage->pvImageAlloc);
+    pImage->pvImageAlloc = NULL;
+    RTMemFree(pImage->pachStrTab);
+    pImage->pachStrTab = NULL;
+    RTMemFree(pImage->paSymbols);
+    pImage->paSymbols = NULL;
+    RTMemFree(pImage);
 }
 
 

@@ -271,9 +271,15 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
         CookieReq.Hdr.rc = VERR_INTERNAL_ERROR;
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
-        const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00100001
-                                   ?  0x00100001
+#ifdef SUPDRV_USE_NATIVE_LOADER
+        const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00120000
+                                   ?  0x00120000
                                    :  SUPDRV_IOC_VERSION & 0xffff0000;
+#else
+       const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00100001
+                                       ?  0x00100001
+                                   :  SUPDRV_IOC_VERSION & 0xffff0000;
+#endif
         CookieReq.u.In.u32MinVersion = uMinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
         if (    RT_SUCCESS(rc)
@@ -1643,6 +1649,8 @@ static DECLCALLBACK(int) supLoadModuleCreateTabsCB(RTLDRMOD hLdrMod, const char 
  */
 static int supLoadModule(const char *pszFilename, const char *pszModule, const char *pszSrvReqHandler, void **ppvImageBase)
 {
+    int rc;
+
     /*
      * Validate input.
      */
@@ -1650,6 +1658,13 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
     AssertPtrReturn(pszModule, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppvImageBase, VERR_INVALID_PARAMETER);
     AssertReturn(strlen(pszModule) < RT_SIZEOFMEMB(SUPLDROPEN, u.In.szName), VERR_FILENAME_TOO_LONG);
+#ifdef SUPDRV_USE_NATIVE_LOADER
+    char szAbsFilename[RT_SIZEOFMEMB(SUPLDROPEN, u.In.szFilename)];
+    rc = RTPathAbs(pszFilename, szAbsFilename, sizeof(szAbsFilename));
+    if (RT_FAILURE(rc))
+        return rc;
+    pszFilename = szAbsFilename;
+#endif
 
     const bool fIsVMMR0 = !strcmp(pszModule, "VMMR0.r0");
     AssertReturn(!pszSrvReqHandler || !fIsVMMR0, VERR_INTERNAL_ERROR);
@@ -1659,7 +1674,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
      * Open image file and figure its size.
      */
     RTLDRMOD hLdrMod;
-    int rc = RTLdrOpen(pszFilename, 0, RTLDRARCH_HOST, &hLdrMod);
+    rc = RTLdrOpen(pszFilename, 0, RTLDRARCH_HOST, &hLdrMod);
     if (!RT_SUCCESS(rc))
         return rc;
 
@@ -1672,7 +1687,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
     {
         const uint32_t  offSymTab = RT_ALIGN_32(CalcArgs.cbImage, 8);
         const uint32_t  offStrTab = offSymTab + CalcArgs.cSymbols * sizeof(SUPLDRSYM);
-        const uint32_t  cbImage   = RT_ALIGN_32(offStrTab + CalcArgs.cbStrings, 8);
+        const uint32_t  cbImageWithTabs = RT_ALIGN_32(offStrTab + CalcArgs.cbStrings, 8);
 
         /*
          * Open the R0 image.
@@ -1684,8 +1699,14 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
         OpenReq.Hdr.cbOut = SUP_IOCTL_LDR_OPEN_SIZE_OUT;
         OpenReq.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
         OpenReq.Hdr.rc = VERR_INTERNAL_ERROR;
-        OpenReq.u.In.cbImage = cbImage;
+        OpenReq.u.In.cbImageWithTabs = cbImageWithTabs;
+#ifdef SUPDRV_USE_NATIVE_LOADER
+        OpenReq.u.In.cbImageBits = (uint32_t)CalcArgs.cbImage;
+#endif
         strcpy(OpenReq.u.In.szName, pszModule);
+#ifdef SUPDRV_USE_NATIVE_LOADER
+        strcpy(OpenReq.u.In.szFilename, pszFilename);
+#endif
         if (!g_u32FakeMode)
         {
             rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_LDR_OPEN, &OpenReq, SUP_IOCTL_LDR_OPEN_SIZE);
@@ -1705,7 +1726,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
              * We need to load it.
              * Allocate memory for the image bits.
              */
-            PSUPLDRLOAD pLoadReq = (PSUPLDRLOAD)RTMemTmpAlloc(SUP_IOCTL_LDR_LOAD_SIZE(cbImage));
+            PSUPLDRLOAD pLoadReq = (PSUPLDRLOAD)RTMemTmpAlloc(SUP_IOCTL_LDR_LOAD_SIZE(cbImageWithTabs));
             if (pLoadReq)
             {
                 /*
@@ -1766,7 +1787,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                              */
                             pLoadReq->Hdr.u32Cookie = g_u32Cookie;
                             pLoadReq->Hdr.u32SessionCookie = g_u32SessionCookie;
-                            pLoadReq->Hdr.cbIn = SUP_IOCTL_LDR_LOAD_SIZE_IN(cbImage);
+                            pLoadReq->Hdr.cbIn = SUP_IOCTL_LDR_LOAD_SIZE_IN(cbImageWithTabs);
                             pLoadReq->Hdr.cbOut = SUP_IOCTL_LDR_LOAD_SIZE_OUT;
                             pLoadReq->Hdr.fFlags = SUPREQHDR_FLAGS_MAGIC | SUPREQHDR_FLAGS_EXTRA_IN;
                             pLoadReq->Hdr.rc = VERR_INTERNAL_ERROR;
@@ -1794,13 +1815,16 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                             pLoadReq->u.In.offStrTab                  = offStrTab;
                             pLoadReq->u.In.cbStrTab                   = (uint32_t)CalcArgs.cbStrings;
                             AssertRelease(pLoadReq->u.In.cbStrTab == CalcArgs.cbStrings);
+#ifdef SUPDRV_USE_NATIVE_LOADER
+                            pLoadReq->u.In.cbImageBits                = (uint32_t)CalcArgs.cbImage;
+#endif
                             pLoadReq->u.In.offSymbols                 = offSymTab;
                             pLoadReq->u.In.cSymbols                   = CalcArgs.cSymbols;
-                            pLoadReq->u.In.cbImage                    = cbImage;
+                            pLoadReq->u.In.cbImageWithTabs            = cbImageWithTabs;
                             pLoadReq->u.In.pvImageBase                = OpenReq.u.Out.pvImageBase;
                             if (!g_u32FakeMode)
                             {
-                                rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_LDR_LOAD, pLoadReq, SUP_IOCTL_LDR_LOAD_SIZE(cbImage));
+                                rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_LDR_LOAD, pLoadReq, SUP_IOCTL_LDR_LOAD_SIZE(cbImageWithTabs));
                                 if (RT_SUCCESS(rc))
                                     rc = pLoadReq->Hdr.rc;
                             }
@@ -1833,7 +1857,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
             }
             else
             {
-                AssertMsgFailed(("failed to allocated %d bytes for SUPLDRLOAD_IN structure!\n", SUP_IOCTL_LDR_LOAD_SIZE(cbImage)));
+                AssertMsgFailed(("failed to allocated %u bytes for SUPLDRLOAD_IN structure!\n", SUP_IOCTL_LDR_LOAD_SIZE(cbImageWithTabs)));
                 rc = VERR_NO_TMP_MEMORY;
             }
         }

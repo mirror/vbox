@@ -31,6 +31,8 @@
 #ifndef ___SUPDrvIOC_h___
 #define ___SUPDrvIOC_h___
 
+/*#define SUPDRV_USE_NATIVE_LOADER*/
+
 /*
  * Basic types.
  */
@@ -199,7 +201,11 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @remarks Major version 0x0011YYYY was consumed by the 3.0.12 release. The
  *          next major version used on the trunk will be 0x00120000!
  */
+#ifdef SUPDRV_USE_NATIVE_LOADER
+#define SUPDRV_IOC_VERSION                              0x00120000
+#else
 #define SUPDRV_IOC_VERSION                              0x00100001
+#endif
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -291,12 +297,21 @@ typedef struct SUPLDROPEN
     {
         struct
         {
-            /** Size of the image we'll be loading. */
-            uint32_t        cbImage;
+            /** Size of the image we'll be loading (includeing tables). */
+            uint32_t        cbImageWithTabs;
+#ifdef SUPDRV_USE_NATIVE_LOADER
+            /** The size of the image bits. (Less or equal to cbImageWithTabs.) */
+            uint32_t        cbImageBits;
+#endif
             /** Image name.
              * This is the NAME of the image, not the file name. It is used
              * to share code with other processes. (Max len is 32 chars!)  */
             char            szName[32];
+#ifdef SUPDRV_USE_NATIVE_LOADER
+            /** Image file name.
+             * This can be used to load the image using a native loader. */
+            char            szFilename[196];
+#endif
         } In;
         struct
         {
@@ -405,6 +420,11 @@ typedef struct SUPLDRLOAD
             RTR0PTR         pvImageBase;
             /** Entry point type. */
             SUPLDRLOADEP    eEPType;
+#ifdef SUPDRV_USE_NATIVE_LOADER
+            /** The size of the image bits (starting at offset 0 and
+             * approaching offSymbols). */
+            uint32_t        cbImageBits;
+#endif
             /** The offset of the symbol table. */
             uint32_t        offSymbols;
             /** The number of entries in the symbol table. */
@@ -413,8 +433,8 @@ typedef struct SUPLDRLOAD
             uint32_t        offStrTab;
             /** Size of the string table. */
             uint32_t        cbStrTab;
-            /** Size of image (including string and symbol tables). */
-            uint32_t        cbImage;
+            /** Size of image data in achImage. */
+            uint32_t        cbImageWithTabs;
             /** The image data. */
             char            achImage[1];
         } In;
