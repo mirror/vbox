@@ -400,26 +400,37 @@ typedef struct SUPDRVLDRIMAGE
     struct SUPDRVLDRIMAGE * volatile pNext;
     /** Pointer to the image. */
     void                           *pvImage;
+    /** Pointer to the allocated image buffer.
+     * pvImage is 32-byte aligned or it may governed by the native loader (this
+     * member is NULL then). */
+    void                           *pvImageAlloc;
+    /** Size of the image including the tables. This is mainly for verification
+     * of the load request. */
+    uint32_t                        cbImageWithTabs;
+    /** Size of the image. */
+    uint32_t                        cbImageBits;
+    /** The number of entries in the symbol table. */
+    uint32_t                        cSymbols;
+    /** Pointer to the symbol table. */
+    PSUPLDRSYM                      paSymbols;
+    /** The offset of the string table. */
+    char                           *pachStrTab;
+    /** Size of the string table. */
+    uint32_t                        cbStrTab;
     /** Pointer to the optional module initialization callback. */
     PFNR0MODULEINIT                 pfnModuleInit;
     /** Pointer to the optional module termination callback. */
     PFNR0MODULETERM                 pfnModuleTerm;
     /** Service request handler. This is NULL for non-service modules. */
     PFNSUPR0SERVICEREQHANDLER       pfnServiceReqHandler;
-    /** Size of the image. */
-    uint32_t                        cbImage;
-    /** The offset of the symbol table. */
-    uint32_t                        offSymbols;
-    /** The number of entries in the symbol table. */
-    uint32_t                        cSymbols;
-    /** The offset of the string table. */
-    uint32_t                        offStrTab;
-    /** Size of the string table. */
-    uint32_t                        cbStrTab;
     /** The ldr image state. (IOCtl code of last opration.) */
     uint32_t                        uState;
     /** Usage count. */
     uint32_t volatile               cUsage;
+#ifdef SUPDRV_USE_NATIVE_LOADER
+    /** Whether it's loaded by the native loader or not. */
+    bool                            fNative;
+#endif
     /** Image name. */
     char                            szName[32];
 } SUPDRVLDRIMAGE, *PSUPDRVLDRIMAGE;
@@ -650,6 +661,58 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
 bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt);
 int  VBOXCALL   supdrvOSEnableVTx(bool fEnabled);
 
+#ifdef SUPDRV_USE_NATIVE_LOADER
+
+/**
+ * Try open the image using the native loader.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if native loading isn't supported.
+ *
+ * @param   pDevExt             The device globals.
+ * @param   pImage              The image handle.  pvImage should be set on
+ *                              success, pvImageAlloc can also be set if
+ *                              appropriate.
+ * @param   pszFilename         The file name - UTF-8, may containg UNIX
+ *                              slashes on non-UNIX systems.
+ */
+int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename);
+
+/**
+ * Validates an entry point address.
+ *
+ * Called before supdrvOSLdrLoad.
+ *
+ * @returns IPRT status code.
+ * @param   pDevExt             The device globals.
+ * @param   pImage              The image data (still in the open state).
+ * @param   pv                  The address within the image.
+ * @param   pbImageBits         The image bits as loaded by ring-3.
+ */
+int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage,
+                                           void *pv, const uint8_t *pbImageBits);
+
+/**
+ * Load the image.
+ *
+ * @returns IPRT status code.
+ * @param   pDevExt             The device globals.
+ * @param   pImage              The image data (up to date except for some
+ *                              entry point pointers).
+ * @param   pbImageBits         The image bits as loaded by ring-3.
+ */
+int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits);
+
+
+/**
+ * Unload the image.
+ *
+ * @param   pDevExt             The device globals.
+ * @param   pImage              The image data (mostly still valid).
+ */
+void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
+
+#endif /* SUPDRV_USE_NATIVE_LOADER */
 
 /*******************************************************************************
 *   Shared Functions                                                           *

@@ -91,7 +91,7 @@ static moduledata_t         g_VBoxDrvFreeBSDModule =
 
 /** Declare the module as a pseudo device. */
 DECLARE_MODULE(vboxdrv,     g_VBoxDrvFreeBSDModule, SI_SUB_PSEUDO, SI_ORDER_ANY);
-MODULE_VERSION(vboxdrv, 1); 
+MODULE_VERSION(vboxdrv, 1);
 
 /**
  * The /dev/vboxdrv character device entry points.
@@ -599,6 +599,35 @@ bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
     return false;
 }
 
+#ifdef SUPDRV_USE_NATIVE_LOADER
+
+int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
+{
+    NOREF(pDevExt); NOREF(pImage); NOREF(pszFilename);
+    return VERR_NOT_SUPPORTED;
+}
+
+
+int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, void *pv, const uint8_t *pbImageBits)
+{
+    NOREF(pDevExt); NOREF(pImage); NOREF(pv); NOREF(pbImageBits);
+    return VERR_NOT_SUPPORTED;
+}
+
+
+int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits)
+{
+    NOREF(pDevExt); NOREF(pImage); NOREF(pbImageBits);
+    return VERR_NOT_SUPPORTED;
+}
+
+
+void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
+{
+    NOREF(pDevExt); NOREF(pImage);
+}
+
+#endif /* SUPDRV_USE_NATIVE_LOADER */
 
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...)
 {
