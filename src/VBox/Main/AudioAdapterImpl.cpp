@@ -109,7 +109,7 @@ HRESULT AudioAdapter::init (Machine *aParent, AudioAdapter *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
-    AutoReadLock thatLock (aThat);
+    AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     mData.share (aThat->mData);
 
     /* Confirm a successful initialization */
@@ -141,7 +141,7 @@ HRESULT AudioAdapter::initCopy (Machine *aParent, AudioAdapter *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
-    AutoReadLock thatLock (aThat);
+    AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     mData.attachCopy (aThat->mData);
 
     /* Confirm a successful initialization */
@@ -179,7 +179,7 @@ STDMETHODIMP AudioAdapter::COMGETTER(Enabled)(BOOL *aEnabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aEnabled = mData->mEnabled;
 
@@ -195,7 +195,7 @@ STDMETHODIMP AudioAdapter::COMSETTER(Enabled)(BOOL aEnabled)
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData->mEnabled != aEnabled)
     {
@@ -213,7 +213,7 @@ STDMETHODIMP AudioAdapter::COMGETTER(AudioDriver)(AudioDriverType_T *aAudioDrive
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aAudioDriver = mData->mAudioDriver;
 
@@ -229,7 +229,7 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -292,7 +292,7 @@ STDMETHODIMP AudioAdapter::COMGETTER(AudioController)(AudioControllerType_T *aAu
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aAudioController = mData->mAudioController;
 
@@ -308,7 +308,7 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioController)(AudioControllerType_T aAud
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -365,7 +365,7 @@ HRESULT AudioAdapter::loadSettings(const settings::AudioAdapter &data)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
@@ -397,7 +397,7 @@ HRESULT AudioAdapter::saveSettings(settings::AudioAdapter &data)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     data.fEnabled = !!mData->mEnabled;
     data.controllerType = mData->mAudioController;
@@ -414,7 +414,7 @@ bool AudioAdapter::rollback()
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     bool changed = false;
 
@@ -445,7 +445,7 @@ void AudioAdapter::commit()
 
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
-    AutoMultiWriteLock2 alock (mPeer, this);
+    AutoMultiWriteLock2 alock(mPeer, this COMMA_LOCKVAL_SRC_POS);
 
     if (mData.isBackedUp())
     {
@@ -476,8 +476,8 @@ void AudioAdapter::copyFrom (AudioAdapter *aThat)
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
-    AutoReadLock rl(aThat);
-    AutoWriteLock wl(this);
+    AutoReadLock rl(aThat COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wl(this COMMA_LOCKVAL_SRC_POS);
 
     /* this will back up current data */
     mData.assignCopy (aThat->mData);

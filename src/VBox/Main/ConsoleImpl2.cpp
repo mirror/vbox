@@ -190,7 +190,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     AssertComRCReturn (autoCaller.rc(), VERR_ACCESS_DENIED);
 
     /* lock the console because we widely use internal fields and methods */
-    AutoWriteLock alock(pConsole);
+    AutoWriteLock alock(pConsole COMMA_LOCKVAL_SRC_POS);
 
     /* Save the VM pointer in the machine object */
     pConsole->mpVM = pVM;
@@ -2054,7 +2054,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * we're on EMT. Write lock is necessary because we indirectly modify the
      * meAttachmentType member.
      */
-    AutoWriteLock alock(pThis);
+    AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
 
     PVM     pVM = pThis->mpVM;
     BSTR    str = NULL;

@@ -93,8 +93,8 @@ public:
     HRESULT loadSettings(const settings::AudioAdapter &data);
     HRESULT saveSettings(settings::AudioAdapter &data);
 
-    bool isModified() { AutoWriteLock alock (this); return mData.isBackedUp(); }
-    bool isReallyModified() { AutoWriteLock alock (this); return mData.hasActualChanges(); }
+    bool isModified() { AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); return mData.isBackedUp(); }
+    bool isReallyModified() { AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); return mData.hasActualChanges(); }
     bool rollback();
     void commit();
     void copyFrom (AudioAdapter *aThat);

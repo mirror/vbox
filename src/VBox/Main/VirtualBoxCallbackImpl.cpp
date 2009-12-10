@@ -77,7 +77,7 @@ STDMETHODIMP CallbackWrapper::OnMachineStateChange(IN_BSTR machineId, MachineSta
 
 STDMETHODIMP CallbackWrapper::OnMachineDataChange(IN_BSTR machineId)
 {
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mVBoxCallback.isNull())
         return S_OK;

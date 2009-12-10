@@ -1042,7 +1042,7 @@ Console::saveStateFileExec(PSSMHANDLE pSSM, void *pvUser)
     AutoCaller autoCaller(that);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoReadLock alock(that);
+    AutoReadLock alock(that COMMA_LOCKVAL_SRC_POS);
 
     int vrc = SSMR3PutU32(pSSM, (uint32_t)that->mSharedFolders.size());
     AssertRC(vrc);
@@ -1117,7 +1117,7 @@ Console::loadStateFileExecInternal(PSSMHANDLE pSSM, uint32_t u32Version)
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), VERR_ACCESS_DENIED);
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(mSharedFolders.size() == 0, VERR_INTERNAL_ERROR);
 
@@ -1423,7 +1423,7 @@ STDMETHODIMP Console::COMGETTER(State)(MachineState_T *aMachineState)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* we return our local state (since it's always the same as on the server) */
     *aMachineState = mMachineState;
@@ -1491,7 +1491,7 @@ STDMETHODIMP Console::COMGETTER(Debugger)(IMachineDebugger **aDebugger)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* we need a write lock because of the lazy mDebugger initialization*/
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* check if we have to create the debugger object */
     if (!mDebugger)
@@ -1512,7 +1512,7 @@ STDMETHODIMP Console::COMGETTER(USBDevices)(ComSafeArrayOut(IUSBDevice *, aUSBDe
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     SafeIfaceArray<IUSBDevice> collection(mUSBDevices);
     collection.detachTo(ComSafeArrayOutArg(aUSBDevices));
@@ -1527,7 +1527,7 @@ STDMETHODIMP Console::COMGETTER(RemoteUSBDevices)(ComSafeArrayOut(IHostUSBDevice
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     SafeIfaceArray<IHostUSBDevice> collection(mRemoteUSBDevices);
     collection.detachTo(ComSafeArrayOutArg(aRemoteUSBDevices));
@@ -1557,7 +1557,7 @@ Console::COMGETTER(SharedFolders)(ComSafeArrayOut(ISharedFolder *, aSharedFolder
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* loadDataFromSavedState() needs a write lock */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Read console data stored in the saved state file (if not yet done) */
     HRESULT rc = loadDataFromSavedState();
@@ -1595,7 +1595,7 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     switch (mMachineState)
     {
@@ -1677,7 +1677,7 @@ STDMETHODIMP Console::Reset()
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (   mMachineState != MachineState_Running
         && mMachineState != MachineState_Teleporting
@@ -1714,7 +1714,7 @@ STDMETHODIMP Console::Pause()
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     switch (mMachineState)
     {
@@ -1761,7 +1761,7 @@ STDMETHODIMP Console::Resume()
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mMachineState != MachineState_Paused)
         return setError(VBOX_E_INVALID_VM_STATE,
@@ -1800,7 +1800,7 @@ STDMETHODIMP Console::PowerButton()
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (   mMachineState != MachineState_Running
         && mMachineState != MachineState_Teleporting
@@ -1844,7 +1844,7 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
 
     AutoCaller autoCaller(this);
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (   mMachineState != MachineState_Running
         && mMachineState != MachineState_Teleporting
@@ -1891,7 +1891,7 @@ STDMETHODIMP Console::GetGuestEnteredACPIMode(BOOL *aEntered)
 
     AutoCaller autoCaller(this);
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (   mMachineState != MachineState_Running
         && mMachineState != MachineState_Teleporting
@@ -1929,7 +1929,7 @@ STDMETHODIMP Console::SleepButton()
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mMachineState != MachineState_Running) /** @todo Live Migration: ??? */
         return setError(VBOX_E_INVALID_VM_STATE,
@@ -1970,7 +1970,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (   mMachineState != MachineState_Running
         && mMachineState != MachineState_Paused)
@@ -2108,7 +2108,7 @@ STDMETHODIMP Console::AdoptSavedState(IN_BSTR aSavedStateFile)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (   mMachineState != MachineState_PoweredOff
         && mMachineState != MachineState_Teleported
@@ -2126,7 +2126,7 @@ STDMETHODIMP Console::ForgetSavedState(BOOL aRemove)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mMachineState != MachineState_Saved)
         return setError(VBOX_E_INVALID_VM_STATE,
@@ -2249,7 +2249,7 @@ STDMETHODIMP Console::AttachUSBDevice(IN_BSTR aId)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (   mMachineState != MachineState_Running
         && mMachineState != MachineState_Paused)
@@ -2292,7 +2292,7 @@ STDMETHODIMP Console::DetachUSBDevice(IN_BSTR aId, IUSBDevice **aDevice)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Find it. */
     ComObjPtr<OUSBDevice> device;
@@ -2424,7 +2424,7 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /// @todo see @todo in AttachUSBDevice() about the Paused state
     if (mMachineState == MachineState_Saved)
@@ -2491,7 +2491,7 @@ STDMETHODIMP Console::RemoveSharedFolder(IN_BSTR aName)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /// @todo see @todo in AttachUSBDevice() about the Paused state
     if (mMachineState == MachineState_Saved)
@@ -2558,7 +2558,7 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (Global::IsTransient(mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
@@ -2687,7 +2687,7 @@ STDMETHODIMP Console::DeleteSnapshot(IN_BSTR aId, IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (Global::IsOnlineOrTransient(mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
@@ -2707,7 +2707,7 @@ STDMETHODIMP Console::RestoreSnapshot(ISnapshot *aSnapshot, IProgress **aProgres
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (Global::IsOnlineOrTransient(mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
@@ -2737,7 +2737,7 @@ STDMETHODIMP Console::RegisterCallback(IConsoleCallback *aCallback)
     aCallback->Release();
 #endif
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     mCallbacks.push_back(CallbackList::value_type(aCallback));
 
@@ -2778,7 +2778,7 @@ STDMETHODIMP Console::UnregisterCallback(IConsoleCallback *aCallback)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CallbackList::iterator it;
     it = std::find(mCallbacks.begin(),
@@ -2886,7 +2886,7 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
     AssertComRCReturnRC(autoCaller.rc());
 
     /* We will need to release the write lock before calling EMT */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
     const char *pszDevice = NULL;
@@ -3087,7 +3087,7 @@ DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, un
        indirectly modify the meDVDState/meFloppyState members (pointed to by
        peState).
      */
-    AutoWriteLock alock(pThis);
+    AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
 
     do
     {
@@ -3260,7 +3260,7 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Don't do anything if the VM isn't running */
     if (!mpVM)
@@ -3403,7 +3403,7 @@ HRESULT Console::doNetworkAdapterChange(const char *pszDevice,
     AssertComRCReturnRC(autoCaller.rc());
 
     /* We will need to release the write lock before calling EMT */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -3571,7 +3571,7 @@ HRESULT Console::onSerialPortChange(ISerialPort *aSerialPort)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Don't do anything if the VM isn't running */
     if (!mpVM)
@@ -3609,7 +3609,7 @@ HRESULT Console::onParallelPortChange(IParallelPort *aParallelPort)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Don't do anything if the VM isn't running */
     if (!mpVM)
@@ -3647,7 +3647,7 @@ HRESULT Console::onStorageControllerChange()
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Don't do anything if the VM isn't running */
     if (!mpVM)
@@ -3685,7 +3685,7 @@ HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForc
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Don't do anything if the VM isn't running */
     if (!mpVM)
@@ -3721,7 +3721,7 @@ HRESULT Console::onVRDPServerChange()
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -3783,7 +3783,7 @@ void Console::onRemoteDisplayInfoChange()
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CallbackList::iterator it = mCallbacks.begin();
     while (it != mCallbacks.end())
@@ -3804,7 +3804,7 @@ HRESULT Console::onUSBControllerChange()
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Ignore if no VM is running yet. */
     if (!mpVM)
@@ -3846,7 +3846,7 @@ HRESULT Console::onSharedFolderChange(BOOL aGlobal)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = fetchSharedFolders(aGlobal);
 
@@ -3885,7 +3885,7 @@ HRESULT Console::onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aE
     AutoCaller autoCaller(this);
     ComAssertComRCRetRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* protect mpVM (we don't need error info, since it's a callback) */
     AutoVMCallerQuiet autoVMCaller(this);
@@ -3951,7 +3951,7 @@ HRESULT Console::onUSBDeviceDetach(IN_BSTR aId,
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Find the device. */
     ComObjPtr<OUSBDevice> device;
@@ -4222,7 +4222,7 @@ HRESULT Console::updateMachineState(MachineState_T aMachineState)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(   mMachineState == MachineState_Saving
                  || mMachineState == MachineState_LiveSnapshotting
@@ -4251,7 +4251,7 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
     AssertComRCReturnVoid(autoCaller.rc());
 
     /* We need a write lock because we alter the cached callback data */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Save the callback arguments */
     mCallbackData.mpsc.visible = fVisible;
@@ -4318,7 +4318,7 @@ void Console::onMouseCapabilityChange(BOOL supportsAbsolute, BOOL needsHostCurso
     AssertComRCReturnVoid(autoCaller.rc());
 
     /* We need a write lock because we alter the cached callback data */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* save the callback arguments */
     mCallbackData.mcc.supportsAbsolute = supportsAbsolute;
@@ -4341,7 +4341,7 @@ void Console::onStateChange(MachineState_T machineState)
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CallbackList::iterator it = mCallbacks.begin();
     while (it != mCallbacks.end())
@@ -4356,7 +4356,7 @@ void Console::onAdditionsStateChange()
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CallbackList::iterator it = mCallbacks.begin();
     while (it != mCallbacks.end())
@@ -4371,7 +4371,7 @@ void Console::onAdditionsOutdated()
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /** @todo Use the On-Screen Display feature to report the fact.
      * The user should be told to install additions that are
@@ -4389,7 +4389,7 @@ void Console::onKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLo
     AssertComRCReturnVoid(autoCaller.rc());
 
     /* We need a write lock because we alter the cached callback data */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* save the callback arguments */
     mCallbackData.klc.numLock = fNumLock;
@@ -4411,7 +4411,7 @@ void Console::onUSBDeviceStateChange(IUSBDevice *aDevice, bool aAttached,
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CallbackList::iterator it = mCallbacks.begin();
     while (it != mCallbacks.end())
@@ -4426,7 +4426,7 @@ void Console::onRuntimeError(BOOL aFatal, IN_BSTR aErrorID, IN_BSTR aMessage)
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CallbackList::iterator it = mCallbacks.begin();
     while (it != mCallbacks.end())
@@ -4447,7 +4447,7 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
     CallbackList::iterator it = mCallbacks.begin();
@@ -4515,7 +4515,7 @@ HRESULT Console::addVMCaller(bool aQuiet /* = false */,
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mVMDestroying)
     {
@@ -4549,7 +4549,7 @@ void Console::releaseVMCaller()
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturnVoid(mpVM != NULL);
 
@@ -4716,7 +4716,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (Global::IsOnlineOrTransient(mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
@@ -5002,7 +5002,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Total # of steps for the progress object. Must correspond to the
      * number of "advance percent count" comments in this method! */
@@ -5297,7 +5297,7 @@ HRESULT Console::setMachineState(MachineState_T aMachineState,
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -5682,7 +5682,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
          */
         case VMSTATE_OFF:
         {
-            AutoWriteLock alock(that);
+            AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
 
             if (that->mVMStateChangeCallbackDisabled)
                 break;
@@ -5748,7 +5748,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
          */
         case VMSTATE_TERMINATED:
         {
-            AutoWriteLock alock(that);
+            AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
 
             if (that->mVMStateChangeCallbackDisabled)
                 break;
@@ -5804,7 +5804,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
 
         case VMSTATE_SUSPENDED:
         {
-            AutoWriteLock alock(that);
+            AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
 
             if (that->mVMStateChangeCallbackDisabled)
                 break;
@@ -5839,7 +5839,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
         case VMSTATE_SUSPENDED_LS:
         case VMSTATE_SUSPENDED_EXT_LS:
         {
-            AutoWriteLock alock(that);
+            AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
             if (that->mVMStateChangeCallbackDisabled)
                 break;
             switch (that->mMachineState)
@@ -5870,7 +5870,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
             if (   aOldState == VMSTATE_POWERING_ON
                 || aOldState == VMSTATE_RESUMING)
             {
-                AutoWriteLock alock(that);
+                AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
 
                 if (that->mVMStateChangeCallbackDisabled)
                     break;
@@ -5898,7 +5898,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
 
         case VMSTATE_FATAL_ERROR:
         {
-            AutoWriteLock alock(that);
+            AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
 
             if (that->mVMStateChangeCallbackDisabled)
                 break;
@@ -5916,7 +5916,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
 
         case VMSTATE_GURU_MEDITATION:
         {
-            AutoWriteLock alock(that);
+            AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
 
             if (that->mVMStateChangeCallbackDisabled)
                 break;
@@ -5951,7 +5951,7 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
 
     /* still want a lock object because we need to leave it */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT hrc;
 
@@ -6063,7 +6063,7 @@ Console::usbAttachCallback(Console *that, IUSBDevice *aHostDevice, PCRTUUID aUui
         hrc = device->init(aHostDevice);
         AssertComRC(hrc);
 
-        AutoWriteLock alock(that);
+        AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
         that->mUSBDevices.push_back(device);
         LogFlowFunc(("Attached device {%RTuuid}\n", device->id().raw()));
 
@@ -6091,7 +6091,7 @@ HRESULT Console::detachUSBDevice(USBDeviceList::iterator &aIt)
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
 
     /* still want a lock object because we need to leave it */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -6152,7 +6152,7 @@ Console::usbDetachCallback(Console *that, USBDeviceList::iterator *aIt, PCRTUUID
 
     if (RT_SUCCESS(vrc))
     {
-        AutoWriteLock alock(that);
+        AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
 
         /* Remove the device from the collection */
         that->mUSBDevices.erase(*aIt);
@@ -6565,7 +6565,7 @@ HRESULT Console::captureUSBDevices(PVM pVM)
         /* leave the lock before calling Host in VBoxSVC since Host may call
          * us back from under its lock (e.g. onUSBDeviceAttach()) which would
          * produce an inter-process dead-lock otherwise. */
-        AutoWriteLock alock(this);
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         alock.leave();
 
         HRESULT hrc = mControl->AutoCaptureUSBDevices();
@@ -6599,7 +6599,7 @@ void Console::detachAllUSBDevices(bool aDone)
     /* leave the lock before calling Host in VBoxSVC since Host may call
      * us back from under its lock (e.g. onUSBDeviceAttach()) which would
      * produce an inter-process dead-lock otherwise. */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     alock.leave();
 
     mControl->DetachAllUSBDevices(aDone);
@@ -6623,7 +6623,7 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDPUSBDEVICEDESC *p
         return;
     }
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /*
      * Mark all existing remote USB devices as dirty.
@@ -6811,7 +6811,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
 
     /* The lock is also used as a signal from the task initiator (which
      * releases it only after RTThreadCreate()) that we can start the job */
-    AutoWriteLock alock(console);
+    AutoWriteLock alock(console COMMA_LOCKVAL_SRC_POS);
 
     /* sanity */
     Assert(console->mpVM == NULL);
@@ -7393,7 +7393,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
         return autoCaller.rc();
     }
 
-    AutoWriteLock alock(that);
+    AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -7702,7 +7702,7 @@ DECLCALLBACK(int) Console::saveStateThread(RTTHREAD Thread, void *pvUser)
     Assert(!fSuspenededBySave);
 
     /* lock the console once we're going to access it */
-    AutoWriteLock thatLock(that);
+    AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
 
     /*
      * finalize the requested save state procedure.
@@ -7769,7 +7769,7 @@ DECLCALLBACK(int) Console::powerDownThread(RTTHREAD Thread, void *pvUser)
      * that */
 
     /* wait until the method tat started us returns */
-    AutoWriteLock thatLock(that);
+    AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
 
     /* release VM caller to avoid the powerDown() deadlock */
     task->releaseVMCaller();

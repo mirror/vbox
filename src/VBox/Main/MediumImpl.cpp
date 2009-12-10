@@ -393,7 +393,7 @@ public:
 
         for (iterator it = begin(); it != end(); ++ it)
         {
-            AutoWriteLock alock(*it);
+            AutoWriteLock alock(*it COMMA_LOCKVAL_SRC_POS);
             Assert((*it)->m->state == MediumState_LockedWrite ||
                    (*it)->m->state == MediumState_Deleting);
             if ((*it)->m->state == MediumState_LockedWrite)
@@ -413,7 +413,7 @@ public:
         HRESULT rc = aMedium->addCaller();
         if (FAILED(rc)) return rc;
 
-        AutoWriteLock alock(aMedium);
+        AutoWriteLock alock(aMedium COMMA_LOCKVAL_SRC_POS);
 
         if (mForward)
         {
@@ -484,7 +484,7 @@ public:
         HRESULT rc = aMedium->addCaller();
         if (FAILED(rc)) return rc;
 
-        AutoWriteLock alock(aMedium);
+        AutoWriteLock alock(aMedium COMMA_LOCKVAL_SRC_POS);
 
         if (!mForward)
         {
@@ -514,7 +514,7 @@ public:
         HRESULT rc = aMedium->addCaller();
         if (FAILED(rc)) return rc;
 
-        AutoWriteLock alock(aMedium);
+        AutoWriteLock alock(aMedium COMMA_LOCKVAL_SRC_POS);
 
         rc = checkChildrenAndAttachments(aMedium);
         if (FAILED(rc))
@@ -643,7 +643,7 @@ public:
             last--;
             for (MediaList::const_iterator it = begin(); it != end(); ++ it)
             {
-                AutoWriteLock alock(*it);
+                AutoWriteLock alock(*it COMMA_LOCKVAL_SRC_POS);
                 if (it == last)
                 {
                     Assert(   (*it)->m->state == MediumState_LockedRead
@@ -1076,7 +1076,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     if (aParent)
     {
         // differencing image: add to parent
-        AutoWriteLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+        AutoWriteLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
         m->pParent = aParent;
         aParent->m->llChildren.push_back(this);
     }
@@ -1282,8 +1282,8 @@ void Medium::uninit()
     {
         /* we uninit children and reset mParent
          * and VirtualBox::removeDependentChild() needs a write lock */
-        AutoWriteLock alock1(m->pVirtualBox->lockHandle());
-        AutoWriteLock alock2(m->pVirtualBox->hardDiskTreeLockHandle());
+        AutoWriteLock alock1(m->pVirtualBox->lockHandle() COMMA_LOCKVAL_SRC_POS);
+        AutoWriteLock alock2(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
         MediaList::iterator it;
         for (it = m->llChildren.begin();
@@ -1346,7 +1346,7 @@ STDMETHODIMP Medium::COMGETTER(Id)(BSTR *aId)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->id.toUtf16().cloneTo(aId);
 
@@ -1360,7 +1360,7 @@ STDMETHODIMP Medium::COMGETTER(Description)(BSTR *aDescription)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->strDescription.isEmpty())
         Bstr("").cloneTo(aDescription);
@@ -1377,7 +1377,7 @@ STDMETHODIMP Medium::COMSETTER(Description)(IN_BSTR aDescription)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /// @todo update m->description and save the global registry (and local
     /// registries of portable VMs referring to this medium), this will also
@@ -1393,7 +1393,7 @@ STDMETHODIMP Medium::COMGETTER(State)(MediumState_T *aState)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     *aState = m->state;
 
     return S_OK;
@@ -1407,7 +1407,7 @@ STDMETHODIMP Medium::COMGETTER(Location)(BSTR *aLocation)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->strLocationFull.cloneTo(aLocation);
 
@@ -1421,7 +1421,7 @@ STDMETHODIMP Medium::COMSETTER(Location)(IN_BSTR aLocation)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /// @todo NEWMEDIA for file names, add the default extension if no extension
     /// is present (using the information from the VD backend which also implies
@@ -1442,7 +1442,7 @@ STDMETHODIMP Medium::COMGETTER(Name)(BSTR *aName)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     getName().cloneTo(aName);
 
@@ -1456,7 +1456,7 @@ STDMETHODIMP Medium::COMGETTER(DeviceType)(DeviceType_T *aDeviceType)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aDeviceType = m->devType;
 
@@ -1470,7 +1470,7 @@ STDMETHODIMP Medium::COMGETTER(HostDrive)(BOOL *aHostDrive)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aHostDrive = m->hostDrive;
 
@@ -1484,7 +1484,7 @@ STDMETHODIMP Medium::COMGETTER(Size)(ULONG64 *aSize)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aSize = m->size;
 
@@ -1513,7 +1513,7 @@ STDMETHODIMP Medium::COMGETTER(Type)(MediumType_T *aType)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aType = m->type;
 
@@ -1526,7 +1526,7 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(m->pVirtualBox, this);
+    AutoMultiWriteLock2 alock(m->pVirtualBox, this COMMA_LOCKVAL_SRC_POS);
 
     switch (m->state)
     {
@@ -1544,7 +1544,7 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
     }
 
     /* we access mParent & children() */
-    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     /* cannot change the type of a differencing hard disk */
     if (m->pParent)
@@ -1597,7 +1597,7 @@ STDMETHODIMP Medium::COMGETTER(Parent)(IMedium **aParent)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* we access mParent */
-    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     m->pParent.queryInterfaceTo(aParent);
 
@@ -1613,7 +1613,7 @@ STDMETHODIMP Medium::COMGETTER(Children)(ComSafeArrayOut(IMedium *, aChildren))
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* we access children */
-    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     SafeIfaceArray<IMedium> children(this->getChildren());
     children.detachTo(ComSafeArrayOutArg(aChildren));
@@ -1656,10 +1656,10 @@ STDMETHODIMP Medium::COMGETTER(LogicalSize)(ULONG64 *aLogicalSize)
         AutoCaller autoCaller(this);
         if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-        AutoReadLock alock(this);
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         /* we access mParent */
-        AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+        AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
         if (m->pParent.isNull())
         {
@@ -1685,7 +1685,7 @@ STDMETHODIMP Medium::COMGETTER(AutoReset)(BOOL *aAutoReset)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->pParent)
         *aAutoReset = FALSE;
@@ -1701,7 +1701,7 @@ STDMETHODIMP Medium::COMSETTER(AutoReset)(BOOL aAutoReset)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(m->pVirtualBox, this);
+    AutoMultiWriteLock2 alock(m->pVirtualBox, this COMMA_LOCKVAL_SRC_POS);
 
     if (m->pParent.isNull())
         return setError(VBOX_E_NOT_SUPPORTED,
@@ -1724,7 +1724,7 @@ STDMETHODIMP Medium::COMGETTER(LastAccessError)(BSTR *aLastAccessError)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->strLastAccessError.isEmpty())
         Bstr("").cloneTo(aLastAccessError);
@@ -1742,7 +1742,7 @@ STDMETHODIMP Medium::COMGETTER(MachineIds)(ComSafeArrayOut(BSTR,aMachineIds))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     com::SafeArray<BSTR> machineIds;
 
@@ -1771,7 +1771,7 @@ STDMETHODIMP Medium::RefreshState(MediumState_T *aState)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* queryInfo() locks this for writing. */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -1802,7 +1802,7 @@ STDMETHODIMP Medium::GetSnapshotIds(IN_BSTR aMachineId,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     com::SafeArray<BSTR> snapshotIds;
 
@@ -1853,7 +1853,7 @@ STDMETHODIMP Medium::LockRead(MediumState_T *aState)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Wait for a concurrently running queryInfo() to complete */
     while (m->queryInfoRunning)
@@ -1908,7 +1908,7 @@ STDMETHODIMP Medium::UnlockRead(MediumState_T *aState)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -1952,7 +1952,7 @@ STDMETHODIMP Medium::LockWrite(MediumState_T *aState)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Wait for a concurrently running queryInfo() to complete */
     while (m->queryInfoRunning)
@@ -1999,7 +1999,7 @@ STDMETHODIMP Medium::UnlockWrite(MediumState_T *aState)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -2043,7 +2043,7 @@ STDMETHODIMP Medium::Close()
      * VirtualBox::find*() but before it starts using us (provided that it holds
      * a mVirtualBox lock of course). */
 
-    AutoWriteLock vboxLock(m->pVirtualBox);
+    AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
 
     bool wasCreated = true;
 
@@ -2091,7 +2091,7 @@ STDMETHODIMP Medium::GetProperty(IN_BSTR aName, BSTR *aValue)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Data::PropertyMap::const_iterator it = m->properties.find(Bstr(aName));
     if (it == m->properties.end())
@@ -2114,7 +2114,7 @@ STDMETHODIMP Medium::SetProperty(IN_BSTR aName, IN_BSTR aValue)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(m->pVirtualBox, this);
+    AutoMultiWriteLock2 alock(m->pVirtualBox, this COMMA_LOCKVAL_SRC_POS);
 
     switch (m->state)
     {
@@ -2151,7 +2151,7 @@ STDMETHODIMP Medium::GetProperties(IN_BSTR aNames,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /// @todo make use of aNames according to the documentation
     NOREF(aNames);
@@ -2188,7 +2188,7 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(m->pVirtualBox, this);
+    AutoMultiWriteLock2 alock(m->pVirtualBox, this COMMA_LOCKVAL_SRC_POS);
 
     com::SafeArray<IN_BSTR> names(ComSafeArrayInArg(aNames));
     com::SafeArray<IN_BSTR> values(ComSafeArrayInArg(aValues));
@@ -2231,7 +2231,7 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     aVariant = (MediumVariant_T)((unsigned)aVariant & (unsigned)~MediumVariant_Diff);
     if (    !(aVariant & MediumVariant_Fixed)
@@ -2319,7 +2319,7 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
 
     ComObjPtr<Medium> diff = static_cast<Medium*>(aTarget);
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->type == MediumType_Writethrough)
         return setError(E_FAIL,
@@ -2373,7 +2373,7 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
     if (aParent)
         parent = static_cast<Medium*>(aParent);
 
-    AutoMultiWriteLock3 alock(this, target, parent);
+    AutoMultiWriteLock3 alock(this, target, parent COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<Progress> progress;
     HRESULT rc = S_OK;
@@ -2392,7 +2392,7 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         std::auto_ptr <ImageChain> srcChain(new ImageChain());
 
         /* we walk the source tree */
-        AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+        AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
         for (Medium *hd = this;
              hd;
              hd = hd->m->pParent)
@@ -2478,7 +2478,7 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr <Progress> progress;
 
@@ -2494,7 +2494,7 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
         std::auto_ptr <ImageChain> imgChain(new ImageChain());
 
         /* we walk the image tree */
-        AutoReadLock srcTreeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+        AutoReadLock srcTreeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
         for (Medium *hd = this;
              hd;
              hd = hd->m->pParent)
@@ -2559,7 +2559,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("ENTER for medium %s\n", m->strLocationFull.c_str()));
 
@@ -2705,7 +2705,7 @@ HRESULT Medium::attachTo(const Guid &aMachineId,
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     switch (m->state)
     {
@@ -2791,7 +2791,7 @@ HRESULT Medium::detachFrom(const Guid &aMachineId,
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     BackRefList::iterator it =
         std::find_if(m->backRefs.begin(), m->backRefs.end(),
@@ -2852,7 +2852,7 @@ const Guid* Medium::getFirstMachineBackrefSnapshotId() const
 void Medium::dumpBackRefs()
 {
     AutoCaller autoCaller(this);
-    AutoReadLock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("Dumping backrefs for medium '%s':\n", m->strLocationFull.raw()));
 
@@ -2891,7 +2891,7 @@ HRESULT Medium::updatePath(const char *aOldPath, const char *aNewPath)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("locationFull.before='%s'\n", m->strLocationFull.raw()));
 
@@ -2932,10 +2932,10 @@ void Medium::updatePaths(const char *aOldPath, const char *aNewPath)
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* we access children() */
-    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     updatePath(aOldPath, aNewPath);
 
@@ -2969,7 +2969,7 @@ ComObjPtr<Medium> Medium::getBase(uint32_t *aLevel /*= NULL*/)
     AssertReturn(autoCaller.isOk(), pBase);
 
     /* we access mParent */
-    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     pBase = this;
     level = 0;
@@ -3007,10 +3007,10 @@ bool Medium::isReadOnly()
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), false);
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* we access children */
-    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     switch (m->type)
     {
@@ -3054,10 +3054,10 @@ HRESULT Medium::saveSettings(settings::Medium &data)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* we access mParent */
-    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     data.uuid = m->id;
     data.strLocation = m->strLocation;
@@ -3122,7 +3122,7 @@ HRESULT Medium::compareLocationTo(const char *aLocation, int &aResult)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Utf8Str locationFull(m->strLocationFull);
 
@@ -3181,10 +3181,10 @@ HRESULT Medium::prepareDiscard(MergeChain * &aChain)
 
     aChain = NULL;
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* we access mParent & children() */
-    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(m->type == MediumType_Normal, E_FAIL);
 
@@ -3234,7 +3234,7 @@ HRESULT Medium::prepareDiscard(MergeChain * &aChain)
 
     /* we keep this locked, so lock the affected child to make sure the lock
      * order is correct when calling prepareMergeTo() */
-    AutoWriteLock childLock(child);
+    AutoWriteLock childLock(child COMMA_LOCKVAL_SRC_POS);
 
     /* delegate the rest to the profi */
     if (m->pParent.isNull())
@@ -3318,10 +3318,10 @@ HRESULT Medium::discard(ComObjPtr<Progress> &aProgress, ULONG ulWeight, MergeCha
 
         if (aChain == NULL)
         {
-            AutoWriteLock alock(this);
+            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
             /* we access mParent & children() */
-            AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+            AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
             Assert(getChildren().size() == 0);
 
@@ -3386,10 +3386,10 @@ void Medium::cancelDiscard(MergeChain *aChain)
 
     if (aChain == NULL)
     {
-        AutoWriteLock alock(this);
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         /* we access mParent & children() */
-        AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+        AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
         Assert(getChildren().size() == 0);
 
@@ -3432,7 +3432,7 @@ Bstr Medium::preferredDiffFormat()
     if (!(m->formatObj->capabilities() & MediumFormatCapabilities_Differencing))
     {
         /* use the default format if not */
-        AutoReadLock propsLock(m->pVirtualBox->systemProperties());
+        AutoReadLock propsLock(m->pVirtualBox->systemProperties() COMMA_LOCKVAL_SRC_POS);
         strFormat = m->pVirtualBox->getDefaultHardDiskFormat();
     }
 
@@ -3653,7 +3653,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
  */
 HRESULT Medium::queryInfo()
 {
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (   m->state != MediumState_Created
         && m->state != MediumState_Inaccessible
@@ -3855,7 +3855,7 @@ HRESULT Medium::queryInfo()
                     }
 
                     /* we set mParent & children() */
-                    AutoWriteLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+                    AutoWriteLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
                     Assert(m->pParent.isNull());
                     m->pParent = parent;
@@ -3864,7 +3864,7 @@ HRESULT Medium::queryInfo()
                 else
                 {
                     /* we access mParent */
-                    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+                    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
                     /* check that parent UUIDs match. Note that there's no need
                      * for the parent's AutoCaller (our lifetime is bound to
@@ -3879,7 +3879,7 @@ HRESULT Medium::queryInfo()
                         throw S_OK;
                     }
 
-                    AutoReadLock parentLock(m->pParent);
+                    AutoReadLock parentLock(m->pParent COMMA_LOCKVAL_SRC_POS);
                     if (    m->pParent->getState() != MediumState_Inaccessible
                          && m->pParent->getId() != parentId)
                     {
@@ -4061,7 +4061,7 @@ HRESULT Medium::deleteStorage(ComObjPtr <Progress> *aProgress, bool aWait)
      * VirtualBox::findHardDisk() but before it starts using us (provided that
      * it holds a mVirtualBox lock too of course). */
 
-    AutoMultiWriteLock2 alock(m->pVirtualBox->lockHandle(), this->lockHandle());
+    AutoMultiWriteLock2 alock(m->pVirtualBox->lockHandle(), this->lockHandle() COMMA_LOCKVAL_SRC_POS);
     LogFlowThisFunc(("aWait=%RTbool locationFull=%s\n", aWait, getLocationFull().c_str() ));
 
     if (    !(m->formatObj->capabilities() & (   MediumFormatCapabilities_CreateDynamic
@@ -4231,7 +4231,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
     AutoCaller targetCaller(aTarget);
     if (FAILED(targetCaller.rc())) return targetCaller.rc();
 
-    AutoMultiWriteLock2 alock(this, aTarget);
+    AutoMultiWriteLock2 alock(this, aTarget COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(m->type != MediumType_Writethrough, E_FAIL);
 
@@ -4368,7 +4368,7 @@ HRESULT Medium::prepareMergeTo(Medium *aTarget,
     aChain = NULL;
 
     /* we walk the tree */
-    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -4391,11 +4391,11 @@ HRESULT Medium::prepareMergeTo(Medium *aTarget,
             {
                 Utf8Str tgtLoc;
                 {
-                    AutoReadLock alock(this);
+                    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
                     tgtLoc = aTarget->getLocationFull();
                 }
 
-                AutoReadLock alock(this);
+                AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
                 return setError(E_FAIL,
                                 tr("Hard disks '%s' and '%s' are unrelated"),
                                 m->strLocationFull.raw(), tgtLoc.raw());
@@ -4524,7 +4524,7 @@ HRESULT Medium::mergeTo(MergeChain *aChain,
         /* ...but create a new one if it is null */
         if (progress.isNull())
         {
-            AutoReadLock alock(this);
+            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
             progress.createObject();
             rc = progress->init(m->pVirtualBox,
@@ -4604,7 +4604,7 @@ HRESULT Medium::setFormat(CBSTR aFormat)
 {
     /* get the format object first */
     {
-        AutoReadLock propsLock(m->pVirtualBox->systemProperties());
+        AutoReadLock propsLock(m->pVirtualBox->systemProperties() COMMA_LOCKVAL_SRC_POS);
 
         unconst(m->formatObj)
             = m->pVirtualBox->systemProperties()->mediumFormat(aFormat);
@@ -4648,7 +4648,7 @@ HRESULT Medium::setFormat(CBSTR aFormat)
 HRESULT Medium::canClose()
 {
     /* we access children */
-    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+    AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     if (getChildren().size() != 0)
         return setError(E_FAIL,
@@ -4670,7 +4670,7 @@ HRESULT Medium::unregisterWithVirtualBox()
      * unregisterHardDisk() properly save the registry */
 
     /* we modify mParent and access children */
-    AutoWriteLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle());
+    AutoWriteLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     Medium *pParentBackup = m->pParent;
 
@@ -4920,7 +4920,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
         {
             /* The lock is also used as a signal from the task initiator (which
              * releases it only after RTThreadCreate()) that we can start the job */
-            AutoWriteLock thatLock(that);
+            AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
 
             /* these parameters we need after creation */
             uint64_t size = 0, logicalSize = 0;
@@ -5019,7 +5019,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
             /* Lock both in {parent,child} order. The lock is also used as a
              * signal from the task initiator (which releases it only after
              * RTThreadCreate()) that we can start the job*/
-            AutoMultiWriteLock2 thatLock(that, target);
+            AutoMultiWriteLock2 thatLock(that, target COMMA_LOCKVAL_SRC_POS);
 
             uint64_t size = 0, logicalSize = 0;
 
@@ -5103,8 +5103,8 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
             {
                 /* we set mParent & children() (note that thatLock is released
                  * here), but lock VirtualBox first to follow the rule */
-                AutoWriteLock alock1(that->m->pVirtualBox);
-                AutoWriteLock alock2(that->m->pVirtualBox->hardDiskTreeLockHandle());
+                AutoWriteLock alock1(that->m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
+                AutoWriteLock alock2(that->m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
                 Assert(target->m->pParent.isNull());
 
@@ -5181,7 +5181,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
              * object is protected by MediumState_Deleting and we don't modify
              * its sensitive fields below */
             {
-                AutoWriteLock thatLock(that);
+                AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
             }
 
             MergeChain *chain = task->d.chain.get();
@@ -5314,8 +5314,8 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
 
                 /* we set mParent & children() (note that thatLock is released
                  * here), but lock VirtualBox first to follow the rule */
-                AutoWriteLock alock1(that->m->pVirtualBox);
-                AutoWriteLock alock2(that->m->pVirtualBox->hardDiskTreeLockHandle());
+                AutoWriteLock alock1(that->m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
+                AutoWriteLock alock2(that->m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
                 Medium *source = chain->source();
                 Medium *target = chain->target();
@@ -5357,13 +5357,13 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                     if (children.size() > 0)
                     {
                         /* obey {parent,child} lock order */
-                        AutoWriteLock sourceLock(source);
+                        AutoWriteLock sourceLock(source COMMA_LOCKVAL_SRC_POS);
 
                         for (MediaList::const_iterator it = children.begin();
                              it != children.end();
                              ++it)
                         {
-                            AutoWriteLock childLock(*it);
+                            AutoWriteLock childLock(*it COMMA_LOCKVAL_SRC_POS);
 
                             Medium *p = *it;
                             p->deparent();  // removes p from source
@@ -5470,7 +5470,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
             /* Lock all in {parent,child} order. The lock is also used as a
              * signal from the task initiator (which releases it only after
              * RTThreadCreate()) that we can start the job. */
-            AutoMultiWriteLock3 thatLock(that, target, parent);
+            AutoMultiWriteLock3 thatLock(that, target, parent COMMA_LOCKVAL_SRC_POS);
 
             ImageChain *srcChain = task->d.source.get();
             ImageChain *parentChain = task->d.parent.get();
@@ -5598,8 +5598,8 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 {
                     /* we set mParent & children() (note that thatLock is released
                      * here), but lock VirtualBox first to follow the rule */
-                    AutoWriteLock alock1(that->m->pVirtualBox);
-                    AutoWriteLock alock2(that->m->pVirtualBox->hardDiskTreeLockHandle());
+                    AutoWriteLock alock1(that->m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
+                    AutoWriteLock alock2(that->m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
                     Assert(target->m->pParent.isNull());
 
@@ -5665,7 +5665,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
         {
             /* The lock is also used as a signal from the task initiator (which
              * releases it only after RTThreadCreate()) that we can start the job */
-            AutoWriteLock thatLock(that);
+            AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
 
             try
             {
@@ -5720,7 +5720,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
         {
             /* The lock is also used as a signal from the task initiator (which
              * releases it only after RTThreadCreate()) that we can start the job */
-            AutoWriteLock thatLock(that);
+            AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
 
             /// @todo Below we use a pair of delete/create operations to reset
             /// the diff contents but the most efficient way will of course be
@@ -5824,7 +5824,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
             /* Lock all in {parent,child} order. The lock is also used as a
              * signal from the task initiator (which releases it only after
              * RTThreadCreate()) that we can start the job. */
-            AutoWriteLock thatLock(that);
+            AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
 
             ImageChain *imgChain = task->d.images.get();
 

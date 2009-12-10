@@ -252,7 +252,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Cancelable) (BOOL *aCancelable)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aCancelable = mCancelable;
 
@@ -304,7 +304,7 @@ STDMETHODIMP ProgressBase::COMGETTER(TimeRemaining)(LONG *aTimeRemaining)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mCompleted)
         *aTimeRemaining = 0;
@@ -340,7 +340,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Percent)(ULONG *aPercent)
     checkForAutomaticTimeout();
 
     /* checkForAutomaticTimeout requires a write lock. */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mCompleted && SUCCEEDED(mResultCode))
         *aPercent = 100;
@@ -370,7 +370,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Completed) (BOOL *aCompleted)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aCompleted = mCompleted;
 
@@ -384,7 +384,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Canceled) (BOOL *aCanceled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aCanceled = mCanceled;
 
@@ -398,7 +398,7 @@ STDMETHODIMP ProgressBase::COMGETTER(ResultCode) (LONG *aResultCode)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mCompleted)
         return setError (E_FAIL,
@@ -416,7 +416,7 @@ STDMETHODIMP ProgressBase::COMGETTER(ErrorInfo) (IVirtualBoxErrorInfo **aErrorIn
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mCompleted)
         return setError (E_FAIL,
@@ -434,7 +434,7 @@ STDMETHODIMP ProgressBase::COMGETTER(OperationCount) (ULONG *aOperationCount)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aOperationCount = m_cOperations;
 
@@ -448,7 +448,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Operation) (ULONG *aOperation)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aOperation = m_ulCurrentOperation;
 
@@ -462,7 +462,7 @@ STDMETHODIMP ProgressBase::COMGETTER(OperationDescription) (BSTR *aOperationDesc
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m_bstrOperationDescription.cloneTo(aOperationDescription);
 
@@ -476,7 +476,7 @@ STDMETHODIMP ProgressBase::COMGETTER(OperationPercent)(ULONG *aOperationPercent)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mCompleted && SUCCEEDED(mResultCode))
         *aOperationPercent = 100;
@@ -491,7 +491,7 @@ STDMETHODIMP ProgressBase::COMSETTER(Timeout)(ULONG aTimeout)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mCancelable)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -509,7 +509,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Timeout)(ULONG *aTimeout)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aTimeout = m_cMsTimeout;
     return S_OK;
@@ -574,7 +574,7 @@ bool ProgressBase::setCancelCallback(void (*pfnCallback)(void *), void *pvUser)
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), false);
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     checkForAutomaticTimeout();
     if (mCanceled)
@@ -816,7 +816,7 @@ STDMETHODIMP Progress::WaitForCompletion (LONG aTimeout)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* if we're already completed, take a shortcut */
     if (!mCompleted)
@@ -878,7 +878,7 @@ STDMETHODIMP Progress::WaitForOperationCompletion(ULONG aOperation, LONG aTimeou
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CheckComArgExpr(aOperation, aOperation < m_cOperations);
 
@@ -936,7 +936,7 @@ STDMETHODIMP Progress::Cancel()
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mCancelable)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -963,7 +963,7 @@ STDMETHODIMP Progress::SetCurrentOperationProgress(ULONG aPercent)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(aPercent <= 100, E_INVALIDARG);
 
@@ -995,7 +995,7 @@ STDMETHODIMP Progress::SetNextOperation(IN_BSTR bstrNextOperationDescription, UL
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(!mCompleted && !mCanceled, E_FAIL);
     AssertReturn(m_ulCurrentOperation + 1 < m_cOperations, E_FAIL);
@@ -1033,7 +1033,7 @@ HRESULT Progress::setResultCode(HRESULT aResultCode)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     mResultCode = aResultCode;
 
@@ -1104,7 +1104,7 @@ HRESULT Progress::notifyComplete(HRESULT aResultCode)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(mCompleted == FALSE, E_FAIL);
 
@@ -1161,7 +1161,7 @@ HRESULT Progress::notifyComplete(HRESULT aResultCode,
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(mCompleted == FALSE, E_FAIL);
 
@@ -1214,7 +1214,7 @@ bool Progress::notifyPointOfNoReturn(void)
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), false);
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mCanceled)
         return false;
@@ -1388,7 +1388,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(Percent)(ULONG *aPercent)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* checkProgress needs a write lock */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mCompleted && SUCCEEDED(mResultCode))
         *aPercent = 100;
@@ -1414,7 +1414,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(Completed) (BOOL *aCompleted)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* checkProgress needs a write lock */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkProgress();
     if (FAILED(rc)) return rc;
@@ -1430,7 +1430,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(Canceled) (BOOL *aCanceled)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* checkProgress needs a write lock */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkProgress();
     if (FAILED(rc)) return rc;
@@ -1446,7 +1446,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(ResultCode) (LONG *aResultCode)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* checkProgress needs a write lock */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkProgress();
     if (FAILED(rc)) return rc;
@@ -1462,7 +1462,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(ErrorInfo) (IVirtualBoxErrorInfo **aErr
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* checkProgress needs a write lock */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkProgress();
     if (FAILED(rc)) return rc;
@@ -1478,7 +1478,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(Operation) (ULONG *aOperation)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* checkProgress needs a write lock */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkProgress();
     if (FAILED(rc)) return rc;
@@ -1494,7 +1494,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(OperationDescription) (BSTR *aOperation
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* checkProgress needs a write lock */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkProgress();
     if (FAILED(rc)) return rc;
@@ -1510,7 +1510,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(OperationPercent)(ULONG *aOperationPerc
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* checkProgress needs a write lock */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkProgress();
     if (FAILED(rc)) return rc;
@@ -1550,7 +1550,7 @@ STDMETHODIMP CombinedProgress::WaitForCompletion (LONG aTimeout)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* if we're already completed, take a shortcut */
     if (!mCompleted)
@@ -1604,7 +1604,7 @@ STDMETHODIMP CombinedProgress::WaitForOperationCompletion (ULONG aOperation, LON
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (aOperation >= m_cOperations)
         return setError (E_FAIL,
@@ -1684,7 +1684,7 @@ STDMETHODIMP CombinedProgress::Cancel()
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mCancelable)
         return setError (E_FAIL, tr ("Operation cannot be canceled"));

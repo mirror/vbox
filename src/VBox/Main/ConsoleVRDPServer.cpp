@@ -2175,7 +2175,7 @@ void RemoteDisplayInfo::uninit()
         if (FAILED(autoCaller.rc())) return autoCaller.rc();              \
                                                                           \
         /* todo: Not sure if a AutoReadLock would be sufficient. */       \
-        AutoWriteLock alock(this);                                        \
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);                                        \
                                                                           \
         uint32_t value;                                                   \
         uint32_t cbOut = 0;                                               \
@@ -2198,7 +2198,7 @@ void RemoteDisplayInfo::uninit()
         if (FAILED(autoCaller.rc())) return autoCaller.rc();              \
                                                                           \
         /* todo: Not sure if a AutoReadLock would be sufficient. */       \
-        AutoWriteLock alock(this);                                        \
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);                                        \
                                                                           \
         _aType value;                                                     \
         uint32_t cbOut = 0;                                               \
@@ -2221,7 +2221,7 @@ void RemoteDisplayInfo::uninit()
         if (FAILED(autoCaller.rc())) return autoCaller.rc();              \
                                                                           \
         /* todo: Not sure if a AutoReadLock would be sufficient. */       \
-        AutoWriteLock alock(this);                                        \
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);                                        \
                                                                           \
         uint32_t cbOut = 0;                                               \
                                                                           \

@@ -140,7 +140,7 @@ STDMETHODIMP Mouse::COMGETTER(AbsoluteSupported) (BOOL *absoluteSupported)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -170,7 +170,7 @@ STDMETHODIMP Mouse::COMGETTER(NeedsHostCursor) (BOOL *needsHostCursor)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -204,7 +204,7 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -267,7 +267,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -391,7 +391,7 @@ DECLCALLBACK(void) Mouse::drvDestruct(PPDMDRVINS pDrvIns)
     LogFlow(("Mouse::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
     if (pData->pMouse)
     {
-        AutoWriteLock mouseLock (pData->pMouse);
+        AutoWriteLock mouseLock(pData->pMouse COMMA_LOCKVAL_SRC_POS);
         pData->pMouse->mpDrv = NULL;
     }
 }

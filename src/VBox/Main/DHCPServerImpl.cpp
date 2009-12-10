@@ -104,7 +104,7 @@ HRESULT DHCPServer::saveSettings(settings::DHCPServer &data)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     data.strNetworkName = mName;
     data.strIPAddress = m.IPAddress;
@@ -146,7 +146,7 @@ STDMETHODIMP DHCPServer::COMSETTER(Enabled) (BOOL aEnabled)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock (mVirtualBox, this);
+    AutoMultiWriteLock2 alock(mVirtualBox, this COMMA_LOCKVAL_SRC_POS);
 
     m.enabled = aEnabled;
 
@@ -214,7 +214,7 @@ STDMETHODIMP DHCPServer::SetConfiguration (IN_BSTR aIPAddress, IN_BSTR aNetworkM
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock (mVirtualBox, this);
+    AutoMultiWriteLock2 alock(mVirtualBox, this COMMA_LOCKVAL_SRC_POS);
 
     m.IPAddress = aIPAddress;
     m.networkMask = aNetworkMask;

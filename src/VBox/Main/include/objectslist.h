@@ -88,7 +88,7 @@ public:
      */
     void addChild(MyType p)
     {
-        AutoWriteLock al(m_lock);
+        AutoWriteLock al(m_lock COMMA_LOCKVAL_SRC_POS);
         m_ll.push_back(p);
     }
 
@@ -99,7 +99,7 @@ public:
      */
     void removeChild(MyType p)
     {
-        AutoWriteLock al(m_lock);
+        AutoWriteLock al(m_lock COMMA_LOCKVAL_SRC_POS);
         m_ll.remove(p);
     }
 
@@ -112,7 +112,7 @@ public:
      */
     void appendOtherList(ObjectsList<T> &ll)
     {
-        AutoReadLock alr(ll.getLockHandle());
+        AutoReadLock alr(ll.getLockHandle() COMMA_LOCKVAL_SRC_POS);
         for (const_iterator it = ll.begin();
              it != ll.end();
              ++it)
@@ -127,7 +127,7 @@ public:
      */
     void uninitAll()
     {
-        AutoWriteLock al(m_lock);
+        AutoWriteLock al(m_lock COMMA_LOCKVAL_SRC_POS);
         for (iterator it = m_ll.begin();
              it != m_ll.end();
              ++it)
@@ -144,7 +144,7 @@ public:
      */
     size_t size()
     {
-        AutoReadLock al(m_lock);
+        AutoReadLock al(m_lock COMMA_LOCKVAL_SRC_POS);
         return m_ll.size();
     }
 
@@ -164,7 +164,7 @@ public:
      */
     MyType front()
     {
-        AutoReadLock al(m_lock);
+        AutoReadLock al(m_lock COMMA_LOCKVAL_SRC_POS);
         return m_ll.front();
     }
 

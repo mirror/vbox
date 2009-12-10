@@ -298,7 +298,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(State) (USBDeviceState_T *aState)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aState = mData.state;
 

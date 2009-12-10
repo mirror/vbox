@@ -121,7 +121,7 @@ HRESULT ParallelPort::init(Machine *aParent, ParallelPort *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
-    AutoReadLock thatLock(aThat);
+    AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     m->bd.share(aThat->m->bd);
 
     /* Confirm a successful initialization */
@@ -155,7 +155,7 @@ HRESULT ParallelPort::initCopy(Machine *aParent, ParallelPort *aThat)
     AutoCaller thatCaller(aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
-    AutoReadLock thatLock(aThat);
+    AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     m->bd.attachCopy(aThat->m->bd);
 
     /* Confirm a successful initialization */
@@ -196,7 +196,7 @@ STDMETHODIMP ParallelPort::COMGETTER(Enabled) (BOOL *aEnabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aEnabled = m->bd->fEnabled;
 
@@ -214,7 +214,7 @@ STDMETHODIMP ParallelPort::COMSETTER(Enabled) (BOOL aEnabled)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd->fEnabled != aEnabled)
     {
@@ -244,7 +244,7 @@ STDMETHODIMP ParallelPort::COMGETTER(Slot) (ULONG *aSlot)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aSlot = m->bd->ulSlot;
 
@@ -258,7 +258,7 @@ STDMETHODIMP ParallelPort::COMGETTER(IRQ) (ULONG *aIRQ)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aIRQ = m->bd->ulIRQ;
 
@@ -282,7 +282,7 @@ STDMETHODIMP ParallelPort::COMSETTER(IRQ)(ULONG aIRQ)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
     bool emitChangeEvent = false;
@@ -312,7 +312,7 @@ STDMETHODIMP ParallelPort::COMGETTER(IOBase) (ULONG *aIOBase)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aIOBase = m->bd->ulIOBase;
 
@@ -336,7 +336,7 @@ STDMETHODIMP ParallelPort::COMSETTER(IOBase)(ULONG aIOBase)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
     bool emitChangeEvent = false;
@@ -366,7 +366,7 @@ STDMETHODIMP ParallelPort::COMGETTER(Path) (BSTR *aPath)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd->strPath.cloneTo(aPath);
 
@@ -382,7 +382,7 @@ STDMETHODIMP ParallelPort::COMSETTER(Path) (IN_BSTR aPath)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Utf8Str str(aPath);
     if (str != m->bd->strPath)
@@ -418,7 +418,7 @@ HRESULT ParallelPort::loadSettings(const settings::ParallelPort &data)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // simply copy
     *m->bd.data() = data;
@@ -440,7 +440,7 @@ HRESULT ParallelPort::saveSettings(settings::ParallelPort &data)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // simply copy
     data = *m->bd.data();
@@ -450,13 +450,13 @@ HRESULT ParallelPort::saveSettings(settings::ParallelPort &data)
 
 bool ParallelPort::isModified()
 {
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     return m->bd.isBackedUp();
 }
 
 bool ParallelPort::isReallyModified()
 {
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     return m->bd.hasActualChanges();
 }
 
@@ -469,7 +469,7 @@ bool ParallelPort::rollback()
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     bool changed = false;
 
@@ -500,7 +500,7 @@ void ParallelPort::commit()
 
     /* lock both for writing since we modify both (m->pPeer is "master" so locked
      * first) */
-    AutoMultiWriteLock2 alock (m->pPeer, this);
+    AutoMultiWriteLock2 alock(m->pPeer, this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd.isBackedUp())
     {
@@ -531,8 +531,8 @@ void ParallelPort::copyFrom(ParallelPort *aThat)
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
-    AutoReadLock rl(aThat);
-    AutoWriteLock wl(this);
+    AutoReadLock rl(aThat COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wl(this COMMA_LOCKVAL_SRC_POS);
 
     /* this will back up current data */
     m->bd.assignCopy(aThat->m->bd);

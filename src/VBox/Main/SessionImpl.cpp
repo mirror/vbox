@@ -128,7 +128,7 @@ void Session::uninit (bool aFinalRelease)
     }
 
     /* close() needs write lock */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mState != SessionState_Closed)
     {
@@ -152,7 +152,7 @@ STDMETHODIMP Session::COMGETTER(State) (SessionState_T *aState)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aState = mState;
 
@@ -166,7 +166,7 @@ STDMETHODIMP Session::COMGETTER(Type) (SessionType_T *aType)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_OPEN();
 
@@ -181,7 +181,7 @@ STDMETHODIMP Session::COMGETTER(Machine) (IMachine **aMachine)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_OPEN();
 
@@ -203,7 +203,7 @@ STDMETHODIMP Session::COMGETTER(Console) (IConsole **aConsole)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_OPEN();
 
@@ -229,7 +229,7 @@ STDMETHODIMP Session::Close()
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* close() needs write lock */
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_OPEN();
 
@@ -246,7 +246,7 @@ STDMETHODIMP Session::GetPID (ULONG *aPid)
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aPid = (ULONG) RTProcSelf();
     AssertCompile (sizeof (*aPid) == sizeof (RTPROCESS));
@@ -262,7 +262,7 @@ STDMETHODIMP Session::GetRemoteConsole (IConsole **aConsole)
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(mState != SessionState_Closed, VBOX_E_INVALID_VM_STATE);
 
@@ -289,7 +289,7 @@ STDMETHODIMP Session::AssignMachine (IMachine *aMachine)
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(mState == SessionState_Closed, VBOX_E_INVALID_VM_STATE);
 
@@ -360,7 +360,7 @@ STDMETHODIMP Session::AssignRemoteMachine (IMachine *aMachine, IConsole *aConsol
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(mState == SessionState_Closed ||
                   mState == SessionState_Spawning, VBOX_E_INVALID_VM_STATE);
@@ -437,7 +437,7 @@ STDMETHODIMP Session::UpdateMachineState (MachineState_T aMachineState)
         return S_OK;
     }
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mState == SessionState_Closing)
     {
@@ -465,7 +465,7 @@ STDMETHODIMP Session::Uninitialize()
     if (autoCaller.state() == Ready)
     {
         /* close() needs write lock */
-        AutoWriteLock alock(this);
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         LogFlowThisFunc(("mState=%s, mType=%d\n", Global::stringifySessionState(mState), mType));
 
@@ -508,7 +508,7 @@ STDMETHODIMP Session::OnNetworkAdapterChange(INetworkAdapter *networkAdapter, BO
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
@@ -522,7 +522,7 @@ STDMETHODIMP Session::OnSerialPortChange(ISerialPort *serialPort)
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
@@ -536,7 +536,7 @@ STDMETHODIMP Session::OnParallelPortChange(IParallelPort *parallelPort)
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
@@ -550,7 +550,7 @@ STDMETHODIMP Session::OnStorageControllerChange()
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
@@ -564,7 +564,7 @@ STDMETHODIMP Session::OnMediumChange(IMediumAttachment *aMediumAttachment, BOOL 
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
@@ -578,7 +578,7 @@ STDMETHODIMP Session::OnVRDPServerChange()
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
@@ -592,7 +592,7 @@ STDMETHODIMP Session::OnUSBControllerChange()
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
@@ -606,7 +606,7 @@ STDMETHODIMP Session::OnSharedFolderChange (BOOL aGlobal)
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
@@ -622,7 +622,7 @@ STDMETHODIMP Session::OnUSBDeviceAttach (IUSBDevice *aDevice,
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
@@ -637,7 +637,7 @@ STDMETHODIMP Session::OnUSBDeviceDetach (IN_BSTR aId,
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
@@ -649,7 +649,7 @@ STDMETHODIMP Session::OnShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
@@ -757,7 +757,7 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("mState=%s, mType=%d\n", Global::stringifySessionState(mState), mType));
 

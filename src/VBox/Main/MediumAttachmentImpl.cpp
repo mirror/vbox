@@ -186,7 +186,7 @@ STDMETHODIMP MediumAttachment::COMGETTER(Medium)(IMedium **aHardDisk)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd->pMedium.queryInterfaceTo(aHardDisk);
 
@@ -267,7 +267,7 @@ STDMETHODIMP MediumAttachment::COMGETTER(Passthrough)(BOOL *aPassthrough)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock lock(this);
+    AutoReadLock lock(this COMMA_LOCKVAL_SRC_POS);
 
     *aPassthrough = m->bd->fPassthrough;
 
@@ -286,7 +286,7 @@ bool MediumAttachment::rollback()
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     bool changed = false;
 
@@ -313,7 +313,7 @@ void MediumAttachment::commit()
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd.isBackedUp())
         m->bd.commit();
@@ -358,7 +358,7 @@ DeviceType_T MediumAttachment::getType() const
 
 bool MediumAttachment::getPassthrough() const
 {
-    AutoReadLock lock(this);
+    AutoReadLock lock(this COMMA_LOCKVAL_SRC_POS);
     return m->bd->fPassthrough;
 }
 
