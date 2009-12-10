@@ -485,6 +485,8 @@ if (defined(VBOX_WITH_CROGL) || defined(VBOX_WITH_VIDEOHWACCEL)) && !defined(VBO
    VBoxTestOGL_LDFLAGS.darwin += -framework OpenGL
    VBoxTestOGL_LIBS.win     += $(PATH_SDK_WINPSDK_LIB)/Opengl32.lib
    VBoxTestOGL_LIBS.solaris += GL
+   VBoxTestOGL_LIBS.linux   += GL
+   VBoxTestOGL_LIBS.freebsd += GL
   endif
   VBoxTestOGL_LDFLAGS.win = /SUBSYSTEM:windows
  endif
