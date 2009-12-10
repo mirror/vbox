@@ -139,7 +139,12 @@ endif
 ifeq ($(VBOX_LDR_FMT),lx)
 SUPR0_SOURCES      += $$(PATH_SUPR0)/SUPR0.def
 $$(PATH_SUPR0)/SUPR0.def: $(PATH_SUB_CURRENT)/SUPR0.def | $$(dir $$@)
-	$(SED) -e 's/^[ \t][ \t]*\([gA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
+	$(SED) \
+		-e 's/^[ \t][ \t]*\([gA-Z]\)/    _\1/' \
+		-e 's/[ \t]DATA[ \t]*/ /' \
+		-e 's/g_pSUPGlobalInfoPage/g_SUPGlobalInfoPage/' \
+		--output $@.tmp\
+		$<
 	$(MV) -f $@.tmp $@
 endif
 

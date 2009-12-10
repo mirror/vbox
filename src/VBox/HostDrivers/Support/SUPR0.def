@@ -152,5 +152,6 @@ EXPORTS
     AssertMsg2
 
     ; data
-    g_pSUPGlobalInfoPage DATA
+    g_pSUPGlobalInfoPage DATA ; NT
+    g_SUPGlobalInfoPage  DATA ; OS2
 
