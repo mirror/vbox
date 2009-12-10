@@ -277,6 +277,7 @@ private:
     bool mMouseIntegration : 1;
     QPoint mLastPos;
     QPoint mCapturedPos;
+    int m_iLastMouseWheelDelta;
 
     bool mDisableAutoCapture : 1;
 
