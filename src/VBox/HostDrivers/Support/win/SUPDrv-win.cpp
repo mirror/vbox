@@ -35,9 +35,11 @@
 #include "../SUPDrvInternal.h"
 #include <excpt.h>
 #include <iprt/assert.h>
-#include <iprt/process.h>
 #include <iprt/initterm.h>
+#include <iprt/mem.h>
+#include <iprt/process.h>
 #include <iprt/power.h>
+#include <iprt/string.h>
 #include <VBox/log.h>
 
 
@@ -594,7 +596,6 @@ bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 }
 
 
-#define MY_SystemLoadGdiDriverInformation               26
 #define MY_SystemLoadGdiDriverInSystemSpaceInformation  54
 #define MY_SystemUnloadGdiDriverInformation             27
 
@@ -612,53 +613,103 @@ extern "C" __declspec(dllimport) NTSTATUS NTAPI ZwSetSystemInformation(ULONG, PV
 
 int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
 {
-#if 0
-    MYSYSTEMGDIDRIVERINFO Info;
-
-    /** @todo fix this horrible stuff. */
-    WCHAR wszConv[192 + 32];
-    unsigned i = 0;
-    wszConv[i++] = '\\';
-    wszConv[i++] = '?';
-    wszConv[i++] = '?';
-    wszConv[i++] = '\\';
-    unsigned cchPref = i;
-    char ch;
-    do
-    {
-        ch = pszFilename[i - cchPref];
-        wszConv[i++] = ch == '/' ? '\\' : ch;
-    } while (ch);
-    RtlInitUnicodeString(&Info.Name, wszConv);
-
-    Info.ImageAddress           = NULL;
-    Info.SectionPointer         = NULL;
-    Info.EntryPointer           = NULL;
-    Info.ExportSectionPointer   = NULL;
-    Info.ImageLength            = 0;
-
-    NTSTATUS rc = ZwSetSystemInformation(MY_SystemLoadGdiDriverInSystemSpaceInformation, &Info, sizeof(Info));
-    if (NT_SUCCESS(rc))
-    {
-        pImage->pvImage = Info.ImageAddress;
-        pImage->pvNtSectionObj = Info.SectionPointer;
-        SUPR0Printf("ImageAddress=%p SectionPointer=%p ImageLength=%#x cbImageBits=%#x rc=%#x '%ws'\n",
-                    Info.ImageAddress, Info.SectionPointer, Info.ImageLength, pImage->cbImageBits, rc, Info.Name.Buffer);
-        if (pImage->cbImageBits == Info.ImageLength)
-            return VINF_SUCCESS;
-        supdrvOSLdrUnload(pDevExt, pImage);
-        rc = STATUS_INFO_LENGTH_MISMATCH;
-    }
-    SUPR0Printf("rc=%#x '%ws'\n", rc, Info.Name.Buffer);
-    //STATUS_OBJECT_NAME_NOT_FOUND       == 0xc0000034 -> SUPR0
-    //STATUS_DRIVER_ENTRYPOINT_NOT_FOUND == 0xC0000263 -> SUPR0
-
-    NOREF(pDevExt); NOREF(pszFilename);
-    pImage->pvNtSectionObj = NULL;
-    return VERR_INTERNAL_ERROR_5; /** @todo convert status, making sure it isn't NOT_SUPPORTED. */
-#else
+#ifdef VBOX_WITHOUT_NATIVE_R0_LOADER
     NOREF(pDevExt); NOREF(pszFilename); NOREF(pImage);
     return VERR_NOT_SUPPORTED;
+
+#else
+    /*
+     * Convert the filename from DOS UTF-8 to NT UTF-16.
+     */
+    size_t cwcFilename;
+    int rc = RTStrCalcUtf16LenEx(pszFilename, RTSTR_MAX, &cwcFilename);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    PRTUTF16 pwcsFilename = (PRTUTF16)RTMemTmpAlloc((4 + cwcFilename + 1) * sizeof(RTUTF16));
+    if (!pwcsFilename)
+        return VERR_NO_TMP_MEMORY;
+
+    pwcsFilename[0] = '\\';
+    pwcsFilename[1] = '?';
+    pwcsFilename[2] = '?';
+    pwcsFilename[3] = '\\';
+    PRTUTF16 pwcsTmp = &pwcsFilename[4];
+    rc = RTStrToUtf16Ex(pszFilename, RTSTR_MAX, &pwcsTmp, cwcFilename + 1, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Try load it.
+         */
+        MYSYSTEMGDIDRIVERINFO Info;
+        RtlInitUnicodeString(&Info.Name, pwcsFilename);
+        Info.ImageAddress           = NULL;
+        Info.SectionPointer         = NULL;
+        Info.EntryPointer           = NULL;
+        Info.ExportSectionPointer   = NULL;
+        Info.ImageLength            = 0;
+
+        NTSTATUS rcNt = ZwSetSystemInformation(MY_SystemLoadGdiDriverInSystemSpaceInformation, &Info, sizeof(Info));
+        if (NT_SUCCESS(rcNt))
+        {
+            pImage->pvImage = Info.ImageAddress;
+            pImage->pvNtSectionObj = Info.SectionPointer;
+            Log(("ImageAddress=%p SectionPointer=%p ImageLength=%#x cbImageBits=%#x rcNt=%#x '%ls'\n",
+                 Info.ImageAddress, Info.SectionPointer, Info.ImageLength, pImage->cbImageBits, rcNt, Info.Name.Buffer));
+# ifdef DEBUG_bird
+            SUPR0Printf("ImageAddress=%p SectionPointer=%p ImageLength=%#x cbImageBits=%#x rcNt=%#x '%ws'\n",
+                        Info.ImageAddress, Info.SectionPointer, Info.ImageLength, pImage->cbImageBits, rcNt, Info.Name.Buffer);
+# endif
+            if (pImage->cbImageBits == Info.ImageLength)
+            {
+                /** @todo do we need to lock down the image? */
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                supdrvOSLdrUnload(pDevExt, pImage);
+                rc = VERR_LDR_MISMATCH_NATIVE;
+            }
+        }
+        else
+        {
+            Log(("rcNt=%#x '%ws'\n", rcNt, pwcsFilename));
+            SUPR0Printf("VBoxDrv: rcNt=%#x '%ws'\n", rcNt, pwcsFilename);
+            switch (rcNt)
+            {
+                case /* 0xc0000003 */ STATUS_INVALID_INFO_CLASS:
+                    /*
+                     * Use the old way of loading the modules if we can.  We do
+                     * not try class 26 because it will not work correctly on
+                     * terminal server and have issues with paging of the image.
+                     *
+                     * Note! Using the 64-bit wrappers will require hacking the
+                     *       image verfication in supdrvOSLdrLoad.
+                     */
+# if !defined(RT_ARCH_AMD64) || defined(RT_WITH_W64_UNWIND_HACK)
+                    rc = VERR_NOT_SUPPORTED;
+# else
+                    rc = VERR_NOT_IMPLEMENTED;
+# endif
+                    break;
+                case /* 0xc0000034 */ STATUS_OBJECT_NAME_NOT_FOUND:
+                    rc = VERR_MODULE_NOT_FOUND;
+                    break;
+                case /* 0xC0000263 */ STATUS_DRIVER_ENTRYPOINT_NOT_FOUND:
+                    rc = VERR_LDR_IMPORTED_SYMBOL_NOT_FOUND;
+                    break;
+                default:
+                    rc = VERR_LDR_GENERAL_FAILURE;
+                    break;
+            }
+
+            pImage->pvNtSectionObj = NULL;
+        }
+    }
+
+    RTMemTmpFree(pwcsFilename);
+    NOREF(pDevExt);
+    return rc;
 #endif
 }
 
@@ -675,8 +726,22 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
     NOREF(pDevExt); NOREF(pImage); NOREF(pbImageBits);
     if (pImage->pvNtSectionObj)
     {
-        /** @todo check that the two image versions matches. */
-        return VINF_SUCCESS;
+        if (!memcmp(pImage->pvImage, pbImageBits, pImage->cbImageBits))
+            return VINF_SUCCESS;
+
+        /* trac down the difference and log it. */
+        uint32_t        cbLeft = pImage->cbImageBits;
+        const uint8_t  *pbNativeBits = (const uint8_t *)pImage->pvImage;
+        for (size_t off = 0; cbLeft > 0; off++, cbLeft--)
+            if (pbNativeBits[off] != pbImageBits[off])
+            {
+                char szBytes[128];
+                RTStrPrintf(szBytes, sizeof(szBytes), "native: %.*Rhxs  our: %.*Rhxs",
+                            RT_MIN(12, cbLeft), &pbNativeBits[off],
+                            RT_MIN(12, cbLeft), &pbImageBits[off]);
+                SUPR0Printf("VBoxDrv: Mismatch at %#x of %s: %s\n", off, pImage->szName, szBytes);
+                return VERR_LDR_MISMATCH_NATIVE;
+            }
     }
     return VERR_INTERNAL_ERROR_4;
 }
