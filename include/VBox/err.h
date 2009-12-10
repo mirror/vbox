@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -560,7 +560,7 @@
 #define VERR_SSM_IDE_ASYNC_TIMEOUT              (-1846)
 /** One of the structure magics was wrong. */
 #define VERR_SSM_STRUCTURE_MAGIC                (-1847)
-/** The data in the saved state doesn't confirm to expectations. */
+/** The data in the saved state doesn't conform to expectations. */
 #define VERR_SSM_UNEXPECTED_DATA                (-1848)
 /** Trying to read a 64-bit guest physical address into a 32-bit variable. */
 #define VERR_SSM_GCPHYS_OVERFLOW                (-1849)
