@@ -22,20 +22,7 @@
 #ifndef ____H_AUTOLOCK
 #define ____H_AUTOLOCK
 
-#include <iprt/cdefs.h>
 #include <iprt/types.h>
-#include <iprt/critsect.h>
-#include <iprt/thread.h>
-#include <iprt/semaphore.h>
-
-#include <iprt/err.h>
-#include <iprt/assert.h>
-
-#if defined(DEBUG)
-# include <iprt/asm.h> // for ASMReturnAddress
-#endif
-
-#include <iprt/semaphore.h>
 
 namespace util
 {
@@ -113,7 +100,8 @@ public:
     virtual uint32_t writeLockLevel() const;
 
 private:
-    RTSEMRW mSemRW;
+    struct Data;
+    Data *m;
 };
 
 /**
@@ -143,7 +131,8 @@ public:
     virtual uint32_t writeLockLevel() const;
 
 private:
-    mutable RTCRITSECT mCritSect;
+    struct Data;
+    Data *m;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
