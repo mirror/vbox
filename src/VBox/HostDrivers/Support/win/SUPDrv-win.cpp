@@ -613,6 +613,9 @@ extern "C" __declspec(dllimport) NTSTATUS NTAPI ZwSetSystemInformation(ULONG, PV
 
 int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
 {
+    pImage->pvNtSectionObj = NULL;
+    pImage->hMemLock = NIL_RTR0MEMOBJ;
+
 #ifdef VBOX_WITHOUT_NATIVE_R0_LOADER
     NOREF(pDevExt); NOREF(pszFilename); NOREF(pImage);
     return VERR_NOT_SUPPORTED;
@@ -662,8 +665,15 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
 # endif
             if (pImage->cbImageBits == Info.ImageLength)
             {
-                /** @todo do we need to lock down the image? */
-                rc = VINF_SUCCESS;
+                /*
+                 * Lock down the entire image, just to be on the safe side.
+                 */
+                rc = RTR0MemObjLockKernel(&pImage->hMemLock, pImage->pvImage, pImage->cbImageBits, RTMEM_PROT_READ);
+                if (RT_FAILURE(rc))
+                {
+                    pImage->hMemLock = NIL_RTR0MEMOBJ;
+                    supdrvOSLdrUnload(pDevExt, pImage);
+                }
             }
             else
             {
@@ -751,8 +761,15 @@ void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 {
     if (pImage->pvNtSectionObj)
     {
+        if (pImage->hMemLock != NIL_RTR0MEMOBJ)
+        {
+            RTR0MemObjFree(pImage->hMemLock, false /*fFreeMappings*/);
+            pImage->hMemLock = NIL_RTR0MEMOBJ;
+        }
+
         NTSTATUS rc = ZwSetSystemInformation(MY_SystemUnloadGdiDriverInformation,
                                              &pImage->pvNtSectionObj, sizeof(pImage->pvNtSectionObj));
+        pImage->pvNtSectionObj = NULL;
     }
     NOREF(pDevExt);
 }
