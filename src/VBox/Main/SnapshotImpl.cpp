@@ -256,7 +256,7 @@ void Snapshot::beginDiscard()
          ++it)
     {
         ComObjPtr<Snapshot> child = *it;
-        AutoWriteLock childLock(child);
+        AutoWriteLock childLock(child COMMA_LOCKVAL_SRC_POS);
 
         child->m->pParent = m->pParent;
         if (m->pParent)
@@ -304,7 +304,7 @@ STDMETHODIMP Snapshot::COMGETTER(Id) (BSTR *aId)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->uuid.toUtf16().cloneTo(aId);
     return S_OK;
@@ -317,7 +317,7 @@ STDMETHODIMP Snapshot::COMGETTER(Name) (BSTR *aName)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->strName.cloneTo(aName);
     return S_OK;
@@ -336,7 +336,7 @@ STDMETHODIMP Snapshot::COMSETTER(Name)(IN_BSTR aName)
 
     Utf8Str strName(aName);
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->strName != strName)
     {
@@ -357,7 +357,7 @@ STDMETHODIMP Snapshot::COMGETTER(Description) (BSTR *aDescription)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->strDescription.cloneTo(aDescription);
     return S_OK;
@@ -372,7 +372,7 @@ STDMETHODIMP Snapshot::COMSETTER(Description) (IN_BSTR aDescription)
 
     Utf8Str strDescription(aDescription);
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->strDescription != strDescription)
     {
@@ -393,7 +393,7 @@ STDMETHODIMP Snapshot::COMGETTER(TimeStamp) (LONG64 *aTimeStamp)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aTimeStamp = RTTimeSpecGetMilli(&m->timeStamp);
     return S_OK;
@@ -406,7 +406,7 @@ STDMETHODIMP Snapshot::COMGETTER(Online)(BOOL *aOnline)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aOnline = !stateFilePath().isEmpty();
     return S_OK;
@@ -419,7 +419,7 @@ STDMETHODIMP Snapshot::COMGETTER(Machine) (IMachine **aMachine)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->pMachine.queryInterfaceTo(aMachine);
     return S_OK;
@@ -432,7 +432,7 @@ STDMETHODIMP Snapshot::COMGETTER(Parent) (ISnapshot **aParent)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->pParent.queryInterfaceTo(aParent);
     return S_OK;
@@ -445,8 +445,8 @@ STDMETHODIMP Snapshot::COMGETTER(Children) (ComSafeArrayOut(ISnapshot *, aChildr
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(m->pMachine->snapshotsTreeLockHandle());
-    AutoReadLock block(this->lockHandle());
+    AutoReadLock alock(m->pMachine->snapshotsTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock block(this->lockHandle() COMMA_LOCKVAL_SRC_POS);
 
     SafeIfaceArray<ISnapshot> collection(m->llChildren);
     collection.detachTo(ComSafeArrayOutArg(aChildren));
@@ -488,7 +488,7 @@ ULONG Snapshot::getChildrenCount()
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
 
-    AutoReadLock treeLock(m->pMachine->snapshotsTreeLockHandle());
+    AutoReadLock treeLock(m->pMachine->snapshotsTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
     return (ULONG)m->llChildren.size();
 }
 
@@ -523,7 +523,7 @@ ULONG Snapshot::getAllChildrenCount()
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
 
-    AutoReadLock treeLock(m->pMachine->snapshotsTreeLockHandle());
+    AutoReadLock treeLock(m->pMachine->snapshotsTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
     return getAllChildrenCountImpl();
 }
 
@@ -579,7 +579,7 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->uuid == aId)
         child = this;
@@ -612,7 +612,7 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(const Utf8Str &aName)
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->strName == aName)
         child = this;
@@ -638,7 +638,7 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(const Utf8Str &aName)
  */
 void Snapshot::updateSavedStatePathsImpl(const char *aOldPath, const char *aNewPath)
 {
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     const Utf8Str &path = m->pMachine->mSSData->mStateFilePath;
     LogFlowThisFunc(("Snap[%s].statePath={%s}\n", m->strName.c_str(), path.c_str()));
@@ -683,7 +683,7 @@ void Snapshot::updateSavedStatePaths(const char *aOldPath, const char *aNewPath)
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
 
-    AutoWriteLock chLock(m->pMachine->snapshotsTreeLockHandle());
+    AutoWriteLock chLock(m->pMachine->snapshotsTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
     // call the implementation under the tree lock
     updateSavedStatePathsImpl(aOldPath, aNewPath);
 }
@@ -696,7 +696,7 @@ void Snapshot::updateSavedStatePaths(const char *aOldPath, const char *aNewPath)
  */
 HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
 {
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     data.uuid = m->uuid;
     data.strName = m->strName;
@@ -750,7 +750,7 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
  */
 HRESULT Snapshot::saveSnapshot(settings::Snapshot &data, bool aAttrsOnly)
 {
-    AutoWriteLock listLock(m->pMachine->snapshotsTreeLockHandle());
+    AutoWriteLock listLock(m->pMachine->snapshotsTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     return saveSnapshotImpl(data, aAttrsOnly);
 }
@@ -1062,7 +1062,7 @@ RWLockHandle *SnapshotMachine::lockHandle() const
  */
 HRESULT SnapshotMachine::onSnapshotChange (Snapshot *aSnapshot)
 {
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     //     mPeer->saveAllSnapshots();  @todo
 
@@ -1227,7 +1227,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     /* saveSettings() needs mParent lock */
-    AutoMultiWriteLock2 alock(mParent, this);
+    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(    !Global::IsOnlineOrTransient(mData->mMachineState)
                   || mData->mMachineState == MachineState_Running
@@ -1391,7 +1391,7 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(   !aSuccess
                  || (    (    mData->mMachineState == MachineState_Saving
@@ -1436,7 +1436,7 @@ HRESULT SessionMachine::endTakingSnapshot(BOOL aSuccess)
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoMultiWriteLock2 alock(mParent, this);
+    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
             // saveSettings needs VirtualBox lock
 
     AssertReturn(!mSnapshotData.mSnapshot.isNull(), E_FAIL);
@@ -1538,7 +1538,7 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // machine must not be running
     ComAssertRet(!Global::IsOnlineOrTransient(mData->mMachineState),
@@ -1558,7 +1558,7 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
          ++it)
     {
         ComObjPtr<MediumAttachment> &pAttach = *it;
-        AutoReadLock attachLock(pAttach);
+        AutoReadLock attachLock(pAttach COMMA_LOCKVAL_SRC_POS);
         if (pAttach->getType() == DeviceType_HardDisk)
         {
             ++ulOpCount;
@@ -1664,14 +1664,14 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
     }
 
     /* saveSettings() needs mParent lock */
-    AutoWriteLock vboxLock(mParent);
+    AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
 
     /* @todo We don't need mParent lock so far so unlock() it. Better is to
      * provide an AutoWriteLock argument that lets create a non-locking
      * instance */
     vboxLock.release();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* discard all current changes to mUserData (name, OSType etc.) (note that
      * the machine is powered off, so there is no need to inform the direct
@@ -1701,7 +1701,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         RTTimeSpecSetMilli(&snapshotTimeStamp, 0);
 
         {
-            AutoReadLock snapshotLock(aTask.pSnapshot);
+            AutoReadLock snapshotLock(aTask.pSnapshot COMMA_LOCKVAL_SRC_POS);
 
             /* remember the timestamp of the snapshot we're restoring from */
             snapshotTimeStamp = aTask.pSnapshot->getTimeStamp();
@@ -1844,7 +1844,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             ComObjPtr<MediumAttachment> pAttach = *it;        // guaranteed to have only attachments where medium != NULL
             ComObjPtr<Medium> pMedium = pAttach->getMedium();
 
-            AutoWriteLock mlock(pMedium);
+            AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
 
             LogFlowThisFunc(("Detaching old current state in differencing image '%s'\n", pMedium->getName().raw()));
 
@@ -1951,18 +1951,18 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* saveSettings() needs mParent lock */
-    AutoMultiWriteLock2 alock(mParent, this);
+    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
     // machine must not be running
     ComAssertRet(!Global::IsOnlineOrTransient(mData->mMachineState), E_FAIL);
 
-    AutoWriteLock treeLock(snapshotsTreeLockHandle());
+    AutoWriteLock treeLock(snapshotsTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<Snapshot> pSnapshot;
     HRESULT rc = findSnapshot(id, pSnapshot, true /* aSetError */);
     if (FAILED(rc)) return rc;
 
-    AutoWriteLock snapshotLock(pSnapshot);
+    AutoWriteLock snapshotLock(pSnapshot COMMA_LOCKVAL_SRC_POS);
 
     size_t childrenCount = pSnapshot->getChildrenCount();
     if (childrenCount > 1)
@@ -2006,12 +2006,12 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
          ++it)
     {
         ComObjPtr<MediumAttachment> &pAttach = *it;
-        AutoReadLock attachLock(pAttach);
+        AutoReadLock attachLock(pAttach COMMA_LOCKVAL_SRC_POS);
         if (pAttach->getType() == DeviceType_HardDisk)
         {
             ComObjPtr<Medium> pHD = pAttach->getMedium();
             Assert(pHD);
-            AutoReadLock mlock(pHD);
+            AutoReadLock mlock(pHD COMMA_LOCKVAL_SRC_POS);
             if (pHD->getType() == MediumType_Normal)
             {
                 ++ulOpCount;
@@ -2131,7 +2131,8 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
     /* Locking order:  */
     AutoMultiWriteLock3 alock(this->lockHandle(),
                               this->snapshotsTreeLockHandle(),
-                              aTask.pSnapshot->lockHandle());
+                              aTask.pSnapshot->lockHandle()
+                              COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<SnapshotMachine> pSnapMachine = aTask.pSnapshot->getSnapshotMachine();
     /* no need to lock the snapshot machine since it is const by definiton */
@@ -2160,7 +2161,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             ++it)
         {
             ComObjPtr<MediumAttachment> &pAttach = *it;
-            AutoReadLock attachLock(pAttach);
+            AutoReadLock attachLock(pAttach COMMA_LOCKVAL_SRC_POS);
             if (pAttach->getType() == DeviceType_HardDisk)
             {
                 Assert(pAttach->getMedium());
@@ -2244,7 +2245,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                         AssertBreak(pAttach = findAttachment(snapAtts, pReplaceHD));
                     }
 
-                    AutoWriteLock attLock(pAttach);
+                    AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
                     pAttach->updateMedium(pHD, false /* aImplicit */);
 
                     toDiscard.push_back(MediumDiscardRec(pHD,
@@ -2355,7 +2356,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 rc2 = it->hd->detachFrom (mData->mUuid, it->snapshotId);
                 AssertComRC(rc2);
 
-                AutoWriteLock attLock (it->replaceHda);
+                AutoWriteLock attLock(it->replaceHda COMMA_LOCKVAL_SRC_POS);
                 it->replaceHda->updateMedium(it->replaceHd, false /* aImplicit */);
             }
         }
@@ -2379,7 +2380,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         {
             // saveSettings needs VirtualBox write lock in addition to our own
             // (parent -> child locking order!)
-            AutoWriteLock vboxLock(mParent);
+            AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
             alock.acquire();
 
             saveSettings(SaveS_InformCallbacksAnyway);

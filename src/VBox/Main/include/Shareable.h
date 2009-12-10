@@ -105,10 +105,10 @@ protected:
  *      ...
  *      {
  *          // acquire the lock until the end of the block
- *          AutoWriteLock alock (mData);
+ *          AutoWriteLock alock(mData COMMA_LOCKVAL_SRC_POS);
  *          // share with another instance (thatData defined somewhere else)
  *          {
- *              AutoReadLock thatLock (thatData);
+ *              AutoReadLock thatLock(thatData COMMA_LOCKVAL_SRC_POS);
  *              mData = thatData;
  *          }
  *          // access managed data (through #operator->())
@@ -129,15 +129,15 @@ protected:
  *      ...
  *      {
  *          // read-only data access
- *          AutoReadLock lock (mData); // protect Shareable members (read-only)
- *          AutoReadLock dataLock (mData.data()); // protect Data members (read-only)
+ *          AutoReadLock lock(mData COMMA_LOCKVAL_SRC_POS); // protect Shareable members (read-only)
+ *          AutoReadLock dataLock(mData.data() COMMA_LOCKVAL_SRC_POS); // protect Data members (read-only)
  *          if (mData->mSomeVield) ...
  *      }
  *      ...
  *      {
  *          // data modification
- *          AutoReadLock lock (mData); // protect Shareable members (still read-only)
- *          AutoWriteLock dataLock (mData.data()); // protect Data members (exclusive)
+ *          AutoReadLock lock(mData COMMA_LOCKVAL_SRC_POS); // protect Shareable members (still read-only)
+ *          AutoWriteLock dataLock(mData.data() COMMA_LOCKVAL_SRC_POS); // protect Data members (exclusive)
  *          mData->mSomeVield = someValue;
  *      }
  *  </code>

@@ -175,7 +175,7 @@ PerformanceCollector::COMGETTER(MetricNames) (ComSafeArrayOut(BSTR, theMetricNam
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     com::SafeArray<BSTR> metricNames(RT_ELEMENTS(gMetricNames));
     for (size_t i = 0; i < RT_ELEMENTS(gMetricNames); i++)
@@ -230,7 +230,7 @@ PerformanceCollector::GetMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     MetricList filteredMetrics;
     MetricList::iterator it;
@@ -269,7 +269,7 @@ PerformanceCollector::SetupMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
     BaseMetricList filteredMetrics;
@@ -318,7 +318,7 @@ PerformanceCollector::EnableMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));
 
-    AutoWriteLock alock(this); /* Write lock is not needed atm since we are */
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); /* Write lock is not needed atm since we are */
                                 /* fiddling with enable bit only, but we */
                                 /* care for those who come next :-). */
 
@@ -355,7 +355,7 @@ PerformanceCollector::DisableMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));
 
-    AutoWriteLock alock(this); /* Write lock is not needed atm since we are */
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); /* Write lock is not needed atm since we are */
                                 /* fiddling with enable bit only, but we */
                                 /* care for those who come next :-). */
 
@@ -398,7 +398,7 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (IN_BSTR, metricNames),
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Let's compute the size of the resulting flat array */
     size_t flatSize = 0;
@@ -463,7 +463,7 @@ void PerformanceCollector::registerBaseMetric (pm::BaseMetric *baseMetric)
     AutoCaller autoCaller(this);
     if (!SUCCEEDED(autoCaller.rc())) return;
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p name=%s\n", this, __PRETTY_FUNCTION__, (void *)baseMetric->getObject(), baseMetric->getName()));
     m.baseMetrics.push_back (baseMetric);
     //LogFlowThisFuncLeave();
@@ -475,7 +475,7 @@ void PerformanceCollector::registerMetric (pm::Metric *metric)
     AutoCaller autoCaller(this);
     if (!SUCCEEDED(autoCaller.rc())) return;
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p name=%s\n", this, __PRETTY_FUNCTION__, (void *)metric->getObject(), metric->getName()));
     m.metrics.push_back (metric);
     //LogFlowThisFuncLeave();
@@ -487,7 +487,7 @@ void PerformanceCollector::unregisterBaseMetricsFor (const ComPtr<IUnknown> &aOb
     AutoCaller autoCaller(this);
     if (!SUCCEEDED(autoCaller.rc())) return;
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     LogAleksey(("{%p} " LOG_FN_FMT ": before remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
     BaseMetricList::iterator it;
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end();)
@@ -508,7 +508,7 @@ void PerformanceCollector::unregisterMetricsFor (const ComPtr<IUnknown> &aObject
     AutoCaller autoCaller(this);
     if (!SUCCEEDED(autoCaller.rc())) return;
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p\n", this, __PRETTY_FUNCTION__, (void *)aObject));
     MetricList::iterator it;
     for (it = m.metrics.begin(); it != m.metrics.end();)
@@ -561,7 +561,7 @@ void PerformanceCollector::staticSamplerCallback (RTTIMERLR hTimerLR, void *pvUs
 void PerformanceCollector::samplerCallback()
 {
     Log4(("{%p} " LOG_FN_FMT ": ENTER\n", this, __PRETTY_FUNCTION__));
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     pm::CollectorHints hints;
     uint64_t timestamp = RTTimeMilliTS();

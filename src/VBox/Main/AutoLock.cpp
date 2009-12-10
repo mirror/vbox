@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2000 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,11 +36,149 @@
 #endif
 
 #include <iprt/string.h>
+#include <iprt/path.h>
 
 #include <vector>
+#include <list>
 
 namespace util
 {
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Global variables
+//
+////////////////////////////////////////////////////////////////////////////////
+
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+// index used for allocating thread-local storage for locking stack
+RTTLS LockHandle::s_lockingStackTlsIndex = NIL_RTTLS;
+
+/**
+ * One item on the LockingStack. One of these gets pushed on the
+ * stack for each lock operation and popped for each unlock.
+ */
+struct LockStackItem
+{
+    LockStackItem(LockHandle *pLock_,
+                  const char *pcszFile_,
+                  unsigned uLine_,
+                  const char *pcszFunction_)
+        : pLock(pLock_),
+          pcszFile(pcszFile_),
+          uLine(uLine_),
+          pcszFunction(pcszFunction_)
+    {
+        pcszFile = RTPathFilename(pcszFile_);
+    }
+
+    LockHandle      *pLock;
+
+    // information about where the lock occured (passed down from the AutoLock classes)
+    const char      *pcszFile;
+    unsigned        uLine;
+    const char      *pcszFunction;
+};
+
+typedef std::list<LockStackItem> LockHandlesList;
+struct LockingStack
+{
+    LockingStack()
+        : threadSelf(RTThreadSelf()),
+          pcszThreadName(NULL),
+          c(0)
+    {
+        threadSelf = RTThreadSelf();
+        pcszThreadName = RTThreadGetName(threadSelf);
+    }
+
+    RTTHREAD            threadSelf;
+    const char          *pcszThreadName;
+
+    LockHandlesList     ll;
+    size_t              c;
+};
+
+LockingStack* getThreadLocalLockingStack()
+{
+    // very first call in this process: allocate the TLS variable
+    if (LockHandle::s_lockingStackTlsIndex == NIL_RTTLS)
+    {
+        LockHandle::s_lockingStackTlsIndex = RTTlsAlloc();
+        Assert(LockHandle::s_lockingStackTlsIndex != NIL_RTTLS);
+    }
+
+    // get pointer to thread-local locking stack
+    LockingStack *pStack = (LockingStack*)RTTlsGet(LockHandle::s_lockingStackTlsIndex);
+    if (!pStack)
+    {
+        // first call on this thread:
+        pStack = new LockingStack;
+        RTTlsSet(LockHandle::s_lockingStackTlsIndex, pStack);
+    }
+
+    return pStack;
+}
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// LockHandle
+//
+////////////////////////////////////////////////////////////////////////////////
+
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+void LockHandle::validateLock(LOCKVAL_SRC_POS_DECL)
+{
+    // put "this" on locking stack
+    LockingStack *pStack = getThreadLocalLockingStack();
+    LockStackItem lsi(this, RT_SRC_POS_ARGS);
+    pStack->ll.push_back(lsi);
+    ++pStack->c;
+
+    LogFlow(("LOCKVAL: lock from %s (%s:%u), new count: %RI32\n", lsi.pcszFunction, lsi.pcszFile, lsi.uLine, (uint32_t)pStack->c));
+}
+
+void LockHandle::validateUnlock()
+{
+    // pop "this" from locking stack
+    LockingStack *pStack = getThreadLocalLockingStack();
+
+    LogFlow(("LOCKVAL: unlock, old count: %RI32\n", (uint32_t)pStack->c));
+
+    AssertMsg(pStack->c == pStack->ll.size(), ("Locking size mismatch"));
+    AssertMsg(pStack->c > 0, ("Locking stack is empty when it should have current LockHandle on top"));
+
+    // validate that "this" is the top item on the stack
+    LockStackItem &lsiTop = pStack->ll.back();
+    if (lsiTop.pLock != this)
+    {
+        // violation of unlocking order: "this" was not the last to be locked on this thread,
+        // see if it's somewhere deep under the locks
+        bool fFound;
+        uint32_t c = 0;
+        for (LockHandlesList::iterator it = pStack->ll.begin();
+             it != pStack->ll.end();
+             ++it, ++c)
+        {
+            LockStackItem &lsiThis = *it;
+            if (lsiThis.pLock == this)
+            {
+                AssertMsgFailed(("Unlocking order violation: unlock attempted for LockHandle which is %d items under the top item\n", c));
+                pStack->ll.erase(it);
+                fFound = true;
+                break;
+            }
+        }
+
+        if (!fFound)
+            AssertMsgFailed(("Locking stack does not contain current LockHandle at all\n"));
+    }
+    else
+        pStack->ll.pop_back();
+    --pStack->c;
+}
+#endif // VBOX_WITH_DEBUG_LOCK_VALIDATOR
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -74,26 +212,39 @@ RWLockHandle::RWLockHandle()
     return RTSemRWIsWriteOwner(m->sem);
 }
 
-/*virtual*/ void RWLockHandle::lockWrite()
+/*virtual*/ void RWLockHandle::lockWrite(LOCKVAL_SRC_POS_DECL)
 {
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+    validateLock(LOCKVAL_SRC_POS_ARGS);
+#endif
     int vrc = RTSemRWRequestWrite(m->sem, RT_INDEFINITE_WAIT);
     AssertRC(vrc);
 }
 
 /*virtual*/ void RWLockHandle::unlockWrite()
 {
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+    validateUnlock();
+#endif
     int vrc = RTSemRWReleaseWrite(m->sem);
     AssertRC(vrc);
+
 }
 
-/*virtual*/ void RWLockHandle::lockRead()
+/*virtual*/ void RWLockHandle::lockRead(LOCKVAL_SRC_POS_DECL)
 {
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+    validateLock(LOCKVAL_SRC_POS_ARGS);
+#endif
     int vrc = RTSemRWRequestRead(m->sem, RT_INDEFINITE_WAIT);
     AssertRC(vrc);
 }
 
 /*virtual*/ void RWLockHandle::unlockRead()
 {
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+    validateUnlock();
+#endif
     int vrc = RTSemRWReleaseRead(m->sem);
     AssertRC(vrc);
 }
@@ -134,8 +285,12 @@ WriteLockHandle::~WriteLockHandle()
     return RTCritSectIsOwner(&m->sem);
 }
 
-/*virtual*/ void WriteLockHandle::lockWrite()
+/*virtual*/ void WriteLockHandle::lockWrite(LOCKVAL_SRC_POS_DECL)
 {
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+    validateLock(LOCKVAL_SRC_POS_ARGS);
+#endif
+
 #if defined(DEBUG)
     RTCritSectEnterDebug(&m->sem,
                          "WriteLockHandle::lockWrite() return address >>>",
@@ -147,12 +302,16 @@ WriteLockHandle::~WriteLockHandle()
 
 /*virtual*/ void WriteLockHandle::unlockWrite()
 {
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+    validateUnlock();
+#endif
+
     RTCritSectLeave(&m->sem);
 }
 
-/*virtual*/ void WriteLockHandle::lockRead()
+/*virtual*/ void WriteLockHandle::lockRead(LOCKVAL_SRC_POS_DECL)
 {
-    lockWrite();
+    lockWrite(LOCKVAL_SRC_POS_ARGS);
 }
 
 /*virtual*/ void WriteLockHandle::unlockRead()
@@ -176,10 +335,21 @@ typedef std::vector<uint32_t> CountsVector;
 
 struct AutoLockBase::Data
 {
-    Data(size_t cHandles)
+    Data(size_t cHandles
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+         , const char *pcszFile_,
+         unsigned uLine_,
+         const char *pcszFunction_
+#endif
+        )
         : fIsLocked(false),
           aHandles(cHandles),       // size of array
           acUnlockedInLeave(cHandles)
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+          , pcszFile(pcszFile_),
+          uLine(uLine_),
+          pcszFunction(pcszFunction_)
+#endif
     {
         for (uint32_t i = 0; i < cHandles; ++i)
         {
@@ -194,17 +364,29 @@ struct AutoLockBase::Data
                                         // and AutoReadLock, there will only be one item on the list; with the
                                         // AutoMulti* derivatives, there will be multiple
     CountsVector    acUnlockedInLeave;  // for each lock handle, how many times the handle was unlocked in leave(); otherwise 0
+
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+    // information about where the lock occured (passed down from the AutoLock classes)
+    const char      *pcszFile;
+    unsigned        uLine;
+    const char      *pcszFunction;
+#endif
 };
 
-AutoLockBase::AutoLockBase(uint32_t cHandles)
+AutoLockBase::AutoLockBase(uint32_t cHandles
+                           COMMA_LOCKVAL_SRC_POS_DECL)
 {
-    m = new Data(cHandles);
+    m = new Data(cHandles
+                 COMMA_LOCKVAL_SRC_POS_ARGS);
 }
 
-AutoLockBase::AutoLockBase(uint32_t cHandles, LockHandle *pHandle)
+AutoLockBase::AutoLockBase(uint32_t cHandles,
+                           LockHandle *pHandle
+                           COMMA_LOCKVAL_SRC_POS_DECL)
 {
     Assert(cHandles == 1);
-    m = new Data(1);
+    m = new Data(1
+                 COMMA_LOCKVAL_SRC_POS_ARGS);
     m->aHandles[0] = pHandle;
 }
 
@@ -246,8 +428,9 @@ void AutoLockBase::callLockOnAllHandles()
  */
 void AutoLockBase::callUnlockOnAllHandles()
 {
-    for (HandlesVector::iterator it = m->aHandles.begin();
-         it != m->aHandles.end();
+    // unlock in reverse order!
+    for (HandlesVector::reverse_iterator it = m->aHandles.rbegin();
+         it != m->aHandles.rend();
          ++it)
     {
         LockHandle *pHandle = *it;
@@ -338,7 +521,7 @@ void AutoLockBase::release()
     if (pHandle)
     {
         if (m->fIsLocked)
-            pHandle->unlockRead();
+            callUnlockImpl(*pHandle);
     }
 }
 
@@ -350,7 +533,11 @@ void AutoLockBase::release()
  */
 /*virtual*/ void AutoReadLock::callLockImpl(LockHandle &l)
 {
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+    l.lockRead(m->pcszFile, m->uLine, m->pcszFunction);
+#else
     l.lockRead();
+#endif
 }
 
 /**
@@ -378,7 +565,11 @@ void AutoLockBase::release()
  */
 /*virtual*/ void AutoWriteLockBase::callLockImpl(LockHandle &l)
 {
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+    l.lockWrite(m->pcszFile, m->uLine, m->pcszFunction);
+#else
     l.lockWrite();
+#endif
 }
 
 /**
@@ -417,9 +608,10 @@ void AutoWriteLockBase::leave()
 {
     AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot leave()!"));
 
+    // unlock in reverse order!
     uint32_t i = 0;
-    for (HandlesVector::iterator it = m->aHandles.begin();
-         it != m->aHandles.end();
+    for (HandlesVector::reverse_iterator it = m->aHandles.rbegin();
+         it != m->aHandles.rend();
          ++it)
     {
         LockHandle *pHandle = *it;
@@ -432,7 +624,7 @@ void AutoWriteLockBase::leave()
             for (uint32_t left = m->acUnlockedInLeave[i];
                  left;
                  --left)
-                pHandle->unlockWrite();
+                callUnlockImpl(*pHandle);
         }
         ++i;
     }
@@ -459,7 +651,7 @@ void AutoWriteLockBase::enter()
             AssertMsg(m->acUnlockedInLeave[i] != 0, ("m->cUnlockedInLeave[%d] is 0! enter() without leave()?", i));
 
             for (; m->acUnlockedInLeave[i]; --m->acUnlockedInLeave[i])
-                pHandle->lockWrite();
+                callLockImpl(*pHandle);
         }
         ++i;
     }
@@ -472,9 +664,10 @@ void AutoWriteLockBase::enter()
  */
 void AutoWriteLockBase::maybeLeave()
 {
+    // unlock in reverse order!
     uint32_t i = 0;
-    for (HandlesVector::iterator it = m->aHandles.begin();
-         it != m->aHandles.end();
+    for (HandlesVector::reverse_iterator it = m->aHandles.rbegin();
+         it != m->aHandles.rend();
          ++it)
     {
         LockHandle *pHandle = *it;
@@ -488,7 +681,7 @@ void AutoWriteLockBase::maybeLeave()
                 for (uint32_t left = m->acUnlockedInLeave[i];
                      left;
                      --left)
-                    pHandle->unlockWrite();
+                    callUnlockImpl(*pHandle);
             }
         }
         ++i;
@@ -513,7 +706,7 @@ void AutoWriteLockBase::maybeEnter()
             if (!pHandle->isWriteLockOnCurrentThread())
             {
                 for (; m->acUnlockedInLeave[i]; --m->acUnlockedInLeave[i])
-                    pHandle->lockWrite();
+                    callLockImpl(*pHandle);
             }
         }
         ++i;
@@ -552,7 +745,7 @@ void AutoWriteLock::attach(LockHandle *aHandle)
 
         if (aHandle)
             if (fWasLocked)
-                aHandle->lockWrite();
+                callLockImpl(*aHandle);
     }
 }
 
@@ -590,8 +783,11 @@ uint32_t AutoWriteLock::writeLockLevel() const
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-AutoMultiWriteLock2::AutoMultiWriteLock2(Lockable *pl1, Lockable *pl2)
-    : AutoWriteLockBase(2)
+AutoMultiWriteLock2::AutoMultiWriteLock2(Lockable *pl1,
+                                         Lockable *pl2
+                                         COMMA_LOCKVAL_SRC_POS_DECL)
+    : AutoWriteLockBase(2
+                        COMMA_LOCKVAL_SRC_POS_ARGS)
 {
     if (pl1)
         m->aHandles[0] = pl1->lockHandle();
@@ -600,16 +796,23 @@ AutoMultiWriteLock2::AutoMultiWriteLock2(Lockable *pl1, Lockable *pl2)
     acquire();
 }
 
-AutoMultiWriteLock2::AutoMultiWriteLock2(LockHandle *pl1, LockHandle *pl2)
-    : AutoWriteLockBase(2)
+AutoMultiWriteLock2::AutoMultiWriteLock2(LockHandle *pl1,
+                                         LockHandle *pl2
+                                         COMMA_LOCKVAL_SRC_POS_DECL)
+    : AutoWriteLockBase(2
+                        COMMA_LOCKVAL_SRC_POS_ARGS)
 {
     m->aHandles[0] = pl1;
     m->aHandles[1] = pl2;
     acquire();
 }
 
-AutoMultiWriteLock3::AutoMultiWriteLock3(Lockable *pl1, Lockable *pl2, Lockable *pl3)
-    : AutoWriteLockBase(3)
+AutoMultiWriteLock3::AutoMultiWriteLock3(Lockable *pl1,
+                                         Lockable *pl2,
+                                         Lockable *pl3
+                                         COMMA_LOCKVAL_SRC_POS_DECL)
+    : AutoWriteLockBase(3
+                        COMMA_LOCKVAL_SRC_POS_ARGS)
 {
     if (pl1)
         m->aHandles[0] = pl1->lockHandle();
@@ -620,8 +823,12 @@ AutoMultiWriteLock3::AutoMultiWriteLock3(Lockable *pl1, Lockable *pl2, Lockable 
     acquire();
 }
 
-AutoMultiWriteLock3::AutoMultiWriteLock3(LockHandle *pl1, LockHandle *pl2, LockHandle *pl3)
-    : AutoWriteLockBase(3)
+AutoMultiWriteLock3::AutoMultiWriteLock3(LockHandle *pl1,
+                                         LockHandle *pl2,
+                                         LockHandle *pl3
+                                         COMMA_LOCKVAL_SRC_POS_DECL)
+    : AutoWriteLockBase(3
+                        COMMA_LOCKVAL_SRC_POS_ARGS)
 {
     m->aHandles[0] = pl1;
     m->aHandles[1] = pl2;

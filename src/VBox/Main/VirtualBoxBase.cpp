@@ -157,7 +157,7 @@ RWLockHandle *VirtualBoxBaseProto::lockHandle() const
 HRESULT VirtualBoxBaseProto::addCaller (State *aState /* = NULL */,
                                         bool aLimited /* = false */)
 {
-    AutoWriteLock stateLock (mStateLock);
+    AutoWriteLock stateLock(mStateLock COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = E_ACCESSDENIED;
 
@@ -250,7 +250,7 @@ HRESULT VirtualBoxBaseProto::addCaller (State *aState /* = NULL */,
  */
 void VirtualBoxBaseProto::releaseCaller()
 {
-    AutoWriteLock stateLock (mStateLock);
+    AutoWriteLock stateLock(mStateLock COMMA_LOCKVAL_SRC_POS);
 
     if (mState == Ready || mState == Limited)
     {
@@ -312,7 +312,7 @@ AutoInitSpan (VirtualBoxBaseProto *aObj,  Result aResult /* = Failed */)
 {
     Assert (aObj);
 
-    AutoWriteLock stateLock (mObj->mStateLock);
+    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
 
     mOk = mObj->mState == NotReady;
     AssertReturnVoid (mOk);
@@ -333,7 +333,7 @@ VirtualBoxBaseProto::AutoInitSpan::~AutoInitSpan()
     if (!mOk)
         return;
 
-    AutoWriteLock stateLock (mObj->mStateLock);
+    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
 
     Assert (mObj->mState == InInit);
 
@@ -385,7 +385,7 @@ AutoReinitSpan (VirtualBoxBaseProto *aObj)
 {
     Assert (aObj);
 
-    AutoWriteLock stateLock (mObj->mStateLock);
+    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
 
     mOk = mObj->mState == Limited;
     AssertReturnVoid (mOk);
@@ -406,7 +406,7 @@ VirtualBoxBaseProto::AutoReinitSpan::~AutoReinitSpan()
     if (!mOk)
         return;
 
-    AutoWriteLock stateLock (mObj->mStateLock);
+    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
 
     Assert (mObj->mState == InInit);
 
@@ -447,7 +447,7 @@ VirtualBoxBaseProto::AutoUninitSpan::AutoUninitSpan (VirtualBoxBaseProto *aObj)
 {
     Assert (aObj);
 
-    AutoWriteLock stateLock (mObj->mStateLock);
+    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
 
     Assert (mObj->mState != InInit);
 
@@ -530,7 +530,7 @@ VirtualBoxBaseProto::AutoUninitSpan::~AutoUninitSpan()
     if (mUninitDone)
         return;
 
-    AutoWriteLock stateLock (mObj->mStateLock);
+    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
 
     Assert (mObj->mState == InUninit);
 
@@ -556,7 +556,7 @@ AutoMayUninitSpan (VirtualBoxBaseProto *aObj)
 {
     Assert (aObj);
 
-    AutoWriteLock stateLock (mObj->mStateLock);
+    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
 
     AssertReturnVoid (mObj->mState != InInit &&
                       mObj->mState != InUninit);
@@ -614,7 +614,7 @@ VirtualBoxBaseProto::AutoMayUninitSpan::~AutoMayUninitSpan()
     if (mAlreadyInProgress || FAILED (mRC))
         return;
 
-    AutoWriteLock stateLock (mObj->mStateLock);
+    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
 
     Assert (mObj->mState == MayUninit);
 
@@ -958,7 +958,7 @@ void VirtualBoxBaseWithChildrenNEXT::uninitDependentChildren()
     AssertReturnVoid (autoCaller.state() == InUninit ||
                       autoCaller.state() == InInit);
 
-    AutoWriteLock chLock (childrenLock());
+    AutoWriteLock chLock(childrenLock() COMMA_LOCKVAL_SRC_POS);
 
     size_t count = mDependentChildren.size();
 
@@ -1025,7 +1025,7 @@ VirtualBoxBase* VirtualBoxBaseWithChildrenNEXT::getDependentChild(const ComPtr<I
     if (autoCaller.state() == InUninit)
         return NULL;
 
-    AutoReadLock alock(childrenLock());
+    AutoReadLock alock(childrenLock() COMMA_LOCKVAL_SRC_POS);
 
     DependentChildren::const_iterator it = mDependentChildren.find (aUnk);
     if (it == mDependentChildren.end())
@@ -1048,7 +1048,7 @@ void VirtualBoxBaseWithChildrenNEXT::doAddDependentChild(IUnknown *aUnk,
                       autoCaller.state() == Ready ||
                       autoCaller.state() == Limited);
 
-    AutoWriteLock alock(childrenLock());
+    AutoWriteLock alock(childrenLock() COMMA_LOCKVAL_SRC_POS);
 
     std::pair <DependentChildren::iterator, bool> result =
         mDependentChildren.insert (DependentChildren::value_type (aUnk, aChild));
@@ -1068,7 +1068,7 @@ void VirtualBoxBaseWithChildrenNEXT::doRemoveDependentChild (IUnknown *aUnk)
                       autoCaller.state() == Ready ||
                       autoCaller.state() == Limited);
 
-    AutoWriteLock alock(childrenLock());
+    AutoWriteLock alock(childrenLock() COMMA_LOCKVAL_SRC_POS);
 
     DependentChildren::size_type result = mDependentChildren.erase (aUnk);
     AssertMsg (result == 1, ("Failed to remove child %p from the map\n", aUnk));

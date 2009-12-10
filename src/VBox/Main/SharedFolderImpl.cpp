@@ -300,7 +300,7 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
         return S_OK;
     }
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m.lastAccessError = BstrFmt (
         tr ("'%s' is not accessible (%Rrc)"), hostPath.raw(), vrc);
@@ -327,7 +327,7 @@ STDMETHODIMP SharedFolder::COMGETTER(LastAccessError) (BSTR *aLastAccessError)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m.lastAccessError.isEmpty())
         Bstr("").cloneTo(aLastAccessError);

@@ -114,7 +114,7 @@ HRESULT BIOSSettings::init(Machine *aParent, BIOSSettings *that)
     m->pMachine = aParent;
     m->pPeer = that;
 
-    AutoWriteLock thatlock(that);
+    AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
     m->bd.share(that->m->bd);
 
     autoInitSpan.setSucceeded();
@@ -144,7 +144,7 @@ HRESULT BIOSSettings::initCopy(Machine *aParent, BIOSSettings *that)
     m->pMachine = aParent;
     // mPeer is left null
 
-    AutoWriteLock thatlock (that);
+    AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
     m->bd.attachCopy(that->m->bd);
 
     autoInitSpan.setSucceeded();
@@ -188,7 +188,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoFadeIn)(BOOL *enabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *enabled = m->bd->fLogoFadeIn;
 
@@ -204,7 +204,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoFadeIn)(BOOL enable)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
     m->bd->fLogoFadeIn = enable;
@@ -220,7 +220,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoFadeOut)(BOOL *enabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *enabled = m->bd->fLogoFadeOut;
 
@@ -236,7 +236,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoFadeOut)(BOOL enable)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
     m->bd->fLogoFadeOut = enable;
@@ -252,7 +252,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoDisplayTime)(ULONG *displayTime)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *displayTime = m->bd->ulLogoDisplayTime;
 
@@ -268,7 +268,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoDisplayTime)(ULONG displayTime)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
     m->bd->ulLogoDisplayTime = displayTime;
@@ -284,7 +284,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoImagePath)(BSTR *imagePath)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd->strLogoImagePath.cloneTo(imagePath);
     return S_OK;
@@ -303,7 +303,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoImagePath)(IN_BSTR imagePath)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
     m->bd->strLogoImagePath = imagePath;
@@ -319,7 +319,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(BootMenuMode)(BIOSBootMenuMode_T *bootMenuM
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *bootMenuMode = m->bd->biosBootMenuMode;
     return S_OK;
@@ -334,7 +334,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(BootMenuMode)(BIOSBootMenuMode_T bootMenuMo
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
     m->bd->biosBootMenuMode = bootMenuMode;
@@ -350,7 +350,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(ACPIEnabled)(BOOL *enabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *enabled = m->bd->fACPIEnabled;
 
@@ -366,7 +366,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(ACPIEnabled)(BOOL enable)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
     m->bd->fACPIEnabled = enable;
@@ -382,7 +382,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(IOAPICEnabled)(BOOL *enabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *enabled = m->bd->fIOAPICEnabled;
 
@@ -398,7 +398,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(IOAPICEnabled)(BOOL enable)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
     m->bd->fIOAPICEnabled = enable;
@@ -414,7 +414,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(PXEDebugEnabled)(BOOL *enabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *enabled = m->bd->fPXEDebugEnabled;
 
@@ -430,7 +430,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(PXEDebugEnabled)(BOOL enable)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
     m->bd->fPXEDebugEnabled = enable;
@@ -446,7 +446,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(TimeOffset)(LONG64 *offset)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *offset = m->bd->llTimeOffset;
 
@@ -462,7 +462,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(TimeOffset)(LONG64 offset)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
     m->bd->llTimeOffset = offset;
@@ -490,7 +490,7 @@ HRESULT BIOSSettings::loadSettings(const settings::BIOSSettings &data)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // simply copy
     *m->bd.data() = data;
@@ -510,7 +510,7 @@ HRESULT BIOSSettings::saveSettings(settings::BIOSSettings &data)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     data = *m->bd.data();
 
@@ -519,19 +519,19 @@ HRESULT BIOSSettings::saveSettings(settings::BIOSSettings &data)
 
 bool BIOSSettings::isModified()
 {
-    AutoReadLock alock (this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     return m->bd.isBackedUp();
 }
 
 bool BIOSSettings::isReallyModified()
 {
-    AutoReadLock alock (this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     return m->bd.hasActualChanges();
 }
 
 void BIOSSettings::rollback()
 {
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m->bd.rollback();
 }
 
@@ -547,7 +547,7 @@ void BIOSSettings::commit()
 
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
-    AutoMultiWriteLock2 alock(m->pPeer, this);
+    AutoMultiWriteLock2 alock(m->pPeer, this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd.isBackedUp())
     {
@@ -555,7 +555,7 @@ void BIOSSettings::commit()
         if (m->pPeer)
         {
             /* attach new data to the peer and reshare it */
-            AutoWriteLock peerlock(m->pPeer);
+            AutoWriteLock peerlock(m->pPeer COMMA_LOCKVAL_SRC_POS);
             m->pPeer->m->bd.attach(m->bd);
         }
     }
@@ -575,8 +575,8 @@ void BIOSSettings::copyFrom (BIOSSettings *aThat)
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
-    AutoReadLock rl(aThat);
-    AutoWriteLock wl(this);
+    AutoReadLock rl(aThat COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wl(this COMMA_LOCKVAL_SRC_POS);
 
     /* this will back up current data */
     m->bd.assignCopy(aThat->m->bd);
@@ -590,7 +590,7 @@ void BIOSSettings::applyDefaults (GuestOSType *aOsType)
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Initialize default BIOS settings here */
     m->bd->fIOAPICEnabled = aOsType->recommendedIOAPIC();

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,6 +24,26 @@
 
 #include <iprt/types.h>
 
+#ifdef DEBUG
+# ifdef VBOX_WITH_LOCK_VALIDATOR
+#  define VBOX_WITH_DEBUG_LOCK_VALIDATOR
+# endif
+#endif
+
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+# define COMMA_LOCKVAL_SRC_POS , RT_SRC_POS
+# define LOCKVAL_SRC_POS_DECL RT_SRC_POS_DECL
+# define COMMA_LOCKVAL_SRC_POS_DECL , RT_SRC_POS_DECL
+# define LOCKVAL_SRC_POS_ARGS RT_SRC_POS_ARGS
+# define COMMA_LOCKVAL_SRC_POS_ARGS , RT_SRC_POS_ARGS
+#else
+# define COMMA_LOCKVAL_SRC_POS
+# define LOCKVAL_SRC_POS_DECL
+# define COMMA_LOCKVAL_SRC_POS_DECL
+# define LOCKVAL_SRC_POS_ARGS
+# define COMMA_LOCKVAL_SRC_POS_ARGS
+#endif
+
 namespace util
 {
 
@@ -34,14 +54,7 @@ namespace util
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Abstract read/write semaphore handle.
- *
- * This is a base class to implement semaphores that provide read/write locking.
- * Subclasses must implement all pure virtual methods of this class together
- * with pure methods of ReadLockOps and WriteLockOps classes.
- *
- * See the AutoWriteLock class documentation for the detailed description of
- * read and write locks.
+ * Abstract base class for semaphore handles (RWLockHandle and WriteLockHandle).
  */
 class LockHandle
 {
@@ -65,10 +78,17 @@ public:
      */
     virtual uint32_t writeLockLevel() const = 0;
 
-    virtual void lockWrite() = 0;
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+    void validateLock(LOCKVAL_SRC_POS_DECL);
+    void validateUnlock();
+#endif
+
+    virtual void lockWrite(LOCKVAL_SRC_POS_DECL) = 0;
     virtual void unlockWrite() = 0;
-    virtual void lockRead() = 0;
+    virtual void lockRead(LOCKVAL_SRC_POS_DECL) = 0;
     virtual void unlockRead() = 0;
+
+    static RTTLS s_lockingStackTlsIndex;
 
 private:
     // prohibit copy + assignment
@@ -92,9 +112,9 @@ public:
 
     virtual bool isWriteLockOnCurrentThread() const;
 
-    virtual void lockWrite();
+    virtual void lockWrite(LOCKVAL_SRC_POS_DECL);
     virtual void unlockWrite();
-    virtual void lockRead();
+    virtual void lockRead(LOCKVAL_SRC_POS_DECL);
     virtual void unlockRead();
 
     virtual uint32_t writeLockLevel() const;
@@ -124,9 +144,9 @@ public:
     virtual ~WriteLockHandle();
     virtual bool isWriteLockOnCurrentThread() const;
 
-    virtual void lockWrite();
+    virtual void lockWrite(LOCKVAL_SRC_POS_DECL);
     virtual void unlockWrite();
-    virtual void lockRead();
+    virtual void lockRead(LOCKVAL_SRC_POS_DECL);
     virtual void unlockRead();
     virtual uint32_t writeLockLevel() const;
 
@@ -192,8 +212,11 @@ public:
 class AutoLockBase
 {
 protected:
-    AutoLockBase(uint32_t cHandles);
-    AutoLockBase(uint32_t cHandles, LockHandle *pHandle);
+    AutoLockBase(uint32_t cHandles
+                 COMMA_LOCKVAL_SRC_POS_DECL);
+    AutoLockBase(uint32_t cHandles,
+                 LockHandle *pHandle
+                 COMMA_LOCKVAL_SRC_POS_DECL);
     virtual ~AutoLockBase();
 
     struct Data;
@@ -244,16 +267,21 @@ public:
      * have the code where lock protection can be selected (or omitted) at
      * runtime.
      */
-    AutoReadLock()
-        : AutoLockBase(1, NULL)
+    AutoReadLock(LOCKVAL_SRC_POS_DECL)
+        : AutoLockBase(1,
+                       NULL
+                       COMMA_LOCKVAL_SRC_POS_ARGS)
     { }
 
     /**
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a read lock.
      */
-    AutoReadLock(LockHandle *aHandle)
-        : AutoLockBase(1, aHandle)
+    AutoReadLock(LockHandle *aHandle
+                 COMMA_LOCKVAL_SRC_POS_DECL)
+        : AutoLockBase(1,
+                       aHandle
+                       COMMA_LOCKVAL_SRC_POS_ARGS)
     {
         acquire();
     }
@@ -262,8 +290,11 @@ public:
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a read lock.
      */
-    AutoReadLock(LockHandle &aHandle)
-        : AutoLockBase(1, &aHandle)
+    AutoReadLock(LockHandle &aHandle
+                 COMMA_LOCKVAL_SRC_POS_DECL)
+        : AutoLockBase(1,
+                       &aHandle
+                       COMMA_LOCKVAL_SRC_POS_ARGS)
     {
         acquire();
     }
@@ -272,8 +303,11 @@ public:
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a read lock.
      */
-    AutoReadLock(const Lockable &aLockable)
-        : AutoLockBase(1, aLockable.lockHandle())
+    AutoReadLock(const Lockable &aLockable
+                 COMMA_LOCKVAL_SRC_POS_DECL)
+        : AutoLockBase(1,
+                       aLockable.lockHandle()
+                       COMMA_LOCKVAL_SRC_POS_ARGS)
     {
         acquire();
     }
@@ -282,8 +316,11 @@ public:
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a read lock.
      */
-    AutoReadLock(const Lockable *aLockable)
-        : AutoLockBase(1, aLockable ? aLockable->lockHandle() : NULL)
+    AutoReadLock(const Lockable *aLockable
+                 COMMA_LOCKVAL_SRC_POS_DECL)
+        : AutoLockBase(1,
+                       aLockable ? aLockable->lockHandle() : NULL
+                       COMMA_LOCKVAL_SRC_POS_ARGS)
     {
         acquire();
     }
@@ -313,12 +350,18 @@ public:
 class AutoWriteLockBase : public AutoLockBase
 {
 protected:
-    AutoWriteLockBase(uint32_t cHandles)
-        : AutoLockBase(cHandles)
+    AutoWriteLockBase(uint32_t cHandles
+                      COMMA_LOCKVAL_SRC_POS_DECL)
+        : AutoLockBase(cHandles
+                       COMMA_LOCKVAL_SRC_POS_ARGS)
     { }
 
-    AutoWriteLockBase(uint32_t cHandles, LockHandle *pHandle)
-        : AutoLockBase(cHandles, pHandle)
+    AutoWriteLockBase(uint32_t cHandles,
+                      LockHandle *pHandle
+                      COMMA_LOCKVAL_SRC_POS_DECL)
+        : AutoLockBase(cHandles,
+                       pHandle
+                       COMMA_LOCKVAL_SRC_POS_ARGS)
     { }
 
     virtual ~AutoWriteLockBase()
@@ -365,16 +408,21 @@ public:
      * have the code where lock protection can be selected (or omitted) at
      * runtime.
      */
-    AutoWriteLock()
-        : AutoWriteLockBase(1, NULL)
+    AutoWriteLock(LOCKVAL_SRC_POS_DECL)
+        : AutoWriteLockBase(1,
+                            NULL
+                            COMMA_LOCKVAL_SRC_POS_ARGS)
     { }
 
     /**
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a write lock.
      */
-    AutoWriteLock(LockHandle *aHandle)
-        : AutoWriteLockBase(1, aHandle)
+    AutoWriteLock(LockHandle *aHandle
+                  COMMA_LOCKVAL_SRC_POS_DECL)
+        : AutoWriteLockBase(1,
+                            aHandle
+                            COMMA_LOCKVAL_SRC_POS_ARGS)
     {
         acquire();
     }
@@ -383,8 +431,11 @@ public:
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a write lock.
      */
-    AutoWriteLock(LockHandle &aHandle)
-        : AutoWriteLockBase(1, &aHandle)
+    AutoWriteLock(LockHandle &aHandle
+                  COMMA_LOCKVAL_SRC_POS_DECL)
+        : AutoWriteLockBase(1,
+                            &aHandle
+                            COMMA_LOCKVAL_SRC_POS_ARGS)
     {
         acquire();
     }
@@ -393,8 +444,11 @@ public:
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a write lock.
      */
-    AutoWriteLock(const Lockable &aLockable)
-        : AutoWriteLockBase(1, aLockable.lockHandle())
+    AutoWriteLock(const Lockable &aLockable
+                  COMMA_LOCKVAL_SRC_POS_DECL)
+        : AutoWriteLockBase(1,
+                            aLockable.lockHandle()
+                            COMMA_LOCKVAL_SRC_POS_ARGS)
     {
         acquire();
     }
@@ -403,8 +457,11 @@ public:
      * Constructs a new instance that will start managing the given read/write
      * semaphore by requesting a write lock.
      */
-    AutoWriteLock(const Lockable *aLockable)
-        : AutoWriteLockBase(1, aLockable ? aLockable->lockHandle() : NULL)
+    AutoWriteLock(const Lockable *aLockable
+                  COMMA_LOCKVAL_SRC_POS_DECL)
+        : AutoWriteLockBase(1,
+                            aLockable ? aLockable->lockHandle() : NULL
+                            COMMA_LOCKVAL_SRC_POS_ARGS)
     {
         acquire();
     }
@@ -460,8 +517,12 @@ public:
 class AutoMultiWriteLock2 : public AutoWriteLockBase
 {
 public:
-    AutoMultiWriteLock2(Lockable *pl1, Lockable *pl2);
-    AutoMultiWriteLock2(LockHandle *pl1, LockHandle *pl2);
+    AutoMultiWriteLock2(Lockable *pl1,
+                        Lockable *pl2
+                        COMMA_LOCKVAL_SRC_POS_DECL);
+    AutoMultiWriteLock2(LockHandle *pl1,
+                        LockHandle *pl2
+                        COMMA_LOCKVAL_SRC_POS_DECL);
 
     virtual ~AutoMultiWriteLock2()
     {
@@ -476,8 +537,14 @@ public:
 class AutoMultiWriteLock3 : public AutoWriteLockBase
 {
 public:
-    AutoMultiWriteLock3(Lockable *pl1, Lockable *pl2, Lockable *pl3);
-    AutoMultiWriteLock3(LockHandle *pl1, LockHandle *pl2, LockHandle *pl3);
+    AutoMultiWriteLock3(Lockable *pl1,
+                        Lockable *pl2,
+                        Lockable *pl3
+                        COMMA_LOCKVAL_SRC_POS_DECL);
+    AutoMultiWriteLock3(LockHandle *pl1,
+                        LockHandle *pl2,
+                        LockHandle *pl3
+                        COMMA_LOCKVAL_SRC_POS_DECL);
 
     virtual ~AutoMultiWriteLock3()
     {

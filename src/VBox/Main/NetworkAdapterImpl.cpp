@@ -112,7 +112,7 @@ HRESULT NetworkAdapter::init (Machine *aParent, NetworkAdapter *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
-    AutoReadLock thatLock (aThat);
+    AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     mData.share (aThat->mData);
 
     /* Confirm a successful initialization */
@@ -144,7 +144,7 @@ HRESULT NetworkAdapter::initCopy (Machine *aParent, NetworkAdapter *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
-    AutoReadLock thatLock (aThat);
+    AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     mData.attachCopy (aThat->mData);
 
     /* Confirm a successful initialization */
@@ -182,7 +182,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(AdapterType) (NetworkAdapterType_T *aAdap
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aAdapterType = mData->mAdapterType;
 
@@ -198,7 +198,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapt
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* make sure the value is allowed */
     switch (aAdapterType)
@@ -241,7 +241,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(Slot) (ULONG *aSlot)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aSlot = mData->mSlot;
 
@@ -255,7 +255,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(Enabled) (BOOL *aEnabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aEnabled = mData->mEnabled;
 
@@ -271,7 +271,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(Enabled) (BOOL aEnabled)
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData->mEnabled != aEnabled)
     {
@@ -294,7 +294,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(MACAddress)(BSTR *aMACAddress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ComAssertRet (!!mData->mMACAddress, E_FAIL);
 
@@ -312,7 +312,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(IN_BSTR aMACAddress)
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
     bool emitChangeEvent = false;
@@ -391,7 +391,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(AttachmentType)(
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aAttachmentType = mData->mAttachmentType;
 
@@ -405,7 +405,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(HostInterface)(BSTR *aHostInterface)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     mData->mHostInterface.cloneTo(aHostInterface);
 
@@ -425,7 +425,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(IN_BSTR aHostInterface)
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData->mHostInterface != aHostInterface)
     {
@@ -448,7 +448,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(InternalNetwork) (BSTR *aInternalNetwork)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     mData->mInternalNetwork.cloneTo(aInternalNetwork);
 
@@ -464,7 +464,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (IN_BSTR aInternalNetwor
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData->mInternalNetwork != aInternalNetwork)
     {
@@ -496,7 +496,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(NATNetwork) (BSTR *aNATNetwork)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     mData->mNATNetwork.cloneTo(aNATNetwork);
 
@@ -516,7 +516,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork) (IN_BSTR aNATNetwork)
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData->mNATNetwork != aNATNetwork)
     {
@@ -539,7 +539,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(CableConnected) (BOOL *aConnected)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aConnected = mData->mCableConnected;
 
@@ -555,7 +555,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(CableConnected) (BOOL aConnected)
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (aConnected != mData->mCableConnected)
     {
@@ -578,7 +578,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(LineSpeed) (ULONG *aSpeed)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aSpeed = mData->mLineSpeed;
 
@@ -594,7 +594,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(LineSpeed) (ULONG aSpeed)
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (aSpeed != mData->mLineSpeed)
     {
@@ -617,7 +617,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TraceEnabled) (BOOL *aEnabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aEnabled = mData->mTraceEnabled;
     return S_OK;
@@ -632,7 +632,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceEnabled) (BOOL aEnabled)
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (aEnabled != mData->mTraceEnabled)
     {
@@ -655,7 +655,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TraceFile) (BSTR *aTraceFile)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     mData->mTraceFile.cloneTo(aTraceFile);
 
@@ -671,7 +671,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile) (IN_BSTR aTraceFile)
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData->mTraceFile != aTraceFile)
     {
@@ -699,7 +699,7 @@ STDMETHODIMP NetworkAdapter::AttachToNAT()
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData->mAttachmentType != NetworkAttachmentType_NAT)
     {
@@ -739,7 +739,7 @@ STDMETHODIMP NetworkAdapter::AttachToBridgedInterface()
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* don't do anything if we're already host interface attached */
     if (mData->mAttachmentType != NetworkAttachmentType_Bridged)
@@ -781,7 +781,7 @@ STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* don't do anything if we're already internal network attached */
     if (mData->mAttachmentType != NetworkAttachmentType_Internal)
@@ -831,7 +831,7 @@ STDMETHODIMP NetworkAdapter::AttachToHostOnlyInterface()
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* don't do anything if we're already host interface attached */
     if (mData->mAttachmentType != NetworkAttachmentType_HostOnly)
@@ -873,7 +873,7 @@ STDMETHODIMP NetworkAdapter::Detach()
     Machine::AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData->mAttachmentType != NetworkAttachmentType_Null)
     {
@@ -906,7 +906,7 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
@@ -991,7 +991,7 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     data.fEnabled = !!mData->mEnabled;
     data.strMACAddress = mData->mMACAddress;
@@ -1040,7 +1040,7 @@ bool NetworkAdapter::rollback()
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     bool changed = false;
 
@@ -1071,7 +1071,7 @@ void NetworkAdapter::commit()
 
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
-    AutoMultiWriteLock2 alock (mPeer, this);
+    AutoMultiWriteLock2 alock(mPeer, this COMMA_LOCKVAL_SRC_POS);
 
     if (mData.isBackedUp())
     {
@@ -1102,8 +1102,8 @@ void NetworkAdapter::copyFrom (NetworkAdapter *aThat)
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
-    AutoReadLock rl(aThat);
-    AutoWriteLock wl(this);
+    AutoReadLock rl(aThat COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wl(this COMMA_LOCKVAL_SRC_POS);
 
     /* this will back up current data */
     mData.assignCopy (aThat->mData);
@@ -1117,7 +1117,7 @@ void NetworkAdapter::applyDefaults (GuestOSType *aOsType)
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     bool e1000enabled = false;
 #ifdef VBOX_WITH_E1000

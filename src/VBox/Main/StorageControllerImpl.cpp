@@ -223,7 +223,7 @@ HRESULT StorageController::init(Machine *aParent,
 
     if (aReshare)
     {
-        AutoWriteLock thatLock (aThat);
+        AutoWriteLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
 
         unconst(aThat->m->pPeer) = this;
         m->bd.attach (aThat->m->bd);
@@ -232,7 +232,7 @@ HRESULT StorageController::init(Machine *aParent,
     {
         unconst(m->pPeer) = aThat;
 
-        AutoReadLock thatLock (aThat);
+        AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
         m->bd.share (aThat->m->bd);
     }
 
@@ -267,7 +267,7 @@ HRESULT StorageController::initCopy(Machine *aParent, StorageController *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
-    AutoReadLock thatlock (aThat);
+    AutoReadLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
     m->bd.attachCopy (aThat->m->bd);
 
     /* Confirm a successful initialization */
@@ -324,7 +324,7 @@ STDMETHODIMP StorageController::COMGETTER(Bus) (StorageBus_T *aBus)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aBus = m->bd->mStorageBus;
 
@@ -338,7 +338,7 @@ STDMETHODIMP StorageController::COMGETTER(ControllerType) (StorageControllerType
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aControllerType = m->bd->mStorageControllerType;
 
@@ -350,7 +350,7 @@ STDMETHODIMP StorageController::COMSETTER(ControllerType) (StorageControllerType
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -404,7 +404,7 @@ STDMETHODIMP StorageController::COMGETTER(MaxDevicesPerPortCount) (ULONG *aMaxDe
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ComPtr<IVirtualBox> VBox;
     HRESULT rc = m->pParent->COMGETTER(Parent)(VBox.asOutParam());
@@ -427,7 +427,7 @@ STDMETHODIMP StorageController::COMGETTER(MinPortCount) (ULONG *aMinPortCount)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ComPtr<IVirtualBox> VBox;
     HRESULT rc = m->pParent->COMGETTER(Parent)(VBox.asOutParam());
@@ -450,7 +450,7 @@ STDMETHODIMP StorageController::COMGETTER(MaxPortCount) (ULONG *aMaxPortCount)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ComPtr<IVirtualBox> VBox;
     HRESULT rc = m->pParent->COMGETTER(Parent)(VBox.asOutParam());
@@ -474,7 +474,7 @@ STDMETHODIMP StorageController::COMGETTER(PortCount) (ULONG *aPortCount)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aPortCount = m->bd->mPortCount;
 
@@ -545,7 +545,7 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
     Machine::AutoMutableStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd->mPortCount != aPortCount)
     {
@@ -568,7 +568,7 @@ STDMETHODIMP StorageController::COMGETTER(Instance) (ULONG *aInstance)
 
     /* The machine doesn't need to be mutable. */
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aInstance = m->bd->mInstance;
 
@@ -582,7 +582,7 @@ STDMETHODIMP StorageController::COMSETTER(Instance) (ULONG aInstance)
 
     /* The machine doesn't need to be mutable. */
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd->mInstance = aInstance;
 
@@ -599,7 +599,7 @@ STDMETHODIMP StorageController::GetIDEEmulationPort(LONG DevicePosition, LONG *a
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd->mStorageControllerType != StorageControllerType_IntelAhci)
         return setError (E_NOTIMPL,
@@ -634,7 +634,7 @@ STDMETHODIMP StorageController::SetIDEEmulationPort(LONG DevicePosition, LONG aP
     /* the machine needs to be mutable */
     Machine::AutoMutableStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd->mStorageControllerType != StorageControllerType_IntelAhci)
         return setError (E_NOTIMPL,
@@ -692,13 +692,13 @@ ULONG StorageController::getInstance() const
 
 bool StorageController::isModified()
 {
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     return m->bd.isBackedUp();
 }
 
 bool StorageController::isReallyModified()
 {
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     return m->bd.hasActualChanges();
 }
 
@@ -708,7 +708,7 @@ bool StorageController::rollback()
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     bool dataChanged = false;
 
@@ -739,7 +739,7 @@ void StorageController::commit()
 
     /* lock both for writing since we modify both (m->pPeer is "master" so locked
      * first) */
-    AutoMultiWriteLock2 alock (m->pPeer, this);
+    AutoMultiWriteLock2 alock(m->pPeer, this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd.isBackedUp())
     {
@@ -771,8 +771,8 @@ void StorageController::unshare()
 
     /* peer is not modified, lock it for reading (m->pPeer is "master" so locked
      * first) */
-    AutoReadLock rl(m->pPeer);
-    AutoWriteLock wl(this);
+    AutoReadLock rl(m->pPeer COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wl(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd.isShared())
     {

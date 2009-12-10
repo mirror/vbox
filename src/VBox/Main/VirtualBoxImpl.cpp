@@ -270,7 +270,7 @@ HRESULT VirtualBox::init()
     /* Locking this object for writing during init sounds a bit paradoxical,
      * but in the current locking mess this avoids that some code gets a
      * read lock and later calls code which wants the same write lock. */
-    AutoWriteLock lock(this);
+    AutoWriteLock lock(this COMMA_LOCKVAL_SRC_POS);
 
     // allocate our instance data
     m = new Data;
@@ -769,7 +769,7 @@ VirtualBox::COMGETTER(Machines) (ComSafeArrayOut(IMachine *, aMachines))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock al(m->ollMachines.getLockHandle());
+    AutoReadLock al(m->ollMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
     SafeIfaceArray<IMachine> machines(m->ollMachines.getList());
     machines.detachTo(ComSafeArrayOutArg(aMachines));
 
@@ -784,7 +784,7 @@ STDMETHODIMP VirtualBox::COMGETTER(HardDisks) (ComSafeArrayOut(IMedium *, aHardD
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock al(m->ollHardDisks.getLockHandle());
+    AutoReadLock al(m->ollHardDisks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
     SafeIfaceArray<IMedium> hardDisks(m->ollHardDisks.getList());
     hardDisks.detachTo(ComSafeArrayOutArg(aHardDisks));
 
@@ -799,7 +799,7 @@ STDMETHODIMP VirtualBox::COMGETTER(DVDImages) (ComSafeArrayOut(IMedium *, aDVDIm
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock al(m->ollDVDImages.getLockHandle());
+    AutoReadLock al(m->ollDVDImages.getLockHandle() COMMA_LOCKVAL_SRC_POS);
     SafeIfaceArray<IMedium> images(m->ollDVDImages.getList());
     images.detachTo(ComSafeArrayOutArg(aDVDImages));
 
@@ -814,7 +814,7 @@ STDMETHODIMP VirtualBox::COMGETTER(FloppyImages) (ComSafeArrayOut(IMedium *, aFl
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock al(m->ollFloppyImages.getLockHandle());
+    AutoReadLock al(m->ollFloppyImages.getLockHandle() COMMA_LOCKVAL_SRC_POS);
     SafeIfaceArray<IMedium> images(m->ollFloppyImages.getList());
     images.detachTo(ComSafeArrayOutArg(aFloppyImages));
 
@@ -829,7 +829,7 @@ STDMETHODIMP VirtualBox::COMGETTER(ProgressOperations) (ComSafeArrayOut(IProgres
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* protect mProgressOperations */
-    AutoReadLock safeLock(m->mtxProgressOperations);
+    AutoReadLock safeLock(m->mtxProgressOperations COMMA_LOCKVAL_SRC_POS);
     SafeIfaceArray<IProgress> progress(m->mapProgressOperations);
     progress.detachTo(ComSafeArrayOutArg(aOperations));
 
@@ -843,7 +843,7 @@ STDMETHODIMP VirtualBox::COMGETTER(GuestOSTypes) (ComSafeArrayOut(IGuestOSType *
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock al(m->ollGuestOSTypes.getLockHandle());
+    AutoReadLock al(m->ollGuestOSTypes.getLockHandle() COMMA_LOCKVAL_SRC_POS);
     SafeIfaceArray<IGuestOSType> ostypes(m->ollGuestOSTypes.getList());
     ostypes.detachTo(ComSafeArrayOutArg(aGuestOSTypes));
 
@@ -891,7 +891,7 @@ VirtualBox::COMGETTER(DHCPServers) (ComSafeArrayOut(IDHCPServer *, aDHCPServers)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock al(m->ollDHCPServers.getLockHandle());
+    AutoReadLock al(m->ollDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
     SafeIfaceArray<IDHCPServer> svrs (m->ollDHCPServers.getList());
     svrs.detachTo(ComSafeArrayOutArg(aDHCPServers));
 
@@ -1208,7 +1208,7 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aName, IMachine **aMachine)
     /* start with not found */
     ComObjPtr<Machine> pMachineFound;
 
-    AutoReadLock al(m->ollMachines.getLockHandle());
+    AutoReadLock al(m->ollMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
     for (MachinesOList::iterator it = m->ollMachines.begin();
          it != m->ollMachines.end();
          ++it)
@@ -1220,7 +1220,7 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aName, IMachine **aMachine)
         /* skip inaccessible machines */
         if (machCaller.state() == Machine::Ready)
         {
-            AutoReadLock machLock(pMachine2);
+            AutoReadLock machLock(pMachine2 COMMA_LOCKVAL_SRC_POS);
             if (pMachine2->getName() == aName)
             {
                 pMachineFound = pMachine2;
@@ -1260,7 +1260,7 @@ STDMETHODIMP VirtualBox::UnregisterMachine(IN_BSTR  aId,
     if (FAILED(rc)) return rc;
 
     // trySetRegistered needs VirtualBox object write lock
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     rc = pMachine->trySetRegistered(FALSE);
     if (FAILED(rc)) return rc;
 
@@ -1572,7 +1572,7 @@ STDMETHODIMP VirtualBox::GetGuestOSType (IN_BSTR aId, IGuestOSType **aType)
 
     *aType = NULL;
 
-    AutoReadLock alock(m->ollGuestOSTypes.getLockHandle());
+    AutoReadLock alock(m->ollGuestOSTypes.getLockHandle() COMMA_LOCKVAL_SRC_POS);
     for (GuestOSTypesOList::iterator it = m->ollGuestOSTypes.begin();
          it != m->ollGuestOSTypes.end();
          ++it)
@@ -1626,7 +1626,7 @@ STDMETHODIMP VirtualBox::GetExtraDataKeys(ComSafeArrayOut(BSTR, aKeys))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     com::SafeArray<BSTR> saKeys(m->pMainConfigFile->mapExtraDataItems.size());
     int i = 0;
@@ -1692,7 +1692,7 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
 
     // look up the old value first; if nothing's changed then we need not do anything
     {
-        AutoReadLock alock(this); // hold read lock only while looking up
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS); // hold read lock only while looking up
         settings::ExtraDataItemsMap::const_iterator it = m->pMainConfigFile->mapExtraDataItems.find(strKey);
         if (it != m->pMainConfigFile->mapExtraDataItems.end())
             strOldValue = it->second;
@@ -1727,7 +1727,7 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
 
         // data is changing and change not vetoed: then write it out under the lock
 
-        AutoWriteLock alock(this);
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         if (strValue.isEmpty())
             m->pMainConfigFile->mapExtraDataItems.erase(strKey);
@@ -1912,7 +1912,7 @@ STDMETHODIMP VirtualBox::RegisterCallback (IVirtualBoxCallback *aCallback)
     aCallback->Release();
 #endif
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m->llCallbacks.push_back (CallbackList::value_type (aCallback));
 
     return S_OK;
@@ -1930,7 +1930,7 @@ STDMETHODIMP VirtualBox::UnregisterCallback (IVirtualBoxCallback *aCallback)
 
     HRESULT rc = S_OK;
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CallbackList::iterator it;
     it = std::find (m->llCallbacks.begin(),
@@ -1961,7 +1961,7 @@ STDMETHODIMP VirtualBox::WaitForPropertyChange(IN_BSTR /* aWhat */,
 void VirtualBox::dumpAllBackRefs()
 {
     {
-        AutoReadLock al(m->ollHardDisks.getLockHandle());
+        AutoReadLock al(m->ollHardDisks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
         for (MediaList::const_iterator mt = m->ollHardDisks.begin();
              mt != m->ollHardDisks.end();
              ++mt)
@@ -1971,7 +1971,7 @@ void VirtualBox::dumpAllBackRefs()
         }
     }
     {
-        AutoReadLock al(m->ollDVDImages.getLockHandle());
+        AutoReadLock al(m->ollDVDImages.getLockHandle() COMMA_LOCKVAL_SRC_POS);
         for (MediaList::const_iterator mt = m->ollDVDImages.begin();
              mt != m->ollDVDImages.end();
              ++mt)
@@ -2040,7 +2040,7 @@ HRESULT VirtualBox::addProgress(IProgress *aProgress)
     AssertComRCReturnRC(rc);
 
     /* protect mProgressOperations */
-    AutoWriteLock safeLock(m->mtxProgressOperations);
+    AutoWriteLock safeLock(m->mtxProgressOperations COMMA_LOCKVAL_SRC_POS);
 
     m->mapProgressOperations.insert (ProgressMap::value_type (Guid(id), aProgress));
     return S_OK;
@@ -2062,7 +2062,7 @@ HRESULT VirtualBox::removeProgress(IN_GUID aId)
     ComPtr<IProgress> progress;
 
     /* protect mProgressOperations */
-    AutoWriteLock safeLock(m->mtxProgressOperations);
+    AutoWriteLock safeLock(m->mtxProgressOperations COMMA_LOCKVAL_SRC_POS);
 
     size_t cnt = m->mapProgressOperations.erase (aId);
     Assert (cnt == 1);
@@ -2343,7 +2343,7 @@ void VirtualBox::addProcessToReap (RTPROCESS pid)
 
     /// @todo (dmik) Win32?
 #ifndef RT_OS_WINDOWS
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m->llProcesses.push_back (pid);
 #endif
 }
@@ -2427,7 +2427,7 @@ BOOL VirtualBox::onExtraDataCanChange (const Guid &aId, IN_BSTR aKey, IN_BSTR aV
 
     CallbackList list;
     {
-        AutoReadLock alock(this);
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
         list = m->llCallbacks;
     }
 
@@ -2657,7 +2657,7 @@ void VirtualBox::getOpenedMachines(SessionMachineList &aMachines,
     if (aControls)
         aControls->clear();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     for (MachinesOList::iterator it = m->ollMachines.begin();
          it != m->ollMachines.end();
@@ -2701,7 +2701,7 @@ HRESULT VirtualBox::findMachine(const Guid &aId,
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     {
-        AutoReadLock al(m->ollMachines.getLockHandle());
+        AutoReadLock al(m->ollMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
         for (MachinesOList::iterator it = m->ollMachines.begin();
              it != m->ollMachines.end();
@@ -2754,7 +2754,7 @@ HRESULT VirtualBox::findHardDisk(const Guid *aId,
 
     // we use the hard disks map, but it is protected by the
     // hard disk _list_ lock handle
-    AutoReadLock alock(m->ollHardDisks.getLockHandle());
+    AutoReadLock alock(m->ollHardDisks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     /* first, look up by UUID in the map if UUID is provided */
     if (aId)
@@ -2845,7 +2845,7 @@ HRESULT VirtualBox::findDVDImage(const Guid *aId,
                             vrc);
     }
 
-    AutoReadLock alock(m->ollDVDImages.getLockHandle());
+    AutoReadLock alock(m->ollDVDImages.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     bool found = false;
 
@@ -2854,7 +2854,7 @@ HRESULT VirtualBox::findDVDImage(const Guid *aId,
          ++ it)
     {
         /* no AutoCaller, registered image life time is bound to this */
-        AutoReadLock imageLock (*it);
+        AutoReadLock imageLock(*it COMMA_LOCKVAL_SRC_POS);
 
         found = (aId && (*it)->getId() == *aId) ||
                 (aLocation != NULL &&
@@ -2921,7 +2921,7 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId, CBSTR aLocation,
                 aLocation, vrc);
     }
 
-    AutoReadLock alock(m->ollFloppyImages.getLockHandle());
+    AutoReadLock alock(m->ollFloppyImages.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     bool found = false;
 
@@ -2930,7 +2930,7 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId, CBSTR aLocation,
          ++ it)
     {
         /* no AutoCaller, registered image life time is bound to this */
-        AutoReadLock imageLock (*it);
+        AutoReadLock imageLock(*it COMMA_LOCKVAL_SRC_POS);
 
         found = (aId && (*it)->getId() == *aId) ||
                 (aLocation != NULL &&
@@ -2977,7 +2977,7 @@ HRESULT VirtualBox::findGuestOSType(CBSTR bstrOSType,
         return S_OK;
     }
 
-    AutoReadLock alock(m->ollGuestOSTypes.getLockHandle());
+    AutoReadLock alock(m->ollGuestOSTypes.getLockHandle() COMMA_LOCKVAL_SRC_POS);
     for (GuestOSTypesOList::const_iterator it = m->ollGuestOSTypes.begin();
          it != m->ollGuestOSTypes.end();
          ++it)
@@ -3018,7 +3018,7 @@ const ComObjPtr<PerformanceCollector>& VirtualBox::performanceCollector() const
  */
 const Utf8Str& VirtualBox::getDefaultMachineFolder() const
 {
-    AutoReadLock propsLock(m->pSystemProperties);
+    AutoReadLock propsLock(m->pSystemProperties COMMA_LOCKVAL_SRC_POS);
     return m->pSystemProperties->m_strDefaultMachineFolder;
 }
 
@@ -3029,7 +3029,7 @@ const Utf8Str& VirtualBox::getDefaultMachineFolder() const
  */
 const Utf8Str& VirtualBox::getDefaultHardDiskFolder() const
 {
-    AutoReadLock propsLock(m->pSystemProperties);
+    AutoReadLock propsLock(m->pSystemProperties COMMA_LOCKVAL_SRC_POS);
     return m->pSystemProperties->m_strDefaultHardDiskFolder;
 }
 
@@ -3040,7 +3040,7 @@ const Utf8Str& VirtualBox::getDefaultHardDiskFolder() const
  */
 const Utf8Str& VirtualBox::getDefaultHardDiskFormat() const
 {
-    AutoReadLock propsLock(m->pSystemProperties);
+    AutoReadLock propsLock(m->pSystemProperties COMMA_LOCKVAL_SRC_POS);
     return m->pSystemProperties->m_strDefaultHardDiskFormat;
 }
 
@@ -3131,7 +3131,7 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
 
     AssertReturn(!aId.isEmpty() && !aLocation.isEmpty(), E_FAIL);
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -3143,7 +3143,7 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
         if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
-            AutoReadLock mediaLock(hardDisk);
+            AutoReadLock mediaLock(hardDisk COMMA_LOCKVAL_SRC_POS);
             aConflict = Utf8StrFmt(tr("hard disk '%s' with UUID {%RTuuid}"),
                                    hardDisk->getLocationFull().raw(),
                                    hardDisk->getId().raw());
@@ -3157,7 +3157,7 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
         if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
-            AutoReadLock mediaLock (image);
+            AutoReadLock mediaLock(image COMMA_LOCKVAL_SRC_POS);
             aConflict = Utf8StrFmt(tr("CD/DVD image '%s' with UUID {%RTuuid}"),
                                    image->getLocationFull().raw(),
                                    image->getId().raw());
@@ -3171,7 +3171,7 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
         if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
-            AutoReadLock mediaLock (image);
+            AutoReadLock mediaLock(image COMMA_LOCKVAL_SRC_POS);
             aConflict = Utf8StrFmt(tr("floppy image '%s' with UUID {%RTuuid}"),
                                    image->getLocationFull().raw(),
                                    image->getId().raw());
@@ -3201,7 +3201,7 @@ HRESULT VirtualBox::saveSettings()
         // machines
         settings::MachinesRegistry machinesTemp;
         {
-            AutoReadLock al(m->ollMachines.getLockHandle());
+            AutoReadLock al(m->ollMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
             for (MachinesOList::iterator it = m->ollMachines.begin();
                  it != m->ollMachines.end();
                  ++it)
@@ -3215,7 +3215,7 @@ HRESULT VirtualBox::saveSettings()
         // hard disks
         settings::MediaList hardDisksTemp;
         {
-            AutoReadLock al(m->ollHardDisks.getLockHandle());
+            AutoReadLock al(m->ollHardDisks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
             for (MediaList::const_iterator it = m->ollHardDisks.begin();
                  it != m->ollHardDisks.end();
                  ++it)
@@ -3230,7 +3230,7 @@ HRESULT VirtualBox::saveSettings()
         /* CD/DVD images */
         settings::MediaList dvdsTemp;
         {
-            AutoReadLock al(m->ollDVDImages.getLockHandle());
+            AutoReadLock al(m->ollDVDImages.getLockHandle() COMMA_LOCKVAL_SRC_POS);
             for (MediaList::const_iterator it = m->ollDVDImages.begin();
                  it != m->ollDVDImages.end();
                  ++it)
@@ -3245,7 +3245,7 @@ HRESULT VirtualBox::saveSettings()
         /* floppy images */
         settings::MediaList floppiesTemp;
         {
-            AutoReadLock al(m->ollFloppyImages.getLockHandle());
+            AutoReadLock al(m->ollFloppyImages.getLockHandle() COMMA_LOCKVAL_SRC_POS);
             for (MediaList::const_iterator it = m->ollFloppyImages.begin();
                  it != m->ollFloppyImages.end();
                  ++it)
@@ -3259,7 +3259,7 @@ HRESULT VirtualBox::saveSettings()
 
         settings::DHCPServersList dhcpServersTemp;
         {
-            AutoReadLock al(m->ollDHCPServers.getLockHandle());
+            AutoReadLock al(m->ollDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
             for (DHCPServersOList::const_iterator it = m->ollDHCPServers.begin();
                  it != m->ollDHCPServers.end();
                  ++it)
@@ -3272,7 +3272,7 @@ HRESULT VirtualBox::saveSettings()
         }
 
         /* finally, lock VirtualBox object for writing */
-        AutoWriteLock alock(this);
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         /* now copy the temp data to the config file under the VirtualBox lock */
         m->pMainConfigFile->llMachines = machinesTemp;
@@ -3353,7 +3353,7 @@ HRESULT VirtualBox::registerMachine(Machine *aMachine)
     {
         // trySetRegistered needs VirtualBox object write lock;
         // it will commit and save machine settings
-        AutoWriteLock alock(this);
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         rc = aMachine->trySetRegistered(TRUE);
         if (FAILED(rc)) return rc;
     }
@@ -3397,7 +3397,7 @@ HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
     Utf8Str strLocationFull;
     ComObjPtr<Medium> pParent;
     {
-        AutoReadLock hardDiskLock(aHardDisk);
+        AutoReadLock hardDiskLock(aHardDisk COMMA_LOCKVAL_SRC_POS);
         id = aHardDisk->getId();
         strLocationFull = aHardDisk->getLocationFull();
         pParent = aHardDisk->getParent();
@@ -3406,7 +3406,7 @@ HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
     HRESULT rc;
     {
         // lock the hard disk lists (list + map) while checking for conflicts
-        AutoWriteLock al(m->ollHardDisks.getLockHandle());
+        AutoWriteLock al(m->ollHardDisks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
         Utf8Str strConflict;
         rc = checkMediaForConflicts2(id,
@@ -3469,14 +3469,14 @@ HRESULT VirtualBox::unregisterHardDisk(Medium *aHardDisk,
     Guid id;
     ComObjPtr<Medium> pParent;
     {
-        AutoReadLock hardDiskLock(aHardDisk);
+        AutoReadLock hardDiskLock(aHardDisk COMMA_LOCKVAL_SRC_POS);
         id = aHardDisk->getId();
         pParent = aHardDisk->getParent();
     }
 
     {
         // lock the hard disk lists (list + map)
-        AutoWriteLock al(m->ollHardDisks.getLockHandle());
+        AutoWriteLock al(m->ollHardDisks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
         // remove base (root) hard disks from the list
         if (pParent.isNull())
@@ -3533,7 +3533,7 @@ HRESULT VirtualBox::registerImage(Medium *argImage,
     Utf8Str strLocationFull;
     ComObjPtr<Medium> pParent;
     {
-        AutoReadLock al(argImage);
+        AutoReadLock al(argImage COMMA_LOCKVAL_SRC_POS);
         id = argImage->getId();
         strLocationFull = argImage->getLocationFull();
         pParent = argImage->getParent();
@@ -3545,7 +3545,7 @@ HRESULT VirtualBox::registerImage(Medium *argImage,
     HRESULT rc;
     {
         // lock the images lists (list + map) while checking for conflicts
-        AutoWriteLock al(oll.getLockHandle());
+        AutoWriteLock al(oll.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
         Utf8Str strConflict;
         rc = checkMediaForConflicts2(id,
@@ -3607,7 +3607,7 @@ HRESULT VirtualBox::unregisterImage(Medium *argImage,
     Guid id;
     ComObjPtr<Medium> pParent;
     {
-        AutoReadLock al(argImage);
+        AutoReadLock al(argImage COMMA_LOCKVAL_SRC_POS);
         id = argImage->getId();
         pParent = argImage->getParent();
     }
@@ -3863,7 +3863,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
                     CloseHandle(handles[i]);
 
                 // lock the machines list for reading
-                AutoReadLock thatLock(that->m->ollMachines.getLockHandle());
+                AutoReadLock thatLock(that->m->ollMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
                 /* obtain a new set of opened machines */
                 cnt = 0;
@@ -3995,7 +3995,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
                         {
 #ifdef DEBUG
                             {
-                                AutoReadLock machineLock(machines[semId]);
+                                AutoReadLock machineLock(machines[semId] COMMA_LOCKVAL_SRC_POS);
                                 LogFlowFunc (("released mutex: machine='%ls'\n",
                                               machines[semId]->name().raw()));
                             }
@@ -4025,7 +4025,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
                                 {
 #ifdef DEBUG
                                     {
-                                        AutoReadLock machineLock(machines[semId]);
+                                        AutoReadLock machineLock(machines[semId] COMMA_LOCKVAL_SRC_POS);
                                         LogFlowFunc(("mutex owner dead: machine='%ls'\n",
                                                      machines[i]->name().raw()));
                                     }
@@ -4052,7 +4052,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
 
             if (update || updateSpawned)
             {
-                AutoReadLock thatLock (that);
+                AutoReadLock thatLock(that COMMA_LOCKVAL_SRC_POS);
 
                 if (update)
                 {
@@ -4157,7 +4157,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
                 /* RT_SUCCESS(rc) means an update event is signaled */
 
                 // lock the machines list for reading
-                AutoReadLock thatLock(that->m->ollMachines.getLockHandle());
+                AutoReadLock thatLock(that->m->ollMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
                 if (RT_SUCCESS(rc) || update)
                 {
@@ -4207,7 +4207,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
 
             /* reap child processes */
             {
-                AutoWriteLock alock(that);
+                AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
                 if (that->m->llProcesses.size())
                 {
                     LogFlowFunc (("UPDATE: child process count = %d\n",
@@ -4321,7 +4321,7 @@ void *VirtualBox::CallbackEvent::handler()
     CallbackList callbacks;
     {
         /* Make a copy to release the lock before iterating */
-        AutoReadLock alock(mVirtualBox);
+        AutoReadLock alock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
         callbacks = mVirtualBox->m->llCallbacks;
         /* We don't need mVirtualBox any more, so release it */
         mVirtualBox.setNull();
@@ -4373,7 +4373,7 @@ STDMETHODIMP VirtualBox::FindDHCPServerByNetworkName(IN_BSTR aName, IDHCPServer 
     Bstr bstr;
     ComPtr<DHCPServer> found;
 
-    AutoReadLock alock(m->ollDHCPServers.getLockHandle());
+    AutoReadLock alock(m->ollDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     for (DHCPServersOList::const_iterator it = m->ollDHCPServers.begin();
          it != m->ollDHCPServers.end();
@@ -4482,7 +4482,7 @@ HRESULT VirtualBox::unregisterDHCPServer(DHCPServer *aDHCPServer,
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AutoCaller dhcpServerCaller (aDHCPServer);
     AssertComRCReturn(dhcpServerCaller.rc(), dhcpServerCaller.rc());

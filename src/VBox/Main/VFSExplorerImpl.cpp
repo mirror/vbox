@@ -129,7 +129,7 @@ STDMETHODIMP VFSExplorer::COMGETTER(Path)(BSTR *aPath)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Bstr bstrPath(m->strPath);
     bstrPath.cloneTo(aPath);
@@ -145,7 +145,7 @@ STDMETHODIMP VFSExplorer::COMGETTER(Type)(VFSType_T *aType)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aType = m->storageType;
 
@@ -275,7 +275,7 @@ HRESULT VFSExplorer::updateFS(TaskVFSExplorer *aTask)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock appLock(this);
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -343,7 +343,7 @@ HRESULT VFSExplorer::deleteFS(TaskVFSExplorer *aTask)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock appLock(this);
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -390,7 +390,7 @@ HRESULT VFSExplorer::updateS3(TaskVFSExplorer *aTask)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock appLock(this);
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -466,7 +466,7 @@ HRESULT VFSExplorer::deleteS3(TaskVFSExplorer *aTask)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock appLock(this);
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -519,7 +519,7 @@ STDMETHODIMP VFSExplorer::Update(IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -581,7 +581,7 @@ STDMETHODIMP VFSExplorer::EntryList(ComSafeArrayOut(BSTR, aNames), ComSafeArrayO
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     com::SafeArray<BSTR> sfaNames((ULONG)m->entryList.size());
     com::SafeArray<ULONG> sfaTypes((VFSFileType_T)m->entryList.size());
@@ -611,7 +611,7 @@ STDMETHODIMP VFSExplorer::Exists(ComSafeArrayIn(IN_BSTR, aNames), ComSafeArrayOu
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     com::SafeArray<IN_BSTR> sfaNames(ComSafeArrayInArg(aNames));
     std::list<BSTR> listExists;
@@ -648,7 +648,7 @@ STDMETHODIMP VFSExplorer::Remove(ComSafeArrayIn(IN_BSTR, aNames), IProgress **aP
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 

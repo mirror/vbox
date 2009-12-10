@@ -388,7 +388,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives)(ComSafeArrayOut(IMedium *, aDrives))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     MediaList list;
     HRESULT rc = S_OK;
@@ -512,7 +512,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives)(ComSafeArrayOut(IMedium *, aDrives))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     MediaList list;
     HRESULT rc = S_OK;
@@ -630,7 +630,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces)(ComSafeArrayOut(IHostNetworkInte
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     std::list <ComObjPtr<HostNetworkInterface> > list;
 
@@ -911,7 +911,7 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(ComSafeArrayOut(IHostUSBDevice*, aUSBDe
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     MultiResult rc = checkUSBProxyService();
     if (FAILED(rc)) return rc;
@@ -938,7 +938,7 @@ STDMETHODIMP Host::COMGETTER(USBDeviceFilters)(ComSafeArrayOut(IHostUSBDeviceFil
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoMultiWriteLock2 alock(this->lockHandle(), &m->treeLock);
+    AutoMultiWriteLock2 alock(this->lockHandle(), &m->treeLock COMMA_LOCKVAL_SRC_POS);
 
     MultiResult rc = checkUSBProxyService();
     if (FAILED(rc)) return rc;
@@ -1038,7 +1038,7 @@ STDMETHODIMP Host::GetProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSuppo
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     switch (aFeature)
     {
@@ -1224,7 +1224,7 @@ STDMETHODIMP Host::COMGETTER(Acceleration3DAvailable)(BOOL *aSupported)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aSupported = m->f3DAccelerationSupported;
 
@@ -1240,7 +1240,7 @@ STDMETHODIMP Host::CreateHostOnlyNetworkInterface(IHostNetworkInterface **aHostN
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     int r = NetIfCreateHostOnlyNetworkInterface(m->pParent, aHostNetworkInterface, aProgress);
     if (RT_SUCCESS(r))
@@ -1257,7 +1257,7 @@ STDMETHODIMP Host::RemoveHostOnlyNetworkInterface(IN_BSTR aId,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* first check whether an interface with the given name already exists */
     {
@@ -1286,7 +1286,7 @@ STDMETHODIMP Host::CreateUSBDeviceFilter(IN_BSTR aName,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<HostUSBDeviceFilter> filter;
     filter.createObject();
@@ -1315,7 +1315,7 @@ STDMETHODIMP Host::InsertUSBDeviceFilter(ULONG aPosition,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoMultiWriteLock2 alock(this->lockHandle(), &m->treeLock);
+    AutoMultiWriteLock2 alock(this->lockHandle(), &m->treeLock COMMA_LOCKVAL_SRC_POS);
 
     MultiResult rc = checkUSBProxyService();
     if (FAILED(rc)) return rc;
@@ -1375,7 +1375,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter(ULONG aPosition)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoMultiWriteLock2 alock(this->lockHandle(), &m->treeLock);
+    AutoMultiWriteLock2 alock(this->lockHandle(), &m->treeLock COMMA_LOCKVAL_SRC_POS);
 
     MultiResult rc = checkUSBProxyService();
     if (FAILED(rc)) return rc;
@@ -1660,7 +1660,7 @@ HRESULT Host::loadSettings(const settings::Host &data)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoMultiWriteLock2 alock(this->lockHandle(), &m->treeLock);
+    AutoMultiWriteLock2 alock(this->lockHandle(), &m->treeLock COMMA_LOCKVAL_SRC_POS);
 
 
     for (settings::USBDeviceFiltersList::const_iterator it = data.llUSBDeviceFilters.begin();
@@ -1695,7 +1695,7 @@ HRESULT Host::saveSettings(settings::Host &data)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(&m->treeLock);
+    AutoReadLock alock(&m->treeLock COMMA_LOCKVAL_SRC_POS);
 
     data.llUSBDeviceFilters.clear();
 
@@ -1726,7 +1726,7 @@ HRESULT Host::addChild(HostUSBDeviceFilter *pChild)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(&m->treeLock);
+    AutoWriteLock alock(&m->treeLock COMMA_LOCKVAL_SRC_POS);
 
     m->llChildren.push_back(pChild);
 
@@ -1738,7 +1738,7 @@ HRESULT Host::removeChild(HostUSBDeviceFilter *pChild)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(&m->treeLock);
+    AutoWriteLock alock(&m->treeLock COMMA_LOCKVAL_SRC_POS);
 
     for (USBDeviceFilterList::iterator it = m->llChildren.begin();
          it != m->llChildren.end();
@@ -1768,7 +1768,7 @@ HRESULT Host::onUSBDeviceFilterChange(HostUSBDeviceFilter *aFilter,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (aFilter->mInList)
     {
@@ -1816,7 +1816,7 @@ HRESULT Host::onUSBDeviceFilterChange(HostUSBDeviceFilter *aFilter,
  */
 void Host::getUSBFilters(Host::USBDeviceFilterList *aGlobalFilters)
 {
-    AutoReadLock alock(&m->treeLock);
+    AutoReadLock alock(&m->treeLock COMMA_LOCKVAL_SRC_POS);
 
     *aGlobalFilters = m->llUSBDeviceFilters;
 }
@@ -2329,7 +2329,7 @@ HRESULT Host::checkUSBProxyService()
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(m->pUSBProxyService, E_FAIL);
     if (!m->pUSBProxyService->isActive())

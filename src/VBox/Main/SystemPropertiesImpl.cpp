@@ -542,7 +542,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMa
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m_strDefaultMachineFolderFull.cloneTo(aDefaultMachineFolder);
 
@@ -555,7 +555,7 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultMachineFolder) (IN_BSTR aDefault
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock (mParent, this);
+    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = setDefaultMachineFolder (aDefaultMachineFolder);
     if (SUCCEEDED(rc))
@@ -571,7 +571,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFolder) (BSTR *aDefaultH
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m_strDefaultHardDiskFolderFull.cloneTo(aDefaultHardDiskFolder);
 
@@ -584,7 +584,7 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFolder) (IN_BSTR aDefaul
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock (mParent, this);
+    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = setDefaultHardDiskFolder (aDefaultHardDiskFolder);
     if (SUCCEEDED(rc))
@@ -602,7 +602,7 @@ COMGETTER(MediumFormats) (ComSafeArrayOut(IMediumFormat *, aMediumFormats))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     SafeIfaceArray<IMediumFormat> mediumFormats (mMediumFormats);
     mediumFormats.detachTo(ComSafeArrayOutArg(aMediumFormats));
@@ -617,7 +617,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFormat) (BSTR *aDefaultH
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m_strDefaultHardDiskFormat.cloneTo(aDefaultHardDiskFormat);
 
@@ -630,7 +630,7 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFormat) (IN_BSTR aDefaul
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock (mParent, this);
+    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = setDefaultHardDiskFormat (aDefaultHardDiskFormat);
     if (SUCCEEDED(rc))
@@ -646,7 +646,7 @@ STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary) (BSTR *aRemot
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m_strRemoteDisplayAuthLibrary.cloneTo(aRemoteDisplayAuthLibrary);
 
@@ -659,7 +659,7 @@ STDMETHODIMP SystemProperties::COMSETTER(RemoteDisplayAuthLibrary) (IN_BSTR aRem
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock (mParent, this);
+    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = setRemoteDisplayAuthLibrary (aRemoteDisplayAuthLibrary);
     if (SUCCEEDED(rc))
@@ -675,7 +675,7 @@ STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary) (BSTR *aWebServi
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m_strWebServiceAuthLibrary.cloneTo(aWebServiceAuthLibrary);
 
@@ -688,7 +688,7 @@ STDMETHODIMP SystemProperties::COMSETTER(WebServiceAuthLibrary) (IN_BSTR aWebSer
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock (mParent, this);
+    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = setWebServiceAuthLibrary (aWebServiceAuthLibrary);
     if (SUCCEEDED(rc))
@@ -705,7 +705,7 @@ STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount) (ULONG *count)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *count = mLogHistoryCount;
 
@@ -718,7 +718,7 @@ STDMETHODIMP SystemProperties::COMSETTER(LogHistoryCount) (ULONG count)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock (mParent, this);
+    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
     mLogHistoryCount = count;
 
@@ -735,7 +735,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultAudioDriver) (AudioDriverType_T 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aAudioDriver = mDefaultAudioDriver;
 
@@ -750,7 +750,7 @@ HRESULT SystemProperties::loadSettings(const settings::SystemProperties &data)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -779,7 +779,7 @@ HRESULT SystemProperties::saveSettings(settings::SystemProperties &data)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     data.strDefaultMachineFolder = m_strDefaultMachineFolder;
     data.strDefaultHardDiskFolder = m_strDefaultHardDiskFolder;
@@ -806,7 +806,7 @@ ComObjPtr<MediumFormat> SystemProperties::mediumFormat (CBSTR aFormat)
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), format);
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     for (MediumFormatList::const_iterator it = mMediumFormats.begin();
          it != mMediumFormats.end(); ++ it)

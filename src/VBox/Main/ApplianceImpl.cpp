@@ -922,7 +922,7 @@ int Appliance::readFS(TaskImportOVF *pTask)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock appLock(this);
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -965,7 +965,7 @@ int Appliance::readS3(TaskImportOVF *pTask)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock appLock(this);
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
     int vrc = VINF_SUCCESS;
@@ -1089,7 +1089,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock appLock(this);
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -1977,7 +1977,7 @@ int Appliance::importS3(TaskImportOVF *pTask)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock appLock(this);
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
     int vrc = VINF_SUCCESS;
     RTS3 hS3 = NIL_RTS3;
@@ -2241,7 +2241,7 @@ int Appliance::writeFS(TaskExportOVF *pTask)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock appLock(this);
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -3085,7 +3085,7 @@ int Appliance::writeS3(TaskExportOVF *pTask)
 
     HRESULT rc = S_OK;
 
-    AutoWriteLock appLock(this);
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
     int vrc = VINF_SUCCESS;
     RTS3 hS3 = NIL_RTS3;
@@ -3260,7 +3260,7 @@ STDMETHODIMP Appliance::COMGETTER(Path)(BSTR *aPath)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Bstr bstrPath(m->locInfo.strPath);
     bstrPath.cloneTo(aPath);
@@ -3280,7 +3280,7 @@ STDMETHODIMP Appliance::COMGETTER(Disks)(ComSafeArrayOut(BSTR, aDisks))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->pReader) // OVFReader instantiated?
     {
@@ -3338,7 +3338,7 @@ STDMETHODIMP Appliance::COMGETTER(VirtualSystemDescriptions)(ComSafeArrayOut(IVi
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     SafeIfaceArray<IVirtualSystemDescription> sfaVSD(m->virtualSystemDescriptions);
     sfaVSD.detachTo(ComSafeArrayOutArg(aVirtualSystemDescriptions));
@@ -3359,7 +3359,7 @@ STDMETHODIMP Appliance::Read(IN_BSTR path, IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->pReader)
  	{
@@ -3405,7 +3405,7 @@ STDMETHODIMP Appliance::Interpret()
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -3852,7 +3852,7 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!m->pReader)
         return setError(E_FAIL,
@@ -3883,7 +3883,7 @@ STDMETHODIMP Appliance::CreateVFSExplorer(IN_BSTR aURI, IVFSExplorer **aExplorer
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<VFSExplorer> explorer;
     HRESULT rc = S_OK;
@@ -3917,7 +3917,7 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, IN_BSTR path, IProgress **aProgres
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // see if we can handle this file; for now we insist it has an ".ovf" extension
     Utf8Str strPath = path;
@@ -3967,7 +3967,7 @@ STDMETHODIMP Appliance::GetWarnings(ComSafeArrayOut(BSTR, aWarnings))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     com::SafeArray<BSTR> sfaWarnings(m->llWarnings.size());
 
@@ -4041,7 +4041,7 @@ STDMETHODIMP VirtualSystemDescription::COMGETTER(Count)(ULONG *aCount)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aCount = (ULONG)m->llDescriptions.size();
 
@@ -4068,7 +4068,7 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ULONG c = (ULONG)m->llDescriptions.size();
     com::SafeArray<VirtualSystemDescriptionType_T> sfaTypes(c);
@@ -4130,7 +4130,7 @@ STDMETHODIMP VirtualSystemDescription::GetDescriptionByType(VirtualSystemDescrip
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     std::list<VirtualSystemDescriptionEntry*> vsd = findByType (aType);
     ULONG c = (ULONG)vsd.size();
@@ -4186,7 +4186,7 @@ STDMETHODIMP VirtualSystemDescription::GetValuesByType(VirtualSystemDescriptionT
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     std::list<VirtualSystemDescriptionEntry*> vsd = findByType (aType);
     com::SafeArray<BSTR> sfaValues((ULONG)vsd.size());
@@ -4235,7 +4235,7 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnab
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     com::SafeArray<BOOL> sfaEnabled(ComSafeArrayInArg(aEnabled));
     com::SafeArray<IN_BSTR> sfaVboxValues(ComSafeArrayInArg(argVboxValues));
@@ -4281,7 +4281,7 @@ STDMETHODIMP VirtualSystemDescription::AddDescription(VirtualSystemDescriptionTy
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     addEntry(aType, "", aVboxValue, aVboxValue, 0, aExtraConfigValue);
 
@@ -4393,7 +4393,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock1(this);
+    AutoReadLock alock1(this COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<VirtualSystemDescription> pNewDesc;
 
@@ -4829,7 +4829,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         ComPtr<IVirtualSystemDescription> copy(pNewDesc);
         copy.queryInterfaceTo(aDescription);
 
-        AutoWriteLock alock(pAppliance);
+        AutoWriteLock alock(pAppliance COMMA_LOCKVAL_SRC_POS);
 
         pAppliance->m->virtualSystemDescriptions.push_back(pNewDesc);
     }

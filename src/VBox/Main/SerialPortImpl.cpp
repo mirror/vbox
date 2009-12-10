@@ -124,7 +124,7 @@ HRESULT SerialPort::init(Machine *aParent, SerialPort *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
-    AutoReadLock thatLock (aThat);
+    AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     m->bd.share (aThat->m->bd);
 
     /* Confirm a successful initialization */
@@ -158,7 +158,7 @@ HRESULT SerialPort::initCopy(Machine *aParent, SerialPort *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
-    AutoReadLock thatLock (aThat);
+    AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
     m->bd.attachCopy (aThat->m->bd);
 
     /* Confirm a successful initialization */
@@ -199,7 +199,7 @@ STDMETHODIMP SerialPort::COMGETTER(Enabled) (BOOL *aEnabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aEnabled = m->bd->fEnabled;
 
@@ -217,7 +217,7 @@ STDMETHODIMP SerialPort::COMSETTER(Enabled) (BOOL aEnabled)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd->fEnabled != aEnabled)
     {
@@ -240,7 +240,7 @@ STDMETHODIMP SerialPort::COMGETTER(HostMode) (PortMode_T *aHostMode)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aHostMode = m->bd->portMode;
 
@@ -256,7 +256,7 @@ STDMETHODIMP SerialPort::COMSETTER(HostMode) (PortMode_T aHostMode)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
     bool emitChangeEvent = false;
@@ -314,7 +314,7 @@ STDMETHODIMP SerialPort::COMGETTER(Slot) (ULONG *aSlot)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aSlot = m->bd->ulSlot;
 
@@ -328,7 +328,7 @@ STDMETHODIMP SerialPort::COMGETTER(IRQ) (ULONG *aIRQ)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aIRQ = m->bd->ulIRQ;
 
@@ -352,7 +352,7 @@ STDMETHODIMP SerialPort::COMSETTER(IRQ)(ULONG aIRQ)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
     bool emitChangeEvent = false;
@@ -382,7 +382,7 @@ STDMETHODIMP SerialPort::COMGETTER(IOBase) (ULONG *aIOBase)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aIOBase = m->bd->ulIOBase;
 
@@ -406,7 +406,7 @@ STDMETHODIMP SerialPort::COMSETTER(IOBase)(ULONG aIOBase)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
     bool emitChangeEvent = false;
@@ -436,7 +436,7 @@ STDMETHODIMP SerialPort::COMGETTER(Path) (BSTR *aPath)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd->strPath.cloneTo(aPath);
 
@@ -452,7 +452,7 @@ STDMETHODIMP SerialPort::COMSETTER(Path) (IN_BSTR aPath)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* we treat empty as null when e.g. saving to XML, do the same here */
     if (aPath && *aPath == '\0')
@@ -483,7 +483,7 @@ STDMETHODIMP SerialPort::COMGETTER(Server) (BOOL *aServer)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aServer = m->bd->fServer;
 
@@ -499,7 +499,7 @@ STDMETHODIMP SerialPort::COMSETTER(Server) (BOOL aServer)
     Machine::AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd->fServer != aServer)
     {
@@ -531,7 +531,7 @@ HRESULT SerialPort::loadSettings(const settings::SerialPort &data)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // simply copy
     *m->bd.data() = data;
@@ -553,7 +553,7 @@ HRESULT SerialPort::saveSettings(settings::SerialPort &data)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // simply copy
     data = *m->bd.data();
@@ -563,13 +563,13 @@ HRESULT SerialPort::saveSettings(settings::SerialPort &data)
 
 bool SerialPort::isModified()
 {
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     return m->bd.isBackedUp();
 }
 
 bool SerialPort::isReallyModified()
 {
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     return m->bd.hasActualChanges();
 }
 
@@ -582,7 +582,7 @@ bool SerialPort::rollback()
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     bool changed = false;
 
@@ -613,7 +613,7 @@ void SerialPort::commit()
 
     /* lock both for writing since we modify both (pPeer is "master" so locked
      * first) */
-    AutoMultiWriteLock2 alock(m->pPeer, this);
+    AutoMultiWriteLock2 alock(m->pPeer, this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd.isBackedUp())
     {
@@ -644,8 +644,8 @@ void SerialPort::copyFrom (SerialPort *aThat)
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
-    AutoReadLock rl(aThat);
-    AutoWriteLock wl(this);
+    AutoReadLock rl(aThat COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wl(this COMMA_LOCKVAL_SRC_POS);
 
     /* this will back up current data */
     m->bd.assignCopy (aThat->m->bd);
@@ -659,7 +659,7 @@ void SerialPort::applyDefaults (GuestOSType *aOsType)
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     uint32_t numSerialEnabled = aOsType->numSerialEnabled();
 

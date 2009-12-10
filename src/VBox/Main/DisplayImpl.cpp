@@ -1941,7 +1941,7 @@ STDMETHODIMP Display::COMGETTER(Width) (ULONG *width)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -1963,7 +1963,7 @@ STDMETHODIMP Display::COMGETTER(Height) (ULONG *height)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -1986,7 +1986,7 @@ STDMETHODIMP Display::COMGETTER(BitsPerPixel) (ULONG *bitsPerPixel)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -2013,7 +2013,7 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
@@ -2050,7 +2050,7 @@ STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* @todo this should be actually done on EMT. */
     DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
@@ -2072,7 +2072,7 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -2122,7 +2122,7 @@ STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Have to leave the lock because the pfnRequestSeamlessChange will call EMT.  */
     alock.leave ();
@@ -2219,7 +2219,7 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -2269,7 +2269,7 @@ STDMETHODIMP Display::TakeScreenShotSlow (ULONG width, ULONG height,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -2362,7 +2362,7 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -2428,7 +2428,7 @@ STDMETHODIMP Display::InvalidateAndUpdate()
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -2471,7 +2471,7 @@ STDMETHODIMP Display::ResizeCompleted(ULONG aScreenId)
 {
     LogFlowFunc (("\n"));
 
-    /// @todo (dmik) can we AutoWriteLock alock(this); here?
+    /// @todo (dmik) can we AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); here?
     //  do it when we switch this class to VirtualBoxBase_NEXT.
     //  This will require general code review and may add some details.
     //  In particular, we may want to check whether EMT is really waiting for
@@ -2507,7 +2507,7 @@ STDMETHODIMP Display::UpdateCompleted()
 {
     LogFlowFunc (("\n"));
 
-    /// @todo (dmik) can we AutoWriteLock alock(this); here?
+    /// @todo (dmik) can we AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); here?
     //  do it when we switch this class to VirtualBoxBase_NEXT.
     //  Tthis will require general code review and may add some details.
     //  In particular, we may want to check whether EMT is really waiting for
@@ -2647,7 +2647,7 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
     AutoCaller autoCaller(that);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(that);
+    AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
 
     DISPLAYFBINFO *pDisplayFBInfo = &that->maFramebuffers[uScreenId];
     pDisplayFBInfo->pFramebuffer = aFB;
@@ -3396,7 +3396,7 @@ DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
     LogFlowFunc (("iInstance=%d\n", pDrvIns->iInstance));
     if (pData->pDisplay)
     {
-        AutoWriteLock displayLock (pData->pDisplay);
+        AutoWriteLock displayLock(pData->pDisplay COMMA_LOCKVAL_SRC_POS);
         pData->pDisplay->mpDrv = NULL;
         pData->pDisplay->mpVMMDev = NULL;
         pData->pDisplay->mLastAddress = NULL;

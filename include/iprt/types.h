@@ -1227,7 +1227,7 @@ typedef RTTLS                                      *PRTTLS;
 /** Pointer to a const TLS index. */
 typedef RTTLS const                                *PCRTTLS;
 /** NIL TLS index value. */
-#define NIL_RTTLS                                   (-1)
+#define NIL_RTTLS                                   ((RTTLS)-1)
 
 /** Handle to a simple heap. */
 typedef R3R0PTRTYPE(struct RTHEAPSIMPLEINTERNAL *)  RTHEAPSIMPLE;
