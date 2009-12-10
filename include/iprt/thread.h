@@ -665,9 +665,27 @@ typedef DECLCALLBACK(void) FNRTTLSDTOR(void *pvValue);
 typedef FNRTTLSDTOR *PFNRTTLSDTOR;
 
 /**
- * Allocates a TLS entry (index). Before using an item of TLS, this must be called
- * once for the process; the RTTLS value returned is then typically stored in a global
- * or static variable. See RTTlsGet() for example code.
+ * Allocates a TLS entry (index).
+ *
+ * Example code:
+ * @code
+    RTTLS g_iTls = NIL_RTTLS;
+
+    ...
+
+    // once for the process, allocate the TLS index
+    if (g_iTls == NIL_RTTLS)
+         g_iTls = RTTlsAlloc();
+
+    // set the thread-local value.
+    RTTlsSet(g_iTls, pMyData);
+
+    ...
+
+    // get the thread-local value
+    PMYDATA pMyData = (PMYDATA)RTTlsGet(g_iTls);
+
+   @endcode
  *
  * @returns the index of the allocated TLS entry.
  * @returns NIL_RTTLS on failure.
@@ -675,7 +693,7 @@ typedef FNRTTLSDTOR *PFNRTTLSDTOR;
 RTR3DECL(RTTLS) RTTlsAlloc(void);
 
 /**
- * Allocates a TLS entry (index, with status code).
+ * Variant of RTTlsAlloc that returns a status code.
  *
  * @returns IPRT status code.
  * @retval  VERR_NOT_SUPPORTED if pfnDestructor is non-NULL and the platform
@@ -699,25 +717,11 @@ RTR3DECL(int) RTTlsFree(RTTLS iTls);
 
 /**
  * Get the (thread-local) value stored in a TLS entry.
- * If RTTlsSet() has not yet been called, returns NULL.
- *
- * Example code:
- * <code>
- * RTTLS g_globalTLSIndex = NIL_RTTLS;
- *
- * ...
- *
- * // once for the process, allocate the TLS index
- * if (g_globalTLSIndex == NIL_RTTLS)
- *      g_globalTLSIndex = RTTlsAlloc();
- *
- * // get the thread-local value
- * void* pv = RTTlsGet(g_globalTLSIndex);
- *
- * </code>
  *
  * @returns value in given TLS entry.
- * @returns NULL on failure.
+ * @retval  NULL if RTTlsSet() has not yet been called on this thread, or if the
+ *          TLS index is invalid.
+ *
  * @param   iTls        The index of the TLS entry.
  */
 RTR3DECL(void *) RTTlsGet(RTTLS iTls);
@@ -727,7 +731,8 @@ RTR3DECL(void *) RTTlsGet(RTTLS iTls);
  *
  * @returns IPRT status code.
  * @param   iTls        The index of the TLS entry.
- * @param   ppvValue    Where to store the value.
+ * @param   ppvValue    Where to store the value.  The value will be NULL if
+ *                      RTTlsSet has not yet been called on this thread.
  */
 RTR3DECL(int) RTTlsGetEx(RTTLS iTls, void **ppvValue);
 
