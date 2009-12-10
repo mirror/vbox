@@ -1015,6 +1015,12 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_IMAGE_BASE_TOO_HIGH                (-614)
 /** Mismatching architecture. */
 #define VERR_LDR_ARCH_MISMATCH                  (-615)
+/** Mismatch between IPRT and native loader. */
+#define VERR_LDR_MISMATCH_NATIVE                (-616)
+/** Failed to resolve an imported (external) symbol. */
+#define VERR_LDR_IMPORTED_SYMBOL_NOT_FOUND      (-617)
+/** Generic loader failure. */
+#define VERR_LDR_GENERAL_FAILURE                (-618)
 /** The PE loader encountered delayed imports, a feature which hasn't been implemented yet. */
 #define VERR_LDRPE_DELAY_IMPORT                 (-620)
 /** The PE loader doesn't have a clue what the security data directory entry is all about. */
