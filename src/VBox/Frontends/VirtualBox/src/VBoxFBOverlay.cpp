@@ -3962,7 +3962,7 @@ int VBoxGLWidget::vhwaLoadExec(VHWACommandList * pCmdList, struct SSMHANDLE * pS
         rc = SSMR3GetU32(pSSM, &u32); AssertRC(rc);
         if(RT_SUCCESS(rc))
         {
-            if(u32Version == 1 && u32 == (~0)) /* work around the v1 bug */
+            if(u32Version == 1U && u32 == (~0U)) /* work around the v1 bug */
                 u32 = 0;
             if(u32)
             {
