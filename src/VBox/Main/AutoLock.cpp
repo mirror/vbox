@@ -90,6 +90,58 @@ uint32_t RWLockHandle::writeLockLevel() const
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+// WriteLockHandle
+//
+////////////////////////////////////////////////////////////////////////////////
+
+WriteLockHandle::WriteLockHandle()
+{
+    RTCritSectInit(&mCritSect);
+}
+
+/*virtual*/ WriteLockHandle::~WriteLockHandle()
+{
+    RTCritSectDelete(&mCritSect);
+}
+
+/*virtual*/ bool WriteLockHandle::isWriteLockOnCurrentThread() const
+{
+    return RTCritSectIsOwner(&mCritSect);
+}
+
+/*virtual*/ void WriteLockHandle::lockWrite()
+{
+#if defined(DEBUG)
+    RTCritSectEnterDebug(&mCritSect,
+                         "WriteLockHandle::lockWrite() return address >>>",
+                         0, (RTUINTPTR) ASMReturnAddress());
+#else
+    RTCritSectEnter(&mCritSect);
+#endif
+}
+
+/*virtual*/ void WriteLockHandle::unlockWrite()
+{
+    RTCritSectLeave(&mCritSect);
+}
+
+/*virtual*/ void WriteLockHandle::lockRead()
+{
+    lockWrite();
+}
+
+/*virtual*/ void WriteLockHandle::unlockRead()
+{
+    unlockWrite();
+}
+
+/*virtual*/ uint32_t WriteLockHandle::writeLockLevel() const
+{
+    return RTCritSectGetRecursion(&mCritSect);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
 // AutoLockBase
 //
 ////////////////////////////////////////////////////////////////////////////////
