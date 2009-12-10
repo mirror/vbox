@@ -154,6 +154,8 @@ private:
     typedef Service SELF;
     /** HGCM helper functions. */
     PVBOXHGCMSVCHELPERS mpHelpers;
+    /** Global flags for the service */
+    ePropFlags meGlobalFlags;
     /** The property list */
     PropertyList mProperties;
     /** The list of property changes for guest notifications */
@@ -222,9 +224,26 @@ private:
         return rc;
     }
 
+    /**
+     * Check whether we have permission to change a property.
+     * @returns VINF_SUCCESS if we do, VERR_PERMISSION_DENIED otherwise
+     * @param   eFlags   the flags on the property in question
+     * @param   isGuest  is the guest or the host trying to make the change?
+     */
+    int checkPermission(ePropFlags eFlags, bool isGuest)
+    {
+        if (   (isGuest && (eFlags & RDONLYGUEST))
+            || (isGuest && (meGlobalFlags & RDONLYGUEST))
+            || (!isGuest && (eFlags & RDONLYHOST))
+           )
+            return VERR_PERMISSION_DENIED;
+        return VINF_SUCCESS;
+    }
+
 public:
     explicit Service(PVBOXHGCMSVCHELPERS pHelpers)
         : mpHelpers(pHelpers)
+        , meGlobalFlags(NILFLAG)
         , mPendingDummyReq(NULL)
         , mfExitThread(false)
         , mpfnHostCallback(NULL)
@@ -643,11 +662,9 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
                 found = true;
                 break;
             }
-    if (RT_SUCCESS(rc) && found)
-        if (   (isGuest && (it->mFlags & RDONLYGUEST))
-            || (!isGuest && (it->mFlags & RDONLYHOST))
-           )
-            rc = VERR_PERMISSION_DENIED;
+    if (RT_SUCCESS(rc))
+        rc = checkPermission(found ? (ePropFlags)it->mFlags : NILFLAG,
+                             isGuest);
 
     /*
      * Set the actual value
@@ -720,11 +737,9 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
                 found = true;
                 break;
             }
-    if (RT_SUCCESS(rc) && found)
-        if (   (isGuest && (it->mFlags & RDONLYGUEST))
-            || (!isGuest && (it->mFlags & RDONLYHOST))
-           )
-            rc = VERR_PERMISSION_DENIED;
+    if (RT_SUCCESS(rc))
+        rc = checkPermission(found ? (ePropFlags)it->mFlags : 
+                             NILFLAG, isGuest);
 
     /*
      * And delete the property if all is well.
@@ -1288,6 +1303,20 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
             case ENUM_PROPS_HOST:
                 LogFlowFunc(("ENUM_PROPS\n"));
                 rc = enumProps(cParms, paParms);
+                break;
+
+            /* The host wishes to flush all pending notification */
+            case SET_GLOBAL_FLAGS_HOST:
+                LogFlowFunc(("SET_GLOBAL_FLAGS_HOST\n"));
+                if (cParms == 1)
+                {
+                    uint32_t eFlags;
+                    rc = paParms[0].getUInt32(&eFlags);
+                    if (RT_SUCCESS(rc))
+                        meGlobalFlags = (ePropFlags)eFlags;
+                }
+                else
+                    rc = VERR_INVALID_PARAMETER;
                 break;
 
             /* The host wishes to flush all pending notification */

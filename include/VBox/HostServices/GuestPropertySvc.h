@@ -247,6 +247,12 @@ enum eHostFn
     ENUM_PROPS_HOST = 6,
 
     /**
+     * Set global flags for the service.  Currently RDONLYGUEST is supported.
+     * Takes one 32-bit unsigned integer parameter for the flags.
+     */
+    SET_GLOBAL_FLAGS_HOST = 7,
+
+    /**
      * Flush notifications.
      * Takes one 32-bit unsigned integer parameter that gives the number of
      * milliseconds to wait for the worker thread to get the work done.
