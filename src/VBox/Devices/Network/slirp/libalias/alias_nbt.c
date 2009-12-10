@@ -277,13 +277,19 @@ typedef struct {
 #define OpWACK      7
 #define OpRefresh   8
 typedef struct {
+#ifndef VBOX
     u_short     nametrid;
     u_short     dir:    1, opcode:4, nmflags:7, rcode:4;
+#else
+    unsigned    nametrid:16;
+    unsigned    dir:    1, opcode:4, nmflags:7, rcode:4;
+#endif
     u_short     qdcount;
     u_short     ancount;
     u_short     nscount;
     u_short     arcount;
 }       NbtNSHeader;
+AssertCompileSize(NbtNSHeader, 12);
 
 #define FMT_ERR     0x1
 #define SRV_ERR     0x2
@@ -535,9 +541,14 @@ typedef struct {
 
 #define SizeOfNsRNB         6
 typedef struct {
+#ifndef VBOX
     u_short     g:  1  , ont:2, resv:13;
+#else
+    unsigned    g:  1  , ont:2, resv:13;
+#endif
     struct in_addr  addr;
 }       NBTNsRNB;
+AssertCompileSize(NBTNsRNB, 8);
 
 static u_char  *
 AliasHandleResourceNB(
@@ -659,8 +670,13 @@ AliasHandleResourceA(
 }
 
 typedef struct {
+#ifndef VBOX
     u_short     opcode:4, flags:8, resv:4;
+#else
+    u_short     hidden; /* obviously not needed */
+#endif
 }       NBTNsResourceNULL;
+AssertCompileSize(NBTNsResourceNULL, 2);
 
 static u_char  *
 AliasHandleResourceNULL(
