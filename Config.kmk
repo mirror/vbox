@@ -379,7 +379,7 @@ VBOX_DO_STRIP_MODULES = 1
 if1of ($(KBUILD_TARGET),darwin os2)
 IPRT_WITH_KSTUFF = 1
 endif
-# Enable Crossbow support for Solaris.
+# Enable Crossbow support for Solaris TAP driver.
 VBOX_WITH_CROSSBOW = 1
 # Enable setuid wrapper for Solaris.
 #VBOX_WITH_SUID_WRAPPER = 1
@@ -514,6 +514,9 @@ endif
 if1of ($(KBUILD_TARGET), darwin linux solaris win freebsd)
  VBOX_WITH_NETFLT = 1
  VBOX_SOLARIS_NSL_RESOLVED = 1
+ ifeq ($(KBUILD_TARGET),solaris)
+  VBOX_WITH_NETFLT_CROSSBOW = 1
+ endif
  if1of ($(KBUILD_TARGET), darwin solaris linux freebsd)
   VBOX_WITH_NETADP = 1
  endif

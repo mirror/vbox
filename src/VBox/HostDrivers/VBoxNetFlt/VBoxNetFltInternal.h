@@ -174,6 +174,18 @@ typedef struct VBOXNETFLTINS
 # elif defined(RT_OS_SOLARIS)
             /** @name Solaris instance data.
              * @{ */
+#  ifdef VBOX_WITH_NETFLT_CROSSBOW
+            /** The lower MAC handle */
+            mac_handle_t hInterface;
+            /** The client MAC handle */
+            mac_client_handle_t hClient;
+            /** The unicast address handle */
+            mac_unicast_handle_t hUnicast;
+            /** The promiscuous handle */
+            mac_promisc_handle_t hPromiscuous;
+            /** The MAC address of the interface */
+            RTMAC Mac;
+#  else
             /** Pointer to the bound IPv4 stream. */
             void volatile *pvIp4Stream;
             /** Pointer to the bound IPv6 stream. */
@@ -192,6 +204,7 @@ typedef struct VBOXNETFLTINS
             RTSEMFASTMUTEX hFastMtx;
             /** Mutex protection used for dynamic IPv6 attaches. */
             RTSEMFASTMUTEX hPollMtx;
+#  endif
             /** @} */
 # elif defined(RT_OS_FREEBSD)
             /** @name FreeBSD instance data.
