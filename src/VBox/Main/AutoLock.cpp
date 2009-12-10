@@ -556,11 +556,6 @@ void AutoWriteLock::attach(LockHandle *aHandle)
     }
 }
 
-void AutoWriteLock::attachRaw(LockHandle *ph)
-{
-    m->aHandles[0] = ph;
-}
-
 /**
  * Returns @c true if the current thread holds a write lock on the managed
  * read/write semaphore. Returns @c false if the managed semaphore is @c

@@ -443,8 +443,6 @@ public:
         attach(aLockable ? aLockable->lockHandle() : NULL);
     }
 
-    void attachRaw(LockHandle *ph);
-
     bool isWriteLockOnCurrentThread() const;
     uint32_t writeLockLevel() const;
 };
