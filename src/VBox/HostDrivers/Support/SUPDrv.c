@@ -102,6 +102,8 @@ static int      supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void 
 static void     supdrvLdrUnsetVMMR0EPs(PSUPDRVDEVEXT pDevExt);
 static int      supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
 static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
+DECLINLINE(int) supdrvLdrLock(PSUPDRVDEVEXT pDevExt);
+DECLINLINE(int) supdrvLdrUnlock(PSUPDRVDEVEXT pDevExt);
 static int      supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq);
 static int      supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLOGGERSETTINGS pReq);
 static int      supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
@@ -498,7 +500,11 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
     rc = RTSpinlockCreate(&pDevExt->Spinlock);
     if (!rc)
     {
+#ifdef SUPDRV_USE_MUTEX_FOR_LDR
+        rc = RTSemMutexCreate(&pDevExt->mtxLdr);
+#else
         rc = RTSemFastMutexCreate(&pDevExt->mtxLdr);
+#endif
         if (!rc)
         {
             rc = RTSemFastMutexCreate(&pDevExt->mtxComponentFactory);
@@ -573,8 +579,13 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
                 RTSemFastMutexDestroy(pDevExt->mtxComponentFactory);
                 pDevExt->mtxComponentFactory = NIL_RTSEMFASTMUTEX;
             }
+#ifdef SUPDRV_USE_MUTEX_FOR_LDR
+            RTSemMutexDestroy(pDevExt->mtxLdr);
+            pDevExt->mtxLdr = NIL_RTSEMMUTEX;
+#else
             RTSemFastMutexDestroy(pDevExt->mtxLdr);
             pDevExt->mtxLdr = NIL_RTSEMFASTMUTEX;
+#endif
         }
         RTSpinlockDestroy(pDevExt->Spinlock);
         pDevExt->Spinlock = NIL_RTSPINLOCK;
@@ -603,8 +614,13 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
      */
     RTSemFastMutexDestroy(pDevExt->mtxGip);
     pDevExt->mtxGip = NIL_RTSEMFASTMUTEX;
+#ifdef SUPDRV_USE_MUTEX_FOR_LDR
+    RTSemMutexDestroy(pDevExt->mtxLdr);
+    pDevExt->mtxLdr = NIL_RTSEMMUTEX;
+#else
     RTSemFastMutexDestroy(pDevExt->mtxLdr);
     pDevExt->mtxLdr = NIL_RTSEMFASTMUTEX;
+#endif
     RTSpinlockDestroy(pDevExt->Spinlock);
     pDevExt->Spinlock = NIL_RTSPINLOCK;
     RTSemFastMutexDestroy(pDevExt->mtxComponentFactory);
@@ -916,7 +932,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
     /*
      * Loaded images needs to be dereferenced and possibly freed up.
      */
-    RTSemFastMutexRequest(pDevExt->mtxLdr);
+    supdrvLdrLock(pDevExt);
     Log2(("freeing images:\n"));
     if (pSession->pLdrUsage)
     {
@@ -935,7 +951,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
             RTMemFree(pvFree);
         }
     }
-    RTSemFastMutexRelease(pDevExt->mtxLdr);
+    supdrvLdrUnlock(pDevExt);
     Log2(("freeing images - done\n"));
 
     /*
@@ -3455,7 +3471,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     /*
      * Check if we got an instance of the image already.
      */
-    RTSemFastMutexRequest(pDevExt->mtxLdr);
+    supdrvLdrLock(pDevExt);
     for (pImage = pDevExt->pLdrImages; pImage; pImage = pImage->pNext)
     {
         if (    pImage->szName[cchName] == '\0'
@@ -3467,7 +3483,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             pReq->u.Out.fNeedsLoading = pImage->uState == SUP_IOCTL_LDR_OPEN;
             pReq->u.Out.fNativeLoader = pImage->fNative;
             supdrvLdrAddUsage(pSession, pImage);
-            RTSemFastMutexRelease(pDevExt->mtxLdr);
+            supdrvLdrUnlock(pDevExt);
             return VINF_SUCCESS;
         }
     }
@@ -3479,7 +3495,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     pv = RTMemAlloc(RT_OFFSETOF(SUPDRVLDRIMAGE, szName[cchName + 1]));
     if (!pv)
     {
-        RTSemFastMutexRelease(pDevExt->mtxLdr);
+        supdrvLdrUnlock(pDevExt);
         Log(("supdrvIOCtl_LdrOpen: RTMemAlloc() failed\n"));
         return VERR_NO_MEMORY;
     }
@@ -3518,7 +3534,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     }
     if (RT_FAILURE(rc))
     {
-        RTSemFastMutexRelease(pDevExt->mtxLdr);
+        supdrvLdrUnlock(pDevExt);
         RTMemFree(pImage);
         Log(("supdrvIOCtl_LdrOpen(%s): failed - %Rrc\n", pReq->u.In.szName, rc));
         return rc;
@@ -3536,7 +3552,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     pReq->u.Out.pvImageBase   = pImage->pvImage;
     pReq->u.Out.fNeedsLoading = true;
     pReq->u.Out.fNativeLoader = pImage->fNative;
-    RTSemFastMutexRelease(pDevExt->mtxLdr);
+    supdrvLdrUnlock(pDevExt);
 
 #if defined(RT_OS_WINDOWS) && defined(DEBUG)
     SUPR0Printf("VBoxDrv: windbg> .reload /f %s=%#p\n", pImage->szName, pImage->pvImage);
@@ -3565,7 +3581,7 @@ static int supdrvLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImag
     {
         if ((uintptr_t)pv - (uintptr_t)pImage->pvImage >= pImage->cbImageBits)
         {
-            RTSemFastMutexRelease(pDevExt->mtxLdr);
+            supdrvLdrUnlock(pDevExt);
             Log(("Out of range (%p LB %#x): %s=%p\n", pImage->pvImage, pImage->cbImageBits, pszWhat, pv));
             return VERR_INVALID_PARAMETER;
         }
@@ -3575,7 +3591,7 @@ static int supdrvLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImag
             int rc = supdrvOSLdrValidatePointer(pDevExt, pImage, pv, pbImageBits);
             if (RT_FAILURE(rc))
             {
-                RTSemFastMutexRelease(pDevExt->mtxLdr);
+                supdrvLdrUnlock(pDevExt);
                 Log(("Bad entry point address: %s=%p (rc=%Rrc)\n", pszWhat, pv, rc));
                 return rc;
             }
@@ -3605,13 +3621,13 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     /*
      * Find the ldr image.
      */
-    RTSemFastMutexRequest(pDevExt->mtxLdr);
+    supdrvLdrLock(pDevExt);
     pUsage = pSession->pLdrUsage;
     while (pUsage && pUsage->pImage->pvImage != pReq->u.In.pvImageBase)
         pUsage = pUsage->pNext;
     if (!pUsage)
     {
-        RTSemFastMutexRelease(pDevExt->mtxLdr);
+        supdrvLdrUnlock(pDevExt);
         Log(("SUP_IOCTL_LDR_LOAD: couldn't find image!\n"));
         return VERR_INVALID_HANDLE;
     }
@@ -3623,7 +3639,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     if (   pImage->cbImageWithTabs != pReq->u.In.cbImageWithTabs
         || pImage->cbImageBits     != pReq->u.In.cbImageBits)
     {
-        RTSemFastMutexRelease(pDevExt->mtxLdr);
+        supdrvLdrUnlock(pDevExt);
         Log(("SUP_IOCTL_LDR_LOAD: image size mismatch!! %d(prep) != %d(load) or %d != %d\n",
              pImage->cbImageWithTabs, pReq->u.In.cbImageWithTabs, pImage->cbImageBits, pReq->u.In.cbImageBits));
         return VERR_INVALID_HANDLE;
@@ -3632,7 +3648,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     if (pImage->uState != SUP_IOCTL_LDR_OPEN)
     {
         unsigned uState = pImage->uState;
-        RTSemFastMutexRelease(pDevExt->mtxLdr);
+        supdrvLdrUnlock(pDevExt);
         if (uState != SUP_IOCTL_LDR_LOAD)
             AssertMsgFailed(("SUP_IOCTL_LDR_LOAD: invalid image state %d (%#x)!\n", uState, uState));
         return SUPDRV_ERR_ALREADY_LOADED;
@@ -3663,7 +3679,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
                 ||  pReq->u.In.EP.Service.apvReserved[1] != NIL_RTR0PTR
                 ||  pReq->u.In.EP.Service.apvReserved[2] != NIL_RTR0PTR)
             {
-                RTSemFastMutexRelease(pDevExt->mtxLdr);
+                supdrvLdrUnlock(pDevExt);
                 Log(("Out of range (%p LB %#x): apvReserved={%p,%p,%p} MBZ!\n",
                      pImage->pvImage, pReq->u.In.cbImageWithTabs,
                      pReq->u.In.EP.Service.apvReserved[0],
@@ -3674,7 +3690,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             break;
 
         default:
-            RTSemFastMutexRelease(pDevExt->mtxLdr);
+            supdrvLdrUnlock(pDevExt);
             Log(("Invalid eEPType=%d\n", pReq->u.In.eEPType));
             return VERR_INVALID_PARAMETER;
     }
@@ -3778,7 +3794,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         pImage->cSymbols            = 0;
     }
 
-    RTSemFastMutexRelease(pDevExt->mtxLdr);
+    supdrvLdrUnlock(pDevExt);
     return rc;
 }
 
@@ -3802,7 +3818,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     /*
      * Find the ldr image.
      */
-    RTSemFastMutexRequest(pDevExt->mtxLdr);
+    supdrvLdrLock(pDevExt);
     pUsagePrev = NULL;
     pUsage = pSession->pLdrUsage;
     while (pUsage && pUsage->pImage->pvImage != pReq->u.In.pvImageBase)
@@ -3812,7 +3828,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     }
     if (!pUsage)
     {
-        RTSemFastMutexRelease(pDevExt->mtxLdr);
+        supdrvLdrUnlock(pDevExt);
         Log(("SUP_IOCTL_LDR_FREE: couldn't find image!\n"));
         return VERR_INVALID_HANDLE;
     }
@@ -3888,7 +3904,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         pUsage->cUsage--;
     }
 
-    RTSemFastMutexRelease(pDevExt->mtxLdr);
+    supdrvLdrUnlock(pDevExt);
     return rc;
 }
 
@@ -3917,13 +3933,13 @@ static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
     /*
      * Find the ldr image.
      */
-    RTSemFastMutexRequest(pDevExt->mtxLdr);
+    supdrvLdrLock(pDevExt);
     pUsage = pSession->pLdrUsage;
     while (pUsage && pUsage->pImage->pvImage != pReq->u.In.pvImageBase)
         pUsage = pUsage->pNext;
     if (!pUsage)
     {
-        RTSemFastMutexRelease(pDevExt->mtxLdr);
+        supdrvLdrUnlock(pDevExt);
         Log(("SUP_IOCTL_LDR_GET_SYMBOL: couldn't find image!\n"));
         return VERR_INVALID_HANDLE;
     }
@@ -3931,7 +3947,7 @@ static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
     if (pImage->uState != SUP_IOCTL_LDR_LOAD)
     {
         unsigned uState = pImage->uState;
-        RTSemFastMutexRelease(pDevExt->mtxLdr);
+        supdrvLdrUnlock(pDevExt);
         Log(("SUP_IOCTL_LDR_GET_SYMBOL: invalid image state %d (%#x)!\n", uState, uState)); NOREF(uState);
         return VERR_ALREADY_LOADED;
     }
@@ -3952,7 +3968,7 @@ static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
             break;
         }
     }
-    RTSemFastMutexRelease(pDevExt->mtxLdr);
+    supdrvLdrUnlock(pDevExt);
     pReq->u.Out.pvSymbol = pvSymbol;
     return rc;
 }
@@ -4013,7 +4029,7 @@ static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
          */
         PSUPDRVLDRIMAGE pImage;
 
-        RTSemFastMutexRequest(pDevExt->mtxLdr);
+        supdrvLdrLock(pDevExt);
 
         for (pImage = pDevExt->pLdrImages; pImage; pImage = pImage->pNext)
             if (!strcmp(pImage->szName, pszModule))
@@ -4043,7 +4059,7 @@ static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
         else
             rc = pImage ? VERR_WRONG_ORDER : VERR_MODULE_NOT_FOUND;
 
-        RTSemFastMutexRelease(pDevExt->mtxLdr);
+        supdrvLdrUnlock(pDevExt);
     }
     return rc;
 }
@@ -4233,6 +4249,38 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 
 
 /**
+ * Acquires the loader lock.
+ *
+ * @returns IPRT status code.
+ * @param   pDevExt         The device extension.
+ */
+DECLINLINE(int) supdrvLdrLock(PSUPDRVDEVEXT pDevExt)
+{
+#ifdef SUPDRV_USE_MUTEX_FOR_LDR
+    return RTSemMutexRequest(pDevExt->mtxLdr, RT_INDEFINITE_WAIT);
+#else
+    return RTSemFastMutexRequest(pDevExt->mtxLdr);
+#endif
+}
+
+
+/**
+ * Releases the loader lock.
+ *
+ * @returns IPRT status code.
+ * @param   pDevExt         The device extension.
+ */
+DECLINLINE(int) supdrvLdrUnlock(PSUPDRVDEVEXT pDevExt)
+{
+#ifdef SUPDRV_USE_MUTEX_FOR_LDR
+    return RTSemMutexRelease(pDevExt->mtxLdr);
+#else
+    return RTSemFastMutexRelease(pDevExt->mtxLdr);
+#endif
+}
+
+
+/**
  * Implements the service call request.
  *
  * @returns VBox status code.
@@ -4248,7 +4296,7 @@ static int supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
     /*
      * Find the module first in the module referenced by the calling session.
      */
-    rc = RTSemFastMutexRequest(pDevExt->mtxLdr);
+    rc = supdrvLdrLock(pDevExt);
     if (RT_SUCCESS(rc))
     {
         PFNSUPR0SERVICEREQHANDLER   pfnServiceReqHandler = NULL;
@@ -4261,7 +4309,7 @@ static int supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
                 pfnServiceReqHandler = pUsage->pImage->pfnServiceReqHandler;
                 break;
             }
-        RTSemFastMutexRelease(pDevExt->mtxLdr);
+        supdrvLdrUnlock(pDevExt);
 
         if (pfnServiceReqHandler)
         {

@@ -173,13 +173,17 @@
  * This is supposed to have a limit right below 256MB, but this appears
  * to actually be much lower. The values here have been determined experimentally.
  */
-#ifdef RT_ARCH_X86
-# define MAX_LOCK_MEM_SIZE   (32*1024*1024) /* 32mb */
-#endif
-#ifdef RT_ARCH_AMD64
-# define MAX_LOCK_MEM_SIZE   (24*1024*1024) /* 24mb */
-#endif
+# ifdef RT_ARCH_X86
+#  define MAX_LOCK_MEM_SIZE   (32*1024*1024) /* 32mb */
+# endif
+# ifdef RT_ARCH_AMD64
+#  define MAX_LOCK_MEM_SIZE   (24*1024*1024) /* 24mb */
+# endif
 
+/** Use a normal mutex for the loader so we remain at the same IRQL after
+ * taking it.
+ * @todo fix the mutex implementation on linux and make this the default. */
+# define SUPDRV_USE_MUTEX_FOR_LDR
 
 /*
  * Linux
@@ -600,7 +604,11 @@ typedef struct SUPDRVDEVEXT
 
     /** Loader mutex.
      * This protects pvVMMR0, pvVMMR0Entry, pImages and SUPDRVSESSION::pLdrUsage. */
+#ifdef SUPDRV_USE_MUTEX_FOR_LDR
+    RTSEMMUTEX                      mtxLdr;
+#else
     RTSEMFASTMUTEX                  mtxLdr;
+#endif
 
     /** VMM Module 'handle'.
      * 0 if the code VMM isn't loaded and Idt are nops. */
