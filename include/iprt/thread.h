@@ -665,7 +665,9 @@ typedef DECLCALLBACK(void) FNRTTLSDTOR(void *pvValue);
 typedef FNRTTLSDTOR *PFNRTTLSDTOR;
 
 /**
- * Allocates a TLS entry.
+ * Allocates a TLS entry (index). Before using an item of TLS, this must be called
+ * once for the process; the RTTLS value returned is then typically stored in a global
+ * or static variable. See RTTlsGet() for example code.
  *
  * @returns the index of the allocated TLS entry.
  * @returns NIL_RTTLS on failure.
@@ -673,7 +675,7 @@ typedef FNRTTLSDTOR *PFNRTTLSDTOR;
 RTR3DECL(RTTLS) RTTlsAlloc(void);
 
 /**
- * Allocates a TLS entry (with status code).
+ * Allocates a TLS entry (index, with status code).
  *
  * @returns IPRT status code.
  * @retval  VERR_NOT_SUPPORTED if pfnDestructor is non-NULL and the platform
@@ -696,7 +698,23 @@ RTR3DECL(int) RTTlsAllocEx(PRTTLS piTls, PFNRTTLSDTOR pfnDestructor);
 RTR3DECL(int) RTTlsFree(RTTLS iTls);
 
 /**
- * Get the value stored in a TLS entry.
+ * Get the (thread-local) value stored in a TLS entry.
+ * If RTTlsSet() has not yet been called, returns NULL.
+ *
+ * Example code:
+ * <code>
+ * RTTLS g_globalTLSIndex = NIL_RTTLS;
+ *
+ * ...
+ *
+ * // once for the process, allocate the TLS index
+ * if (g_globalTLSIndex == NIL_RTTLS)
+ *      g_globalTLSIndex = RTTlsAlloc();
+ *
+ * // get the thread-local value
+ * void* pv = RTTlsGet(g_globalTLSIndex);
+ *
+ * </code>
  *
  * @returns value in given TLS entry.
  * @returns NULL on failure.
@@ -720,7 +738,7 @@ RTR3DECL(int) RTTlsGetEx(RTTLS iTls, void **ppvValue);
  * @param   iTls        The index of the TLS entry.
  * @param   pvValue     The value to store.
  *
- * @remarks Note that NULL is considered to special value.
+ * @remarks Note that NULL is considered a special value.
  */
 RTR3DECL(int) RTTlsSet(RTTLS iTls, void *pvValue);
 
