@@ -598,6 +598,7 @@ LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, 
 
     PVBOXNETFLTINS pThis = (PVBOXNETFLTINS)pvData;
     AssertPtrReturnVoid(pThis);
+    AssertPtrReturnVoid(pMsg);
 
     /*
      * Active? Retain the instance and increment the busy counter.
@@ -629,7 +630,7 @@ LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, 
     else
         LogRel((DEVICE_NAME ":vboxNetFltSolarisMBlkToSG failed. rc=%d\n", rc));
 
-    vboxNetFltRelease(pThis, true /* fBusy */);        
+    vboxNetFltRelease(pThis, true /* fBusy */);
     freemsgchain(pMsg);
 
     NOREF(hResource);
@@ -647,7 +648,7 @@ LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, 
 LOCAL int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis, bool fRediscovery)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    
+
     /*
      * Open the underlying interface (lower MAC) and get it's handle.
      */
@@ -665,7 +666,10 @@ LOCAL int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
                  */
                 AssertCompile(sizeof(RTMAC) == ETHERADDRL);
                 mac_unicast_primary_get(pThis->u.s.hInterface, (uint8_t *)&pThis->u.s.Mac.au8);
-                
+
+                LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface MAC address of %s is %.*Rhxs\n", pThis->szName,
+                                sizeof(pThis->u.s.Mac), &pThis->u.s.Mac));
+
                 /** @todo Obtain the MTU size using mac_sdu_get() */
                 /** @todo Obtain capabilities (hardware checksum etc.) using mac_capab_get() */
 
@@ -685,7 +689,9 @@ LOCAL int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
                      * Also we don't really set the RX function here, this is done when we activate promiscuous mode.
                      */
                     mac_diag_t MacDiag;
-                    rc = mac_unicast_add_set_rx(pThis->u.s.hClient, NULL /* MAC Address */,  MAC_UNICAST_PRIMARY,
+                    rc = mac_unicast_add_set_rx(pThis->u.s.hClient, NULL /* MAC Address */,
+                                                MAC_UNICAST_PRIMARY | MAC_UNICAST_STRIP_DISABLE | 
+                                                MAC_UNICAST_DISABLE_TX_VID_CHECK | MAC_UNICAST_NODUPCHECK,
                                                 &pThis->u.s.hUnicast, 0 /* VLAN id */, &MacDiag, NULL /* pfnRecv */, pThis);
                     if (!rc)
                     {
@@ -695,6 +701,9 @@ LOCAL int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
                     else
                         LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed to set client MAC address over link '%s' rc=%d\n",
                                 pThis->szName, rc));
+
+                    mac_client_close(pThis->u.s.hClient, 0 /* fFlags */);
+                    pThis->u.s.hClient = NULL;
                 }
                 else
                 {
@@ -743,8 +752,11 @@ LOCAL int vboxNetFltSolarisDetachFromInterface(PVBOXNETFLTINS pThis)
 
     if (pThis->u.s.hClient)
     {
-        mac_unicast_remove(pThis->u.s.hClient, pThis->u.s.hUnicast);
-        pThis->u.s.hUnicast = NULL;
+        if (pThis->u.s.hUnicast)
+        {
+            mac_unicast_remove(pThis->u.s.hClient, pThis->u.s.hUnicast);
+            pThis->u.s.hUnicast = NULL;
+        }
 
         mac_rx_clear(pThis->u.s.hClient);
 
@@ -755,7 +767,7 @@ LOCAL int vboxNetFltSolarisDetachFromInterface(PVBOXNETFLTINS pThis)
     if (pThis->u.s.hInterface)
     {
         mac_close(pThis->u.s.hInterface);
-        pThis->u.s.hInterface = NULL;    
+        pThis->u.s.hInterface = NULL;
     }
 }
 
@@ -797,7 +809,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
         if (!pThis->u.s.hPromiscuous)
         {
             int rc = mac_promisc_add(pThis->u.s.hClient, MAC_CLIENT_PROMISC_ALL, vboxNetFltSolarisRecv, pThis, &pThis->u.s.hPromiscuous,
-                                    /* MAC_PROMISC_FLAGS_NO_TX_LOOP */ 0);
+                                    MAC_PROMISC_FLAGS_NO_TX_LOOP);
             if (rc)
                 LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive cannot enable promiscuous mode for '%s' rc=%d\n", pThis->szName, rc));
         }
@@ -879,17 +891,9 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
         if (RT_LIKELY(pMsg))
         {
             LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit pThis=%p cbData=%d\n", pThis, MBLKL(pMsg)));
-            mac_tx_cookie_t pXmitCookie = mac_tx(pThis->u.s.hClient, pMsg,
-                                            0                                            /* hint: no idea what this is  */,
-                                            MAC_DROP_ON_NO_DESC,                         /* freemsg on failure */
-                                            NULL                                         /* return message */
-                                            );
-            if (!pXmitCookie)
-                return VINF_SUCCESS;
 
-            pMsg = NULL;
-            rc = VERR_NET_IO_ERROR;
-            LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit Xmit failed.\n"));
+            mac_tx(pThis->u.s.hClient, pMsg, 0 /* Hint */, MAC_DROP_ON_NO_DESC, NULL /* return message */);
+            return VINF_SUCCESS;
         }
         else
         {
