@@ -721,7 +721,7 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t cCpus)
     }
 
     /* ISA bus */
-    PMPSBUSENTRY pBusEntry         = (PMPSBUSENTRY)(pProcEntry+1);
+    PMPSBUSENTRY pBusEntry         = (PMPSBUSENTRY)pProcEntry;
     pBusEntry->u8EntryType         = 1; /* bus entry */
     pBusEntry->u8BusId             = 0; /* this ID is referenced by the interrupt entries */
     memcpy(pBusEntry->au8BusTypeStr, "ISA   ", 6);
