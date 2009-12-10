@@ -700,6 +700,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mMouseCaptured (false)
     , mMouseAbsolute (false)
     , mMouseIntegration (true)
+    , m_iLastMouseWheelDelta(0)
     , mDisableAutoCapture (false)
     , mIsHostkeyPressed (false)
     , mIsHostkeyAlone (false)
@@ -1766,6 +1767,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             case QEvent::MouseButtonRelease:
             {
                 QMouseEvent *me = (QMouseEvent *) e;
+                m_iLastMouseWheelDelta = 0;
                 if (mouseEvent (me->type(), me->pos(), me->globalPos(),
                                 me->buttons(), me->modifiers(),
                                 0, Qt::Horizontal))
@@ -1775,6 +1777,18 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             case QEvent::Wheel:
             {
                 QWheelEvent *we = (QWheelEvent *) e;
+                /* There are pointing devices which send smaller values for the
+                 * delta than 120. Here we sum them up until we are greater
+                 * than 120. This allows to have finer control over the speed
+                 * acceleration & enables such devices to send a valid wheel
+                 * event to our guest mouse device at all. */
+                int iDelta = 0;
+                m_iLastMouseWheelDelta += we->delta();
+                if (qAbs(m_iLastMouseWheelDelta) >= 120)
+                {
+                    iDelta = m_iLastMouseWheelDelta;
+                    m_iLastMouseWheelDelta = m_iLastMouseWheelDelta % 120;
+                }
                 if (mouseEvent (we->type(), we->pos(), we->globalPos(),
 #ifdef QT_MAC_USE_COCOA
                                 /* Qt Cocoa is buggy. It always reports a left
@@ -1787,7 +1801,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                                 we->buttons(),
 #endif /* QT_MAC_USE_COCOA */
                                 we->modifiers(),
-                                we->delta(), we->orientation()))
+                                iDelta, we->orientation()))
                     return true; /* stop further event handling */
                 break;
             }
