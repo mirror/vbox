@@ -332,9 +332,22 @@ vboxnetflt_SOURCES.linux = linux/VBoxNetFlt-linux.c
 vboxnetflt_SOURCES.solaris = solaris/VBoxNetFlt-solaris.c
 vboxnetflt_SOURCES.freebsd = freebsd/VBoxNetFlt-freebsd.c
 vboxnetflt_SOURCES = VBoxNetFlt.c
- endif
-
 solaris/VBoxNetFlt-solaris.c_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+  ifdef VBOX_WITH_NETFLT_CROSSBOW
+SYSMODS += vboxnetbow
+vboxnetbow_TEMPLATE      = VBOXR0DRV
+vboxnetbow_NAME          = vboxbow
+vboxnetbow_DEFS          = vboxnetflt_DEFS VBOX_WITH_NETFLT_CROSSBOW
+vboxnetbow_DEPS         += $(VBOX_SVN_REV_KMK)
+vboxnetbow_INCS         := $(PATH_SUB_CURRENT)
+vboxnetbow_LDFLAGS      += -N drv/vboxdrv -N misc/mac
+vboxnetbow_LIBS = \
+	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+vboxnetbow_SOURCES.solaris = solaris/VBoxNetFltBow-solaris.c
+vboxnetbow_SOURCES         = VBoxNetFlt.c
+solaris/VBoxNetFltBow-solaris.c_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+  endif  # VBOX_WITH_NETFLT_CROSSBOW
+ endif # VBOX_WITH_VBOXDRV
 endif # to be removed.
 
 
