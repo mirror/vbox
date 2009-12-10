@@ -650,7 +650,7 @@ static int vdLoadDynamicBackends()
         goto out;
     }
 
-    while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING)) != VERR_NO_MORE_FILES)
+    while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK)) != VERR_NO_MORE_FILES)
     {
         RTLDRMOD hPlugin = NIL_RTLDRMOD;
         PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad = NULL;
@@ -663,7 +663,7 @@ static int vdLoadDynamicBackends()
             RTMemFree(pPluginDirEntry);
             pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(cbPluginDirEntry);
             /* Retry. */
-            rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING);
+            rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
             if (RT_FAILURE(rc))
                 break;
         }

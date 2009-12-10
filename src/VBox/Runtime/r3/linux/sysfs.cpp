@@ -401,7 +401,7 @@ static ssize_t rtLinuxFindDevicePathRecursive(dev_t DevNum, RTFMODE fMode, const
         for (;;)
         {
             RTDIRENTRYEX Entry;
-            rc = RTDirReadEx(pDir, &Entry, NULL, RTFSOBJATTRADD_UNIX);
+            rc = RTDirReadEx(pDir, &Entry, NULL, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
             if (RT_FAILURE(rc))
             {
                 errno = rc == VERR_NO_MORE_FILES
@@ -412,7 +412,7 @@ static ssize_t rtLinuxFindDevicePathRecursive(dev_t DevNum, RTFMODE fMode, const
                 rcRet = -1;
                 break;
             }
-            if (RTFS_IS_SYMLINK(Entry.Info.Attr.fMode)) /* paranoia */
+            if (RTFS_IS_SYMLINK(Entry.Info.Attr.fMode)) /* paranoia. @todo RTDirReadEx now returns symlinks, see also #if 1 below. */
                 continue;
 
             /* Do the matching. */
