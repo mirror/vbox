@@ -260,12 +260,7 @@ DECLASM(void)  UNWIND_WRAP(AssertMsg1)(const char *pszExpr, unsigned uLine, cons
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** Pointer to the global info page for implementing SUPGetGIP(). */
-static PSUPGLOBALINFOPAGE      g_pSUPGlobalInfoPageInternal = NULL;
-#if defined(RT_OS_WINDOWS)
 DECLEXPORT(PSUPGLOBALINFOPAGE) g_pSUPGlobalInfoPage = NULL;
-# define SUPR0_EXPORT_GIP_POINTER
-#endif
 
 /**
  * Array of the R0 SUP API.
@@ -320,7 +315,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0GetPagingMode",                     (void *)UNWIND_WRAP(SUPR0GetPagingMode) },
     { "SUPR0EnableVTx",                         (void *)SUPR0EnableVTx },
     { "SUPGetGIP",                              (void *)SUPGetGIP },
-    { "g_pSUPGlobalInfoPage",                   (void *)&g_pSUPGlobalInfoPageInternal },
+    { "g_pSUPGlobalInfoPage",                   (void *)&g_pSUPGlobalInfoPage },
     { "RTMemAlloc",                             (void *)UNWIND_WRAP(RTMemAlloc) },
     { "RTMemAllocZ",                            (void *)UNWIND_WRAP(RTMemAllocZ) },
     { "RTMemFree",                              (void *)UNWIND_WRAP(RTMemFree) },
@@ -3089,7 +3084,7 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
  */
 SUPDECL(PSUPGLOBALINFOPAGE) SUPGetGIP(void)
 {
-    return g_pSUPGlobalInfoPageInternal;
+    return g_pSUPGlobalInfoPage;
 }
 
 
@@ -4534,10 +4529,7 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
              * We're good.
              */
             dprintf(("supdrvGipCreate: %ld ns interval.\n", (long)u32Interval));
-            g_pSUPGlobalInfoPageInternal = pGip;
-#ifdef SUPR0_EXPORT_GIP_POINTER
             g_pSUPGlobalInfoPage = pGip;
-#endif
             return VINF_SUCCESS;
         }
 
@@ -4575,10 +4567,7 @@ static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
         supdrvGipTerm(pDevExt->pGip);
         pDevExt->pGip = NULL;
     }
-    g_pSUPGlobalInfoPageInternal = NULL;
-#ifdef SUPR0_EXPORT_GIP_POINTER
     g_pSUPGlobalInfoPage = NULL;
-#endif
 
     /*
      * Destroy the timer and free the GIP memory object.
