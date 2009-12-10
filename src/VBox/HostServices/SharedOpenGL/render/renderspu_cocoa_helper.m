@@ -1110,31 +1110,31 @@ while(0);
                     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
                     GL_RESTORE_STATE;
                 }
-
-                /* Clear background to transparent */
-                glClear(GL_COLOR_BUFFER_BIT);
-
-                /* Blit the content of the FBO to the screen. todo: check for
-                 * optimization with display lists. */
-                GLint i;
-                for (i = 0; i < m_cClipRects; ++i)
-                {
-                    GLint x1 = m_paClipRects[4*i];
-                    GLint y1 = r.size.height - m_paClipRects[4*i+1];
-                    GLint x2 = m_paClipRects[4*i+2];
-                    GLint y2 = r.size.height - m_paClipRects[4*i+3];
-                    glBegin(GL_QUADS);
-                    {
-                        glTexCoord2i(x1, y1); glVertex2i(x1, y1);
-                        glTexCoord2i(x1, y2); glVertex2i(x1, y2);
-                        glTexCoord2i(x2, y2); glVertex2i(x2, y2);
-                        glTexCoord2i(x2, y1); glVertex2i(x2, y1);
-                    }
-                    glEnd();
-                }
-                [m_pSharedGLCtx flushBuffer];
-                [m_pGLCtx makeCurrentContext];
             }
+
+            /* Clear background to transparent */
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            /* Blit the content of the FBO to the screen. todo: check for
+             * optimization with display lists. */
+            GLint i;
+            for (i = 0; i < m_cClipRects; ++i)
+            {
+                GLint x1 = m_paClipRects[4*i];
+                GLint y1 = r.size.height - m_paClipRects[4*i+1];
+                GLint x2 = m_paClipRects[4*i+2];
+                GLint y2 = r.size.height - m_paClipRects[4*i+3];
+                glBegin(GL_QUADS);
+                {
+                    glTexCoord2i(x1, y1); glVertex2i(x1, y1);
+                    glTexCoord2i(x1, y2); glVertex2i(x1, y2);
+                    glTexCoord2i(x2, y2); glVertex2i(x2, y2);
+                    glTexCoord2i(x2, y1); glVertex2i(x2, y1);
+                }
+                glEnd();
+            }
+            [m_pSharedGLCtx flushBuffer];
+            [m_pGLCtx makeCurrentContext];
         }
     }
 }
