@@ -47,63 +47,6 @@ namespace util
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Abstract lock operations. See LockHandle and AutoWriteLock for details.
- */
-class LockOps
-{
-public:
-
-    virtual ~LockOps() {}
-
-    virtual void lock() = 0;
-    virtual void unlock() = 0;
-};
-
-/**
- * Read lock operations. See LockHandle and AutoWriteLock for details.
- */
-class ReadLockOps : public LockOps
-{
-public:
-
-    /**
-     * Requests a read (shared) lock.
-     */
-    virtual void lockRead() = 0;
-
-    /**
-     * Releases a read (shared) lock ackquired by lockRead().
-     */
-    virtual void unlockRead() = 0;
-
-    // LockOps interface
-    void lock() { lockRead(); }
-    void unlock() { unlockRead(); }
-};
-
-/**
- * Write lock operations. See LockHandle and AutoWriteLock for details.
- */
-class WriteLockOps : public LockOps
-{
-public:
-
-    /**
-     * Requests a write (exclusive) lock.
-     */
-    virtual void lockWrite() = 0;
-
-    /**
-     * Releases a write (exclusive) lock ackquired by lockWrite().
-     */
-    virtual void unlockWrite() = 0;
-
-    // LockOps interface
-    void lock() { lockWrite(); }
-    void unlock() { unlockWrite(); }
-};
-
-/**
  * Abstract read/write semaphore handle.
  *
  * This is a base class to implement semaphores that provide read/write locking.
@@ -113,10 +56,9 @@ public:
  * See the AutoWriteLock class documentation for the detailed description of
  * read and write locks.
  */
-class LockHandle : protected ReadLockOps, protected WriteLockOps
+class LockHandle
 {
 public:
-
     LockHandle() {}
     virtual ~LockHandle() {}
 
@@ -136,25 +78,15 @@ public:
      */
     virtual uint32_t writeLockLevel() const = 0;
 
-    /**
-     * Returns an interface to read lock operations of this semaphore.
-     * Used by constructors of AutoMultiLockN classes.
-     */
-    LockOps *rlock() { return (ReadLockOps *) this; }
-
-    /**
-     * Returns an interface to write lock operations of this semaphore.
-     * Used by constructors of AutoMultiLockN classes.
-     */
-    LockOps *wlock() { return (WriteLockOps *) this; }
+    virtual void lockWrite() = 0;
+    virtual void unlockWrite() = 0;
+    virtual void lockRead() = 0;
+    virtual void unlockRead() = 0;
 
 private:
-
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (LockHandle)
-
-    friend class AutoWriteLockBase;
-    friend class AutoWriteLock;
-    friend class AutoReadLock;
+    // prohibit copy + assignment
+    LockHandle(const LockHandle&);
+    LockHandle& operator=(const LockHandle&);
 };
 
 /**
@@ -168,23 +100,19 @@ private:
 class RWLockHandle : public LockHandle
 {
 public:
-
     RWLockHandle();
     virtual ~RWLockHandle();
 
-    bool isWriteLockOnCurrentThread() const;
+    virtual bool isWriteLockOnCurrentThread() const;
+
+    virtual void lockWrite();
+    virtual void unlockWrite();
+    virtual void lockRead();
+    virtual void unlockRead();
+
+    virtual uint32_t writeLockLevel() const;
 
 private:
-
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (RWLockHandle)
-
-    void lockWrite();
-    void unlockWrite();
-    void lockRead();
-    void unlockRead();
-
-    uint32_t writeLockLevel() const;
-
     RTSEMRW mSemRW;
 };
 
@@ -204,50 +132,17 @@ private:
 class WriteLockHandle : public LockHandle
 {
 public:
+    WriteLockHandle();
+    virtual ~WriteLockHandle();
+    virtual bool isWriteLockOnCurrentThread() const;
 
-    WriteLockHandle()
-    {
-        RTCritSectInit (&mCritSect);
-    }
-
-    virtual ~WriteLockHandle()
-    {
-        RTCritSectDelete (&mCritSect);
-    }
-
-    bool isWriteLockOnCurrentThread() const
-    {
-        return RTCritSectIsOwner (&mCritSect);
-    }
+    virtual void lockWrite();
+    virtual void unlockWrite();
+    virtual void lockRead();
+    virtual void unlockRead();
+    virtual uint32_t writeLockLevel() const;
 
 private:
-
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (WriteLockHandle)
-
-    void lockWrite()
-    {
-#if defined(DEBUG)
-        RTCritSectEnterDebug (&mCritSect,
-                              "WriteLockHandle::lockWrite() return address >>>",
-                              0, (RTUINTPTR) ASMReturnAddress());
-#else
-        RTCritSectEnter (&mCritSect);
-#endif
-    }
-
-    void unlockWrite()
-    {
-        RTCritSectLeave (&mCritSect);
-    }
-
-    void lockRead() { lockWrite(); }
-    void unlockRead() { unlockWrite(); }
-
-    uint32_t writeLockLevel() const
-    {
-        return RTCritSectGetRecursion (&mCritSect);
-    }
-
     mutable RTCRITSECT mCritSect;
 };
 
@@ -286,26 +181,6 @@ public:
         LockHandle *h = lockHandle();
         return h ? h->isWriteLockOnCurrentThread() : false;
     }
-
-    /**
-     * Equivalent to <tt>#lockHandle()->rlock()</tt>.
-     * Returns @c NULL false if lockHandle() returns @c NULL.
-     */
-    LockOps *rlock()
-    {
-        LockHandle *h = lockHandle();
-        return h ? h->rlock() : NULL;
-    }
-
-    /**
-     * Equivalent to <tt>#lockHandle()->wlock()</tt>. Returns @c NULL false if
-     * lockHandle() returns @c NULL.
-     */
-    LockOps *wlock()
-    {
-        LockHandle *h = lockHandle();
-        return h ? h->wlock() : NULL;
-    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -313,6 +188,17 @@ public:
 // AutoLockBase
 //
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Abstract base class for all autolocks.
+ *
+ * This cannot be used directly. Use AutoReadLock or AutoWriteLock or AutoMultiWriteLock2/3
+ * which directly and indirectly derive from this.
+ *
+ * In the implementation, the instance data contains a list of lock handles.
+ * The class provides some utility functions to help locking and unlocking
+ * them.
+ */
 
 class AutoLockBase
 {
@@ -339,7 +225,7 @@ public:
 private:
     // prohibit copy + assignment
     AutoLockBase(const AutoLockBase&);
-    AutoLockBase& operator=(AutoLockBase&);
+    AutoLockBase& operator=(const AutoLockBase&);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -348,6 +234,15 @@ private:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Automatic read lock. Use this with a RWLockHandle to request a read/write
+ * semaphore in read mode. You can also use this with a WriteLockHandle but
+ * that makes little sense since they know no read mode.
+ *
+ * If constructed with a RWLockHandle or an instance of Lockable (which in
+ * practice means any VirtualBoxBase derivative), it autoamtically requests
+ * the lock in read mode and releases the read lock in the destructor.
+ */
 class AutoReadLock : public AutoLockBase
 {
 public:
@@ -416,6 +311,16 @@ public:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Base class for all auto write locks.
+ *
+ * This cannot be used directly. Use AutoWriteLock or AutoMultiWriteLock2/3
+ * which directly and indirectly derive from this.
+ *
+ * In addition to utility methods for subclasses, this implements the public
+ * leave/enter/maybeLeave/maybeEnter methods, which are common to all
+ * write locks.
+ */
 class AutoWriteLockBase : public AutoLockBase
 {
 protected:
@@ -446,6 +351,19 @@ public:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Automatic write lock. Use this with a RWLockHandle to request a read/write
+ * semaphore in write mode. There can only ever be one writer of a read/write
+ * semaphore: while the lock is held in write mode, no other writer or reader
+ * can request the semaphore and will block.
+ *
+ * If constructed with a RWLockHandle or an instance of Lockable (which in
+ * practice means any VirtualBoxBase derivative), it autoamtically requests
+ * the lock in write mode and releases the write lock in the destructor.
+ *
+ * When used with a WriteLockHandle, it requests the semaphore contained therein
+ * exclusively.
+ */
 class AutoWriteLock : public AutoWriteLockBase
 {
 public:
@@ -548,6 +466,10 @@ public:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * A multi-write-lock containing two other write locks.
+ *
+ */
 class AutoMultiWriteLock2 : public AutoWriteLockBase
 {
 public:
@@ -560,6 +482,10 @@ public:
     }
 };
 
+/**
+ * A multi-write-lock containing three other write locks.
+ *
+ */
 class AutoMultiWriteLock3 : public AutoWriteLockBase
 {
 public:
