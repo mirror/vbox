@@ -292,8 +292,8 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoImagePath)(BSTR *imagePath)
 
 STDMETHODIMP BIOSSettings::COMSETTER(LogoImagePath)(IN_BSTR imagePath)
 {
-    /* empty strings are not allowed as path names */
-    if (imagePath && !(*imagePath))
+    /* NULL strings are not allowed */
+    if (!imagePath)
         return E_INVALIDARG;
 
     AutoCaller autoCaller(this);

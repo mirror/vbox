@@ -4117,7 +4117,10 @@
     </attribute>
 
     <attribute name="logoImagePath" type="wstring">
-      <desc>Local file system path for external BIOS image.</desc>
+      <desc>
+        Local file system path for external BIOS splash image. Empty string
+        means the default image is shown on boot.
+      </desc>
     </attribute>
 
     <attribute name="bootMenuMode" type="BIOSBootMenuMode">
