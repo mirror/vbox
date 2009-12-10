@@ -80,7 +80,7 @@ typedef struct {
     CROcclusionBits   occlusion;
 #endif
     CRPixelBits       pixel;
-    CRPointBits   point;
+    CRPointBits       point;
     CRPolygonBits     polygon;
     CRProgramBits     program;
     CRRegCombinerBits regcombiner;

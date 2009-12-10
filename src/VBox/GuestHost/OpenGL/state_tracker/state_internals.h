@@ -24,4 +24,6 @@
 
 typedef void (SPU_APIENTRY *glAble)(GLenum);
 
+#define GLCLIENT_BIT_ALLOC 1024
+
 #endif
