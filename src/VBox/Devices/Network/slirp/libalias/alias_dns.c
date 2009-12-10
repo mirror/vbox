@@ -15,6 +15,7 @@
 union dnsmsg_header
 {
     struct {
+#ifndef VBOX
         uint16_t id;
         uint16_t rd:1;
         uint16_t tc:1;
@@ -24,6 +25,17 @@ union dnsmsg_header
         uint16_t rcode:4;
         uint16_t Z:3;
         uint16_t ra:1;
+#else
+        unsigned id:16;
+        unsigned rd:1;
+        unsigned tc:1;
+        unsigned aa:1;
+        unsigned opcode:4;
+        unsigned qr:1;
+        unsigned rcode:4;
+        unsigned Z:3;
+        unsigned ra:1;
+#endif
         uint16_t qdcount;
         uint16_t ancount;
         uint16_t nscount;
@@ -31,6 +43,8 @@ union dnsmsg_header
     } X;
     uint16_t raw[5];
 };
+AssertCompileSize(union dnsmsg_header, 12);
+
 struct dnsmsg_answer
 {
     uint16_t name;
