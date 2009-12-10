@@ -32,6 +32,7 @@
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/err.h>
+#include <iprt/path.h>
 //#include <iprt/
 
 int main(int argc, char **argv)
@@ -105,7 +106,7 @@ int main(int argc, char **argv)
                     for (;;)
                     {
                         RTDIRENTRYEX DirEntry;
-                        rc = RTDirReadEx(pDir, &DirEntry, NULL, RTFSOBJATTRADD_UNIX);
+                        rc = RTDirReadEx(pDir, &DirEntry, NULL, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
                         if (RT_FAILURE(rc))
                             break;
 

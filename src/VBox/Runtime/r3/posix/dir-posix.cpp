@@ -388,7 +388,7 @@ static void rtDirSetDummyInfo(PRTFSOBJINFO pInfo, RTDIRENTRYTYPE enmType)
 }
 
 
-RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs)
+RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags)
 {
     /*
      * Validate and digest input.
@@ -400,6 +400,7 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
                     &&  enmAdditionalAttribs <= RTFSOBJATTRADD_LAST,
                     ("Invalid enmAdditionalAttribs=%p\n", enmAdditionalAttribs),
                     VERR_INVALID_PARAMETER);
+    AssertMsgReturn(RTPATH_F_IS_VALID(fFlags, 0), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
     size_t cbDirEntry = sizeof(*pDirEntry);
     if (pcbDirEntry)
     {
@@ -447,7 +448,7 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
             {
                 memcpy(pszNamePath, pDir->pszPath, pDir->cchPath);
                 memcpy(pszNamePath + pDir->cchPath, pszName, cchName + 1);
-                rc = RTPathQueryInfo(pszNamePath, &pDirEntry->Info, enmAdditionalAttribs);
+                rc = RTPathQueryInfoEx(pszNamePath, &pDirEntry->Info, enmAdditionalAttribs, fFlags);
             }
             else
                 rc = VERR_NO_MEMORY;

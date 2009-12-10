@@ -313,8 +313,9 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry);
  * @param   enmAdditionalAttribs
  *                      Which set of additional attributes to request.
  *                      Use RTFSOBJATTRADD_NOTHING if this doesn't matter.
+ * @param   fFlags      RTPATH_F_ON_LINK or RTPATH_F_FOLLOW_LINK.
  */
-RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs);
+RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags);
 
 
 /**
