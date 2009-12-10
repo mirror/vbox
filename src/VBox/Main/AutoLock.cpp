@@ -23,6 +23,18 @@
 
 #include "Logging.h"
 
+#include <iprt/cdefs.h>
+#include <iprt/critsect.h>
+#include <iprt/thread.h>
+#include <iprt/semaphore.h>
+
+#include <iprt/err.h>
+#include <iprt/assert.h>
+
+#if defined(DEBUG)
+# include <iprt/asm.h> // for ASMReturnAddress
+#endif
+
 #include <iprt/string.h>
 
 #include <vector>
@@ -36,56 +48,59 @@ namespace util
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+struct RWLockHandle::Data
+{
+    Data()
+    { }
+
+    RTSEMRW sem;
+};
+
 RWLockHandle::RWLockHandle()
 {
-    int vrc = RTSemRWCreate (&mSemRW);
-    AssertRC (vrc);
+    m = new Data();
+    int vrc = RTSemRWCreate(&m->sem);
+    AssertRC(vrc);
 }
 
-
-RWLockHandle::~RWLockHandle()
+/*virtual*/ RWLockHandle::~RWLockHandle()
 {
-    RTSemRWDestroy (mSemRW);
+    RTSemRWDestroy(m->sem);
+    delete m;
 }
 
-
-bool RWLockHandle::isWriteLockOnCurrentThread() const
+/*virtual*/ bool RWLockHandle::isWriteLockOnCurrentThread() const
 {
-    return RTSemRWIsWriteOwner (mSemRW);
+    return RTSemRWIsWriteOwner(m->sem);
 }
 
-
-void RWLockHandle::lockWrite()
+/*virtual*/ void RWLockHandle::lockWrite()
 {
-    int vrc = RTSemRWRequestWrite (mSemRW, RT_INDEFINITE_WAIT);
-    AssertRC (vrc);
+    int vrc = RTSemRWRequestWrite(m->sem, RT_INDEFINITE_WAIT);
+    AssertRC(vrc);
 }
 
-
-void RWLockHandle::unlockWrite()
+/*virtual*/ void RWLockHandle::unlockWrite()
 {
-    int vrc = RTSemRWReleaseWrite (mSemRW);
-    AssertRC (vrc);
+    int vrc = RTSemRWReleaseWrite(m->sem);
+    AssertRC(vrc);
 }
 
-
-void RWLockHandle::lockRead()
+/*virtual*/ void RWLockHandle::lockRead()
 {
-    int vrc = RTSemRWRequestRead (mSemRW, RT_INDEFINITE_WAIT);
-    AssertRC (vrc);
+    int vrc = RTSemRWRequestRead(m->sem, RT_INDEFINITE_WAIT);
+    AssertRC(vrc);
 }
 
-
-void RWLockHandle::unlockRead()
+/*virtual*/ void RWLockHandle::unlockRead()
 {
-    int vrc = RTSemRWReleaseRead (mSemRW);
-    AssertRC (vrc);
+    int vrc = RTSemRWReleaseRead(m->sem);
+    AssertRC(vrc);
 }
 
-
-uint32_t RWLockHandle::writeLockLevel() const
+/*virtual*/ uint32_t RWLockHandle::writeLockLevel() const
 {
-    return RTSemRWGetWriteRecursion (mSemRW);
+    return RTSemRWGetWriteRecursion(m->sem);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,35 +109,45 @@ uint32_t RWLockHandle::writeLockLevel() const
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+struct WriteLockHandle::Data
+{
+    Data()
+    { }
+
+    mutable RTCRITSECT sem;
+};
+
 WriteLockHandle::WriteLockHandle()
 {
-    RTCritSectInit(&mCritSect);
+    m = new Data;
+    RTCritSectInit(&m->sem);
 }
 
-/*virtual*/ WriteLockHandle::~WriteLockHandle()
+WriteLockHandle::~WriteLockHandle()
 {
-    RTCritSectDelete(&mCritSect);
+    RTCritSectDelete(&m->sem);
+    delete m;
 }
 
 /*virtual*/ bool WriteLockHandle::isWriteLockOnCurrentThread() const
 {
-    return RTCritSectIsOwner(&mCritSect);
+    return RTCritSectIsOwner(&m->sem);
 }
 
 /*virtual*/ void WriteLockHandle::lockWrite()
 {
 #if defined(DEBUG)
-    RTCritSectEnterDebug(&mCritSect,
+    RTCritSectEnterDebug(&m->sem,
                          "WriteLockHandle::lockWrite() return address >>>",
-                         0, (RTUINTPTR) ASMReturnAddress());
+                         0, (RTUINTPTR)ASMReturnAddress());
 #else
-    RTCritSectEnter(&mCritSect);
+    RTCritSectEnter(&m->sem);
 #endif
 }
 
 /*virtual*/ void WriteLockHandle::unlockWrite()
 {
-    RTCritSectLeave(&mCritSect);
+    RTCritSectLeave(&m->sem);
 }
 
 /*virtual*/ void WriteLockHandle::lockRead()
@@ -137,7 +162,7 @@ WriteLockHandle::WriteLockHandle()
 
 /*virtual*/ uint32_t WriteLockHandle::writeLockLevel() const
 {
-    return RTCritSectGetRecursion(&mCritSect);
+    return RTCritSectGetRecursion(&m->sem);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

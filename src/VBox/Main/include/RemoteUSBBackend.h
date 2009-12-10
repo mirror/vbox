@@ -27,6 +27,8 @@
 #include <VBox/vrdpapi.h>
 #include <VBox/vrdpusb.h>
 
+#include <iprt/critsect.h>
+
 //typedef enum
 //{
 //    RDLIdle = 0,

@@ -23,6 +23,7 @@
 #define ____H_VIRTUALBOXBASEIMPL
 
 #include <iprt/cdefs.h>
+#include <iprt/thread.h>
 
 #include <list>
 #include <map>
