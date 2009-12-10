@@ -790,14 +790,6 @@ void crStateBufferObjectSwitch(CRBufferObjectBits *bb, CRbitvalue *bitID,
         to->bResyncNeeded = GL_FALSE;
 
         /*@todo, move to state_client.c*/
-
-
-        /*@todo, patch dirty bits after snapshot loading instead*/
-        if (toCtx->client.array.v.enabled)
-        {
-            diff_api.EnableClientState(GL_VERTEX_ARRAY);
-        }
-
         cp = &toCtx->client.array.v;
         if (cp->buffer->name || locked)
         {

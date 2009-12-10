@@ -17,9 +17,6 @@
 #include "state/cr_statefuncs.h"
 #include "state_internals.h"
 
-#define GLCLIENT_BIT_ALLOC 1024
-
-
 const CRPixelPackState crStateNativePixelPacking = {
    0, /* rowLength */
    0, /* skipRows */
