@@ -268,10 +268,13 @@ RuntimeR3_SOURCES       = \
 	common/rand/rand.cpp \
 	common/rand/randadv.cpp \
 	common/rand/randparkmiller.cpp \
+	common/string/RTStrCmp.cpp \
 	common/string/RTStrConvertHexBytes.cpp \
+	common/string/RTStrNCmp.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
 	common/string/RTStrPrintHexBytes.cpp \
+	common/string/RTStrStr.cpp \
 	common/string/base64.cpp \
 	common/string/simplepattern.cpp \
 	common/string/straprintf.cpp \
@@ -288,6 +291,7 @@ RuntimeR3_SOURCES       = \
 	common/string/unidata.cpp \
 	common/string/utf-16.cpp \
 	common/string/utf-8.cpp \
+	common/string/utf-8-case.cpp \
 	common/string/ministring.cpp \
 	common/table/avlgcptr.cpp \
 	common/table/avlhcphys.cpp \
@@ -785,8 +789,11 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/path/RTPathStripExt.cpp \
 	common/path/RTPathStripFilename.cpp \
 	common/path/RTPathStripTrailingSlash.cpp \
+	common/string/RTStrCmp.cpp \
+	common/string/RTStrNCmp.cpp \
         common/string/RTStrNLen.cpp \
         common/string/RTStrNLenEx.cpp \
+	common/string/RTStrStr.cpp \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
@@ -796,6 +803,7 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/string/strtonum.cpp \
 	common/string/unidata.cpp \
 	common/string/utf-8.cpp \
+	common/string/utf-8-case.cpp \
 	common/string/utf-16.cpp \
 	generic/pathhost-generic.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
@@ -1194,6 +1202,8 @@ RuntimeR0Drv_SOURCES    = \
 	common/string/strprintf.cpp \
 	common/string/strtonum.cpp \
 	common/string/string.cpp \
+	common/string/utf-16.cpp \
+	common/string/utf-8.cpp \
 	common/table/avlpv.cpp \
 	generic/RTLogWriteStdErr-stub-generic.cpp \
 	generic/RTLogWriteUser-generic.cpp \
