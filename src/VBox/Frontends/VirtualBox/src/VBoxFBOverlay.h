@@ -365,28 +365,6 @@ private:
     size_t mcbActualBufferSize;
 };
 
-class VBoxVHWAAlignedPBO
-{
-public:
-    void init(size_t size)
-    {
-
-    }
-
-    size_t alignedSize() { return mAlignedSize; }
-    size_t actualSize() { return mActualSize; }
-    size_t requestedSize() { return mRequestedSize; }
-    void* alignedBuffer() { return mAlignedBuffer; }
-    void* actualBuffer() { return mActualBuffer; }
-
-private:
-    void* mAlignedBuffer;
-    void* mActualBuffer;
-    size_t mAlignedSize;
-    size_t mActualSize;
-    size_t mRequestedSize;
-};
-
 #ifdef VBOXVHWA_USE_TEXGROUP
 class VBoxVHWATextureGroup
 {
