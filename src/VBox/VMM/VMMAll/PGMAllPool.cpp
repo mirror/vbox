@@ -4570,11 +4570,6 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
     pPool->cUsedPages--;
 
-    /* REMOVE ME: experiment */
-    if (pVM->cCpus > 1)
-        PGM_INVL_ALL_VCPU_TLBS(pVM);
-    /* end experiment */
-
     pgmUnlock(pVM);
     STAM_PROFILE_STOP(&pPool->StatFlushPage, f);
     return rc;
