@@ -45,6 +45,7 @@ PROGRAMS += \
 	tstPin \
 	tstGIP-2 \
 	tstGetPagingMode \
+	tstSupLoadModule \
 	tstSupSem \
 	tstSupSem-Zombie
 endif # VBOX_WITH_TESTCASES
@@ -85,6 +86,9 @@ tstGIP-2_SOURCES      = tstGIP-2.cpp
 
 tstGetPagingMode_TEMPLATE = VBOXR3TSTEXE
 tstGetPagingMode_SOURCES = tstGetPagingMode.cpp
+
+tstSupLoadModule_TEMPLATE = VBOXR3TSTEXE
+tstSupLoadModule_SOURCES  = tstSupLoadModule.cpp
 
 tstSupSem_TEMPLATE    = VBOXR3TSTEXE
 tstSupSem_SOURCES     = tstSupSem.cpp
