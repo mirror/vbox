@@ -35,8 +35,10 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
 #endif /* VBOX_GUI_WITH_SYSTRAY */
 #ifndef Q_WS_MAC
     mCbCheckDockPreview->hide();
-    mCbCheckPresentationMode->hide();
 #endif /* Q_WS_MAC */
+#ifndef QT_MAC_USE_COCOA
+    mCbCheckPresentationMode->hide();
+#endif /* QT_MAC_USE_COCOA */
     if (   mCbCheckTrayIcon->isHidden()
         && mCbCheckDockPreview->isHidden()
         && mCbCheckPresentationMode->isHidden())
