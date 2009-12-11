@@ -45,7 +45,6 @@
 #include "internal/ldr.h"
 
 
-
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -1009,7 +1008,7 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
                                          const IMAGE_FILE_HEADER *pFileHdr, RTFOFF cbRawImage)
 {
     const uint16_t CorrectMagic = pFileHdr->SizeOfOptionalHeader == sizeof(IMAGE_OPTIONAL_HEADER32)
-             ? IMAGE_NT_OPTIONAL_HDR32_MAGIC : IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+                                ? IMAGE_NT_OPTIONAL_HDR32_MAGIC : IMAGE_NT_OPTIONAL_HDR64_MAGIC;
     if (pOptHdr->Magic != CorrectMagic)
     {
         Log(("rtldrPEOpen: %s: Magic=%#x - expected %#x!!!\n", pszLogName, pOptHdr->Magic, CorrectMagic));
@@ -1113,16 +1112,12 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
                      pszLogName, i, pDir->VirtualAddress, pDir->Size));
                 return VERR_LDRPE_DELAY_IMPORT;
 
-            /* The security directory seems to be some kind of hack, and the rva is a fileoffset or something. */
             case IMAGE_DIRECTORY_ENTRY_SECURITY:      // 4
+                /* The VirtualAddress is a PointerToRawData. */
                 cb = (size_t)cbRawImage; Assert((RTFOFF)cb == cbRawImage);
                 Log(("rtldrPEOpen: %s: dir no. %d (SECURITY) VirtualAddress=%#x Size=%#x is not supported!!!\n",
                      pszLogName, i, pDir->VirtualAddress, pDir->Size));
-#if 0 /** @todo correctly validate this! Ignoring it for the present. */
-                return VERR_LDRPE_SECURITY;
-#else
                 break;
-#endif
 
             case IMAGE_DIRECTORY_ENTRY_GLOBALPTR:     // 8   /* (MIPS GP) */
                 Log(("rtldrPEOpen: %s: dir no. %d (GLOBALPTR) VirtualAddress=%#x Size=%#x is not supported!!!\n",
@@ -1134,7 +1129,7 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
                      pszLogName, i, pDir->VirtualAddress, pDir->Size));
                 return VERR_LDRPE_TLS;
 
-            case IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR: // 14
+            case IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR:// 14
                 Log(("rtldrPEOpen: %s: dir no. %d (COM_DESCRIPTOR) VirtualAddress=%#x Size=%#x is not supported!!!\n",
                      pszLogName, i, pDir->VirtualAddress, pDir->Size));
                 return VERR_LDRPE_COM_DESCRIPTOR;

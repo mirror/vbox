@@ -1025,8 +1025,7 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_LDR_GENERAL_FAILURE                (-618)
 /** The PE loader encountered delayed imports, a feature which hasn't been implemented yet. */
 #define VERR_LDRPE_DELAY_IMPORT                 (-620)
-/** The PE loader doesn't have a clue what the security data directory entry is all about. */
-#define VERR_LDRPE_SECURITY                     (-621)
+
 /** The PE loader doesn't know how to deal with the global pointer data directory entry yet. */
 #define VERR_LDRPE_GLOBALPTR                    (-622)
 /** The PE loader doesn't support the TLS data directory yet. */
