@@ -619,6 +619,9 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
     pImage->hMemLock = NIL_RTR0MEMOBJ;
 
 #ifdef VBOX_WITHOUT_NATIVE_R0_LOADER
+# ifndef RT_ARCH_X86
+#  error "VBOX_WITHOUT_NATIVE_R0_LOADER is only safe on x86."
+# endif
     NOREF(pDevExt); NOREF(pszFilename); NOREF(pImage);
     return VERR_NOT_SUPPORTED;
 
@@ -690,18 +693,17 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
             switch (rcNt)
             {
                 case /* 0xc0000003 */ STATUS_INVALID_INFO_CLASS:
-                    /*
-                     * Use the old way of loading the modules if we can.  We do
-                     * not try class 26 because it will not work correctly on
-                     * terminal server and have issues with paging of the image.
-                     *
-                     * Note! Using the 64-bit wrappers will require hacking the
-                     *       image verfication in supdrvOSLdrLoad.
-                     */
-# if !defined(RT_ARCH_AMD64) || defined(RT_WITH_W64_UNWIND_HACK)
-                    rc = VERR_NOT_SUPPORTED;
-# else
+# ifdef RT_ARCH_AMD64
+                    /* Unwind will crash and BSOD, so no fallback here! */
                     rc = VERR_NOT_IMPLEMENTED;
+# else
+                    /*
+                     * Use the old way of loading the modules.
+                     *
+                     * Note! We do *NOT* try class 26 because it will probably
+                     *       not work correctly on terminal servers and such.
+                     */
+                    rc = VERR_NOT_SUPPORTED;
 # endif
                     break;
                 case /* 0xc0000034 */ STATUS_OBJECT_NAME_NOT_FOUND:
@@ -734,8 +736,8 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
 
 
 /**
- * memcmp + log. 
- *  
+ * memcmp + log.
+ *
  * @returns Same as memcmp.
  * @param   pImage          The image.
  * @param   pbImageBits     The image bits ring-3 uploads.
@@ -805,7 +807,7 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
             uint32_t    cImpsLeft    = pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size
                                      / sizeof(IMAGE_IMPORT_DESCRIPTOR);
             IMAGE_IMPORT_DESCRIPTOR const *pImp;
-            pImp = (IMAGE_IMPORT_DESCRIPTOR const *)(pbImageBits 
+            pImp = (IMAGE_IMPORT_DESCRIPTOR const *)(pbImageBits
                                                      + pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
             while (   cImpsLeft-- > 0
                    && cExcludeRgns < RT_ELEMENTS(aExcludeRgns))
