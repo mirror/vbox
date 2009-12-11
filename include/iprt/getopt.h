@@ -202,8 +202,8 @@ typedef struct RTGETOPTSTATE
     const char     *pszNextShort;
     /** The option definition which matched. NULL otherwise. */
     PCRTGETOPTDEF   pDef;
-    /** The index of an index option, otherwise UINT64_MAX. */
-    uint64_t        uIndex;
+    /** The index of an index option, otherwise UINT32_MAX. */
+    uint32_t        uIndex;
     /* More members will be added later for dealing with initial
        call, optional sorting, '--' and so on. */
 } RTGETOPTSTATE;
