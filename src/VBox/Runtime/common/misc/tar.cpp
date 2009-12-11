@@ -296,7 +296,7 @@ static int rtTarCopyFileTo(RTFILE hFile, const char *pszSrcName)
             /* Make sure the called doesn't mix truncated tar files with the
              * official end indicated by rtTarCalcChkSum. */
             if (rc == VERR_EOF)
-                rc == VERR_FILE_IO_ERROR;
+                rc = VERR_FILE_IO_ERROR;
         }
     }
 
