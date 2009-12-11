@@ -34,6 +34,8 @@
 #define LOG_GROUP LOG_GROUP_SUP_DRV
 #include "../SUPDrvInternal.h"
 #include <excpt.h>
+#include <ntimage.h>
+
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
@@ -731,18 +733,23 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
 }
 
 
-int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits)
+/**
+ * memcmp + log. 
+ *  
+ * @returns Same as memcmp.
+ * @param   pImage          The image.
+ * @param   pbImageBits     The image bits ring-3 uploads.
+ * @param   uRva            The RVA to start comparing at.
+ * @param   cb              The number of bytes to compare.
+ */
+static int supdrvNtCompare(PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, uint32_t uRva, uint32_t cb)
 {
-    NOREF(pDevExt); NOREF(pImage); NOREF(pbImageBits);
-    if (pImage->pvNtSectionObj)
+    int iDiff = memcmp((uint8_t const *)pImage->pvImage + uRva, pbImageBits + uRva, cb);
+    if (iDiff)
     {
-        if (!memcmp(pImage->pvImage, pbImageBits, pImage->cbImageBits))
-            return VINF_SUCCESS;
-
-        /* trac down the difference and log it. */
-        uint32_t        cbLeft = pImage->cbImageBits;
+        uint32_t        cbLeft = cb;
         const uint8_t  *pbNativeBits = (const uint8_t *)pImage->pvImage;
-        for (size_t off = 0; cbLeft > 0; off++, cbLeft--)
+        for (size_t off = uRva; cbLeft > 0; off++, cbLeft--)
             if (pbNativeBits[off] != pbImageBits[off])
             {
                 char szBytes[128];
@@ -750,8 +757,106 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
                             RT_MIN(12, cbLeft), &pbNativeBits[off],
                             RT_MIN(12, cbLeft), &pbImageBits[off]);
                 SUPR0Printf("VBoxDrv: Mismatch at %#x of %s: %s\n", off, pImage->szName, szBytes);
-                return VERR_LDR_MISMATCH_NATIVE;
+                break;
             }
+    }
+    return iDiff;
+}
+
+int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits)
+{
+    NOREF(pDevExt); NOREF(pImage); NOREF(pbImageBits);
+    if (pImage->pvNtSectionObj)
+    {
+        /*
+         * Usually, the entire image matches exactly.
+         */
+        if (!memcmp(pImage->pvImage, pbImageBits, pImage->cbImageBits))
+            return VINF_SUCCESS;
+
+        /*
+         * However, on Windows Server 2003 (sp2 x86) both import thunk tables
+         * are fixed up and we typically get a mismatch in the INIT section.
+         *
+         * So, lets see if everything matches when excluding the
+         * OriginalFirstThunk tables.  To make life simpler, set the max number
+         * of imports to 16 and just record and sort the locations that needs
+         * to be excluded from the comparison.
+         */
+        IMAGE_NT_HEADERS const *pNtHdrs;
+        pNtHdrs = (IMAGE_NT_HEADERS const *)(pbImageBits
+                                             + (  *(uint16_t *)pbImageBits == IMAGE_DOS_SIGNATURE
+                                                ? ((IMAGE_DOS_HEADER const *)pbImageBits)->e_lfanew
+                                                : 0));
+        if (    pNtHdrs->Signature == IMAGE_NT_SIGNATURE
+            &&  pNtHdrs->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR_MAGIC
+            &&  pNtHdrs->OptionalHeader.NumberOfRvaAndSizes > IMAGE_DIRECTORY_ENTRY_IMPORT
+            &&  pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size >= sizeof(IMAGE_IMPORT_DESCRIPTOR)
+            &&  pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress > sizeof(IMAGE_NT_HEADERS)
+            &&  pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress < pImage->cbImageBits
+            )
+        {
+            struct MyRegion
+            {
+                uint32_t uRva;
+                uint32_t cb;
+            }           aExcludeRgns[16];
+            unsigned    cExcludeRgns = 0;
+            uint32_t    cImpsLeft    = pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size
+                                     / sizeof(IMAGE_IMPORT_DESCRIPTOR);
+            IMAGE_IMPORT_DESCRIPTOR const *pImp;
+            pImp = (IMAGE_IMPORT_DESCRIPTOR const *)(pbImageBits 
+                                                     + pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+            while (   cImpsLeft-- > 0
+                   && cExcludeRgns < RT_ELEMENTS(aExcludeRgns))
+            {
+                uint32_t uRvaThunk = pImp->OriginalFirstThunk;
+                if (    uRvaThunk >  sizeof(IMAGE_NT_HEADERS)
+                    &&  uRvaThunk <= pImage->cbImageBits - sizeof(IMAGE_THUNK_DATA)
+                    &&  uRvaThunk != pImp->FirstThunk)
+                {
+                    /* Find the size of the thunk table. */
+                    IMAGE_THUNK_DATA const *paThunk    = (IMAGE_THUNK_DATA const *)(pbImageBits + uRvaThunk);
+                    uint32_t                cMaxThunks = (pImage->cbImageBits - uRvaThunk) / sizeof(IMAGE_THUNK_DATA);
+                    uint32_t                cThunks    = 0;
+                    while (cThunks < cMaxThunks && paThunk[cThunks].u1.Function != 0)
+                        cThunks++;
+
+                    /* Ordered table insert. */
+                    unsigned i = 0;
+                    for (; i < cExcludeRgns; i++)
+                        if (uRvaThunk < aExcludeRgns[i].uRva)
+                            break;
+                    if (i != cExcludeRgns)
+                        memmove(&aExcludeRgns[i + 1], &aExcludeRgns[i], (cExcludeRgns - i) * sizeof(aExcludeRgns[0]));
+                    aExcludeRgns[i].uRva = uRvaThunk;
+                    aExcludeRgns[i].cb   = cThunks * sizeof(IMAGE_THUNK_DATA);
+                    cExcludeRgns++;
+                }
+
+                /* advance */
+                pImp++;
+            }
+
+            /*
+             * Ok, do the comparison.
+             */
+            int         iDiff    = 0;
+            uint32_t    uRvaNext = 0;
+            for (unsigned i = 0; !iDiff && i < cExcludeRgns; i++)
+            {
+                if (uRvaNext < aExcludeRgns[i].uRva)
+                    iDiff = supdrvNtCompare(pImage, pbImageBits, uRvaNext, aExcludeRgns[i].uRva - uRvaNext);
+                uRvaNext = aExcludeRgns[i].uRva + aExcludeRgns[i].cb;
+            }
+            if (!iDiff && uRvaNext < pImage->cbImageBits)
+                iDiff = supdrvNtCompare(pImage, pbImageBits, uRvaNext, pImage->cbImageBits - uRvaNext);
+            if (!iDiff)
+                return VINF_SUCCESS;
+        }
+        else
+            supdrvNtCompare(pImage, pbImageBits, 0, pImage->cbImageBits);
+        return VERR_LDR_MISMATCH_NATIVE;
     }
     return VERR_INTERNAL_ERROR_4;
 }
@@ -767,8 +872,10 @@ void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
             pImage->hMemLock = NIL_RTR0MEMOBJ;
         }
 
-        NTSTATUS rc = ZwSetSystemInformation(MY_SystemUnloadGdiDriverInformation,
-                                             &pImage->pvNtSectionObj, sizeof(pImage->pvNtSectionObj));
+        NTSTATUS rcNt = ZwSetSystemInformation(MY_SystemUnloadGdiDriverInformation,
+                                               &pImage->pvNtSectionObj, sizeof(pImage->pvNtSectionObj));
+        if (rcNt != STATUS_SUCCESS)
+            SUPR0Printf("VBoxDrv: failed to unload '%s', rcNt=%#x\n", pImage->szName, rcNt);
         pImage->pvNtSectionObj = NULL;
     }
     NOREF(pDevExt);
