@@ -55,7 +55,7 @@ public:
                  LONG aPort,
                  LONG aDevice,
                  DeviceType_T aType,
-                 bool aImplicit = false);
+                 bool fPassthrough);
     void uninit();
 
     HRESULT FinalConstruct();

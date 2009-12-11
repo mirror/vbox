@@ -6345,7 +6345,8 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                controllerName,
                                dev.lPort,
                                dev.lDevice,
-                               dev.deviceType);
+                               dev.deviceType,
+                               dev.fPassThrough);
         if (FAILED(rc)) break;
 
         /* associate the medium with this machine and snapshot */
@@ -7152,7 +7153,7 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
         dev.lDevice = pAttach->getDevice();
         if (pMedium)
         {
-            BOOL fHostDrive = false;
+            BOOL fHostDrive = FALSE;
             rc = pMedium->COMGETTER(HostDrive)(&fHostDrive);
             if (FAILED(rc))
                 return rc;
