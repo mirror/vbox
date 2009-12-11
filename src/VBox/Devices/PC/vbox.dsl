@@ -849,8 +849,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
 
                     Name (_CRS, ResourceTemplate ()
                     {
-                        IO (Decode16, 0x0060, 0x0060, 0x00, 0x01)
-                        IO (Decode16, 0x0064, 0x0064, 0x00, 0x01)
                         IRQNoFlags () {12}
                     })
                 }
