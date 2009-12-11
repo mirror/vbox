@@ -9159,7 +9159,7 @@ STDMETHODIMP SessionMachine::AdoptSavedState (IN_BSTR aSavedStateFile)
 {
     LogFlowThisFunc(("\n"));
 
-    AssertReturn(aSavedStateFile, E_INVALIDARG);
+    CheckComArgStrNotEmptyOrNull(aSavedStateFile);
 
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
