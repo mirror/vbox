@@ -494,11 +494,6 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_BOOT:
             {
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > 4))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid boot slot number in '%s'",
-                                       GetOptState.pDef->pszLong);
-
                 if (!strcmp(ValueUnion.psz, "none"))
                 {
                     CHECK_ERROR(machine, SetBootOrder(GetOptState.uIndex, DeviceType_Null));
@@ -521,7 +516,6 @@ int handleModifyVM(HandlerArg *a)
                 }
                 else
                     return errorArgument("Invalid boot device '%s'", ValueUnion.psz);
-
                 break;
             }
 
@@ -664,19 +658,8 @@ int handleModifyVM(HandlerArg *a)
                 ComPtr<IStorageController> SataCtl;
                 CHECK_ERROR(machine, GetStorageControllerByName(Bstr("SATA"), SataCtl.asOutParam()));
 
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > 4))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid SATA boot slot number in '%s'",
-                                       GetOptState.pDef->pszLong);
-
-                if ((ValueUnion.u32 < 1) && (ValueUnion.u32 > 30))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid SATA port number in '%s'",
-                                       GetOptState.pDef->pszLong);
-
                 if (SUCCEEDED(rc))
                     CHECK_ERROR(SataCtl, SetIDEEmulationPort(GetOptState.uIndex, ValueUnion.u32));
-
                 break;
             }
 
@@ -687,17 +670,11 @@ int handleModifyVM(HandlerArg *a)
 
                 if (SUCCEEDED(rc) && ValueUnion.u32 > 0)
                     CHECK_ERROR(SataCtl, COMSETTER(PortCount)(ValueUnion.u32));
-
                 break;
             }
 
             case MODIFYVM_SATAPORT: // deprecated
             {
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > 30))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid SATA port number in '%s'",
-                                       GetOptState.pDef->pszLong);
-
                 if (!strcmp(ValueUnion.psz, "none"))
                 {
                     machine->DetachDevice(Bstr("SATA"), GetOptState.uIndex, 0);
@@ -716,17 +693,17 @@ int handleModifyVM(HandlerArg *a)
                         {
                             /* open the new hard disk object */
                             CHECK_ERROR(a->virtualBox,
-                                         OpenHardDisk(Bstr(ValueUnion.psz), AccessMode_ReadWrite,
-                                                      false, Bstr(""), false,
-                                                      Bstr(""), hardDisk.asOutParam()));
+                                        OpenHardDisk(Bstr(ValueUnion.psz), AccessMode_ReadWrite,
+                                                     false, Bstr(""), false,
+                                                     Bstr(""), hardDisk.asOutParam()));
                         }
                     }
                     if (hardDisk)
                     {
                         hardDisk->COMGETTER(Id)(uuid.asOutParam());
                         CHECK_ERROR(machine,
-                                     AttachDevice(Bstr("SATA"), GetOptState.uIndex,
-                                                  0, DeviceType_HardDisk, uuid));
+                                    AttachDevice(Bstr("SATA"), GetOptState.uIndex,
+                                                 0, DeviceType_HardDisk, uuid));
                     }
                     else
                         rc = E_FAIL;
@@ -751,11 +728,6 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_SCSIPORT: // deprecated
             {
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > 16))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid SCSI port number in '%s'",
-                                       GetOptState.pDef->pszLong);
-
                 if (!strcmp(ValueUnion.psz, "none"))
                 {
                     rc = machine->DetachDevice(Bstr("LsiLogic"), GetOptState.uIndex, 0);
@@ -999,11 +971,6 @@ int handleModifyVM(HandlerArg *a)
             {
                 ComPtr<INetworkAdapter> nic;
 
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > NetworkAdapterCount))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid NIC slot number in '%s'",
-                                       GetOptState.pDef->pszLong);
-
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1015,11 +982,6 @@ int handleModifyVM(HandlerArg *a)
             {
                 ComPtr<INetworkAdapter> nic;
 
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > NetworkAdapterCount))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid NIC slot number in '%s'",
-                                       GetOptState.pDef->pszLong);
-
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1030,11 +992,6 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_NICTYPE:
             {
                 ComPtr<INetworkAdapter> nic;
-
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > NetworkAdapterCount))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid NIC slot number in '%s'",
-                                       GetOptState.pDef->pszLong);
 
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
@@ -1069,7 +1026,7 @@ int handleModifyVM(HandlerArg *a)
 #endif /* VBOX_WITH_VIRTIO */
                 else
                 {
-                    errorArgument("Invalid NIC type '%s' specified for NIC %lu", ValueUnion.psz, GetOptState.uIndex);
+                    errorArgument("Invalid NIC type '%s' specified for NIC %u", ValueUnion.psz, GetOptState.uIndex);
                     rc = E_FAIL;
                 }
                 break;
@@ -1078,18 +1035,6 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_NICSPEED:
             {
                 ComPtr<INetworkAdapter> nic;
-
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > NetworkAdapterCount))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid NIC slot number in '%s'",
-                                       GetOptState.pDef->pszLong);
-
-                if ((ValueUnion.u32 < 1000) && (ValueUnion.u32 > 4000000))
-                {
-                    errorArgument("Invalid --nicspeed%lu argument '%u'", GetOptState.uIndex, ValueUnion.u32);
-                    rc = E_FAIL;
-                    break;
-                }
 
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
@@ -1101,11 +1046,6 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_NIC:
             {
                 ComPtr<INetworkAdapter> nic;
-
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > NetworkAdapterCount))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid NIC slot number in '%s'",
-                                       GetOptState.pDef->pszLong);
 
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
@@ -1145,7 +1085,7 @@ int handleModifyVM(HandlerArg *a)
 #endif
                 else
                 {
-                    errorArgument("Invalid type '%s' specfied for NIC %lu", ValueUnion.psz, GetOptState.uIndex);
+                    errorArgument("Invalid type '%s' specfied for NIC %u", ValueUnion.psz, GetOptState.uIndex);
                     rc = E_FAIL;
                 }
                 break;
@@ -1154,11 +1094,6 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_CABLECONNECTED:
             {
                 ComPtr<INetworkAdapter> nic;
-
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > NetworkAdapterCount))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid NIC slot number in '%s'",
-                                       GetOptState.pDef->pszLong);
 
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
@@ -1171,11 +1106,6 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_HOSTONLYADAPTER:
             {
                 ComPtr<INetworkAdapter> nic;
-
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > NetworkAdapterCount))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid NIC slot number in '%s'",
-                                       GetOptState.pDef->pszLong);
 
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
@@ -1196,11 +1126,6 @@ int handleModifyVM(HandlerArg *a)
             {
                 ComPtr<INetworkAdapter> nic;
 
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > NetworkAdapterCount))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid NIC slot number in '%s'",
-                                       GetOptState.pDef->pszLong);
-
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1220,27 +1145,16 @@ int handleModifyVM(HandlerArg *a)
             {
                 ComPtr<INetworkAdapter> nic;
 
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > NetworkAdapterCount))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid NIC slot number in '%s'",
-                                       GetOptState.pDef->pszLong);
-
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
                 CHECK_ERROR(nic, COMSETTER(NATNetwork)(Bstr(ValueUnion.psz)));
-
                 break;
             }
 
             case MODIFYVM_MACADDRESS:
             {
                 ComPtr<INetworkAdapter> nic;
-
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > NetworkAdapterCount))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid NIC slot number in '%s'",
-                                       GetOptState.pDef->pszLong);
 
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
@@ -1261,11 +1175,6 @@ int handleModifyVM(HandlerArg *a)
             {
                 ComPtr<ISerialPort> uart;
                 char *pszIRQ = NULL;
-
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > SerialPortCount))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid Serial Port number in '%s'",
-                                       GetOptState.pDef->pszLong);
 
                 CHECK_ERROR_BREAK(machine, GetSerialPort(GetOptState.uIndex - 1, uart.asOutParam()));
                 ASSERT(uart);
@@ -1314,11 +1223,6 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_UART:
             {
                 ComPtr<ISerialPort> uart;
-
-                if ((GetOptState.uIndex < 1) && (GetOptState.uIndex > SerialPortCount))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid Serial Port number in '%s'",
-                                       GetOptState.pDef->pszLong);
 
                 CHECK_ERROR_BREAK(machine, GetSerialPort(GetOptState.uIndex - 1, uart.asOutParam()));
                 ASSERT(uart);
