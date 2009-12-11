@@ -81,6 +81,8 @@ void GlueHandleComError(ComPtr<IUnknown> iface,
     com::ErrorInfo info(iface);
     if (info.isFullAvailable() || info.isBasicAvailable())
         GluePrintErrorInfo(info);
+    else
+        GluePrintRCMessage(rc);
     GluePrintErrorContext(pcszContext, pcszSourceFile, ulLine);
 }
 
