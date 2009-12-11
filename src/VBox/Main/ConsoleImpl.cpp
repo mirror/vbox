@@ -2103,7 +2103,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
 
 STDMETHODIMP Console::AdoptSavedState(IN_BSTR aSavedStateFile)
 {
-    CheckComArgNotNull(aSavedStateFile);
+    CheckComArgStrNotEmptyOrNull(aSavedStateFile);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
