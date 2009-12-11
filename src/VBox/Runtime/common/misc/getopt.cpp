@@ -400,7 +400,7 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
      * Reset the variables kept in state.
      */
     pState->pDef = NULL;
-    pState->uIndex = UINT64_MAX;
+    pState->uIndex = UINT32_MAX;
 
     /*
      * Make sure the union is completely cleared out, whatever happens below.
@@ -511,9 +511,9 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                     if (pszArgThis[cchLong] == '\0')
                         return VERR_GETOPT_INDEX_MISSING;
 
-                    uint64_t uIndex;
+                    uint32_t uIndex;
                     char *pszRet = NULL;
-                    int rc = RTStrToUInt64Ex(&pszArgThis[cchLong], &pszRet, 10, &uIndex);
+                    int rc = RTStrToUInt32Ex(&pszArgThis[cchLong], &pszRet, 10, &uIndex);
                     if (rc == VWRN_TRAILING_CHARS)
                     {
                         if (   pszRet[0] != ':'
@@ -583,9 +583,9 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
             if (pszArgThis[cchLong] == '\0')
                 return VERR_GETOPT_INDEX_MISSING;
 
-            uint64_t uIndex;
+            uint32_t uIndex;
             char *pszRet = NULL;
-            if (RTStrToUInt64Full(&pszArgThis[cchLong], 10, &uIndex) == VINF_SUCCESS)
+            if (RTStrToUInt32Full(&pszArgThis[cchLong], 10, &uIndex) == VINF_SUCCESS)
                 pState->uIndex = uIndex;
             else
                 AssertMsgFailedReturn(("%s\n", pszArgThis), VERR_GETOPT_INVALID_ARGUMENT_FORMAT); /* search bug */

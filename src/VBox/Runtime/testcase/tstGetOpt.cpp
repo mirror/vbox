@@ -171,10 +171,10 @@ int main()
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 2);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string1"));
-    CHECK(GetState.uIndex == UINT64_MAX);
+    CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 2);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string2"));
-    CHECK(GetState.uIndex == UINT64_MAX);
+    CHECK(GetState.uIndex == UINT32_MAX);
 
     /* -i */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
@@ -300,22 +300,22 @@ int main()
     CHECK(GetState.uIndex == 1);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 404, 1);
-    CHECK(GetState.uIndex == UINT64_MAX);
+    CHECK(GetState.uIndex == UINT32_MAX);
 
     /* RTGetOptFetchValue tests */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 405, 2);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "firstvalue"));
-    CHECK(GetState.uIndex == UINT64_MAX);
+    CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_STRING), VINF_SUCCESS, 1);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "secondvalue"));
-    CHECK(GetState.uIndex == UINT64_MAX);
+    CHECK(GetState.uIndex == UINT32_MAX);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 405, 1);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "firstvalue"));
-    CHECK(GetState.uIndex == UINT64_MAX);
+    CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_STRING), VINF_SUCCESS, 1);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "secondvalue"));
-    CHECK(GetState.uIndex == UINT64_MAX);
+    CHECK(GetState.uIndex == UINT32_MAX);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 406, 2);
     CHECK(Val.u32 == 1);
@@ -333,13 +333,13 @@ int main()
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 407, 2);
     CHECK(Val.u32 == 1);
-    CHECK(GetState.uIndex == UINT64_MAX);
+    CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_UINT32), VINF_SUCCESS, 1);
     CHECK(Val.u32 == 12);
-    CHECK(GetState.uIndex == UINT64_MAX);
+    CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_STRING), VINF_SUCCESS, 1);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "thirdvalue"));
-    CHECK(GetState.uIndex == UINT64_MAX);
+    CHECK(GetState.uIndex == UINT32_MAX);
 
     /* bool on/off tests */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 408, 2);
