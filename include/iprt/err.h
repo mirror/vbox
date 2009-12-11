@@ -426,6 +426,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_ALREADY_LOADED                 (-9)
 /** Permission denied. */
 #define VERR_PERMISSION_DENIED              (-10)
+/** Permission denied. */
+#define VINF_PERMISSION_DENIED              10
 /** Version mismatch. */
 #define VERR_VERSION_MISMATCH               (-11)
 /** The request function is not implemented. */
