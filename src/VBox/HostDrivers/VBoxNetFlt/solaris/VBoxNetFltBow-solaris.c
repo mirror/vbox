@@ -61,7 +61,6 @@
 /** Debugging switch for using symbols in kmdb */
 # define LOCAL      static
 
-#define DEBUG_ramshankar
 #if defined(DEBUG_ramshankar)
 # undef Log
 # define Log        LogRel
@@ -583,6 +582,7 @@ static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
     }
 }
 
+
 /**
  * Receive (rx) entry point.
  *
@@ -594,7 +594,7 @@ static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
 
 LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, mblk_t *pMsg, boolean_t fLoopback)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisRecv pvData=%p pMsg=%p fLoopback=%d\n", pvData, pMsg, fLoopback));
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisRecv pvData=%p pMsg=%p fLoopback=%d cbData=%d\n", pvData, pMsg, fLoopback, pMsg ? MBLKL(pMsg) : 0));
 
     PVBOXNETFLTINS pThis = (PVBOXNETFLTINS)pvData;
     AssertPtrReturnVoid(pThis);
@@ -614,10 +614,9 @@ LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, 
 
     uint32_t fSrc = INTNETTRUNKDIR_WIRE;
     PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)pMsg->b_rptr;
-    if (vboxNetFltPortOsIsHostMac(pThis, &pEthHdr->SrcMac))
+    if (   MBLKL(pMsg) >= sizeof(RTNETETHERHDR)
+        && vboxNetFltPortOsIsHostMac(pThis, &pEthHdr->SrcMac))
         fSrc = INTNETTRUNKDIR_HOST;
-
-    vboxNetFltSolarisAnalyzeMBlk(pMsg);
 
     /*
      * Route all received packets into the internal network.
@@ -776,14 +775,14 @@ LOCAL int vboxNetFltSolarisDetachFromInterface(PVBOXNETFLTINS pThis)
 bool vboxNetFltPortOsIsPromiscuous(PVBOXNETFLTINS pThis)
 {
     LogFlow((DEVICE_NAME ":vboxNetFltPortOsIsPromiscuous pThis=%p\n", pThis));
-    return pThis->u.s.hPromiscuous ? true : false;
+    return false;
 }
 
 
 void vboxNetFltPortOsGetMacAddress(PVBOXNETFLTINS pThis, PRTMAC pMac)
 {
     LogFlow((DEVICE_NAME ":vboxNetFltPortOsGetMacAddress pThis=%p\n", pThis));
-    NOREF(pThis); NOREF(pMac);
+    *pMac = pThis->u.s.Mac;
     return;
 }
 
@@ -892,8 +891,13 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
         {
             LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit pThis=%p cbData=%d\n", pThis, MBLKL(pMsg)));
 
-            mac_tx(pThis->u.s.hClient, pMsg, 0 /* Hint */, MAC_DROP_ON_NO_DESC, NULL /* return message */);
-            return VINF_SUCCESS;
+            mac_tx_cookie_t pXmitCookie = mac_tx(pThis->u.s.hClient, pMsg, 0 /* Hint */, MAC_DROP_ON_NO_DESC, NULL /* return message */);
+            if (RT_LIKELY(!pXmitCookie))
+                return VINF_SUCCESS;
+
+            pMsg = NULL;
+            rc = VERR_NET_IO_ERROR;
+            LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit Xmit failed.\n"));
         }
         else
         {
