@@ -3409,10 +3409,6 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
 }
 
 
-#  define static DECLCALLBACK(_t) static DECLCALLBACK(_t)
-#  define INTNET_CALLBACK(_n) _n
-#endif
-
 /** @copydoc INTNETTRUNKSWPORT::pfnSetSGPhys */
 static DECLCALLBACK(bool) intnetR0TrunkIfPortSetSGPhys(PINTNETTRUNKSWPORT pSwitchPort, bool fEnable)
 {
