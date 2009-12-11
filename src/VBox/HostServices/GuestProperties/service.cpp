@@ -236,7 +236,8 @@ private:
             || (isGuest && (meGlobalFlags & RDONLYGUEST))
             || (!isGuest && (eFlags & RDONLYHOST))
            )
-            return VERR_PERMISSION_DENIED;
+            return VINF_PERMISSION_DENIED;
+
         return VINF_SUCCESS;
     }
 
@@ -666,6 +667,9 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
         rc = checkPermission(found ? (ePropFlags)it->mFlags : NILFLAG,
                              isGuest);
 
+    if (rc == VINF_PERMISSION_DENIED)
+        return rc;
+
     /*
      * Set the actual value
      */
@@ -740,6 +744,9 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
     if (RT_SUCCESS(rc))
         rc = checkPermission(found ? (ePropFlags)it->mFlags : 
                              NILFLAG, isGuest);
+    
+    if (rc == VINF_PERMISSION_DENIED)
+        return rc;
 
     /*
      * And delete the property if all is well.
