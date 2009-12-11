@@ -397,33 +397,11 @@ DECLHIDDEN(void) vboxNetAdpCancelReceive(PVBOXNETADP pThis)
     vboxNetAdpRelease(pThis);
 }
 
-#ifdef RT_WITH_W64_UNWIND_HACK
-# if defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
-#  define NETADP_DECL_CALLBACK(type) DECLASM(DECLHIDDEN(type))
-#  define NETADP_CALLBACK(_n) netfltNtWrap##_n
-
-NETADP_DECL_CALLBACK(int)  NETADP_CALLBACK(vboxNetAdpPortXmit)(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG, uint32_t fDst);
-NETADP_DECL_CALLBACK(bool) NETADP_CALLBACK(vboxNetAdpPortIsPromiscuous)(PINTNETTRUNKIFPORT pIfPort);
-NETADP_DECL_CALLBACK(void) NETADP_CALLBACK(vboxNetAdpPortGetMacAddress)(PINTNETTRUNKIFPORT pIfPort, PRTMAC pMac);
-NETADP_DECL_CALLBACK(bool) NETADP_CALLBACK(vboxNetAdpPortIsHostMac)(PINTNETTRUNKIFPORT pIfPort, PCRTMAC pMac);
-NETADP_DECL_CALLBACK(int)  NETADP_CALLBACK(vboxNetAdpPortWaitForIdle)(PINTNETTRUNKIFPORT pIfPort, uint32_t cMillies);
-NETADP_DECL_CALLBACK(bool) NETADP_CALLBACK(vboxNetAdpPortSetActive)(PINTNETTRUNKIFPORT pIfPort, bool fActive);
-NETADP_DECL_CALLBACK(void) NETADP_CALLBACK(vboxNetAdpPortDisconnectAndRelease)(PINTNETTRUNKIFPORT pIfPort);
-NETADP_DECL_CALLBACK(void) NETADP_CALLBACK(vboxNetAdpPortRetain)(PINTNETTRUNKIFPORT pIfPort);
-NETADP_DECL_CALLBACK(void) NETADP_CALLBACK(vboxNetAdpPortRelease)(PINTNETTRUNKIFPORT pIfPort);
-
-# else
-#  error "UNSUPPORTED (RT_WITH_W64_UNWIND_HACK)"
-# endif
-#else
-# define NETADP_DECL_CALLBACK(type) static DECLCALLBACK(type)
-# define NETADP_CALLBACK(_n) _n
-#endif
 
 /**
  * @copydoc INTNETTRUNKIFPORT::pfnXmit
  */
-NETADP_DECL_CALLBACK(int) vboxNetAdpPortXmit(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG, uint32_t fDst)
+static DECLCALLBACK(int) vboxNetAdpPortXmit(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG, uint32_t fDst)
 {
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     PVBOXNETADP pThis = IFPORT_2_VBOXNETADP(pIfPort);
@@ -464,7 +442,7 @@ NETADP_DECL_CALLBACK(int) vboxNetAdpPortXmit(PINTNETTRUNKIFPORT pIfPort, PINTNET
 /**
  * @copydoc INTNETTRUNKIFPORT::pfnIsPromiscuous
  */
-NETADP_DECL_CALLBACK(bool) vboxNetAdpPortIsPromiscuous(PINTNETTRUNKIFPORT pIfPort)
+static DECLCALLBACK(bool) vboxNetAdpPortIsPromiscuous(PINTNETTRUNKIFPORT pIfPort)
 {
     PVBOXNETADP pThis = IFPORT_2_VBOXNETADP(pIfPort);
 
@@ -485,7 +463,7 @@ NETADP_DECL_CALLBACK(bool) vboxNetAdpPortIsPromiscuous(PINTNETTRUNKIFPORT pIfPor
 /**
  * @copydoc INTNETTRUNKIFPORT::pfnGetMacAddress
  */
-NETADP_DECL_CALLBACK(void) vboxNetAdpPortGetMacAddress(PINTNETTRUNKIFPORT pIfPort, PRTMAC pMac)
+static DECLCALLBACK(void) vboxNetAdpPortGetMacAddress(PINTNETTRUNKIFPORT pIfPort, PRTMAC pMac)
 {
     PVBOXNETADP pThis = IFPORT_2_VBOXNETADP(pIfPort);
 
@@ -506,7 +484,7 @@ NETADP_DECL_CALLBACK(void) vboxNetAdpPortGetMacAddress(PINTNETTRUNKIFPORT pIfPor
 /**
  * @copydoc INTNETTRUNKIFPORT::pfnIsHostMac
  */
-NETADP_DECL_CALLBACK(bool) vboxNetAdpPortIsHostMac(PINTNETTRUNKIFPORT pIfPort, PCRTMAC pMac)
+static DECLCALLBACK(bool) vboxNetAdpPortIsHostMac(PINTNETTRUNKIFPORT pIfPort, PCRTMAC pMac)
 {
     PVBOXNETADP pThis = IFPORT_2_VBOXNETADP(pIfPort);
 
@@ -527,7 +505,7 @@ NETADP_DECL_CALLBACK(bool) vboxNetAdpPortIsHostMac(PINTNETTRUNKIFPORT pIfPort, P
 /**
  * @copydoc INTNETTRUNKIFPORT::pfnWaitForIdle
  */
-NETADP_DECL_CALLBACK(int) vboxNetAdpPortWaitForIdle(PINTNETTRUNKIFPORT pIfPort, uint32_t cMillies)
+static DECLCALLBACK(int) vboxNetAdpPortWaitForIdle(PINTNETTRUNKIFPORT pIfPort, uint32_t cMillies)
 {
     int rc;
     PVBOXNETADP pThis = IFPORT_2_VBOXNETADP(pIfPort);
@@ -557,7 +535,7 @@ NETADP_DECL_CALLBACK(int) vboxNetAdpPortWaitForIdle(PINTNETTRUNKIFPORT pIfPort, 
 /**
  * @copydoc INTNETTRUNKIFPORT::pfnSetActive
  */
-NETADP_DECL_CALLBACK(bool) vboxNetAdpPortSetActive(PINTNETTRUNKIFPORT pIfPort, bool fActive)
+static DECLCALLBACK(bool) vboxNetAdpPortSetActive(PINTNETTRUNKIFPORT pIfPort, bool fActive)
 {
     bool fPreviouslyActive;
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
@@ -598,7 +576,7 @@ NETADP_DECL_CALLBACK(bool) vboxNetAdpPortSetActive(PINTNETTRUNKIFPORT pIfPort, b
 /**
  * @copydoc INTNETTRUNKIFPORT::pfnDisconnectAndRelease
  */
-NETADP_DECL_CALLBACK(void) vboxNetAdpPortDisconnectAndRelease(PINTNETTRUNKIFPORT pIfPort)
+static DECLCALLBACK(void) vboxNetAdpPortDisconnectAndRelease(PINTNETTRUNKIFPORT pIfPort)
 {
     PVBOXNETADP pThis = IFPORT_2_VBOXNETADP(pIfPort);
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
@@ -637,7 +615,7 @@ NETADP_DECL_CALLBACK(void) vboxNetAdpPortDisconnectAndRelease(PINTNETTRUNKIFPORT
 /**
  * @copydoc INTNETTRUNKIFPORT::pfnRelease
  */
-NETADP_DECL_CALLBACK(void) vboxNetAdpPortRelease(PINTNETTRUNKIFPORT pIfPort)
+static DECLCALLBACK(void) vboxNetAdpPortRelease(PINTNETTRUNKIFPORT pIfPort)
 {
     PVBOXNETADP pThis = IFPORT_2_VBOXNETADP(pIfPort);
     vboxNetAdpRelease(pThis);
@@ -647,7 +625,7 @@ NETADP_DECL_CALLBACK(void) vboxNetAdpPortRelease(PINTNETTRUNKIFPORT pIfPort)
 /**
  * @copydoc INTNETTRUNKIFPORT::pfnRetain
  */
-NETADP_DECL_CALLBACK(void) vboxNetAdpPortRetain(PINTNETTRUNKIFPORT pIfPort)
+static DECLCALLBACK(void) vboxNetAdpPortRetain(PINTNETTRUNKIFPORT pIfPort)
 {
     PVBOXNETADP pThis = IFPORT_2_VBOXNETADP(pIfPort);
     vboxNetAdpRetain(pThis);
@@ -906,15 +884,15 @@ static int vboxNetAdpSlotCreate(PVBOXNETADPGLOBALS pGlobals, unsigned uUnit, PVB
     int rc;
 
     pNew->MyPort.u32Version             = INTNETTRUNKIFPORT_VERSION;
-    pNew->MyPort.pfnRetain              = NETADP_CALLBACK(vboxNetAdpPortRetain);
-    pNew->MyPort.pfnRelease             = NETADP_CALLBACK(vboxNetAdpPortRelease);
-    pNew->MyPort.pfnDisconnectAndRelease= NETADP_CALLBACK(vboxNetAdpPortDisconnectAndRelease);
-    pNew->MyPort.pfnSetActive           = NETADP_CALLBACK(vboxNetAdpPortSetActive);
-    pNew->MyPort.pfnWaitForIdle         = NETADP_CALLBACK(vboxNetAdpPortWaitForIdle);
-    pNew->MyPort.pfnGetMacAddress       = NETADP_CALLBACK(vboxNetAdpPortGetMacAddress);
-    pNew->MyPort.pfnIsHostMac           = NETADP_CALLBACK(vboxNetAdpPortIsHostMac);
-    pNew->MyPort.pfnIsPromiscuous       = NETADP_CALLBACK(vboxNetAdpPortIsPromiscuous);
-    pNew->MyPort.pfnXmit                = NETADP_CALLBACK(vboxNetAdpPortXmit);
+    pNew->MyPort.pfnRetain              = vboxNetAdpPortRetain;
+    pNew->MyPort.pfnRelease             = vboxNetAdpPortRelease;
+    pNew->MyPort.pfnDisconnectAndRelease= vboxNetAdpPortDisconnectAndRelease;
+    pNew->MyPort.pfnSetActive           = vboxNetAdpPortSetActive;
+    pNew->MyPort.pfnWaitForIdle         = vboxNetAdpPortWaitForIdle;
+    pNew->MyPort.pfnGetMacAddress       = vboxNetAdpPortGetMacAddress;
+    pNew->MyPort.pfnIsHostMac           = vboxNetAdpPortIsHostMac;
+    pNew->MyPort.pfnIsPromiscuous       = vboxNetAdpPortIsPromiscuous;
+    pNew->MyPort.pfnXmit                = vboxNetAdpPortXmit;
     pNew->MyPort.u32VersionEnd          = INTNETTRUNKIFPORT_VERSION;
     pNew->pSwitchPort                   = NULL;
     pNew->pGlobals                      = pGlobals;
