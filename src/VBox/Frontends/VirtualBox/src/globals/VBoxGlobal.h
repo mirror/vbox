@@ -204,6 +204,17 @@ public:
     const bool mChanged;
 };
 
+class VBoxChangePresentationModeEvent : public QEvent
+{
+public:
+    VBoxChangePresentationModeEvent (bool aChanged)
+        : QEvent ((QEvent::Type) VBoxDefs::ChangePresentationmodeEventType)
+        , mChanged (aChanged)
+        {}
+
+    const bool mChanged;
+};
+
 class Process : public QProcess
 {
     Q_OBJECT;
@@ -854,6 +865,7 @@ signals:
     void trayIconChanged (const VBoxChangeTrayIconEvent &e);
 #endif
     void dockIconUpdateChanged (const VBoxChangeDockIconUpdateEvent &e);
+    void presentationModeChanged (const VBoxChangePresentationModeEvent &e);
 
     void canShowRegDlg (bool aCanShow);
     void canShowUpdDlg (bool aCanShow);

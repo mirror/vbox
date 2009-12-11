@@ -58,6 +58,7 @@ class QIWidgetValidator;
 class QIMenu;
 class QIStateIndicator;
 class VBoxChangeDockIconUpdateEvent;
+class VBoxChangePresentationModeEvent;
 class VBoxConsoleView;
 class VBoxMiniToolBar;
 class VBoxSwitchMenu;
@@ -177,6 +178,7 @@ private slots:
     void mtMaskUpdate();
 
     void changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &aEvent);
+    void changePresentationMode (const VBoxChangePresentationModeEvent &aEvent);
     void processGlobalSettingChange (const char *aPublicName, const char *aName);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

@@ -49,6 +49,7 @@ private:
     QString remapScancodes;
     bool trayIconEnabled;
     bool dockPreviewEnabled;
+    bool presentationModeEnabled;
 
     friend class VBoxGlobalSettings;
 };
@@ -66,6 +67,7 @@ class VBoxGlobalSettings : public QObject, public CIShared <VBoxGlobalSettingsDa
     Q_PROPERTY (QString remapScancodes READ remapScancodes WRITE setRemapScancodes)
     Q_PROPERTY (bool trayIconEnabled READ trayIconEnabled WRITE setTrayIconEnabled)
     Q_PROPERTY (bool dockPreviewEnabled READ dockPreviewEnabled WRITE setDockPreviewEnabled)
+    Q_PROPERTY (bool presentationModeEnabled READ presentationModeEnabled WRITE setPresentationModeEnabled)
 
 public:
 
@@ -126,6 +128,12 @@ public:
     void setDockPreviewEnabled (bool enabled)
     {
         mData()->dockPreviewEnabled = enabled;
+    }
+
+    bool presentationModeEnabled() const { return data()->presentationModeEnabled; }
+    void setPresentationModeEnabled (bool enabled)
+    {
+        mData()->presentationModeEnabled = enabled;
     }
 
 

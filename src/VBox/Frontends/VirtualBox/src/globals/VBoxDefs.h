@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -90,47 +90,47 @@ struct VBoxDefs
     /** Additional Qt event types. */
     enum
     {
-        AsyncEventType = QEvent::User + 100,
-        ResizeEventType,
-        RepaintEventType,
-        SetRegionEventType,
-        MouseCapabilityEventType,
-        MousePointerChangeEventType,
-        MachineStateChangeEventType,
-        AdditionsStateChangeEventType,
-        MediaDriveChangeEventType,
-        MachineDataChangeEventType,
-        MachineRegisteredEventType,
-        SessionStateChangeEventType,
-        SnapshotEventType,
-        CanShowRegDlgEventType,
-        CanShowUpdDlgEventType,
-        NetworkAdapterChangeEventType,
-        USBCtlStateChangeEventType,
-        USBDeviceStateChangeEventType,
-        SharedFolderChangeEventType,
-        RuntimeErrorEventType,
-        ModifierKeyChangeEventType,
-        MediaEnumEventType,
+          AsyncEventType = QEvent::User + 100
+        , ResizeEventType
+        , RepaintEventType
+        , SetRegionEventType
+        , MouseCapabilityEventType
+        , MousePointerChangeEventType
+        , MachineStateChangeEventType
+        , AdditionsStateChangeEventType
+        , MediaDriveChangeEventType
+        , MachineDataChangeEventType
+        , MachineRegisteredEventType
+        , SessionStateChangeEventType
+        , SnapshotEventType
+        , CanShowRegDlgEventType
+        , CanShowUpdDlgEventType
+        , NetworkAdapterChangeEventType
+        , USBCtlStateChangeEventType
+        , USBDeviceStateChangeEventType
+        , SharedFolderChangeEventType
+        , RuntimeErrorEventType
+        , ModifierKeyChangeEventType
+        , MediaEnumEventType
 #if defined (Q_WS_WIN)
-        ShellExecuteEventType,
+        , ShellExecuteEventType
 #endif
-        ActivateMenuEventType,
+        , ActivateMenuEventType
 #if defined (Q_WS_MAC)
-        ShowWindowEventType,
+        , ShowWindowEventType
 #endif
-        ChangeGUILanguageEventType,
+        , ChangeGUILanguageEventType
 #if defined (VBOX_GUI_WITH_SYSTRAY)
-        CanShowTrayIconEventType,
-        ShowTrayIconEventType,
-        TrayIconChangeEventType,
-        MainWindowCountChangeEventType,
+        , CanShowTrayIconEventType
+        , ShowTrayIconEventType
+        , TrayIconChangeEventType
+        , MainWindowCountChangeEventType
 #endif
-        AddVDMUrlsEventType,
-        ChangeDockIconUpdateEventType
+        , AddVDMUrlsEventType
+        , ChangeDockIconUpdateEventType
+        , ChangePresentationmodeEventType
 #ifdef VBOX_GUI_USE_QGL
-        ,
-        VHWACommandProcessType
+        , VHWACommandProcessType
 #endif
     };
 
@@ -172,6 +172,7 @@ struct VBoxDefs
 #endif
 #ifdef Q_WS_MAC
     static const char* GUI_RealtimeDockIconUpdateEnabled;
+    static const char* GUI_PresentationModeEnabled;
 #endif /* Q_WS_MAC */
     static const char* GUI_PassCAD;
     static const char* GUI_Export_StorageType;

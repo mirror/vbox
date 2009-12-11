@@ -35,8 +35,11 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
 #endif /* VBOX_GUI_WITH_SYSTRAY */
 #ifndef Q_WS_MAC
     mCbCheckDockPreview->hide();
+    mCbCheckPresentationMode->hide();
 #endif /* Q_WS_MAC */
-    if (mCbCheckTrayIcon->isHidden() && mCbCheckDockPreview->isHidden())
+    if (   mCbCheckTrayIcon->isHidden()
+        && mCbCheckDockPreview->isHidden()
+        && mCbCheckPresentationMode->isHidden())
         mLnSeparator2->hide();
 
     mPsHardDisk->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
@@ -57,6 +60,7 @@ void VBoxGLSettingsGeneral::getFrom (const CSystemProperties &aProps,
     mCbCheckTrayIcon->setChecked (aGs.trayIconEnabled());
 #ifdef Q_WS_MAC
     mCbCheckDockPreview->setChecked (aGs.dockPreviewEnabled());
+    mCbCheckPresentationMode->setChecked (aGs.presentationModeEnabled());
 #endif /* Q_WS_MAC */
 }
 
@@ -72,6 +76,7 @@ void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
     aGs.setTrayIconEnabled (mCbCheckTrayIcon->isChecked());
 #ifdef Q_WS_MAC
     aGs.setDockPreviewEnabled (mCbCheckDockPreview->isChecked());
+    aGs.setPresentationModeEnabled (mCbCheckPresentationMode->isChecked());
 #endif /* Q_WS_MAC */
 }
 

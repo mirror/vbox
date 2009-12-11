@@ -54,6 +54,7 @@ const char* VBoxDefs::GUI_MainWindowCount = "GUI/MainWindowCount";
 #endif
 #ifdef Q_WS_MAC
 const char* VBoxDefs::GUI_RealtimeDockIconUpdateEnabled = "GUI/RealtimeDockIconUpdateEnabled";
+const char* VBoxDefs::GUI_PresentationModeEnabled = "GUI/PresentationModeEnabled";
 #endif /* Q_WS_MAC */
 const char* VBoxDefs::GUI_PassCAD = "GUI/PassCAD";
 const char* VBoxDefs::GUI_Export_StorageType = "GUI/Export/StorageType";
