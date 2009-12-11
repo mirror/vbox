@@ -2828,6 +2828,7 @@ void VBoxConsoleWnd::changePresentationMode (const VBoxChangePresentationModeEve
 {
     Q_UNUSED (aEvent);
 #ifdef Q_WS_MAC
+# ifdef QT_MAC_USE_COCOA
     if (mIsFullscreen)
     {
         QString testStr = vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_PresentationModeEnabled).toLower();
@@ -2839,6 +2840,7 @@ void VBoxConsoleWnd::changePresentationMode (const VBoxChangePresentationModeEve
     }
     else
         SetSystemUIMode (kUIModeNormal, 0);
+# endif /* QT_MAC_USE_COCOA */
 #endif
 }
 
@@ -3519,9 +3521,7 @@ void VBoxConsoleWnd::switchToFullscreen (bool aOn, bool aSeamless)
     {
         /* Here we are going really fullscreen */
         setWindowState (windowState() ^ Qt::WindowFullScreen);
-# ifdef QT_MAC_USE_COCOA
         changePresentationMode (VBoxChangePresentationModeEvent(aOn));
-# endif /* QT_MAC_USE_COCOA */
     }
 
 # ifndef QT_MAC_USE_COCOA
