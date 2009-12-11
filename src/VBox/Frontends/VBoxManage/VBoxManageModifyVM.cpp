@@ -156,7 +156,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--accelerate2dvideo",        MODIFYVM_ACCELERATE2DVIDEO,         RTGETOPT_REQ_BOOL_ONOFF },
     { "--bioslogofadein",           MODIFYVM_BIOSLOGOFADEIN,            RTGETOPT_REQ_BOOL_ONOFF },
     { "--bioslogofadeout",          MODIFYVM_BIOSLOGOFADEOUT,           RTGETOPT_REQ_BOOL_ONOFF },
-    { "--bioslogodisplaytime",      MODIFYVM_BIOSLOGODISPLAYTIME,       RTGETOPT_REQ_UINT64 },
+    { "--bioslogodisplaytime",      MODIFYVM_BIOSLOGODISPLAYTIME,       RTGETOPT_REQ_UINT32 },
     { "--bioslogoimagepath",        MODIFYVM_BIOSLOGOIMAGEPATH,         RTGETOPT_REQ_STRING },
     { "--biosbootmenu",             MODIFYVM_BIOSBOOTMENU,              RTGETOPT_REQ_STRING },
     { "--biossystemtimeoffset",     MODIFYVM_BIOSSYSTEMTIMEOFFSET,      RTGETOPT_REQ_INT64 },
@@ -448,7 +448,7 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_BIOSLOGODISPLAYTIME:
             {
-                CHECK_ERROR(biosSettings, COMSETTER(LogoDisplayTime)(ValueUnion.u64));
+                CHECK_ERROR(biosSettings, COMSETTER(LogoDisplayTime)(ValueUnion.u32));
                 break;
             }
 
