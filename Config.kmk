@@ -411,6 +411,8 @@ VBOX_WITH_64_BITS_GUESTS = 1
 VBOX_WITH_MULTI_CORE = 1
 # Enable the host/guest information service (aka guest properties).
 VBOX_WITH_GUEST_PROPS = 1
+# Enable this to prevent the guest from writing guest properties
+VBOX_WITH_GUEST_PROPS_RDONLY_GUEST =
 # Enable performance API.
 VBOX_WITH_RESOURCE_USAGE_API = 1
 # Enables all the doxgen bits.
