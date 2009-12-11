@@ -2901,6 +2901,32 @@ static void configSetProperty(VMMDev * const pVMMDev, const char *pszName,
     pVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::SET_PROP_HOST, 3,
                            &parms[0]);
 }
+
+/**
+ * Set the global flags value by calling the service
+ * @returns the status returned by the call to the service
+ *
+ * @param   pTable  the service instance handle
+ * @param   eFlags  the flags to set
+ */
+int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
+                                 guestProp::ePropFlags eFlags)
+{
+    VBOXHGCMSVCPARM paParm;
+    paParm.setUInt32(eFlags);
+    int rc = pVMMDev->hgcmHostCall ("VBoxGuestPropSvc",
+                                    guestProp::SET_GLOBAL_FLAGS_HOST, 1,
+                                    &paParm);
+    if (RT_FAILURE(rc))
+    {
+        char szFlags[guestProp::MAX_FLAGS_LEN];
+        if (RT_FAILURE(writeFlags(eFlags, szFlags)))
+            Log(("Failed to set the global flags.\n"));
+        else
+            Log(("Failed to set the global flags \"%s\".\n", szFlags));
+    }
+    return rc;
+}
 #endif /* VBOX_WITH_GUEST_PROPS */
 
 /**
@@ -3029,6 +3055,12 @@ static void configSetProperty(VMMDev * const pVMMDev, const char *pszName,
         HGCMHostRegisterServiceExtension(&hDummy, "VBoxGuestPropSvc",
                                          Console::doGuestPropNotification,
                                          pvConsole);
+
+#ifdef VBOX_WITH_GUEST_PROPS_RDONLY_GUEST
+        rc = configSetGlobalPropertyFlags(pConsole->mVMMDev,
+                                          guestProp::RDONLYGUEST);
+        AssertRCReturn(rc, rc);
+#endif
 
         Log(("Set VBoxGuestPropSvc property store\n"));
     }
