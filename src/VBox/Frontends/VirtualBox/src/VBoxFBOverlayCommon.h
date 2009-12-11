@@ -63,7 +63,7 @@
 #define VBOXGETTIME() RTTimeNanoTS()
 
 #define VBOXPRINTDIF(_nano, _m) do{\
-        uint64_t cur = VBOXGETTIME(); \
+        uint64_t cur = VBOXGETTIME(); NOREF(cur); \
         VBOXQGLLOG(_m); \
         VBOXQGLLOG(("(%Lu)\n", cur - (_nano))); \
     }while(0)
