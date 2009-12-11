@@ -378,6 +378,13 @@ public:
                     bool f = (testStr.isEmpty() || testStr == "true");
                     QApplication::postEvent (&mGlobal, new VBoxChangeDockIconUpdateEvent (f));
                 }
+                else if (sKey == VBoxDefs::GUI_PresentationModeEnabled)
+                {
+                    /* Default to true if it is an empty value */
+                    QString testStr = sVal.toLower();
+                    bool f = (testStr.isEmpty() || testStr == "false");
+                    QApplication::postEvent (&mGlobal, new VBoxChangePresentationModeEvent (f));
+                }
 #endif
 
                 mMutex.lock();
@@ -4511,6 +4518,11 @@ bool VBoxGlobal::event (QEvent *e)
         case VBoxDefs::ChangeDockIconUpdateEventType:
         {
             emit dockIconUpdateChanged (*(VBoxChangeDockIconUpdateEvent *) e);
+            return true;
+        }
+        case VBoxDefs::ChangePresentationmodeEventType:
+        {
+            emit presentationModeChanged (*(VBoxChangePresentationModeEvent *) e);
             return true;
         }
 #endif

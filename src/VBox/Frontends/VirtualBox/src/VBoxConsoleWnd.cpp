@@ -735,6 +735,8 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
 #ifdef Q_WS_MAC
     connect (&vboxGlobal(), SIGNAL (dockIconUpdateChanged (const VBoxChangeDockIconUpdateEvent &)),
              this, SLOT (changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &)));
+    connect (&vboxGlobal(), SIGNAL (presentationModeChanged (const VBoxChangePresentationModeEvent &)),
+             this, SLOT (changePresentationMode (const VBoxChangePresentationModeEvent &)));
 #endif
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -2822,6 +2824,24 @@ void VBoxConsoleWnd::changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &
 #endif
 }
 
+void VBoxConsoleWnd::changePresentationMode (const VBoxChangePresentationModeEvent &aEvent)
+{
+    Q_UNUSED (aEvent);
+#ifdef Q_WS_MAC
+    if (mIsFullscreen)
+    {
+        QString testStr = vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_PresentationModeEnabled).toLower();
+        /* Default to false if it is an empty value */
+        if (testStr.isEmpty() || testStr == "false")
+            SetSystemUIMode (kUIModeAllHidden, 0);
+        else
+            SetSystemUIMode (kUIModeAllSuppressed, 0);
+    }
+    else
+        SetSystemUIMode (kUIModeNormal, 0);
+#endif
+}
+
 /**
  *  Called (on non-UI thread!) when a global GUI setting changes.
  */
@@ -3500,9 +3520,7 @@ void VBoxConsoleWnd::switchToFullscreen (bool aOn, bool aSeamless)
         /* Here we are going really fullscreen */
         setWindowState (windowState() ^ Qt::WindowFullScreen);
 # ifdef QT_MAC_USE_COCOA
-        /* Disable the auto show menubar feature of Qt in fullscreen. */
-        if (aOn)
-            SetSystemUIMode (kUIModeAllHidden, 0);
+        changePresentationMode (VBoxChangePresentationModeEvent(aOn));
 # endif /* QT_MAC_USE_COCOA */
     }
 
