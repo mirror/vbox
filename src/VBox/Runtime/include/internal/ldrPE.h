@@ -196,6 +196,17 @@
 #define  IMAGE_DEBUG_TYPE_BORLAND  0x9
 #define  IMAGE_DEBUG_TYPE_RESERVED10  0x10
 
+/* security directory */
+#define  WIN_CERT_REVISION_1_0  UINT16_C(0x0100)
+#define  WIN_CERT_REVISION_2_0  UINT16_C(0x0200)
+
+#define  WIN_CERT_TYPE_X509  UINT16_C(1)
+#define  WIN_CERT_TYPE_PKCS_SIGNED_DATA  UINT16_C(2)
+#define  WIN_CERT_TYPE_RESERVED_1  UINT16_C(3)
+#define  WIN_CERT_TYPE_TS_STACK_SIGNED  UINT16_C(4)
+#define  WIN_CERT_TYPE_EFI_PKCS115 UINT16_C(0x0ef0)
+#define  WIN_CERT_TYPE_EFI_GUID UINT16_C(0x0ef1)
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -466,6 +477,16 @@ typedef struct _IMAGE_DEBUG_DIRECTORY
     uint32_t  PointerToRawData;
 } IMAGE_DEBUG_DIRECTORY;
 typedef IMAGE_DEBUG_DIRECTORY *PIMAGE_DEBUG_DIRECTORY;
+
+
+typedef struct WIN_CERTIFICATE
+{
+    uint32_t    dwLength;
+    uint16_t    wRevision;
+    uint16_t    wCertificateType;
+    uint8_t     bCertificate[8];
+} WIN_CERTIFICATE;
+typedef WIN_CERTIFICATE *PWIN_CERTIFICATE;
 
 #pragma pack()
 
