@@ -1117,6 +1117,21 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
                 cb = (size_t)cbRawImage; Assert((RTFOFF)cb == cbRawImage);
                 Log(("rtldrPEOpen: %s: dir no. %d (SECURITY) VirtualAddress=%#x Size=%#x is not supported!!!\n",
                      pszLogName, i, pDir->VirtualAddress, pDir->Size));
+                if (pDir->Size < sizeof(WIN_CERTIFICATE))
+                {
+                    Log(("rtldrPEOpen: %s: Security directory is too small: %#x bytes\n", pszLogName, i, pDir->Size));
+                    return VERR_LDRPE_MALFORMED_CERT;
+                }
+                if (pDir->Size >= _1M)
+                {
+                    Log(("rtldrPEOpen: %s: Security directory is too large: %#x bytes\n", pszLogName, i, pDir->Size));
+                    return VERR_LDRPE_MALFORMED_CERT;
+                }
+                if (pDir->VirtualAddress & 7)
+                {
+                    Log(("rtldrPEOpen: %s: Security directory is misaligned: %#x\n", pszLogName, i, pDir->VirtualAddress));
+                    return VERR_LDRPE_MALFORMED_CERT;
+                }
                 break;
 
             case IMAGE_DIRECTORY_ENTRY_GLOBALPTR:     // 8   /* (MIPS GP) */
@@ -1412,6 +1427,65 @@ int rtldrPEValidateDirectories(PRTLDRMODPE pModPe, const IMAGE_OPTIONAL_HEADER64
             return VERR_BAD_EXE_FORMAT;
         }
     }
+
+    /*
+     * If the image is signed, take a look at the signature.
+     */
+    Dir = pOptHdr->DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY];
+    if (Dir.Size)
+    {
+        PWIN_CERTIFICATE pFirst = (PWIN_CERTIFICATE)RTMemTmpAlloc(Dir.Size);
+        if (!pFirst)
+            return VERR_NO_TMP_MEMORY;
+        int rc = pModPe->pReader->pfnRead(pModPe->pReader, pFirst, Dir.Size, Dir.VirtualAddress);
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t         off  = 0;
+            PWIN_CERTIFICATE pCur = pFirst;
+            do
+            {
+                /* validate the members. */
+                uint32_t const cbCur = RT_ALIGN_32(pCur->dwLength, 8);
+                if (   cbCur < sizeof(WIN_CERTIFICATE)
+                    || cbCur + off > RT_ALIGN_32(Dir.Size, 8))
+                {
+                    Log(("rtldrPEOpen: %s: cert at %#x/%#x: dwLength=%#x\n", pszLogName, off, Dir.Size, pCur->dwLength));
+                    rc = VERR_LDRPE_MALFORMED_CERT;
+                    break;
+                }
+                if (    pCur->wRevision != WIN_CERT_REVISION_2_0
+                    &&  pCur->wRevision != WIN_CERT_REVISION_1_0)
+                {
+                    Log(("rtldrPEOpen: %s: cert at %#x/%#x: wRevision=%#x\n", pszLogName, off, Dir.Size, pCur->wRevision));
+                    rc = pCur->wRevision >= WIN_CERT_REVISION_1_0 ? VERR_LDRPE_CERT_UNSUPPORTED : VERR_LDRPE_CERT_MALFORMED;
+                    break;
+                }
+                if (    pCur->wCertificateType != WIN_CERT_TYPE_PKCS_SIGNED_DATA
+                    &&  pCur->wCertificateType != WIN_CERT_TYPE_X509
+                    /*&&  pCur->wCertificateType != WIN_CERT_TYPE_RESERVED_1*/
+                    /*&&  pCur->wCertificateType != WIN_CERT_TYPE_TS_STACK_SIGNED*/
+                    &&  pCur->wCertificateType != WIN_CERT_TYPE_EFI_PKCS115
+                    &&  pCur->wCertificateType != WIN_CERT_TYPE_EFI_GUID
+                   )
+                {
+                    Log(("rtldrPEOpen: %s: cert at %#x/%#x: wRevision=%#x\n", pszLogName, off, Dir.Size, pCur->wRevision));
+                    rc = pCur->wCertificateType ? VERR_LDRPE_CERT_UNSUPPORTED : VERR_LDRPE_CERT_MALFORMED;
+                    break;
+                }
+
+                /** @todo Rainy Day: Implement further verfication using openssl. */
+
+                /* next */
+                off += cbCur;
+                pCur = (PWIN_CERTIFICATE)((uint8_t *)pCur + cbCur);
+            } while (off < Dir.Size);
+        }
+        RTMemTmpFree(pFirst);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+
     return VINF_SUCCESS;
 }
 

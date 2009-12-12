@@ -1025,17 +1025,20 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_LDR_GENERAL_FAILURE                (-618)
 /** The PE loader encountered delayed imports, a feature which hasn't been implemented yet. */
 #define VERR_LDRPE_DELAY_IMPORT                 (-620)
-
+/** The PE loader encountered a malformed certificate. */
+#define VERR_LDRPE_CERT_MALFORMED               (-621)
+/** The PE loader encountered a certificate with an unsupported type or structure revision. */
+#define VERR_LDRPE_CERT_UNSUPPORTED             (-622)
 /** The PE loader doesn't know how to deal with the global pointer data directory entry yet. */
-#define VERR_LDRPE_GLOBALPTR                    (-622)
+#define VERR_LDRPE_GLOBALPTR                    (-623)
 /** The PE loader doesn't support the TLS data directory yet. */
-#define VERR_LDRPE_TLS                          (-623)
+#define VERR_LDRPE_TLS                          (-624)
 /** The PE loader doesn't grok the COM descriptor data directory entry. */
-#define VERR_LDRPE_COM_DESCRIPTOR               (-624)
+#define VERR_LDRPE_COM_DESCRIPTOR               (-625)
 /** The PE loader encountered an unknown load config directory/header size. */
-#define VERR_LDRPE_LOAD_CONFIG_SIZE             (-625)
+#define VERR_LDRPE_LOAD_CONFIG_SIZE             (-626)
 /** The PE loader encountered a lock prefix table, a feature which hasn't been implemented yet. */
-#define VERR_LDRPE_LOCK_PREFIX_TABLE            (-626)
+#define VERR_LDRPE_LOCK_PREFIX_TABLE            (-627)
 /** The ELF loader doesn't handle foreign endianness. */
 #define VERR_LDRELF_ODD_ENDIAN                  (-630)
 /** The ELF image is 'dynamic', the ELF loader can only deal with 'relocatable' images at present. */
