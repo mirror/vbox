@@ -918,7 +918,7 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
  * @param   iDevInstance        The parent device instance number.
  * @param   iLun                The parent LUN number.
  */
-DECLINLINE(bool) pdmR3PowerOnDrv(PPDMDRVINS pDrvIns, const char *pszDeviceName, uint32_t iDevInstance, uint32_t iLun)
+DECLINLINE(int) pdmR3PowerOnDrv(PPDMDRVINS pDrvIns, const char *pszDeviceName, uint32_t iDevInstance, uint32_t iLun)
 {
     Assert(pDrvIns->Internal.s.fVMSuspended);
     if (pDrvIns->pDrvReg->pfnPowerOn)
@@ -1466,7 +1466,7 @@ VMMR3DECL(void) PDMR3Suspend(PVM pVM)
  * @param   iDevInstance        The parent device instance number.
  * @param   iLun                The parent LUN number.
  */
-DECLINLINE(bool) pdmR3ResumeDrv(PPDMDRVINS pDrvIns, const char *pszDeviceName, uint32_t iDevInstance, uint32_t iLun)
+DECLINLINE(int) pdmR3ResumeDrv(PPDMDRVINS pDrvIns, const char *pszDeviceName, uint32_t iDevInstance, uint32_t iLun)
 {
     Assert(pDrvIns->Internal.s.fVMSuspended);
     if (pDrvIns->pDrvReg->pfnResume)
