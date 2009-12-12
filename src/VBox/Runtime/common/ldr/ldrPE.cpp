@@ -1120,17 +1120,17 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
                 if (pDir->Size < sizeof(WIN_CERTIFICATE))
                 {
                     Log(("rtldrPEOpen: %s: Security directory is too small: %#x bytes\n", pszLogName, i, pDir->Size));
-                    return VERR_LDRPE_MALFORMED_CERT;
+                    return VERR_LDRPE_CERT_MALFORMED;
                 }
                 if (pDir->Size >= _1M)
                 {
                     Log(("rtldrPEOpen: %s: Security directory is too large: %#x bytes\n", pszLogName, i, pDir->Size));
-                    return VERR_LDRPE_MALFORMED_CERT;
+                    return VERR_LDRPE_CERT_MALFORMED;
                 }
                 if (pDir->VirtualAddress & 7)
                 {
                     Log(("rtldrPEOpen: %s: Security directory is misaligned: %#x\n", pszLogName, i, pDir->VirtualAddress));
-                    return VERR_LDRPE_MALFORMED_CERT;
+                    return VERR_LDRPE_CERT_MALFORMED;
                 }
                 break;
 
@@ -1450,7 +1450,7 @@ int rtldrPEValidateDirectories(PRTLDRMODPE pModPe, const IMAGE_OPTIONAL_HEADER64
                     || cbCur + off > RT_ALIGN_32(Dir.Size, 8))
                 {
                     Log(("rtldrPEOpen: %s: cert at %#x/%#x: dwLength=%#x\n", pszLogName, off, Dir.Size, pCur->dwLength));
-                    rc = VERR_LDRPE_MALFORMED_CERT;
+                    rc = VERR_LDRPE_CERT_MALFORMED;
                     break;
                 }
                 if (    pCur->wRevision != WIN_CERT_REVISION_2_0
