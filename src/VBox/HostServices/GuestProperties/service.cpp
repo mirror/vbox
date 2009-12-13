@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * Guest Property Service:
- * Host service entry points.
+ * Guest Property Service: Host service entry points.
  */
 
 /*
@@ -48,7 +47,7 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/autores.h>
+#include <iprt/cpp/autores.h>
 #include <iprt/cpp/utils.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>

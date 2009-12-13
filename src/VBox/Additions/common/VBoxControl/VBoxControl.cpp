@@ -23,7 +23,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/alloca.h>
-#include <iprt/autores.h>
+#include <iprt/cpp/autores.h>
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>

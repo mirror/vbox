@@ -33,8 +33,8 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
-#ifdef __cplusplus
-# include <iprt/autores.h>
+#ifdef __cplusplus      /** @todo remove when spitting. */
+# include <iprt/cpp/autores.h>
 #endif
 
 
@@ -435,7 +435,7 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_
 RT_C_DECLS_END
 
 
-#ifdef __cplusplus
+#ifdef __cplusplus /** @todo Split this out into iprt/cpp/mem.h! */
 # include <iprt/assert.h>
 
 /**

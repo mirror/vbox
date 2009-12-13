@@ -26,7 +26,7 @@
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
-#include <iprt/autores.h>
+#include <iprt/cpp/autores.h>
 #include <iprt/stdarg.h>
 #include <VBox/log.h>
 #include <VBox/HostServices/GuestPropertySvc.h>
