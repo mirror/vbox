@@ -31,7 +31,7 @@
 #include <VBox/VRDPAuth.h>
 #include <VBox/version.h>
 
-#include <iprt/lock.h>
+#include <iprt/cpp/lock.h>
 #include <iprt/rand.h>
 #include <iprt/initterm.h>
 #include <iprt/getopt.h>
