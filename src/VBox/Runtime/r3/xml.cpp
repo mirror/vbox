@@ -31,7 +31,7 @@
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/cpp/lock.h>
-#include <iprt/xml_cpp.h>
+#include <iprt/cpp/xml.h>
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>
