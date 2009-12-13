@@ -24,7 +24,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/autores.h>
+#include <iprt/cpp/autores.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>

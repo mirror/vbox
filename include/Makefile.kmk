@@ -28,9 +28,6 @@ LIBRARIES = SyntaxVBoxIncludeR3 SyntaxVBoxIncludeR0 SyntaxVBoxIncludeGC
 cpp_hdrs := \
 	VBox/dbggui.h \
 	VBox/settings.h \
-	iprt/autores.h \
-	iprt/cpp/utils.h \
-	iprt/cpp/lock.h \
 	$(wildcard iprt/*_cpp.h iprt/cpp/*.h )
 
 r3_only_hdrs := \
@@ -45,7 +42,7 @@ hdrs := $(filter-out \
 	VBox/WinNetConfig.h \
 	VBox/usblib-win.h \
 	VBox/usblib-solaris.h, \
-	$(wildcard VBox/*.h iprt/*.h))
+	$(wildcard VBox/*.h iprt/*.h iprt/*/*.h))
 
 hdrs.r3 := $(filter-out , $(hdrs))
 hdrs.r0 := $(filter-out $(cpp_hdrs) $(r3_only_hdrs), $(hdrs))
