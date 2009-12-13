@@ -50,7 +50,7 @@
 
 #include <iprt/cpp/utils.h>
 #include <iprt/alloc.h>
-#include <iprt/ministring_cpp.h>
+#include <iprt/cpp/ministring.h>
 
 namespace com
 {

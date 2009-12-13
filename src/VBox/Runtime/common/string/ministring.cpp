@@ -31,7 +31,7 @@
  * additional information or have any questions.
  */
 
-#include <iprt/ministring_cpp.h>
+#include <iprt/cpp/ministring.h>
 
 using namespace iprt;
 

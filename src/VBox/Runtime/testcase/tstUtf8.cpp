@@ -41,7 +41,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/test.h>
-#include <iprt/ministring_cpp.h>
+#include <iprt/cpp/ministring.h>
 
 #include <stdlib.h> /** @todo use our random. */
 

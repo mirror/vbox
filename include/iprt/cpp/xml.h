@@ -37,7 +37,7 @@
 #include <list>
 #include <memory>
 
-#include <iprt/ministring_cpp.h>
+#include <iprt/cpp/ministring.h>
 
 /* Forwards */
 typedef struct _xmlParserInput xmlParserInput;
