@@ -30,7 +30,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
-#include <iprt/lock.h>
+#include <iprt/cpp/lock.h>
 #include <iprt/xml_cpp.h>
 
 #include <libxml/tree.h>
