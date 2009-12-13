@@ -48,7 +48,7 @@
 #include "VBox/com/defs.h"
 #include "VBox/com/assert.h"
 
-#include <iprt/cpputils.h>
+#include <iprt/cpp/utils.h>
 #include <iprt/alloc.h>
 #include <iprt/ministring_cpp.h>
 

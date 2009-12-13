@@ -72,7 +72,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
-#include <iprt/cpputils.h>
+#include <iprt/cpp/utils.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/ldr.h>

@@ -29,9 +29,9 @@ cpp_hdrs := \
 	VBox/dbggui.h \
 	VBox/settings.h \
 	iprt/autores.h \
-	iprt/cpputils.h \
-	iprt/lock.h \
-	$(wildcard iprt/*_cpp.h iprt/*.hpp)
+	iprt/cpp/utils.h \
+	iprt/cpp/lock.h \
+	$(wildcard iprt/*_cpp.h iprt/cpp/*.h )
 
 r3_only_hdrs := \
 	VBox/vrdpapi.h \

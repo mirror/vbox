@@ -24,7 +24,7 @@
 #include "Logging.h"
 #include "GuestOSTypeImpl.h"
 
-#include <iprt/cpputils.h>
+#include <iprt/cpp/utils.h>
 #include <VBox/settings.h>
 
 ////////////////////////////////////////////////////////////////////////////////

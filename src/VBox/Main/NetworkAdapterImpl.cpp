@@ -25,7 +25,7 @@
 #include "GuestOSTypeImpl.h"
 
 #include <iprt/string.h>
-#include <iprt/cpputils.h>
+#include <iprt/cpp/utils.h>
 
 #include <VBox/err.h>
 #include <VBox/settings.h>

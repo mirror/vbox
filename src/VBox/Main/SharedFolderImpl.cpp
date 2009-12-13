@@ -27,7 +27,7 @@
 #include "Logging.h"
 
 #include <iprt/param.h>
-#include <iprt/cpputils.h>
+#include <iprt/cpp/utils.h>
 #include <iprt/path.h>
 
 // constructor / destructor
