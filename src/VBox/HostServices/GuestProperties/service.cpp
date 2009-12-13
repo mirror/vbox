@@ -49,7 +49,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/autores.h>
-#include <iprt/cpputils.h>
+#include <iprt/cpp/utils.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/req.h>
@@ -742,9 +742,9 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
                 break;
             }
     if (RT_SUCCESS(rc))
-        rc = checkPermission(found ? (ePropFlags)it->mFlags : 
+        rc = checkPermission(found ? (ePropFlags)it->mFlags :
                              NILFLAG, isGuest);
-    
+
     if (rc == VINF_PERMISSION_DENIED)
         return rc;
 

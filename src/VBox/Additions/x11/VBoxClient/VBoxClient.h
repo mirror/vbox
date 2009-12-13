@@ -22,7 +22,7 @@
 #ifndef ___vboxclient_vboxclient_h
 # define ___vboxclient_vboxclient_h
 
-#include <iprt/cpputils.h>
+#include <iprt/cpp/utils.h>
 
 /** Namespace for VBoxClient-specific things */
 namespace VBoxClient {

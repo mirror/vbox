@@ -30,7 +30,7 @@
 #include "Logging.h"
 
 #include <VBox/VMMDev.h>
-#include <iprt/cpputils.h>
+#include <iprt/cpp/utils.h>
 
 // defines
 /////////////////////////////////////////////////////////////////////////////

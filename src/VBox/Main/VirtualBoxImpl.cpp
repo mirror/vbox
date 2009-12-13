@@ -21,7 +21,7 @@
  */
 
 #include <iprt/buildconfig.h>
-#include <iprt/cpputils.h>
+#include <iprt/cpp/utils.h>
 #include <iprt/dir.h>
 #include <iprt/env.h>
 #include <iprt/file.h>

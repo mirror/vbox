@@ -63,7 +63,7 @@
 #include <iprt/dir.h>
 #include <iprt/asm.h>
 #include <iprt/process.h>
-#include <iprt/cpputils.h>
+#include <iprt/cpp/utils.h>
 #include <iprt/env.h>
 #include <iprt/string.h>
 

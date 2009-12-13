@@ -25,7 +25,7 @@
 #include "Logging.h"
 
 #include <iprt/string.h>
-#include <iprt/cpputils.h>
+#include <iprt/cpp/utils.h>
 
 #include <VBox/settings.h>
 
