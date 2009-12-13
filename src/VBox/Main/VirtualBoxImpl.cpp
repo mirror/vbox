@@ -31,7 +31,7 @@
 #include <iprt/stream.h>
 #include <iprt/thread.h>
 #include <iprt/uuid.h>
-#include <iprt/xml_cpp.h>
+#include <iprt/cpp/xml.h>
 
 #include <VBox/com/com.h>
 #include <VBox/com/array.h>

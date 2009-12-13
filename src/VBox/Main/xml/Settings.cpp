@@ -58,7 +58,7 @@
 
 #include "VBox/com/string.h"
 #include "VBox/settings.h"
-#include <iprt/xml_cpp.h>
+#include <iprt/cpp/xml.h>
 #include <iprt/stream.h>
 #include <iprt/ctype.h>
 #include <iprt/file.h>

@@ -1,8 +1,8 @@
 /* $Id$ */
 /** @file
+ * OVF reader declarations.
  *
- * OVF reader declarations. Depends only on IPRT, including the iprt::MiniString
- * and IPRT XML classes.
+ * Depends only on IPRT, including the iprt::MiniString and IPRT XML classes.
  */
 
 /*
@@ -24,7 +24,7 @@
 #ifndef ____H_OVFREADER
 #define ____H_OVFREADER
 
-#include "iprt/xml_cpp.h"
+#include "iprt/cpp/xml.h"
 #include <map>
 
 ////////////////////////////////////////////////////////////////////////////////
