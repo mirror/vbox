@@ -1,8 +1,9 @@
 /* $Id$ */
 /** @file
- * Classes for handling hardware detection under Linux.  Please feel free to
- * expand these to work for other systems (Solaris!) or to add new ones for
- * other systems.
+ * Classes for handling hardware detection under Linux.
+ *
+ * Please feel free to expand these to work for other systems (Solaris!) or to
+ * add new ones for other systems.
  */
 
 /*
@@ -25,7 +26,7 @@
 # define ____H_HOSTHARDWARELINUX
 
 #include <iprt/err.h>
-#include <iprt/ministring_cpp.h>
+#include <iprt/cpp/ministring.h>
 #include <vector>
 
 /**
