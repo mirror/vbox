@@ -652,7 +652,16 @@ void slirp_deregister_statistics(PNATState pData, PPDMDRVINS pDrvIns)
  */
 void slirp_link_up(PNATState pData)
 {
+    struct arp_cache_entry *ac = NULL;
     link_up = 1;
+
+    if (LIST_EMPTY(&pData->arp_cache))
+        return;
+
+    LIST_FOREACH(ac, &pData->arp_cache, list)
+    {
+        activate_port_forwarding(pData, ac->ether);
+    }
 }
 
 /**
@@ -2120,6 +2129,14 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     m->m_len = sizeof(struct arphdr) + ETH_HLEN;
 #endif
     if_encap(pData, ETH_P_ARP, m, ETH_ENCAP_URG);
+}
+
+int slirp_arp_cache_update_or_add(PNATState pData, uint32_t dst, const uint8_t *mac)
+{
+    if (slirp_arp_cache_update(pData, dst, mac))
+        slirp_arp_cache_add(pData, dst, mac);
+
+    return 0;
 }
 
 /* updates the arp cache
