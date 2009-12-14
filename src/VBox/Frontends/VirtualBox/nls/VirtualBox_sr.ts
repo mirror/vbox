@@ -4349,7 +4349,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Са брисањем слике, статус из слике ће бити одбачен, и податци који су на више слика ће бити састављени у једну датотеку. То може потрајати, и информације из слике на могу да се поврате.&lt;/p&gt;&lt;/p&gt;Сигурно избрисати одабрану слику &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Брисањем слике ће довести до губљења информације статутса, и податци који су у више слика што је „VirtualBox“ креирао ће бити спојене у једну датотеку. То може да потраје, и информације из слике неће моћи да се врати.&lt;/p&gt;&lt;/p&gt;Да ли сигурно желите да избришете одабрану слику &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>

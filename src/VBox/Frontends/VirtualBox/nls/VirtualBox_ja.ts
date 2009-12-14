@@ -798,7 +798,7 @@ Version %1</source>
     <message>
         <location filename="" line="0"/>
         <source>USB Controller</source>
-        <translation>USBコントローラ</translation>
+        <translation>USB コントローラ</translation>
     </message>
     <message>
         <location filename="" line="0"/>
@@ -1426,7 +1426,7 @@ Version %1</source>
         <location filename="" line="0"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USBコントローラが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB コントローラが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="" line="0"/>
@@ -4690,7 +4690,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="" line="0"/>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="obsolete">SATAコントローラを有効化(&amp;E)</translation>
+        <translation type="obsolete">SATA コントローラを有効化(&amp;E)</translation>
     </message>
     <message>
         <location filename="" line="0"/>
@@ -4700,7 +4700,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
                           attach hard disks to SATA ports when the virtual SATA
                           controller is disabled.&lt;/qt&gt;
                         </source>
-        <translation type="obsolete">&lt;qt&gt;この仮想マシンの仮想SATAコントローラを有効にします。注：仮想コントローラが無効なとき、ハードディスクをSATAポートに取り付けることができません。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;この仮想マシンの仮想SATA コントローラを有効にします。注：仮想コントローラが無効なとき、ハードディスクをSATAポートに取り付けることができません。&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="" line="0"/>
@@ -4812,7 +4812,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="" line="0"/>
         <source>&amp;Help</source>
-        <translation>ヘルプ(&amp;H)ヘルプ(&amp;H)</translation>
+        <translation>ヘルプ(&amp;H)</translation>
     </message>
 </context>
 <context>
@@ -6386,8 +6386,8 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="" line="0"/>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;この仮想マシンのSATAポートに割り当てられたハードディスクがあります。SATAコントローラを無効にすると、それらのハードディスクは自動的に割り当て解除されます。&lt;/p&gt;
-&lt;p&gt;SATAコントローラを無効にしますか？&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;この仮想マシンのSATAポートに割り当てられたハードディスクがあります。SATA コントローラを無効にすると、それらのハードディスクは自動的に割り当て解除されます。&lt;/p&gt;
+&lt;p&gt;SATA コントローラを無効にしますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="" line="0"/>
@@ -9518,7 +9518,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="" line="0"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="obsolete">指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDEコントローラのマスタースロットに割り当てられます。</translation>
+        <translation type="obsolete">指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDE コントローラのマスタースロットに割り当てられます。</translation>
     </message>
     <message>
         <location filename="" line="0"/>
@@ -9939,7 +9939,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="" line="0"/>
         <source>Enable &amp;USB Controller</source>
-        <translation type="obsolete">USBコントローラを有効化(&amp;U)</translation>
+        <translation type="obsolete">USB コントローラを有効化(&amp;U)</translation>
     </message>
     <message>
         <location filename="" line="0"/>
@@ -10029,7 +10029,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="" line="0"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="obsolete">指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDEコントローラのマスタースロットに割り当てられます。</translation>
+        <translation type="obsolete">指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDE コントローラのマスタースロットに割り当てられます。</translation>
     </message>
     <message>
         <location filename="" line="0"/>
@@ -10156,7 +10156,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="" line="0"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="obsolete">この仮想マシンの仮想USBコントローラを有効にします。</translation>
+        <translation type="obsolete">この仮想マシンの仮想USB コントローラを有効にします。</translation>
     </message>
     <message>
         <location filename="" line="0"/>
@@ -10400,12 +10400,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="" line="0"/>
         <source>&amp;IDE Controller Type</source>
-        <translation type="obsolete">IDEコントローラ タイプ(&amp;I)</translation>
+        <translation type="obsolete">IDE コントローラ タイプ(&amp;I)</translation>
     </message>
     <message>
         <location filename="" line="0"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="obsolete">仮想IDEコントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
+        <translation type="obsolete">仮想IDE コントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
     </message>
     <message>
         <location filename="" line="0"/>
@@ -10425,7 +10425,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="" line="0"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation type="obsolete">仮想マシンの仮想USB EHCIコントローラを有効にします。USB EHCIコントローラはUSB 2.0 サポートを提供します。</translation>
+        <translation type="obsolete">仮想マシンの仮想USB EHCI コントローラを有効にします。USB EHCI コントローラはUSB 2.0 サポートを提供します。</translation>
     </message>
     <message>
         <location filename="" line="0"/>
@@ -10890,12 +10890,12 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="" line="0"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="obsolete">仮想IDEコントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
+        <translation type="obsolete">仮想IDE コントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
     </message>
     <message>
         <location filename="" line="0"/>
         <source>&amp;IDE Controller Type:</source>
-        <translation type="obsolete">IDEコントローラ タイプ(&amp;I):</translation>
+        <translation type="obsolete">IDE コントローラ タイプ(&amp;I):</translation>
     </message>
     <message>
         <location filename="" line="0"/>
@@ -11063,12 +11063,12 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="" line="0"/>
         <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
-        <translation type="obsolete">仮想SATAコントローラを有効にします。注：仮想SATAコントローラが無効な場合、SATAポートにハードディスクを割り当てできません。</translation>
+        <translation type="obsolete">仮想SATA コントローラを有効にします。注：仮想SATA コントローラが無効な場合、SATAポートにハードディスクを割り当てできません。</translation>
     </message>
     <message>
         <location filename="" line="0"/>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="obsolete">SATAコントローラを有効化(&amp;E)</translation>
+        <translation type="obsolete">SATA コントローラを有効化(&amp;E)</translation>
     </message>
     <message>
         <location filename="" line="0"/>
@@ -11108,12 +11108,12 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="" line="0"/>
         <source>IDE &amp;Controller Type</source>
-        <translation type="obsolete">IDEコントローラ タイプ(&amp;C)</translation>
+        <translation type="obsolete">IDE コントローラ タイプ(&amp;C)</translation>
     </message>
     <message>
         <location filename="" line="0"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="obsolete">仮想IDEコントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
+        <translation type="obsolete">仮想IDE コントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
     </message>
     <message>
         <location filename="" line="0"/>
@@ -12360,17 +12360,17 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="" line="0"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation>この仮想マシンの仮想USBコントローラを有効にします。</translation>
+        <translation>この仮想マシンの仮想USB コントローラを有効にします。</translation>
     </message>
     <message>
         <location filename="" line="0"/>
         <source>Enable &amp;USB Controller</source>
-        <translation>USBコントローラを有効化(&amp;U)</translation>
+        <translation>USB コントローラを有効化(&amp;U)</translation>
     </message>
     <message>
         <location filename="" line="0"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>仮想マシンの仮想USB EHCIコントローラを有効にします。USB EHCIコントローラはUSB 2.0 サポートを提供します。</translation>
+        <translation>仮想マシンの仮想USB EHCI コントローラを有効にします。USB EHCI コントローラはUSB 2.0 サポートを提供します。</translation>
     </message>
     <message>
         <location filename="" line="0"/>

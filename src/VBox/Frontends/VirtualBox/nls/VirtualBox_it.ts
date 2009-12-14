@@ -3480,7 +3480,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Taking Live Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Acquisizione istantanea a caldo</translation>
     </message>
     <message>
         <source>Teleporting Paused VM</source>
@@ -3515,7 +3515,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>IDE Primary Slave</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>IDE slave secondario</translation>
+        <translation>IDE slave primario</translation>
     </message>
     <message>
         <source>IDE Secondary Master</source>

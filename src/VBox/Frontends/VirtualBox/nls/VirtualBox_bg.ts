@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1" language="bg_BG">
-<defaultcodec></defaultcodec>
+<!DOCTYPE TS>
+<TS version="2.0" language="bg_BG">
 <context>
     <name>@@@</name>
     <message>
@@ -4900,29 +4900,29 @@ p, li { white-space: pre-wrap; }
     <message numerus="yes">
         <source> (%n day(s) ago)</source>
         <translation>
-            <numerusform> (преди %n ден(а))</numerusform>
-            <numerusform></numerusform>
+            <numerusform> (преди %n ден)</numerusform>
+            <numerusform> (преди %n дена)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n hour(s) ago)</source>
         <translation>
-            <numerusform> (преди %n час(а))</numerusform>
-            <numerusform></numerusform>
+            <numerusform> (преди %n час)</numerusform>
+            <numerusform> (преди %n часа)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n minute(s) ago)</source>
         <translation>
+            <numerusform> (преди %n минутa)</numerusform>
             <numerusform> (преди %n минути)</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n second(s) ago)</source>
         <translation>
+            <numerusform> (преди %n секундa)</numerusform>
             <numerusform> (преди %n секунди)</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
