@@ -49,6 +49,10 @@
 #define SEM2HND(Sem) ((HANDLE)(uintptr_t)Sem)
 
 
+/* Undefine debug mappings. */
+#undef RTSemMutexRequest
+#undef RTSemMutexRequestNoResume
+
 
 RTDECL(int)   RTSemEventCreate(PRTSEMEVENT pEventSem)
 {

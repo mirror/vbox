@@ -98,6 +98,7 @@ RTDECL(int) RTSemEventMultiWait(RTSEMEVENTMULTI EventSem, unsigned cMillies)
 RT_EXPORT_SYMBOL(RTSemEventMultiWait);
 
 
+#undef RTSemMutexRequest                /* undo debug mapping */
 RTDECL(int) RTSemMutexRequest(RTSEMMUTEX Mutex, unsigned cMillies)
 {
     int rc;

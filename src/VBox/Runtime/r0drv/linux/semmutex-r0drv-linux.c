@@ -62,6 +62,10 @@ typedef struct RTSEMMUTEXINTERNAL
 } RTSEMMUTEXINTERNAL, *PRTSEMMUTEXINTERNAL;
 
 
+/* Undefine debug mappings. */
+#undef RTSemMutexRequest
+#undef RTSemMutexRequestNoResume
+
 
 RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
 {
