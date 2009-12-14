@@ -235,7 +235,7 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
                          PCRTGETOPTDEF paOptions, size_t cOptions,
                          int iFirst, uint32_t fFlags);
 
-/* *
+/**
  * Command line argument parser, handling both long and short options and checking
  * argument formats, if desired.
  *
