@@ -708,6 +708,9 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
                 case /* 0xC0000263 */ STATUS_DRIVER_ENTRYPOINT_NOT_FOUND:
                     rc = VERR_LDR_IMPORTED_SYMBOL_NOT_FOUND;
                     break;
+                case /* 0xC0000428 */ STATUS_INVALID_IMAGE_HASH:
+                    rc = VERR_LDR_IMAGE_HASH;
+                    break;
                 default:
                     rc = VERR_LDR_GENERAL_FAILURE;
                     break;
