@@ -2149,6 +2149,10 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Show System Tray Icon</source>
         <translation>&amp;Mostrar icono en el área de notificación</translation>
     </message>
+    <message>
+        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGLSettingsInput</name>
@@ -3694,6 +3698,52 @@ p, li { white-space: pre-wrap; }
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
         <translation>Este disco duro base está indirectamente conectado usando el siguiente disco duro diferenciado:</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n year(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n month(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n day(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n hour(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n minute(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n second(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>(CD/DVD)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6215,6 +6265,15 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <comment>failed to close ...</comment>
         <translation type="unfinished">dispositivo de disquete</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
@@ -6228,55 +6287,55 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>%1 days, %2 hours remaining</source>
-        <translation>%1 días, %2 horas restantes</translation>
+        <translation type="obsolete">%1 días, %2 horas restantes</translation>
     </message>
     <message>
         <source>%1 days, %2 minutes remaining</source>
-        <translation>%1 días, %2 minutos restantes</translation>
+        <translation type="obsolete">%1 días, %2 minutos restantes</translation>
     </message>
     <message>
         <source>%1 days remaining</source>
-        <translation>%1 días restantes</translation>
+        <translation type="obsolete">%1 días restantes</translation>
     </message>
     <message>
         <source>1 day, %1 hours remaining</source>
-        <translation>1 día, %1 horas restantes</translation>
+        <translation type="obsolete">1 día, %1 horas restantes</translation>
     </message>
     <message>
         <source>1 day, %1 minutes remaining</source>
-        <translation>1 día, %1 minutos restantes</translation>
+        <translation type="obsolete">1 día, %1 minutos restantes</translation>
     </message>
     <message>
         <source>1 day remaining</source>
-        <translation>1 día restantes</translation>
+        <translation type="obsolete">1 día restantes</translation>
     </message>
     <message>
         <source>%1 hours, %2 minutes remaining</source>
-        <translation>%1 horas, %2 minutos restantes</translation>
+        <translation type="obsolete">%1 horas, %2 minutos restantes</translation>
     </message>
     <message>
         <source>1 hour, %1 minutes remaining</source>
-        <translation>1 hora, %1 minutos restantes</translation>
+        <translation type="obsolete">1 hora, %1 minutos restantes</translation>
     </message>
     <message>
         <source>1 hour remaining</source>
-        <translation>1 hora restante</translation>
+        <translation type="obsolete">1 hora restante</translation>
     </message>
     <message>
         <source>%1 minutes remaining</source>
-        <translation>%1 minutos restantes</translation>
+        <translation type="obsolete">%1 minutos restantes</translation>
     </message>
     <message>
         <source>1 minute, %2 seconds remaining</source>
-        <translation>1 minuto, %2 segundos restantes</translation>
+        <translation type="obsolete">1 minuto, %2 segundos restantes</translation>
     </message>
     <message>
         <source>1 minute remaining</source>
-        <translation>1 minuto restante</translation>
+        <translation type="obsolete">1 minuto restante</translation>
     </message>
     <message>
         <source>%1 seconds remaining</source>
-        <translation>%1 segundos restantes</translation>
+        <translation type="obsolete">%1 segundos restantes</translation>
     </message>
     <message>
         <source>A few seconds remaining</source>
@@ -6289,6 +6348,16 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <message>
         <source>Cancel the current operation</source>
         <translation>Cancelar la operación actual</translation>
+    </message>
+    <message>
+        <source>%1, %2 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7166,28 +7235,28 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
     </message>
     <message numerus="yes">
         <source> (%n day(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (hace %n día)</numerusform>
             <numerusform> (hace %n días)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n hour(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (hace %n hora)</numerusform>
             <numerusform> (hace %n horas)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n minute(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (hace %n minuto)</numerusform>
             <numerusform> (hace %n minutos)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n second(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (hace %n segundo)</numerusform>
             <numerusform> (hace %n segundos)</numerusform>
         </translation>
@@ -7207,6 +7276,10 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
     <message>
         <source>Delete the selected snapshot of the virtual machine</source>
         <translation>Eliminar la instantánea seleccionada de la máquina virtual</translation>
+    </message>
+    <message>
+        <source> (%1 ago)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7257,6 +7330,13 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Cancelar</translation>
+    </message>
+    <message numerus="yes">
+        <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
     </message>
 </context>
 <context>

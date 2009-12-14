@@ -2109,6 +2109,10 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Dock Icon Realtime Preview</source>
         <translation>Atualização em Tempo Real do Ícone da Barra (&amp;D)</translation>
     </message>
+    <message>
+        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGLSettingsInput</name>
@@ -3675,6 +3679,52 @@ p, li { white-space: pre-wrap; }
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
         <translation>Este disco rígido de base está indiretamente conectado através do seguinte disco rígido diferencial:</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n year(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n month(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n day(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n hour(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n minute(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n second(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>(CD/DVD)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6248,6 +6298,15 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <comment>failed to close ...</comment>
         <translation>dispositivo de disquete</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
@@ -6261,55 +6320,55 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>%1 days, %2 hours remaining</source>
-        <translation>%1 dias, %2 horas restantes</translation>
+        <translation type="obsolete">%1 dias, %2 horas restantes</translation>
     </message>
     <message>
         <source>%1 days, %2 minutes remaining</source>
-        <translation>%1 dias, %2 minutos restantes</translation>
+        <translation type="obsolete">%1 dias, %2 minutos restantes</translation>
     </message>
     <message>
         <source>%1 days remaining</source>
-        <translation>%1 dias restantes</translation>
+        <translation type="obsolete">%1 dias restantes</translation>
     </message>
     <message>
         <source>1 day, %1 hours remaining</source>
-        <translation>1 dia, %1 horas restantes</translation>
+        <translation type="obsolete">1 dia, %1 horas restantes</translation>
     </message>
     <message>
         <source>1 day, %1 minutes remaining</source>
-        <translation>1 dia, %1 minutos restantes</translation>
+        <translation type="obsolete">1 dia, %1 minutos restantes</translation>
     </message>
     <message>
         <source>1 day remaining</source>
-        <translation>1 dia restante</translation>
+        <translation type="obsolete">1 dia restante</translation>
     </message>
     <message>
         <source>%1 hours, %2 minutes remaining</source>
-        <translation>%1 horas, %2 minutos restantes</translation>
+        <translation type="obsolete">%1 horas, %2 minutos restantes</translation>
     </message>
     <message>
         <source>1 hour, %1 minutes remaining</source>
-        <translation>1 hora, %1 minutos restantes</translation>
+        <translation type="obsolete">1 hora, %1 minutos restantes</translation>
     </message>
     <message>
         <source>1 hour remaining</source>
-        <translation>1 hora restante</translation>
+        <translation type="obsolete">1 hora restante</translation>
     </message>
     <message>
         <source>%1 minutes remaining</source>
-        <translation>%1 minutos restantes</translation>
+        <translation type="obsolete">%1 minutos restantes</translation>
     </message>
     <message>
         <source>1 minute, %2 seconds remaining</source>
-        <translation>1 minuto, %2 segundos restantes</translation>
+        <translation type="obsolete">1 minuto, %2 segundos restantes</translation>
     </message>
     <message>
         <source>1 minute remaining</source>
-        <translation>1 minuto restante</translation>
+        <translation type="obsolete">1 minuto restante</translation>
     </message>
     <message>
         <source>%1 seconds remaining</source>
-        <translation>%1 segundos restantes</translation>
+        <translation type="obsolete">%1 segundos restantes</translation>
     </message>
     <message>
         <source>A few seconds remaining</source>
@@ -6322,6 +6381,16 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <source>Cancel the current operation</source>
         <translation>Cancelando a operação atual</translation>
+    </message>
+    <message>
+        <source>%1, %2 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7195,28 +7264,28 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
     </message>
     <message numerus="yes">
         <source> (%n day(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (%n dia atrás)</numerusform>
             <numerusform> (%n dias atrás)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n hour(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (%n hora atrás)</numerusform>
             <numerusform> (%n horas atrás)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n minute(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (%n minuto atrás)</numerusform>
             <numerusform> (%n minutos atrás)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n second(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (%n segundo atrás)</numerusform>
             <numerusform> (%n segundos atrás)</numerusform>
         </translation>
@@ -7236,6 +7305,10 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
     <message>
         <source>Delete the selected snapshot of the virtual machine</source>
         <translation>Apaga o snapshot selecionado para a máquina virtual</translation>
+    </message>
+    <message>
+        <source> (%1 ago)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7286,6 +7359,13 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Cancelar</translation>
+    </message>
+    <message numerus="yes">
+        <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
     </message>
 </context>
 <context>

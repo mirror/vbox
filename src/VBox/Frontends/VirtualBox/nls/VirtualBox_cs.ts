@@ -1993,6 +1993,10 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Show System Tray Icon</source>
         <translation>Zobrazit &amp;ikonu v oznamovací oblasti</translation>
     </message>
+    <message>
+        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGLSettingsInput</name>
@@ -3514,6 +3518,58 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n year(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n month(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n day(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n hour(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n minute(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n second(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>(CD/DVD)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5743,6 +5799,15 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <comment>failed to close ...</comment>
         <translation>disketová mechanika</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
@@ -5756,55 +5821,55 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>%1 days, %2 hours remaining</source>
-        <translation>zbývá %1 dnů(y) a %2 hodin(y)</translation>
+        <translation type="obsolete">zbývá %1 dnů(y) a %2 hodin(y)</translation>
     </message>
     <message>
         <source>%1 days, %2 minutes remaining</source>
-        <translation>zbývá %1 dnů(y) a %2 minut(y)</translation>
+        <translation type="obsolete">zbývá %1 dnů(y) a %2 minut(y)</translation>
     </message>
     <message>
         <source>%1 days remaining</source>
-        <translation>zbývá %1 dnů</translation>
+        <translation type="obsolete">zbývá %1 dnů</translation>
     </message>
     <message>
         <source>1 day, %1 hours remaining</source>
-        <translation>zbývá 1 den a %1 hodin(y)</translation>
+        <translation type="obsolete">zbývá 1 den a %1 hodin(y)</translation>
     </message>
     <message>
         <source>1 day, %1 minutes remaining</source>
-        <translation>zbývá 1 den a %1 minut(y)</translation>
+        <translation type="obsolete">zbývá 1 den a %1 minut(y)</translation>
     </message>
     <message>
         <source>1 day remaining</source>
-        <translation>zbývá jeden den</translation>
+        <translation type="obsolete">zbývá jeden den</translation>
     </message>
     <message>
         <source>%1 hours, %2 minutes remaining</source>
-        <translation>zbývá %1 hodin(y) a %2 minut(y)</translation>
+        <translation type="obsolete">zbývá %1 hodin(y) a %2 minut(y)</translation>
     </message>
     <message>
         <source>1 hour, %1 minutes remaining</source>
-        <translation>zbývá 1 hodina a %1 minut(y)</translation>
+        <translation type="obsolete">zbývá 1 hodina a %1 minut(y)</translation>
     </message>
     <message>
         <source>1 hour remaining</source>
-        <translation>zbývá 1 hodina</translation>
+        <translation type="obsolete">zbývá 1 hodina</translation>
     </message>
     <message>
         <source>%1 minutes remaining</source>
-        <translation>zbývá %1 minut(y)</translation>
+        <translation type="obsolete">zbývá %1 minut(y)</translation>
     </message>
     <message>
         <source>1 minute, %2 seconds remaining</source>
-        <translation>zbývá 1 minuta a %2 vteřin(y)</translation>
+        <translation type="obsolete">zbývá 1 minuta a %2 vteřin(y)</translation>
     </message>
     <message>
         <source>1 minute remaining</source>
-        <translation>zbývá jedna minuta</translation>
+        <translation type="obsolete">zbývá jedna minuta</translation>
     </message>
     <message>
         <source>%1 seconds remaining</source>
-        <translation>zbývá %1 vteřin(y)</translation>
+        <translation type="obsolete">zbývá %1 vteřin(y)</translation>
     </message>
     <message>
         <source>A few seconds remaining</source>
@@ -5817,6 +5882,16 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     <message>
         <source>Cancel the current operation</source>
         <translation>Zruší aktuální operaci</translation>
+    </message>
+    <message>
+        <source>%1, %2 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6540,7 +6615,7 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
     <message numerus="yes">
         <source> (%n day(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (před %n dnem)</numerusform>
             <numerusform> (před %n dny)</numerusform>
             <numerusform> (před %n dny)</numerusform>
@@ -6548,7 +6623,7 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
     <message numerus="yes">
         <source> (%n hour(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (před %n hodinou)</numerusform>
             <numerusform> (před %n hodinami)</numerusform>
             <numerusform> (před %n hodinami)</numerusform>
@@ -6556,7 +6631,7 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
     <message numerus="yes">
         <source> (%n minute(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (před %n minutou)</numerusform>
             <numerusform> (před %n minutami)</numerusform>
             <numerusform> (před %n minutami)</numerusform>
@@ -6564,7 +6639,7 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
     <message numerus="yes">
         <source> (%n second(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (před %n vteřinou)</numerusform>
             <numerusform> (před %n vteřinami)</numerusform>
             <numerusform> (před %n vteřinami)</numerusform>
@@ -6585,6 +6660,10 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     <message>
         <source>Delete the selected snapshot of the virtual machine</source>
         <translation>Smaže vybraný snímek virtuálního počítače</translation>
+    </message>
+    <message>
+        <source> (%1 ago)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6619,6 +6698,14 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Zrušit</translation>
+    </message>
+    <message numerus="yes">
+        <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
     </message>
 </context>
 <context>
