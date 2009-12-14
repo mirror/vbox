@@ -737,10 +737,9 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
             if (it->mName.compare(pcszName) == 0)
             {
                 found = true;
+                rc = checkPermission((ePropFlags)it->mFlags, isGuest);
                 break;
             }
-        rc = checkPermission(found ? (ePropFlags)it->mFlags : NILFLAG,
-                             isGuest);
 
         /*
          * And delete the property if all is well.
