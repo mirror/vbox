@@ -1,31 +1,42 @@
+/* $Id$ */
+/** @file
+ * libalias helper for using the host resolver instead of dnsproxy.
+ */
+
+/*
+ * Copyright (C) 2009 Sun Microsystems, Inc.
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ * Clara, CA 95054 USA or visit http://www.sun.com if you need
+ * additional information or have any questions.
+ */
+
 #ifndef RT_OS_WINDOWS
 # include <netdb.h>
 #endif
-# include <iprt/ctype.h>
-# include <iprt/assert.h>
-# include <slirp.h>
-# include "alias.h"
-# include "alias_local.h"
-# include "alias_mod.h"
-# define isdigit(ch)    RT_C_IS_DIGIT(ch)
-# define isalpha(ch)    RT_C_IS_ALPHA(ch)
+#include <iprt/ctype.h>
+#include <iprt/assert.h>
+#include <slirp.h>
+#include "alias.h"
+#include "alias_local.h"
+#include "alias_mod.h"
+#define isdigit(ch)    RT_C_IS_DIGIT(ch)
+#define isalpha(ch)    RT_C_IS_ALPHA(ch)
 
 #define DNS_CONTROL_PORT_NUMBER 53
 /* see RFC 1035(4.1.1) */
 union dnsmsg_header
 {
-    struct {
-#ifndef VBOX
-        uint16_t id;
-        uint16_t rd:1;
-        uint16_t tc:1;
-        uint16_t aa:1;
-        uint16_t opcode:4;
-        uint16_t qr:1;
-        uint16_t rcode:4;
-        uint16_t Z:3;
-        uint16_t ra:1;
-#else
+    struct
+    {
         unsigned id:16;
         unsigned rd:1;
         unsigned tc:1;
@@ -35,13 +46,12 @@ union dnsmsg_header
         unsigned rcode:4;
         unsigned Z:3;
         unsigned ra:1;
-#endif
         uint16_t qdcount;
         uint16_t ancount;
         uint16_t nscount;
         uint16_t arcount;
     } X;
-    uint16_t raw[5];
+    uint16_t raw[6];
 };
 AssertCompileSize(union dnsmsg_header, 12);
 
@@ -52,36 +62,40 @@ struct dnsmsg_answer
     uint16_t class;
     uint16_t ttl[2];
     uint16_t rdata_len;
-    uint8_t rdata[1];  /*depends on value at rdata_len */
+    uint8_t  rdata[1];  /* depends on value at rdata_len */
 };
 
 /* see RFC 1035(4.1) */
 static int dns_alias_handler(PNATState pData, int type);
-static void cstr2qstr(char *cstr, char *qstr);
-static void qstr2cstr(char *qstr, char *cstr);
+static void CStr2QStr(const char *pcszStr, char *pszQStr, size_t cQStr);
+static void QStr2CStr(const char *pcszQStr, char *pszStr, size_t cStr);
 
 static int 
 fingerprint(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
 
-    if (ah->dport == NULL || ah->sport == NULL || ah->lnk == NULL)
-        return (-1);
+    if (!ah->dport || !ah->sport || !ah->lnk)
+        return -1;
+
     fprintf(stderr, "NAT:%s: ah(dport: %hd, sport: %hd) oaddr:%R[IP4] aaddr:%R[IP4]\n", 
         __FUNCTION__, ntohs(*ah->dport), ntohs(*ah->sport),
         &ah->oaddr, &ah->aaddr);
+
     if (   (ntohs(*ah->dport) == DNS_CONTROL_PORT_NUMBER
         || ntohs(*ah->sport) == DNS_CONTROL_PORT_NUMBER)
         && (ah->oaddr->s_addr == htonl(ntohl(la->pData->special_addr.s_addr)|CTL_DNS)))
-        return (0);
-    return (-1);
+        return 0;
+
+    return -1;
 }
 
 static void doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, struct ip *pip, struct hostent *h)
 {
     int i;
-    if (h == NULL)
+
+    if (!h)
     {
-        hdr->X.qr = 1; /*response*/
+        hdr->X.qr = 1; /* response */
         hdr->X.aa = 1;
         hdr->X.rd = 1;
         hdr->X.rcode = 3;
@@ -97,38 +111,40 @@ static void doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, 
         uint16_t addr_off = (uint16_t)~0;
         
 #if 0
-        /*here is no compressed names+answers + new query*/
+        /* here is no compressed names+answers + new query */
         m_inc(m, h->h_length * sizeof(struct dnsmsg_answer) + strlen(qname) + 2 * sizeof(uint16_t));
 #endif
-        packet_len = (pip->ip_hl << 2) + sizeof(struct udphdr) + sizeof(union dnsmsg_header) 
-            + strlen(qname) +  2 * sizeof(uint16_t); /* ip + udp + header + query */
+        packet_len = (pip->ip_hl << 2)
+                   + sizeof(struct udphdr)
+                   + sizeof(union dnsmsg_header) 
+                   + strlen(qname)
+                   + 2 * sizeof(uint16_t); /* ip + udp + header + query */
         query = (char *)&hdr[1];
 
         strcpy(query, qname);
-        query += strlen(qname);
-        query ++;
-        
+        query += strlen(qname) + 1;
+
         *(uint16_t *)query = htons(1);
         ((uint16_t *)query)[1] = htons(1);
         answers = (char *)&((uint16_t *)query)[2];
 
         off = (char *)&hdr[1] - (char *)hdr;
         off |= (0x3 << 14);
-        /*add aliases */
-        cstr = h->h_aliases;
-        while(*cstr) 
+
+        /* add aliases */
+        for (cstr = h->h_aliases; *cstr; cstr++)
         {
             uint16_t len;
             struct dnsmsg_answer *ans = (struct dnsmsg_answer *)answers;
             ans->name = htons(off);
-            ans->type = htons(5); /*CNAME*/
+            ans->type = htons(5); /* CNAME */
             ans->class = htons(1);
             *(uint32_t *)ans->ttl = htonl(3600); /* 1h */
-            c = (addr_off == (uint16_t)~0?h->h_name : *cstr);
+            c = (addr_off == (uint16_t)~0 ? h->h_name : *cstr);
             len = strlen(c) + 2;
             ans->rdata_len = htons(len);
             ans->rdata[len - 1] = 0;
-            cstr2qstr(c, (char *)ans->rdata);
+            CStr2QStr(c, (char *)ans->rdata, len);
             off = (char *)&ans->rdata - (char *)hdr;
             off |= (0x3 << 14);
             if (addr_off == (uint16_t)~0)
@@ -136,9 +152,8 @@ static void doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, 
             answers = (char *)&ans[1] + len - 2;  /* note: 1 symbol already counted */
             packet_len += sizeof(struct dnsmsg_answer) + len - 2;
             hdr->X.ancount++;
-            cstr++;
         }
-        /*add addresses */
+        /* add addresses */
 
         for(i = 0; i < h->h_length && h->h_addr_list[i] != NULL; ++i)
         {
@@ -154,13 +169,13 @@ static void doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, 
             packet_len += sizeof(struct dnsmsg_answer) + 3;
             hdr->X.ancount++;
         }
-        hdr->X.qr = 1; /*response*/
+        hdr->X.qr = 1; /* response */
         hdr->X.aa = 1;
         hdr->X.rd = 1;
         hdr->X.ra = 1;
         hdr->X.rcode = 0;
         HTONS(hdr->X.ancount);
-        /*don't forget update m_len*/
+        /* don't forget update m_len */
         pip->ip_len = htons(packet_len);
     }
 }
@@ -168,12 +183,12 @@ static int
 protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
     int i;
-    /*Parse dns request */
+    /* Parse dns request */
     char *qw_qname = NULL;
     uint16_t *qw_qtype = NULL;
     uint16_t *qw_qclass = NULL;
     struct hostent *h = NULL;
-    char *cname[255]; /* ??? */
+    char cname[255];
 
     struct udphdr *udp = NULL;
     union dnsmsg_header *hdr = NULL;
@@ -181,7 +196,7 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
     hdr = (union dnsmsg_header *)udp_next(udp);
 
     if (hdr->X.qr == 1)
-        return 0; /* this is respose*/
+        return 0; /* this is respose */
 
     qw_qname = (char *)&hdr[1];
     Assert((ntohs(hdr->X.qdcount) == 1));
@@ -193,68 +208,82 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
         fprintf(stderr, "qname:%s qtype:%hd qclass:%hd\n", 
             qw_qname, ntohs(*qw_qtype), ntohs(*qw_qclass));
     }
-    qstr2cstr(qw_qname, (char *)cname);
-    h = gethostbyname((char *)cname);
+
+    QStr2CStr(qw_qname, cname, sizeof(cname));
+    h = gethostbyname(cname);
     fprintf(stderr, "cname:%s\n", cname);
     doanswer(la, hdr, qw_qname, pip, h);
-    /*we've chenged size and conten of udp, to avoid double csum calcualtion 
-     *will assign to zero
+
+    /* 
+     * We have changed the size and the content of udp, to avoid double csum calculation
+     * will assign to zero
      */
     udp->uh_sum = 0;
     udp->uh_ulen = ntohs(htons(pip->ip_len) - (pip->ip_hl << 2));
     pip->ip_sum = 0;
     pip->ip_sum = LibAliasInternetChecksum(la, (uint16_t *)pip, pip->ip_hl << 2);
-    return (0);
+    return 0;
 }
+
 /*
  * qstr is z-string with -dot- replaced with \count to next -dot-
  * e.g. ya.ru is \02ya\02ru
  * Note: it's assumed that caller allocates buffer for cstr
  */
-static void qstr2cstr(char *qname, char *cname)
+static void QStr2CStr(const char *pcszQStr, char *pszStr, size_t cStr)
 {
-    char *q = qname;
-    char *c = cname;
-    while(*q != 0)
+    const char *q;
+    char *c;
+    size_t cLen = 0;
+
+    Assert(cStr > 0);
+    for (q = pcszQStr, c = pszStr; *q != '\0' && cLen < cStr-1; q++, cLen++)
     {
-        if (isalpha(*q) || isdigit(*q))
+        if (   isalpha(*q)
+            || isdigit(*q)
+            || *q == '-'
+            || *q == '_')
         {
            *c = *q; 
             c++;
         }
-        else if (c != &cname[0])
+        else if (c != &pszStr[0])
         {
             *c = '.';
             c++;
         }
-        q++;
     }
-    q = 0;
+    *c = '\0';
 }
+
 /*
  *
  */
-static void cstr2qstr(char *cstr, char *qstr)
+static void CStr2QStr(const char *pcszStr, char *pszQStr, size_t cQStr)
 {
-    char *c, *pc, *q;
-    c = cstr;
-    q = qstr; 
-    while(*c != 0)
+    const char *c;
+    const char *pc;
+    char *q;
+    size_t cLen = 0;
+
+    Assert(cQStr > 0);
+    for (c = pcszStr, q = pszQStr; *c != '\0' && cLen < cQStr-1; q++, cLen++)
     {
-        /* a the begining or at -dot- position */
-        if (*c == '.' || (c == cstr && q == qstr)) 
+        /* at the begining or at -dot- position */
+        if (*c == '.' || (c == pcszStr && q == pszQStr)) 
         {
-            if (c != cstr) c++;
+            if (c != pcszStr)
+                c++;
             pc = strchr(c, '.');
-            *q = pc != NULL ? (pc - c) : strlen(c);
-            q++;
-            continue;
+            *q = pc ? (pc - c) : strlen(c);
         }
-        (*q) = (*c); /*direct copy*/
-        q++;
-        c++;
+        else
+        {
+            *q = *c;
+            c++;
+        }
     }
-    q = 0;
+    *q = '\0';
 }
 
 
@@ -275,8 +304,10 @@ static int
 dns_alias_handler(PNATState pData, int type)
 {
     int error;
-    if (handlers == NULL)
+
+    if (!handlers)
         handlers = RTMemAllocZ(2 * sizeof(struct proto_handler));
+
     handlers[0].pri = 20;
     handlers[0].dir = IN;
     handlers[0].proto = UDP;
@@ -284,19 +315,22 @@ dns_alias_handler(PNATState pData, int type)
     handlers[0].protohandler = &protohandler;
     handlers[1].pri = EOH;
 
-    switch (type) {   
-    case MOD_LOAD:
-        error = 0;
-        LibAliasAttachHandlers(pData, handlers);
-        break;
-    case MOD_UNLOAD:
-        error = 0;
-        LibAliasDetachHandlers(pData, handlers);
-        RTMemFree(handlers);
-        handlers = NULL;
-        break;
-    default:
-        error = EINVAL;
+    switch (type)
+    {
+        case MOD_LOAD:
+            error = 0;
+            LibAliasAttachHandlers(pData, handlers);
+            break;
+
+        case MOD_UNLOAD:
+            error = 0;
+            LibAliasDetachHandlers(pData, handlers);
+            RTMemFree(handlers);
+            handlers = NULL;
+            break;
+
+        default:
+            error = EINVAL;
     }
-    return (error);
+    return error;
 }
