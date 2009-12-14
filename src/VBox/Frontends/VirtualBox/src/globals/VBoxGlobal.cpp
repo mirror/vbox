@@ -1754,11 +1754,15 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                 CMedium medium = attachment.GetMedium();
                 if (attachment.isOk())
                 {
+                    /* Append 'device slot name' with 'device type name' for CD/DVD devices only */
+                    QString strDeviceType = attachment.GetType() == KDeviceType_DVD ? tr("(CD/DVD)") : QString();
+                    if (!strDeviceType.isNull()) strDeviceType.prepend(' ');
                     item += QString (sSectionItemTpl2)
                             .arg (QString ("&nbsp;&nbsp;") +
                                   toString (StorageSlot (controller.GetBus(),
                                                          attachment.GetPort(),
-                                                         attachment.GetDevice())))
+                                                         attachment.GetDevice())) +
+                                  strDeviceType)
                             .arg (details (medium, false));
                     ++ rows;
                 }
