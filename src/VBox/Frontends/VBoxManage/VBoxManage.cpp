@@ -365,7 +365,7 @@ int main(int argc, char *argv[])
         { "startvm",          handleStartVM },
         { "controlvm",        handleControlVM },
         { "discardstate",     handleDiscardState },
-        { "adoptstate",       handleAdoptdState },
+        { "adoptstate",       handleAdoptState },
         { "snapshot",         handleSnapshot },
         { "openmedium",       handleOpenMedium },
         { "registerimage",    handleOpenMedium }, /* backward compatiblity */
