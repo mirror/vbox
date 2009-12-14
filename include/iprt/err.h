@@ -1023,6 +1023,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_LDR_IMPORTED_SYMBOL_NOT_FOUND      (-617)
 /** Generic loader failure. */
 #define VERR_LDR_GENERAL_FAILURE                (-618)
+/** Code signing error.  */
+#define VERR_LDR_IMAGE_HASH                     (-619)
 /** The PE loader encountered delayed imports, a feature which hasn't been implemented yet. */
 #define VERR_LDRPE_DELAY_IMPORT                 (-620)
 /** The PE loader encountered a malformed certificate. */
