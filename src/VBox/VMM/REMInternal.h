@@ -216,8 +216,8 @@ typedef struct REM
     /** Time spent switching state back. */
     STAMPROFILE             StatsStateBack;
 
-    /** Padding the CPUX86State structure to 32 byte. */
-    uint32_t                abPadding[HC_ARCH_BITS == 32 ? 2 : 6];
+    /** Padding the CPUX86State structure to 64 byte. */
+    uint32_t                abPadding[HC_ARCH_BITS == 32 ? 4 : 4];
 
 # define REM_ENV_SIZE       0xff00
 

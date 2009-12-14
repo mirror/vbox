@@ -239,6 +239,7 @@ RuntimeR3_SOURCES       = \
 	common/misc/handletable.cpp \
 	common/misc/handletablectx.cpp \
 	common/misc/handletablesimple.cpp \
+	common/misc/lockvalidator.cpp \
 	common/misc/message.cpp \
 	common/misc/once.cpp \
 	common/misc/req.cpp \
@@ -1256,6 +1257,7 @@ RuntimeR0Drv_SOURCES.linux = \
 ## @todo thread2-r0drv-linux.c and assert-r0drv-linux.c
 
 RuntimeR0Drv_SOURCES.win = \
+	common/misc/lockvalidator.cpp \
 	common/misc/thread.cpp \
 	common/string/memcmp.asm \
 	common/string/memchr.asm \
@@ -1298,6 +1300,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/misc/RTAssertMsg1Weak.cpp \
 	common/misc/RTAssertMsg2Weak.cpp \
+	common/misc/lockvalidator.cpp \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
 	common/string/strpbrk.cpp \
@@ -1342,6 +1345,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	\
+	common/misc/lockvalidator.cpp \
 	common/misc/thread.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -1389,6 +1393,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 RuntimeR0Drv_SOURCES.freebsd = \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/err/RTErrConvertToErrno.cpp \
+	common/misc/lockvalidator.cpp \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
 	common/string/memmove.asm \
@@ -1423,6 +1428,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 RuntimeR0Drv_SOURCES.solaris = \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/err/RTErrConvertToErrno.cpp \
+	common/misc/lockvalidator.cpp \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
 	generic/RTAssertShouldPanic-generic.cpp \

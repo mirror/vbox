@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -44,15 +44,12 @@
 #include "internal/strict.h"
 
 
-/* in strict mode we're redefining this, so undefine it now for the implementation. */
+/* In strict mode we're redefining these, so undefine them now for the implementation. */
 #undef RTCritSectEnter
 #undef RTCritSectTryEnter
 #undef RTCritSectEnterMultiple
 
 
-/**
- * Initialize a critical section.
- */
 RTDECL(int) RTCritSectInit(PRTCRITSECT pCritSect)
 {
     return RTCritSectInitEx(pCritSect, 0);
@@ -60,13 +57,6 @@ RTDECL(int) RTCritSectInit(PRTCRITSECT pCritSect)
 RT_EXPORT_SYMBOL(RTCritSectInit);
 
 
-/**
- * Initialize a critical section.
- *
- * @returns iprt status code.
- * @param   pCritSect   Pointer to the critical section structure.
- * @param   fFlags      Flags, any combination of the RTCRITSECT_FLAGS \#defines.
- */
 RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags)
 {
     /*
@@ -77,13 +67,14 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags)
     pCritSect->cNestings            = 0;
     pCritSect->cLockers             = -1;
     pCritSect->NativeThreadOwner    = NIL_RTNATIVETHREAD;
-    pCritSect->Strict.ThreadOwner   = NIL_RTTHREAD;
-    pCritSect->Strict.pszEnterFile  = NULL;
-    pCritSect->Strict.u32EnterLine  = 0;
-    pCritSect->Strict.uEnterId      = 0;
-    int rc = RTSemEventCreate(&pCritSect->EventSem);
+    int rc = RTLockValidatorCreate(&pCritSect->pValidatorRec, NIL_RTLOCKVALIDATORCLASS, 0, NULL, pCritSect);
     if (RT_SUCCESS(rc))
-        return VINF_SUCCESS;
+    {
+        rc = RTSemEventCreate(&pCritSect->EventSem);
+        if (RT_SUCCESS(rc))
+            return VINF_SUCCESS;
+        RTLockValidatorDestroy(&pCritSect->pValidatorRec);
+    }
 
     AssertRC(rc);
     pCritSect->EventSem = NULL;
@@ -93,41 +84,24 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags)
 RT_EXPORT_SYMBOL(RTCritSectInitEx);
 
 
-/**
- * Enter multiple critical sections.
- *
- * This function will enter ALL the specified critical sections before returning.
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_SEM_NESTED if nested enter on a no nesting section. (Asserted.)
- * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
- * @param   cCritSects      Number of critical sections in the array.
- * @param   papCritSects    Array of critical section pointers.
- *
- * @remark  Please note that this function will not necessarily come out favourable in a
- *          fight with other threads which are using the normal RTCritSectEnter() function.
- *          Therefore, avoid having to enter multiple critical sections!
- */
-RTDECL(int) RTCritSectEnterMultiple(unsigned cCritSects, PRTCRITSECT *papCritSects)
 #ifdef RTCRITSECT_STRICT
-{
-    return RTCritSectEnterMultipleDebug(cCritSects, papCritSects, __FILE__, __LINE__, 0);
-}
-RTDECL(int) RTCritSectEnterMultipleDebug(unsigned cCritSects, PRTCRITSECT *papCritSects, const char *pszFile, unsigned uLine, RTUINTPTR uId)
-#endif /* RTCRITSECT_STRICT */
+RTDECL(int) RTCritSectEnterMultipleDebug(size_t cCritSects, PRTCRITSECT *papCritSects, RTUINTPTR uId, RT_SRC_POS_DECL)
+#else
+RTDECL(int) RTCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects)
+#endif
 {
     Assert(cCritSects > 0);
-    Assert(VALID_PTR(papCritSects));
+    AssertPtr(papCritSects);
 
     /*
      * Try get them all.
      */
     int rc = VERR_INVALID_PARAMETER;
-    unsigned i;
+    size_t i;
     for (i = 0; i < cCritSects; i++)
     {
 #ifdef RTCRITSECT_STRICT
-        rc = RTCritSectTryEnterDebug(papCritSects[i], pszFile, uLine, uId);
+        rc = RTCritSectTryEnterDebug(papCritSects[i], uId, RT_SRC_POS_ARGS);
 #else
         rc = RTCritSectTryEnter(papCritSects[i]);
 #endif
@@ -145,7 +119,7 @@ RTDECL(int) RTCritSectEnterMultipleDebug(unsigned cCritSects, PRTCRITSECT *papCr
         /*
          * We've failed, release any locks we might have gotten. ('i' is the lock that failed btw.)
          */
-        unsigned j = i;
+        size_t j = i;
         while (j-- > 0)
         {
             int rc2 = RTCritSectLeave(papCritSects[j]);
@@ -165,7 +139,7 @@ RTDECL(int) RTCritSectEnterMultipleDebug(unsigned cCritSects, PRTCRITSECT *papCr
          * Wait on the one we failed to get.
          */
 #ifdef RTCRITSECT_STRICT
-        rc = RTCritSectEnterDebug(papCritSects[i], pszFile, uLine, uId);
+        rc = RTCritSectEnterDebug(papCritSects[i], uId, RT_SRC_POS_ARGS);
 #else
         rc = RTCritSectEnter(papCritSects[i]);
 #endif
@@ -180,7 +154,7 @@ RTDECL(int) RTCritSectEnterMultipleDebug(unsigned cCritSects, PRTCRITSECT *papCr
             if (j != i)
             {
 #ifdef RTCRITSECT_STRICT
-                rc = RTCritSectTryEnterDebug(papCritSects[j], pszFile, uLine, uId);
+                rc = RTCritSectTryEnterDebug(papCritSects[j], uId, RT_SRC_POS_ARGS);
 #else
                 rc = RTCritSectTryEnter(papCritSects[j]);
 #endif
@@ -202,24 +176,35 @@ RTDECL(int) RTCritSectEnterMultipleDebug(unsigned cCritSects, PRTCRITSECT *papCr
         i = j;
     }
 }
+#ifdef RTCRITSECT_STRICT
+RT_EXPORT_SYMBOL(RTCritSectEnterMultipleDebug);
+#else
+RT_EXPORT_SYMBOL(RTCritSectEnterMultiple);
+#endif
+
+
+#ifdef RTCRITSECT_STRICT
+RTDECL(int) RTCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects)
+{
+    return RTCritSectEnterMultipleDebug(cCritSects, papCritSects, 0, RT_SRC_POS);
+}
 RT_EXPORT_SYMBOL(RTCritSectEnterMultiple);
 
 
-/**
- * Try enter a critical section.
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_SEM_NESTED if nested enter on a no nesting section. (Asserted.)
- * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
- * @param   pCritSect   The critical section.
- */
-RTDECL(int) RTCritSectTryEnter(PRTCRITSECT pCritSect)
-#ifdef RTCRITSECT_STRICT
+#else  /* !RTCRITSECT_STRICT */
+RTDECL(int) RTCritSectEnterMultipleDebug(size_t cCritSects, PRTCRITSECT *papCritSects, RTUINTPTR uId, RT_SRC_POS_DECL)
 {
-    return RTCritSectTryEnterDebug(pCritSect, __FILE__, __LINE__, 0);
+    return RTCritSectEnterMultiple(cCritSects, papCritSects);
 }
-RTDECL(int) RTCritSectTryEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, unsigned uLine, RTUINTPTR uId)
-#endif /* RTCRITSECT_STRICT */
+RT_EXPORT_SYMBOL(RTCritSectEnterMultipleDebug);
+#endif /* !RTCRITSECT_STRICT */
+
+
+#ifdef RTCRITSECT_STRICT
+RTDECL(int) RTCritSectTryEnterDebug(PRTCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+#else
+RTDECL(int) RTCritSectTryEnter(PRTCRITSECT pCritSect)
+#endif
 {
     Assert(pCritSect);
     Assert(pCritSect->u32Magic == RTCRITSECT_MAGIC);
@@ -258,32 +243,40 @@ RTDECL(int) RTCritSectTryEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, 
     pCritSect->cNestings = 1;
     ASMAtomicWriteHandle(&pCritSect->NativeThreadOwner, NativeThreadSelf);
 #ifdef RTCRITSECT_STRICT
-    pCritSect->Strict.pszEnterFile = pszFile;
-    pCritSect->Strict.u32EnterLine = uLine;
-    pCritSect->Strict.uEnterId     = uId;
-    ASMAtomicWriteHandle(&pCritSect->Strict.ThreadOwner, ThreadSelf);
+    RTLockValidatorSetOwner(pCritSect->pValidatorRec, ThreadSelf, uId, RT_SRC_POS_ARGS);
 #endif
 
     return VINF_SUCCESS;
 }
+#ifdef RTCRITSECT_STRICT
+RT_EXPORT_SYMBOL(RTCritSectTryEnterDebug);
+#else
+RT_EXPORT_SYMBOL(RTCritSectTryEnter);
+#endif
+
+
+#ifdef RTCRITSECT_STRICT
+RTDECL(int) RTCritSectTryEnter(PRTCRITSECT pCritSect)
+{
+    return RTCritSectTryEnterDebug(pCritSect, 0, RT_SRC_POS);
+}
 RT_EXPORT_SYMBOL(RTCritSectTryEnter);
 
 
-/**
- * Enter a critical section.
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_SEM_NESTED if nested enter on a no nesting section. (Asserted.)
- * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
- * @param   pCritSect   The critical section.
- */
-RTDECL(int) RTCritSectEnter(PRTCRITSECT pCritSect)
-#ifdef RTCRITSECT_STRICT
+#else  /* !RTCRITSECT_STRICT */
+RTDECL(int) RTCritSectTryEnterDebug(PRTCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    return RTCritSectEnterDebug(pCritSect, __FILE__, __LINE__, 0);
+    return RTCritSectTryEnter(pCritSect);
 }
-RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, unsigned uLine, RTUINTPTR uId)
-#endif /* RTCRITSECT_STRICT */
+RT_EXPORT_SYMBOL(RTCritSectTryEnterDebug);
+#endif /* !RTCRITSECT_STRICT */
+
+
+#ifdef RTCRITSECT_STRICT
+RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+#else
+RTDECL(int) RTCritSectEnter(PRTCRITSECT pCritSect)
+#endif
 {
     Assert(pCritSect);
     Assert(pCritSect->u32Magic == RTCRITSECT_MAGIC);
@@ -292,6 +285,7 @@ RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, uns
     RTTHREAD        ThreadSelf = RTThreadSelf();
     if (ThreadSelf == NIL_RTTHREAD)
         RTThreadAdopt(RTTHREADTYPE_DEFAULT, 0, NULL, &ThreadSelf);
+    RTLockValidatorCheckOrder(pCritSect->pValidatorRec, ThreadSelf, uId, RT_SRC_POS_ARGS);
 #endif
 
     /** If the critical section has already been destroyed, then inform the caller. */
@@ -323,7 +317,7 @@ RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, uns
         for (;;)
         {
 #ifdef RTCRITSECT_STRICT
-            RTThreadBlocking(ThreadSelf, RTTHREADSTATE_CRITSECT, (uintptr_t)pCritSect, pszFile, uLine, uId);
+            RTThreadBlocking(ThreadSelf, RTTHREADSTATE_CRITSECT, pCritSect->pValidatorRec, uId, RT_SRC_POS_ARGS);
 #endif
             int rc = RTSemEventWait(pCritSect->EventSem, RT_INDEFINITE_WAIT);
 #ifdef RTCRITSECT_STRICT
@@ -344,24 +338,36 @@ RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, uns
     pCritSect->cNestings = 1;
     ASMAtomicWriteHandle(&pCritSect->NativeThreadOwner, NativeThreadSelf);
 #ifdef RTCRITSECT_STRICT
-    pCritSect->Strict.pszEnterFile = pszFile;
-    pCritSect->Strict.u32EnterLine = uLine;
-    pCritSect->Strict.uEnterId     = uId;
-    ASMAtomicWriteHandle(&pCritSect->Strict.ThreadOwner, ThreadSelf);
+    RTLockValidatorSetOwner(pCritSect->pValidatorRec, ThreadSelf, uId, RT_SRC_POS_ARGS);
     RTThreadWriteLockInc(ThreadSelf);
 #endif
 
     return VINF_SUCCESS;
 }
+#ifdef RTCRITSECT_STRICT
+RT_EXPORT_SYMBOL(RTCritSectEnterDebug);
+#else
+RT_EXPORT_SYMBOL(RTCritSectEnter);
+#endif
+
+
+#ifdef RTCRITSECT_STRICT
+RTDECL(int) RTCritSectEnter(PRTCRITSECT pCritSect)
+{
+    return RTCritSectEnterDebug(pCritSect, 0, RT_SRC_POS);
+}
 RT_EXPORT_SYMBOL(RTCritSectEnter);
 
 
-/**
- * Leave a critical section.
- *
- * @returns VINF_SUCCESS.
- * @param   pCritSect   The critical section.
- */
+#else  /* !RTCRITSECT_STRICT */
+RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return RTCritSectEnter(pCritSect);
+}
+RT_EXPORT_SYMBOL(RTCritSectEnterDebug);
+#endif /* !RTCRITSECT_STRICT */
+
+
 RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
 {
     /*
@@ -386,9 +392,7 @@ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
          * Decrement waiters, if >= 0 then we have to wake one of them up.
          */
 #ifdef RTCRITSECT_STRICT
-        if (pCritSect->Strict.ThreadOwner != NIL_RTTHREAD) /* May happen for PDMCritSects when entering GC/R0. */
-            RTThreadWriteLockDec(pCritSect->Strict.ThreadOwner);
-        ASMAtomicWriteHandle(&pCritSect->Strict.ThreadOwner, NIL_RTTHREAD);
+        RTLockValidatorUnsetOwner(pCritSect->pValidatorRec);
 #endif
         ASMAtomicWriteHandle(&pCritSect->NativeThreadOwner, NIL_RTNATIVETHREAD);
         if (ASMAtomicDecS32(&pCritSect->cLockers) >= 0)
@@ -402,17 +406,10 @@ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
 RT_EXPORT_SYMBOL(RTCritSectLeave);
 
 
-/**
- * Leave multiple critical sections.
- *
- * @returns VINF_SUCCESS.
- * @param   cCritSects      Number of critical sections in the array.
- * @param   papCritSects    Array of critical section pointers.
- */
-RTDECL(int) RTCritSectLeaveMultiple(unsigned cCritSects, PRTCRITSECT *papCritSects)
+RTDECL(int) RTCritSectLeaveMultiple(size_t cCritSects, PRTCRITSECT *papCritSects)
 {
     int rc = VINF_SUCCESS;
-    for (unsigned i = 0; i < cCritSects; i++)
+    for (size_t i = 0; i < cCritSects; i++)
     {
         int rc2 = RTCritSectLeave(papCritSects[i]);
         if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
@@ -423,33 +420,6 @@ RTDECL(int) RTCritSectLeaveMultiple(unsigned cCritSects, PRTCRITSECT *papCritSec
 RT_EXPORT_SYMBOL(RTCritSectLeaveMultiple);
 
 
-#ifndef RTCRITSECT_STRICT
-RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, unsigned uLine, RTUINTPTR uId)
-{
-    return RTCritSectEnter(pCritSect);
-}
-
-RTDECL(int) RTCritSectTryEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, unsigned uLine, RTUINTPTR uId)
-{
-    return RTCritSectTryEnter(pCritSect);
-}
-
-RTDECL(int) RTCritSectEnterMultipleDebug(unsigned cCritSects, PRTCRITSECT *papCritSects, const char *pszFile, unsigned uLine, RTUINTPTR uId)
-{
-    return RTCritSectEnterMultiple(cCritSects, papCritSects);
-}
-#endif /* RT_STRICT */
-RT_EXPORT_SYMBOL(RTCritSectEnterDebug);
-RT_EXPORT_SYMBOL(RTCritSectTryEnterDebug);
-RT_EXPORT_SYMBOL(RTCritSectEnterMultipleDebug);
-
-
-/**
- * Deletes a critical section.
- *
- * @returns VINF_SUCCESS.
- * @param   pCritSect   The critical section.
- */
 RTDECL(int) RTCritSectDelete(PRTCRITSECT pCritSect)
 {
     /*
@@ -471,11 +441,14 @@ RTDECL(int) RTCritSectDelete(PRTCRITSECT pCritSect)
     pCritSect->NativeThreadOwner= NIL_RTNATIVETHREAD;
     RTSEMEVENT EventSem = pCritSect->EventSem;
     pCritSect->EventSem         = NIL_RTSEMEVENT;
+
     while (pCritSect->cLockers-- >= 0)
         RTSemEventSignal(EventSem);
     ASMAtomicWriteS32(&pCritSect->cLockers, -1);
     int rc = RTSemEventDestroy(EventSem);
     AssertRC(rc);
+
+    RTLockValidatorDestroy(&pCritSect->pValidatorRec);
 
     return rc;
 }

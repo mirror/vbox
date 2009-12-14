@@ -60,33 +60,32 @@ typedef enum RTTHREADSTATE
     RTTHREADSTATE_TERMINATED,
     /** Probably running. */
     RTTHREADSTATE_RUNNING,
+
     /** Waiting on a critical section. */
     RTTHREADSTATE_CRITSECT,
-    /** Waiting on a mutex. */
-    RTTHREADSTATE_MUTEX,
     /** Waiting on a event semaphore. */
     RTTHREADSTATE_EVENT,
     /** Waiting on a event multiple wakeup semaphore. */
-    RTTHREADSTATE_EVENTMULTI,
+    RTTHREADSTATE_EVENT_MULTI,
+    /** Waiting on a fast mutex. */
+    RTTHREADSTATE_FAST_MUTEX,
+    /** Waiting on a mutex. */
+    RTTHREADSTATE_MUTEX,
     /** Waiting on a read write semaphore, read (shared) access. */
     RTTHREADSTATE_RW_READ,
     /** Waiting on a read write semaphore, write (exclusive) access. */
     RTTHREADSTATE_RW_WRITE,
     /** The thread is sleeping. */
     RTTHREADSTATE_SLEEP,
+    /** Waiting on a spin mutex. */
+    RTTHREADSTATE_SPIN_MUTEX,
+
     /** The usual 32-bit size hack. */
     RTTHREADSTATE_32BIT_HACK = 0x7fffffff
 } RTTHREADSTATE;
 
 /** Checks if a thread state indicates that the thread is sleeping. */
-#define RTTHREAD_IS_SLEEPING(enmState) (    (enmState) == RTTHREADSTATE_CRITSECT \
-                                        ||  (enmState) == RTTHREADSTATE_MUTEX \
-                                        ||  (enmState) == RTTHREADSTATE_EVENT \
-                                        ||  (enmState) == RTTHREADSTATE_EVENTMULTI \
-                                        ||  (enmState) == RTTHREADSTATE_RW_READ \
-                                        ||  (enmState) == RTTHREADSTATE_RW_WRITE \
-                                        ||  (enmState) == RTTHREADSTATE_SLEEP \
-                                       )
+#define RTTHREAD_IS_SLEEPING(enmState) ((enmState) >= RTTHREADSTATE_CRITSECT)
 
 /**
  * Get the thread handle of the current thread.
@@ -637,15 +636,14 @@ RTDECL(void) RTThreadUnblocked(RTTHREAD hThread, RTTHREADSTATE enmCurState);
  *
  * This is a RT_STRICT method for debugging locks and detecting deadlocks.
  *
- * @param   hThread     The current thread.
- * @param   enmState    The sleep state.
- * @param   u64Block    The block data. A pointer or handle.
- * @param   pszFile     Where we are blocking.
- * @param   uLine       Where we are blocking.
- * @param   uId         Where we are blocking.
+ * @param   hThread         The current thread.
+ * @param   enmState        The sleep state.
+ * @param   pvBlock         Pointer to a RTLOCKVALIDATORREC structure.
+ * @param   uId             Where we are blocking.
+ * @param   RT_SRC_POS_DECL Where we are blocking.
  */
-RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState, uint64_t u64Block,
-                              const char *pszFile, unsigned uLine, RTUINTPTR uId);
+RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState,
+                              PRTLOCKVALIDATORREC pValidatorRec, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 
 

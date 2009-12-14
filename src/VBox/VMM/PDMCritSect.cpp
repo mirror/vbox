@@ -125,32 +125,35 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
     int rc = SUPSemEventCreate(pVM->pSession, (PSUPSEMEVENT)&pCritSect->Core.EventSem);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Initialize the structure (first bit is c&p from RTCritSectInitEx).
-         */
-        pCritSect->Core.u32Magic             = RTCRITSECT_MAGIC;
-        pCritSect->Core.fFlags               = 0;
-        pCritSect->Core.cNestings            = 0;
-        pCritSect->Core.cLockers             = -1;
-        pCritSect->Core.NativeThreadOwner    = NIL_RTNATIVETHREAD;
-        pCritSect->Core.Strict.ThreadOwner   = NIL_RTTHREAD;
-        pCritSect->Core.Strict.pszEnterFile  = NULL;
-        pCritSect->Core.Strict.u32EnterLine  = 0;
-        pCritSect->Core.Strict.uEnterId      = 0;
-        pCritSect->pVMR3                     = pVM;
-        pCritSect->pVMR0                     = pVM->pVMR0;
-        pCritSect->pVMRC                     = pVM->pVMRC;
-        pCritSect->pvKey                     = pvKey;
-        pCritSect->EventToSignal             = NIL_RTSEMEVENT;
-        pCritSect->pNext                     = pVM->pdm.s.pCritSects;
-        pCritSect->pszName                   = RTStrDup(pszName);
-        pVM->pdm.s.pCritSects = pCritSect;
-        STAMR3RegisterF(pVM, &pCritSect->StatContentionRZLock,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZLock", pszName);
-        STAMR3RegisterF(pVM, &pCritSect->StatContentionRZUnlock,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZUnlock", pszName);
-        STAMR3RegisterF(pVM, &pCritSect->StatContentionR3,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionR3", pszName);
+        rc = RTLockValidatorCreate(&pCritSect->Core.pValidatorRec, NIL_RTLOCKVALIDATORCLASS, 0, pszName, pCritSect);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Initialize the structure (first bit is c&p from RTCritSectInitEx).
+             */
+            pCritSect->Core.u32Magic             = RTCRITSECT_MAGIC;
+            pCritSect->Core.fFlags               = 0;
+            pCritSect->Core.cNestings            = 0;
+            pCritSect->Core.cLockers             = -1;
+            pCritSect->Core.NativeThreadOwner    = NIL_RTNATIVETHREAD;
+            pCritSect->pVMR3                     = pVM;
+            pCritSect->pVMR0                     = pVM->pVMR0;
+            pCritSect->pVMRC                     = pVM->pVMRC;
+            pCritSect->pvKey                     = pvKey;
+            pCritSect->EventToSignal             = NIL_RTSEMEVENT;
+            pCritSect->pNext                     = pVM->pdm.s.pCritSects;
+            pCritSect->pszName                   = RTStrDup(pszName);
+            pVM->pdm.s.pCritSects = pCritSect;
+            STAMR3RegisterF(pVM, &pCritSect->StatContentionRZLock,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZLock", pszName);
+            STAMR3RegisterF(pVM, &pCritSect->StatContentionRZUnlock,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZUnlock", pszName);
+            STAMR3RegisterF(pVM, &pCritSect->StatContentionR3,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionR3", pszName);
 #ifdef VBOX_WITH_STATISTICS
-        STAMR3RegisterF(pVM, &pCritSect->StatLocked,        STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, NULL, "/PDM/CritSects/%s/Locked", pszName);
+            STAMR3RegisterF(pVM, &pCritSect->StatLocked,        STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, NULL, "/PDM/CritSects/%s/Locked", pszName);
 #endif
+            return VINF_SUCCESS;
+        }
+
+        SUPSemEventClose(pVM->pSession, (SUPSEMEVENT)pCritSect->Core.EventSem);
     }
     return rc;
 }
@@ -240,6 +243,7 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PPDMCRITSECTINT pCritSect, PPDMCRITSE
     ASMAtomicWriteS32(&pCritSect->Core.cLockers, -1);
     int rc = SUPSemEventClose(pVM->pSession, hEvent);
     AssertRC(rc);
+    RTLockValidatorDestroy(&pCritSect->Core.pValidatorRec);
     pCritSect->pNext   = NULL;
     pCritSect->pvKey   = NULL;
     pCritSect->pVMR3   = NULL;
@@ -389,6 +393,12 @@ VMMR3DECL(bool) PDMR3CritSectYield(PPDMCRITSECT pCritSect)
     if (cLockers < cNestings)
         return false;
 
+#ifdef PDMCRITSECT_STRICT
+    const char * const pszFile      = pCritSect->s.Core.pValidatorRec->pszFile;
+    const char * const pszFunction  = pCritSect->s.Core.pValidatorRec->pszFunction;
+    uint32_t     const iLine        = pCritSect->s.Core.pValidatorRec->uLine;
+    RTHCUINTPTR  const uId          = pCritSect->s.Core.pValidatorRec->uId;
+#endif
     PDMCritSectLeave(pCritSect);
 
     /*
@@ -410,7 +420,11 @@ VMMR3DECL(bool) PDMR3CritSectYield(PPDMCRITSECT pCritSect)
             RTThreadYield();
     }
 
+#ifdef PDMCRITSECT_STRICT
+    int rc = PDMCritSectEnterDebug(pCritSect, VERR_INTERNAL_ERROR, uId, pszFile, iLine, pszFunction);
+#else
     int rc = PDMCritSectEnter(pCritSect, VERR_INTERNAL_ERROR);
+#endif
     AssertLogRelRC(rc);
     return true;
 }

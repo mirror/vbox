@@ -1123,6 +1123,13 @@ typedef RTLDRMOD                                   *PRTLDRMOD;
 /** Nil loader module handle. */
 #define NIL_RTLDRMOD                                0
 
+/** Lock validator class handle. */
+typedef R3R0PTRTYPE(struct RTLOCKVALIDATORCLASSINT *) RTLOCKVALIDATORCLASS;
+/** Pointer to a lock validator class handle. */
+typedef RTLOCKVALIDATORCLASS                       *PRTLOCKVALIDATORCLASS;
+/** Nil lock validator class handle. */
+#define NIL_RTLOCKVALIDATORCLASS                    ((RTLOCKVALIDATORCLASS)0)
+
 /** Ring-0 memory object handle. */
 typedef R0PTRTYPE(struct RTR0MEMOBJINTERNAL *)      RTR0MEMOBJ;
 /** Pointer to a Ring-0 memory object handle. */
@@ -1457,6 +1464,11 @@ typedef union RTMAC
 typedef RTMAC *PRTMAC;
 /** Pointer to a readonly MAC address. */
 typedef const RTMAC *PCRTMAC;
+
+
+/** Pointer to a lock validator record.
+ * The structure definition is found in iprt/lockvalidator.h.  */
+typedef struct RTLOCKVALIDATORREC *PRTLOCKVALIDATORREC;
 
 
 #ifdef __cplusplus

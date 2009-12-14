@@ -50,6 +50,12 @@ RT_C_DECLS_BEGIN
 # define PDM_WITH_R3R0_CRIT_SECT
 #endif
 
+/** @def PDMCRITSECT_STRICT
+ * Enables/disables PDM critsect strictness like deadlock detection. */
+#if defined(VBOX_STRICT) || defined(DOXYGEN_RUNNING)
+# define PDMCRITSECT_STRICT
+#endif
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *

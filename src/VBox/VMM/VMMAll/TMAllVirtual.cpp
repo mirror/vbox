@@ -405,7 +405,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
 
     /*
-     * Don't make updates untill
+     * Don't make updates until we've check the timer qeueue.
      */
     bool            fUpdatePrev = true;
     bool            fUpdateOff  = true;
