@@ -206,7 +206,8 @@ VirtualBox_src/main.cpp_DEFS += \
     VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
 endif
 
-VirtualBox_INCS           = \
+
+VBOX_GUI_INC_DIRS = \
 	./src \
 	./src/globals \
 	./src/extensions \
@@ -220,7 +221,10 @@ VirtualBox_INCS           = \
 	./src/wizards/importappliance \
 	./src/widgets \
 	./src/X11 \
-	./src/darwin \
+	./src/darwin
+
+VirtualBox_INCS = \
+	$(VBOX_GUI_INC_DIRS) \
 	$(PATH_VirtualBox)/include
 
 # Necessary for the hdd backend enumeration
@@ -761,11 +765,14 @@ include $(KBUILD_PATH)/subfooter.kmk
 # before a new product release. VirtualBox_xx_YY.ts is a template for new
 # languages and should never be actually translated or installed.
 #
+# For Qt >= 4.6.0 it maybe necessary to add -I $(VBOX_GUI_INC_DIRS) to the
+# lupdate call
+#
 updatenls:: makeallnls nls/VirtualBox_en.ts
 
 makeallnls:: \
-		$(filter-out %.qrc,$(VirtualBox_SOURCES) $(VirtualBox_VBOX_EXTRA_NLS_SOURCES)) \
-		$(wildcard include/*.h)
+		$(foreach header,$(VBOX_GUI_INC_DIRS),$(wildcard $(header)/*.h)) \
+		$(filter-out %.qrc,$(VirtualBox_SOURCES) $(VirtualBox_VBOX_EXTRA_NLS_SOURCES))
 	$(call MSG_L1,lupdate all languages (nls/*.ts))
 	$(QUIET)$(TOOL_QT4_LUPDATE) \
 		$^ \
@@ -776,8 +783,8 @@ makeallnls:: \
 # Create the English translation file. This is something special cause it will
 # contain the plural forms only.
 nls/VirtualBox_en.ts: \
-		$(filter-out %.qrc,$(VirtualBox_SOURCES) $(VirtualBox_VBOX_EXTRA_NLS_SOURCES)) \
-		$(wildcard include/*.h)
+		$(foreach header,$(VBOX_GUI_INC_DIRS),$(wildcard $(header)/*.h)) \
+		$(filter-out %.qrc,$(VirtualBox_SOURCES) $(VirtualBox_VBOX_EXTRA_NLS_SOURCES))
 	$(call MSG_L1,lupdate $@)
 	$(QUIET)$(TOOL_QT4_LUPDATE) \
 		$^ \

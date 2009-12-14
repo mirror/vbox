@@ -1402,6 +1402,10 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Dock Icon Realtime Preview</source>
         <translation>Обновлять иконку &amp;дока</translation>
     </message>
+    <message>
+        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGLSettingsInput</name>
@@ -2882,6 +2886,58 @@ p, li { white-space: pre-wrap; }
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
         <translation>Этот базовый жёсткий диск косвенно подсоединен с помощью следующего разностного диска:</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n year(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n month(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n day(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n hour(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n minute(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n second(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>(CD/DVD)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4486,6 +4542,15 @@ p, li { white-space: pre-wrap; }
         <comment>failed to close ...</comment>
         <translation type="unfinished">привод гибких дисков</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
@@ -4499,55 +4564,55 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>%1 days, %2 hours remaining</source>
-        <translation type="unfinished">Осталось дней: %1, часов: %2</translation>
+        <translation type="obsolete">Осталось дней: %1, часов: %2</translation>
     </message>
     <message>
         <source>%1 days, %2 minutes remaining</source>
-        <translation type="unfinished">Осталось дней: %1, минут: %2</translation>
+        <translation type="obsolete">Осталось дней: %1, минут: %2</translation>
     </message>
     <message>
         <source>%1 days remaining</source>
-        <translation type="unfinished">Осталось дней: %1</translation>
+        <translation type="obsolete">Осталось дней: %1</translation>
     </message>
     <message>
         <source>1 day, %1 hours remaining</source>
-        <translation type="unfinished">Осталось дней: 1, часов: %1</translation>
+        <translation type="obsolete">Осталось дней: 1, часов: %1</translation>
     </message>
     <message>
         <source>1 day, %1 minutes remaining</source>
-        <translation type="unfinished">Осталось дней: 1, минут: %1</translation>
+        <translation type="obsolete">Осталось дней: 1, минут: %1</translation>
     </message>
     <message>
         <source>1 day remaining</source>
-        <translation type="unfinished">Остался 1 день</translation>
+        <translation type="obsolete">Остался 1 день</translation>
     </message>
     <message>
         <source>%1 hours, %2 minutes remaining</source>
-        <translation type="unfinished">Осталось часов: %1, минут: %2</translation>
+        <translation type="obsolete">Осталось часов: %1, минут: %2</translation>
     </message>
     <message>
         <source>1 hour, %1 minutes remaining</source>
-        <translation type="unfinished">Осталось часов: 1, минут: %1</translation>
+        <translation type="obsolete">Осталось часов: 1, минут: %1</translation>
     </message>
     <message>
         <source>1 hour remaining</source>
-        <translation type="unfinished">Остался 1 час</translation>
+        <translation type="obsolete">Остался 1 час</translation>
     </message>
     <message>
         <source>%1 minutes remaining</source>
-        <translation type="unfinished">Осталось минут: %1</translation>
+        <translation type="obsolete">Осталось минут: %1</translation>
     </message>
     <message>
         <source>1 minute, %2 seconds remaining</source>
-        <translation type="unfinished">Осталось минут: 1, секунд: %2</translation>
+        <translation type="obsolete">Осталось минут: 1, секунд: %2</translation>
     </message>
     <message>
         <source>1 minute remaining</source>
-        <translation type="unfinished">Осталась 1 минута</translation>
+        <translation type="obsolete">Осталась 1 минута</translation>
     </message>
     <message>
         <source>%1 seconds remaining</source>
-        <translation type="unfinished">Осталось секунд: %1</translation>
+        <translation type="obsolete">Осталось секунд: %1</translation>
     </message>
     <message>
         <source>A few seconds remaining</source>
@@ -4560,6 +4625,16 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Cancel the current operation</source>
         <translation>Отменить текущую операцию</translation>
+    </message>
+    <message>
+        <source>%1, %2 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5034,7 +5109,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message numerus="yes">
         <source> (%n day(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (%n день назад)</numerusform>
             <numerusform> (%n дня назад)</numerusform>
             <numerusform> (%n дней назад)</numerusform>
@@ -5042,7 +5117,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message numerus="yes">
         <source> (%n hour(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (%n час назад)</numerusform>
             <numerusform> (%n часа назад)</numerusform>
             <numerusform> (%n часов назад)</numerusform>
@@ -5050,7 +5125,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message numerus="yes">
         <source> (%n minute(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (%n минута назад)</numerusform>
             <numerusform> (%n минуты назад)</numerusform>
             <numerusform> (%n минут назад)</numerusform>
@@ -5058,7 +5133,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message numerus="yes">
         <source> (%n second(s) ago)</source>
-        <translation>
+        <translation type="obsolete">
             <numerusform> (%n секунда назад)</numerusform>
             <numerusform> (%n секунды назад)</numerusform>
             <numerusform> (%n секунд назад)</numerusform>
@@ -5079,6 +5154,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Delete the selected snapshot of the virtual machine</source>
         <translation>Удалить выбранный снимок виртуальной машины</translation>
+    </message>
+    <message>
+        <source> (%1 ago)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5105,6 +5184,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Snapshot &amp;Description</source>
         <translation>О&amp;писание снимка</translation>
+    </message>
+    <message numerus="yes">
+        <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
     </message>
 </context>
 <context>

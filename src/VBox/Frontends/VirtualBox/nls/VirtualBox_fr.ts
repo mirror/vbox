@@ -1816,6 +1816,10 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Dock Icon Realtime Preview</source>
         <translation>&amp;Icône Dock aperçu temps réel</translation>
     </message>
+    <message>
+        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGLSettingsInput</name>
@@ -3434,6 +3438,10 @@ p, li { white-space: pre-wrap; }
             <numerusform>%n seconde</numerusform>
             <numerusform>%n secondes</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>(CD/DVD)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

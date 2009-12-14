@@ -1461,6 +1461,10 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Show System Tray Icon</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGLSettingsInput</name>
@@ -2775,6 +2779,46 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%n year(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n month(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n day(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n hour(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n minute(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n second(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>(CD/DVD)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4305,61 +4349,18 @@ p, li { white-space: pre-wrap; }
         <comment>failed to close ...</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
-    <message>
-        <source>%1 days, %2 hours remaining</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 days, %2 minutes remaining</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 days remaining</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>1 day, %1 hours remaining</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>1 day, %1 minutes remaining</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>1 day remaining</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 hours, %2 minutes remaining</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>1 hour, %1 minutes remaining</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>1 hour remaining</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 minutes remaining</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>1 minute, %2 seconds remaining</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>1 minute remaining</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 seconds remaining</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>A few seconds remaining</source>
         <translation type="unfinished"></translation>
@@ -4374,6 +4375,16 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Cancel the current operation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, %2 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4975,30 +4986,6 @@ p, li { white-space: pre-wrap; }
         <source> (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-    <message numerus="yes">
-        <source> (%n day(s) ago)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source> (%n hour(s) ago)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source> (%n minute(s) ago)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source> (%n second(s) ago)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-        </translation>
-    </message>
     <message>
         <source>&amp;Restore Snapshot</source>
         <translation type="unfinished"></translation>
@@ -5013,6 +5000,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Delete the selected snapshot of the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> (%1 ago)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5064,6 +5055,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Cancel</source>
         <translation type="obsolete">إلغاء</translation>
+    </message>
+    <message numerus="yes">
+        <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
     </message>
 </context>
 <context>

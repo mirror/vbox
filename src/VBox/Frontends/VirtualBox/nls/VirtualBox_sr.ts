@@ -1396,6 +1396,10 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Dock Icon Realtime Preview</source>
         <translation></translation>
     </message>
+    <message>
+        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGLSettingsInput</name>
@@ -2867,6 +2871,58 @@ p, li { white-space: pre-wrap; }
         <comment>medium</comment>
         <translation>Овај базни хард диск је индиректно прикачен са овим различитим диском:</translation>
     </message>
+    <message numerus="yes">
+        <source>%n year(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n month(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n day(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n hour(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n minute(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n second(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>(CD/DVD)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -2927,7 +2983,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to import an appliance, you have to select a file describing the appliance first. Currently VirtualBox supports the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Аистент помаже у процесу извоза средства. &lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Користити &lt;span style=&quot; font-weight:600;&quot;&gt;Даље&lt;/span&gt; за следећи лист асистента и &lt;span style=&quot; font-weight:600;&quot;&gt;Назад&lt;/span&gt; за предходни лист.&lt;/p&gt;
+        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Аистент помаже у процесу извоза средства. &lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Користити &lt;span style=&quot; font-weight:600;&quot;&gt;Даље&lt;/span&gt; за следећи лист асистента и &lt;span style=&quot; font-weight:600;&quot;&gt;Назад&lt;/span&gt; за предходни лист.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;За увоз средства требате да одаберете датотеку која описујее средство. За сада VirtualBox подржава &apos;Open Virtualization Format (OVF)&apos;. за наставак, одабрати датотеку за увоз:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
@@ -2957,6 +3013,16 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Import &gt;</source>
         <translation>Увоз &gt;</translation>
+    </message>
+    <message>
+        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4466,6 +4532,15 @@ p, li { white-space: pre-wrap; }
         <comment>failed to close ...</comment>
         <translation>флопи уређај</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
@@ -4479,55 +4554,55 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>%1 days, %2 hours remaining</source>
-        <translation>Преостало %1 дана, %2 сата</translation>
+        <translation type="obsolete">Преостало %1 дана, %2 сата</translation>
     </message>
     <message>
         <source>%1 days, %2 minutes remaining</source>
-        <translation>Преостало %1 дана, %2 минута</translation>
+        <translation type="obsolete">Преостало %1 дана, %2 минута</translation>
     </message>
     <message>
         <source>%1 days remaining</source>
-        <translation>Преостао %1 дан</translation>
+        <translation type="obsolete">Преостао %1 дан</translation>
     </message>
     <message>
         <source>1 day, %1 hours remaining</source>
-        <translation>Преостало 1 дан, %1 сата</translation>
+        <translation type="obsolete">Преостало 1 дан, %1 сата</translation>
     </message>
     <message>
         <source>1 day, %1 minutes remaining</source>
-        <translation>Преостало 1 дан, %1 минута</translation>
+        <translation type="obsolete">Преостало 1 дан, %1 минута</translation>
     </message>
     <message>
         <source>1 day remaining</source>
-        <translation>Преостало 1 дан</translation>
+        <translation type="obsolete">Преостало 1 дан</translation>
     </message>
     <message>
         <source>%1 hours, %2 minutes remaining</source>
-        <translation>Преостало %1 дата, %2 минута</translation>
+        <translation type="obsolete">Преостало %1 дата, %2 минута</translation>
     </message>
     <message>
         <source>1 hour, %1 minutes remaining</source>
-        <translation>Преостало 1 дан, %1 минута</translation>
+        <translation type="obsolete">Преостало 1 дан, %1 минута</translation>
     </message>
     <message>
         <source>1 hour remaining</source>
-        <translation>Преостало 1 сат</translation>
+        <translation type="obsolete">Преостало 1 сат</translation>
     </message>
     <message>
         <source>%1 minutes remaining</source>
-        <translation>Преостало %1 минута</translation>
+        <translation type="obsolete">Преостало %1 минута</translation>
     </message>
     <message>
         <source>1 minute, %2 seconds remaining</source>
-        <translation>Преостало минут, %1 секунда</translation>
+        <translation type="obsolete">Преостало минут, %1 секунда</translation>
     </message>
     <message>
         <source>1 minute remaining</source>
-        <translation>Преостало минут</translation>
+        <translation type="obsolete">Преостало минут</translation>
     </message>
     <message>
         <source>%1 seconds remaining</source>
-        <translation>Преостало %1 секунда</translation>
+        <translation type="obsolete">Преостало %1 секунда</translation>
     </message>
     <message>
         <source>A few seconds remaining</source>
@@ -4540,6 +4615,16 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Cancel the current operation</source>
         <translation>Поништи актуелни рад</translation>
+    </message>
+    <message>
+        <source>%1, %2 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 remaining</source>
+        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5020,38 +5105,6 @@ p, li { white-space: pre-wrap; }
         <source> (%1)</source>
         <translation> (%1)</translation>
     </message>
-    <message numerus="yes">
-        <source> (%n day(s) ago)</source>
-        <translation type="unfinished">
-          <numerusform></numerusform>
-          <numerusform></numerusform>
-          <numerusform></numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source> (%n hour(s) ago)</source>
-        <translation type="unfinished">
-          <numerusform></numerusform>
-          <numerusform></numerusform>
-          <numerusform></numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source> (%n minute(s) ago)</source>
-        <translation type="unfinished">
-          <numerusform></numerusform>
-          <numerusform></numerusform>
-          <numerusform></numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source> (%n second(s) ago)</source>
-        <translation type="unfinished">
-          <numerusform></numerusform>
-          <numerusform></numerusform>
-          <numerusform></numerusform>
-        </translation>
-    </message>
     <message>
         <source>&amp;Restore Snapshot</source>
         <translation>Врати слику</translation>
@@ -5067,6 +5120,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Delete the selected snapshot of the virtual machine</source>
         <translation>Бриши одабрану слику виртуелне машине</translation>
+    </message>
+    <message>
+        <source> (%1 ago)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5093,6 +5150,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Snapshot &amp;Description</source>
         <translation>&amp;Опис снимка</translation>
+    </message>
+    <message numerus="yes">
+        <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
     </message>
 </context>
 <context>
@@ -7055,7 +7120,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation>Када унето, гост ће подржати 'Extended Firmware Interface (EFI)', што је потребно за покретање неких ОС-а. Не-EFI ОС-и неће моћи да се покрену ако опција није активна.</translation>
+        <translation>Када унето, гост ће подржати &apos;Extended Firmware Interface (EFI)&apos;, што је потребно за покретање неких ОС-а. Не-EFI ОС-и неће моћи да се покрену ако опција није активна.</translation>
     </message>
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
