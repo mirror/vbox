@@ -291,7 +291,9 @@ WriteLockHandle::~WriteLockHandle()
     validateLock(LOCKVAL_SRC_POS_ARGS);
 #endif
 
-#if defined(DEBUG)
+#if defined(DEBUG) && defined(VBOX_WITH_DEBUG_LOCK_VALIDATOR)
+    RTCritSectEnterDebug(&m->sem, pszFile, iLine, (uintptr_t)ASMReturnAddress());
+#elif defined(DEBUG)
     RTCritSectEnterDebug(&m->sem,
                          "WriteLockHandle::lockWrite() return address >>>",
                          0, (RTUINTPTR)ASMReturnAddress());
