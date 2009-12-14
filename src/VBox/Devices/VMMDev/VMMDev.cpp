@@ -2257,11 +2257,11 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->mouseCapabilities);
         if (uVersion >= 10)
             pThis->pDrv->pfnUpdatePointerShape(pThis->pDrv,
-                                               pThis->fHostCursorRequested,
-                                               0,
-                                               0, 0,
-                                               0, 0,
-                                               NULL);
+                                               /*fVisible=*/pThis->fHostCursorRequested,
+                                               /*fAlpha=*/false,
+                                               /*xHot=*/0, /*yHot=*/0,
+                                               /*cx=*/0, /*cy=*/0,
+                                               /*pvShape=*/NULL);
     }
 
     /* Reestablish the acceleration status. */
