@@ -281,6 +281,17 @@ RTDECL(int)  RTSemMutexRequestNoResumeDebug(RTSEMMUTEX MutexSem, unsigned cMilli
  */
 RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem);
 
+/* Strict build: Remap the two request calls to the debug versions. */
+#ifdef RT_STRICT
+# ifdef ___iprt_asm_h
+#  define RTSemMutexRequest(pCritSect, cMillies)            RTSemMutexRequestDebug((pCritSect), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define RTSemMutexRequestNoResume(pCritSect, cMillies)    RTSemMutexRequestNoResumeDebug((pCritSect), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+# else
+#  define RTSemMutexRequest(pCritSect, cMillies)            RTSemMutexRequestDebug((pCritSect), (cMillies), 0, RT_SRC_POS)
+#  define RTSemMutexRequestNoResume(pCritSect, cMillies)    RTSemMutexRequestNoResumeDebug((pCritSect), (cMillies), 0, RT_SRC_POS)
+# endif
+#endif
+
 /** @} */
 
 

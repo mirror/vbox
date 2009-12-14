@@ -85,6 +85,11 @@ struct RTSEMMUTEXINTERNAL
 };
 
 
+/* Undefine debug mappings. */
+#undef RTSemMutexRequest
+#undef RTSemMutexRequestNoResume
+
+
 /**
  * Wrapper for the futex syscall.
  */
