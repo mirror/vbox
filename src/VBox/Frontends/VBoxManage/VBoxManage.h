@@ -192,7 +192,7 @@ int handleUnregisterVM(HandlerArg *a);
 int handleCreateVM(HandlerArg *a);
 int handleStartVM(HandlerArg *a);
 int handleDiscardState(HandlerArg *a);
-int handleAdoptdState(HandlerArg *a);
+int handleAdoptState(HandlerArg *a);
 int handleGetExtraData(HandlerArg *a);
 int handleSetExtraData(HandlerArg *a);
 int handleSetProperty(HandlerArg *a);
