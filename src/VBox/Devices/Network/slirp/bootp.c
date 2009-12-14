@@ -323,6 +323,7 @@ skip_dns_servers:
         val = (int)strlen(slirp_hostname);
         FILL_BOOTP_EXT(q, RFC1533_HOSTNAME, val, slirp_hostname);
     }
+    slirp_arp_cache_update_or_add(pData, rbp->bp_yiaddr.s_addr, bc->macaddr);
     return q - rbp->bp_vend; /*return offset */
 }
 
@@ -456,7 +457,6 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
                Assert((bp->bp_hlen == ETH_ALEN));
                memcpy(bc->macaddr, bp->bp_hwaddr, bp->bp_hlen);
                bc->addr.s_addr = bp->bp_ciaddr.s_addr;
-               slirp_arp_cache_update(pData, bp->bp_ciaddr.s_addr, bp->bp_hwaddr);
             }
             break;
 
@@ -480,7 +480,6 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
             Assert((bp->bp_hlen == ETH_ALEN));
             memcpy(bc->macaddr, bp->bp_hwaddr, bp->bp_hlen);
             bc->addr.s_addr = ui32;
-            slirp_arp_cache_update(pData, bp->bp_ciaddr.s_addr, bp->bp_hwaddr);
             break;
 
         case NONE:

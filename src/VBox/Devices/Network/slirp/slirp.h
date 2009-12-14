@@ -318,6 +318,7 @@ struct tcpcb *tcp_drop(PNATState, struct tcpcb *tp, int err);
 void slirp_arp_who_has(PNATState pData, uint32_t dst);
 int slirp_arp_cache_update(PNATState pData, uint32_t dst, const uint8_t *mac);
 void slirp_arp_cache_add(PNATState pData, uint32_t ip, const uint8_t *ether);
+int slirp_arp_cache_update_or_add(PNATState pData, uint32_t dst, const uint8_t *mac);
 #define MIN_MRU 128
 #define MAX_MRU 16384
 
