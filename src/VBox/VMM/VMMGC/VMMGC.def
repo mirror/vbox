@@ -26,6 +26,7 @@ EXPORTS
     CPUMGCResumeGuest
     CPUMGCResumeGuestV86
     PDMCritSectEnter
+    PDMCritSectEnterDebug
     PDMCritSectLeave
     PDMCritSectIsOwner
     PDMQueueAlloc

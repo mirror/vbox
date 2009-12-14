@@ -24,6 +24,7 @@ EXPORTS
 
     ; code
     PDMCritSectEnter
+    PDMCritSectEnterDebug
     PDMCritSectIsOwner
     PDMCritSectLeave
     PDMQueueAlloc
