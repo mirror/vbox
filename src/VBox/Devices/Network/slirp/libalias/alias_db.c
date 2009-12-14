@@ -811,7 +811,7 @@ GetSocket(struct libalias *la, u_short port_net, int *sockfd, int link_type)
         return (1);
     } else {
 #ifdef VBOX
-        if (sock > 0) 
+        if (sock >= 0) 
             closesocket(sock);
         /* socket wasn't enqueued so we shouldn't use sofree */
         RTMemFree(so);
