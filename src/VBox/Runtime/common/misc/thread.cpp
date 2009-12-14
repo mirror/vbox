@@ -40,6 +40,7 @@
 #include <iprt/avl.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
+#include <iprt/lockvalidator.h>
 #include <iprt/semaphore.h>
 #ifdef IN_RING0
 # include <iprt/spinlock.h>
@@ -47,6 +48,7 @@
 #include <iprt/asm.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
+#include "internal/magics.h"
 #include "internal/thread.h"
 #include "internal/sched.h"
 #include "internal/process.h"
@@ -194,6 +196,29 @@ void rtThreadTerm(void)
 }
 
 
+/**
+ * Gets the thread state.
+ *
+ * @returns The thread state.
+ * @param   pThread             The thread.
+ */
+DECLINLINE(RTTHREADSTATE) rtThreadGetState(PRTTHREADINT pThread)
+{
+    return pThread->enmState;
+}
+
+
+/**
+ * Sets the thread state.
+ *
+ * @param   pThread             The thread.
+ * @param   enmNewState         The new thread state.
+ */
+DECLINLINE(void) rtThreadSetState(PRTTHREADINT pThread, RTTHREADSTATE enmNewState)
+{
+    AssertCompile(sizeof(pThread->enmState) == sizeof(uint32_t));
+    ASMAtomicWriteU32((uint32_t volatile *)&pThread->enmState, enmNewState);
+}
 
 #ifdef IN_RING3
 
@@ -254,7 +279,7 @@ static int rtThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntFla
         if (RT_SUCCESS(rc))
         {
             rtThreadInsert(pThread, NativeThread);
-            ASMAtomicWriteSize(&pThread->enmState, RTTHREADSTATE_RUNNING);
+            rtThreadSetState(pThread, RTTHREADSTATE_RUNNING);
             rtThreadRelease(pThread);
         }
     }
@@ -375,7 +400,7 @@ void rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread)
      * gets this far. Since the OS may quickly reuse the native thread ID
      * it should not be reinserted at this point.
      */
-    if (pThread->enmState != RTTHREADSTATE_TERMINATED)
+    if (rtThreadGetState(pThread) != RTTHREADSTATE_TERMINATED)
     {
         /*
          * Before inserting we must check if there is a thread with this id
@@ -587,7 +612,7 @@ void rtThreadTerminate(PRTTHREADINT pThread, int rc)
      * Set the rc, mark it terminated and signal anyone waiting.
      */
     pThread->rc = rc;
-    ASMAtomicWriteSize(&pThread->enmState, RTTHREADSTATE_TERMINATED);
+    rtThreadSetState(pThread, RTTHREADSTATE_TERMINATED);
     ASMAtomicOrU32(&pThread->fIntFlags, RTTHREADINT_FLAGS_TERMINATED);
     if (pThread->EventTerminated != NIL_RTSEMEVENTMULTI)
         RTSemEventMultiSignal(pThread->EventTerminated);
@@ -633,7 +658,7 @@ int rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread, const char *
     /*
      * Call thread function and terminate when it returns.
      */
-    ASMAtomicWriteSize(&pThread->enmState, RTTHREADSTATE_RUNNING);
+    rtThreadSetState(pThread, RTTHREADSTATE_RUNNING);
     rc = pThread->pfnThread(pThread, pThread->pvUser);
 
     /*
@@ -1379,20 +1404,47 @@ int rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority)
 
 
 /**
+ * Translate a thread state into a string.
+ *
+ * @returns Pointer to a read-only string containing the state name.
+ * @param   enmState            The state.
+ */
+static const char *rtThreadStateName(RTTHREADSTATE enmState)
+{
+    switch (enmState)
+    {
+        case RTTHREADSTATE_INVALID:         return "INVALID";
+        case RTTHREADSTATE_INITIALIZING:    return "INITIALIZING";
+        case RTTHREADSTATE_TERMINATED:      return "TERMINATED";
+        case RTTHREADSTATE_RUNNING:         return "RUNNING";
+        case RTTHREADSTATE_CRITSECT:        return "CRITSECT";
+        case RTTHREADSTATE_EVENT:           return "EVENT";
+        case RTTHREADSTATE_EVENT_MULTI:     return "EVENT_MULTI";
+        case RTTHREADSTATE_FAST_MUTEX:      return "FAST_MUTEX";
+        case RTTHREADSTATE_MUTEX:           return "MUTEX";
+        case RTTHREADSTATE_RW_READ:         return "RW_READ";
+        case RTTHREADSTATE_RW_WRITE:        return "RW_WRITE";
+        case RTTHREADSTATE_SLEEP:           return "SLEEP";
+        case RTTHREADSTATE_SPIN_MUTEX:      return "SPIN_MUTEX";
+        default:                            return "UnknownThreadState";
+    }
+}
+
+
+/**
  * Bitch about a deadlock.
  *
- * @param   pThread     This thread.
- * @param   pCur        The thread we're deadlocking with.
- * @param   enmState    The sleep state.
- * @param   u64Block    The block data. A pointer or handle.
- * @param   pszFile     Where we are gonna block.
- * @param   uLine       Where we are gonna block.
- * @param   uId         Where we are gonna block.
+ * @param   pThread         This thread.
+ * @param   pCur            The thread we're deadlocking with.
+ * @param   enmState        The sleep state.
+ * @param   pRec            The lock validator record we're going to block on.
+ * @param   RT_SRC_POS_DECL Where we are going to deadlock.
+ * @param   uId             Where we are going to deadlock.
  */
-static void rtThreadDeadlock(PRTTHREADINT pThread, PRTTHREADINT pCur, RTTHREADSTATE enmState, uint64_t u64Block,
-                             const char *pszFile, unsigned uLine, RTUINTPTR uId)
+static void rtThreadDeadlock(PRTTHREADINT pThread, PRTTHREADINT pCur, RTTHREADSTATE enmState,
+                             PRTLOCKVALIDATORREC pRec, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    AssertMsg1(pCur == pThread ? "!!Deadlock detected!!" : "!!Deadlock exists!!", uLine, pszFile, "");
+    AssertMsg1(pCur == pThread ? "!!Deadlock detected!!" : "!!Deadlock exists!!", iLine, pszFile, pszFunction);
 
     /*
      * Print the threads and locks involved.
@@ -1405,34 +1457,49 @@ static void rtThreadDeadlock(PRTTHREADINT pThread, PRTTHREADINT pCur, RTTHREADST
         /*
          * Print info on pCur. Determin next while doing so.
          */
-        AssertMsg2(" #%d: %RTthrd/%RTnthrd %s: %s(%u) %RTptr\n",
+        AssertMsg2(" #%u: %RTthrd/%RTnthrd %s: %s(%u) %RTptr\n",
                    iEntry, pCur, pCur->Core.Key, pCur->szName,
-                   pCur->pszBlockFile, pCur->uBlockLine, pCur->uBlockId);
-        PRTTHREADINT pNext = NULL;
-        switch (pCur->enmState)
+                   pCur->pszBlockFile, pCur->uBlockLine, pCur->pszBlockFunction, pCur->uBlockId);
+        PRTTHREADINT  pNext       = NULL;
+        RTTHREADSTATE enmCurState = rtThreadGetState(pCur);
+        switch (enmCurState)
         {
             case RTTHREADSTATE_CRITSECT:
+            case RTTHREADSTATE_EVENT:
+            case RTTHREADSTATE_EVENT_MULTI:
+            case RTTHREADSTATE_FAST_MUTEX:
+            case RTTHREADSTATE_MUTEX:
+            case RTTHREADSTATE_RW_READ:
+            case RTTHREADSTATE_RW_WRITE:
+            case RTTHREADSTATE_SPIN_MUTEX:
             {
-                PRTCRITSECT pCritSect = pCur->Block.pCritSect;
-                if (pCur->enmState != RTTHREADSTATE_CRITSECT)
+                PRTLOCKVALIDATORREC pCurRec      = pCur->Block.pRec;
+                RTTHREADSTATE       enmCurState2 = rtThreadGetState(pCur);
+                if (enmCurState2 != enmCurState)
                 {
-                    AssertMsg2("Impossible!!!\n");
+                    AssertMsg2(" Impossible!!! enmState=%s -> %s (%d)\n",
+                               rtThreadStateName(enmCurState), rtThreadStateName(enmCurState2), enmCurState2);
                     break;
                 }
-                if (VALID_PTR(pCritSect) && RTCritSectIsInitialized(pCritSect))
+                if (   VALID_PTR(pCurRec)
+                    && pCurRec->u32Magic == RTLOCKVALIDATORREC_MAGIC)
                 {
-                    AssertMsg2("     Waiting on CRITSECT %p: Entered %s(%u) %RTptr\n",
-                               pCritSect, pCritSect->Strict.pszEnterFile,
-                               pCritSect->Strict.u32EnterLine, pCritSect->Strict.uEnterId);
-                    pNext = pCritSect->Strict.ThreadOwner;
+                    AssertMsg2("     Waiting on %s %p [%s]: Entered %s(%u) %s %p\n",
+                               rtThreadStateName(enmCurState), pCurRec->hLock, pCurRec->pszName,
+                               pCurRec->pszFile, pCurRec->uLine, pCurRec->pszFunction, pCurRec->uId);
+                    pNext = pCurRec->hThread;
                 }
+                else if (VALID_PTR(pCurRec))
+                    AssertMsg2("     Waiting on %s pCurRec=%p: invalid magic number: %#x\n",
+                               rtThreadStateName(enmCurState), pCurRec, pCurRec->u32Magic);
                 else
-                    AssertMsg2("     Waiting on CRITSECT %p: invalid pointer or uninitialized critsect\n", pCritSect);
+                    AssertMsg2("     Waiting on %s pCurRec=%p: invalid pointer\n",
+                               rtThreadStateName(enmCurState), pCurRec);
                 break;
             }
 
             default:
-                AssertMsg2(" Impossible!!! enmState=%d\n", pCur->enmState);
+                AssertMsg2(" Impossible!!! enmState=%s (%d)\n", rtThreadStateName(enmCurState), enmCurState);
                 break;
         }
 
@@ -1465,26 +1532,27 @@ static void rtThreadDeadlock(PRTTHREADINT pThread, PRTTHREADINT pCur, RTTHREADST
  *
  * This is a RT_STRICT method for debugging locks and detecting deadlocks.
  *
- * @param   hThread     The current thread.
- * @param   enmState    The sleep state.
- * @param   u64Block    The block data. A pointer or handle.
- * @param   pszFile     Where we are blocking.
- * @param   uLine       Where we are blocking.
- * @param   uId         Where we are blocking.
+ * @param   hThread         The current thread.
+ * @param   enmState        The sleep state.
+ * @param   pvBlock         Pointer to a RTLOCKVALIDATORREC structure.
+ * @param   uId             Where we are blocking.
+ * @param   RT_SRC_POS_DECL Where we are blocking.
  */
-RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState, uint64_t u64Block,
-                              const char *pszFile, unsigned uLine, RTUINTPTR uId)
+RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState,
+                              PRTLOCKVALIDATORREC pValidatorRec, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+
 {
     PRTTHREADINT pThread = hThread;
     Assert(RTTHREAD_IS_SLEEPING(enmState));
-    if (pThread && pThread->enmState == RTTHREADSTATE_RUNNING)
+    if (pThread && rtThreadGetState(pThread) == RTTHREADSTATE_RUNNING)
     {
         /** @todo This has to be serialized! The deadlock detection isn't 100% safe!!! */
-        pThread->Block.u64      = u64Block;
-        pThread->pszBlockFile   = pszFile;
-        pThread->uBlockLine     = uLine;
-        pThread->uBlockId       = uId;
-        ASMAtomicWriteSize(&pThread->enmState, enmState);
+        pThread->Block.pRec         = pValidatorRec;
+        pThread->pszBlockFunction   = pszFunction;
+        pThread->pszBlockFile       = pszFile;
+        pThread->uBlockLine         = iLine;
+        pThread->uBlockId           = uId;
+        rtThreadSetState(pThread, enmState);
 
         /*
          * Do deadlock detection.
@@ -1496,8 +1564,8 @@ RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState, uint64_t
          */
         PRTTHREADINT    pCur;
         unsigned        cPrevLength = ~0U;
-        unsigned        cEqualRuns = 0;
-        unsigned        iParanoia = 256;
+        unsigned        cEqualRuns  = 0;
+        unsigned        iParanoia   = 256;
         do
         {
             unsigned cLength = 0;
@@ -1507,35 +1575,63 @@ RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState, uint64_t
                 /*
                  * Get the next thread.
                  */
+                PRTTHREADINT pNext = NULL;
                 for (;;)
                 {
-                    switch (pCur->enmState)
+                    RTTHREADSTATE enmCurState = rtThreadGetState(pCur);
+                    switch (enmCurState)
                     {
                         case RTTHREADSTATE_CRITSECT:
+                        case RTTHREADSTATE_EVENT:
+                        case RTTHREADSTATE_EVENT_MULTI:
+                        case RTTHREADSTATE_FAST_MUTEX:
+                        case RTTHREADSTATE_MUTEX:
+                        case RTTHREADSTATE_RW_READ:
+                        case RTTHREADSTATE_RW_WRITE:
+                        case RTTHREADSTATE_SPIN_MUTEX:
                         {
-                            PRTCRITSECT pCritSect = pCur->Block.pCritSect;
-                            if (pCur->enmState != RTTHREADSTATE_CRITSECT)
+                            PRTLOCKVALIDATORREC pRec = pCur->Block.pRec;
+                            if (    rtThreadGetState(pCur) != enmCurState
+                                ||  !VALID_PTR(pRec)
+                                ||  pRec->u32Magic != RTLOCKVALIDATORREC_MAGIC)
                                 continue;
-                            pCur = pCritSect->Strict.ThreadOwner;
+                            pNext = pRec->hThread;
+                            if (    rtThreadGetState(pCur) != enmCurState
+                                ||  pRec->u32Magic != RTLOCKVALIDATORREC_MAGIC
+                                ||  pRec->hThread != pNext)
+                                continue;
                             break;
                         }
 
                         default:
-                            pCur = NULL;
+                            pNext = NULL;
                             break;
                     }
                     break;
                 }
+
+                /*
+                 * If we arrive at the end of the list we're good.
+                 */
+                pCur = pNext;
                 if (!pCur)
                     return;
 
                 /*
-                 * If we've got back to the blocking thread id we've got a deadlock.
-                 * If we've got a chain of more than 256 items, there is some kind of cycle
-                 * in the list, which means that there is already a deadlock somewhere.
+                 * If we've got back to the blocking thread id we've
+                 * got a deadlock.
                  */
-                if (pCur == pThread || cLength >= 256)
+                if (pCur == pThread)
                     break;
+
+                /*
+                 * If we've got a chain of more than 256 items, there is some
+                 * kind of cycle in the list, which means that there is already
+                 * a deadlock somewhere.
+                 */
+                if (cLength >= 256)
+                    break;
+
                 cLength++;
             }
 
@@ -1552,7 +1648,7 @@ RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState, uint64_t
         /*
          * Ok, if we ever get here, it's most likely a genuine deadlock.
          */
-        rtThreadDeadlock(pThread, pCur, enmState, u64Block, pszFile, uLine, uId);
+        rtThreadDeadlock(pThread, pCur, enmState, pValidatorRec, uId, RT_SRC_POS_ARGS);
     }
 }
 RT_EXPORT_SYMBOL(RTThreadBlocking);
@@ -1569,8 +1665,8 @@ RT_EXPORT_SYMBOL(RTThreadBlocking);
  */
 RTDECL(void) RTThreadUnblocked(RTTHREAD hThread, RTTHREADSTATE enmCurState)
 {
-    if (hThread && hThread->enmState == enmCurState)
-        ASMAtomicWriteSize(&hThread->enmState, RTTHREADSTATE_RUNNING);
+    if (hThread && rtThreadGetState(hThread) == enmCurState)
+        rtThreadSetState(hThread, RTTHREADSTATE_RUNNING);
 }
 RT_EXPORT_SYMBOL(RTThreadUnblocked);
 

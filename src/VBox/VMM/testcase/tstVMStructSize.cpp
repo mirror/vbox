@@ -248,7 +248,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VM, StatTotalQemuToGC, 8);
     CHECK_MEMBER_ALIGNMENT(VM, rem.s.uPendingExcptCR2, 8);
     CHECK_MEMBER_ALIGNMENT(VM, rem.s.StatsInQEMU, 8);
-    CHECK_MEMBER_ALIGNMENT(VM, rem.s.Env, 32);
+    CHECK_MEMBER_ALIGNMENT(VM, rem.s.Env, 64);
 
     /* the VMCPUs are page aligned TLB hit reassons. */
     CHECK_MEMBER_ALIGNMENT(VM, aCpus, 4096);

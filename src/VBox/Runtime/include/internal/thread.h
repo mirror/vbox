@@ -92,18 +92,17 @@ typedef struct RTTHREADINT
     /** What we're blocking on. */
     union RTTHREADINTBLOCKID
     {
+        PRTLOCKVALIDATORREC pRec;
         uint64_t            u64;
-        PRTCRITSECT         pCritSect;
-        RTSEMEVENT          Event;
-        RTSEMEVENTMULTI     EventMulti;
-        RTSEMMUTEX          Mutex;
     } Block;
+    /** Where we're blocking. */
+    const char volatile    *pszBlockFunction;
     /** Where we're blocking. */
     const char volatile    *pszBlockFile;
     /** Where we're blocking. */
-    unsigned volatile       uBlockLine;
+    uint32_t volatile       uBlockLine;
     /** Where we're blocking. */
-    RTUINTPTR volatile      uBlockId;
+    RTHCUINTPTR volatile    uBlockId;
     /** Number of registered write locks, mutexes and critsects that this thread owns. */
     int32_t volatile        cWriteLocks;
     /** Number of registered read locks that this thread owns, nesting included. */

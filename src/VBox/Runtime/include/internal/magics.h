@@ -66,6 +66,10 @@
 #define RTLOCALIPCSERVER_MAGIC      0x19600201
 /** The magic value for RTLOCALIPCSERVER::u32Magic. (Katsuhiro Otomo) */
 #define RTLOCALIPCSESSION_MAGIC     0x19530414
+/** The magic value for RTLOCKVALIDATORREC::u32Magic. (Vladimir Vladimirovich Nabokov) */
+#define RTLOCKVALIDATORREC_MAGIC    0x18990422
+/** The dead magic value for RTLOCKVALIDATORREC::u32Magic. */
+#define RTLOCKVALIDATORREC_MAGIC_DEAD 0x19770702
 /** Magic number for RTMEMCACHEINT::u32Magic. (Joseph Weizenbaum) */
 #define RTMEMCACHE_MAGIC            0x19230108
 /** Dead magic number for RTMEMCACHEINT::u32Magic. */
