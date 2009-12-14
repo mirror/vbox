@@ -2709,7 +2709,6 @@ static int lsilogicProcessMessageRequest(PLSILOGICSCSI pLsiLogic, PMptMessageHdr
 static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv, unsigned cb)
 {
     uint32_t u32 = *(uint32_t *)pv;
-    AssertMsg(cb == 4, ("cb != 4 is %d\n", cb));
 
     LogFlowFunc(("pThis=%#p uOffset=%#x pv=%#p{%.*Rhxs} cb=%u\n", pThis, uOffset, pv, cb, pv, cb));
 
@@ -2907,33 +2906,40 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv
  */
 static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv, unsigned cb)
 {
-    uint32_t *pu32 = (uint32_t *)pv;
-    AssertMsg(cb == 4, ("cb != 4 is %d\n", cb));
+    uint32_t u32 = 0;
 
-    switch (uOffset)
+    /* Align to a 4 byte offset. */ 
+    switch (uOffset & ~3)
     {
         case LSILOGIC_REG_REPLY_QUEUE:
         {
+            /*
+             * Non 4-byte access may cause real strange behavior because the data is part of a physical guest address.
+             * But some drivers use 1-byte access to scan for SCSI controllers.
+             */
+            if (RT_UNLIKELY(cb != 4))
+                LogFlowFunc((": cb is not 4 (%u)\n", cb));
+
             if (pThis->uReplyPostQueueNextEntryFreeWrite != pThis->uReplyPostQueueNextAddressRead)
             {
-                *pu32 = pThis->CTX_SUFF(pReplyPostQueueBase)[pThis->uReplyPostQueueNextAddressRead];
+                u32 = pThis->CTX_SUFF(pReplyPostQueueBase)[pThis->uReplyPostQueueNextAddressRead];
                 pThis->uReplyPostQueueNextAddressRead++;
                 pThis->uReplyPostQueueNextAddressRead %= pThis->cReplyQueueEntries;
             }
             else
             {
                 /* The reply post queue is empty. Reset interrupt. */
-                *pu32 = UINT32_C(0xffffffff);
+                u32 = UINT32_C(0xffffffff);
                 lsilogicClearInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR);
             }
-            Log(("%s: Returning address %#x\n", __FUNCTION__, *pu32));
+            Log(("%s: Returning address %#x\n", __FUNCTION__, u32));
             break;
         }
         case LSILOGIC_REG_DOORBELL:
         {
-            *pu32  = LSILOGIC_REG_DOORBELL_SET_STATE(pThis->enmState);
-            *pu32 |= LSILOGIC_REG_DOORBELL_SET_USED(pThis->fDoorbellInProgress);
-            *pu32 |= LSILOGIC_REG_DOORBELL_SET_WHOINIT(pThis->enmWhoInit);
+            u32  = LSILOGIC_REG_DOORBELL_SET_STATE(pThis->enmState);
+            u32 |= LSILOGIC_REG_DOORBELL_SET_USED(pThis->fDoorbellInProgress);
+            u32 |= LSILOGIC_REG_DOORBELL_SET_WHOINIT(pThis->enmWhoInit);
             /*
              * If there is a doorbell function in progress we pass the return value
              * instead of the status code. We transfer 16bit of the reply
@@ -2942,49 +2948,61 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv,
             if (pThis->fDoorbellInProgress)
             {
                 /* Return next 16bit value. */
-                *pu32 |= pThis->ReplyBuffer.au16Reply[pThis->uNextReplyEntryRead++];
+                u32 |= pThis->ReplyBuffer.au16Reply[pThis->uNextReplyEntryRead++];
             }
             else
             {
                 /* We return the status code of the I/O controller. */
-                *pu32 |= pThis->u16IOCFaultCode;
+                u32 |= pThis->u16IOCFaultCode;
             }
             break;
         }
         case LSILOGIC_REG_HOST_INTR_STATUS:
         {
-            *pu32 = pThis->uInterruptStatus;
+            u32 = pThis->uInterruptStatus;
             break;
         }
         case LSILOGIC_REG_HOST_INTR_MASK:
         {
-            *pu32 = pThis->uInterruptMask;
+            u32 = pThis->uInterruptMask;
             break;
         }
-        case LSILOGIC_REG_HOST_DIAGNOSTIC:
-        {
-            //AssertMsgFailed(("todo\n"));
-            break;
-        }
+        case LSILOGIC_REG_HOST_DIAGNOSTIC: /* The spec doesn't say anything about these registers, so we just ignore them */
         case LSILOGIC_REG_TEST_BASE_ADDRESS:
-        {
-            AssertMsgFailed(("todo\n"));
-            break;
-        }
         case LSILOGIC_REG_DIAG_RW_DATA:
-        {
-            AssertMsgFailed(("todo\n"));
-            break;
-        }
         case LSILOGIC_REG_DIAG_RW_ADDRESS:
-        {
-            AssertMsgFailed(("todo\n"));
-            break;
-        }
         default: /* Ignore. */
         {
             break;
         }
+    }
+
+    /* Clip data according to the read size. */
+    switch (cb)
+    {
+        case 4:
+        {
+            *(uint32_t *)pv = u32;
+            break;
+        }
+        case 2:
+        {
+            uint8_t uRegOff = uOffset - (uOffset & 3);
+
+            u32 = u32 & (0xffff << uRegOff);
+            *(uint16_t *)pv = u32 >> uRegOff;
+            break;
+        }
+        case 1:
+        {
+            uint8_t uRegOff = uOffset - (uOffset & 3);
+
+            u32 = u32 & (0xff << uRegOff);
+            *(uint8_t *)pv = u32 >> uRegOff;
+            break;
+        }
+        default:
+            AssertMsgFailed(("Invalid access size %u\n", cb));
     }
 
     LogFlowFunc(("pThis=%#p uOffset=%#x pv=%#p{%.*Rhxs} cb=%u\n", pThis, uOffset, pv, cb, pv, cb));
