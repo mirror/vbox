@@ -352,7 +352,7 @@ public:
     public:
 
         #if defined(RT_STRICT)
-        # define ___CritSectEnter(cs) RTCritSectEnterDebug((cs), "return address >>>", 0, (RTUINTPTR)ASMReturnAddress(), __PRETTY_FUNCTION__)
+        # define ___CritSectEnter(cs) RTCritSectEnterDebug((cs), (RTUINTPTR)ASMReturnAddress(), "return address >>>", 0, __PRETTY_FUNCTION__)
         #else
         # define ___CritSectEnter(cs) RTCritSectEnter((cs))
         #endif
