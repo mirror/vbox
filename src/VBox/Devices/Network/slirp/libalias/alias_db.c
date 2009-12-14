@@ -2887,7 +2887,11 @@ UninitPunchFW(struct libalias *la)
     LIBALIAS_LOCK_ASSERT(la);
     ClearAllFWHoles(la);
     if (la->fireWallFD >= 0)
+#ifdef VBOX /* this code is currently dead but anyway ... */
+        closesocket(la->fireWallFD);
+#else
         close(la->fireWallFD);
+#endif
     la->fireWallFD = -1;
     if (la->fireWallField)
         free(la->fireWallField);
