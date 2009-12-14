@@ -351,13 +351,10 @@ public:
     {
     public:
 
-        #if defined(DEBUG)
-        # define ___CritSectEnter(cs) \
-            RTCritSectEnterDebug ((cs), \
-                "AutoLock::lock()/enter() return address >>>", 0, \
-                (RTUINTPTR) ASMReturnAddress())
+        #if defined(RT_STRICT)
+        # define ___CritSectEnter(cs) RTCritSectEnterDebug((cs), "return address >>>", 0, (RTUINTPTR)ASMReturnAddress(), __PRETTY_FUNCTION__)
         #else
-        # define ___CritSectEnter(cs) RTCritSectEnter ((cs))
+        # define ___CritSectEnter(cs) RTCritSectEnter((cs))
         #endif
 
         /** Internal lock handle */
