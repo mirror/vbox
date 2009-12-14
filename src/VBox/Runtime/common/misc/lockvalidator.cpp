@@ -148,8 +148,10 @@ RTDECL(void) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread,
     if (hThread == NIL_RTTHREAD)
     {
         hThread = RTThreadSelf();
+#ifdef IN_RING3
         if (RT_UNLIKELY(hThread == NIL_RTTHREAD))
             RTThreadAdopt(RTTHREADTYPE_DEFAULT, 0, NULL, &hThread);
+#endif
     }
     ASMAtomicWriteHandle(&pRec->hThread, hThread);
 
