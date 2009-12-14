@@ -24,15 +24,18 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_NET_FLT_DRV
 #include <VBox/log.h>
+#include <VBox/err.h>
 #include <VBox/cdefs.h>
 #include <VBox/version.h>
 #include <iprt/initterm.h>
 #include <iprt/alloca.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/string.h>
 #include <iprt/net.h>
 #include <iprt/spinlock.h>
 
+#include <sys/types.h>
 #include <sys/modctl.h>
 #include <sys/conf.h>
 #include <sys/stat.h>
@@ -41,12 +44,20 @@
 #include <sys/sunddi.h>
 #include <sys/strsubr.h>
 #include <sys/dlpi.h>
+#include <sys/dls_mgmt.h>
 #include <sys/mac.h>
 #include <sys/strsun.h>
+#include <sys/sunddi.h>
 
-#include "include/mac_provider.h"
-#include "include/mac_client.h"
-#include "include/mac_client_priv.h"
+#include "include/mac_provider.h"       /* dependency for other headers */
+#include "include/mac_client.h"         /* for mac_* */
+#include "include/mac_client_priv.h"    /* for mac_info, mac_capab_get etc. */
+#if 0
+#include "include/dls.h"                /* for dls_mgmt_* */
+#include "include/dld_ioc.h"            /* required by vnic.h */
+#include "include/vnic.h"               /* for vnic_ioc_diag_t */
+#include "include/vnic_impl.h"          /* for vnic_dev_create */
+#endif
 
 #define VBOXNETFLT_OS_SPECFIC 1
 #include "../VBoxNetFltInternal.h"
@@ -58,6 +69,8 @@
 #define DEVICE_NAME                     "vboxflt"
 /** The module descriptions as seen in 'modinfo'. */
 #define DEVICE_DESC_DRV                 "VirtualBox NetBow"
+/** The dynamically created VNIC name */
+#define VBOXFLT_VNIC_NAME               "vboxvnic"
 /** Debugging switch for using symbols in kmdb */
 # define LOCAL      static
 
@@ -142,8 +155,10 @@ static struct modldrv g_VBoxNetFltSolarisModule =
 static struct modlinkage g_VBoxNetFltSolarisModLinkage =
 {
     MODREV_1,
-    &g_VBoxNetFltSolarisModule,
-    NULL,
+    {
+        &g_VBoxNetFltSolarisModule,
+        NULL,
+    }
 };
 
 
@@ -591,7 +606,6 @@ static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
  * @param   pMsg            The packet.
  * @param   fLoopback       Whether this is a loopback packet or not.
  */
-
 LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, mblk_t *pMsg, boolean_t fLoopback)
 {
     LogFlow((DEVICE_NAME ":vboxNetFltSolarisRecv pvData=%p pMsg=%p fLoopback=%d cbData=%d\n", pvData, pMsg, fLoopback, pMsg ? MBLKL(pMsg) : 0));
@@ -637,6 +651,101 @@ LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, 
 
 
 /**
+ * Create a VNIC dynamically over the given interface.
+ *
+ * @param   pThis           The VM connection instance.
+ *
+ * @returns corresponding VBox error code.
+ */
+LOCAL int vboxNetFltSolarisCreateVNIC(PVBOXNETFLTINS pThis)
+{
+#if 0
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisCreateVNIC pThis=%p\n", pThis));
+
+    datalink_id_t InterfaceLinkId;
+    int rc = dls_mgmt_get_linkid(pThis->szName, &InterfaceLinkId);
+    if (!rc)
+    {
+        dev_t DeviceNum = makedevice(ddi_driver_major(g_pVBoxNetFltSolarisDip), pThis->u.s.uInstance);
+        char szVNICName[sizeof(VBOXFLT_VNIC_NAME) + 16];
+        RTStrPrintf(szVNICName, sizeof(szVNICName), "%s%d", VBOXFLT_VNIC_NAME, pThis->u.s.uInstance);
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisCreateVNIC Creating VNIC '%s' over '%s'\n", szVNICName, pThis->szName));
+        rc = dls_mgmt_create(szVNICName, DeviceNum, DATALINK_CLASS_VNIC, DL_ETHER, B_FALSE /* Persist */, &pThis->u.s.VNICLinkId);
+        if (!rc)
+        {
+            /* -XXX- @todo remove hardcoded Guest MAC address, should be sent from guest later. */
+            RTMAC GuestMac;
+            GuestMac.au8[0] = 0x08;
+            GuestMac.au8[1] = 0x00;
+            GuestMac.au8[2] = 0x27;
+            GuestMac.au8[3] = 0xFE;
+            GuestMac.au8[4] = 0x21;
+            GuestMac.au8[5] = 0x03;
+
+            AssertCompile(sizeof(RTMAC) <= MAXMACADDRLEN);
+            uchar_t MacAddr[MAXMACADDRLEN];
+            bzero(MacAddr, sizeof(MacAddr));
+            bcopy(GuestMac.au8, MacAddr, RT_MIN(sizeof(GuestMac), sizeof(MacAddr)));
+
+            int MacSlot = 0;
+            vnic_ioc_diag_t Diag = VNIC_IOC_DIAG_NONE;
+            vnic_mac_addr_type_t MacAddrType = VNIC_MAC_ADDR_TYPE_FIXED;
+            int cbMac = sizeof(RTMAC);
+            int fFlags = VNIC_IOC_CREATE_NODUPCHECK | VNIC_IOC_CREATE_REQ_HWRINGS;
+            rc = vnic_dev_create(pThis->u.s.VNICLinkId, InterfaceLinkId, &MacAddrType, &cbMac, MacAddr,
+                                &MacSlot, 0 /* Mac Prefix */, 0 /* VLAN Id */, NULL /* Resources Caps */,
+                                fFlags, &Diag, kcred);
+            if (rc)
+            {
+                if (Diag == VNIC_IOC_DIAG_NO_HWRINGS)
+                {
+                    /*
+                     * No hardware rings available, retry without requesting hardware ring.
+                     */
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisCreateVNIC No hardware rings available for VNIC over '%s'. Recreating VNIC '%s'\n", pThis->szName,
+                                    szVNICName));
+
+                    fFlags = VNIC_IOC_CREATE_NODUPCHECK;
+                    rc = vnic_dev_create(pThis->u.s.VNICLinkId, InterfaceLinkId, &MacAddrType, &cbMac, MacAddr,
+                                        &MacSlot, 0 /* Mac Prefix */, 0 /* VLAN Id */, NULL /* Resources Caps */,
+                                        fFlags, &Diag, kcred);
+                }
+            }
+
+            if (!rc)
+            {
+                pThis->u.s.fCreatedVNIC = true;
+                pThis->u.s.uInstance++;
+                LogFlow((DEVICE_NAME ":vboxNetFltSolarisCreateVNIC successfully created VNIC '%s' over '%s'\n", "vboxvnic", pThis->szName));
+                return VINF_SUCCESS;
+            }
+            else
+            {
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisCreateVNIC failed to create VNIC over '%s'. rc=%d Diagnosis=%d\n", pThis->szName,
+                            rc, Diag));
+                rc = VERR_INTNET_FLT_VNIC_CREATE_FAILED;
+            }
+
+            dls_mgmt_destroy(pThis->u.s.VNICLinkId, B_FALSE /* Persist */);
+        }
+        else
+        {
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisCreateVNIC failed to create a link id for a VNIC over '%s' rc=%d\n", pThis->szName, rc));
+            rc = VERR_INTNET_FLT_VNIC_CREATE_FAILED;
+        }
+    }
+    else
+    {
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisCreateVNIC failed to find interface '%s' rc=%d\n", pThis->szName, rc));
+        rc = VERR_INTNET_FLT_IF_NOT_FOUND;
+    }
+
+    return rc;
+#endif
+}
+
+
+/**
  * Attach to the network interface.
  *
  * @param   pThis           The VM connection instance.
@@ -646,6 +755,8 @@ LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, 
  */
 LOCAL int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis, bool fRediscovery)
 {
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface pThis=%p fRediscovery=%d\n", pThis, fRediscovery));
+
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
     /*
@@ -654,76 +765,116 @@ LOCAL int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
     int rc = mac_open_by_linkname(pThis->szName, &pThis->u.s.hInterface);
     if (RT_LIKELY(!rc))
     {
-        const mac_info_t *pMacInfo = mac_info(pThis->u.s.hInterface);
-        if (RT_LIKELY(pMacInfo))
+        /*
+         * If this is not a VNIC, create a VNIC and open it instead.
+         */
+        rc = mac_is_vnic(pThis->u.s.hInterface);
+        if (!rc)
         {
-            if (   pMacInfo->mi_media == DL_ETHER
-                && pMacInfo->mi_nativemedia == DL_ETHER)
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface '%s' is not a VNIC. Creating one.\n", pThis->szName));
+
+            mac_close(pThis->u.s.hInterface);
+            pThis->u.s.hInterface = NULL;
+            rc = vboxNetFltSolarisCreateVNIC(pThis);
+            if (RT_SUCCESS(rc))
+                rc = mac_open_by_linkid(pThis->u.s.VNICLinkId, &pThis->u.s.hInterface);
+            else
             {
-                /*
-                 * Obtain the MAC address of the interface.
-                 */
-                AssertCompile(sizeof(RTMAC) == ETHERADDRL);
-                mac_unicast_primary_get(pThis->u.s.hInterface, (uint8_t *)&pThis->u.s.Mac.au8);
+                pThis->u.s.hInterface = NULL;
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed to create VNIC. rc=%Rrc\n", rc));
+            }
+        }
+        else
+            rc = VINF_SUCCESS;
 
-                LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface MAC address of %s is %.*Rhxs\n", pThis->szName,
-                                sizeof(pThis->u.s.Mac), &pThis->u.s.Mac));
-
-                /** @todo Obtain the MTU size using mac_sdu_get() */
-                /** @todo Obtain capabilities (hardware checksum etc.) using mac_capab_get() */
-
-                /*
-                 * Open a client connection to the lower MAC interface.
-                 */
-                rc = mac_client_open(pThis->u.s.hInterface, &pThis->u.s.hClient,
-                                     NULL                                   /* name of this client */,
-                                     MAC_OPEN_FLAGS_USE_DATALINK_NAME |     /* client name same as underlying NIC */
-                                     MAC_OPEN_FLAGS_MULTI_PRIMARY           /* allow multiple primary unicasts */
-                                     );
-                if (RT_LIKELY(!rc))
+        /*
+         * At this point "hInterface" should be a handle to a VNIC, we no longer would deal with physical interface
+         * if it has been passed by the user.
+         */
+        if (RT_SUCCESS(rc))
+        {
+            const mac_info_t *pMacInfo = mac_info(pThis->u.s.hInterface);
+            if (RT_LIKELY(pMacInfo))
+            {
+                if (   pMacInfo->mi_media == DL_ETHER
+                    && pMacInfo->mi_nativemedia == DL_ETHER)
                 {
                     /*
-                     * Set a unicast address for this client and the packet receive callback.
-                     * We want to use the primary unicast address of the underlying interface hence we pass NULL.
-                     * Also we don't really set the RX function here, this is done when we activate promiscuous mode.
+                     * Obtain the MAC address of the interface.
                      */
-                    mac_diag_t MacDiag;
-                    rc = mac_unicast_add_set_rx(pThis->u.s.hClient, NULL /* MAC Address */,
-                                                MAC_UNICAST_PRIMARY | MAC_UNICAST_STRIP_DISABLE | 
-                                                MAC_UNICAST_DISABLE_TX_VID_CHECK | MAC_UNICAST_NODUPCHECK,
-                                                &pThis->u.s.hUnicast, 0 /* VLAN id */, &MacDiag, NULL /* pfnRecv */, pThis);
-                    if (!rc)
+                    AssertCompile(sizeof(RTMAC) == ETHERADDRL);
+                    mac_unicast_primary_get(pThis->u.s.hInterface, (uint8_t *)&pThis->u.s.Mac.au8);
+
+                    LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface MAC address of %s is %.*Rhxs\n", pThis->szName,
+                                    sizeof(pThis->u.s.Mac), &pThis->u.s.Mac));
+
+                    /** @todo Obtain the MTU size using mac_sdu_get() */
+                    /** @todo Obtain capabilities (hardware checksum etc.) using mac_capab_get() */
+
+                    /*
+                     * Open a client connection to the lower MAC interface.
+                     */
+                    rc = mac_client_open(pThis->u.s.hInterface, &pThis->u.s.hClient,
+                                         NULL                                   /* name of this client */,
+                                         MAC_OPEN_FLAGS_USE_DATALINK_NAME |     /* client name same as underlying NIC */
+                                         MAC_OPEN_FLAGS_MULTI_PRIMARY           /* allow multiple primary unicasts */
+                                         );
+                    if (RT_LIKELY(!rc))
                     {
-                        LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface successfully attached over '%s'\n", pThis->szName));
-                        return VINF_SUCCESS;
+                        /** @todo -XXX- if possible we must move unicast_add and rx_set to when the Guest advertises it's MAC to us.  */
+
+                        /*
+                         * Set a unicast address for this client and the packet receive callback.
+                         * We want to use the primary unicast address of the underlying interface (VNIC) hence we pass NULL.
+                         * Also we don't really set the RX function here, this is done when we activate promiscuous mode.
+                         */
+                        mac_diag_t MacDiag;
+                        rc = mac_unicast_add(pThis->u.s.hClient, NULL /* MAC Address */,
+                                            MAC_UNICAST_PRIMARY | MAC_UNICAST_STRIP_DISABLE | 
+                                            MAC_UNICAST_DISABLE_TX_VID_CHECK | MAC_UNICAST_NODUPCHECK | MAC_UNICAST_HW,
+                                            &pThis->u.s.hUnicast, 0 /* VLAN id */, &MacDiag);
+                        if (!rc)
+                        {
+                            LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface successfully attached over '%s'\n", pThis->szName));
+                            return VINF_SUCCESS;
+                        }
+                        else
+                            LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed to set client MAC address over link '%s' rc=%d\n",
+                                    pThis->szName, rc));
+
+                        mac_client_close(pThis->u.s.hClient, 0 /* fFlags */);
+                        pThis->u.s.hClient = NULL;
                     }
                     else
-                        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed to set client MAC address over link '%s' rc=%d\n",
+                    {
+                        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed to create client over link '%s' rc=%d\n",
                                 pThis->szName, rc));
-
-                    mac_client_close(pThis->u.s.hClient, 0 /* fFlags */);
-                    pThis->u.s.hClient = NULL;
+                    }
                 }
                 else
                 {
-                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed to create client over link '%s' rc=%d\n",
-                            pThis->szName, rc));
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface media type incompatible: %d %d\n", pMacInfo->mi_media,
+                            pMacInfo->mi_nativemedia));
+                    rc = EPROTO;
                 }
             }
             else
             {
-                LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface media type incompatible: %d %d\n", pMacInfo->mi_media,
-                        pMacInfo->mi_nativemedia));
-                rc = EPROTO;
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed to obtain info for link '%s'\n", pThis->szName));
+                rc = ENXIO;
             }
         }
         else
         {
-            LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed to obtain info for link '%s'\n", pThis->szName));
+            LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface VNIC creation failed over '%s'\n", pThis->szName));
             rc = ENXIO;
         }
 
-        mac_close(pThis->u.s.hInterface);
+        if (pThis->u.s.hInterface)
+        {
+            mac_close(pThis->u.s.hInterface);
+            pThis->u.s.hInterface = NULL;
+        }
     }
     else
         LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed to open link '%s' rc=%d\n", pThis->szName, rc));
@@ -767,6 +918,16 @@ LOCAL int vboxNetFltSolarisDetachFromInterface(PVBOXNETFLTINS pThis)
     {
         mac_close(pThis->u.s.hInterface);
         pThis->u.s.hInterface = NULL;
+    }
+
+    if (pThis->u.s.fCreatedVNIC)
+    {
+#if 0
+        vnic_dev_delete(pThis->u.s.VNICLinkId, 0 /* Flags -- ununsed in snv_127 */, kcred);
+        dls_mgmt_destroy(pThis->u.s.VNICLinkId, B_FALSE /* Persist */);
+        pThis->u.s.VNICLinkId = DATALINK_INVALID_LINKID;
+        pThis->u.s.fCreatedVNIC = false;
+#endif
     }
 }
 
@@ -860,6 +1021,9 @@ int vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
     /*
      * Init. the solaris specific data.
      */
+    pThis->u.s.VNICLinkId = DATALINK_INVALID_LINKID;
+    pThis->u.s.uInstance = 0;
+    pThis->u.s.fCreatedVNIC = false;
     pThis->u.s.hInterface = NULL;
     pThis->u.s.hClient = NULL;
     pThis->u.s.hUnicast = NULL;

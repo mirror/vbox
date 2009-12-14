@@ -336,7 +336,7 @@ vboxnetbow_NAME          = vboxbow
 vboxnetbow_DEFS          = vboxnetflt_DEFS VBOX_WITH_NETFLT_CROSSBOW
 vboxnetbow_DEPS         += $(VBOX_SVN_REV_KMK)
 vboxnetbow_INCS         := $(PATH_SUB_CURRENT)
-vboxnetbow_LDFLAGS      += -N drv/vboxdrv -N misc/mac
+vboxnetbow_LDFLAGS      += -N drv/vboxdrv -N drv/vnic -N misc/mac -N misc/dls
 vboxnetbow_LIBS = \
 	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
 vboxnetbow_SOURCES.solaris = solaris/VBoxNetFltBow-solaris.c
