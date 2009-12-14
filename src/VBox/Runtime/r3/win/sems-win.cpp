@@ -264,6 +264,13 @@ RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
     }
 }
 
+
+RTDECL(int)  RTSemMutexRequestNoResumeDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return RTSemMutexRequestNoResume(MutexSem, cMillies);
+}
+
+
 RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
 {
     /*

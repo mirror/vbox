@@ -32,11 +32,15 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/semaphore.h>
-#include <iprt/assert.h>
+#include "internal/iprt.h"
+
 #include <iprt/alloc.h>
-#include <iprt/thread.h>
 #include <iprt/asm.h>
+#include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/lockvalidator.h>
+#include <iprt/thread.h>
+#include "internal/magics.h"
 #include "internal/strict.h"
 
 #include <errno.h>
@@ -57,27 +61,14 @@ struct RTSEMMUTEXINTERNAL
     volatile pthread_t  Owner;
     /** Nesting count. */
     volatile uint32_t   cNesting;
+    /** Magic value (RTSEMMUTEX_MAGIC). */
+    uint32_t            u32Magic;
+#ifdef RTSEMMUTEX_STRICT
+    /** Lock validator record associated with this mutex. */
+    RTLOCKVALIDATORREC  ValidatorRec;
+#endif
 };
 
-
-
-/**
- * Validate a Mutex semaphore handle passed to one of the interface.
- *
- * @returns true if valid.
- * @returns false if invalid.
- * @param   pIntMutexSem    Pointer to the mutex semaphore to validate.
- */
-DECLINLINE(bool) rtsemMutexValid(struct RTSEMMUTEXINTERNAL *pIntMutexSem)
-{
-    if ((uintptr_t)pIntMutexSem < 0x10000)
-        return false;
-
-    if (pIntMutexSem->cNesting == (uint32_t)~0)
-        return false;
-
-    return true;
-}
 
 
 RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
@@ -87,8 +78,8 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
     /*
      * Allocate semaphore handle.
      */
-    struct RTSEMMUTEXINTERNAL *pIntMutexSem = (struct RTSEMMUTEXINTERNAL *)RTMemAlloc(sizeof(struct RTSEMMUTEXINTERNAL));
-    if (pIntMutexSem)
+    struct RTSEMMUTEXINTERNAL *pThis = (struct RTSEMMUTEXINTERNAL *)RTMemAlloc(sizeof(struct RTSEMMUTEXINTERNAL));
+    if (pThis)
     {
         /*
          * Create the semaphore.
@@ -97,20 +88,24 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
         rc = pthread_mutexattr_init(&MutexAttr);
         if (!rc)
         {
-            rc = pthread_mutex_init(&pIntMutexSem->Mutex, &MutexAttr);
+            rc = pthread_mutex_init(&pThis->Mutex, &MutexAttr);
             if (!rc)
             {
                 pthread_mutexattr_destroy(&MutexAttr);
 
-                pIntMutexSem->Owner    = (pthread_t)-1;
-                pIntMutexSem->cNesting = 0;
+                pThis->Owner    = (pthread_t)-1;
+                pThis->cNesting = 0;
+                pThis->u32Magic = RTSEMMUTEX_MAGIC;
+#ifdef RTSEMMUTEX_STRICT
+                RTLockValidatorInit(&pThis->ValidatorRec, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, NULL, pThis);
+#endif
 
-                *pMutexSem = pIntMutexSem;
+                *pMutexSem = pThis;
                 return VINF_SUCCESS;
             }
             pthread_mutexattr_destroy(&MutexAttr);
         }
-        RTMemFree(pIntMutexSem);
+        RTMemFree(pThis);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -124,17 +119,16 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
     /*
      * Validate input.
      */
-    if (!rtsemMutexValid(MutexSem))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", MutexSem));
-        return VERR_INVALID_HANDLE;
-    }
+    if (MutexSem == NIL_RTSEMMUTEX)
+        return VINF_SUCCESS;
+    struct RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Try destroy it.
      */
-    struct RTSEMMUTEXINTERNAL *pIntMutexSem = MutexSem;
-    int rc = pthread_mutex_destroy(&pIntMutexSem->Mutex);
+    int rc = pthread_mutex_destroy(&pThis->Mutex);
     if (rc)
     {
         AssertMsgFailed(("Failed to destroy mutex sem %p, rc=%d.\n", MutexSem, rc));
@@ -144,36 +138,45 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
     /*
      * Free the memory and be gone.
      */
-    pIntMutexSem->Owner    = (pthread_t)-1;
-    pIntMutexSem->cNesting = ~0;
-    RTMemTmpFree(pIntMutexSem);
+    ASMAtomicWriteU32(&pThis->u32Magic, RTSEMMUTEX_MAGIC_DEAD);
+    pThis->Owner    = (pthread_t)-1;
+    pThis->cNesting = UINT32_MAX;
+#ifdef RTSEMMUTEX_STRICT
+    RTLockValidatorDelete(&pThis->ValidatorRec);
+#endif
+    RTMemTmpFree(pThis);
 
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
+DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, RTSEMMUTEX_STRICT_POS_DECL)
 {
     /*
      * Validate input.
      */
-    if (!rtsemMutexValid(MutexSem))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", MutexSem));
-        return VERR_INVALID_HANDLE;
-    }
+    struct RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
+
+#ifdef RTSEMMUTEX_STRICT
+    RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
+    RTLockValidatorCheckOrder(&pThis->ValidatorRec, hThreadSelf, RTSEMMUTEX_STRICT_POS_ARGS);
+#endif
 
     /*
      * Check if nested request.
      */
-    pthread_t                     Self = pthread_self();
-    struct RTSEMMUTEXINTERNAL    *pIntMutexSem = MutexSem;
-    if (    pIntMutexSem->Owner == Self
-        &&  pIntMutexSem->cNesting > 0)
+    pthread_t Self = pthread_self();
+    if (    pThis->Owner == Self
+        &&  pThis->cNesting > 0)
     {
-        pIntMutexSem->cNesting++;
+        ASMAtomicIncU32(&pThis->cNesting);
         return VINF_SUCCESS;
     }
+#ifndef RTSEMMUTEX_STRICT
+    RTTHREAD hThreadSelf = RTThreadSelf();
+#endif
 
     /*
      * Lock it.
@@ -181,7 +184,9 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
     if (cMillies == RT_INDEFINITE_WAIT)
     {
         /* take mutex */
-        int rc = pthread_mutex_lock(&pIntMutexSem->Mutex);
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX, RTSEMMUTEX_STRICT_BLOCK_ARGS(&pThis->ValidatorRec));
+        int rc = pthread_mutex_lock(&pThis->Mutex);
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_MUTEX);
         if (rc)
         {
             AssertMsgFailed(("Failed to lock mutex sem %p, rc=%d.\n", MutexSem, rc)); NOREF(rc);
@@ -208,10 +213,12 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
                 ts.tv_nsec -= 1000000000;
                 ts.tv_sec++;
             }
+            RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX, RTSEMMUTEX_STRICT_BLOCK_ARGS(&pThis->ValidatorRec));
         }
 
         /* take mutex */
-        int rc = pthread_mutex_timedlock(&pIntMutexSem->Mutex, &ts);
+        int rc = pthread_mutex_timedlock(&pThis->Mutex, &ts);
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_MUTEX);
         if (rc)
         {
             AssertMsg(rc == ETIMEDOUT, ("Failed to lock mutex sem %p, rc=%d.\n", MutexSem, rc)); NOREF(rc);
@@ -223,22 +230,55 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
     /*
      * Set the owner and nesting.
      */
-    pIntMutexSem->Owner = Self;
-    ASMAtomicXchgU32(&pIntMutexSem->cNesting, 1);
+    pThis->Owner = Self;
+    ASMAtomicWriteU32(&pThis->cNesting, 1);
 #ifdef RTSEMMUTEX_STRICT
-    RTTHREAD Thread = RTThreadSelf();
-    if (Thread != NIL_RTTHREAD)
-        RTThreadWriteLockInc(Thread);
+    RTThreadWriteLockInc(RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, RTSEMMUTEX_STRICT_POS_ARGS));
 #endif
 
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
+RTDECL(int) RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
+{
+#ifndef RTSEMMUTEX_STRICT
+    return rtSemMutexRequest(MutexSem, cMillies, RTSEMMUTEX_STRICT_POS_ARGS);
+#else
+    return RTSemMutexRequestDebug(MutexSem, cMillies, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
+#endif
+}
+
+
+RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+#ifdef RTSEMMUTEX_STRICT
+    return rtSemMutexRequest(MutexSem, cMillies, RTSEMMUTEX_STRICT_POS_ARGS);
+#else
+    return RTSemMutexRequest(MutexSem, cMillies);
+#endif
+}
+
+
+RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
 {
     /* EINTR isn't returned by the wait functions we're using. */
+#ifndef RTSEMMUTEX_STRICT
     return RTSemMutexRequest(MutexSem, cMillies);
+#else
+    return RTSemMutexRequestDebug(MutexSem, cMillies, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
+#endif
+}
+
+
+RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    /* EINTR isn't returned by the wait functions we're using. */
+#ifdef RTSEMMUTEX_STRICT
+    return RTSemMutexRequestDebug(MutexSem, cMillies, RTSEMMUTEX_STRICT_POS_ARGS);
+#else
+    return RTSemMutexRequest(MutexSem, cMillies);
+#endif
 }
 
 
@@ -247,31 +287,28 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     /*
      * Validate input.
      */
-    if (!rtsemMutexValid(MutexSem))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", MutexSem));
-        return VERR_INVALID_HANDLE;
-    }
+    struct RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Check if nested.
      */
-    pthread_t                     Self = pthread_self();
-    struct RTSEMMUTEXINTERNAL    *pIntMutexSem = MutexSem;
-    if (    pIntMutexSem->Owner != Self
-        ||  pIntMutexSem->cNesting == (uint32_t)~0)
+    pthread_t Self = pthread_self();
+    if (RT_UNLIKELY(    pThis->Owner != Self
+                    ||  pThis->cNesting == 0))
     {
         AssertMsgFailed(("Not owner of mutex %p!! Self=%08x Owner=%08x cNesting=%d\n",
-                         pIntMutexSem, Self, pIntMutexSem->Owner, pIntMutexSem->cNesting));
+                         pThis, Self, pThis->Owner, pThis->cNesting));
         return VERR_NOT_OWNER;
     }
 
     /*
      * If nested we'll just pop a nesting.
      */
-    if (pIntMutexSem->cNesting > 1)
+    if (pThis->cNesting > 1)
     {
-        pIntMutexSem->cNesting--;
+        ASMAtomicDecU32(&pThis->cNesting);
         return VINF_SUCCESS;
     }
 
@@ -279,18 +316,16 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
      * Clear the state. (cNesting == 1)
      */
 #ifdef RTSEMMUTEX_STRICT
-    RTTHREAD Thread = RTThreadSelf();
-    if (Thread != NIL_RTTHREAD)
-        RTThreadWriteLockDec(Thread);
+    RTThreadWriteLockDec(RTLockValidatorUnsetOwner(&pThis->ValidatorRec));
 #endif
-    pIntMutexSem->Owner    = (pthread_t)-1;
-    ASMAtomicXchgU32(&pIntMutexSem->cNesting, 0);
+    pThis->Owner = (pthread_t)-1;
+    ASMAtomicXchgU32(&pThis->cNesting, 0);
 
     /*
      * Unlock mutex semaphore.
      */
-    int rc = pthread_mutex_unlock(&pIntMutexSem->Mutex);
-    if (rc)
+    int rc = pthread_mutex_unlock(&pThis->Mutex);
+    if (RT_UNLIKELY(rc))
     {
         AssertMsgFailed(("Failed to unlock mutex sem %p, rc=%d.\n", MutexSem, rc)); NOREF(rc);
         return RTErrConvertFromErrno(rc);

@@ -95,6 +95,14 @@ typedef enum RTTHREADSTATE
 RTDECL(RTTHREAD) RTThreadSelf(void);
 
 /**
+ * Get the thread handle of the current thread, automatically adopting alien
+ * threads.
+ *
+ * @returns Thread handle.
+ */
+RTDECL(RTTHREAD) RTThreadSelfAutoAdopt(void);
+
+/**
  * Get the native thread handle of the current thread.
  *
  * @returns Native thread handle.
