@@ -163,7 +163,7 @@ Machine::HWData::HWData()
     mMonitorCount = 1;
     mHWVirtExEnabled = true;
     mHWVirtExNestedPagingEnabled = false;
-    mHWVirtExVPIDEnabled = false;
+    mHWVirtExVPIDEnabled = true;
 #if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
     mHWVirtExExclusive = false;
 #else
