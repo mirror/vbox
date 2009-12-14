@@ -441,7 +441,7 @@ int handleDiscardState(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-int handleAdoptdState(HandlerArg *a)
+int handleAdoptState(HandlerArg *a)
 {
     HRESULT rc;
 
