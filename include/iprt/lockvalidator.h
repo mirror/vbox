@@ -171,6 +171,9 @@ RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThrea
  *
  * This is typically called after acquiring the lock.
  *
+ * @returns hThread resolved.  Can return NIL_RTHREAD iff we fail to adopt the
+ *          alien thread or if pRec is invalid.
+ *
  * @param   pRec                The validator record.
  * @param   hThread             The handle of the calling thread.  If not known,
  *                              pass NIL_RTTHREAD and this method will figure it
@@ -183,7 +186,7 @@ RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThrea
  * @param   pszFunction         The functionn where the lock is being acquired
  *                              from.  Optional.
  */
-RTDECL(void) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 
 /**
@@ -191,9 +194,11 @@ RTDECL(void) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread,
  *
  * This is typically called before release the lock.
  *
+ * @returns The thread handle of the previous owner.  NIL_RTTHREAD if the record
+ *          is invalid or didn't have any owner.
  * @param   pRec                The validator record.
  */
-RTDECL(void) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec);
+RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec);
 
 
 /*RTDECL(int) RTLockValidatorClassCreate();*/

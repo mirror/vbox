@@ -334,6 +334,22 @@ RT_EXPORT_SYMBOL(RTThreadAdopt);
 
 
 /**
+ * Get the thread handle of the current thread, automatically adopting alien
+ * threads.
+ *
+ * @returns Thread handle.
+ */
+RTDECL(RTTHREAD) RTThreadSelfAutoAdopt(void)
+{
+    RTTHREAD hSelf = RTThreadSelf();
+    if (RT_UNLIKELY(hSelf == NIL_RTTHREAD))
+        RTThreadAdopt(RTTHREADTYPE_DEFAULT, 0, NULL, &hSelf);
+    return hSelf;
+}
+RT_EXPORT_SYMBOL(RTThreadSelfAutoAdopt);
+
+
+/**
  * Allocates a per thread data structure and initializes the basic fields.
  *
  * @returns Pointer to per thread data structure.
@@ -1236,7 +1252,7 @@ RT_EXPORT_SYMBOL(RTThreadGetWriteLockCount);
 RTDECL(void) RTThreadWriteLockInc(RTTHREAD Thread)
 {
     PRTTHREADINT pThread = rtThreadGet(Thread);
-    Assert(pThread);
+    AssertReturnVoid(pThread);
     ASMAtomicIncS32(&pThread->cWriteLocks);
     rtThreadRelease(pThread);
 }
@@ -1251,7 +1267,7 @@ RT_EXPORT_SYMBOL(RTThreadWriteLockInc);
 RTDECL(void) RTThreadWriteLockDec(RTTHREAD Thread)
 {
     PRTTHREADINT pThread = rtThreadGet(Thread);
-    Assert(pThread);
+    AssertReturnVoid(pThread);
     ASMAtomicDecS32(&pThread->cWriteLocks);
     rtThreadRelease(pThread);
 }
@@ -1542,10 +1558,28 @@ RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState,
                               PRTLOCKVALIDATORREC pValidatorRec, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 
 {
-    PRTTHREADINT pThread = hThread;
     Assert(RTTHREAD_IS_SLEEPING(enmState));
-    if (pThread && rtThreadGetState(pThread) == RTTHREADSTATE_RUNNING)
+
+    /*
+     * Fend off wild life.
+     */
+    PRTTHREADINT pThread = hThread;
+    if (!pThread)
+        return;
+    if (rtThreadGetState(pThread) != RTTHREADSTATE_RUNNING)
+        return;
+
+    if (!pValidatorRec)
+        /*
+         * If no validator record, just update the thread state.
+         */
+        rtThreadSetState(pThread, enmState);
+    else
     {
+        /*
+         * Record the location and everything before changing the state and
+         * performing deadlock detection.
+         */
         /** @todo This has to be serialized! The deadlock detection isn't 100% safe!!! */
         pThread->Block.pRec         = pValidatorRec;
         pThread->pszBlockFunction   = pszFunction;

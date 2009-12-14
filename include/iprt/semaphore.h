@@ -237,6 +237,42 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies);
 RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies);
 
 /**
+ * Debug version of RTSemMutexRequest that tracks the location.
+ *
+ * @returns iprt status code.
+ *          Will not return VERR_INTERRUPTED.
+ * @param   MutexSem            The mutex semaphore to request ownership over.
+ * @param   cMillies            The number of milliseconds to wait.
+ * @param   uId
+ * @param   uId                 Some kind of locking location ID.  Typically a
+ *                              return address up the stack.  Optional (0).
+ * @param   pszFile             The file where the lock is being acquired from.
+ *                              Optional.
+ * @param   iLine               The line number in that file.  Optional (0).
+ * @param   pszFunction         The functionn where the lock is being acquired
+ *                              from.  Optional.
+ */
+RTDECL(int)  RTSemMutexRequestDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+
+/**
+ * Debug version of RTSemMutexRequestNoResume that tracks the location.
+ *
+ * @returns iprt status code.
+ *          Will not return VERR_INTERRUPTED.
+ * @param   MutexSem            The mutex semaphore to request ownership over.
+ * @param   cMillies            The number of milliseconds to wait.
+ * @param   uId
+ * @param   uId                 Some kind of locking location ID.  Typically a
+ *                              return address up the stack.  Optional (0).
+ * @param   pszFile             The file where the lock is being acquired from.
+ *                              Optional.
+ * @param   iLine               The line number in that file.  Optional (0).
+ * @param   pszFunction         The functionn where the lock is being acquired
+ *                              from.  Optional.
+ */
+RTDECL(int)  RTSemMutexRequestNoResumeDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+
+/**
  * Release the ownership of a mutex semaphore.
  *
  * @returns iprt status code.

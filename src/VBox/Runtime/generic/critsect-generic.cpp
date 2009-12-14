@@ -243,7 +243,7 @@ RTDECL(int) RTCritSectTryEnter(PRTCRITSECT pCritSect)
     pCritSect->cNestings = 1;
     ASMAtomicWriteHandle(&pCritSect->NativeThreadOwner, NativeThreadSelf);
 #ifdef RTCRITSECT_STRICT
-    RTLockValidatorSetOwner(pCritSect->pValidatorRec, ThreadSelf, uId, RT_SRC_POS_ARGS);
+    RTThreadWriteLockInc(RTLockValidatorSetOwner(pCritSect->pValidatorRec, ThreadSelf, uId, RT_SRC_POS_ARGS));
 #endif
 
     return VINF_SUCCESS;
@@ -282,10 +282,8 @@ RTDECL(int) RTCritSectEnter(PRTCRITSECT pCritSect)
     Assert(pCritSect->u32Magic == RTCRITSECT_MAGIC);
     RTNATIVETHREAD  NativeThreadSelf = RTThreadNativeSelf();
 #ifdef RTCRITSECT_STRICT
-    RTTHREAD        ThreadSelf = RTThreadSelf();
-    if (ThreadSelf == NIL_RTTHREAD)
-        RTThreadAdopt(RTTHREADTYPE_DEFAULT, 0, NULL, &ThreadSelf);
-    RTLockValidatorCheckOrder(pCritSect->pValidatorRec, ThreadSelf, uId, RT_SRC_POS_ARGS);
+    RTTHREAD        hThreadSelf = RTThreadSelfAutoAdopt();
+    RTLockValidatorCheckOrder(pCritSect->pValidatorRec, hThreadSelf, uId, RT_SRC_POS_ARGS);
 #endif
 
     /** If the critical section has already been destroyed, then inform the caller. */
@@ -314,15 +312,17 @@ RTDECL(int) RTCritSectEnter(PRTCRITSECT pCritSect)
             return VERR_SEM_NESTED;
         }
 
+        /*
+         * Wait for the current owner to release it.
+         */
+#ifndef RTCRITSECT_STRICT
+        RTTHREAD hThreadSelf = RTThreadSelf();
+#endif
         for (;;)
         {
-#ifdef RTCRITSECT_STRICT
-            RTThreadBlocking(ThreadSelf, RTTHREADSTATE_CRITSECT, pCritSect->pValidatorRec, uId, RT_SRC_POS_ARGS);
-#endif
+            RTThreadBlocking(hThreadSelf, RTTHREADSTATE_CRITSECT, RTCRITSECT_STRICT_BLOCK_ARGS(pCritSect->pValidatorRec));
             int rc = RTSemEventWait(pCritSect->EventSem, RT_INDEFINITE_WAIT);
-#ifdef RTCRITSECT_STRICT
-            RTThreadUnblocked(ThreadSelf, RTTHREADSTATE_CRITSECT);
-#endif
+            RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_CRITSECT);
             if (pCritSect->u32Magic != RTCRITSECT_MAGIC)
                 return VERR_SEM_DESTROYED;
             if (rc == VINF_SUCCESS)
@@ -338,8 +338,7 @@ RTDECL(int) RTCritSectEnter(PRTCRITSECT pCritSect)
     pCritSect->cNestings = 1;
     ASMAtomicWriteHandle(&pCritSect->NativeThreadOwner, NativeThreadSelf);
 #ifdef RTCRITSECT_STRICT
-    RTLockValidatorSetOwner(pCritSect->pValidatorRec, ThreadSelf, uId, RT_SRC_POS_ARGS);
-    RTThreadWriteLockInc(ThreadSelf);
+    RTThreadWriteLockInc(RTLockValidatorSetOwner(pCritSect->pValidatorRec, hThreadSelf, uId, RT_SRC_POS_ARGS));
 #endif
 
     return VINF_SUCCESS;
@@ -392,7 +391,7 @@ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
          * Decrement waiters, if >= 0 then we have to wake one of them up.
          */
 #ifdef RTCRITSECT_STRICT
-        RTLockValidatorUnsetOwner(pCritSect->pValidatorRec);
+        RTThreadWriteLockInc(RTLockValidatorUnsetOwner(pCritSect->pValidatorRec));
 #endif
         ASMAtomicWriteHandle(&pCritSect->NativeThreadOwner, NIL_RTNATIVETHREAD);
         if (ASMAtomicDecS32(&pCritSect->cLockers) >= 0)

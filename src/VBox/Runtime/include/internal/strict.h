@@ -41,6 +41,17 @@
 # define RTCRITSECT_STRICT
 #endif
 
+#ifdef RTCRITSECT_STRICT
+# define RTCRITSECT_STRICT_POS_DECL         RTHCUINTPTR uId, RT_SRC_POS_DECL
+# define RTCRITSECT_STRICT_POS_ARGS         uId, RT_SRC_POS_ARGS
+# define RTCRITSECT_STRICT_BLOCK_ARGS(pRec) pRec,     uId, RT_SRC_POS_ARGS
+#else
+# define RTCRITSECT_STRICT_POS_DECL         int iDummy
+# define RTCRITSECT_STRICT_POS_ARGS         0
+# define RTCRITSECT_STRICT_BLOCK_ARGS(pRec) NULL, 0, NULL, 0, NULL
+#endif
+
+
 /** @def RTSEMMUTEX_STRICT
  * Enables strictness checks and lock accounting of the RTSemMutex API.
  */
@@ -48,12 +59,34 @@
 # define RTSEMMUTEX_STRICT
 #endif
 
+#ifdef RTSEMMUTEX_STRICT
+# define RTSEMMUTEX_STRICT_POS_DECL         RTHCUINTPTR uId, RT_SRC_POS_DECL
+# define RTSEMMUTEX_STRICT_POS_ARGS         uId, RT_SRC_POS_ARGS
+# define RTSEMMUTEX_STRICT_BLOCK_ARGS(pRec) pRec,     uId, RT_SRC_POS_ARGS
+#else
+# define RTSEMMUTEX_STRICT_POS_DECL         int iDummy
+# define RTSEMMUTEX_STRICT_POS_ARGS         0
+# define RTSEMMUTEX_STRICT_BLOCK_ARGS(pRec) NULL, 0, NULL, 0, NULL
+#endif
+
+
 /** @def RTSEMRW_STRICT
  * Enables strictness checks and lock accounting of the RTSemRW API.
  */
 #if defined(DOXYGEN_RUNNING) || (!defined(RTSEMRW_STRICT) && (defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT)))
 # define RTSEMRW_STRICT
 #endif
+
+#ifdef RTSEMRW_STRICT
+# define RTSEMRW_STRICT_POS_DECL            RTHCUINTPTR uId, RT_SRC_POS_DECL
+# define RTSEMRW_STRICT_POS_ARGS            uId, RT_SRC_POS_ARGS
+# define RTSEMRW_STRICT_BLOCK_ARGS(pRec)    pRec, uId, RT_SRC_POS_ARGS
+#else
+# define RTSEMRW_STRICT_POS_DECL            int iDummy
+# define RTSEMRW_STRICT_POS_ARGS            0
+# define RTSEMRW_STRICT_BLOCK_ARGS(pRec)    NULL, 0, NULL, 0, NULL
+#endif
+
 
 
 /** @} */

@@ -125,3 +125,31 @@ RTDECL(int) RTSemMutexRequest(RTSEMMUTEX Mutex, unsigned cMillies)
 }
 RT_EXPORT_SYMBOL(RTSemMutexRequest);
 
+
+RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX Mutex, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    int rc;
+    if (cMillies == RT_INDEFINITE_WAIT)
+    {
+        do rc = RTSemMutexRequestNoResumeDebug(Mutex, cMillies, uId, RT_SRC_POS_ARGS);
+        while (rc == VERR_INTERRUPTED);
+    }
+    else
+    {
+        const uint64_t u64Start = RTTimeMilliTS();
+        rc = RTSemMutexRequestNoResumeDebug(Mutex, cMillies, uId, RT_SRC_POS_ARGS);
+        if (rc == VERR_INTERRUPTED)
+        {
+            do
+            {
+                uint64_t u64Elapsed = RTTimeMilliTS() - u64Start;
+                if (u64Elapsed >= cMillies)
+                    return VERR_TIMEOUT;
+                rc = RTSemMutexRequestNoResumeDebug(Mutex, cMillies - (unsigned)u64Elapsed, uId, RT_SRC_POS_ARGS);
+            } while (rc == VERR_INTERRUPTED);
+        }
+    }
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTSemMutexRequestDebug);
+

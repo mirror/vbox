@@ -159,6 +159,13 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
 }
 
 
+RTDECL(int)  RTSemMutexRequestDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return RTSemMutexRequest(MutexSem, cMillies);
+}
+
+/** @todo implement the NoResume versions */
+
 RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
 {
     /*

@@ -132,9 +132,9 @@ RTDECL(int) RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread
 }
 
 
-RTDECL(void) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    AssertReturnVoid(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC);
+    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, NIL_RTTHREAD);
     Assert(pRec->hThread == NIL_RTTHREAD);
 
     /*
@@ -146,26 +146,27 @@ RTDECL(void) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread,
     ASMAtomicUoWritePtr((void * volatile *)&pRec->uId,          (void *)uId);
 
     if (hThread == NIL_RTTHREAD)
-    {
-        hThread = RTThreadSelf();
 #ifdef IN_RING3
-        if (RT_UNLIKELY(hThread == NIL_RTTHREAD))
-            RTThreadAdopt(RTTHREADTYPE_DEFAULT, 0, NULL, &hThread);
+        hThread = RTThreadSelfAutoAdopt();
+#else
+        hThread = RTThreadSelf();
 #endif
-    }
     ASMAtomicWriteHandle(&pRec->hThread, hThread);
 
     /*
      * Push the lock onto the lock stack.
      */
     /** @todo push it onto the per-thread lock stack. */
+
+    return hThread;
 }
 
 
-RTDECL(void) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec)
+RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec)
 {
-    AssertReturnVoid(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC);
-    Assert(pRec->hThread != NIL_RTTHREAD);
+    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, NIL_RTTHREAD);
+    RTTHREAD hThread = pRec->hThread;
+    AssertReturn(hThread != NIL_RTTHREAD, hThread);
 
     /*
      * Pop (remove) the lock.
@@ -176,5 +177,7 @@ RTDECL(void) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec)
      * Update the record.
      */
     ASMAtomicWriteHandle(&pRec->hThread, NIL_RTTHREAD);
+
+    return hThread;
 }
 
