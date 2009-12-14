@@ -19,7 +19,6 @@
 #define MBUF_ZONE_SIZE 100
 static int mbuf_zone_init(PNATState pData)
 {
-    int limit;
     struct mbuf_zone *mzone;
     int i;
     struct mbuf *m;
@@ -37,7 +36,7 @@ static int mbuf_zone_init(PNATState pData)
         return -1;
     }
 
-    for(i = 0; i < MBUF_ZONE_SIZE; ++i)
+    for (i = 0; i < MBUF_ZONE_SIZE; ++i)
     {
         m = (struct mbuf *)((char *)zone + i*msize);
         memset(m, 0, sizeof(struct mbuf));
@@ -63,7 +62,7 @@ void m_fini(PNATState pData)
     {
         mz = LIST_FIRST(&pData->mbuf_zone_head);
         zone = mz->mbuf_zone_base_addr;
-        for(i = 0; i < MBUF_ZONE_SIZE; ++i)
+        for (i = 0; i < MBUF_ZONE_SIZE; ++i)
         {
             m = (struct mbuf *)((char *)zone + i*msize);
             if (   (m->m_flags & M_EXT) 
@@ -79,8 +78,6 @@ void m_fini(PNATState pData)
 void
 m_init(PNATState pData)
 {
-    int i;
-    struct mbuf *m;
     int rc = 0;
     m_freelist.m_next = m_freelist.m_prev = &m_freelist;
     m_usedlist.m_next = m_usedlist.m_prev = &m_usedlist;
