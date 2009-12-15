@@ -34,6 +34,7 @@
 #include <VBox/sup.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/lockvalidator.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
 

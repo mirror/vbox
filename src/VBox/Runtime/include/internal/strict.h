@@ -37,7 +37,7 @@
 /** @def RTCRITSECT_STRICT
  * Enables strictness checks and lock accounting of the RTCritSect API.
  */
-#if defined(DOXYGEN_RUNNING) || (!defined(RTCRITSECT_STRICT) && (defined(RT_STRICT) || defined(RT_LOCK_STRICT)))
+#if defined(DOXYGEN_RUNNING) || (!defined(RTCRITSECT_STRICT) && defined(IN_RING3) && (defined(RT_STRICT) || defined(RT_LOCK_STRICT)))
 # define RTCRITSECT_STRICT
 #endif
 
@@ -45,7 +45,7 @@
 # define RTCRITSECT_STRICT_POS_DECL             RTHCUINTPTR uId, RT_SRC_POS_DECL
 # define RTCRITSECT_STRICT_POS_ARGS             uId, RT_SRC_POS_ARGS
 # define RTCRITSECT_STRICT_BLOCK(hThread, pRec, fRecursive) \
-                                                RTThreadBlockingDebug((hThread), RTTHREADSTATE_CRITSECT, fRecursive, pRec, uId, RT_SRC_POS_ARGS)
+                                                RTLockValidatorCheckBlocking(pRec, (hThread), RTTHREADSTATE_CRITSECT, fRecursive, uId, RT_SRC_POS_ARGS)
 #else
 # define RTCRITSECT_STRICT_POS_DECL             int iDummy
 # define RTCRITSECT_STRICT_POS_ARGS             0
@@ -58,14 +58,14 @@
 /** @def RTSEMMUTEX_STRICT
  * Enables strictness checks and lock accounting of the RTSemMutex API.
  */
-#if defined(DOXYGEN_RUNNING) || (!defined(RTSEMMUTEX_STRICT) && (defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT)))
+#if defined(DOXYGEN_RUNNING) || (!defined(RTSEMMUTEX_STRICT) && defined(IN_RING3) && (defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT)))
 # define RTSEMMUTEX_STRICT
 #endif
 
 #ifdef RTSEMMUTEX_STRICT
 # define RTSEMMUTEX_STRICT_POS_DECL             RTHCUINTPTR uId, RT_SRC_POS_DECL
 # define RTSEMMUTEX_STRICT_POS_ARGS             uId, RT_SRC_POS_ARGS
-# define RTSEMMUTEX_STRICT_BLOCK(hThread, pRec) RTThreadBlockingDebug((hThread), RTTHREADSTATE_MUTEX, true, pRec, uId, RT_SRC_POS_ARGS)
+# define RTSEMMUTEX_STRICT_BLOCK(hThread, pRec) RTLockValidatorCheckBlocking(pRec, (hThread), RTTHREADSTATE_MUTEX, true, uId, RT_SRC_POS_ARGS)
 #else
 # define RTSEMMUTEX_STRICT_POS_DECL             int iDummy
 # define RTSEMMUTEX_STRICT_POS_ARGS             0
@@ -77,7 +77,7 @@
 /** @def RTSEMRW_STRICT
  * Enables strictness checks and lock accounting of the RTSemRW API.
  */
-#if defined(DOXYGEN_RUNNING) || (!defined(RTSEMRW_STRICT) && (defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT)))
+#if defined(DOXYGEN_RUNNING) || (!defined(RTSEMRW_STRICT) && defined(IN_RING3) && (defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT)))
 # define RTSEMRW_STRICT
 #endif
 

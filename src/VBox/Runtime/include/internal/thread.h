@@ -38,6 +38,7 @@
 # include <iprt/process.h>
 # include <iprt/critsect.h>
 #endif
+#include "internal/lockvalidator.h"
 #include "internal/magics.h"
 
 RT_C_DECLS_BEGIN
@@ -46,10 +47,10 @@ RT_C_DECLS_BEGIN
 
 
 /** Max thread name length. */
-#define RTTHREAD_NAME_LEN 16
+#define RTTHREAD_NAME_LEN       16
 #ifdef IPRT_WITH_GENERIC_TLS
 /** The number of TLS entries for the generic implementation. */
-# define RTTHREAD_TLS_ENTRIES 64
+# define RTTHREAD_TLS_ENTRIES   64
 #endif
 
 /**
@@ -89,24 +90,8 @@ typedef struct RTTHREADINT
     /** Actual stack size. */
     size_t                  cbStack;
 #ifdef IN_RING3
-    /** What we're blocking on. */
-    union RTTHREADINTBLOCKID
-    {
-        PRTLOCKVALIDATORREC pRec;
-        uint64_t            u64;
-    } Block;
-    /** Where we're blocking. */
-    const char volatile    *pszBlockFunction;
-    /** Where we're blocking. */
-    const char volatile    *pszBlockFile;
-    /** Where we're blocking. */
-    uint32_t volatile       uBlockLine;
-    /** Where we're blocking. */
-    RTHCUINTPTR volatile    uBlockId;
-    /** Number of registered write locks, mutexes and critsects that this thread owns. */
-    int32_t volatile        cWriteLocks;
-    /** Number of registered read locks that this thread owns, nesting included. */
-    int32_t volatile        cReadLocks;
+    /** The lock validator data. */
+    RTLOCKVALIDATORPERTHREAD LockValidator;
 #endif /* IN_RING3 */
 #ifdef IPRT_WITH_GENERIC_TLS
     /** The TLS entries for this thread. */
@@ -207,6 +192,17 @@ int rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority);
 void rtThreadClearTlsEntry(RTTLS iTls);
 void rtThreadTlsDestruction(PRTTHREADINT pThread); /* in tls-generic.cpp */
 #endif
+
+/**
+ * Gets the thread state.
+ *
+ * @returns The thread state.
+ * @param   pThread             The thread.
+ */
+DECLINLINE(RTTHREADSTATE) rtThreadGetState(PRTTHREADINT pThread)
+{
+    return pThread->enmState;
+}
 
 RT_C_DECLS_END
 
