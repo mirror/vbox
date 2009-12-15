@@ -2831,12 +2831,18 @@ void VBoxConsoleWnd::changePresentationMode (const VBoxChangePresentationModeEve
 # ifdef QT_MAC_USE_COCOA
     if (mIsFullscreen)
     {
-        QString testStr = vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_PresentationModeEnabled).toLower();
-        /* Default to false if it is an empty value */
-        if (testStr.isEmpty() || testStr == "false")
-            SetSystemUIMode (kUIModeAllHidden, 0);
-        else
-            SetSystemUIMode (kUIModeAllSuppressed, 0);
+        /* First check if we are on the primary screen, only than the
+           presentation mode have to be changed. */
+        QDesktopWidget* pDesktop = QApplication::desktop();
+        if (pDesktop->screenNumber(this) == pDesktop->primaryScreen())
+        {
+            QString testStr = vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_PresentationModeEnabled).toLower();
+            /* Default to false if it is an empty value */
+            if (testStr.isEmpty() || testStr == "false")
+                SetSystemUIMode (kUIModeAllHidden, 0);
+            else
+                SetSystemUIMode (kUIModeAllSuppressed, 0);
+        }
     }
     else
         SetSystemUIMode (kUIModeNormal, 0);
