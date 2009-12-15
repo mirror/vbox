@@ -1,6 +1,6 @@
 /** @file
  *
- * AutoWriteLock/AutoReadLock: smart R/W semaphore wrappers
+ * Automatic locks, implementation
  */
 
 /*
@@ -24,6 +24,8 @@
 
 #include <iprt/types.h>
 
+// macros for automatic lock validation;
+// use VBOX_WITH_LOCK_VALIDATOR to enable for debug mode
 #ifdef DEBUG
 # ifdef VBOX_WITH_LOCK_VALIDATOR
 #  define VBOX_WITH_DEBUG_LOCK_VALIDATOR
@@ -55,6 +57,7 @@ namespace util
 
 /**
  * Abstract base class for semaphore handles (RWLockHandle and WriteLockHandle).
+ * Don't use this directly, but this implements lock validation for them.
  */
 class LockHandle
 {
@@ -78,15 +81,16 @@ public:
      */
     virtual uint32_t writeLockLevel() const = 0;
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
-    void validateLock(LOCKVAL_SRC_POS_DECL);
-    void validateUnlock();
-#endif
-
     virtual void lockWrite(LOCKVAL_SRC_POS_DECL) = 0;
     virtual void unlockWrite() = 0;
     virtual void lockRead(LOCKVAL_SRC_POS_DECL) = 0;
     virtual void unlockRead() = 0;
+
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+    void validateLock(LOCKVAL_SRC_POS_DECL);
+    void validateUnlock();
+    virtual const char* describe() const = 0;
+#endif
 
     static RTTLS s_lockingStackTlsIndex;
 
@@ -119,6 +123,10 @@ public:
 
     virtual uint32_t writeLockLevel() const;
 
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+    virtual const char* describe() const;
+#endif
+
 private:
     struct Data;
     Data *m;
@@ -149,6 +157,10 @@ public:
     virtual void lockRead(LOCKVAL_SRC_POS_DECL);
     virtual void unlockRead();
     virtual uint32_t writeLockLevel() const;
+
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+    virtual const char* describe() const;
+#endif
 
 private:
     struct Data;
@@ -234,6 +246,10 @@ public:
     void acquire();
     void release();
 
+#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+    void dumpStack(const char *pcszMessage, RT_SRC_POS_DECL);
+#endif
+
 private:
     // prohibit copy + assignment
     AutoLockBase(const AutoLockBase&);
@@ -249,7 +265,7 @@ private:
 /**
  * Automatic read lock. Use this with a RWLockHandle to request a read/write
  * semaphore in read mode. You can also use this with a WriteLockHandle but
- * that makes little sense since they know no read mode.
+ * that makes little sense since they treat read mode like write mode.
  *
  * If constructed with a RWLockHandle or an instance of Lockable (which in
  * practice means any VirtualBoxBase derivative), it autoamtically requests
@@ -341,7 +357,7 @@ public:
  * Base class for all auto write locks.
  *
  * This cannot be used directly. Use AutoWriteLock or AutoMultiWriteLock2/3
- * which directly and indirectly derive from this.
+ * which derive from this.
  *
  * In addition to utility methods for subclasses, this implements the public
  * leave/enter/maybeLeave/maybeEnter methods, which are common to all
