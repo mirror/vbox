@@ -1995,7 +1995,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Automaticky zobrazit ikonu a nástrojovou lištu v celoobrazovkovém režimu</translation>
     </message>
 </context>
 <context>
@@ -3522,55 +3522,55 @@ p, li { white-space: pre-wrap; }
     </message>
     <message numerus="yes">
         <source>%n year(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n rokem</numerusform>
+            <numerusform>%n roky</numerusform>
+            <numerusform>%n roky</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n month(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n měsícem</numerusform>
+            <numerusform>%n měsíci</numerusform>
+            <numerusform>%n měsíci</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n dnem</numerusform>
+            <numerusform>%n dny</numerusform>
+            <numerusform>%n dny</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n hodinou</numerusform>
+            <numerusform>%n hodinami</numerusform>
+            <numerusform>%n hodinami</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n minutou</numerusform>
+            <numerusform>%n minutami</numerusform>
+            <numerusform>%n minutami</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n second(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n vteřinou</numerusform>
+            <numerusform>%n vteřinami</numerusform>
+            <numerusform>%n vteřinami</numerusform>
         </translation>
     </message>
     <message>
         <source>(CD/DVD)</source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD</translation>
     </message>
 </context>
 <context>
@@ -5801,12 +5801,12 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Opravdu chcete smazat CD/DVD-ROM zařízení?&lt;/p&gt;&lt;p&gt;Bez něj nebudete moci připojit žádný CD nebo DVD obraz ani nainstalovat přídavky pro hosta!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Odstranit</translation>
     </message>
 </context>
 <context>
@@ -5886,12 +5886,12 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     <message>
         <source>%1, %2 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
-        <translation type="unfinished"></translation>
+        <translation>Zbývající čas: %1, %2</translation>
     </message>
     <message>
         <source>%1 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
-        <translation type="unfinished"></translation>
+        <translation>Zbývající čas: %1</translation>
     </message>
 </context>
 <context>
@@ -6663,7 +6663,7 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
     <message>
         <source> (%1 ago)</source>
-        <translation type="unfinished"></translation>
+        <translation> (před %1)</translation>
     </message>
 </context>
 <context>
@@ -6701,10 +6701,10 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Varování: Chystáte se sejmout snímek z virtuálního počítače, který má připojen %n nesmazatelný obraz. Dokud budete pracovat s tímto snímkem nebude možné nesmazatelný disk obnovit aby jste nepřišli o data.</numerusform>
+            <numerusform>Varování: Chystáte se sejmout snímek z virtuálního počítače, který má připojeno %n nesmazatelných obrazů. Dokud budete pracovat s tímto snímkem nebude možné nesmazatelné disky obnovit aby jste nepřišli o data.</numerusform>
+            <numerusform>Varování: Chystáte se sejmout snímek z virtuálního počítače, který má připojeno %n nesmazatelných obrazů. Dokud budete pracovat s tímto snímkem nebude možné nesmazatelné disky obnovit aby jste nepřišli o data.</numerusform>
         </translation>
     </message>
 </context>
@@ -8947,7 +8947,7 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     </message>
     <message>
         <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished">Vybere podtyp aktuálně zvoleného řadiče pro úložiště.</translation>
+        <translation>Vybere podtyp aktuálně zvoleného řadiče pro úložiště.</translation>
     </message>
     <message>
         <source>S&amp;lot:</source>

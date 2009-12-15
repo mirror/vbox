@@ -4727,7 +4727,7 @@ Kies een andere bestandsnaam.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 can only be used to escape itself or %2, not %3</source>
-        <translation>In de vervangende reeks kan %1 alleen worden gebruikt om zichzelf in te dekken of %2 maar niet %3.</translation>
+        <translation>In de vervangende reeks kan %1 alleen worden gebruikt om zichzelf in te dekken of %2 maar niet %3</translation>
     </message>
     <message>
         <source>%1 matches newline characters</source>
@@ -4932,7 +4932,7 @@ precies één</translation>
     </message>
     <message>
         <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation>24 uurs tijd:%1:%2.%3 zijn ongeldig. Het uur is 24 maar de minuten, seconden en milliseconden zijn niet allemaal 0.</translation>
+        <translation>24 uurs tijd:%1:%2.%3 zijn ongeldig. Het uur is 24 maar de minuten, seconden en milliseconden zijn niet allemaal 0. </translation>
     </message>
     <message>
         <source>Time %1:%2:%3.%4 is invalid.</source>
