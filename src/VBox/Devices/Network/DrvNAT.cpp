@@ -142,6 +142,9 @@ typedef struct DRVNAT
     PPDMTHREAD              pSlirpThread;
     /** Queue for NAT-thread-external events. */
     PRTREQQUEUE             pSlirpReqQueue;
+    /** The guest IP for port-forwarding. */
+    uint32_t                GuestIP;
+    uint32_t                alignment1;
 
 #ifdef VBOX_WITH_SLIRP_MT
     PPDMTHREAD              pGuestThread;
@@ -153,7 +156,7 @@ typedef struct DRVNAT
     RTFILE                  PipeRead;
 # if HC_ARCH_BITS == 32
     /** Alignment padding. */
-    uint32_t                u32Alignment;
+    uint32_t                alignment2;
 # endif
 #else
     /** for external notification */
@@ -177,11 +180,11 @@ typedef struct DRVNAT
     PRTREQQUEUE             pUrgRecvReqQueue;
 
     /* makes access to device func RecvAvail and Recv atomical */
-    RTCRITSECT                csDevAccess;
-    volatile uint32_t cUrgPkt;
-    volatile uint32_t cPkt;
-    PTMTIMERR3 pTmrSlow;
-    PTMTIMERR3 pTmrFast;
+    RTCRITSECT              csDevAccess;
+    volatile uint32_t       cUrgPkt;
+    volatile uint32_t       cPkt;
+    PTMTIMERR3              pTmrSlow;
+    PTMTIMERR3              pTmrFast;
 } DRVNAT;
 AssertCompileMemberAlignment(DRVNAT, StatNATRecvWakeups, 8);
 /** Pointer the NAT driver instance data. */
@@ -834,7 +837,8 @@ static void drvNATSetMac(PDRVNAT pThis)
     {
         RTMAC Mac;
         pThis->pConfig->pfnGetMac(pThis->pConfig, &Mac);
-        slirp_set_ethaddr(pThis->pNATState, Mac.au8);
+        /* Re-activate the port forwarding. If  */
+        slirp_set_ethaddr_and_activate_port_forwarding(pThis->pNATState, Mac.au8, pThis->GuestIP);
     }
 }
 
@@ -916,6 +920,11 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
         struct in_addr GuestIP;
         /* @todo (vvl) use CTL_* */
         GETIP_DEF(rc, pThis, pNode, GuestIP, htonl(Network | CTL_GUEST));
+
+        /* Store the guest IP for re-establishing the port-forwarding rules. Note that GuestIP
+         * is not documented. Without */
+        if (pThis->GuestIP == INADDR_ANY)
+            pThis->GuestIP = GuestIP.s_addr;
 
         /*
          * Call slirp about it.
