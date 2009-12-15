@@ -1332,10 +1332,69 @@ VBOXGLXTAG(glXCreatePbuffer)(Display *dpy, GLXFBConfig config, ATTRIB_TYPE *attr
 DECLEXPORT(GLXPixmap) 
 VBOXGLXTAG(glXCreatePixmap)(Display *dpy, GLXFBConfig config, Pixmap pixmap, const ATTRIB_TYPE *attrib_list)
 {
+    ATTRIB_TYPE *attrib;
+    XVisualInfo *pVis;
+    GLX_Pixmap_t *pGlxPixmap;
     (void) dpy;
     (void) config;
-    (void) attrib_list;
 
+    pGlxPixmap = crCalloc(sizeof(GLX_Pixmap_t));
+    if (!pGlxPixmap)
+    {
+        crWarning("glXCreatePixmap failed to allocate memory");
+        return 0;
+    }
+
+    pVis = VBOXGLXTAG(glXGetVisualFromFBConfig)(dpy, config);
+    if (!pVis)
+    {
+        crWarning("Unknown config 0x%x in glXCreatePixmap", (unsigned int) config);
+        return 0;
+    }
+
+    pGlxPixmap->format = pVis->depth==24 ? GL_RGB:GL_RGBA;
+    pGlxPixmap->target = GL_TEXTURE_2D;
+
+    if (attrib_list)
+    {
+        for (attrib = attrib_list; *attrib != None; attrib++)
+        {
+            switch (*attrib)
+            {
+                case GLX_TEXTURE_FORMAT_EXT:
+                    attrib++;
+                    switch (*attrib)
+                    {
+                        case GLX_TEXTURE_FORMAT_RGBA_EXT:
+                            pGlxPixmap->format = GL_RGBA;
+                            break;
+                        case GLX_TEXTURE_FORMAT_RGB_EXT:
+                            pGlxPixmap->format = GL_RGB;
+                            break;
+                        default:
+                            crDebug("Unexpected GLX_TEXTURE_FORMAT_EXT 0x%x", (unsigned int) *attrib);
+                    }
+                    break;
+                case GLX_TEXTURE_TARGET_EXT:
+                    attrib++;
+                    switch (*attrib)
+                    {
+                        case GLX_TEXTURE_2D_EXT:
+                            pGlxPixmap->target = GL_TEXTURE_2D;
+                            break;
+                        case GLX_TEXTURE_RECTANGLE_EXT:
+                            pGlxPixmap->target = GL_TEXTURE_RECTANGLE_NV;
+                            break;
+                        default:
+                            crDebug("Unexpected GLX_TEXTURE_TARGET_EXT 0x%x", (unsigned int) *attrib);
+                    }
+                    break;
+                default: attrib++;
+            }
+        }
+    }
+
+    crHashtableAdd(stub.pGLXPixmapsHash, (unsigned int) pixmap, pGlxPixmap);
     return (GLXPixmap) pixmap;
 }
 
@@ -1437,8 +1496,9 @@ DECLEXPORT(GLXDrawable) VBOXGLXTAG(glXGetCurrentReadDrawable)(void)
 DECLEXPORT(int) VBOXGLXTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig config, int attribute, int *value)
 {
     XVisualInfo * pVisual;
+    const char * pExt;
 
-    pVisual =  glXGetVisualFromFBConfig(dpy, config);
+    pVisual =  VBOXGLXTAG(glXGetVisualFromFBConfig)(dpy, config);
     if (!pVisual)
     {
         crWarning("glXGetFBConfigAttrib for 0x%x, failed to get XVisualInfo", (int)config);
@@ -1454,10 +1514,16 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig confi
             break;
         case GLX_BIND_TO_TEXTURE_TARGETS_EXT:
             *value = GLX_TEXTURE_2D_BIT_EXT;
+            pExt = (const char *) stub.spu->dispatch_table.GetString(GL_EXTENSIONS);
+            if (crStrstr(pExt, "GL_NV_texture_rectangle")
+                || crStrstr(pExt, "GL_ARB_texture_rectangle")
+                || crStrstr(pExt, "GL_EXT_texture_rectangle"))
+            {
+                *value |= GLX_TEXTURE_RECTANGLE_BIT_EXT;
+            }
             break;
         case GLX_BIND_TO_TEXTURE_RGBA_EXT:
-            //crDebug("attribute=GLX_BIND_TO_TEXTURE_RGBA_EXT");
-            *value = True;
+            *value = pVisual->depth==32;
             break;
         case GLX_BIND_TO_TEXTURE_RGB_EXT:
             *value = True;
@@ -1837,7 +1903,7 @@ static void stubCheckXDamageCB(unsigned long key, void *data1, void *data2)
     }
 }
 
-static GLX_Pixmap_t* stubInitGlxPixmap(Display *dpy, GLXDrawable draw, ContextInfo *pContext)
+static GLX_Pixmap_t* stubInitGlxPixmap(GLX_Pixmap_t* pCreateInfoPixmap, Display *dpy, GLXDrawable draw, ContextInfo *pContext)
 {
     int x, y;
     unsigned int w, h;
@@ -1846,7 +1912,7 @@ static GLX_Pixmap_t* stubInitGlxPixmap(Display *dpy, GLXDrawable draw, ContextIn
     Window root;
     GLX_Pixmap_t *pGlxPixmap;
 
-    CRASSERT(pContext);
+    CRASSERT(pContext && pCreateInfoPixmap);
 
     if (!XGetGeometry(dpy, (Pixmap)draw, &root, &x, &y, &w, &h, &border, &depth))
     {
@@ -1872,7 +1938,8 @@ static GLX_Pixmap_t* stubInitGlxPixmap(Display *dpy, GLXDrawable draw, ContextIn
     pGlxPixmap->border = border;
     pGlxPixmap->depth = depth;
     pGlxPixmap->root = root;
-    pGlxPixmap->format = pGlxPixmap->depth==24 ? GL_RGB : GL_RGBA;
+    pGlxPixmap->format = pCreateInfoPixmap->format;
+    pGlxPixmap->target = pCreateInfoPixmap->target;
 
     /* Try to allocate shared memory
      * As we're allocating huge chunk of memory, do it in this function, only if this extension is really used
@@ -1909,7 +1976,7 @@ static GLX_Pixmap_t* stubInitGlxPixmap(Display *dpy, GLXDrawable draw, ContextIn
         pGlxPixmap->pDamageRegion = XCreateRegion();
         if (!pGlxPixmap->pDamageRegion)
         {
-            crWarning("stubInitGlxPixmap failed to create empy damage region for drawable 0x%x", (unsigned int) draw);
+            crWarning("stubInitGlxPixmap failed to create empty damage region for drawable 0x%x", (unsigned int) draw);
         }
 
         /*We have never seen this pixmap before, so mark it as dirty for first use*/
@@ -1926,11 +1993,12 @@ static GLX_Pixmap_t* stubInitGlxPixmap(Display *dpy, GLXDrawable draw, ContextIn
      * Note that we're making empty texture by passing NULL as pixels pointer, so there's no overhead transferring data to host.*/
     if (CR_MAX_TRANSFER_SIZE < 4*pGlxPixmap->w*pGlxPixmap->h)
     {
-        stub.spu->dispatch_table.TexImage2D(GL_TEXTURE_2D, 0, pGlxPixmap->format, pGlxPixmap->w, pGlxPixmap->h, 0, 
+        stub.spu->dispatch_table.TexImage2D(pGlxPixmap->target, 0, pGlxPixmap->format, pGlxPixmap->w, pGlxPixmap->h, 0, 
                                             GL_BGRA, GL_UNSIGNED_BYTE, NULL);
     }
 
     crHashtableAdd(pContext->pGLXPixmapsHash, (unsigned int) draw, pGlxPixmap);
+    crHashtableDelete(stub.pGLXPixmapsHash, (unsigned int) draw, crFree);
 
     return pGlxPixmap;
 }
@@ -1971,7 +2039,7 @@ static void stubXshmUpdateWholeImage(Display *dpy, GLXDrawable draw, GLX_Pixmap_
                   pGlxPixmap->x, pGlxPixmap->y, pGlxPixmap->w, pGlxPixmap->h, 0, 0);
         /* Have to make sure XCopyArea is processed */
         XSync(dpy, False);
-        stub.spu->dispatch_table.TexImage2D(GL_TEXTURE_2D, 0, pGlxPixmap->format, pGlxPixmap->w, pGlxPixmap->h, 0, 
+        stub.spu->dispatch_table.TexImage2D(pGlxPixmap->target, 0, pGlxPixmap->format, pGlxPixmap->w, pGlxPixmap->h, 0, 
                                             GL_BGRA, GL_UNSIGNED_BYTE, stub.xshmSI.shmaddr);
         /*crDebug("Sync texture for drawable 0x%x(dmg handle 0x%x) [%i,%i,%i,%i]", 
                   (unsigned int) draw, (unsigned int)pGlxPixmap->hDamage, 
@@ -2020,7 +2088,7 @@ static void stubXshmUpdateImageRect(Display *dpy, GLXDrawable draw, GLX_Pixmap_t
             stub.spu->dispatch_table.GetIntegerv(GL_UNPACK_ROW_LENGTH, &origUnpackRowLength);
             stub.spu->dispatch_table.PixelStorei(GL_UNPACK_ROW_LENGTH, pGlxPixmap->w);
         }
-        stub.spu->dispatch_table.TexSubImage2D(GL_TEXTURE_2D, 0, pRect->x, pRect->y, pRect->width, pRect->height, 
+        stub.spu->dispatch_table.TexSubImage2D(pGlxPixmap->target, 0, pRect->x, pRect->y, pRect->width, pRect->height, 
                                                GL_BGRA, GL_UNSIGNED_BYTE, stub.xshmSI.shmaddr);
         if (pRect->width!=pGlxPixmap->w)
         {
@@ -2062,8 +2130,6 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
 
     GLX_Pixmap_t *pGlxPixmap;
 
-    crDebug("->glXBindTexImageEXT");
-
     if (!stub.currentContext)
     {
         crWarning("glXBindTexImageEXT called without current context");
@@ -2073,10 +2139,18 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
     pGlxPixmap = (GLX_Pixmap_t *) crHashtableSearch(stub.currentContext->pGLXPixmapsHash, (unsigned int) draw);
     if (!pGlxPixmap)
     {
-        /*Not a fault, just setup the desired information, see comment for glXCreatePixmap function*/
-        pGlxPixmap = stubInitGlxPixmap(dpy, draw, stub.currentContext);
-
-        if (!pGlxPixmap) return;
+        pGlxPixmap = (GLX_Pixmap_t *) crHashtableSearch(stub.pGLXPixmapsHash, (unsigned int) draw);
+        if (!pGlxPixmap)
+        {
+            crDebug("Unknown drawable 0x%x in glXBindTexImageEXT!", (unsigned int) draw);
+            return;
+        }
+        pGlxPixmap = stubInitGlxPixmap(pGlxPixmap, dpy, draw, stub.currentContext);
+        if (!pGlxPixmap)
+        {
+            crDebug("glXBindTexImageEXT failed to get pGlxPixmap");
+            return;
+        }
     }
 
     /* If there's damage extension, then process incoming events as we need the information right now */
@@ -2130,7 +2204,7 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
             return;
         }
 
-        stub.spu->dispatch_table.TexImage2D(GL_TEXTURE_2D, 0, pGlxPixmap->format, pxim->width, pxim->height, 0, 
+        stub.spu->dispatch_table.TexImage2D(pGlxPixmap->target, 0, pGlxPixmap->format, pxim->width, pxim->height, 0, 
                                             GL_BGRA, GL_UNSIGNED_BYTE, (void*)(&(pxim->data[0])));
         XDestroyImage(pxim);
     }
