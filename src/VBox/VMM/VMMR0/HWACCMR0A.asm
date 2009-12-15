@@ -810,10 +810,11 @@ BEGINPROC VMXR0InvEPT
     dd          .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
  %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
-    mov         eax, [esp + 4]
-    mov         ecx, [esp + 8]
-;    invept      eax, qword [ecx]
-    DB          0x66, 0x0F, 0x38, 0x80, 0x1
+    mov         ecx, [esp + 4]
+    mov         edx, [esp + 8]
+    xor         eax, eax
+;    invept      ecx, qword [edx]
+    DB          0x66, 0x0F, 0x38, 0x80, 0xA
 %endif
     jnc         .valid_vmcs
     mov         eax, VERR_VMX_INVALID_VMCS_PTR
@@ -873,10 +874,11 @@ BEGINPROC VMXR0InvVPID
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
  %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
-    mov         eax, [esp + 4]
-    mov         ecx, [esp + 8]
-;    invvpid     eax, qword [ecx]
-    DB          0x66, 0x0F, 0x38, 0x81, 0x1
+    mov         ecx, [esp + 4]
+    mov         edx, [esp + 8]
+    xor         eax, eax
+;    invvpid     ecx, qword [edx]
+    DB          0x66, 0x0F, 0x38, 0x81, 0xA
 %endif
     jnc         .valid_vmcs
     mov         eax, VERR_VMX_INVALID_VMCS_PTR
