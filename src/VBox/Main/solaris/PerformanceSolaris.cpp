@@ -52,6 +52,7 @@ public:
 private:
     kstat_ctl_t *mKC;
     kstat_t     *mSysPages;
+    kstat_t     *mZFSCache;
 };
 
 CollectorHAL *createHAL()
@@ -62,7 +63,10 @@ CollectorHAL *createHAL()
 // Collector HAL for Solaris
 
 
-CollectorSolaris::CollectorSolaris() : mKC(0), mSysPages(0)
+CollectorSolaris::CollectorSolaris()
+    : mKC(0),
+      mSysPages(0),
+      mZFSCache(0)
 {
     if ((mKC = kstat_open()) == 0)
     {
@@ -74,6 +78,11 @@ CollectorSolaris::CollectorSolaris() : mKC(0), mSysPages(0)
     {
         Log(("kstat_lookup(system_pages) -> %d\n", errno));
         return;
+    }
+
+    if ((mZFSCache = kstat_lookup(mKC, "zfs", 0, "arcstats")) == 0)
+    {
+        Log(("kstat_lookup(system_pages) -> %d\n", errno));
     }
 }
 
@@ -179,6 +188,21 @@ int CollectorSolaris::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *avail
         return VERR_INTERNAL_ERROR;
     }
     *available = kn->value.ul * (PAGE_SIZE/1024);
+
+    // Optional don't fail if kstat is missing; as ZFS kstats are not be available for SunOS < 5.10 U8
+    if (kstat_read(mKC, mZFSCache, 0) != -1)
+    {
+        if (mZFSCache)
+        {
+            if ((kn = (kstat_named_t *)kstat_data_lookup(mZFSCache, "size")))
+                *available += (kn->value.ul / 1024);
+            else
+                Log(("kstat_data_lookup(size) -> %d\n", errno));
+        }
+        else
+            Log(("mZFSCache missing.\n"));
+    }
+
     if ((kn = (kstat_named_t *)kstat_data_lookup(mSysPages, "physmem")) == 0)
     {
         Log(("kstat_data_lookup(physmem) -> %d\n", errno));
