@@ -467,6 +467,9 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             if (pVM->hwaccm.s.fHasIoApic)
                 val |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC;
 
+            if (pVM->hwaccm.s.vmx.fUnrestrictedGuest)
+                val |= VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE;
+
             /* Mask away the bits that the CPU doesn't support */
             /** @todo make sure they don't conflict with the above requirements. */
             val &= pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1;
