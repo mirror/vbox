@@ -1666,7 +1666,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;isa automatiskt docka och menyrad i helskärm</translation>
     </message>
 </context>
 <context>
@@ -3201,49 +3201,49 @@ p, li { white-space: pre-wrap; }
     </message>
     <message numerus="yes">
         <source>%n year(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n år</numerusform>
+            <numerusform>%n år</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n month(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n månad</numerusform>
+            <numerusform>%n månader</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n dag</numerusform>
+            <numerusform>%n dagar</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n timme</numerusform>
+            <numerusform>%n timmar</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n minut</numerusform>
+            <numerusform>%n minuter</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n second(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n sekund</numerusform>
+            <numerusform>%n sekunder</numerusform>
         </translation>
     </message>
     <message>
         <source>(CD/DVD)</source>
-        <translation type="unfinished"></translation>
+        <translation>(CD/DVD)</translation>
     </message>
 </context>
 <context>
@@ -5019,12 +5019,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Är du säker på att du vill ta bort CD/DVD-ROM-enheten?&lt;/p&gt;&lt;p&gt;Du kommer inte att kunna montera några CD- eller ISO-avbildningar eller installera Guest Additions utan den!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ta bort</translation>
     </message>
 </context>
 <context>
@@ -5104,12 +5104,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1, %2 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1, %2 återstår</translation>
     </message>
     <message>
         <source>%1 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 återstår</translation>
     </message>
 </context>
 <context>
@@ -5660,7 +5660,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> (%1 ago)</source>
-        <translation type="unfinished"></translation>
+        <translation> (%1 sedan)</translation>
     </message>
 </context>
 <context>
@@ -5690,9 +5690,9 @@ p, li { white-space: pre-wrap; }
     </message>
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Varning: Du tar en ögonblicksbild av en körande maskin som har %n oföränderlig avbildning ansluten till sig. Så länge som du arbetar från denna ögonblicksbild så kommer den oföränderliga avbildningen inte att återställas för att förhindra att data förloras.</numerusform>
+            <numerusform>Varning: Du tar en ögonblicksbild av en körande maskin som har %n oföränderliga avbildningar anslutna till sig. Så länge som du arbetar från denna ögonblicksbild så kommer de oföränderliga avbildningarna inte att återställas för att förhindra att data förloras.</numerusform>
         </translation>
     </message>
 </context>
