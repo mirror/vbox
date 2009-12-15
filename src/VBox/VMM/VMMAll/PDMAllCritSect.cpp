@@ -140,6 +140,8 @@ static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hN
 # ifdef PDMCRITSECT_STRICT
     RTTHREAD        hSelf    = RTThreadSelfAutoAdopt();
     RTLockValidatorCheckOrder(pCritSect->s.Core.pValidatorRec, hSelf, 0, NULL, 0, NULL);
+#else
+    RTTHREAD        hSelf    = RTThreadSelf();
 # endif
     for (;;)
     {
