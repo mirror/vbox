@@ -239,6 +239,63 @@ RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
  */
 RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec);
 
+/**
+ * Gets the number of write locks and critical sections the specified
+ * thread owns.
+ *
+ * This number does not include any nested lock/critect entries.
+ *
+ * Note that it probably will return 0 for non-strict builds since
+ * release builds doesn't do unnecessary diagnostic counting like this.
+ *
+ * @returns Number of locks on success (0+) and VERR_INVALID_HANDLER on failure
+ * @param   Thread          The thread we're inquiring about.
+ * @remarks Will only work for strict builds.
+ */
+RTDECL(int32_t) RTLockValidatorWriteLockGetCount(RTTHREAD Thread);
+
+/**
+ * Works the THREADINT::cWriteLocks member, mostly internal.
+ *
+ * @param   Thread      The current thread.
+ */
+RTDECL(void) RTLockValidatorWriteLockInc(RTTHREAD Thread);
+
+/**
+ * Works the THREADINT::cWriteLocks member, mostly internal.
+ *
+ * @param   Thread      The current thread.
+ */
+RTDECL(void) RTLockValidatorWriteLockDec(RTTHREAD Thread);
+
+/**
+ * Gets the number of read locks the specified thread owns.
+ *
+ * Note that nesting read lock entry will be included in the
+ * total sum. And that it probably will return 0 for non-strict
+ * builds since release builds doesn't do unnecessary diagnostic
+ * counting like this.
+ *
+ * @returns Number of read locks on success (0+) and VERR_INVALID_HANDLER on failure
+ * @param   Thread          The thread we're inquiring about.
+ */
+RTDECL(int32_t) RTLockValidatorReadLockGetCount(RTTHREAD Thread);
+
+/**
+ * Works the THREADINT::cReadLocks member.
+ *
+ * @param   Thread      The current thread.
+ */
+RTDECL(void) RTLockValidatorReadLockInc(RTTHREAD Thread);
+
+/**
+ * Works the THREADINT::cReadLocks member.
+ *
+ * @param   Thread      The current thread.
+ */
+RTDECL(void) RTLockValidatorReadLockDec(RTTHREAD Thread);
+
+
 
 /*RTDECL(int) RTLockValidatorClassCreate();*/
 

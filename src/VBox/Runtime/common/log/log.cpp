@@ -45,6 +45,7 @@
 #ifdef IN_RING3
 # include <iprt/env.h>
 # include <iprt/file.h>
+# include <iprt/lockvalidator.h>
 # include <iprt/path.h>
 #endif
 #include <iprt/time.h>
@@ -411,9 +412,9 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                     RTTHREAD Thread = RTThreadSelf();
                     if (Thread != NIL_RTTHREAD)
                     {
-                        int32_t c = RTThreadGetWriteLockCount(Thread);
+                        int32_t c = RTLockValidatorWriteLockGetCount(Thread);
                         RTSemSpinMutexRequest(pLogger->hSpinMtx);
-                        c = RTThreadGetWriteLockCount(Thread) - c;
+                        c = RTLockValidatorWriteLockGetCount(Thread) - c;
                         RTSemSpinMutexRelease(pLogger->hSpinMtx);
                         ASMAtomicWriteU32(&g_cLoggerLockCount, c);
                     }
@@ -2524,8 +2525,8 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     RTTHREAD Thread = RTThreadSelf();
                     if (Thread != NIL_RTTHREAD)
                     {
-                        uint32_t cReadLocks  = RTThreadGetReadLockCount(Thread);
-                        uint32_t cWriteLocks = RTThreadGetWriteLockCount(Thread) - g_cLoggerLockCount;
+                        uint32_t cReadLocks  = RTLockValidatorReadLockGetCount(Thread);
+                        uint32_t cWriteLocks = RTLockValidatorWriteLockGetCount(Thread) - g_cLoggerLockCount;
                         cReadLocks  = RT_MIN(0xfff, cReadLocks);
                         cWriteLocks = RT_MIN(0xfff, cWriteLocks);
                         psz += RTStrFormatNumber(psz, cReadLocks,  16, 1, 0, RTSTR_F_ZEROPAD);

@@ -32,11 +32,14 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/semaphore.h>
-#include <iprt/assert.h>
-#include <iprt/alloc.h>
-#include <iprt/thread.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
+#include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/lockvalidator.h>
+#include <iprt/mem.h>
+#include <iprt/thread.h>
 
 #include <errno.h>
 #include <pthread.h>
@@ -184,7 +187,7 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
         pThis->cWriterReads++;
 #ifdef RTSEMRW_STRICT
         if (ThreadSelf != NIL_RTTHREAD)
-            RTThreadReadLockInc(ThreadSelf);
+            RTLockValidatorReadLockInc(ThreadSelf);
 #endif
         return VINF_SUCCESS;
     }
@@ -237,7 +240,7 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
 
 #ifdef RTSEMRW_STRICT
     if (ThreadSelf != NIL_RTTHREAD)
-        RTThreadReadLockInc(ThreadSelf);
+        RTLockValidatorReadLockInc(ThreadSelf);
 #endif
     return VINF_SUCCESS;
 }
@@ -277,7 +280,7 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
         pThis->cWriterReads--;
 #ifdef RTSEMRW_STRICT
         if (ThreadSelf != NIL_RTTHREAD)
-            RTThreadReadLockDec(ThreadSelf);
+            RTLockValidatorReadLockDec(ThreadSelf);
 #endif
         return VINF_SUCCESS;
     }
@@ -294,7 +297,7 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
 
 #ifdef RTSEMRW_STRICT
     if (ThreadSelf != NIL_RTTHREAD)
-        RTThreadReadLockDec(ThreadSelf);
+        RTLockValidatorReadLockDec(ThreadSelf);
 #endif
     return VINF_SUCCESS;
 }
@@ -374,7 +377,7 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 #ifdef RTSEMRW_STRICT
     RTTHREAD ThreadSelf = RTThreadSelf();
     if (ThreadSelf != NIL_RTTHREAD)
-        RTThreadWriteLockInc(ThreadSelf);
+        RTLockValidatorWriteLockInc(ThreadSelf);
 #endif
     return VINF_SUCCESS;
 }
@@ -424,7 +427,7 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
 #ifdef RTSEMRW_STRICT
     RTTHREAD ThreadSelf = RTThreadSelf();
     if (ThreadSelf != NIL_RTTHREAD)
-        RTThreadWriteLockDec(ThreadSelf);
+        RTLockValidatorWriteLockDec(ThreadSelf);
 #endif
     return VINF_SUCCESS;
 }

@@ -170,7 +170,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned c
     {
         case WAIT_OBJECT_0:
 #ifdef RTSEMMUTEX_STRICT
-            RTThreadWriteLockInc(RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, RTSEMMUTEX_STRICT_POS_ARGS));
+            RTLockValidatorWriteLockInc(RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, RTSEMMUTEX_STRICT_POS_ARGS));
 #endif
             return VINF_SUCCESS;
 
@@ -226,7 +226,7 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX MutexSem)
 #ifdef RTSEMMUTEX_STRICT
     if (   pThis->ValidatorRec.hThread != NIL_RTTHREAD
         && pThis->ValidatorRec.hThread == RTThreadSelf())
-        RTThreadWriteLockDec(RTLockValidatorUnsetOwner(&pThis->ValidatorRec));
+        RTLockValidatorWriteLockDec(RTLockValidatorUnsetOwner(&pThis->ValidatorRec));
     else
         AssertMsgFailed(("%p hThread=%RTthrd\n", pThis, pThis->ValidatorRec.hThread));
 #endif

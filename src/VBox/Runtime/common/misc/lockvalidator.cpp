@@ -186,6 +186,77 @@ RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec)
 }
 
 
+RTDECL(int32_t) RTLockValidatorWriteLockGetCount(RTTHREAD Thread)
+{
+    if (Thread == NIL_RTTHREAD)
+        return 0;
+
+    PRTTHREADINT pThread = rtThreadGet(Thread);
+    if (!pThread)
+        return VERR_INVALID_HANDLE;
+    int32_t cWriteLocks = ASMAtomicReadS32(&pThread->LockValidator.cWriteLocks);
+    rtThreadRelease(pThread);
+    return cWriteLocks;
+}
+RT_EXPORT_SYMBOL(RTLockValidatorWriteLockGetCount);
+
+
+RTDECL(void) RTLockValidatorWriteLockInc(RTTHREAD Thread)
+{
+    PRTTHREADINT pThread = rtThreadGet(Thread);
+    AssertReturnVoid(pThread);
+    ASMAtomicIncS32(&pThread->LockValidator.cWriteLocks);
+    rtThreadRelease(pThread);
+}
+RT_EXPORT_SYMBOL(RTLockValidatorWriteLockInc);
+
+
+RTDECL(void) RTLockValidatorWriteLockDec(RTTHREAD Thread)
+{
+    PRTTHREADINT pThread = rtThreadGet(Thread);
+    AssertReturnVoid(pThread);
+    ASMAtomicDecS32(&pThread->LockValidator.cWriteLocks);
+    rtThreadRelease(pThread);
+}
+RT_EXPORT_SYMBOL(RTLockValidatorWriteLockDec);
+
+
+RTDECL(int32_t) RTLockValidatorReadLockGetCount(RTTHREAD Thread)
+{
+    if (Thread == NIL_RTTHREAD)
+        return 0;
+
+    PRTTHREADINT pThread = rtThreadGet(Thread);
+    if (!pThread)
+        return VERR_INVALID_HANDLE;
+    int32_t cReadLocks = ASMAtomicReadS32(&pThread->LockValidator.cReadLocks);
+    rtThreadRelease(pThread);
+    return cReadLocks;
+}
+RT_EXPORT_SYMBOL(RTLockValidatorReadLockGetCount);
+
+
+RTDECL(void) RTLockValidatorReadLockInc(RTTHREAD Thread)
+{
+    PRTTHREADINT pThread = rtThreadGet(Thread);
+    Assert(pThread);
+    ASMAtomicIncS32(&pThread->LockValidator.cReadLocks);
+    rtThreadRelease(pThread);
+}
+RT_EXPORT_SYMBOL(RTLockValidatorReadLockInc);
+
+
+RTDECL(void) RTLockValidatorReadLockDec(RTTHREAD Thread)
+{
+    PRTTHREADINT pThread = rtThreadGet(Thread);
+    Assert(pThread);
+    ASMAtomicDecS32(&pThread->LockValidator.cReadLocks);
+    rtThreadRelease(pThread);
+}
+RT_EXPORT_SYMBOL(RTLockValidatorReadLockDec);
+
+
+
 /**
  * Bitch about a deadlock.
  *
@@ -307,7 +378,9 @@ RTDECL(void) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hTh
     PRTTHREADINT pThread = hThread;
     AssertPtrReturnVoid(pThread);
     AssertReturnVoid(pThread->u32Magic == RTTHREADINT_MAGIC);
-    AssertReturnVoid(rtThreadGetState(pThread) == RTTHREADSTATE_RUNNING);
+    RTTHREADSTATE enmThreadState = rtThreadGetState(pThread);
+    AssertReturnVoid(   enmThreadState == RTTHREADSTATE_RUNNING
+                     || enmThreadState == RTTHREADSTATE_TERMINATED /* rtThreadRemove uses locks too */);
 
     /*
      * Record the location and everything before changing the state and

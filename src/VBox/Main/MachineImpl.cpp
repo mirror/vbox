@@ -59,12 +59,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <iprt/asm.h>
 #include <iprt/path.h>
 #include <iprt/dir.h>
-#include <iprt/asm.h>
+#include <iprt/env.h>
+#include <iprt/lockvalidator.h>
 #include <iprt/process.h>
 #include <iprt/cpp/utils.h>
-#include <iprt/env.h>
 #include <iprt/string.h>
 
 #include <VBox/com/array.h>
@@ -9751,8 +9752,8 @@ HRESULT SessionMachine::onUSBDeviceAttach (IUSBDevice *aDevice,
         return E_FAIL;
 
     /* No locks should be held at this point. */
-    AssertMsg (RTThreadGetWriteLockCount (RTThreadSelf()) == 0, ("%d\n", RTThreadGetWriteLockCount (RTThreadSelf())));
-    AssertMsg (RTThreadGetReadLockCount (RTThreadSelf()) == 0, ("%d\n", RTThreadGetReadLockCount (RTThreadSelf())));
+    AssertMsg (RTLockValidatorWriteLockGetCount (RTThreadSelf()) == 0, ("%d\n", RTLockValidatorWriteLockGetCount (RTThreadSelf())));
+    AssertMsg (RTLockValidatorReadLockGetCount (RTThreadSelf()) == 0, ("%d\n", RTLockValidatorReadLockGetCount (RTThreadSelf())));
 
     return directControl->OnUSBDeviceAttach (aDevice, aError, aMaskedIfs);
 }
@@ -9783,8 +9784,8 @@ HRESULT SessionMachine::onUSBDeviceDetach (IN_BSTR aId,
         return E_FAIL;
 
     /* No locks should be held at this point. */
-    AssertMsg (RTThreadGetWriteLockCount (RTThreadSelf()) == 0, ("%d\n", RTThreadGetWriteLockCount (RTThreadSelf())));
-    AssertMsg (RTThreadGetReadLockCount (RTThreadSelf()) == 0, ("%d\n", RTThreadGetReadLockCount (RTThreadSelf())));
+    AssertMsg (RTLockValidatorWriteLockGetCount (RTThreadSelf()) == 0, ("%d\n", RTLockValidatorWriteLockGetCount (RTThreadSelf())));
+    AssertMsg (RTLockValidatorReadLockGetCount (RTThreadSelf()) == 0, ("%d\n", RTLockValidatorReadLockGetCount (RTThreadSelf())));
 
     return directControl->OnUSBDeviceDetach (aId, aError);
 }
