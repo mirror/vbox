@@ -153,7 +153,7 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncPreInit(void)
 {
 #ifdef VBOX_WITH_GUEST_PROPS
     /** @todo Merge this function with VBoxServiceTimeSyncOption() to generalize
-     *        the "command line args override guest property values" behavior.
+     *        the "command line args override guest property values" behavior. */
 
     /*
      * Read the service options from the VM's guest properties.
