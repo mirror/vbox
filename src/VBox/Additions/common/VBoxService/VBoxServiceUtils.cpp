@@ -37,6 +37,116 @@
 
 #ifdef VBOX_WITH_GUEST_PROPS
 /**
+ * Reads a guest property.
+ *
+ * @returns VBox status code, fully bitched.
+ *
+ * @param   u32ClientId         The HGCM client ID for the guest property session.
+ * @param   pszPropName         The property name.
+ * @param   ppszValue           Where to return the value.  This is always set
+ *                              to NULL.  Free it using RTStrFree().
+ * @param   ppszFlags           Where to return the value flags. Free it
+ *                              using RTStrFree().  Optional.
+ * @param   puTimestamp         Where to return the timestamp.  This is only set
+ *                              on success.  Optional.
+ */
+int VBoxServiceReadProp(uint32_t u32ClientId, const char *pszPropName, char **ppszValue, char **ppszFlags, uint64_t *puTimestamp)
+{
+    size_t  cbBuf = _1K;
+    void   *pvBuf = NULL;
+    int     rc;
+
+    *ppszValue = NULL;
+
+    for (unsigned cTries = 0; cTries < 10; cTries++)
+    {
+        /*
+         * (Re-)Allocate the buffer and try read the property.
+         */
+        RTMemFree(pvBuf);
+        pvBuf = RTMemAlloc(cbBuf);
+        if (!pvBuf)
+        {
+            VBoxServiceError("Guest Property: Failed to allocate %zu bytes\n", cbBuf);
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+        char    *pszValue;
+        char    *pszFlags;
+        uint64_t uTimestamp;
+        rc = VbglR3GuestPropRead(u32ClientId, pszPropName,
+                                 pvBuf, cbBuf,
+                                 &pszValue, &uTimestamp, &pszFlags, NULL);
+        if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_BUFFER_OVERFLOW)
+            {
+                /* try again with a bigger buffer. */
+                cbBuf *= 2;
+                continue;
+            }
+            if (rc == VERR_NOT_FOUND)
+                VBoxServiceVerbose(2, "Guest Property: %s not found\n", pszPropName);
+            else
+                VBoxServiceError("Guest Property: Failed to query \"%s\": %Rrc\n", pszPropName, rc);
+            break;
+        }
+
+        VBoxServiceVerbose(2, "Guest Property: Read \"%s\" = \"%s\", timestamp %RU64n\n",
+                           pszPropName, pszValue, uTimestamp);
+        *ppszValue = RTStrDup(pszValue);
+        if (!*ppszValue)
+        {
+            VBoxServiceError("Guest Property: RTStrDup failed for \"%s\"\n", pszValue);
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        if (puTimestamp)
+            *puTimestamp = uTimestamp;
+        if (ppszFlags)
+            *ppszFlags = RTStrDup(pszFlags);
+        break; /* done */
+    }
+
+    RTMemFree(pvBuf);
+    return rc;
+}
+
+
+/**
+ * Reads a guest property as a 32-bit value.
+ *
+ * @returns VBox status code, fully bitched.
+ *
+ * @param   u32ClientId         The HGCM client ID for the guest property session.
+ * @param   pszPropName         The property name.
+ * @param   pu32                Where to store the 32-bit value.
+ *
+ */
+int VBoxServiceReadPropUInt32(uint32_t u32ClientId, const char *pszPropName, uint32_t *pu32, uint32_t u32Min, uint32_t u32Max)
+{
+    char *pszValue;
+    int rc = VBoxServiceReadProp(u32ClientId, pszPropName, &pszValue,
+        NULL /* ppszFlags */, NULL /* puTimestamp */);
+    if (RT_SUCCESS(rc))
+    {
+        AssertPtr(pu32);
+        char *pszNext;
+        rc = RTStrToUInt32Ex(pszValue, &pszNext, 0, pu32);
+        if (   RT_SUCCESS(rc)
+            && (*pu32 < u32Min || *pu32 > u32Max))
+        {
+            VBoxServiceError("The guest property value %s = %RU32 is out of range [%RU32..%RU32].\n",
+                             pszPropName, *pu32, u32Min, u32Max);
+        }
+        RTStrFree(pszValue);
+    }
+    return rc;
+}
+
+
+/**
  * Wrapper around VbglR3GuestPropWriteValue that does value formatting and
  * logging.
  *
