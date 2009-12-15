@@ -1557,7 +1557,9 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             val |= X86_CR0_NE;  /* always turn on the native mechanism to report FPU errors (old style uses interrupts) */
         }
         /* Note: protected mode & paging are always enabled; we use them for emulating real and protected mode without paging too. */
-        val |= X86_CR0_PE | X86_CR0_PG;
+        if (!pVM->hwaccm.s.vmx.fUnrestrictedGuest)
+            val |= X86_CR0_PE | X86_CR0_PG;
+
         if (pVM->hwaccm.s.fNestedPaging)
         {
             if (CPUMIsGuestInPagedProtectedModeEx(pCtx))
@@ -1642,7 +1644,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             }
         }
         else
-        if (!CPUMIsGuestInPagedProtectedModeEx(pCtx))
+        if (    !CPUMIsGuestInPagedProtectedModeEx(pCtx)
+            &&  !pVM->hwaccm.s.vmx.fUnrestrictedGuest)
         {
             /* We use 4 MB pages in our identity mapping page table for real and protected mode without paging. */
             val |= X86_CR4_PSE;
@@ -1690,7 +1693,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             rc = VMXWriteVMCS64(VMX_VMCS_CTRL_EPTP_FULL, pVCpu->hwaccm.s.vmx.GCPhysEPTP);
             AssertRC(rc);
 
-            if (!CPUMIsGuestInPagedProtectedModeEx(pCtx))
+            if (    !CPUMIsGuestInPagedProtectedModeEx(pCtx)
+                &&  !pVM->hwaccm.s.vmx.fUnrestrictedGuest)
             {
                 RTGCPHYS GCPhys;
 
