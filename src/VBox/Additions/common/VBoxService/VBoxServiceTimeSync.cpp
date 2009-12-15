@@ -100,6 +100,7 @@
 #include <iprt/assert.h>
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
+#include "VBoxServiceUtils.h"
 
 
 /*******************************************************************************
@@ -150,7 +151,71 @@ static BOOL g_bWinTimeAdjustmentDisabled;
 /** @copydoc VBOXSERVICE::pfnPreInit */
 static DECLCALLBACK(int) VBoxServiceTimeSyncPreInit(void)
 {
+#ifdef VBOX_WITH_GUEST_PROPS
+    /** @todo Merge this function with VBoxServiceTimeSyncOption() to generalize
+     *        the "command line args override guest property values" behavior.
+
+    /*
+     * Read the service options from the VM's guest properties.
+     * Note that these options can be overriden by the command line options later.
+     */
+    uint32_t uGuestPropSvcClientID;
+    int rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceError("Failed to connect to the guest property service! Error: %Rrc\n", rc);
+    }
+    else
+    {
+        rc = VBoxServiceReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-interval",
+                                       &g_TimeSyncInterval, 1, UINT32_MAX - 1);
+        if (   RT_SUCCESS(rc)
+            || rc == VERR_NOT_FOUND)
+        {
+            rc = VBoxServiceReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-min-adjust",
+                                           &g_TimeSyncMinAdjust, 0, 3600000);
+        }
+        if (   RT_SUCCESS(rc)
+            || rc == VERR_NOT_FOUND)
+        {
+            rc = VBoxServiceReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-latency-factor",
+                                           &g_TimeSyncLatencyFactor, 1, 1024);
+        }
+        if (   RT_SUCCESS(rc)
+            || rc == VERR_NOT_FOUND)
+        {
+            rc = VBoxServiceReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-max-latency",
+                                           &g_TimeSyncMaxLatency, 1, 3600000);
+        }
+        if (   RT_SUCCESS(rc)
+            || rc == VERR_NOT_FOUND)
+        {
+            rc = VBoxServiceReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold",
+                                           &g_TimeSyncSetThreshold, 0, 7*24*60*1000 /* a week */);
+        }
+        if (   RT_SUCCESS(rc)
+            || rc == VERR_NOT_FOUND)
+        {
+            char *pszValue;
+            rc = VBoxServiceReadProp(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-start",
+                                     &pszValue, NULL /* ppszFlags */, NULL /* puTimestamp */);
+            if (RT_SUCCESS(rc))
+            {
+                g_fTimeSyncSetNext = true;
+                RTStrFree(pszValue);
+            }
+        }
+
+        VbglR3GuestPropDisconnect(uGuestPropSvcClientID);
+    }
+
+    if (rc == VERR_NOT_FOUND) /* If a value is not found, don't be sad! */
+        rc = VINF_SUCCESS;
+    return rc;
+#else
+    /* Nothing to do here yet. */
     return VINF_SUCCESS;
+#endif
 }
 
 
