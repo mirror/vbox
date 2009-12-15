@@ -875,7 +875,7 @@ BEGINPROC VMXR0InvVPID
  %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     mov         eax, [esp + 4]
     mov         ecx, [esp + 8]
-;    invept      eax, qword [ecx]
+;    invvpid     eax, qword [ecx]
     DB          0x66, 0x0F, 0x38, 0x81, 0x1
 %endif
     jnc         .valid_vmcs
