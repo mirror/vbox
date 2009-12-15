@@ -134,6 +134,9 @@ typedef ptrdiff_t GLsizeiptr;
 #ifndef GL_STREAM_COPY
 # define GL_STREAM_COPY                 0x88E2
 #endif
+#ifndef GL_DYNAMIC_DRAW
+# define GL_DYNAMIC_DRAW                0x88E8
+#endif
 
 #ifndef GL_PIXEL_PACK_BUFFER
 # define GL_PIXEL_PACK_BUFFER           0x88EB

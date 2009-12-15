@@ -308,11 +308,24 @@ void VBoxVHWAHandleTable::doRemove(uint32_t h)
     --mcUsage;
 }
 
-static VBoxVHWATexture* vboxVHWATextureCreate(const QGLContext * pContext, const QRect & aRect, const VBoxVHWAColorFormat & aFormat, bool bVGA)
+static VBoxVHWATextureImage* vboxVHWAImageCreate(const QRect & aRect, const VBoxVHWAColorFormat & aFormat, class VBoxVHWAGlProgramMngr * pMgr, bool bDisablePBO)
+{
+    const VBoxVHWAInfo & info = vboxVHWAGetSupportInfo(NULL);
+#ifdef VBOXVHWA_NEW_PBO
+    if(!bDisablePBO && info.getGlInfo().isPBOSupported())
+    {
+        VBOXQGLLOG(("PBO Image\n"));
+        return new VBoxVHWATextureImagePBO(aRect, aFormat, pMgr);
+    }
+#endif
+    VBOXQGLLOG(("Generic Image\n"));
+    return new VBoxVHWATextureImage(aRect, aFormat, pMgr, bDisablePBO);
+}
+
+static VBoxVHWATexture* vboxVHWATextureCreate(const QGLContext * pContext, const QRect & aRect, const VBoxVHWAColorFormat & aFormat, bool bDisablePBO)
 {
     const VBoxVHWAInfo & info = vboxVHWAGetSupportInfo(pContext);
-
-    if(!bVGA && info.getGlInfo().isPBOSupported())
+    if(!bDisablePBO && info.getGlInfo().isPBOSupported())
     {
         VBOXQGLLOG(("VBoxVHWATextureNP2RectPBO\n"));
         return new VBoxVHWATextureNP2RectPBO(aRect, aFormat);
@@ -1103,18 +1116,6 @@ VBoxVHWAGlProgramVHWA * VBoxVHWAGlProgramMngr::searchProgram(uint32_t type, uint
     return NULL;
 }
 
-int VBoxVHWASurfaceBase::setCKey(VBoxVHWAGlProgramVHWA * pProgram, const VBoxVHWAColorFormat * pFormat, const VBoxVHWAColorKey * pCKey, bool bDst)
-{
-    float r,g,b;
-    pFormat->pixel2Normalized(pCKey->lower(), &r, &g, &b);
-    int rcL = bDst ? pProgram->setDstCKeyLowerRange(r, g, b) : pProgram->setSrcCKeyLowerRange(r, g, b);
-    Assert(RT_SUCCESS(rcL));
-
-    return RT_SUCCESS(rcL) /*&& RT_SUCCESS(rcU)*/ ? VINF_SUCCESS: VERR_GENERAL_FAILURE;
-}
-
-
-
 void VBoxVHWASurfaceBase::setAddress(uchar * addr)
 {
     Assert(addr);
@@ -1129,22 +1130,7 @@ void VBoxVHWASurfaceBase::setAddress(uchar * addr)
     mAddress = addr;
     mFreeAddress = false;
 
-#ifdef VBOXVHWA_USE_TEXGROUP
-    for(int i = mpTex.numSets()-1; i >=0; --i)
-    {
-#endif
-    mpTex[0]->setAddress(mAddress);
-    if(fourcc() == FOURCC_YV12)
-    {
-        uchar *pTexAddr = mAddress+mpTex[0]->memSize();
-        mpTex[1]->setAddress(pTexAddr);
-        pTexAddr = pTexAddr+mpTex[1]->memSize();
-        mpTex[2]->setAddress(pTexAddr);
-    }
-#ifdef VBOXVHWA_USE_TEXGROUP
-    mpTex.swap();
-    }
-#endif
+    mImage->setAddress(mAddress);
 
     mUpdateMem2TexRect.set(mRect);
     Assert(!mUpdateMem2TexRect.isClear());
@@ -1179,12 +1165,7 @@ VBoxVHWASurfaceBase::VBoxVHWASurfaceBase(class VBoxGLWidget *aWidget,
 #endif
                     bool bVGA) :
                 mRect(0,0,aSize.width(),aSize.height()),
-                mpProgram(NULL),
-                mVisibleDisplayInitialized(false),
-                mNeedVisibilityReinit(true),
-                mNotIntersected(false),
                 mAddress(NULL),
-                mColorFormat(aColorFormat),
                 mpSrcBltCKey(NULL),
                 mpDstBltCKey(NULL),
                 mpSrcOverlayCKey(NULL),
@@ -1193,7 +1174,9 @@ VBoxVHWASurfaceBase::VBoxVHWASurfaceBase(class VBoxGLWidget *aWidget,
                 mpDefaultSrcOverlayCKey(NULL),
                 mLockCount(0),
                 mFreeAddress(false),
+                mbNotIntersected(false),
                 mComplexList(NULL),
+                mpPrimary(NULL),
                 mWidget(aWidget),
                 mHGHandle(VBOXVHWA_SURFHANDLE_INVALID)
 #ifdef DEBUG
@@ -1211,23 +1194,7 @@ VBoxVHWASurfaceBase::VBoxVHWASurfaceBase(class VBoxGLWidget *aWidget,
     setDefaultSrcOverlayCKey(pSrcOverlayCKey);
     resetDefaultSrcOverlayCKey();
 
-#ifdef VBOXVHWA_USE_TEXGROUP
-    mpTex.init(mColorFormat.fourcc() == FOURCC_YV12 ? 3 : 1, cBackTex);
-    Assert(mpTex.numSets());
-    for(int i = mpTex.numSets()-1; i >=0; --i)
-    {
-#endif
-    mpTex[0] = vboxVHWATextureCreate(mWidget->context(), QRect(0,0,aSize.width(),aSize.height()), mColorFormat, bVGA);
-    if(mColorFormat.fourcc() == FOURCC_YV12)
-    {
-        QRect rect(0,0,aSize.width()/2,aSize.height()/2);
-        mpTex[1] = vboxVHWATextureCreate(mWidget->context(), rect, mColorFormat, bVGA);
-        mpTex[2] = vboxVHWATextureCreate(mWidget->context(), rect, mColorFormat, bVGA);
-    }
-#ifdef VBOXVHWA_USE_TEXGROUP
-    mpTex.swap();
-    }
-#endif
+    mImage = vboxVHWAImageCreate(QRect(0,0,aSize.width(),aSize.height()), aColorFormat, getGlProgramMngr(), bVGA);
 
     setRectValues(aTargRect, aSrcRect);
     setVisibleRectValues(aVisTargRect);
@@ -1309,22 +1276,7 @@ ulong VBoxVHWASurfaceBase::calcBytesPerPixel(GLenum format, GLenum type)
 
 void VBoxVHWASurfaceBase::uninit()
 {
-    deleteDisplay();
-
-#ifdef VBOXVHWA_USE_TEXGROUP
-    for(int i = mpTex.numSets()-1; i >=0; --i)
-    {
-#endif
-    delete mpTex[0];
-    if(fourcc() == FOURCC_YV12)
-    {
-        delete mpTex[1];
-        delete mpTex[2];
-    }
-#ifdef VBOXVHWA_USE_TEXGROUP
-    mpTex.swap();
-    }
-#endif
+    delete mImage;
 
     if(mAddress && mFreeAddress)
     {
@@ -1335,12 +1287,7 @@ void VBoxVHWASurfaceBase::uninit()
 
 ulong VBoxVHWASurfaceBase::memSize()
 {
-    ulong size = mpTex[0]->memSize();
-    if(fourcc() == FOURCC_YV12)
-    {
-        size += mpTex[1]->memSize() + mpTex[2]->memSize();
-    }
-    return size;
+    return (ulong)mImage->memSize();
 }
 
 void VBoxVHWASurfaceBase::init(VBoxVHWASurfaceBase * pPrimary, uchar *pvMem)
@@ -1355,7 +1302,7 @@ void VBoxVHWASurfaceBase::init(VBoxVHWASurfaceBase * pPrimary, uchar *pvMem)
     int size = memSize();
     uchar * address = (uchar *)malloc(size);
 #ifdef DEBUG_misha
-    int tex0Size = mpTex[0]->memSize();
+    int tex0Size = mImage->component(0)->memSize();
     if(pPrimary)
     {
         memset(address, 0xff, tex0Size);
@@ -1378,20 +1325,8 @@ void VBoxVHWASurfaceBase::init(VBoxVHWASurfaceBase * pPrimary, uchar *pvMem)
     memset(address, 0, size);
 #endif
 
-#ifdef VBOXVHWA_USE_TEXGROUP
-    for(int i = mpTex.numSets()-1; i >=0; --i)
-    {
-#endif
-    mpTex[0]->init(address);
-    if(fourcc() == FOURCC_YV12)
-    {
-        mpTex[1]->init(address);
-        mpTex[2]->init(address);
-    }
-#ifdef VBOXVHWA_USE_TEXGROUP
-    mpTex.swap();
-    }
-#endif
+    mImage->init(address);
+    mpPrimary = pPrimary;
 
     if(pvMem)
     {
@@ -1406,24 +1341,9 @@ void VBoxVHWASurfaceBase::init(VBoxVHWASurfaceBase * pPrimary, uchar *pvMem)
         mFreeAddress = true;
     }
 
-#ifdef VBOXVHWA_USE_TEXGROUP
-    for(int i = mpTex.numSets()-1; i >=0; --i)
-    {
-#endif
-    mpTex[0]->setAddress(mAddress);
-    if(fourcc() == FOURCC_YV12)
-    {
-        uchar *pTexAddr = mAddress+mpTex[0]->memSize();
-        mpTex[1]->setAddress(pTexAddr);
-        pTexAddr = pTexAddr+mpTex[1]->memSize();
-        mpTex[2]->setAddress(pTexAddr);
-    }
-#ifdef VBOXVHWA_USE_TEXGROUP
-    mpTex.swap();
-    }
-#endif
+    mImage->setAddress(mAddress);
 
-    initDisplay(pPrimary);
+    initDisplay();
 
     mUpdateMem2TexRect.set(mRect);
     Assert(!mUpdateMem2TexRect.isClear());
@@ -1439,25 +1359,8 @@ void VBoxVHWASurfaceBase::init(VBoxVHWASurfaceBase * pPrimary, uchar *pvMem)
 
 }
 
-#ifdef DEBUGVHWASTRICT
-bool g_DbgTest = false;
-#endif
-
 void VBoxVHWATexture::doUpdate(uchar * pAddress, const QRect * pRect)
 {
-#ifdef DEBUGVHWASTRICT
-    if(g_DbgTest)
-    {
-        pAddress = (uchar*)malloc(memSize());
-        uchar val = 0;
-        for(uint32_t i = 0; i < memSize(); i++)
-        {
-            pAddress[i] = val;
-            val+=64;
-        }
-    }
-#endif
-
     GLenum tt = texTarget();
     if(pRect)
     {
@@ -1492,13 +1395,6 @@ void VBoxVHWATexture::doUpdate(uchar * pAddress, const QRect * pRect)
                 mColorFormat.type(),
                 address);
             );
-
-#ifdef DEBUGVHWASTRICT
-    if(g_DbgTest)
-    {
-        free(pAddress);
-    }
-#endif
 }
 
 void VBoxVHWATexture::texCoord(int x, int y)
@@ -1519,9 +1415,12 @@ void VBoxVHWATexture::uninit()
     }
 }
 
-VBoxVHWATexture::VBoxVHWATexture(const QRect & aRect, const VBoxVHWAColorFormat &aFormat)
-        : mAddress(0),
-          mTexture(0)
+VBoxVHWATexture::VBoxVHWATexture(const QRect & aRect, const VBoxVHWAColorFormat &aFormat) :
+            mAddress(NULL),
+            mTexture(0),
+            mBytesPerPixel(0),
+            mBytesPerPixelTex(0),
+            mBytesPerLine(0)
 {
     mColorFormat = aFormat;
     mRect = aRect;
@@ -1622,22 +1521,11 @@ bool VBoxVHWASurfaceBase::synchTexMem(const QRect * pRect)
     if(pRect && !mUpdateMem2TexRect.rect().intersects(*pRect))
         return false;
 
-#ifdef VBOXVHWA_USE_TEXGROUP
-    mpTex.swap();
-#endif
-
 #ifdef VBOXVHWA_PROFILE_FPS
     mWidget->reportNewFrame();
 #endif
 
-    mpTex[0]->update(&mUpdateMem2TexRect.rect());
-    if(fourcc() == FOURCC_YV12)
-    {
-        QRect rect(mUpdateMem2TexRect.rect().x()/2, mUpdateMem2TexRect.rect().y()/2,
-                mUpdateMem2TexRect.rect().width()/2, mUpdateMem2TexRect.rect().height()/2);
-        mpTex[1]->update(&rect);
-        mpTex[2]->update(&rect);
-    }
+    mImage->update(&mUpdateMem2TexRect.rect());
 
     mUpdateMem2TexRect.clear();
     Assert(mUpdateMem2TexRect.isClear());
@@ -1750,7 +1638,7 @@ uchar* VBoxVHWATextureNP2RectPBOMapped::mapAlignedBuffer()
     return mpMappedAllignedBuffer;
 }
 
-void   VBoxVHWATextureNP2RectPBOMapped::unmapBuffer()
+void VBoxVHWATextureNP2RectPBOMapped::unmapBuffer()
 {
     Assert(mpMappedAllignedBuffer);
     if(mpMappedAllignedBuffer)
@@ -1815,107 +1703,6 @@ void VBoxVHWATextureNP2RectPBOMapped::doUpdate(uchar * pAddress, const QRect * p
     VBOXQGL_CHECKERR(
             vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
     );
-}
-
-void VBoxVHWASurfaceBase::doTex2FB(const QRect * pDstRect, const QRect * pSrcRect)
-{
-    int tx1, ty1, tx2, ty2;
-    pSrcRect->getCoords(&tx1, &ty1, &tx2, &ty2);
-    int bx1, by1, bx2, by2;
-    pDstRect->getCoords(&bx1, &by1, &bx2, &by2);
-    tx2++; ty2++;bx2++; by2++;
-
-    VBOXQGLLOG_QRECT("texRect: ", &mpTex[0]->texRect(), "\n");
-    glBegin(GL_QUADS);
-    mpTex[0]->texCoord(tx1, ty1);
-    glVertex2i(bx1, by1);
-    mpTex[0]->texCoord(tx1, ty2);
-    glVertex2i(bx1, by2);
-    mpTex[0]->texCoord(tx2, ty2);
-    glVertex2i(bx2, by2);
-    mpTex[0]->texCoord(tx2, ty1);
-    glVertex2i(bx2, by1);
-    glEnd();
-}
-
-
-void VBoxVHWASurfaceBase::doMultiTex2FB(const QRect * pDstRect, const QRect * pSrcRect, int cSrcTex)
-{
-    int tx1, ty1, tx2, ty2;
-    pSrcRect->getCoords(&tx1, &ty1, &tx2, &ty2);
-    int bx1, by1, bx2, by2;
-    pDstRect->getCoords(&bx1, &by1, &bx2, &by2);
-    tx2++; ty2++;bx2++; by2++;
-    uint32_t t0width = mpTex[0]->rect().width();
-    uint32_t t0height = mpTex[0]->rect().height();
-
-            glBegin(GL_QUADS);
-            for(int i = 0; i < cSrcTex; i++)
-            {
-                mpTex[i]->multiTexCoord(GL_TEXTURE0 + i, tx1/(t0width/mpTex[i]->texRect().width()), ty1/(t0height/mpTex[i]->rect().height()));
-            }
-            glVertex2i(bx1, by1);
-            for(int i = 0; i < cSrcTex; i++)
-            {
-                mpTex[i]->multiTexCoord(GL_TEXTURE0 + i, tx1/(t0width/mpTex[i]->texRect().width()), ty2/(t0height/mpTex[i]->rect().height()));
-            }
-            glVertex2i(bx1, by2);
-            for(int i = 0; i < cSrcTex; i++)
-            {
-                mpTex[i]->multiTexCoord(GL_TEXTURE0 + i, tx2/(t0width/mpTex[i]->texRect().width()), ty2/(t0height/mpTex[i]->rect().height()));
-
-            }
-            glVertex2i(bx2, by2);
-            for(int i = 0; i < cSrcTex; i++)
-            {
-                mpTex[i]->multiTexCoord(GL_TEXTURE0 + i, tx2/(t0width/mpTex[i]->texRect().width()), ty1/(t0height/mpTex[i]->rect().height()));
-            }
-            glVertex2i(bx2, by1);
-            glEnd();
-}
-
-void VBoxVHWASurfaceBase::doMultiTex2FB(const QRect * pDstRect, VBoxVHWATexture * pDstTex, const QRect * pSrcRect, int cSrcTex)
-{
-    int tx1, ty1, tx2, ty2;
-    pSrcRect->getCoords(&tx1, &ty1, &tx2, &ty2);
-    int bx1, by1, bx2, by2;
-    pDstRect->getCoords(&bx1, &by1, &bx2, &by2);
-    tx2++; ty2++;bx2++; by2++;
-    uint32_t t0width = mpTex[0]->rect().width();
-    uint32_t t0height = mpTex[0]->rect().height();
-
-            glBegin(GL_QUADS);
-
-            for(int i = 0; i < cSrcTex; i++)
-            {
-                mpTex[i]->multiTexCoord(GL_TEXTURE0 + i, tx1/(t0width/mpTex[i]->rect().width()), ty1/(t0height/mpTex[i]->rect().height()));
-            }
-            pDstTex->multiTexCoord(GL_TEXTURE0 + cSrcTex, bx1, by1);
-            glVertex2i(bx1, by1);
-
-            for(int i = 0; i < cSrcTex; i++)
-            {
-                mpTex[i]->multiTexCoord(GL_TEXTURE0 + i, tx1/(t0width/mpTex[i]->rect().width()), ty2/(t0height/mpTex[i]->rect().height()));
-            }
-            pDstTex->multiTexCoord(GL_TEXTURE0 + cSrcTex, bx1, by2);
-            glVertex2i(bx1, by2);
-
-            for(int i = 0; i < cSrcTex; i++)
-            {
-                mpTex[i]->multiTexCoord(GL_TEXTURE0 + i, tx2/(t0width/mpTex[i]->rect().width()), ty2/(t0height/mpTex[i]->rect().height()));
-            }
-            pDstTex->multiTexCoord(GL_TEXTURE0 + cSrcTex, bx2, by2);
-            glVertex2i(bx2, by2);
-
-            for(int i = 0; i < cSrcTex; i++)
-            {
-                mpTex[i]->multiTexCoord(GL_TEXTURE0 + i, tx2/(t0width/mpTex[i]->rect().width()), ty1/(t0height/mpTex[i]->rect().height()));
-            }
-            pDstTex->multiTexCoord(GL_TEXTURE0 + cSrcTex, bx2, by1);
-            glVertex2i(bx2, by1);
-
-            glEnd();
-
 }
 
 int VBoxVHWASurfaceBase::lock(const QRect * pRect, uint32_t flags)
@@ -1998,7 +1785,6 @@ void VBoxVHWASurfaceBase::setRects(const QRect & aTargRect, const QRect & aSrcRe
     if(mTargRect != aTargRect || mSrcRect != aSrcRect)
     {
         setRectValues(aTargRect, aSrcRect);
-        mNeedVisibilityReinit = true;
     }
 }
 
@@ -2011,245 +1797,28 @@ void VBoxVHWASurfaceBase::setTargRectPosition(const QPoint & aPoint)
 
 void VBoxVHWASurfaceBase::updateVisibility (VBoxVHWASurfaceBase *pPrimary, const QRect & aVisibleTargRect, bool bNotIntersected, bool bForce)
 {
-    if(mNeedVisibilityReinit || bForce || aVisibleTargRect.intersected(mTargRect) != mVisibleTargRect || mNotIntersected != bNotIntersected)
+    if(bForce || aVisibleTargRect.intersected(mTargRect) != mVisibleTargRect)
     {
         setVisibleRectValues(aVisibleTargRect);
-        mNotIntersected = bNotIntersected;
-        initDisplay(pPrimary);
-        mNeedVisibilityReinit = false;
     }
+
+    mpPrimary = pPrimary;
+    mbNotIntersected = bNotIntersected;
+
+    initDisplay();
 }
 
-void VBoxVHWASurfaceBase::deleteDisplay()
+void VBoxVHWASurfaceBase::initDisplay()
 {
-    if(mVisibleDisplayInitialized)
+    if(mVisibleTargRect.isEmpty() || mVisibleSrcRect.isEmpty())
     {
-#ifdef VBOXVHWA_USE_TEXGROUP
-        for(int i = mpTex.numSets()-1; i >=0; --i)
-        {
-        if(mpTex.display())
-        {
-            glDeleteLists(mpTex.display(), 1);
-            mpTex.display() = 0;
-        }
-        if(mpProgram)
-        {
-            mpProgram = NULL;
-        }
-        mpTex.swap();
-        }
-#else
-        if(mVisibleDisplay)
-        {
-            glDeleteLists(mVisibleDisplay, 1);
-            mVisibleDisplay = 0;
-        }
-        if(mpProgram)
-        {
-            mpProgram = NULL;
-        }
-#endif
-        mVisibleDisplayInitialized = false;
-    }
-}
-
-void VBoxVHWASurfaceBase::doDisplay(VBoxVHWASurfaceBase *pPrimary, bool bProgram, bool bBindDst)
-{
-    bool bInvokeMultiTex2 = false;
-
-    if(bProgram)
-    {
-        if(bBindDst)
-        {
-            if(fourcc() == FOURCC_YV12)
-            {
-                vboxglActiveTexture(GL_TEXTURE1);
-                mpTex[1]->bind();
-                vboxglActiveTexture(GL_TEXTURE1+1);
-                mpTex[2]->bind();
-
-                vboxglActiveTexture(GL_TEXTURE1+2);
-            }
-            else
-            {
-                vboxglActiveTexture(GL_TEXTURE1);
-            }
-            pPrimary->mpTex[0]->bind();
-
-            vboxglActiveTexture(GL_TEXTURE0);
-            mpTex[0]->bind();
-            bInvokeMultiTex2 = true;
-        }
-        else
-        {
-            if(fourcc() == FOURCC_YV12)
-            {
-                vboxglActiveTexture(GL_TEXTURE1);
-                mpTex[1]->bind();
-                vboxglActiveTexture(GL_TEXTURE0);
-            }
-            mpTex[0]->bind();
-        }
-    }
-    else
-    {
-        mpTex[0]->bind();
+        Assert(mVisibleTargRect.isEmpty() && mVisibleSrcRect.isEmpty());
+        mImage->deleteDisplay();
+        return;
     }
 
-    if(bInvokeMultiTex2)
-    {
-        doMultiTex2FB(&mVisibleTargRect, pPrimary->mpTex[0], &mVisibleSrcRect,
-                (fourcc() == FOURCC_YV12) ? 2 : 1);
-    }
-    else
-    {
-        if(fourcc() == FOURCC_YV12)
-        {
-            doMultiTex2FB(&mVisibleTargRect, &mVisibleSrcRect, 2);
-        }
-        else
-        {
-            VBOXQGLLOG_QRECT("mVisibleTargRect: ", &mVisibleTargRect, "\n");
-            VBOXQGLLOG_QRECT("mVisibleSrcRect: ", &mVisibleSrcRect, "\n");
-            doTex2FB(&mVisibleTargRect, &mVisibleSrcRect);
-        }
-    }
-}
-
-class VBoxVHWAGlProgramVHWA * VBoxVHWASurfaceBase::calcProgram(VBoxVHWASurfaceBase * pPrimary)
-{
-    const VBoxVHWAColorKey * pSrcCKey = NULL, *pDstCKey = NULL;
-    uint32_t type = 0;
-
-    pSrcCKey = getActiveSrcOverlayCKey();
-    /* we use src (overlay) surface to maintain overridden dst ckey info
-     * to allow multiple overlays have different overridden dst keys for one primary surface */
-    /* non-null dstOverlayCKey for overlay would mean the overlay surface contains the overridden
-     * dst ckey value in defaultDstOverlayCKey
-     * this allows the NULL to be a valid overridden value as well */
-    pDstCKey = getActiveDstOverlayCKey(pPrimary);
-
-    if(pDstCKey != NULL)
-        type |= VBOXVHWA_PROGRAM_DSTCOLORKEY;
-    if(pSrcCKey)
-        type |= VBOXVHWA_PROGRAM_SRCCOLORKEY;
-    if((pDstCKey || pSrcCKey) && mNotIntersected)
-        type |= VBOXVHWA_PROGRAM_COLORKEYNODISCARD;
-
-    return mWidget->vboxVHWAGetGlProgramMngr()->getProgram(type, &colorFormat(), &pPrimary->colorFormat());
-}
-
-int VBoxVHWASurfaceBase::createDisplay(VBoxVHWASurfaceBase *pPrimary, GLuint *pDisplay, class VBoxVHWAGlProgramVHWA ** ppProgram)
-{
-    if(mVisibleTargRect.isEmpty())
-    {
-        Assert(mVisibleSrcRect.isEmpty());
-        return 0;
-    }
-    Assert(!mVisibleSrcRect.isEmpty());
-    /* just for the fallback */
-    if(mVisibleSrcRect.isEmpty())
-    {
-        *pDisplay = 0;
-        return VINF_SUCCESS;
-    }
-
-    VBoxVHWAGlProgramVHWA * pProgram = NULL;
-    if(pPrimary)
-    {
-        pProgram = calcProgram(pPrimary);
-        if(pProgram)
-        {
-            const VBoxVHWAColorKey *pResSrcCKey = getActiveSrcOverlayCKey();
-            const VBoxVHWAColorKey *pResDstCKey = getActiveDstOverlayCKey(pPrimary);
-
-            pProgram->start();
-            if(pResSrcCKey)
-            {
-                VBoxVHWASurfaceBase::setCKey(pProgram, &colorFormat(), pResSrcCKey, false);
-            }
-            if(pResDstCKey)
-            {
-                VBoxVHWASurfaceBase::setCKey(pProgram, &pPrimary->colorFormat(), pResDstCKey, true);
-            }
-            pProgram->stop();
-        }
-    }
-
-    glGetError(); /* clear the err flag */
-    GLuint display = glGenLists(1);
-    GLenum err = glGetError();
-    if(err == GL_NO_ERROR)
-    {
-        Assert(display);
-        if(!display)
-        {
-            /* well, it seems it should not return 0 on success according to the spec,
-             * but just in case, pick another one */
-            display = glGenLists(1);
-            err = glGetError();
-            if(err == GL_NO_ERROR)
-            {
-                Assert(display);
-            }
-            else
-            {
-                /* we are failed */
-                Assert(!display);
-                display = 0;
-            }
-        }
-
-        if(display)
-        {
-            const VBoxVHWAColorKey * pDstCKey = pPrimary ? getActiveDstOverlayCKey(pPrimary) : NULL;
-
-            glNewList(display, GL_COMPILE);
-
-            doDisplay(pPrimary, pProgram != 0, pDstCKey != NULL);
-
-            glEndList();
-            VBOXQGL_ASSERTNOERR();
-            *pDisplay = display;
-            *ppProgram = pProgram;
-            return VINF_SUCCESS;
-        }
-    }
-    else
-    {
-        VBOXQGLLOG(("gl error ocured (0x%x)\n", err));
-        Assert(err == GL_NO_ERROR);
-    }
-
-    return VERR_GENERAL_FAILURE;
-}
-
-void VBoxVHWASurfaceBase::initDisplay(VBoxVHWASurfaceBase *pPrimary)
-{
-    deleteDisplay();
-
-    int rc;
-#ifdef VBOXVHWA_USE_TEXGROUP
-    for(int i = mpTex.numSets()-1; i >=0; --i)
-    {
-        rc = createDisplay(pPrimary, &mpTex.display(), &mpProgram);
-        AssertRC(rc);
-        if(RT_FAILURE(rc))
-            break;
-        mpTex.swap();
-    }
-#else
-    rc = createDisplay(pPrimary, &mVisibleDisplay, &mpProgram);
+    int rc = mImage->initDisplay(mpPrimary ? mpPrimary->mImage : NULL, &mVisibleTargRect, &mVisibleSrcRect, getActiveDstOverlayCKey(mpPrimary), getActiveSrcOverlayCKey(), mbNotIntersected);
     AssertRC(rc);
-#endif
-    if(RT_SUCCESS(rc))
-    {
-        mVisibleDisplayInitialized = true;
-    }
-    else
-    {
-        mVisibleDisplayInitialized = false;
-    }
 }
 
 void VBoxVHWASurfaceBase::updatedMem(const QRect *rec)
@@ -2263,28 +1832,24 @@ void VBoxVHWASurfaceBase::updatedMem(const QRect *rec)
 
 bool VBoxVHWASurfaceBase::performDisplay(VBoxVHWASurfaceBase *pPrimary, bool bForce)
 {
-    Assert(mVisibleDisplayInitialized);
+    Assert(mImage->displayInitialized());
 
-#ifdef VBOXVHWA_USE_TEXGROUP
-    if(mpTex.display() == 0)
-#else
-    if(mVisibleDisplay == 0)
-#endif
+    if(mVisibleTargRect.isEmpty())
     {
         /* nothing to display, i.e. the surface is not visible,
          * in the sense that it's located behind the viewport ranges */
         Assert(mVisibleSrcRect.isEmpty());
-        Assert(mVisibleTargRect.isEmpty());
         return false;
     }
     else
     {
         Assert(!mVisibleSrcRect.isEmpty());
-        Assert(!mVisibleTargRect.isEmpty());
     }
 
     bForce |= synchTexMem(&mVisibleSrcRect);
-    if(pPrimary && getActiveDstOverlayCKey(pPrimary))
+
+    const VBoxVHWAColorKey * pDstCKey = getActiveDstOverlayCKey(pPrimary);
+    if(pPrimary && pDstCKey)
     {
         bForce |= pPrimary->synchTexMem(&mVisibleTargRect);
     }
@@ -2292,49 +1857,15 @@ bool VBoxVHWASurfaceBase::performDisplay(VBoxVHWASurfaceBase *pPrimary, bool bFo
     if(!bForce)
         return false;
 
-#ifdef VBOXVHWA_USE_TEXGROUP
-    Assert(mpTex.display());
-#else
-    Assert(mVisibleDisplay);
-#endif
-
-    if(!mVisibleDisplayInitialized)
-    {
-        VBoxVHWAGlProgramVHWA * pProgram = NULL;
-        if(pPrimary)
-        {
-            pProgram = calcProgram(pPrimary);
-        }
-
-        const VBoxVHWAColorKey * pDstCKey = NULL;
-        pDstCKey = getActiveDstOverlayCKey(pPrimary);
-
-        if(pProgram)
-            pProgram->start();
-        doDisplay(pPrimary, pProgram != 0, pDstCKey != NULL);
-        if(pProgram)
-            pProgram->stop();
-    }
-    else
-    {
-        if(mpProgram)
-            mpProgram->start();
-#ifdef VBOXVHWA_USE_TEXGROUP
-        VBOXQGL_CHECKERR(
-                glCallList(mpTex.display());
-                );
-#else
-        VBOXQGL_CHECKERR(
-                glCallList(mVisibleDisplay);
-                );
-#endif
-        if(mpProgram)
-            mpProgram->stop();
-
-    }
+    mImage->display();
 
     Assert(bForce);
     return true;
+}
+
+class VBoxVHWAGlProgramMngr * VBoxVHWASurfaceBase::getGlProgramMngr()
+{
+    return mWidget->vboxVHWAGetGlProgramMngr();
 }
 
 class VBoxGLContext : public QGLContext
@@ -2876,7 +2407,8 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
                                             pCmd->SurfInfo.PixelFormat.m3.rgbBBitMask);
             QSize surfSize(pCmd->SurfInfo.width, pCmd->SurfInfo.height);
             QRect primaryRect = mDisplay.getPrimary()->rect();
-            surf = new VBoxVHWASurfaceBase(this, surfSize,
+            surf = new VBoxVHWASurfaceBase(this,
+                        surfSize,
                         primaryRect,
                         QRect(0, 0, surfSize.width(), surfSize.height()),
                         mViewport,
@@ -2893,7 +2425,8 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
             QRect primaryRect = mDisplay.getPrimary()->rect();
 
             VBoxVHWAColorFormat format(pCmd->SurfInfo.PixelFormat.fourCC);
-            surf = new VBoxVHWASurfaceBase(this, surfSize,
+            surf = new VBoxVHWASurfaceBase(this,
+                                    surfSize,
                                     primaryRect,
                                     QRect(0, 0, surfSize.width(), surfSize.height()),
                                     mViewport,
@@ -3151,15 +2684,6 @@ int VBoxGLWidget::vhwaSurfaceFlip(struct _VBOXVHWACMD_SURF_FLIP *pCmd)
 
 void VBoxGLWidget::vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBoxVHWASurfaceBase *pSrcSurf, struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmd)
 {
-    /* get old values first to check whether we need to re-init display and program values */
-    bool bHadSrcCKey = false, bHadDstCKey = false;
-
-    if(pDstSurf)
-    {
-        bHadSrcCKey = !!(pSrcSurf->getActiveSrcOverlayCKey());
-        bHadDstCKey = !!(pSrcSurf->getActiveDstOverlayCKey(pDstSurf));
-    }
-
     if(pCmd->u.in.flags & VBOXVHWA_OVER_KEYDEST)
     {
         VBOXQGLLOG((", KEYDEST"));
@@ -3232,33 +2756,9 @@ void VBoxGLWidget::vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBo
         VBOXQGLLOG_QRECT("dstRect:", &dstRect, "\n");
         VBOXQGLLOG_QRECT("srcRect:", &srcRect, "\n");
 
-        const VBoxVHWAColorKey *pResSrcCKey = pSrcSurf->getActiveSrcOverlayCKey();
-        const VBoxVHWAColorKey *pResDstCKey = pSrcSurf->getActiveDstOverlayCKey(pDstSurf);
-
-        if(bHadSrcCKey != !!pResSrcCKey || bHadDstCKey != !!pResDstCKey)
-        {
-            pSrcSurf->setVisibilityReinitFlag();
-        }
-        else if(pResSrcCKey || pResDstCKey)
-        {
-            VBoxVHWAGlProgramVHWA *pProgram = pSrcSurf->getProgram(pDstSurf);
-            if(pProgram)
-            {
-                pProgram->start();
-                if(pResSrcCKey)
-                {
-                    VBoxVHWASurfaceBase::setCKey(pProgram, &pSrcSurf->colorFormat(), pResSrcCKey, false);
-                }
-                if(pResDstCKey)
-                {
-                    VBoxVHWASurfaceBase::setCKey(pProgram, &pDstSurf->colorFormat(), pResDstCKey, true);
-                }
-                pProgram->stop();
-            }
-        }
+        pSrcSurf->setPrimary(pDstSurf);
 
         pSrcSurf->setRects(dstRect, srcRect);
-
     }
 }
 
@@ -3399,7 +2899,6 @@ int VBoxGLWidget::vhwaSurfaceColorkeySet(struct _VBOXVHWACMD_SURF_COLORKEY_SET *
              sit != surfaces.end(); ++ sit)
         {
             VBoxVHWASurfaceBase *pOverlaySurf = *sit;
-            pOverlaySurf->setVisibilityReinitFlag();
         }
     }
     return VINF_SUCCESS;
@@ -5503,5 +5002,373 @@ void VBoxVHWACommandsQueue::freeList(VBoxVHWACommandElement * pList)
         delete pCur;
     }
 }
+
+VBoxVHWATextureImage::VBoxVHWATextureImage(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr, bool bDisablePBO) :
+        mVisibleDisplay(0),
+        mpProgram(0),
+        mProgramMngr(aMgr),
+        mpDst(NULL),
+        mpDstCKey(NULL),
+        mpSrcCKey(NULL),
+        mbNotIntersected(false)
+{
+    mpTex[0] = vboxVHWATextureCreate(NULL, size, format, bDisablePBO);
+    mColorFormat = format;
+    if(mColorFormat.fourcc() == FOURCC_YV12)
+    {
+        QRect rect(size.x()/2,size.y()/2,size.width()/2,size.height()/2);
+        mpTex[1] = vboxVHWATextureCreate(NULL, rect, format, bDisablePBO);
+        mpTex[2] = vboxVHWATextureCreate(NULL, rect, format, bDisablePBO);
+        mcTex = 3;
+    }
+    else
+    {
+        mcTex = 1;
+    }
+}
+
+void VBoxVHWATextureImage::deleteDisplayList()
+{
+    if(mVisibleDisplay)
+    {
+        glDeleteLists(mVisibleDisplay, 1);
+        mVisibleDisplay = 0;
+    }
+}
+
+void VBoxVHWATextureImage::deleteDisplay()
+{
+    deleteDisplayList();
+    mpProgram = NULL;
+}
+
+void VBoxVHWATextureImage::draw(VBoxVHWATextureImage *pDst, const QRect * pDstRect, const QRect * pSrcRect)
+{
+    int tx1, ty1, tx2, ty2;
+    pSrcRect->getCoords(&tx1, &ty1, &tx2, &ty2);
+    int bx1, by1, bx2, by2;
+    pDstRect->getCoords(&bx1, &by1, &bx2, &by2);
+    tx2++; ty2++;bx2++; by2++;
+
+    glBegin(GL_QUADS);
+    uint32_t c = texCoord(GL_TEXTURE0, tx1, ty1);
+    if(pDst)
+    {
+        pDst->texCoord(GL_TEXTURE0 + c, bx1, by1);
+    }
+    glVertex2i(bx1, by1);
+
+    texCoord(GL_TEXTURE0, tx1, ty2);
+    if(pDst)
+    {
+        pDst->texCoord(GL_TEXTURE0 + c, bx1, by2);
+    }
+    glVertex2i(bx1, by2);
+
+    texCoord(GL_TEXTURE0, tx2, ty2);
+    if(pDst)
+    {
+        pDst->texCoord(GL_TEXTURE0 + c, bx2, by2);
+    }
+    glVertex2i(bx2, by2);
+
+    texCoord(GL_TEXTURE0, tx2, ty1);
+    if(pDst)
+    {
+        pDst->texCoord(GL_TEXTURE0 + c, bx2, by1);
+    }
+    glVertex2i(bx2, by1);
+
+    glEnd();
+}
+
+void VBoxVHWATextureImage::internalSetDstCKey(const VBoxVHWAColorKey * pDstCKey)
+{
+    if(pDstCKey)
+    {
+        mDstCKey = *pDstCKey;
+        mpDstCKey = &mDstCKey;
+    }
+    else
+    {
+        mpDstCKey = NULL;
+    }
+}
+
+void VBoxVHWATextureImage::internalSetSrcCKey(const VBoxVHWAColorKey * pSrcCKey)
+{
+    if(pSrcCKey)
+    {
+        mSrcCKey = *pSrcCKey;
+        mpSrcCKey = &mSrcCKey;
+    }
+    else
+    {
+        mpSrcCKey = NULL;
+    }
+}
+
+int VBoxVHWATextureImage::initDisplay(VBoxVHWATextureImage *pDst,
+        const QRect * pDstRect, const QRect * pSrcRect,
+        const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected)
+{
+    if(!mVisibleDisplay
+            || mpDst != pDst
+            || *pDstRect != mDstRect
+            || *pSrcRect != mSrcRect
+            || !!(pDstRect) != !!(mpDstCKey)
+            || !!(pSrcCKey) != !!(mpSrcCKey)
+            || mbNotIntersected != bNotIntersected)
+    {
+        return createSetDisplay(pDst, pDstRect, pSrcRect,
+                pDstCKey, pSrcCKey, bNotIntersected,
+                &mVisibleDisplay, &mpProgram);
+
+    }
+    else if((pDstCKey && mpDstCKey && *pDstCKey == *mpDstCKey)
+            || (pSrcCKey && mpSrcCKey && *pSrcCKey == *mpSrcCKey))
+    {
+        Assert(mpProgram);
+        updateSetCKeys(pDstCKey, pSrcCKey);
+        return VINF_SUCCESS;
+    }
+    mVisibleDisplay = 0;
+    mpProgram = 0;
+    return VINF_SUCCESS;
+}
+
+void VBoxVHWATextureImage::bind(VBoxVHWATextureImage * pPrimary)
+{
+    for(uint32_t i = 1; i < mcTex; i++)
+    {
+        vboxglActiveTexture(GL_TEXTURE0 + i);
+        mpTex[i]->bind();
+    }
+    if(pPrimary)
+    {
+        for(uint32_t i = 0; i < pPrimary->mcTex; i++)
+        {
+            vboxglActiveTexture(GL_TEXTURE0 + i + mcTex);
+            pPrimary->mpTex[i]->bind();
+        }
+    }
+
+    vboxglActiveTexture(GL_TEXTURE0);
+    mpTex[0]->bind();
+}
+
+class VBoxVHWAGlProgramVHWA * VBoxVHWATextureImage::calcProgram(VBoxVHWATextureImage *pDst, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected)
+{
+    uint32_t type = 0;
+
+    if(pDstCKey != NULL)
+        type |= VBOXVHWA_PROGRAM_DSTCOLORKEY;
+    if(pSrcCKey)
+        type |= VBOXVHWA_PROGRAM_SRCCOLORKEY;
+    if((pDstCKey || pSrcCKey) && bNotIntersected)
+        type |= VBOXVHWA_PROGRAM_COLORKEYNODISCARD;
+
+    return mProgramMngr->getProgram(type, &colorFormat(), pDst ? &pDst->colorFormat() : NULL);
+}
+
+int VBoxVHWATextureImage::createSetDisplay(VBoxVHWATextureImage *pDst, const QRect * pDstRect, const QRect * pSrcRect,
+        const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected,
+        GLuint *pDisplay, class VBoxVHWAGlProgramVHWA ** ppProgram)
+{
+    deleteDisplay();
+    int rc = createDisplay(pDst, pDstRect, pSrcRect,
+            pDstCKey, pSrcCKey, bNotIntersected,
+            &mVisibleDisplay, &mpProgram);
+    if(RT_FAILURE(rc))
+    {
+        mVisibleDisplay = 0;
+        mpProgram = NULL;
+    }
+
+    mpDst = pDst;
+
+    mDstRect = *pDstRect;
+    mSrcRect = *pSrcRect;
+
+    internalSetDstCKey(pDstCKey);
+    internalSetSrcCKey(pSrcCKey);
+
+    mbNotIntersected = bNotIntersected;
+
+    return rc;
+}
+
+
+int VBoxVHWATextureImage::createDisplayList(VBoxVHWATextureImage *pDst, const QRect * pDstRect, const QRect * pSrcRect,
+        const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected,
+        GLuint *pDisplay)
+{
+    glGetError(); /* clear the err flag */
+    GLuint display = glGenLists(1);
+    GLenum err = glGetError();
+    if(err == GL_NO_ERROR)
+    {
+        Assert(display);
+        if(!display)
+        {
+            /* well, it seems it should not return 0 on success according to the spec,
+             * but just in case, pick another one */
+            display = glGenLists(1);
+            err = glGetError();
+            if(err == GL_NO_ERROR)
+            {
+                Assert(display);
+            }
+            else
+            {
+                /* we are failed */
+                Assert(!display);
+                display = 0;
+            }
+        }
+
+        if(display)
+        {
+            glNewList(display, GL_COMPILE);
+
+            runDisplay(pDst, pDstRect, pSrcRect);
+
+            glEndList();
+            VBOXQGL_ASSERTNOERR();
+            *pDisplay = display;
+            return VINF_SUCCESS;
+        }
+    }
+    else
+    {
+        VBOXQGLLOG(("gl error ocured (0x%x)\n", err));
+        Assert(err == GL_NO_ERROR);
+    }
+    return VERR_GENERAL_FAILURE;
+}
+
+void VBoxVHWATextureImage::updateCKeys(VBoxVHWATextureImage * pDst, class VBoxVHWAGlProgramVHWA * pProgram, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey)
+{
+    if(pProgram)
+    {
+        pProgram->start();
+        if(pSrcCKey)
+        {
+            VBoxVHWATextureImage::setCKey(pProgram, &colorFormat(), pSrcCKey, false);
+        }
+        if(pDstCKey)
+        {
+            VBoxVHWATextureImage::setCKey(pProgram, &pDst->colorFormat(), pDstCKey, true);
+        }
+        pProgram->stop();
+    }
+}
+
+void VBoxVHWATextureImage::updateSetCKeys(const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey)
+{
+    updateCKeys(mpDst, mpProgram, pDstCKey, pSrcCKey);
+    internalSetDstCKey(pDstCKey);
+    internalSetSrcCKey(pSrcCKey);
+}
+
+int VBoxVHWATextureImage::createDisplay(VBoxVHWATextureImage *pDst, const QRect * pDstRect, const QRect * pSrcRect,
+        const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected,
+        GLuint *pDisplay, class VBoxVHWAGlProgramVHWA ** ppProgram)
+{
+    VBoxVHWAGlProgramVHWA * pProgram = NULL;
+    if(!pDst)
+    {
+        /* sanity */
+        Assert(pDstCKey == NULL);
+        pDstCKey = NULL;
+    }
+
+    pProgram = calcProgram(pDst, pDstCKey, pSrcCKey, bNotIntersected);
+
+    updateCKeys(pDst, pProgram, pDstCKey, pSrcCKey);
+
+    GLuint displ;
+    int rc = createDisplayList(pDst, pDstRect, pSrcRect,
+            pDstCKey, pSrcCKey, bNotIntersected,
+            &displ);
+    if(RT_SUCCESS(rc))
+    {
+        *pDisplay = displ;
+        *ppProgram = pProgram;
+    }
+
+    return rc;
+}
+
+void VBoxVHWATextureImage::display(VBoxVHWATextureImage *pDst, const QRect * pDstRect, const QRect * pSrcRect,
+        const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected)
+{
+    VBoxVHWAGlProgramVHWA * pProgram = calcProgram(pDst, pDstCKey, pSrcCKey, bNotIntersected);
+    if(pProgram)
+        pProgram->start();
+
+    runDisplay(pDst, pDstRect, pSrcRect);
+
+    if(pProgram)
+        pProgram->stop();
+}
+
+void VBoxVHWATextureImage::display()
+{
+    Assert(mVisibleDisplay);
+    if(mVisibleDisplay)
+    {
+        if(mpProgram)
+            mpProgram->start();
+
+        VBOXQGL_CHECKERR(
+                glCallList(mVisibleDisplay);
+                );
+
+        if(mpProgram)
+            mpProgram->stop();
+    }
+    else
+    {
+        display(mpDst, &mDstRect, &mSrcRect,
+                mpDstCKey, mpSrcCKey, mbNotIntersected);
+    }
+}
+
+//int VBoxVHWATextureImage::updateDstCKeyInfo(const VBoxVHWAColorKey * pDstCKey)
+//{
+//    if(mpProgram)
+//    {
+//        pProgram->start();
+//        int rc = setCKey(mpProgram, &mColorFormat, pDstCKey, true);
+//        pProgram->stop();
+//        return rc;
+//    }
+//    return VERR_INVALID_STATE;
+//}
+//
+//int VBoxVHWATextureImage::updateSrcCKeyInfo(const VBoxVHWAColorKey * pSrcCKey)
+//{
+//    if(mpProgram)
+//    {
+//        pProgram->start();
+//        int rc = setCKey(mpProgram, &mColorFormat, pSrcCKey, false);
+//        pProgram->stop();
+//        return rc;
+//    }
+//    return VERR_INVALID_STATE;
+//}
+
+int VBoxVHWATextureImage::setCKey(VBoxVHWAGlProgramVHWA * pProgram, const VBoxVHWAColorFormat * pFormat, const VBoxVHWAColorKey * pCKey, bool bDst)
+{
+    float r,g,b;
+    pFormat->pixel2Normalized(pCKey->lower(), &r, &g, &b);
+    int rcL = bDst ? pProgram->setDstCKeyLowerRange(r, g, b) : pProgram->setSrcCKeyLowerRange(r, g, b);
+    Assert(RT_SUCCESS(rcL));
+
+    return RT_SUCCESS(rcL) /*&& RT_SUCCESS(rcU)*/ ? VINF_SUCCESS: VERR_GENERAL_FAILURE;
+}
+
+
 
 #endif
