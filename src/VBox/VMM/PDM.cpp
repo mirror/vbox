@@ -506,6 +506,7 @@ static void pdmR3TermLuns(PVM pVM, PPDMLUN pLun, const char *pszDevice, unsigned
                          pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pLun->iLun, pszDevice, iInstance));
                 pDrvIns->pDrvReg->pfnDestruct(pDrvIns);
             }
+            pDrvIns->Internal.s.pDrv->cInstances--;
 
             TMR3TimerDestroyDriver(pVM, pDrvIns);
             //PDMR3QueueDestroyDriver(pVM, pDrvIns);

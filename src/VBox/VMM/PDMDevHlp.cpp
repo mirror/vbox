@@ -892,11 +892,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
                         pNew->pDrvHlp                   = &g_pdmR3DrvHlp;
                         pNew->pDrvReg                   = pDrv->pDrvReg;
                         pNew->pCfgHandle                = pConfigNode;
-                        pNew->iInstance                 = pDrv->cInstances++;
+                        pNew->iInstance                 = pDrv->iNextInstance;
                         pNew->pUpBase                   = pBaseInterface;
                         //pNew->pDownBase                 = NULL;
                         //pNew->IBase.pfnQueryInterface   = NULL;
                         pNew->pvInstanceData            = &pNew->achInstanceData[0];
+
+                        pDrv->iNextInstance++;
+                        pDrv->cInstances++;
 
                         /*
                          * Link with LUN and call the constructor.
