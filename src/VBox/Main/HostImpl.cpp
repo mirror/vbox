@@ -425,8 +425,9 @@ STDMETHODIMP Host::COMGETTER(DVDDrives)(ComSafeArrayOut(IMedium *, aDrives))
             if (RTEnvGet("VBOX_CDROM"))
             {
                 char *cdromEnv = strdup(RTEnvGet("VBOX_CDROM"));
+                char *saveStr = NULL;
                 char *cdromDrive;
-                cdromDrive = strtok(cdromEnv, ":"); /** @todo use strtok_r. */
+                cdromDrive = strtok_r(cdromEnv, ":", &saveStr);
                 while (cdromDrive)
                 {
                     if (validateDevice(cdromDrive, true))
@@ -436,7 +437,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives)(ComSafeArrayOut(IMedium *, aDrives))
                         hostDVDDriveObj->init(m->pParent, DeviceType_DVD, Bstr(cdromDrive));
                         list.push_back(hostDVDDriveObj);
                     }
-                    cdromDrive = strtok(NULL, ":");
+                    cdromDrive = strtok_r(NULL, ":", &saveStr);
                 }
                 free(cdromEnv);
             }
@@ -2215,31 +2216,28 @@ void Host::parseMountTable(char *mountTable, std::list< ComObjPtr<Medium> > &lis
         struct mnttab mntTab;
         while (getmntent(mntFile, &mntTab) == 0)
         {
-            char *mountName = strdup(mntTab.mnt_special);
-            char *mountPoint = strdup(mntTab.mnt_mountp);
-            char *mountFSType = strdup(mntTab.mnt_fstype);
-
-            // skip devices we are not interested in
-            if ((*mountName && mountName[0] == '/') &&                  // skip 'fake' devices (like -hosts, proc, fd, swap)
-                (*mountFSType && (strcmp(mountFSType, "devfs") != 0 &&  // skip devfs (i.e. /devices)
-                                  strcmp(mountFSType, "dev") != 0 &&    // skip dev (i.e. /dev)
-                                  strcmp(mountFSType, "lofs") != 0)) && // skip loop-back file-system (lofs)
-                (*mountPoint && strcmp(mountPoint, "/") != 0))          // skip point '/' (Can CD/DVD be mounted at '/' ???)
+            const char *mountName = mntTab.mnt_special;
+            const char *mountPoint = mntTab.mnt_mountp;
+            const char *mountFSType = mntTab.mnt_fstype;
+            if (mountName && mountPoint && mountFSType)
             {
-                char *rawDevName = getfullrawname(mountName);
-                if (validateDevice(rawDevName, true))
+                // skip devices we are not interested in
+                if ((*mountName && mountName[0] == '/') &&                      // skip 'fake' devices (like -hosts, proc, fd, swap)
+                    (*mountFSType && (strncmp(mountFSType, "devfs", 5) != 0 &&  // skip devfs (i.e. /devices)
+                                      strncmp(mountFSType, "dev", 3) != 0 &&    // skip dev (i.e. /dev)
+                                      strncmp(mountFSType, "lofs", 4) != 0)))   // skip loop-back file-system (lofs)
                 {
-                    ComObjPtr<Medium> hostDVDDriveObj;
-                    hostDVDDriveObj.createObject();
-                    hostDVDDriveObj->init(m->pParent, DeviceType_DVD, Bstr(rawDevName));
-                    list.push_back (hostDVDDriveObj);
+                    char *rawDevName = getfullrawname((char *)mountName);
+                    if (validateDevice(rawDevName, true))
+                    {
+                        ComObjPtr<Medium> hostDVDDriveObj;
+                        hostDVDDriveObj.createObject();
+                        hostDVDDriveObj->init(m->pParent, DeviceType_DVD, Bstr(rawDevName));
+                        list.push_back (hostDVDDriveObj);
+                    }
+                    free(rawDevName);
                 }
-                free(rawDevName);
             }
-
-            free(mountName);
-            free(mountPoint);
-            free(mountFSType);
         }
 
         fclose(mntFile);
