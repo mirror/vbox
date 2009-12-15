@@ -1544,18 +1544,12 @@ static void rtThreadDeadlock(PRTTHREADINT pThread, PRTTHREADINT pCur, RTTHREADST
 
 
 /**
- * Change the thread state to blocking and do deadlock detection.
- *
- * This is a RT_STRICT method for debugging locks and detecting deadlocks.
+ * Change the thread state to blocking.
  *
  * @param   hThread         The current thread.
  * @param   enmState        The sleep state.
- * @param   pvBlock         Pointer to a RTLOCKVALIDATORREC structure.
- * @param   uId             Where we are blocking.
- * @param   RT_SRC_POS_DECL Where we are blocking.
  */
-RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState,
-                              PRTLOCKVALIDATORREC pValidatorRec, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState)
 
 {
     Assert(RTTHREAD_IS_SLEEPING(enmState));
@@ -1569,25 +1563,63 @@ RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState,
     if (rtThreadGetState(pThread) != RTTHREADSTATE_RUNNING)
         return;
 
-    if (!pValidatorRec)
-        /*
-         * If no validator record, just update the thread state.
-         */
-        rtThreadSetState(pThread, enmState);
-    else
-    {
-        /*
-         * Record the location and everything before changing the state and
-         * performing deadlock detection.
-         */
-        /** @todo This has to be serialized! The deadlock detection isn't 100% safe!!! */
-        pThread->Block.pRec         = pValidatorRec;
-        pThread->pszBlockFunction   = pszFunction;
-        pThread->pszBlockFile       = pszFile;
-        pThread->uBlockLine         = iLine;
-        pThread->uBlockId           = uId;
-        rtThreadSetState(pThread, enmState);
+    /*
+     * Do the job.
+     */
+    rtThreadSetState(pThread, enmState);
+}
 
+
+/**
+ * Change the thread state to blocking and do deadlock detection.
+ *
+ * This is a RT_STRICT method for debugging locks and detecting deadlocks.
+ *
+ * @param   hThread         The current thread.
+ * @param   enmState        The sleep state.
+ * @param   pvBlock         Pointer to a RTLOCKVALIDATORREC structure.
+ * @param   fRecursiveOk    Whether it's ok to recurse.
+ * @param   uId             Where we are blocking.
+ * @param   RT_SRC_POS_DECL Where we are blocking.
+ *
+ * @todo    Move this to RTLockValidator.
+ */
+RTDECL(void) RTThreadBlockingDebug(RTTHREAD hThread, RTTHREADSTATE enmState, bool fRecursiveOk,
+                                   PRTLOCKVALIDATORREC pValidatorRec, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+
+{
+    /*
+     * Fend off wild life.
+     */
+    AssertReturnVoid(RTTHREAD_IS_SLEEPING(enmState));
+    AssertPtrReturnVoid(pValidatorRec);
+    AssertReturnVoid(pValidatorRec->u32Magic == RTLOCKVALIDATORREC_MAGIC);
+    PRTTHREADINT pThread = hThread;
+    AssertPtrReturnVoid(pThread);
+    AssertReturnVoid(pThread->u32Magic == RTTHREADINT_MAGIC);
+    AssertReturnVoid(rtThreadGetState(pThread) == RTTHREADSTATE_RUNNING);
+
+    /*
+     * Record the location and everything before changing the state and
+     * performing deadlock detection.
+     */
+    /** @todo This has to be serialized! The deadlock detection isn't 100% safe!!! */
+    pThread->Block.pRec         = pValidatorRec;
+    pThread->pszBlockFunction   = pszFunction;
+    pThread->pszBlockFile       = pszFile;
+    pThread->uBlockLine         = iLine;
+    pThread->uBlockId           = uId;
+    rtThreadSetState(pThread, enmState);
+
+    /*
+     * Don't do deadlock detection if we're recursing and that's OK.
+     *
+     * On some hosts we don't do recursion accounting our selves and there
+     * isn't any other place to check for this.  semmutex-win.cpp for instance.
+     */
+    if (    !fRecursiveOk
+        ||  pValidatorRec->hThread != pThread)
+    {
         /*
          * Do deadlock detection.
          *

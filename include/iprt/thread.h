@@ -631,13 +631,21 @@ RTDECL(void) RTThreadReadLockDec(RTTHREAD Thread);
 /**
  * Unblocks a thread.
  *
- * This function is paired with rtThreadBlocking.
+ * This function is paired with RTThreadBlocking and RTThreadBlockingDebug.
  *
  * @param   hThread     The current thread.
  * @param   enmCurState The current state, used to check for nested blocking.
  *                      The new state will be running.
  */
 RTDECL(void) RTThreadUnblocked(RTTHREAD hThread, RTTHREADSTATE enmCurState);
+
+/**
+ * Change the thread state to blocking.
+ *
+ * @param   hThread         The current thread.
+ * @param   enmState        The sleep state.
+ */
+RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState);
 
 /**
  * Change the thread state to blocking and do deadlock detection.
@@ -647,11 +655,14 @@ RTDECL(void) RTThreadUnblocked(RTTHREAD hThread, RTTHREADSTATE enmCurState);
  * @param   hThread         The current thread.
  * @param   enmState        The sleep state.
  * @param   pvBlock         Pointer to a RTLOCKVALIDATORREC structure.
+ * @param   fRecursiveOk    Whether it's ok to recurse.
  * @param   uId             Where we are blocking.
  * @param   RT_SRC_POS_DECL Where we are blocking.
+ *
+ * @todo    Move this to RTLockValidator.
  */
-RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState,
-                              PRTLOCKVALIDATORREC pValidatorRec, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+RTDECL(void) RTThreadBlockingDebug(RTTHREAD hThread, RTTHREADSTATE enmState, bool fRecursiveOk,
+                                   PRTLOCKVALIDATORREC pValidatorRec, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 
 

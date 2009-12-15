@@ -228,9 +228,9 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
              * Go to sleep.
              */
             if (pTimeout && ( pTimeout->tv_sec || pTimeout->tv_nsec ))
-                RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX, RTSEMMUTEX_STRICT_BLOCK_ARGS(&pThis->ValidatorRec));
+                RTSEMMUTEX_STRICT_BLOCK(hThreadSelf, &pThis->ValidatorRec);
             long rc = sys_futex(&pThis->iState, FUTEX_WAIT, 2, pTimeout, NULL, 0);
-            RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_MUTEX);
+            RTSEMMUTEX_STRICT_UNBLOCK(hThreadSelf);
             if (RT_UNLIKELY(pThis->u32Magic != RTSEMMUTEX_MAGIC))
                 return VERR_SEM_DESTROYED;
 
