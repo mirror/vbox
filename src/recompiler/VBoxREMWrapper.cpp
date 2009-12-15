@@ -209,6 +209,7 @@
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/ldr.h>
+#include <iprt/lockvalidator.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
