@@ -226,7 +226,8 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
         if ((pCtx->eflags.u32 & X86_EFL_VM))                                                    \
             val = pCtx->reg##Hid.Attr.u;                                                        \
         else                                                                                    \
-        if (CPUMIsGuestInRealModeEx(pCtx))                                                      \
+        if (    CPUMIsGuestInRealModeEx(pCtx)                                                   \
+            &&  !pVM->hwaccm.s.vmx.fUnrestrictedGuest)                                          \
         {                                                                                       \
             /* Must override this or else VT-x will fail with invalid guest state errors. */    \
             /* DPL=3, present, code/data, r/w/accessed. */                                      \
