@@ -119,6 +119,8 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGetAdapterSettings(const GUID * pGuid, 
 typedef VOID (*LOG_ROUTINE) (LPCWSTR szString);
 VBOXNETCFGWIN_DECL(VOID) VBoxNetCfgWinSetLogging(LOG_ROUTINE Log);
 
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumUpperBindings ();
+
 RT_C_DECLS_END
 
 /** @} */
