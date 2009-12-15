@@ -36,17 +36,33 @@
 #include <Windows.h>
 
 #include <iprt/semaphore.h>
-#include <iprt/thread.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
+#include <iprt/asm.h>
 #include <iprt/err.h>
+#include <iprt/lockvalidator.h>
+#include <iprt/mem.h>
+#include <iprt/thread.h>
+#include "internal/magics.h"
 #include "internal/strict.h"
 
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** Converts semaphore to win32 handle. */
-#define SEM2HND(Sem) ((HANDLE)(uintptr_t)Sem)
+/** Posix internal representation of a Mutex semaphore. */
+struct RTSEMMUTEXINTERNAL
+{
+    /** Magic value (RTSEMMUTEX_MAGIC). */
+    uint32_t            u32Magic;
+    /** The mutex handle. */
+    HANDLE              hMtx;
+#ifdef RTSEMMUTEX_STRICT
+    /** Lock validator record associated with this mutex. */
+    RTLOCKVALIDATORREC  ValidatorRec;
+#endif
+};
 
 
 /* Undefine debug mappings. */
@@ -56,49 +72,107 @@
 
 RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
 {
+    int rc;
+
     /*
      * Create the semaphore.
      */
-    HANDLE hmtx = CreateMutex(NULL, FALSE, NULL);
-    if (hmtx)
+    HANDLE hMtx = CreateMutex(NULL, FALSE, NULL);
+    if (hMtx)
     {
-        *pMutexSem = (RTSEMMUTEX)(void *)hmtx;
-        return VINF_SUCCESS;
-    }
+        RTSEMMUTEXINTERNAL *pThis = (RTSEMMUTEXINTERNAL *)RTMemAlloc(sizeof(*pThis));
+        if (pThis)
+        {
+            pThis->u32Magic = RTSEMMUTEX_MAGIC;
+            pThis->hMtx = hMtx;
+#ifdef RTSEMMUTEX_STRICT
+            RTLockValidatorInit(&pThis->ValidatorRec,  NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, NULL, pThis);
+#endif
+            *pMutexSem = pThis;
+            return VINF_SUCCESS;
+        }
 
-    return RTErrConvertFromWin32(GetLastError());
+        rc = VERR_NO_MEMORY;
+    }
+    else
+        rc = RTErrConvertFromWin32(GetLastError());
+    return rc;
 }
 
 
 RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
 {
     /*
+     * Validate.
+     */
+    RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    if (pThis == NIL_RTSEMMUTEX)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
+
+    /*
      * Close semaphore handle.
      */
-    if (CloseHandle(SEM2HND(MutexSem)))
-        return VINF_SUCCESS;
-    AssertMsgFailed(("Destroy MutexSem %p failed, lasterr=%d\n", MutexSem, GetLastError()));
-    return RTErrConvertFromWin32(GetLastError());
+    AssertReturn(ASMAtomicCmpXchgU32(&pThis->u32Magic, RTSEMMUTEX_MAGIC_DEAD, RTSEMMUTEX_MAGIC), VERR_INVALID_HANDLE);
+    HANDLE hMtx = pThis->hMtx;
+    ASMAtomicWritePtr((void * volatile *)&pThis->hMtx, (void *)INVALID_HANDLE_VALUE);
+
+    int rc = VINF_SUCCESS;
+    if (!CloseHandle(hMtx))
+    {
+        rc = RTErrConvertFromWin32(GetLastError());
+        AssertMsgFailed(("%p rc=%d lasterr=%d\n", pThis->hMtx, rc, GetLastError()));
+    }
+
+#ifdef RTSEMMUTEX_STRICT
+    RTLockValidatorDelete(&pThis->ValidatorRec);
+#endif
+    RTMemFree(pThis);
+    return rc;
 }
 
 
-RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
+/**
+ * Internal worker for RTSemMutexRequestNoResume and it's debug companion.
+ *
+ * @returns Same as RTSEmMutexRequestNoResume
+ * @param   MutexSem                    The mutex handle.
+ * @param   cMillies                    The number of milliseconds to wait.
+ * @param   TSEMMUTEX_STRICT_POS_DECL   The source position of the caller.
+ */
+DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies, RTSEMMUTEX_STRICT_POS_DECL)
 {
+    /*
+     * Validate.
+     */
+    RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
+
+#ifdef RTSEMMUTEX_STRICT
+    RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
+    RTLockValidatorCheckOrder(&pThis->ValidatorRec, hThreadSelf, RTSEMMUTEX_STRICT_POS_ARGS);
+#else
+    RTTHREAD hThreadSelf = RTThreadSelf();
+#endif
+
     /*
      * Lock mutex semaphore.
      */
-    int rc = WaitForSingleObjectEx(SEM2HND(MutexSem), cMillies == RT_INDEFINITE_WAIT ? INFINITE : cMillies, TRUE);
+    if (cMillies > 0)
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX, RTSEMMUTEX_STRICT_BLOCK_ARGS(&pThis->ValidatorRec));
+    int rc = WaitForSingleObjectEx(pThis->hMtx,
+                                   cMillies == RT_INDEFINITE_WAIT ? INFINITE : cMillies,
+                                   TRUE /*bAlertable*/);
+    RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_MUTEX);
     switch (rc)
     {
         case WAIT_OBJECT_0:
-        {
 #ifdef RTSEMMUTEX_STRICT
-            RTTHREAD Thread = RTThreadSelf();
-            if (Thread != NIL_RTTHREAD)
-                RTThreadWriteLockInc(Thread);
+            RTThreadWriteLockInc(RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, RTSEMMUTEX_STRICT_POS_ARGS));
 #endif
             return VINF_SUCCESS;
-        }
 
         case WAIT_TIMEOUT:          return VERR_TIMEOUT;
         case WAIT_IO_COMPLETION:    return VERR_INTERRUPTED;
@@ -117,30 +191,49 @@ RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
 }
 
 
-RTDECL(int)  RTSemMutexRequestNoResumeDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
 {
-    return RTSemMutexRequestNoResume(MutexSem, cMillies);
+#ifndef RTSEMMUTEX_STRICT
+    return rtSemMutexRequestNoResume(MutexSem, cMillies, RTSEMMUTEX_STRICT_POS_ARGS);
+#else
+    return RTSemMutexRequestNoResumeDebug(MutexSem, cMillies, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
+#endif
 }
 
 
-RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
+RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
+#ifdef RTSEMMUTEX_STRICT
+    return rtSemMutexRequestNoResume(MutexSem, cMillies, RTSEMMUTEX_STRICT_POS_ARGS);
+#else
+    return RTSemMutexRequestNoResume(MutexSem, cMillies);
+#endif
+}
+
+
+RTDECL(int) RTSemMutexRelease(RTSEMMUTEX MutexSem)
+{
+    /*
+     * Validate.
+     */
+    RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
+
     /*
      * Unlock mutex semaphore.
      */
 #ifdef RTSEMMUTEX_STRICT
-    RTTHREAD Thread = RTThreadSelf();
-    if (Thread != NIL_RTTHREAD)
-        RTThreadWriteLockDec(Thread);
+    if (   pThis->ValidatorRec.hThread != NIL_RTTHREAD
+        && pThis->ValidatorRec.hThread == RTThreadSelf())
+        RTThreadWriteLockDec(RTLockValidatorUnsetOwner(&pThis->ValidatorRec));
+    else
+        AssertMsgFailed(("%p hThread=%RTthrd\n", pThis, pThis->ValidatorRec.hThread));
 #endif
-    if (ReleaseMutex(SEM2HND(MutexSem)))
+    if (ReleaseMutex(pThis->hMtx))
         return VINF_SUCCESS;
-
-#ifdef RTSEMMUTEX_STRICT
-    if (Thread != NIL_RTTHREAD)
-        RTThreadWriteLockInc(Thread);
-#endif
-    AssertMsgFailed(("Release MutexSem %p failed, lasterr=%d\n", MutexSem, GetLastError()));
-    return RTErrConvertFromWin32(GetLastError());
+    int rc = RTErrConvertFromWin32(GetLastError());
+    AssertMsgFailed(("%p/%p, rc=%Rrc lasterr=%d\n", pThis, pThis->hMtx, rc, GetLastError()));
+    return rc;
 }
 
