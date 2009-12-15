@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="bg_BG">
+<!DOCTYPE TS><TS version="1.1" language="bg_BG">
+<defaultcodec></defaultcodec>
 <context>
     <name>AudioOutput</name>
     <message>
@@ -3638,11 +3638,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Insert</source>
-        <translation type="unfinished">Вмъкване</translation>
+        <translation>Вмъкване</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">Изтриване</translation>
+        <translation>Изтриване</translation>
     </message>
     <message>
         <source>Escape</source>

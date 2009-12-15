@@ -2513,7 +2513,7 @@ Vill du ta bort den ändå?</translation>
     <name>QObject</name>
     <message>
         <source>Operation not supported on %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Åtgärden stöds inte på %1</translation>
     </message>
     <message>
         <source>Invalid URI: %1</source>
@@ -2529,15 +2529,15 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Uttagsfel på %1: %2</translation>
     </message>
     <message>
         <source>Remote host closed the connection prematurely on %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Fjärrvärden stängde anslutningen i förtid på %1</translation>
     </message>
     <message>
         <source>Protocol error: packet of size 0 received</source>
-        <translation type="unfinished"></translation>
+        <translation>Protokollfel: paket med storlek 0 togs emot</translation>
     </message>
 </context>
 <context>
@@ -3327,7 +3327,7 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>%1: key is empty</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: nyckeln är tom</translation>
     </message>
     <message>
         <source>%1: unix key file doesn&apos;t exists</source>
@@ -3335,7 +3335,7 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: ftok misslyckades</translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
