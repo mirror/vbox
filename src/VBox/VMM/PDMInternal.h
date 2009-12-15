@@ -404,8 +404,10 @@ typedef struct PDMDRV
     PPDMDRV                         pNext;
     /** Registration structure. */
     const struct PDMDRVREG *        pDrvReg;
-    /** Number of instances. */
-    RTUINT                          cInstances;
+    /** Current number of instances. */
+    uint32_t                        cInstances;
+    /** The next instance number. */
+    uint32_t                        iNextInstance;
 } PDMDRV;
 
 

@@ -317,6 +317,7 @@ static DECLCALLBACK(int) pdmR3DrvRegister(PCPDMDRVREGCB pCallbacks, PCPDMDRVREG 
     {
         pDrv->pNext = NULL;
         pDrv->cInstances = 0;
+        pDrv->iNextInstance = 0;
         pDrv->pDrvReg = pDrvReg;
 
         if (pDrvPrev)
@@ -447,6 +448,7 @@ void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
         pCur->pUpBase = NULL;
         if (pCur->pDrvReg->pfnDestruct)
             pCur->pDrvReg->pfnDestruct(pCur);
+        pCur->Internal.s.pDrv->cInstances--;
 
         /*
          * Free all resources allocated by the driver.
@@ -541,11 +543,14 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, uint32_t fFlags,
                             pNew->pDrvHlp                   = &g_pdmR3DrvHlp;
                             pNew->pDrvReg                   = pDrv->pDrvReg;
                             pNew->pCfgHandle                = pConfigNode;
-                            pNew->iInstance                 = pDrv->cInstances++;
+                            pNew->iInstance                 = pDrv->iNextInstance;
                             pNew->pUpBase                   = &pDrvIns->IBase; /* This ain't safe, you can calc the pDrvIns of the up/down driver! */
                             pNew->pDownBase                 = NULL;
                             pNew->IBase.pfnQueryInterface   = NULL;
                             pNew->pvInstanceData            = &pNew->achInstanceData[0];
+
+                            pDrv->iNextInstance++;
+                            pDrv->cInstances++;
 
                             /*
                              * Hook it onto the chain and call the constructor.
