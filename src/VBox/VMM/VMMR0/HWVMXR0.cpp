@@ -753,7 +753,8 @@ static int VMXR0InjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t intIn
 #endif
 
 #ifdef HWACCM_VMX_EMULATE_REALMODE
-    if (CPUMIsGuestInRealModeEx(pCtx))
+    if (    CPUMIsGuestInRealModeEx(pCtx)
+        &&  pVM->hwaccm.s.vmx.pRealModeTSS)
     {
         RTGCPHYS GCPhysHandler;
         uint16_t offset, ip;
@@ -1290,7 +1291,8 @@ static void vmxR0UpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 # ifdef HWACCM_VMX_EMULATE_REALMODE
     /* Intercept all exceptions in real mode as none of them can be injected directly (#GP otherwise). */
-    if (CPUMIsGuestInRealModeEx(pCtx) && pVM->hwaccm.s.vmx.pRealModeTSS)
+    if (    CPUMIsGuestInRealModeEx(pCtx) 
+        &&  pVM->hwaccm.s.vmx.pRealModeTSS)
         u32TrapMask |= HWACCM_VMX_TRAP_MASK_REALMODE;
 # endif /* HWACCM_VMX_EMULATE_REALMODE */
 
@@ -1472,7 +1474,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
 #ifdef HWACCM_VMX_EMULATE_REALMODE
         /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
-        if (CPUMIsGuestInRealModeEx(pCtx))
+        if (    CPUMIsGuestInRealModeEx(pCtx)
+            &&  pVM->hwaccm.s.vmx.pRealModeTSS)
         {
             RTGCPHYS GCPhys;
 
@@ -1647,9 +1650,12 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             val &= ~X86_CR4_PAE;
         }
 
+#ifdef HWACCM_VMX_EMULATE_REALMODE
         /* Turn off VME if we're in emulated real mode. */
-        if (CPUMIsGuestInRealModeEx(pCtx))
+        if (    CPUMIsGuestInRealModeEx(pCtx)
+            &&  !pVM->hwaccm.s.vmx.pRealModeTSS)
             val &= ~X86_CR4_VME;
+#endif /* HWACCM_VMX_EMULATE_REALMODE */
 
         rc |= VMXWriteVMCS64(VMX_VMCS64_GUEST_CR4,            val);
         Log2(("Guest CR4 %08x\n", val));
@@ -1786,7 +1792,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 #ifdef HWACCM_VMX_EMULATE_REALMODE
     /* Real mode emulation using v86 mode. */
-    if (CPUMIsGuestInRealModeEx(pCtx))
+    if (    CPUMIsGuestInRealModeEx(pCtx)
+        &&  pVM->hwaccm.s.vmx.pRealModeTSS)
     {
         pVCpu->hwaccm.s.vmx.RealMode.eflags = eflags;
 
@@ -2016,7 +2023,8 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 #ifdef HWACCM_VMX_EMULATE_REALMODE
     /* Real mode emulation using v86 mode. */
-    if (CPUMIsGuestInRealModeEx(pCtx))
+    if (    CPUMIsGuestInRealModeEx(pCtx)
+        &&  pVM->hwaccm.s.vmx.pRealModeTSS)
     {
         /* Hide our emulation flags */
         pCtx->eflags.Bits.u1VM   = 0;
@@ -3017,7 +3025,8 @@ ResumeExecution:
 
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestGP);
 #ifdef VBOX_STRICT
-                if (!CPUMIsGuestInRealModeEx(pCtx))
+                if (    !CPUMIsGuestInRealModeEx(pCtx)
+                    ||  !pVM->hwaccm.s.vmx.pRealModeTSS)
                 {
                     Log(("Trap %x at %04X:%RGv errorCode=%x\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip, errCode));
                     rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
@@ -3288,7 +3297,8 @@ ResumeExecution:
 #endif
             default:
 #ifdef HWACCM_VMX_EMULATE_REALMODE
-                if (CPUMIsGuestInRealModeEx(pCtx))
+                if (    CPUMIsGuestInRealModeEx(pCtx)
+                    &&  pVM->hwaccm.s.vmx.pRealModeTSS)
                 {
                     Log(("Real Mode Trap %x at %04x:%04X error code %x\n", vector, pCtx->cs, pCtx->eip, errCode));
                     rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
