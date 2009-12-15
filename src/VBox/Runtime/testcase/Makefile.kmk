@@ -91,6 +91,7 @@ PROGRAMS += \
 	tstRTS3 \
 	tstSems \
 	tstSemEvent \
+	tstSemMutex \
 	tstSemPingPong \
 	tstRTStrCache \
 	tstRTStrFormat \
@@ -123,7 +124,6 @@ PROGRAMS.linux += \
 	tstRTBitOperationsPIC3 \
 	tstInlineAsmPIC \
 	tstInlineAsmPIC3 \
-	tstSemMutex \
 	tstSemRW
 PROGRAMS.l4 += \
 	tstIoCtl
