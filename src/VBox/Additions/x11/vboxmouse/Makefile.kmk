@@ -104,7 +104,7 @@ vboxmouse_drv_13_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_13_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_13_INCS := \
 	$(VBOX_PATH_X11_XORG_1_3) \
-	$(VBOX_PATH_X11_XORG_1_3)/X11 \
+	$(VBOX_PATH_X11_ROOT)/inputproto-1.4.4 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.3.0.0 \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_13_SOURCES = \
@@ -119,7 +119,6 @@ vboxmouse_drv_14_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_14_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_14_INCS := \
 	$(VBOX_PATH_X11_XORG_1_4) \
-	$(VBOX_PATH_X11_XORG_1_4)/X11 \
 	$(VBOX_PATH_X11_XORG_1_4)/xorg \
 	$(PATH_SUB_CURRENT)
 ifeq ($(KBUILD_TARGET),linux)
@@ -141,7 +140,7 @@ vboxmouse_drv_15_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_15_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_15_INCS := \
 	$(VBOX_PATH_X11_XORG_1_5) \
-	$(VBOX_PATH_X11_XORG_1_5)/X11 \
+	$(VBOX_PATH_X11_ROOT)/inputproto-1.4.4 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.5.3 \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_15_SOURCES = \
@@ -156,7 +155,7 @@ vboxmouse_drv_16_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_16_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_16_INCS := \
 	$(VBOX_PATH_X11_XORG_1_6) \
-	$(VBOX_PATH_X11_XORG_1_6)/X11 \
+	$(VBOX_PATH_X11_ROOT)/inputproto-1.4.4 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local \
 	$(PATH_SUB_CURRENT)
