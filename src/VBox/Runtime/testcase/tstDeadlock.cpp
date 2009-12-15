@@ -34,6 +34,7 @@
 *******************************************************************************/
 #include <iprt/asm.h>                   /* for return addresses */
 #include <iprt/critsect.h>
+#include <iprt/lockvalidator.h>
 
 #include <iprt/err.h>
 #include <iprt/initterm.h>

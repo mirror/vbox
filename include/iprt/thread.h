@@ -648,21 +648,12 @@ RTDECL(void) RTThreadUnblocked(RTTHREAD hThread, RTTHREADSTATE enmCurState);
 RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState);
 
 /**
- * Change the thread state to blocking and do deadlock detection.
+ * Translate a thread state into a string.
  *
- * This is a RT_STRICT method for debugging locks and detecting deadlocks.
- *
- * @param   hThread         The current thread.
- * @param   enmState        The sleep state.
- * @param   pvBlock         Pointer to a RTLOCKVALIDATORREC structure.
- * @param   fRecursiveOk    Whether it's ok to recurse.
- * @param   uId             Where we are blocking.
- * @param   RT_SRC_POS_DECL Where we are blocking.
- *
- * @todo    Move this to RTLockValidator.
+ * @returns Pointer to a read-only string containing the state name.
+ * @param   enmState            The state.
  */
-RTDECL(void) RTThreadBlockingDebug(RTTHREAD hThread, RTTHREADSTATE enmState, bool fRecursiveOk,
-                                   PRTLOCKVALIDATORREC pValidatorRec, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+RTDECL(const char *) RTThreadStateName(RTTHREADSTATE enmState);
 
 
 

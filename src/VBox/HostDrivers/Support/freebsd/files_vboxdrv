@@ -116,6 +116,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/common/table/avl_Destroy.cpp.h=>common/table/avl_Destroy.cpp.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/initterm.h=>include/internal/initterm.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/iprt.h=>include/internal/iprt.h \
+    ${PATH_ROOT}/src/VBox/Runtime/include/internal/lockvalidator.h=>include/internal/lockvalidator.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/magics.h=>include/internal/magics.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/memobj.h=>include/internal/memobj.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/string.h=>include/internal/string.h \

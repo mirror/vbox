@@ -36,6 +36,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #ifdef IN_RING3
+# include <iprt/lockvalidator.h>
 # include <iprt/semaphore.h>
 #endif
 
@@ -54,7 +55,7 @@
 # define PDMCRITSECT_STRICT_POS_DECL            RTHCUINTPTR uId, RT_SRC_POS_DECL
 # define PDMCRITSECT_STRICT_POS_ARGS            uId, RT_SRC_POS_ARGS
 # define PDMCRITSECT_STRICT_BLOCK(hThread, pRec, fRecursive) \
-                                                RTThreadBlockingDebug((hThread), RTTHREADSTATE_CRITSECT, fRecursive, pRec, uId, RT_SRC_POS_ARGS)
+                                                RTLockValidatorCheckBlocking(pRec, (hThread), RTTHREADSTATE_CRITSECT, fRecursive, uId, RT_SRC_POS_ARGS)
 #else
 # define PDMCRITSECT_STRICT_POS_DECL            int iDummy
 # define PDMCRITSECT_STRICT_POS_ARGS            0
@@ -106,7 +107,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
     ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, 1);
     ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, hNativeSelf);
 
-# if defined(PDMCRITSECT_STRICT) && defined(IN_RING3)
+# ifdef PDMCRITSECT_STRICT
     RTThreadWriteLockInc(RTLockValidatorSetOwner(pCritSect->s.Core.pValidatorRec, NIL_RTTHREAD, PDMCRITSECT_STRICT_POS_ARGS));
 # endif
 
@@ -449,9 +450,9 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
         if (pCritSect->s.Core.pValidatorRec->hThread != NIL_RTTHREAD)
             RTThreadWriteLockDec(RTLockValidatorUnsetOwner(pCritSect->s.Core.pValidatorRec));
 #  endif
+        Assert(!pCritSect->s.Core.pValidatorRec || pCritSect->s.Core.pValidatorRec->hThread == NIL_RTTHREAD);
 # endif
         ASMAtomicAndU32(&pCritSect->s.Core.fFlags, ~PDMCRITSECT_FLAGS_PENDING_UNLOCK);
-        Assert(!pCritSect->s.Core.pValidatorRec || pCritSect->s.Core.pValidatorRec->hThread == NIL_RTTHREAD);
         ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, NIL_RTNATIVETHREAD);
         ASMAtomicDecS32(&pCritSect->s.Core.cNestings);
 

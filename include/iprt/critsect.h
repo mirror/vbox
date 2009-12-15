@@ -32,9 +32,9 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
-#include <iprt/lockvalidator.h>
+#include <iprt/assert.h>
 #ifdef IN_RING3
-#include <iprt/thread.h>
+# include <iprt/thread.h>
 #endif
 
 

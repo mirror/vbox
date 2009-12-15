@@ -33,6 +33,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/assert.h>
+#include <iprt/thread.h>
 
 
 /** @defgroup grp_ldr       RTLockValidator - Lock Validator
@@ -64,12 +65,12 @@ typedef struct RTLOCKVALIDATORREC
     RTTHREAD volatile                   hThread;
     /** Pointer to the lock record below us. Only accessed by the owner. */
     R3R0PTRTYPE(PRTLOCKVALIDATORREC)    pDown;
-    /** The lock class. */
-    RTLOCKVALIDATORCLASS                hClass;
+    /** Recursion count */
+    uint32_t                            cRecursion;
     /** The lock sub-class. */
     uint32_t volatile                   uSubClass;
-    /** Reserved for future use. */
-    uint32_t                            u32Reserved;
+    /** The lock class. */
+    RTLOCKVALIDATORCLASS                hClass;
     /** Pointer to the lock. */
     RTHCPTR                             hLock;
     /** The lock name. */
@@ -166,6 +167,21 @@ RTDECL(void) RTLockValidatorDestroy(PRTLOCKVALIDATORREC *ppRec);
 RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
+ * Change the thread state to blocking and do deadlock detection.
+ *
+ * @param   pRec                The validator record we're blocing on.
+ * @param   hThread             The current thread.  Shall not be NIL_RTTHREAD!
+ * @param   enmState            The sleep state.
+ * @param   pvBlock             Pointer to a RTLOCKVALIDATORREC structure.
+ * @param   fRecursiveOk        Whether it's ok to recurse.
+ * @param   uId                 Where we are blocking.
+ * @param   RT_SRC_POS_DECL     Where we are blocking.
+ */
+RTDECL(void) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread,
+                                          RTTHREADSTATE enmState, bool fRecursiveOk,
+                                          RTHCUINTPTR uId, RT_SRC_POS_DECL);
+
+/**
  * Check the exit order.
  *
  * This is called by routines implementing lock acquisition.
@@ -187,6 +203,7 @@ RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThrea
  *                              from.  Optional.
  */
 RTDECL(int)  RTLockValidatorCheckReleaseOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread);
+
 
 /**
  * Record the specified thread as lock owner.
@@ -224,6 +241,7 @@ RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec);
 
 
 /*RTDECL(int) RTLockValidatorClassCreate();*/
+
 
 RT_C_DECLS_END
 
