@@ -93,7 +93,6 @@ static int InstallNetFlt()
     HRESULT hr = CoInitialize(NULL);
     if(hr == S_OK)
     {
-#if 0
         int i = 0;
         do
         {
@@ -161,8 +160,6 @@ static int InstallNetFlt()
                 break;
             }
         } while(true);
-#endif
-        VBoxNetCfgWinEnumUpperBindings ();
 
         CoUninitialize();
     }
