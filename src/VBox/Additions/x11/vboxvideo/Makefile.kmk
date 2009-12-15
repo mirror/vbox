@@ -161,6 +161,7 @@ vboxvideo_drv_13_INCS = \
 	$(VBOX_PATH_X11_XORG_1_3)/X11 \
 	$(VBOX_PATH_X11_XORG_1_3)/xorg \
 	$(VBOX_PATH_X11_ROOT)/glproto-1.4.10 \
+	$(VBOX_PATH_X11_ROOT)/mesa-7.2/include \
 	$(VBOX_PATH_X11_ROOT)/libdrm-2.4.13 \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0
 vboxvideo_drv_13_SOURCES = \
@@ -183,6 +184,7 @@ vboxvideo_drv_14_INCS = \
 	$(VBOX_PATH_X11_XORG_1_4)/X11 \
 	$(VBOX_PATH_X11_XORG_1_4)/xorg \
 	$(VBOX_PATH_X11_ROOT)/glproto-1.4.10 \
+	$(VBOX_PATH_X11_ROOT)/mesa-7.2/include \
 	$(VBOX_PATH_X11_ROOT)/libdrm-2.4.13 \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0
 vboxvideo_drv_14_SOURCES  = \
@@ -205,6 +207,7 @@ vboxvideo_drv_15_INCS = \
 	$(VBOX_PATH_X11_XORG_1_5) \
 	$(VBOX_PATH_X11_XORG_1_5)/X11 \
 	$(VBOX_PATH_X11_ROOT)/glproto-1.4.10 \
+	$(VBOX_PATH_X11_ROOT)/mesa-7.2/include \
 	$(VBOX_PATH_X11_ROOT)/libdrm-2.4.13 \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.5.3
@@ -228,6 +231,7 @@ vboxvideo_drv_16_INCS = \
 	$(VBOX_PATH_X11_XORG_1_6) \
 	$(VBOX_PATH_X11_XORG_1_6)/X11 \
 	$(VBOX_PATH_X11_ROOT)/glproto-1.4.10 \
+	$(VBOX_PATH_X11_ROOT)/mesa-7.2/include \
 	$(VBOX_PATH_X11_ROOT)/libdrm-2.4.13 \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0 \
@@ -246,6 +250,7 @@ vboxvideo_drv_17_DEFS := $(vboxvideo_drv_15_DEFS)
 vboxvideo_drv_17_INCS = \
 	$(VBOX_PATH_X11_ROOT)/fontsproto-2.1.0 \
 	$(VBOX_PATH_X11_ROOT)/glproto-1.4.10 \
+	$(VBOX_PATH_X11_ROOT)/mesa-7.2/include \
 	$(VBOX_PATH_X11_ROOT)/inputproto-1.9.99.902 \
 	$(VBOX_PATH_X11_ROOT)/libdrm-2.4.13 \
 	$(VBOX_PATH_X11_ROOT)/libpciaccess-0.10.8 \
