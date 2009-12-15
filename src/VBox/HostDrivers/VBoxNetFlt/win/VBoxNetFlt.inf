@@ -135,7 +135,7 @@ HKR, Ndi,            FilterDeviceInfId,   , sun_VBoxNetFltmp
 HKR, Ndi,            Service,             , VBoxNetFlt
 HKR, Ndi\Interfaces, UpperRange,          , noupper
 HKR, Ndi\Interfaces, LowerRange,          , nolower
-HKR, Ndi\Interfaces, FilterMediaTypes,    , "ethernet, wan, nolower"
+HKR, Ndi\Interfaces, FilterMediaTypes,    , "ethernet, nolower"
 
 [VBoxNetFlt.AddReg]
 ; The following key is Required
