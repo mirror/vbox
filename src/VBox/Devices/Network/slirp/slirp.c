@@ -193,7 +193,7 @@
 
 #define LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) DO_LOG_NAT_SOCK((so), proto, (winevent), r_fdset, w_fdset, x_fdset)
 
-static void activate_port_forwarding(PNATState, uint8_t *pEther);
+static void activate_port_forwarding(PNATState, const uint8_t *pEther);
 
 static const uint8_t special_ethaddr[6] =
 {
@@ -652,7 +652,7 @@ void slirp_deregister_statistics(PNATState pData, PPDMDRVINS pDrvIns)
  */
 void slirp_link_up(PNATState pData)
 {
-    struct arp_cache_entry *ac = NULL;
+    struct arp_cache_entry *ac;
     link_up = 1;
 
     if (LIST_EMPTY(&pData->arp_cache))
@@ -670,7 +670,7 @@ void slirp_link_up(PNATState pData)
 void slirp_link_down(PNATState pData)
 {
     struct socket *so;
-    struct port_forward_rule *rule = NULL;
+    struct port_forward_rule *rule;
 
     while ((so = tcb.so_next) != &tcb)
     {
@@ -1768,9 +1768,9 @@ static uint32_t find_guest_ip(PNATState pData, const uint8_t *eth_addr)
  * service mode
  * @todo finish this for service case
  */
-static void activate_port_forwarding(PNATState pData, uint8_t *h_source)
+static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
 {
-    struct port_forward_rule *rule = NULL;
+    struct port_forward_rule *rule;
 
     /* check mac here */
     LIST_FOREACH(rule, &pData->port_forward_rule_head, list)
@@ -1908,11 +1908,16 @@ int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_b
                     addr_low_byte, htons(guest_port));
 }
 
-void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr)
+void slirp_set_ethaddr_and_activate_port_forwarding(PNATState pData, const uint8_t *ethaddr, uint32_t GuestIP)
 {
 #ifndef VBOX_WITH_NAT_SERVICE
     memcpy(client_ethaddr, ethaddr, ETH_ALEN);
 #endif
+    if (GuestIP != INADDR_ANY)
+    {
+        slirp_arp_cache_update_or_add(pData, GuestIP, ethaddr);
+        activate_port_forwarding(pData, ethaddr);
+    }
 }
 
 #if defined(RT_OS_WINDOWS)
@@ -2050,7 +2055,7 @@ void slirp_set_tcp_sndspace(PNATState pData, int kilobytes)
  */
 int slirp_arp_lookup_ether_by_ip(PNATState pData, uint32_t ip, uint8_t *ether)
 {
-    struct arp_cache_entry *ac = NULL;
+    struct arp_cache_entry *ac;
 
     if (ether == NULL)
         return VERR_INVALID_PARAMETER;
@@ -2076,7 +2081,7 @@ int slirp_arp_lookup_ether_by_ip(PNATState pData, uint32_t ip, uint8_t *ether)
  */
 int slirp_arp_lookup_ip_by_ether(PNATState pData, const uint8_t *ether, uint32_t *ip)
 {
-    struct arp_cache_entry *ac = NULL;
+    struct arp_cache_entry *ac;
     *ip = INADDR_ANY;
 
     if (LIST_EMPTY(&pData->arp_cache))

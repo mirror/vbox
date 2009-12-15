@@ -52,7 +52,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len);
 #else
 void slirp_input(PNATState pData, void *pvData);
 #endif
-void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr);
+void slirp_set_ethaddr_and_activate_port_forwarding(PNATState pData, const uint8_t *ethaddr, uint32_t GuestIP);
 
 /* you must provide the following functions: */
 void slirp_arm_fast_timer(void *pvUser);
