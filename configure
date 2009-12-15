@@ -2020,9 +2020,10 @@ EOF
 
 # test if we are OSE
 if [ $OSE -eq 1 -a -d "`cd \`dirname $0\`; pwd`/src/VBox/Devices/USB" ]; then
-  echo "Found USB devices, assuming VBOX_OSE = FALSE" >> $LOG
-  echo >> $LOG
   OSE=0
+  # Set this as a reminder to print a log message once we know the path of the
+  # log file
+  NOT_OSE=1
 fi
 
 # Change OS specific defaults; must be before all other stuff
@@ -2197,6 +2198,12 @@ done
 LOG="$ODIR$LOG"
 ENV="$ODIR$ENV"
 CNF="$ODIR$CNF"
+
+# Print log warning about OSE if necessary
+if [ $NOT_OSE -eq 1 ]; then
+  echo "Found USB devices, assuming VBOX_OSE = FALSE" >> $LOG
+  echo >> $LOG
+fi
 
 # initialize output files
 cat > $LOG << EOF
