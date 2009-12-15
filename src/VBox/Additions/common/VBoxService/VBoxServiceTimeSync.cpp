@@ -168,7 +168,7 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncPreInit(void)
     else
     {
         rc = VBoxServiceReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-interval",
-                                       &g_TimeSyncInterval, 1, UINT32_MAX - 1);
+                                       &g_TimeSyncInterval, 50, UINT32_MAX - 1);
         if (   RT_SUCCESS(rc)
             || rc == VERR_NOT_FOUND)
         {
@@ -227,7 +227,7 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncOption(const char **ppszShort, int a
         /* no short options */;
     else if (!strcmp(argv[*pi], "--timesync-interval"))
         rc = VBoxServiceArgUInt32(argc, argv, "", pi,
-                                  &g_TimeSyncInterval, 1, UINT32_MAX - 1);
+                                  &g_TimeSyncInterval, 50, UINT32_MAX - 1);
     else if (!strcmp(argv[*pi], "--timesync-min-adjust"))
         rc = VBoxServiceArgUInt32(argc, argv, "", pi,
                                   &g_TimeSyncMinAdjust, 0, 3600000);
