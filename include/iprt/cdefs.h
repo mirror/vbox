@@ -1132,6 +1132,15 @@
  */
 #define RT_MIN(Value1, Value2)                  ( (Value1) <= (Value2) ? (Value1) : (Value2) )
 
+/** @def RT_CLAMP
+ * Clamps the value to minimum and maximum values.
+ * @returns The clamped value.
+ * @param   Value       The value to check.
+ * @param   Min         Minimum value.
+ * @param   Max         Maximum value.
+ */
+#define RT_CLAMP(Value, Min, Max)               ( ((Value) > (Max)) ? (Max) : (((Value) < (Min)) ? (Min) : (Value)) )
+
 /** @def RT_ABS
  * Get the absolute (non-negative) value.
  * @returns The absolute value of Value.
