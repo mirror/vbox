@@ -165,6 +165,28 @@ RTDECL(void) RTLockValidatorDestroy(PRTLOCKVALIDATORREC *ppRec);
  */
 RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
+/**
+ * Check the exit order.
+ *
+ * This is called by routines implementing lock acquisition.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_DEADLOCK if the order is wrong, after having whined and
+ *          asserted.
+ *
+ * @param   pRec                The validator record.
+ * @param   hThread             The handle of the calling thread.  If not known,
+ *                              pass NIL_RTTHREAD and this method will figure it
+ *                              out.
+ * @param   uId                 Some kind of locking location ID.  Typically a
+ *                              return address up the stack.  Optional (0).
+ * @param   pszFile             The file where the lock is being acquired from.
+ *                              Optional.
+ * @param   iLine               The line number in that file.  Optional (0).
+ * @param   pszFunction         The functionn where the lock is being acquired
+ *                              from.  Optional.
+ */
+RTDECL(int)  RTLockValidatorCheckReleaseOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread);
 
 /**
  * Record the specified thread as lock owner.

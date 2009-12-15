@@ -320,9 +320,9 @@ RTDECL(int) RTCritSectEnter(PRTCRITSECT pCritSect)
 #endif
         for (;;)
         {
-            RTThreadBlocking(hThreadSelf, RTTHREADSTATE_CRITSECT, RTCRITSECT_STRICT_BLOCK_ARGS(pCritSect->pValidatorRec));
+            RTCRITSECT_STRICT_BLOCK(hThreadSelf, pCritSect->pValidatorRec, !(pCritSect->fFlags & RTCRITSECT_FLAGS_NO_NESTING));
             int rc = RTSemEventWait(pCritSect->EventSem, RT_INDEFINITE_WAIT);
-            RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_CRITSECT);
+            RTCRITSECT_STRICT_UNBLOCK(hThreadSelf);
             if (pCritSect->u32Magic != RTCRITSECT_MAGIC)
                 return VERR_SEM_DESTROYED;
             if (rc == VINF_SUCCESS)

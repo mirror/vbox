@@ -188,9 +188,9 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
     if (cMillies == RT_INDEFINITE_WAIT)
     {
         /* take mutex */
-        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX, RTSEMMUTEX_STRICT_BLOCK_ARGS(&pThis->ValidatorRec));
+        RTSEMMUTEX_STRICT_BLOCK(hThreadSelf, &pThis->ValidatorRec);
         int rc = pthread_mutex_lock(&pThis->Mutex);
-        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_MUTEX);
+        RTSEMMUTEX_STRICT_UNBLOCK(hThreadSelf);
         if (rc)
         {
             AssertMsgFailed(("Failed to lock mutex sem %p, rc=%d.\n", MutexSem, rc)); NOREF(rc);
@@ -217,12 +217,12 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
                 ts.tv_nsec -= 1000000000;
                 ts.tv_sec++;
             }
-            RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX, RTSEMMUTEX_STRICT_BLOCK_ARGS(&pThis->ValidatorRec));
+            RTSEMMUTEX_STRICT_BLOCK(hThreadSelf, &pThis->ValidatorRec);
         }
 
         /* take mutex */
         int rc = pthread_mutex_timedlock(&pThis->Mutex, &ts);
-        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_MUTEX);
+        RTSEMMUTEX_STRICT_UNBLOCK(hThreadSelf);
         if (rc)
         {
             AssertMsg(rc == ETIMEDOUT, ("Failed to lock mutex sem %p, rc=%d.\n", MutexSem, rc)); NOREF(rc);
