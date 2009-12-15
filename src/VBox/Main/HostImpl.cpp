@@ -426,8 +426,9 @@ STDMETHODIMP Host::COMGETTER(DVDDrives)(ComSafeArrayOut(IMedium *, aDrives))
             {
                 char *cdromEnv = strdup(RTEnvGet("VBOX_CDROM"));
                 char *saveStr = NULL;
-                char *cdromDrive;
-                cdromDrive = strtok_r(cdromEnv, ":", &saveStr);
+                char *cdromDrive = NULL;
+                if (cdromEnv)
+                    cdromDrive = strtok_r(cdromEnv, ":", &saveStr);
                 while (cdromDrive)
                 {
                     if (validateDevice(cdromDrive, true))
