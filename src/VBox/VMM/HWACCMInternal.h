@@ -328,6 +328,10 @@ typedef struct HWACCM
         /** Set if VT-x VPID is allowed. */
         bool                        fAllowVPID;
 
+        /** Set if unrestricted guest execution is allowed (real and protected mode without paging). */
+        bool                        fUnrestrictedGuest;
+        bool                        uAlignment[3];
+
         /** Virtual address of the TSS page used for real mode emulation. */
         R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
 

@@ -1033,50 +1033,56 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 pVM->hwaccm.s.vmx.fVPID = pVM->hwaccm.s.vmx.fAllowVPID;
 #endif /* HWACCM_VTX_WITH_VPID */
 
+            /* Unrestricted guest execution relies on EPT. */
+            if (    pVM->hwaccm.s.fNestedPaging
+                &&  (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE))
+            {
+                pVM->hwaccm.s.vmx.fUnrestrictedGuest = true;
+            }
+
             /* Only try once. */
             pVM->hwaccm.s.fInitialized = true;
 
-            /* Allocate three pages for the TSS we need for real mode emulation. (2 page for the IO bitmap) */
-#if 1
-            rc = PDMR3VMMDevHeapAlloc(pVM, HWACCM_VTX_TOTAL_DEVHEAP_MEM, (RTR3PTR *)&pVM->hwaccm.s.vmx.pRealModeTSS);
-#else
-            rc = VERR_NO_MEMORY; /* simulation of no VMMDev Heap. */
-#endif
-            if (RT_SUCCESS(rc))
+            if (!pVM->hwaccm.s.vmx.fUnrestrictedGuest)
             {
-                /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. */
-                ASMMemZero32(pVM->hwaccm.s.vmx.pRealModeTSS, sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS));
-                pVM->hwaccm.s.vmx.pRealModeTSS->offIoBitmap = sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS);
-                /* Bit set to 0 means redirection enabled. */
-                memset(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap));
-                /* Allow all port IO, so the VT-x IO intercepts do their job. */
-                memset(pVM->hwaccm.s.vmx.pRealModeTSS + 1, 0, PAGE_SIZE*2);
-                *((unsigned char *)pVM->hwaccm.s.vmx.pRealModeTSS + HWACCM_VTX_TSS_SIZE - 2) = 0xff;
-
-                /* Construct a 1024 element page directory with 4 MB pages for the identity mapped page table used in
-                 * real and protected mode without paging with EPT.
-                 */
-                pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable = (PX86PD)((char *)pVM->hwaccm.s.vmx.pRealModeTSS + PAGE_SIZE * 3);
-                for (unsigned i=0;i<X86_PG_ENTRIES;i++)
+                /* Allocate three pages for the TSS we need for real mode emulation. (2 pages for the IO bitmap) */
+                rc = PDMR3VMMDevHeapAlloc(pVM, HWACCM_VTX_TOTAL_DEVHEAP_MEM, (RTR3PTR *)&pVM->hwaccm.s.vmx.pRealModeTSS);
+                if (RT_SUCCESS(rc))
                 {
-                    pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable->a[i].u  = _4M * i;
-                    pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable->a[i].u |= X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_G;
+                    /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. */
+                    ASMMemZero32(pVM->hwaccm.s.vmx.pRealModeTSS, sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS));
+                    pVM->hwaccm.s.vmx.pRealModeTSS->offIoBitmap = sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS);
+                    /* Bit set to 0 means redirection enabled. */
+                    memset(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap));
+                    /* Allow all port IO, so the VT-x IO intercepts do their job. */
+                    memset(pVM->hwaccm.s.vmx.pRealModeTSS + 1, 0, PAGE_SIZE*2);
+                    *((unsigned char *)pVM->hwaccm.s.vmx.pRealModeTSS + HWACCM_VTX_TSS_SIZE - 2) = 0xff;
+
+                    /* Construct a 1024 element page directory with 4 MB pages for the identity mapped page table used in
+                     * real and protected mode without paging with EPT.
+                     */
+                    pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable = (PX86PD)((char *)pVM->hwaccm.s.vmx.pRealModeTSS + PAGE_SIZE * 3);
+                    for (unsigned i=0;i<X86_PG_ENTRIES;i++)
+                    {
+                        pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable->a[i].u  = _4M * i;
+                        pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable->a[i].u |= X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_G;
+                    }
+
+                    /* We convert it here every time as pci regions could be reconfigured. */
+                    rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pRealModeTSS, &GCPhys);
+                    AssertRC(rc);
+                    LogRel(("HWACCM: Real Mode TSS guest physaddr  = %RGp\n", GCPhys));
+
+                    rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
+                    AssertRC(rc);
+                    LogRel(("HWACCM: Non-Paging Mode EPT CR3       = %RGp\n", GCPhys));
                 }
-
-                /* We convert it here every time as pci regions could be reconfigured. */
-                rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pRealModeTSS, &GCPhys);
-                AssertRC(rc);
-                LogRel(("HWACCM: Real Mode TSS guest physaddr  = %RGp\n", GCPhys));
-
-                rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
-                AssertRC(rc);
-                LogRel(("HWACCM: Non-Paging Mode EPT CR3       = %RGp\n", GCPhys));
-            }
-            else
-            {
-                LogRel(("HWACCM: No real mode VT-x support (PDMR3VMMDevHeapAlloc returned %Rrc)\n", rc));
-                pVM->hwaccm.s.vmx.pRealModeTSS = NULL;
-                pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable = NULL;
+                else
+                {
+                    LogRel(("HWACCM: No real mode VT-x support (PDMR3VMMDevHeapAlloc returned %Rrc)\n", rc));
+                    pVM->hwaccm.s.vmx.pRealModeTSS = NULL;
+                    pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable = NULL;
+                }
             }
 
             rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
@@ -1108,7 +1114,12 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 {
                     LogRel(("HWACCM: Enabled nested paging\n"));
                     LogRel(("HWACCM: EPT root page                 = %RHp\n", PGMGetHyperCR3(VMMGetCpu(pVM))));
+                    if (pVM->hwaccm.s.vmx.fUnrestrictedGuest)
+                        LogRel(("HWACCM: Unrestricted guest execution enabled!\n"));
                 }
+                else
+                    Assert(!pVM->hwaccm.s.vmx.fUnrestrictedGuest);
+
                 if (pVM->hwaccm.s.vmx.fVPID)
                     LogRel(("HWACCM: Enabled VPID\n"));
 
@@ -2101,6 +2112,8 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     /* Note! The context supplied by REM is partial. If we add more checks here, be sure to verify that REM provides this info! */
 #ifdef HWACCM_VMX_EMULATE_REALMODE
+    Assert((pVM->hwaccm.s.vmx.fUnrestrictedGuest && !pVM->hwaccm.s.vmx.pRealModeTSS) || (!pVM->hwaccm.s.vmx.fUnrestrictedGuest && pVM->hwaccm.s.vmx.pRealModeTSS));
+
     if (pVM->hwaccm.s.vmx.pRealModeTSS)
     {
         if (CPUMIsGuestInRealModeEx(pCtx))
@@ -2143,7 +2156,8 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
     else
 #endif /* HWACCM_VMX_EMULATE_REALMODE */
     {
-        if (!CPUMIsGuestInLongModeEx(pCtx))
+        if (    !CPUMIsGuestInLongModeEx(pCtx)
+            &&  !pVM->hwaccm.s.vmx.fUnrestrictedGuest)
         {
             /** @todo   This should (probably) be set on every excursion to the REM,
              *          however it's too risky right now. So, only apply it when we go
@@ -2186,30 +2200,33 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
     {
         uint32_t mask;
 
-        /* if bit N is set in cr0_fixed0, then it must be set in the guest's cr0. */
-        mask = (uint32_t)pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed0;
-        /* Note: We ignore the NE bit here on purpose; see vmmr0\hwaccmr0.cpp for details. */
-        mask &= ~X86_CR0_NE;
+        if (!pVM->hwaccm.s.vmx.fUnrestrictedGuest)
+        {
+            /* if bit N is set in cr0_fixed0, then it must be set in the guest's cr0. */
+            mask = (uint32_t)pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed0;
+            /* Note: We ignore the NE bit here on purpose; see vmmr0\hwaccmr0.cpp for details. */
+            mask &= ~X86_CR0_NE;
 
 #ifdef HWACCM_VMX_EMULATE_REALMODE
-        if (pVM->hwaccm.s.vmx.pRealModeTSS)
-        {
-            /* Note: We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
-            mask &= ~(X86_CR0_PG|X86_CR0_PE);
-        }
-        else
+            if (pVM->hwaccm.s.vmx.pRealModeTSS)
+            {
+                /* Note: We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
+                mask &= ~(X86_CR0_PG|X86_CR0_PE);
+            }
+            else
 #endif
-        {
-            /* We support protected mode without paging using identity mapping. */
-            mask &= ~X86_CR0_PG;
-        }
-        if ((pCtx->cr0 & mask) != mask)
-            return false;
+            {
+                /* We support protected mode without paging using identity mapping. */
+                mask &= ~X86_CR0_PG;
+            }
+            if ((pCtx->cr0 & mask) != mask)
+                return false;
 
-        /* if bit N is cleared in cr0_fixed1, then it must be zero in the guest's cr0. */
-        mask = (uint32_t)~pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed1;
-        if ((pCtx->cr0 & mask) != 0)
-            return false;
+            /* if bit N is cleared in cr0_fixed1, then it must be zero in the guest's cr0. */
+            mask = (uint32_t)~pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed1;
+            if ((pCtx->cr0 & mask) != 0)
+                return false;
+        }
 
         /* if bit N is set in cr4_fixed0, then it must be set in the guest's cr4. */
         mask  = (uint32_t)pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed0;
