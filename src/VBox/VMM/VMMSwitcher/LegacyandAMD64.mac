@@ -387,7 +387,7 @@ ENDPROC vmmR0HostToGuestAsm
 ; Push the address of this routine.
 ;
 ;
-BITS 64
+BITS 32
 ALIGNCODE(16)
 BEGINPROC vmmGCCallTrampoline
 %ifdef DEBUG_STUFF
@@ -406,7 +406,7 @@ BITS 64
 ALIGNCODE(16)
 BEGINPROC vmmGCGuestToHost
 %ifdef DEBUG_STUFF
-    push    esi
+    push    rsi
     COM_NEWLINE
     DEBUG_CHAR('b')
     DEBUG_CHAR('a')
@@ -414,7 +414,7 @@ BEGINPROC vmmGCGuestToHost
     DEBUG_CHAR('k')
     DEBUG_CHAR('!')
     COM_NEWLINE
-    pop     esi
+    pop     rsi
 %endif
     int3
 ENDPROC vmmGCGuestToHost
