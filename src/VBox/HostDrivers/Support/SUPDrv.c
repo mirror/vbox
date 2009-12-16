@@ -803,6 +803,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
             RTMemFree(pvFree);
         }
     }
+    /* Calling supdrvLdrUnlock when the above lock failed raises a fatal exception in Windows. */
     if (rcLock == VINF_SUCCESS)
         supdrvLdrUnlock(pDevExt);
     Log2(("freeing images - done\n"));
