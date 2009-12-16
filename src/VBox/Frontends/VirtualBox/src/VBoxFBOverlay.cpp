@@ -5157,9 +5157,23 @@ void VBoxVHWATextureImage::bind(VBoxVHWATextureImage * pPrimary)
     mpTex[0]->bind();
 }
 
-class VBoxVHWAGlProgramVHWA * VBoxVHWATextureImage::calcProgram(VBoxVHWATextureImage *pDst, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected)
+uint32_t VBoxVHWATextureImage::calcProgramType(VBoxVHWATextureImage *pDst, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected)
 {
     uint32_t type = 0;
+
+    if(pDstCKey != NULL)
+        type |= VBOXVHWA_PROGRAM_DSTCOLORKEY;
+    if(pSrcCKey)
+        type |= VBOXVHWA_PROGRAM_SRCCOLORKEY;
+    if((pDstCKey || pSrcCKey) && bNotIntersected)
+        type |= VBOXVHWA_PROGRAM_COLORKEYNODISCARD;
+
+    return type;
+}
+
+class VBoxVHWAGlProgramVHWA * VBoxVHWATextureImage::calcProgram(VBoxVHWATextureImage *pDst, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected)
+{
+    uint32_t type = calcProgramType(pDst, pDstCKey, pSrcCKey, bNotIntersected);
 
     if(pDstCKey != NULL)
         type |= VBOXVHWA_PROGRAM_DSTCOLORKEY;
