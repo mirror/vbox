@@ -617,7 +617,7 @@ void VBOXCALL supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
  */
 void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
-    int                 rc;
+    int                 rc, rcLock;
     PSUPDRVBUNDLE       pBundle;
     LogFlow(("supdrvCleanupSession: pSession=%p\n", pSession));
 
@@ -782,7 +782,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
     /*
      * Loaded images needs to be dereferenced and possibly freed up.
      */
-    int rcLock = supdrvLdrLock(pDevExt);
+    rcLock = supdrvLdrLock(pDevExt);
     if (rcLock != VINF_SUCCESS)
         Log(("supdrvLdrLock failed with rc=%d\n", rcLock));
     Log2(("freeing images:\n"));
