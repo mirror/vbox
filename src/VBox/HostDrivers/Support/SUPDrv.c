@@ -782,7 +782,9 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
     /*
      * Loaded images needs to be dereferenced and possibly freed up.
      */
-    supdrvLdrLock(pDevExt);
+    int rcLock = supdrvLdrLock(pDevExt);
+    if (rcLock != VINF_SUCCESS)
+        Log(("supdrvLdrLock failed with rc=%d\n", rcLock));
     Log2(("freeing images:\n"));
     if (pSession->pLdrUsage)
     {
@@ -801,7 +803,8 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
             RTMemFree(pvFree);
         }
     }
-    supdrvLdrUnlock(pDevExt);
+    if (rcLock == VINF_SUCCESS)
+        supdrvLdrUnlock(pDevExt);
     Log2(("freeing images - done\n"));
 
     /*
