@@ -102,6 +102,10 @@
 #define RTSEMSPINMUTEX_MAGIC_DEAD   0x19161209
 /** RTSEMRWINTERNAL::u32Magic value. (Kosuke Fujishima) */
 #define RTSEMRW_MAGIC               0x19640707
+/** RTSEMXROADSINTERNAL::u32Magic value. (Kenneth Elton "Ken" Kesey) */
+#define RTSEMXROADS_MAGIC           0x19350917
+/** RTSEMXROADSINTERNAL::u32Magic value after RTSemXRoadsDestroy. */
+#define RTSEMXROADS_MAGIC_DEAD      0x20011110
 /** Magic value for RTSPINLOCKINTERNAL::u32Magic. (Terry Pratchett) */
 #define RTSPINLOCK_MAGIC            0x19480428
 /** Magic value for RTSTRCACHE::u32Magic. (Sir Arthur Charles Clarke) */

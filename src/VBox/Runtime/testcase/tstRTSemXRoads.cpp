@@ -58,9 +58,9 @@ static int tstTrafficThreadCommon(uintptr_t iThread, bool fNS)
     for (uint32_t iLoop = 0; RTTimeMilliTS() - g_u64StartMilliTS < 15*1000; iLoop++)
     {
         /* fudge */
-        if ((iLoop % 19) == 15)
+        if ((iLoop % 223) == 223)
             RTThreadYield();
-        else if ((iLoop % 41) == 40)
+        else if ((iLoop % 16127) == 16127)
             RTThreadSleep(1);
 
         if (fNS)
@@ -148,8 +148,10 @@ static void tstTraffic(void)
             RTTEST_CHECK_RC_OK(g_hTest, rc2);
         }
 
-    RTTEST_CHECK_MSG(g_hTest, g_cEWCrossings > 10 && g_cNSCrossings,
-                     (g_hTest, "cEWCrossings=%u g_cNSCrossings=%u\n", g_cEWCrossings, g_cNSCrossings));
+    RTTEST_CHECK_MSG_RETV(g_hTest, g_cEWCrossings > 10 && g_cNSCrossings,
+                          (g_hTest, "cEWCrossings=%u g_cNSCrossings=%u\n", g_cEWCrossings, g_cNSCrossings));
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "cNSCrossings=%u\n", g_cNSCrossings);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "cEWCrossings=%u\n", g_cEWCrossings);
 }
 
 
