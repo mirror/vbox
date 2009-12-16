@@ -47,16 +47,17 @@
 
 #include "internal/magics.h"
 
+/* We use the API of Linux 2.6.28+ (hrtimer_add_expires_ns()) */
 #if !defined(RT_USE_LINUX_HRTIMER) \
-    && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) \
-    && 0 /* disabled because it somehow sucks. */
+    && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28) \
+    && 0 /* currently disabled */
 # define RT_USE_LINUX_HRTIMER
 #endif
 
 /* This check must match the ktime usage in rtTimeGetSystemNanoTS() / time-r0drv-linux.c. */
 #if defined(RT_USE_LINUX_HRTIMER) \
- && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
-# error "RT_USE_LINUX_HRTIMER requires 2.6.16 or later, sorry."
+ && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 28)
+# error "RT_USE_LINUX_HRTIMER requires 2.6.28 or later, sorry."
 #endif
 
 
@@ -98,13 +99,13 @@ typedef struct RTTIMERLNXSUBTIMER
     struct hrtimer          LnxTimer;
 #else
     struct timer_list       LnxTimer;
-#endif
     /** The start of the current run (ns).
      * This is used to calculate when the timer ought to fire the next time. */
     uint64_t                u64StartTS;
     /** The start of the current run (ns).
      * This is used to calculate when the timer ought to fire the next time. */
     uint64_t                u64NextTS;
+#endif
     /** The current tick number (since u64StartTS). */
     uint64_t                iTick;
     /** Pointer to the parent timer. */
@@ -249,13 +250,13 @@ DECLINLINE(unsigned long) rtTimerLnxNanoToJiffies(uint64_t cNanoSecs)
     /* this can be made even better... */
     if (cNanoSecs > (uint64_t)TICK_NSEC * MAX_JIFFY_OFFSET)
         return MAX_JIFFY_OFFSET;
-#if ARCH_BITS == 32
+# if ARCH_BITS == 32
     if (RT_LIKELY(cNanoSecs <= UINT32_MAX))
         return ((uint32_t)cNanoSecs + (TICK_NSEC-1)) / TICK_NSEC;
-#endif
+# endif
     return (cNanoSecs + (TICK_NSEC-1)) / TICK_NSEC;
 }
-#endif
+#endif /* ! RT_USE_LINUX_HRTIMER */
 
 
 /**
@@ -271,8 +272,11 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
      * Calc when it should start firing.
      */
     uint64_t u64NextTS = u64Now + u64First;
+#ifndef RT_USE_LINUX_HRTIMER
     pSubTimer->u64StartTS = u64NextTS;
     pSubTimer->u64NextTS = u64NextTS;
+#endif
+
     pSubTimer->iTick = 0;
 
 #ifdef RT_USE_LINUX_HRTIMER
@@ -367,6 +371,14 @@ static void rtTimerLinuxCallback(unsigned long ulUser)
     }
     else
     {
+        const uint64_t iTick = ++pSubTimer->iTick;
+
+#ifdef RT_USE_LINUX_HRTIMER
+        hrtimer_add_expires_ns(&pSubTimer->LnxTimer, pTimer->u64NanoInterval);
+        rc = HRTIMER_RESTART;
+#else
+        const uint64_t u64NanoTS = RTTimeNanoTS();
+
         /*
          * Interval timer, calculate the next timeout and re-arm it.
          *
@@ -374,28 +386,13 @@ static void rtTimerLinuxCallback(unsigned long ulUser)
          * try prevent some jittering if we were started at a bad time.
          * This may of course backfire with highres timers...
          */
-        const uint64_t u64NanoTS = RTTimeNanoTS();
-        const uint64_t iTick = ++pSubTimer->iTick;
-
         if (RT_UNLIKELY(iTick == 1))
         {
-#ifdef RT_USE_LINUX_HRTIMER
-            pSubTimer->u64StartTS = pSubTimer->u64NextTS = u64NanoTS;//rtTimerLnxKtToNano(pSubTimer->LnxTimer.base->softirq_time);
-#else
             pSubTimer->u64StartTS = pSubTimer->u64NextTS = u64NanoTS;
             pSubTimer->ulNextJiffies = jiffies;
-#endif
         }
 
         pSubTimer->u64NextTS += pTimer->u64NanoInterval;
-
-#ifdef RT_USE_LINUX_HRTIMER
-        while (pSubTimer->u64NextTS < u64NanoTS)
-            pSubTimer->u64NextTS += pTimer->u64NanoInterval;
-
-        pSubTimer->LnxTimer.expires = rtTimerLnxNanoToKt(pSubTimer->u64NextTS);
-        rc = HRTIMER_RESTART;
-#else
         if (pTimer->cJiffies)
         {
             pSubTimer->ulNextJiffies += pTimer->cJiffies;
@@ -895,9 +892,9 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
         pTimer->aSubTimers[iCpu].LnxTimer.data     = (unsigned long)&pTimer->aSubTimers[iCpu];
         pTimer->aSubTimers[iCpu].LnxTimer.function = rtTimerLinuxCallback;
         pTimer->aSubTimers[iCpu].LnxTimer.expires  = jiffies;
-#endif
         pTimer->aSubTimers[iCpu].u64StartTS = 0;
         pTimer->aSubTimers[iCpu].u64NextTS = 0;
+#endif
         pTimer->aSubTimers[iCpu].iTick = 0;
         pTimer->aSubTimers[iCpu].pParent = pTimer;
         pTimer->aSubTimers[iCpu].enmState = RTTIMERLNXSTATE_STOPPED;
