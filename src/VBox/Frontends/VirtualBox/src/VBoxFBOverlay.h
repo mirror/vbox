@@ -481,9 +481,9 @@ protected:
         draw(pDst, pDstRect, pSrcRect);
     }
 
-    void draw(VBoxVHWATextureImage *pDst, const QRect * pDstRect, const QRect * pSrcRect);
+    virtual void draw(VBoxVHWATextureImage *pDst, const QRect * pDstRect, const QRect * pSrcRect);
 
-    uint32_t texCoord(GLenum tex, int x, int y)
+    virtual uint32_t texCoord(GLenum tex, int x, int y)
     {
         uint32_t c = 1;
         mpTex[0]->multiTexCoord(tex, x, y);
@@ -497,11 +497,13 @@ protected:
         return c;
     }
 
-    void bind(VBoxVHWATextureImage * pPrimary);
+    virtual void bind(VBoxVHWATextureImage * pPrimary);
 
-    class VBoxVHWAGlProgramVHWA * calcProgram(VBoxVHWATextureImage *pDst, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected);
+    virtual uint32_t calcProgramType(VBoxVHWATextureImage *pDst, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected);
 
-    int createDisplay(VBoxVHWATextureImage *pDst, const QRect * pDstRect, const QRect * pSrcRect,
+    virtual class VBoxVHWAGlProgramVHWA * calcProgram(VBoxVHWATextureImage *pDst, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected);
+
+    virtual int createDisplay(VBoxVHWATextureImage *pDst, const QRect * pDstRect, const QRect * pSrcRect,
             const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected,
             GLuint *pDisplay, class VBoxVHWAGlProgramVHWA ** ppProgram);
 
@@ -677,17 +679,89 @@ public:
         );
     }
 
-    void bind(VBoxVHWATexture *pTex)
+    void bind()
     {
         VBOXQGL_CHECKERR(
             vboxglBindFramebuffer(GL_FRAMEBUFFER, mFBO);
         );
+    }
+
+    void unbind(VBoxVHWATexture *pTex)
+    {
+        VBOXQGL_CHECKERR(
+            vboxglBindFramebuffer(GL_FRAMEBUFFER, 0);
+        );
+    }
+
+    void attachBound(VBoxVHWATexture *pTex)
+    {
         VBOXQGL_CHECKERR(
                 vboxglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, pTex->texTarget(), pTex->texture(), 0);
         );
     }
+
 private:
     GLuint mFBO;
+};
+
+template <class T>
+class VBoxVHWATextureImageFBO : public T
+{
+public:
+    VBoxVHWATextureImageFBO(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr) :
+            T(size, format, aMgr),
+            mFBOTex(size, VBoxVHWAColorFormat(32, 0xff0000, 0xff00, 0xff), aMgr)
+    {
+    }
+
+    virtual void init(uchar *pvMem)
+    {
+        mFBO.init();
+        mFBOTex.init(NULL);
+        T:init(pvMem);
+        mFBO.bind();
+        mFBO.attachBound(mFBOTex.mpTex[0]);
+        mFBO.unbind();
+    }
+
+    virtual int createDisplay(VBoxVHWATextureImage *pDst, const QRect * pDstRect, const QRect * pSrcRect,
+            const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected,
+            GLuint *pDisplay, class VBoxVHWAGlProgramVHWA ** ppProgram)
+    {
+        T::createDisplay(&mFBOTex, &mFBOTex.rect(), &rect(),
+                NULL, NULL, false,
+                pDisplay, ppProgram);
+
+        return mFBOTex.createDisplay(pDst, pDstRect, pSrcRect,
+                pDstCKey, pSrcCKey, bNotIntersected,
+                pDisplay, ppProgram);
+    }
+
+    virtual void update(const QRect * pRect)
+    {
+        mFBO.bind();
+        T:update(pRect);
+
+        VBoxGLWidget::pushSettingsAndSetupViewport(rect(), rect());
+        mFBO.bind();
+        mFBOTex.draw();
+        mFBO.unbind();
+        VBoxGLWidget::popSettingsAfterSetupViewport();
+    }
+
+    virtual void display(VBoxVHWATextureImage *pDst, const QRect * pDstRect, const QRect * pSrcRect,
+            const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected)
+    {
+        mFBOTex.display(pDst, pDstRect, pSrcRect, pDstCKey, pSrcCKey, bNotIntersected);
+    }
+
+    virtual void display()
+    {
+        mFBOTex.display();
+    }
+private:
+    VBoxVHWAFBO mFBO;
+    VBoxVHWATextureImage mFBOTex;
 };
 
 class VBoxVHWAHandleTable
@@ -1429,6 +1503,25 @@ public:
     }
 
     VHWACommandList &onResizeCmdList() { return mOnResizeCmdList; }
+
+    static void pushSettingsAndSetupViewport(const QSize &display, const QRect &viewport)
+    {
+        glPushAttrib(GL_ALL_ATTRIB_BITS);
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+//        glMatrixMode(GL_MODELVIEW);
+        setupMatricies(display);
+        adjustViewport(display, viewport);
+    }
+
+    static void popSettingsAfterSetupViewport()
+    {
+        glPopAttrib();
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+        glMatrixMode(GL_MODELVIEW);
+    }
+
 protected:
 
     void paintGL()
@@ -1709,28 +1802,28 @@ public:
     STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY,
                              ULONG aW, ULONG aH)
     {
-        if(mOverlay.onNotifyUpdate(aX, aY, aW, aH))
+        if(mOverlay.onNotifyUpdate (aX, aY, aW, aH))
             return S_OK;
-        return T::NotifyUpdate(aX, aY, aW, aH);
+        return T::NotifyUpdate (aX, aY, aW, aH);
     }
 
     void resizeEvent (VBoxResizeEvent *re)
     {
-        mOverlay.onResizeEvent(re);
-        T::resizeEvent(re);
-        mOverlay.onResizeEventPostprocess(re);
+        mOverlay.onResizeEvent (re);
+        T::resizeEvent (re);
+        mOverlay.onResizeEventPostprocess (re);
     }
 
-    void viewportResized(QResizeEvent * re)
+    void viewportResized (QResizeEvent * re)
     {
         mOverlay.onViewportResized(re);
         T::viewportResized(re);
     }
 
-    void viewportScrolled(int dx, int dy)
+    void viewportScrolled (int dx, int dy)
     {
-        mOverlay.onViewportScrolled(dx, dy);
-        T::viewportScrolled(dx, dy);
+        mOverlay.onViewportScrolled (dx, dy);
+        T::viewportScrolled (dx, dy);
     }
 private:
     VBoxQGLOverlay mOverlay;
