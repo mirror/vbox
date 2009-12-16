@@ -332,6 +332,15 @@ setup()
             # SUSE with X.Org Server 1.6 knows about vboxvideo
             test "$system" = "suse" && setupxorgconf=""
             ;;
+        1.4.99.901 | 1.4.99.902 )
+            echo "Warning: you are using a pre-release version of X.Org server 1.5 which is known"
+            echo "not to work with the VirtualBox Guest Additions.  Please update to a more"
+            echo "recent version (for example by installing all updates in your guest) and then"
+            echo "set up the Guest Additions for X.Org server by running"
+            echo ""
+            echo "  /usr/lib[64]/VBoxGuestAdditions/vboxadd-x11 setup"
+            dox11config=""
+            ;;
         1.4.99.* | 1.5.* )
             # Fedora 9 shipped X.Org Server version 1.4.99.9x (1.5.0 RC)
             # in its released version
