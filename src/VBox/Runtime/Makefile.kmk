@@ -334,6 +334,7 @@ RuntimeR3_SOURCES       = \
 	generic/RTTimerLRCreate-generic.cpp \
 	generic/mempool-generic.cpp \
 	generic/semfastmutex-generic.cpp \
+	generic/semxroads-generic.cpp \
 	generic/spinlock-generic.cpp \
 	generic/strcache-stubs-generic.cpp \
 	generic/timerlr-generic.cpp \
