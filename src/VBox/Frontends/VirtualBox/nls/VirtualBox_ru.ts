@@ -1404,7 +1404,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Показывать Док и Менюбар в режиме полного экрана</translation>
     </message>
 </context>
 <context>
@@ -2889,55 +2889,55 @@ p, li { white-space: pre-wrap; }
     </message>
     <message numerus="yes">
         <source>%n year(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n год</numerusform>
+            <numerusform>%n года</numerusform>
+            <numerusform>%n лет</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n month(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n месяц</numerusform>
+            <numerusform>%n месяца</numerusform>
+            <numerusform>%n месяцев</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n день</numerusform>
+            <numerusform>%n дня</numerusform>
+            <numerusform>%n дней</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n час</numerusform>
+            <numerusform>%n часа</numerusform>
+            <numerusform>%n часов</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n минута</numerusform>
+            <numerusform>%n минуты</numerusform>
+            <numerusform>%n минут</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n second(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n секунда</numerusform>
+            <numerusform>%n секунды</numerusform>
+            <numerusform>%n секунд</numerusform>
         </translation>
     </message>
     <message>
         <source>(CD/DVD)</source>
-        <translation type="unfinished"></translation>
+        <translation>(CD/DVD)</translation>
     </message>
 </context>
 <context>
@@ -4544,12 +4544,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вы уверены, что хотите удалить виртуальный привод оптических дисков?&lt;/p&gt;&lt;p&gt;Без такого устройства у Вас не будет возможности подключать привод оптических дисков основного компьютера или образ оптического диска к виртуальной машине. Кроме того, Вы не сможете установить дополнения гостевой операционной системы!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Удалить</translation>
     </message>
 </context>
 <context>
@@ -4616,7 +4616,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>A few seconds remaining</source>
-        <translation type="unfinished">Осталось несколько секунд</translation>
+        <translation>Осталось несколько секунд</translation>
     </message>
     <message>
         <source>Canceling...</source>
@@ -4629,12 +4629,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1, %2 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
-        <translation type="unfinished"></translation>
+        <translation>Времени осталось: %1, %2</translation>
     </message>
     <message>
         <source>%1 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
-        <translation type="unfinished"></translation>
+        <translation>Времени осталось: %1</translation>
     </message>
 </context>
 <context>
@@ -5157,7 +5157,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> (%1 ago)</source>
-        <translation type="unfinished"></translation>
+        <translation> (%1 назад)</translation>
     </message>
 </context>
 <context>
@@ -5187,10 +5187,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Предупреждение: Вы собираетесь взять снимок машины, активной в данный момент и имеющей %n неизменяемый образ, подсоединённый к ней. До тех пор пока Вы работаете в данном снимке, неизменяемый образ не будет сброшен, дабы не допустить потерю данных.</numerusform>
+            <numerusform>Предупреждение: Вы собираетесь взять снимок машины, активной в данный момент и имеющей %n неизменяемых образа, подсоединённых к ней. До тех пор пока Вы работаете в данном снимке, неизменяемые образы не будут сброшены, дабы не допустить потерю данных.</numerusform>
+            <numerusform>Предупреждение: Вы собираетесь взять снимок машины, активной в данный момент и имеющей %n неизменяемых образов, подсоединённых к ней. До тех пор пока Вы работаете в данном снимке, неизменяемые образы не будут сброшены, дабы не допустить потерю данных.</numerusform>
         </translation>
     </message>
 </context>
