@@ -576,21 +576,34 @@ static void rtThreadDestroy(PRTTHREADINT pThread)
         rtThreadRemove(pThread);
         ASMAtomicDecU32(&pThread->cRefs);
     }
-    ASMAtomicXchgU32(&pThread->u32Magic, RTTHREADINT_MAGIC_DEAD);
 
     /*
-     * Free resources.
+     * Invalidate the thread structure and free it.
      */
+#ifdef IN_RING3
+    rtLockValidatorSerializeDestructEnter();
+#endif
+
+    ASMAtomicXchgU32(&pThread->u32Magic, RTTHREADINT_MAGIC_DEAD);
     ASMAtomicWritePtr(&pThread->Core.Key, (void *)NIL_RTTHREAD);
-    pThread->enmType    = RTTHREADTYPE_INVALID;
-    RTSemEventMultiDestroy(pThread->EventUser);
-    pThread->EventUser  = NIL_RTSEMEVENTMULTI;
-    if (pThread->EventTerminated != NIL_RTSEMEVENTMULTI)
-    {
-        RTSemEventMultiDestroy(pThread->EventTerminated);
-        pThread->EventTerminated = NIL_RTSEMEVENTMULTI;
-    }
+    pThread->enmType         = RTTHREADTYPE_INVALID;
+    RTSEMEVENTMULTI hEvt1    = pThread->EventUser;
+    pThread->EventUser       = NIL_RTSEMEVENTMULTI;
+    RTSEMEVENTMULTI hEvt2    = pThread->EventTerminated;
+    pThread->EventTerminated = NIL_RTSEMEVENTMULTI;
+
     RTMemFree(pThread);
+
+#ifdef IN_RING3
+    rtLockValidatorSerializeDestructLeave();
+#endif
+
+    /*
+     * Destroy semaphore resources.
+     */
+    RTSemEventMultiDestroy(hEvt1);
+    if (hEvt2 != NIL_RTSEMEVENTMULTI)
+        RTSemEventMultiDestroy(hEvt2);
 }
 
 

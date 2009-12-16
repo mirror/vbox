@@ -55,7 +55,57 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+/** Serializing object destruction and deadlock detection.
+ * NS: RTLOCKVALIDATORREC and RTTHREADINT destruction.
+ * EW: Deadlock detection.
+ */
+static RTSEMXROADS g_hLockValidatorXRoads = NIL_RTSEMXROADS;
 
+
+
+/**
+ * Serializes destruction of RTLOCKVALIDATORREC and RTTHREADINT structures.
+ */
+DECLHIDDEN(void) rtLockValidatorSerializeDestructEnter(void)
+{
+    RTSEMXROADS hXRoads = g_hLockValidatorXRoads;
+    if (hXRoads != NIL_RTSEMXROADS)
+        RTSemXRoadsNSEnter(hXRoads);
+}
+
+
+/**
+ * Call after rtLockValidatorSerializeDestructEnter.
+ */
+DECLHIDDEN(void) rtLockValidatorSerializeDestructLeave(void)
+{
+    RTSEMXROADS hXRoads = g_hLockValidatorXRoads;
+    if (hXRoads != NIL_RTSEMXROADS)
+        RTSemXRoadsNSLeave(hXRoads);
+}
+
+
+/**
+ * Serializes deadlock detection against destruction of the objects being
+ * inspected.
+ */
+DECLINLINE(void) rtLockValidatorSerializeDetectionEnter(void)
+{
+    RTSEMXROADS hXRoads = g_hLockValidatorXRoads;
+    if (hXRoads != NIL_RTSEMXROADS)
+        RTSemXRoadsEWEnter(hXRoads);
+}
+
+
+/**
+ * Call after rtLockValidatorSerializeDetectionEnter.
+ */
+DECLHIDDEN(void) rtLockValidatorSerializeDetectionLeave(void)
+{
+    RTSEMXROADS hXRoads = g_hLockValidatorXRoads;
+    if (hXRoads != NIL_RTSEMXROADS)
+        RTSemXRoadsEWLeave(hXRoads);
+}
 
 
 RTDECL(void) RTLockValidatorInit(PRTLOCKVALIDATORREC pRec, RTLOCKVALIDATORCLASS hClass,
@@ -73,11 +123,23 @@ RTDECL(void) RTLockValidatorInit(PRTLOCKVALIDATORREC pRec, RTLOCKVALIDATORCLASS 
     pRec->cRecursion    = 0;
     pRec->hLock         = hLock;
     pRec->pszName       = pszName;
+
+    /* Lazily initialize the crossroads semaphore. */
+    static uint32_t volatile s_fInitializing = false;
+    if (RT_UNLIKELY(    g_hLockValidatorXRoads == NIL_RTSEMXROADS
+                    &&  ASMAtomicCmpXchgU32(&s_fInitializing, true, false)))
+    {
+        RTSEMXROADS hXRoads;
+        int rc = RTSemXRoadsCreate(&hXRoads);
+        if (RT_SUCCESS(rc))
+            ASMAtomicWriteHandle(&g_hLockValidatorXRoads, hXRoads);
+        ASMAtomicWriteU32(&s_fInitializing, false);
+    }
 }
 
 
 RTDECL(int)  RTLockValidatorCreate(PRTLOCKVALIDATORREC *ppRec, RTLOCKVALIDATORCLASS hClass,
-                                   uint32_t uSubClass, const char *pszName, void *pvLock)
+                                  uint32_t uSubClass, const char *pszName, void *pvLock)
 {
     PRTLOCKVALIDATORREC pRec;
     *ppRec = pRec = (PRTLOCKVALIDATORREC)RTMemAlloc(sizeof(*pRec));
@@ -94,9 +156,13 @@ RTDECL(void) RTLockValidatorDelete(PRTLOCKVALIDATORREC pRec)
 {
     Assert(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC);
 
+    rtLockValidatorSerializeDestructEnter();
+
     ASMAtomicWriteU32(&pRec->u32Magic, RTLOCKVALIDATORREC_MAGIC_DEAD);
     ASMAtomicWriteHandle(&pRec->hThread, NIL_RTTHREAD);
     ASMAtomicWriteHandle(&pRec->hClass, NIL_RTLOCKVALIDATORCLASS);
+
+    rtLockValidatorSerializeDestructLeave();
 }
 
 
@@ -412,6 +478,8 @@ RTDECL(void) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hTh
          * While this isn't perfect, it should avoid out the most obvious
          * races on SMP boxes.
          */
+        rtLockValidatorSerializeDetectionEnter();
+
         PRTTHREADINT    pCur;
         unsigned        cPrevLength = ~0U;
         unsigned        cEqualRuns  = 0;
@@ -465,7 +533,10 @@ RTDECL(void) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hTh
                  */
                 pCur = pNext;
                 if (!pCur)
+                {
+                    rtLockValidatorSerializeDetectionLeave();
                     return;
+                }
 
                 /*
                  * If we've got back to the blocking thread id we've
@@ -499,6 +570,8 @@ RTDECL(void) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hTh
          * Ok, if we ever get here, it's most likely a genuine deadlock.
          */
         rtLockValidatorComplainAboutDeadlock(pRec, pThread, enmState, pCur, uId, RT_SRC_POS_ARGS);
+
+        rtLockValidatorSerializeDetectionLeave();
     }
 }
 RT_EXPORT_SYMBOL(RTThreadBlocking);

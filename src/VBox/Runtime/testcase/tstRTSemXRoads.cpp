@@ -79,6 +79,7 @@ static int tstTrafficThreadCommon(uintptr_t iThread, bool fNS)
     return VINF_SUCCESS;
 }
 
+
 static DECLCALLBACK(int) tstTrafficNSThread(RTTHREAD hSelf, void *pvUser)
 {
     uintptr_t iThread = (uintptr_t)pvUser;
