@@ -445,6 +445,7 @@ public:
     {
         return mpTex[0]->rect();
     }
+
     size_t memSize()
     {
         size_t size = 0;
@@ -1624,6 +1625,8 @@ public:
     {
         mFBOTex.display();
     }
+
+    const QRect &rect() { return T::rect(); }
 private:
     VBoxVHWAFBO mFBO;
     VBoxVHWATextureImage mFBOTex;
