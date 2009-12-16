@@ -727,18 +727,10 @@ typedef struct BUSLOGICTASKSTATE
     Mailbox             MailboxGuest;
     /** The SCSI request we pass to the underlying SCSI engine. */
     PDMSCSIREQUEST      PDMScsiRequest;
-    /** Number of bytes in all scatter gather entries. */
-    uint32_t            cbScatterGather;
-    /** Number of entries in the scatter gather list. */
-    uint32_t            cScatterGather;
-    /** Page map lock array. */
-    PPGMPAGEMAPLOCK     paPageLock;
-    /** Pointer to the scatter gather array. */
-    PPDMDATASEG         paScatterGather;
-    /** Pointer to the page map lock for the sense buffer. */
-    PGMPAGEMAPLOCK      pPageLockSense;
+    /** Data buffer segment */
+    PDMDATASEG          DataSeg;
     /** Pointer to the R3 sense buffer. */
-    uint8_t            *pu8SenseBuffer;
+    uint8_t            *pbSenseBuffer;
     /** Flag whether this is a request from the BIOS. */
     bool                fBIOS;
 } BUSLOGICTASKSTATE, *PBUSLOGICTASKSTATE;
@@ -989,281 +981,214 @@ static void buslogicDumpCCBInfo(PCommandControlBlock pCCB)
 #endif
 
 /**
- * Maps the data buffer into R3.
+ * Allocate data buffer.
  *
  * @returns VBox status code.
  * @param   pTaskState    Pointer to the task state.
- * @param   fReadonly     Flag whether the mappings should be readonly.
  */
-static int buslogicMapGCDataBufIntoR3(PBUSLOGICTASKSTATE pTaskState, bool fReadonly)
+static int buslogicDataBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
 {
-    int rc = VINF_SUCCESS;
-    uint32_t cScatterGatherEntriesR3 = 0;
     PPDMDEVINS pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
 
-    /*
-     * @todo: Check following assumption and what residual means.
-     *
-     * The BusLogic adapter can handle two different data buffer formats.
-     * The first one is that the data pointer entry in the CCB points to
-     * the buffer directly. In second mode the data pointer points to a
-     * scatter gather list which describes the buffer.
-     */
-    if (   (pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_SCATTER_GATHER)
-        || (pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_SCATTER_GATHER))
+    if (   (pTaskState->CommandControlBlockGuest.uDataDirection != BUSLOGIC_CCB_DIRECTION_NO_DATA)
+        && (pTaskState->CommandControlBlockGuest.cbData > 0))
     {
-        uint32_t cScatterGatherGCRead;
-        uint32_t iScatterGatherEntry;
-        ScatterGatherEntry aScatterGatherReadGC[32]; /* Number of scatter gather list entries read from guest memory. */
-        uint32_t cScatterGatherGCLeft = pTaskState->CommandControlBlockGuest.cbData / sizeof(ScatterGatherEntry);
-        RTGCPHYS GCPhysAddrScatterGatherCurrent = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrData;
-
-        /* First pass - count needed R3 scatter gather list entries. */
-        do
-        {
-            cScatterGatherGCRead =   (cScatterGatherGCLeft < RT_ELEMENTS(aScatterGatherReadGC))
-                                   ? cScatterGatherGCLeft
-                                   : RT_ELEMENTS(aScatterGatherReadGC);
-            cScatterGatherGCLeft -= cScatterGatherGCRead;
-
-            /* Read the SG entries. */
-            PDMDevHlpPhysRead(pDevIns, GCPhysAddrScatterGatherCurrent, &aScatterGatherReadGC[0],
-                              cScatterGatherGCRead * sizeof(ScatterGatherEntry));
-
-            for (iScatterGatherEntry = 0; iScatterGatherEntry < cScatterGatherGCRead; iScatterGatherEntry++)
-            {
-                RTGCPHYS    GCPhysAddrDataBase;
-                size_t      cbDataToTransfer;
-
-                Log(("%s: iScatterGatherEntry=%u\n", __FUNCTION__, iScatterGatherEntry));
-
-                GCPhysAddrDataBase = (RTGCPHYS)aScatterGatherReadGC[iScatterGatherEntry].u32PhysAddrSegmentBase;
-                cbDataToTransfer = aScatterGatherReadGC[iScatterGatherEntry].cbSegment;
-
-                Log(("%s: GCPhysAddrDataBase=%RGp cbDataToTransfer=%u\n", __FUNCTION__, GCPhysAddrDataBase, cbDataToTransfer));
-
-                /*
-                 * Check if the physical address is page aligned.
-                 */
-                if (GCPhysAddrDataBase & PAGE_OFFSET_MASK)
-                {
-                    RTGCPHYS    GCPhysAddrDataNextPage = PAGE_ADDRESS(GCPhysAddrDataBase) + PAGE_SIZE;
-                    uint32_t    u32GCPhysAddrDiff = GCPhysAddrDataNextPage - GCPhysAddrDataBase;
-
-                    Log(("%s: Align page: GCPhysAddrDataBase=%RGp GCPhysAddrDataNextPage=%RGp\n",
-                         __FUNCTION__, GCPhysAddrDataBase, GCPhysAddrDataNextPage));
-
-                    cScatterGatherEntriesR3++;
-                    /* Subtract size of the buffer in the actual page. */
-                    if (cbDataToTransfer < u32GCPhysAddrDiff)
-                        cbDataToTransfer = 0;
-                    else
-                        cbDataToTransfer -= u32GCPhysAddrDiff;
-                }
-
-                /* The address is now page aligned. */
-                while (cbDataToTransfer)
-                {
-                    Log(("%s: GCPhysAddrDataBase=%RGp cbDataToTransfer=%u cScatterGatherEntriesR3=%u\n",
-                         __FUNCTION__, GCPhysAddrDataBase, cbDataToTransfer, cScatterGatherEntriesR3));
-
-                    cScatterGatherEntriesR3++;
-
-                    /* Check if this is the last page the buffer is in. */
-                    if (cbDataToTransfer < PAGE_SIZE)
-                        cbDataToTransfer = 0;
-                    else
-                        cbDataToTransfer -= PAGE_SIZE;
-                }
-            }
-
-            /* Set address to the next entries to read. */
-            GCPhysAddrScatterGatherCurrent += cScatterGatherGCRead * sizeof(ScatterGatherEntry);
-        } while (cScatterGatherGCLeft);
-
-        Log(("%s: cScatterGatherEntriesR3=%u\n", __FUNCTION__, cScatterGatherEntriesR3));
-
         /*
-         * Allocate page map lock and scatter gather array.
-         * @todo: Optimize with caching.
+         * @todo: Check following assumption and what residual means.
+         *
+         * The BusLogic adapter can handle two different data buffer formats.
+         * The first one is that the data pointer entry in the CCB points to
+         * the buffer directly. In second mode the data pointer points to a
+         * scatter gather list which describes the buffer.
          */
-        AssertMsg(!pTaskState->paPageLock && !pTaskState->paScatterGather, ("paPageLock or/and paScatterGather are not NULL\n"));
-        pTaskState->cScatterGather = cScatterGatherEntriesR3;
-        pTaskState->cbScatterGather = 0;
-        pTaskState->paPageLock = (PPGMPAGEMAPLOCK)RTMemAllocZ(cScatterGatherEntriesR3 * sizeof(PGMPAGEMAPLOCK));
-        AssertMsgReturn(pTaskState->paPageLock, ("Allocating page lock array failed\n"), VERR_NO_MEMORY);
-        pTaskState->paScatterGather = (PPDMDATASEG)RTMemAllocZ(cScatterGatherEntriesR3 * sizeof(PDMDATASEG));
-        AssertMsgReturn(pTaskState->paScatterGather, ("Allocating page lock array failed\n"), VERR_NO_MEMORY);
-
-        /* Second pass - map the elements into R3. **/
-        cScatterGatherGCLeft = pTaskState->CommandControlBlockGuest.cbData / sizeof(ScatterGatherEntry);
-        GCPhysAddrScatterGatherCurrent = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrData;
-        PPGMPAGEMAPLOCK    pPageLockCurrent = pTaskState->paPageLock;
-        PPDMDATASEG        pScatterGatherCurrent = pTaskState->paScatterGather;
-
-        do
+        if (   (pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_SCATTER_GATHER)
+            || (pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_SCATTER_GATHER))
         {
-            cScatterGatherGCRead = (cScatterGatherGCLeft < RT_ELEMENTS(aScatterGatherReadGC)) ? cScatterGatherGCLeft : RT_ELEMENTS(aScatterGatherReadGC);
-            cScatterGatherGCLeft -= cScatterGatherGCRead;
+            uint32_t cScatterGatherGCRead;
+            uint32_t iScatterGatherEntry;
+            ScatterGatherEntry aScatterGatherReadGC[32]; /* Number of scatter gather list entries read from guest memory. */
+            uint32_t cScatterGatherGCLeft = pTaskState->CommandControlBlockGuest.cbData / sizeof(ScatterGatherEntry);
+            RTGCPHYS GCPhysAddrScatterGatherCurrent = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrData;
+            size_t cbDataToTransfer = 0;
 
-            /* Read the SG entries. */
-            PDMDevHlpPhysRead(pDevIns, GCPhysAddrScatterGatherCurrent, &aScatterGatherReadGC[0], cScatterGatherGCRead * sizeof(ScatterGatherEntry));
-
-            for (iScatterGatherEntry = 0; iScatterGatherEntry < cScatterGatherGCRead; iScatterGatherEntry++)
+            /* Count number of bytes to transfer. */
+            do
             {
-                RTGCPHYS    GCPhysAddrDataBase;
-                uint32_t    cbDataToTransfer;
+                cScatterGatherGCRead =   (cScatterGatherGCLeft < RT_ELEMENTS(aScatterGatherReadGC))
+                                        ? cScatterGatherGCLeft
+                                        : RT_ELEMENTS(aScatterGatherReadGC);
+                cScatterGatherGCLeft -= cScatterGatherGCRead;
 
-                GCPhysAddrDataBase = (RTGCPHYS)aScatterGatherReadGC[iScatterGatherEntry].u32PhysAddrSegmentBase;
-                cbDataToTransfer = aScatterGatherReadGC[iScatterGatherEntry].cbSegment;
-                pTaskState->cbScatterGather += cbDataToTransfer;
+                /* Read the SG entries. */
+                PDMDevHlpPhysRead(pDevIns, GCPhysAddrScatterGatherCurrent, &aScatterGatherReadGC[0],
+                                    cScatterGatherGCRead * sizeof(ScatterGatherEntry));
 
-                /*
-                 * Check if the physical address is page aligned.
-                 */
-                if (GCPhysAddrDataBase & PAGE_OFFSET_MASK)
+                for (iScatterGatherEntry = 0; iScatterGatherEntry < cScatterGatherGCRead; iScatterGatherEntry++)
                 {
-                    RTGCPHYS    GCPhysAddrDataNextPage = PAGE_ADDRESS(GCPhysAddrDataBase) + PAGE_SIZE;
-                    uint32_t    u32GCPhysAddrDiff = GCPhysAddrDataNextPage - GCPhysAddrDataBase; /* Difference from the buffer start to the next page boundary. */
+                    RTGCPHYS    GCPhysAddrDataBase;
 
-                    /* Check if the mapping ends at the page boundary and set segment size accordingly. */
-                    pScatterGatherCurrent->cbSeg = (cbDataToTransfer < u32GCPhysAddrDiff) ? cbDataToTransfer : u32GCPhysAddrDiff;
+                    Log(("%s: iScatterGatherEntry=%u\n", __FUNCTION__, iScatterGatherEntry));
 
-                    /* Create the mapping. */
-                    if (fReadonly)
-                        rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, PAGE_ADDRESS(GCPhysAddrDataBase), 0, (const void **)&pScatterGatherCurrent->pvSeg, pPageLockCurrent); /** @todo r=bird: PAGE_ADDRESS is the wrong macro here as well... */
-                    else
-                        rc = PDMDevHlpPhysGCPhys2CCPtr(pDevIns, PAGE_ADDRESS(GCPhysAddrDataBase), 0, &pScatterGatherCurrent->pvSeg, pPageLockCurrent);
+                    GCPhysAddrDataBase = (RTGCPHYS)aScatterGatherReadGC[iScatterGatherEntry].u32PhysAddrSegmentBase;
+                    cbDataToTransfer += aScatterGatherReadGC[iScatterGatherEntry].cbSegment;
 
-                    if (RT_FAILURE(rc))
-                        AssertMsgFailed(("Creating mapping failed rc=%Rrc\n", rc));
-
-                    /* Let pvBuf point to the start of the buffer in the page. */
-                    pScatterGatherCurrent->pvSeg = ((uint8_t *)pScatterGatherCurrent->pvSeg) + (GCPhysAddrDataBase - PAGE_ADDRESS(GCPhysAddrDataBase));
-
-                    /* Subtract size of the buffer in the actual page. */
-                    cbDataToTransfer -= (uint32_t)pScatterGatherCurrent->cbSeg;
-                    pPageLockCurrent++;
-                    pScatterGatherCurrent++;
-                    /* Let physical address point to the next page in the buffer. */
-                    GCPhysAddrDataBase = GCPhysAddrDataNextPage;
+                    Log(("%s: GCPhysAddrDataBase=%RGp cbDataToTransfer=%u\n",
+                         __FUNCTION__, GCPhysAddrDataBase,
+                         aScatterGatherReadGC[iScatterGatherEntry].cbSegment));
                 }
 
-                /* The address is now page aligned. */
-                while (cbDataToTransfer)
+                /* Set address to the next entries to read. */
+                GCPhysAddrScatterGatherCurrent += cScatterGatherGCRead * sizeof(ScatterGatherEntry);
+            } while (cScatterGatherGCLeft > 0);
+
+            Log((": cbDataToTransfer=%d\n", cbDataToTransfer));
+
+            /* Allocate buffer */
+            pTaskState->DataSeg.cbSeg = cbDataToTransfer;
+            pTaskState->DataSeg.pvSeg = RTMemAlloc(pTaskState->DataSeg.cbSeg);
+            if (!pTaskState->DataSeg.pvSeg)
+                return VERR_NO_MEMORY;
+
+            /* Copy the data if needed */
+            if (pTaskState->CommandControlBlockGuest.uDataDirection == BUSLOGIC_CCB_DIRECTION_OUT)
+            {
+                cScatterGatherGCLeft = pTaskState->CommandControlBlockGuest.cbData / sizeof(ScatterGatherEntry);
+                GCPhysAddrScatterGatherCurrent = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrData;
+                uint8_t *pbData = (uint8_t *)pTaskState->DataSeg.pvSeg;
+
+                do
                 {
-                    /* Check if this is the last page the buffer is in. */
-                    if (cbDataToTransfer < PAGE_SIZE)
+                    cScatterGatherGCRead =   (cScatterGatherGCLeft < RT_ELEMENTS(aScatterGatherReadGC))
+                                            ? cScatterGatherGCLeft
+                                            : RT_ELEMENTS(aScatterGatherReadGC);
+                    cScatterGatherGCLeft -= cScatterGatherGCRead;
+
+                    /* Read the SG entries. */
+                    PDMDevHlpPhysRead(pDevIns, GCPhysAddrScatterGatherCurrent, &aScatterGatherReadGC[0],
+                                        cScatterGatherGCRead * sizeof(ScatterGatherEntry));
+
+                    for (iScatterGatherEntry = 0; iScatterGatherEntry < cScatterGatherGCRead; iScatterGatherEntry++)
                     {
-                        pScatterGatherCurrent->cbSeg = cbDataToTransfer;
-                        cbDataToTransfer = 0;
+                        RTGCPHYS    GCPhysAddrDataBase;
+
+                        Log(("%s: iScatterGatherEntry=%u\n", __FUNCTION__, iScatterGatherEntry));
+
+                        GCPhysAddrDataBase = (RTGCPHYS)aScatterGatherReadGC[iScatterGatherEntry].u32PhysAddrSegmentBase;
+                        cbDataToTransfer = aScatterGatherReadGC[iScatterGatherEntry].cbSegment;
+
+                        Log(("%s: GCPhysAddrDataBase=%RGp cbDataToTransfer=%u\n", __FUNCTION__, GCPhysAddrDataBase, cbDataToTransfer));
+
+                        PDMDevHlpPhysRead(pDevIns, GCPhysAddrDataBase, pbData, cbDataToTransfer);
+                        pbData += cbDataToTransfer;
                     }
-                    else
-                    {
-                        cbDataToTransfer -= PAGE_SIZE;
-                        pScatterGatherCurrent->cbSeg = PAGE_SIZE;
-                    }
 
-                    /* Create the mapping. */
-                    if (fReadonly)
-                        rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, GCPhysAddrDataBase, 0, (const void **)&pScatterGatherCurrent->pvSeg, pPageLockCurrent);
-                    else
-                        rc = PDMDevHlpPhysGCPhys2CCPtr(pDevIns, GCPhysAddrDataBase, 0, &pScatterGatherCurrent->pvSeg, pPageLockCurrent);
-
-                    if (RT_FAILURE(rc))
-                        AssertMsgFailed(("Creating mapping failed rc=%Rrc\n", rc));
-
-                    /* Go to the next page. */
-                    GCPhysAddrDataBase += PAGE_SIZE;
-                    pPageLockCurrent++;
-                    pScatterGatherCurrent++;
-                }
+                    /* Set address to the next entries to read. */
+                    GCPhysAddrScatterGatherCurrent += cScatterGatherGCRead * sizeof(ScatterGatherEntry);
+                } while (cScatterGatherGCLeft > 0);
             }
 
-            /* Set address to the next entries to read. */
-            GCPhysAddrScatterGatherCurrent += cScatterGatherGCRead * sizeof(ScatterGatherEntry);
-
-        } while (cScatterGatherGCLeft);
-
-    }
-    else if (   (pTaskState->CommandControlBlockGuest.u32PhysAddrData != 0)
-             && (pTaskState->CommandControlBlockGuest.cbData != 0))
-    {
-        /* The buffer is not scattered. */
-        RTGCPHYS GCPhysAddrDataBase     = (RTGCPHYS)PAGE_ADDRESS(pTaskState->CommandControlBlockGuest.u32PhysAddrData);
-        RTGCPHYS GCPhysAddrDataEnd      = (RTGCPHYS)(pTaskState->CommandControlBlockGuest.u32PhysAddrData + pTaskState->CommandControlBlockGuest.cbData);
-        RTGCPHYS GCPhysAddrDataEndBase  = (RTGCPHYS)PAGE_ADDRESS(GCPhysAddrDataEnd);
-        RTGCPHYS GCPhysAddrDataNext     = (RTGCPHYS)PAGE_ADDRESS(GCPhysAddrDataEnd) + PAGE_SIZE;
-        uint32_t cPages = (GCPhysAddrDataNext - GCPhysAddrDataBase) / PAGE_SIZE;
-        uint32_t cbOffsetFirstPage = pTaskState->CommandControlBlockGuest.u32PhysAddrData & PAGE_OFFSET_MASK;
-
-        Log(("Non scattered buffer:\n"));
-        Log(("u32PhysAddrData=%#x\n", pTaskState->CommandControlBlockGuest.u32PhysAddrData));
-        Log(("cbData=%u\n", pTaskState->CommandControlBlockGuest.cbData));
-        Log(("GCPhysAddrDataBase=0x%RGp\n", GCPhysAddrDataBase));
-        Log(("GCPhysAddrDataEnd=0x%RGp\n", GCPhysAddrDataEnd));
-        Log(("GCPhysAddrDataEndBase=0x%RGp\n", GCPhysAddrDataEndBase));
-        Log(("GCPhysAddrDataNext=0x%RGp\n", GCPhysAddrDataNext));
-        Log(("cPages=%u\n", cPages));
-
-        pTaskState->paPageLock = (PPGMPAGEMAPLOCK)RTMemAllocZ(cPages * sizeof(PGMPAGEMAPLOCK));
-        AssertMsgReturn(pTaskState->paPageLock, ("Allocating page lock array failed\n"), VERR_NO_MEMORY);
-        pTaskState->paScatterGather = (PPDMDATASEG)RTMemAllocZ(cPages * sizeof(PDMDATASEG));
-        AssertMsgReturn(pTaskState->paScatterGather, ("Allocating scatter gather list failed\n"), VERR_NO_MEMORY);
-
-        PPGMPAGEMAPLOCK    pPageLockCurrent = pTaskState->paPageLock;
-        PPDMDATASEG        pScatterGatherCurrent = pTaskState->paScatterGather;
-
-        for (uint32_t i = 0; i < cPages; i++)
-        {
-            if (fReadonly)
-                rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, GCPhysAddrDataBase, 0, (const void **)&pScatterGatherCurrent->pvSeg, pPageLockCurrent);
-            else
-                rc = PDMDevHlpPhysGCPhys2CCPtr(pDevIns, GCPhysAddrDataBase, 0, &pScatterGatherCurrent->pvSeg, pPageLockCurrent);
-
-            pScatterGatherCurrent->cbSeg = PAGE_SIZE;
-
-            pPageLockCurrent++;
-            pScatterGatherCurrent++;
-            GCPhysAddrDataBase += PAGE_SIZE;
         }
+        else if (pTaskState->CommandControlBlockGuest.uDataDirection == BUSLOGIC_CCB_DIRECTION_OUT)
+        {
+            /* The buffer is not scattered. */
+            RTGCPHYS GCPhysAddrDataBase     = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrData;
 
-        /* Correct pointer of the first entry. */
-        pTaskState->paScatterGather[0].pvSeg = (uint8_t *)pTaskState->paScatterGather[0].pvSeg + cbOffsetFirstPage;
-        pTaskState->paScatterGather[0].cbSeg -= cbOffsetFirstPage;
-        /* Correct size of the last entry. */
-        pTaskState->paScatterGather[cPages-1].cbSeg = GCPhysAddrDataEnd - GCPhysAddrDataEndBase;
-        pTaskState->cScatterGather = cPages;
-        pTaskState->cbScatterGather = pTaskState->CommandControlBlockGuest.cbData;
+            AssertMsg(GCPhysAddrDataBase != 0, ("Physical address is 0\n"));
+
+            pTaskState->DataSeg.cbSeg = pTaskState->CommandControlBlockGuest.cbData;
+            pTaskState->DataSeg.pvSeg = RTMemAlloc(pTaskState->DataSeg.cbSeg);
+            if (!pTaskState->DataSeg.pvSeg)
+                return VERR_NO_MEMORY;
+
+            Log(("Non scattered buffer:\n"));
+            Log(("u32PhysAddrData=%#x\n", pTaskState->CommandControlBlockGuest.u32PhysAddrData));
+            Log(("cbData=%u\n", pTaskState->CommandControlBlockGuest.cbData));
+            Log(("GCPhysAddrDataBase=0x%RGp\n", GCPhysAddrDataBase));
+
+            /* Copy the data into the buffer. */
+            PDMDevHlpPhysRead(pDevIns, GCPhysAddrDataBase, pTaskState->DataSeg.pvSeg, pTaskState->DataSeg.cbSeg);
+        }
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
- * Free mapped pages and other allocated resources used for the scatter gather list.
+ * Free allocated resources used for the scatter gather list.
  *
  * @returns nothing.
  * @param   pTaskState    Pointer to the task state.
  */
-static void buslogicFreeGCDataBuffer(PBUSLOGICTASKSTATE pTaskState)
+static void buslogicDataBufferFree(PBUSLOGICTASKSTATE pTaskState)
 {
-    PPGMPAGEMAPLOCK pPageMapLock = pTaskState->paPageLock;
-    PPDMDEVINS      pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
+    PPDMDEVINS pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
 
-    for (uint32_t iPageLockCurrent = 0; iPageLockCurrent < pTaskState->cScatterGather; iPageLockCurrent++)
+    if (   (pTaskState->CommandControlBlockGuest.cbData > 0)
+        && (  (pTaskState->CommandControlBlockGuest.uDataDirection == BUSLOGIC_CCB_DIRECTION_IN)
+            || (pTaskState->CommandControlBlockGuest.uDataDirection == BUSLOGIC_CCB_DIRECTION_UNKNOWN)))
     {
-        PDMDevHlpPhysReleasePageMappingLock(pDevIns, pPageMapLock);
-        pPageMapLock++;
+        if (   (pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_SCATTER_GATHER)
+            || (pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_SCATTER_GATHER))
+        {
+            uint32_t cScatterGatherGCRead;
+            uint32_t iScatterGatherEntry;
+            ScatterGatherEntry aScatterGatherReadGC[32]; /* Number of scatter gather list entries read from guest memory. */
+            uint32_t cScatterGatherGCLeft = pTaskState->CommandControlBlockGuest.cbData / sizeof(ScatterGatherEntry);
+            RTGCPHYS GCPhysAddrScatterGatherCurrent = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrData;
+            uint8_t *pbData = (uint8_t *)pTaskState->DataSeg.pvSeg;
+
+            do
+            {
+                cScatterGatherGCRead =   (cScatterGatherGCLeft < RT_ELEMENTS(aScatterGatherReadGC))
+                                        ? cScatterGatherGCLeft
+                                        : RT_ELEMENTS(aScatterGatherReadGC);
+                cScatterGatherGCLeft -= cScatterGatherGCRead;
+
+                /* Read the SG entries. */
+                PDMDevHlpPhysRead(pDevIns, GCPhysAddrScatterGatherCurrent, &aScatterGatherReadGC[0],
+                                    cScatterGatherGCRead * sizeof(ScatterGatherEntry));
+
+                for (iScatterGatherEntry = 0; iScatterGatherEntry < cScatterGatherGCRead; iScatterGatherEntry++)
+                {
+                    RTGCPHYS    GCPhysAddrDataBase;
+                    size_t      cbDataToTransfer;
+
+                    Log(("%s: iScatterGatherEntry=%u\n", __FUNCTION__, iScatterGatherEntry));
+
+                    GCPhysAddrDataBase = (RTGCPHYS)aScatterGatherReadGC[iScatterGatherEntry].u32PhysAddrSegmentBase;
+                    cbDataToTransfer = aScatterGatherReadGC[iScatterGatherEntry].cbSegment;
+
+                    Log(("%s: GCPhysAddrDataBase=%RGp cbDataToTransfer=%u\n", __FUNCTION__, GCPhysAddrDataBase, cbDataToTransfer));
+
+                    PDMDevHlpPhysWrite(pDevIns, GCPhysAddrDataBase, pbData, cbDataToTransfer);
+                    pbData += cbDataToTransfer;
+                }
+
+                /* Set address to the next entries to read. */
+                GCPhysAddrScatterGatherCurrent += cScatterGatherGCRead * sizeof(ScatterGatherEntry);
+            } while (cScatterGatherGCLeft > 0);
+
+        }
+        else
+        {
+            /* The buffer is not scattered. */
+            RTGCPHYS GCPhysAddrDataBase = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrData;
+
+            AssertMsg(GCPhysAddrDataBase != 0, ("Physical address is 0\n"));
+
+            Log(("Non scattered buffer:\n"));
+            Log(("u32PhysAddrData=%#x\n", pTaskState->CommandControlBlockGuest.u32PhysAddrData));
+            Log(("cbData=%u\n", pTaskState->CommandControlBlockGuest.cbData));
+            Log(("GCPhysAddrDataBase=0x%RGp\n", GCPhysAddrDataBase));
+
+            /* Copy the data into the guest memory. */
+            PDMDevHlpPhysWrite(pDevIns, GCPhysAddrDataBase, pTaskState->DataSeg.pvSeg, pTaskState->DataSeg.cbSeg);
+        }
     }
 
-    /* @todo: optimize with caching. */
-    RTMemFree(pTaskState->paPageLock);
-    RTMemFree(pTaskState->paScatterGather);
-    pTaskState->paPageLock      = NULL;
-    pTaskState->paScatterGather = NULL;
-    pTaskState->cScatterGather  = 0;
-    pTaskState->cbScatterGather = 0;
+    RTMemFree(pTaskState->DataSeg.pvSeg);
+    pTaskState->DataSeg.pvSeg = NULL;
+    pTaskState->DataSeg.cbSeg = 0;
 }
 
 /**
@@ -1272,45 +1197,36 @@ static void buslogicFreeGCDataBuffer(PBUSLOGICTASKSTATE pTaskState)
  * @returns nothing.
  * @param   pTaskState   Pointer to the task state.
  */
-static void buslogicFreeGCSenseBuffer(PBUSLOGICTASKSTATE pTaskState)
+static void buslogicSenseBufferFree(PBUSLOGICTASKSTATE pTaskState)
 {
     PPDMDEVINS pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
+    RTGCPHYS GCPhysAddrSenseBuffer = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrSenseData;
+    uint32_t cbSenseBuffer = pTaskState->CommandControlBlockGuest.cbSenseData;
 
-    PDMDevHlpPhysReleasePageMappingLock(pDevIns, &pTaskState->pPageLockSense);
-    pTaskState->pu8SenseBuffer = NULL;
+    /* Copy into guest memory. */
+    PDMDevHlpPhysWrite(pDevIns, GCPhysAddrSenseBuffer, pTaskState->pbSenseBuffer, cbSenseBuffer);
+
+    RTMemFree(pTaskState->pbSenseBuffer);
+    pTaskState->pbSenseBuffer = NULL;
 }
 
 /**
- * Map the sense buffer into R3.
+ * Alloc the sense buffer.
  *
  * @returns VBox status code.
  * @param   pTaskState    Pointer to the task state.
  * @note Current assumption is that the sense buffer is not scattered and does not cross a page boundary.
  */
-static int buslogicMapGCSenseBufferIntoR3(PBUSLOGICTASKSTATE pTaskState)
+static int buslogicSenseBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
 {
-    int rc = VINF_SUCCESS;
     PPDMDEVINS pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
-    RTGCPHYS GCPhysAddrSenseBuffer = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrSenseData;
-#ifdef RT_STRICT
     uint32_t cbSenseBuffer = pTaskState->CommandControlBlockGuest.cbSenseData;
-#endif
-    RTGCPHYS GCPhysAddrSenseBufferBase = PAGE_ADDRESS(GCPhysAddrSenseBuffer);
 
-    AssertMsg(GCPhysAddrSenseBuffer >= GCPhysAddrSenseBufferBase,
-              ("Impossible GCPhysAddrSenseBuffer < GCPhysAddrSenseBufferBase\n"));
+    pTaskState->pbSenseBuffer = (uint8_t *)RTMemAllocZ(cbSenseBuffer);
+    if (!pTaskState->pbSenseBuffer)
+        return VERR_NO_MEMORY;
 
-    /* Sanity checks for the assumption. */
-    AssertMsg(((GCPhysAddrSenseBuffer + cbSenseBuffer) < (GCPhysAddrSenseBufferBase + PAGE_SIZE)),
-              ("Sense buffer crosses page boundary\n"));
-
-    rc = PDMDevHlpPhysGCPhys2CCPtr(pDevIns, GCPhysAddrSenseBufferBase, 0, (void **)&pTaskState->pu8SenseBuffer, &pTaskState->pPageLockSense);
-    AssertMsgRC(rc, ("Mapping sense buffer failed rc=%Rrc\n", rc));
-
-    /* Correct start address of the sense buffer. */
-    pTaskState->pu8SenseBuffer += (GCPhysAddrSenseBuffer - GCPhysAddrSenseBufferBase);
-
-    return rc;
+    return VINF_SUCCESS;
 }
 #endif /* IN_RING3 */
 
@@ -1830,8 +1746,8 @@ static int  buslogicIsaIOPortRead (PPDMDEVINS pDevIns, void *pvUser,
 
     rc = vboxscsiReadRegister(&pBusLogic->VBoxSCSI, (Port - BUSLOGIC_ISA_IO_PORT), pu32);
 
-    Log2(("%s: pu32=%p:{%.*Rhxs} iRegister=%d rc=%Rrc\n",
-          __FUNCTION__, pu32, 1, pu32, (Port - BUSLOGIC_ISA_IO_PORT), rc));
+    //Log2(("%s: pu32=%p:{%.*Rhxs} iRegister=%d rc=%Rrc\n",
+    //      __FUNCTION__, pu32, 1, pu32, (Port - BUSLOGIC_ISA_IO_PORT), rc));
 
     return rc;
 }
@@ -2052,10 +1968,10 @@ static DECLCALLBACK(int) buslogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
     }
     else
     {
-        buslogicFreeGCDataBuffer(pTaskState);
+        buslogicDataBufferFree(pTaskState);
 
-        if (pTaskState->pu8SenseBuffer)
-            buslogicFreeGCSenseBuffer(pTaskState);
+        if (pTaskState->pbSenseBuffer)
+            buslogicSenseBufferFree(pTaskState);
 
         buslogicSendIncomingMailbox(pBusLogic, pTaskState,
                                     BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED,
@@ -2120,8 +2036,6 @@ static int buslogicProcessMailboxNext(PBUSLOGIC pBusLogic)
 
     if (pTaskState->MailboxGuest.u.out.uActionCode == BUSLOGIC_MAILBOX_OUTGOING_ACTION_START_COMMAND)
     {
-        bool fReadonly = false;
-
         /* Fetch CCB now. */
         RTGCPHYS GCPhysAddrCCB = (RTGCPHYS)pTaskState->MailboxGuest.u32PhysAddrCCB;
         PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrCCB,
@@ -2134,38 +2048,23 @@ static int buslogicProcessMailboxNext(PBUSLOGIC pBusLogic)
         buslogicDumpCCBInfo(&pTaskState->CommandControlBlockGuest);
 #endif
 
-        switch (pTaskState->CommandControlBlockGuest.uDataDirection)
-        {
-            case BUSLOGIC_CCB_DIRECTION_UNKNOWN:
-            case BUSLOGIC_CCB_DIRECTION_IN:
-                fReadonly = false;
-                break;
-            case BUSLOGIC_CCB_DIRECTION_OUT:
-            case BUSLOGIC_CCB_DIRECTION_NO_DATA:
-                fReadonly = true;
-                break;
-            default:
-                AssertMsgFailed(("Invalid data transfer direction type %u\n",
-                                    pTaskState->CommandControlBlockGuest.uDataDirection));
-        }
-
-        /* Map required buffers. */
-        rc = buslogicMapGCDataBufIntoR3(pTaskState, fReadonly);
-        AssertMsgRC(rc, ("Mapping failed rc=%Rrc\n", rc));
+        /* Alloc required buffers. */
+        rc = buslogicDataBufferAlloc(pTaskState);
+        AssertMsgRC(rc, ("Alloc failed rc=%Rrc\n", rc));
 
         if (pTaskState->CommandControlBlockGuest.cbSenseData)
         {
-            rc = buslogicMapGCSenseBufferIntoR3(pTaskState);
+            rc = buslogicSenseBufferAlloc(pTaskState);
             AssertMsgRC(rc, ("Mapping sense buffer failed rc=%Rrc\n", rc));
         }
 
         /* Check if device is present on bus. If not return error immediately and don't process this further. */
         if (!pBusLogic->aDeviceStates[pTaskState->CommandControlBlockGuest.uTargetId].fPresent)
         {
-            buslogicFreeGCDataBuffer(pTaskState);
+            buslogicDataBufferFree(pTaskState);
 
-            if (pTaskState->pu8SenseBuffer)
-                buslogicFreeGCSenseBuffer(pTaskState);
+            if (pTaskState->pbSenseBuffer)
+                buslogicSenseBufferFree(pTaskState);
 
             buslogicSendIncomingMailbox(pBusLogic, pTaskState,
                                         BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_SCSI_SELECTION_TIMEOUT,
@@ -2193,11 +2092,20 @@ static int buslogicProcessMailboxNext(PBUSLOGIC pBusLogic)
 
             pTaskState->PDMScsiRequest.cbCDB                 = pTaskState->CommandControlBlockGuest.cbCDB;
             pTaskState->PDMScsiRequest.pbCDB                 = pTaskState->CommandControlBlockGuest.aCDB;
-            pTaskState->PDMScsiRequest.cbScatterGather       = pTaskState->cbScatterGather;
-            pTaskState->PDMScsiRequest.cScatterGatherEntries = pTaskState->cScatterGather;
-            pTaskState->PDMScsiRequest.paScatterGatherHead   = pTaskState->paScatterGather;
+            if (pTaskState->DataSeg.cbSeg)
+            {
+                pTaskState->PDMScsiRequest.cbScatterGather       = pTaskState->DataSeg.cbSeg;
+                pTaskState->PDMScsiRequest.cScatterGatherEntries = 1;
+                pTaskState->PDMScsiRequest.paScatterGatherHead   = &pTaskState->DataSeg;
+            }
+            else
+            {
+                pTaskState->PDMScsiRequest.cbScatterGather       = 0;
+                pTaskState->PDMScsiRequest.cScatterGatherEntries = 0;
+                pTaskState->PDMScsiRequest.paScatterGatherHead   = NULL;
+            }
             pTaskState->PDMScsiRequest.cbSenseBuffer         = pTaskState->CommandControlBlockGuest.cbSenseData;
-            pTaskState->PDMScsiRequest.pbSenseBuffer         = pTaskState->pu8SenseBuffer;
+            pTaskState->PDMScsiRequest.pbSenseBuffer         = pTaskState->pbSenseBuffer;
             pTaskState->PDMScsiRequest.pvUser                = pTaskState;
 
             LogFlowFunc(("before increment %u\n", pTargetDevice->cOutstandingRequests));
