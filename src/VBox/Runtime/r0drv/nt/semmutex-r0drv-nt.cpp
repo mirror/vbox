@@ -68,7 +68,7 @@ typedef struct RTSEMMUTEXINTERNAL
 #undef RTSemMutexRequestNoResume
 
 
-RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
+RTDECL(int) RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
 {
     Assert(sizeof(RTSEMMUTEXINTERNAL) > sizeof(void *));
     PRTSEMMUTEXINTERNAL pMutexInt = (PRTSEMMUTEXINTERNAL)RTMemAlloc(sizeof(*pMutexInt));
@@ -87,7 +87,7 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
 }
 
 
-RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
+RTDECL(int) RTSemMutexDestroy(RTSEMMUTEX MutexSem)
 {
     /*
      * Validate input.
@@ -95,22 +95,28 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
     PRTSEMMUTEXINTERNAL pMutexInt = (PRTSEMMUTEXINTERNAL)MutexSem;
     if (!pMutexInt)
         return VERR_INVALID_PARAMETER;
-    if (pMutexInt->u32Magic != RTSEMMUTEX_MAGIC)
-    {
-        AssertMsgFailed(("pMutexInt->u32Magic=%RX32 pMutexInt=%p\n", pMutexInt->u32Magic, pMutexInt));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(pMutexInt->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Invalidate it and signal the object just in case.
      */
-    ASMAtomicIncU32(&pMutexInt->u32Magic);
+    AssertReturn(ASMAtomicCmpXchgU32(&pMutexInt->u32Magic, RTSEMMUTEX_MAGIC_DEAD, RTSEMMUTEX_MAGIC), VERR_INVALID_HANDLE);
     RTMemFree(pMutexInt);
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
+/**
+ * Internal worker for RTSemMutexRequest and RTSemMutexRequestNoResume
+ *
+ * @returns IPRT status code.
+ * @param   MutexSem            The mutex handle.
+ * @param   cMillies            The timeout.
+ * @param   fInterruptible      Whether it's interruptible
+ *                              (RTSemMutexRequestNoResume) or not
+ *                              (RTSemMutexRequest).
+ */
+static int rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, BOOLEAN fInterruptible)
 {
     /*
      * Validate input.
@@ -118,12 +124,7 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
     PRTSEMMUTEXINTERNAL pMutexInt = (PRTSEMMUTEXINTERNAL)MutexSem;
     if (!pMutexInt)
         return VERR_INVALID_PARAMETER;
-    if (    !pMutexInt
-        ||  pMutexInt->u32Magic != RTSEMMUTEX_MAGIC)
-    {
-        AssertMsgFailed(("pMutexInt->u32Magic=%RX32 pMutexInt=%p\n", pMutexInt ? pMutexInt->u32Magic : 0, pMutexInt));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(pMutexInt->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Get the mutex.
@@ -131,15 +132,15 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
 #ifdef RT_USE_FAST_MUTEX
     AssertMsg(cMillies == RT_INDEFINITE_WAIT, ("timeouts are not supported when using fast mutexes!\n"));
     ExAcquireFastMutex(&pMutexInt->Mutex);
-#else
+#else  /* !RT_USE_FAST_MUTEX */
     NTSTATUS rcNt;
     if (cMillies == RT_INDEFINITE_WAIT)
-        rcNt = KeWaitForSingleObject(&pMutexInt->Mutex, Executive, KernelMode, TRUE, NULL);
+        rcNt = KeWaitForSingleObject(&pMutexInt->Mutex, Executive, KernelMode, fInterruptible, NULL);
     else
     {
         LARGE_INTEGER Timeout;
         Timeout.QuadPart = -(int64_t)cMillies * 10000;
-        rcNt = KeWaitForSingleObject(&pMutexInt->Mutex, Executive, KernelMode, TRUE, &Timeout);
+        rcNt = KeWaitForSingleObject(&pMutexInt->Mutex, Executive, KernelMode, fInterruptible, &Timeout);
     }
     switch (rcNt)
     {
@@ -147,30 +148,50 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
             if (pMutexInt->u32Magic == RTSEMMUTEX_MAGIC)
                 return VINF_SUCCESS;
             return VERR_SEM_DESTROYED;
+
         case STATUS_ALERTED:
-            return VERR_INTERRUPTED; /** @todo VERR_INTERRUPTED isn't correct anylonger. please fix r0drv stuff! */
         case STATUS_USER_APC:
-            return VERR_INTERRUPTED; /** @todo VERR_INTERRUPTED isn't correct anylonger. please fix r0drv stuff! */
+            Assert(fInterruptible);
+            return VERR_INTERRUPTED;
+
         case STATUS_TIMEOUT:
             return VERR_TIMEOUT;
+
         default:
             AssertMsgFailed(("pMutexInt->u32Magic=%RX32 pMutexInt=%p: wait returned %lx!\n",
                              pMutexInt->u32Magic, pMutexInt, (long)rcNt));
             return VERR_INTERNAL_ERROR;
     }
-#endif
+#endif /* !RT_USE_FAST_MUTEX */
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int)  RTSemMutexRequestDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
+{
+    return rtSemMutexRequest(MutexSem, cMillies, FALSE /*fInterruptible*/);
+}
+
+
+RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     return RTSemMutexRequest(MutexSem, cMillies);
 }
 
-/** @todo implement the NoResume versions */
 
-RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
+RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
+{
+    return rtSemMutexRequest(MutexSem, cMillies, TRUE /*fInterruptible*/);
+}
+
+
+RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return RTSemMutexRequestNoResume(MutexSem, cMillies);
+}
+
+
+RTDECL(int) RTSemMutexRelease(RTSEMMUTEX MutexSem)
 {
     /*
      * Validate input.
@@ -178,12 +199,7 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     PRTSEMMUTEXINTERNAL pMutexInt = (PRTSEMMUTEXINTERNAL)MutexSem;
     if (!pMutexInt)
         return VERR_INVALID_PARAMETER;
-    if (    !pMutexInt
-        ||  pMutexInt->u32Magic != RTSEMMUTEX_MAGIC)
-    {
-        AssertMsgFailed(("pMutexInt->u32Magic=%RX32 pMutexInt=%p\n", pMutexInt ? pMutexInt->u32Magic : 0, pMutexInt));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(pMutexInt->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Release the mutex.
@@ -191,7 +207,7 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
 #ifdef RT_USE_FAST_MUTEX
     ExReleaseFastMutex(&pMutexInt->Mutex);
 #else
-    KeReleaseMutex(&pMutexInt->Mutex, FALSE);
+    KeReleaseMutex(&pMutexInt->Mutex, FALSE /*Wait*/);
 #endif
     return VINF_SUCCESS;
 }
