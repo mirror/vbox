@@ -28,6 +28,8 @@
 
 //#define VBOXVHWADBG_RENDERCHECK
 
+//#define VBOXVHWA_NEW_PBO
+
 #include "COMDefs.h"
 #include <QGLWidget>
 #include <iprt/assert.h>
@@ -652,7 +654,7 @@ private:
     GLuint mPBO;
     uchar* mAddress;
 };
-#if 0
+
 class VBoxVHWAFBO
 {
 public:
@@ -664,7 +666,7 @@ public:
     {
         if(mFBO)
         {
-            vboxglDeleteFramebuffers(1, mFBO);
+            vboxglDeleteFramebuffers(1, &mFBO);
         }
     }
 
@@ -687,7 +689,6 @@ public:
 private:
     GLuint mFBO;
 };
-#endif
 
 class VBoxVHWAHandleTable
 {
