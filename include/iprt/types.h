@@ -1206,6 +1206,14 @@ typedef RTSEMRW                                    *PRTSEMRW;
 /** Nil read/write semaphore handle. */
 #define NIL_RTSEMRW                                 0
 
+/** @typedef RTSEMXROADS
+ * Crossroads semaphore handle. */
+typedef R3R0PTRTYPE(struct RTSEMXROADSINTERNAL *)   RTSEMXROADS;
+/** Pointer to a crossroads semaphore handle. */
+typedef RTSEMXROADS                                *PRTSEMXROADS;
+/** Nil crossroads semaphore handle. */
+#define NIL_RTSEMXROADS                             ((RTSEMXROADS)0)
+
 /** Spinlock handle. */
 typedef R3R0PTRTYPE(struct RTSPINLOCKINTERNAL *)    RTSPINLOCK;
 /** Pointer to a spinlock handle. */

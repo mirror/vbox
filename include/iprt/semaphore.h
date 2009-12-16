@@ -40,7 +40,8 @@ RT_C_DECLS_BEGIN
  *
  * This module implements all kinds of event and mutex semaphores; in addition
  * to these, IPRT implements "critical sections", which are fast recursive
- * mutexes (see @ref grp_rt_critsect ).
+ * mutexes (see @ref grp_rt_critsect ).  C++ users may find @ref grp_rt_lock
+ * interesting.
  *
  * @ingroup grp_rt
  * @{
@@ -49,11 +50,10 @@ RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_sems_event    RTSemEvent - Single Release Event Semaphores
  *
- * Event semaphores can be used for inter-process communication when
- * one thread wants to notify another thread that something happened.
- * A thread can block ("wait") on an event semaphore until it is
- * signalled by another thread; see RTSemEventCreate, RTSemEventSignal
- * and RTSemEventWait.
+ * Event semaphores can be used for inter-thread communication when one thread
+ * wants to notify another thread that something happened.  A thread can block
+ * ("wait") on an event semaphore until it is signalled by another thread; see
+ * RTSemEventCreate, RTSemEventSignal and RTSemEventWait.
  *
  * @{ */
 
@@ -76,9 +76,9 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem);
 /**
  * Signal an event semaphore.
  *
- * The event semaphore will be signaled and automatically reset
- * after exactly one thread have successfully returned from
- * RTSemEventWait() after waiting/polling on that semaphore.
+ * The event semaphore will be signaled and automatically reset after exactly
+ * one thread have successfully returned from RTSemEventWait() after
+ * waiting/polling on that semaphore.
  *
  * @returns iprt status code.
  * @param   EventSem    The event semaphore to signal.
@@ -88,8 +88,8 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem);
 /**
  * Wait for the event semaphore to be signaled, resume on interruption.
  *
- * This function will resume if the wait is interrupted by an async
- * system event (like a unix signal) or similar.
+ * This function will resume if the wait is interrupted by an async system event
+ * (like a unix signal) or similar.
  *
  * @returns iprt status code.
  *          Will not return VERR_INTERRUPTED.
@@ -113,6 +113,10 @@ RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies);
 
 
 /** @defgroup grp_rt_sems_event_multi   RTSemEventMulti - Multiple Release Event Semaphores
+ *
+ * A variant of @ref  grp_rt_sems_event where all threads will be unblocked when
+ * signalling the semaphore.
+ *
  * @{ */
 
 /**
@@ -177,14 +181,13 @@ RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned
 
 /** @defgroup grp_rt_sems_mutex     RTMutex - Mutex semaphores.
  *
- * Mutex semaphores protect a section of code or data to which access
- * must be exclusive. Only one thread can hold access to a critical
- * section at one time. See RTSemMutexCreate, RTSemMutexRequest and
- * RTSemMutexRelease.
+ * Mutex semaphores protect a section of code or data to which access must be
+ * exclusive.  Only one thread can hold access to a critical section at one
+ * time.  See RTSemMutexCreate, RTSemMutexRequest and RTSemMutexRelease.
  *
- * @remarks These are less efficient than "fast mutexes" and "critical sections",
- *          which IPRT implements as well; see @ref grp_rt_sems_fast_mutex and
- *          @ref grp_rt_critsect .
+ * @remarks These are less efficient than "fast mutexes" and "critical
+ *          sections", which IPRT implements as well; see @ref
+ *          grp_rt_sems_fast_mutex and @ref grp_rt_critsect .
  *
  * @{ */
 
@@ -297,11 +300,10 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem);
 
 /** @defgroup grp_rt_sems_fast_mutex    RTSemFastMutex - Fast Mutex Semaphores
  *
- * Fast mutexes work like regular mutexes in that they allow only
- * a single thread access to a critical piece of code or data.
- * As opposed to mutexes, they require no syscall if the fast mutex
- * is not held (like critical sections). Unlike critical sections however,
- * they are *not* recursive.
+ * Fast mutexes work like regular mutexes in that they allow only a single
+ * thread access to a critical piece of code or data.  As opposed to mutexes,
+ * they require no syscall if the fast mutex is not held (like critical
+ * sections).  Unlike critical sections however, they are *not* recursive.
  *
  * @{ */
 
@@ -349,7 +351,8 @@ RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX MutexSem);
 
 /** @defgroup grp_rt_sems_spin_mutex RTSemSpinMutex - Spinning Mutex Semaphores
  *
- * Very adaptive kind of mutex semaphore tailored for the ring-0 logger.
+ * A very adaptive variant of mutex semaphore that is tailored for the ring-0
+ * logger.
  *
  * @{ */
 
@@ -442,11 +445,10 @@ RTDECL(int) RTSemSpinMutexRelease(RTSEMSPINMUTEX hSpinMtx);
 
 /** @defgroup grp_rt_sem_rw             RTSemRW - Read / Write Semaphores
  *
- * Read/write semaphores are a fancier version of mutexes in that they
- * grant read access to the protected data to several threads
- * at the same time but allow only one writer at a time. This can make
- * code scale better at the expense of slightly more overhead in
- * mutex management.
+ * Read/write semaphores are a fancier version of mutexes in that they grant
+ * read access to the protected data to several threads at the same time but
+ * allow only one writer at a time.  This can make code scale better at the
+ * expense of slightly more overhead in mutex management.
  *
  * @{ */
 
@@ -565,6 +567,9 @@ RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW RWSem);
 
 
 /** @defgroup grp_rt_sems_pingpong      RTSemPingPong - Ping-Pong Construct
+ *
+ * Serialization of a two way communication.
+ *
  * @{ */
 
 /**
@@ -723,6 +728,85 @@ DECLINLINE(bool) RTSemPongShouldWait(PRTPINGPONG pPP)
         || enmSpeaker == RTPINGPONGSPEAKER_PING_SIGNALED
         || enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED;
 }
+
+/** @} */
+
+
+/** @defgroup grp_rt_sems_xroads    RTSemXRoads - Crossroads
+ *
+ * The crossroads semaphore is intended to prevent two classes of incompatible
+ * events from occuring simultaneously, like south/north bound traffic and
+ * west/east bound traffic at a 4-way junction.
+ *
+ * @remarks In order to simplify the implementation, the current flow is always
+ *          given priority.  So, it won't work at all well when busy!
+ *
+ * @remarks "XRoads" is used as a name because it is briefer than "crossroads"
+ *          and it slightly stresses that is a 4 way crossing to the users of
+ *          American English.
+ * @{
+ */
+
+/**
+ * Creates a crossroads semaphore.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   phXRoads            Where to return the handle to the newly created
+ *                              crossroads semaphore.
+ */
+RTDECL(int) RTSemXRoadsCreate(PRTSEMXROADS phXRoads);
+
+/**
+ * Destroys a crossroads semaphore.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hXRoads             Handle to the crossroads semaphore that is to be
+ *                              destroyed.  NIL_RTSEMXROADS is quitetly ignored
+ *                              (VINF_SUCCESS).
+ */
+RTDECL(int) RTSemXRoadsDestroy(RTSEMXROADS hXRoads);
+
+/**
+ * Enter the crossroads from the south or north.
+ *
+ * (Coupled with RTSemXRoadsNSLeave.)
+ *
+ * @returns IPRT status code.
+ * @param   hXRoads             Handle to the crossroads semaphore.
+ */
+RTDECL(int) RTSemXRoadsNSEnter(RTSEMXROADS hXRoads);
+
+/**
+ * Leave the crossroads to the north or south.
+ *
+ * (Coupled with RTSemXRoadsNSEnter.)
+ *
+ * @returns IPRT status code.
+ * @param   hXRoads             Handle to the crossroads semaphore.
+ */
+RTDECL(int) RTSemXRoadsNSLeave(RTSEMXROADS hXRoads);
+
+/**
+ * Leave the crossroads from the east or west.
+ *
+ * (Coupled with RTSemXRoadsEWLeave.)
+ *
+ * @returns IPRT status code.
+ * @param   hXRoads             Handle to the crossroads semaphore.
+ */
+RTDECL(int) RTSemXRoadsEWEnter(RTSEMXROADS hXRoads);
+
+/**
+ * Leave the crossroads to the west or east.
+ *
+ * (Coupled with RTSemXRoadsEWEnter.)
+ *
+ * @returns IPRT status code.
+ * @param   hXRoads             Handle to the crossroads semaphore.
+ */
+RTDECL(int) RTSemXRoadsEWLeave(RTSEMXROADS hXRoads);
 
 /** @} */
 
