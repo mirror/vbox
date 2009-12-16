@@ -1610,7 +1610,7 @@ public:
 
         VBoxGLWidget::pushSettingsAndSetupViewport(rect(), rect());
         mFBO.bind();
-        mFBOTex.draw();
+        mFBOTex.display();
         mFBO.unbind();
         VBoxGLWidget::popSettingsAfterSetupViewport();
     }
