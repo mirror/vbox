@@ -733,6 +733,16 @@ static const REMPARMDESC g_aArgsPDMCritSectEnter[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(PPDMCRITSECT), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(int), NULL }
 };
+static const REMPARMDESC g_aArgsPDMCritSectEnterDebug[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PPDMCRITSECT), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(int), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTHCUINTPTR), NULL },
+    /* RT_SRC_POS_DECL */
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL }
+};
 static const REMPARMDESC g_aArgsPGMGetGuestMode[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
@@ -1178,7 +1188,9 @@ static REMFNDESC g_aVMMImports[] =
     { "PDMR3CritSectInit",                      (void *)(uintptr_t)&PDMR3CritSectInit,              &g_aArgsPDMR3CritSectInit[0],               RT_ELEMENTS(g_aArgsPDMR3CritSectInit),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PDMCritSectEnter",                       (void *)(uintptr_t)&PDMCritSectEnter,               &g_aArgsPDMCritSectEnter[0],                RT_ELEMENTS(g_aArgsPDMCritSectEnter),                  REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PDMCritSectLeave",                       (void *)(uintptr_t)&PDMCritSectLeave,               &g_aArgsPTR[0],                             RT_ELEMENTS(g_aArgsPTR),                               REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
-
+#ifdef VBOX_STRICT
+    { "PDMCritSectEnterDebug",                  (void *)(uintptr_t)&PDMCritSectEnterDebug,          &g_aArgsPDMCritSectEnterDebug[0],           RT_ELEMENTS(g_aArgsPDMCritSectEnterDebug),             REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+#endif
     { "PDMGetInterrupt",                        (void *)(uintptr_t)&PDMGetInterrupt,                &g_aArgsPDMGetInterrupt[0],                 RT_ELEMENTS(g_aArgsPDMGetInterrupt),                   REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PDMIsaSetIrq",                           (void *)(uintptr_t)&PDMIsaSetIrq,                   &g_aArgsPDMIsaSetIrq[0],                    RT_ELEMENTS(g_aArgsPDMIsaSetIrq),                      REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PGMGetGuestMode",                        (void *)(uintptr_t)&PGMGetGuestMode,                &g_aArgsPGMGetGuestMode[0],                 RT_ELEMENTS(g_aArgsPGMGetGuestMode),                   REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
