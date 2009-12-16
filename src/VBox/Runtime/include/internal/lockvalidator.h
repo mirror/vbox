@@ -62,6 +62,10 @@ typedef struct RTLOCKVALIDATORPERTHREAD
     int32_t volatile        cReadLocks;
 } RTLOCKVALIDATORPERTHREAD;
 
+
+DECLHIDDEN(void)    rtLockValidatorSerializeDestructEnter(void);
+DECLHIDDEN(void)    rtLockValidatorSerializeDestructLeave(void);
+
 RT_C_DECLS_END
 
 #endif
