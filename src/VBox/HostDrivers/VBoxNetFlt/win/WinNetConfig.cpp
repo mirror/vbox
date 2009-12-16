@@ -1059,6 +1059,11 @@ static HRESULT vboxNetCfgWinCopyInf(IN LPCWSTR pInfFullPath)
     return hr;
 }
 
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInstallInf(IN LPCWSTR pInfFullPath)
+{
+    return vboxNetCfgWinCopyInf(pInfFullPath);
+}
+
 /**
  * Install a network component(protocols, clients and services)
  *            given its INF file.
@@ -2833,8 +2838,6 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (LPCWSTR
     /* return the network connection GUID on success */
     if (SUCCEEDED(hrc))
     {
-//        Bstr str(DevName);
-//        str.detachTo(pName);
         WCHAR ConnectoinName[128];
         ULONG cbName = sizeof(ConnectoinName);
 
