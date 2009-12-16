@@ -3313,7 +3313,7 @@ HRESULT Medium::discard(ComObjPtr<Progress> &aProgress, ULONG ulWeight, MergeCha
         AutoCaller autoCaller(this);
         AssertComRCReturnRC(autoCaller.rc());
 
-        aProgress->SetNextOperation(BstrFmt(tr("Discarding hard disk '%s'"), getName().raw()),
+        aProgress->SetNextOperation(BstrFmt(tr("Merging differencing image '%s'"), getName().raw()),
                                     ulWeight);        // weight
 
         if (aChain == NULL)
