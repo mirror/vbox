@@ -2111,7 +2111,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>Mostrar Dock e Barra de Menus &amp;automaticamente em tela cheia</translatorcomment>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -3682,49 +3683,49 @@ p, li { white-space: pre-wrap; }
     </message>
     <message numerus="yes">
         <source>%n year(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n ano(s)</numerusform>
+            <numerusform>%n anos</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n month(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n mês(meses)</numerusform>
+            <numerusform>%n meses</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n dia(s)</numerusform>
+            <numerusform>%n dias</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n hora(s)</numerusform>
+            <numerusform>%n horas</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n minuto(s)</numerusform>
+            <numerusform>%n minuto(s)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n second(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n segundo(s)</numerusform>
+            <numerusform>%n segundos</numerusform>
         </translation>
     </message>
     <message>
         <source>(CD/DVD)</source>
-        <translation type="unfinished"></translation>
+        <translation>(CD/DVD)</translation>
     </message>
 </context>
 <context>
@@ -6300,12 +6301,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Você tem certeza de que deseja remover o dispositivo de CD/DVD-ROM?&lt;/p&gt;&lt;p&gt;Você não poderá ler nenhum CD, montar imagens ISO ou instalar os Adicionais para Convidado sem ele!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Remover</translation>
     </message>
 </context>
 <context>
@@ -6385,12 +6386,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <source>%1, %2 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tempo restante: %1, %2</translation>
     </message>
     <message>
         <source>%1 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tempo restante: %1</translation>
     </message>
 </context>
 <context>
@@ -7308,7 +7309,7 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
     </message>
     <message>
         <source> (%1 ago)</source>
-        <translation type="unfinished"></translation>
+        <translation> (%1 atrás)</translation>
     </message>
 </context>
 <context>
@@ -7362,9 +7363,9 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
     </message>
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Aviso: Você está criando um snapshot de uma máquina em execução que possui %n imagem imutável associada a ela. Enquanto você estiver trabalhando a partir deste snapshot, a imagem imutável não será reestabelecida para evitar perda de dados.</numerusform>
+            <numerusform>Aviso: Você está criando um snapshot de uma máquina em execução que possui %n imagens imutáveis associadas a ela. Enquanto você estiver trabalhando a partir deste snapshot, as imagens imutáveis não serão reestabelecidas para evitar perda de dados.</numerusform>
         </translation>
     </message>
 </context>
@@ -10127,11 +10128,11 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
     <message>
         <source>Adds a new controller to the end of the Storage Tree.</source>
-        <translation>Adiciona uma nova controladora ao final da Árvore de Armazenamento</translation>
+        <translation>Adiciona uma nova controladora ao final da Árvore de Armazenamento.</translation>
     </message>
     <message>
         <source>Removes the controller highlighted in the Storage Tree.</source>
-        <translation>Remove a controladora selecionada da Árvore de Armazenamento</translation>
+        <translation>Remove a controladora selecionada da Árvore de Armazenamento.</translation>
     </message>
     <message>
         <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
