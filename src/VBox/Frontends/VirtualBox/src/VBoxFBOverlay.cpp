@@ -310,8 +310,8 @@ void VBoxVHWAHandleTable::doRemove(uint32_t h)
 
 static VBoxVHWATextureImage* vboxVHWAImageCreate(const QRect & aRect, const VBoxVHWAColorFormat & aFormat, class VBoxVHWAGlProgramMngr * pMgr, bool bDisablePBO)
 {
-    const VBoxVHWAInfo & info = vboxVHWAGetSupportInfo(NULL);
 #ifdef VBOXVHWA_NEW_PBO
+    const VBoxVHWAInfo & info = vboxVHWAGetSupportInfo(NULL);
     if(!bDisablePBO && info.getGlInfo().isPBOSupported())
     {
         VBOXQGLLOG(("PBO Image\n"));
@@ -2888,19 +2888,6 @@ int VBoxGLWidget::vhwaSurfaceColorkeySet(struct _VBOXVHWACMD_SURF_COLORKEY_SET *
         pSurf->setDefaultSrcOverlayCKey(&ckey);
     }
 
-    /* ensure all overlays programs & display lists are updated */
-    const OverlayList & overlays = mDisplay.overlays();
-    for (OverlayList::const_iterator it = overlays.begin();
-         it != overlays.end(); ++ it)
-    {
-        VBoxVHWASurfList * pSurfList = *it;
-        const SurfList & surfaces = pSurfList->surfaces();
-        for (SurfList::const_iterator sit = surfaces.begin();
-             sit != surfaces.end(); ++ sit)
-        {
-            VBoxVHWASurfaceBase *pOverlaySurf = *sit;
-        }
-    }
     return VINF_SUCCESS;
 }
 
@@ -5121,8 +5108,7 @@ int VBoxVHWATextureImage::initDisplay(VBoxVHWATextureImage *pDst,
             || mbNotIntersected != bNotIntersected)
     {
         return createSetDisplay(pDst, pDstRect, pSrcRect,
-                pDstCKey, pSrcCKey, bNotIntersected,
-                &mVisibleDisplay, &mpProgram);
+                pDstCKey, pSrcCKey, bNotIntersected);
 
     }
     else if((pDstCKey && mpDstCKey && *pDstCKey == *mpDstCKey)
@@ -5186,8 +5172,7 @@ class VBoxVHWAGlProgramVHWA * VBoxVHWATextureImage::calcProgram(VBoxVHWATextureI
 }
 
 int VBoxVHWATextureImage::createSetDisplay(VBoxVHWATextureImage *pDst, const QRect * pDstRect, const QRect * pSrcRect,
-        const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected,
-        GLuint *pDisplay, class VBoxVHWAGlProgramVHWA ** ppProgram)
+        const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected)
 {
     deleteDisplay();
     int rc = createDisplay(pDst, pDstRect, pSrcRect,
@@ -5217,6 +5202,10 @@ int VBoxVHWATextureImage::createDisplayList(VBoxVHWATextureImage *pDst, const QR
         const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected,
         GLuint *pDisplay)
 {
+    Q_UNUSED(pDstCKey);
+    Q_UNUSED(pSrcCKey);
+    Q_UNUSED(bNotIntersected);
+
     glGetError(); /* clear the err flag */
     GLuint display = glGenLists(1);
     GLenum err = glGetError();

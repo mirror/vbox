@@ -508,8 +508,7 @@ protected:
             GLuint *pDisplay, class VBoxVHWAGlProgramVHWA ** ppProgram);
 
     int createSetDisplay(VBoxVHWATextureImage *pDst, const QRect * pDstRect, const QRect * pSrcRect,
-            const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected,
-            GLuint *pDisplay, class VBoxVHWAGlProgramVHWA ** ppProgram);
+            const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected);
 
     virtual int createDisplayList(VBoxVHWATextureImage *pDst, const QRect * pDstRect, const QRect * pSrcRect,
             const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected,
