@@ -617,7 +617,7 @@ void VBOXCALL supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
  */
 void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
-    int                 rc, rcLock;
+    int                 rc;
     PSUPDRVBUNDLE       pBundle;
     LogFlow(("supdrvCleanupSession: pSession=%p\n", pSession));
 
@@ -782,9 +782,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
     /*
      * Loaded images needs to be dereferenced and possibly freed up.
      */
-    rcLock = supdrvLdrLock(pDevExt);
-    if (rcLock != VINF_SUCCESS)
-        Log(("supdrvLdrLock failed with rc=%d\n", rcLock));
+    supdrvLdrLock(pDevExt);
     Log2(("freeing images:\n"));
     if (pSession->pLdrUsage)
     {
@@ -803,9 +801,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
             RTMemFree(pvFree);
         }
     }
-    /* Calling supdrvLdrUnlock when the above lock failed raises a fatal exception in Windows. */
-    if (rcLock == VINF_SUCCESS)
-        supdrvLdrUnlock(pDevExt);
+    supdrvLdrUnlock(pDevExt);
     Log2(("freeing images - done\n"));
 
     /*
@@ -4075,10 +4071,12 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 DECLINLINE(int) supdrvLdrLock(PSUPDRVDEVEXT pDevExt)
 {
 #ifdef SUPDRV_USE_MUTEX_FOR_LDR
-    return RTSemMutexRequest(pDevExt->mtxLdr, RT_INDEFINITE_WAIT);
+    int rc = RTSemMutexRequest(pDevExt->mtxLdr, RT_INDEFINITE_WAIT);
 #else
-    return RTSemFastMutexRequest(pDevExt->mtxLdr);
+    int rc = RTSemFastMutexRequest(pDevExt->mtxLdr);
 #endif
+    AssertRC(rc);
+    return rc;
 }
 
 
