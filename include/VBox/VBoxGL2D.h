@@ -158,6 +158,24 @@ typedef GLvoid (APIENTRY *PFNVBOXVHWA_BUFFER_DATA)(GLenum target, GLsizeiptr siz
 typedef GLvoid* (APIENTRY *PFNVBOXVHWA_MAP_BUFFER)(GLenum target, GLenum access);
 typedef GLboolean (APIENTRY *PFNVBOXVHWA_UNMAP_BUFFER)(GLenum target);
 
+/* GL_EXT_framebuffer_object */
+#ifndef GL_FRAMEBUFFER
+# define GL_FRAMEBUFFER                0x8D40
+#endif
+#ifndef GL_COLOR_ATTACHMENT0
+# define GL_COLOR_ATTACHMENT0          0x8CE0
+#endif
+
+typedef GLboolean (APIENTRY *PFNVBOXVHWA_IS_FRAMEBUFFER)(GLuint framebuffer);
+typedef GLvoid (APIENTRY *PFNVBOXVHWA_BIND_FRAMEBUFFER)(GLenum target, GLuint framebuffer);
+typedef GLvoid (APIENTRY *PFNVBOXVHWA_DELETE_FRAMEBUFFERS)(GLsizei n, const GLuint *framebuffers);
+typedef GLvoid (APIENTRY *PFNVBOXVHWA_GEN_FRAMEBUFFERS)(GLsizei n, GLuint *framebuffers);
+typedef GLenum (APIENTRY *PFNVBOXVHWA_CHECK_FRAMEBUFFER_STATUS)(GLenum target);
+typedef GLvoid (APIENTRY *PFNVBOXVHWA_FRAMEBUFFER_TEXTURE1D)(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+typedef GLvoid (APIENTRY *PFNVBOXVHWA_FRAMEBUFFER_TEXTURE2D)(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+typedef GLvoid (APIENTRY *PFNVBOXVHWA_FRAMEBUFFER_TEXTURE3D)(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint zoffset);
+typedef GLvoid (APIENTRY *PFNVBOXVHWA_GET_FRAMEBUFFER_ATTACHMENT_PARAMETRIV)(GLenum target, GLenum attachment, GLenum pname, GLint *params);
+
 
 /*****************/
 
@@ -209,6 +227,17 @@ extern PFNVBOXVHWA_BUFFER_DATA vboxglBufferData;
 extern PFNVBOXVHWA_MAP_BUFFER vboxglMapBuffer;
 extern PFNVBOXVHWA_UNMAP_BUFFER vboxglUnmapBuffer;
 
+extern PFNVBOXVHWA_IS_FRAMEBUFFER vboxglIsFramebuffer;
+extern PFNVBOXVHWA_BIND_FRAMEBUFFER vboxglBindFramebuffer;
+extern PFNVBOXVHWA_DELETE_FRAMEBUFFERS vboxglDeleteFramebuffers;
+extern PFNVBOXVHWA_GEN_FRAMEBUFFERS vboxglGenFramebuffers;
+extern PFNVBOXVHWA_CHECK_FRAMEBUFFER_STATUS vboxglCheckFramebufferStatus;
+extern PFNVBOXVHWA_FRAMEBUFFER_TEXTURE1D vboxglFramebufferTexture1D;
+extern PFNVBOXVHWA_FRAMEBUFFER_TEXTURE2D vboxglFramebufferTexture2D;
+extern PFNVBOXVHWA_FRAMEBUFFER_TEXTURE3D vboxglFramebufferTexture3D;
+extern PFNVBOXVHWA_GET_FRAMEBUFFER_ATTACHMENT_PARAMETRIV vboxglGetFramebufferAttachmentParameteriv;
+
+
 class VBoxGLInfo
 {
 public:
@@ -218,6 +247,7 @@ public:
         mTextureRectangleSupported(false),
         mTextureNP2Supported(false),
         mPBOSupported(false),
+        mFBOSupported(false),
         mMultiTexNumSupported(1), /* 1 would mean it is not supported */
         m_GL_ARB_multitexture(false),
         m_GL_ARB_shader_objects(false),
@@ -227,6 +257,7 @@ public:
         m_GL_EXT_texture_rectangle(false),
         m_GL_NV_texture_rectangle(false),
         m_GL_ARB_texture_non_power_of_two(false),
+        m_GL_EXT_framebuffer_object(false),
         mInitialized(false)
     {}
 
@@ -239,6 +270,7 @@ public:
     bool isTextureRectangleSupported() const { return mTextureRectangleSupported; }
     bool isTextureNP2Supported() const { return mTextureNP2Supported; }
     bool isPBOSupported() const { return mPBOSupported; }
+    bool isFBOSupported() const { return mFBOSupported; }
     /* 1 would mean it is not supported */
     int getMultiTexNumSupported() const { return mMultiTexNumSupported; }
 
@@ -251,6 +283,7 @@ private:
     bool mTextureRectangleSupported;
     bool mTextureNP2Supported;
     bool mPBOSupported;
+    bool mFBOSupported;
     int mMultiTexNumSupported; /* 1 would mean it is not supported */
 
     bool m_GL_ARB_multitexture;
@@ -261,6 +294,7 @@ private:
     bool m_GL_EXT_texture_rectangle;
     bool m_GL_NV_texture_rectangle;
     bool m_GL_ARB_texture_non_power_of_two;
+    bool m_GL_EXT_framebuffer_object;
 
     bool mInitialized;
 };
