@@ -400,7 +400,7 @@ RuntimeR3_SOURCES.win = \
 	generic/RTSemMutexRequest-generic.cpp \
 	generic/RTSemMutexRequestDebug-generic.cpp \
 	generic/mppresent-generic.cpp \
-	generic/semsrw-generic.cpp \
+	generic/semrw-generic.cpp \
 	generic/uuid-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
@@ -510,7 +510,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTSemEventMultiWait-generic.cpp \
 	generic/RTSemMutexRequest-generic.cpp \
 	generic/RTSemMutexRequestDebug-generic.cpp \
-	generic/semsrw-generic.cpp \
+	generic/semrw-generic.cpp \
 	generic/timer-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
@@ -702,7 +702,7 @@ RuntimeR3L4_SOURCES = \
 	generic/RTSemEventMultiWait-generic.cpp \
 	generic/RTSemMutexRequest-generic.cpp \
 	generic/RTSemMutexRequestDebug-generic.cpp \
-	generic/semsrw-generic.cpp \
+	generic/semrw-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
