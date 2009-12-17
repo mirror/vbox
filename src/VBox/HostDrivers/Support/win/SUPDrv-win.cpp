@@ -105,7 +105,6 @@ RT_C_DECLS_END
 ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 {
     NTSTATUS    rc;
-    dprintf(("VBoxDrv::DriverEntry\n"));
 
     /*
      * Create device.
@@ -126,6 +125,8 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
             int vrc = RTR0Init(0);
             if (RT_SUCCESS(rc))
             {
+                Log(("VBoxDrv::DriverEntry\n"));
+
                 /*
                  * Initialize the device extension.
                  */
@@ -161,11 +162,11 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                     if (rc == STATUS_SUCCESS)
                         pDevExt->hPowerCallback = ExRegisterCallback(pDevExt->pObjPowerCallback, VBoxPowerDispatchCallback, pDevObj);
 
-                    dprintf(("VBoxDrv::DriverEntry returning STATUS_SUCCESS\n"));
+                    Log(("VBoxDrv::DriverEntry returning STATUS_SUCCESS\n"));
                     return STATUS_SUCCESS;
                 }
 
-                dprintf(("supdrvInitDevExit failed with vrc=%d!\n", vrc));
+                Log(("supdrvInitDevExit failed with vrc=%d!\n", vrc));
                 rc = VBoxDrvNtErr2NtStatus(vrc);
 
                 IoDeleteSymbolicLink(&DosName);
@@ -173,21 +174,21 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
             }
             else
             {
-                dprintf(("RTR0Init failed with vrc=%d!\n", vrc));
+                Log(("RTR0Init failed with vrc=%d!\n", vrc));
                 rc = VBoxDrvNtErr2NtStatus(vrc);
             }
         }
         else
-            dprintf(("IoCreateSymbolicLink failed with rc=%#x!\n", rc));
+            Log(("IoCreateSymbolicLink failed with rc=%#x!\n", rc));
 
         IoDeleteDevice(pDevObj);
     }
     else
-        dprintf(("IoCreateDevice failed with rc=%#x!\n", rc));
+        Log(("IoCreateDevice failed with rc=%#x!\n", rc));
 
     if (NT_SUCCESS(rc))
         rc = STATUS_INVALID_PARAMETER;
-    dprintf(("VBoxDrv::DriverEntry returning %#x\n", rc));
+    Log(("VBoxDrv::DriverEntry returning %#x\n", rc));
     return rc;
 }
 
@@ -201,7 +202,7 @@ void _stdcall VBoxDrvNtUnload(PDRIVER_OBJECT pDrvObj)
 {
     PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pDrvObj->DeviceObject->DeviceExtension;
 
-    dprintf(("VBoxDrvNtUnload at irql %d\n", KeGetCurrentIrql()));
+    Log(("VBoxDrvNtUnload at irql %d\n", KeGetCurrentIrql()));
 
     /* Clean up the power callback registration. */
     if (pDevExt->hPowerCallback)
@@ -234,7 +235,7 @@ void _stdcall VBoxDrvNtUnload(PDRIVER_OBJECT pDrvObj)
  */
 NTSTATUS _stdcall VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    dprintf(("VBoxDrvNtCreate\n"));
+    Log(("VBoxDrvNtCreate\n"));
     PIO_STACK_LOCATION  pStack = IoGetCurrentIrpStackLocation(pIrp);
     PFILE_OBJECT        pFileObj = pStack->FileObject;
     PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
@@ -284,8 +285,8 @@ NTSTATUS _stdcall VBoxDrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
     PIO_STACK_LOCATION  pStack = IoGetCurrentIrpStackLocation(pIrp);
     PFILE_OBJECT        pFileObj = pStack->FileObject;
-    dprintf(("VBoxDrvNtClose: pDevExt=%p pFileObj=%p pSession=%p\n",
-             pDevExt, pFileObj, pFileObj->FsContext));
+    Log(("VBoxDrvNtClose: pDevExt=%p pFileObj=%p pSession=%p\n",
+         pDevExt, pFileObj, pFileObj->FsContext));
     supdrvCloseSession(pDevExt, (PSUPDRVSESSION)pFileObj->FsContext);
     pFileObj->FsContext = NULL;
     pIrp->IoStatus.Information = 0;
@@ -357,10 +358,10 @@ static int VBoxDrvNtDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSes
     NTSTATUS    rcNt;
     unsigned    cbOut = 0;
     int         rc = 0;
-    dprintf2(("VBoxDrvNtDeviceControlSlow(%p,%p): ioctl=%#x pBuf=%p cbIn=%#x cbOut=%#x pSession=%p\n",
-             pDevExt, pIrp, pStack->Parameters.DeviceIoControl.IoControlCode,
-             pIrp->AssociatedIrp.SystemBuffer, pStack->Parameters.DeviceIoControl.InputBufferLength,
-             pStack->Parameters.DeviceIoControl.OutputBufferLength, pSession));
+    Log2(("VBoxDrvNtDeviceControlSlow(%p,%p): ioctl=%#x pBuf=%p cbIn=%#x cbOut=%#x pSession=%p\n",
+          pDevExt, pIrp, pStack->Parameters.DeviceIoControl.IoControlCode,
+          pIrp->AssociatedIrp.SystemBuffer, pStack->Parameters.DeviceIoControl.InputBufferLength,
+          pStack->Parameters.DeviceIoControl.OutputBufferLength, pSession));
 
 #ifdef RT_ARCH_AMD64
     /* Don't allow 32-bit processes to do any I/O controls. */
@@ -393,30 +394,30 @@ static int VBoxDrvNtDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSes
                 }
                 else
                     rcNt = STATUS_INVALID_PARAMETER;
-                dprintf2(("VBoxDrvNtDeviceControlSlow: returns %#x cbOut=%d rc=%#x\n", rcNt, cbOut, rc));
+                Log2(("VBoxDrvNtDeviceControlSlow: returns %#x cbOut=%d rc=%#x\n", rcNt, cbOut, rc));
             }
             else
             {
-                dprintf(("VBoxDrvNtDeviceControlSlow: Mismatching sizes (%#x) - Hdr=%#lx/%#lx Irp=%#lx/%#lx!\n",
-                         pStack->Parameters.DeviceIoControl.IoControlCode,
-                         pStack->Parameters.DeviceIoControl.InputBufferLength >= sizeof(*pHdr) ? pHdr->cbIn : 0,
-                         pStack->Parameters.DeviceIoControl.InputBufferLength >= sizeof(*pHdr) ? pHdr->cbOut : 0,
-                         pStack->Parameters.DeviceIoControl.InputBufferLength,
-                         pStack->Parameters.DeviceIoControl.OutputBufferLength));
+                Log(("VBoxDrvNtDeviceControlSlow: Mismatching sizes (%#x) - Hdr=%#lx/%#lx Irp=%#lx/%#lx!\n",
+                     pStack->Parameters.DeviceIoControl.IoControlCode,
+                     pStack->Parameters.DeviceIoControl.InputBufferLength >= sizeof(*pHdr) ? pHdr->cbIn : 0,
+                     pStack->Parameters.DeviceIoControl.InputBufferLength >= sizeof(*pHdr) ? pHdr->cbOut : 0,
+                     pStack->Parameters.DeviceIoControl.InputBufferLength,
+                     pStack->Parameters.DeviceIoControl.OutputBufferLength));
                 rcNt = STATUS_INVALID_PARAMETER;
             }
         }
         else
         {
-            dprintf(("VBoxDrvNtDeviceControlSlow: not buffered request (%#x) - not supported\n",
-                     pStack->Parameters.DeviceIoControl.IoControlCode));
+            Log(("VBoxDrvNtDeviceControlSlow: not buffered request (%#x) - not supported\n",
+                 pStack->Parameters.DeviceIoControl.IoControlCode));
             rcNt = STATUS_NOT_SUPPORTED;
         }
     }
 #ifdef RT_ARCH_AMD64
     else
     {
-        dprintf(("VBoxDrvNtDeviceControlSlow: WOW64 req - not supported\n"));
+        Log(("VBoxDrvNtDeviceControlSlow: WOW64 req - not supported\n"));
         rcNt = STATUS_NOT_SUPPORTED;
     }
 #endif
@@ -444,10 +445,10 @@ NTSTATUS _stdcall VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pI
     NTSTATUS            rcNt;
     unsigned            cbOut = 0;
     int                 rc = 0;
-    dprintf2(("VBoxDrvNtInternalDeviceControl(%p,%p): ioctl=%#x pBuf=%p cbIn=%#x cbOut=%#x pSession=%p\n",
-             pDevExt, pIrp, pStack->Parameters.DeviceIoControl.IoControlCode,
-             pIrp->AssociatedIrp.SystemBuffer, pStack->Parameters.DeviceIoControl.InputBufferLength,
-             pStack->Parameters.DeviceIoControl.OutputBufferLength, pSession));
+    Log2(("VBoxDrvNtInternalDeviceControl(%p,%p): ioctl=%#x pBuf=%p cbIn=%#x cbOut=%#x pSession=%p\n",
+          pDevExt, pIrp, pStack->Parameters.DeviceIoControl.IoControlCode,
+          pIrp->AssociatedIrp.SystemBuffer, pStack->Parameters.DeviceIoControl.InputBufferLength,
+          pStack->Parameters.DeviceIoControl.OutputBufferLength, pSession));
 
 /** @todo IDC on NT: figure when to create the session and that stuff... */
 
@@ -477,15 +478,15 @@ NTSTATUS _stdcall VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pI
                 }
                 else
                     rcNt = STATUS_INVALID_PARAMETER;
-                dprintf2(("VBoxDrvNtInternalDeviceControl: returns %#x/rc=%#x\n", rcNt, rc));
+                Log2(("VBoxDrvNtInternalDeviceControl: returns %#x/rc=%#x\n", rcNt, rc));
             }
             else
             {
-                dprintf(("VBoxDrvNtInternalDeviceControl: Mismatching sizes (%#x) - Hdr=%#lx Irp=%#lx/%#lx!\n",
-                         pStack->Parameters.DeviceIoControl.IoControlCode,
-                         pStack->Parameters.DeviceIoControl.InputBufferLength >= sizeof(*pHdr) ? pHdr->cb : 0,
-                         pStack->Parameters.DeviceIoControl.InputBufferLength,
-                         pStack->Parameters.DeviceIoControl.OutputBufferLength));
+                Log(("VBoxDrvNtInternalDeviceControl: Mismatching sizes (%#x) - Hdr=%#lx Irp=%#lx/%#lx!\n",
+                     pStack->Parameters.DeviceIoControl.IoControlCode,
+                     pStack->Parameters.DeviceIoControl.InputBufferLength >= sizeof(*pHdr) ? pHdr->cb : 0,
+                     pStack->Parameters.DeviceIoControl.InputBufferLength,
+                     pStack->Parameters.DeviceIoControl.OutputBufferLength));
                 rcNt = STATUS_INVALID_PARAMETER;
             }
         }
@@ -494,8 +495,8 @@ NTSTATUS _stdcall VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pI
     }
     else
     {
-        dprintf(("VBoxDrvNtInternalDeviceControl: not buffered request (%#x) - not supported\n",
-                 pStack->Parameters.DeviceIoControl.IoControlCode));
+        Log(("VBoxDrvNtInternalDeviceControl: not buffered request (%#x) - not supported\n",
+             pStack->Parameters.DeviceIoControl.IoControlCode));
         rcNt = STATUS_NOT_SUPPORTED;
     }
 
@@ -516,7 +517,7 @@ NTSTATUS _stdcall VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pI
  */
 NTSTATUS _stdcall VBoxDrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    dprintf(("VBoxDrvNtNotSupportedStub\n"));
+    Log(("VBoxDrvNtNotSupportedStub\n"));
     pDevObj = pDevObj;
 
     pIrp->IoStatus.Information = 0;
@@ -538,15 +539,15 @@ VOID _stdcall VBoxPowerDispatchCallback(PVOID pCallbackContext, PVOID pArgument1
 {
     PDEVICE_OBJECT pDevObj = (PDEVICE_OBJECT)pCallbackContext;
 
-    dprintf(("VBoxPowerDispatchCallback: %x %x\n", pArgument1, pArgument2));
+    Log(("VBoxPowerDispatchCallback: %x %x\n", pArgument1, pArgument2));
 
     /* Power change imminent? */
     if ((unsigned)pArgument1 == PO_CB_SYSTEM_STATE_LOCK)
     {
         if ((unsigned)pArgument2 == 0)
-            dprintf(("VBoxPowerDispatchCallback: about to go into suspend mode!\n"));
+            Log(("VBoxPowerDispatchCallback: about to go into suspend mode!\n"));
         else
-            dprintf(("VBoxPowerDispatchCallback: resumed!\n"));
+            Log(("VBoxPowerDispatchCallback: resumed!\n"));
 
         /* Inform any clients that have registered themselves with IPRT. */
         RTPowerSignalEvent(((unsigned)pArgument2 == 0) ? RTPOWEREVENT_SUSPEND : RTPOWEREVENT_RESUME);
@@ -884,25 +885,25 @@ void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 
 
 /**
- * Converts a supdrv error code to an nt status code.
+ * Converts an IPRT error code to an nt status code.
  *
  * @returns corresponding nt status code.
- * @param   rc  supdrv error code (SUPDRV_ERR_* defines).
+ * @param   rc      IPRT error status code.
  */
 static NTSTATUS     VBoxDrvNtErr2NtStatus(int rc)
 {
     switch (rc)
     {
-        case 0:                             return STATUS_SUCCESS;
-        case SUPDRV_ERR_GENERAL_FAILURE:    return STATUS_NOT_SUPPORTED;
-        case SUPDRV_ERR_INVALID_PARAM:      return STATUS_INVALID_PARAMETER;
-        case SUPDRV_ERR_INVALID_MAGIC:      return STATUS_UNKNOWN_REVISION;
-        case SUPDRV_ERR_INVALID_HANDLE:     return STATUS_INVALID_HANDLE;
-        case SUPDRV_ERR_INVALID_POINTER:    return STATUS_INVALID_ADDRESS;
-        case SUPDRV_ERR_LOCK_FAILED:        return STATUS_NOT_LOCKED;
-        case SUPDRV_ERR_ALREADY_LOADED:     return STATUS_IMAGE_ALREADY_LOADED;
-        case SUPDRV_ERR_PERMISSION_DENIED:  return STATUS_ACCESS_DENIED;
-        case SUPDRV_ERR_VERSION_MISMATCH:   return STATUS_REVISION_MISMATCH;
+        case VINF_SUCCESS:                  return STATUS_SUCCESS;
+        case VERR_GENERAL_FAILURE:          return STATUS_NOT_SUPPORTED;
+        case VERR_INVALID_PARAMETER:        return STATUS_INVALID_PARAMETER;
+        case VERR_INVALID_MAGIC:            return STATUS_UNKNOWN_REVISION;
+        case VERR_INVALID_HANDLE:           return STATUS_INVALID_HANDLE;
+        case VERR_INVALID_POINTER:          return STATUS_INVALID_ADDRESS;
+        case VERR_LOCK_FAILED:              return STATUS_NOT_LOCKED;
+        case VERR_ALREADY_LOADED:           return STATUS_IMAGE_ALREADY_LOADED;
+        case VERR_PERMISSION_DENIED:        return STATUS_ACCESS_DENIED;
+        case VERR_VERSION_MISMATCH:         return STATUS_REVISION_MISMATCH;
     }
 
     return STATUS_UNSUCCESSFUL;

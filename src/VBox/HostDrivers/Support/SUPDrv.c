@@ -32,6 +32,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_SUP_DRV
+#define SUPDRV_AGNOSTIC
 #include "SUPDrvInternal.h"
 #ifndef PAGE_SHIFT
 # include <iprt/param.h>
@@ -46,9 +47,6 @@
 #include <iprt/spinlock.h>
 #include <iprt/thread.h>
 #include <iprt/uuid.h>
-#include <VBox/param.h>
-#include <VBox/log.h>
-#include <VBox/err.h>
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 # include <iprt/crc32.h>
 # include <iprt/net.h>
@@ -56,6 +54,13 @@
 # include <iprt/rand.h>
 # include <iprt/path.h>
 #endif
+
+#include <VBox/param.h>
+#include <VBox/log.h>
+#include <VBox/err.h>
+#include <VBox/hwacc_svm.h>
+#include <VBox/hwacc_vmx.h>
+#include <VBox/x86.h>
 
 /*
  * Logging assignments:
@@ -91,30 +96,30 @@
 *******************************************************************************/
 static DECLCALLBACK(int)    supdrvSessionObjHandleRetain(RTHANDLETABLE hHandleTable, void *pvObj, void *pvCtx, void *pvUser);
 static DECLCALLBACK(void)   supdrvSessionObjHandleDelete(RTHANDLETABLE hHandleTable, uint32_t h, void *pvObj, void *pvCtx, void *pvUser);
-static int      supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession);
-static int      supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEMREFTYPE eType);
-static int      supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDROPEN pReq);
-static int      supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRLOAD pReq);
-static int      supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE pReq);
-static int      supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq);
-static int      supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQGETSYM pReq);
-static int      supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryInt, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx);
-static void     supdrvLdrUnsetVMMR0EPs(PSUPDRVDEVEXT pDevExt);
-static int      supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
-static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
-DECLINLINE(int) supdrvLdrLock(PSUPDRVDEVEXT pDevExt);
-DECLINLINE(int) supdrvLdrUnlock(PSUPDRVDEVEXT pDevExt);
-static int      supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq);
-static int      supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLOGGERSETTINGS pReq);
-static int      supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
-static void     supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
-static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
-static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
-static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
-static void     supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys, uint64_t u64NanoTS, unsigned uUpdateHz);
-static void     supdrvGipTerm(PSUPGLOBALINFOPAGE pGip);
-static void     supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, uint64_t iTick);
-static void     supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, unsigned iCpu, uint64_t iTick);
+static int                  supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession);
+static int                  supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEMREFTYPE eType);
+static int                  supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDROPEN pReq);
+static int                  supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRLOAD pReq);
+static int                  supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE pReq);
+static int                  supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq);
+static int                  supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQGETSYM pReq);
+static int                  supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryInt, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx);
+static void                 supdrvLdrUnsetVMMR0EPs(PSUPDRVDEVEXT pDevExt);
+static int                  supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
+static void                 supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
+DECLINLINE(int)             supdrvLdrLock(PSUPDRVDEVEXT pDevExt);
+DECLINLINE(int)             supdrvLdrUnlock(PSUPDRVDEVEXT pDevExt);
+static int                  supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq);
+static int                  supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLOGGERSETTINGS pReq);
+static int                  supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
+static void                 supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
+static DECLCALLBACK(void)   supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+static DECLCALLBACK(void)   supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+static DECLCALLBACK(void)   supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
+static void                 supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys, uint64_t u64NanoTS, unsigned uUpdateHz);
+static void                 supdrvGipTerm(PSUPGLOBALINFOPAGE pGip);
+static void                 supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, uint64_t iTick);
+static void                 supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, unsigned iCpu, uint64_t iTick);
 
 
 /*******************************************************************************
@@ -911,7 +916,7 @@ int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, VMCPUID idCpu, PSUPDRVDEVEXT pDev
  * We would use strpbrk here if this function would be contained in the RedHat kABI white
  * list, see http://www.kerneldrivers.org/RHEL5.
  *
- * @return 1 if pszStr does contain any character of pszChars, 0 otherwise.
+ * @returns  1 if pszStr does contain any character of pszChars, 0 otherwise.
  * @param    pszStr     String to check
  * @param    pszChars   Character set
  */
@@ -934,8 +939,8 @@ static int supdrvCheckInvalidChar(const char *pszStr, const char *pszChars)
 /**
  * I/O Control worker.
  *
- * @returns 0 on success.
- * @returns VERR_INVALID_PARAMETER if the request is invalid.
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_PARAMETER if the request is invalid.
  *
  * @param   uIOCtl      Function number.
  * @param   pDevExt     Device extention.
@@ -1585,7 +1590,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             Log(("Unknown IOCTL %#lx\n", (long)uIOCtl));
             break;
     }
-    return SUPDRV_ERR_GENERAL_FAILURE;
+    return VERR_GENERAL_FAILURE;
 }
 
 
@@ -2788,6 +2793,202 @@ SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3)
 
 
 /**
+ * Gets the paging mode of the current CPU.
+ *
+ * @returns Paging mode, SUPPAGEINGMODE_INVALID on error.
+ */
+SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void)
+{
+    SUPPAGINGMODE enmMode;
+
+    RTR0UINTREG cr0 = ASMGetCR0();
+    if ((cr0 & (X86_CR0_PG | X86_CR0_PE)) != (X86_CR0_PG | X86_CR0_PE))
+        enmMode = SUPPAGINGMODE_INVALID;
+    else
+    {
+        RTR0UINTREG cr4 = ASMGetCR4();
+        uint32_t fNXEPlusLMA = 0;
+        if (cr4 & X86_CR4_PAE)
+        {
+            uint32_t fAmdFeatures = ASMCpuId_EDX(0x80000001);
+            if (fAmdFeatures & (X86_CPUID_AMD_FEATURE_EDX_NX | X86_CPUID_AMD_FEATURE_EDX_LONG_MODE))
+            {
+                uint64_t efer = ASMRdMsr(MSR_K6_EFER);
+                if ((fAmdFeatures & X86_CPUID_AMD_FEATURE_EDX_NX)        && (efer & MSR_K6_EFER_NXE))
+                    fNXEPlusLMA |= RT_BIT(0);
+                if ((fAmdFeatures & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE) && (efer & MSR_K6_EFER_LMA))
+                    fNXEPlusLMA |= RT_BIT(1);
+            }
+        }
+
+        switch ((cr4 & (X86_CR4_PAE | X86_CR4_PGE)) | fNXEPlusLMA)
+        {
+            case 0:
+                enmMode = SUPPAGINGMODE_32_BIT;
+                break;
+
+            case X86_CR4_PGE:
+                enmMode = SUPPAGINGMODE_32_BIT_GLOBAL;
+                break;
+
+            case X86_CR4_PAE:
+                enmMode = SUPPAGINGMODE_PAE;
+                break;
+
+            case X86_CR4_PAE | RT_BIT(0):
+                enmMode = SUPPAGINGMODE_PAE_NX;
+                break;
+
+            case X86_CR4_PAE | X86_CR4_PGE:
+                enmMode = SUPPAGINGMODE_PAE_GLOBAL;
+                break;
+
+            case X86_CR4_PAE | X86_CR4_PGE | RT_BIT(0):
+                enmMode = SUPPAGINGMODE_PAE_GLOBAL;
+                break;
+
+            case RT_BIT(1) | X86_CR4_PAE:
+                enmMode = SUPPAGINGMODE_AMD64;
+                break;
+
+            case RT_BIT(1) | X86_CR4_PAE | RT_BIT(0):
+                enmMode = SUPPAGINGMODE_AMD64_NX;
+                break;
+
+            case RT_BIT(1) | X86_CR4_PAE | X86_CR4_PGE:
+                enmMode = SUPPAGINGMODE_AMD64_GLOBAL;
+                break;
+
+            case RT_BIT(1) | X86_CR4_PAE | X86_CR4_PGE | RT_BIT(0):
+                enmMode = SUPPAGINGMODE_AMD64_GLOBAL_NX;
+                break;
+
+            default:
+                AssertMsgFailed(("Cannot happen! cr4=%#x fNXEPlusLMA=%d\n", cr4, fNXEPlusLMA));
+                enmMode = SUPPAGINGMODE_INVALID;
+                break;
+        }
+    }
+    return enmMode;
+}
+
+
+/**
+ * Enables or disabled hardware virtualization extensions using native OS APIs.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_SUPPORTED if not supported by the native OS.
+ *
+ * @param   fEnable         Whether to enable or disable.
+ */
+SUPR0DECL(int) SUPR0EnableVTx(bool fEnable)
+{
+#ifdef RT_OS_DARWIN
+    return supdrvOSEnableVTx(fEnable);
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/** @todo document me */
+SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
+{
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pfCaps, VERR_INVALID_POINTER);
+
+    *pfCaps = 0;
+
+    if (ASMHasCpuId())
+    {
+        uint32_t u32FeaturesECX;
+        uint32_t u32Dummy;
+        uint32_t u32FeaturesEDX;
+        uint32_t u32VendorEBX, u32VendorECX, u32VendorEDX, u32AMDFeatureEDX, u32AMDFeatureECX;
+        uint64_t val;
+
+        ASMCpuId(0, &u32Dummy, &u32VendorEBX, &u32VendorECX, &u32VendorEDX);
+        ASMCpuId(1, &u32Dummy, &u32Dummy, &u32FeaturesECX, &u32FeaturesEDX);
+        /* Query AMD features. */
+        ASMCpuId(0x80000001, &u32Dummy, &u32Dummy, &u32AMDFeatureECX, &u32AMDFeatureEDX);
+
+        if (    u32VendorEBX == X86_CPUID_VENDOR_INTEL_EBX
+            &&  u32VendorECX == X86_CPUID_VENDOR_INTEL_ECX
+            &&  u32VendorEDX == X86_CPUID_VENDOR_INTEL_EDX
+           )
+        {
+            if (    (u32FeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
+                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
+                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
+               )
+            {
+                val = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+                /*
+                 * Both the LOCK and VMXON bit must be set; otherwise VMXON will generate a #GP.
+                 * Once the lock bit is set, this MSR can no longer be modified.
+                 */
+                if (       (val & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
+                        ==        (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK) /* enabled and locked */
+                    ||  !(val & MSR_IA32_FEATURE_CONTROL_LOCK) /* not enabled, but not locked either */
+                   )
+                {
+                    VMX_CAPABILITY vtCaps;
+
+                    *pfCaps |= SUPVTCAPS_VT_X;
+
+                    vtCaps.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
+                    if (vtCaps.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+                    {
+                        vtCaps.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
+                        if (vtCaps.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
+                            *pfCaps |= SUPVTCAPS_NESTED_PAGING;
+                    }
+                    return VINF_SUCCESS;
+                }
+                return VERR_VMX_MSR_LOCKED_OR_DISABLED;
+            }
+            return VERR_VMX_NO_VMX;
+        }
+
+        if (    u32VendorEBX == X86_CPUID_VENDOR_AMD_EBX
+            &&  u32VendorECX == X86_CPUID_VENDOR_AMD_ECX
+            &&  u32VendorEDX == X86_CPUID_VENDOR_AMD_EDX
+           )
+        {
+            if (   (u32AMDFeatureECX & X86_CPUID_AMD_FEATURE_ECX_SVM)
+                && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
+                && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
+               )
+            {
+                /* Check if SVM is disabled */
+                val = ASMRdMsr(MSR_K8_VM_CR);
+                if (!(val & MSR_K8_VM_CR_SVM_DISABLE))
+                {
+                    *pfCaps |= SUPVTCAPS_AMD_V;
+
+                    /* Query AMD features. */
+                    ASMCpuId(0x8000000A, &u32Dummy, &u32Dummy, &u32Dummy, &u32FeaturesEDX);
+
+                    if (u32FeaturesEDX & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
+                        *pfCaps |= SUPVTCAPS_NESTED_PAGING;
+
+                    return VINF_SUCCESS;
+                }
+                return VERR_SVM_DISABLED;
+            }
+            return VERR_SVM_NO_SVM;
+        }
+    }
+
+    return VERR_UNSUPPORTED_CPU;
+}
+
+
+/**
  * (Re-)initializes the per-cpu structure prior to starting or resuming the GIP
  * updating.
  *
@@ -2912,7 +3113,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
     }
     else
     {
-        rc = SUPDRV_ERR_GENERAL_FAILURE;
+        rc = VERR_GENERAL_FAILURE;
         Log(("SUPR0GipMap: GIP is not available!\n"));
     }
 #ifdef SUPDRV_USE_MUTEX_FOR_GIP
@@ -3554,7 +3755,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         supdrvLdrUnlock(pDevExt);
         if (uState != SUP_IOCTL_LDR_LOAD)
             AssertMsgFailed(("SUP_IOCTL_LDR_LOAD: invalid image state %d (%#x)!\n", uState, uState));
-        return SUPDRV_ERR_ALREADY_LOADED;
+        return VERR_ALREADY_LOADED;
     }
 
     switch (pReq->u.In.eEPType)
@@ -3811,8 +4012,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
 /**
  * Gets the address of a symbol in an open image.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pDevExt     Device globals.
  * @param   pSession    Session data.
  * @param   pReq        The request buffer.
@@ -4464,7 +4664,7 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
             /*
              * We're good.
              */
-            dprintf(("supdrvGipCreate: %ld ns interval.\n", (long)u32Interval));
+            Log(("supdrvGipCreate: %ld ns interval.\n", (long)u32Interval));
             g_pSUPGlobalInfoPage = pGip;
             return VINF_SUCCESS;
         }
@@ -4611,12 +4811,168 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
                 }
             }
 
-            dprintf(("supdrvGipMpEvent: Gip master %#lx -> %#lx\n", (long)idGipMaster, (long)idNewGipMaster));
+            Log(("supdrvGipMpEvent: Gip master %#lx -> %#lx\n", (long)idGipMaster, (long)idNewGipMaster));
             ASMAtomicCmpXchgSize(&pDevExt->idGipMaster, idNewGipMaster, idGipMaster, fIgnored);
             NOREF(fIgnored);
         }
     }
 }
+
+
+/**
+ * Callback used by supdrvDetermineAsyncTSC to read the TSC on a CPU.
+ *
+ * @param   idCpu       Ignored.
+ * @param   pvUser1     Where to put the TSC.
+ * @param   pvUser2     Ignored.
+ */
+static DECLCALLBACK(void) supdrvDetermineAsyncTscWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+#if 1
+    ASMAtomicWriteU64((uint64_t volatile *)pvUser1, ASMReadTSC());
+#else
+    *(uint64_t *)pvUser1 = ASMReadTSC();
+#endif
+}
+
+
+/**
+ * Determine if Async GIP mode is required because of TSC drift.
+ *
+ * When using the default/normal timer code it is essential that the time stamp counter
+ * (TSC) runs never backwards, that is, a read operation to the counter should return
+ * a bigger value than any previous read operation. This is guaranteed by the latest
+ * AMD CPUs and by newer Intel CPUs which never enter the C2 state (P4). In any other
+ * case we have to choose the asynchronous timer mode.
+ *
+ * @param   poffMin     Pointer to the determined difference between different cores.
+ * @return  false if the time stamp counters appear to be synchron, true otherwise.
+ */
+bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *poffMin)
+{
+    /*
+     * Just iterate all the cpus 8 times and make sure that the TSC is
+     * ever increasing. We don't bother taking TSC rollover into account.
+     */
+    RTCPUSET    CpuSet;
+    int         iLastCpu = RTCpuLastIndex(RTMpGetSet(&CpuSet));
+    int         iCpu;
+    int         cLoops = 8;
+    bool        fAsync = false;
+    int         rc = VINF_SUCCESS;
+    uint64_t    offMax = 0;
+    uint64_t    offMin = ~(uint64_t)0;
+    uint64_t    PrevTsc = ASMReadTSC();
+
+    while (cLoops-- > 0)
+    {
+        for (iCpu = 0; iCpu <= iLastCpu; iCpu++)
+        {
+            uint64_t CurTsc;
+            rc = RTMpOnSpecific(RTMpCpuIdFromSetIndex(iCpu), supdrvDetermineAsyncTscWorker, &CurTsc, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                if (CurTsc <= PrevTsc)
+                {
+                    fAsync = true;
+                    offMin = offMax = PrevTsc - CurTsc;
+                    Log(("supdrvDetermineAsyncTsc: iCpu=%d cLoops=%d CurTsc=%llx PrevTsc=%llx\n",
+                         iCpu, cLoops, CurTsc, PrevTsc));
+                    break;
+                }
+
+                /* Gather statistics (except the first time). */
+                if (iCpu != 0 || cLoops != 7)
+                {
+                    uint64_t off = CurTsc - PrevTsc;
+                    if (off < offMin)
+                        offMin = off;
+                    if (off > offMax)
+                        offMax = off;
+                    Log2(("%d/%d: off=%llx\n", cLoops, iCpu, off));
+                }
+
+                /* Next */
+                PrevTsc = CurTsc;
+            }
+            else if (rc == VERR_NOT_SUPPORTED)
+                break;
+            else
+                AssertMsg(rc == VERR_CPU_NOT_FOUND || rc == VERR_CPU_OFFLINE, ("%d\n", rc));
+        }
+
+        /* broke out of the loop. */
+        if (iCpu <= iLastCpu)
+            break;
+    }
+
+    *poffMin = offMin; /* Almost RTMpOnSpecific profiling. */
+    Log(("supdrvDetermineAsyncTsc: returns %d; iLastCpu=%d rc=%d offMin=%llx offMax=%llx\n",
+         fAsync, iLastCpu, rc, offMin, offMax));
+#if !defined(RT_OS_SOLARIS) && !defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS)
+    OSDBGPRINT(("vboxdrv: fAsync=%d offMin=%#lx offMax=%#lx\n", fAsync, (long)offMin, (long)offMax));
+#endif
+    return fAsync;
+}
+
+
+/**
+ * Determin the GIP TSC mode.
+ *
+ * @returns The most suitable TSC mode.
+ * @param   pDevExt     Pointer to the device instance data.
+ */
+static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
+{
+    /*
+     * On SMP we're faced with two problems:
+     *      (1) There might be a skew between the CPU, so that cpu0
+     *          returns a TSC that is sligtly different from cpu1.
+     *      (2) Power management (and other things) may cause the TSC
+     *          to run at a non-constant speed, and cause the speed
+     *          to be different on the cpus. This will result in (1).
+     *
+     * So, on SMP systems we'll have to select the ASYNC update method
+     * if there are symphoms of these problems.
+     */
+    if (RTMpGetCount() > 1)
+    {
+        uint32_t uEAX, uEBX, uECX, uEDX;
+        uint64_t u64DiffCoresIgnored;
+
+        /* Permit the user and/or the OS specfic bits to force async mode. */
+        if (supdrvOSGetForcedAsyncTscMode(pDevExt))
+            return SUPGIPMODE_ASYNC_TSC;
+
+        /* Try check for current differences between the cpus. */
+        if (supdrvDetermineAsyncTsc(&u64DiffCoresIgnored))
+            return SUPGIPMODE_ASYNC_TSC;
+
+        /*
+         * If the CPU supports power management and is an AMD one we
+         * won't trust it unless it has the TscInvariant bit is set.
+         */
+        /* Check for "AuthenticAMD" */
+        ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
+        if (    uEAX >= 1
+            &&  uEBX == X86_CPUID_VENDOR_AMD_EBX
+            &&  uECX == X86_CPUID_VENDOR_AMD_ECX
+            &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
+        {
+            /* Check for APM support and that TscInvariant is cleared. */
+            ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
+            if (uEAX >= 0x80000007)
+            {
+                ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
+                if (    !(uEDX & RT_BIT(8))/* TscInvariant */
+                    &&  (uEDX & 0x3e))  /* STC|TM|THERMTRIP|VID|FID. Ignore TS. */
+                    return SUPGIPMODE_ASYNC_TSC;
+            }
+        }
+    }
+    return SUPGIPMODE_SYNC_TSC;
+}
+
 
 
 /**
@@ -4678,103 +5034,6 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
     pDevExt->pGip = pGip;
     pDevExt->HCPhysGip = HCPhys;
     pDevExt->cGipUsers = 0;
-}
-
-
-/**
- * Callback used by supdrvDetermineAsyncTSC to read the TSC on a CPU.
- *
- * @param   idCpu       Ignored.
- * @param   pvUser1     Where to put the TSC.
- * @param   pvUser2     Ignored.
- */
-static DECLCALLBACK(void) supdrvDetermineAsyncTscWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
-{
-#if 1
-    ASMAtomicWriteU64((uint64_t volatile *)pvUser1, ASMReadTSC());
-#else
-    *(uint64_t *)pvUser1 = ASMReadTSC();
-#endif
-}
-
-
-/**
- * Determine if Async GIP mode is required because of TSC drift.
- *
- * When using the default/normal timer code it is essential that the time stamp counter
- * (TSC) runs never backwards, that is, a read operation to the counter should return
- * a bigger value than any previous read operation. This is guaranteed by the latest
- * AMD CPUs and by newer Intel CPUs which never enter the C2 state (P4). In any other
- * case we have to choose the asynchronous timer mode.
- *
- * @param   poffMin     Pointer to the determined difference between different cores.
- * @return  false if the time stamp counters appear to be synchron, true otherwise.
- */
-bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *poffMin)
-{
-    /*
-     * Just iterate all the cpus 8 times and make sure that the TSC is
-     * ever increasing. We don't bother taking TSC rollover into account.
-     */
-    RTCPUSET    CpuSet;
-    int         iLastCpu = RTCpuLastIndex(RTMpGetSet(&CpuSet));
-    int         iCpu;
-    int         cLoops = 8;
-    bool        fAsync = false;
-    int         rc = VINF_SUCCESS;
-    uint64_t    offMax = 0;
-    uint64_t    offMin = ~(uint64_t)0;
-    uint64_t    PrevTsc = ASMReadTSC();
-
-    while (cLoops-- > 0)
-    {
-        for (iCpu = 0; iCpu <= iLastCpu; iCpu++)
-        {
-            uint64_t CurTsc;
-            rc = RTMpOnSpecific(RTMpCpuIdFromSetIndex(iCpu), supdrvDetermineAsyncTscWorker, &CurTsc, NULL);
-            if (RT_SUCCESS(rc))
-            {
-                if (CurTsc <= PrevTsc)
-                {
-                    fAsync = true;
-                    offMin = offMax = PrevTsc - CurTsc;
-                    dprintf(("supdrvDetermineAsyncTsc: iCpu=%d cLoops=%d CurTsc=%llx PrevTsc=%llx\n",
-                             iCpu, cLoops, CurTsc, PrevTsc));
-                    break;
-                }
-
-                /* Gather statistics (except the first time). */
-                if (iCpu != 0 || cLoops != 7)
-                {
-                    uint64_t off = CurTsc - PrevTsc;
-                    if (off < offMin)
-                        offMin = off;
-                    if (off > offMax)
-                        offMax = off;
-                    dprintf2(("%d/%d: off=%llx\n", cLoops, iCpu, off));
-                }
-
-                /* Next */
-                PrevTsc = CurTsc;
-            }
-            else if (rc == VERR_NOT_SUPPORTED)
-                break;
-            else
-                AssertMsg(rc == VERR_CPU_NOT_FOUND || rc == VERR_CPU_OFFLINE, ("%d\n", rc));
-        }
-
-        /* broke out of the loop. */
-        if (iCpu <= iLastCpu)
-            break;
-    }
-
-    *poffMin = offMin; /* Almost RTMpOnSpecific profiling. */
-    dprintf(("supdrvDetermineAsyncTsc: returns %d; iLastCpu=%d rc=%d offMin=%llx offMax=%llx\n",
-             fAsync, iLastCpu, rc, offMin, offMax));
-#if !defined(RT_OS_SOLARIS) && !defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS)
-    OSDBGPRINT(("vboxdrv: fAsync=%d offMin=%#lx offMax=%#lx\n", fAsync, (long)offMin, (long)offMax));
-#endif
-    return fAsync;
 }
 
 

@@ -838,22 +838,22 @@ int VBOXCALL SUPDrvSolarisIDC(uint32_t uReq, PSUPDRVIDCREQHDR pReq)
  * Converts an supdrv error code to a solaris error code.
  *
  * @returns corresponding solaris error code.
- * @param   rc  supdrv error code (SUPDRV_ERR_* defines).
+ * @param   rc      IPRT status code.
  */
 static int VBoxSupDrvErr2SolarisErr(int rc)
 {
     switch (rc)
     {
-        case 0:                             return 0;
-        case SUPDRV_ERR_GENERAL_FAILURE:    return EACCES;
-        case SUPDRV_ERR_INVALID_PARAM:      return EINVAL;
-        case SUPDRV_ERR_INVALID_MAGIC:      return EILSEQ;
-        case SUPDRV_ERR_INVALID_HANDLE:     return ENXIO;
-        case SUPDRV_ERR_INVALID_POINTER:    return EFAULT;
-        case SUPDRV_ERR_LOCK_FAILED:        return ENOLCK;
-        case SUPDRV_ERR_ALREADY_LOADED:     return EEXIST;
-        case SUPDRV_ERR_PERMISSION_DENIED:  return EPERM;
-        case SUPDRV_ERR_VERSION_MISMATCH:   return ENOSYS;
+        case VINF_SUCCESS:              return 0;
+        case VERR_GENERAL_FAILURE:      return EACCES;
+        case VERR_INVALID_PARAMETER:    return EINVAL;
+        case VERR_INVALID_MAGIC:        return EILSEQ;
+        case VERR_INVALID_HANDLE:       return ENXIO;
+        case VERR_INVALID_POINTER:      return EFAULT;
+        case VERR_LOCK_FAILED:          return ENOLCK;
+        case VERR_ALREADY_LOADED:       return EEXIST;
+        case VERR_PERMISSION_DENIED:    return EPERM;
+        case VERR_VERSION_MISMATCH:     return ENOSYS;
     }
 
     return EPERM;
