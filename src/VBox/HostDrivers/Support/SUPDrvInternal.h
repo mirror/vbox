@@ -185,6 +185,11 @@
  * @todo fix the mutex implementation on linux and make this the default. */
 # define SUPDRV_USE_MUTEX_FOR_LDR
 
+/** Use a normal mutex for the GIP so we remain at the same IRQL after
+ * taking it.
+ * @todo fix the mutex implementation on linux and make this the default. */
+# define SUPDRV_USE_MUTEX_FOR_GIP
+
 /*
  * Linux
  */
@@ -606,7 +611,11 @@ typedef struct SUPDRVDEVEXT
     /** GIP mutex.
      * Any changes to any of the GIP members requires ownership of this mutex,
      * except on driver init and termination. */
+#ifdef SUPDRV_USE_MUTEX_FOR_GIP
+    RTSEMMUTEX                      mtxGip;
+#else
     RTSEMFASTMUTEX                  mtxGip;
+#endif
     /** Pointer to the Global Info Page (GIP). */
     PSUPGLOBALINFOPAGE              pGip;
     /** The physical address of the GIP. */
