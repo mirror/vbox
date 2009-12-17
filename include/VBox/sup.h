@@ -128,7 +128,7 @@ typedef struct SUPGIPCPU
      */
     volatile uint32_t   au32TSCHistory[8];
     /** The interval between the last two NanoTS updates. (experiment for now) */
-    volatile uint32_t   u32UpdateIntervalNS;
+    volatile uint32_t   u32PrevUpdateIntervalNS;
     /** Reserved for future per processor data. */
     volatile uint32_t   au32Reserved[5];
 } SUPGIPCPU;

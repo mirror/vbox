@@ -2770,6 +2770,40 @@ SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3)
 
 
 /**
+ * (Re-)initializes the per-cpu structure prior to starting or resuming the GIP
+ * updating.
+ *
+ * @param   pGipCpu          The per CPU structure for this CPU.
+ * @param   u64NanoTS        The current time.
+ */
+static void supdrvGipReInitCpu(PSUPGIPCPU pGipCpu, uint64_t u64NanoTS)
+{
+    pGipCpu->u64TSC    = ASMReadTSC() - pGipCpu->u32UpdateIntervalTSC;
+    pGipCpu->u64NanoTS = u64NanoTS;
+}
+
+
+/**
+ * Set the current TSC and NanoTS value for the CPU.
+ *
+ * @param   idCpu            The CPU ID. Unused - we have to use the APIC ID.
+ * @param   pvUser1          Pointer to the ring-0 GIP mapping.
+ * @param   pvUser2          Pointer to the variable holding the current time.
+ */
+static DECLCALLBACK(void) supdrvGipReInitCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    PSUPGLOBALINFOPAGE  pGip = (PSUPGLOBALINFOPAGE)pvUser1;
+    unsigned            iCpu = ASMGetApicId();
+
+    if (RT_LIKELY(iCpu < RT_ELEMENTS(pGip->aCPUs)))
+        supdrvGipReInitCpu(&pGip->aCPUs[iCpu], *(uint64_t *)pvUser2);
+
+    NOREF(pvUser2);
+    NOREF(idCpu);
+}
+
+
+/**
  * Maps the GIP into userspace and/or get the physical address of the GIP.
  *
  * @returns IPRT status code.
@@ -2828,13 +2862,26 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
             if (pDevExt->cGipUsers == 1)
             {
                 PSUPGLOBALINFOPAGE pGipR0 = pDevExt->pGip;
+                uint64_t u64NanoTS;
                 unsigned i;
 
                 LogFlow(("SUPR0GipMap: Resumes GIP updating\n"));
 
-                for (i = 0; i < RT_ELEMENTS(pGipR0->aCPUs); i++)
-                    ASMAtomicXchgU32(&pGipR0->aCPUs[i].u32TransactionId, pGipR0->aCPUs[i].u32TransactionId & ~(GIP_UPDATEHZ_RECALC_FREQ * 2 - 1));
-                ASMAtomicXchgU64(&pGipR0->u64NanoTSLastUpdateHz, 0);
+                if (pGipR0->aCPUs[0].u32TransactionId != 2 /* not the first time */)
+                {
+                    for (i = 0; i < RT_ELEMENTS(pGipR0->aCPUs); i++)
+                        ASMAtomicUoWriteU32(&pGipR0->aCPUs[i].u32TransactionId,
+                                            (pGipR0->aCPUs[i].u32TransactionId + GIP_UPDATEHZ_RECALC_FREQ * 2)
+                                            & ~(GIP_UPDATEHZ_RECALC_FREQ * 2 - 1));
+                    ASMAtomicWriteU64(&pGipR0->u64NanoTSLastUpdateHz, 0);
+                }
+
+                u64NanoTS = RTTimeSystemNanoTS() - pGipR0->u32UpdateIntervalNS;
+                if (   pGipR0->u32Mode == SUPGIPMODE_SYNC_TSC
+                    || RTMpGetOnlineCount() == 1)
+                    supdrvGipReInitCpu(&pGipR0->aCPUs[0], u64NanoTS);
+                else
+                    RTMpOnAll(supdrvGipReInitCpuCallback, pGipR0, &u64NanoTS);
 
                 rc = RTTimerStart(pDevExt->pGipTimer, 0);
                 AssertRC(rc); rc = VINF_SUCCESS;
@@ -4462,7 +4509,7 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
     uint64_t        u64TSC    = ASMReadTSC();
     uint64_t        NanoTS    = RTTimeSystemNanoTS();
 
-    supdrvGipUpdate(pDevExt->pGip, NanoTS, u64TSC);
+    supdrvGipUpdate(pDevExt->pGip, NanoTS, u64TSC, iTick);
 
     ASMSetFlags(fOldFlags);
 }
@@ -4483,9 +4530,9 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
 
     /** @todo reset the transaction number and whatnot when iTick == 1. */
     if (pDevExt->idGipMaster == idCpu)
-        supdrvGipUpdate(pDevExt->pGip, NanoTS, u64TSC);
+        supdrvGipUpdate(pDevExt->pGip, NanoTS, u64TSC, iTick);
     else
-        supdrvGipUpdatePerCpu(pDevExt->pGip, NanoTS, u64TSC, ASMGetApicId());
+        supdrvGipUpdatePerCpu(pDevExt->pGip, NanoTS, u64TSC, ASMGetApicId(), iTick);
 
     ASMSetFlags(fOldFlags);
 }
@@ -4576,18 +4623,20 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
 
         /*
          * We don't know the following values until we've executed updates.
-         * So, we'll just insert very high values.
+         * So, we'll just pretend it's a 4 GHz CPU and adjust the history it on
+         * the 2nd timer callout.
          */
-        pGip->aCPUs[i].u64CpuHz          = _4G + 1;
-        pGip->aCPUs[i].u32UpdateIntervalTSC = _2G / 4;
-        pGip->aCPUs[i].au32TSCHistory[0] = _2G / 4;
-        pGip->aCPUs[i].au32TSCHistory[1] = _2G / 4;
-        pGip->aCPUs[i].au32TSCHistory[2] = _2G / 4;
-        pGip->aCPUs[i].au32TSCHistory[3] = _2G / 4;
-        pGip->aCPUs[i].au32TSCHistory[4] = _2G / 4;
-        pGip->aCPUs[i].au32TSCHistory[5] = _2G / 4;
-        pGip->aCPUs[i].au32TSCHistory[6] = _2G / 4;
-        pGip->aCPUs[i].au32TSCHistory[7] = _2G / 4;
+        pGip->aCPUs[i].u64CpuHz          = _4G + 1; /* tstGIP-2 depends on this. */
+        pGip->aCPUs[i].u32UpdateIntervalTSC
+            = pGip->aCPUs[i].au32TSCHistory[0]
+            = pGip->aCPUs[i].au32TSCHistory[1]
+            = pGip->aCPUs[i].au32TSCHistory[2]
+            = pGip->aCPUs[i].au32TSCHistory[3]
+            = pGip->aCPUs[i].au32TSCHistory[4]
+            = pGip->aCPUs[i].au32TSCHistory[5]
+            = pGip->aCPUs[i].au32TSCHistory[6]
+            = pGip->aCPUs[i].au32TSCHistory[7]
+            = /*pGip->aCPUs[i].u64CpuHz*/ _4G / uUpdateHz;
     }
 
     /*
@@ -4724,17 +4773,19 @@ void VBOXCALL supdrvGipTerm(PSUPGLOBALINFOPAGE pGip)
  * @param   pGipCpu         Pointer to the per cpu data.
  * @param   u64NanoTS       The current time stamp.
  * @param   u64TSC          The current TSC.
+ * @param   iTick           The current timer tick.
  */
-static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, uint64_t u64NanoTS, uint64_t u64TSC)
+static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, uint64_t u64NanoTS, uint64_t u64TSC, uint64_t iTick)
 {
     uint64_t    u64TSCDelta;
     uint32_t    u32UpdateIntervalTSC;
     uint32_t    u32UpdateIntervalTSCSlack;
     unsigned    iTSCHistoryHead;
     uint64_t    u64CpuHz;
+    uint32_t    u32TransactionId;
 
     /* Delta between this and the previous update. */
-    pGipCpu->u32UpdateIntervalNS = (uint32_t)(u64NanoTS - pGipCpu->u64NanoTS);
+    ASMAtomicUoWriteU32(&pGipCpu->u32PrevUpdateIntervalNS, (uint32_t)(u64NanoTS - pGipCpu->u64NanoTS));
 
     /*
      * Update the NanoTS.
@@ -4755,10 +4806,26 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
     }
 
     /*
+     * On the 2nd and 3rd callout, reset the history with the current TSC
+     * interval since the values entered by supdrvGipInit are totally off.
+     * The interval on the 1st callout completely unreliable, the 2nd is a bit
+     * better, while the 3rd should be most reliable.
+     */
+    u32TransactionId = pGipCpu->u32TransactionId;
+    if (RT_UNLIKELY(   (   u32TransactionId == 5
+                        || u32TransactionId == 7)
+                    && (   iTick == 2
+                        || iTick == 3) ))
+    {
+        unsigned i;
+        for (i = 0; i < RT_ELEMENTS(pGipCpu->au32TSCHistory); i++)
+            ASMAtomicUoWriteU32(&pGipCpu->au32TSCHistory[i], (uint32_t)u64TSCDelta);
+    }
+
+    /*
      * TSC History.
      */
     Assert(RT_ELEMENTS(pGipCpu->au32TSCHistory) == 8);
-
     iTSCHistoryHead = (pGipCpu->iTSCHistoryHead + 1) & 7;
     ASMAtomicXchgU32(&pGipCpu->iTSCHistoryHead, iTSCHistoryHead);
     ASMAtomicXchgU32(&pGipCpu->au32TSCHistory[iTSCHistoryHead], (uint32_t)u64TSCDelta);
@@ -4814,11 +4881,12 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
 /**
  * Updates the GIP.
  *
- * @param   pGip        Pointer to the GIP.
- * @param   u64NanoTS   The current nanosecond timesamp.
- * @param   u64TSC      The current TSC timesamp.
+ * @param   pGip            Pointer to the GIP.
+ * @param   u64NanoTS       The current nanosecond timesamp.
+ * @param   u64TSC          The current TSC timesamp.
+ * @param   iTick           The current timer tick.
  */
-void VBOXCALL supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC)
+void VBOXCALL supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, uint64_t iTick)
 {
     /*
      * Determin the relevant CPU data.
@@ -4829,7 +4897,7 @@ void VBOXCALL supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint6
     else
     {
         unsigned iCpu = ASMGetApicId();
-        if (RT_LIKELY(iCpu >= RT_ELEMENTS(pGip->aCPUs)))
+        if (RT_UNLIKELY(iCpu >= RT_ELEMENTS(pGip->aCPUs)))
             return;
         pGipCpu = &pGip->aCPUs[iCpu];
     }
@@ -4869,7 +4937,7 @@ void VBOXCALL supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint6
     /*
      * Update the data.
      */
-    supdrvGipDoUpdateCpu(pGip, pGipCpu, u64NanoTS, u64TSC);
+    supdrvGipDoUpdateCpu(pGip, pGipCpu, u64NanoTS, u64TSC, iTick);
 
     /*
      * Complete transaction.
@@ -4881,12 +4949,13 @@ void VBOXCALL supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint6
 /**
  * Updates the per cpu GIP data for the calling cpu.
  *
- * @param   pGip        Pointer to the GIP.
- * @param   u64NanoTS   The current nanosecond timesamp.
- * @param   u64TSC      The current TSC timesamp.
- * @param   iCpu        The CPU index.
+ * @param   pGip            Pointer to the GIP.
+ * @param   u64NanoTS       The current nanosecond timesamp.
+ * @param   u64TSC          The current TSC timesamp.
+ * @param   iCpu            The CPU index.
+ * @param   iTick           The current timer tick.
  */
-void VBOXCALL supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, unsigned iCpu)
+void VBOXCALL supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, unsigned iCpu, uint64_t iTick)
 {
     PSUPGIPCPU  pGipCpu;
 
@@ -4908,7 +4977,7 @@ void VBOXCALL supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS,
         /*
          * Update the data.
          */
-        supdrvGipDoUpdateCpu(pGip, pGipCpu, u64NanoTS, u64TSC);
+        supdrvGipDoUpdateCpu(pGip, pGipCpu, u64NanoTS, u64TSC, iTick);
 
         /*
          * Complete transaction.
