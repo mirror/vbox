@@ -400,7 +400,7 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
 #endif /* 10.4 */
     }
     else
-        rc = SUPDRV_ERR_INVALID_PARAM;
+        rc = VERR_INVALID_PARAMETER;
 
 #ifdef DEBUG_DARWIN_GIP
     OSDBGPRINT(("VBoxDrvDarwinOpen: pid=%d '%s' pSession=%p rc=%d\n", proc_pid(pProcess), szName, pSession, rc));
