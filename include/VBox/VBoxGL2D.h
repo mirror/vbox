@@ -270,6 +270,9 @@ public:
     bool isTextureRectangleSupported() const { return mTextureRectangleSupported; }
     bool isTextureNP2Supported() const { return mTextureNP2Supported; }
     bool isPBOSupported() const { return mPBOSupported; }
+    /* some ATI drivers do not seem to support non-zero offsets when dealing with PBOs
+     * @todo: add a check for that, always unsupported currently */
+    bool isPBOOffsetSupported() const { return false; }
     bool isFBOSupported() const { return mFBOSupported; }
     /* 1 would mean it is not supported */
     int getMultiTexNumSupported() const { return mMultiTexNumSupported; }
