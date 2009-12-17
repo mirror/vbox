@@ -104,6 +104,109 @@ private:
 };
 
 /**
+ * Callback handler for VirtualBox events
+ */
+class VirtualBoxCallback :
+  VBOX_SCRIPTABLE_IMPL(IVirtualBoxCallback)
+{
+public:
+    VirtualBoxCallback()
+    {
+#ifndef VBOX_WITH_XPCOM
+        refcnt = 0;
+#endif
+    }
+
+    virtual ~VirtualBoxCallback()
+    {
+    }
+
+#ifndef VBOX_WITH_XPCOM
+    STDMETHOD_(ULONG, AddRef)()
+    {
+        return ::InterlockedIncrement(&refcnt);
+    }
+    STDMETHOD_(ULONG, Release)()
+    {
+        long cnt = ::InterlockedDecrement(&refcnt);
+        if (cnt == 0)
+            delete this;
+        return cnt;
+    }
+#endif
+    VBOX_SCRIPTABLE_DISPATCH_IMPL(IVirtualBoxCallback)
+
+    NS_DECL_ISUPPORTS
+
+    STDMETHOD(OnMachineStateChange)(IN_BSTR machineId, MachineState_T state)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnMachineDataChange)(IN_BSTR machineId)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnExtraDataCanChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value,
+                                    BSTR *error, BOOL *changeAllowed)
+    {
+        /* we never disagree */
+        if (!changeAllowed)
+            return E_INVALIDARG;
+        *changeAllowed = TRUE;
+        return S_OK;
+    }
+
+    STDMETHOD(OnExtraDataChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnMediumRegistered)(IN_BSTR mediaId, DeviceType_T mediaType,
+                                  BOOL registered)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnMachineRegistered)(IN_BSTR machineId, BOOL registered)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnSessionStateChange)(IN_BSTR machineId, SessionState_T state)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnSnapshotTaken) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnSnapshotDiscarded) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnSnapshotChange) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnGuestPropertyChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value, IN_BSTR flags)
+    {
+        return S_OK;
+    }
+
+private:
+#ifndef VBOX_WITH_XPCOM
+    long refcnt;
+#endif
+
+};
+
+/**
  *  Callback handler for machine events.
  */
 class ConsoleCallback : VBOX_SCRIPTABLE_IMPL(IConsoleCallback)
@@ -287,6 +390,8 @@ private:
 };
 
 #ifdef VBOX_WITH_XPCOM
+NS_DECL_CLASSINFO (VirtualBoxCallback)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI (VirtualBoxCallback, IVirtualBoxCallback)
 NS_DECL_CLASSINFO (ConsoleCallback)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI (ConsoleCallback, IConsoleCallback)
 #endif
@@ -845,6 +950,14 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
         gSession = session;
         gConsole = console;
         gEventQ = com::EventQueue::getMainEventQueue();
+
+        /* VirtualBox callback registration. */
+        VirtualBoxCallback *vboxCallback = new VirtualBoxCallback();
+        vboxCallback->AddRef();
+        CHECK_ERROR(virtualBox, RegisterCallback(vboxCallback));
+        vboxCallback->Release();
+        if (FAILED (rc))
+            break;
 
         /* register a callback for machine events */
         {
