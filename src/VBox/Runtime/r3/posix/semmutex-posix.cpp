@@ -185,12 +185,23 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
     /*
      * Lock it.
      */
+    if (cMillies != 0)
+    {
+#ifdef RTSEMMUTEX_STRICT
+        int rc9 = RTLockValidatorCheckBlocking(&pThis->ValidatorRec, hThreadSelf,
+                                               RTTHREADSTATE_MUTEX, true, uId, RT_SRC_POS_ARGS);
+        if (RT_FAILURE(rc9))
+            return rc9;
+#else
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX);
+#endif
+    }
+
     if (cMillies == RT_INDEFINITE_WAIT)
     {
         /* take mutex */
-        RTSEMMUTEX_STRICT_BLOCK(hThreadSelf, &pThis->ValidatorRec);
         int rc = pthread_mutex_lock(&pThis->Mutex);
-        RTSEMMUTEX_STRICT_UNBLOCK(hThreadSelf);
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_MUTEX);
         if (rc)
         {
             AssertMsgFailed(("Failed to lock mutex sem %p, rc=%d.\n", MutexSem, rc)); NOREF(rc);
@@ -217,12 +228,11 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
                 ts.tv_nsec -= 1000000000;
                 ts.tv_sec++;
             }
-            RTSEMMUTEX_STRICT_BLOCK(hThreadSelf, &pThis->ValidatorRec);
         }
 
         /* take mutex */
         int rc = pthread_mutex_timedlock(&pThis->Mutex, &ts);
-        RTSEMMUTEX_STRICT_UNBLOCK(hThreadSelf);
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_MUTEX);
         if (rc)
         {
             AssertMsg(rc == ETIMEDOUT, ("Failed to lock mutex sem %p, rc=%d.\n", MutexSem, rc)); NOREF(rc);
@@ -237,7 +247,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
     pThis->Owner = Self;
     ASMAtomicWriteU32(&pThis->cNesting, 1);
 #ifdef RTSEMMUTEX_STRICT
-    RTLockValidatorWriteLockInc(RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, RTSEMMUTEX_STRICT_POS_ARGS));
+    RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, RTSEMMUTEX_STRICT_POS_ARGS);
 #endif
 
     return VINF_SUCCESS;
@@ -320,7 +330,7 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
      * Clear the state. (cNesting == 1)
      */
 #ifdef RTSEMMUTEX_STRICT
-    RTLockValidatorWriteLockDec(RTLockValidatorUnsetOwner(&pThis->ValidatorRec));
+    RTLockValidatorUnsetOwner(&pThis->ValidatorRec);
 #endif
     pThis->Owner = (pthread_t)-1;
     ASMAtomicXchgU32(&pThis->cNesting, 0);

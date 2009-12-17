@@ -842,6 +842,16 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_SEM_BAD_CONTEXT                (-367)
 /** Don't spin for the semaphore, but it is safe to try grab it. */
 #define VINF_SEM_BAD_CONTEXT                (367)
+/** Wrong locking order detected. */
+#define VERR_SEM_LV_WRONG_ORDER             (-368)
+/** Wrong release order detected. */
+#define VERR_SEM_LV_WRONG_RELEASE_ORDER     (-369)
+/** Attempt to recursively enter a non-recurisve lock. */
+#define VERR_SEM_LV_NESTED                  (-370)
+/** Invalid parameters passed to the lock validator. */
+#define VERR_SEM_LV_INVALID_PARAMETER       (-371)
+/** The lock validator detected a deadlock. */
+#define VERR_SEM_LV_DEADLOCK                (-372)
 /** @} */
 
 

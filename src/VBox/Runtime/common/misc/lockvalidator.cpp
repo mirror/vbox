@@ -180,7 +180,7 @@ RTDECL(void) RTLockValidatorDestroy(PRTLOCKVALIDATORREC *ppRec)
 
 RTDECL(int) RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
 
     /*
      * Check it locks we're currently holding.
@@ -195,12 +195,49 @@ RTDECL(int) RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread
 }
 
 
+RTDECL(int)  RTLockValidatorCheckReleaseOrder(PRTLOCKVALIDATORREC pRec)
+{
+    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRec->hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTLockValidatorRecordRecursion(PRTLOCKVALIDATORREC pRec, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRec->hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
+
+    Assert(pRec->cRecursion < _1M);
+    pRec->cRecursion++;
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(void) RTLockValidatorRecordUnwind(PRTLOCKVALIDATORREC pRec)
+{
+    AssertReturnVoid(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC);
+    AssertReturnVoid(pRec->hThread != NIL_RTTHREAD);
+    AssertReturnVoid(pRec->cRecursion > 0);
+
+    pRec->cRecursion--;
+}
+
+
 RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, NIL_RTTHREAD);
 
     if (hThread == NIL_RTTHREAD)
+    {
         hThread = RTThreadSelfAutoAdopt();
+        AssertReturn(hThread != NIL_RTTHREAD, hThread);
+    }
+
+    ASMAtomicIncS32(&hThread->LockValidator.cWriteLocks);
+
     if (pRec->hThread == hThread)
         pRec->cRecursion++;
     else
@@ -231,9 +268,10 @@ RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
 RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec)
 {
     AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, NIL_RTTHREAD);
-    RTTHREAD hThread = pRec->hThread;
-    AssertReturn(hThread != NIL_RTTHREAD, hThread);
-    AssertReturn(pRec->hThread == hThread, hThread);
+    RTTHREADINT *pThread = pRec->hThread;
+    AssertReturn(pThread != NIL_RTTHREAD, pThread);
+
+    ASMAtomicDecS32(&pThread->LockValidator.cWriteLocks);
 
     if (ASMAtomicDecU32(&pRec->cRecursion) == 0)
     {
@@ -248,7 +286,7 @@ RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec)
         ASMAtomicWriteHandle(&pRec->hThread, NIL_RTTHREAD);
     }
 
-    return hThread;
+    return pThread;
 }
 
 
@@ -420,33 +458,24 @@ static void rtLockValidatorComplainAboutDeadlock(PRTLOCKVALIDATORREC pRec, PRTTH
 }
 
 
-/**
- * Change the thread state to blocking and do deadlock detection.
- *
- * @param   pRec                The validator record we're blocing on.
- * @param   hThread             The current thread.  Shall not be NIL_RTTHREAD!
- * @param   enmState            The sleep state.
- * @param   pvBlock             Pointer to a RTLOCKVALIDATORREC structure.
- * @param   fRecursiveOk        Whether it's ok to recurse.
- * @param   uId                 Where we are blocking.
- * @param   RT_SRC_POS_DECL     Where we are blocking.
- */
-RTDECL(void) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread,
-                                          RTTHREADSTATE enmState, bool fRecursiveOk,
-                                          RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread,
+                                         RTTHREADSTATE enmState, bool fRecursiveOk,
+                                         RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     /*
      * Fend off wild life.
      */
-    AssertReturnVoid(RTTHREAD_IS_SLEEPING(enmState));
-    AssertPtrReturnVoid(pRec);
-    AssertReturnVoid(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC);
+    AssertReturn(RTTHREAD_IS_SLEEPING(enmState), VERR_SEM_LV_INVALID_PARAMETER);
+    AssertPtrReturn(pRec, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     PRTTHREADINT pThread = hThread;
-    AssertPtrReturnVoid(pThread);
-    AssertReturnVoid(pThread->u32Magic == RTTHREADINT_MAGIC);
+    AssertPtrReturn(pThread, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pThread->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     RTTHREADSTATE enmThreadState = rtThreadGetState(pThread);
-    AssertReturnVoid(   enmThreadState == RTTHREADSTATE_RUNNING
-                     || enmThreadState == RTTHREADSTATE_TERMINATED /* rtThreadRemove uses locks too */);
+    AssertReturn(   enmThreadState == RTTHREADSTATE_RUNNING
+                 || enmThreadState == RTTHREADSTATE_TERMINATED   /* rtThreadRemove uses locks too */
+                 || enmThreadState == RTTHREADSTATE_INITIALIZING /* rtThreadInsert uses locks too */
+                 , VERR_SEM_LV_INVALID_PARAMETER);
 
     /*
      * Record the location and everything before changing the state and
@@ -467,112 +496,118 @@ RTDECL(void) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hTh
      * On some hosts we don't do recursion accounting our selves and there
      * isn't any other place to check for this.  semmutex-win.cpp for instance.
      */
-    if (    !fRecursiveOk
-        ||  pRec->hThread != pThread)
+    if (pRec->hThread == pThread)
     {
-        /*
-         * Do deadlock detection.
-         *
-         * Since we're missing proper serialization, we don't declare it a
-         * deadlock until we've got three runs with the same list length.
-         * While this isn't perfect, it should avoid out the most obvious
-         * races on SMP boxes.
-         */
-        rtLockValidatorSerializeDetectionEnter();
+        if (fRecursiveOk)
+            return VINF_SUCCESS;
+        AssertMsgFailed(("%p (%s)\n", pRec->hLock, pRec->pszName));
+        return VERR_SEM_LV_NESTED;
+    }
 
-        PRTTHREADINT    pCur;
-        unsigned        cPrevLength = ~0U;
-        unsigned        cEqualRuns  = 0;
-        unsigned        iParanoia   = 256;
-        do
+    /*
+     * Do deadlock detection.
+     *
+     * Since we're missing proper serialization, we don't declare it a
+     * deadlock until we've got three runs with the same list length.
+     * While this isn't perfect, it should avoid out the most obvious
+     * races on SMP boxes.
+     */
+    rtLockValidatorSerializeDetectionEnter();
+
+    PRTTHREADINT    pCur;
+    unsigned        cPrevLength = ~0U;
+    unsigned        cEqualRuns  = 0;
+    unsigned        iParanoia   = 256;
+    do
+    {
+        unsigned cLength = 0;
+        pCur = pThread;
+        for (;;)
         {
-            unsigned cLength = 0;
-            pCur = pThread;
+            /*
+             * Get the next thread.
+             */
+            PRTTHREADINT pNext = NULL;
             for (;;)
             {
-                /*
-                 * Get the next thread.
-                 */
-                PRTTHREADINT pNext = NULL;
-                for (;;)
+                RTTHREADSTATE enmCurState = rtThreadGetState(pCur);
+                switch (enmCurState)
                 {
-                    RTTHREADSTATE enmCurState = rtThreadGetState(pCur);
-                    switch (enmCurState)
+                    case RTTHREADSTATE_CRITSECT:
+                    case RTTHREADSTATE_EVENT:
+                    case RTTHREADSTATE_EVENT_MULTI:
+                    case RTTHREADSTATE_FAST_MUTEX:
+                    case RTTHREADSTATE_MUTEX:
+                    case RTTHREADSTATE_RW_READ:
+                    case RTTHREADSTATE_RW_WRITE:
+                    case RTTHREADSTATE_SPIN_MUTEX:
                     {
-                        case RTTHREADSTATE_CRITSECT:
-                        case RTTHREADSTATE_EVENT:
-                        case RTTHREADSTATE_EVENT_MULTI:
-                        case RTTHREADSTATE_FAST_MUTEX:
-                        case RTTHREADSTATE_MUTEX:
-                        case RTTHREADSTATE_RW_READ:
-                        case RTTHREADSTATE_RW_WRITE:
-                        case RTTHREADSTATE_SPIN_MUTEX:
-                        {
-                            PRTLOCKVALIDATORREC pCurRec = pCur->LockValidator.pRec;
-                            if (    rtThreadGetState(pCur) != enmCurState
-                                ||  !VALID_PTR(pCurRec)
-                                ||  pCurRec->u32Magic != RTLOCKVALIDATORREC_MAGIC)
-                                continue;
-                            pNext = pCurRec->hThread;
-                            if (    rtThreadGetState(pCur) != enmCurState
-                                ||  pCurRec->u32Magic != RTLOCKVALIDATORREC_MAGIC
-                                ||  pCurRec->hThread != pNext)
-                                continue;
-                            break;
-                        }
-
-                        default:
-                            pNext = NULL;
-                            break;
+                        PRTLOCKVALIDATORREC pCurRec = pCur->LockValidator.pRec;
+                        if (    rtThreadGetState(pCur) != enmCurState
+                            ||  !VALID_PTR(pCurRec)
+                            ||  pCurRec->u32Magic != RTLOCKVALIDATORREC_MAGIC)
+                            continue;
+                        pNext = pCurRec->hThread;
+                        if (    rtThreadGetState(pCur) != enmCurState
+                            ||  pCurRec->u32Magic != RTLOCKVALIDATORREC_MAGIC
+                            ||  pCurRec->hThread != pNext)
+                            continue;
+                        break;
                     }
-                    break;
+
+                    default:
+                        pNext = NULL;
+                        break;
                 }
-
-                /*
-                 * If we arrive at the end of the list we're good.
-                 */
-                pCur = pNext;
-                if (!pCur)
-                {
-                    rtLockValidatorSerializeDetectionLeave();
-                    return;
-                }
-
-                /*
-                 * If we've got back to the blocking thread id we've
-                 * got a deadlock.
-                 */
-                if (pCur == pThread)
-                    break;
-
-                /*
-                 * If we've got a chain of more than 256 items, there is some
-                 * kind of cycle in the list, which means that there is already
-                 * a deadlock somewhere.
-                 */
-                if (cLength >= 256)
-                    break;
-
-                cLength++;
+                break;
             }
 
-            /* compare with previous list run. */
-            if (cLength != cPrevLength)
+            /*
+             * If we arrive at the end of the list we're good.
+             */
+            pCur = pNext;
+            if (!pCur)
             {
-                cPrevLength = cLength;
-                cEqualRuns = 0;
+                rtLockValidatorSerializeDetectionLeave();
+                return VINF_SUCCESS;
             }
-            else
-                cEqualRuns++;
-        } while (cEqualRuns < 3 && --iParanoia > 0);
 
-        /*
-         * Ok, if we ever get here, it's most likely a genuine deadlock.
-         */
-        rtLockValidatorComplainAboutDeadlock(pRec, pThread, enmState, pCur, uId, RT_SRC_POS_ARGS);
+            /*
+             * If we've got back to the blocking thread id we've
+             * got a deadlock.
+             */
+            if (pCur == pThread)
+                break;
 
-        rtLockValidatorSerializeDetectionLeave();
-    }
+            /*
+             * If we've got a chain of more than 256 items, there is some
+             * kind of cycle in the list, which means that there is already
+             * a deadlock somewhere.
+             */
+            if (cLength >= 256)
+                break;
+
+            cLength++;
+        }
+
+        /* compare with previous list run. */
+        if (cLength != cPrevLength)
+        {
+            cPrevLength = cLength;
+            cEqualRuns = 0;
+        }
+        else
+            cEqualRuns++;
+    } while (cEqualRuns < 3 && --iParanoia > 0);
+
+    /*
+     * Ok, if we ever get here, it's most likely a genuine deadlock.
+     */
+    rtLockValidatorComplainAboutDeadlock(pRec, pThread, enmState, pCur, uId, RT_SRC_POS_ARGS);
+
+    rtLockValidatorSerializeDetectionLeave();
+
+    return VERR_SEM_LV_DEADLOCK;
 }
 RT_EXPORT_SYMBOL(RTThreadBlocking);
 

@@ -44,15 +44,10 @@
 #ifdef RTCRITSECT_STRICT
 # define RTCRITSECT_STRICT_POS_DECL             RTHCUINTPTR uId, RT_SRC_POS_DECL
 # define RTCRITSECT_STRICT_POS_ARGS             uId, RT_SRC_POS_ARGS
-# define RTCRITSECT_STRICT_BLOCK(hThread, pRec, fRecursive) \
-                                                RTLockValidatorCheckBlocking(pRec, (hThread), RTTHREADSTATE_CRITSECT, fRecursive, uId, RT_SRC_POS_ARGS)
 #else
 # define RTCRITSECT_STRICT_POS_DECL             int iDummy
 # define RTCRITSECT_STRICT_POS_ARGS             0
-# define RTCRITSECT_STRICT_BLOCK(hThread, pRec, fRecursive) \
-                                                RTThreadBlocking((hThread), RTTHREADSTATE_CRITSECT)
 #endif
-#define  RTCRITSECT_STRICT_UNBLOCK(hThread)     RTThreadUnblocked((hThread), RTTHREADSTATE_CRITSECT)
 
 
 /** @def RTSEMMUTEX_STRICT
@@ -65,13 +60,10 @@
 #ifdef RTSEMMUTEX_STRICT
 # define RTSEMMUTEX_STRICT_POS_DECL             RTHCUINTPTR uId, RT_SRC_POS_DECL
 # define RTSEMMUTEX_STRICT_POS_ARGS             uId, RT_SRC_POS_ARGS
-# define RTSEMMUTEX_STRICT_BLOCK(hThread, pRec) RTLockValidatorCheckBlocking(pRec, (hThread), RTTHREADSTATE_MUTEX, true, uId, RT_SRC_POS_ARGS)
 #else
 # define RTSEMMUTEX_STRICT_POS_DECL             int iDummy
 # define RTSEMMUTEX_STRICT_POS_ARGS             0
-# define RTSEMMUTEX_STRICT_BLOCK(hThread, pRec) RTThreadBlocking((hThread), RTTHREADSTATE_MUTEX)
 #endif
-#define  RTSEMMUTEX_STRICT_UNBLOCK(hThread)     RTThreadUnblocked((hThread), RTTHREADSTATE_MUTEX)
 
 
 /** @def RTSEMRW_STRICT
@@ -82,13 +74,11 @@
 #endif
 
 #ifdef RTSEMRW_STRICT
-# define RTSEMRW_STRICT_POS_DECL            RTHCUINTPTR uId, RT_SRC_POS_DECL
-# define RTSEMRW_STRICT_POS_ARGS            uId, RT_SRC_POS_ARGS
-# define RTSEMRW_STRICT_BLOCK_ARGS(pRec)    pRec, uId, RT_SRC_POS_ARGS
+# define RTSEMRW_STRICT_POS_DECL                RTHCUINTPTR uId, RT_SRC_POS_DECL
+# define RTSEMRW_STRICT_POS_ARGS                uId, RT_SRC_POS_ARGS
 #else
-# define RTSEMRW_STRICT_POS_DECL            int iDummy
-# define RTSEMRW_STRICT_POS_ARGS            0
-# define RTSEMRW_STRICT_BLOCK_ARGS(pRec)    NULL, 0, NULL, 0, NULL
+# define RTSEMRW_STRICT_POS_DECL                int iDummy
+# define RTSEMRW_STRICT_POS_ARGS                0
 #endif
 
 

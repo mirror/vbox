@@ -149,8 +149,9 @@ RTDECL(void) RTLockValidatorDestroy(PRTLOCKVALIDATORREC *ppRec);
  * This is called by routines implementing lock acquisition.
  *
  * @retval  VINF_SUCCESS on success.
- * @retval  VERR_DEADLOCK if the order is wrong, after having whined and
- *          asserted.
+ * @retval  VERR_SEM_LV_WRONG_ORDER if the order is wrong.  Will have done all
+ *          necessary whining and breakpointing before returning.
+ * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
  *
  * @param   pRec                The validator record.
  * @param   hThread             The handle of the calling thread.  If not known,
@@ -169,6 +170,13 @@ RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThrea
 /**
  * Change the thread state to blocking and do deadlock detection.
  *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_SEM_LV_DEADLOCK if blocking would deadlock.  Gone thru the
+ *          motions.
+ * @retval  VERR_SEM_LV_NESTED if the semaphore isn't recursive and hThread is
+ *          already the owner.  Gone thru the motions.
+ * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
+ *
  * @param   pRec                The validator record we're blocing on.
  * @param   hThread             The current thread.  Shall not be NIL_RTTHREAD!
  * @param   enmState            The sleep state.
@@ -177,23 +185,33 @@ RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThrea
  * @param   uId                 Where we are blocking.
  * @param   RT_SRC_POS_DECL     Where we are blocking.
  */
-RTDECL(void) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread,
-                                          RTTHREADSTATE enmState, bool fRecursiveOk,
-                                          RTHCUINTPTR uId, RT_SRC_POS_DECL);
+RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread,
+                                         RTTHREADSTATE enmState, bool fRecursiveOk,
+                                         RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
  * Check the exit order.
  *
- * This is called by routines implementing lock acquisition.
+ * This is called by routines implementing releasing the lock.
  *
  * @retval  VINF_SUCCESS on success.
- * @retval  VERR_DEADLOCK if the order is wrong, after having whined and
- *          asserted.
+ * @retval  VERR_SEM_LV_WRONG_RELEASE_ORDER if the order is wrong.  Will have
+ *          done all necessary whining and breakpointing before returning.
+ * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
  *
  * @param   pRec                The validator record.
- * @param   hThread             The handle of the calling thread.  If not known,
- *                              pass NIL_RTTHREAD and this method will figure it
- *                              out.
+ */
+RTDECL(int)  RTLockValidatorCheckReleaseOrder(PRTLOCKVALIDATORREC pRec);
+
+/**
+ * Checks and records a lock recursion.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SEM_LV_NESTED if the semaphore class forbids recursion.  Gone
+ *          thru the motions.
+ * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
+ *
+ * @param   pRec                The validator record.
  * @param   uId                 Some kind of locking location ID.  Typically a
  *                              return address up the stack.  Optional (0).
  * @param   pszFile             The file where the lock is being acquired from.
@@ -202,13 +220,21 @@ RTDECL(void) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hTh
  * @param   pszFunction         The functionn where the lock is being acquired
  *                              from.  Optional.
  */
-RTDECL(int)  RTLockValidatorCheckReleaseOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread);
-
+RTDECL(int) RTLockValidatorRecordRecursion(PRTLOCKVALIDATORREC pRec, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
- * Record the specified thread as lock owner.
+ * Records a lock unwind (releasing one recursion).
  *
- * This is typically called after acquiring the lock.
+ * This should be coupled with called to RTLockValidatorRecordRecursion.
+ *
+ * @param   pRec                The validator record.
+ */
+RTDECL(void) RTLockValidatorRecordUnwind(PRTLOCKVALIDATORREC pRec);
+
+/**
+ * Record the specified thread as lock owner and increment the write lock count.
+ *
+ * This function is typically called after acquiring the lock.
  *
  * @returns hThread resolved.  Can return NIL_RTHREAD iff we fail to adopt the
  *          alien thread or if pRec is invalid.
@@ -229,7 +255,7 @@ RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
 
 
 /**
- * Clear the lock ownership.
+ * Clear the lock ownership and decrement the write lock count.
  *
  * This is typically called before release the lock.
  *
