@@ -356,20 +356,24 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
      */
     memset(pDevExt, 0, sizeof(*pDevExt));
     rc = RTSpinlockCreate(&pDevExt->Spinlock);
-    if (!rc)
+    if (RT_SUCCESS(rc))
     {
 #ifdef SUPDRV_USE_MUTEX_FOR_LDR
         rc = RTSemMutexCreate(&pDevExt->mtxLdr);
 #else
         rc = RTSemFastMutexCreate(&pDevExt->mtxLdr);
 #endif
-        if (!rc)
+        if (RT_SUCCESS(rc))
         {
             rc = RTSemFastMutexCreate(&pDevExt->mtxComponentFactory);
-            if (!rc)
+            if (RT_SUCCESS(rc))
             {
+#ifdef SUPDRV_USE_MUTEX_FOR_LDR
+                rc = RTSemMutexCreate(&pDevExt->mtxGip);
+#else
                 rc = RTSemFastMutexCreate(&pDevExt->mtxGip);
-                if (!rc)
+#endif
+                if (RT_SUCCESS(rc))
                 {
                     rc = supdrvGipCreate(pDevExt);
                     if (RT_SUCCESS(rc))
@@ -431,8 +435,13 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
                         return VINF_SUCCESS;
                     }
 
+#ifdef SUPDRV_USE_MUTEX_FOR_GIP
+                    RTSemMutexDestroy(pDevExt->mtxGip);
+                    pDevExt->mtxGip = NIL_RTSEMMUTEX;
+#else
                     RTSemFastMutexDestroy(pDevExt->mtxGip);
                     pDevExt->mtxGip = NIL_RTSEMFASTMUTEX;
+#endif
                 }
                 RTSemFastMutexDestroy(pDevExt->mtxComponentFactory);
                 pDevExt->mtxComponentFactory = NIL_RTSEMFASTMUTEX;
@@ -470,8 +479,13 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
     /*
      * Kill mutexes and spinlocks.
      */
+#ifdef SUPDRV_USE_MUTEX_FOR_GIP
+    RTSemMutexDestroy(pDevExt->mtxGip);
+    pDevExt->mtxGip = NIL_RTSEMMUTEX;
+#else
     RTSemFastMutexDestroy(pDevExt->mtxGip);
     pDevExt->mtxGip = NIL_RTSEMFASTMUTEX;
+#endif
 #ifdef SUPDRV_USE_MUTEX_FOR_LDR
     RTSemMutexDestroy(pDevExt->mtxLdr);
     pDevExt->mtxLdr = NIL_RTSEMMUTEX;
@@ -2834,7 +2848,11 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
     AssertPtrNullReturn(ppGipR3, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pHCPhysGip, VERR_INVALID_POINTER);
 
+#ifdef SUPDRV_USE_MUTEX_FOR_GIP
+    RTSemMutexRequest(pDevExt->mtxGip);
+#else
     RTSemFastMutexRequest(pDevExt->mtxGip);
+#endif
     if (pDevExt->pGip)
     {
         /*
@@ -2897,7 +2915,11 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
         rc = SUPDRV_ERR_GENERAL_FAILURE;
         Log(("SUPR0GipMap: GIP is not available!\n"));
     }
+#ifdef SUPDRV_USE_MUTEX_FOR_GIP
+    RTSemMutexRelease(pDevExt->mtxGip);
+#else
     RTSemFastMutexRelease(pDevExt->mtxGip);
+#endif
 
     /*
      * Write returns.
@@ -2937,7 +2959,11 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
 #endif
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
 
+#ifdef SUPDRV_USE_MUTEX_FOR_GIP
+    RTSemMutexRequest(pDevExt->mtxGip);
+#else
     RTSemFastMutexRequest(pDevExt->mtxGip);
+#endif
 
     /*
      * Unmap anything?
@@ -2964,7 +2990,11 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
         }
     }
 
+#ifdef SUPDRV_USE_MUTEX_FOR_GIP
+    RTSemMutexRelease(pDevExt->mtxGip);
+#else
     RTSemFastMutexRelease(pDevExt->mtxGip);
+#endif
 
     return rc;
 }
