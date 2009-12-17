@@ -43,11 +43,14 @@ VBoxClient_LIBPATH = \
 	$(VBOX_LIBPATH32_X11)
 VBoxClient_LIBS.freebsd = \
 	iconv
+VBoxClient_LIBS.linux = \
+	dl
+VBoxClient_LIBS.solaris = \
+	dl
 VBoxClient_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
-	dl \
 	X11 \
 	Xt
 # These are static replacements for gcc-specific parts of libstdc++
