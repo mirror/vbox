@@ -347,23 +347,24 @@ static VBoxVHWATextureImage* vboxVHWAImageCreate(const QRect & aRect, const VBox
 static VBoxVHWATexture* vboxVHWATextureCreate(const QGLContext * pContext, const QRect & aRect, const VBoxVHWAColorFormat & aFormat, VBOXVHWAIMG_TYPE flags)
 {
     const VBoxVHWAInfo & info = vboxVHWAGetSupportInfo(pContext);
+    GLint scaleFunc = (flags & VBOXVHWAIMG_LINEAR) ? GL_LINEAR : GL_NEAREST;
     if((flags & VBOXVHWAIMG_PBO) && info.getGlInfo().isPBOSupported())
     {
         VBOXQGLLOG(("VBoxVHWATextureNP2RectPBO\n"));
-        return new VBoxVHWATextureNP2RectPBO(aRect, aFormat);
+        return new VBoxVHWATextureNP2RectPBO(aRect, aFormat, scaleFunc);
     }
     else if(info.getGlInfo().isTextureRectangleSupported())
     {
         VBOXQGLLOG(("VBoxVHWATextureNP2Rect\n"));
-        return new VBoxVHWATextureNP2Rect(aRect, aFormat);
+        return new VBoxVHWATextureNP2Rect(aRect, aFormat, scaleFunc);
     }
     else if(info.getGlInfo().isTextureNP2Supported())
     {
         VBOXQGLLOG(("VBoxVHWATextureNP2\n"));
-        return new VBoxVHWATextureNP2(aRect, aFormat);
+        return new VBoxVHWATextureNP2(aRect, aFormat, scaleFunc);
     }
     VBOXQGLLOG(("VBoxVHWATexture\n"));
-    return new VBoxVHWATexture(aRect, aFormat);
+    return new VBoxVHWATexture(aRect, aFormat, scaleFunc);
 }
 
 class VBoxVHWAGlShaderComponent
@@ -1216,7 +1217,7 @@ VBoxVHWASurfaceBase::VBoxVHWASurfaceBase(class VBoxGLWidget *aWidget,
     setDefaultSrcOverlayCKey(pSrcOverlayCKey);
     resetDefaultSrcOverlayCKey();
 
-    mImage = vboxVHWAImageCreate(QRect(0,0,aSize.width(),aSize.height()), aColorFormat, getGlProgramMngr(), bVGA ? 0 : (VBOXVHWAIMG_PBO | VBOXVHWAIMG_PBOIMG /*| VBOXVHWAIMG_FBO*/));
+    mImage = vboxVHWAImageCreate(QRect(0,0,aSize.width(),aSize.height()), aColorFormat, getGlProgramMngr(), bVGA ? 0 : (VBOXVHWAIMG_PBO | VBOXVHWAIMG_PBOIMG | VBOXVHWAIMG_FBO));
 
     setRectValues(aTargRect, aSrcRect);
     setVisibleRectValues(aVisTargRect);
@@ -1437,12 +1438,13 @@ void VBoxVHWATexture::uninit()
     }
 }
 
-VBoxVHWATexture::VBoxVHWATexture(const QRect & aRect, const VBoxVHWAColorFormat &aFormat) :
+VBoxVHWATexture::VBoxVHWATexture(const QRect & aRect, const VBoxVHWAColorFormat &aFormat, GLint scaleFuncttion) :
             mAddress(NULL),
             mTexture(0),
             mBytesPerPixel(0),
             mBytesPerPixelTex(0),
-            mBytesPerLine(0)
+            mBytesPerLine(0),
+            mScaleFuncttion(scaleFuncttion)
 {
     mColorFormat = aFormat;
     mRect = aRect;
@@ -1458,9 +1460,9 @@ void VBoxVHWATexture::initParams()
 {
     GLenum tt = texTarget();
 
-    glTexParameteri(tt, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(tt, GL_TEXTURE_MIN_FILTER, mScaleFuncttion);
     VBOXQGL_ASSERTNOERR();
-    glTexParameteri(tt, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(tt, GL_TEXTURE_MAG_FILTER, mScaleFuncttion);
     VBOXQGL_ASSERTNOERR();
     glTexParameteri(tt, GL_TEXTURE_WRAP_S, GL_CLAMP);
     VBOXQGL_ASSERTNOERR();
