@@ -72,6 +72,16 @@
 #include <iprt/mem.h>
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/* check kernel version */
+# ifndef SUPDRV_AGNOSTIC
+#  if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#   error Unsupported kernel version!
+#  endif
+# endif
+
 /* devfs defines */
 #if defined(CONFIG_DEVFS_FS) && !defined(CONFIG_VBOXDRV_AS_MISC)
 # ifdef VBOX_WITH_HARDENING
@@ -127,6 +137,33 @@ extern int nmi_active;
 
 
 /*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static int  VBoxDrvLinuxInit(void);
+static void VBoxDrvLinuxUnload(void);
+static int  VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp);
+static int  VBoxDrvLinuxClose(struct inode *pInode, struct file *pFilp);
+#ifdef HAVE_UNLOCKED_IOCTL
+static long VBoxDrvLinuxIOCtl(struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
+#else
+static int  VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
+#endif
+static int  VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
+static int  VBoxDrvLinuxErr2LinuxErr(int);
+#ifdef VBOX_WITH_SUSPEND_NOTIFICATION
+static int  VBoxDrvProbe(struct platform_device *pDev);
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
+static int  VBoxDrvSuspend(struct device *pDev);
+static int  VBoxDrvResume(struct device *pDev);
+# else
+static int  VBoxDrvSuspend(struct platform_device *pDev, pm_message_t State);
+static int  VBoxDrvResume(struct platform_device *pDev);
+# endif
+static void VBoxDevRelease(struct device *pDev);
+#endif
+
+
+/*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 /**
@@ -161,33 +198,6 @@ __asm__(".section execmemory, \"awx\", @progbits\n\t"
         ".type g_abExecMemory, @object\n\t"
         ".size g_abExecMemory, 1572864\n\t"
         ".text\n\t");
-#endif
-
-
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-static int  VBoxDrvLinuxInit(void);
-static void VBoxDrvLinuxUnload(void);
-static int  VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp);
-static int  VBoxDrvLinuxClose(struct inode *pInode, struct file *pFilp);
-#ifdef HAVE_UNLOCKED_IOCTL
-static long VBoxDrvLinuxIOCtl(struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
-#else
-static int  VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
-#endif
-static int  VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
-static int  VBoxDrvLinuxErr2LinuxErr(int);
-#ifdef VBOX_WITH_SUSPEND_NOTIFICATION
-static int  VBoxDrvProbe(struct platform_device *pDev);
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
-static int  VBoxDrvSuspend(struct device *pDev);
-static int  VBoxDrvResume(struct device *pDev);
-# else
-static int  VBoxDrvSuspend(struct platform_device *pDev, pm_message_t State);
-static int  VBoxDrvResume(struct platform_device *pDev);
-# endif
-static void VBoxDevRelease(struct device *pDev);
 #endif
 
 /** The file_operations structure. */
@@ -252,6 +262,9 @@ static struct platform_device gPlatformDevice =
     }
 };
 #endif /* VBOX_WITH_SUSPEND_NOTIFICATION */
+
+
+
 
 
 #ifdef CONFIG_X86_LOCAL_APIC
@@ -394,8 +407,6 @@ DECLINLINE(RTUID) vboxdrvLinuxEuid(void)
 static int __init VBoxDrvLinuxInit(void)
 {
     int       rc;
-
-    dprintf(("VBoxDrv::ModuleInit\n"));
 
 #ifdef CONFIG_X86_LOCAL_APIC
     /*
@@ -554,7 +565,7 @@ no_error:
     rc = register_chrdev((dev_t)g_iModuleMajor, DEVICE_NAME, &gFileOpsVBoxDrv);
     if (rc < 0)
     {
-        dprintf(("register_chrdev() failed with rc=%#x!\n", rc));
+        Log(("register_chrdev() failed with rc=%#x!\n", rc));
         return rc;
     }
 
@@ -573,7 +584,7 @@ no_error:
      */
     if (devfs_mk_cdev(MKDEV(DEVICE_MAJOR, 0), S_IFCHR | VBOX_DEV_FMASK, DEVICE_NAME) != 0)
     {
-        dprintf(("devfs_register failed!\n"));
+        Log(("devfs_register failed!\n"));
         rc = -EINVAL;
     }
 # endif
@@ -591,6 +602,8 @@ no_error:
             rc = RTR0MemExecDonate(&g_abExecMemory[0], sizeof(g_abExecMemory));
             printk("VBoxDrv: dbg - g_abExecMemory=%p\n", (void *)&g_abExecMemory[0]);
 #endif
+            Log(("VBoxDrv::ModuleInit\n"));
+
             /*
              * Initialize the device extension.
              */
@@ -641,10 +654,10 @@ no_error:
     }
 #ifdef CONFIG_VBOXDRV_AS_MISC
     misc_deregister(&gMiscDevice);
-    dprintf(("VBoxDrv::ModuleInit returning %#x (minor:%d)\n", rc, gMiscDevice.minor));
+    Log(("VBoxDrv::ModuleInit returning %#x (minor:%d)\n", rc, gMiscDevice.minor));
 #else
     unregister_chrdev(g_iModuleMajor, DEVICE_NAME);
-    dprintf(("VBoxDrv::ModuleInit returning %#x (major:%d)\n", rc, g_iModuleMajor));
+    Log(("VBoxDrv::ModuleInit returning %#x (major:%d)\n", rc, g_iModuleMajor));
 #endif
     return rc;
 }
@@ -656,7 +669,7 @@ no_error:
 static void __exit VBoxDrvLinuxUnload(void)
 {
     int                 rc;
-    dprintf(("VBoxDrvLinuxUnload\n"));
+    Log(("VBoxDrvLinuxUnload\n"));
     NOREF(rc);
 
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
@@ -672,7 +685,7 @@ static void __exit VBoxDrvLinuxUnload(void)
     rc = misc_deregister(&gMiscDevice);
     if (rc < 0)
     {
-        dprintf(("misc_deregister failed with rc=%#x\n", rc));
+        Log(("misc_deregister failed with rc=%#x\n", rc));
     }
 #else  /* !CONFIG_VBOXDRV_AS_MISC */
 # ifdef CONFIG_DEVFS_FS
@@ -1040,23 +1053,23 @@ void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
  * Converts a supdrv error code to an linux error code.
  *
  * @returns corresponding linux error code.
- * @param   rc  supdrv error code (SUPDRV_ERR_* defines).
+ * @param   rc          IPRT status code.
  */
 static int VBoxDrvLinuxErr2LinuxErr(int rc)
 {
     switch (rc)
     {
-        case 0:                             return 0;
-        case SUPDRV_ERR_GENERAL_FAILURE:    return -EACCES;
-        case SUPDRV_ERR_INVALID_PARAM:      return -EINVAL;
-        case SUPDRV_ERR_INVALID_MAGIC:      return -EILSEQ;
-        case SUPDRV_ERR_INVALID_HANDLE:     return -ENXIO;
-        case SUPDRV_ERR_INVALID_POINTER:    return -EFAULT;
-        case SUPDRV_ERR_LOCK_FAILED:        return -ENOLCK;
-        case SUPDRV_ERR_ALREADY_LOADED:     return -EEXIST;
-        case SUPDRV_ERR_PERMISSION_DENIED:  return -EPERM;
-        case SUPDRV_ERR_VERSION_MISMATCH:   return -ENOSYS;
-        case SUPDRV_ERR_IDT_FAILED:         return -1000;
+        case VINF_SUCCESS:              return 0;
+        case VERR_GENERAL_FAILURE:      return -EACCES;
+        case VERR_INVALID_PARAMETER:    return -EINVAL;
+        case VERR_INVALID_MAGIC:        return -EILSEQ;
+        case VERR_INVALID_HANDLE:       return -ENXIO;
+        case VERR_INVALID_POINTER:      return -EFAULT;
+        case VERR_LOCK_FAILED:          return -ENOLCK;
+        case VERR_ALREADY_LOADED:       return -EEXIST;
+        case VERR_PERMISSION_DENIED:    return -EPERM;
+        case VERR_VERSION_MISMATCH:     return -ENOSYS;
+        case VERR_IDT_FAILED:           return -1000;
     }
 
     return -EPERM;

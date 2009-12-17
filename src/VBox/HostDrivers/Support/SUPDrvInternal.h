@@ -161,25 +161,7 @@
 #define BIRD_INV    0x62697264 /* 'drib' */
 
 
-/*
- * Win32
- */
-#if defined(RT_OS_WINDOWS)
-
-/* debug printf */
-# define OSDBGPRINT(a) DbgPrint a
-
-/** Maximum number of bytes we try to lock down in one go.
- * This is supposed to have a limit right below 256MB, but this appears
- * to actually be much lower. The values here have been determined experimentally.
- */
-# ifdef RT_ARCH_X86
-#  define MAX_LOCK_MEM_SIZE   (32*1024*1024) /* 32mb */
-# endif
-# ifdef RT_ARCH_AMD64
-#  define MAX_LOCK_MEM_SIZE   (24*1024*1024) /* 24mb */
-# endif
-
+#ifdef RT_OS_WINDOWS
 /** Use a normal mutex for the loader so we remain at the same IRQL after
  * taking it.
  * @todo fix the mutex implementation on linux and make this the default. */
@@ -189,113 +171,13 @@
  * taking it.
  * @todo fix the mutex implementation on linux and make this the default. */
 # define SUPDRV_USE_MUTEX_FOR_GIP
-
-/*
- * Linux
- */
-#elif defined(RT_OS_LINUX)
-
-/* check kernel version */
-# ifndef SUPDRV_AGNOSTIC
-#  if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-#   error Unsupported kernel version!
-#  endif
-# endif
-
-RT_C_DECLS_BEGIN
-int  linux_dprintf(const char *format, ...);
-RT_C_DECLS_END
-
-/* debug printf */
-# define OSDBGPRINT(a) printk a
-
-
-/*
- * Darwin
- */
-#elif defined(RT_OS_DARWIN)
-
-/* debug printf */
-# define OSDBGPRINT(a) printf a
-
-
-/*
- * OS/2
- */
-#elif defined(RT_OS_OS2)
-
-/* No log API in OS/2 only COM port. */
-# define OSDBGPRINT(a) SUPR0Printf a
-
-
-/*
- * FreeBSD
- */
-#elif defined(RT_OS_FREEBSD)
-
-/* debug printf */
-# define OSDBGPRINT(a) printf a
-
-
-/*
- * Solaris
- */
-#elif defined(RT_OS_SOLARIS)
-# define OSDBGPRINT(a) SUPR0Printf a
-
-
-#else
-/** @todo other os'es */
-# error "OS interface defines is not done for this OS!"
 #endif
 
 
-/* dprintf */
-#if (defined(DEBUG) && !defined(NO_LOGGING))
-# ifdef LOG_TO_COM
-#  include <VBox/log.h>
-#  define dprintf(a) RTLogComPrintf a
-# else
-#  define dprintf(a) OSDBGPRINT(a)
-# endif
-#else
-# define dprintf(a) do {} while (0)
-#endif
-
-/* dprintf2 - extended logging. */
-#if defined(RT_OS_DARWIN) || defined(RT_OS_OS2) || defined(RT_OS_FREEBSD)
-# define dprintf2 dprintf
-#else
-# define dprintf2(a) do { } while (0)
-#endif
-
-
-/*
- * Error codes.
+/**
+ * OS debug print macro.
  */
-/** @todo retire the SUPDRV_ERR_* stuff, we ship err.h now. */
-/** Invalid parameter. */
-#define SUPDRV_ERR_GENERAL_FAILURE  (-1)
-/** Invalid parameter. */
-#define SUPDRV_ERR_INVALID_PARAM    (-2)
-/** Invalid magic or cookie. */
-#define SUPDRV_ERR_INVALID_MAGIC    (-3)
-/** Invalid loader handle. */
-#define SUPDRV_ERR_INVALID_HANDLE   (-4)
-/** Failed to lock the address range. */
-#define SUPDRV_ERR_LOCK_FAILED      (-5)
-/** Invalid memory pointer. */
-#define SUPDRV_ERR_INVALID_POINTER  (-6)
-/** Failed to patch the IDT. */
-#define SUPDRV_ERR_IDT_FAILED       (-7)
-/** Memory allocation failed. */
-#define SUPDRV_ERR_NO_MEMORY        (-8)
-/** Already loaded. */
-#define SUPDRV_ERR_ALREADY_LOADED   (-9)
-/** Permission denied. */
-#define SUPDRV_ERR_PERMISSION_DENIED (-10)
-/** Version mismatch. */
-#define SUPDRV_ERR_VERSION_MISMATCH (-11)
+#define OSDBGPRINT(a) SUPR0Printf a
 
 
 /** @name Context values for the per-session handle tables.
@@ -722,10 +604,6 @@ void VBOXCALL   supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt);
 int  VBOXCALL   supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSION *ppSession);
 void VBOXCALL   supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 void VBOXCALL   supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
-bool VBOXCALL   supdrvDetermineAsyncTsc(uint64_t *pu64DiffCores);
-
-/* SUPDrvAgnostic.c */
-SUPGIPMODE VBOXCALL supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt);
 
 RT_C_DECLS_END
 

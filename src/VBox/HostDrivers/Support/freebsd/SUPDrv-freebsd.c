@@ -158,8 +158,6 @@ static int VBoxDrvFreeBSDModuleEvent(struct module *pMod, int enmEventType, void
 
 static int VBoxDrvFreeBSDLoad(void)
 {
-    dprintf(("VBoxDrvFreeBSDLoad:\n"));
-
     g_cUsers = 0;
 
     /*
@@ -168,6 +166,8 @@ static int VBoxDrvFreeBSDLoad(void)
     int rc = RTR0Init(0);
     if (RT_SUCCESS(rc))
     {
+        Log(("VBoxDrvFreeBSDLoad:\n"));
+
         /*
          * Initialize the device extension.
          */
@@ -181,13 +181,13 @@ static int VBoxDrvFreeBSDLoad(void)
             g_VBoxDrvFreeBSDEHTag = EVENTHANDLER_REGISTER(dev_clone, VBoxDrvFreeBSDClone, 0, 1000);
             if (g_VBoxDrvFreeBSDEHTag)
             {
-                dprintf(("VBoxDrvFreeBSDLoad: returns successfully\n"));
+                Log(("VBoxDrvFreeBSDLoad: returns successfully\n"));
                 return VINF_SUCCESS;
             }
 
             printf("vboxdrv: EVENTHANDLER_REGISTER(dev_clone,,,) failed\n");
             clone_cleanup(&g_pVBoxDrvFreeBSDClones);
-            rc = SUPDRV_ERR_ALREADY_LOADED;
+            rc = VERR_ALREADY_LOADED;
             supdrvDeleteDevExt(&g_VBoxDrvFreeBSDDevExt);
         }
         else
@@ -201,7 +201,7 @@ static int VBoxDrvFreeBSDLoad(void)
 
 static int VBoxDrvFreeBSDUnload(void)
 {
-    dprintf(("VBoxDrvFreeBSDUnload:\n"));
+    Log(("VBoxDrvFreeBSDUnload:\n"));
 
     if (g_cUsers > 0)
         return EBUSY;
@@ -218,7 +218,7 @@ static int VBoxDrvFreeBSDUnload(void)
 
     memset(&g_VBoxDrvFreeBSDDevExt, 0, sizeof(g_VBoxDrvFreeBSDDevExt));
 
-    dprintf(("VBoxDrvFreeBSDUnload: returns\n"));
+    Log(("VBoxDrvFreeBSDUnload: returns\n"));
     return VINF_SUCCESS;
 }
 
@@ -231,7 +231,7 @@ static void VBoxDrvFreeBSDClone(void *pvArg, struct ucred *pCred, char *pszName,
     int iUnit;
     int rc;
 
-    dprintf(("VBoxDrvFreeBSDClone: pszName=%s ppDev=%p\n", pszName, ppDev));
+    Log(("VBoxDrvFreeBSDClone: pszName=%s ppDev=%p\n", pszName, ppDev));
 
     /*
      * One device node per user, si_drv1 points to the session.
@@ -243,14 +243,14 @@ static void VBoxDrvFreeBSDClone(void *pvArg, struct ucred *pCred, char *pszName,
         return;
     if (iUnit >= 256 || iUnit < 0)
     {
-        dprintf(("VBoxDrvFreeBSDClone: iUnit=%d >= 256 - rejected\n", iUnit));
+        Log(("VBoxDrvFreeBSDClone: iUnit=%d >= 256 - rejected\n", iUnit));
         return;
     }
 
-    dprintf(("VBoxDrvFreeBSDClone: pszName=%s iUnit=%d\n", pszName, iUnit));
+    Log(("VBoxDrvFreeBSDClone: pszName=%s iUnit=%d\n", pszName, iUnit));
 
     rc = clone_create(&g_pVBoxDrvFreeBSDClones, &g_VBoxDrvFreeBSDChrDevSW, &iUnit, ppDev, 0);
-    dprintf(("VBoxDrvFreeBSDClone: clone_create -> %d; iUnit=%d\n", rc, iUnit));
+    Log(("VBoxDrvFreeBSDClone: clone_create -> %d; iUnit=%d\n", rc, iUnit));
     if (rc)
     {
 #if __FreeBSD_version > 800061
@@ -262,16 +262,16 @@ static void VBoxDrvFreeBSDClone(void *pvArg, struct ucred *pCred, char *pszName,
         {
             dev_ref(*ppDev);
             (*ppDev)->si_flags |= SI_CHEAPCLONE;
-            dprintf(("VBoxDrvFreeBSDClone: Created *ppDev=%p iUnit=%d si_drv1=%p si_drv2=%p\n",
-                     *ppDev, iUnit, (*ppDev)->si_drv1, (*ppDev)->si_drv2));
+            Log(("VBoxDrvFreeBSDClone: Created *ppDev=%p iUnit=%d si_drv1=%p si_drv2=%p\n",
+                 *ppDev, iUnit, (*ppDev)->si_drv1, (*ppDev)->si_drv2));
             (*ppDev)->si_drv1 = (*ppDev)->si_drv2 = NULL;
         }
         else
             OSDBGPRINT(("VBoxDrvFreeBSDClone: make_dev iUnit=%d failed\n", iUnit));
     }
     else
-        dprintf(("VBoxDrvFreeBSDClone: Existing *ppDev=%p iUnit=%d si_drv1=%p si_drv2=%p\n",
-                 *ppDev, iUnit, (*ppDev)->si_drv1, (*ppDev)->si_drv2));
+        Log(("VBoxDrvFreeBSDClone: Existing *ppDev=%p iUnit=%d si_drv1=%p si_drv2=%p\n",
+             *ppDev, iUnit, (*ppDev)->si_drv1, (*ppDev)->si_drv2));
 }
 
 
@@ -296,9 +296,9 @@ static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd, 
     int rc;
 
 #if __FreeBSD_version < 800062
-    dprintf(("VBoxDrvFreeBSDOpen: fOpen=%#x iUnit=%d\n", fOpen, minor2unit(minor(pDev))));
+    Log(("VBoxDrvFreeBSDOpen: fOpen=%#x iUnit=%d\n", fOpen, minor2unit(minor(pDev))));
 #else
-    dprintf(("VBoxDrvFreeBSDOpen: fOpen=%#x iUnit=%d\n", fOpen, minor(dev2udev(pDev))));
+    Log(("VBoxDrvFreeBSDOpen: fOpen=%#x iUnit=%d\n", fOpen, minor(dev2udev(pDev))));
 #endif
 
     /*
@@ -306,7 +306,7 @@ static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd, 
      */
     if (fOpen != (FREAD|FWRITE /*=O_RDWR*/))
     {
-        dprintf(("VBoxDrvFreeBSDOpen: fOpen=%#x expected %#x\n", fOpen, O_RDWR));
+        Log(("VBoxDrvFreeBSDOpen: fOpen=%#x expected %#x\n", fOpen, O_RDWR));
         return EINVAL;
     }
 
@@ -352,9 +352,9 @@ static int VBoxDrvFreeBSDClose(struct cdev *pDev, int fFile, int DevType, struct
 {
     PSUPDRVSESSION pSession = (PSUPDRVSESSION)pDev->si_drv1;
 #if __FreeBSD_version < 800062
-    dprintf(("VBoxDrvFreeBSDClose: fFile=%#x iUnit=%d pSession=%p\n", fFile, minor2unit(minor(pDev)), pSession));
+    Log(("VBoxDrvFreeBSDClose: fFile=%#x iUnit=%d pSession=%p\n", fFile, minor2unit(minor(pDev)), pSession));
 #else
-    dprintf(("VBoxDrvFreeBSDClose: fFile=%#x iUnit=%d pSession=%p\n", fFile, minor(dev2udev(pDev)), pSession));
+    Log(("VBoxDrvFreeBSDClose: fFile=%#x iUnit=%d pSession=%p\n", fFile, minor(dev2udev(pDev)), pSession));
 #endif
 
     /*
@@ -495,7 +495,7 @@ static int VBoxDrvFreeBSDIOCtlSlow(PSUPDRVSESSION pSession, u_long ulCmd, caddr_
     }
     else
     {
-        dprintf(("VBoxDrvFreeBSDIOCtlSlow: huh? cbReq=%#x ulCmd=%#lx\n", cbReq, ulCmd));
+        Log(("VBoxDrvFreeBSDIOCtlSlow: huh? cbReq=%#x ulCmd=%#lx\n", cbReq, ulCmd));
         return EINVAL;
     }
 
@@ -520,7 +520,7 @@ static int VBoxDrvFreeBSDIOCtlSlow(PSUPDRVSESSION pSession, u_long ulCmd, caddr_
             if (RT_UNLIKELY(rc))
                 OSDBGPRINT(("VBoxDrvFreeBSDIOCtlSlow: copyout(%p,%p,%#x) -> %d; uCmd=%#lx!\n", pHdr, pvUser, cbOut, rc, ulCmd));
 
-            dprintf(("VBoxDrvFreeBSDIOCtlSlow: returns %d / %d ulCmd=%lx\n", 0, pHdr->rc, ulCmd));
+            Log(("VBoxDrvFreeBSDIOCtlSlow: returns %d / %d ulCmd=%lx\n", 0, pHdr->rc, ulCmd));
 
             /* cleanup */
             RTMemTmpFree(pHdr);
@@ -534,7 +534,7 @@ static int VBoxDrvFreeBSDIOCtlSlow(PSUPDRVSESSION pSession, u_long ulCmd, caddr_
         if (pvUser)
             RTMemTmpFree(pHdr);
 
-        dprintf(("VBoxDrvFreeBSDIOCtlSlow: ulCmd=%lx pData=%p failed, rc=%d\n", ulCmd, pvData, rc));
+        Log(("VBoxDrvFreeBSDIOCtlSlow: ulCmd=%lx pData=%p failed, rc=%d\n", ulCmd, pvData, rc));
         rc = EINVAL;
     }
 

@@ -535,9 +535,9 @@ int suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t /* cPages */)
 
 
 /**
- * Converts a supdrv error code to an nt status code.
+ * Converts a supdrv win32 error code to an IPRT status code.
  *
- * @returns corresponding SUPDRV_ERR_*.
+ * @returns corresponding IPRT error code.
  * @param   rc  Win32 error code.
  */
 static int suplibConvertWin32Err(int rc)
@@ -571,23 +571,14 @@ static int suplibConvertWin32Err(int rc)
     {
         //case 0:                             return STATUS_SUCCESS;
         case 0:                             return VINF_SUCCESS;
-        //case SUPDRV_ERR_GENERAL_FAILURE:    return STATUS_NOT_SUPPORTED;
         case ERROR_NOT_SUPPORTED:           return VERR_GENERAL_FAILURE;
-        //case SUPDRV_ERR_INVALID_PARAM:      return STATUS_INVALID_PARAMETER;
         case ERROR_INVALID_PARAMETER:       return VERR_INVALID_PARAMETER;
-        //case SUPDRV_ERR_INVALID_MAGIC:      return STATUS_ACCESS_DENIED;
         case ERROR_UNKNOWN_REVISION:        return VERR_INVALID_MAGIC;
-        //case SUPDRV_ERR_INVALID_HANDLE:     return STATUS_INVALID_HANDLE;
         case ERROR_INVALID_HANDLE:          return VERR_INVALID_HANDLE;
-        //case SUPDRV_ERR_INVALID_POINTER:    return STATUS_INVALID_ADDRESS;
         case ERROR_UNEXP_NET_ERR:           return VERR_INVALID_POINTER;
-        //case SUPDRV_ERR_LOCK_FAILED:        return STATUS_NOT_LOCKED;
         case ERROR_NOT_LOCKED:              return VERR_LOCK_FAILED;
-        //case SUPDRV_ERR_ALREADY_LOADED:     return STATUS_IMAGE_ALREADY_LOADED;
         case ERROR_SERVICE_ALREADY_RUNNING: return VERR_ALREADY_LOADED;
-        //case SUPDRV_ERR_PERMISSION_DENIED:  return STATUS_ACCESS_DENIED;
         case ERROR_ACCESS_DENIED:           return VERR_PERMISSION_DENIED;
-        //case SUPDRV_ERR_VERSION_MISMATCH:   return STATUS_REVISION_MISMATCH;
         case ERROR_REVISION_MISMATCH:       return VERR_VERSION_MISMATCH;
     }
 

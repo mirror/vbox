@@ -90,14 +90,14 @@ RT_C_DECLS_END
  */
 DECLASM(int) VBoxDrvInit(const char *pszArgs)
 {
-    dprintf(("VBoxDrvInit: pszArgs=%s\n", pszArgs));
-
     /*
      * Initialize the runtime.
      */
     int rc = RTR0Init(0);
     if (RT_SUCCESS(rc))
     {
+        Log(("VBoxDrvInit: pszArgs=%s\n", pszArgs));
+
         /*
          * Initialize the device extension.
          */
@@ -166,14 +166,14 @@ DECLASM(int) VBoxDrvOpen(uint16_t sfn)
         RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     }
 
-    dprintf(("VBoxDrvOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, (int)RTProcSelf()));
+    Log(("VBoxDrvOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, (int)RTProcSelf()));
     return rc;
 }
 
 
 DECLASM(int) VBoxDrvClose(uint16_t sfn)
 {
-    dprintf(("VBoxDrvClose: pid=%d sfn=%d\n", (int)RTProcSelf(), sfn));
+    Log(("VBoxDrvClose: pid=%d sfn=%d\n", (int)RTProcSelf(), sfn));
 
     /*
      * Remove from the hash table.
@@ -293,7 +293,7 @@ DECLASM(int) VBoxDrvIOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, void *p
      */
     if (RT_LIKELY(iCat == SUP_CTL_CATEGORY))
     {
-        dprintf(("VBoxDrvIOCtl: pSession=%p iFunction=%#x pvParm=%p pvData=%p *pcbParm=%d *pcbData=%d\n", pSession, iFunction, pvParm, pvData, *pcbParm, *pcbData));
+        Log(("VBoxDrvIOCtl: pSession=%p iFunction=%#x pvParm=%p pvData=%p *pcbParm=%d *pcbData=%d\n", pSession, iFunction, pvParm, pvData, *pcbParm, *pcbData));
         Assert(pvParm);
         Assert(!pvData);
 
@@ -351,7 +351,7 @@ DECLASM(int) VBoxDrvIOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, void *p
         int rc2 = KernVMUnlock(&Lock);
         AssertMsg(!rc2, ("rc2=%d\n", rc2)); NOREF(rc2);
 
-        dprintf2(("VBoxDrvIOCtl: returns %d\n", rc));
+        Log2(("VBoxDrvIOCtl: returns %d\n", rc));
         return rc;
     }
     return VERR_NOT_SUPPORTED;
