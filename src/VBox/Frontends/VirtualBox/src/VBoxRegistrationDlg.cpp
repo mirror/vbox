@@ -63,17 +63,17 @@ private:
         if (mData.startsWith ("triesLeft="))
         {
             bool ok = false;
-            uint triesLeft = mData.section ('=', 1, 1).toUInt (&ok);
+            uint uTriesLeft = mData.section ('=', 1, 1).toUInt (&ok);
             if (!ok)
                 return;
-            mTriesLeft = triesLeft;
+            mTriesLeft = uTriesLeft;
             mIsValid = true;
             return;
         }
 
         /* Decoding CRC32 */
-        QString data = mData;
-        QString crcData = data.right (2 * sizeof (ulong));
+        QString sData = mData;
+        QString crcData = sData.right (2 * sizeof (ulong));
         ulong crcNeed = 0;
         for (long i = 0; i < crcData.length(); i += 2)
         {
@@ -81,12 +81,12 @@ private:
             uchar curByte = (uchar) crcData.mid (i, 2).toUShort (0, 16);
             crcNeed += curByte;
         }
-        data.truncate (data.length() - 2 * sizeof (ulong));
+        sData.truncate (sData.length() - 2 * sizeof (ulong));
 
         /* Decoding data */
         QString result;
-        for (long i = 0; i < data.length(); i += 4)
-            result += QChar (data.mid (i, 4).toUShort (0, 16));
+        for (long i = 0; i < sData.length(); i += 4)
+            result += QChar (sData.mid (i, 4).toUShort (0, 16));
         ulong crcNow = crc32 ((uchar*)result.toAscii().constData(), result.length());
 
         /* Check the CRC32 */
@@ -114,18 +114,18 @@ private:
         mAccount = aAccount;
 
         /* Encoding data */
-        QString data = QString ("%1").arg (mAccount);
+        QString sData = QString ("%1").arg (mAccount);
         mData = QString::null;
-        for (long i = 0; i < data.length(); ++ i)
+        for (long i = 0; i < sData.length(); ++ i)
         {
-            QString curPair = QString::number (data.at (i).unicode(), 16);
+            QString curPair = QString::number (sData.at (i).unicode(), 16);
             while (curPair.length() < 4)
                 curPair.prepend ('0');
             mData += curPair;
         }
 
         /* Enconding CRC32 */
-        ulong crcNow = crc32 ((uchar*)data.toAscii().constData(), data.length());
+        ulong crcNow = crc32 ((uchar*)sData.toAscii().constData(), sData.length());
         QString crcData;
         for (ulong i = 0; i < sizeof (ulong); ++ i)
         {
@@ -226,7 +226,11 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *
                                 "\\x000E-\\x007F]))*\"))"
                       "@"
                       "[a-zA-Z0-9\\-]+(\\.[a-zA-Z0-9\\-]+)*");
-    QRegExp passwordExp ("[a-zA-Z0-9_\\-\\+=`~!@#$%^&\\*\\(\\)?\\[\\]:;,\\./]+");
+    /*
+     * According to sun.online this are the allowed characters:
+     * A-Z a-z 0-9 [ ! # $ % = + | ~ ` : ; , { } < > / * ( ) ' ? " & ]
+     */
+    QRegExp passwordExp ("[a-zA-Z0-9_\\-\\+=`~!@#$%^&\\*\\(\\)?\\[\\]:;,\\./\\{\\}<>]+");
 
     mLeOldEmail->setMaxLength (50);
     /* New accounts *must* have a valid email as user name. Thats not the case
