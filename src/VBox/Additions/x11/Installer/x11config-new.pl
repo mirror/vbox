@@ -162,6 +162,7 @@ EndSection
 
 Section "ServerLayout"
   Identifier   "Layout[all]"
+  InputDevice  "Keyboard[0]" "CoreKeyboard"
   InputDevice  "Mouse[1]" "CorePointer"
   InputDevice  "Mouse[2]" "SendCoreEvents"
   Option       "Clone" "off"
