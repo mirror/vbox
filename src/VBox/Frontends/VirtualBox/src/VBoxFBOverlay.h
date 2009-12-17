@@ -28,8 +28,6 @@
 
 //#define VBOXVHWADBG_RENDERCHECK
 
-//#define VBOXVHWA_NEW_PBO
-
 #include "COMDefs.h"
 #include <QGLWidget>
 #include <iprt/assert.h>
@@ -376,10 +374,15 @@ private:
     size_t mcbActualBufferSize;
 };
 
+#define VBOXVHWAIMG_PBO    0x00000001U
+#define VBOXVHWAIMG_PBOIMG 0x00000002U
+#define VBOXVHWAIMG_FBO    0x00000004U
+typedef uint32_t VBOXVHWAIMG_TYPE;
+
 class VBoxVHWATextureImage
 {
 public:
-    VBoxVHWATextureImage(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr, bool bDisablePBO);
+    VBoxVHWATextureImage(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr, VBOXVHWAIMG_TYPE flags);
 
     virtual ~VBoxVHWATextureImage()
     {
@@ -548,8 +551,8 @@ protected:
 class VBoxVHWATextureImagePBO : public VBoxVHWATextureImage
 {
 public:
-    VBoxVHWATextureImagePBO(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr) :
-            VBoxVHWATextureImage(size, format, aMgr, true),
+    VBoxVHWATextureImagePBO(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr, VBOXVHWAIMG_TYPE flags) :
+            VBoxVHWATextureImage(size, format, aMgr, flags & (~VBOXVHWAIMG_PBO)),
             mPBO(0)
     {
     }
@@ -1574,19 +1577,27 @@ template <class T>
 class VBoxVHWATextureImageFBO : public T
 {
 public:
-    VBoxVHWATextureImageFBO(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr) :
-            T(size, format, aMgr),
-            mFBOTex(size, VBoxVHWAColorFormat(32, 0xff0000, 0xff00, 0xff), aMgr)
+    VBoxVHWATextureImageFBO(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr, VBOXVHWAIMG_TYPE flags) :
+            T(size, format, aMgr, flags & (~VBOXVHWAIMG_FBO)),
+            mFBOTex(size, VBoxVHWAColorFormat(32, 0xff0000, 0xff00, 0xff), aMgr, flags & (~VBOXVHWAIMG_FBO)),
+            mpvFBOTexMem(NULL)
     {
+    }
+
+    virtual ~VBoxVHWATextureImageFBO()
+    {
+        if(mpvFBOTexMem)
+            free(mpvFBOTexMem);
     }
 
     virtual void init(uchar *pvMem)
     {
         mFBO.init();
-        mFBOTex.init(NULL);
-        T:init(pvMem);
+        mpvFBOTexMem = (uchar*)malloc(mFBOTex.memSize());
+        mFBOTex.init(mpvFBOTexMem);
+        T::init(pvMem);
         mFBO.bind();
-        mFBO.attachBound(mFBOTex.mpTex[0]);
+        mFBO.attachBound(mFBOTex.component(0));
         mFBO.unbind();
     }
 
@@ -1594,23 +1605,21 @@ public:
             const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected,
             GLuint *pDisplay, class VBoxVHWAGlProgramVHWA ** ppProgram)
     {
-        T::createDisplay(&mFBOTex, &mFBOTex.rect(), &rect(),
+        T::createDisplay(NULL, &mFBOTex.rect(), &rect(),
                 NULL, NULL, false,
                 pDisplay, ppProgram);
 
-        return mFBOTex.createDisplay(pDst, pDstRect, pSrcRect,
-                pDstCKey, pSrcCKey, bNotIntersected,
-                pDisplay, ppProgram);
+        return mFBOTex.initDisplay(pDst, pDstRect, pSrcRect,
+                pDstCKey, pSrcCKey, bNotIntersected);
     }
 
     virtual void update(const QRect * pRect)
     {
-        mFBO.bind();
-        T:update(pRect);
+        T::update(pRect);
 
-        VBoxGLWidget::pushSettingsAndSetupViewport(rect(), rect());
+        VBoxGLWidget::pushSettingsAndSetupViewport(rect().size(), rect());
         mFBO.bind();
-        mFBOTex.display();
+        T::display();
         mFBO.unbind();
         VBoxGLWidget::popSettingsAfterSetupViewport();
     }
@@ -1630,6 +1639,7 @@ public:
 private:
     VBoxVHWAFBO mFBO;
     VBoxVHWATextureImage mFBOTex;
+    uchar * mpvFBOTexMem;
 };
 
 class VBoxQGLOverlay

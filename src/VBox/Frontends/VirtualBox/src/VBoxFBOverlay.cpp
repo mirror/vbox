@@ -308,24 +308,46 @@ void VBoxVHWAHandleTable::doRemove(uint32_t h)
     --mcUsage;
 }
 
-static VBoxVHWATextureImage* vboxVHWAImageCreate(const QRect & aRect, const VBoxVHWAColorFormat & aFormat, class VBoxVHWAGlProgramMngr * pMgr, bool bDisablePBO)
+static VBoxVHWATextureImage* vboxVHWAImageCreate(const QRect & aRect, const VBoxVHWAColorFormat & aFormat, class VBoxVHWAGlProgramMngr * pMgr, VBOXVHWAIMG_TYPE flags)
 {
-#ifdef VBOXVHWA_NEW_PBO
     const VBoxVHWAInfo & info = vboxVHWAGetSupportInfo(NULL);
-    if(!bDisablePBO && info.getGlInfo().isPBOSupported())
+    if((flags & VBOXVHWAIMG_PBO) && !info.getGlInfo().isPBOSupported())
+        flags &= ~VBOXVHWAIMG_PBO;
+
+    if((flags & VBOXVHWAIMG_PBOIMG) &&
+            (!info.getGlInfo().isPBOSupported() || !info.getGlInfo().isPBOOffsetSupported()))
+        flags &= ~VBOXVHWAIMG_PBOIMG;
+
+    if((flags & VBOXVHWAIMG_FBO) && !info.getGlInfo().isFBOSupported())
+        flags &= ~VBOXVHWAIMG_FBO;
+
+    /* ensure we don't create a PBO-based texture in case we use a PBO-based image */
+    if(flags & VBOXVHWAIMG_PBOIMG)
+        flags &= ~VBOXVHWAIMG_PBO;
+
+    if(flags & VBOXVHWAIMG_PBOIMG)
     {
+        if(flags & VBOXVHWAIMG_FBO)
+        {
+            VBOXQGLLOG(("FBO PBO Image\n"));
+            return new VBoxVHWATextureImageFBO<VBoxVHWATextureImagePBO>(aRect, aFormat, pMgr, flags);
+        }
         VBOXQGLLOG(("PBO Image\n"));
-        return new VBoxVHWATextureImagePBO(aRect, aFormat, pMgr);
+        return new VBoxVHWATextureImagePBO(aRect, aFormat, pMgr, flags);
     }
-#endif
+    if(flags & VBOXVHWAIMG_FBO)
+    {
+        VBOXQGLLOG(("FBO Generic Image\n"));
+        return new VBoxVHWATextureImageFBO<VBoxVHWATextureImage>(aRect, aFormat, pMgr, flags);
+    }
     VBOXQGLLOG(("Generic Image\n"));
-    return new VBoxVHWATextureImage(aRect, aFormat, pMgr, bDisablePBO);
+    return new VBoxVHWATextureImage(aRect, aFormat, pMgr, flags);
 }
 
-static VBoxVHWATexture* vboxVHWATextureCreate(const QGLContext * pContext, const QRect & aRect, const VBoxVHWAColorFormat & aFormat, bool bDisablePBO)
+static VBoxVHWATexture* vboxVHWATextureCreate(const QGLContext * pContext, const QRect & aRect, const VBoxVHWAColorFormat & aFormat, VBOXVHWAIMG_TYPE flags)
 {
     const VBoxVHWAInfo & info = vboxVHWAGetSupportInfo(pContext);
-    if(!bDisablePBO && info.getGlInfo().isPBOSupported())
+    if((flags & VBOXVHWAIMG_PBO) && info.getGlInfo().isPBOSupported())
     {
         VBOXQGLLOG(("VBoxVHWATextureNP2RectPBO\n"));
         return new VBoxVHWATextureNP2RectPBO(aRect, aFormat);
@@ -1194,7 +1216,7 @@ VBoxVHWASurfaceBase::VBoxVHWASurfaceBase(class VBoxGLWidget *aWidget,
     setDefaultSrcOverlayCKey(pSrcOverlayCKey);
     resetDefaultSrcOverlayCKey();
 
-    mImage = vboxVHWAImageCreate(QRect(0,0,aSize.width(),aSize.height()), aColorFormat, getGlProgramMngr(), bVGA);
+    mImage = vboxVHWAImageCreate(QRect(0,0,aSize.width(),aSize.height()), aColorFormat, getGlProgramMngr(), bVGA ? 0 : (VBOXVHWAIMG_PBO | VBOXVHWAIMG_PBOIMG/* | VBOXVHWAIMG_FBO*/));
 
     setRectValues(aTargRect, aSrcRect);
     setVisibleRectValues(aVisTargRect);
@@ -1965,39 +1987,20 @@ void VBoxGLWidget::doSetupMatrix(const QSize & aSize, bool bInverted)
 
 void VBoxGLWidget::adjustViewport(const QSize &display, const QRect &viewport)
 {
-#ifdef VBOXVHWA_OLD_COORD
-    /* viewport:  (viewport.x;viewport.y) (viewport.width;viewport.height)*/
-    glViewport(-((int)display.width() + viewport.x()),
-                -((int)display.height() - viewport.y() + display.height() - viewport.height()),
-                2*display.width(),
-                2*display.height());
-#else
     glViewport(-viewport.x(),
     		   viewport.height() + viewport.y() - display.height(),
                display.width(),
                display.height());
-
-#endif
 }
 
 void VBoxGLWidget::setupMatricies(const QSize &display)
 {
-#ifdef VBOXVHWA_OLD_COORD
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glFrustum(0., (GLdouble)display.width(), 0., (GLdouble)display.height(), 0., 0.);
-
-    glMatrixMode(GL_MODELVIEW);
-    //    doSetupMatrix(bInverted ? &mRect.size() : &mTargSize.size(), bInverted);
-    doSetupMatrix(display, false);
-#else
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0., (GLdouble)display.width(), (GLdouble)display.height(), 0., -1., 1.);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-#endif
 }
 
 VBoxVHWACommandElement * VBoxGLWidget::processCmdList(VBoxVHWACommandElement * pCmd)
@@ -4990,7 +4993,7 @@ void VBoxVHWACommandsQueue::freeList(VBoxVHWACommandElement * pList)
     }
 }
 
-VBoxVHWATextureImage::VBoxVHWATextureImage(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr, bool bDisablePBO) :
+VBoxVHWATextureImage::VBoxVHWATextureImage(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr, VBOXVHWAIMG_TYPE flags) :
         mVisibleDisplay(0),
         mpProgram(0),
         mProgramMngr(aMgr),
@@ -4999,13 +5002,13 @@ VBoxVHWATextureImage::VBoxVHWATextureImage(const QRect &size, const VBoxVHWAColo
         mpSrcCKey(NULL),
         mbNotIntersected(false)
 {
-    mpTex[0] = vboxVHWATextureCreate(NULL, size, format, bDisablePBO);
+    mpTex[0] = vboxVHWATextureCreate(NULL, size, format, flags);
     mColorFormat = format;
     if(mColorFormat.fourcc() == FOURCC_YV12)
     {
         QRect rect(size.x()/2,size.y()/2,size.width()/2,size.height()/2);
-        mpTex[1] = vboxVHWATextureCreate(NULL, rect, format, bDisablePBO);
-        mpTex[2] = vboxVHWATextureCreate(NULL, rect, format, bDisablePBO);
+        mpTex[1] = vboxVHWATextureCreate(NULL, rect, format, flags);
+        mpTex[2] = vboxVHWATextureCreate(NULL, rect, format, flags);
         mcTex = 3;
     }
     else
@@ -5160,13 +5163,6 @@ uint32_t VBoxVHWATextureImage::calcProgramType(VBoxVHWATextureImage *pDst, const
 class VBoxVHWAGlProgramVHWA * VBoxVHWATextureImage::calcProgram(VBoxVHWATextureImage *pDst, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool bNotIntersected)
 {
     uint32_t type = calcProgramType(pDst, pDstCKey, pSrcCKey, bNotIntersected);
-
-    if(pDstCKey != NULL)
-        type |= VBOXVHWA_PROGRAM_DSTCOLORKEY;
-    if(pSrcCKey)
-        type |= VBOXVHWA_PROGRAM_SRCCOLORKEY;
-    if((pDstCKey || pSrcCKey) && bNotIntersected)
-        type |= VBOXVHWA_PROGRAM_COLORKEYNODISCARD;
 
     return mProgramMngr->getProgram(type, &colorFormat(), pDst ? &pDst->colorFormat() : NULL);
 }
