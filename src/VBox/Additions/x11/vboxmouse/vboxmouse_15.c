@@ -73,6 +73,12 @@ VBoxReadInput(InputInfoPtr pInfo)
 #endif
         &&  RT_SUCCESS(VbglR3GetMouseStatus(&fFeatures, &cx, &cy))
         && (fFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE))
+#if ABI_XINPUT_VERSION == SET_ABI_VERSION(2, 0)
+        /* Bug in the 1.4 X server series - conversion_proc was no longer
+         * called, but the server didn't yet do the conversion itself. */
+        cx = xf86ScaleAxis(cx, 0, screenInfo.screens[0]->width, 0, 65536);
+        cy = xf86ScaleAxis(cy, 0, screenInfo.screens[0]->height, 0, 65536);
+#endif
         /* send absolute movement */
         xf86PostMotionEvent(pInfo->dev, 1, 0, 2, cx, cy);
 }
@@ -121,20 +127,25 @@ VBoxInit(DeviceIntPtr device)
         return !Success;
 
     /* Tell the server about the range of axis values we report */
+#if ABI_XINPUT_VERSION <= SET_ABI_VERSION(2, 0)
+    xf86InitValuatorAxisStruct(device, 0, 0, -1, 1, 0, 1);
+    xf86InitValuatorAxisStruct(device, 1, 0, -1, 1, 0, 1);
+#else
     xf86InitValuatorAxisStruct(device, 0,
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+# if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
                                axis_labels[0],
-#endif
+# endif
                                0 /* min X */, 65536 /* max X */,
                                10000, 0, 10000);
-    xf86InitValuatorDefaults(device, 0);
 
     xf86InitValuatorAxisStruct(device, 1,
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+# if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
                                axis_labels[1],
-#endif
+# endif
                                0 /* min Y */, 65536 /* max Y */,
                                10000, 0, 10000);
+#endif
+    xf86InitValuatorDefaults(device, 0);
     xf86InitValuatorDefaults(device, 1);
     xf86MotionHistoryAllocate(pInfo);
 
@@ -213,7 +224,6 @@ VBoxProbe(InputInfoPtr pInfo)
     return Success;
 }
 
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 2
 static Bool
 VBoxConvert(InputInfoPtr pInfo, int first, int num, int v0, int v1, int v2,
             int v3, int v4, int v5, int *x, int *y)
@@ -225,7 +235,6 @@ VBoxConvert(InputInfoPtr pInfo, int first, int num, int v0, int v1, int v2,
     } else
         return FALSE;
 }
-#endif
 
 static InputInfoPtr
 VBoxPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
@@ -243,9 +252,7 @@ VBoxPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     pInfo->conf_idev = dev;
     /* Unlike evdev, we set this unconditionally, as we don't handle keyboards. */
     pInfo->type_name = XI_MOUSE;
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 2
     pInfo->conversion_proc = VBoxConvert;
-#endif
     pInfo->flags = XI86_POINTER_CAPABLE | XI86_SEND_DRAG_EVENTS |
             XI86_ALWAYS_CORE;
 
