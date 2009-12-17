@@ -33,29 +33,29 @@
 
 
 struc SUPGIPCPU
-    .u32TransactionId       resd 1
-    .u32UpdateIntervalTSC   resd 1
-    .u64NanoTS              resq 1
-    .u64TSC                 resq 1
-    .u64CpuHz               resq 1
-    .cErrors                resd 1
-    .iTSCHistoryHead        resd 1
-    .au32TSCHistory         resd 8
-    .u32UpdateIntervalNS    resd 1
-    .au32Reserved           resd 5
+    .u32TransactionId           resd 1
+    .u32UpdateIntervalTSC       resd 1
+    .u64NanoTS                  resq 1
+    .u64TSC                     resq 1
+    .u64CpuHz                   resq 1
+    .cErrors                    resd 1
+    .iTSCHistoryHead            resd 1
+    .au32TSCHistory             resd 8
+    .u32PrevUpdateIntervalNS    resd 1
+    .au32Reserved               resd 5
 endstruc
 
 %define SUPGLOBALINFOPAGE_MAGIC 0x19590106
 struc SUPGLOBALINFOPAGE
-    .u32Magic               resd 1
-    .u32Version             resd 1
-    .u32Mode                resd 1
-    .u32Padding0            resd 1
-    .u32UpdateHz            resd 1
-    .u32UpdateIntervalNS    resd 1
-    .u64NanoTSLastUpdateHz  resq 1
-    .au32Padding1           resd 56
-    .aCPUs                  resb (SUPGIPCPU_size*32)
+    .u32Magic                   resd 1
+    .u32Version                 resd 1
+    .u32Mode                    resd 1
+    .u32Padding0                resd 1
+    .u32UpdateHz                resd 1
+    .u32UpdateIntervalNS        resd 1
+    .u64NanoTSLastUpdateHz      resq 1
+    .au32Padding1               resd 56
+    .aCPUs                      resb (SUPGIPCPU_size*32)
 endstruc
 
 
