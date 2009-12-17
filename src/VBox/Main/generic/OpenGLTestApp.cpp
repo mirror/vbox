@@ -184,6 +184,8 @@ static int vboxInitLogging(const char *pszFilename, bool bGenNameSuffix)
 
         /* register this logger as the release logger */
         RTLogRelSetDefaultInstance(loggerRelease);
+        
+        return VINF_SUCCESS;
     }
 
     return vrc;
