@@ -104,7 +104,7 @@
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ця помилка означає, що драйвер ядра не має достатньо пам&apos;яті або помилка певної операції відображення.</translation>
     </message>
 </context>
 <context>
@@ -330,7 +330,7 @@
     <name>QILabel</name>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished">&amp;Копіювати</translation>
+        <translation>&amp;Копіювати</translation>
     </message>
 </context>
 <context>
@@ -592,7 +592,7 @@
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Якщо це відмічено, стан машини буде відновлено до стану, який збережено в поточному знімку, відразу після її вимкнення. Це може бути корисним, якщо ви впевнені, що бажаєте відкинути результати останнього сеансу і вернутись до поточного знімку.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Якщо це відмічено, стан машини буде відновлено до стану, який збережено в поточному зрізі, відразу після її вимкнення. Це може бути корисним, якщо ви впевнені, що бажаєте відкинути результати останнього сеансу і вернутись до поточного зрізу.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
@@ -608,11 +608,11 @@
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Відновити стан машини до збереженої на поточному зрізі</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Відновити поточний зріз &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
@@ -697,11 +697,11 @@
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation>З&amp;робити знімок...</translation>
+        <translation>З&amp;робити зріз...</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>Зробити знімок віртуальної машини</translation>
+        <translation>Зробити зріз віртуальної машини</translation>
     </message>
     <message>
         <source>&amp;Floppy Image...</source>
@@ -821,7 +821,7 @@
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Знімок %1</translation>
+        <translation>Зріз %1</translation>
     </message>
     <message>
         <source>Host Drive </source>
@@ -1029,96 +1029,96 @@
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation type="unfinished"></translation>
+        <translation> ЕКСПЕРЕМЕНТАЛЬНА збірка %1r%2 — %3</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Пристрої CD/DVD</translation>
     </message>
     <message>
         <source>&amp;Floppy Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Пристрої &amp;дискет</translation>
     </message>
     <message>
         <source>&amp;Network Adapters...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Мережевий адаптер...</translation>
     </message>
     <message>
         <source>Change the settings of network adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>Змінити налаштування мережевих адаптерів</translation>
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation type="unfinished">Відда&amp;лений екран</translation>
+        <translation>Ві&amp;ддалений екран</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation type="unfinished"></translation>
+        <translation>Сервер віддаленої стільниці (RDP)</translation>
     </message>
     <message>
         <source>More CD/DVD Images...</source>
-        <translation type="unfinished"></translation>
+        <translation>Більше образів CD/DVD…</translation>
     </message>
     <message>
         <source>Unmount CD/DVD Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Демонтувати пристрій CD/DVD</translation>
     </message>
     <message>
         <source>More Floppy Images...</source>
-        <translation type="unfinished"></translation>
+        <translation>Більше образів дискет…</translation>
     </message>
     <message>
         <source>Unmount Floppy Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Демонтувати пристрій дискет</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
-        <translation type="unfinished"></translation>
+        <translation>Немає приєднаних пристроїв CD/DVD</translation>
     </message>
     <message>
         <source>No Floppy Devices Attached</source>
-        <translation type="unfinished"></translation>
+        <translation>Немає приєднаних пристроїв CD/DVD</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності віртуальних жорстких дисків:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності пристроїв CD/DVD:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No CD/DVD devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Немає приєднаних пристроїв CD/DVD&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності пристроїв дискет:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No floppy devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Немає приєднаних пристроїв дискет&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності мережевих інтерфейсів:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності приєднаних пристроїв USB:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності спільних тек:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1397,10 +1397,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Dock Icon Realtime Preview</source>
         <translation>&amp;Попередній перегляд піктограми реального часу</translation>
-    </message>
-    <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1741,31 +1737,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Check for:</source>
-        <translation type="unfinished"></translation>
+        <translation>Перевірка на:</translation>
     </message>
     <message>
         <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Виберіть це, якщо ви бажаєте сповіщатись лише про стабільні оновлення VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Stable release versions</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Версії стабільного випуску</translation>
     </message>
     <message>
         <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Виберіть це, якщо ви бажаєте сповіщатись про всі нові випуски VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;All new releases</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Усі нові випуски</translation>
     </message>
     <message>
         <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Виберіть це, якщо ви бажаєте сповіщатись про всі нові та передвипуски VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>All new releases and &amp;pre-releases</source>
-        <translation type="unfinished"></translation>
+        <translation>Усі н&amp;ові випуски і передвипуски</translation>
     </message>
 </context>
 <context>
@@ -2688,242 +2684,190 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>details report (2D Video Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Увімкнено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (2D Video Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Вимкнено</translation>
     </message>
     <message>
         <source>2D Video Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Відеоприскорення 2D</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details report (Storage)</comment>
-        <translation type="unfinished">Не під&apos;єднанані</translation>
+        <translation>Не під&apos;єднанано</translation>
     </message>
     <message>
         <source>Storage</source>
         <comment>details report</comment>
-        <translation type="unfinished">Пам&apos;ять</translation>
+        <translation>Пам&apos;ять</translation>
     </message>
     <message>
         <source>Teleported</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Телепортовано</translation>
     </message>
     <message>
         <source>Guru Meditation</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Гуру медитує</translation>
     </message>
     <message>
         <source>Teleporting</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Телепортація</translation>
     </message>
     <message>
         <source>Taking Live Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Робиться зріз вживу</translation>
     </message>
     <message>
         <source>Teleporting Paused VM</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Телепортацію призупинено</translation>
     </message>
     <message>
         <source>Restoring Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Відновлення зрізу</translation>
     </message>
     <message>
         <source>Deleting Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Вилучення зрізу</translation>
     </message>
     <message>
         <source>Floppy</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished">Дискета</translation>
+        <translation>Дискета</translation>
     </message>
     <message>
         <source>Device %1</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished"></translation>
+        <translation>Пристрій %1</translation>
     </message>
     <message>
         <source>IDE Primary Master</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Головний господар IDE</translation>
     </message>
     <message>
         <source>IDE Primary Slave</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Головний слуга IDE</translation>
     </message>
     <message>
         <source>IDE Secondary Master</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Вторинний господар IDE</translation>
     </message>
     <message>
         <source>IDE Secondary Slave</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Вторинний слуга IDE</translation>
     </message>
     <message>
         <source>SATA Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Порт SATA %1</translation>
     </message>
     <message>
         <source>SCSI Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Порт SCSI %1</translation>
     </message>
     <message>
         <source>Floppy Device %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Пристрій дискет %1</translation>
     </message>
     <message>
         <source>Paravirtualized Network (virtio-net)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Паравіртуалізована мережа (virtio-net)</translation>
     </message>
     <message>
         <source>I82078</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>I82078</translation>
     </message>
     <message>
         <source>Empty</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Порожній</translation>
     </message>
     <message>
         <source>Host Drive &apos;%1&apos;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Головний пристрій &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host Drive %1 (%2)</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Головний пристрій %1 (%2)</translation>
     </message>
     <message>
         <source>&lt;p style=white-space:pre&gt;Type (Format):  %1 (%2)&lt;/p&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=white-space:pre&gt;Тип (формат):  %1 (%2)&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Attached to:  %1&lt;/p&gt;</source>
         <comment>image</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Під&apos;єднано до:  %1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not Attached&lt;/i&gt;</source>
         <comment>image</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Не під&apos;єднано&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Перевірка доступності...&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Failed to check media accessibility.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Не вдалось перевірити доступність носія.</translation>
     </message>
     <message>
         <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Не вибрано носія&lt;/b&gt;</translation>
     </message>
     <message>
         <source>You can also change this while the machine is running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ви також можете це змінювати протягом роботи машини.</translation>
     </message>
     <message>
         <source>&lt;b&gt;No media available&lt;/b&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Немає доступного носія&lt;/b&gt;</translation>
     </message>
     <message>
         <source>You can create media images using the virtual media manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ви можете створити носій образів, використовуючи керування віртуальними носіями.</translation>
     </message>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Долучення цього жорсткого диска буде здійснюватись непрямим чином, використовуючи невостворені обчислення жорсткого диска.</translation>
     </message>
     <message>
         <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Деякі носії цієї низки жорстких дисків недоступні. Будь ласка, використайте керування віртуальними носіями в режимі &lt;b&gt;Показати обчислення жорстких дисків&lt;/b&gt;, щоб оглянути цей носій.</translation>
     </message>
     <message>
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message numerus="yes">
-        <source>%n year(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n month(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n day(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n hour(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n minute(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n second(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>(CD/DVD)</source>
-        <translation type="unfinished"></translation>
+        <translation>Цей базовий жорсткий диск не напряму під&apos;єднано, використовуючи такі обчислення жорсткого диска:</translation>
     </message>
 </context>
 <context>
@@ -2945,7 +2889,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxHelpButton</name>
     <message>
         <source>&amp;Help</source>
-        <translation type="unfinished">&amp;Довідка</translation>
+        <translation>&amp;Довідка</translation>
     </message>
 </context>
 <context>
@@ -2956,7 +2900,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Reading Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Читання образа віртуальної машини …</translation>
     </message>
 </context>
 <context>
@@ -3165,7 +3109,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add an existing medium</source>
-        <translation>Додати існуючий носій</translation>
+        <translation>Додати наявний носій</translation>
     </message>
     <message>
         <source>Remove the selected medium</source>
@@ -3271,17 +3215,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Attached to</source>
         <comment>VMM: Virtual Disk</comment>
-        <translation type="unfinished">Під&apos;єднати до</translation>
+        <translation>Під&apos;єднано до</translation>
     </message>
     <message>
         <source>Attached to</source>
         <comment>VMM: CD/DVD Image</comment>
-        <translation type="unfinished">Під&apos;єднати до</translation>
+        <translation>Під&apos;єднано до</translation>
     </message>
     <message>
         <source>Attached to</source>
         <comment>VMM: Floppy Image</comment>
-        <translation type="unfinished">Під&apos;єднати до</translation>
+        <translation>Під&apos;єднано до</translation>
     </message>
 </context>
 <context>
@@ -3338,7 +3282,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxNetworkDialog</name>
     <message>
         <source>Network Adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>Мережеві адаптери</translation>
     </message>
 </context>
 <context>
@@ -3577,7 +3521,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Виберіть образ жорсткого диска, який буде використовуватися як завантажувальний жорсткий диск віртуальної машини. Ви можете створити новий жорсткий диск, натиснувши на кнопку &lt;b&gt;Створити&lt;/b&gt;, або вибрати існуючий жорсткий диск, зі спадного списку або з Керування Віртуальними Дисками, який відкриється при натисненні на кнопку &lt;b&gt;Існуючий&lt;/b&gt;).&lt;/p&gt;&lt;p&gt;Якщо вам потрібне складніше монтування жорстких дисків, ви можете пропустити цей крок і під&apos;єднати жорсткі диски пізніше за допомогою діалогу Налаштування віртуальної машини.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Виберіть образ жорсткого диска, який буде використовуватися як завантажувальний жорсткий диск віртуальної машини. Ви можете створити новий жорсткий диск, натиснувши на кнопку &lt;b&gt;Створити&lt;/b&gt;, або вибрати наявний жорсткий диск, зі спадного списку або з Керування віртуальними дисками, який відкриється при натисненні на кнопку &lt;b&gt;Наявний&lt;/b&gt;).&lt;/p&gt;&lt;p&gt;Якщо вам потрібне складніше монтування жорстких дисків, ви можете пропустити цей крок і під&apos;єднати жорсткі диски пізніше за допомогою діалогу Налаштування віртуальної машини.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
@@ -3589,7 +3533,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Use existing hard disk</source>
-        <translation>&amp;Використовувати існуючий жорсткий диск</translation>
+        <translation>&amp;Використовувати наявний жорсткий диск</translation>
     </message>
 </context>
 <context>
@@ -3697,7 +3641,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не вдалось створити знімок віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось створити зріз віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -3867,7 +3811,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Не вдалось змінити шлях до знімків віртуальної машини &lt;b&gt;%1&lt;b&gt; в &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Не вдалось змінити шлях до зрізів віртуальної машини &lt;b&gt;%1&lt;b&gt; в &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
@@ -4347,7 +4291,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ваш існуючий файл налаштувань VirtualBox буде автоматично перетворено зі старого формату на необхідний для нової версії VirtualBox.&lt;/p&gt;&lt;p&gt;Натисніть &lt;b&gt;Гаразд&lt;/b&gt;, щоб запустити VirtualBox зараз або натисніть &lt;b&gt;Вийти&lt;/b&gt;, якщо ви бажаєте завершити роботу програми VirtualBox без будь-яких інших дій.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ваш наявний файл налаштувань VirtualBox буде автоматично перетворено зі старого формату на необхідний для нової версії VirtualBox.&lt;/p&gt;&lt;p&gt;Натисніть &lt;b&gt;Гаразд&lt;/b&gt;, щоб запустити VirtualBox зараз або натисніть &lt;b&gt;Вийти&lt;/b&gt;, якщо ви бажаєте завершити роботу програми VirtualBox без будь-яких інших дій.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open appliance.</source>
@@ -4387,147 +4331,138 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
-        <translation type="unfinished"></translation>
+        <translation>Схоже, що ваша файлова система USBFS змонтована в /sys/bus/usb/drivers. Ми настійно рекомендуємо змінити, оскільки це може спричини нестабільну роботу пристроїв USB.</translation>
     </message>
     <message>
         <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ви запустили експерементальну збірку VirtualBox. Ця версія не придатна для повсякденного використання.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ви впевнені, що бажаєте відновити зріз &lt;b&gt;%1&lt;/b&gt;? Це спричинить втрату поточного стану машини, який буде неможливо відновити.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Restore</source>
-        <translation type="unfinished"></translation>
+        <translation>Відновити</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <source>&lt;p&gt;By deleting a snapshot, the state information stored in the snapshot will be thrown away, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Вилучивши зріз, інформація про стан, який збережено в зрізі, буде відкинуто, і дані диска розподілено декілька файлів зображення, які VirtualBox створив разом зі зрізом, буде об&apos;єднано в один файл. Це може бути тривалим процесом, та інформацію в зрізі неможливо відновити.&lt;/p&gt;&lt;/p&gt;Ви впевнені, що бажаєте вилучити вибраний зріз &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">Вилучити</translation>
+        <translation>Вилучити</translation>
     </message>
     <message>
         <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдалось відновити зріз &lt;b&gt;%1&lt;/b&gt; віртуальної машини &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдалось вилучити зріз &lt;b&gt;%1&lt;/b&gt; віртуальної машини &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Немає достуних невикористаних носіїв для новостворених долучень.&lt;/p&gt;&lt;p&gt;Натисніть кнопку &lt;b&gt;Створити&lt;/b&gt;, щоб запустити майстра &lt;i&gt;Новий віртуальний диск&lt;/i&gt; і створіть новий носій, або натисніть &lt;b&gt;Вибрати&lt;/b&gt;, якщо бажаєте відкрити &lt;i&gt;Керування віртуальними носіями&lt;/i&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
         <comment>medium</comment>
-        <translation type="unfinished">&amp;Створити</translation>
+        <translation>&amp;Створити</translation>
     </message>
     <message>
         <source>&amp;Select</source>
         <comment>medium</comment>
-        <translation type="unfinished">Ви&amp;брати</translation>
+        <translation>Ви&amp;брати</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Немає достуних невикористаних носіїв для новостворених долучень.&lt;/p&gt;&lt;p&gt; Натисніть &lt;b&gt;Вибрати&lt;/b&gt;, якщо бажаєте відкрити &lt;i&gt;Керуванння віртуальними носіями&lt;/i&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдалось приєднати %1 до гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдалось від&apos;єднати %1 зі гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неможливо змонтувати %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; на машину &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source> Would you like to force mounting of this medium?</source>
-        <translation type="unfinished"></translation>
+        <translation> Бажаєте примусово змонтувати цей носій?</translation>
     </message>
     <message>
         <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неможливо демонтувати %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; з машини &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source> Would you like to force unmounting of this medium?</source>
-        <translation type="unfinished"></translation>
+        <translation> Бажаєте впримусово демонтувати цей носій?</translation>
     </message>
     <message>
         <source>Force Unmount</source>
-        <translation type="unfinished"></translation>
+        <translation>Примусово демонтувати</translation>
     </message>
     <message>
         <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдається вийняти диск з віртуального пристрою. Пристрій може бути заблокований гостьовою операційною системою. Будь ласка, перевірте це і спробуйте знову.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Неможливо вставити образ CD встановлювача гостьових доповнень VirtualBox у віртуальну машину &lt;b&gt;%1&lt;/b&gt;, бо машина не має пристроя CD/DVD-ROM. Будь ласка, додайте цей пристрій через діалог налаштувань.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
         <comment>warnAboutSettingsAutoConversion message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Вийти</translation>
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Такі файли налаштувань VirtualBox будуть автоматично перетворені в новіший формат, оскільки потрібні для роботи нової версії VirtualBox.&lt;/p&gt;&lt;p&gt;Натисніть &lt;b&gt;Гаразд&lt;/b&gt;, щоб запустити VirtualBox зараз, або &lt;b&gt;Вийти&lt;/b&gt;,якщо бажаєте вимкнути програму VirtualBox без усіляких подальших дій.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>hard disk</source>
         <comment>failed to mount ...</comment>
-        <translation type="unfinished">жорсткий диск</translation>
+        <translation>жорсткий диск</translation>
     </message>
     <message>
         <source>CD/DVD</source>
         <comment>failed to mount ... host-drive</comment>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD</translation>
     </message>
     <message>
         <source>CD/DVD image</source>
         <comment>failed to mount ...</comment>
-        <translation type="unfinished">образ CD/DVD</translation>
+        <translation>образ CD/DVD</translation>
     </message>
     <message>
         <source>floppy</source>
         <comment>failed to mount ... host-drive</comment>
-        <translation type="unfinished"></translation>
+        <translation>дискета</translation>
     </message>
     <message>
         <source>floppy image</source>
         <comment>failed to mount ...</comment>
-        <translation type="unfinished">образ дискети</translation>
+        <translation>образ дискети</translation>
     </message>
     <message>
         <source>hard disk</source>
         <comment>failed to attach ...</comment>
-        <translation type="unfinished">жорсткий диск</translation>
+        <translation>жорсткий диск</translation>
     </message>
     <message>
         <source>CD/DVD device</source>
         <comment>failed to attach ...</comment>
-        <translation type="unfinished"></translation>
+        <translation>пристрій CD/DVD</translation>
     </message>
     <message>
         <source>floppy device</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>пристрій дискети</translation>
     </message>
 </context>
 <context>
@@ -4537,30 +4472,72 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Залишилось часу: %1</translation>
     </message>
     <message>
+        <source>%1 days, %2 hours remaining</source>
+        <translation>залишилось %1 днів, %2 годин</translation>
+    </message>
+    <message>
+        <source>%1 days, %2 minutes remaining</source>
+        <translation>залишилось %1 днів, %2 хвилин</translation>
+    </message>
+    <message>
+        <source>%1 days remaining</source>
+        <translation>залишилось %1 днів</translation>
+    </message>
+    <message>
+        <source>1 day, %1 hours remaining</source>
+        <translation>залишився 1 день, %1 годин</translation>
+    </message>
+    <message>
+        <source>1 day, %1 minutes remaining</source>
+        <translation>залишився 1 день, %1 хвилин</translation>
+    </message>
+    <message>
+        <source>1 day remaining</source>
+        <translation>залишився 1 день</translation>
+    </message>
+    <message>
+        <source>%1 hours, %2 minutes remaining</source>
+        <translation>залишилось %1 годин, %2 хвилин</translation>
+    </message>
+    <message>
+        <source>1 hour, %1 minutes remaining</source>
+        <translation>залишилась 1 година, %1 хвилин</translation>
+    </message>
+    <message>
+        <source>1 hour remaining</source>
+        <translation>залишилась 1 година</translation>
+    </message>
+    <message>
+        <source>%1 minutes remaining</source>
+        <translation>залишилось %1 хвилин</translation>
+    </message>
+    <message>
+        <source>1 minute, %2 seconds remaining</source>
+        <translation>залишилась 1 хвилина, %2 секунд</translation>
+    </message>
+    <message>
+        <source>1 minute remaining</source>
+        <translation>залишилась 1 хвилина</translation>
+    </message>
+    <message>
+        <source>%1 seconds remaining</source>
+        <translation>залишилось %1 секунд</translation>
+    </message>
+    <message>
         <source>A few seconds remaining</source>
-        <translation type="unfinished"></translation>
+        <translation>залишлось кілька секунд</translation>
     </message>
     <message>
         <source>Canceling...</source>
-        <translation type="unfinished"></translation>
+        <translation>Скасування...</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Скасувати</translation>
     </message>
     <message>
         <source>Cancel the current operation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1, %2 remaining</source>
-        <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 remaining</source>
-        <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
-        <translation type="unfinished"></translation>
+        <translation>Скасувати поточну операцію</translation>
     </message>
 </context>
 <context>
@@ -4681,15 +4658,15 @@ p, li { white-space: pre-wrap; }
     <name>VBoxScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Зріз %1 (%2)</translation>
     </message>
     <message>
         <source>Click to view non-scaled screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Клікніть, щоб побачити немасштабований зріз.</translation>
     </message>
     <message>
         <source>Click to view scaled screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Клікніть, щоб побачити масштабований зріз.</translation>
     </message>
 </context>
 <context>
@@ -4769,7 +4746,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation>&amp;Знімки</translation>
+        <translation>&amp;Зрізи</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
@@ -4924,23 +4901,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Click to enlarge the screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>кілкніть, щоб збільшити зріз.</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Назва:</translation>
+        <translation>&amp;Назва:</translation>
     </message>
     <message>
         <source>Taken:</source>
-        <translation type="unfinished"></translation>
+        <translation>Зроблено:</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Опис:</translation>
     </message>
     <message>
         <source>D&amp;etails:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Подробиці:</translation>
     </message>
 </context>
 <context>
@@ -4965,11 +4942,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation>Поточний стан відрізняється від стану, який був збережений в поточному знімку</translation>
+        <translation>Поточний стан відрізняється від стану, який був збережений в поточному зрізі</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation>Поточний стан тотожний стану, який був збережений в поточному знімку</translation>
+        <translation>Поточний стан тотожний стану, який був збережений в поточному зрізі</translation>
     </message>
     <message>
         <source> (current, </source>
@@ -5003,7 +4980,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Знімок %1</translation>
+        <translation>Зріз %1</translation>
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
@@ -5011,7 +4988,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Take &amp;Snapshot</source>
-        <translation>З&amp;робити знімок</translation>
+        <translation>З&amp;робити зріз</translation>
     </message>
     <message>
         <source>&amp;Revert to Current Snapshot</source>
@@ -5031,7 +5008,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation>Зробити знімок поточного стану віртуальної машини</translation>
+        <translation>Зробити зріз поточного стану віртуальної машини</translation>
     </message>
     <message>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
@@ -5043,31 +5020,59 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Show the details of the selected snapshot</source>
-        <translation>Показати деталі вибраного знімку</translation>
+        <translation>Показати деталі вибраного зрізу</translation>
     </message>
     <message>
         <source> (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation> (%1)</translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n day(s) ago)</source>
+        <translation>
+            <numerusform> (%n день тому)</numerusform>
+            <numerusform> (%n дні тому)</numerusform>
+            <numerusform> (%n днів тому)</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n hour(s) ago)</source>
+        <translation>
+            <numerusform> (%n година тому)</numerusform>
+            <numerusform> (%n години тому)</numerusform>
+            <numerusform> (%n годин тому)</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n minute(s) ago)</source>
+        <translation>
+            <numerusform> (%n хвилина тому)</numerusform>
+            <numerusform> (%n хвилини тому)</numerusform>
+            <numerusform> (%n хвилин тому)</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source> (%n second(s) ago)</source>
+        <translation>
+            <numerusform> (%n секунда тому)</numerusform>
+            <numerusform> (%n секунди тому)</numerusform>
+            <numerusform> (%n секунд тому)</numerusform>
+        </translation>
     </message>
     <message>
         <source>&amp;Restore Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>В&amp;ідновити зріз</translation>
     </message>
     <message>
         <source>&amp;Delete Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>В&amp;илучити зріз</translation>
     </message>
     <message>
         <source>Restore the selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Відновити вибраний зріз віртуальної машини</translation>
     </message>
     <message>
         <source>Delete the selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source> (%1 ago)</source>
-        <translation type="unfinished"></translation>
+        <translation>Вилучити вибраний зріз віртуальної машини</translation>
     </message>
 </context>
 <context>
@@ -5085,23 +5090,15 @@ p, li { white-space: pre-wrap; }
     <name>VBoxTakeSnapshotDlg</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation>Зробити знімок віртуальної машини</translation>
+        <translation>Зробити зріз віртуальної машини</translation>
     </message>
     <message>
         <source>Snapshot &amp;Name</source>
-        <translation>&amp;Назва знімку</translation>
+        <translation>&amp;Назва зрізу</translation>
     </message>
     <message>
         <source>Snapshot &amp;Description</source>
-        <translation>&amp;Опис знімку</translation>
-    </message>
-    <message numerus="yes">
-        <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-        </translation>
+        <translation>&amp;Опис зрізу</translation>
     </message>
 </context>
 <context>
@@ -5400,7 +5397,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Якщо вищевказане правильне, натисніть кнопку &lt;b&gt;Закінчити&lt;/b&gt;. Після натиснення, вибрані носії будуть тимчасово змонтовані на віртуальну машину, яка відразу ж розпочне свою роботу.&lt;/p&gt;&lt;p&gt;Будь ласка, майте на увазі, коли ви закриєте віртуальну машину, вказані носії будуть демонтовані та пристрій завантаження буде вказано до першого жорсткого диска.&lt;/p&gt;&lt;p&gt;Залежно від типу програми встановлення, вам, можливо, буде потрібно вручну демонтувати(вийняти) носій після перезапуску машини цією програмою, щоб запобігти встановленню з самого початку ще раз. Ви можете це зробити, вибравши відповідну дію &lt;b&gt;Демонтувати...&lt;/b&gt; у меню &lt;b&gt;Пристрої&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5513,19 +5510,19 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not Available</source>
         <comment>details report (VRDP server port)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Недоступний</translation>
     </message>
     <message>
         <source>Storage Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Статистика пам&apos;яті</translation>
     </message>
     <message>
         <source>No Storage Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Немає пристрою з накопичуванням пам&apos;яті</translation>
     </message>
     <message>
         <source>Network Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Статистика мережі</translation>
     </message>
 </context>
 <context>
@@ -5770,19 +5767,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
-        <translation type="unfinished"></translation>
+        <translation>ви вказали менше, ніж &lt;b&gt;%1&lt;/b&gt; відеопам&apos;яті, що менше за мінімальний об&apos;єм потрібний для відео з високою роздільною здатністю, щоб відтворюватись ефективніше.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
-        <translation type="unfinished"></translation>
+        <translation>Якщо це відмічено, віртуальна машина матиме доступ до прискорених можливостей відео у гостьовій операційній системі.</translation>
     </message>
     <message>
         <source>Enable &amp;2D Video Acceleration</source>
-        <translation type="unfinished"></translation>
+        <translation>Увімкнути &amp;прискорення 2D</translation>
     </message>
     <message>
         <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Номер порта сервера VRDP. Ви можете вказати &lt;tt&gt;0&lt;/tt&gt; (нуль), щоб вибрати порт 3389, який є стандарнтим для RDP.</translation>
     </message>
 </context>
 <context>
@@ -5865,7 +5862,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>ви маєте прискорення відео 2D увікнутим. Оскільки прискорення відео 2D підтримується лише для гостьових Windows, цю властивість вимкнено.</translation>
     </message>
 </context>
 <context>
@@ -5923,7 +5920,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
-        <translation>Показує шлях, де будуть зберігатися знімки цієї машини. Майте на увазі, знімки можуть займати доволі чимало дискового простору.</translation>
+        <translation>Показує шлях, де будуть зберігатися зрізи цієї машини. Майте на увазі, зрізи можуть займати доволі чимало дискового простору.</translation>
     </message>
     <message>
         <source>&amp;Basic</source>
@@ -6055,7 +6052,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>S&amp;napshot Folder:</source>
-        <translation>Тека &amp;знімків:</translation>
+        <translation>Тека &amp;зрізів:</translation>
     </message>
     <message>
         <source>&amp;Description</source>
@@ -6123,11 +6120,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Якщо це відмічено, показувати зменшену панель інструментів зверху екрана, а не, як типово, знизу.</translation>
     </message>
     <message>
         <source>Show At &amp;Top Of Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Показати &amp;зверху екрана</translation>
     </message>
 </context>
 <context>
@@ -6206,211 +6203,211 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Шина:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Тип:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Збільшити/зменшити&amp;nbsp;пункт&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Додати&amp;nbsp;жорсткий&amp;nbsp;диск&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Додати&amp;nbsp;пристрій&amp;nbsp;CD/DVD&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Додати&amp;nbsp;пристрій&amp;nbsp;дискет&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вибрано жорсткий диск для &lt;i&gt;%1&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; використовує носій, який долучений до &lt;i&gt;%2&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Add Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Додати контролер</translation>
     </message>
     <message>
         <source>Add IDE Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Додати контролер IDE</translation>
     </message>
     <message>
         <source>Add SATA Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Додати контролер SATA</translation>
     </message>
     <message>
         <source>Add SCSI Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Додати контролер SCSI</translation>
     </message>
     <message>
         <source>Add Floppy Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Додати контролер дискет</translation>
     </message>
     <message>
         <source>Remove Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Вилучити контролер</translation>
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Додати долучення</translation>
     </message>
     <message>
         <source>Add Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Додати жорсткий диск</translation>
     </message>
     <message>
         <source>Add CD/DVD Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Додати пристрій CD/DVD</translation>
     </message>
     <message>
         <source>Add Floppy Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Додати пристрій дискет</translation>
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Вилучити долучення</translation>
     </message>
     <message>
         <source>Adds a new controller to the end of the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Додає новий контролер в кінець дерева пам&apos;яті.</translation>
     </message>
     <message>
         <source>Removes the controller highlighted in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вилучає контролер, який виділений у дереві пам&apos;яті.</translation>
     </message>
     <message>
         <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Додає нове долучення до дерева пам&apos;яті, використовуючи поточно вибраний контролер як основний.</translation>
     </message>
     <message>
         <source>Removes the attachment highlighted in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вилучає долучення, яке виділене в дереві пам&apos;яті.</translation>
     </message>
     <message>
         <source>IDE Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Контролер IDE</translation>
     </message>
     <message>
         <source>SATA Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Контролер SATA</translation>
     </message>
     <message>
         <source>SCSI Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Контролер SCSI</translation>
     </message>
     <message>
         <source>Floppy Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Контролер дискет</translation>
     </message>
     <message>
         <source>Hard &amp;Disk:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Жорсткий диск:</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Device:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Пристрій CD/DVD:</translation>
     </message>
     <message>
         <source>&amp;Floppy Device:</source>
-        <translation type="unfinished"></translation>
+        <translation>Пристрій &amp;дискет:</translation>
     </message>
     <message>
         <source>&amp;Storage Tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Д&amp;ерево пам&apos;яті</translation>
     </message>
     <message>
         <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation type="unfinished"></translation>
+        <translation>Містить всі контролери пам&apos;яті для цієї машини і віртуальні образи та головін драйвери, які долучено до них.</translation>
     </message>
     <message>
         <source>Information</source>
-        <translation type="unfinished"></translation>
+        <translation>Інформація</translation>
     </message>
     <message>
         <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation type="unfinished"></translation>
+        <translation>Дерево пам&apos;яті може містити кілька контролерів різних типів. Ця машина поки що не має жодного.</translation>
     </message>
     <message>
         <source>Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Ознаки</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Назва:</translation>
+        <translation>&amp;Назва:</translation>
     </message>
     <message>
         <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Змінює назву контролера пам&apos;яті, який поточно вибрано в дереві пам&apos;яті.</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Тип:</translation>
     </message>
     <message>
         <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вибирає підтип контролера пам&apos;яті, який поточно вибрано в дереві пам&apos;яті.</translation>
     </message>
     <message>
         <source>S&amp;lot:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Гніздо:</translation>
     </message>
     <message>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вибирає гніздо на контролері пам&apos;яті, яуий використовується цим долученням. Доступні гнізда залежать від типу контролера й інших долучень на ньому.</translation>
     </message>
     <message>
         <source>Selects the virtual disk image or the host drive used by this attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вибирає образ віртуального диска або головний пристрій, який використовує це долучення.</translation>
     </message>
     <message>
         <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Відкриває кервуванння віртуальними носіями, щоб вибрати віртуальний образ для цього долучення.</translation>
     </message>
     <message>
         <source>Open Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Відкрити керування віртуальними носіями</translation>
     </message>
     <message>
         <source>D&amp;ifferencing Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Обчислення дисків</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Якщо це відмічено, то гостьова система може відправляти команди ATAPI напряму до головних пристроїв, що довзволяє використовувати запис CD/DVD, які під&apos;єднано до головної системи. Майте на увазі, запис аудіо CD поки що не підтримується.</translation>
     </message>
     <message>
         <source>&amp;Passthrough</source>
-        <translation type="unfinished"></translation>
+        <translation>Пере&amp;хід</translation>
     </message>
     <message>
         <source>Virtual Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Віртуальний розмір:</translation>
     </message>
     <message>
         <source>Actual Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Дійсний розмір:</translation>
     </message>
     <message>
         <source>Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Розмір:</translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation type="unfinished"></translation>
+        <translation>Місцеросташування:</translation>
     </message>
     <message>
         <source>Type (Format):</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип (формат):</translation>
     </message>
     <message>
         <source>Attached To:</source>
-        <translation type="unfinished"></translation>
+        <translation>Долучено до:</translation>
     </message>
 </context>
 <context>
@@ -6461,11 +6458,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">Показує адресу MAC цього адаптера. Вона містить 12 символів вибраних з діапозону {0-9,A-F}. Майте на увазі, другий символ повиннен бути лише числом.</translation>
+        <translation>Показує адресу MAC цього адаптера. Вона містить 12 символів вибраних з діапозону {0-9,A-F}. Майте на увазі, другий символ повиннен бути лише числом.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">Створює нову випадкову MAC-адресу.</translation>
+        <translation>Створює нову випадкову адресу MAC.</translation>
     </message>
     <message>
         <source>&amp;Generate</source>
@@ -6473,7 +6470,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished">Визначає, буде з’єднано віртуальний мережевий кабель під час запуску, чи ні.</translation>
+        <translation>Визначає, чи буде з&apos;єднано віртуальний мережевий кабель під час запуску, чи ні.</translation>
     </message>
     <message>
         <source>Ca&amp;ble Connected</source>
@@ -6554,19 +6551,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>A&amp;dvanced</source>
-        <translation type="unfinished"></translation>
+        <translation>В&amp;досконалений</translation>
     </message>
     <message>
         <source>Shows or hides additional network adapter options.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показує або ховає вдосконалені налаштування мережевого адаптера.</translation>
     </message>
     <message>
         <source>&amp;Mac Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Адреса Mac:</translation>
     </message>
     <message>
         <source>&amp;Cable connected</source>
-        <translation type="unfinished">&amp;Кабель під&apos;єднаний</translation>
+        <translation>&amp;Кабель під&apos;єднано</translation>
     </message>
 </context>
 <context>
@@ -6656,11 +6653,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показує номер запиту на переривання (IRQ) цього паралельно порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значення понад &lt;tt&gt;15&lt;/tt&gt; може використовуватись лише тоді, коли ввімкнено &lt;b&gt;IO APIC&lt;/b&gt; для цієї віртуальної машини.</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показує базову адресу порту В/В цього паралельного порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
 </context>
 <context>
@@ -6738,23 +6735,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> Global Folders</source>
-        <translation type="unfinished"></translation>
+        <translation> Загальні теки</translation>
     </message>
     <message>
         <source>&amp;Add Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Долучити спільну теку</translation>
     </message>
     <message>
         <source>&amp;Edit Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Редагувати спільну теку</translation>
     </message>
     <message>
         <source>&amp;Remove Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Вилучити спільну теку</translation>
     </message>
     <message>
         <source>&amp;Folders List</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Список тек</translation>
     </message>
 </context>
 <context>
@@ -6845,7 +6842,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
-        <translation>Якщо це відмічено, канал описується в полі &lt;b&gt;Шлях порту&lt;/b&gt;, яке буде створене при запуску віртуальної машини. Інакше віртуальна машина спробує використати існуючий канал.</translation>
+        <translation>Якщо це відмічено, канал описується в полі &lt;b&gt;Шлях порту&lt;/b&gt;, яке буде створене при запуску віртуальної машини. Інакше віртуальна машина спробує використати наявний канал.</translation>
     </message>
     <message>
         <source>&amp;Create Pipe</source>
@@ -6865,11 +6862,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показує номер запиту на переривання (IRQ) цього послідовного порту. Це має бути проміжок між &lt;tt&gt;0&lt;/tt&gt; і &lt;tt&gt;255&lt;/tt&gt;. Значення, які більші за &lt;tt&gt;15&lt;/tt&gt;, можна використовувати лише тоді, коли налаштування &lt;b&gt;IO APIC&lt;/b&gt; увімкнуто для цієї віртуальної машини.</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показує базову адресу порту В/В цього послідовного порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
 </context>
 <context>
@@ -7034,15 +7031,15 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is host cpu count * 2 for now</comment>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;процесорів&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;процесорів&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Якщо це відмічено, у гостьової буде підтримка інтерфейсу розширних мікропропрам (EFI), які потребують завантаження певних гостьових операційних систем, але вона унеможливлює завантаження інших.</translation>
     </message>
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
-        <translation type="unfinished"></translation>
+        <translation>Увімкнут&amp;и EFI (лише для спеціальни операційних систем)</translation>
     </message>
 </context>
 <context>
