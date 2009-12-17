@@ -2849,7 +2849,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
     AssertPtrNullReturn(pHCPhysGip, VERR_INVALID_POINTER);
 
 #ifdef SUPDRV_USE_MUTEX_FOR_GIP
-    RTSemMutexRequest(pDevExt->mtxGip);
+    RTSemMutexRequest(pDevExt->mtxGip, RT_INDEFINITE_WAIT);
 #else
     RTSemFastMutexRequest(pDevExt->mtxGip);
 #endif
@@ -2960,7 +2960,7 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
 
 #ifdef SUPDRV_USE_MUTEX_FOR_GIP
-    RTSemMutexRequest(pDevExt->mtxGip);
+    RTSemMutexRequest(pDevExt->mtxGip, RT_INDEFINITE_WAIT);
 #else
     RTSemFastMutexRequest(pDevExt->mtxGip);
 #endif
