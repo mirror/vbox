@@ -49,8 +49,6 @@ if1of ($(KBUILD_TARGET),linux solaris)
  ifneq ($(KBUILD_TARGET),solaris)   # No DRI on Solaris yet
   VBoxOGL_FAKEDRI = 1
  endif
-# VBOX_PATH_MESA_SOURCE = $(PATH_ROOT)/src/libs/mesa-7.2
- VBOX_PATH_MESA_SOURCE = $(VBOX_PATH_X11_ROOT)/mesa-7.2
 
  # Only Solaris right now needs C stubs because I can't figure out how to
  # generate the GOT based relocation ASM yet.
@@ -77,12 +75,7 @@ if1of ($(KBUILD_TARGET),linux solaris)
 	$(VBOX_PATH_X11_ROOT)/fixesproto-4.0 \
 	$(VBOX_PATH_X11_ROOT)/libx11-1.1.5-other \
 	$(VBOX_PATH_X11_ROOT)/1.3/xorg \
-	$(VBOX_PATH_MESA_SOURCE) \
-	$(VBOX_PATH_MESA_SOURCE)/include \
-	$(VBOX_PATH_MESA_SOURCE)/src/mesa/ \
-	$(VBOX_PATH_MESA_SOURCE)/src/mesa/glapi \
-	$(VBOX_PATH_MESA_SOURCE)/src/mesa/main \
-	$(VBOX_PATH_MESA_SOURCE)/src/mesa/drivers/dri/common \
+	$(VBOX_MESA_INCS) \
 	$(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.13
  VBoxOGL_DEFS     += VBOX_NO_NATIVEGL
 endif
@@ -325,6 +318,10 @@ endif
 VBoxOGLarrayspu_TEMPLATE      = VBOXCROGLR3GUESTDLL
 VBoxOGLarrayspu_INCS          = \
 	array
+if1of ($(KBUILD_TARGET),linux solaris)
+ VBoxOGLarrayspu_INCS += \
+        $(VBOX_MESA_INCS)
+endif
 VBoxOGLarrayspu_INCS.darwin  += $(PATH_OUT)/obj/VBoxOGL
 VBoxOGLarrayspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
@@ -347,6 +344,10 @@ VBoxOGLarrayspu_LIBS          = \
 VBoxOGLpassthroughspu_TEMPLATE    = VBOXCROGLR3GUESTDLL
 VBoxOGLpassthroughspu_INCS        = \
 	passthrough
+if1of ($(KBUILD_TARGET),linux solaris)
+ VBoxOGLpassthroughspu_INCS += \
+        $(VBOX_MESA_INCS)
+endif
 VBoxOGLpassthroughspu_SOURCES     = \
 	passthrough/passthroughspu_init.c \
 	$(VBOX_PATH_CROGL_GENFILES)/passthroughspu.c
@@ -372,6 +373,10 @@ VBoxOGLpackspu_TEMPLATE      = VBOXCROGLR3GUESTDLL
 VBoxOGLpackspu_DEFS          = TRACKS_STATE=1 PACKS=1
 VBoxOGLpackspu_INCS          = \
 	pack
+if1of ($(KBUILD_TARGET),linux solaris)
+ VBoxOGLpackspu_INCS += \
+        $(VBOX_MESA_INCS)
+endif
 VBoxOGLpackspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/packspu_proto.h \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h
@@ -438,6 +443,10 @@ $(VBOX_PATH_CROGL_GENFILES)/packspu_proto.h: $(addprefix $(PATH_SUB_CURRENT)/pac
 VBoxOGLfeedbackspu_TEMPLATE    = VBOXCROGLR3GUESTDLL
 VBoxOGLfeedbackspu_INCS        = \
 	feedback
+if1of ($(KBUILD_TARGET),linux solaris)
+ VBoxOGLfeedbackspu_INCS += \
+        $(VBOX_MESA_INCS)
+endif
 VBoxOGLarrayspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu_proto.h
 VBoxOGLfeedbackspu_SOURCES     = \

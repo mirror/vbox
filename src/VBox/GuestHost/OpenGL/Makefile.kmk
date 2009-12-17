@@ -46,6 +46,10 @@ endif
 VBoxOGLcrutil_TEMPLATE      = VBOXCROGLR3GUESTDLL
 VBoxOGLcrutil_SDKS.win      = DXSDK
 VBoxOGLcrutil_INTERMEDIATES = $(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h
+if1of ($(KBUILD_TARGET),linux solaris)
+ VBoxOGLcrutil_INCS += \
+	$(VBOX_MESA_INCS)
+endif
 VBoxOGLcrutil_SOURCES       = \
 	util/bbox.c \
 	util/bufpool.c \
@@ -119,6 +123,10 @@ $(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c: $(PATH_SUB_CURRENT)/util/debug_opco
 VBoxOGLcrpacker_TEMPLATE = VBOXCROGLR3GUESTLIB
 VBoxOGLcrpacker_INCS = \
 	packer
+if1of ($(KBUILD_TARGET),linux solaris)
+ VBoxOGLcrpacker_INCS += \
+	$(VBOX_MESA_INCS)
+endif
 VBoxOGLcrpacker_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
@@ -249,6 +257,10 @@ $(VBOX_PATH_CROGL_GENFILES)/%_swap.c: $(PATH_SUB_CURRENT)/packer/%.c $(PATH_SUB_
 VBoxOGLspuload_TEMPLATE = VBOXCROGLR3GUESTLIB
 VBoxOGLspuload_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
+if1of ($(KBUILD_TARGET),linux solaris)
+ VBoxOGLspuload_INCS += \
+	$(VBOX_MESA_INCS)
+endif
 VBoxOGLspuload_SOURCES = \
 	spu_loader/spuinit.c \
 	spu_loader/spuload.c \
@@ -300,6 +312,10 @@ $(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h: $(PATH_SUB_CURRENT)/spu_loader
 VBoxOGLcrstate_TEMPLATE = VBOXCROGLR3GUESTLIB
 VBoxOGLcrstate_INCS = \
 	state_tracker
+if1of ($(KBUILD_TARGET),linux solaris)
+ VBoxOGLcrstate_INCS += \
+	$(VBOX_MESA_INCS)
+endif
 VBoxOGLcrstate_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
@@ -463,6 +479,10 @@ $(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h: $(addprefix $(PATH_SUB_CURREN
 VBoxOGLerrorspu_TEMPLATE = VBOXCROGLR3GUESTDLL
 VBoxOGLerrorspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
+if1of ($(KBUILD_TARGET),linux solaris)
+ VBoxOGLerrorspu_INCS += \
+	$(VBOX_MESA_INCS)
+endif
 VBoxOGLerrorspu_SOURCES = \
 	$(VBOX_PATH_CROGL_GENFILES)/errorspu.c \
 	error/errorspu_init.c

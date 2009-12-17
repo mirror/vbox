@@ -1611,6 +1611,18 @@ ifdef VBOX_WITH_CROGL
   VBOX_LIB_OGL_HOSTCRUTIL = $(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
  endif
 
+ if1of ($(KBUILD_TARGET),linux solaris)
+ # VBOX_PATH_MESA_SOURCE = $(PATH_ROOT)/src/libs/mesa-7.2
+  VBOX_PATH_MESA_SOURCE = $(VBOX_PATH_X11_ROOT)/mesa-7.2
+  VBOX_MESA_INCS = \
+        $(VBOX_PATH_MESA_SOURCE) \
+        $(VBOX_PATH_MESA_SOURCE)/include \
+        $(VBOX_PATH_MESA_SOURCE)/src/mesa/ \
+        $(VBOX_PATH_MESA_SOURCE)/src/mesa/glapi \
+        $(VBOX_PATH_MESA_SOURCE)/src/mesa/main \
+        $(VBOX_PATH_MESA_SOURCE)/src/mesa/drivers/dri/common
+ endif
+
  VBOX_DARWIN_OPENGL_INST     = obj/VBoxOGL/GL/
  VBOX_DARWIN_OPENGL_HEADERS  = gl.h glu.h
  SDK_DARWIN-OPENGL           = Workaround SDK for the darwin OpenGL include directorly layout layout.
