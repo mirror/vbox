@@ -604,6 +604,7 @@ MousePreInit(InputDriverPtr drv, IDevPtr dev, int flags)
 {
     InputInfoPtr pInfo;
     MouseDevPtr pMse;
+    Bool clearDTR, clearRTS;
     MessageType from = X_DEFAULT;
     const char *protocol;
     MouseProtocolID protocolID;
@@ -747,16 +748,20 @@ MousePreInit(InputDriverPtr drv, IDevPtr dev, int flags)
 		pMse->resolution);
     }
 
-    pMse->clearDTR = xf86SetBoolOption(pInfo->options, "ClearDTR", FALSE);
-    pMse->clearRTS = xf86SetBoolOption(pInfo->options, "ClearRTS", FALSE);
-    if (pMse->clearDTR || pMse->clearRTS) {
+    if ((clearDTR = xf86SetBoolOption(pInfo->options, "ClearDTR", FALSE)))
+		pMse->mouseFlags |= MF_CLEAR_DTR;
+
+    if ((clearRTS = xf86SetBoolOption(pInfo->options, "ClearRTS", FALSE)))
+		pMse->mouseFlags |= MF_CLEAR_RTS;
+
+    if (clearDTR || clearRTS) {
 	xf86Msg(X_CONFIG, "%s: ", pInfo->name);
-	if (pMse->clearDTR) {
+	if (clearDTR) {
 	    xf86ErrorF("ClearDTR");
-	    if (pMse->clearRTS)
+	    if (clearRTS)
 		xf86ErrorF(", ");
 	}
-	if (pMse->clearRTS) {
+	if (clearRTS) {
 	    xf86ErrorF("ClearRTS");
 	}
 	xf86ErrorF("\n");
