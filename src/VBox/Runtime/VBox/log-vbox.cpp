@@ -393,7 +393,7 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
             if (pszArgFileBuf)
             {
                 /* Retrieve the argument list */
-                rcBSD = sysctl(aiName, RT_ELEMENTS(aiName), NULL, &cchArgs, NULL, 0);
+                rcBSD = sysctl(aiName, RT_ELEMENTS(aiName), pszArgFileBuf, &cchArgs, NULL, 0);
                 if (!rcBSD)
                 {
                     /*
