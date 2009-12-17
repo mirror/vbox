@@ -111,6 +111,10 @@ static void     supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
 static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
+static void     supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys, uint64_t u64NanoTS, unsigned uUpdateHz);
+static void     supdrvGipTerm(PSUPGLOBALINFOPAGE pGip);
+static void     supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, uint64_t iTick);
+static void     supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, unsigned iCpu, uint64_t iTick);
 
 
 /*******************************************************************************
@@ -4588,14 +4592,13 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
 /**
  * Initializes the GIP data.
  *
- * @returns IPRT status code.
  * @param   pDevExt     Pointer to the device instance data.
  * @param   pGip        Pointer to the read-write kernel mapping of the GIP.
  * @param   HCPhys      The physical address of the GIP.
  * @param   u64NanoTS   The current nanosecond timestamp.
  * @param   uUpdateHz   The update freqence.
  */
-int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys, uint64_t u64NanoTS, unsigned uUpdateHz)
+static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys, uint64_t u64NanoTS, unsigned uUpdateHz)
 {
     unsigned i;
 #ifdef DEBUG_DARWIN_GIP
@@ -4645,8 +4648,6 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
     pDevExt->pGip = pGip;
     pDevExt->HCPhysGip = HCPhys;
     pDevExt->cGipUsers = 0;
-
-    return VINF_SUCCESS;
 }
 
 
@@ -4752,7 +4753,7 @@ bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *poffMin)
  *
  * @param   pGip        Pointer to the read-write kernel mapping of the GIP.
  */
-void VBOXCALL supdrvGipTerm(PSUPGLOBALINFOPAGE pGip)
+static void supdrvGipTerm(PSUPGLOBALINFOPAGE pGip)
 {
     unsigned i;
     pGip->u32Magic = 0;
@@ -4886,7 +4887,7 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
  * @param   u64TSC          The current TSC timesamp.
  * @param   iTick           The current timer tick.
  */
-void VBOXCALL supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, uint64_t iTick)
+static void supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, uint64_t iTick)
 {
     /*
      * Determin the relevant CPU data.
@@ -4955,7 +4956,7 @@ void VBOXCALL supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint6
  * @param   iCpu            The CPU index.
  * @param   iTick           The current timer tick.
  */
-void VBOXCALL supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, unsigned iCpu, uint64_t iTick)
+static void supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, unsigned iCpu, uint64_t iTick)
 {
     PSUPGIPCPU  pGipCpu;
 
