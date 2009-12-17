@@ -82,6 +82,10 @@ struct RTSEMRWINTERNAL
     volatile pthread_t  Writer;
     /** pthread rwlock. */
     pthread_rwlock_t    RWLock;
+#ifdef RTSEMRW_STRICT
+    /** The validator record for the writer. */
+    RTLOCKVALIDATORREC  ValidatorRec;
+#endif
 };
 
 
@@ -110,6 +114,9 @@ RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
                 pThis->cWrites = 0;
                 pThis->cWriterReads = 0;
                 pThis->Writer = (pthread_t)-1;
+#ifdef RTSEMRW_STRICT
+                RTLockValidatorInit(&pThis->ValidatorRec, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, NULL, pThis);
+#endif
                 *pRWSem = pThis;
                 return VINF_SUCCESS;
             }
@@ -130,9 +137,9 @@ RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
     /*
      * Validate input, nil handle is fine.
      */
-    if (RWSem == NIL_RTSEMRW)
-        return VINF_SUCCESS;
     struct RTSEMRWINTERNAL *pThis = RWSem;
+    if (pThis == NIL_RTSEMRW)
+        return VINF_SUCCESS;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
                     ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
@@ -144,15 +151,19 @@ RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
     /*
      * Try destroy it.
      */
+    AssertReturn(ASMAtomicCmpXchgU32(&pThis->u32Magic, ~RTSEMRW_MAGIC, RTSEMRW_MAGIC), VERR_INVALID_HANDLE);
     int rc = pthread_rwlock_destroy(&pThis->RWLock);
     if (!rc)
     {
-        pThis->u32Magic++;
+#ifdef RTSEMRW_STRICT
+        RTLockValidatorInit(&pThis->ValidatorRec, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, NULL, pThis);
+#endif
         RTMemFree(pThis);
         rc = VINF_SUCCESS;
     }
     else
     {
+        ASMAtomicWriteU32(&pThis->u32Magic, RTSEMRW_MAGIC);
         AssertMsgFailed(("Failed to destroy read-write sem %p, rc=%d.\n", RWSem, rc));
         rc = RTErrConvertFromErrno(rc);
     }
@@ -303,7 +314,7 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
 }
 
 
-RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
+DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, RTSEMRW_STRICT_POS_DECL)
 {
     /*
      * Validate input.
@@ -313,6 +324,10 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
     AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
                     ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
                     VERR_INVALID_HANDLE);
+#ifdef RTSEMRW_STRICT
+    RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
+    RTLockValidatorCheckOrder(&pThis->ValidatorRec, hThreadSelf, RTSEMRW_STRICT_POS_ARGS);
+#endif
 
     /*
      * Recursion?
@@ -322,18 +337,38 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
     ATOMIC_GET_PTHREAD_T(&pThis->Writer, &Writer);
     if (Writer == Self)
     {
+#ifdef RTSEMRW_STRICT
+        int rc9 = RTLockValidatorRecordRecursion(&pThis->ValidatorRec, RTSEMRW_STRICT_POS_ARGS);
+        if (RT_FAILURE(rc9))
+            return rc9;
+#endif
         Assert(pThis->cWrites < INT32_MAX);
         pThis->cWrites++;
         return VINF_SUCCESS;
     }
+#ifndef RTSEMRW_STRICT
+    RTTHREAD hThreadSelf = RTThreadSelf();
+#endif
 
     /*
      * Try lock it.
      */
+    if (cMillies)
+    {
+#ifdef RTSEMRW_STRICT
+        int rc9 = RTLockValidatorCheckBlocking(&pThis->ValidatorRec, hThreadSelf, RTTHREADSTATE_RW_WRITE, true, uId, RT_SRC_POS_ARGS);
+        if (RT_FAILURE(rc9))
+            return rc9;
+#else
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+#endif
+    }
+
     if (cMillies == RT_INDEFINITE_WAIT)
     {
         /* take rwlock */
         int rc = pthread_rwlock_wrlock(&pThis->RWLock);
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
         if (rc)
         {
             AssertMsgFailed(("Failed write lock read-write sem %p, rc=%d.\n", RWSem, rc));
@@ -364,6 +399,7 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 
         /* take rwlock */
         int rc = pthread_rwlock_timedwrlock(&pThis->RWLock, &ts);
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
         if (rc)
         {
             AssertMsg(rc == ETIMEDOUT, ("Failed read lock read-write sem %p, rc=%d.\n", RWSem, rc));
@@ -375,18 +411,51 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
     ATOMIC_SET_PTHREAD_T(&pThis->Writer, Self);
     pThis->cWrites = 1;
 #ifdef RTSEMRW_STRICT
-    RTTHREAD ThreadSelf = RTThreadSelf();
-    if (ThreadSelf != NIL_RTTHREAD)
-        RTLockValidatorWriteLockInc(ThreadSelf);
+    RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, RTSEMRW_STRICT_POS_ARGS);
 #endif
     return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
+{
+#ifndef RTSEMRW_STRICT
+    return rtSemRWRequestWrite(RWSem, cMillies, RTSEMRW_STRICT_POS_ARGS);
+#else
+    return RTSemRWRequestWriteDebug(RWSem, cMillies, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
+#endif
+}
+
+
+RTDECL(int) RTSemRWRequestWriteDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+#ifdef RTSEMRW_STRICT
+    return rtSemRWRequestWrite(RWSem, cMillies, RTSEMRW_STRICT_POS_ARGS);
+#else
+    return RTSemRWRequestWrite(RWSem, cMillies);
+#endif
 }
 
 
 RTDECL(int) RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies)
 {
     /* EINTR isn't returned by the wait functions we're using. */
+#ifndef RTSEMRW_STRICT
     return RTSemRWRequestWrite(RWSem, cMillies);
+#else
+    return RTSemRWRequestWriteDebug(RWSem, cMillies, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
+#endif
+}
+
+
+RTDECL(int) RTSemRWRequestWriteNoResumeDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    /* EINTR isn't returned by the wait functions we're using. */
+#ifdef RTSEMRW_STRICT
+    return RTSemRWRequestWriteDebug(RWSem, cMillies, RTSEMRW_STRICT_POS_ARGS);
+#else
+    return RTSemRWRequestWrite(RWSem, cMillies);
+#endif
 }
 
 
@@ -408,14 +477,25 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
     pthread_t Writer;
     ATOMIC_GET_PTHREAD_T(&pThis->Writer, &Writer);
     AssertMsgReturn(Writer == Self, ("pThis=%p\n", pThis), VERR_NOT_OWNER);
+    AssertReturn(pThis->cWriterReads == 0 || pThis->cWrites > 1, VERR_WRONG_ORDER);
+
     pThis->cWrites--;
     if (pThis->cWrites)
+    {
+#ifdef RTSEMRW_STRICT
+        RTLockValidatorRecordUnwind(&pThis->ValidatorRec);
+#endif
         return VINF_SUCCESS;
-    AssertReturn(!pThis->cWriterReads, VERR_WRONG_ORDER);
+    }
 
     /*
      * Try unlock it.
      */
+#ifdef RTSEMRW_STRICT
+    RTLockValidatorCheckReleaseOrder(&pThis->ValidatorRec);
+    RTLockValidatorUnsetOwner(&pThis->ValidatorRec);
+#endif
+
     ATOMIC_SET_PTHREAD_T(&pThis->Writer, (pthread_t)-1);
     int rc = pthread_rwlock_unlock(&pThis->RWLock);
     if (rc)
@@ -424,11 +504,6 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
         return RTErrConvertFromErrno(rc);
     }
 
-#ifdef RTSEMRW_STRICT
-    RTTHREAD ThreadSelf = RTThreadSelf();
-    if (ThreadSelf != NIL_RTTHREAD)
-        RTLockValidatorWriteLockDec(ThreadSelf);
-#endif
     return VINF_SUCCESS;
 }
 

@@ -246,7 +246,6 @@ RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies);
  *          Will not return VERR_INTERRUPTED.
  * @param   MutexSem            The mutex semaphore to request ownership over.
  * @param   cMillies            The number of milliseconds to wait.
- * @param   uId
  * @param   uId                 Some kind of locking location ID.  Typically a
  *                              return address up the stack.  Optional (0).
  * @param   pszFile             The file where the lock is being acquired from.
@@ -261,10 +260,8 @@ RTDECL(int)  RTSemMutexRequestDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHC
  * Debug version of RTSemMutexRequestNoResume that tracks the location.
  *
  * @returns iprt status code.
- *          Will not return VERR_INTERRUPTED.
  * @param   MutexSem            The mutex semaphore to request ownership over.
  * @param   cMillies            The number of milliseconds to wait.
- * @param   uId
  * @param   uId                 Some kind of locking location ID.  Typically a
  *                              return address up the stack.  Optional (0).
  * @param   pszFile             The file where the lock is being acquired from.
@@ -529,6 +526,40 @@ RTDECL(int)   RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies);
  * @param   cMillies    The number of milliseconds to wait.
  */
 RTDECL(int)   RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies);
+
+/**
+ * Debug version of RTSemRWRequestWrite that tracks the location.
+ *
+ * @returns IPRT status code, see RTSemRWRequestWrite.
+ * @param   RWSem               The Read/Write semaphore to request write access
+ *                              to.
+ * @param   cMillies            The number of milliseconds to wait.
+ * @param   uId                 Some kind of locking location ID.  Typically a
+ *                              return address up the stack.  Optional (0).
+ * @param   pszFile             The file where the lock is being acquired from.
+ *                              Optional.
+ * @param   iLine               The line number in that file.  Optional (0).
+ * @param   pszFunction         The functionn where the lock is being acquired
+ *                              from.  Optional.
+ */
+RTDECL(int)  RTSemRWRequestWriteDebug(RTSEMRW MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+
+/**
+ * Debug version of RTSemRWRequestWriteNoResume that tracks the location.
+ *
+ * @returns IPRT status code, see RTSemRWRequestWriteNoResume.
+ * @param   RWSem               The Read/Write semaphore to request write access
+ *                              to.
+ * @param   cMillies            The number of milliseconds to wait.
+ * @param   uId                 Some kind of locking location ID.  Typically a
+ *                              return address up the stack.  Optional (0).
+ * @param   pszFile             The file where the lock is being acquired from.
+ *                              Optional.
+ * @param   iLine               The line number in that file.  Optional (0).
+ * @param   pszFunction         The functionn where the lock is being acquired
+ *                              from.  Optional.
+ */
+RTDECL(int)  RTSemRWRequestWriteNoResumeDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
  * Release write access to a read/write semaphore.

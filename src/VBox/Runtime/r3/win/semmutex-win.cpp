@@ -161,16 +161,25 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned c
      * Lock mutex semaphore.
      */
     if (cMillies > 0)
-        RTSEMMUTEX_STRICT_BLOCK(hThreadSelf, &pThis->ValidatorRec);
+    {
+#ifdef RTSEMMUTEX_STRICT
+        int rc9 = RTLockValidatorCheckBlocking(&pThis->ValidatorRec, hThreadSelf,
+                                               RTTHREADSTATE_MUTEX, true, uId, RT_SRC_POS_ARGS);
+        if (RT_FAILURE(rc9))
+            return rc9;
+#else
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX);
+#endif
+    }
     int rc = WaitForSingleObjectEx(pThis->hMtx,
                                    cMillies == RT_INDEFINITE_WAIT ? INFINITE : cMillies,
                                    TRUE /*bAlertable*/);
-    RTSEMMUTEX_STRICT_UNBLOCK(hThreadSelf);
+    RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_MUTEX);
     switch (rc)
     {
         case WAIT_OBJECT_0:
 #ifdef RTSEMMUTEX_STRICT
-            RTLockValidatorWriteLockInc(RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, RTSEMMUTEX_STRICT_POS_ARGS));
+            RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, RTSEMMUTEX_STRICT_POS_ARGS);
 #endif
             return VINF_SUCCESS;
 
@@ -226,7 +235,7 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX MutexSem)
 #ifdef RTSEMMUTEX_STRICT
     if (   pThis->ValidatorRec.hThread != NIL_RTTHREAD
         && pThis->ValidatorRec.hThread == RTThreadSelf())
-        RTLockValidatorWriteLockDec(RTLockValidatorUnsetOwner(&pThis->ValidatorRec));
+        RTLockValidatorUnsetOwner(&pThis->ValidatorRec);
     else
         AssertMsgFailed(("%p hThread=%RTthrd\n", pThis, pThis->ValidatorRec.hThread));
 #endif
