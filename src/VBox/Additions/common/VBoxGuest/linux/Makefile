@@ -233,6 +233,10 @@ ifeq ($(KERN_VERSION), 24)
 # 2.4
 #
 
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+ KFLAGS  += -mcmodel=kernel
+endif
+
 CFLAGS := -O2 -DVBOX_LINUX_2_4 -DEXPORT_SYMTAB $(INCL) $(KFLAGS) $(KDEBUG)
 MODULE_EXT := o
 
