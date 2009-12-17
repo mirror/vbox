@@ -502,7 +502,7 @@ void VBoxProblemReporter::cannotLoadGlobalConfig (const CVirtualBox &vbox,
             "<p>The application will now terminate.</p>")
              .arg (vbox.GetSettingsFilePath()),
         !res.isOk() ? formatErrorInfo (res)
-                    : QString ("<p>%1.</p>").arg (vboxGlobal().emphasize (error)));
+                    : QString ("<!--EOM--><p>%1</p>").arg (vboxGlobal().emphasize (error)));
 }
 
 void VBoxProblemReporter::cannotSaveGlobalConfig (const CVirtualBox &vbox)
