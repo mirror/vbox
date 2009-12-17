@@ -1409,8 +1409,7 @@ public:
         glPushAttrib(GL_ALL_ATTRIB_BITS);
         glMatrixMode(GL_PROJECTION);
         glPushMatrix();
-//        glMatrixMode(GL_MODELVIEW);
-        setupMatricies(display);
+        setupMatricies(display, false);
         adjustViewport(display, viewport);
     }
 
@@ -1439,7 +1438,7 @@ protected:
     void initializeGL();
 
 private:
-    static void setupMatricies(const QSize &display);
+    static void setupMatricies(const QSize &display, bool bInvert);
     static void adjustViewport(const QSize &display, const QRect &viewport);
 
 

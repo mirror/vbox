@@ -1216,7 +1216,7 @@ VBoxVHWASurfaceBase::VBoxVHWASurfaceBase(class VBoxGLWidget *aWidget,
     setDefaultSrcOverlayCKey(pSrcOverlayCKey);
     resetDefaultSrcOverlayCKey();
 
-    mImage = vboxVHWAImageCreate(QRect(0,0,aSize.width(),aSize.height()), aColorFormat, getGlProgramMngr(), bVGA ? 0 : (VBOXVHWAIMG_PBO | VBOXVHWAIMG_PBOIMG/* | VBOXVHWAIMG_FBO*/));
+    mImage = vboxVHWAImageCreate(QRect(0,0,aSize.width(),aSize.height()), aColorFormat, getGlProgramMngr(), bVGA ? 0 : (VBOXVHWAIMG_PBO | VBOXVHWAIMG_PBOIMG /*| VBOXVHWAIMG_FBO*/));
 
     setRectValues(aTargRect, aSrcRect);
     setVisibleRectValues(aVisTargRect);
@@ -1993,11 +1993,15 @@ void VBoxGLWidget::adjustViewport(const QSize &display, const QRect &viewport)
                display.height());
 }
 
-void VBoxGLWidget::setupMatricies(const QSize &display)
+void VBoxGLWidget::setupMatricies(const QSize &display, bool bInverted)
 {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0., (GLdouble)display.width(), (GLdouble)display.height(), 0., -1., 1.);
+
+    if(bInverted)
+        glOrtho(0., (GLdouble)display.width(), (GLdouble)display.height(), 0., -1., 1.);
+    else
+        glOrtho(0., (GLdouble)display.width(), 0., (GLdouble)display.height(), -1., 1.);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -3849,7 +3853,7 @@ void VBoxGLWidget::vboxDoResize(void *resize)
 //    VBOXQGLLOG(("\n\n*******\n\n     viewport size is: (%d):(%d)\n\n*******\n\n", size().width(), size().height()));
     mViewport = QRect(0,0,displayWidth, displayHeight);
     adjustViewport(dispSize, mViewport);
-    setupMatricies(dispSize);
+    setupMatricies(dispSize, true);
 
 #ifdef VBOXQGL_DBG_SURF
     {
