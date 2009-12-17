@@ -2200,7 +2200,7 @@ ENV="$ODIR$ENV"
 CNF="$ODIR$CNF"
 
 # Print log warning about OSE if necessary
-if [ $NOT_OSE -eq 1 ]; then
+if [ -n "$NOT_OSE" ]; then
   echo "Found USB devices, assuming VBOX_OSE = FALSE" >> $LOG
   echo >> $LOG
 fi
