@@ -4544,8 +4544,8 @@ p, li { white-space: pre-wrap; }
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation>
-            <numerusform>Warnung: Sie erstellen einen Snapshot von einer laufenden Machine die %n unveränderliches Festplattenabbild angeschlossen hat. So lange Sie mit diesem Sicherungspunkt arbeiten wird das unveränderliche Festplattenabbild nicht zurück gesetzt um Datenverlust zu vermeiden.</numerusform>
-            <numerusform>Warnung: Sie erstellen einen Snapshot von einer laufenden Machine die %n unveränderliche Festplattenabbilder angeschlossen hat. So lange Sie mit diesen Sicherungspunkt arbeiten werden die unveränderlichen Festplattenabbilder nicht zurück gesetzt um Datenverlust zu vermeiden.</numerusform>
+            <numerusform>Warnung: Sie erstellen einen Snapshot von einer laufenden Machine, die %n unveränderliches Festplattenabbild angeschlossen hat. So lange Sie mit diesem Sicherungspunkt arbeiten, wird das unveränderliche Festplattenabbild nicht zurück gesetzt, um Datenverlust zu vermeiden.</numerusform>
+            <numerusform>Warnung: Sie erstellen einen Snapshot von einer laufenden Machine, die %n unveränderliche Festplattenabbilder angeschlossen hat. So lange Sie mit diesen Sicherungspunkt arbeiten, werden die unveränderlichen Festplattenabbilder nicht zurück gesetzt, um Datenverlust zu vermeiden.</numerusform>
         </translation>
     </message>
 </context>
