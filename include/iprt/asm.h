@@ -3042,12 +3042,11 @@ DECLINLINE(RTR3PTR) ASMAtomicXchgR3Ptr(RTR3PTR volatile *ppvR3, RTR3PTR pvR3)
  * @param   u8New       The new value to assigned to *pu8.
  * @param   u8Old       The old value to *pu8 compare with.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL || !RT_INLINE_ASM_GNU_STYLE
 DECLASM(bool) ASMAtomicCmpXchgU8(volatile uint8_t *pu8, const uint8_t u8New, const uint8_t u8Old);
 #else
 DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t *pu8, const uint8_t u8New, uint8_t u8Old)
 {
-# if RT_INLINE_ASM_GNU_STYLE
     uint8_t u8Ret;
     __asm__ __volatile__("lock; cmpxchgb %3, %0\n\t"
                          "setz  %1\n\t"
@@ -3058,29 +3057,6 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t *pu8, const uint8_t u8New, 
                            "2" (u8Old),
                            "m" (*pu8));
     return (bool)u8Ret;
-
-# else
-    uint8_t u8Ret;
-    __asm
-    {
-#  ifdef RT_ARCH_AMD64
-        mov     rdx, [pu8]
-#  else
-        mov     edx, [pu8]
-#  endif
-        mov     al, [u8Old]
-        mov     cl, [u8New]
-#  ifdef RT_ARCH_AMD64
-        lock cmpxchg [rdx], cl
-#  else
-        lock cmpxchg [edx], cl
-#  endif
-        setz    al
-        movzx   eax, al
-        mov     [u8Ret], eax
-    }
-    return !!u8Ret;
-# endif
 }
 #endif
 
