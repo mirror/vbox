@@ -134,7 +134,7 @@ typedef struct _VBOXRec
     pciVideoPtr pciInfo;
     PCITAG pciTag;
     CARD16 maxBytesPerScanline;
-    int mapPhys, mapOff, mapSize;	/* video memory */
+    unsigned long mapPhys, mapOff, mapSize;	/* video memory */
     void *base, *VGAbase;
     CARD8 *state, *pstate;	/* SVGA state */
     int statePage, stateSize, stateMode;
