@@ -62,6 +62,37 @@
 static RTSEMXROADS g_hLockValidatorXRoads = NIL_RTSEMXROADS;
 
 
+/**
+ * Copy a source position record.
+ *
+ * @param   pDst                The destination.
+ * @param   pSrc                The source.
+ */
+DECL_FORCE_INLINE(void) rtLockValidatorCopySrcPos(PRTLOCKVALIDATORSRCPOS pDst, PCRTLOCKVALIDATORSRCPOS pSrc)
+{
+    ASMAtomicUoWriteU32(&pDst->uLine,                           pSrc->uLine);
+    ASMAtomicUoWritePtr((void * volatile *)&pDst->pszFile,      pSrc->pszFile);
+    ASMAtomicUoWritePtr((void * volatile *)&pDst->pszFunction,  pSrc->pszFunction);
+    ASMAtomicUoWritePtr((void * volatile *)&pDst->uId,          (void *)pSrc->uId);
+}
+
+
+/**
+ * Init a source position record.
+ *
+ * @param   pSrcPos             The source position record.
+ */
+DECL_FORCE_INLINE(void) rtLockValidatorInitSrcPos(PRTLOCKVALIDATORSRCPOS pSrcPos)
+{
+    pSrcPos->pszFile        = NULL;
+    pSrcPos->pszFunction    = NULL;
+    pSrcPos->uId            = 0;
+    pSrcPos->uLine          = 0;
+#if HC_ARCH_BITS == 64
+    pSrcPos->u32Padding     = 0;
+#endif
+}
+
 
 /**
  * Serializes destruction of RTLOCKVALIDATORREC and RTTHREADINT structures.
@@ -112,10 +143,7 @@ RTDECL(void) RTLockValidatorInit(PRTLOCKVALIDATORREC pRec, RTLOCKVALIDATORCLASS 
                                  uint32_t uSubClass, const char *pszName, void *hLock)
 {
     pRec->u32Magic      = RTLOCKVALIDATORREC_MAGIC;
-    pRec->uLine         = 0;
-    pRec->pszFile       = NULL;
-    pRec->pszFunction   = NULL;
-    pRec->uId           = 0;
+    rtLockValidatorInitSrcPos(&pRec->SrcPos);
     pRec->hThread       = NIL_RTTHREAD;
     pRec->pDown         = NULL;
     pRec->hClass        = hClass;
@@ -178,7 +206,7 @@ RTDECL(void) RTLockValidatorDestroy(PRTLOCKVALIDATORREC *ppRec)
 }
 
 
-RTDECL(int) RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
     AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
 
@@ -204,7 +232,7 @@ RTDECL(int)  RTLockValidatorCheckReleaseOrder(PRTLOCKVALIDATORREC pRec)
 }
 
 
-RTDECL(int) RTLockValidatorRecordRecursion(PRTLOCKVALIDATORREC pRec, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTLockValidatorRecordRecursion(PRTLOCKVALIDATORREC pRec, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
     AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(pRec->hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
@@ -226,7 +254,7 @@ RTDECL(void) RTLockValidatorRecordUnwind(PRTLOCKVALIDATORREC pRec)
 }
 
 
-RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
     AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, NIL_RTTHREAD);
 
@@ -247,12 +275,8 @@ RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
         /*
          * Update the record.
          */
-        ASMAtomicUoWriteU32(&pRec->uLine, iLine);
-        ASMAtomicUoWritePtr((void * volatile *)&pRec->pszFile,      pszFile);
-        ASMAtomicUoWritePtr((void * volatile *)&pRec->pszFunction,  pszFunction);
-        ASMAtomicUoWritePtr((void * volatile *)&pRec->uId,          (void *)uId);
+        rtLockValidatorCopySrcPos(&pRec->SrcPos, pSrcPos);
         ASMAtomicUoWriteU32(&pRec->cRecursion, 1);
-
         ASMAtomicWriteHandle(&pRec->hThread, hThread);
 
         /*
@@ -368,13 +392,12 @@ RT_EXPORT_SYMBOL(RTLockValidatorReadLockDec);
  * @param   pThread         This thread.
  * @param   pCur            The thread we're deadlocking with.
  * @param   enmState        The sleep state.
- * @param   RT_SRC_POS_DECL Where we are going to deadlock.
- * @param   uId             Where we are going to deadlock.
+ * @param   pSrcPos         Where we are going to deadlock.
  */
 static void rtLockValidatorComplainAboutDeadlock(PRTLOCKVALIDATORREC pRec, PRTTHREADINT pThread, RTTHREADSTATE enmState,
-                                                 PRTTHREADINT pCur, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+                                                 PRTTHREADINT pCur, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
-    AssertMsg1(pCur == pThread ? "!!Deadlock detected!!" : "!!Deadlock exists!!", iLine, pszFile, pszFunction);
+    AssertMsg1(pCur == pThread ? "!!Deadlock detected!!" : "!!Deadlock exists!!", pSrcPos->uLine, pSrcPos->pszFile, pSrcPos->pszFunction);
 
     /*
      * Print the threads and locks involved.
@@ -389,8 +412,8 @@ static void rtLockValidatorComplainAboutDeadlock(PRTLOCKVALIDATORREC pRec, PRTTH
          */
         AssertMsg2(" #%u: %RTthrd/%RTnthrd %s: %s(%u) %RTptr\n",
                    iEntry, pCur, pCur->Core.Key, pCur->szName,
-                   pCur->LockValidator.pszBlockFile, pCur->LockValidator.uBlockLine,
-                   pCur->LockValidator.pszBlockFunction, pCur->LockValidator.uBlockId);
+                   pCur->LockValidator.SrcPos.pszFile, pCur->LockValidator.SrcPos.uLine,
+                   pCur->LockValidator.SrcPos.pszFunction, pCur->LockValidator.SrcPos.uId);
         PRTTHREADINT  pNext       = NULL;
         RTTHREADSTATE enmCurState = rtThreadGetState(pCur);
         switch (enmCurState)
@@ -417,7 +440,7 @@ static void rtLockValidatorComplainAboutDeadlock(PRTLOCKVALIDATORREC pRec, PRTTH
                 {
                     AssertMsg2("     Waiting on %s %p [%s]: Entered %s(%u) %s %p\n",
                                RTThreadStateName(enmCurState), pCurRec->hLock, pCurRec->pszName,
-                               pCurRec->pszFile, pCurRec->uLine, pCurRec->pszFunction, pCurRec->uId);
+                               pCurRec->SrcPos.pszFile, pCurRec->SrcPos.uLine, pCurRec->SrcPos.pszFunction, pCurRec->SrcPos.uId);
                     pNext = pCurRec->hThread;
                 }
                 else if (VALID_PTR(pCurRec))
@@ -460,7 +483,7 @@ static void rtLockValidatorComplainAboutDeadlock(PRTLOCKVALIDATORREC pRec, PRTTH
 
 RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread,
                                          RTTHREADSTATE enmState, bool fRecursiveOk,
-                                         RTHCUINTPTR uId, RT_SRC_POS_DECL)
+                                         PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
     /*
      * Fend off wild life.
@@ -481,14 +504,8 @@ RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
      * Record the location and everything before changing the state and
      * performing deadlock detection.
      */
-    /** @todo This has to be serialized! The deadlock detection isn't 100% safe!!! */
-    pThread->LockValidator.pRec             = pRec;
-    pThread->LockValidator.pszBlockFunction = pszFunction;
-    pThread->LockValidator.pszBlockFile     = pszFile;
-    pThread->LockValidator.uBlockLine       = iLine;
-    pThread->LockValidator.uBlockId         = uId;
-
-    RTThreadBlocking(hThread, enmState);
+    pThread->LockValidator.pRec = pRec;
+    rtLockValidatorCopySrcPos(&pThread->LockValidator.SrcPos, pSrcPos);
 
     /*
      * Don't do deadlock detection if we're recursing and that's OK.
@@ -603,7 +620,7 @@ RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
     /*
      * Ok, if we ever get here, it's most likely a genuine deadlock.
      */
-    rtLockValidatorComplainAboutDeadlock(pRec, pThread, enmState, pCur, uId, RT_SRC_POS_ARGS);
+    rtLockValidatorComplainAboutDeadlock(pRec, pThread, enmState, pCur, pSrcPos);
 
     rtLockValidatorSerializeDetectionLeave();
 

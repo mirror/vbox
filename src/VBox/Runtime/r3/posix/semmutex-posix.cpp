@@ -154,7 +154,7 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
 }
 
 
-DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, RTSEMMUTEX_STRICT_POS_DECL)
+DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
     /*
      * Validate input.
@@ -165,7 +165,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
 
 #ifdef RTSEMMUTEX_STRICT
     RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
-    RTLockValidatorCheckOrder(&pThis->ValidatorRec, hThreadSelf, RTSEMMUTEX_STRICT_POS_ARGS);
+    RTLockValidatorCheckOrder(&pThis->ValidatorRec, hThreadSelf, pSrcPos);
 #endif
 
     /*
@@ -189,12 +189,11 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
     {
 #ifdef RTSEMMUTEX_STRICT
         int rc9 = RTLockValidatorCheckBlocking(&pThis->ValidatorRec, hThreadSelf,
-                                               RTTHREADSTATE_MUTEX, true, uId, RT_SRC_POS_ARGS);
+                                               RTTHREADSTATE_MUTEX, true, pSrcPos);
         if (RT_FAILURE(rc9))
             return rc9;
-#else
-        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX);
 #endif
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX);
     }
 
     if (cMillies == RT_INDEFINITE_WAIT)
@@ -247,7 +246,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
     pThis->Owner = Self;
     ASMAtomicWriteU32(&pThis->cNesting, 1);
 #ifdef RTSEMMUTEX_STRICT
-    RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, RTSEMMUTEX_STRICT_POS_ARGS);
+    RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, pSrcPos);
 #endif
 
     return VINF_SUCCESS;
@@ -257,42 +256,37 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
 RTDECL(int) RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
 {
 #ifndef RTSEMMUTEX_STRICT
-    return rtSemMutexRequest(MutexSem, cMillies, RTSEMMUTEX_STRICT_POS_ARGS);
+    return rtSemMutexRequest(MutexSem, cMillies, NULL);
 #else
-    return RTSemMutexRequestDebug(MutexSem, cMillies, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    return rtSemMutexRequest(MutexSem, cMillies, &SrcPos);
 #endif
 }
 
 
 RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-#ifdef RTSEMMUTEX_STRICT
-    return rtSemMutexRequest(MutexSem, cMillies, RTSEMMUTEX_STRICT_POS_ARGS);
-#else
-    return RTSemMutexRequest(MutexSem, cMillies);
-#endif
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    return rtSemMutexRequest(MutexSem, cMillies, &SrcPos);
 }
 
 
 RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
 {
-    /* EINTR isn't returned by the wait functions we're using. */
+    /* (EINTR isn't returned by the wait functions we're using.) */
 #ifndef RTSEMMUTEX_STRICT
-    return RTSemMutexRequest(MutexSem, cMillies);
+    return rtSemMutexRequest(MutexSem, cMillies, NULL);
 #else
-    return RTSemMutexRequestDebug(MutexSem, cMillies, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    return rtSemMutexRequest(MutexSem, cMillies, &SrcPos);
 #endif
 }
 
 
 RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    /* EINTR isn't returned by the wait functions we're using. */
-#ifdef RTSEMMUTEX_STRICT
-    return RTSemMutexRequestDebug(MutexSem, cMillies, RTSEMMUTEX_STRICT_POS_ARGS);
-#else
-    return RTSemMutexRequest(MutexSem, cMillies);
-#endif
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    return rtSemMutexRequest(MutexSem, cMillies, &SrcPos);
 }
 
 

@@ -34,11 +34,6 @@
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
 
-#ifdef IN_RC
-# error "There are no threading APIs available Guest Context!"
-#endif
-
-
 
 RT_C_DECLS_BEGIN
 
@@ -86,61 +81,6 @@ typedef enum RTTHREADSTATE
 
 /** Checks if a thread state indicates that the thread is sleeping. */
 #define RTTHREAD_IS_SLEEPING(enmState) ((enmState) >= RTTHREADSTATE_CRITSECT)
-
-/**
- * Get the thread handle of the current thread.
- *
- * @returns Thread handle.
- */
-RTDECL(RTTHREAD) RTThreadSelf(void);
-
-/**
- * Get the thread handle of the current thread, automatically adopting alien
- * threads.
- *
- * @returns Thread handle.
- */
-RTDECL(RTTHREAD) RTThreadSelfAutoAdopt(void);
-
-/**
- * Get the native thread handle of the current thread.
- *
- * @returns Native thread handle.
- */
-RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void);
-
-/**
- * Millisecond granular sleep function.
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_INTERRUPTED if a signal or other asynchronous stuff happend
- *          which interrupt the peaceful sleep.
- * @param   cMillies    Number of milliseconds to sleep.
- *                      0 milliseconds means yielding the timeslice - deprecated!
- * @remark  See RTThreadNanoSleep() for sleeping for smaller periods of time.
- */
-RTDECL(int) RTThreadSleep(unsigned cMillies);
-
-/**
- * Yields the CPU.
- *
- * @returns true if we yielded.
- * @returns false if it's probable that we didn't yield.
- */
-RTDECL(bool) RTThreadYield(void);
-
-
-
-/**
- * Thread function.
- *
- * @returns 0 on success.
- * @param   ThreadSelf  Thread handle to this thread.
- * @param   pvUser      User argument.
- */
-typedef DECLCALLBACK(int) FNRTTHREAD(RTTHREAD ThreadSelf, void *pvUser);
-/** Pointer to a FNRTTHREAD(). */
-typedef FNRTTHREAD *PFNRTTHREAD;
 
 /**
  * Thread types.
@@ -224,6 +164,63 @@ typedef enum RTTHREADTYPE
     RTTHREADTYPE_END
 } RTTHREADTYPE;
 
+
+#ifndef IN_RC
+
+/**
+ * Get the thread handle of the current thread.
+ *
+ * @returns Thread handle.
+ */
+RTDECL(RTTHREAD) RTThreadSelf(void);
+
+/**
+ * Get the thread handle of the current thread, automatically adopting alien
+ * threads.
+ *
+ * @returns Thread handle.
+ */
+RTDECL(RTTHREAD) RTThreadSelfAutoAdopt(void);
+
+/**
+ * Get the native thread handle of the current thread.
+ *
+ * @returns Native thread handle.
+ */
+RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void);
+
+/**
+ * Millisecond granular sleep function.
+ *
+ * @returns VINF_SUCCESS on success.
+ * @returns VERR_INTERRUPTED if a signal or other asynchronous stuff happend
+ *          which interrupt the peaceful sleep.
+ * @param   cMillies    Number of milliseconds to sleep.
+ *                      0 milliseconds means yielding the timeslice - deprecated!
+ * @remark  See RTThreadNanoSleep() for sleeping for smaller periods of time.
+ */
+RTDECL(int) RTThreadSleep(unsigned cMillies);
+
+/**
+ * Yields the CPU.
+ *
+ * @returns true if we yielded.
+ * @returns false if it's probable that we didn't yield.
+ */
+RTDECL(bool) RTThreadYield(void);
+
+
+
+/**
+ * Thread function.
+ *
+ * @returns 0 on success.
+ * @param   ThreadSelf  Thread handle to this thread.
+ * @param   pvUser      User argument.
+ */
+typedef DECLCALLBACK(int) FNRTTHREAD(RTTHREAD ThreadSelf, void *pvUser);
+/** Pointer to a FNRTTHREAD(). */
+typedef FNRTTHREAD *PFNRTTHREAD;
 
 /**
  * Thread creation flags.
@@ -442,7 +439,7 @@ RTDECL(int) RTThreadUserReset(RTTHREAD Thread);
  */
 RTDECL(int) RTThreadPoke(RTTHREAD hThread);
 
-#ifdef IN_RING0
+# ifdef IN_RING0
 
 /**
  * Check if preemption is currently enabled or not for the current thread.
@@ -489,7 +486,7 @@ typedef struct RTTHREADPREEMPTSTATE
 {
     /** In debug builds this will be used to check for cpu migration. */
     RTCPUID         idCpu;
-#ifdef RT_OS_WINDOWS
+#  ifdef RT_OS_WINDOWS
     /** The old IRQL. Don't touch! */
     unsigned char   uchOldIrql;
     /** Reserved, MBZ. */
@@ -498,16 +495,16 @@ typedef struct RTTHREADPREEMPTSTATE
     uint8_t         bReserved2;
     /** Reserved, MBZ. */
     uint8_t         bReserved3;
-# define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, 255, 0, 0, 0 }
-#elif defined(RT_OS_SOLARIS)
+#   define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, 255, 0, 0, 0 }
+#  elif defined(RT_OS_SOLARIS)
     /** The Old PIL. Don't touch! */
     uint32_t        uOldPil;
-# define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, UINT32_MAX }
-#else
+#   define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, UINT32_MAX }
+#  else
     /** Reserved, MBZ. */
     uint32_t        u32Reserved;
-# define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, 0 }
-#endif
+#   define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, 0 }
+#  endif
 } RTTHREADPREEMPTSTATE;
 /** Pointer to a preemption state. */
 typedef RTTHREADPREEMPTSTATE *PRTTHREADPREEMPTSTATE;
@@ -541,10 +538,10 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState);
  */
 RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread);
 
-#endif /* IN_RING0 */
+# endif /* IN_RING0 */
 
 
-#ifdef IN_RING3
+# ifdef IN_RING3
 
 /**
  * Adopts a non-IPRT thread.
@@ -701,7 +698,8 @@ RTR3DECL(int) RTTlsSet(RTTLS iTls, void *pvValue);
 
 /** @} */
 
-#endif /* IN_RING3 */
+# endif /* IN_RING3 */
+# endif /* !IN_RC */
 
 /** @} */
 

@@ -57,28 +57,12 @@
 # define RTSEMMUTEX_STRICT
 #endif
 
-#ifdef RTSEMMUTEX_STRICT
-# define RTSEMMUTEX_STRICT_POS_DECL             RTHCUINTPTR uId, RT_SRC_POS_DECL
-# define RTSEMMUTEX_STRICT_POS_ARGS             uId, RT_SRC_POS_ARGS
-#else
-# define RTSEMMUTEX_STRICT_POS_DECL             int iDummy
-# define RTSEMMUTEX_STRICT_POS_ARGS             0
-#endif
-
 
 /** @def RTSEMRW_STRICT
  * Enables strictness checks and lock accounting of the RTSemRW API.
  */
 #if defined(DOXYGEN_RUNNING) || (!defined(RTSEMRW_STRICT) && defined(IN_RING3) && (defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT)))
 # define RTSEMRW_STRICT
-#endif
-
-#ifdef RTSEMRW_STRICT
-# define RTSEMRW_STRICT_POS_DECL                RTHCUINTPTR uId, RT_SRC_POS_DECL
-# define RTSEMRW_STRICT_POS_ARGS                uId, RT_SRC_POS_ARGS
-#else
-# define RTSEMRW_STRICT_POS_DECL                int iDummy
-# define RTSEMRW_STRICT_POS_ARGS                0
 #endif
 
 

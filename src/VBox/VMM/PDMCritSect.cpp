@@ -395,10 +395,7 @@ VMMR3DECL(bool) PDMR3CritSectYield(PPDMCRITSECT pCritSect)
         return false;
 
 #ifdef PDMCRITSECT_STRICT
-    const char * const pszFile      = pCritSect->s.Core.pValidatorRec->pszFile;
-    const char * const pszFunction  = pCritSect->s.Core.pValidatorRec->pszFunction;
-    uint32_t     const iLine        = pCritSect->s.Core.pValidatorRec->uLine;
-    RTHCUINTPTR  const uId          = pCritSect->s.Core.pValidatorRec->uId;
+    RTLOCKVALIDATORSRCPOS const SrcPos = pCritSect->s.Core.pValidatorRec->SrcPos;
 #endif
     PDMCritSectLeave(pCritSect);
 
@@ -422,7 +419,8 @@ VMMR3DECL(bool) PDMR3CritSectYield(PPDMCRITSECT pCritSect)
     }
 
 #ifdef PDMCRITSECT_STRICT
-    int rc = PDMCritSectEnterDebug(pCritSect, VERR_INTERNAL_ERROR, uId, pszFile, iLine, pszFunction);
+    int rc = PDMCritSectEnterDebug(pCritSect, VERR_INTERNAL_ERROR,
+                                   SrcPos.uId, SrcPos.pszFile, SrcPos.uLine, SrcPos.pszFunction);
 #else
     int rc = PDMCritSectEnter(pCritSect, VERR_INTERNAL_ERROR);
 #endif

@@ -137,11 +137,11 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
  * Internal worker for RTSemMutexRequestNoResume and it's debug companion.
  *
  * @returns Same as RTSEmMutexRequestNoResume
- * @param   MutexSem                    The mutex handle.
- * @param   cMillies                    The number of milliseconds to wait.
- * @param   TSEMMUTEX_STRICT_POS_DECL   The source position of the caller.
+ * @param   MutexSem            The mutex handle.
+ * @param   cMillies            The number of milliseconds to wait.
+ * @param   pSrcPos             The source position of the caller.
  */
-DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies, RTSEMMUTEX_STRICT_POS_DECL)
+DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
     /*
      * Validate.
@@ -152,7 +152,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned c
 
 #ifdef RTSEMMUTEX_STRICT
     RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
-    RTLockValidatorCheckOrder(&pThis->ValidatorRec, hThreadSelf, RTSEMMUTEX_STRICT_POS_ARGS);
+    RTLockValidatorCheckOrder(&pThis->ValidatorRec, hThreadSelf, pSrcPos);
 #else
     RTTHREAD hThreadSelf = RTThreadSelf();
 #endif
@@ -164,12 +164,11 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned c
     {
 #ifdef RTSEMMUTEX_STRICT
         int rc9 = RTLockValidatorCheckBlocking(&pThis->ValidatorRec, hThreadSelf,
-                                               RTTHREADSTATE_MUTEX, true, uId, RT_SRC_POS_ARGS);
+                                               RTTHREADSTATE_MUTEX, true, pSrcPos);
         if (RT_FAILURE(rc9))
             return rc9;
-#else
-        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX);
 #endif
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX);
     }
     int rc = WaitForSingleObjectEx(pThis->hMtx,
                                    cMillies == RT_INDEFINITE_WAIT ? INFINITE : cMillies,
@@ -179,7 +178,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned c
     {
         case WAIT_OBJECT_0:
 #ifdef RTSEMMUTEX_STRICT
-            RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, RTSEMMUTEX_STRICT_POS_ARGS);
+            RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, pSrcPos);
 #endif
             return VINF_SUCCESS;
 
@@ -203,20 +202,18 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned c
 RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
 {
 #ifndef RTSEMMUTEX_STRICT
-    return rtSemMutexRequestNoResume(MutexSem, cMillies, RTSEMMUTEX_STRICT_POS_ARGS);
+    return rtSemMutexRequestNoResume(MutexSem, cMillies, NULL);
 #else
-    return RTSemMutexRequestNoResumeDebug(MutexSem, cMillies, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    return rtSemMutexRequestNoResume(MutexSem, cMillies, &SrcPos);
 #endif
 }
 
 
 RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-#ifdef RTSEMMUTEX_STRICT
-    return rtSemMutexRequestNoResume(MutexSem, cMillies, RTSEMMUTEX_STRICT_POS_ARGS);
-#else
-    return RTSemMutexRequestNoResume(MutexSem, cMillies);
-#endif
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    return rtSemMutexRequestNoResume(MutexSem, cMillies, &SrcPos);
 }
 
 

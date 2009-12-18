@@ -51,22 +51,6 @@
 /** The number loops to spin for in the raw-mode context. */
 #define PDMCRITSECT_SPIN_COUNT_RC       256
 
-#ifdef PDMCRITSECT_STRICT
-# define PDMCRITSECT_STRICT_POS_DECL            RTHCUINTPTR uId, RT_SRC_POS_DECL
-# define PDMCRITSECT_STRICT_POS_ARGS            uId, RT_SRC_POS_ARGS
-# define PDMCRITSECT_STRICT_BLOCK_RET(hThread, pRec, fRecursive) \
-    do { \
-        int rc9 = RTLockValidatorCheckBlocking(pRec, (hThread), RTTHREADSTATE_CRITSECT, fRecursive, uId, RT_SRC_POS_ARGS); \
-        if (RT_FAILURE(rc9)) \
-            return rc9; \
-    } while (0)
-#else
-# define PDMCRITSECT_STRICT_POS_DECL            int iDummy
-# define PDMCRITSECT_STRICT_POS_ARGS            0
-# define PDMCRITSECT_STRICT_BLOCK_RET(hThread, pRec, fRecursive) \
-                                                RTThreadBlocking((hThread), RTTHREADSTATE_CRITSECT)
-#endif
-#define  PDMCRITSECT_STRICT_UNBLOCK(hThread)    RTThreadUnblocked((hThread), RTTHREADSTATE_CRITSECT)
 
 /* Undefine the automatic VBOX_STRICT API mappings. */
 #undef PDMCritSectEnter
@@ -103,7 +87,7 @@ DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectGetNativeSelf(PCPDMCRITSECT pCritSe
  * @param   pCritSect       The critical section.
  * @param   hNativeSelf     The native handle of this thread.
  */
-DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PDMCRITSECT_STRICT_POS_DECL)
+DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
     AssertMsg(pCritSect->s.Core.NativeThreadOwner == NIL_RTNATIVETHREAD, ("NativeThreadOwner=%p\n", pCritSect->s.Core.NativeThreadOwner));
     Assert(!(pCritSect->s.Core.fFlags & PDMCRITSECT_FLAGS_PENDING_UNLOCK));
@@ -112,7 +96,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
     ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, hNativeSelf);
 
 # ifdef PDMCRITSECT_STRICT
-    RTLockValidatorSetOwner(pCritSect->s.Core.pValidatorRec, NIL_RTTHREAD, PDMCRITSECT_STRICT_POS_ARGS);
+    RTLockValidatorSetOwner(pCritSect->s.Core.pValidatorRec, NIL_RTTHREAD, pSrcPos);
 # endif
 
     STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
@@ -128,37 +112,45 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
  * @param   pCritSect           The critsect.
  * @param   hNativeSelf         The native thread handle.
  */
-static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PDMCRITSECT_STRICT_POS_DECL)
+static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
     /*
      * Start waiting.
      */
     if (ASMAtomicIncS32(&pCritSect->s.Core.cLockers) == 0)
-        return pdmCritSectEnterFirst(pCritSect, hNativeSelf, PDMCRITSECT_STRICT_POS_ARGS);
+        return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
     STAM_COUNTER_INC(&pCritSect->s.StatContentionR3);
 
     /*
      * The wait loop.
      */
-    PSUPDRVSESSION  pSession = pCritSect->s.CTX_SUFF(pVM)->pSession;
-    SUPSEMEVENT     hEvent   = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
+    PSUPDRVSESSION  pSession    = pCritSect->s.CTX_SUFF(pVM)->pSession;
+    SUPSEMEVENT     hEvent      = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
 # ifdef PDMCRITSECT_STRICT
-    RTTHREAD        hSelf    = RTThreadSelfAutoAdopt();
-    int rc2 = RTLockValidatorCheckOrder(pCritSect->s.Core.pValidatorRec, hSelf, 0, NULL, 0, NULL);
+    RTTHREAD        hThreadSelf = RTThreadSelfAutoAdopt();
+    int rc2 = RTLockValidatorCheckOrder(pCritSect->s.Core.pValidatorRec, hThreadSelf, pSrcPos);
     if (RT_FAILURE(rc2))
         return rc2;
 # else
-    RTTHREAD        hSelf    = RTThreadSelf();
+    RTTHREAD        hThreadSelf = RTThreadSelf();
 # endif
     for (;;)
     {
-        PDMCRITSECT_STRICT_BLOCK_RET(hSelf, pCritSect->s.Core.pValidatorRec, !(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NO_NESTING));
+# ifdef PDMCRITSECT_STRICT
+        int rc9 = RTLockValidatorCheckBlocking(pCritSect->s.Core.pValidatorRec, hThreadSelf, RTTHREADSTATE_CRITSECT,
+                                               !(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NO_NESTING), pSrcPos);
+        if (RT_FAILURE(rc9))
+            return rc9;
+# endif
+
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_CRITSECT);
         int rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_INDEFINITE_WAIT);
-        PDMCRITSECT_STRICT_UNBLOCK(hSelf);
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_CRITSECT);
+
         if (RT_UNLIKELY(pCritSect->s.Core.u32Magic != RTCRITSECT_MAGIC))
             return VERR_SEM_DESTROYED;
         if (rc == VINF_SUCCESS)
-            return pdmCritSectEnterFirst(pCritSect, hNativeSelf, PDMCRITSECT_STRICT_POS_ARGS);
+            return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
         AssertMsg(rc == VERR_INTERRUPTED, ("rc=%Rrc\n", rc));
     }
     /* won't get here */
@@ -177,7 +169,7 @@ static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hN
  * @param   rcBusy              The status code to return when we're in GC or R0
  *                              and the section is busy.
  */
-DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PDMCRITSECT_STRICT_POS_DECL)
+DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
     Assert(pCritSect->s.Core.cNestings < 8);  /* useful to catch incorrect locking */
 
@@ -194,7 +186,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PDMC
     RTNATIVETHREAD hNativeSelf = pdmCritSectGetNativeSelf(pCritSect);
     /* Not owned ... */
     if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
-        return pdmCritSectEnterFirst(pCritSect, hNativeSelf, PDMCRITSECT_STRICT_POS_ARGS);
+        return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
 
     /* ... or nested. */
     if (pCritSect->s.Core.NativeThreadOwner == hNativeSelf)
@@ -214,7 +206,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PDMC
     while (cSpinsLeft-- > 0)
     {
         if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
-            return pdmCritSectEnterFirst(pCritSect, hNativeSelf, PDMCRITSECT_STRICT_POS_ARGS);
+            return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
         ASMNopPause();
         /** @todo Should use monitor/mwait on e.g. &cLockers here, possibly with a
            cli'ed pendingpreemption check up front using sti w/ instruction fusing
@@ -227,7 +219,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PDMC
     /*
      * Take the slow path.
      */
-    return pdmR3CritSectEnterContended(pCritSect, hNativeSelf, PDMCRITSECT_STRICT_POS_ARGS);
+    return pdmR3CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
 #else
     /*
      * Return busy.
@@ -253,10 +245,10 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PDMC
 VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
 {
 #ifndef PDMCRITSECT_STRICT
-    return pdmCritSectEnter(pCritSect, rcBusy, PDMCRITSECT_STRICT_POS_ARGS);
+    return pdmCritSectEnter(pCritSect, rcBusy, NULL);
 #else
-    /* No need for a second code instance. */
-    return PDMCritSectEnterDebug(pCritSect, rcBusy, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    return pdmCritSectEnter(pCritSect, rcBusy, &SrcPos);
 #endif
 }
 
@@ -282,10 +274,10 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
 VMMDECL(int) PDMCritSectEnterDebug(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
 #ifdef PDMCRITSECT_STRICT
-    return pdmCritSectEnter(pCritSect, rcBusy, PDMCRITSECT_STRICT_POS_ARGS);
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    return pdmCritSectEnter(pCritSect, rcBusy, &SrcPos);
 #else
-    /* No need for a second code instance. */
-    return PDMCritSectEnter(pCritSect, rcBusy);
+    return pdmCritSectEnter(pCritSect, rcBusy, NULL);
 #endif
 }
 
@@ -300,7 +292,7 @@ VMMDECL(int) PDMCritSectEnterDebug(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTP
  *
  * @param   pCritSect   The critical section.
  */
-static int pdmCritSectTryEnter(PPDMCRITSECT pCritSect, PDMCRITSECT_STRICT_POS_DECL)
+static int pdmCritSectTryEnter(PPDMCRITSECT pCritSect, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
     /*
      * If the critical section has already been destroyed, then inform the caller.
@@ -315,7 +307,7 @@ static int pdmCritSectTryEnter(PPDMCRITSECT pCritSect, PDMCRITSECT_STRICT_POS_DE
     RTNATIVETHREAD hNativeSelf = pdmCritSectGetNativeSelf(pCritSect);
     /* Not owned ... */
     if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
-        return pdmCritSectEnterFirst(pCritSect, hNativeSelf, PDMCRITSECT_STRICT_POS_ARGS);
+        return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
 
     /* ... or nested. */
     if (pCritSect->s.Core.NativeThreadOwner == hNativeSelf)
@@ -354,10 +346,10 @@ static int pdmCritSectTryEnter(PPDMCRITSECT pCritSect, PDMCRITSECT_STRICT_POS_DE
 VMMDECL(int) PDMCritSectTryEnter(PPDMCRITSECT pCritSect)
 {
 #ifndef PDMCRITSECT_STRICT
-    return pdmCritSectTryEnter(pCritSect, PDMCRITSECT_STRICT_POS_ARGS);
+    return pdmCritSectTryEnter(pCritSect, NULL);
 #else
-    /* No need for a second code instance. */
-    return PDMCritSectTryEnterDebug(pCritSect, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    return pdmCritSectTryEnter(pCritSect, &SrcPos);
 #endif
 }
 
@@ -382,10 +374,10 @@ VMMDECL(int) PDMCritSectTryEnter(PPDMCRITSECT pCritSect)
 VMMDECL(int) PDMCritSectTryEnterDebug(PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
 #ifdef PDMCRITSECT_STRICT
-    return pdmCritSectTryEnter(pCritSect, PDMCRITSECT_STRICT_POS_ARGS);
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    return pdmCritSectTryEnter(pCritSect, &SrcPos);
 #else
-    /* No need for a second code instance. */
-    return PDMCritSectTryEnter(pCritSect);
+    return pdmCritSectTryEnter(pCritSect, NULL);
 #endif
 }
 

@@ -43,6 +43,55 @@
 
 RT_C_DECLS_BEGIN
 
+typedef struct RTLOCKVALIDATORSRCPOS
+{
+    /** The file where the lock was taken. */
+    R3R0PTRTYPE(const char * volatile)  pszFile;
+    /** The function where the lock was taken. */
+    R3R0PTRTYPE(const char * volatile)  pszFunction;
+    /** Some ID indicating where the lock was taken, typically an address. */
+    RTHCUINTPTR volatile                uId;
+    /** The line number in the file. */
+    uint32_t volatile                   uLine;
+#if HC_ARCH_BITS == 64
+    uint32_t                            u32Padding; /**< Alignment padding. */
+#endif
+} RTLOCKVALIDATORSRCPOS;
+AssertCompileSize(RTLOCKVALIDATORSRCPOS, HC_ARCH_BITS == 32 ? 16 : 32);
+/* The pointer types are defined in iprt/types.h. */
+
+/** @def RTLOCKVALIDATORSRCPOS_INIT
+ * Initializer for a RTLOCKVALIDATORSRCPOS variable.
+ *
+ * @param   pszFile         The file name.  Optional (NULL).
+ * @param   uLine           The line number in that file. Optional (0).
+ * @param   pszFunction     The function.  Optional (NULL).
+ * @param   uId             Some location ID, normally the return address.
+ *                          Optional (NULL).
+ */
+#if HC_ARCH_BITS == 64
+# define RTLOCKVALIDATORSRCPOS_INIT(pszFile, uLine, pszFunction, uId) \
+    { (pszFile), (pszFunction), (uId), (uLine), 0 }
+#else
+# define RTLOCKVALIDATORSRCPOS_INIT(pszFile, uLine, pszFunction, uId) \
+    { (pszFile), (pszFunction), (uId), (uLine) }
+#endif
+
+/** @def RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API
+ * Initializer for a RTLOCKVALIDATORSRCPOS variable in a typicial debug API
+ * variant.  Assumes RT_SRC_POS_DECL and RTHCUINTPTR uId as arguments.
+ */
+#define RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API()  \
+    RTLOCKVALIDATORSRCPOS_INIT(pszFile, iLine, pszFunction, uId)
+
+/** @def RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API
+ * Initializer for a RTLOCKVALIDATORSRCPOS variable in a normal API
+ * variant.  Assumes iprt/asm.h is included.
+ */
+#define RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API() \
+    RTLOCKVALIDATORSRCPOS_INIT(__FILE__, __LINE__, __PRETTY_FUNCTION__, (uintptr_t)ASMReturnAddress())
+
+
 /**
  * Record recording the ownership of a lock.
  *
@@ -53,14 +102,10 @@ typedef struct RTLOCKVALIDATORREC
 {
     /** Magic value (RTLOCKVALIDATORREC_MAGIC). */
     uint32_t                            u32Magic;
-    /** The line number in the file. */
-    uint32_t volatile                   uLine;
-    /** The file where the lock was taken. */
-    R3R0PTRTYPE(const char * volatile)  pszFile;
-    /** The function where the lock was taken. */
-    R3R0PTRTYPE(const char * volatile)  pszFunction;
-    /** Some ID indicating where the lock was taken, typically an address. */
-    RTHCUINTPTR volatile                uId;
+    /** Reserved. */
+    uint32_t                            u32Reserved;
+    /** Source position where the lock was taken. */
+    RTLOCKVALIDATORSRCPOS               SrcPos;
     /** The current owner thread. */
     RTTHREAD volatile                   hThread;
     /** Pointer to the lock record below us. Only accessed by the owner. */
@@ -75,9 +120,81 @@ typedef struct RTLOCKVALIDATORREC
     RTHCPTR                             hLock;
     /** The lock name. */
     R3R0PTRTYPE(const char *)           pszName;
+    /** Reserved. */
+    RTHCPTR                             pvReserved;
 } RTLOCKVALIDATORREC;
-AssertCompileSize(RTLOCKVALIDATORREC, HC_ARCH_BITS == 32 ? 48 : 80);
-/* The pointer is defined in iprt/types.h */
+AssertCompileSize(RTLOCKVALIDATORREC, HC_ARCH_BITS == 32 ? 8 + 16 + 32 : 8 + 32 + 56);
+/* The pointer type is defined in iprt/types.h. */
+
+/** Pointer to a record of one ownership share.  */
+typedef struct RTLOCKVALIDATORSHAREDREC *PRTLOCKVALIDATORSHAREDREC;
+/**
+ * For recording the one ownership share.
+ */
+typedef struct RTLOCKVALIDATORSHAREDONE
+{
+    /** Magic value (RTLOCKVALIDATORSHAREDONE_MAGIC). */
+    uint32_t                                u32Magic;
+    /** Recursion count */
+    uint32_t                                cRecursion;
+    /** The current owner thread. */
+    RTTHREAD volatile                       hThread;
+    /** Pointer to the lock record below us. Only accessed by the owner. */
+    R3R0PTRTYPE(PRTLOCKVALIDATORREC)        pDown;
+    /** Pointer back to the shared record. */
+    R3R0PTRTYPE(PRTLOCKVALIDATORSHAREDREC)  pSharedRec;
+#if HC_ARCH_BITS == 32
+    /** Reserved. */
+    RTHCPTR                                 pvReserved;
+#endif
+    /** Source position where the lock was taken. */
+    RTLOCKVALIDATORSRCPOS                   SrcPos;
+} RTLOCKVALIDATORSHAREDONE;
+AssertCompileSize(RTLOCKVALIDATORSHAREDONE, HC_ARCH_BITS == 32 ? 24 + 16 : 32 + 32);
+/** Pointer to a RTLOCKVALIDATORSHAREDONE. */
+typedef RTLOCKVALIDATORSHAREDONE *PRTLOCKVALIDATORSHAREDONE;
+
+/**
+ * Record recording the shared ownership of a lock.
+ *
+ * This is typically part of the per-lock data structure when compiling with
+ * the lock validator.
+ */
+typedef struct RTLOCKVALIDATORSHARED
+{
+    /** Magic value (RTLOCKVALIDATORSHARED_MAGIC). */
+    uint32_t                            u32Magic;
+    /** The lock sub-class. */
+    uint32_t volatile                   uSubClass;
+    /** The lock class. */
+    RTLOCKVALIDATORCLASS                hClass;
+    /** Pointer to the lock. */
+    RTHCPTR                             hLock;
+    /** The lock name. */
+    R3R0PTRTYPE(const char *)           pszName;
+
+    /** The number of entries in the table.
+     * Updated before inserting and after removal. */
+    uint32_t volatile                   cEntries;
+    /** The index of the last entry (approximately). */
+    uint32_t volatile                   iLastEntry;
+    /** The max table size. */
+    uint32_t volatile                   cAllocated;
+    /** Set if the table is being reallocated, clear if not.
+     * This is used together with rtLockValidatorSerializeDetectionEnter to make
+     * sure there is exactly one thread doing the reallocation and that nobody is
+     * using the table at that point. */
+    bool volatile                       fReallocating;
+    /** Alignment padding. */
+    bool                                afPadding[3];
+    /** Pointer to a table containing pointers to records of all the owners. */
+    R3R0PTRTYPE(PRTLOCKVALIDATORSHAREDONE volatile *) papOwners;
+    /** Alignment padding. */
+    uint64_t                            u64Alignment;
+} RTLOCKVALIDATORSHARED;
+AssertCompileSize(RTLOCKVALIDATORSHARED, HC_ARCH_BITS == 32 ? 20 + 20 + 8 : 32 + 32);
+/** Pointer to a RTLOCKVALIDATORSHARED. */
+typedef RTLOCKVALIDATORSHARED *PRTLOCKVALIDATORSHARED;
 
 
 /** @name   Special sub-class values.
@@ -157,18 +274,12 @@ RTDECL(void) RTLockValidatorDestroy(PRTLOCKVALIDATORREC *ppRec);
  * @param   hThread             The handle of the calling thread.  If not known,
  *                              pass NIL_RTTHREAD and this method will figure it
  *                              out.
- * @param   uId                 Some kind of locking location ID.  Typically a
- *                              return address up the stack.  Optional (0).
- * @param   pszFile             The file where the lock is being acquired from.
- *                              Optional.
- * @param   iLine               The line number in that file.  Optional (0).
- * @param   pszFunction         The functionn where the lock is being acquired
- *                              from.  Optional.
+ * @param   pSrcPos             The source position of the lock operation.
  */
-RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, PCRTLOCKVALIDATORSRCPOS pSrcPos);
 
 /**
- * Change the thread state to blocking and do deadlock detection.
+ * Do deadlock detection before blocking on a lock.
  *
  * @retval  VINF_SUCCESS
  * @retval  VERR_SEM_LV_DEADLOCK if blocking would deadlock.  Gone thru the
@@ -182,12 +293,11 @@ RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThrea
  * @param   enmState            The sleep state.
  * @param   pvBlock             Pointer to a RTLOCKVALIDATORREC structure.
  * @param   fRecursiveOk        Whether it's ok to recurse.
- * @param   uId                 Where we are blocking.
- * @param   RT_SRC_POS_DECL     Where we are blocking.
+ * @param   pSrcPos             The source position of the lock operation.
  */
 RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread,
                                          RTTHREADSTATE enmState, bool fRecursiveOk,
-                                         RTHCUINTPTR uId, RT_SRC_POS_DECL);
+                                         PCRTLOCKVALIDATORSRCPOS pSrcPos);
 
 /**
  * Check the exit order.
@@ -212,15 +322,9 @@ RTDECL(int)  RTLockValidatorCheckReleaseOrder(PRTLOCKVALIDATORREC pRec);
  * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
  *
  * @param   pRec                The validator record.
- * @param   uId                 Some kind of locking location ID.  Typically a
- *                              return address up the stack.  Optional (0).
- * @param   pszFile             The file where the lock is being acquired from.
- *                              Optional.
- * @param   iLine               The line number in that file.  Optional (0).
- * @param   pszFunction         The functionn where the lock is being acquired
- *                              from.  Optional.
+ * @param   pSrcPos             The source position of the lock operation.
  */
-RTDECL(int) RTLockValidatorRecordRecursion(PRTLOCKVALIDATORREC pRec, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+RTDECL(int) RTLockValidatorRecordRecursion(PRTLOCKVALIDATORREC pRec, PCRTLOCKVALIDATORSRCPOS pSrcPos);
 
 /**
  * Records a lock unwind (releasing one recursion).
@@ -243,15 +347,9 @@ RTDECL(void) RTLockValidatorRecordUnwind(PRTLOCKVALIDATORREC pRec);
  * @param   hThread             The handle of the calling thread.  If not known,
  *                              pass NIL_RTTHREAD and this method will figure it
  *                              out.
- * @param   uId                 Some kind of locking location ID.  Typically a
- *                              return address up the stack.  Optional (0).
- * @param   pszFile             The file where the lock is being acquired from.
- *                              Optional.
- * @param   iLine               The line number in that file.  Optional (0).
- * @param   pszFunction         The functionn where the lock is being acquired
- *                              from.  Optional.
+ * @param   pSrcPos             The source position of the lock operation.
  */
-RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, PCRTLOCKVALIDATORSRCPOS pSrcPos);
 
 
 /**
