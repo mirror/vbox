@@ -236,18 +236,14 @@ RTDECL(void) RTLockValidatorSharedRecDelete(PRTLOCKVALIDATORSHARED pRec)
      * Flip it into table realloc mode and take the destruction lock.
      */
     rtLockValidatorSerializeDestructEnter();
-
-    if (!ASMAtomicCmpXchgBool(&pRec->fReallocating, true, false))
+    while (!ASMAtomicCmpXchgBool(&pRec->fReallocating, true, false))
     {
-        for (;;)
-        {
-            rtLockValidatorSerializeDestructEnter();
-            rtLockValidatorSerializeDetectionEnter();
-            rtLockValidatorSerializeDetectionLeave();
-            rtLockValidatorSerializeDestructEnter();
-            if (ASMAtomicCmpXchgBool(&pRec->fReallocating, true, false))
-                break;
-        }
+        rtLockValidatorSerializeDestructLeave();
+
+        rtLockValidatorSerializeDetectionEnter();
+        rtLockValidatorSerializeDetectionLeave();
+
+        rtLockValidatorSerializeDestructEnter();
     }
 
     ASMAtomicWriteU32(&pRec->u32Magic, RTLOCKVALIDATORSHARED_MAGIC_DEAD);
@@ -283,10 +279,20 @@ RTDECL(int) RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread
 }
 
 
-RTDECL(int)  RTLockValidatorCheckReleaseOrder(PRTLOCKVALIDATORREC pRec)
+RTDECL(int)  RTLockValidatorCheckAndRelease(PRTLOCKVALIDATORREC pRec)
 {
     AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(pRec->hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
+
+    RTLockValidatorUnsetOwner(pRec);
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int)  RTLockValidatorCheckAndReleaseReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHREAD hThread)
+{
+    AssertReturn(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
 
     return VINF_SUCCESS;
 }
@@ -304,13 +310,42 @@ RTDECL(int) RTLockValidatorRecordRecursion(PRTLOCKVALIDATORREC pRec, PCRTLOCKVAL
 }
 
 
-RTDECL(void) RTLockValidatorRecordUnwind(PRTLOCKVALIDATORREC pRec)
+RTDECL(int) RTLockValidatorUnwindRecursion(PRTLOCKVALIDATORREC pRec)
 {
-    AssertReturnVoid(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC);
-    AssertReturnVoid(pRec->hThread != NIL_RTTHREAD);
-    AssertReturnVoid(pRec->cRecursion > 0);
+    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRec->hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRec->cRecursion > 0, VERR_SEM_LV_INVALID_PARAMETER);
 
+    Assert(pRec->cRecursion);
     pRec->cRecursion--;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTLockValidatorRecordReadWriteRecursion(PRTLOCKVALIDATORREC pWrite, PRTLOCKVALIDATORSHARED pRead, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+{
+    AssertReturn(pWrite->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pWrite->hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pWrite->cRecursion > 0, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+
+    Assert(pWrite->cRecursion < _1M);
+    pWrite->cRecursion++;
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTLockValidatorUnwindReadWriteRecursion(PRTLOCKVALIDATORREC pWrite, PRTLOCKVALIDATORSHARED pRead)
+{
+    AssertReturn(pWrite->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pWrite->hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pWrite->cRecursion > 0, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+
+    Assert(pWrite->cRecursion);
+    pWrite->cRecursion--;
+    return VINF_SUCCESS;
 }
 
 
@@ -371,6 +406,20 @@ RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec)
     }
 
     return pThread;
+}
+
+
+RTDECL(void) RTLockValidatorAddReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHREAD hThread, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+{
+    AssertReturnVoid(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC);
+    AssertReturnVoid(hThread != NIL_RTTHREAD);
+}
+
+
+RTDECL(void) RTLockValidatorRemoveReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHREAD hThread)
+{
+    AssertReturnVoid(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC);
+    AssertReturnVoid(hThread != NIL_RTTHREAD);
 }
 
 
@@ -538,6 +587,56 @@ static void rtLockValidatorComplainAboutDeadlock(PRTLOCKVALIDATORREC pRec, PRTTH
         pCur = pNext;
     }
     AssertBreakpoint();
+}
+
+
+RTDECL(int) RTLockValidatorCheckWriteOrderBlocking(PRTLOCKVALIDATORREC pWrite, PRTLOCKVALIDATORSHARED pRead,
+                                                   RTTHREAD hThread, RTTHREADSTATE enmState, bool fRecursiveOk,
+                                                   PCRTLOCKVALIDATORSRCPOS pSrcPos)
+{
+    /*
+     * Fend off wild life.
+     */
+    AssertReturn(RTTHREAD_IS_SLEEPING(enmState), VERR_SEM_LV_INVALID_PARAMETER);
+    AssertPtrReturn(pWrite, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pWrite->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertPtrReturn(pRead, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    PRTTHREADINT pThread = hThread;
+    AssertPtrReturn(pThread, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pThread->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    RTTHREADSTATE enmThreadState = rtThreadGetState(pThread);
+    AssertReturn(   enmThreadState == RTTHREADSTATE_RUNNING
+                 || enmThreadState == RTTHREADSTATE_TERMINATED   /* rtThreadRemove uses locks too */
+                 || enmThreadState == RTTHREADSTATE_INITIALIZING /* rtThreadInsert uses locks too */
+                 , VERR_SEM_LV_INVALID_PARAMETER);
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTLockValidatorCheckReadOrderBlocking(PRTLOCKVALIDATORSHARED pRead, PRTLOCKVALIDATORREC pWrite,
+                                                  RTTHREAD hThread, RTTHREADSTATE enmState, bool fRecursiveOk,
+                                                  PCRTLOCKVALIDATORSRCPOS pSrcPos)
+{
+    /*
+     * Fend off wild life.
+     */
+    AssertReturn(RTTHREAD_IS_SLEEPING(enmState), VERR_SEM_LV_INVALID_PARAMETER);
+    AssertPtrReturn(pRead, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertPtrReturn(pWrite, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pWrite->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    PRTTHREADINT pThread = hThread;
+    AssertPtrReturn(pThread, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pThread->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    RTTHREADSTATE enmThreadState = rtThreadGetState(pThread);
+    AssertReturn(   enmThreadState == RTTHREADSTATE_RUNNING
+                 || enmThreadState == RTTHREADSTATE_TERMINATED   /* rtThreadRemove uses locks too */
+                 || enmThreadState == RTTHREADSTATE_INITIALIZING /* rtThreadInsert uses locks too */
+                 , VERR_SEM_LV_INVALID_PARAMETER);
+
+    return VINF_SUCCESS;
 }
 
 
