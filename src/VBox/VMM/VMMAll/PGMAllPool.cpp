@@ -1952,9 +1952,8 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
 
     /*
      * Found a usable page, flush it and return.
-     */
-    pgmPoolFlushPage(pPool, pPage); 
-    return rc; 
+     */   
+    return pgmPoolFlushPage(pPool, pPage);  
 }
 
 
