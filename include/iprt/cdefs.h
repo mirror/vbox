@@ -1139,7 +1139,7 @@
  * @param   Min         Minimum value.
  * @param   Max         Maximum value.
  */
-#define RT_CLAMP(Value, Min, Max)               ( ((Value) > (Max)) ? (Max) : (((Value) < (Min)) ? (Min) : (Value)) )
+#define RT_CLAMP(Value, Min, Max)               ( (Value) > (Max) ? (Max) : (Value) < (Min) ? (Min) : (Value) )
 
 /** @def RT_ABS
  * Get the absolute (non-negative) value.
