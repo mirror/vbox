@@ -1953,7 +1953,12 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
     /*
      * Found a usable page, flush it and return.
      */   
-    return pgmPoolFlushPage(pPool, pPage);  
+    int rc = pgmPoolFlushPage(pPool, pPage);  
+    /* This flush was initiated by us and not the guest, so explicitly flush the TLB. */  
+    /* todo: find out why this is necessary; pgmPoolFlushPage should trigger a flush if one is really needed. */
+    if (rc == VINF_SUCCESS)
+        PGM_INVL_ALL_VCPU_TLBS(pVM);  
+    return rc;
 }
 
 
