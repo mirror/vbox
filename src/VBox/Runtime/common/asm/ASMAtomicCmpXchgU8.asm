@@ -48,7 +48,7 @@ BEGINCODE
 BEGINPROC_EXPORTED ASMAtomicCmpXchgU8
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
-        mov     al, r8l
+        mov     al, r8b
         lock cmpxchg [rcx], dl
  %else
         mov     al, dl
