@@ -30,7 +30,7 @@
  */
 
 #ifndef VBOX_PROXY_STUB
-#error This file is a private header, intended to be included in specific places only
+# error This file is a private header, intended to be included in specific places only
 #endif
 
 /** The following are the symbols which we need from libdbus-1. */

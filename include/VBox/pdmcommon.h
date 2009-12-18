@@ -30,6 +30,8 @@
 #ifndef ___VBox_pdmcommon_h
 #define ___VBox_pdmcommon_h
 
+#include <VBox/types.h>
+
 /** @defgroup grp_pdm_common    Common Definitions & Types
  * @ingroup grp_pdm
  *

@@ -34,15 +34,24 @@ r3_only_hdrs := \
 	VBox/vrdpapi.h \
         VBox/vrdpusb.h \
 	VBox/VBoxHDD.h \
+	VBox/VBoxHDD-Plugin.h \
+	VBox/dbus.h \
+	VBox/uvm.h \
 	iprt/tcp.h \
-	iprt/localipc.h
+	iprt/localipc.h \
+	iprt/linux/sysfs.h \
 
+# We omit a few headers which have platform specific issues or are templates.
 hdrs := $(filter-out \
 	VBox/VBoxGuest16.h \
+	VBox/VBoxGL2D.h \
 	VBox/WinNetConfig.h \
+	VBox/dbus-calls.h \
 	VBox/usblib-win.h \
-	VBox/usblib-solaris.h, \
-	$(wildcard VBox/*.h iprt/*.h iprt/*/*.h))
+	VBox/usblib-solaris.h \
+	$(foreach os,$(filter-out $(KBUILD_TARGET),$(KBUILD_OSES)),iprt/$(os)/% VBox/$(os)/%) \
+	$(xforeach arch,$(KBUILD_ARCHES),iprt/nocrt/$(arch)/%) \
+	, $(wildcard VBox/*.h iprt/*.h iprt/*/*.h))
 
 hdrs.r3 := $(filter-out , $(hdrs))
 hdrs.r0 := $(filter-out $(cpp_hdrs) $(r3_only_hdrs), $(hdrs))
@@ -52,8 +61,10 @@ hdrs.gc := $(filter-out \
 	iprt/thread.h \
 	iprt/mem.h \
 	iprt/alloc.h \
-	$(cpp_hdrs) $(r3_only_hdrs), \
-	$(hdrs))
+	iprt/alloca.h \
+	$(cpp_hdrs) \
+	$(r3_only_hdrs) \
+	, $(hdrs))
 
 SyntaxVBoxIncludeR3_TEMPLATE = VBOXMAINEXE
 SyntaxVBoxIncludeR3_DEFS = VBOX_WITH_HGCM
@@ -74,6 +85,8 @@ SyntaxVBoxIncludeGC_SOURCES := \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.gc))))
 
 
+# Comment out the next line to simplify header correction.
+VBOX_ROOT_INCLUDE_MAKEFILE = $(PATH_ROOT)/include/Makefile.kmk
 
 include $(KBUILD_PATH)/footer.kmk
 
@@ -81,13 +94,13 @@ include $(KBUILD_PATH)/footer.kmk
 define def_hdr
 $(eval flatname := $(subst /,_,$(basename $(hdr))))
 $$(PATH_TARGET)/$(flatname)-cpp.cpp: $$(PATH_TARGET)/
-	$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
+	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
 
-$$(PATH_TARGET)/$(flatname)-c.c: Makefile.kmk | $$(PATH_TARGET)/
+$$(PATH_TARGET)/$(flatname)-c.c: $(VBOX_ROOT_INCLUDE_MAKEFILE)  | $$(PATH_TARGET)/
 ifn1of ($(hdr),$(cpp_hdrs))
-	$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
+	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
 else
-	$$(APPEND) -t -n $$@ 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
+	$(QUIET)$$(APPEND) -t -n $$@ 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
 endif
 
 $(subst .h,.o,$(notdir $(hdr)))::

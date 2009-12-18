@@ -32,7 +32,8 @@
 #ifndef ___VBox_DBus_h
 #define ___VBox_DBus_h
 
-#include <stdint.h>
+#include <iprt/types.h>
+#include <iprt/stdarg.h>
 
 #define VBOX_DBUS_1_3_LIB "libdbus-1.so.3"
 
@@ -49,13 +50,18 @@ struct DBusError
     unsigned int dummy5 : 1;
     void *padding1;
 };
+typedef struct DBusError DBusError;
+
 struct DBusConnection;
 typedef struct DBusConnection DBusConnection;
+
 typedef uint32_t dbus_bool_t;
 typedef uint32_t dbus_uint32_t;
 typedef enum { DBUS_BUS_SESSON, DBUS_BUS_SYSTEM, DBUS_BUS_STARTER } DBusBusType;
+
 struct DBusMessage;
 typedef struct DBusMessage DBusMessage;
+
 struct DBusMessageIter
 {
     void *dummy1;
@@ -103,7 +109,7 @@ typedef void (*DBusFreeFunction) (void *);
 
 /* Declarations of the functions that we need from libdbus-1 */
 #define VBOX_PROXY_STUB(function, rettype, signature, shortsig) \
-RTR3DECL(rettype) ( function ) signature ;
+    RTR3DECL(rettype) ( function ) signature ;
 
 #include <VBox/dbus-calls.h>
 

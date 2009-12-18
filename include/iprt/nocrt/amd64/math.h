@@ -33,7 +33,7 @@
 #include <iprt/asm.h>
 
 
-#if RT_INLINE_ASM_GNU_STYLE
+#if RT_INLINE_ASM_GNU_STYLE && defined(__SSE__)
 
 DECLINLINE(long double) inline_atan2l(long double lrd1, long double lrd2)
 {
