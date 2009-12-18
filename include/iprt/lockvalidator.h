@@ -127,28 +127,28 @@ AssertCompileSize(RTLOCKVALIDATORREC, HC_ARCH_BITS == 32 ? 8 + 16 + 32 : 8 + 32 
 /* The pointer type is defined in iprt/types.h. */
 
 /** Pointer to a record of one ownership share.  */
-typedef struct RTLOCKVALIDATORSHAREDREC *PRTLOCKVALIDATORSHAREDREC;
+typedef struct RTLOCKVALIDATORSHARED *PRTLOCKVALIDATORSHARED;
 /**
  * For recording the one ownership share.
  */
 typedef struct RTLOCKVALIDATORSHAREDONE
 {
     /** Magic value (RTLOCKVALIDATORSHAREDONE_MAGIC). */
-    uint32_t                                u32Magic;
+    uint32_t                            u32Magic;
     /** Recursion count */
-    uint32_t                                cRecursion;
+    uint32_t                            cRecursion;
     /** The current owner thread. */
-    RTTHREAD volatile                       hThread;
+    RTTHREAD volatile                   hThread;
     /** Pointer to the lock record below us. Only accessed by the owner. */
-    R3R0PTRTYPE(PRTLOCKVALIDATORREC)        pDown;
+    R3R0PTRTYPE(PRTLOCKVALIDATORREC)    pDown;
     /** Pointer back to the shared record. */
-    R3R0PTRTYPE(PRTLOCKVALIDATORSHAREDREC)  pSharedRec;
+    R3R0PTRTYPE(PRTLOCKVALIDATORSHARED) pSharedRec;
 #if HC_ARCH_BITS == 32
     /** Reserved. */
-    RTHCPTR                                 pvReserved;
+    RTHCPTR                             pvReserved;
 #endif
     /** Source position where the lock was taken. */
-    RTLOCKVALIDATORSRCPOS                   SrcPos;
+    RTLOCKVALIDATORSRCPOS               SrcPos;
 } RTLOCKVALIDATORSHAREDONE;
 AssertCompileSize(RTLOCKVALIDATORSHAREDONE, HC_ARCH_BITS == 32 ? 24 + 16 : 32 + 32);
 /** Pointer to a RTLOCKVALIDATORSHAREDONE. */
@@ -193,8 +193,6 @@ typedef struct RTLOCKVALIDATORSHARED
     uint64_t                            u64Alignment;
 } RTLOCKVALIDATORSHARED;
 AssertCompileSize(RTLOCKVALIDATORSHARED, HC_ARCH_BITS == 32 ? 20 + 20 + 8 : 32 + 32);
-/** Pointer to a RTLOCKVALIDATORSHARED. */
-typedef RTLOCKVALIDATORSHARED *PRTLOCKVALIDATORSHARED;
 
 
 /** @name   Special sub-class values.

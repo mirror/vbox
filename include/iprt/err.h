@@ -852,6 +852,10 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_SEM_LV_INVALID_PARAMETER       (-371)
 /** The lock validator detected a deadlock. */
 #define VERR_SEM_LV_DEADLOCK                (-372)
+/** Not the lock owner according our records. */
+#define VERR_SEM_LV_NOT_OWNER               (-373)
+/** An illegal lock upgrade was attempted. */
+#define VERR_SEM_LV_UPGRADE                 (-374)
 /** @} */
 
 

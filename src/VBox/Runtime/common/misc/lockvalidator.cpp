@@ -262,6 +262,240 @@ RTDECL(void) RTLockValidatorSharedRecDelete(PRTLOCKVALIDATORSHARED pRec)
 }
 
 
+/**
+ * Locates a thread in a shared lock record.
+ *
+ * @returns Pointer to the thread record on success, NULL on failure..
+ * @param   pShared             The shared lock record.
+ * @param   hThread             The thread to find.
+ * @param   piEntry             Where to optionally return the table in index.
+ */
+DECLINLINE(PRTLOCKVALIDATORSHAREDONE)
+rtLockValidatorSharedRecFindThread(PRTLOCKVALIDATORSHARED pShared, RTTHREAD hThread, uint32_t *piEntry)
+{
+    rtLockValidatorSerializeDetectionEnter();
+    if (pShared->papOwners)
+    {
+        PRTLOCKVALIDATORSHAREDONE volatile *papOwners = pShared->papOwners;
+        uint32_t const                      cMax      = pShared->cAllocated;
+        for (uint32_t iEntry = 0; iEntry < cMax; iEntry++)
+        {
+            PRTLOCKVALIDATORSHAREDONE pEntry;
+            pEntry = (PRTLOCKVALIDATORSHAREDONE)ASMAtomicUoReadPtr((void * volatile *)&papOwners[iEntry]);
+            if (pEntry && pEntry->hThread == hThread)
+            {
+                rtLockValidatorSerializeDetectionLeave();
+                if (piEntry)
+                    *piEntry = iEntry;
+                return pEntry;
+            }
+        }
+    }
+    rtLockValidatorSerializeDetectionLeave();
+    return NULL;
+}
+
+
+/**
+ * Allocates and initializes a thread entry for the shared lock record.
+ *
+ * @returns The new thread entry.
+ * @param   pShared             The shared lock record.
+ * @param   hThread             The thread handle.
+ * @param   pSrcPos             The source position.
+ */
+DECLINLINE(PRTLOCKVALIDATORSHAREDONE)
+rtLockValidatorSharedRecAllocThread(PRTLOCKVALIDATORSHARED pRead, RTTHREAD hThread, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+{
+    PRTLOCKVALIDATORSHAREDONE pEntry;
+
+    pEntry = (PRTLOCKVALIDATORSHAREDONE)RTMemAlloc(sizeof(RTLOCKVALIDATORSHAREDONE));
+    if (pEntry)
+    {
+        pEntry->u32Magic        = RTLOCKVALIDATORSHAREDONE_MAGIC;
+        pEntry->cRecursion      = 1;
+        pEntry->hThread         = hThread;
+        pEntry->pDown           = NULL;
+        pEntry->pSharedRec      = pRead;
+#if HC_ARCH_BITS == 32
+        pEntry->pvReserved      = NULL;
+#endif
+        if (pSrcPos)
+            pEntry->SrcPos      = *pSrcPos;
+        else
+            rtLockValidatorInitSrcPos(&pEntry->SrcPos);
+    }
+
+    return pEntry;
+}
+
+/**
+ * Frees a thread entry allocated by rtLockValidatorSharedRecAllocThread.
+ *
+ * @param   pEntry              The thread entry.
+ */
+DECLINLINE(void) rtLockValidatorSharedRecFreeThread(PRTLOCKVALIDATORSHAREDONE pEntry)
+{
+    if (pEntry)
+    {
+        rtLockValidatorSerializeDestructEnter();
+        ASMAtomicWriteU32(&pEntry->u32Magic, RTLOCKVALIDATORSHAREDONE_MAGIC_DEAD);
+        ASMAtomicWriteHandle(&pEntry->hThread, NIL_RTTHREAD);
+        rtLockValidatorSerializeDestructLeave();
+
+        RTMemFree(pEntry);
+    }
+}
+
+
+/**
+ * Make more room in the table.
+ *
+ * @retval  true on success
+ * @retval  false if we're out of memory or running into a bad race condition
+ *          (probably a bug somewhere).  No longer holding the lock.
+ *
+ * @param   pShared             The shared lock record.
+ */
+static bool rtLockValidatorSharedRecMakeRoom(PRTLOCKVALIDATORSHARED pShared)
+{
+    for (unsigned i = 0; i < 1000; i++)
+    {
+        /*
+         * Switch to the other data access direction.
+         */
+        rtLockValidatorSerializeDetectionLeave();
+        if (i >= 10)
+        {
+            Assert(i != 10 && i != 100);
+            RTThreadSleep(i >= 100);
+        }
+        rtLockValidatorSerializeDestructEnter();
+
+        /*
+         * Try grab the privilege to reallocating the table.
+         */
+        if (    pShared->u32Magic == RTLOCKVALIDATORSHARED_MAGIC
+            &&  ASMAtomicCmpXchgBool(&pShared->fReallocating, true, false))
+        {
+            uint32_t cAllocated = pShared->cAllocated;
+            if (cAllocated < pShared->cEntries)
+            {
+                /*
+                 * Ok, still not enough space.  Reallocate the table.
+                 */
+#if 0  /** @todo enable this after making sure growing works flawlessly. */
+                uint32_t                    cInc = RT_ALIGN_32(pShared->cEntries - cAllocated, 16);
+#else
+                uint32_t                    cInc = RT_ALIGN_32(pShared->cEntries - cAllocated, 1);
+#endif
+                PRTLOCKVALIDATORSHAREDONE  *papOwners;
+                papOwners = (PRTLOCKVALIDATORSHAREDONE *)RTMemRealloc((void *)pShared->papOwners,
+                                                                      (cAllocated + cInc) * sizeof(void *));
+                if (!papOwners)
+                {
+                    ASMAtomicWriteBool(&pShared->fReallocating, false);
+                    rtLockValidatorSerializeDestructLeave();
+                    /* RTMemRealloc will assert */
+                    return false;
+                }
+
+                while (cInc-- > 0)
+                {
+                    papOwners[cAllocated] = NULL;
+                    cAllocated++;
+                }
+
+                ASMAtomicWritePtr((void * volatile *)&pShared->papOwners, papOwners);
+                ASMAtomicWriteU32(&pShared->cAllocated, cAllocated);
+            }
+            ASMAtomicWriteBool(&pShared->fReallocating, false);
+        }
+        rtLockValidatorSerializeDestructLeave();
+
+        rtLockValidatorSerializeDetectionEnter();
+        if (RT_UNLIKELY(pShared->u32Magic != RTLOCKVALIDATORSHARED_MAGIC))
+            break;
+
+        if (pShared->cAllocated >= pShared->cEntries)
+            return true;
+    }
+
+    rtLockValidatorSerializeDetectionLeave();
+    AssertFailed(); /* too many iterations or destroyed while racing. */
+    return false;
+}
+
+
+/**
+ * Adds a thread entry to a shared lock record.
+ *
+ * @returns true on success, false on serious race or we're if out of memory.
+ * @param   pShared             The shared lock record.
+ * @param   pEntry              The thread entry.
+ */
+DECLINLINE(bool) rtLockValidatorSharedRecAddThread(PRTLOCKVALIDATORSHARED pShared, PRTLOCKVALIDATORSHAREDONE pEntry)
+{
+    rtLockValidatorSerializeDetectionEnter();
+    if (RT_LIKELY(pShared->u32Magic == RTLOCKVALIDATORSHARED_MAGIC)) /* paranoia */
+    {
+        if (   ASMAtomicIncU32(&pShared->cEntries) > pShared->cAllocated /** @todo add fudge */
+            && !rtLockValidatorSharedRecMakeRoom(pShared))
+            return false; /* the worker leave the lock */
+
+        PRTLOCKVALIDATORSHAREDONE volatile *papOwners = pShared->papOwners;
+        uint32_t const                      cMax      = pShared->cAllocated;
+        for (unsigned i = 0; i < 100; i++)
+        {
+            for (uint32_t iEntry = 0; iEntry < cMax; iEntry++)
+            {
+                if (ASMAtomicCmpXchgPtr((void * volatile *)&papOwners[iEntry], pEntry, NULL))
+                {
+                    rtLockValidatorSerializeDetectionLeave();
+                    return true;
+                }
+            }
+            Assert(i != 25);
+        }
+        AssertFailed();
+    }
+    rtLockValidatorSerializeDetectionLeave();
+    return false;
+}
+
+
+/**
+ * Remove a thread entry from a shared lock record.
+ *
+ * @param   pShared             The shared lock record.
+ * @param   pEntry              The thread entry to remove.
+ * @param   iEntry              The last known index.
+ */
+DECLINLINE(void) rtLockValidatorSharedRecDelete(PRTLOCKVALIDATORSHARED pShared, PRTLOCKVALIDATORSHAREDONE pEntry,
+                                                uint32_t iEntry)
+{
+    rtLockValidatorSerializeDetectionEnter();
+    if (RT_LIKELY(pShared->u32Magic == RTLOCKVALIDATORSHARED_MAGIC))
+    {
+        if (   iEntry >= pShared->cAllocated
+            || !ASMAtomicCmpXchgPtr((void * volatile *)&pShared->papOwners[iEntry], NULL, pEntry))
+        {
+            /* this shouldn't happen yet... */
+            AssertFailed();
+            PRTLOCKVALIDATORSHAREDONE volatile *papOwners = pShared->papOwners;
+            uint32_t const                      cMax      = pShared->cAllocated;
+            for (iEntry = 0; iEntry < cMax; iEntry++)
+                if (ASMAtomicCmpXchgPtr((void * volatile *)&papOwners[iEntry], NULL, pEntry))
+                   break;
+            AssertReturnVoidStmt(iEntry < cMax, rtLockValidatorSerializeDetectionLeave());
+        }
+        uint32_t cNow = ASMAtomicDecU32(&pShared->cEntries);
+        Assert(!(cNow & RT_BIT_32(31))); NOREF(cNow);
+    }
+    rtLockValidatorSerializeDetectionLeave();
+}
+
+
 RTDECL(int) RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
     AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
@@ -293,6 +527,30 @@ RTDECL(int)  RTLockValidatorCheckAndReleaseReadOwner(PRTLOCKVALIDATORSHARED pRea
 {
     AssertReturn(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
+
+    /*
+     * Locate the entry for this thread in the table.
+     */
+    uint32_t                    iEntry = 0;
+    PRTLOCKVALIDATORSHAREDONE   pEntry = rtLockValidatorSharedRecFindThread(pRead, hThread, &iEntry);
+    AssertReturn(pEntry, VERR_SEM_LV_NOT_OWNER);
+
+    /*
+     * Check the release order.
+     */
+    if (pRead->hClass != NIL_RTLOCKVALIDATORCLASS)
+    {
+        /** @todo order validation */
+    }
+
+    /*
+     * Release the ownership or unwind a level of recursion.
+     */
+    Assert(pEntry->cRecursion > 0);
+    if (pEntry->cRecursion > 1)
+        pEntry->cRecursion--;
+    else
+        rtLockValidatorSharedRecDelete(pRead, pEntry, iEntry);
 
     return VINF_SUCCESS;
 }
@@ -413,6 +671,28 @@ RTDECL(void) RTLockValidatorAddReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHREAD 
 {
     AssertReturnVoid(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC);
     AssertReturnVoid(hThread != NIL_RTTHREAD);
+
+    /*
+     * Recursive?
+     *
+     * Note! This code can be optimized to try avoid scanning the table on
+     *       insert. However, that's annoying work that makes the code big,
+     *       so it can wait til later sometime.
+     */
+    PRTLOCKVALIDATORSHAREDONE pEntry = rtLockValidatorSharedRecFindThread(pRead, hThread, NULL);
+    if (pEntry)
+    {
+        pEntry->cRecursion++;
+        return;
+    }
+
+    /*
+     * Allocate a new thread entry and insert it into the table.
+     */
+    pEntry = rtLockValidatorSharedRecAllocThread(pRead, hThread, pSrcPos);
+    if (    pEntry
+        &&  !rtLockValidatorSharedRecAddThread(pRead, pEntry))
+        rtLockValidatorSharedRecFreeThread(pEntry);
 }
 
 
@@ -420,6 +700,7 @@ RTDECL(void) RTLockValidatorRemoveReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHRE
 {
     AssertReturnVoid(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC);
     AssertReturnVoid(hThread != NIL_RTTHREAD);
+    AssertMsgFailed(("Not implemented"));
 }
 
 
@@ -611,6 +892,20 @@ RTDECL(int) RTLockValidatorCheckWriteOrderBlocking(PRTLOCKVALIDATORREC pWrite, P
                  || enmThreadState == RTTHREADSTATE_INITIALIZING /* rtThreadInsert uses locks too */
                  , VERR_SEM_LV_INVALID_PARAMETER);
 
+    /*
+     * Check for attempts at doing a read upgrade.
+     */
+    PRTLOCKVALIDATORSHAREDONE pEntry = rtLockValidatorSharedRecFindThread(pRead, hThread, NULL);
+    if (pEntry)
+    {
+        AssertMsgFailed(("Read lock upgrade at %s(%d) %s %p!\nRead lock take at %s(%d) %s %p!\n",
+                         pSrcPos->pszFile, pSrcPos->uLine, pSrcPos->pszFunction, pSrcPos->uId,
+                         pEntry->SrcPos.pszFile, pEntry->SrcPos.uLine, pEntry->SrcPos.pszFunction, pEntry->SrcPos.uId));
+        return VERR_SEM_LV_UPGRADE;
+    }
+
+
+
     return VINF_SUCCESS;
 }
 
@@ -635,6 +930,8 @@ RTDECL(int) RTLockValidatorCheckReadOrderBlocking(PRTLOCKVALIDATORSHARED pRead, 
                  || enmThreadState == RTTHREADSTATE_TERMINATED   /* rtThreadRemove uses locks too */
                  || enmThreadState == RTTHREADSTATE_INITIALIZING /* rtThreadInsert uses locks too */
                  , VERR_SEM_LV_INVALID_PARAMETER);
+    Assert(pWrite->hThread != pThread);
+
 
     return VINF_SUCCESS;
 }
