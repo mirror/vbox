@@ -146,6 +146,7 @@ RuntimeWin64ASM_SOURCES = \
 # Win32 assembly sources.
 #
 RuntimeWin32ASM_SOURCES = \
+	common/asm/ASMAtomicCmpXchgU8.asm \
 	common/asm/ASMMultU64ByU32DivByU32.asm
 
 #
