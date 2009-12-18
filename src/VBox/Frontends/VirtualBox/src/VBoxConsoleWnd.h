@@ -111,6 +111,9 @@ public:
     void setMask (const QRegion &aRegion);
     void clearMask();
 
+    /* informs that the guest display is resized */
+    void onDisplayResize (ulong aHeight, ulong aWidth);
+
 signals:
 
     void closing();

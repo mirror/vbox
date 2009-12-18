@@ -1229,6 +1229,18 @@ void VBoxConsoleWnd::clearMask()
 #endif
 }
 
+void VBoxConsoleWnd::onDisplayResize (ulong aHeight, ulong aWidth)
+{
+    if (mIsSeamless && QApplication::desktop()->availableGeometry (this).size() != QSize (aHeight, aWidth))
+    {
+        mVmSeamlessAction->setChecked (false);
+        /* should be cleared already, but just in case */
+        if (mIsSeamless)
+            toggleFullscreenMode (false, true);
+    }
+}
+
+
 bool VBoxConsoleWnd::event (QEvent *aEvent)
 {
     switch (aEvent->type())
