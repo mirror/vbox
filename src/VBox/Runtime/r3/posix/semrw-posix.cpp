@@ -314,7 +314,7 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
 }
 
 
-DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, RTSEMRW_STRICT_POS_DECL)
+DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
     /*
      * Validate input.
@@ -326,7 +326,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, RTS
                     VERR_INVALID_HANDLE);
 #ifdef RTSEMRW_STRICT
     RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
-    RTLockValidatorCheckOrder(&pThis->ValidatorRec, hThreadSelf, RTSEMRW_STRICT_POS_ARGS);
+    RTLockValidatorCheckOrder(&pThis->ValidatorRec, hThreadSelf, pSrcPos);
 #endif
 
     /*
@@ -338,7 +338,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, RTS
     if (Writer == Self)
     {
 #ifdef RTSEMRW_STRICT
-        int rc9 = RTLockValidatorRecordRecursion(&pThis->ValidatorRec, RTSEMRW_STRICT_POS_ARGS);
+        int rc9 = RTLockValidatorRecordRecursion(&pThis->ValidatorRec, pSrcPos);
         if (RT_FAILURE(rc9))
             return rc9;
 #endif
@@ -356,12 +356,11 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, RTS
     if (cMillies)
     {
 #ifdef RTSEMRW_STRICT
-        int rc9 = RTLockValidatorCheckBlocking(&pThis->ValidatorRec, hThreadSelf, RTTHREADSTATE_RW_WRITE, true, uId, RT_SRC_POS_ARGS);
+        int rc9 = RTLockValidatorCheckBlocking(&pThis->ValidatorRec, hThreadSelf, RTTHREADSTATE_RW_WRITE, true, pSrcPos);
         if (RT_FAILURE(rc9))
             return rc9;
-#else
-        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE);
 #endif
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE);
     }
 
     if (cMillies == RT_INDEFINITE_WAIT)
@@ -411,7 +410,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, RTS
     ATOMIC_SET_PTHREAD_T(&pThis->Writer, Self);
     pThis->cWrites = 1;
 #ifdef RTSEMRW_STRICT
-    RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, RTSEMRW_STRICT_POS_ARGS);
+    RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, pSrcPos);
 #endif
     return VINF_SUCCESS;
 }
@@ -420,20 +419,18 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, RTS
 RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 {
 #ifndef RTSEMRW_STRICT
-    return rtSemRWRequestWrite(RWSem, cMillies, RTSEMRW_STRICT_POS_ARGS);
+    return rtSemRWRequestWrite(RWSem, cMillies, NULL);
 #else
-    return RTSemRWRequestWriteDebug(RWSem, cMillies, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    return rtSemRWRequestWrite(RWSem, cMillies, &SrcPos);
 #endif
 }
 
 
 RTDECL(int) RTSemRWRequestWriteDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-#ifdef RTSEMRW_STRICT
-    return rtSemRWRequestWrite(RWSem, cMillies, RTSEMRW_STRICT_POS_ARGS);
-#else
-    return RTSemRWRequestWrite(RWSem, cMillies);
-#endif
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    return rtSemRWRequestWrite(RWSem, cMillies, &SrcPos);
 }
 
 
@@ -441,9 +438,10 @@ RTDECL(int) RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies)
 {
     /* EINTR isn't returned by the wait functions we're using. */
 #ifndef RTSEMRW_STRICT
-    return RTSemRWRequestWrite(RWSem, cMillies);
+    return rtSemRWRequestWrite(RWSem, cMillies, NULL);
 #else
-    return RTSemRWRequestWriteDebug(RWSem, cMillies, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    return rtSemRWRequestWrite(RWSem, cMillies, &SrcPos);
 #endif
 }
 
@@ -451,11 +449,8 @@ RTDECL(int) RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies)
 RTDECL(int) RTSemRWRequestWriteNoResumeDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     /* EINTR isn't returned by the wait functions we're using. */
-#ifdef RTSEMRW_STRICT
-    return RTSemRWRequestWriteDebug(RWSem, cMillies, RTSEMRW_STRICT_POS_ARGS);
-#else
-    return RTSemRWRequestWrite(RWSem, cMillies);
-#endif
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    return rtSemRWRequestWrite(RWSem, cMillies, &SrcPos);
 }
 
 
