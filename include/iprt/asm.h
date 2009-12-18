@@ -3053,7 +3053,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t *pu8, const uint8_t u8New, 
                          : "=m" (*pu8),
                            "=qm" (u8Ret),
                            "=a" (u8Old)
-                         : "r" (u8New),
+                         : "q" (u8New),
                            "2" (u8Old),
                            "m" (*pu8));
     return (bool)u8Ret;
