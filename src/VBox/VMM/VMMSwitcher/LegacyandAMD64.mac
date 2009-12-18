@@ -74,7 +74,7 @@ BEGINPROC vmmR0HostToGuest
     ; turn off interrupts
     pushf
     cli
-    
+
     ;
     ; Call worker.
     ;
@@ -85,7 +85,7 @@ BEGINPROC vmmR0HostToGuest
 
     ; restore original flags
     popf
-    
+
 %ifdef VBOX_WITH_STATISTICS
     ;
     ; Switcher stats.
@@ -96,7 +96,7 @@ BEGINPROC vmmR0HostToGuest
 %endif
 
     ret
-   
+
 ENDPROC vmmR0HostToGuest
 
 ; *****************************************************************************
@@ -193,7 +193,7 @@ BEGINPROC vmmR0HostToGuestAsm
     FIXUP FIX_HC_2_ID_NEAR_REL, 1, NAME(IDEnterTarget) - NAME(Start)
     jmp near NAME(IDEnterTarget)
 
-        
+
     ; We're now on identity mapped pages!
 ALIGNCODE(16)
 GLOBALNAME IDEnterTarget
@@ -278,7 +278,7 @@ db 'Switch_marker'
     ; When we arrive here we're in 64 bits mode in the intermediate context
     ;
 ALIGNCODE(16)
-GLOBALNAME ICEnterTarget     
+GLOBALNAME ICEnterTarget
     ; Load CPUM pointer into rdx
     mov     rdx, [NAME(pCpumIC) wrt rip]
     CPUMCPU_FROM_CPUM(edx)
@@ -286,7 +286,7 @@ GLOBALNAME ICEnterTarget
     mov     rax, cs
     mov     ds, rax
     mov     es, rax
-    
+
     ; Invalidate fs & gs
     mov     rax, 0
     mov     fs, rax
@@ -310,11 +310,11 @@ GLOBALNAME ICEnterTarget
 
     ; load the hypervisor function address
     mov     r9, [rdx + CPUMCPU.Hyper.eip]
-   
+
     ; Check if we need to restore the guest FPU state
     mov     esi, [rdx + CPUMCPU.fUseFlags] ; esi == use flags.
     test    esi, CPUM_SYNC_FPU_STATE
-    jz      near gth_fpu_no  
+    jz      near gth_fpu_no
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 7
@@ -326,7 +326,7 @@ GLOBALNAME ICEnterTarget
     mov     cr0, rax
     fxrstor [rdx + CPUMCPU.Guest.fpu]
     mov     cr0, rcx                    ; and restore old CR0 again
-    
+
     and     dword [rdx + CPUMCPU.fUseFlags], ~CPUM_SYNC_FPU_STATE
 
 gth_fpu_no:
@@ -337,7 +337,7 @@ gth_fpu_no:
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 8
 %endif
-    
+
     mov     rax, qword [rdx + CPUMCPU.Guest.dr + 0*8]
     mov     dr0, rax
     mov     rax, qword [rdx + CPUMCPU.Guest.dr + 1*8]
@@ -357,10 +357,10 @@ gth_debug_no:
     mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 9
 %endif
 
-    ; parameter for all helper functions (pCtx)    
+    ; parameter for all helper functions (pCtx)
     lea     rsi, [rdx + CPUMCPU.Guest.fpu]
     call    r9
-    
+
     ; Load CPUM pointer into rdx
     mov     rdx, [NAME(pCpumIC) wrt rip]
     CPUMCPU_FROM_CPUM(edx)
@@ -368,10 +368,10 @@ gth_debug_no:
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 10
 %endif
-    
+
     ; Save the return code
     mov     dword [rdx + CPUMCPU.u32RetCode], eax
-    
+
     ; now let's switch back
     jmp     NAME(VMMGCGuestToHostAsm)   ; rax = returncode.
 
@@ -387,7 +387,7 @@ ENDPROC vmmR0HostToGuestAsm
 ; Push the address of this routine.
 ;
 ;
-BITS 32
+BITS 64
 ALIGNCODE(16)
 BEGINPROC vmmGCCallTrampoline
 %ifdef DEBUG_STUFF
@@ -445,11 +445,11 @@ NAME(fpIDEnterTarget):
 dd  0
     FIXUP FIX_HYPER_CS, 0
 dd  0
-        
+
     ; We're now on identity mapped pages!
 ALIGNCODE(16)
 GLOBALNAME IDExitTarget
-BITS 32     
+BITS 32
     DEBUG_CHAR('1')
 
     ; 1. Deactivate long mode by turning off paging.
@@ -492,7 +492,7 @@ just_a_jump:
     ;;
     FIXUP FIX_ID_2_HC_NEAR_REL, 1, NAME(ICExitTarget) - NAME(Start)
     jmp near NAME(ICExitTarget)
-   
+
     ;;
     ;; When we arrive at this label we're at the
     ;; intermediate mapping of the switching code.
@@ -525,7 +525,7 @@ GLOBALNAME ICExitTarget
     mov     edx, [ebx + CPUMCPU.Host.efer + 4]
     wrmsr
     mov     edx, ebx
-    
+
     ; activate host gdt and idt
     lgdt    [edx + CPUMCPU.Host.gdtr]
     DEBUG_CHAR('0')
@@ -570,8 +570,8 @@ GLOBALNAME ICExitTarget
     mov     ebx, [edx + CPUMCPU.Host.ebx]
     mov     ebp, [edx + CPUMCPU.Host.ebp]
 
-    ; store the return code in eax    
-    mov     eax, [edx + CPUMCPU.u32RetCode]   
+    ; store the return code in eax
+    mov     eax, [edx + CPUMCPU.u32RetCode]
     retf
 ENDPROC VMMGCGuestToHostAsm
 
@@ -606,7 +606,7 @@ BEGINPROC VMMGCGuestToHostAsmHyperCtx
 ALIGNCODE(16)
 BEGINPROC VMMGCGuestToHostAsmGuestCtx
       int3
-     
+
 GLOBALNAME End
 ;
 ; The description string (in the text section).
