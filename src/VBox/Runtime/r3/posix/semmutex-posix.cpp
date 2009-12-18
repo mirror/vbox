@@ -101,7 +101,7 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
                 pThis->cNesting = 0;
                 pThis->u32Magic = RTSEMMUTEX_MAGIC;
 #ifdef RTSEMMUTEX_STRICT
-                RTLockValidatorInit(&pThis->ValidatorRec, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, NULL, pThis);
+                RTLockValidatorRecInit(&pThis->ValidatorRec, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, NULL, pThis);
 #endif
 
                 *pMutexSem = pThis;
@@ -146,7 +146,7 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
     pThis->Owner    = (pthread_t)-1;
     pThis->cNesting = UINT32_MAX;
 #ifdef RTSEMMUTEX_STRICT
-    RTLockValidatorDelete(&pThis->ValidatorRec);
+    RTLockValidatorRecDelete(&pThis->ValidatorRec);
 #endif
     RTMemTmpFree(pThis);
 

@@ -67,9 +67,17 @@
 /** The magic value for RTLOCALIPCSERVER::u32Magic. (Katsuhiro Otomo) */
 #define RTLOCALIPCSESSION_MAGIC     0x19530414
 /** The magic value for RTLOCKVALIDATORREC::u32Magic. (Vladimir Vladimirovich Nabokov) */
-#define RTLOCKVALIDATORREC_MAGIC    0x18990422
+#define RTLOCKVALIDATORREC_MAGIC            0x18990422
 /** The dead magic value for RTLOCKVALIDATORREC::u32Magic. */
-#define RTLOCKVALIDATORREC_MAGIC_DEAD 0x19770702
+#define RTLOCKVALIDATORREC_MAGIC_DEAD       0x19770702
+/** The magic value for RTLOCKVALIDATORSHARED::u32Magic. (Agnar Mykle) */
+#define RTLOCKVALIDATORSHARED_MAGIC         0x19150808
+/** The magic value for RTLOCKVALIDATORSHARED::u32Magic after deletion. */
+#define RTLOCKVALIDATORSHARED_MAGIC_DEAD    0x19940115
+/** The magic value for RTLOCKVALIDATORSHAREDONE::u32Magic. (Jens Ingvald Bjoerneboe) */
+#define RTLOCKVALIDATORSHAREDONE_MAGIC      0x19201009
+/** The magic value for RTLOCKVALIDATORSHAREDONE::u32Magic after deletion. */
+#define RTLOCKVALIDATORSHAREDONE_MAGIC_DEAD 0x19760509
 /** Magic number for RTMEMCACHEINT::u32Magic. (Joseph Weizenbaum) */
 #define RTMEMCACHE_MAGIC            0x19230108
 /** Dead magic number for RTMEMCACHEINT::u32Magic. */

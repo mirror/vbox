@@ -86,7 +86,7 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
             pThis->u32Magic = RTSEMMUTEX_MAGIC;
             pThis->hMtx = hMtx;
 #ifdef RTSEMMUTEX_STRICT
-            RTLockValidatorInit(&pThis->ValidatorRec,  NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, NULL, pThis);
+            RTLockValidatorRecInit(&pThis->ValidatorRec,  NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, NULL, pThis);
 #endif
             *pMutexSem = pThis;
             return VINF_SUCCESS;
@@ -126,7 +126,7 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
     }
 
 #ifdef RTSEMMUTEX_STRICT
-    RTLockValidatorDelete(&pThis->ValidatorRec);
+    RTLockValidatorRecDelete(&pThis->ValidatorRec);
 #endif
     RTMemFree(pThis);
     return rc;

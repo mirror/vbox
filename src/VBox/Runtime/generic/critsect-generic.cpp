@@ -44,13 +44,6 @@
 #include "internal/strict.h"
 
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALIDATORSRCPOS pSrcPos);
-DECL_FORCE_INLINE(int) rtCritSectTryEnter(PRTCRITSECT pCritSect, PCRTLOCKVALIDATORSRCPOS pSrcPos);
-
-
 /* In strict mode we're redefining these, so undefine them now for the implementation. */
 #undef RTCritSectEnter
 #undef RTCritSectTryEnter
@@ -75,13 +68,13 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags)
     pCritSect->cNestings            = 0;
     pCritSect->cLockers             = -1;
     pCritSect->NativeThreadOwner    = NIL_RTNATIVETHREAD;
-    int rc = RTLockValidatorCreate(&pCritSect->pValidatorRec, NIL_RTLOCKVALIDATORCLASS, 0, NULL, pCritSect);
+    int rc = RTLockValidatorRecCreate(&pCritSect->pValidatorRec, NIL_RTLOCKVALIDATORCLASS, 0, NULL, pCritSect);
     if (RT_SUCCESS(rc))
     {
         rc = RTSemEventCreate(&pCritSect->EventSem);
         if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
-        RTLockValidatorDestroy(&pCritSect->pValidatorRec);
+        RTLockValidatorRecDestroy(&pCritSect->pValidatorRec);
     }
 
     AssertRC(rc);
@@ -90,105 +83,6 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags)
     return rc;
 }
 RT_EXPORT_SYMBOL(RTCritSectInitEx);
-
-
-static int rtCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects, PCRTLOCKVALIDATORSRCPOS pSrcPos)
-{
-    Assert(cCritSects > 0);
-    AssertPtr(papCritSects);
-
-    /*
-     * Try get them all.
-     */
-    int rc = VERR_INVALID_PARAMETER;
-    size_t i;
-    for (i = 0; i < cCritSects; i++)
-    {
-        rc = rtCritSectTryEnter(papCritSects[i], pSrcPos);
-        if (RT_FAILURE(rc))
-            break;
-    }
-    if (RT_SUCCESS(rc))
-        return rc;
-
-    /*
-     * The retry loop.
-     */
-    for (unsigned cTries = 0; ; cTries++)
-    {
-        /*
-         * We've failed, release any locks we might have gotten. ('i' is the lock that failed btw.)
-         */
-        size_t j = i;
-        while (j-- > 0)
-        {
-            int rc2 = RTCritSectLeave(papCritSects[j]);
-            AssertRC(rc2);
-        }
-        if (rc != VERR_SEM_BUSY)
-            return rc;
-
-        /*
-         * Try prevent any theoretical synchronous races with other threads.
-         */
-        Assert(cTries < 1000000);
-        if (cTries > 10000)
-            RTThreadSleep(cTries % 3);
-
-        /*
-         * Wait on the one we failed to get.
-         */
-        rc = rtCritSectEnter(papCritSects[i], pSrcPos);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        /*
-         * Try take the others.
-         */
-        for (j = 0; j < cCritSects; j++)
-        {
-            if (j != i)
-            {
-                rc = rtCritSectTryEnter(papCritSects[j], pSrcPos);
-                if (RT_FAILURE(rc))
-                    break;
-            }
-        }
-        if (RT_SUCCESS(rc))
-            return rc;
-
-        /*
-         * We failed.
-         */
-        if (i > j)
-        {
-            int rc2 = RTCritSectLeave(papCritSects[i]);
-            AssertRC(rc2);
-        }
-        i = j;
-    }
-}
-
-
-RTDECL(int) RTCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects)
-{
-#ifndef RTCRITSECT_STRICT
-    return rtCritSectEnterMultiple(cCritSects, papCritSects, NULL);
-#else
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
-    return rtCritSectEnterMultiple(cCritSects, papCritSects, &SrcPos);
-#endif
-}
-RT_EXPORT_SYMBOL(RTCritSectEnterMultiple);
-
-
-RTDECL(int) RTCritSectEnterMultipleDebug(size_t cCritSects, PRTCRITSECT *papCritSects, RTUINTPTR uId, RT_SRC_POS_DECL)
-{
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
-    return rtCritSectEnterMultiple(cCritSects, papCritSects, &SrcPos);
-}
-RT_EXPORT_SYMBOL(RTCritSectEnterMultipleDebug);
-
 
 
 DECL_FORCE_INLINE(int) rtCritSectTryEnter(PRTCRITSECT pCritSect, PCRTLOCKVALIDATORSRCPOS pSrcPos)
@@ -341,10 +235,10 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALIDATORS
 RTDECL(int) RTCritSectEnter(PRTCRITSECT pCritSect)
 {
 #ifndef RTCRITSECT_STRICT
-    return rtCritSectTryEnter(pCritSect, NULL);
+    return rtCritSectEnter(pCritSect, NULL);
 #else
     RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
-    return rtCritSectTryEnter(pCritSect, &SrcPos);
+    return rtCritSectEnter(pCritSect, &SrcPos);
 #endif
 }
 RT_EXPORT_SYMBOL(RTCritSectEnter);
@@ -396,6 +290,108 @@ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
 RT_EXPORT_SYMBOL(RTCritSectLeave);
 
 
+
+
+
+static int rtCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+{
+    Assert(cCritSects > 0);
+    AssertPtr(papCritSects);
+
+    /*
+     * Try get them all.
+     */
+    int rc = VERR_INVALID_PARAMETER;
+    size_t i;
+    for (i = 0; i < cCritSects; i++)
+    {
+        rc = rtCritSectTryEnter(papCritSects[i], pSrcPos);
+        if (RT_FAILURE(rc))
+            break;
+    }
+    if (RT_SUCCESS(rc))
+        return rc;
+
+    /*
+     * The retry loop.
+     */
+    for (unsigned cTries = 0; ; cTries++)
+    {
+        /*
+         * We've failed, release any locks we might have gotten. ('i' is the lock that failed btw.)
+         */
+        size_t j = i;
+        while (j-- > 0)
+        {
+            int rc2 = RTCritSectLeave(papCritSects[j]);
+            AssertRC(rc2);
+        }
+        if (rc != VERR_SEM_BUSY)
+            return rc;
+
+        /*
+         * Try prevent any theoretical synchronous races with other threads.
+         */
+        Assert(cTries < 1000000);
+        if (cTries > 10000)
+            RTThreadSleep(cTries % 3);
+
+        /*
+         * Wait on the one we failed to get.
+         */
+        rc = rtCritSectEnter(papCritSects[i], pSrcPos);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /*
+         * Try take the others.
+         */
+        for (j = 0; j < cCritSects; j++)
+        {
+            if (j != i)
+            {
+                rc = rtCritSectTryEnter(papCritSects[j], pSrcPos);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+        }
+        if (RT_SUCCESS(rc))
+            return rc;
+
+        /*
+         * We failed.
+         */
+        if (i > j)
+        {
+            int rc2 = RTCritSectLeave(papCritSects[i]);
+            AssertRC(rc2);
+        }
+        i = j;
+    }
+}
+
+
+RTDECL(int) RTCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects)
+{
+#ifndef RTCRITSECT_STRICT
+    return rtCritSectEnterMultiple(cCritSects, papCritSects, NULL);
+#else
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    return rtCritSectEnterMultiple(cCritSects, papCritSects, &SrcPos);
+#endif
+}
+RT_EXPORT_SYMBOL(RTCritSectEnterMultiple);
+
+
+RTDECL(int) RTCritSectEnterMultipleDebug(size_t cCritSects, PRTCRITSECT *papCritSects, RTUINTPTR uId, RT_SRC_POS_DECL)
+{
+    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    return rtCritSectEnterMultiple(cCritSects, papCritSects, &SrcPos);
+}
+RT_EXPORT_SYMBOL(RTCritSectEnterMultipleDebug);
+
+
+
 RTDECL(int) RTCritSectLeaveMultiple(size_t cCritSects, PRTCRITSECT *papCritSects)
 {
     int rc = VINF_SUCCESS;
@@ -438,7 +434,7 @@ RTDECL(int) RTCritSectDelete(PRTCRITSECT pCritSect)
     int rc = RTSemEventDestroy(EventSem);
     AssertRC(rc);
 
-    RTLockValidatorDestroy(&pCritSect->pValidatorRec);
+    RTLockValidatorRecDestroy(&pCritSect->pValidatorRec);
 
     return rc;
 }
