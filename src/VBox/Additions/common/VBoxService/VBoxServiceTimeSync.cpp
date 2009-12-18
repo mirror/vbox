@@ -410,6 +410,8 @@ static bool VBoxServiceTimeSyncAdjust(PCRTTIMESPEC pDrift)
 static void VBoxServiceTimeSyncCancelAdjust(void)
 {
 #ifdef RT_OS_WINDOWS
+    if (g_hTokenProcess == NULL) /* No process token (anymore)? */
+        return;
     if (SetSystemTimeAdjustment(0, TRUE /* Periodic adjustments disabled. */))
         VBoxServiceVerbose(3, "Windows Time Adjustment is now disabled.\n");
     else if (g_cTimeSyncErrors++ < 10)
