@@ -2932,14 +2932,17 @@ int VBoxGLWidget::vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd)
         pCmd->u.out.cfgFlags = VBOXVHWA_CFG_ENABLED;
 
         pCmd->u.out.caps =
+                    /* we do not support blitting for now */
 //                        VBOXVHWA_CAPS_BLT | VBOXVHWA_CAPS_BLTSTRETCH | VBOXVHWA_CAPS_BLTQUEUE
-//                                 // | VBOXVHWA_CAPS_BLTCOLORFILL not supported, although adding it is trivial
-//                                 // | VBOXVHWA_CAPS_BLTFOURCC set below if shader support is available
+//                                 | VBOXVHWA_CAPS_BLTCOLORFILL not supported, although adding it is trivial
+//                                 | VBOXVHWA_CAPS_BLTFOURCC set below if shader support is available
                                  VBOXVHWA_CAPS_OVERLAY
                                  | VBOXVHWA_CAPS_OVERLAYSTRETCH
                                  | VBOXVHWA_CAPS_OVERLAYCANTCLIP
                                  // | VBOXVHWA_CAPS_OVERLAYFOURCC set below if shader support is available
                                  ;
+
+        /* @todo: check if we could use DDSCAPS_ALPHA instead of colorkeying */
 
         pCmd->u.out.caps2 = VBOXVHWA_CAPS2_CANRENDERWINDOWED
                                     | VBOXVHWA_CAPS2_WIDESURFACES;
