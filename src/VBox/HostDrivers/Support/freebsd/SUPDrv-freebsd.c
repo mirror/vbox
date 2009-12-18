@@ -171,7 +171,7 @@ static int VBoxDrvFreeBSDLoad(void)
         /*
          * Initialize the device extension.
          */
-        rc = supdrvInitDevExt(&g_VBoxDrvFreeBSDDevExt);
+        rc = supdrvInitDevExt(&g_VBoxDrvFreeBSDDevExt, sizeof(SUPDRVSESSION));
         if (RT_SUCCESS(rc))
         {
             /*
