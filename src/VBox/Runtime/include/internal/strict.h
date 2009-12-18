@@ -41,14 +41,6 @@
 # define RTCRITSECT_STRICT
 #endif
 
-#ifdef RTCRITSECT_STRICT
-# define RTCRITSECT_STRICT_POS_DECL             RTHCUINTPTR uId, RT_SRC_POS_DECL
-# define RTCRITSECT_STRICT_POS_ARGS             uId, RT_SRC_POS_ARGS
-#else
-# define RTCRITSECT_STRICT_POS_DECL             int iDummy
-# define RTCRITSECT_STRICT_POS_ARGS             0
-#endif
-
 
 /** @def RTSEMMUTEX_STRICT
  * Enables strictness checks and lock accounting of the RTSemMutex API.
