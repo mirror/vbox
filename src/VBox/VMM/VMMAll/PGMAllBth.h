@@ -955,8 +955,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
  *          (The guest has to shoot down TLB entries on other CPUs itself)
  *          Currently true, but keep in mind!
  *
- * @todo    Flush page or page directory only if necessary!
- * @todo    Add a #define for simply invalidating the page.
+ * @todo    Clean this up! Most of it is (or should be) no longer necessary as we catch all page table accesses.
  */
 PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 {
