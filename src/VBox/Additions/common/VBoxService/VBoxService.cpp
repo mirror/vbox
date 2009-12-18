@@ -30,14 +30,17 @@
 #endif
 #include <errno.h>
 
-#include <iprt/thread.h>
+#include <iprt/asm.h>
+#include <iprt/buildconfig.h>
+#include <iprt/initterm.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
-#include <iprt/initterm.h>
-#include <iprt/asm.h>
-#include <iprt/path.h>
-#include <VBox/log.h>
+#include <iprt/thread.h>
+
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/log.h>
+
 #include "VBoxServiceInternal.h"
 
 
@@ -549,7 +552,8 @@ int main(int argc, char **argv)
     if (iMain == ~0U)
         return VBoxServiceSyntax("At least one service must be enabled.\n");
 
-    VBoxServiceVerbose(0, "Started. Verbose level = %d\n", g_cVerbosity);
+    VBoxServiceVerbose(0, "%s r%s started. Verbose level = %d\n",
+        RTBldCfgVersion(), RTBldCfgRevisionStr(), g_cVerbosity);
 
     /*
      * Daemonize if requested.
