@@ -2141,7 +2141,18 @@ typedef struct LSILOGICSCSI
 # define LSILOGIC_REG_DOORBELL_GET_SIZE(x)             (((x) & 0x00ff0000) >> 16)
 
 #define LSILOGIC_REG_WRITE_SEQUENCE    0x04
+
 #define LSILOGIC_REG_HOST_DIAGNOSTIC   0x08
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_DIAG_MEM_ENABLE     (RT_BIT(0))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_DISABLE_ARM         (RT_BIT(1))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_RESET_ADAPTER       (RT_BIT(2))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_DIAG_RW_ENABLE      (RT_BIT(4))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_RESET_HISTORY       (RT_BIT(5))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_FLASH_BAD_SIG       (RT_BIT(6))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_DRWE                (RT_BIT(7))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_PREVENT_IOC_BOOT    (RT_BIT(9))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_CLEAR_FLASH_BAD_SIG (RT_BIT(10))
+
 #define LSILOGIC_REG_TEST_BASE_ADDRESS 0x0c
 #define LSILOGIC_REG_DIAG_RW_DATA      0x10
 #define LSILOGIC_REG_DIAG_RW_ADDRESS   0x14
@@ -2887,6 +2898,18 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv
             }
             break;
         }
+        case LSILOGIC_REG_HOST_DIAGNOSTIC:
+        {
+#ifndef IN_RING3
+            return VINF_IOM_HC_IOPORT_WRITE;
+#else
+            if (u32 & LSILOGIC_REG_HOST_DIAGNOSTIC_RESET_ADAPTER)
+            {
+                lsilogicHardReset(pThis);
+            }
+            break;
+#endif
+        }
         default: /* Ignore. */
         {
             break;
@@ -2967,8 +2990,15 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv,
             u32 = pThis->uInterruptMask;
             break;
         }
-        case LSILOGIC_REG_HOST_DIAGNOSTIC: /* The spec doesn't say anything about these registers, so we just ignore them */
-        case LSILOGIC_REG_TEST_BASE_ADDRESS:
+        case LSILOGIC_REG_HOST_DIAGNOSTIC:
+        {
+            if (pThis->fDiagnosticEnabled)
+                u32 = LSILOGIC_REG_HOST_DIAGNOSTIC_DRWE;
+            else
+                u32 = 0;
+            break;
+        }
+        case LSILOGIC_REG_TEST_BASE_ADDRESS: /* The spec doesn't say anything about these registers, so we just ignore them */
         case LSILOGIC_REG_DIAG_RW_DATA:
         case LSILOGIC_REG_DIAG_RW_ADDRESS:
         default: /* Ignore. */
