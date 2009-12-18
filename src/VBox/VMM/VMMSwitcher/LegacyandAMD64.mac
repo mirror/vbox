@@ -391,9 +391,9 @@ BITS 64
 ALIGNCODE(16)
 BEGINPROC vmmGCCallTrampoline
 %ifdef DEBUG_STUFF
-    COM32_S_CHAR 'c'
-    COM32_S_CHAR 't'
-    COM32_S_CHAR '!'
+    COM64_S_CHAR 'c'
+    COM64_S_CHAR 't'
+    COM64_S_CHAR '!'
 %endif
     int3
 ENDPROC vmmGCCallTrampoline
