@@ -3031,6 +3031,92 @@ DECLINLINE(RTR3PTR) ASMAtomicXchgR3Ptr(RTR3PTR volatile *ppvR3, RTR3PTR pvR3)
     } while (0)
 
 
+
+/**
+ * Atomically Compare and Exchange an unsigned 8-bit value, ordered.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   pu8         Pointer to the value to update.
+ * @param   u8New       The new value to assigned to *pu8.
+ * @param   u8Old       The old value to *pu8 compare with.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(bool) ASMAtomicCmpXchgU8(volatile uint8_t *pu8, const uint8_t u8New, const uint8_t u8Old);
+#else
+DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t *pu8, const uint8_t u8New, uint8_t u8Old)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    uint8_t u8Ret;
+    __asm__ __volatile__("lock; cmpxchgb %3, %0\n\t"
+                         "setz  %1\n\t"
+                         : "=m" (*pu8),
+                           "=qm" (u8Ret),
+                           "=a" (u8Old)
+                         : "r" (u8New),
+                           "2" (u8Old),
+                           "m" (*pu8));
+    return (bool)u8Ret;
+
+# else
+    uint8_t u8Ret;
+    __asm
+    {
+#  ifdef RT_ARCH_AMD64
+        mov     rdx, [pu8]
+#  else
+        mov     edx, [pu8]
+#  endif
+        mov     al, [u8Old]
+        mov     cl, [u8New]
+#  ifdef RT_ARCH_AMD64
+        lock cmpxchg [rdx], cl
+#  else
+        lock cmpxchg [edx], cl
+#  endif
+        setz    al
+        movzx   eax, al
+        mov     [u8Ret], eax
+    }
+    return !!u8Ret;
+# endif
+}
+#endif
+
+
+/**
+ * Atomically Compare and Exchange a signed 8-bit value, ordered.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   pi8         Pointer to the value to update.
+ * @param   i8New       The new value to assigned to *pi8.
+ * @param   i8Old       The old value to *pi8 compare with.
+ */
+DECLINLINE(bool) ASMAtomicCmpXchgS8(volatile int8_t *pi8, const int8_t i8New, const int8_t i8Old)
+{
+    return ASMAtomicCmpXchgU8((volatile uint8_t *)pi8, (const uint8_t)i8New, (const uint8_t)i8Old);
+}
+
+
+/**
+ * Atomically Compare and Exchange a bool value, ordered.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   pf          Pointer to the value to update.
+ * @param   fNew        The new value to assigned to *pf.
+ * @param   fOld        The old value to *pf compare with.
+ */
+DECLINLINE(bool) ASMAtomicCmpXchgBool(volatile bool *pf, const bool fNew, const bool fOld)
+{
+    return ASMAtomicCmpXchgU8((volatile uint8_t *)pf, (const uint8_t)fNew, (const uint8_t)fOld);
+}
+
+
 /**
  * Atomically Compare and Exchange an unsigned 32-bit value, ordered.
  *
