@@ -133,7 +133,7 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                 PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
                 memset(pDevExt, 0, sizeof(*pDevExt));
 
-                vrc = supdrvInitDevExt(pDevExt);
+                vrc = supdrvInitDevExt(pDevExt, sizeof(SUPDRVSESSION));
                 if (!vrc)
                 {
                     /*

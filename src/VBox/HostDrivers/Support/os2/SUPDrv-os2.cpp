@@ -101,7 +101,7 @@ DECLASM(int) VBoxDrvInit(const char *pszArgs)
         /*
          * Initialize the device extension.
          */
-        rc = supdrvInitDevExt(&g_DevExt);
+        rc = supdrvInitDevExt(&g_DevExt, sizeof(SUPDRVSESSION));
         if (RT_SUCCESS(rc))
         {
             /*

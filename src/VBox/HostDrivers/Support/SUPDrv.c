@@ -336,8 +336,12 @@ PFNRT g_apfnVBoxDrvIPRTDeps[] =
  *
  * @returns IPRT status code.
  * @param   pDevExt     The device extension to initialize.
+ * @param   cbSession   The size of the session structure.  The size of
+ *                      SUPDRVSESSION may be smaller when SUPDRV_AGNOSTIC is
+ *                      defined because we're skipping the OS specific members
+ *                      then.
  */
-int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
+int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession)
 {
     int rc;
 
@@ -384,6 +388,7 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
                     if (RT_SUCCESS(rc))
                     {
                         pDevExt->u32Cookie = BIRD;  /** @todo make this random? */
+                        pDevExt->cbSession = cbSession;
 
                         /*
                          * Fixup the absolute symbols.
@@ -553,8 +558,8 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSI
     /*
      * Allocate memory for the session data.
      */
-    int rc = VERR_NO_MEMORY;
-    PSUPDRVSESSION pSession = *ppSession = (PSUPDRVSESSION)RTMemAllocZ(sizeof(*pSession));
+    int             rc;
+    PSUPDRVSESSION  pSession = *ppSession = (PSUPDRVSESSION)RTMemAllocZ(pDevExt->cbSession);
     if (pSession)
     {
         /* Initialize session data. */
@@ -598,6 +603,8 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSI
         *ppSession = NULL;
         Log(("Failed to create spinlock, rc=%d!\n", rc));
     }
+    else
+        rc = VERR_NO_MEMORY;
 
     return rc;
 }

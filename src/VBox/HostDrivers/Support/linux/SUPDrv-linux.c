@@ -608,7 +608,7 @@ no_error:
              * Initialize the device extension.
              */
             if (RT_SUCCESS(rc))
-                rc = supdrvInitDevExt(&g_DevExt);
+                rc = supdrvInitDevExt(&g_DevExt, sizeof(SUPDRVSESSION));
             if (RT_SUCCESS(rc))
             {
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
@@ -731,7 +731,7 @@ static int VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp)
     /*
      * Call common code for the rest.
      */
-    rc = supdrvCreateSession(&g_DevExt, true /* fUser */, (PSUPDRVSESSION *)&pSession);
+    rc = supdrvCreateSession(&g_DevExt, true /* fUser */, &pSession);
     if (!rc)
     {
         pSession->Uid = vboxdrvLinuxUid();
