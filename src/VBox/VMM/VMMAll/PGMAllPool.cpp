@@ -1953,10 +1953,7 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
     /*
      * Found a usable page, flush it and return.
      */
-    int rc = pgmPoolFlushPage(pPool, pPage); 
-    /* This flush was initiated by us and not the guest, so explicitly flush the TLB. */ 
-    if (rc == VINF_SUCCESS) 
-        PGM_INVL_ALL_VCPU_TLBS(pVM); 
+    pgmPoolFlushPage(pPool, pPage); 
     return rc; 
 }
 
@@ -2131,7 +2128,6 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
                     {
                         STAM_COUNTER_INC(&pPool->StatCacheKindMismatches);
                         pgmPoolFlushPage(pPool, pPage);
-                        PGM_INVL_VCPU_TLBS(VMMGetCpu(pVM));
                         break;
                     }
                 }
@@ -4469,10 +4465,12 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  * @retval  VINF_SUCCESS on success.
  * @param   pPool       The pool.
  * @param   HCPhys      The HC physical address of the shadow page.
+ * @param   fFlush      Flush the TLBS when required (should only be false in very specific use cases!!)
  */
-int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
+int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
 {
-    PVM pVM = pPool->CTX_SUFF(pVM);
+    PVM     pVM = pPool->CTX_SUFF(pVM);
+    bool    fFlushRequired = false;
 
     int rc = VINF_SUCCESS;
     STAM_PROFILE_START(&pPool->StatFlushPage, f);
@@ -4528,6 +4526,10 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 #endif
 
 #ifdef PGMPOOL_WITH_USER_TRACKING
+    /* If there are any users of this table, then we *must* issue a tlb flush on all VCPUs. */
+    if (pPage->iUserHead != NIL_PGMPOOL_USER_INDEX)
+        fFlushRequired = true;
+
     /*
      * Clear the page.
      */
@@ -4569,6 +4571,13 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     pPage->fReusedFlushPending = false;
 
     pPool->cUsedPages--;
+
+    /* Flush the TLBs of all VCPUs if required. */
+    if (    fFlushRequired
+        &&  fFlush)
+    {
+        PGM_INVL_ALL_VCPU_TLBS();
+    }
 
     pgmUnlock(pVM);
     STAM_PROFILE_STOP(&pPool->StatFlushPage, f);
@@ -5135,6 +5144,7 @@ void pgmR3PoolReset(PVM pVM)
         PVMCPU pVCpu = &pVM->aCpus[i];
         pgmR3ReEnterShadowModeAfterPoolFlush(pVM, pVCpu);
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
     }
 
     STAM_PROFILE_STOP(&pPool->StatR3Reset, a);
