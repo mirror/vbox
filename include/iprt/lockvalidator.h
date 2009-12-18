@@ -213,7 +213,7 @@ typedef RTLOCKVALIDATORSHARED *PRTLOCKVALIDATORSHARED;
 /**
  * Initialize a lock validator record.
  *
- * Use RTLockValidatorDelete to deinitialize it.
+ * Use RTLockValidatorRecDelete to deinitialize it.
  *
  * @param   pRec                The record.
  * @param   hClass              The class. If NIL, the no lock order
@@ -224,20 +224,21 @@ typedef RTLOCKVALIDATORSHARED *PRTLOCKVALIDATORSHARED;
  * @param   pszName             The lock name (optional).
  * @param   hLock               The lock handle.
  */
-RTDECL(void) RTLockValidatorInit(PRTLOCKVALIDATORREC pRec, RTLOCKVALIDATORCLASS hClass,
-                                 uint32_t uSubClass, const char *pszName, void *hLock);
+RTDECL(void) RTLockValidatorRecInit(PRTLOCKVALIDATORREC pRec, RTLOCKVALIDATORCLASS hClass,
+                                    uint32_t uSubClass, const char *pszName, void *hLock);
 /**
  * Uninitialize a lock validator record previously initialized by
- * RTLockValidatorInit.
+ * RTLockRecValidatorInit.
  *
  * @param   pRec                The record.  Must be valid.
  */
-RTDECL(void) RTLockValidatorDelete(PRTLOCKVALIDATORREC pRec);
+RTDECL(void) RTLockValidatorRecDelete(PRTLOCKVALIDATORREC pRec);
 
 /**
  * Create and initialize a lock validator record.
  *
- * Use RTLockValidatorDestroy to deinitialize and destroy the returned record.
+ * Use RTLockValidatorRecDestroy to deinitialize and destroy the returned
+ * record.
  *
  * @return VINF_SUCCESS or VERR_NO_MEMORY.
  * @param   ppRec               Where to return the record pointer.
@@ -249,16 +250,40 @@ RTDECL(void) RTLockValidatorDelete(PRTLOCKVALIDATORREC pRec);
  * @param   pszName             The lock name (optional).
  * @param   hLock               The lock handle.
  */
-RTDECL(int)  RTLockValidatorCreate(PRTLOCKVALIDATORREC *ppRec, RTLOCKVALIDATORCLASS hClass,
-                                   uint32_t uSubClass, const char *pszName, void *hLock);
+RTDECL(int)  RTLockValidatorRecCreate(PRTLOCKVALIDATORREC *ppRec, RTLOCKVALIDATORCLASS hClass,
+                                      uint32_t uSubClass, const char *pszName, void *hLock);
 
 /**
- * Deinitialize and destroy a record created by RTLockValidatorCreate.
+ * Deinitialize and destroy a record created by RTLockValidatorRecCreate.
  *
  * @param   ppRec               Pointer to the record pointer.  Will be set to
  *                              NULL.
  */
-RTDECL(void) RTLockValidatorDestroy(PRTLOCKVALIDATORREC *ppRec);
+RTDECL(void) RTLockValidatorRecDestroy(PRTLOCKVALIDATORREC *ppRec);
+
+/**
+ * Initialize a lock validator record for a shared lock.
+ *
+ * Use RTLockValidatorSharedRecDelete to deinitialize it.
+ *
+ * @param   pRec                The shared lock record.
+ * @param   hClass              The class. If NIL, the no lock order
+ *                              validation will be performed on this lock.
+ * @param   uSubClass           The sub-class.  This is used to define lock
+ *                              order inside the same class.  If you don't know,
+ *                              then pass RTLOCKVALIDATOR_SUB_CLASS_NONE.
+ * @param   pszName             The lock name (optional).
+ * @param   hLock               The lock handle.
+ */
+RTDECL(void) RTLockValidatorSharedRecInit(PRTLOCKVALIDATORSHARED pRec, RTLOCKVALIDATORCLASS hClass,
+                                          uint32_t uSubClass, const char *pszName, void *hLock);
+/**
+ * Uninitialize a lock validator record previously initialized by
+ * RTLockValidatorSharedRecInit.
+ *
+ * @param   pRec                The shared lock record.  Must be valid.
+ */
+RTDECL(void) RTLockValidatorSharedRecDelete(PRTLOCKVALIDATORSHARED pRec);
 
 /**
  * Check the locking order.

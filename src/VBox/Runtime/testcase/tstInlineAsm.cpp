@@ -563,6 +563,28 @@ static void tstASMAtomicXchgPtr(void)
 }
 
 
+static void tstASMAtomicCmpXchgU8(void)
+{
+    struct
+    {
+        uint8_t u8Before;
+        uint8_t u8;
+        uint8_t u8After;
+    } u = { 0xcc, 0xff, 0xaa };
+
+    CHECKOP(ASMAtomicCmpXchgU8(&u.u8, 0, 0), false, "%d", bool);
+    CHECKVAL(u.u8, 0xff, "%x"); CHECKVAL(u.u8Before, 0xcc, "%x"); CHECKVAL(u.u8After, 0xaa, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgU8(&u.u8, 0, 0xff), true, "%d", bool);
+    CHECKVAL(u.u8, 0, "%x");    CHECKVAL(u.u8Before, 0xcc, "%x"); CHECKVAL(u.u8After, 0xaa, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgU8(&u.u8, 0x79, 0xff), false, "%d", bool);
+    CHECKVAL(u.u8, 0, "%x");    CHECKVAL(u.u8Before, 0xcc, "%x"); CHECKVAL(u.u8After, 0xaa, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgU8(&u.u8, 0x97, 0), true, "%d", bool);
+    CHECKVAL(u.u8, 0x97, "%x"); CHECKVAL(u.u8Before, 0xcc, "%x"); CHECKVAL(u.u8After, 0xaa, "%x");
+}
+
 static void tstASMAtomicCmpXchgU32(void)
 {
     uint32_t u32 = 0xffffffff;
@@ -1214,6 +1236,7 @@ int main(int argc, char *argv[])
     tstASMAtomicXchgU32();
     tstASMAtomicXchgU64();
     tstASMAtomicXchgPtr();
+    tstASMAtomicCmpXchgU8();
     tstASMAtomicCmpXchgU32();
     tstASMAtomicCmpXchgU64();
     tstASMAtomicCmpXchgExU32();

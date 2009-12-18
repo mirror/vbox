@@ -139,8 +139,8 @@ DECLHIDDEN(void) rtLockValidatorSerializeDetectionLeave(void)
 }
 
 
-RTDECL(void) RTLockValidatorInit(PRTLOCKVALIDATORREC pRec, RTLOCKVALIDATORCLASS hClass,
-                                 uint32_t uSubClass, const char *pszName, void *hLock)
+RTDECL(void) RTLockValidatorRecInit(PRTLOCKVALIDATORREC pRec, RTLOCKVALIDATORCLASS hClass,
+                                    uint32_t uSubClass, const char *pszName, void *hLock)
 {
     pRec->u32Magic      = RTLOCKVALIDATORREC_MAGIC;
     rtLockValidatorInitSrcPos(&pRec->SrcPos);
@@ -166,21 +166,21 @@ RTDECL(void) RTLockValidatorInit(PRTLOCKVALIDATORREC pRec, RTLOCKVALIDATORCLASS 
 }
 
 
-RTDECL(int)  RTLockValidatorCreate(PRTLOCKVALIDATORREC *ppRec, RTLOCKVALIDATORCLASS hClass,
-                                  uint32_t uSubClass, const char *pszName, void *pvLock)
+RTDECL(int)  RTLockValidatorRecCreate(PRTLOCKVALIDATORREC *ppRec, RTLOCKVALIDATORCLASS hClass,
+                                      uint32_t uSubClass, const char *pszName, void *pvLock)
 {
     PRTLOCKVALIDATORREC pRec;
     *ppRec = pRec = (PRTLOCKVALIDATORREC)RTMemAlloc(sizeof(*pRec));
     if (!pRec)
         return VERR_NO_MEMORY;
 
-    RTLockValidatorInit(pRec, hClass, uSubClass, pszName, pvLock);
+    RTLockValidatorRecInit(pRec, hClass, uSubClass, pszName, pvLock);
 
     return VINF_SUCCESS;
 }
 
 
-RTDECL(void) RTLockValidatorDelete(PRTLOCKVALIDATORREC pRec)
+RTDECL(void) RTLockValidatorRecDelete(PRTLOCKVALIDATORREC pRec)
 {
     Assert(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC);
 
@@ -194,15 +194,75 @@ RTDECL(void) RTLockValidatorDelete(PRTLOCKVALIDATORREC pRec)
 }
 
 
-RTDECL(void) RTLockValidatorDestroy(PRTLOCKVALIDATORREC *ppRec)
+RTDECL(void) RTLockValidatorRecDestroy(PRTLOCKVALIDATORREC *ppRec)
 {
     PRTLOCKVALIDATORREC pRec = *ppRec;
     *ppRec = NULL;
     if (pRec)
     {
-        RTLockValidatorDelete(pRec);
+        RTLockValidatorRecDelete(pRec);
         RTMemFree(pRec);
     }
+}
+
+
+RTDECL(void) RTLockValidatorSharedRecInit(PRTLOCKVALIDATORSHARED pRec, RTLOCKVALIDATORCLASS hClass,
+                                          uint32_t uSubClass, const char *pszName, void *hLock)
+{
+    pRec->u32Magic      = RTLOCKVALIDATORSHARED_MAGIC;
+    pRec->uSubClass     = uSubClass;
+    pRec->hClass        = hClass;
+    pRec->hLock         = hLock;
+    pRec->pszName       = pszName;
+
+    /* the table */
+    pRec->cEntries      = 0;
+    pRec->iLastEntry    = 0;
+    pRec->cAllocated    = 0;
+    pRec->fReallocating = false;
+    pRec->afPadding[0]  = false;
+    pRec->afPadding[1]  = false;
+    pRec->afPadding[2]  = false;
+    pRec->papOwners     = NULL;
+    pRec->u64Alignment  = UINT64_MAX;
+}
+
+
+RTDECL(void) RTLockValidatorSharedRecDelete(PRTLOCKVALIDATORSHARED pRec)
+{
+    Assert(pRec->u32Magic == RTLOCKVALIDATORSHARED_MAGIC);
+
+    /*
+     * Flip it into table realloc mode and take the destruction lock.
+     */
+    rtLockValidatorSerializeDestructEnter();
+
+    if (!ASMAtomicCmpXchgBool(&pRec->fReallocating, true, false))
+    {
+        for (;;)
+        {
+            rtLockValidatorSerializeDestructEnter();
+            rtLockValidatorSerializeDetectionEnter();
+            rtLockValidatorSerializeDetectionLeave();
+            rtLockValidatorSerializeDestructEnter();
+            if (ASMAtomicCmpXchgBool(&pRec->fReallocating, true, false))
+                break;
+        }
+    }
+
+    ASMAtomicWriteU32(&pRec->u32Magic, RTLOCKVALIDATORSHARED_MAGIC_DEAD);
+    ASMAtomicUoWriteHandle(&pRec->hClass, NIL_RTLOCKVALIDATORCLASS);
+    if (pRec->papOwners)
+    {
+        PRTLOCKVALIDATORSHAREDONE volatile *papOwners = pRec->papOwners;
+        ASMAtomicUoWritePtr((void * volatile *)&pRec->papOwners, NULL);
+        ASMAtomicUoWriteU32(&pRec->cAllocated, 0);
+
+        RTMemFree((void *)pRec->papOwners);
+    }
+    ASMAtomicWriteBool(&pRec->fReallocating, false);
+
+    rtLockValidatorSerializeDestructLeave();
 }
 
 
