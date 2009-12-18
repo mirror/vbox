@@ -104,10 +104,10 @@ NAME(%1):
 ;;
 ; Global exported marker which is DECLASM() compatible.
 %macro EXPORTEDNAME 1,
+ %ifdef ASM_FORMAT_PE
+  export %1=NAME(%1)
+ %endif
  %ifdef __NASM__
-  %ifdef ASM_FORMAT_PE
-   export %1=NAME(%1)
-  %endif
   %ifdef ASM_FORMAT_OMF
    export NAME(%1) NAME(%1)
   %endif
