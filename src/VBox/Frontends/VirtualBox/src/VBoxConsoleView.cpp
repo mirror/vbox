@@ -1346,6 +1346,8 @@ bool VBoxConsoleView::event (QEvent *e)
                     mIgnoreFrameBufferResize = false;
                 }
 
+                mMainWnd->onDisplayResize (re->width(), re->height());
+
                 return true;
             }
 
