@@ -4575,7 +4575,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
     if (    fFlushRequired
         &&  fFlush)
     {
-        PGM_INVL_ALL_VCPU_TLBS();
+        PGM_INVL_ALL_VCPU_TLBS(pVM);
     }
 
     pgmUnlock(pVM);
