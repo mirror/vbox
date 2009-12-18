@@ -92,6 +92,7 @@ PROGRAMS += \
 	tstSemEvent \
 	tstSemMutex \
 	tstSemPingPong \
+	tstSemRW \
 	tstSems \
 	tstRTSemXRoads \
 	tstRTStrCache \
@@ -124,8 +125,7 @@ PROGRAMS.linux += \
 	tstRTProcIsRunningByName \
 	tstRTBitOperationsPIC3 \
 	tstInlineAsmPIC \
-	tstInlineAsmPIC3 \
-	tstSemRW
+	tstInlineAsmPIC3
 PROGRAMS.l4 += \
 	tstIoCtl
 PROGRAMS.darwin += \
