@@ -3017,18 +3017,18 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv,
         }
         case 2:
         {
-            uint8_t uRegOff = uOffset - (uOffset & 3);
+            uint8_t uBitsOff = (uOffset - (uOffset & 3))*8;
 
-            u32 = u32 & (0xffff << uRegOff);
-            *(uint16_t *)pv = u32 >> uRegOff;
+            u32 &= (0xffff << uBitsOff);
+            *(uint16_t *)pv = (uint16_t)(u32 >> uBitsOff);
             break;
         }
         case 1:
         {
-            uint8_t uRegOff = uOffset - (uOffset & 3);
+            uint8_t uBitsOff = (uOffset - (uOffset & 3))*8;
 
-            u32 = u32 & (0xff << uRegOff);
-            *(uint8_t *)pv = u32 >> uRegOff;
+            u32 &= (0xff << uBitsOff);
+            *(uint8_t *)pv = (uint8_t)(u32 >> uBitsOff);
             break;
         }
         default:
