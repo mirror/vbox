@@ -30,7 +30,10 @@ if1of ($(KBUILD_TARGET), linux)
  vboxvideo_drv_TEMPLATE = VBOXGUESTR3XF86MOD
  vboxvideo_drv_DEFS.linux = linux
  vboxvideo_drv_DEFS.x86 = __i386__
- vboxvideo_drv_DEFS = \
+ # This one has to be defined when building server code on systems where
+ # unslgned long is 64bits
+ vboxvideo_drv_DEFS.amd64 += _XSERVER64
+vboxvideo_drv_DEFS = \
 	_POSIX_C_SOURCE=199309L _POSIX_SOURCE _XOPEN_SOURCE \
 	_BSD_SOURCE _SVID_SOURCE _GNU_SOURCE SHAPE XINPUT XKB LBX XAPPGROUP \
 	XCSECURITY TOGCUP XF86BIGFONT DPMSExtension PIXPRIV PANORAMIX RENDER \
