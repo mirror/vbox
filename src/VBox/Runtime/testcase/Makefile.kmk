@@ -92,7 +92,7 @@ PROGRAMS += \
 	tstSemEvent \
 	tstSemMutex \
 	tstSemPingPong \
-	tstSemRW \
+	tstRTSemRW \
 	tstSems \
 	tstRTSemXRoads \
 	tstRTStrCache \
@@ -365,7 +365,8 @@ tstSemMutex_SOURCES = tstSemMutex.cpp
 
 tstSemEvent_SOURCES = tstSemEvent.cpp
 
-tstSemRW_SOURCES = tstSemRW.cpp
+tstRTSemRW_TEMPLATE = VBOXR3TSTEXE
+tstRTSemRW_SOURCES = tstRTSemRW.cpp
 
 tstSemPingPong_SOURCES = tstSemPingPong.cpp
 
