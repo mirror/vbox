@@ -108,7 +108,7 @@ OBJS   = \
 	common/log/logcom.o \
 	common/log/logformat.o \
 	common/misc/RTAssertMsg1Weak.o \
-	common/misc/RTAssertMsg2V.o \
+	common/misc/RTAssertMsg2.o \
 	common/misc/RTAssertMsg2Weak.o \
 	common/misc/RTAssertMsg2WeakV.o \
 	common/misc/assert.o \

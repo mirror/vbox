@@ -73,7 +73,7 @@ SRCS += \
 .PATH:	${.CURDIR}/common/misc
 SRCS += \
 	RTAssertMsg1Weak.c \
-	RTAssertMsg2V.c \
+	RTAssertMsg2.c \
 	RTAssertMsg2Weak.c \
 	RTAssertMsg2WeakV.c \
 	assert.c \
