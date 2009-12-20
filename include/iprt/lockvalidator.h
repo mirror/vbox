@@ -102,8 +102,10 @@ typedef struct RTLOCKVALIDATORREC
 {
     /** Magic value (RTLOCKVALIDATORREC_MAGIC). */
     uint32_t                            u32Magic;
+    /** Whether it's enabled or not. */
+    bool                                fEnabled;
     /** Reserved. */
-    uint32_t                            u32Reserved;
+    bool                                afReserved[3];
     /** Source position where the lock was taken. */
     RTLOCKVALIDATORSRCPOS               SrcPos;
     /** The current owner thread. */
@@ -185,8 +187,10 @@ typedef struct RTLOCKVALIDATORSHARED
      * sure there is exactly one thread doing the reallocation and that nobody is
      * using the table at that point. */
     bool volatile                       fReallocating;
+    /** Whether it's enabled or not. */
+    bool                                fEnabled;
     /** Alignment padding. */
-    bool                                afPadding[3];
+    bool                                afPadding[2];
     /** Pointer to a table containing pointers to records of all the owners. */
     R3R0PTRTYPE(PRTLOCKVALIDATORSHAREDONE volatile *) papOwners;
     /** Alignment padding. */
@@ -549,6 +553,23 @@ RTDECL(void) RTLockValidatorReadLockDec(RTTHREAD Thread);
 
 
 /*RTDECL(int) RTLockValidatorClassCreate();*/
+
+
+
+/**
+ * Enables / disables the lock validator for new locks.
+ *
+ * @returns The old setting.
+ * @param   fEnabled    The new setting.
+ */
+RTDECL(bool) RTLockValidatorSetEnabled(bool fEnabled);
+
+/**
+ * Is the lock validator enabled?
+ *
+ * @returns True if enabled, false if not.
+ */
+RTDECL(bool) RTLockValidatorIsEnabled(void);
 
 
 RT_C_DECLS_END
