@@ -213,7 +213,7 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
     RTTHREAD    Self = (RTTHREAD)RTThreadNativeSelf();
     unsigned    cMilliesInitial = cMillies;
     uint64_t    tsStart = 0;
-    if (cMillies != RT_INDEFINITE_WAIT)
+    if (cMillies != RT_INDEFINITE_WAIT && cMillies != 0)
         tsStart = RTTimeNanoTS();
 
     /*
@@ -226,13 +226,77 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
         return rc;
     }
 
+    /*
+     * Check if the state of affairs allows read access.
+     * Do not block further readers if there is a writer waiting, as
+     * that will break/deadlock reader recursion.
+     */
+    if (!pThis->cWrites
+        /** @todo && (   pThis->cReads
+         *            || !pThis->cWritesWaiting) ?? - making sure not to race waiting
+         *        writers.  */
+       )
+    {
+        pThis->cReads++;
+
+        RTCritSectLeave(&pThis->CritSect);
+        return VINF_SUCCESS;
+    }
+
+    if (pThis->Writer == Self)
+    {
+        pThis->cWriterReads++;
+
+        RTCritSectLeave(&pThis->CritSect);
+        return VINF_SUCCESS;
+    }
+
+    RTCritSectLeave(&pThis->CritSect);
+
+    /*
+     * Wait till it's ready for reading.
+     */
+    if (cMillies == 0)
+        return VERR_TIMEOUT;
+
     for (;;)
     {
+        if (cMillies != RT_INDEFINITE_WAIT)
+        {
+            int64_t tsDelta = RTTimeNanoTS() - tsStart;
+            if (tsDelta >= 1000000)
+            {
+                tsDelta /= 1000000;
+                if ((uint64_t)tsDelta < cMilliesInitial)
+                    cMilliesInitial = (unsigned)tsDelta;
+                else
+                    cMilliesInitial = 1;
+            }
+        }
+        int rcWait = rc = RTSemEventMultiWait(pThis->ReadEvent, cMillies);
+        if (RT_FAILURE(rc) && rc != VERR_TIMEOUT) /* handle timeout below */
+        {
+            AssertMsgRC(rc, ("RTSemEventMultiWait failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
+            break;
+        }
+
+        if (pThis->u32Magic != RTSEMRW_MAGIC)
+        {
+            rc = VERR_SEM_DESTROYED;
+            break;
+        }
+
         /*
-         * Check if the state of affairs allows read access.
-         * Do not block further readers if there is a writer waiting, as
-         * that will break/deadlock reader recursion.
+         * Re-take critsect and repeate the exact same checks as we did before
+         * the loop.
          */
+        rc = RTCritSectEnter(&pThis->CritSect);
+        if (RT_FAILURE(rc))
+        {
+            AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
+            break;
+        }
+
         if (!pThis->cWrites
             /** @todo && (   pThis->cReads
              *            || !pThis->cWritesWaiting) ?? - making sure not to race waiting
@@ -256,38 +320,11 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
         RTCritSectLeave(&pThis->CritSect);
 
         /*
-         * Wait till it's ready for reading.
+         * Quit if the wait already timed out.
          */
-        if (cMillies != RT_INDEFINITE_WAIT)
+        if (rcWait == VERR_TIMEOUT)
         {
-            int64_t tsDelta = RTTimeNanoTS() - tsStart;
-            if (tsDelta >= 1000000)
-            {
-                cMillies = cMilliesInitial - (unsigned)(tsDelta / 1000000);
-                if (cMillies > cMilliesInitial)
-                    cMillies = cMilliesInitial ? 1 : 0;
-            }
-        }
-        rc = RTSemEventMultiWait(pThis->ReadEvent, cMillies);
-        if (RT_FAILURE(rc) && rc != VERR_TIMEOUT)
-        {
-            AssertMsgRC(rc, ("RTSemEventMultiWait failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
-            break;
-        }
-
-        if (pThis->u32Magic != RTSEMRW_MAGIC)
-        {
-            rc = VERR_SEM_DESTROYED;
-            break;
-        }
-
-        /*
-         * Re-take critsect.
-         */
-        rc = RTCritSectEnter(&pThis->CritSect);
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
+            rc = VERR_TIMEOUT;
             break;
         }
     }
@@ -378,15 +415,78 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
     }
 
     /*
+     * Check if the state of affairs allows write access.
+     */
+    if (!pThis->cReads && (!pThis->cWrites || pThis->Writer == Self))
+    {
+        /*
+         * Reset the reader event semaphore if necessary.
+         */
+        if (pThis->fNeedResetReadEvent)
+        {
+            pThis->fNeedResetReadEvent = false;
+            rc = RTSemEventMultiReset(pThis->ReadEvent);
+            AssertMsgRC(rc, ("Failed to reset readers, rwsem %p, rc=%Rrc.\n", RWSem, rc));
+        }
+
+        pThis->cWrites++;
+        pThis->Writer = Self;
+
+        RTCritSectLeave(&pThis->CritSect);
+        return VINF_SUCCESS;
+    }
+
+    /*
      * Signal writer presence.
      */
-    pThis->cWritesWaiting++;
+    if (cMillies != 0)
+        pThis->cWritesWaiting++;
+
+    RTCritSectLeave(&pThis->CritSect);
+
+    /*
+     * Wait till it's ready for writing.
+     */
+    if (cMillies == 0)
+        return VERR_TIMEOUT;
 
     for (;;)
     {
+        if (cMillies != RT_INDEFINITE_WAIT)
+        {
+            int64_t tsDelta = RTTimeNanoTS() - tsStart;
+            if (tsDelta >= 1000000)
+            {
+                tsDelta /= 1000000;
+                if ((uint64_t)tsDelta < cMilliesInitial)
+                    cMilliesInitial = (unsigned)tsDelta;
+                else
+                    cMilliesInitial = 1;
+            }
+        }
+        int rcWait = rc = RTSemEventWait(pThis->WriteEvent, cMillies);
+        if (RT_UNLIKELY(RT_FAILURE_NP(rc) && rc != VERR_TIMEOUT)) /* timeouts are handled below */
+        {
+            AssertMsgRC(rc, ("RTSemEventWait failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
+            break;
+        }
+
+        if (RT_UNLIKELY(pThis->u32Magic != RTSEMRW_MAGIC))
+        {
+            rc = VERR_SEM_DESTROYED;
+            break;
+        }
+
         /*
-         * Check if the state of affairs allows write access.
+         * Re-take critsect and repeate the check we did prior to this loop.
          */
+        rc = RTCritSectEnter(&pThis->CritSect);
+        if (RT_FAILURE(rc))
+        {
+            AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
+            break;
+        }
+
         if (!pThis->cReads && (!pThis->cWrites || pThis->Writer == Self))
         {
             /*
@@ -401,8 +501,8 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 
             pThis->cWrites++;
             pThis->Writer = Self;
-            /* We're not waiting, so decrease counter. */
             pThis->cWritesWaiting--;
+
             RTCritSectLeave(&pThis->CritSect);
             return VINF_SUCCESS;
         }
@@ -410,41 +510,13 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
         RTCritSectLeave(&pThis->CritSect);
 
         /*
-         * Wait till it's ready for writing.
+         * Quit if the wait already timed out.
          */
-        if (cMillies != RT_INDEFINITE_WAIT && cMillies != 0)
+        if (rcWait == VERR_TIMEOUT)
         {
-            int64_t tsDelta = RTTimeNanoTS() - tsStart;
-            if (tsDelta >= 1000000)
-            {
-                cMillies = cMilliesInitial - (unsigned)(tsDelta / 1000000);
-                if (cMillies > cMilliesInitial)
-                    cMillies = cMilliesInitial ? 1 : 0;
-            }
-        }
-        rc = RTSemEventWait(pThis->WriteEvent, cMillies);
-        if (RT_UNLIKELY(RT_FAILURE_NP(rc) && rc != VERR_TIMEOUT))
-        {
-            AssertMsgRC(rc, ("RTSemEventWait failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
+            rc = VERR_TIMEOUT;
             break;
         }
-
-        if (RT_UNLIKELY(pThis->u32Magic != RTSEMRW_MAGIC))
-        {
-            rc = VERR_SEM_DESTROYED;
-            break;
-        }
-
-        /*
-         * Re-take critsect.
-         */
-        rc = RTCritSectEnter(&pThis->CritSect);
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
-            break;
-        }
-//        AssertMsg(!pThis->cReads, ("We woke up and there are readers around!\n"));
     }
 
     /*
