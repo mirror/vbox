@@ -681,20 +681,7 @@ $$(VirtualBox_0_OUTDIR)/include/precomp.h.gch: \
 		'/Developer/SDKs/MacOSX10.5.sdk' \
 		'-m32' \
 		\
-		$(addprefix \$(NL)$(TAB)-I,$(VirtualBox_INCS)) \
-		'-I$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/include' \
-		'-I$(PATH_OUT)/dist/sdk/bindings/xpcom/include' \
-		'-I$(PATH_OUT)/dist/sdk/bindings/xpcom/include/xpcom' \
-		'-I$(PATH_OUT)/dist/sdk/bindings/xpcom/include/string' \
-		'-I$(PATH_OUT)/dist/sdk/bindings/xpcom/include/xpcom' \
-		'-I$(PATH_OUT)/dist/sdk/bindings/xpcom/include/nsprpub' \
-		'-I$(PATH_OUT)/dist/sdk/bindings/xpcom/include/ipcd' \
-		'-I$(PATH_SDK_QT4)/Frameworks/QtCoreVBox.framework/Versions/4/Headers' \
-		'-I$(PATH_SDK_QT4)/Frameworks/QtGuiVBox.framework/Versions/4/Headers' \
-		'-I$(PATH_SDK_QT4)/Frameworks/QtNetworkVBox.framework/Versions/4/Headers' \
-		'-I$(PATH_SDK_QT4)/Frameworks/QtOpenGLVBox.framework/Versions/4/Headers' \
-		'-I$(PATH_OBJ)/VirtualBox/qtmoc' \
-		'-I$(PATH_OBJ)/VirtualBox/qtuic' \
+		$(foreach inc,$(VirtualBox_INCS),\$(NL)$(TAB)-I$(inc)) \
 		'-I$(PATH_ROOT)/include' \
 		'-I$(PATH_OUT)' \
 		'-DVBOX' \
