@@ -145,6 +145,37 @@ bool            RTAssertShouldPanic(void);
 DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void);
 #endif
 
+/**
+ * Controls whether the assertions should be quiet or noisy (default).
+ *
+ * @returns The old setting.
+ * @param   fQuiet              The new setting.
+ */
+RTDECL(bool)    RTAssertSetQuiet(bool fQuiet);
+
+/**
+ * Are assertions quiet or noisy?
+ *
+ * @returns True if they are quiet, false if noisy.
+ */
+RTDECL(bool)    RTAssertAreQuiet(void);
+
+/**
+ * Makes the assertions panic (default) or not.
+ *
+ * @returns The old setting.
+ * @param   fPanic              The new setting.
+ */
+RTDECL(bool)    RTAssertSetMayPanic(bool fPanic);
+
+/**
+ * Can assertion panic.
+ *
+ * @returns True if they can, false if not.
+ */
+RTDECL(bool)    RTAssertMayPanic(void);
+
+
 /** @name Globals for crash analysis
  * @remarks     This is the full potential set, it
  * @{

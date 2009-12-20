@@ -35,12 +35,46 @@
 #include <iprt/assert.h>
 #include "internal/iprt.h"
 
+#include <iprt/asm.h>
 #include <iprt/log.h>
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
 #ifdef IN_RING3
 # include <stdio.h>
 #endif
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** Set if assertions are quiet. */
+static bool volatile g_fQuiet = false;
+/** Set if assertions may panic. */
+static bool volatile g_fMayPanic = true;
+
+
+RTDECL(bool) RTAssertSetQuiet(bool fQuiet)
+{
+    return ASMAtomicXchgBool(&g_fQuiet, fQuiet);
+}
+
+
+RTDECL(bool) RTAssertAreQuiet(void)
+{
+    return ASMAtomicUoReadBool(&g_fQuiet);
+}
+
+
+RTDECL(bool) RTAssertSetMayPanic(bool fMayPanic)
+{
+    return ASMAtomicXchgBool(&g_fMayPanic, fMayPanic);
+}
+
+
+RTDECL(bool) RTAssertMayPanic(void)
+{
+    return ASMAtomicUoReadBool(&g_fMayPanic);
+}
 
 
 #if defined(IN_GUEST_R0) && defined(RT_OS_WINDOWS) /** @todo remove this, see defect XYZ. */
@@ -110,54 +144,57 @@ RTDATADECL(char) g_szRTAssertMsg2[2048];
  */
 RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
-#if !defined(IN_RING3) && !defined(LOG_NO_COM)
-    RTLogComPrintf("\n!!Assertion Failed!!\n"
-                   "Expression: %s\n"
-                   "Location  : %s(%d) %s\n",
-                   pszExpr, pszFile, uLine, pszFunction);
-#endif
-
-    PRTLOGGER pLog = RTLogRelDefaultInstance();
-    if (pLog)
+    if (!RTAssertAreQuiet())
     {
-        RTLogRelPrintf("\n!!Assertion Failed!!\n"
+#if !defined(IN_RING3) && !defined(LOG_NO_COM)
+        RTLogComPrintf("\n!!Assertion Failed!!\n"
                        "Expression: %s\n"
                        "Location  : %s(%d) %s\n",
                        pszExpr, pszFile, uLine, pszFunction);
-#ifndef IN_RC /* flushing is done automatically in RC */
-        RTLogFlush(pLog);
 #endif
-    }
 
-#ifndef LOG_ENABLED
-    if (!pLog)
-#endif
-    {
-        pLog = RTLogDefaultInstance();
+        PRTLOGGER pLog = RTLogRelDefaultInstance();
         if (pLog)
         {
-            RTLogPrintf("\n!!Assertion Failed!!\n"
-                        "Expression: %s\n"
-                        "Location  : %s(%d) %s\n",
-                        pszExpr, pszFile, uLine, pszFunction);
+            RTLogRelPrintf("\n!!Assertion Failed!!\n"
+                           "Expression: %s\n"
+                           "Location  : %s(%d) %s\n",
+                           pszExpr, pszFile, uLine, pszFunction);
 #ifndef IN_RC /* flushing is done automatically in RC */
             RTLogFlush(pLog);
 #endif
         }
-    }
+
+#ifndef LOG_ENABLED
+        if (!pLog)
+#endif
+        {
+            pLog = RTLogDefaultInstance();
+            if (pLog)
+            {
+                RTLogPrintf("\n!!Assertion Failed!!\n"
+                            "Expression: %s\n"
+                            "Location  : %s(%d) %s\n",
+                            pszExpr, pszFile, uLine, pszFunction);
+#ifndef IN_RC /* flushing is done automatically in RC */
+                RTLogFlush(pLog);
+#endif
+            }
+        }
 
 #ifdef IN_RING3
-    /* print to stderr, helps user and gdb debugging. */
-    fprintf(stderr,
-            "\n!!Assertion Failed!!\n"
-            "Expression: %s\n"
-            "Location  : %s(%d) %s\n",
-            VALID_PTR(pszExpr) ? pszExpr : "<none>",
-            VALID_PTR(pszFile) ? pszFile : "<none>",
-            uLine,
-            VALID_PTR(pszFunction) ? pszFunction : "");
-    fflush(stderr);
+        /* print to stderr, helps user and gdb debugging. */
+        fprintf(stderr,
+                "\n!!Assertion Failed!!\n"
+                "Expression: %s\n"
+                "Location  : %s(%d) %s\n",
+                VALID_PTR(pszExpr) ? pszExpr : "<none>",
+                VALID_PTR(pszFile) ? pszFile : "<none>",
+                uLine,
+                VALID_PTR(pszFunction) ? pszFunction : "");
+        fflush(stderr);
 #endif
+    }
 
     RTStrPrintf(g_szRTAssertMsg1, sizeof(g_szRTAssertMsg1),
                 "\n!!Assertion Failed!!\n"
@@ -178,43 +215,46 @@ RTDECL(void)    AssertMsg2(const char *pszFormat, ...)
 {
     va_list args;
 
+    if (!RTAssertAreQuiet())
+    {
 #if !defined(IN_RING3) && !defined(LOG_NO_COM)
-    va_start(args, pszFormat);
-    RTLogComPrintfV(pszFormat, args);
-    va_end(args);
+        va_start(args, pszFormat);
+        RTLogComPrintfV(pszFormat, args);
+        va_end(args);
 #endif
 
-    PRTLOGGER pLog = RTLogRelDefaultInstance();
-    if (pLog)
-    {
-        va_start(args, pszFormat);
-        RTLogRelPrintfV(pszFormat, args);
-        va_end(args);
+        PRTLOGGER pLog = RTLogRelDefaultInstance();
+        if (pLog)
+        {
+            va_start(args, pszFormat);
+            RTLogRelPrintfV(pszFormat, args);
+            va_end(args);
 #ifndef IN_RC /* flushing is done automatically in RC */
-        RTLogFlush(pLog);
+            RTLogFlush(pLog);
 #endif
-    }
+        }
 
-    pLog = RTLogDefaultInstance();
-    if (pLog)
-    {
-        va_start(args, pszFormat);
-        RTLogPrintfV(pszFormat, args);
-        va_end(args);
+        pLog = RTLogDefaultInstance();
+        if (pLog)
+        {
+            va_start(args, pszFormat);
+            RTLogPrintfV(pszFormat, args);
+            va_end(args);
 #ifndef IN_RC /* flushing is done automatically in RC */
-        RTLogFlush(pLog);
+            RTLogFlush(pLog);
 #endif
-    }
+        }
 
 #ifdef IN_RING3
-    /* print to stderr, helps user and gdb debugging. */
-    char szMsg[1024];
-    va_start(args, pszFormat);
-    RTStrPrintfV(szMsg, sizeof(szMsg), pszFormat, args);
-    va_end(args);
-    fprintf(stderr, "%s", szMsg);
-    fflush(stderr);
+        /* print to stderr, helps user and gdb debugging. */
+        char szMsg[1024];
+        va_start(args, pszFormat);
+        RTStrPrintfV(szMsg, sizeof(szMsg), pszFormat, args);
+        va_end(args);
+        fprintf(stderr, "%s", szMsg);
+        fflush(stderr);
 #endif
+    }
 
     va_start(args, pszFormat);
     RTStrPrintfV(g_szRTAssertMsg2, sizeof(g_szRTAssertMsg2), pszFormat, args);
