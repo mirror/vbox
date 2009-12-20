@@ -340,9 +340,7 @@ static void Test3(void)
     RTSEMRW hSemRW;
     RTTEST_CHECK_RC_RETV(g_hTest, RTSemRWCreate(&hSemRW), VINF_SUCCESS);
 
-#ifndef RT_OS_LINUX /** @todo unlock is busted in glibc-2.8 at least... */
     RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead(hSemRW), VERR_NOT_OWNER);
-#endif
     RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(hSemRW), VERR_NOT_OWNER);
 
     RTTEST_CHECK_RC(g_hTest, RTSemRWRequestWrite(hSemRW, RT_INDEFINITE_WAIT), VINF_SUCCESS);
