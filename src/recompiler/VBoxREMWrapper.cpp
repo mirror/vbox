@@ -999,17 +999,22 @@ static const REMPARMDESC g_aArgsVMR3ReqFree[] =
 };
 
 /* IPRT args */
-static const REMPARMDESC g_aArgsAssertMsg1[] =
+static const REMPARMDESC g_aArgsRTAssertMsg1[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL }
 };
-static const REMPARMDESC g_aArgsAssertMsg2[] =
+static const REMPARMDESC g_aArgsRTAssertMsg2[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
     { REMPARMDESC_FLAGS_ELLIPSIS,   0 }
+};
+static const REMPARMDESC g_aArgsRTAssertMsg2V[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
+    { REMPARMDESC_FLAGS_VALIST,     0 }
 };
 static const REMPARMDESC g_aArgsRTLogFlags[] =
 {
@@ -1252,8 +1257,11 @@ static REMFNDESC g_aVMMImports[] =
  */
 static REMFNDESC g_aRTImports[] =
 {
-    { "AssertMsg1",                             (void *)(uintptr_t)&AssertMsg1,                     &g_aArgsAssertMsg1[0],                      RT_ELEMENTS(g_aArgsAssertMsg1),                        REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
-    { "AssertMsg2",                             (void *)(uintptr_t)&AssertMsg2,                     &g_aArgsAssertMsg2[0],                      RT_ELEMENTS(g_aArgsAssertMsg2),                        REMFNDESC_FLAGS_RET_VOID | REMFNDESC_FLAGS_ELLIPSIS, 0, NULL },
+    { "RTAssertMsg1",                           (void *)(uintptr_t)&RTAssertMsg1,                   &g_aArgsRTAssertMsg1[0],                    RT_ELEMENTS(g_aArgsRTAssertMsg1),                      REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
+    { "RTAssertMsg1Weak",                       (void *)(uintptr_t)&RTAssertMsg1Weak,               &g_aArgsRTAssertMsg1[0],                    RT_ELEMENTS(g_aArgsRTAssertMsg1),                      REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
+    { "RTAssertMsg2",                           (void *)(uintptr_t)&RTAssertMsg2,                   &g_aArgsRTAssertMsg2[0],                    RT_ELEMENTS(g_aArgsRTAssertMsg2),                      REMFNDESC_FLAGS_RET_VOID | REMFNDESC_FLAGS_ELLIPSIS, 0, NULL },
+    { "RTAssertMsg2V",                          (void *)(uintptr_t)&RTAssertMsg2V,                  &g_aArgsRTAssertMsg2V[0],                   RT_ELEMENTS(g_aArgsRTAssertMsg2V),                     REMFNDESC_FLAGS_RET_VOID | REMFNDESC_FLAGS_VALIST, 0, NULL },
+    { "RTAssertMsg2Weak",                       (void *)(uintptr_t)&RTAssertMsg2Weak,               &g_aArgsRTAssertMsg2[0],                    RT_ELEMENTS(g_aArgsRTAssertMsg2),                      REMFNDESC_FLAGS_RET_VOID | REMFNDESC_FLAGS_ELLIPSIS, 0, NULL },
     { "RTAssertShouldPanic",                    (void *)(uintptr_t)&RTAssertShouldPanic,            NULL,                                       0,                                                     REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "RTLogDefaultInstance",                   (void *)(uintptr_t)&RTLogDefaultInstance,           NULL,                                       0,                                                     REMFNDESC_FLAGS_RET_INT,    sizeof(PRTLOGGER),  NULL },
     { "RTLogRelDefaultInstance",                (void *)(uintptr_t)&RTLogRelDefaultInstance,        NULL,                                       0,                                                     REMFNDESC_FLAGS_RET_INT,    sizeof(PRTLOGGER),  NULL },

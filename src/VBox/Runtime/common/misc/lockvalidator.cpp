@@ -818,7 +818,7 @@ RT_EXPORT_SYMBOL(RTLockValidatorReadLockDec);
 static void rtLockValidatorComplainAboutDeadlock(PRTLOCKVALIDATORREC pRec, PRTTHREADINT pThread, RTTHREADSTATE enmState,
                                                  PRTTHREADINT pCur, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
-    AssertMsg1(pCur == pThread ? "!!Deadlock detected!!" : "!!Deadlock exists!!", pSrcPos->uLine, pSrcPos->pszFile, pSrcPos->pszFunction);
+    RTAssertMsg1Weak(pCur == pThread ? "!!Deadlock detected!!" : "!!Deadlock exists!!", pSrcPos->uLine, pSrcPos->pszFile, pSrcPos->pszFunction);
 
     /*
      * Print the threads and locks involved.
@@ -831,10 +831,10 @@ static void rtLockValidatorComplainAboutDeadlock(PRTLOCKVALIDATORREC pRec, PRTTH
         /*
          * Print info on pCur. Determin next while doing so.
          */
-        AssertMsg2(" #%u: %RTthrd/%RTnthrd %s: %s(%u) %RTptr\n",
-                   iEntry, pCur, pCur->Core.Key, pCur->szName,
-                   pCur->LockValidator.SrcPos.pszFile, pCur->LockValidator.SrcPos.uLine,
-                   pCur->LockValidator.SrcPos.pszFunction, pCur->LockValidator.SrcPos.uId);
+        RTAssertMsg2Weak(" #%u: %RTthrd/%RTnthrd %s: %s(%u) %RTptr\n",
+                         iEntry, pCur, pCur->Core.Key, pCur->szName,
+                         pCur->LockValidator.SrcPos.pszFile, pCur->LockValidator.SrcPos.uLine,
+                         pCur->LockValidator.SrcPos.pszFunction, pCur->LockValidator.SrcPos.uId);
         PRTTHREADINT  pNext       = NULL;
         RTTHREADSTATE enmCurState = rtThreadGetState(pCur);
         switch (enmCurState)
@@ -852,29 +852,29 @@ static void rtLockValidatorComplainAboutDeadlock(PRTLOCKVALIDATORREC pRec, PRTTH
                 RTTHREADSTATE       enmCurState2 = rtThreadGetState(pCur);
                 if (enmCurState2 != enmCurState)
                 {
-                    AssertMsg2(" Impossible!!! enmState=%s -> %s (%d)\n",
-                               RTThreadStateName(enmCurState), RTThreadStateName(enmCurState2), enmCurState2);
+                    RTAssertMsg2Weak(" Impossible!!! enmState=%s -> %s (%d)\n",
+                                     RTThreadStateName(enmCurState), RTThreadStateName(enmCurState2), enmCurState2);
                     break;
                 }
                 if (   VALID_PTR(pCurRec)
                     && pCurRec->u32Magic == RTLOCKVALIDATORREC_MAGIC)
                 {
-                    AssertMsg2("     Waiting on %s %p [%s]: Entered %s(%u) %s %p\n",
-                               RTThreadStateName(enmCurState), pCurRec->hLock, pCurRec->pszName,
-                               pCurRec->SrcPos.pszFile, pCurRec->SrcPos.uLine, pCurRec->SrcPos.pszFunction, pCurRec->SrcPos.uId);
+                    RTAssertMsg2Weak("     Waiting on %s %p [%s]: Entered %s(%u) %s %p\n",
+                                     RTThreadStateName(enmCurState), pCurRec->hLock, pCurRec->pszName,
+                                     pCurRec->SrcPos.pszFile, pCurRec->SrcPos.uLine, pCurRec->SrcPos.pszFunction, pCurRec->SrcPos.uId);
                     pNext = pCurRec->hThread;
                 }
                 else if (VALID_PTR(pCurRec))
-                    AssertMsg2("     Waiting on %s pCurRec=%p: invalid magic number: %#x\n",
-                               RTThreadStateName(enmCurState), pCurRec, pCurRec->u32Magic);
+                    RTAssertMsg2Weak("     Waiting on %s pCurRec=%p: invalid magic number: %#x\n",
+                                     RTThreadStateName(enmCurState), pCurRec, pCurRec->u32Magic);
                 else
-                    AssertMsg2("     Waiting on %s pCurRec=%p: invalid pointer\n",
-                               RTThreadStateName(enmCurState), pCurRec);
+                    RTAssertMsg2Weak("     Waiting on %s pCurRec=%p: invalid pointer\n",
+                                     RTThreadStateName(enmCurState), pCurRec);
                 break;
             }
 
             default:
-                AssertMsg2(" Impossible!!! enmState=%s (%d)\n", RTThreadStateName(enmCurState), enmCurState);
+                RTAssertMsg2Weak(" Impossible!!! enmState=%s (%d)\n", RTThreadStateName(enmCurState), enmCurState);
                 break;
         }
 
@@ -886,7 +886,7 @@ static void rtLockValidatorComplainAboutDeadlock(PRTLOCKVALIDATORREC pRec, PRTTH
         for (unsigned i = 0; i < RT_ELEMENTS(apSeenThreads); i++)
             if (apSeenThreads[i] == pCur)
             {
-                AssertMsg2(" Cycle!\n");
+                RTAssertMsg2Weak(" Cycle!\n");
                 pNext = NULL;
                 break;
             }

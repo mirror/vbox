@@ -24,7 +24,7 @@
 
 #ifdef RT_OS_LINUX
 # include "VBoxCalls.h"
-# define DbgPrint AssertMsg2
+# define DbgPrint RTAssertMsg2Weak
 #else
 # include "VBoxCalls.h"
 #endif

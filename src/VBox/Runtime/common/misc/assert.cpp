@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Assertion Workers.
+ * IPRT - Assertions, common code.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,72 +42,103 @@
 #ifdef IN_RING3
 # include <stdio.h>
 #endif
+#include "internal/assert.h"
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+/** The last assert message, 1st part. */
+RTDATADECL(char)                    g_szRTAssertMsg1[1024];
+RT_EXPORT_SYMBOL(g_szRTAssertMsg1);
+/** The last assert message, 2nd part. */
+RTDATADECL(char)                    g_szRTAssertMsg2[2048];
+RT_EXPORT_SYMBOL(g_szRTAssertMsg2);
+/** The last assert message, expression. */
+RTDATADECL(const char * volatile)   g_pszRTAssertExpr;
+RT_EXPORT_SYMBOL(g_pszRTAssertExpr);
+/** The last assert message, function name. */
+RTDATADECL(const char *  volatile)  g_pszRTAssertFunction;
+RT_EXPORT_SYMBOL(g_pszRTAssertFunction);
+/** The last assert message, file name. */
+RTDATADECL(const char * volatile)   g_pszRTAssertFile;
+RT_EXPORT_SYMBOL(g_pszRTAssertFile);
+/** The last assert message, line number. */
+RTDATADECL(uint32_t volatile)       g_u32RTAssertLine;
+RT_EXPORT_SYMBOL(g_u32RTAssertLine);
+
+
 /** Set if assertions are quiet. */
-static bool volatile g_fQuiet = false;
+static bool volatile                g_fQuiet = false;
 /** Set if assertions may panic. */
-static bool volatile g_fMayPanic = true;
+static bool volatile                g_fMayPanic = true;
 
 
 RTDECL(bool) RTAssertSetQuiet(bool fQuiet)
 {
     return ASMAtomicXchgBool(&g_fQuiet, fQuiet);
 }
+RT_EXPORT_SYMBOL(RTAssertSetQuiet);
 
 
 RTDECL(bool) RTAssertAreQuiet(void)
 {
     return ASMAtomicUoReadBool(&g_fQuiet);
 }
+RT_EXPORT_SYMBOL(RTAssertAreQuiet);
 
 
 RTDECL(bool) RTAssertSetMayPanic(bool fMayPanic)
 {
     return ASMAtomicXchgBool(&g_fMayPanic, fMayPanic);
 }
+RT_EXPORT_SYMBOL(RTAssertSetMayPanic);
 
 
 RTDECL(bool) RTAssertMayPanic(void)
 {
     return ASMAtomicUoReadBool(&g_fMayPanic);
 }
+RT_EXPORT_SYMBOL(RTAssertMayPanic);
 
 
-#ifdef IN_RING0
-
-/* OS specific.  */
-
-#else /* !IN_RING0 */
-
-
-/** The last assert message, 1st part. */
-RTDATADECL(char) g_szRTAssertMsg1[1024];
-/** The last assert message, 2nd part. */
-RTDATADECL(char) g_szRTAssertMsg2[2048];
-
-/**
- * The 1st part of an assert message.
- *
- * @param   pszExpr     Expression. Can be NULL.
- * @param   uLine       Location line number.
- * @param   pszFile     Location file name.
- * @param   pszFunction Location function name.
- * @remark  This API exists in HC Ring-3 and GC.
- */
-RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
+RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
+    /*
+     * Fill in the globals.
+     */
+    ASMAtomicUoWritePtr((void * volatile *)&g_pszRTAssertExpr, (void *)pszExpr);
+    ASMAtomicUoWritePtr((void * volatile *)&g_pszRTAssertFile, (void *)pszFile);
+    ASMAtomicUoWritePtr((void * volatile *)&g_pszRTAssertFunction, (void *)pszFunction);
+    ASMAtomicUoWriteU32(&g_u32RTAssertLine, uLine);
+    RTStrPrintf(g_szRTAssertMsg1, sizeof(g_szRTAssertMsg1),
+                "\n!!Assertion Failed!!\n"
+                "Expression: %s\n"
+                "Location  : %s(%d) %s\n",
+                pszExpr, pszFile, uLine, pszFunction);
+
+    /*
+     * If not quiet, make noise.
+     */
     if (!RTAssertAreQuiet())
     {
-#if !defined(IN_RING3) && !defined(LOG_NO_COM)
+#ifdef IN_RING0
+# ifdef IN_GUEST_R0
+        RTLogBackdoorPrintf("\n!!Assertion Failed!!\n"
+                            "Expression: %s\n"
+                            "Location  : %s(%d) %s\n",
+                            pszExpr, pszFile, uLine, pszFunction);
+# endif
+        /** @todo fully integrate this with the logger... play safe a bit for now.  */
+        rtR0AssertNativeMsg1(pszExpr, uLine, pszFile, pszFunction);
+
+#else  /* !IN_RING0 */
+# if !defined(IN_RING3) && !defined(LOG_NO_COM)
         RTLogComPrintf("\n!!Assertion Failed!!\n"
                        "Expression: %s\n"
                        "Location  : %s(%d) %s\n",
                        pszExpr, pszFile, uLine, pszFunction);
-#endif
+# endif
 
         PRTLOGGER pLog = RTLogRelDefaultInstance();
         if (pLog)
@@ -116,14 +147,14 @@ RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszF
                            "Expression: %s\n"
                            "Location  : %s(%d) %s\n",
                            pszExpr, pszFile, uLine, pszFunction);
-#ifndef IN_RC /* flushing is done automatically in RC */
+# ifndef IN_RC /* flushing is done automatically in RC */
             RTLogFlush(pLog);
-#endif
+# endif
         }
 
-#ifndef LOG_ENABLED
+# ifndef LOG_ENABLED
         if (!pLog)
-#endif
+# endif
         {
             pLog = RTLogDefaultInstance();
             if (pLog)
@@ -132,13 +163,13 @@ RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszF
                             "Expression: %s\n"
                             "Location  : %s(%d) %s\n",
                             pszExpr, pszFile, uLine, pszFunction);
-#ifndef IN_RC /* flushing is done automatically in RC */
+# ifndef IN_RC /* flushing is done automatically in RC */
                 RTLogFlush(pLog);
-#endif
+# endif
             }
         }
 
-#ifdef IN_RING3
+# ifdef IN_RING3
         /* print to stderr, helps user and gdb debugging. */
         fprintf(stderr,
                 "\n!!Assertion Failed!!\n"
@@ -149,73 +180,79 @@ RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszF
                 uLine,
                 VALID_PTR(pszFunction) ? pszFunction : "");
         fflush(stderr);
-#endif
+# endif
+#endif /* !IN_RING0 */
     }
-
-    RTStrPrintf(g_szRTAssertMsg1, sizeof(g_szRTAssertMsg1),
-                "\n!!Assertion Failed!!\n"
-                "Expression: %s\n"
-                "Location  : %s(%d) %s\n",
-                pszExpr, pszFile, uLine, pszFunction);
 }
+RT_EXPORT_SYMBOL(RTAssertMsg1);
 
 
-/**
- * The 2nd (optional) part of an assert message.
- *
- * @param   pszFormat   Printf like format string.
- * @param   ...         Arguments to that string.
- * @remark  This API exists in HC Ring-3 and GC.
- */
-RTDECL(void)    AssertMsg2(const char *pszFormat, ...)
+RTDECL(void) RTAssertMsg2V(const char *pszFormat, va_list va)
 {
-    va_list args;
+    va_list vaCopy;
 
+    /*
+     * The global first.
+     */
+    va_copy(vaCopy, va);
+    RTStrPrintfV(g_szRTAssertMsg2, sizeof(g_szRTAssertMsg2), pszFormat, vaCopy);
+    va_end(vaCopy);
+
+    /*
+     * If not quiet, make some noise.
+     */
     if (!RTAssertAreQuiet())
     {
-#if !defined(IN_RING3) && !defined(LOG_NO_COM)
-        va_start(args, pszFormat);
-        RTLogComPrintfV(pszFormat, args);
-        va_end(args);
-#endif
+#ifdef IN_RING0
+# ifdef IN_GUEST_R0
+        va_copy(vaCopy, va);
+        RTLogBackdoorPrintfV(pszFormat, vaCopy);
+        va_end(vaCopy);
+# endif
+        /** @todo fully integrate this with the logger... play safe a bit for now.  */
+        rtR0AssertNativeMsg2V(pszFormat, va);
+
+#else  /* !IN_RING0 */
+# if !defined(IN_RING3) && !defined(LOG_NO_COM)
+        va_copy(vaCopy, va);
+        RTLogComPrintfV(pszFormat, vaCopy);
+        va_end(vaCopy);
+# endif
 
         PRTLOGGER pLog = RTLogRelDefaultInstance();
         if (pLog)
         {
-            va_start(args, pszFormat);
-            RTLogRelPrintfV(pszFormat, args);
-            va_end(args);
-#ifndef IN_RC /* flushing is done automatically in RC */
+            va_copy(vaCopy, va);
+            RTLogRelPrintfV(pszFormat, vaCopy);
+            va_end(vaCopy);
+# ifndef IN_RC /* flushing is done automatically in RC */
             RTLogFlush(pLog);
-#endif
+# endif
         }
 
         pLog = RTLogDefaultInstance();
         if (pLog)
         {
-            va_start(args, pszFormat);
-            RTLogPrintfV(pszFormat, args);
-            va_end(args);
-#ifndef IN_RC /* flushing is done automatically in RC */
+            va_copy(vaCopy, va);
+            RTLogPrintfV(pszFormat, vaCopy);
+            va_end(vaCopy);
+# ifndef IN_RC /* flushing is done automatically in RC */
             RTLogFlush(pLog);
 #endif
         }
 
-#ifdef IN_RING3
+# ifdef IN_RING3
         /* print to stderr, helps user and gdb debugging. */
         char szMsg[1024];
-        va_start(args, pszFormat);
-        RTStrPrintfV(szMsg, sizeof(szMsg), pszFormat, args);
-        va_end(args);
+        va_copy(vaCopy, va);
+        RTStrPrintfV(szMsg, sizeof(szMsg), pszFormat, vaCopy);
+        va_end(vaCopy);
         fprintf(stderr, "%s", szMsg);
         fflush(stderr);
-#endif
+# endif
+#endif /* !IN_RING0 */
     }
 
-    va_start(args, pszFormat);
-    RTStrPrintfV(g_szRTAssertMsg2, sizeof(g_szRTAssertMsg2), pszFormat, args);
-    va_end(args);
 }
-
-#endif /* !IN_RING0 */
+RT_EXPORT_SYMBOL(RTAssertMsg2V);
 

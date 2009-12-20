@@ -745,7 +745,7 @@ static DECLCALLBACK(bool) pdmR3DrvHlp_AssertEMT(PPDMDRVINS pDrvIns, const char *
 
     char szMsg[100];
     RTStrPrintf(szMsg, sizeof(szMsg), "AssertEMT '%s'/%d\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance);
-    AssertMsg1(szMsg, iLine, pszFile, pszFunction);
+    RTAssertMsg1Weak(szMsg, iLine, pszFile, pszFunction);
     AssertBreakpoint();
     VM_ASSERT_EMT(pDrvIns->Internal.s.pVM);
     return false;
@@ -761,7 +761,7 @@ static DECLCALLBACK(bool) pdmR3DrvHlp_AssertOther(PPDMDRVINS pDrvIns, const char
 
     char szMsg[100];
     RTStrPrintf(szMsg, sizeof(szMsg), "AssertOther '%s'/%d\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance);
-    AssertMsg1(szMsg, iLine, pszFile, pszFunction);
+    RTAssertMsg1Weak(szMsg, iLine, pszFile, pszFunction);
     AssertBreakpoint();
     VM_ASSERT_EMT(pDrvIns->Internal.s.pVM);
     return false;

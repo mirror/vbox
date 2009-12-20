@@ -65,8 +65,8 @@ EXPORTS
     VMSetErrorV
 
     ; runtime
-    AssertMsg1
-    AssertMsg2
+    RTAssertMsg1Weak
+    RTAssertMsg2Weak
     RTAssertShouldPanic
     RTTimeNanoTSLegacySync
     RTTimeNanoTSLegacyAsync

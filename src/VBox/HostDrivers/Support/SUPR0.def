@@ -148,8 +148,8 @@ EXPORTS
     RTLogSetDefaultInstanceThread
     RTLogLoggerExV
     RTLogPrintfV
-    AssertMsg1
-    AssertMsg2
+    RTAssertMsg1
+    RTAssertMsg2V
 
     ; data
     g_pSUPGlobalInfoPage DATA ; NT

@@ -233,6 +233,10 @@ RuntimeR3_SOURCES       = \
 	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
+	common/misc/RTAssertMsg1Weak.cpp \
+	common/misc/RTAssertMsg2Weak.cpp \
+	common/misc/RTAssertMsg2WeakV.cpp \
+	common/misc/RTAssertMsg2.cpp \
 	common/misc/assert.cpp \
 	common/misc/buildconfig.cpp \
 	common/misc/cache.cpp \
@@ -786,6 +790,10 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/err/errmsgxpcom.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/log/logformat.cpp \
+	common/misc/RTAssertMsg1Weak.cpp \
+	common/misc/RTAssertMsg2Weak.cpp \
+	common/misc/RTAssertMsg2WeakV.cpp \
+	common/misc/RTAssertMsg2.cpp \
 	common/misc/assert.cpp \
 	common/misc/buildconfig.cpp \
 	common/misc/sanity-c.c \
@@ -1078,14 +1086,16 @@ RuntimeR0_SOURCES       = \
 	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
-	common/misc/assert.cpp \
+	common/misc/RTAssertMsg1Weak.cpp \
+	common/misc/RTAssertMsg2Weak.cpp \
+	common/misc/RTAssertMsg2WeakV.cpp \
+	common/misc/RTAssertMsg2.cpp \
 	common/misc/buildconfig.cpp \
 	common/misc/handletable.cpp \
 	common/misc/handletablectx.cpp \
 	common/misc/handletablesimple.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
-	common/misc/RTAssertMsg2.cpp \
 	common/misc/term.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
@@ -1174,7 +1184,6 @@ RuntimeR0Drv_SOURCES    = \
 	common/alloc/alloc.cpp \
 	common/alloc/heapsimple.cpp \
 	common/alloc/heapoffset.cpp \
-	common/misc/RTAssertMsg2.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
 	common/checksum/md5.cpp \
@@ -1185,6 +1194,10 @@ RuntimeR0Drv_SOURCES    = \
 	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
+	common/misc/RTAssertMsg1Weak.cpp \
+	common/misc/RTAssertMsg2Weak.cpp \
+	common/misc/RTAssertMsg2WeakV.cpp \
+	common/misc/RTAssertMsg2.cpp \
 	common/misc/assert.cpp \
 	common/misc/buildconfig.cpp \
 	common/misc/handletable.cpp \
@@ -1311,8 +1324,6 @@ RuntimeR0Drv_SOURCES.win.x86   = $(RuntimeWin32ASM_SOURCES)
 
 RuntimeR0Drv_SOURCES.darwin = \
 	common/err/RTErrConvertFromErrno.cpp \
-	common/misc/RTAssertMsg1Weak.cpp \
-	common/misc/RTAssertMsg2Weak.cpp \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
 	common/string/strpbrk.cpp \
@@ -1512,6 +1523,10 @@ RuntimeGC_SOURCES       = \
 	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
+	common/misc/RTAssertMsg1Weak.cpp \
+	common/misc/RTAssertMsg2Weak.cpp \
+	common/misc/RTAssertMsg2WeakV.cpp \
+	common/misc/RTAssertMsg2.cpp \
 	common/misc/assert.cpp \
 	common/misc/buildconfig.cpp \
 	common/misc/sanity-c.c \

@@ -191,7 +191,7 @@ void rtThreadTerm(void)
     RTSpinlockDestroy(g_ThreadSpinlock);
     g_ThreadSpinlock = NIL_RTSPINLOCK;
     if (g_ThreadTree != NULL)
-        AssertMsg2("WARNING: g_ThreadTree=%p\n", g_ThreadTree);
+        RTAssertMsg2Weak("WARNING: g_ThreadTree=%p\n", g_ThreadTree);
 #endif
 }
 

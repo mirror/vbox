@@ -55,9 +55,9 @@
 // #define DUMPHEAP
 
 #ifdef DUMPHEAP
-#define VBGL_PH_dprintf(a) AssertMsg2 a
+# define VBGL_PH_dprintf(a) RTAssertMsg2Weak a
 #else
-#define VBGL_PH_dprintf(a)
+# define VBGL_PH_dprintf(a)
 #endif
 
 /* Heap block signature */

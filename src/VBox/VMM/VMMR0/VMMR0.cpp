@@ -1295,19 +1295,19 @@ DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
  * @param   pszFile     Location file name.
  * @param   pszFunction Location function name.
  */
-DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
+DECLEXPORT(void) RTCALL RTAssertMsg1Weak(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
-#if !defined(DEBUG_sandervl) && !defined(RT_OS_DARWIN)
-    SUPR0Printf("\n!!R0-Assertion Failed!!\n"
-                "Expression: %s\n"
-                "Location  : %s(%d) %s\n",
-                pszExpr, pszFile, uLine, pszFunction);
-#endif
+    /*
+     * To the log.
+     */
     LogAlways(("\n!!R0-Assertion Failed!!\n"
                "Expression: %s\n"
                "Location  : %s(%d) %s\n",
                pszExpr, pszFile, uLine, pszFunction));
 
+    /*
+     * To the global VMM buffer.
+     */
     PVM pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
     if (pVM)
         RTStrPrintf(pVM->vmm.s.szRing0AssertMsg1, sizeof(pVM->vmm.s.szRing0AssertMsg1),
@@ -1315,9 +1315,11 @@ DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const ch
                     "Expression: %s\n"
                     "Location  : %s(%d) %s\n",
                     pszExpr, pszFile, uLine, pszFunction);
-#ifdef RT_OS_DARWIN
+
+    /*
+     * Continue the normal way.
+     */
     RTAssertMsg1(pszExpr, uLine, pszFile, pszFunction);
-#endif
 }
 
 
@@ -1328,41 +1330,47 @@ DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const ch
 static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t cbChars)
 {
     for (size_t i = 0; i < cbChars; i++)
-    {
-#if !defined(DEBUG_sandervl) && !defined(RT_OS_DARWIN)
-        SUPR0Printf("%c", pachChars[i]);
-#endif
         LogAlways(("%c", pachChars[i]));
-    }
 
     return cbChars;
 }
 
 
-DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
+/**
+ * Override this so we can push it up to ring-3.
+ *
+ * @param   pszFormat   The format string.
+ * @param   va          Arguments.
+ */
+DECLEXPORT(void) RTCALL RTAssertMsg2WeakV(const char *pszFormat, va_list va)
 {
-    va_list va;
+    va_list vaCopy;
 
+    /*
+     * Push the message to the logger.
+     */
     PRTLOGGER pLog = RTLogDefaultInstance(); /** @todo we want this for release as well! */
     if (pLog)
     {
-        va_start(va, pszFormat);
-        RTLogFormatV(rtLogOutput, pLog, pszFormat, va);
-        va_end(va);
-
-        PVM pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
-        if (pVM)
-        {
-            va_start(va, pszFormat);
-            RTStrPrintfV(pVM->vmm.s.szRing0AssertMsg2, sizeof(pVM->vmm.s.szRing0AssertMsg2), pszFormat, va);
-            va_end(va);
-        }
+        va_copy(vaCopy, va);
+        RTLogFormatV(rtLogOutput, pLog, pszFormat, vaCopy);
+        va_end(vaCopy);
     }
 
-#ifdef RT_OS_DARWIN
-    va_start(va, pszFormat);
+    /*
+     * Push it to the global VMM buffer.
+     */
+    PVM pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
+    if (pVM)
+    {
+        va_copy(vaCopy, va);
+        RTStrPrintfV(pVM->vmm.s.szRing0AssertMsg2, sizeof(pVM->vmm.s.szRing0AssertMsg2), pszFormat, vaCopy);
+        va_end(vaCopy);
+    }
+
+    /*
+     * Continue the normal way.
+     */
     RTAssertMsg2V(pszFormat, va);
-    va_end(va);
-#endif
 }
 

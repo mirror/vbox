@@ -87,8 +87,8 @@ EXPORTS
     nocrt_strcpy
     nocrt_strcmp
     nocrt_strchr
-    AssertMsg1
-    AssertMsg2
+    RTAssertMsg1Weak
+    RTAssertMsg2Weak
     RTAssertShouldPanic
     RTTimeNanoTSLegacySync
     RTTimeNanoTSLegacyAsync

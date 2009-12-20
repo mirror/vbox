@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - RTAssertMsg2Weak.
+ * IPRT - Internal RTAssert header
  */
 
 /*
- * Copyright (C) 2008-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,22 +28,38 @@
  * additional information or have any questions.
  */
 
+#ifndef ___internal_assert_h
+#define ___internal_assert_h
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
-#include <iprt/assert.h>
-#include "internal/iprt.h"
+#include <iprt/types.h>
 
-#include <iprt/stdarg.h>
+RT_C_DECLS_BEGIN
 
+#ifdef IN_RING0
 
-RTDECL(void) RTAssertMsg2Weak(const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    RTAssertMsg2WeakV(pszFormat, va);
-    va_end(va);
-}
-RT_EXPORT_SYMBOL(RTAssertMsg2Weak);
+/**
+ * Print the 1st part of an assert message to whatever native facility is best
+ * fitting.
+ *
+ * @param   pszExpr     Expression. Can be NULL.
+ * @param   uLine       Location line number.
+ * @param   pszFile     Location file name.
+ * @param   pszFunction Location function name.
+ */
+void rtR0AssertNativeMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction);
+
+/**
+ * Print the 2nd (optional) part of an assert message to whatever native
+ * facility is best fitting.
+ *
+ * @param   pszFormat   Printf like format string.
+ * @param   va          Arguments to that string.
+ */
+void rtR0AssertNativeMsg2V(const char *pszFormat, va_list va);
+
+#endif
+
+RT_C_DECLS_END
+
+#endif
 

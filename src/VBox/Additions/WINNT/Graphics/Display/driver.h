@@ -465,8 +465,8 @@ BOOL vrdpReportOrderGeneric (PPDEV ppdev,
     do { \
         if (!(expr)) \
         { \
-            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertMsg2("!!!\n"); \
+            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertMsg2Weak("!!!\n"); \
         } \
     } while (0)
 #else

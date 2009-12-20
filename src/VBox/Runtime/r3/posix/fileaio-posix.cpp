@@ -857,7 +857,7 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
         if (RT_UNLIKELY(!pCtxInt->iFirstFree))
         {
             for (unsigned i = 0; i < pCtxInt->cReqsWaitMax; i++)
-                AssertMsg2("wait[%d] = %#p\n", i, pCtxInt->apReqs[i]);
+                RTAssertMsg2Weak("wait[%d] = %#p\n", i, pCtxInt->apReqs[i]);
 
             AssertMsgFailed(("No request to wait for. pReqsWaitHead=%#p pReqsWaitTail=%#p\n",
                             pCtxInt->pReqsWaitHead, pCtxInt->pReqsWaitTail));

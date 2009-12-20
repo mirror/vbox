@@ -247,7 +247,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTThreadYield",                          (void *)RTThreadYield },
 #if 0 /* Thread APIs, Part 2. */
     { "RTThreadSelf",                           (void *)RTThreadSelf },
-    { "RTThreadCreate",                         (void *)RTThreadCreate }, /** @todo need to wrap the callback */
+    { "RTThreadCreate",                         (void *)RTThreadCreate },
     { "RTThreadGetNative",                      (void *)RTThreadGetNative },
     { "RTThreadWait",                           (void *)RTThreadWait },
     { "RTThreadWaitNoResume",                   (void *)RTThreadWaitNoResume },
@@ -287,21 +287,13 @@ static SUPFUNC g_aFunctions[] =
     { "RTPowerNotificationDeregister",          (void *)RTPowerNotificationDeregister },
     { "RTLogRelDefaultInstance",                (void *)RTLogRelDefaultInstance },
     { "RTLogSetDefaultInstanceThread",          (void *)RTLogSetDefaultInstanceThread },
-    { "RTLogLogger",                            (void *)RTLogLogger }, /** @todo remove this */
-    { "RTLogLoggerEx",                          (void *)RTLogLoggerEx }, /** @todo remove this */
     { "RTLogLoggerExV",                         (void *)RTLogLoggerExV },
-    { "RTLogPrintf",                            (void *)RTLogPrintf }, /** @todo remove this */
     { "RTLogPrintfV",                           (void *)RTLogPrintfV },
-    { "AssertMsg1",                             (void *)AssertMsg1 },
-    { "AssertMsg2",                             (void *)AssertMsg2 }, /** @todo replace this by RTAssertMsg2V */
-#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+#if !defined(RT_OS_FREEBSD) || defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) /** @todo implement this everywhere. */
     { "RTR0AssertPanicSystem",                  (void *)RTR0AssertPanicSystem },
 #endif
-#if defined(RT_OS_DARWIN)
     { "RTAssertMsg1",                           (void *)RTAssertMsg1 },
-    { "RTAssertMsg2",                           (void *)RTAssertMsg2 },
     { "RTAssertMsg2V",                          (void *)RTAssertMsg2V },
-#endif
 };
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
@@ -1212,14 +1204,14 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             if (pReq->u.In.cSymbols)
             {
                 uint32_t i;
-                PSUPLDRSYM paSyms = (PSUPLDRSYM)&pReq->u.In.achImage[pReq->u.In.offSymbols];
+                PSUPLDRSYM paSyms = (PSUPLDRSYM)&pReq->u.In.abImage[pReq->u.In.offSymbols];
                 for (i = 0; i < pReq->u.In.cSymbols; i++)
                 {
                     REQ_CHECK_EXPR_FMT(paSyms[i].offSymbol < pReq->u.In.cbImageWithTabs,
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: symb off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offSymbol, (long)pReq->u.In.cbImageWithTabs));
                     REQ_CHECK_EXPR_FMT(paSyms[i].offName < pReq->u.In.cbStrTab,
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: name off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithTabs));
-                    REQ_CHECK_EXPR_FMT(memchr(&pReq->u.In.achImage[pReq->u.In.offStrTab + paSyms[i].offName], '\0', pReq->u.In.cbStrTab - paSyms[i].offName),
+                    REQ_CHECK_EXPR_FMT(memchr(&pReq->u.In.abImage[pReq->u.In.offStrTab + paSyms[i].offName], '\0', pReq->u.In.cbStrTab - paSyms[i].offName),
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: unterminated name! (%#lx / %#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithTabs));
                 }
             }
@@ -3771,19 +3763,19 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             break;
 
         case SUPLDRLOADEP_VMMR0:
-            rc = supdrvLdrValidatePointer(    pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0,          false, pReq->u.In.achImage, "pvVMMR0");
+            rc = supdrvLdrValidatePointer(    pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0,          false, pReq->u.In.abImage, "pvVMMR0");
             if (RT_SUCCESS(rc))
-                rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,  false, pReq->u.In.achImage, "pvVMMR0EntryInt");
+                rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,  false, pReq->u.In.abImage, "pvVMMR0EntryInt");
             if (RT_SUCCESS(rc))
-                rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, false, pReq->u.In.achImage, "pvVMMR0EntryFast");
+                rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, false, pReq->u.In.abImage, "pvVMMR0EntryFast");
             if (RT_SUCCESS(rc))
-                rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx,   false, pReq->u.In.achImage, "pvVMMR0EntryEx");
+                rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx,   false, pReq->u.In.abImage, "pvVMMR0EntryEx");
             if (RT_FAILURE(rc))
                 return rc;
             break;
 
         case SUPLDRLOADEP_SERVICE:
-            rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.Service.pfnServiceReq, false, pReq->u.In.achImage, "pfnServiceReq");
+            rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.Service.pfnServiceReq, false, pReq->u.In.abImage, "pfnServiceReq");
             if (RT_FAILURE(rc))
                 return rc;
             if (    pReq->u.In.EP.Service.apvReserved[0] != NIL_RTR0PTR
@@ -3806,10 +3798,10 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             return VERR_INVALID_PARAMETER;
     }
 
-    rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.pfnModuleInit, true, pReq->u.In.achImage, "pfnModuleInit");
+    rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.pfnModuleInit, true, pReq->u.In.abImage, "pfnModuleInit");
     if (RT_FAILURE(rc))
         return rc;
-    rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.pfnModuleTerm, true, pReq->u.In.achImage, "pfnModuleTerm");
+    rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.pfnModuleTerm, true, pReq->u.In.abImage, "pfnModuleTerm");
     if (RT_FAILURE(rc))
         return rc;
 
@@ -3822,7 +3814,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     {
         pImage->pachStrTab = (char *)RTMemAlloc(pImage->cbStrTab);
         if (pImage->pachStrTab)
-            memcpy(pImage->pachStrTab, &pReq->u.In.achImage[pReq->u.In.offStrTab], pImage->cbStrTab);
+            memcpy(pImage->pachStrTab, &pReq->u.In.abImage[pReq->u.In.offStrTab], pImage->cbStrTab);
         else
             rc = VERR_NO_MEMORY;
     }
@@ -3833,7 +3825,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         size_t  cbSymbols = pImage->cSymbols * sizeof(SUPLDRSYM);
         pImage->paSymbols = (PSUPLDRSYM)RTMemAlloc(cbSymbols);
         if (pImage->paSymbols)
-            memcpy(pImage->paSymbols, &pReq->u.In.achImage[pReq->u.In.offSymbols], cbSymbols);
+            memcpy(pImage->paSymbols, &pReq->u.In.abImage[pReq->u.In.offSymbols], cbSymbols);
         else
             rc = VERR_NO_MEMORY;
     }
@@ -3848,9 +3840,9 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         pImage->pfnModuleTerm = pReq->u.In.pfnModuleTerm;
 
         if (pImage->fNative)
-            rc = supdrvOSLdrLoad(pDevExt, pImage, pReq->u.In.achImage);
+            rc = supdrvOSLdrLoad(pDevExt, pImage, pReq->u.In.abImage);
         else
-            memcpy(pImage->pvImage, &pReq->u.In.achImage[0], pImage->cbImageBits);
+            memcpy(pImage->pvImage, &pReq->u.In.abImage[0], pImage->cbImageBits);
     }
 
     /*
@@ -4855,7 +4847,7 @@ static DECLCALLBACK(void) supdrvDetermineAsyncTscWorker(RTCPUID idCpu, void *pvU
  * @param   poffMin     Pointer to the determined difference between different cores.
  * @return  false if the time stamp counters appear to be synchron, true otherwise.
  */
-bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *poffMin)
+static bool supdrvDetermineAsyncTsc(uint64_t *poffMin)
 {
     /*
      * Just iterate all the cpus 8 times and make sure that the TSC is

@@ -39,6 +39,8 @@
 
 #include <VBox/log.h>
 
+#include "internal/assert.h"
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -48,30 +50,15 @@ extern char g_szRTAssertMsg[2048];
 /** The length of the last assert message. (in DATA16) */
 extern size_t g_cchRTAssertMsg;
 
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(size_t) rtR0Os2AssertOutputCB(void *pvArg, const char *pachChars, size_t cbChars);
 
 
-/**
- * The 1st part of an assert message.
- *
- * @param   pszExpr     Expression. Can be NULL.
- * @param   uLine       Location line number.
- * @param   pszFile     Location file name.
- * @param   pszFunction Location function name.
- * @remark  This API exists in HC Ring-3 and GC.
- */
-RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
+void rtR0AssertNativeMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
-#ifdef IN_GUEST_R0
-    RTLogBackdoorPrintf("\n!!Assertion Failed!!\n"
-                        "Expression: %s\n"
-                        "Location  : %s(%d) %s\n",
-                        pszExpr, pszFile, uLine, pszFunction);
-#endif
-
 #if defined(DEBUG_bird)
     RTLogComPrintf("\n!!Assertion Failed!!\n"
                    "Expression: %s\n"
@@ -87,27 +74,13 @@ RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszF
 }
 
 
-/**
- * The 2nd (optional) part of an assert message.
- *
- * @param   pszFormat   Printf like format string.
- * @param   ...         Arguments to that string.
- * @remark  This API exists in HC Ring-3 and GC.
- */
-RTDECL(void) AssertMsg2(const char *pszFormat, ...)
+void rtR0AssertNativeMsg2V(const char *pszFormat, va_list va)
 {
-    va_list va;
-
-#ifdef IN_GUEST_R0
-    va_start(va, pszFormat);
-    RTLogBackdoorPrintfV(pszFormat, va);
-    va_end(va);
-#endif
-
 #if defined(DEBUG_bird)
-    va_start(va, pszFormat);
-    RTLogComPrintfV(pszFormat, va);
-    va_end(va);
+    va_list vaCopy;
+    va_copy(vaCopy, va);
+    RTLogComPrintfV(pszFormat, vaCopy);
+    va_end(vaCopy);
 #endif
 
     va_start(va, pszFormat);
