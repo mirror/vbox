@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Global includes */
 #include <QDir>
 
@@ -27,6 +30,7 @@
 #include "VBoxMedium.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 QString VBoxMedium::mTable = QString ("<table>%1</table>");
 QString VBoxMedium::mRow = QString ("<tr><td>%1</td></tr>");

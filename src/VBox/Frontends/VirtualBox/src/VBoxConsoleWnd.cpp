@@ -21,6 +21,9 @@
  */
 
 /* Global includes */
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include <QActionGroup>
 #include <QDesktopWidget>
 #include <QDir>
@@ -43,6 +46,7 @@
 #include "QIStateIndicator.h"
 #include "QIStatusBar.h"
 #include "QIWidgetValidator.h"
+#include "QIHotKeyEdit.h"
 #include "VBoxConsoleWnd.h"
 #include "VBoxConsoleView.h"
 #include "VBoxCloseVMDlg.h"
@@ -75,6 +79,7 @@
 #include <iprt/buildconfig.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Global forwards */
 extern void qt_set_sequence_auto_mnemonic (bool on);

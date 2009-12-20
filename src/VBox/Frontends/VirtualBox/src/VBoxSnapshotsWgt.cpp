@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Global includes */
 #include <QDateTime>
 #include <QHeaderView>
@@ -32,6 +35,7 @@
 #include <VBoxSnapshotDetailsDlg.h>
 #include <VBoxTakeSnapshotDlg.h>
 #include <VBoxToolBar.h>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /**
  *  QTreeWidgetItem subclass for snapshots items

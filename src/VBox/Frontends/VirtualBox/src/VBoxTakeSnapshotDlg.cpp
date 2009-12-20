@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Global includes */
 #include <QPushButton>
 
@@ -27,6 +30,7 @@
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxUtils.h"
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 VBoxTakeSnapshotDlg::VBoxTakeSnapshotDlg(QWidget *pParent, const CMachine &machine)
     : QIWithRetranslateUI<QDialog>(pParent)

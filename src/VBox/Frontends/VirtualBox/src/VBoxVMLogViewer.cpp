@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "VBoxVMLogViewer.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
@@ -39,6 +42,7 @@
 #include <QDateTime>
 #include <QPushButton>
 #include <QKeyEvent>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 VBoxVMLogViewer::LogViewersMap VBoxVMLogViewer::mSelfArray = LogViewersMap();
 

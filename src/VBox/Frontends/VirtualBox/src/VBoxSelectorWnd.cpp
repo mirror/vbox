@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "VBoxProblemReporter.h"
 #include "VBoxSelectorWnd.h"
 #include "VBoxVMListView.h"
@@ -50,6 +53,7 @@
 #include <QToolButton>
 
 #include <iprt/buildconfig.h>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 // VBoxVMDetailsView class
 ////////////////////////////////////////////////////////////////////////////////

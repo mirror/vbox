@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Global Includes */
 #include <QTimer>
 
@@ -27,6 +30,7 @@
 #include <VBoxVMInformationDlg.h>
 #include <VBoxGlobal.h>
 #include <VBoxConsoleView.h>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 VBoxVMInformationDlg::InfoDlgMap VBoxVMInformationDlg::mSelfArray = InfoDlgMap();
 

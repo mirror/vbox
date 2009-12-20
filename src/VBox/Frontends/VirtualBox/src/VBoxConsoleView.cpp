@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include <VBox/VBoxVideo.h>
 
 #include "VBoxConsoleView.h"
@@ -41,6 +44,8 @@
 #include <QStatusBar>
 #include <QPainter>
 #include <QBitmap>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */ /** @todo Move this further down! Requires some cleanup below though, so later. */
 
 #ifdef Q_WS_WIN
 // VBox/cdefs.h defines these:

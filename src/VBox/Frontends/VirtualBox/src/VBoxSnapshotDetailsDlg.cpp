@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Global includes */
 #include <QDateTime>
 #include <QPushButton>
@@ -30,6 +33,7 @@
 #include <VBoxProblemReporter.h>
 #include <VBoxSnapshotDetailsDlg.h>
 #include <VBoxUtils.h>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 VBoxSnapshotDetailsDlg::VBoxSnapshotDetailsDlg (QWidget *aParent)
     : QIWithRetranslateUI <QDialog> (aParent)

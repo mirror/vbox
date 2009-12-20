@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Global includes */
 #include <QCloseEvent>
 #include <QDir>
@@ -41,6 +44,7 @@
 #include "VBoxToolBar.h"
 #include "QIFileDialog.h"
 #include "QILabel.h"
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 class AddVDMUrlsEvent: public QEvent
 {

@@ -22,6 +22,9 @@
 
 #if defined (VBOX_GUI_USE_DDRAW)
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "VBoxFrameBuffer.h"
 
 #include "VBoxConsoleView.h"
@@ -33,6 +36,7 @@
 
 #include <iprt/param.h>
 #include <iprt/alloc.h>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 #define LOGDDRAW Log
 

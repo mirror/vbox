@@ -20,6 +20,12 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+# ifdef QT_MAC_USE_COCOA
+#  include "darwin/VBoxCocoaApplication.h"
+# endif
+#else /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxSelectorWnd.h"
@@ -55,6 +61,8 @@
 #include <iprt/process.h>
 #include <iprt/stream.h>
 #include <VBox/err.h>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 #ifdef VBOX_WITH_HARDENING
 # include <VBox/sup.h>
 #endif
