@@ -70,7 +70,7 @@ RTR0DECL(void) RTR0AssertPanicSystem(void)
     while (psz < pszEnd && (*psz == ' ' || *psz == '\t' || *psz == '\n' || *psz == '\r'))
         psz++;
 
-    if (psz >= pszEnd || *psz)
+    if (psz < pszEnd && *psz)
         assfail(psz, g_pszRTAssertFile, g_u32RTAssertLine);
     else
         assfail(g_szRTAssertMsg1, g_pszRTAssertFile, g_u32RTAssertLine);
