@@ -73,7 +73,7 @@ struct RTSEMRWINTERNAL
     /** Number of writers waiting. */
     uint32_t            cWritesWaiting;
     /** The write owner of the lock. */
-    RTTHREAD            Writer;
+    RTNATIVETHREAD      hWriter;
     /** The handle of the event object on which the waiting readers block. (manual reset). */
     RTSEMEVENTMULTI     ReadEvent;
     /** The handle of the event object on which the waiting writers block. (automatic reset). */
@@ -117,7 +117,7 @@ RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
                         pThis->cWrites              = 0;
                         pThis->cWriterReads         = 0;
                         pThis->cWritesWaiting       = 0;
-                        pThis->Writer               = NIL_RTTHREAD;
+                        pThis->hWriter              = NIL_RTNATIVETHREAD;
                         pThis->fNeedResetReadEvent  = true;
                         pThis->u32Magic             = RTSEMRW_MAGIC;
                         *pRWSem = pThis;
@@ -210,9 +210,8 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
-    RTTHREAD    Self = (RTTHREAD)RTThreadNativeSelf();
-    unsigned    cMilliesInitial = cMillies;
-    uint64_t    tsStart = 0;
+    unsigned        cMilliesInitial = cMillies;
+    uint64_t        tsStart = 0;
     if (cMillies != RT_INDEFINITE_WAIT && cMillies != 0)
         tsStart = RTTimeNanoTS();
 
@@ -231,21 +230,25 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
      * Do not block further readers if there is a writer waiting, as
      * that will break/deadlock reader recursion.
      */
-    if (!pThis->cWrites
-        /** @todo && (   pThis->cReads
-         *            || !pThis->cWritesWaiting) ?? - making sure not to race waiting
-         *        writers.  */
+    if (    pThis->hWriter == NIL_RTNATIVETHREAD
+#if 0
+        && (   !pThis->cWritesWaiting
+            ||  pThis->cReads)
+#endif
        )
     {
         pThis->cReads++;
+        Assert(pThis->cReads > 0);
 
         RTCritSectLeave(&pThis->CritSect);
         return VINF_SUCCESS;
     }
 
-    if (pThis->Writer == Self)
+    RTNATIVETHREAD hNativeSelf = pThis->CritSect.NativeThreadOwner;
+    if (pThis->hWriter == hNativeSelf)
     {
         pThis->cWriterReads++;
+        Assert(pThis->cWriterReads > 0);
 
         RTCritSectLeave(&pThis->CritSect);
         return VINF_SUCCESS;
@@ -287,8 +290,7 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
         }
 
         /*
-         * Re-take critsect and repeate the exact same checks as we did before
-         * the loop.
+         * Re-take critsect and repeate the check we did before the loop.
          */
         rc = RTCritSectEnter(&pThis->CritSect);
         if (RT_FAILURE(rc))
@@ -297,21 +299,14 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
             break;
         }
 
-        if (!pThis->cWrites
-            /** @todo && (   pThis->cReads
-             *            || !pThis->cWritesWaiting) ?? - making sure not to race waiting
-             *        writers.  */
+        if (    pThis->hWriter == NIL_RTNATIVETHREAD
+#if 0
+            && (   !pThis->cWritesWaiting
+                ||  pThis->cReads)
+#endif
            )
         {
             pThis->cReads++;
-
-            RTCritSectLeave(&pThis->CritSect);
-            return VINF_SUCCESS;
-        }
-
-        if (pThis->Writer == Self)
-        {
-            pThis->cWriterReads++;
 
             RTCritSectLeave(&pThis->CritSect);
             return VINF_SUCCESS;
@@ -329,6 +324,7 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
         }
     }
 
+    /* failed */
     return rc;
 }
 RT_EXPORT_SYMBOL(RTSemRWRequestRead);
@@ -351,34 +347,53 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
-    RTTHREAD Self = (RTTHREAD)RTThreadNativeSelf();
-
     /*
      * Take critsect.
      */
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        if (pThis->Writer == Self)
+        if (pThis->hWriter == NIL_RTNATIVETHREAD)
         {
-            pThis->cWriterReads--;
+            if (RT_LIKELY(pThis->cReads > 0))
+            {
+                pThis->cReads--;
+
+                /* Kick off a writer if appropriate. */
+                if (    pThis->cWritesWaiting > 0
+                    &&  !pThis->cReads)
+                {
+                    rc = RTSemEventSignal(pThis->WriteEvent);
+                    AssertMsgRC(rc, ("Failed to signal writers on rwsem %p, rc=%Rrc\n", RWSem, rc));
+                }
+            }
+            else
+            {
+                AssertFailed();
+                rc = VERR_NOT_OWNER;
+            }
         }
         else
         {
-            AssertMsg(pThis->Writer == NIL_RTTHREAD, ("Impossible! Writers and Readers are exclusive!\n"));
-            pThis->cReads--;
-
-            /* Kick off a writer if appropriate. */
-            if (    pThis->cWritesWaiting > 0
-                &&  !pThis->cReads)
+            RTNATIVETHREAD hNativeSelf = pThis->CritSect.NativeThreadOwner;
+            if (pThis->hWriter == hNativeSelf)
             {
-                rc = RTSemEventSignal(pThis->WriteEvent);
-                AssertMsgRC(rc, ("Failed to signal writers on rwsem %p, rc=%Rrc\n", RWSem, rc));
+                if (pThis->cWriterReads > 0)
+                    pThis->cWriterReads--;
+                else
+                {
+                    AssertFailed();
+                    rc = VERR_NOT_OWNER;
+                }
+            }
+            else
+            {
+                AssertFailed();
+                rc = VERR_NOT_OWNER;
             }
         }
 
         RTCritSectLeave(&pThis->CritSect);
-        return VINF_SUCCESS;
     }
     else
         AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
@@ -398,7 +413,6 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
-    RTTHREAD    Self = (RTTHREAD)RTThreadNativeSelf();
     unsigned    cMilliesInitial = cMillies;
     uint64_t    tsStart = 0;
     if (cMillies != RT_INDEFINITE_WAIT && cMillies != 0)
@@ -417,7 +431,8 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
     /*
      * Check if the state of affairs allows write access.
      */
-    if (!pThis->cReads && (!pThis->cWrites || pThis->Writer == Self))
+    RTNATIVETHREAD hNativeSelf = pThis->CritSect.NativeThreadOwner;
+    if (!pThis->cReads && (!pThis->cWrites || pThis->hWriter == hNativeSelf))
     {
         /*
          * Reset the reader event semaphore if necessary.
@@ -430,7 +445,7 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
         }
 
         pThis->cWrites++;
-        pThis->Writer = Self;
+        pThis->hWriter = hNativeSelf;
 
         RTCritSectLeave(&pThis->CritSect);
         return VINF_SUCCESS;
@@ -487,7 +502,7 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
             break;
         }
 
-        if (!pThis->cReads && (!pThis->cWrites || pThis->Writer == Self))
+        if (!pThis->cReads && (!pThis->cWrites || pThis->hWriter == hNativeSelf))
         {
             /*
              * Reset the reader event semaphore if necessary.
@@ -500,7 +515,7 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
             }
 
             pThis->cWrites++;
-            pThis->Writer = Self;
+            pThis->hWriter = hNativeSelf;
             pThis->cWritesWaiting--;
 
             RTCritSectLeave(&pThis->CritSect);
@@ -551,35 +566,40 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
-    RTTHREAD Self = (RTTHREAD)RTThreadNativeSelf();
-
     /*
      * Take critsect.
      */
     int rc = RTCritSectEnter(&pThis->CritSect);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
-        return rc;
-    }
+    AssertRCReturn(rc, rc);
 
     /*
      * Check if owner.
      */
-    if (pThis->Writer != Self)
+    RTNATIVETHREAD hNativeSelf = pThis->CritSect.NativeThreadOwner;
+    if (pThis->hWriter != hNativeSelf)
     {
         RTCritSectLeave(&pThis->CritSect);
         AssertMsgFailed(("Not read-write owner of rwsem %p.\n", RWSem));
         return VERR_NOT_OWNER;
     }
 
-    Assert(pThis->cWrites > 0);
     /*
      * Release ownership and remove ourselves from the writers count.
      */
+    Assert(pThis->cWrites > 0);
     pThis->cWrites--;
     if (!pThis->cWrites)
-        pThis->Writer = NIL_RTTHREAD;
+    {
+        if (RT_UNLIKELY(pThis->cWriterReads > 0))
+        {
+            pThis->cWrites++;
+            RTCritSectLeave(&pThis->CritSect);
+            AssertMsgFailed(("All recursive read locks need to be released prior to the final write lock! (%p)n\n", pThis));
+            return VERR_WRONG_ORDER;
+        }
+
+        pThis->hWriter = NIL_RTNATIVETHREAD;
+    }
 
     /*
      * Release the readers if no more writers waiting, otherwise the writers.
@@ -615,10 +635,10 @@ RTDECL(bool) RTSemRWIsWriteOwner(RTSEMRW RWSem)
     /*
      * Check ownership.
      */
-    RTTHREAD Self = (RTTHREAD)RTThreadNativeSelf();
-    RTTHREAD Writer;
-    ASMAtomicUoReadSize(&pThis->Writer, &Writer);
-    return Writer == Self;
+    RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
+    RTNATIVETHREAD hWriter;
+    ASMAtomicUoReadHandle(&pThis->hWriter, &hWriter);
+    return hWriter == hNativeSelf;
 }
 RT_EXPORT_SYMBOL(RTSemRWIsWriteOwner);
 
