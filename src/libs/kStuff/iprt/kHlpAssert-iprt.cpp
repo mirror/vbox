@@ -39,7 +39,7 @@ KHLP_DECL(void) kHlpAssertMsg2(const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    RTAssertMsg2V/*Weak?*/(pszFormat, va);
+    RTAssertMsg2WeakV(pszFormat, va);
     va_end(va);
 }
 
