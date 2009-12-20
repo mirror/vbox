@@ -77,51 +77,7 @@ RTDECL(bool) RTAssertMayPanic(void)
 }
 
 
-#if defined(IN_GUEST_R0) && defined(RT_OS_WINDOWS) /** @todo remove this, see defect XYZ. */
-/*
- * This is legacy that should be eliminated. OS specific code deals with
- * R0 assertions now and it will do the backdoor printfs in addition to
- * proper OS specific printfs and panics / BSODs / IPEs.
- */
-#include <VBox/log.h>
-
-
-/**
- * The 1st part of an assert message.
- *
- * @param   pszExpr     Expression. Can be NULL.
- * @param   uLine       Location line number.
- * @param   pszFile     Location file name.
- * @param   pszFunction Location function name.
- * @remark  This API exists in HC Ring-3 and GC.
- */
-RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
-{
-    RTLogBackdoorPrintf("\n!!Assertion Failed!!\n"
-                        "Expression: %s\n"
-                        "Location  : %s(%d) %s\n",
-                        pszExpr, pszFile, uLine, pszFunction);
-}
-RT_EXPORT_SYMBOL(AssertMsg1);
-
-
-/**
- * The 2nd (optional) part of an assert message.
- *
- * @param   pszFormat   Printf like format string.
- * @param   ...         Arguments to that string.
- * @remark  This API exists in HC Ring-3 and GC.
- */
-RTDECL(void) AssertMsg2(const char *pszFormat, ...)
-{   /* forwarder. */
-    va_list args;
-    va_start(args, pszFormat);
-    RTLogBackdoorPrintfV(pszFormat, args);
-    va_end(args);
-}
-RT_EXPORT_SYMBOL(AssertMsg2);
-
-#elif defined(IN_RING0)
+#ifdef IN_RING0
 
 /* OS specific.  */
 
