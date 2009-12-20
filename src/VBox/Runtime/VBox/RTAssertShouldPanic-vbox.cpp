@@ -58,6 +58,12 @@
 RTDECL(bool) RTAssertShouldPanic(void)
 {
     /*
+     * Check if panicing is excluded by the the RTAssert settings first.
+     */
+    if (!RTAssertMayPanic())
+        return false;
+
+    /*
      * Check for the VBOX_ASSERT variable.
      */
     const char *psz = RTEnvGet("VBOX_ASSERT");
