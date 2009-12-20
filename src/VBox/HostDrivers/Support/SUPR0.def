@@ -150,6 +150,10 @@ EXPORTS
     RTLogPrintfV
     RTAssertMsg1
     RTAssertMsg2V
+    RTAssertSetQuiet
+    RTAssertMayPanic
+    RTAssertSetMayPanic
+    RTAssertAreQuiet
 
     ; data
     g_pSUPGlobalInfoPage DATA ; NT

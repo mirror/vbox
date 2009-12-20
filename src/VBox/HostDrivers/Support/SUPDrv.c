@@ -289,11 +289,13 @@ static SUPFUNC g_aFunctions[] =
     { "RTLogSetDefaultInstanceThread",          (void *)RTLogSetDefaultInstanceThread },
     { "RTLogLoggerExV",                         (void *)RTLogLoggerExV },
     { "RTLogPrintfV",                           (void *)RTLogPrintfV },
-#if !defined(RT_OS_FREEBSD) || defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) /** @todo implement this everywhere. */
     { "RTR0AssertPanicSystem",                  (void *)RTR0AssertPanicSystem },
-#endif
     { "RTAssertMsg1",                           (void *)RTAssertMsg1 },
     { "RTAssertMsg2V",                          (void *)RTAssertMsg2V },
+    { "RTAssertSetQuiet",                       (void *)RTAssertSetQuiet },
+    { "RTAssertMayPanic",                       (void *)RTAssertMayPanic },
+    { "RTAssertSetMayPanic",                    (void *)RTAssertSetMayPanic },
+    { "RTAssertAreQuiet",                       (void *)RTAssertAreQuiet },
 };
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
