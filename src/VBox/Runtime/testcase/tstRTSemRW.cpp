@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT Testcase - Reader/Writer Semaphore Test.
+ * IPRT Testcase - Reader/Writer Semaphore.
  */
 
 /*
