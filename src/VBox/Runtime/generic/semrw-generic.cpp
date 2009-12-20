@@ -78,25 +78,10 @@ struct RTSEMRWINTERNAL
     RTSEMEVENTMULTI     ReadEvent;
     /** The handle of the event object on which the waiting writers block. (automatic reset). */
     RTSEMEVENT          WriteEvent;
+    /** Need to reset ReadEvent. */
+    bool                fNeedResetReadEvent;
 };
 
-
-/**
- * Validate a read-write semaphore handle passed to one of the interface.
- *
- * @returns true if valid.
- * @returns false if invalid.
- * @param   pThis   Pointer to the read-write semaphore to validate.
- */
-inline bool rtsemRWValid(struct RTSEMRWINTERNAL *pThis)
-{
-    if (!VALID_PTR(pThis))
-        return false;
-
-    if (pThis->u32Magic != RTSEMRW_MAGIC)
-        return false;
-    return true;
-}
 
 
 RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
@@ -127,13 +112,14 @@ RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
                     rc = RTSemEventMultiSignal(pThis->ReadEvent);
                     if (RT_SUCCESS(rc))
                     {
-                        pThis->u32Padding       = 0xa5a55a5a;
-                        pThis->cReads           = 0;
-                        pThis->cWrites          = 0;
-                        pThis->cWriterReads     = 0;
-                        pThis->cWritesWaiting   = 0;
-                        pThis->Writer           = NIL_RTTHREAD;
-                        pThis->u32Magic         = RTSEMRW_MAGIC;
+                        pThis->u32Padding           = UINT32_C(0xa5a55a5a);
+                        pThis->cReads               = 0;
+                        pThis->cWrites              = 0;
+                        pThis->cWriterReads         = 0;
+                        pThis->cWritesWaiting       = 0;
+                        pThis->Writer               = NIL_RTTHREAD;
+                        pThis->fNeedResetReadEvent  = true;
+                        pThis->u32Magic             = RTSEMRW_MAGIC;
                         *pRWSem = pThis;
                         return VINF_SUCCESS;
                     }
@@ -156,14 +142,14 @@ RT_EXPORT_SYMBOL(RTSemRWCreate);
 RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
 {
     struct RTSEMRWINTERNAL *pThis = RWSem;
+
     /*
      * Validate handle.
      */
-    if (!rtsemRWValid(pThis))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return VERR_INVALID_HANDLE;
-    }
+    if (pThis == NIL_RTSEMRW)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Check if busy.
@@ -176,23 +162,23 @@ RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
             /*
              * Make it invalid and unusable.
              */
-            pThis->u32Magic = ~RTSEMRW_MAGIC;
+            ASMAtomicWriteU32(&pThis->u32Magic, ~RTSEMRW_MAGIC);
             pThis->cReads = ~0;
 
             /*
              * Do actual cleanup. None of these can now fail.
              */
             rc = RTSemEventMultiDestroy(pThis->ReadEvent);
-            AssertMsgRC(rc, ("RTSemEventMultiDestroy failed! rc=%d\n", rc));
+            AssertMsgRC(rc, ("RTSemEventMultiDestroy failed! rc=%Rrc\n", rc));
             pThis->ReadEvent = NIL_RTSEMEVENTMULTI;
 
             rc = RTSemEventDestroy(pThis->WriteEvent);
-            AssertMsgRC(rc, ("RTSemEventDestroy failed! rc=%d\n", rc));
+            AssertMsgRC(rc, ("RTSemEventDestroy failed! rc=%Rrc\n", rc));
             pThis->WriteEvent = NIL_RTSEMEVENT;
 
             RTCritSectLeave(&pThis->CritSect);
             rc = RTCritSectDelete(&pThis->CritSect);
-            AssertMsgRC(rc, ("RTCritSectDelete failed! rc=%d\n", rc));
+            AssertMsgRC(rc, ("RTCritSectDelete failed! rc=%Rrc\n", rc));
 
             RTMemFree(pThis);
             rc = VINF_SUCCESS;
@@ -205,7 +191,7 @@ RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
     }
     else
     {
-        AssertMsgRC(rc, ("RTCritSectTryEnter failed! rc=%d\n", rc));
+        AssertMsgRC(rc, ("RTCritSectTryEnter failed! rc=%Rrc\n", rc));
         rc = VERR_SEM_BUSY;
     }
 
@@ -217,14 +203,12 @@ RT_EXPORT_SYMBOL(RTSemRWDestroy);
 RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
 {
     struct RTSEMRWINTERNAL *pThis = RWSem;
+
     /*
      * Validate handle.
      */
-    if (!rtsemRWValid(pThis))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return VERR_INVALID_HANDLE;
-    }
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
     RTTHREAD    Self = (RTTHREAD)RTThreadNativeSelf();
     unsigned    cMilliesInitial = cMillies;
@@ -238,7 +222,7 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%d\n", RWSem, rc));
+        AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
         return rc;
     }
 
@@ -249,14 +233,19 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
          * Do not block further readers if there is a writer waiting, as
          * that will break/deadlock reader recursion.
          */
-        if (!pThis->cWrites)
+        if (!pThis->cWrites
+            /** @todo && (   pThis->cReads
+             *            || !pThis->cWritesWaiting) ?? - making sure not to race waiting
+             *        writers.  */
+           )
         {
             pThis->cReads++;
 
             RTCritSectLeave(&pThis->CritSect);
             return VINF_SUCCESS;
         }
-        else if (pThis->Writer == Self)
+
+        if (pThis->Writer == Self)
         {
             pThis->cWriterReads++;
 
@@ -282,7 +271,7 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
         rc = RTSemEventMultiWait(pThis->ReadEvent, cMillies);
         if (RT_FAILURE(rc) && rc != VERR_TIMEOUT)
         {
-            AssertMsgRC(rc, ("RTSemEventMultiWait failed on rwsem %p, rc=%d\n", RWSem, rc));
+            AssertMsgRC(rc, ("RTSemEventMultiWait failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
             break;
         }
 
@@ -298,7 +287,7 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
         rc = RTCritSectEnter(&pThis->CritSect);
         if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%d\n", RWSem, rc));
+            AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
             break;
         }
     }
@@ -318,14 +307,12 @@ RT_EXPORT_SYMBOL(RTSemRWRequestReadNoResume);
 RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
 {
     struct RTSEMRWINTERNAL *pThis = RWSem;
+
     /*
      * Validate handle.
      */
-    if (!rtsemRWValid(pThis))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return VERR_INVALID_HANDLE;
-    }
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
     RTTHREAD Self = (RTTHREAD)RTThreadNativeSelf();
 
@@ -349,7 +336,7 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
                 &&  !pThis->cReads)
             {
                 rc = RTSemEventSignal(pThis->WriteEvent);
-                AssertMsgRC(rc, ("Failed to signal writers on rwsem %p, rc=%d\n", RWSem, rc));
+                AssertMsgRC(rc, ("Failed to signal writers on rwsem %p, rc=%Rrc\n", RWSem, rc));
             }
         }
 
@@ -357,7 +344,7 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
         return VINF_SUCCESS;
     }
     else
-        AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%d\n", RWSem, rc));
+        AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
 
     return rc;
 }
@@ -367,19 +354,17 @@ RT_EXPORT_SYMBOL(RTSemRWReleaseRead);
 RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 {
     struct RTSEMRWINTERNAL *pThis = RWSem;
+
     /*
      * Validate handle.
      */
-    if (!rtsemRWValid(pThis))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return VERR_INVALID_HANDLE;
-    }
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
     RTTHREAD    Self = (RTTHREAD)RTThreadNativeSelf();
     unsigned    cMilliesInitial = cMillies;
     uint64_t    tsStart = 0;
-    if (cMillies != RT_INDEFINITE_WAIT)
+    if (cMillies != RT_INDEFINITE_WAIT && cMillies != 0)
         tsStart = RTTimeNanoTS();
 
     /*
@@ -388,7 +373,7 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%d\n", RWSem, rc));
+        AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
         return rc;
     }
 
@@ -405,11 +390,14 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
         if (!pThis->cReads && (!pThis->cWrites || pThis->Writer == Self))
         {
             /*
-             * Reset the reader event semaphore. For write recursion this
-             * is redundant, but does not hurt.
+             * Reset the reader event semaphore if necessary.
              */
-            rc = RTSemEventMultiReset(pThis->ReadEvent);
-            AssertMsgRC(rc, ("Failed to reset readers, rwsem %p, rc=%d.\n", RWSem, rc));
+            if (pThis->fNeedResetReadEvent)
+            {
+                pThis->fNeedResetReadEvent = false;
+                rc = RTSemEventMultiReset(pThis->ReadEvent);
+                AssertMsgRC(rc, ("Failed to reset readers, rwsem %p, rc=%Rrc.\n", RWSem, rc));
+            }
 
             pThis->cWrites++;
             pThis->Writer = Self;
@@ -424,7 +412,7 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
         /*
          * Wait till it's ready for writing.
          */
-        if (cMillies != RT_INDEFINITE_WAIT)
+        if (cMillies != RT_INDEFINITE_WAIT && cMillies != 0)
         {
             int64_t tsDelta = RTTimeNanoTS() - tsStart;
             if (tsDelta >= 1000000)
@@ -435,13 +423,13 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
             }
         }
         rc = RTSemEventWait(pThis->WriteEvent, cMillies);
-        if (RT_FAILURE(rc) && rc != VERR_TIMEOUT)
+        if (RT_UNLIKELY(RT_FAILURE_NP(rc) && rc != VERR_TIMEOUT))
         {
-            AssertMsgRC(rc, ("RTSemEventWait failed on rwsem %p, rc=%d\n", RWSem, rc));
+            AssertMsgRC(rc, ("RTSemEventWait failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
             break;
         }
 
-        if (pThis->u32Magic != RTSEMRW_MAGIC)
+        if (RT_UNLIKELY(pThis->u32Magic != RTSEMRW_MAGIC))
         {
             rc = VERR_SEM_DESTROYED;
             break;
@@ -453,7 +441,7 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
         rc = RTCritSectEnter(&pThis->CritSect);
         if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%d\n", RWSem, rc));
+            AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
             break;
         }
 //        AssertMsg(!pThis->cReads, ("We woke up and there are readers around!\n"));
@@ -484,14 +472,12 @@ RT_EXPORT_SYMBOL(RTSemRWRequestWriteNoResume);
 RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
 {
     struct RTSEMRWINTERNAL *pThis = RWSem;
+
     /*
      * Validate handle.
      */
-    if (!rtsemRWValid(pThis))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return VERR_INVALID_HANDLE;
-    }
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
     RTTHREAD Self = (RTTHREAD)RTThreadNativeSelf();
 
@@ -501,7 +487,7 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%d\n", RWSem, rc));
+        AssertMsgFailed(("RTCritSectEnter failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
         return rc;
     }
 
@@ -529,12 +515,13 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
     if (!pThis->cWritesWaiting)
     {
         rc = RTSemEventMultiSignal(pThis->ReadEvent);
-        AssertMsgRC(rc, ("RTSemEventMultiSignal failed for rwsem %p, rc=%d.\n", RWSem, rc));
+        AssertMsgRC(rc, ("RTSemEventMultiSignal failed for rwsem %p, rc=%Rrc.\n", RWSem, rc));
+        pThis->fNeedResetReadEvent = true;
     }
     else
     {
         rc = RTSemEventSignal(pThis->WriteEvent);
-        AssertMsgRC(rc, ("Failed to signal writers on rwsem %p, rc=%d\n", RWSem, rc));
+        AssertMsgRC(rc, ("Failed to signal writers on rwsem %p, rc=%Rrc\n", RWSem, rc));
     }
     RTCritSectLeave(&pThis->CritSect);
 
@@ -546,14 +533,12 @@ RT_EXPORT_SYMBOL(RTSemRWReleaseWrite);
 RTDECL(bool) RTSemRWIsWriteOwner(RTSEMRW RWSem)
 {
     struct RTSEMRWINTERNAL *pThis = RWSem;
+
     /*
      * Validate handle.
      */
-    if (!rtsemRWValid(pThis))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return false;
-    }
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Check ownership.
@@ -569,14 +554,12 @@ RT_EXPORT_SYMBOL(RTSemRWIsWriteOwner);
 RTDECL(uint32_t) RTSemRWGetWriteRecursion(RTSEMRW RWSem)
 {
     struct RTSEMRWINTERNAL *pThis = RWSem;
+
     /*
      * Validate handle.
      */
-    if (!rtsemRWValid(pThis))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return 0;
-    }
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Return the requested data.
@@ -589,14 +572,12 @@ RT_EXPORT_SYMBOL(RTSemRWGetWriteRecursion);
 RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW RWSem)
 {
     struct RTSEMRWINTERNAL *pThis = RWSem;
+
     /*
      * Validate handle.
      */
-    if (!rtsemRWValid(pThis))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return 0;
-    }
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Return the requested data.
