@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "VBoxCloseVMDlg.h"
 #include "VBoxProblemReporter.h"
 #ifdef Q_WS_MAC
@@ -28,6 +31,7 @@
 
 /* Qt includes */
 #include <QPushButton>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 VBoxCloseVMDlg::VBoxCloseVMDlg (QWidget *aParent)
     : QIWithRetranslateUI<QIDialog> (aParent)

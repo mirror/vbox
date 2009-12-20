@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "QIHttp.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
@@ -27,6 +30,7 @@
 
 /* Qt includes */
 #include <QTimer>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /**
  *  This class is used to encode/decode the registration data.

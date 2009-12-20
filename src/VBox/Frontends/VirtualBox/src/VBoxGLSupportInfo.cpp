@@ -19,6 +19,10 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
+
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include <iprt/assert.h>
 #include <iprt/log.h>
 #include <iprt/err.h>
@@ -35,6 +39,7 @@
 
 #include <VBox/VBoxGL2D.h>
 #include "VBoxFBOverlayCommon.h"
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /*****************/
 

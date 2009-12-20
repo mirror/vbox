@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "VBoxFrameBuffer.h"
 
 #include "VBoxConsoleView.h"
@@ -28,6 +31,7 @@
 
 /* Qt includes */
 #include <QPainter>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 //
 // VBoxFrameBuffer class

@@ -19,6 +19,9 @@
  */
 #if defined (VBOX_GUI_USE_QGL)
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #define LOG_GROUP LOG_GROUP_GUI
 
 #include "VBoxFBOverlay.h"
@@ -44,6 +47,7 @@
 
 #include <QFile>
 #include <QTextStream>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 #ifdef VBOXQGL_PROF_BASE
 # ifdef VBOXQGL_DBG_SURF

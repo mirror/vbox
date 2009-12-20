@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "VBoxVMListView.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxSelectorWnd.h"
@@ -31,6 +34,7 @@
 #if defined (Q_WS_MAC)
 # include <ApplicationServices/ApplicationServices.h>
 #endif
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
 // Helpers

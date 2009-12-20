@@ -21,6 +21,9 @@
 
 #if defined (VBOX_GUI_USE_QUARTZ2D)
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include <iprt/asm.h>
 
 /* VBox includes */
@@ -36,6 +39,7 @@
 #include <QDesktopWidget>
 
 #include "iprt/system.h"
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 //#define COMP_WITH_SHADOW
 //#define OVERLAY_CLIPRECTS

@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "VBoxAboutDlg.h"
 #include "VBoxGlobal.h"
 
@@ -29,6 +32,7 @@
 #include <QDir>
 #include <QEvent>
 #include <QPainter>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 VBoxAboutDlg::VBoxAboutDlg (QWidget* aParent, const QString &aVersion)
     : QIWithRetranslateUI2 <QIDialog> (aParent, Qt::CustomizeWindowHint |

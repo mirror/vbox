@@ -20,12 +20,16 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "VBoxHelpActions.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 
 /* Qt includes */
 #include <QMenu>
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 void VBoxHelpActions::setup (QObject *aParent)
 {

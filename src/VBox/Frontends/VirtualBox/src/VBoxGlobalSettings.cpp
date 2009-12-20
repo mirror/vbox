@@ -20,6 +20,9 @@
  * additional information or have any questions.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include "precomp.h"
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Qt includes */
 #include <QString>
 #include <QRegExp>
@@ -28,6 +31,7 @@
 #include "VBoxGlobalSettings.h"
 #include "QIHotKeyEdit.h"
 #include "COMDefs.h"
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /** @class VBoxGlobalSettingsData
  *
