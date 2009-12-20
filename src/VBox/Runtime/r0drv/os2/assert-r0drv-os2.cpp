@@ -125,3 +125,6 @@ static DECLCALLBACK(size_t) rtR0Os2AssertOutputCB(void *pvArg, const char *pachC
     return cbWritten;
 }
 
+
+/* RTR0AssertPanicSystem is implemented in RTR0AssertPanicSystem-r0drv-os2.asm */
+

@@ -59,3 +59,9 @@ void rtR0AssertNativeMsg2V(const char *pszFormat, va_list va)
     DbgPrint("%s", szMsg);
 }
 
+
+RTR0DECL(void) RTR0AssertPanicSystem(void)
+{
+    /** @todo implement RTR0AssertPanicSystem. */
+}
+
