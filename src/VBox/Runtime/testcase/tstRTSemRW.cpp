@@ -37,6 +37,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/initterm.h>
+#include <iprt/lockvalidator.h>
 #include <iprt/rand.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
@@ -56,20 +57,23 @@ static bool                 g_fQuiet;
 static unsigned             g_uWritePercent;
 static uint32_t volatile    g_cConcurrentWriters;
 static uint32_t volatile    g_cConcurrentReaders;
-static uint32_t volatile    g_cErrors;
 
 
-int ThreadTest1(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) Test4Thread(RTTHREAD ThreadSelf, void *pvUser)
 {
     // Use randomization to get a little more variation of the sync pattern
-    unsigned c100 = RTRandU32Ex(0, 99);
-    uint64_t *pu64 = (uint64_t *)pvUser;
+    int rc;
+    RTRAND hRand;
+    RTTEST_CHECK_RC_OK_RET(g_hTest, rc = RTRandAdvCreateParkMiller(&hRand), rc);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, rc = RTRandAdvSeed(hRand, (uintptr_t)ThreadSelf), rc);
+    unsigned c100 = RTRandAdvU32Ex(hRand, 0, 99);
+
+    uint64_t *pcItr = (uint64_t *)pvUser;
     bool fWrite;
     for (;;)
     {
-        int rc;
-        unsigned readrec = RTRandU32Ex(0, 3);
-        unsigned writerec = RTRandU32Ex(0, 3);
+        unsigned readrec = RTRandAdvU32Ex(hRand, 0, 3);
+        unsigned writerec = RTRandAdvU32Ex(hRand, 0, 3);
         /* Don't overdo recursion testing. */
         if (readrec > 1)
             readrec--;
@@ -134,7 +138,7 @@ int ThreadTest1(RTTHREAD ThreadSelf, void *pvUser)
         /*
          * Check for fairness: The values of the threads should not differ too much
          */
-        (*pu64)++;
+        (*pcItr)++;
 
         /*
          * Check for correctness: Give other threads a chance. If the implementation is
@@ -203,20 +207,21 @@ int ThreadTest1(RTTHREAD ThreadSelf, void *pvUser)
         c100 %= 100;
     }
     if (!g_fQuiet)
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Thread %s exited with %lld\n", RTThreadSelfName(), *pu64);
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Thread %s exited with %lld\n", RTThreadSelfName(), *pcItr);
+    RTRandAdvDestroy(hRand);
     return VINF_SUCCESS;
 }
 
 
-static void Test3(unsigned cThreads, unsigned cSeconds, unsigned uWritePercent, bool fYield, bool fQuiet)
+static void Test4(unsigned cThreads, unsigned cSeconds, unsigned uWritePercent, bool fYield, bool fQuiet)
 {
     int rc;
     unsigned i;
-    uint64_t au64[32];
-    RTTHREAD aThreads[RT_ELEMENTS(au64)];
-    AssertRelease(cThreads <= RT_ELEMENTS(au64));
+    uint64_t acIterations[32];
+    RTTHREAD aThreads[RT_ELEMENTS(acIterations)];
+    AssertRelease(cThreads <= RT_ELEMENTS(acIterations));
 
-    RTTestSubF(g_hTest, "Test3 - %u threads, %u sec, %u%% writes, %syielding",
+    RTTestSubF(g_hTest, "Test4 - %u threads, %u sec, %u%% writes, %syielding",
                cThreads, cSeconds, uWritePercent, fYield ? "" : "non-");
 
     /*
@@ -238,8 +243,8 @@ static void Test3(unsigned cThreads, unsigned cSeconds, unsigned uWritePercent, 
 
     for (i = 0; i < cThreads; i++)
     {
-        au64[i] = 0;
-        RTTEST_CHECK_RC_RETV(g_hTest, RTThreadCreateF(&aThreads[i], ThreadTest1, &au64[i], 0,
+        acIterations[i] = 0;
+        RTTEST_CHECK_RC_RETV(g_hTest, RTThreadCreateF(&aThreads[i], Test4Thread, &acIterations[i], 0,
                                                       RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
                                                       "test-%u", i), VINF_SUCCESS);
     }
@@ -247,6 +252,7 @@ static void Test3(unsigned cThreads, unsigned cSeconds, unsigned uWritePercent, 
     /*
      * Do the test run.
      */
+    uint32_t cErrorsBefore = RTTestErrorCount(g_hTest);
     uint64_t u64StartTS = RTTimeNanoTS();
     RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_hSemRW), VINF_SUCCESS);
     RTThreadSleep(cSeconds * 1000);
@@ -265,37 +271,41 @@ static void Test3(unsigned cThreads, unsigned cSeconds, unsigned uWritePercent, 
     RTTEST_CHECK_RC(g_hTest, RTSemRWDestroy(g_hSemRW), VINF_SUCCESS);
     g_hSemRW = NIL_RTSEMRW;
 
-//    if (g_cErrors)
-//        RTThreadSleep(100);
+    if (RTTestErrorCount(g_hTest) != cErrorsBefore)
+        RTThreadSleep(100);
 
     /*
      * Collect and display the results.
      */
-    uint64_t Total = au64[0];
+    uint64_t cItrTotal = acIterations[0];
     for (i = 1; i < cThreads; i++)
-        Total += au64[i];
+        cItrTotal += acIterations[i];
 
-    uint64_t Normal = Total / cThreads;
-    uint64_t MaxDeviation = 0;
+    uint64_t cItrNormal = cItrTotal / cThreads;
+    uint64_t cItrMinOK = cItrNormal / 20; /* 5% */
+    uint64_t cItrMaxDeviation = 0;
     for (i = 0; i < cThreads; i++)
     {
-        uint64_t Delta = RT_ABS((int64_t)(au64[i] - Normal));
-        if (Delta > Normal / 2)
+        uint64_t cItrDelta = RT_ABS((int64_t)(acIterations[i] - cItrNormal));
+        if (acIterations[i] < cItrMinOK)
+            RTTestFailed(g_hTest, "Thread %u did less than 5%% of the iterations - %llu (it) vs. %llu (5%%) - %llu%%\n",
+                         i, acIterations[i], cItrMinOK, cItrDelta * 100 / cItrNormal);
+        else if (cItrDelta > cItrNormal / 2)
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
                          "Warning! Thread %u deviates by more than 50%% - %llu (it) vs. %llu (avg) - %llu%%\n",
-                         i, au64[i], Normal, Delta * 100 / Normal);
-        if (Delta > MaxDeviation)
-            MaxDeviation = Delta;
+                         i, acIterations[i], cItrNormal, cItrDelta * 100 / cItrNormal);
+        if (cItrDelta > cItrMaxDeviation)
+            cItrMaxDeviation = cItrDelta;
 
     }
 
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
                  "Threads: %u  Total: %llu  Per Sec: %llu  Avg: %llu ns  Max dev: %llu%%\n",
                  cThreads,
-                 Total,
-                 Total / cSeconds,
-                 ElapsedNS / Total,
-                 MaxDeviation * 100 / Normal
+                 cItrTotal,
+                 cItrTotal / cSeconds,
+                 ElapsedNS / cItrTotal,
+                 cItrMaxDeviation * 100 / cItrNormal
                  );
 }
 
@@ -316,6 +326,36 @@ static DECLCALLBACK(int) Test2Thread(RTTHREAD hThreadSelf, void *pvUser)
     return VINF_SUCCESS;
 }
 
+
+static void Test3(void)
+{
+    RTTestSub(g_hTest, "Negative");
+    bool fSavedAssertQuiet    = RTAssertSetQuiet(true);
+    bool fSavedAssertMayPanic = RTAssertSetMayPanic(false);
+    bool fSavedLckValEnabled  = RTLockValidatorSetEnabled(false);
+
+    RTSEMRW hSemRW;
+    RTTEST_CHECK_RC_RETV(g_hTest, RTSemRWCreate(&hSemRW), VINF_SUCCESS);
+
+#ifndef RT_OS_LINUX /** @todo unlock is busted in glibc-2.8 at least... */
+    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead(hSemRW), VERR_NOT_OWNER);
+#endif
+    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(hSemRW), VERR_NOT_OWNER);
+
+    RTTEST_CHECK_RC(g_hTest, RTSemRWRequestWrite(hSemRW, RT_INDEFINITE_WAIT), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead(hSemRW), VERR_NOT_OWNER);
+
+    RTTEST_CHECK_RC(g_hTest, RTSemRWRequestRead(hSemRW, RT_INDEFINITE_WAIT), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(hSemRW), VERR_WRONG_ORDER); /* cannot release the final write before the reads. */
+    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead(hSemRW), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(hSemRW), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, RTSemRWDestroy(hSemRW), VINF_SUCCESS);
+
+    RTLockValidatorSetEnabled(fSavedLckValEnabled);
+    RTAssertSetMayPanic(fSavedAssertMayPanic);
+    RTAssertSetQuiet(fSavedAssertQuiet);
+}
 
 static void Test2(void)
 {
@@ -412,6 +452,7 @@ static bool Test1(void)
 
     RTTEST_CHECK_RC_RET(g_hTest, RTSemRWDestroy(hSemRW), VINF_SUCCESS, false);
     RTTEST_CHECK_RC_RET(g_hTest, RTSemRWDestroy(NIL_RTSEMRW), VINF_SUCCESS, false);
+
     return true;
 }
 
@@ -427,18 +468,19 @@ int main(int argc, char **argv)
         if (argc == 1)
         {
             Test2();
+            Test3();
 
             /*    threads, seconds, writePercent,  yield,  quiet */
-            Test3(      1,       1,            0,   true,  false);
-            Test3(      1,       1,            1,   true,  false);
-            Test3(      1,       1,            5,   true,  false);
-            Test3(      2,       1,            3,   true,  false);
-            Test3(     10,       1,            5,   true,  false);
-            Test3(     10,      10,           10,  false,  false);
+            Test4(      1,       1,            0,   true,  false);
+            Test4(      1,       1,            1,   true,  false);
+            Test4(      1,       1,            5,   true,  false);
+            Test4(      2,       1,            3,   true,  false);
+            Test4(     10,       1,            5,   true,  false);
+            Test4(     10,      10,           10,  false,  false);
 
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "benchmarking...\n");
             for (unsigned cThreads = 1; cThreads < 32; cThreads++)
-                Test3(cThreads,  2,            1,  false,   true);
+                Test4(cThreads,  2,            1,  false,   true);
 
             /** @todo add a testcase where some stuff times out. */
         }
@@ -446,15 +488,15 @@ int main(int argc, char **argv)
         {
             /*    threads, seconds, writePercent,  yield,  quiet */
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "benchmarking...\n");
-            Test3(      1,       3,            1,  false,   true);
-            Test3(      1,       3,            1,  false,   true);
-            Test3(      1,       3,            1,  false,   true);
-            Test3(      2,       3,            1,  false,   true);
-            Test3(      2,       3,            1,  false,   true);
-            Test3(      2,       3,            1,  false,   true);
-            Test3(      3,       3,            1,  false,   true);
-            Test3(      3,       3,            1,  false,   true);
-            Test3(      3,       3,            1,  false,   true);
+            Test4(      1,       3,            1,  false,   true);
+            Test4(      1,       3,            1,  false,   true);
+            Test4(      1,       3,            1,  false,   true);
+            Test4(      2,       3,            1,  false,   true);
+            Test4(      2,       3,            1,  false,   true);
+            Test4(      2,       3,            1,  false,   true);
+            Test4(      3,       3,            1,  false,   true);
+            Test4(      3,       3,            1,  false,   true);
+            Test4(      3,       3,            1,  false,   true);
         }
     }
 
