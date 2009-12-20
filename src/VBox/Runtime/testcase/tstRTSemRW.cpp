@@ -61,7 +61,10 @@ static uint32_t volatile    g_cConcurrentReaders;
 
 static DECLCALLBACK(int) Test4Thread(RTTHREAD ThreadSelf, void *pvUser)
 {
-    // Use randomization to get a little more variation of the sync pattern
+    /* Use randomization to get a little more variation of the sync pattern.
+       We use a pseudo random generator here so that we don't end up testing
+       the speed of the /dev/urandom implementation, but rather the read-write
+       semaphores. */
     int rc;
     RTRAND hRand;
     RTTEST_CHECK_RC_OK_RET(g_hTest, rc = RTRandAdvCreateParkMiller(&hRand), rc);
