@@ -11,7 +11,7 @@
 # include <iprt/assert.h>
 # include <math.h>
 # undef printf
-# define printf AssertMsg2
+# define printf RTAssertMsg2Weak
 #else
 # include <stdio.h>
 # include <math.h>

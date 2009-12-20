@@ -1407,8 +1407,8 @@ VMMR0DECL(int) PGMR0DynMapAssertIntegrity(void)
         if (RT_UNLIKELY(!(expr))) \
         { \
             RTSpinlockRelease(pThis->hSpinlock, &Tmp); \
-            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertMsg2 a; \
+            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertMsg2Weak a; \
             return VERR_INTERNAL_ERROR; \
         } \
     } while (0)
@@ -1825,8 +1825,8 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
     uint32_t const  iPage = pgmR0DynMapPage(g_pPGMR0DynMap, HCPhys, pSet->iCpu, pVM, &pvPage);
     if (RT_UNLIKELY(iPage == UINT32_MAX))
     {
-        AssertMsg2("PGMDynMapHCPage: cLoad=%u/%u cPages=%u cGuardPages=%u\n",
-                   g_pPGMR0DynMap->cLoad, g_pPGMR0DynMap->cMaxLoad, g_pPGMR0DynMap->cPages, g_pPGMR0DynMap->cGuardPages);
+        RTAssertMsg2Weak("PGMDynMapHCPage: cLoad=%u/%u cPages=%u cGuardPages=%u\n",
+                         g_pPGMR0DynMap->cLoad, g_pPGMR0DynMap->cMaxLoad, g_pPGMR0DynMap->cPages, g_pPGMR0DynMap->cGuardPages);
         if (!g_fPGMR0DynMapTestRunning)
             VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_VM_R0_ASSERTION, 0);
         *ppv = NULL;
@@ -1922,7 +1922,7 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
                 /* We're screwed. */
                 pgmR0DynMapReleasePage(g_pPGMR0DynMap, iPage, 1);
 
-                AssertMsg2("PGMDynMapHCPage: set is full!\n");
+                RTAssertMsg2Weak("PGMDynMapHCPage: set is full!\n");
                 if (!g_fPGMR0DynMapTestRunning)
                     VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_VM_R0_ASSERTION, 0);
                 *ppv = NULL;

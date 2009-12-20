@@ -301,8 +301,8 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                 case EFI_PANIC_CMD_BAD_ORG:
                     LogRel(("EFI Panic: You have to fix ORG offset in EfiThunk.asm! Must be 0x%x\n",
                             g_cbEfiThunkBinary));
-                    AssertMsg2("Fix ORG offset in EfiThunk.asm: must be 0x%x\n",
-                               g_cbEfiThunkBinary);
+                    RTAssertMsg2Weak("Fix ORG offset in EfiThunk.asm: must be 0x%x\n",
+                                     g_cbEfiThunkBinary);
                     break;
 
                 case EFI_PANIC_CMD_THUNK_TRAP:

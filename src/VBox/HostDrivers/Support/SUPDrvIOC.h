@@ -196,7 +196,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - Nothing.
  */
-#define SUPDRV_IOC_VERSION                              0x00120000
+#define SUPDRV_IOC_VERSION                              0x00140000
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -319,8 +319,8 @@ typedef struct SUPLDROPEN
  * @{
  */
 #define SUP_IOCTL_LDR_LOAD                              SUP_CTL_CODE_BIG(4)
-#define SUP_IOCTL_LDR_LOAD_SIZE(cbImage)                RT_UOFFSETOF(SUPLDRLOAD, u.In.achImage[cbImage])
-#define SUP_IOCTL_LDR_LOAD_SIZE_IN(cbImage)             RT_UOFFSETOF(SUPLDRLOAD, u.In.achImage[cbImage])
+#define SUP_IOCTL_LDR_LOAD_SIZE(cbImage)                RT_UOFFSETOF(SUPLDRLOAD, u.In.abImage[cbImage])
+#define SUP_IOCTL_LDR_LOAD_SIZE_IN(cbImage)             RT_UOFFSETOF(SUPLDRLOAD, u.In.abImage[cbImage])
 #define SUP_IOCTL_LDR_LOAD_SIZE_OUT                     sizeof(SUPREQHDR)
 
 /**
@@ -423,7 +423,7 @@ typedef struct SUPLDRLOAD
             /** Size of image data in achImage. */
             uint32_t        cbImageWithTabs;
             /** The image data. */
-            char            achImage[1];
+            uint8_t         abImage[1];
         } In;
     } u;
 } SUPLDRLOAD, *PSUPLDRLOAD;

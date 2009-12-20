@@ -1077,7 +1077,7 @@ static DECLCALLBACK(bool) pdmR3DevHlp_AssertEMT(PPDMDEVINS pDevIns, const char *
 
     char szMsg[100];
     RTStrPrintf(szMsg, sizeof(szMsg), "AssertEMT '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance);
-    AssertMsg1(szMsg, iLine, pszFile, pszFunction);
+    RTAssertMsg1Weak(szMsg, iLine, pszFile, pszFunction);
     AssertBreakpoint();
     return false;
 }
@@ -1092,7 +1092,7 @@ static DECLCALLBACK(bool) pdmR3DevHlp_AssertOther(PPDMDEVINS pDevIns, const char
 
     char szMsg[100];
     RTStrPrintf(szMsg, sizeof(szMsg), "AssertOther '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance);
-    AssertMsg1(szMsg, iLine, pszFile, pszFunction);
+    RTAssertMsg1Weak(szMsg, iLine, pszFile, pszFunction);
     AssertBreakpoint();
     return false;
 }

@@ -114,7 +114,7 @@ static void _stdcall rtTimerNtSimpleCallback(IN PKDPC pDpc, IN PVOID pvUser, IN 
     AssertPtr(pTimer);
 #ifdef RT_STRICT
     if (KeGetCurrentIrql() < DISPATCH_LEVEL)
-        AssertMsg2("rtTimerNtSimpleCallback: Irql=%d expected >=%d\n", KeGetCurrentIrql(), DISPATCH_LEVEL);
+        RTAssertMsg2Weak("rtTimerNtSimpleCallback: Irql=%d expected >=%d\n", KeGetCurrentIrql(), DISPATCH_LEVEL);
 #endif
 
     /*
@@ -144,10 +144,10 @@ static void _stdcall rtTimerNtOmniSlaveCallback(IN PKDPC pDpc, IN PVOID pvUser, 
     AssertPtr(pTimer);
 #ifdef RT_STRICT
     if (KeGetCurrentIrql() < DISPATCH_LEVEL)
-        AssertMsg2("rtTimerNtOmniSlaveCallback: Irql=%d expected >=%d\n", KeGetCurrentIrql(), DISPATCH_LEVEL);
+        RTAssertMsg2Weak("rtTimerNtOmniSlaveCallback: Irql=%d expected >=%d\n", KeGetCurrentIrql(), DISPATCH_LEVEL);
     int iCpuSelf = RTMpCpuIdToSetIndex(RTMpCpuId());
     if (pSubTimer - &pTimer->aSubTimers[0] != iCpuSelf)
-        AssertMsg2("rtTimerNtOmniSlaveCallback: iCpuSelf=%d pSubTimer=%p / %d\n", iCpuSelf, pSubTimer, pSubTimer - &pTimer->aSubTimers[0]);
+        RTAssertMsg2Weak("rtTimerNtOmniSlaveCallback: iCpuSelf=%d pSubTimer=%p / %d\n", iCpuSelf, pSubTimer, pSubTimer - &pTimer->aSubTimers[0]);
 #endif
 
     /*
@@ -181,9 +181,9 @@ static void _stdcall rtTimerNtOmniMasterCallback(IN PKDPC pDpc, IN PVOID pvUser,
     AssertPtr(pTimer);
 #ifdef RT_STRICT
     if (KeGetCurrentIrql() < DISPATCH_LEVEL)
-        AssertMsg2("rtTimerNtOmniMasterCallback: Irql=%d expected >=%d\n", KeGetCurrentIrql(), DISPATCH_LEVEL);
+        RTAssertMsg2Weak("rtTimerNtOmniMasterCallback: Irql=%d expected >=%d\n", KeGetCurrentIrql(), DISPATCH_LEVEL);
     if (pSubTimer - &pTimer->aSubTimers[0] != iCpuSelf)
-        AssertMsg2("rtTimerNtOmniMasterCallback: iCpuSelf=%d pSubTimer=%p / %d\n", iCpuSelf, pSubTimer, pSubTimer - &pTimer->aSubTimers[0]);
+        RTAssertMsg2Weak("rtTimerNtOmniMasterCallback: iCpuSelf=%d pSubTimer=%p / %d\n", iCpuSelf, pSubTimer, pSubTimer - &pTimer->aSubTimers[0]);
 #endif
 
     /*
