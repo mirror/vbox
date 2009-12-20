@@ -57,10 +57,8 @@ void rtR0AssertNativeMsg2V(const char *pszFormat, va_list va)
 {
     char szMsg[256];
 
-    va_start(va, pszFormat);
     RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, va);
     szMsg[sizeof(szMsg) - 1] = '\0';
-    va_end(va);
     printk("%s", szMsg);
 }
 

@@ -83,12 +83,10 @@ void rtR0AssertNativeMsg2V(const char *pszFormat, va_list va)
     va_end(vaCopy);
 #endif
 
-    va_start(va, pszFormat);
     size_t cch = g_cchRTAssertMsg;
     char *pch = &g_szRTAssertMsg[cch];
     cch += RTStrFormatV(rtR0Os2AssertOutputCB, &pch, NULL, NULL, pszFormat, va);
     g_cchRTAssertMsg = cch;
-    va_end(va);
 }
 
 
