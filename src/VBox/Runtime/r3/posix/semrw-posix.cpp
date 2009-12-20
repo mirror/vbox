@@ -72,8 +72,9 @@ struct RTSEMRWINTERNAL
 {
     /** The usual magic. (RTSEMRW_MAGIC) */
     uint32_t            u32Magic;
-    /* Alignment padding. */
-    uint32_t            u32Padding;
+    /** The number of readers.
+     * (For preventing screwing up the lock on linux). */
+    uint32_t volatile   cReaders;
     /** Number of write recursions. */
     uint32_t            cWrites;
     /** Number of read recursions by the writer. */
@@ -111,11 +112,11 @@ RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
             rc = pthread_rwlock_init(&pThis->RWLock, &Attr);
             if (!rc)
             {
-                pThis->u32Magic = RTSEMRW_MAGIC;
-                pThis->u32Padding = 0;
-                pThis->cWrites = 0;
+                pThis->u32Magic     = RTSEMRW_MAGIC;
+                pThis->cReaders     = 0;
+                pThis->cWrites      = 0;
                 pThis->cWriterReads = 0;
-                pThis->Writer = (pthread_t)-1;
+                pThis->Writer       = (pthread_t)-1;
 #ifdef RTSEMRW_STRICT
                 RTLockValidatorRecInit(&pThis->ValidatorWrite, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, NULL, pThis);
                 RTLockValidatorSharedRecInit(&pThis->ValidatorRead,  NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, NULL, pThis);
@@ -148,6 +149,7 @@ RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
                     ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
                     VERR_INVALID_HANDLE);
     Assert(pThis->Writer == (pthread_t)-1);
+    Assert(!pThis->cReaders);
     Assert(!pThis->cWrites);
     Assert(!pThis->cWriterReads);
 
@@ -271,6 +273,7 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
 #endif /* !RT_OS_DARWIN */
     }
 
+    ASMAtomicIncU32(&pThis->cReaders);
 #ifdef RTSEMRW_STRICT
     RTLockValidatorAddReadOwner(&pThis->ValidatorRead, hThreadSelf, pSrcPos);
 #endif
@@ -322,9 +325,18 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
     if (RT_FAILURE(rc9))
         return rc9;
 #endif
+#ifdef RT_OS_LINUX /* glibc (at least 2.8) may screw up when unlocking a lock we don't own. */
+    if (ASMAtomicReadU32(&pThis->cReaders) == 0)
+    {
+        AssertMsgFailed(("Not owner of %p\n", pThis));
+        return VERR_NOT_OWNER;
+    }
+#endif
+    ASMAtomicDecU32(&pThis->cReaders);
     int rc = pthread_rwlock_unlock(&pThis->RWLock);
     if (rc)
     {
+        ASMAtomicIncU32(&pThis->cReaders);
         AssertMsgFailed(("Failed read unlock read-write sem %p, rc=%d.\n", RWSem, rc));
         return RTErrConvertFromErrno(rc);
     }
@@ -425,6 +437,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, PCR
 
     ATOMIC_SET_PTHREAD_T(&pThis->Writer, Self);
     pThis->cWrites = 1;
+    Assert(!pThis->cReaders);
 #ifdef RTSEMRW_STRICT
     RTLockValidatorSetOwner(&pThis->ValidatorWrite, hThreadSelf, pSrcPos);
 #endif
