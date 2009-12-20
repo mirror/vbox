@@ -1049,6 +1049,22 @@ RTR3DECL(int) RTTestErrorInc(RTTEST hTest)
 
 
 /**
+ * Get the current error count.
+ *
+ * @returns The error counter, UINT32_MAX if no valid test handle.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ */
+RTR3DECL(uint32_t) RTTestErrorCount(RTTEST hTest)
+{
+    PRTTESTINT pTest = hTest;
+    RTTEST_GET_VALID_RETURN_RC(pTest, UINT32_MAX);
+
+    return ASMAtomicReadU32(&pTest->cErrors);
+}
+
+
+/**
  * Increments the error counter and prints a failure message.
  *
  * @returns IPRT status code.

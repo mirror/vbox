@@ -343,6 +343,15 @@ RTR3DECL(int) RTTestPassed(RTTEST hTest, const char *pszFormat, ...);
 RTR3DECL(int) RTTestErrorInc(RTTEST hTest);
 
 /**
+ * Get the current error count.
+ *
+ * @returns The error counter, UINT32_MAX if no valid test handle.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ */
+RTR3DECL(uint32_t) RTTestErrorCount(RTTEST hTest);
+
+/**
  * Increments the error counter and prints a failure message.
  *
  * @returns IPRT status code.
@@ -695,6 +704,13 @@ RTR3DECL(int) RTTestIPassed(const char *pszFormat, ...);
  * @returns IPRT status code.
  */
 RTR3DECL(int) RTTestIErrorInc(void);
+
+/**
+ * Get the current error count.
+ *
+ * @returns The error counter, UINT32_MAX if no valid test handle.
+ */
+RTR3DECL(uint32_t) RTTestIErrorCount(void);
 
 /**
  * Increments the error counter and prints a failure message.

@@ -102,6 +102,12 @@ RTR3DECL(int) RTTestIErrorInc(void)
 }
 
 
+RTR3DECL(uint32_t) RTTestIErrorCount(void)
+{
+    return RTTestErrorCount(NIL_RTTEST);
+}
+
+
 RTR3DECL(int) RTTestIFailedV(const char *pszFormat, va_list va)
 {
     return RTTestFailedV(NIL_RTTEST, pszFormat, va);
