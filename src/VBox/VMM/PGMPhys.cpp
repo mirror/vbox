@@ -1894,6 +1894,9 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
             pPageDst++;
         }
 
+        /* Flush physical page map TLB. */
+        PGMPhysInvalidatePageMapTLB(pVM);
+
         if (cPendingPages)
         {
             rc = GMMR3FreePagesPerform(pVM, pReq, cPendingPages);
@@ -1975,6 +1978,9 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
             pVM->pgm.s.cZeroPages++;
             pPageDst++;
         }
+
+        /* Flush physical page map TLB. */
+        PGMPhysInvalidatePageMapTLB(pVM);
 
         GCPhysRangeREM = NIL_RTGCPHYS;  /* shuts up gcc */
         cbRangeREM     = RTGCPHYS_MAX;  /* ditto */
@@ -2329,6 +2335,9 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                 pVM->pgm.s.cZeroPages -= cPages;
             }
             pVM->pgm.s.cPrivatePages += cPages;
+
+            /* Flush physical page map TLB. */
+            PGMPhysInvalidatePageMapTLB(pVM);
 
             pgmUnlock(pVM);
 
@@ -3239,6 +3248,9 @@ static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPa
     PGM_PAGE_SET_HCPHYS(pPage, pVM->pgm.s.HCPhysZeroPg);
     PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ZERO);
     PGM_PAGE_SET_PAGEID(pPage, NIL_GMM_PAGEID);
+
+    /* Flush physical page map TLB entry. */
+    PGMPhysInvalidatePageMapTLBEntry(pVM, GCPhys);
 
     /*
      * Make sure it's not in the handy page array.
