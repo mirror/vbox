@@ -472,34 +472,40 @@ DECLINLINE(bool) rtLockValidatorSharedRecAddThread(PRTLOCKVALIDATORSHARED pShare
 
 
 /**
- * Remove a thread entry from a shared lock record.
+ * Remove a thread entry from a shared lock record and free it.
  *
  * @param   pShared             The shared lock record.
  * @param   pEntry              The thread entry to remove.
  * @param   iEntry              The last known index.
  */
-DECLINLINE(void) rtLockValidatorSharedRecDelete(PRTLOCKVALIDATORSHARED pShared, PRTLOCKVALIDATORSHAREDONE pEntry,
-                                                uint32_t iEntry)
+DECLINLINE(void) rtLockValidatorSharedRecRemoveAndFree(PRTLOCKVALIDATORSHARED pShared, PRTLOCKVALIDATORSHAREDONE pEntry,
+                                                       uint32_t iEntry)
 {
+    /*
+     * Remove it from the table.
+     */
     rtLockValidatorSerializeDetectionEnter();
-    if (RT_LIKELY(pShared->u32Magic == RTLOCKVALIDATORSHARED_MAGIC))
+    AssertReturnVoidStmt(pShared->u32Magic == RTLOCKVALIDATORSHARED_MAGIC, rtLockValidatorSerializeDetectionLeave());
+    if (RT_UNLIKELY(   iEntry >= pShared->cAllocated
+                    || !ASMAtomicCmpXchgPtr((void * volatile *)&pShared->papOwners[iEntry], NULL, pEntry)))
     {
-        if (   iEntry >= pShared->cAllocated
-            || !ASMAtomicCmpXchgPtr((void * volatile *)&pShared->papOwners[iEntry], NULL, pEntry))
-        {
-            /* this shouldn't happen yet... */
-            AssertFailed();
-            PRTLOCKVALIDATORSHAREDONE volatile *papOwners = pShared->papOwners;
-            uint32_t const                      cMax      = pShared->cAllocated;
-            for (iEntry = 0; iEntry < cMax; iEntry++)
-                if (ASMAtomicCmpXchgPtr((void * volatile *)&papOwners[iEntry], NULL, pEntry))
-                   break;
-            AssertReturnVoidStmt(iEntry < cMax, rtLockValidatorSerializeDetectionLeave());
-        }
-        uint32_t cNow = ASMAtomicDecU32(&pShared->cEntries);
-        Assert(!(cNow & RT_BIT_32(31))); NOREF(cNow);
+        /* this shouldn't happen yet... */
+        AssertFailed();
+        PRTLOCKVALIDATORSHAREDONE volatile *papOwners = pShared->papOwners;
+        uint32_t const                      cMax      = pShared->cAllocated;
+        for (iEntry = 0; iEntry < cMax; iEntry++)
+            if (ASMAtomicCmpXchgPtr((void * volatile *)&papOwners[iEntry], NULL, pEntry))
+               break;
+        AssertReturnVoidStmt(iEntry < cMax, rtLockValidatorSerializeDetectionLeave());
     }
+    uint32_t cNow = ASMAtomicDecU32(&pShared->cEntries);
+    Assert(!(cNow & RT_BIT_32(31))); NOREF(cNow);
     rtLockValidatorSerializeDetectionLeave();
+
+    /*
+     * Successfully removed, now free it.
+     */
+    rtLockValidatorSharedRecFreeThread(pEntry);
 }
 
 
@@ -563,7 +569,7 @@ RTDECL(int)  RTLockValidatorCheckAndReleaseReadOwner(PRTLOCKVALIDATORSHARED pRea
     if (pEntry->cRecursion > 1)
         pEntry->cRecursion--;
     else
-        rtLockValidatorSharedRecDelete(pRead, pEntry, iEntry);
+        rtLockValidatorSharedRecRemoveAndFree(pRead, pEntry, iEntry);
 
     return VINF_SUCCESS;
 }
@@ -731,7 +737,16 @@ RTDECL(void) RTLockValidatorRemoveReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHRE
         return;
     AssertReturnVoid(hThread != NIL_RTTHREAD);
 
-    AssertMsgFailed(("Not implemented"));
+    /*
+     * Find the entry hope it's a recursive one.
+     */
+    uint32_t iEntry;
+    PRTLOCKVALIDATORSHAREDONE pEntry = rtLockValidatorSharedRecFindThread(pRead, hThread, &iEntry);
+    AssertReturnVoid(pEntry);
+    if (pEntry->cRecursion > 1)
+        pEntry->cRecursion--;
+    else
+        rtLockValidatorSharedRecRemoveAndFree(pRead, pEntry, iEntry);
 }
 
 
