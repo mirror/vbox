@@ -907,10 +907,6 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
     else
         rc = rc2;
 
-#ifdef IN_RC
-    /* See use in pgmPoolAccessHandlerSimple(). */
-    PGM_INVL_VCPU_TLBS(pVCpu);
-#endif
     LogFlow(("pgmPoolAccessHandlerPT: returns %Rrc (flushed)\n", rc));
     return rc;
 }
@@ -979,11 +975,6 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
         pRegFrame->rcx--;
     }
     pRegFrame->rip += pDis->opsize;
-
-#ifdef IN_RC
-    /* See use in pgmPoolAccessHandlerSimple(). */
-    PGM_INVL_VCPU_TLBS(pVCpu);
-#endif
 
     LogFlow(("pgmPoolAccessHandlerSTOSD: returns\n"));
     return VINF_SUCCESS;
@@ -1069,22 +1060,6 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
         }
         }
     }
-#endif
-
-#ifdef IN_RC
-    /*
-     * Quick hack, with logging enabled we're getting stale
-     * code TLBs but no data TLB for EIP and crash in EMInterpretDisasOne.
-     * Flushing here is BAD and expensive, I think EMInterpretDisasOne will
-     * have to be fixed to support this. But that'll have to wait till next week.
-     *
-     * An alternative is to keep track of the changed PTEs together with the
-     * GCPhys from the guest PT. This may proove expensive though.
-     *
-     * At the moment, it's VITAL that it's done AFTER the instruction interpreting
-     * because we need the stale TLBs in some cases (XP boot). This MUST be fixed properly!
-     */
-    PGM_INVL_VCPU_TLBS(pVCpu);
 #endif
 
     LogFlow(("pgmPoolAccessHandlerSimple: returns %Rrc cb=%d\n", rc, cb));
