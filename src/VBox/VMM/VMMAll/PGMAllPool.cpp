@@ -907,8 +907,10 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
     else
         rc = rc2;
 
+#ifdef IN_RC
     /* See use in pgmPoolAccessHandlerSimple(). */
     PGM_INVL_VCPU_TLBS(pVCpu);
+#endif
     LogFlow(("pgmPoolAccessHandlerPT: returns %Rrc (flushed)\n", rc));
     return rc;
 }
