@@ -175,7 +175,9 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
         }
 
         pEnd = pStart + sym1->st_size;
+#ifndef VBOX_NO_MESA_PATCH_REPORTS
         crDebug("VBox Entry: %p, start: %p(%s:%s), size: %i", pStart, dlip1.dli_saddr, dlip1.dli_fname, dlip1.dli_sname, sym1->st_size);
+#endif
     }
 #endif
 
