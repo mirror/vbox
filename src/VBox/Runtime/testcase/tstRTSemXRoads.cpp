@@ -50,12 +50,13 @@ static RTTEST g_hTest;
 static uint32_t volatile    g_cNSCrossings;
 static uint32_t volatile    g_cEWCrossings;
 static uint64_t             g_u64StartMilliTS;
+static uint32_t             g_cSecs;
 static RTSEMXROADS          g_hXRoads;
 
 
 static int tstTrafficThreadCommon(uintptr_t iThread, bool fNS)
 {
-    for (uint32_t iLoop = 0; RTTimeMilliTS() - g_u64StartMilliTS < 15*1000; iLoop++)
+    for (uint32_t iLoop = 0; RTTimeMilliTS() - g_u64StartMilliTS < g_cSecs*1000; iLoop++)
     {
         /* fudge */
         if ((iLoop % 223) == 223)
@@ -94,9 +95,9 @@ static DECLCALLBACK(int) tstTrafficEWThread(RTTHREAD hSelf, void *pvUser)
 }
 
 
-static void tstTraffic(void)
+static void tstTraffic(unsigned cThreads, unsigned cSecs)
 {
-    RTTestSub(g_hTest, "Traffic");
+    RTTestSubF(g_hTest, "Traffic - %u threads per direction, %u sec", cThreads, cSecs);
 
     /*
      * Create X worker threads which drives in the south/north direction and Y
@@ -106,29 +107,32 @@ static void tstTraffic(void)
      */
 
     /* init */
-    RTTHREAD ahThreadsX[4];
+    RTTHREAD ahThreadsX[8];
     for (unsigned i = 0; i < RT_ELEMENTS(ahThreadsX); i++)
         ahThreadsX[i] = NIL_RTTHREAD;
+    AssertRelease(RT_ELEMENTS(ahThreadsX) >= cThreads);
 
-    RTTHREAD ahThreadsY[4];
+    RTTHREAD ahThreadsY[8];
     for (unsigned i = 0; i < RT_ELEMENTS(ahThreadsY); i++)
         ahThreadsY[i] = NIL_RTTHREAD;
+    AssertRelease(RT_ELEMENTS(ahThreadsY) >= cThreads);
 
-    g_cNSCrossings = 0;
-    g_cEWCrossings = 0;
-    g_u64StartMilliTS = RTTimeMilliTS();
+    g_cNSCrossings      = 0;
+    g_cEWCrossings      = 0;
+    g_cSecs             = cSecs;
+    g_u64StartMilliTS   = RTTimeMilliTS();
 
     /* create */
     RTTEST_CHECK_RC_RETV(g_hTest, RTSemXRoadsCreate(&g_hXRoads), VINF_SUCCESS);
 
     int rc = VINF_SUCCESS;
-    for (unsigned i = 0; i < RT_ELEMENTS(ahThreadsX) && RT_SUCCESS(rc); i++)
+    for (unsigned i = 0; i < cThreads && RT_SUCCESS(rc); i++)
     {
         rc = RTThreadCreateF(&ahThreadsX[i], tstTrafficNSThread, (void *)i, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "NS-%u", i);
         RTTEST_CHECK_RC_OK(g_hTest, rc);
     }
 
-    for (unsigned i = 0; i < RT_ELEMENTS(ahThreadsY) && RT_SUCCESS(rc); i++)
+    for (unsigned i = 0; i < cThreads && RT_SUCCESS(rc); i++)
     {
         rc = RTThreadCreateF(&ahThreadsX[i], tstTrafficEWThread, (void *)i, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "NS-%u", i);
         RTTEST_CHECK_RC_OK(g_hTest, rc);
@@ -138,14 +142,14 @@ static void tstTraffic(void)
     for (unsigned i = 0; i < RT_ELEMENTS(ahThreadsX); i++)
         if (ahThreadsX[i] != NIL_RTTHREAD)
         {
-            int rc2 = RTThreadWaitNoResume(ahThreadsX[i], 60*1000, NULL);
+            int rc2 = RTThreadWaitNoResume(ahThreadsX[i], (60 + cSecs) * 1000, NULL);
             RTTEST_CHECK_RC_OK(g_hTest, rc2);
         }
 
     for (unsigned i = 0; i < RT_ELEMENTS(ahThreadsY); i++)
         if (ahThreadsY[i] != NIL_RTTHREAD)
         {
-            int rc2 = RTThreadWaitNoResume(ahThreadsY[i], 60*1000, NULL);
+            int rc2 = RTThreadWaitNoResume(ahThreadsY[i], (60 + cSecs) * 1000, NULL);
             RTTEST_CHECK_RC_OK(g_hTest, rc2);
         }
 
@@ -192,7 +196,12 @@ int main()
     RTTestBanner(g_hTest);
 
     if (tstBasics())
-        tstTraffic();
+    {
+        tstTraffic(1, 5);
+        tstTraffic(2, 5);
+        tstTraffic(4, 15);
+        tstTraffic(8, 10);
+    }
 
     return RTTestSummaryAndDestroy(g_hTest);
 }
