@@ -550,14 +550,14 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
             pPage->cModifications += 0x1000;
         }
 
-        pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvPhys, NULL);
+        pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvPhys, 0 /* unknown write size */);
         /** @todo r=bird: making unsafe assumption about not crossing entries here! */
         while (cbBuf > 4)
         {
             cbBuf -= 4;
             pvPhys = (uint8_t *)pvPhys + 4;
             GCPhys += 4;
-            pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvPhys, NULL);
+            pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvPhys, 0 /* unknown write size */);
         }
         STAM_PROFILE_STOP(&pPool->StatMonitorR3, a);
     }
@@ -570,7 +570,7 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
         if (!pPage->cModifications++)
             pgmPoolMonitorModifiedInsert(pPool, pPage);
         /** @todo r=bird: making unsafe assumption about not crossing entries here! */
-        pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvPhys, NULL);
+        pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvPhys, 0 /* unknown write size */);
         STAM_PROFILE_STOP(&pPool->StatMonitorR3, a);
     }
     else

@@ -138,22 +138,6 @@ DECLINLINE(void) PGMPOOL_UNLOCK_PTR(PVM pVM, void *pvPage)
 
 
 /**
- * Determin the size of a write instruction.
- * @returns number of bytes written.
- * @param   pDis        The disassembler state.
- */
-static unsigned pgmPoolDisasWriteSize(PDISCPUSTATE pDis)
-{
-    /*
-     * This is very crude and possibly wrong for some opcodes,
-     * but since it's not really supposed to be called we can
-     * probably live with that.
-     */
-    return DISGetParamSize(pDis, &pDis->param1);
-}
-
-
-/**
  * Flushes a chain of pages sharing the same access monitor.
  *
  * @returns VBox status code suitable for scheduling.
@@ -233,14 +217,12 @@ DECLINLINE(int) pgmPoolPhysSimpleReadGCPhys(PVM pVM, void *pvDst, CTXTYPE(RTGCPT
  * @param   GCPhysFault The guest physical fault address.
  * @param   uAddress    In R0 and GC this is the guest context fault address (flat).
  *                      In R3 this is the host context 'fault' address.
- * @param   pDis        The disassembler state for figuring out the write size.
- *                      This need not be specified if the caller knows we won't do cross entry accesses.
+ * @param   cbWrite     Write size; might be zero if the caller knows we're not crossing entry boundaries
  */
-void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvAddress, PDISCPUSTATE pDis)
+void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvAddress, unsigned cbWrite)
 {
     AssertMsg(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX, ("%#x (idx=%#x)\n", pPage->iMonitoredPrev, pPage->idx));
     const unsigned off     = GCPhysFault & PAGE_OFFSET_MASK;
-    const unsigned cbWrite = pDis ? pgmPoolDisasWriteSize(pDis) : 0;
     PVM pVM = pPool->CTX_SUFF(pVM);
 
     LogFlow(("pgmPoolMonitorChainChanging: %RGv phys=%RGp cbWrite=%d\n", (RTGCPTR)pvAddress, GCPhysFault, cbWrite));
@@ -346,9 +328,8 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                         }
 
                         /* paranoia / a bit assumptive. */
-                        if (   pDis
-                            && (off & 3)
-                            && (off & 3) + cbWrite > 4)
+                        if (    (off & 3)
+                            &&  (off & 3) + cbWrite > 4)
                         {
                             const unsigned iShw2 = iShw + 2 + i;
                             if (iShw2 < RT_ELEMENTS(uShw.pPDPae->a))
@@ -398,9 +379,8 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 }
 
                 /* paranoia / a bit assumptive. */
-                if (   pDis
-                    && (off & 7)
-                    && (off & 7) + cbWrite > sizeof(X86PTEPAE))
+                if (    (off & 7)
+                    &&  (off & 7) + cbWrite > sizeof(X86PTEPAE))
                 {
                     const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PTEPAE);
                     AssertBreak(iShw2 < RT_ELEMENTS(uShw.pPTPae->a));
@@ -456,9 +436,8 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     }
                 }
                 /* paranoia / a bit assumptive. */
-                if (   pDis
-                    && (off & 3)
-                    && (off & 3) + cbWrite > sizeof(X86PTE))
+                if (    (off & 3)
+                    &&  (off & 3) + cbWrite > sizeof(X86PTE))
                 {
                     const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PTE);
                     if (    iShw2 != iShw
@@ -540,9 +519,8 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     }
                 }
                 /* paranoia / a bit assumptive. */
-                if (   pDis
-                    && (off & 7)
-                    && (off & 7) + cbWrite > sizeof(X86PDEPAE))
+                if (    (off & 7)
+                    &&  (off & 7) + cbWrite > sizeof(X86PDEPAE))
                 {
                     const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PDEPAE);
                     AssertBreak(iShw2 < RT_ELEMENTS(uShw.pPDPae->a));
@@ -613,9 +591,8 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     }
 
                     /* paranoia / a bit assumptive. */
-                    if (   pDis
-                        && (offPdpt & 7)
-                        && (offPdpt & 7) + cbWrite > sizeof(X86PDPE))
+                    if (    (offPdpt & 7)
+                        &&  (offPdpt & 7) + cbWrite > sizeof(X86PDPE))
                     {
                         const unsigned iShw2 = (offPdpt + cbWrite - 1) / sizeof(X86PDPE);
                         if (    iShw2 != iShw
@@ -666,9 +643,8 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     ASMAtomicWriteSize(&uShw.pPDPae->a[iShw].u, 0);
                 }
                 /* paranoia / a bit assumptive. */
-                if (   pDis
-                    && (off & 7)
-                    && (off & 7) + cbWrite > sizeof(X86PDEPAE))
+                if (    (off & 7)
+                    &&  (off & 7) + cbWrite > sizeof(X86PDEPAE))
                 {
                     const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PDEPAE);
                     AssertBreak(iShw2 < RT_ELEMENTS(uShw.pPDPae->a));
@@ -703,9 +679,8 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     ASMAtomicWriteSize(&uShw.pPDPT->a[iShw].u, 0);
                 }
                 /* paranoia / a bit assumptive. */
-                if (   pDis
-                    && (off & 7)
-                    && (off & 7) + cbWrite > sizeof(X86PDPE))
+                if (    (off & 7)
+                    &&  (off & 7) + cbWrite > sizeof(X86PDPE))
                 {
                     const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PDPE);
                     if (uShw.pPDPT->a[iShw2].n.u1Present)
@@ -734,9 +709,8 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     ASMAtomicWriteSize(&uShw.pPML4->a[iShw].u, 0);
                 }
                 /* paranoia / a bit assumptive. */
-                if (   pDis
-                    && (off & 7)
-                    && (off & 7) + cbWrite > sizeof(X86PDPE))
+                if (    (off & 7)
+                    &&  (off & 7) + cbWrite > sizeof(X86PDPE))
                 {
                     const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PML4E);
                     if (uShw.pPML4->a[iShw2].n.u1Present)
@@ -987,10 +961,10 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
     {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
         uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
-        pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, (RTGCPTR)pu32, NULL);
+        pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, (RTGCPTR)pu32, uIncrement);
         PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
 #else
-        pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, (RTGCPTR)pu32, NULL);
+        pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, (RTGCPTR)pu32, uIncrement);
 #endif
 #ifdef IN_RC
         *(uint32_t *)pu32 = pRegFrame->eax;
@@ -1044,10 +1018,10 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
      */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     uint32_t    iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
-    pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, pvFault, pDis);
+    pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, pvFault, DISGetParamSize(pDis, &pDis->param1));
     PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
 #else
-    pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, pvFault, pDis);
+    pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, pvFault, DISGetParamSize(pDis, &pDis->param1));
 #endif
 
     /*
