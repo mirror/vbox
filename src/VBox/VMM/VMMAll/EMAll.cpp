@@ -106,8 +106,6 @@ VMMDECL(void)    EMSetState(PVMCPU pVCpu, EMSTATE enmNewState)
 }
 
 
-#ifndef IN_RC
-
 /**
  * Read callback for disassembly function; supports reading bytes that cross a page boundary
  *
@@ -144,26 +142,35 @@ DECLCALLBACK(int) EMReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void 
 
     rc = PGMPhysSimpleReadGCPtr(pVCpu, pDest, pSrc, cb);
     AssertMsgRC(rc, ("PGMPhysSimpleReadGCPtr failed for pSrc=%RGv cb=%x rc=%d\n", pSrc, cb, rc));
-# else /* IN_RING3 */
+# elif defined(IN_RING3)
     if (!PATMIsPatchGCAddr(pVM, pSrc))
     {
         int rc = PGMPhysSimpleReadGCPtr(pVCpu, pDest, pSrc, cb);
         AssertRC(rc);
     }
     else
-    {
-        for (unsigned i = 0; i < cb; i++)
-        {
-            uint8_t opcode;
-            if (RT_SUCCESS(PATMR3QueryOpcode(pVM, (RTGCPTR)pSrc + i, &opcode)))
-                *(pDest+i) = opcode;
+        memcpy(pDest, PATMR3GCPtrToHCPtr(pVM, pSrc), cb);
 
+# elif defined(IN_RC)
+    if (!PATMIsPatchGCAddr(pVM, (RTRCPTR)pSrc))
+    {
+        int rc = MMGCRamRead(pVM, pDest, (void *)pSrc, cb);
+        if (rc == VERR_ACCESS_DENIED)
+        {
+            /* Recently flushed; access the data manually. */
+            rc = PGMPhysSimpleReadGCPtr(pVCpu, pDest, pSrc, cb);
+            AssertRC(rc);
         }
     }
+    else /* the hypervisor region is always present. */
+        memcpy(pDest, (RTRCPTR)pSrc, cb);
+
 # endif /* IN_RING3 */
     return VINF_SUCCESS;
 }
 
+
+#ifndef IN_RC
 DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
 {
     EMDISSTATE State;
@@ -194,9 +201,13 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
 
 DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
 {
-    NOREF(pVCpu);
-    NOREF(pVM);
-    return DISCoreOne(pDis, InstrGC, pOpsize);
+    EMDISSTATE State;
+
+    State.pVM   = pVM;
+    State.pVCpu = pVCpu;
+    State.GCPtr = InstrGC;
+
+    return DISCoreOneEx(InstrGC, pDis->mode, EMReadBytes, &State, pDis, pOpsize);
 }
 
 #endif /* IN_RC */
