@@ -36,9 +36,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
 #ifdef VBOX_STRICT
 PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr = 0, RTGCPTR cb = ~(RTGCPTR)0);
 #endif
-#ifdef PGMPOOL_WITH_USER_TRACKING
 DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPU pVCpu, PPGMPOOLPAGE pShwPage, RTHCPHYS HCPhys);
-#endif
 PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
 PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu);
 RT_C_DECLS_END
@@ -1268,10 +1266,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
                 PSHWPT pPT = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
                 if (pPT->a[iPTEDst].n.u1Present)
                 {
-#  ifdef PGMPOOL_WITH_USER_TRACKING
                     /* This is very unlikely with caching/monitoring enabled. */
                     PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pShwPage, pPT->a[iPTEDst].u & SHW_PTE_PG_MASK);
-#  endif
                     ASMAtomicWriteSize(&pPT->a[iPTEDst], 0);
                 }
 # else /* Syncing it here isn't 100% safe and it's probably not worth spending time syncing it. */
@@ -1372,7 +1368,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 }
 
 
-#ifdef PGMPOOL_WITH_USER_TRACKING
 /**
  * Update the tracking of shadowed pages.
  *
@@ -1382,7 +1377,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
  */
 DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPU pVCpu, PPGMPOOLPAGE pShwPage, RTHCPHYS HCPhys)
 {
-# ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
     STAM_PROFILE_START(&pVM->pgm.s.StatTrackDeref, a);
@@ -1416,10 +1410,6 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPU pVCpu, PPGMPOOLPA
 
     for (;;)
         AssertReleaseMsgFailed(("HCPhys=%RHp wasn't found!\n", HCPhys));
-# else  /* !PGMPOOL_WITH_GCPHYS_TRACKING */
-    pShwPage->cPresent--;
-    pVM->pgm.s.CTX_SUFF(pPool)->cPresent--;
-# endif /* !PGMPOOL_WITH_GCPHYS_TRACKING */
 }
 
 
@@ -1435,7 +1425,6 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPU pVCpu, PPGMPOOLPA
 DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVMCPU pVCpu, PPGMPOOLPAGE pShwPage, uint16_t u16, PPGMPAGE pPage, const unsigned iPTDst)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-# ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     /*
      * Just deal with the simple first time here.
      */
@@ -1451,15 +1440,12 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVMCPU pVCpu, PPGMPOOLP
     Log2(("SyncPageWorkerTrackAddRef: u16=%#x->%#x  iPTDst=%#x\n", u16, PGM_PAGE_GET_TRACKING(pPage), iPTDst));
     PGM_PAGE_SET_TRACKING(pPage, u16);
 
-# endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
-
     /* update statistics. */
     pVM->pgm.s.CTX_SUFF(pPool)->cPresent++;
     pShwPage->cPresent++;
     if (pShwPage->iFirstPresent > iPTDst)
         pShwPage->iFirstPresent = iPTDst;
 }
-#endif /* PGMPOOL_WITH_USER_TRACKING */
 
 
 /**
@@ -1602,7 +1588,6 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
                 Log3(("SyncPageWorker: write-protecting %RGp pPage=%R[pgmpage]at iPTDst=%d\n", (RTGCPHYS)(PteSrc.u & X86_PTE_PAE_PG_MASK), pPage, iPTDst));
             }
 
-#ifdef PGMPOOL_WITH_USER_TRACKING
             /*
              * Keep user track up to date.
              */
@@ -1622,7 +1607,6 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
                 Log2(("SyncPageWorker: deref! *pPteDst=%RX64\n", (uint64_t)pPteDst->u));
                 PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVCpu, pShwPage, pPteDst->u & SHW_PTE_PG_MASK);
             }
-#endif /* PGMPOOL_WITH_USER_TRACKING */
 
             /*
              * Update statistics and commit the entry.
@@ -1642,14 +1626,12 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
          * Page not-present.
          */
         Log2(("SyncPageWorker: page not present in Pte\n"));
-#ifdef PGMPOOL_WITH_USER_TRACKING
         /* Keep user track up to date. */
         if (pPteDst->n.u1Present)
         {
             Log2(("SyncPageWorker: deref! *pPteDst=%RX64\n", (uint64_t)pPteDst->u));
             PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVCpu, pShwPage, pPteDst->u & SHW_PTE_PG_MASK);
         }
-#endif /* PGMPOOL_WITH_USER_TRACKING */
         ASMAtomicWriteSize(pPteDst, 0);
         /** @todo count these. */
     }
@@ -1925,10 +1907,9 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
                             PteDst.u = 0;
                     }
                     const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-# ifdef PGMPOOL_WITH_USER_TRACKING
                     if (PteDst.n.u1Present && !pPTDst->a[iPTDst].n.u1Present)
                         PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVCpu, pShwPage, PGM_PAGE_GET_TRACKING(pPage), pPage, iPTDst);
-# endif
+
                     /* Make sure only allocated pages are mapped writable. */
                     if (    PteDst.n.u1Write
                         &&  PteDst.n.u1Present
@@ -2943,10 +2924,9 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                             Log3(("SyncPT: write-protecting %RGp pPage=%R[pgmpage] at %RGv\n", GCPhys, pPage, (RTGCPTR)(GCPtr | (iPTDst << SHW_PT_SHIFT))));
                         }
 
-# ifdef PGMPOOL_WITH_USER_TRACKING
                         if (PteDst.n.u1Present)
                             PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVCpu, pShwPage, PGM_PAGE_GET_TRACKING(pPage), pPage, iPTDst);
-# endif
+
                         /* commit it */
                         pPTDst->a[iPTDst] = PteDst;
                         Log4(("SyncPT: BIG %RGv PteDst:{P=%d RW=%d U=%d raw=%08llx}%s\n",
