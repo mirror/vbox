@@ -127,6 +127,39 @@ RTDECL(void)    RTAssertMsg2V(const char *pszFormat, va_list va);
  */
 RTDECL(void)    RTAssertMsg2WeakV(const char *pszFormat, va_list va);
 
+/**
+ * Additional information which should be appended to the 2nd part of an
+ * assertion message.
+ *
+ * @param   pszFormat   Printf like format string.
+ * @param   ...         Arguments to that string.
+ */
+RTDECL(void)    RTAssertMsg2Add(const char *pszFormat, ...);
+/**
+ * Weak version of RTAssertMsgAdd2 that forwards to RTAssertMsg2AddWeakV.
+ *
+ * There is not need to override this, check out RTAssertMsg2AddWeakV instead!
+ *
+ * @copydoc RTAssertMsgAdd2
+ */
+RTDECL(void)    RTAssertMsg2AddWeak(const char *pszFormat, ...);
+
+/**
+ * Additional information which should be appended to the 2nd part of an
+ * assertion message.
+ *
+ * @param   pszFormat   Printf like format string.
+ * @param   va          Arguments to that string.
+ */
+RTDECL(void)    RTAssertMsg2AddV(const char *pszFormat, va_list va);
+/**
+ * Weak version of RTAssertMsg2AddV that can be overridden locally in a module
+ * to modify, redirect or otherwise mess with the assertion output.
+ *
+ * @copydoc RTAssertMsg2AddV
+ */
+RTDECL(void)    RTAssertMsg2AddWeakV(const char *pszFormat, va_list va);
+
 #ifdef IN_RING0
 /**
  * Panics the system as the result of a fail assertion.
@@ -193,7 +226,7 @@ RTDECL(bool)    RTAssertMayPanic(void);
 /** The last assert message, 1st part. */
 extern RTDATADECL(char)                     g_szRTAssertMsg1[1024];
 /** The last assert message, 2nd part. */
-extern RTDATADECL(char)                     g_szRTAssertMsg2[2048];
+extern RTDATADECL(char)                     g_szRTAssertMsg2[4096];
 /** The last assert message, expression. */
 extern RTDATADECL(const char * volatile)    g_pszRTAssertExpr;
 /** The last assert message, file name. */

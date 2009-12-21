@@ -52,10 +52,12 @@ void rtR0AssertNativeMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
  * Print the 2nd (optional) part of an assert message to whatever native
  * facility is best fitting.
  *
+ * @param   fInitial    Whether it's the initial (true) or an additional (false)
+ *                      message.
  * @param   pszFormat   Printf like format string.
  * @param   va          Arguments to that string.
  */
-void rtR0AssertNativeMsg2V(const char *pszFormat, va_list va);
+void rtR0AssertNativeMsg2V(bool fInitial, const char *pszFormat, va_list va);
 
 #endif
 

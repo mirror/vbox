@@ -74,6 +74,9 @@ SRCS += \
 SRCS += \
 	RTAssertMsg1Weak.c \
 	RTAssertMsg2.c \
+	RTAssertMsg2Add.c \
+	RTAssertMsg2AddWeak.c \
+	RTAssertMsg2AddWeakV.c \
 	RTAssertMsg2Weak.c \
 	RTAssertMsg2WeakV.c \
 	assert.c \

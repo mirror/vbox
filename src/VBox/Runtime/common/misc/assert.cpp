@@ -52,8 +52,11 @@
 RTDATADECL(char)                    g_szRTAssertMsg1[1024];
 RT_EXPORT_SYMBOL(g_szRTAssertMsg1);
 /** The last assert message, 2nd part. */
-RTDATADECL(char)                    g_szRTAssertMsg2[2048];
+RTDATADECL(char)                    g_szRTAssertMsg2[4096];
 RT_EXPORT_SYMBOL(g_szRTAssertMsg2);
+/** The length of the g_szRTAssertMsg2 content.
+ * @remarks Race.  */
+static uint32_t volatile            g_cchRTAssertMsg2;
 /** The last assert message, expression. */
 RTDATADECL(const char * volatile)   g_pszRTAssertExpr;
 RT_EXPORT_SYMBOL(g_pszRTAssertExpr);
@@ -187,16 +190,39 @@ RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
 RT_EXPORT_SYMBOL(RTAssertMsg1);
 
 
-RTDECL(void) RTAssertMsg2V(const char *pszFormat, va_list va)
+/**
+ * Worker for RTAssertMsg2V and RTAssertMsg2AddV
+ *
+ * @param   fInitial            True if it's RTAssertMsg2V, otherwise false.
+ * @param   pszFormat           The message format string.
+ * @param   va                  The format arguments.
+ */
+static void rtAssertMsg2Worker(bool fInitial, const char *pszFormat, va_list va)
 {
     va_list vaCopy;
+    size_t  cch;
 
     /*
      * The global first.
      */
-    va_copy(vaCopy, va);
-    RTStrPrintfV(g_szRTAssertMsg2, sizeof(g_szRTAssertMsg2), pszFormat, vaCopy);
-    va_end(vaCopy);
+    if (fInitial)
+    {
+        va_copy(vaCopy, va);
+        cch = RTStrPrintfV(g_szRTAssertMsg2, sizeof(g_szRTAssertMsg2), pszFormat, vaCopy);
+        ASMAtomicWriteU32(&g_cchRTAssertMsg2, (uint32_t)cch);
+        va_end(vaCopy);
+    }
+    else
+    {
+        cch = ASMAtomicReadU32(&g_cchRTAssertMsg2);
+        if (cch < sizeof(g_szRTAssertMsg2) - 4)
+        {
+            va_copy(vaCopy, va);
+            cch += RTStrPrintfV(&g_szRTAssertMsg2[cch], sizeof(g_szRTAssertMsg2) - cch, pszFormat, vaCopy);
+            ASMAtomicWriteU32(&g_cchRTAssertMsg2, (uint32_t)cch);
+            va_end(vaCopy);
+        }
+    }
 
     /*
      * If not quiet, make some noise.
@@ -210,7 +236,7 @@ RTDECL(void) RTAssertMsg2V(const char *pszFormat, va_list va)
         va_end(vaCopy);
 # endif
         /** @todo fully integrate this with the logger... play safe a bit for now.  */
-        rtR0AssertNativeMsg2V(pszFormat, va);
+        rtR0AssertNativeMsg2V(fInitial, pszFormat, va);
 
 #else  /* !IN_RING0 */
 # if !defined(IN_RING3) && !defined(LOG_NO_COM)
@@ -254,5 +280,18 @@ RTDECL(void) RTAssertMsg2V(const char *pszFormat, va_list va)
     }
 
 }
+
+
+RTDECL(void) RTAssertMsg2V(const char *pszFormat, va_list va)
+{
+    rtAssertMsg2Worker(true /*fInitial*/, pszFormat, va);
+}
 RT_EXPORT_SYMBOL(RTAssertMsg2V);
+
+
+RTDECL(void) RTAssertMsg2AddV(const char *pszFormat, va_list va)
+{
+    rtAssertMsg2Worker(false /*fInitial*/, pszFormat, va);
+}
+RT_EXPORT_SYMBOL(RTAssertMsg2AddV);
 
