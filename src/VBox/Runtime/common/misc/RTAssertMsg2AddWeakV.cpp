@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT -  Assertion Workers, Ring-0 Drivers, Linux.
+ * IPRT - RTAssertMsg2AddWeakV.
  */
 
 /*
- * Copyright (C) 2007 Sun Microsystems, Inc.
+ * Copyright (C) 2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,42 +32,13 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "the-linux-kernel.h"
+#include <iprt/assert.h>
 #include "internal/iprt.h"
 
-#include <iprt/assert.h>
-#include <iprt/log.h>
-#include <iprt/string.h>
-#include <iprt/stdarg.h>
-#include <iprt/asm.h>
 
-#include "internal/assert.h"
-
-
-void rtR0AssertNativeMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
+RTDECL(void) RTAssertMsg2AddWeakV(const char *pszFormat, va_list va)
 {
-    printk("\r\n!!Assertion Failed!!\r\n"
-           "Expression: %s\r\n"
-           "Location  : %s(%d) %s\r\n",
-           pszExpr, pszFile, uLine, pszFunction);
+    RTAssertMsg2AddV(pszFormat, va);
 }
-
-
-void rtR0AssertNativeMsg2V(bool fInitial, const char *pszFormat, va_list va)
-{
-    char szMsg[256];
-
-    RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, va);
-    szMsg[sizeof(szMsg) - 1] = '\0';
-    printk("%s", szMsg);
-
-    NOREF(fInitial);
-}
-
-
-RTR0DECL(void) RTR0AssertPanicSystem(void)
-{
-    panic("%s%s", g_szRTAssertMsg1, g_szRTAssertMsg2);
-}
-RT_EXPORT_SYMBOL(RTR0AssertPanicSystem);
+RT_EXPORT_SYMBOL(RTAssertMsg2AddWeakV);
 

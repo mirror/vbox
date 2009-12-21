@@ -234,9 +234,12 @@ RuntimeR3_SOURCES       = \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/RTAssertMsg1Weak.cpp \
+	common/misc/RTAssertMsg2.cpp \
+	common/misc/RTAssertMsg2Add.cpp \
+	common/misc/RTAssertMsg2AddWeak.cpp \
+	common/misc/RTAssertMsg2AddWeakV.cpp \
 	common/misc/RTAssertMsg2Weak.cpp \
 	common/misc/RTAssertMsg2WeakV.cpp \
-	common/misc/RTAssertMsg2.cpp \
 	common/misc/assert.cpp \
 	common/misc/buildconfig.cpp \
 	common/misc/cache.cpp \
@@ -791,9 +794,12 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/log/logformat.cpp \
 	common/misc/RTAssertMsg1Weak.cpp \
+	common/misc/RTAssertMsg2.cpp \
+	common/misc/RTAssertMsg2Add.cpp \
+	common/misc/RTAssertMsg2AddWeak.cpp \
+	common/misc/RTAssertMsg2AddWeakV.cpp \
 	common/misc/RTAssertMsg2Weak.cpp \
 	common/misc/RTAssertMsg2WeakV.cpp \
-	common/misc/RTAssertMsg2.cpp \
 	common/misc/assert.cpp \
 	common/misc/buildconfig.cpp \
 	common/misc/sanity-c.c \
@@ -1087,9 +1093,12 @@ RuntimeR0_SOURCES       = \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/RTAssertMsg1Weak.cpp \
+	common/misc/RTAssertMsg2.cpp \
+	common/misc/RTAssertMsg2Add.cpp \
+	common/misc/RTAssertMsg2AddWeak.cpp \
+	common/misc/RTAssertMsg2AddWeakV.cpp \
 	common/misc/RTAssertMsg2Weak.cpp \
 	common/misc/RTAssertMsg2WeakV.cpp \
-	common/misc/RTAssertMsg2.cpp \
 	common/misc/buildconfig.cpp \
 	common/misc/handletable.cpp \
 	common/misc/handletablectx.cpp \
@@ -1195,9 +1204,12 @@ RuntimeR0Drv_SOURCES    = \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/RTAssertMsg1Weak.cpp \
+	common/misc/RTAssertMsg2.cpp \
+	common/misc/RTAssertMsg2Add.cpp \
+	common/misc/RTAssertMsg2AddWeak.cpp \
+	common/misc/RTAssertMsg2AddWeakV.cpp \
 	common/misc/RTAssertMsg2Weak.cpp \
 	common/misc/RTAssertMsg2WeakV.cpp \
-	common/misc/RTAssertMsg2.cpp \
 	common/misc/assert.cpp \
 	common/misc/buildconfig.cpp \
 	common/misc/handletable.cpp \
@@ -1524,9 +1536,12 @@ RuntimeGC_SOURCES       = \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/RTAssertMsg1Weak.cpp \
+	common/misc/RTAssertMsg2.cpp \
+	common/misc/RTAssertMsg2Add.cpp \
+	common/misc/RTAssertMsg2AddWeak.cpp \
+	common/misc/RTAssertMsg2AddWeakV.cpp \
 	common/misc/RTAssertMsg2Weak.cpp \
 	common/misc/RTAssertMsg2WeakV.cpp \
-	common/misc/RTAssertMsg2.cpp \
 	common/misc/assert.cpp \
 	common/misc/buildconfig.cpp \
 	common/misc/sanity-c.c \

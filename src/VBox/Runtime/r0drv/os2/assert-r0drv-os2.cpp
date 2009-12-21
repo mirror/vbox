@@ -74,7 +74,7 @@ void rtR0AssertNativeMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
 }
 
 
-void rtR0AssertNativeMsg2V(const char *pszFormat, va_list va)
+void rtR0AssertNativeMsg2V(bool fInitial, const char *pszFormat, va_list va)
 {
 #if defined(DEBUG_bird)
     va_list vaCopy;
@@ -87,6 +87,8 @@ void rtR0AssertNativeMsg2V(const char *pszFormat, va_list va)
     char *pch = &g_szRTAssertMsg[cch];
     cch += RTStrFormatV(rtR0Os2AssertOutputCB, &pch, NULL, NULL, pszFormat, va);
     g_cchRTAssertMsg = cch;
+
+    NOREF(fInitial);
 }
 
 

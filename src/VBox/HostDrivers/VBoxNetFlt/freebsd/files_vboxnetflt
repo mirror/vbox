@@ -75,9 +75,6 @@ VBOX_VBOXNETFLT_SOURCES=" \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/SUPR0IdcClientComponent.c=>SUPR0IdcClientComponent.c \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/SUPR0IdcClientInternal.h=>SUPR0IdcClientInternal.h \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/freebsd/SUPR0IdcClient-freebsd.c=>SUPR0IdcClient-freebsd.c \
-    ${PATH_ROOT}/src/VBox/Runtime/include/internal/initterm.h=>include/internal/initterm.h \
-    ${PATH_ROOT}/src/VBox/Runtime/include/internal/iprt.h=>include/internal/iprt.h \
-    ${PATH_ROOT}/src/VBox/Runtime/include/internal/magics.h=>include/internal/magics.h \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/freebsd/the-freebsd-kernel.h=>r0drv/freebsd/the-freebsd-kernel.h \
     ${PATH_OUT}/version-generated.h=>version-generated.h \
 "
