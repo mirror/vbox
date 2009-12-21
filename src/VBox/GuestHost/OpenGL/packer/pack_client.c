@@ -1034,7 +1034,7 @@ static void crPackLockClientPointer(GLint first, GLint count, unsigned char **pp
         }
 
         WRITE_DATA_AI(int, index);
-        cptr = cp->p + first*cp->bytesPerIndex;
+        cptr = cp->p + first*cp->stride;
         if (cp->bytesPerIndex==cp->stride)
         {
             crMemcpy(data_ptr, cptr, count*cp->bytesPerIndex);
