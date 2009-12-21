@@ -105,47 +105,6 @@
 #define PGM_MAX_PHYSCACHE_ENTRIES       64
 #define PGM_MAX_PHYSCACHE_ENTRIES_MASK  (PGM_MAX_PHYSCACHE_ENTRIES-1)
 
-/** @def PGMPOOL_WITH_CACHE
- * Enable agressive caching using the page pool.
- *
- * This requires PGMPOOL_WITH_USER_TRACKING and PGMPOOL_WITH_MONITORING.
- */
-#define PGMPOOL_WITH_CACHE
-
-/** @def PGMPOOL_WITH_MIXED_PT_CR3
- * When defined, we'll deal with 'uncachable' pages.
- */
-#ifdef PGMPOOL_WITH_CACHE
-# define PGMPOOL_WITH_MIXED_PT_CR3
-#endif
-
-/** @def PGMPOOL_WITH_MONITORING
- * Monitor the guest pages which are shadowed.
- * When this is enabled, PGMPOOL_WITH_CACHE or PGMPOOL_WITH_GCPHYS_TRACKING must
- * be enabled as well.
- * @remark doesn't really work without caching now. (Mixed PT/CR3 change.)
- */
-#ifdef PGMPOOL_WITH_CACHE
-# define PGMPOOL_WITH_MONITORING
-#endif
-
-/** @def PGMPOOL_WITH_GCPHYS_TRACKING
- * Tracking the of shadow pages mapping guest physical pages.
- *
- * This is very expensive, the current cache prototype is trying to figure out
- * whether it will be acceptable with an agressive caching policy.
- */
-#if defined(PGMPOOL_WITH_CACHE) || defined(PGMPOOL_WITH_MONITORING)
-# define PGMPOOL_WITH_GCPHYS_TRACKING
-#endif
-
-/** @def PGMPOOL_WITH_USER_TRACKING
- * Tracking users of shadow pages. This is required for the linking of shadow page
- * tables and physical guest addresses.
- */
-#if defined(PGMPOOL_WITH_GCPHYS_TRACKING) || defined(PGMPOOL_WITH_CACHE) || defined(PGMPOOL_WITH_MONITORING)
-# define PGMPOOL_WITH_USER_TRACKING
-#endif
 
 /** @def PGMPOOL_CFG_MAX_GROW
  * The maximum number of pages to add to the pool in one go.
@@ -1827,15 +1786,12 @@ typedef struct PGMPOOLPAGE
     /** The next entry in the list this page currently resides in.
      * It's either in the free list or in the GCPhys hash. */
     uint16_t            iNext;
-#ifdef PGMPOOL_WITH_USER_TRACKING
     /** Head of the user chain. NIL_PGMPOOL_USER_INDEX if not currently in use. */
     uint16_t            iUserHead;
     /** The number of present entries. */
     uint16_t            cPresent;
     /** The first entry in the table which is present. */
     uint16_t            iFirstPresent;
-#endif
-#ifdef PGMPOOL_WITH_MONITORING
     /** The number of modifications to the monitored page. */
     uint16_t            cModifications;
     /** The next modified page. NIL_PGMPOOL_IDX if tail. */
@@ -1846,13 +1802,10 @@ typedef struct PGMPOOLPAGE
     uint16_t            iMonitoredNext;
     /** The previous page sharing access handler. NIL_PGMPOOL_IDX if head. */
     uint16_t            iMonitoredPrev;
-#endif
-#ifdef PGMPOOL_WITH_CACHE
     /** The next page in the age list. */
     uint16_t            iAgeNext;
     /** The previous page in the age list. */
     uint16_t            iAgePrev;
-#endif /* PGMPOOL_WITH_CACHE */
     /** Used to indicate that the page is zeroed. */
     bool                fZeroed;
     /** Used to indicate that a PT has non-global entries. */
@@ -1877,12 +1830,10 @@ typedef struct PGMPOOLPAGE
 typedef PGMPOOLPAGE const *PCPGMPOOLPAGE;
 
 
-#ifdef PGMPOOL_WITH_CACHE
 /** The hash table size. */
 # define PGMPOOL_HASH_SIZE      0x40
 /** The hash function. */
 # define PGMPOOL_HASH(GCPhys)   ( ((GCPhys) >> PAGE_SHIFT) & (PGMPOOL_HASH_SIZE - 1) )
-#endif
 
 
 /**
@@ -1908,7 +1859,6 @@ typedef struct PGMPOOL
     uint16_t                    iFreeHead;
     /* Padding. */
     uint16_t                    u16Padding;
-#ifdef PGMPOOL_WITH_USER_TRACKING
     /** Head of the chain of free user nodes. */
     uint16_t                    iUserFreeHead;
     /** The number of user nodes we've allocated. */
@@ -1921,8 +1871,6 @@ typedef struct PGMPOOL
     R3PTRTYPE(PPGMPOOLUSER)     paUsersR3;
     /** Pointer to the array of user nodes - R0 pointer. */
     R0PTRTYPE(PPGMPOOLUSER)     paUsersR0;
-#endif /* PGMPOOL_WITH_USER_TRACKING */
-#ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     /** Head of the chain of free phys ext nodes. */
     uint16_t                    iPhysExtFreeHead;
     /** The number of user nodes we've allocated. */
@@ -1933,8 +1881,6 @@ typedef struct PGMPOOL
     R3PTRTYPE(PPGMPOOLPHYSEXT)  paPhysExtsR3;
     /** Pointer to the array of physical xref extent nodes - R0 pointer. */
     R0PTRTYPE(PPGMPOOLPHYSEXT)  paPhysExtsR0;
-#endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
-#ifdef PGMPOOL_WITH_CACHE
     /** Hash table for GCPhys addresses. */
     uint16_t                    aiHash[PGMPOOL_HASH_SIZE];
     /** The head of the age list. */
@@ -1945,8 +1891,6 @@ typedef struct PGMPOOL
     bool                        fCacheEnabled;
     /** Alignment padding. */
     bool                        afPadding1[3];
-#endif /* PGMPOOL_WITH_CACHE */
-#ifdef PGMPOOL_WITH_MONITORING
     /** Head of the list of modified pages. */
     uint16_t                    iModifiedHead;
     /** The current number of modified pages. */
@@ -1970,7 +1914,6 @@ typedef struct PGMPOOL
     /* Array of current dirty pgm pool page indices. */
     uint16_t                    aIdxDirtyPages[16];
     uint64_t                    aDirtyPages[16][512];
-#endif /* PGMPOOL_WITH_MONITORING */
     /** The number of pages currently in use. */
     uint16_t                    cUsedPages;
 #ifdef VBOX_WITH_STATISTICS
@@ -1995,7 +1938,6 @@ typedef struct PGMPOOL
     STAMCOUNTER                 StatForceFlushReused;
     /** Profiling time spent zeroing pages. */
     STAMPROFILE                 StatZeroPage;
-# ifdef PGMPOOL_WITH_USER_TRACKING
     /** Profiling of pgmPoolTrackDeref. */
     STAMPROFILE                 StatTrackDeref;
     /** Profiling pgmTrackFlushGCPhysPT. */
@@ -2010,16 +1952,12 @@ typedef struct PGMPOOL
     STAMCOUNTER                 StatTrackFlushEntry;
     /** Nr of updated entries. */
     STAMCOUNTER                 StatTrackFlushEntryKeep;
-# endif
-# ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     /** Profiling deref activity related tracking GC physical pages. */
     STAMPROFILE                 StatTrackDerefGCPhys;
     /** Number of linear searches for a HCPhys in the ram ranges. */
     STAMCOUNTER                 StatTrackLinearRamSearches;
     /** The number of failing pgmPoolTrackPhysExtAlloc calls. */
     STAMCOUNTER                 StamTrackPhysExtAllocFailures;
-# endif
-# ifdef PGMPOOL_WITH_MONITORING
     /** Profiling the RC/R0 access handler. */
     STAMPROFILE                 StatMonitorRZ;
     /** Times we've failed interpreting the instruction. */
@@ -2091,8 +2029,7 @@ typedef struct PGMPOOL
     /** The high wather mark for cModifiedPages. */
     uint16_t                    cModifiedPagesHigh;
     uint16_t                    Alignment2[3];      /**< Align the next member on a 64-bit boundrary. */
-# endif
-# ifdef PGMPOOL_WITH_CACHE
+
     /** The number of cache hits. */
     STAMCOUNTER                 StatCacheHits;
     /** The number of cache misses. */
@@ -2105,7 +2042,6 @@ typedef struct PGMPOOL
     STAMCOUNTER                 StatCacheCacheable;
     /** The number of uncacheable allocations. */
     STAMCOUNTER                 StatCacheUncacheable;
-# endif
 #else
     uint32_t                    Alignment3;         /**< Align the next member on a 64-bit boundrary. */
 #endif
@@ -2117,10 +2053,8 @@ typedef struct PGMPOOL
      */
     PGMPOOLPAGE                 aPages[PGMPOOL_IDX_FIRST];
 } PGMPOOL, *PPGMPOOL, **PPPGMPOOL;
-#ifdef PGMPOOL_WITH_MONITORING
 AssertCompileMemberAlignment(PGMPOOL, iModifiedHead, 8);
 AssertCompileMemberAlignment(PGMPOOL, aDirtyPages, 8);
-#endif
 AssertCompileMemberAlignment(PGMPOOL, cUsedPages, 8);
 #ifdef VBOX_WITH_STATISTICS
 AssertCompileMemberAlignment(PGMPOOL, StatAlloc, 8);
@@ -2851,14 +2785,12 @@ typedef struct PGM
     STAMCOUNTER StatRCPhysSimpleWrite;
     STAMCOUNTER StatRCPhysSimpleWriteBytes;
 
-# ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     STAMCOUNTER StatTrackVirgin;                    /**< The number of first time shadowings. */
     STAMCOUNTER StatTrackAliased;                   /**< The number of times switching to cRef2, i.e. the page is being shadowed by two PTs. */
     STAMCOUNTER StatTrackAliasedMany;               /**< The number of times we're tracking using cRef2. */
     STAMCOUNTER StatTrackAliasedLots;               /**< The number of times we're hitting pages which has overflowed cRef2. */
     STAMCOUNTER StatTrackOverflows;                 /**< The number of times the extent list grows to long. */
     STAMPROFILE StatTrackDeref;                     /**< Profiling of SyncPageWorkerTrackDeref (expensive). */
-# endif
 #endif
 } PGM;
 #ifndef IN_TSTVMSTRUCTGC /* HACK */
@@ -3382,11 +3314,9 @@ DECLINLINE(int) pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlu
 uint16_t        pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT);
 void            pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPGMPAGE pPhysPage);
 void            pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCPhys, RTGCPHYS GCPhysHint);
-#ifdef PGMPOOL_WITH_MONITORING
 void            pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvAddress, PDISCPUSTATE pCpu);
 int             pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolMonitorModifiedInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
-#endif
 
 void            pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolResetDirtyPages(PVM pVM);
@@ -4850,7 +4780,6 @@ DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPageByIdx(PPGMPOOL pPool, unsigned idx)
 }
 
 
-#ifdef PGMPOOL_WITH_GCPHYS_TRACKING
 /**
  * Clear references to guest physical memory.
  *
@@ -4876,10 +4805,8 @@ DECLINLINE(void) pgmTrackDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPG
         pgmPoolTrackPhysExtDerefGCPhys(pPool, pPoolPage, pPhysPage);
     Log2(("pgmTrackDerefGCPhys: %x -> %x pPhysPage=%R[pgmpage]\n", uOrg, PGM_PAGE_GET_TRACKING(pPhysPage), pPhysPage ));
 }
-#endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
 
 
-#ifdef PGMPOOL_WITH_CACHE
 /**
  * Moves the page to the head of the age list.
  *
@@ -4914,7 +4841,6 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     }
     pgmUnlock(pVM);
 }
-#endif /* PGMPOOL_WITH_CACHE */
 
 /**
  * Locks a page to prevent flushing (important for cr3 root pages or shadow pae pd pages).
