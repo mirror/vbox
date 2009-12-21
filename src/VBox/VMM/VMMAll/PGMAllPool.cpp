@@ -694,28 +694,25 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                  * Hopefully this doesn't happen very often:
                  * - messing with the bits of pd pointers without changing the physical address
                  */
-                if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
+                uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
+                const unsigned iShw = off / sizeof(X86PDPE);
+                if (uShw.pPDPT->a[iShw].n.u1Present)
                 {
-                    uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
-                    const unsigned iShw = off / sizeof(X86PDPE);
-                    if (uShw.pPDPT->a[iShw].n.u1Present)
+                    LogFlow(("pgmPoolMonitorChainChanging: pdpt iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPT->a[iShw].u));
+                    pgmPoolFree(pVM, uShw.pPDPT->a[iShw].u & X86_PDPE_PG_MASK, pPage->idx, iShw);
+                    ASMAtomicWriteSize(&uShw.pPDPT->a[iShw].u, 0);
+                }
+                /* paranoia / a bit assumptive. */
+                if (   pDis
+                    && (off & 7)
+                    && (off & 7) + cbWrite > sizeof(X86PDPE))
+                {
+                    const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PDPE);
+                    if (uShw.pPDPT->a[iShw2].n.u1Present)
                     {
-                        LogFlow(("pgmPoolMonitorChainChanging: pdpt iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPT->a[iShw].u));
-                        pgmPoolFree(pVM, uShw.pPDPT->a[iShw].u & X86_PDPE_PG_MASK, pPage->idx, iShw);
-                        ASMAtomicWriteSize(&uShw.pPDPT->a[iShw].u, 0);
-                    }
-                    /* paranoia / a bit assumptive. */
-                    if (   pDis
-                        && (off & 7)
-                        && (off & 7) + cbWrite > sizeof(X86PDPE))
-                    {
-                        const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PDPE);
-                        if (uShw.pPDPT->a[iShw2].n.u1Present)
-                        {
-                            LogFlow(("pgmPoolMonitorChainChanging: pdpt iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPT->a[iShw2].u));
-                            pgmPoolFree(pVM, uShw.pPDPT->a[iShw2].u & X86_PDPE_PG_MASK, pPage->idx, iShw2);
-                            ASMAtomicWriteSize(&uShw.pPDPT->a[iShw2].u, 0);
-                        }
+                        LogFlow(("pgmPoolMonitorChainChanging: pdpt iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPT->a[iShw2].u));
+                        pgmPoolFree(pVM, uShw.pPDPT->a[iShw2].u & X86_PDPE_PG_MASK, pPage->idx, iShw2);
+                        ASMAtomicWriteSize(&uShw.pPDPT->a[iShw2].u, 0);
                     }
                 }
                 break;
@@ -728,28 +725,25 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                  * Hopefully this doesn't happen very often:
                  * - messing with the bits of pd pointers without changing the physical address
                  */
-                if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
+                uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
+                const unsigned iShw = off / sizeof(X86PDPE);
+                if (uShw.pPML4->a[iShw].n.u1Present)
                 {
-                    uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
-                    const unsigned iShw = off / sizeof(X86PDPE);
-                    if (uShw.pPML4->a[iShw].n.u1Present)
+                    LogFlow(("pgmPoolMonitorChainChanging: pml4 iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPML4->a[iShw].u));
+                    pgmPoolFree(pVM, uShw.pPML4->a[iShw].u & X86_PML4E_PG_MASK, pPage->idx, iShw);
+                    ASMAtomicWriteSize(&uShw.pPML4->a[iShw].u, 0);
+                }
+                /* paranoia / a bit assumptive. */
+                if (   pDis
+                    && (off & 7)
+                    && (off & 7) + cbWrite > sizeof(X86PDPE))
+                {
+                    const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PML4E);
+                    if (uShw.pPML4->a[iShw2].n.u1Present)
                     {
-                        LogFlow(("pgmPoolMonitorChainChanging: pml4 iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPML4->a[iShw].u));
-                        pgmPoolFree(pVM, uShw.pPML4->a[iShw].u & X86_PML4E_PG_MASK, pPage->idx, iShw);
-                        ASMAtomicWriteSize(&uShw.pPML4->a[iShw].u, 0);
-                    }
-                    /* paranoia / a bit assumptive. */
-                    if (   pDis
-                        && (off & 7)
-                        && (off & 7) + cbWrite > sizeof(X86PDPE))
-                    {
-                        const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PML4E);
-                        if (uShw.pPML4->a[iShw2].n.u1Present)
-                        {
-                            LogFlow(("pgmPoolMonitorChainChanging: pml4 iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPML4->a[iShw2].u));
-                            pgmPoolFree(pVM, uShw.pPML4->a[iShw2].u & X86_PML4E_PG_MASK, pPage->idx, iShw2);
-                            ASMAtomicWriteSize(&uShw.pPML4->a[iShw2].u, 0);
-                        }
+                        LogFlow(("pgmPoolMonitorChainChanging: pml4 iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPML4->a[iShw2].u));
+                        pgmPoolFree(pVM, uShw.pPML4->a[iShw2].u & X86_PML4E_PG_MASK, pPage->idx, iShw2);
+                        ASMAtomicWriteSize(&uShw.pPML4->a[iShw2].u, 0);
                     }
                 }
                 break;
