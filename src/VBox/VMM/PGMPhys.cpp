@@ -3067,6 +3067,8 @@ VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
         pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].idChunk = NIL_GMM_CHUNKID;
         pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].pChunk = NULL;
     }
+    /* The page map TLB references chunks, so invalidate that one too. */
+    PGMPhysInvalidatePageMapTLB(pVM);
     pgmUnlock(pVM);
 }
 
