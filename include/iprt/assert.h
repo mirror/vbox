@@ -402,6 +402,16 @@ RT_C_DECLS_END
  * @{
  */
 
+/** @def RTASSERT_QUIET
+ * This can be defined to shut up the messages for a file where this would be
+ * problematic because the message printing code path passes thru it.
+ * @internal */
+#ifdef RTASSERT_QUIET
+# define RTAssertMsg1Weak(pszExpr, uLine, pszfile, pszFunction) \
+                                do { } while (0)
+# define RTAssertMsg2Weak       if (0) RTAssertMsg2Weak
+#endif
+
 /** @def RTAssertDoPanic
  * Raises an assertion panic appropriate to the current context.
  * @remarks This macro does not depend on RT_STRICT.
