@@ -334,7 +334,12 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncInit(void)
 static bool VBoxServiceTimeSyncAdjust(PCRTTIMESPEC pDrift)
 {
 #ifdef RT_OS_WINDOWS
-/** @todo r=bird: NT4 doesn't have GetSystemTimeAdjustment. */
+/** @todo r=bird: NT4 doesn't have GetSystemTimeAdjustment according to MSDN. */
+/** @todo r=bird: g_hTokenProcess cannot be NULL here.
+ *        VBoxServiceTimeSyncInit will fail and the service will not be
+ *        started with it being NULL.  VBoxServiceTimeSyncInit OTOH will *NOT*
+ *        be called until the service thread has terminated.  If anything
+ *        else is the case, there is buggy code somewhere.*/
     if (g_hTokenProcess == NULL) /* Is the token already closed when shutting down? */
         return false;
 
@@ -410,6 +415,8 @@ static bool VBoxServiceTimeSyncAdjust(PCRTTIMESPEC pDrift)
 static void VBoxServiceTimeSyncCancelAdjust(void)
 {
 #ifdef RT_OS_WINDOWS
+/** @todo r=bird: g_hTokenProcess cannot be NULL here.  See argumentation in
+ *        VBoxServiceTimeSyncAdjust.  */
     if (g_hTokenProcess == NULL) /* No process token (anymore)? */
         return;
     if (SetSystemTimeAdjustment(0, TRUE /* Periodic adjustments disabled. */))
