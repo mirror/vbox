@@ -1659,7 +1659,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #ifdef HWACCM_VMX_EMULATE_REALMODE
         /* Turn off VME if we're in emulated real mode. */
         if (    CPUMIsGuestInRealModeEx(pCtx)
-            &&  !pVM->hwaccm.s.vmx.pRealModeTSS)
+            &&  pVM->hwaccm.s.vmx.pRealModeTSS)
             val &= ~X86_CR4_VME;
 #endif /* HWACCM_VMX_EMULATE_REALMODE */
 
