@@ -120,6 +120,7 @@ RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
 #ifdef RTSEMRW_STRICT
                 RTLockValidatorRecInit(&pThis->ValidatorWrite, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, NULL, pThis);
                 RTLockValidatorSharedRecInit(&pThis->ValidatorRead,  NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, NULL, pThis);
+                RTLockValidatorMakeSiblings(&pThis->ValidatorWrite, &pThis->ValidatorRead);
 #endif
                 *pRWSem = pThis;
                 return VINF_SUCCESS;

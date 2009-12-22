@@ -91,6 +91,9 @@ AssertCompileSize(RTLOCKVALIDATORSRCPOS, HC_ARCH_BITS == 32 ? 16 : 32);
 #define RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API() \
     RTLOCKVALIDATORSRCPOS_INIT(__FILE__, __LINE__, __PRETTY_FUNCTION__, (uintptr_t)ASMReturnAddress())
 
+/** Pointer to a record of one ownership share.  */
+typedef struct RTLOCKVALIDATORSHARED *PRTLOCKVALIDATORSHARED;
+
 
 /**
  * Record recording the ownership of a lock.
@@ -122,14 +125,13 @@ typedef struct RTLOCKVALIDATORREC
     RTHCPTR                             hLock;
     /** The lock name. */
     R3R0PTRTYPE(const char *)           pszName;
-    /** Reserved. */
-    RTHCPTR                             pvReserved;
+    /** Pointer to the sibling record.
+     * This is used to find the read side of a read-write lock.  */
+    R3R0PTRTYPE(PRTLOCKVALIDATORSHARED) pSibling;
 } RTLOCKVALIDATORREC;
 AssertCompileSize(RTLOCKVALIDATORREC, HC_ARCH_BITS == 32 ? 8 + 16 + 32 : 8 + 32 + 56);
 /* The pointer type is defined in iprt/types.h. */
 
-/** Pointer to a record of one ownership share.  */
-typedef struct RTLOCKVALIDATORSHARED *PRTLOCKVALIDATORSHARED;
 /**
  * For recording the one ownership share.
  */
@@ -174,6 +176,9 @@ typedef struct RTLOCKVALIDATORSHARED
     RTHCPTR                             hLock;
     /** The lock name. */
     R3R0PTRTYPE(const char *)           pszName;
+    /** Pointer to the sibling record.
+     * This is used to find the write side of a read-write lock.  */
+    R3R0PTRTYPE(PRTLOCKVALIDATORREC)    pSibling;
 
     /** The number of entries in the table.
      * Updated before inserting and after removal. */
@@ -193,10 +198,12 @@ typedef struct RTLOCKVALIDATORSHARED
     bool                                afPadding[2];
     /** Pointer to a table containing pointers to records of all the owners. */
     R3R0PTRTYPE(PRTLOCKVALIDATORSHAREDONE volatile *) papOwners;
+#if RT_ARCH_BITS == 32
     /** Alignment padding. */
-    uint64_t                            u64Alignment;
+    uint32_T                            u32Reserved;
+#endif
 } RTLOCKVALIDATORSHARED;
-AssertCompileSize(RTLOCKVALIDATORSHARED, HC_ARCH_BITS == 32 ? 20 + 20 + 8 : 32 + 32);
+AssertCompileSize(RTLOCKVALIDATORSHARED, HC_ARCH_BITS == 32 ? 24 + 20 + 4 : 40 + 24);
 
 
 /** @name   Special sub-class values.
@@ -286,6 +293,16 @@ RTDECL(void) RTLockValidatorSharedRecInit(PRTLOCKVALIDATORSHARED pRec, RTLOCKVAL
  * @param   pRec                The shared lock record.  Must be valid.
  */
 RTDECL(void) RTLockValidatorSharedRecDelete(PRTLOCKVALIDATORSHARED pRec);
+
+/**
+ * Makes the two records siblings.
+ *
+ * @returns VINF_SUCCESS on success, VERR_SEM_LV_INVALID_PARAMETER if either of
+ *          the records are invalid.
+ * @param   pvRec1              Record 1.
+ * @param   pvRec2              Record 2.
+ */
+RTDECL(int) RTLockValidatorMakeSiblings(void *pvRec1, void *pvRec2);
 
 /**
  * Check the locking order.
