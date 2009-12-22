@@ -158,6 +158,7 @@ RTDECL(void) RTLockValidatorRecInit(PRTLOCKVALIDATORREC pRec, RTLOCKVALIDATORCLA
     pRec->cRecursion    = 0;
     pRec->hLock         = hLock;
     pRec->pszName       = pszName;
+    pRec->pSibling      = NULL;
 
     /* Lazily initialize the crossroads semaphore. */
     static uint32_t volatile s_fInitializing = false;
@@ -196,6 +197,12 @@ RTDECL(void) RTLockValidatorRecDelete(PRTLOCKVALIDATORREC pRec)
     ASMAtomicWriteU32(&pRec->u32Magic, RTLOCKVALIDATORREC_MAGIC_DEAD);
     ASMAtomicWriteHandle(&pRec->hThread, NIL_RTTHREAD);
     ASMAtomicWriteHandle(&pRec->hClass, NIL_RTLOCKVALIDATORCLASS);
+    if (pRec->pSibling)
+    {
+        /* ASSUMES sibling destruction doesn't involve any races.  */
+        ASMAtomicUoWritePtr((void * volatile *)&pRec->pSibling->pSibling, NULL);
+        ASMAtomicUoWritePtr((void * volatile *)&pRec->pSibling, NULL);
+    }
 
     rtLockValidatorSerializeDestructLeave();
 }
@@ -222,6 +229,7 @@ RTDECL(void) RTLockValidatorSharedRecInit(PRTLOCKVALIDATORSHARED pRec, RTLOCKVAL
     pRec->hLock         = hLock;
     pRec->pszName       = pszName;
     pRec->fEnabled      = RTLockValidatorIsEnabled();
+    pRec->pSibling      = NULL;
 
     /* the table */
     pRec->cEntries      = 0;
@@ -231,7 +239,9 @@ RTDECL(void) RTLockValidatorSharedRecInit(PRTLOCKVALIDATORSHARED pRec, RTLOCKVAL
     pRec->afPadding[0]  = false;
     pRec->afPadding[1]  = false;
     pRec->papOwners     = NULL;
-    pRec->u64Alignment  = UINT64_MAX;
+#if HC_ARCH_BITS == 32
+    pRec->u32Alignment  = UINT32_MAX;
+#endif
 }
 
 
@@ -262,6 +272,12 @@ RTDECL(void) RTLockValidatorSharedRecDelete(PRTLOCKVALIDATORSHARED pRec)
         ASMAtomicUoWriteU32(&pRec->cAllocated, 0);
 
         RTMemFree((void *)pRec->papOwners);
+    }
+    if (pRec->pSibling)
+    {
+        /* ASSUMES sibling destruction doesn't involve any races.  */
+        ASMAtomicUoWritePtr((void * volatile *)&pRec->pSibling->pSibling, NULL);
+        ASMAtomicUoWritePtr((void * volatile *)&pRec->pSibling, NULL);
     }
     ASMAtomicWriteBool(&pRec->fReallocating, false);
 
@@ -506,6 +522,53 @@ DECLINLINE(void) rtLockValidatorSharedRecRemoveAndFree(PRTLOCKVALIDATORSHARED pS
      * Successfully removed, now free it.
      */
     rtLockValidatorSharedRecFreeThread(pEntry);
+}
+
+
+RTDECL(int) RTLockValidatorMakeSiblings(void *pvRec1, void *pvRec2)
+{
+    /*
+     * Validate input.
+     */
+    union
+    {
+        PRTLOCKVALIDATORREC     pRec;
+        PRTLOCKVALIDATORSHARED  pShared;
+        uint32_t               *pu32Magic;
+        void                   *pv;
+    } u1, u2;
+    u1.pv = pvRec1;
+    u2.pv = pvRec2;
+
+    AssertPtrReturn(u1.pv, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(   *u1.pu32Magic == RTLOCKVALIDATORREC_MAGIC
+                 || *u1.pu32Magic == RTLOCKVALIDATORSHARED_MAGIC
+                 , VERR_SEM_LV_INVALID_PARAMETER);
+
+    AssertPtrReturn(u2.pv, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(   *u2.pu32Magic == RTLOCKVALIDATORREC_MAGIC
+                 || *u2.pu32Magic == RTLOCKVALIDATORSHARED_MAGIC
+                 , VERR_SEM_LV_INVALID_PARAMETER);
+
+    /*
+     * Link them.
+     */
+    if (    *u1.pu32Magic == RTLOCKVALIDATORREC_MAGIC
+        &&  *u2.pu32Magic == RTLOCKVALIDATORSHARED_MAGIC)
+    {
+        u1.pRec->pSibling    = u2.pShared;
+        u2.pShared->pSibling = u1.pRec;
+    }
+    else if (    *u1.pu32Magic == RTLOCKVALIDATORSHARED_MAGIC
+             &&  *u2.pu32Magic == RTLOCKVALIDATORREC_MAGIC)
+    {
+        u1.pShared->pSibling = u2.pRec;
+        u2.pRec->pSibling    = u1.pShared;
+    }
+    else
+        AssertFailedReturn(VERR_SEM_LV_INVALID_PARAMETER); /* unsupported mix */
+
+    return VINF_SUCCESS;
 }
 
 
@@ -859,8 +922,6 @@ static void rtLockValidatorComplainAboutDeadlock(PRTLOCKVALIDATORREC pRec, PRTTH
             case RTTHREADSTATE_EVENT_MULTI:
             case RTTHREADSTATE_FAST_MUTEX:
             case RTTHREADSTATE_MUTEX:
-            case RTTHREADSTATE_RW_READ:
-            case RTTHREADSTATE_RW_WRITE:
             case RTTHREADSTATE_SPIN_MUTEX:
             {
                 PRTLOCKVALIDATORREC pCurRec      = pCur->LockValidator.pRec;
@@ -887,6 +948,13 @@ static void rtLockValidatorComplainAboutDeadlock(PRTLOCKVALIDATORREC pRec, PRTTH
                                      RTThreadStateName(enmCurState), pCurRec);
                 break;
             }
+
+#if 0
+            case RTTHREADSTATE_RW_READ:
+            case RTTHREADSTATE_RW_WRITE:
+            {
+            }
+#endif
 
             default:
                 RTAssertMsg2Weak(" Impossible!!! enmState=%s (%d)\n", RTThreadStateName(enmCurState), enmCurState);
@@ -1065,7 +1133,6 @@ RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
                     case RTTHREADSTATE_EVENT_MULTI:
                     case RTTHREADSTATE_FAST_MUTEX:
                     case RTTHREADSTATE_MUTEX:
-                    case RTTHREADSTATE_RW_WRITE:
                     case RTTHREADSTATE_SPIN_MUTEX:
                     {
                         PRTLOCKVALIDATORREC pCurRec = pCur->LockValidator.pRec;
@@ -1078,6 +1145,18 @@ RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
                             ||  pCurRec->u32Magic != RTLOCKVALIDATORREC_MAGIC
                             ||  pCurRec->hThread != pNext)
                             continue;
+                        break;
+                    }
+
+#if 0
+                    case RTTHREADSTATE_RW_WRITE:
+                    {
+                        PRTLOCKVALIDATORREC pCurRec = pCur->LockValidator.pRec;
+                        if (    rtThreadGetState(pCur) != enmCurState
+                            ||  !VALID_PTR(pCurRec)
+                            ||  pCurRec->u32Magic != RTLOCKVALIDATORREC_MAGIC)
+                            continue;
+
                         break;
                     }
 
@@ -1095,7 +1174,7 @@ RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
                             continue;
                         break;
                     }
-
+#endif
 
                     default:
                         pNext = NULL;
