@@ -491,7 +491,27 @@ RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
  */
 RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec);
 
+/**
+ * Adds an owner to a shared locking record.
+ *
+ * Takes recursion into account.  This function is typically called after
+ * acquiring the lock.
+ *
+ * @param   pRead               The validator record.
+ * @param   hThread             The thread to add.
+ * @param   pSrcPos             The source position of the lock operation.
+ */
 RTDECL(void) RTLockValidatorAddReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHREAD hThread, PCRTLOCKVALIDATORSRCPOS pSrcPos);
+
+/**
+ * Removes an owner from a shared locking record.
+ *
+ * Takes recursion into account.  This function is typically called before
+ * releaseing the lock.
+ *
+ * @param   pRead               The validator record.
+ * @param   hThread             The thread to to remove.
+ */
 RTDECL(void) RTLockValidatorRemoveReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHREAD hThread);
 
 /**
