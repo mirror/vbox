@@ -35,7 +35,11 @@
 RT_C_DECLS_BEGIN
 
 #ifdef RT_ARCH_AMD64
+# ifdef RT_OS_WINDOWS /* Also saves rsi, rdi and xmm6-xmm15. */
+typedef uint64_t RT_NOCRT(jmp_buf)[10 + (2*10)];
+# else
 typedef uint64_t RT_NOCRT(jmp_buf)[8];
+# endif
 #else
 typedef uint32_t RT_NOCRT(jmp_buf)[6+2];
 #endif
