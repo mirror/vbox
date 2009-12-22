@@ -1065,7 +1065,6 @@ RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
                     case RTTHREADSTATE_EVENT_MULTI:
                     case RTTHREADSTATE_FAST_MUTEX:
                     case RTTHREADSTATE_MUTEX:
-                    case RTTHREADSTATE_RW_READ:
                     case RTTHREADSTATE_RW_WRITE:
                     case RTTHREADSTATE_SPIN_MUTEX:
                     {
@@ -1081,6 +1080,22 @@ RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
                             continue;
                         break;
                     }
+
+                    case RTTHREADSTATE_RW_READ:
+                    {
+                        PRTLOCKVALIDATORREC pCurRec = pCur->LockValidator.pRec;
+                        if (    rtThreadGetState(pCur) != enmCurState
+                            ||  !VALID_PTR(pCurRec)
+                            ||  pCurRec->u32Magic != RTLOCKVALIDATORREC_MAGIC)
+                            continue;
+                        pNext = pCurRec->hThread;
+                        if (    rtThreadGetState(pCur) != enmCurState
+                            ||  pCurRec->u32Magic != RTLOCKVALIDATORREC_MAGIC
+                            ||  pCurRec->hThread != pNext)
+                            continue;
+                        break;
+                    }
+
 
                     default:
                         pNext = NULL;
