@@ -324,7 +324,7 @@ VBOX_WITH_ALSA = 1
 # Enable Pulse support for Linux.
 VBOX_WITH_PULSE = 1
 # Enable statically linked dbus support
-if1of ($(KBUILD_TARGET),linux solaris)
+if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_WITH_DBUS = 1
 endif
 # Disable WINMM support for Windows (not implemented).
@@ -354,13 +354,13 @@ ifeq ($(KBUILD_TARGET),linux)
 # VBOX_WITH_FFMPEG = 1
 endif
 # Enable crOpenGL service
-if1of ($(KBUILD_TARGET),win linux solaris darwin freebsd)
+if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_CROGL = 1
 endif
 # Enable Host Guest Shared Memory Interface
 VBOX_WITH_HGSMI=1
 # Enable Video 2D Acceleration
-if1of ($(KBUILD_TARGET),win linux darwin)
+if1of ($(KBUILD_TARGET), darwin linux win)
  VBOX_WITH_VIDEOHWACCEL = 1
 endif
 # Enable VBVA lock
@@ -376,7 +376,7 @@ VBOX_DO_STRIP = $(if $(filter release profile,$(KBUILD_TYPE)),1,)
 # Strip R0/GC modules (current requirement for our loader)
 VBOX_DO_STRIP_MODULES = 1
 # Use kStuff for MACH-O and LX binary loading.
-if1of ($(KBUILD_TARGET),darwin os2)
+if1of ($(KBUILD_TARGET), darwin os2)
 IPRT_WITH_KSTUFF = 1
 endif
 # Enable Crossbow support for Solaris TAP driver.
@@ -438,7 +438,7 @@ VBOX_DYNAMIC_NET_ATTACH = 1
 # Enable this setting to force a fallback to default DMI data on configuration errors
 VBOX_BIOS_DMI_FALLBACK =
 # Enable host network interface API.
-if1of ($(KBUILD_TARGET), darwin solaris linux win freebsd)
+if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_HOSTNETIF_API = 1
 endif
 # Enables the Python<->XPCOM and Python<->COM bindings.
@@ -489,7 +489,7 @@ endif
 # depending on the location of the object.)
 #VBOX_WITH_RUNPATH = /usr/lib/virtualbox
 ifdef VBOX_WITH_HARDENING
- if1of ($(KBUILD_TARGET), solaris freebsd)
+ if1of ($(KBUILD_TARGET), freebsd solaris)
   VBOX_WITH_RUNPATH = $(VBOX_PATH_APP_PRIVATE)
  endif
 endif
@@ -513,18 +513,18 @@ ifdef VBOX_WITH_HARDENING
  endif
 endif
 # Use VBoxNetFlt for host interface networking.
-if1of ($(KBUILD_TARGET), darwin linux solaris win freebsd)
+if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_NETFLT = 1
  VBOX_SOLARIS_NSL_RESOLVED = 1
  ifeq ($(KBUILD_TARGET),solaris)
   VBOX_WITH_NETFLT_CROSSBOW = 1
  endif
- if1of ($(KBUILD_TARGET), darwin solaris linux freebsd)
+ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris)
   VBOX_WITH_NETADP = 1
  endif
 endif
 # Enable the new I/O path
-if1of ($(KBUILD_TARGET), linux solaris win freebsd darwin)
+if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_NEW_IO_CODE = 1
 endif
 
@@ -543,7 +543,7 @@ endif
 ## For experimenting with disabling preemption instead of interrupts
 # when working VT-x/AMD-V in VMMR0.
 ## @todo os2? Reconsider perhaps windows? (see defect) This should be made the default.
-if1of ($(KBUILD_TARGET), darwin freebsd linux win solaris)
+if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_VMMR0_DISABLE_PREEMPTION = 1
 endif
 
@@ -861,7 +861,7 @@ endif
 #
 # Image and object format config.
 #
-if1of ($(KBUILD_TARGET), linux l4 freebsd netbsd openbsd solaris)
+if1of ($(KBUILD_TARGET), freebsd linux l4 netbsd openbsd solaris)
  VBOX_LDR_FMT = elf
 endif
 ifeq ($(KBUILD_TARGET),darwin)
@@ -1240,7 +1240,7 @@ ARCH_BITS_DEFS += $(VBOX_GC_ARCH_BITS_DEFS)
 #
 # Add the output dir(s) to the dynamic loader search path.
 #
-if1of ($(KBUILD_TARGET), linux l4 freebsd netbsd openbsd solaris)
+if1of ($(KBUILD_TARGET), freebsd linux l4 netbsd openbsd solaris)
  export LD_LIBRARY_PATH:=$(PATH_BIN):$(PATH_LIB):$(LD_LIBRARY_PATH)
 endif
 ifeq ($(KBUILD_TARGET),os2)
@@ -1273,7 +1273,7 @@ ifeq ($(KBUILD_TARGET),l4)
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.s.so
  LIB_DDU         = $(PATH_BIN)/VBoxDDU.s.so
 endif
-if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
+if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
  LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.so
  LIB_RUNTIME_EF  = $(PATH_LIB)/RuntimeEFCPP.a
  LIB_KPROFILE    = $(PATH_BIN)/kPrf2.so
@@ -1418,7 +1418,7 @@ VBOX_PATH_MAKECAB   ?= $(VBOX_PATH_CABSDK)/BIN/MAKECAB.EXE
 
 # We need to export YASM for OSE, but since it was converted to .zip we need to
 # allow for the location used by the zip to be properly cleaned up first.
-if1of ($(KBUILD_HOST).$(KBUILD_HOST_ARCH),  win.x86 linux.x86 solaris.x86)
+if1of ($(KBUILD_HOST).$(KBUILD_HOST_ARCH), linux.x86 solaris.x86 win.x86)
  PATH_TOOL_YASM ?= $(PATH_DEVTOOLS_BLD)/bin
 endif
 
@@ -1611,7 +1611,7 @@ ifdef VBOX_WITH_CROGL
   VBOX_LIB_OGL_HOSTCRUTIL = $(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
  endif
 
- if1of ($(KBUILD_TARGET),linux solaris)
+ if1of ($(KBUILD_TARGET), linux solaris)
  # VBOX_PATH_MESA_SOURCE = $(PATH_ROOT)/src/libs/mesa-7.2
   VBOX_PATH_MESA_SOURCE = $(VBOX_PATH_X11_ROOT)/mesa-7.2
   VBOX_MESA_INCS = \
@@ -1802,7 +1802,7 @@ ifdef VBOX_SIGNING_MODE
   ifeq ($(strip $(VBOX_SIGNING_MODE)),test)
    VBOX_CERTIFICATE_SUBJECT_NAME ?= MyTestCertificate
    VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= /n "$(VBOX_CERTIFICATE_SUBJECT_NAME)"
-  else if1of ($(VBOX_SIGNING_MODE),release development)
+  else if1of ($(VBOX_SIGNING_MODE), release development)
    VBOX_CERTIFICATE_SUBJECT_NAME ?= Sun Microsystems, Inc.
    VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= /n "$(VBOX_CERTIFICATE_SUBJECT_NAME)"
    VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/MSCV-VSClass3.cer
@@ -1887,7 +1887,7 @@ VBOX_EDIT_INF64_FN = $(SED) \
 # Default prefixes and suffixes.
 #
 VBOX_PREF_LIB =
-if1of ($(KBUILD_TARGET),win os2)
+if1of ($(KBUILD_TARGET), os2 win)
 VBOX_SUFF_LIB = .lib
 else
 VBOX_SUFF_LIB = .a
@@ -1912,12 +1912,12 @@ SDK_VBOX_LIBXML2_DEFS.win += WIN32 _WINDOWS _MBCS
 # libxml against VBoxRT
 
 SDK_VBOX_LIBXSLT          = .
-#if1of ($(KBUILD_TARGET),win os2 solaris)
+#if1of ($(KBUILD_TARGET), os2 solaris win)
  SDK_VBOX_LIBXSLT_INCS   ?= $(PATH_ROOT)/src/libs/libxslt-1.1.22
  SDK_VBOX_LIBXSLT_LIBS   ?= $(PATH_LIB)/VBox-libxslt$(VBOX_SUFF_LIB)
  SDK_VBOX_LIBXSLT_DEFS   ?=
  SDK_VBOX_LIBXSLT_DEFS.win += WIN32 _WINDOWS _MBCS _REENTRANT
-#else if1of ($(KBUILD_TARGET),linux)
+#else if1of ($(KBUILD_TARGET), linux)
 # SDK_VBOX_LIBXSLT_INCS      ?=
 # SDK_VBOX_LIBXSLT_LIBS      ?=
 # SDK_VBOX_LIBXSLT_CFLAGS    ?= $(shell pkg-config libxslt-1.0 --cflags)
@@ -1933,7 +1933,7 @@ SDK_VBOX_LIBPNG_INCS ?= $(PATH_ROOT)/src/libs/libpng-1.2.8
 SDK_VBOX_LIBPNG_LIBS ?= $(PATH_LIB)/VBox-libpng$(VBOX_SUFF_LIB)
 
 SDK_VBOX_ZLIB         = .
-if1of ($(KBUILD_TARGET), win os2)
+if1of ($(KBUILD_TARGET), os2 win)
  SDK_VBOX_ZLIB_INCS  ?= $(PATH_ROOT)/src/libs/zlib-1.2.1
  SDK_VBOX_ZLIB_LIBS  ?= $(PATH_LIB)/VBox-zlib$(VBOX_SUFF_LIB)
 else
@@ -1951,7 +1951,7 @@ if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_OPENSSL_ALL=1
 endif
 
-if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64 linux.x86 linux.amd64 solaris.x86 solaris.amd64 darwin.x86 darwin.amd64 freebsd.x86 freebsd.amd64)
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 freebsd.x86 freebsd.amd64 linux.x86 linux.amd64 solaris.x86 solaris.amd64 win.x86 win.amd64)
  VBOX_WITH_LIBCURL = 1
  SDK_VBOX_LIBCURL       = .
  SDK_VBOX_LIBCURL_INCS ?= $(PATH_ROOT)/src/libs/curl-7.19.4/include
@@ -1960,7 +1960,7 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64 linux.x86 linux
 endif
 
 SDK_VBOX_FFMPEG       = .
-if1of ($(KBUILD_TARGET), win os2 darwin linux)
+if1of ($(KBUILD_TARGET), darwin linux os2 win)
  SDK_VBOX_FFMPEG_INCS ?= \
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavutil \
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavcodec \
@@ -2578,7 +2578,7 @@ TEMPLATE_VBOXR3EXE_CXXFLAGS.darwin     = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
 TEMPLATE_VBOXR3EXE_OBJCFLAGS.darwin    = $(VBOX_DARWIN_DEF_SDK_OBJCFLAGS)
 TEMPLATE_VBOXR3EXE_LDFLAGS.darwin      = $(VBOX_DARWIN_DEF_SDK_LDFLAGS)
 TEMPLATE_VBOXR3EXE_LDFLAGS.darwin.x86  = -read_only_relocs suppress
- else if1of ($(KBUILD_TARGET),freebsd netbsd openbsd)
+ else if1of ($(KBUILD_TARGET), freebsd netbsd openbsd)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3
 TEMPLATE_VBOXR3EXE_LIBS                = pthread
 TEMPLATE_VBOXR3EXE_INCS               += \
@@ -2845,7 +2845,7 @@ else
  TEMPLATE_VBOXNOCRTGCC_CXXFLAGS        += $(VBOX_GCC_fno-stack-protector)
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
   # in 64-bit mode we'll build a sys-module (VBoxREM2).
-  if1of ($(KBUILD_TARGET),darwin solaris)
+  if1of ($(KBUILD_TARGET), darwin solaris)
    TEMPLATE_VBOXNOCRTGCC_LDFLAGS.solaris= -64 -r
   else
    TEMPLATE_VBOXNOCRTGCC_LDFLAGS        = -nostdlib
@@ -3142,9 +3142,9 @@ ifdef VBOX_WITH_QTGUI
      VBOX_PATH_QT4_FRAMEWORKS ?= /Library/Frameworks
     endif
    endif
-  else if1of ($(KBUILD_TARGET),win)
+  else if1of ($(KBUILD_TARGET), win)
    VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
-  else if1of ($(KBUILD_TARGET),solaris)
+  else if1of ($(KBUILD_TARGET), solaris)
    VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
    ifneq ($(VBOX_PATH_QT4),)
     VBOX_WITH_QT4_SUN = 1
@@ -3856,7 +3856,7 @@ $(VBOX_VERSION_MK): $(VBOX_VERSION_STAMP)
 	$(QUIET)$(MV) -f $@.tmp $@
 
 if !defined(VBOX_OSE) && !defined(VBOX_NOINC_LICENSE_VER_KMK)
- if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
+ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
   # VBOX_LICENSE_VER is used in several Makefiles
   VBOX_LICENSE_VER_KMK = $(PATH_OUT)/license-version.kmk
 $(VBOX_LICENSE_VER_KMK): $(VBOX_BRAND_LICENSE_HTML)
