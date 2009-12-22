@@ -2534,7 +2534,7 @@ uint8_t DISReadByte(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
     AssertMsgFailed(("DISReadByte with no read callback in ring 0!!\n"));
     return 0;
 #else
-    else return *(uint8_t *)pAddress;
+    return *(uint8_t *)pAddress;
 #endif
 }
 //*****************************************************************************
@@ -2558,7 +2558,7 @@ uint16_t DISReadWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
     AssertMsgFailed(("DISReadWord with no read callback in ring 0!!\n"));
     return 0;
 #else
-    else return *(uint16_t *)pAddress;
+    return *(uint16_t *)pAddress;
 #endif
 }
 //*****************************************************************************
@@ -2582,7 +2582,7 @@ uint32_t DISReadDWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
     AssertMsgFailed(("DISReadDWord with no read callback in ring 0!!\n"));
     return 0;
 #else
-    else return *(uint32_t *)pAddress;
+    return *(uint32_t *)pAddress;
 #endif
 }
 //*****************************************************************************
@@ -2607,7 +2607,7 @@ uint64_t DISReadQWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
     AssertMsgFailed(("DISReadQWord with no read callback in ring 0!!\n"));
     return 0;
 #else
-    else return *(uint64_t *)pAddress;
+    return *(uint64_t *)pAddress;
 #endif
 }
 

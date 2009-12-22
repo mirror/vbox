@@ -73,7 +73,7 @@
 #define IDX_ParseThreeByteEsc5      39
 #define IDX_ParseMax                (IDX_ParseThreeByteEsc5+1)
 
-#ifdef IN_RING0
+#if defined(IN_RING0) || defined(IN_RC)
 #define DIS_THROW(a)                /* Not available. */
 #elif  __L4ENV__
 #define DIS_THROW(a)                longjmp(*pCpu->pJumpBuffer, a)
