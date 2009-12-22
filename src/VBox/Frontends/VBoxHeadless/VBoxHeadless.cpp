@@ -115,6 +115,7 @@ public:
 #ifndef VBOX_WITH_XPCOM
         refcnt = 0;
 #endif
+        mfNoLoggedInUsers = true;
     }
 
     virtual ~VirtualBoxCallback()
@@ -196,6 +197,65 @@ public:
 
     STDMETHOD(OnGuestPropertyChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value, IN_BSTR flags)
     {
+#ifdef VBOX_WITH_GUEST_PROPS
+        Utf8Str utf8Key = key;
+        if (utf8Key == "/VirtualBox/GuestInfo/OS/NoLoggedInUsers")
+        {
+            /* Check if the "disconnect on logout feature" is enabled. */
+            BOOL fDisconnectOnGuestLogout = FALSE;
+            ComPtr <IMachine> machine;
+            HRESULT hrc = S_OK;
+
+            if (gConsole)
+            {
+                hrc = gConsole->COMGETTER(Machine)(machine.asOutParam());
+                if (SUCCEEDED(hrc) && machine)
+                {
+                    Bstr value;
+                    hrc = machine->GetExtraData(Bstr("VRDP/DisconnectOnGuestLogout"), value.asOutParam());
+                    if (SUCCEEDED(hrc) && value == "1")
+                    {
+                        fDisconnectOnGuestLogout = TRUE;
+                    }
+                }
+            }
+
+            if (fDisconnectOnGuestLogout)
+            {
+                Utf8Str utf8Value = value;
+                if (utf8Value == "true")
+                {
+                    if (!mfNoLoggedInUsers) /* Only if the property really changes. */
+                    {
+                        mfNoLoggedInUsers = true;
+
+                        /* If there is a VRDP connection, drop it. */
+                        ComPtr<IRemoteDisplayInfo> info;
+                        hrc = gConsole->COMGETTER(RemoteDisplayInfo)(info.asOutParam());
+                        if (SUCCEEDED(hrc) && info)
+                        {
+                            ULONG cClients = 0;
+                            hrc = info->COMGETTER(NumberOfClients)(&cClients);
+                            if (SUCCEEDED(hrc) && cClients > 0)
+                            {
+                                ComPtr <IVRDPServer> vrdpServer;
+                                hrc = machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
+                                if (SUCCEEDED(hrc) && vrdpServer)
+                                {
+                                    vrdpServer->COMSETTER(Enabled)(FALSE);
+                                    vrdpServer->COMSETTER(Enabled)(TRUE);
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    mfNoLoggedInUsers = false;
+                }
+            }
+        }
+#endif /* VBOX_WITH_GUEST_PROPS */
         return S_OK;
     }
 
@@ -204,6 +264,7 @@ private:
     long refcnt;
 #endif
 
+    bool mfNoLoggedInUsers;
 };
 
 /**
@@ -1075,6 +1136,9 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
         /* we don't have to disable VRDP here because we don't save the settings of the VM */
     }
     while (0);
+
+    /* No more access to the 'console' object, which will be uninitialized by the next session->Close call. */
+    gConsole = NULL;
 
     if (fSessionOpened)
     {
