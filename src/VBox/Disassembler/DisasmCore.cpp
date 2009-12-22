@@ -2512,7 +2512,6 @@ void disasmGetPtrString(PDISCPUSTATE pCpu, PCOPCODE pOp, POP_PARAMETER pParam)
     if (pCpu->prefix & PREFIX_SEG)
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "%s:", szModRMSegReg[pCpu->enmPrefixSeg]);
 }
-#ifndef IN_RC
 //*****************************************************************************
 /* Read functions for getting the opcode bytes */
 //*****************************************************************************
@@ -2611,7 +2610,6 @@ uint64_t DISReadQWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
     else return *(uint64_t *)pAddress;
 #endif
 }
-#endif /* IN_RC */
 
 #if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
 //*****************************************************************************
