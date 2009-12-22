@@ -844,19 +844,6 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
     }
 
     /*
-     * Optimize RDTSC traps.
-     * Some guests (like Solaris) are using RDTSC all over the place and
-     * will end up trapping a *lot* because of that.
-     */
-    if (   !pRegFrame->eflags.Bits.u1VM
-        && ((uint8_t *)PC)[0] == 0x0f
-        && ((uint8_t *)PC)[1] == 0x31)
-    {
-        STAM_PROFILE_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
-        return trpmGCTrap0dHandlerRdTsc(pVM, pVCpu, pRegFrame);
-    }
-
-    /*
      * Disassemble the instruction.
      */
     DISCPUSTATE Cpu;
@@ -869,6 +856,19 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
         return trpmGCExitTrap(pVM, pVCpu, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
     }
     STAM_PROFILE_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
+
+    /*
+     * Optimize RDTSC traps.
+     * Some guests (like Solaris) are using RDTSC all over the place and
+     * will end up trapping a *lot* because of that.
+     *
+     * Note: it's no longer safe to access the instruction opcode directly due to possible stale code TLB entries
+     */
+    if (Cpu.pCurInstr->opcode == OP_RDTSC)
+    {
+        STAM_PROFILE_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
+        return trpmGCTrap0dHandlerRdTsc(pVM, pVCpu, pRegFrame);
+    }
 
     /*
      * Deal with I/O port access.
