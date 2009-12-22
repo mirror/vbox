@@ -54,16 +54,16 @@ BEGINPROC RT_NOCRT(setjmp)
  %ifdef ASM_CALL64_MSC
         mov     [rcx +  8h*8], rsi
         mov     [rcx +  9h*8], rdi
-        movdaq  [rcx + 0ah*8], xmm6
-        movdaq  [rcx + 0ch*8], xmm7
-        movdaq  [rcx + 0eh*8], xmm8
-        movdaq  [rcx + 10h*8], xmm9
-        movdaq  [rcx + 12h*8], xmm10
-        movdaq  [rcx + 14h*8], xmm11
-        movdaq  [rcx + 16h*8], xmm12
-        movdaq  [rcx + 18h*8], xmm13
-        movdaq  [rcx + 1ah*8], xmm14
-        movdaq  [rcx + 1ch*8], xmm15
+        movdqa  [rcx + 0ah*8], xmm6
+        movdqa  [rcx + 0ch*8], xmm7
+        movdqa  [rcx + 0eh*8], xmm8
+        movdqa  [rcx + 10h*8], xmm9
+        movdqa  [rcx + 12h*8], xmm10
+        movdqa  [rcx + 14h*8], xmm11
+        movdqa  [rcx + 16h*8], xmm12
+        movdqa  [rcx + 18h*8], xmm13
+        movdqa  [rcx + 1ah*8], xmm14
+        movdqa  [rcx + 1ch*8], xmm15
   %ifndef RT_OS_WINDOWS
    %error "Fix setjmp.h"
   %endif
@@ -104,16 +104,16 @@ BEGINPROC RT_NOCRT(longjmp)
  %ifdef ASM_CALL64_MSC
         mov     rsi,   [rcx +  8h*8]
         mov     rdi,   [rcx +  9h*8]
-        movdaq  xmm6,  [rcx + 0ah*8]
-        movdaq  xmm7,  [rcx + 0ch*8]
-        movdaq  xmm8,  [rcx + 0eh*8]
-        movdaq  xmm9,  [rcx + 10h*8]
-        movdaq  xmm10, [rcx + 12h*8]
-        movdaq  xmm11, [rcx + 14h*8]
-        movdaq  xmm12, [rcx + 16h*8]
-        movdaq  xmm13, [rcx + 18h*8]
-        movdaq  xmm14, [rcx + 1ah*8]
-        movdaq  xmm15, [rcx + 1ch*8]
+        movdqa  xmm6,  [rcx + 0ah*8]
+        movdqa  xmm7,  [rcx + 0ch*8]
+        movdqa  xmm8,  [rcx + 0eh*8]
+        movdqa  xmm9,  [rcx + 10h*8]
+        movdqa  xmm10, [rcx + 12h*8]
+        movdqa  xmm11, [rcx + 14h*8]
+        movdqa  xmm12, [rcx + 16h*8]
+        movdqa  xmm13, [rcx + 18h*8]
+        movdqa  xmm14, [rcx + 1ah*8]
+        movdqa  xmm15, [rcx + 1ch*8]
   %ifndef RT_OS_WINDOWS
    %error "Fix setjmp.h"
   %endif
