@@ -373,44 +373,41 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
                 RTLogLoggerEx(pLogger, 0, ~0U, "\n");
             fclose(pFile);
         }
-#  elif defined(RT_OS_FREEBSD)
-        char *pszArgFileBuf = NULL;
-        int aiName[4];
-        size_t cchArgs;
 
+#  elif defined(RT_OS_FREEBSD)
+        /* Retrieve the required length first */
+        int aiName[4];
         aiName[0] = CTL_KERN;
         aiName[1] = KERN_PROC;
-        aiName[2] = KERN_PROC_ARGS;
-        aiName[3] = -1;
-
-        /* Retrieve the required length first */
-        cchArgs = 0;
+        aiName[2] = KERN_PROC_ARGS;     /* Introduced in FreeBSD 4.0 */
+        aiName[3] = getpid();
+        size_t cchArgs = 0;
         int rcBSD = sysctl(aiName, RT_ELEMENTS(aiName), NULL, &cchArgs, NULL, 0);
-
         if (cchArgs > 0)
         {
-            pszArgFileBuf = (char *)RTMemAllocZ(cchArgs + 1 /* Safety */);
+            char *pszArgFileBuf = (char *)RTMemAllocZ(cchArgs + 1 /* Safety */);
             if (pszArgFileBuf)
             {
                 /* Retrieve the argument list */
                 rcBSD = sysctl(aiName, RT_ELEMENTS(aiName), pszArgFileBuf, &cchArgs, NULL, 0);
                 if (!rcBSD)
                 {
-                    /*
-                     * cmdline is a flattened argument list so we need
-                     * to convert all \0 to blanks
-                     */
-                    for(size_t i = 0; i < cchArgs - 1; i++)
+                    unsigned    iArg = 0;
+                    size_t      off = 0;
+                    while (off < cchArgs)
                     {
-                       if(pszArgFileBuf[i] == '\0')
-                          pszArgFileBuf[i] = ' ';
-                    }
+                        size_t cchArg = strlen(&pszArgFileBuf[off]);
+                        RTLogLoggerEx(pLogger, 0, ~0U, "Arg[%u]: %s\n", iArg, &pszArgFileBuf[off]);
 
-                    RTLogLoggerEx(pLogger, 0, ~0U, "Commandline: %s\n", pszArgFileBuf);
+                        /* advance */
+                        off += cchArg + 1;
+                        iArg++;
+                    }
                 }
                 RTMemFree(pszArgFileBuf);
             }
         }
+
 #  elif defined(RT_OS_L4) || defined(RT_OS_OS2) || defined(RT_OS_DARWIN)
         /* commandline? */
 #  else
