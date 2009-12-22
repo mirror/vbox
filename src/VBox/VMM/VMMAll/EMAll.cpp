@@ -257,14 +257,15 @@ VMMDECL(int) EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, 
  */
 VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pDis, unsigned *pcbInstr)
 {
-    int rc;
-
-#ifndef IN_RC
+    int        rc;
     EMDISSTATE State;
 
     State.pVM   = pVM;
     State.pVCpu = pVCpu;
 
+#ifdef IN_RC
+    State.GCPtr = GCPtrInstr;
+#else /* ring 0/3 */
     rc = PGMPhysSimpleReadGCPtr(pVCpu, &State.aOpcode, GCPtrInstr, sizeof(State.aOpcode));
     if (RT_SUCCESS(rc))
     {
@@ -285,12 +286,8 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
 #endif
 
     rc = DISCoreOneEx(GCPtrInstr, SELMGetCpuModeFromSelector(pVM, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid),
-#ifdef IN_RC
-                          NULL, NULL,
-#else
-                          EMReadBytes, &State,
-#endif
-                          pDis, pcbInstr);
+                      EMReadBytes, &State,
+                      pDis, pcbInstr);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
     AssertMsgFailed(("DISCoreOne failed to GCPtrInstr=%RGv rc=%Rrc\n", GCPtrInstr, rc));

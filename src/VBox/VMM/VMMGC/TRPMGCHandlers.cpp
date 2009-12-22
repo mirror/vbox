@@ -861,8 +861,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
      */
     DISCPUSTATE Cpu;
     uint32_t    cbOp;
-    rc = DISCoreOneEx((RTGCUINTPTR)PC, cBits == 32 ? CPUMODE_32BIT : cBits == 16 ? CPUMODE_16BIT : CPUMODE_64BIT,
-                      NULL, NULL, &Cpu, &cbOp);
+    rc = EMInterpretDisasOneEx(pVM, pVCpu, (RTGCUINTPTR)PC, pRegFrame, &Cpu, &cbOp);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("DISCoreOneEx failed to PC=%RGv rc=%Rrc\n", PC, rc));
