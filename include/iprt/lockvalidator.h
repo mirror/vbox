@@ -198,12 +198,12 @@ typedef struct RTLOCKVALIDATORSHARED
     bool                                afPadding[2];
     /** Pointer to a table containing pointers to records of all the owners. */
     R3R0PTRTYPE(PRTLOCKVALIDATORSHAREDONE volatile *) papOwners;
-#if RT_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32
     /** Alignment padding. */
-    uint32_T                            u32Reserved;
+    uint32_t                            u32Alignment;
 #endif
 } RTLOCKVALIDATORSHARED;
-/*AssertCompileSize(RTLOCKVALIDATORSHARED, HC_ARCH_BITS == 32 ? 24 + 20 + 4 : 40 + 24);*/
+AssertCompileSize(RTLOCKVALIDATORSHARED, HC_ARCH_BITS == 32 ? 24 + 20 + 4 : 40 + 24);
 
 
 /** @name   Special sub-class values.
