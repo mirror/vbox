@@ -160,18 +160,11 @@ void disasmPrintDisp8(POP_PARAMETER pParam);
 void disasmPrintDisp16(POP_PARAMETER pParam);
 
 
-#ifdef IN_RC
-#define  DISReadByte(pCpu,  pAddress) (*(uint8_t *)(pAddress))
-#define  DISReadWord(pCpu,  pAddress) (*(uint16_t *)(pAddress))
-#define  DISReadDWord(pCpu, pAddress) (*(uint32_t *)(pAddress))
-#define  DISReadQWord(pCpu, pAddress) (*(uint64_t *)(pAddress))
-#else
 /* Read functions */
 uint8_t  DISReadByte(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
 uint16_t DISReadWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
 uint32_t DISReadDWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
 uint64_t DISReadQWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress);
-#endif
 
 size_t disFormatBytes(PCDISCPUSTATE pCpu, char *pszDst, size_t cchDst, uint32_t fFlags);
 
