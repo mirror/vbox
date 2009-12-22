@@ -203,7 +203,7 @@ typedef struct RTLOCKVALIDATORSHARED
     uint32_T                            u32Reserved;
 #endif
 } RTLOCKVALIDATORSHARED;
-AssertCompileSize(RTLOCKVALIDATORSHARED, HC_ARCH_BITS == 32 ? 24 + 20 + 4 : 40 + 24);
+/*AssertCompileSize(RTLOCKVALIDATORSHARED, HC_ARCH_BITS == 32 ? 24 + 20 + 4 : 40 + 24);*/
 
 
 /** @name   Special sub-class values.
