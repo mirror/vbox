@@ -838,7 +838,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 #   if PGM_SHW_TYPE == PGM_TYPE_EPT
                         HWACCMInvalidatePhysPage(pVM, (RTGCPHYS)pvFault);
 #   else
-                        PGM_INVL_PG_ALL_VCPU(pVM, pvFault);
+                        PGM_INVL_PG(pVM, pvFault);
 #   endif
 #   ifdef VBOX_STRICT
                         RTGCPHYS GCPhys2;
