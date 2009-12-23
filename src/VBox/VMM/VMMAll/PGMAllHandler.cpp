@@ -167,7 +167,6 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
         if (rc == VINF_PGM_SYNC_CR3)
             rc = VINF_PGM_GCPHYS_ALIASED;
         pgmUnlock(pVM);
-        PGM_INVL_ALL_VCPU_TLBS(pVM);
 #ifndef IN_RING3
         REMNotifyHandlerPhysicalRegister(pVM, enmType, GCPhys, GCPhysLast - GCPhys + 1, !!pfnHandlerR3);
 #else
@@ -854,7 +853,6 @@ VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
                      * Set the flags and flush shadow PT entries.
                      */
                     rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
-                    PGM_INVL_ALL_VCPU_TLBS(pVM);
                 }
 
                 rc = VINF_SUCCESS;
