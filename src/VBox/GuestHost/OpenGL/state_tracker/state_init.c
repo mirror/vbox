@@ -46,6 +46,9 @@ crStateAllocShared(void)
 static void
 DeleteTextureCallback(void *texObj)
 {
+#ifndef IN_GUEST
+    diff_api.DeleteTextures(1, &((CRTextureObj *)texObj)->name);
+#endif
     crStateDeleteTextureObject((CRTextureObj *) texObj);
 }
 
