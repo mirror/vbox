@@ -232,6 +232,7 @@ VMMDECL(void) REMNotifyHandlerPhysicalFlushIfAlmostFull(PVM pVM, PVMCPU pVCpu)
     VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_REM_REPLAY_HANDLER_NOTIFICATIONS, 0);
 
     AssertRelease(pVM->rem.s.idxPendingList == UINT32_MAX);
+    AssertRelease(pVM->rem.s.idxFreeList != UINT32_MAX);
 }
 #endif /* IN_RC */
 
