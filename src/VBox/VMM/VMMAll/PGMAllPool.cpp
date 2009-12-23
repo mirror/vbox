@@ -2926,7 +2926,6 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
  * @param   fFlushPTEs  Flush PTEs or allow them to be updated (e.g. in case of an RW bit change)
  * @param   iShw        The shadow page table.
  * @param   cRefs       The number of references made in that PT.
- * @param   pfKeptPTEs  Flag indicating removal of all relevant PTEs (out)
  */
 static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlushPTEs, uint16_t iShw, uint16_t cRefs)
 {
