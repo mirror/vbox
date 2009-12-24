@@ -2828,6 +2828,7 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
 #if 1 //def VBOX_STRICT
         if (pVM->cCpus == 1)
         {
+            unsigned c;
             /* Check that all records are now on the free list. */
             for (c = 0, idxNext = pVM->rem.s.idxFreeList; idxNext != UINT32_MAX;
                  idxNext = pVM->rem.s.aHandlerNotifications[idxNext].idxNext)
