@@ -26,15 +26,7 @@
 #ifndef ___VBoxNetFltCommon_win_h___
 #define ___VBoxNetFltCommon_win_h___
 
-#ifndef VBOX_NETFLT_ONDEMAND_BIND
-# define NDIS_MINIPORT_DRIVER
-# define NDIS50_MINIPORT 1
-#endif
-
-#define BINARY_COMPATIBLE 0
-#define NDIS_WDM 0
-#define NDIS50 1
-#define NTSTRSAFE_LIB
+//#define NTSTRSAFE_LIB
 
 #ifdef DEBUG
 //# define DEBUG_NETFLT_PACKETS
