@@ -277,7 +277,7 @@ void VBoxGLInfo::init(const QGLContext * pContext)
     {
         VBOXQGLLOGREL (("gl version string: 0%s\n", str));
 
-        mGLVersion = parseVersion(str);
+        mGLVersion = parseVersion (str);
         Assert(mGLVersion > 0);
         if(mGLVersion < 0)
         {
@@ -287,8 +287,10 @@ void VBoxGLInfo::init(const QGLContext * pContext)
         {
             VBOXQGLLOGREL (("gl version: 0x%x\n", mGLVersion));
             VBOXQGL_CHECKERR(
-                    str = glGetString(GL_EXTENSIONS);
+                    str = glGetString (GL_EXTENSIONS);
                     );
+
+            VBOXQGLLOGREL (("gl extensions: %s\n", str));
 
             const char * pos = strstr((const char *)str, "GL_ARB_multitexture");
             m_GL_ARB_multitexture = pos != NULL;

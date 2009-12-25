@@ -62,3 +62,10 @@ const char* VBoxDefs::GUI_Export_Username = "GUI/Export/Username";
 const char* VBoxDefs::GUI_Export_Hostname = "GUI/Export/Hostname";
 const char* VBoxDefs::GUI_Export_Bucket = "GUI/Export/Bucket";
 const char* VBoxDefs::GUI_PreventBetaWarning = "GUI/PreventBetaWarning";
+#ifdef VBOX_WITH_VIDEOHWACCEL
+const char* VBoxDefs::GUI_Accelerate2D_StretchLinear = "GUI/Accelerate2D/StretchLinear";
+const char* VBoxDefs::GUI_Accelerate2D_PixformatYV12 = "GUI/Accelerate2D/PixformatYV12";
+const char* VBoxDefs::GUI_Accelerate2D_PixformatUYVY = "GUI/Accelerate2D/PixformatUYVY";
+const char* VBoxDefs::GUI_Accelerate2D_PixformatYUY2 = "GUI/Accelerate2D/PixformatYUY2";
+const char* VBoxDefs::GUI_Accelerate2D_PixformatAYUV = "GUI/Accelerate2D/PixformatAYUV";
+#endif

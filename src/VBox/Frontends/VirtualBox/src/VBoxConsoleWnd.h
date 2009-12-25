@@ -114,6 +114,10 @@ public:
     /* informs that the guest display is resized */
     void onDisplayResize (ulong aHeight, ulong aWidth);
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* used for obtaining the extradata settings */
+    CSession &session() { return mSession; }
+#endif
 signals:
 
     void closing();
