@@ -180,6 +180,14 @@ struct VBoxDefs
     static const char* GUI_Export_Hostname;
     static const char* GUI_Export_Bucket;
     static const char* GUI_PreventBetaWarning;
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    static const char* GUI_Accelerate2D_StretchLinear;
+    static const char* GUI_Accelerate2D_PixformatYV12;
+    static const char* GUI_Accelerate2D_PixformatUYVY;
+    static const char* GUI_Accelerate2D_PixformatYUY2;
+    static const char* GUI_Accelerate2D_PixformatAYUV;
+#endif
 };
 
 #define MAC_LEOPARD_STYLE defined(Q_WS_MAC) && (QT_VERSION >= 0x040300)

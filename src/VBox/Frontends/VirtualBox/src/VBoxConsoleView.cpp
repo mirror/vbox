@@ -781,7 +781,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     switch (mode)
     {
         case VBoxDefs::QGLMode:
-            pViewport = new VBoxGLWidget (this, this);
+            pViewport = new VBoxGLWidget (this, this, NULL);
             break;
         default:
             pViewport = new VBoxViewport (this);
@@ -838,7 +838,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
         case VBoxDefs::QImageMode:
             mFrameBuf =
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQImageFrameBuffer>(this) :
+                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQImageFrameBuffer> (this, &mainWnd->session()) :
 #endif
                     new VBoxQImageFrameBuffer (this);
             break;
@@ -855,7 +855,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 # endif
             mFrameBuf =
 #if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
-                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxSDLFrameBuffer> (this) :
+                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxSDLFrameBuffer> (this, &mainWnd->session()) :
 #endif
                     new VBoxSDLFrameBuffer (this);
             /*
@@ -878,7 +878,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
             pViewport->setAttribute (Qt::WA_PaintOnScreen);
             mFrameBuf =
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer> (this) :
+                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer> (this, &mainWnd->session()) :
 #endif
             	    new VBoxQuartz2DFrameBuffer (this);
             break;
