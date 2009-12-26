@@ -42,6 +42,13 @@
 #endif
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** Enable the physical TLB. */
+#define PGM_WITH_PHYS_TLB
+
+
 
 #ifndef IN_RING3
 
@@ -654,7 +661,7 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
             /* Lookup the MMIO2 range and use pvR3 to calc the address. */
             PPGMRAMRANGE pRam = pgmPhysGetRange(&pVM->pgm.s, GCPhys);
             AssertMsgReturn(pRam || !pRam->pvR3, ("pRam=%p pPage=%R[pgmpage]\n", pRam, pPage), VERR_INTERNAL_ERROR_2);
-            *ppv = (void *)((uintptr_t)pRam->pvR3 + (GCPhys - pRam->GCPhys));
+            *ppv = (void *)((uintptr_t)pRam->pvR3 + (GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK) - pRam->GCPhys);
         }
         else if (PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO)
         {
@@ -862,6 +869,7 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
             return rc;
         pTlbe->pMap = pMap;
         pTlbe->pv = pv;
+        Assert(!((uintptr_t)pTlbe->pv & PAGE_OFFSET_MASK));
     }
     else
     {
@@ -869,12 +877,9 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
         pTlbe->pMap = NULL;
         pTlbe->pv = pPGM->CTXALLSUFF(pvZeroPg);
     }
-#ifdef IN_RING0
-    pTlbe->GCPhys = (GCPhys & X86_PTE_PAE_PG_MASK);
+#ifdef PGM_WITH_PHYS_TLB
+    pTlbe->GCPhys = GCPhys & X86_PTE_PAE_PG_MASK;
 #else
-    /* REM already has a TLB of its own; no point in having two
-     * and keeping both in sync will eliminate any benefit there might be.
-     */
     pTlbe->GCPhys = NIL_RTGCPHYS;
 #endif
     pTlbe->pPage  = pPage;
@@ -913,6 +918,7 @@ int pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys)
             return rc;
         pTlbe->pMap = pMap;
         pTlbe->pv = pv;
+        Assert(!((uintptr_t)pTlbe->pv & PAGE_OFFSET_MASK));
     }
     else
     {
@@ -920,12 +926,9 @@ int pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         pTlbe->pMap = NULL;
         pTlbe->pv = pPGM->CTXALLSUFF(pvZeroPg);
     }
-#ifdef IN_RING0
-    pTlbe->GCPhys = (GCPhys & X86_PTE_PAE_PG_MASK);
+#ifdef PGM_WITH_PHYS_TLB
+    pTlbe->GCPhys = GCPhys & X86_PTE_PAE_PG_MASK;
 #else
-    /* REM already has a TLB of its own; no point in having two
-     * and keeping both in sync will eliminate any benefit there might be.
-     */
     pTlbe->GCPhys = NIL_RTGCPHYS;
 #endif
     pTlbe->pPage = pPage;
