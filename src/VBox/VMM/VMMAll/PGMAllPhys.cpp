@@ -869,8 +869,12 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
         pTlbe->pMap = NULL;
         pTlbe->pv = pPGM->CTXALLSUFF(pvZeroPg);
     }
-#if 1 /* Testing */
+#ifdef IN_RING0
     pTlbe->GCPhys = (GCPhys & X86_PTE_PAE_PG_MASK);
+#else
+    /* REM already has a TLB of its own; no point in having two
+     * and keeping both in sync will eliminate any benefit there might be.
+     */
 #endif
     pTlbe->pPage  = pPage;
     return VINF_SUCCESS;
@@ -915,8 +919,12 @@ int pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         pTlbe->pMap = NULL;
         pTlbe->pv = pPGM->CTXALLSUFF(pvZeroPg);
     }
-#if 1 /* Testing */
+#ifdef IN_RING0
     pTlbe->GCPhys = (GCPhys & X86_PTE_PAE_PG_MASK);
+#else
+    /* REM already has a TLB of its own; no point in having two
+     * and keeping both in sync will eliminate any benefit there might be.
+     */
 #endif
     pTlbe->pPage = pPage;
     return VINF_SUCCESS;
