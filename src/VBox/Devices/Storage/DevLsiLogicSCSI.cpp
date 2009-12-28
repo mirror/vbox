@@ -39,6 +39,14 @@
 
 #include "../Builtins.h"
 
+/** The current saved state version. */
+#define LSILOGIC_SAVED_STATE_VERSION          3
+/** The saved state version used by VirtualBox before SAS support was added. */
+#define LSILOGIC_SAVED_STATE_VERSION_PRE_SAS  2
+/** The saved state version used by VirtualBox 3.0 and earlier.  It does not
+ * include the device config part. */
+#define LSILOGIC_SAVED_STATE_VERSION_VBOX_30  1
+
 /**
  * Reply data.
  */
@@ -89,60 +97,6 @@ typedef struct LSILOGICDEVICE
     PDMLED                        Led;
 
 } LSILOGICDEVICE, *PLSILOGICDEVICE;
-
-/**
- * Defined states that the SCSI controller can have.
- */
-typedef enum LSILOGICSTATE
-{
-    /** Reset state. */
-    LSILOGICSTATE_RESET       = 0x00,
-    /** Ready state. */
-    LSILOGICSTATE_READY       = 0x01,
-    /** Operational state. */
-    LSILOGICSTATE_OPERATIONAL = 0x02,
-    /** Fault state. */
-    LSILOGICSTATE_FAULT       = 0x04,
-    /** 32bit size hack */
-    LSILOGICSTATE_32BIT_HACK  = 0x7fffffff
-} LSILOGICSTATE;
-
-/**
- * Which entity needs to initialize the controller
- * to get into the operational state.
- */
-typedef enum LSILOGICWHOINIT
-{
-    /** Not initialized. */
-    LSILOGICWHOINIT_NOT_INITIALIZED = 0x00,
-    /** System BIOS. */
-    LSILOGICWHOINIT_SYSTEM_BIOS     = 0x01,
-    /** ROM Bios. */
-    LSILOGICWHOINIT_ROM_BIOS        = 0x02,
-    /** PCI Peer. */
-    LSILOGICWHOINIT_PCI_PEER        = 0x03,
-    /** Host driver. */
-    LSILOGICWHOINIT_HOST_DRIVER     = 0x04,
-    /** Manufacturing. */
-    LSILOGICWHOINIT_MANUFACTURING   = 0x05,
-    /** 32bit size hack. */
-    LSILOGICWHOINIT_32BIT_HACK      = 0x7fffffff
-} LSILOGICWHOINIT;
-
-
-/**
- * IOC status codes.
- */
-#define LSILOGIC_IOCSTATUS_SUCCESS                0x0000
-#define LSILOGIC_IOCSTATUS_INVALID_FUNCTION       0x0001
-#define LSILOGIC_IOCSTATUS_BUSY                   0x0002
-#define LSILOGIC_IOCSTATUS_INVALID_SGL            0x0003
-#define LSILOGIC_IOCSTATUS_INTERNAL_ERROR         0x0004
-#define LSILOGIC_IOCSTATUS_RESERVED               0x0005
-#define LSILOGIC_IOCSTATUS_INSUFFICIENT_RESOURCES 0x0006
-#define LSILOGIC_IOCSTATUS_INVALID_FIELD          0x0007
-#define LSILOGIC_IOCSTATUS_INVALID_STATE          0x0008
-#define LSILOGIC_IOCSTATUS_OP_STATE_NOT_SUPPOTED  0x0009
 
 /**
  * Device instance data for the emulated
@@ -275,96 +229,41 @@ typedef struct LSILOGICSCSI
     RCPTRTYPE(volatile uint32_t *) pRequestQueueBaseRC;
 
     /** Next free entry in the reply queue the guest can write a address to. */
-    volatile uint32_t     uReplyFreeQueueNextEntryFreeWrite;
+    volatile uint32_t              uReplyFreeQueueNextEntryFreeWrite;
     /** Next valid entry the controller can read a valid address for reply frames from. */
-    volatile uint32_t     uReplyFreeQueueNextAddressRead;
+    volatile uint32_t              uReplyFreeQueueNextAddressRead;
 
     /** Next free entry in the reply queue the guest can write a address to. */
-    volatile uint32_t     uReplyPostQueueNextEntryFreeWrite;
+    volatile uint32_t              uReplyPostQueueNextEntryFreeWrite;
     /** Next valid entry the controller can read a valid address for reply frames from. */
-    volatile uint32_t     uReplyPostQueueNextAddressRead;
+    volatile uint32_t              uReplyPostQueueNextAddressRead;
 
     /** Next free entry the guest can write a address to a request frame to. */
-    volatile uint32_t     uRequestQueueNextEntryFreeWrite;
+    volatile uint32_t              uRequestQueueNextEntryFreeWrite;
     /** Next valid entry the controller can read a valid address for request frames from. */
-    volatile uint32_t     uRequestQueueNextAddressRead;
+    volatile uint32_t              uRequestQueueNextAddressRead;
 
-    /* Emulated controller type */
-    LSILOGICCTRLTYPE      enmCtrlType;
+    /** Emulated controller type */
+    LSILOGICCTRLTYPE               enmCtrlType;
+    /** Handle counter */
+    uint16_t                       u16NextHandle;
 
-    /** Configuration pages. */
-    union
-    {
-        /** Pages for the SPI controller. */
-        MptConfigurationPagesSupportedSpi SpiPages;
-        /** Pages for the SAS controller. */
-        MptConfigurationPagesSupportedSas SasPages;
-    } ConfigurationPages;
-
-    uint32_t                       u32Alignment2;
+    uint16_t                       u16Alignment3;
+    uint32_t                       u32Alignment4;
 
     /** BIOS emulation. */
     VBOXSCSI                       VBoxSCSI;
-
     /** Cache for allocated tasks. */
     R3PTRTYPE(PRTOBJCACHE)         pTaskCache;
-
     /** The base interface */
     PDMIBASE                       IBase;
     /** Status Port - Leds interface. */
     PDMILEDPORTS                   ILeds;
     /** Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)  pLedsConnector;
+
+    R3PTRTYPE(PMptConfigurationPagesSupported) pConfigurationPages;
 } LSILOGISCSI, *PLSILOGICSCSI;
-
-#define LSILOGIC_PCI_SPACE_IO_SIZE  256
-#define LSILOGIC_PCI_SPACE_MEM_SIZE 128 * _1K
-
-#define LSILOGIC_REG_DOORBELL 0x00
-# define LSILOGIC_REG_DOORBELL_SET_STATE(enmState)     (((enmState) & 0x0f) << 28)
-# define LSILOGIC_REG_DOORBELL_SET_USED(fUsed)         (((fUsed) ? 1 : 0) << 27)
-# define LSILOGIC_REG_DOORBELL_SET_WHOINIT(enmWhoInit) (((enmWhoInit) & 0x07) << 24)
-# define LSILOGIC_REG_DOORBELL_SET_FAULT_CODE(u16Code) (u16Code)
-# define LSILOGIC_REG_DOORBELL_GET_FUNCTION(x)         (((x) & 0xff000000) >> 24)
-# define LSILOGIC_REG_DOORBELL_GET_SIZE(x)             (((x) & 0x00ff0000) >> 16)
-
-#define LSILOGIC_REG_WRITE_SEQUENCE    0x04
-
-#define LSILOGIC_REG_HOST_DIAGNOSTIC   0x08
-# define LSILOGIC_REG_HOST_DIAGNOSTIC_DIAG_MEM_ENABLE     (RT_BIT(0))
-# define LSILOGIC_REG_HOST_DIAGNOSTIC_DISABLE_ARM         (RT_BIT(1))
-# define LSILOGIC_REG_HOST_DIAGNOSTIC_RESET_ADAPTER       (RT_BIT(2))
-# define LSILOGIC_REG_HOST_DIAGNOSTIC_DIAG_RW_ENABLE      (RT_BIT(4))
-# define LSILOGIC_REG_HOST_DIAGNOSTIC_RESET_HISTORY       (RT_BIT(5))
-# define LSILOGIC_REG_HOST_DIAGNOSTIC_FLASH_BAD_SIG       (RT_BIT(6))
-# define LSILOGIC_REG_HOST_DIAGNOSTIC_DRWE                (RT_BIT(7))
-# define LSILOGIC_REG_HOST_DIAGNOSTIC_PREVENT_IOC_BOOT    (RT_BIT(9))
-# define LSILOGIC_REG_HOST_DIAGNOSTIC_CLEAR_FLASH_BAD_SIG (RT_BIT(10))
-
-#define LSILOGIC_REG_TEST_BASE_ADDRESS 0x0c
-#define LSILOGIC_REG_DIAG_RW_DATA      0x10
-#define LSILOGIC_REG_DIAG_RW_ADDRESS   0x14
-
-#define LSILOGIC_REG_HOST_INTR_STATUS  0x30
-# define LSILOGIC_REG_HOST_INTR_STATUS_W_MASK (RT_BIT(3))
-# define LSILOGIC_REG_HOST_INTR_STATUS_DOORBELL_STS    (RT_BIT(31))
-# define LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR      (RT_BIT(3))
-# define LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL (RT_BIT(0))
-
-#define LSILOGIC_REG_HOST_INTR_MASK    0x34
-# define LSILOGIC_REG_HOST_INTR_MASK_W_MASK (RT_BIT(0) | RT_BIT(3) | RT_BIT(8) | RT_BIT(9))
-# define LSILOGIC_REG_HOST_INTR_MASK_IRQ_ROUTING (RT_BIT(8) | RT_BIT(9))
-# define LSILOGIC_REG_HOST_INTR_MASK_DOORBELL RT_BIT(0)
-# define LSILOGIC_REG_HOST_INTR_MASK_REPLY    RT_BIT(3)
-
-#define LSILOGIC_REG_REQUEST_QUEUE     0x40
-#define LSILOGIC_REG_REPLY_QUEUE       0x44
-
-/* Functions which can be passed through the system doorbell. */
-#define LSILOGIC_DOORBELL_FUNCTION_IOC_MSG_UNIT_RESET  0x40
-#define LSILOGIC_DOORBELL_FUNCTION_IO_UNIT_RESET       0x41
-#define LSILOGIC_DOORBELL_FUNCTION_HANDSHAKE           0x42
-#define LSILOGIC_DOORBELL_FUNCTION_REPLY_FRAME_REMOVAL 0x43
 
 /**
  * Scatter gather list entry data.
@@ -566,19 +465,20 @@ static int lsilogicHardReset(PLSILOGICSCSI pThis)
 
     /* Reset the queues. */
     pThis->uReplyFreeQueueNextEntryFreeWrite = 0;
-    pThis->uReplyFreeQueueNextAddressRead = 0;
+    pThis->uReplyFreeQueueNextAddressRead    = 0;
     pThis->uReplyPostQueueNextEntryFreeWrite = 0;
-    pThis->uReplyPostQueueNextAddressRead = 0;
-    pThis->uRequestQueueNextEntryFreeWrite = 0;
-    pThis->uRequestQueueNextAddressRead = 0;
+    pThis->uReplyPostQueueNextAddressRead    = 0;
+    pThis->uRequestQueueNextEntryFreeWrite   = 0;
+    pThis->uRequestQueueNextAddressRead      = 0;
 
     /* Disable diagnostic access. */
     pThis->iDiagnosticAccess = 0;
 
     /* Set default values. */
-    pThis->cMaxDevices  = LSILOGIC_DEVICES_MAX;
-    pThis->cMaxBuses    = 1;
-    pThis->cbReplyFrame = 128; /* @todo Figure out where it is needed. */
+    pThis->cMaxDevices   = LSILOGIC_DEVICES_MAX;
+    pThis->cMaxBuses     = 1;
+    pThis->cbReplyFrame  = 128; /* @todo Figure out where it is needed. */
+    pThis->u16NextHandle = 1;
     /** @todo: Put stuff to reset here. */
 
     lsilogicInitializeConfigurationPages(pThis);
@@ -757,7 +657,6 @@ static int lsilogicProcessMessageRequest(PLSILOGICSCSI pLsiLogic, PMptMessageHdr
             pReply->SCSITaskManagement.u8MessageLength     = 6;     /* 6 32bit dwords. */
             pReply->SCSITaskManagement.u8TaskType          = pTaskMgmtReq->u8TaskType;
             pReply->SCSITaskManagement.u32TerminationCount = 0;
-            //AssertMsgFailed(("todo\n"));
             fForceReplyPostFifo = true;
             break;
         }
@@ -792,7 +691,20 @@ static int lsilogicProcessMessageRequest(PLSILOGICSCSI pLsiLogic, PMptMessageHdr
         case MPT_MESSAGE_HDR_FUNCTION_IOC_FACTS:
         {
             pReply->IOCFacts.u8MessageLength      = 15;     /* 15 32bit dwords. */
-            pReply->IOCFacts.u16MessageVersion    = 0x0102; /* Version from the specification. */
+
+            if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
+            {
+                pReply->IOCFacts.u16MessageVersion    = 0x0102; /* Version from the specification. */
+                pReply->IOCFacts.u8NumberOfPorts      = 1;
+            }
+            else if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+            {
+                pReply->IOCFacts.u16MessageVersion    = 0x0105; /* Version from the specification. */
+                pReply->IOCFacts.u8NumberOfPorts      = 8;
+            }
+            else
+                AssertMsgFailed(("Invalid controller type %d\n", pLsiLogic->enmCtrlType));
+
             pReply->IOCFacts.u8IOCNumber          = 0;      /* PCI function number. */
             pReply->IOCFacts.u16IOCExceptions     = 0;
             pReply->IOCFacts.u8MaxChainDepth      = LSILOGICSCSI_MAXIMUM_CHAIN_DEPTH;
@@ -804,7 +716,7 @@ static int lsilogicProcessMessageRequest(PLSILOGICSCSI pLsiLogic, PMptMessageHdr
             pReply->IOCFacts.u16ProductID         = 0xcafe; /* Our own product ID :) */
             pReply->IOCFacts.u32CurrentHostMFAHighAddr = pLsiLogic->u32HostMFAHighAddr;
             pReply->IOCFacts.u16GlobalCredits     = pLsiLogic->cRequestQueueEntries - 1; /* One entry is always free. */
-            pReply->IOCFacts.u8NumberOfPorts      = 1;
+
             pReply->IOCFacts.u8EventState         = 0; /* Event notifications not enabled. */
             pReply->IOCFacts.u32CurrentSenseBufferHighAddr = pLsiLogic->u32SenseBufferHighAddr;
             pReply->IOCFacts.u16CurReplyFrameSize = pLsiLogic->cbReplyFrame;
@@ -821,21 +733,43 @@ static int lsilogicProcessMessageRequest(PLSILOGICSCSI pLsiLogic, PMptMessageHdr
             pReply->PortFacts.u8MessageLength = 10;
             pReply->PortFacts.u8PortNumber    = pPortFactsReq->u8PortNumber;
 
-            /* This controller only supports one bus with bus number 0. */
-            if (pPortFactsReq->u8PortNumber != 0)
+            if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
             {
-                pReply->PortFacts.u8PortType = 0; /* Not existant. */
+                /* This controller only supports one bus with bus number 0. */
+                if (pPortFactsReq->u8PortNumber != 0)
+                {
+                    pReply->PortFacts.u8PortType = 0; /* Not existant. */
+                }
+                else
+                {
+                    pReply->PortFacts.u8PortType             = 0x01; /* SCSI Port. */
+                    pReply->PortFacts.u16MaxDevices          = LSILOGIC_DEVICES_MAX;
+                    pReply->PortFacts.u16ProtocolFlags       = RT_BIT(3) | RT_BIT(0); /* SCSI initiator and LUN supported. */
+                    pReply->PortFacts.u16PortSCSIID          = 7; /* Default */
+                    pReply->PortFacts.u16MaxPersistentIDs    = 0;
+                    pReply->PortFacts.u16MaxPostedCmdBuffers = 0; /* Only applies for target mode which we dont support. */
+                    pReply->PortFacts.u16MaxLANBuckets       = 0; /* Only for the LAN controller. */
+                }
+            }
+            else if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+            {
+                if (pPortFactsReq->u8PortNumber >= 8)
+                {
+                    pReply->PortFacts.u8PortType = 0; /* Not existant. */
+                }
+                else
+                {
+                    pReply->PortFacts.u8PortType             = 0x30; /* SAS Port. */
+                    pReply->PortFacts.u16MaxDevices          = 1;
+                    pReply->PortFacts.u16ProtocolFlags       = RT_BIT(3) | RT_BIT(0); /* SCSI initiator and LUN supported. */
+                    pReply->PortFacts.u16PortSCSIID          = 7; /* Default */
+                    pReply->PortFacts.u16MaxPersistentIDs    = 0;
+                    pReply->PortFacts.u16MaxPostedCmdBuffers = 0; /* Only applies for target mode which we dont support. */
+                    pReply->PortFacts.u16MaxLANBuckets       = 0; /* Only for the LAN controller. */
+                }
             }
             else
-            {
-                pReply->PortFacts.u8PortType             = 0x01; /* SCSI Port. */
-                pReply->PortFacts.u16MaxDevices          = LSILOGIC_DEVICES_MAX;
-                pReply->PortFacts.u16ProtocolFlags       = RT_BIT(3) | RT_BIT(0); /* SCSI initiator and LUN supported. */
-                pReply->PortFacts.u16PortSCSIID          = 7; /* Default */
-                pReply->PortFacts.u16MaxPersistentIDs    = 0;
-                pReply->PortFacts.u16MaxPostedCmdBuffers = 0; /* Only applies for target mode which we dont support. */
-                pReply->PortFacts.u16MaxLANBuckets       = 0; /* Only for the LAN controller. */
-            }
+                AssertMsgFailed(("Invalid controller type %d\n", pLsiLogic->enmCtrlType));
             break;
         }
         case MPT_MESSAGE_HDR_FUNCTION_PORT_ENABLE:
@@ -2037,7 +1971,9 @@ static DECLCALLBACK(int) lsilogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
  * @param   ppPageHeader  Where to store the pointer to the page header.
  * @param   ppbPageData   Where to store the pointer to the page data.
  */
-static int lsilogicConfigurationIOUnitPageGetFromNumber(PLSILOGICSCSI pLsiLogic, uint8_t u8PageNumber,
+static int lsilogicConfigurationIOUnitPageGetFromNumber(PLSILOGICSCSI pLsiLogic,
+                                                        PMptConfigurationPagesSupported pPages,
+                                                        uint8_t u8PageNumber,
                                                         PMptConfigurationPageHeader *ppPageHeader,
                                                         uint8_t **ppbPageData, size_t *pcbPage)
 {
@@ -2048,24 +1984,29 @@ static int lsilogicConfigurationIOUnitPageGetFromNumber(PLSILOGICSCSI pLsiLogic,
     switch(u8PageNumber)
     {
         case 0:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.IOUnitPage0.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.IOUnitPage0.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.IOUnitPage0);
+            *ppPageHeader = &pPages->IOUnitPage0.u.fields.Header;
+            *ppbPageData  =  pPages->IOUnitPage0.u.abPageData;
+            *pcbPage      = sizeof(pPages->IOUnitPage0);
             break;
         case 1:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.IOUnitPage1.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.IOUnitPage1.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.IOUnitPage1);
+            *ppPageHeader = &pPages->IOUnitPage1.u.fields.Header;
+            *ppbPageData  =  pPages->IOUnitPage1.u.abPageData;
+            *pcbPage      = sizeof(pPages->IOUnitPage1);
             break;
         case 2:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.IOUnitPage2.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.IOUnitPage2.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.IOUnitPage2);
+            *ppPageHeader = &pPages->IOUnitPage2.u.fields.Header;
+            *ppbPageData  =  pPages->IOUnitPage2.u.abPageData;
+            *pcbPage      = sizeof(pPages->IOUnitPage2);
             break;
         case 3:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.IOUnitPage3.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.IOUnitPage3.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.IOUnitPage3);
+            *ppPageHeader = &pPages->IOUnitPage3.u.fields.Header;
+            *ppbPageData  =  pPages->IOUnitPage3.u.abPageData;
+            *pcbPage      = sizeof(pPages->IOUnitPage3);
+            break;
+        case 4:
+            *ppPageHeader = &pPages->IOUnitPage4.u.fields.Header;
+            *ppbPageData  =  pPages->IOUnitPage4.u.abPageData;
+            *pcbPage      = sizeof(pPages->IOUnitPage4);
             break;
         default:
             rc = VERR_NOT_FOUND;
@@ -2084,7 +2025,9 @@ static int lsilogicConfigurationIOUnitPageGetFromNumber(PLSILOGICSCSI pLsiLogic,
  * @param   ppPageHeader  Where to store the pointer to the page header.
  * @param   ppbPageData   Where to store the pointer to the page data.
  */
-static int lsilogicConfigurationIOCPageGetFromNumber(PLSILOGICSCSI pLsiLogic, uint8_t u8PageNumber,
+static int lsilogicConfigurationIOCPageGetFromNumber(PLSILOGICSCSI pLsiLogic,
+                                                     PMptConfigurationPagesSupported pPages,
+                                                     uint8_t u8PageNumber,
                                                      PMptConfigurationPageHeader *ppPageHeader,
                                                      uint8_t **ppbPageData, size_t *pcbPage)
 {
@@ -2095,34 +2038,34 @@ static int lsilogicConfigurationIOCPageGetFromNumber(PLSILOGICSCSI pLsiLogic, ui
     switch(u8PageNumber)
     {
         case 0:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.IOCPage0.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.IOCPage0.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.IOCPage0);
+            *ppPageHeader = &pPages->IOCPage0.u.fields.Header;
+            *ppbPageData  =  pPages->IOCPage0.u.abPageData;
+            *pcbPage      = sizeof(pPages->IOCPage0);
             break;
         case 1:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.IOCPage1.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.IOCPage1.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.IOCPage1);
+            *ppPageHeader = &pPages->IOCPage1.u.fields.Header;
+            *ppbPageData  =  pPages->IOCPage1.u.abPageData;
+            *pcbPage      = sizeof(pPages->IOCPage1);
             break;
         case 2:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.IOCPage2.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.IOCPage2.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.IOCPage2);
+            *ppPageHeader = &pPages->IOCPage2.u.fields.Header;
+            *ppbPageData  =  pPages->IOCPage2.u.abPageData;
+            *pcbPage      = sizeof(pPages->IOCPage2);
             break;
         case 3:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.IOCPage3.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.IOCPage3.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.IOCPage3);
+            *ppPageHeader = &pPages->IOCPage3.u.fields.Header;
+            *ppbPageData  =  pPages->IOCPage3.u.abPageData;
+            *pcbPage      = sizeof(pPages->IOCPage3);
             break;
         case 4:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.IOCPage4.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.IOCPage4.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.IOCPage4);
+            *ppPageHeader = &pPages->IOCPage4.u.fields.Header;
+            *ppbPageData  =  pPages->IOCPage4.u.abPageData;
+            *pcbPage      = sizeof(pPages->IOCPage4);
             break;
         case 6:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.IOCPage6.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.IOCPage6.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.IOCPage6);
+            *ppPageHeader = &pPages->IOCPage6.u.fields.Header;
+            *ppbPageData  =  pPages->IOCPage6.u.abPageData;
+            *pcbPage      = sizeof(pPages->IOCPage6);
             break;
         default:
             rc = VERR_NOT_FOUND;
@@ -2141,7 +2084,9 @@ static int lsilogicConfigurationIOCPageGetFromNumber(PLSILOGICSCSI pLsiLogic, ui
  * @param   ppPageHeader  Where to store the pointer to the page header.
  * @param   ppbPageData   Where to store the pointer to the page data.
  */
-static int lsilogicConfigurationManufacturingPageGetFromNumber(PLSILOGICSCSI pLsiLogic, uint8_t u8PageNumber,
+static int lsilogicConfigurationManufacturingPageGetFromNumber(PLSILOGICSCSI pLsiLogic,
+                                                               PMptConfigurationPagesSupported pPages,
+                                                               uint8_t u8PageNumber,
                                                                PMptConfigurationPageHeader *ppPageHeader,
                                                                uint8_t **ppbPageData, size_t *pcbPage)
 {
@@ -2152,29 +2097,59 @@ static int lsilogicConfigurationManufacturingPageGetFromNumber(PLSILOGICSCSI pLs
     switch(u8PageNumber)
     {
         case 0:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage0.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage0.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage0);
+            *ppPageHeader = &pPages->ManufacturingPage0.u.fields.Header;
+            *ppbPageData  =  pPages->ManufacturingPage0.u.abPageData;
+            *pcbPage      = sizeof(pPages->ManufacturingPage0);
             break;
         case 1:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage1.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage1.abVPDInfo;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage1);
+            *ppPageHeader = &pPages->ManufacturingPage1.Header;
+            *ppbPageData  =  pPages->ManufacturingPage1.abVPDInfo;
+            *pcbPage      = sizeof(pPages->ManufacturingPage1);
             break;
         case 2:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage2.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage2.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage2);
+            *ppPageHeader = &pPages->ManufacturingPage2.u.fields.Header;
+            *ppbPageData  =  pPages->ManufacturingPage2.u.abPageData;
+            *pcbPage      = sizeof(pPages->ManufacturingPage2);
             break;
         case 3:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage3.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage3.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage3);
+            *ppPageHeader = &pPages->ManufacturingPage3.u.fields.Header;
+            *ppbPageData  =  pPages->ManufacturingPage3.u.abPageData;
+            *pcbPage      = sizeof(pPages->ManufacturingPage3);
             break;
         case 4:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage4.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage4.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.ManufacturingPage4);
+            *ppPageHeader = &pPages->ManufacturingPage4.u.fields.Header;
+            *ppbPageData  =  pPages->ManufacturingPage4.u.abPageData;
+            *pcbPage      = sizeof(pPages->ManufacturingPage4);
+            break;
+        case 5:
+            *ppPageHeader = &pPages->ManufacturingPage5.u.fields.Header;
+            *ppbPageData  =  pPages->ManufacturingPage5.u.abPageData;
+            *pcbPage      = sizeof(pPages->ManufacturingPage5);
+            break;
+        case 6:
+            *ppPageHeader = &pPages->ManufacturingPage6.u.fields.Header;
+            *ppbPageData  =  pPages->ManufacturingPage6.u.abPageData;
+            *pcbPage      = sizeof(pPages->ManufacturingPage6);
+            break;
+        case 7:
+            *ppPageHeader = &pPages->ManufacturingPage7.u.fields.Header;
+            *ppbPageData  =  pPages->ManufacturingPage7.u.abPageData;
+            *pcbPage      = sizeof(pPages->ManufacturingPage7);
+            break;
+        case 8:
+            *ppPageHeader = &pPages->ManufacturingPage8.u.fields.Header;
+            *ppbPageData  =  pPages->ManufacturingPage8.u.abPageData;
+            *pcbPage      = sizeof(pPages->ManufacturingPage8);
+            break;
+        case 9:
+            *ppPageHeader = &pPages->ManufacturingPage9.u.fields.Header;
+            *ppbPageData  =  pPages->ManufacturingPage9.u.abPageData;
+            *pcbPage      = sizeof(pPages->ManufacturingPage9);
+            break;
+        case 10:
+            *ppPageHeader = &pPages->ManufacturingPage10.u.fields.Header;
+            *ppbPageData  =  pPages->ManufacturingPage10.u.abPageData;
+            *pcbPage      = sizeof(pPages->ManufacturingPage10);
             break;
         default:
             rc = VERR_NOT_FOUND;
@@ -2193,7 +2168,53 @@ static int lsilogicConfigurationManufacturingPageGetFromNumber(PLSILOGICSCSI pLs
  * @param   ppPageHeader  Where to store the pointer to the page header.
  * @param   ppbPageData   Where to store the pointer to the page data.
  */
-static int lsilogicConfigurationSCSISPIPortPageGetFromNumber(PLSILOGICSCSI pLsiLogic, uint8_t u8Port,
+static int lsilogicConfigurationBiosPageGetFromNumber(PLSILOGICSCSI pLsiLogic,
+                                                      PMptConfigurationPagesSupported pPages,
+                                                      uint8_t u8PageNumber,
+                                                      PMptConfigurationPageHeader *ppPageHeader,
+                                                      uint8_t **ppbPageData, size_t *pcbPage)
+{
+    int rc = VINF_SUCCESS;
+
+    AssertMsg(VALID_PTR(ppPageHeader) && VALID_PTR(ppbPageData), ("Invalid parameters\n"));
+
+    switch(u8PageNumber)
+    {
+        case 1:
+            *ppPageHeader = &pPages->BIOSPage1.u.fields.Header;
+            *ppbPageData  =  pPages->BIOSPage1.u.abPageData;
+            *pcbPage      = sizeof(pPages->BIOSPage1);
+            break;
+        case 2:
+            *ppPageHeader = &pPages->BIOSPage2.u.fields.Header;
+            *ppbPageData  =  pPages->BIOSPage2.u.abPageData;
+            *pcbPage      = sizeof(pPages->BIOSPage2);
+            break;
+        case 4:
+            *ppPageHeader = &pPages->BIOSPage4.u.fields.Header;
+            *ppbPageData  =  pPages->BIOSPage4.u.abPageData;
+            *pcbPage      = sizeof(pPages->BIOSPage4);
+            break;
+        default:
+            rc = VERR_NOT_FOUND;
+    }
+
+    return rc;
+}
+
+/**
+ * Return the configuration page header and data
+ * which matches the given page type and number.
+ *
+ * @returns VINF_SUCCESS if successful
+ *          VERR_NOT_FOUND if the requested page could be found.
+ * @param   u8PageNumber  Number of the page to get.
+ * @param   ppPageHeader  Where to store the pointer to the page header.
+ * @param   ppbPageData   Where to store the pointer to the page data.
+ */
+static int lsilogicConfigurationSCSISPIPortPageGetFromNumber(PLSILOGICSCSI pLsiLogic,
+                                                             PMptConfigurationPagesSupported pPages,
+                                                             uint8_t u8Port,
                                                              uint8_t u8PageNumber,
                                                              PMptConfigurationPageHeader *ppPageHeader,
                                                              uint8_t **ppbPageData, size_t *pcbPage)
@@ -2202,25 +2223,25 @@ static int lsilogicConfigurationSCSISPIPortPageGetFromNumber(PLSILOGICSCSI pLsiL
 
     AssertMsg(VALID_PTR(ppPageHeader) && VALID_PTR(ppbPageData), ("Invalid parameters\n"));
 
-    if (u8Port >= RT_ELEMENTS(pLsiLogic->ConfigurationPages.SpiPages.aPortPages))
+    if (u8Port >= RT_ELEMENTS(pPages->u.SpiPages.aPortPages))
         return VERR_NOT_FOUND;
 
     switch(u8PageNumber)
     {
         case 0:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.aPortPages[u8Port].SCSISPIPortPage0.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.aPortPages[u8Port].SCSISPIPortPage0.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.aPortPages[u8Port].SCSISPIPortPage0);
+            *ppPageHeader = &pPages->u.SpiPages.aPortPages[u8Port].SCSISPIPortPage0.u.fields.Header;
+            *ppbPageData  =  pPages->u.SpiPages.aPortPages[u8Port].SCSISPIPortPage0.u.abPageData;
+            *pcbPage      = sizeof(pPages->u.SpiPages.aPortPages[u8Port].SCSISPIPortPage0);
             break;
         case 1:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.aPortPages[u8Port].SCSISPIPortPage1.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.aPortPages[u8Port].SCSISPIPortPage1.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.aPortPages[u8Port].SCSISPIPortPage1);
+            *ppPageHeader = &pPages->u.SpiPages.aPortPages[u8Port].SCSISPIPortPage1.u.fields.Header;
+            *ppbPageData  =  pPages->u.SpiPages.aPortPages[u8Port].SCSISPIPortPage1.u.abPageData;
+            *pcbPage      = sizeof(pPages->u.SpiPages.aPortPages[u8Port].SCSISPIPortPage1);
             break;
         case 2:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.aPortPages[u8Port].SCSISPIPortPage2.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.aPortPages[u8Port].SCSISPIPortPage2.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.aPortPages[u8Port].SCSISPIPortPage2);
+            *ppPageHeader = &pPages->u.SpiPages.aPortPages[u8Port].SCSISPIPortPage2.u.fields.Header;
+            *ppbPageData  =  pPages->u.SpiPages.aPortPages[u8Port].SCSISPIPortPage2.u.abPageData;
+            *pcbPage      = sizeof(pPages->u.SpiPages.aPortPages[u8Port].SCSISPIPortPage2);
             break;
         default:
             rc = VERR_NOT_FOUND;
@@ -2239,7 +2260,9 @@ static int lsilogicConfigurationSCSISPIPortPageGetFromNumber(PLSILOGICSCSI pLsiL
  * @param   ppPageHeader  Where to store the pointer to the page header.
  * @param   ppbPageData   Where to store the pointer to the page data.
  */
-static int lsilogicConfigurationSCSISPIDevicePageGetFromNumber(PLSILOGICSCSI pLsiLogic, uint8_t u8Bus,
+static int lsilogicConfigurationSCSISPIDevicePageGetFromNumber(PLSILOGICSCSI pLsiLogic,
+                                                               PMptConfigurationPagesSupported pPages,
+                                                               uint8_t u8Bus,
                                                                uint8_t u8TargetID, uint8_t u8PageNumber,
                                                                PMptConfigurationPageHeader *ppPageHeader,
                                                                uint8_t **ppbPageData, size_t *pcbPage)
@@ -2248,34 +2271,287 @@ static int lsilogicConfigurationSCSISPIDevicePageGetFromNumber(PLSILOGICSCSI pLs
 
     AssertMsg(VALID_PTR(ppPageHeader) && VALID_PTR(ppbPageData), ("Invalid parameters\n"));
 
-    if (u8Bus >= RT_ELEMENTS(pLsiLogic->ConfigurationPages.SpiPages.aBuses))
+    if (u8Bus >= RT_ELEMENTS(pPages->u.SpiPages.aBuses))
         return VERR_NOT_FOUND;
 
-    if (u8TargetID >= RT_ELEMENTS(pLsiLogic->ConfigurationPages.SpiPages.aBuses[u8Bus].aDevicePages))
+    if (u8TargetID >= RT_ELEMENTS(pPages->u.SpiPages.aBuses[u8Bus].aDevicePages))
         return VERR_NOT_FOUND;
 
     switch(u8PageNumber)
     {
         case 0:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage0.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage0.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage0);
+            *ppPageHeader = &pPages->u.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage0.u.fields.Header;
+            *ppbPageData  =  pPages->u.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage0.u.abPageData;
+            *pcbPage      = sizeof(pPages->u.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage0);
             break;
         case 1:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage1.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage1.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage1);
+            *ppPageHeader = &pPages->u.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage1.u.fields.Header;
+            *ppbPageData  =  pPages->u.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage1.u.abPageData;
+            *pcbPage      = sizeof(pPages->u.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage1);
             break;
         case 2:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage2.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage2.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage2);
+            *ppPageHeader = &pPages->u.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage2.u.fields.Header;
+            *ppbPageData  =  pPages->u.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage2.u.abPageData;
+            *pcbPage      = sizeof(pPages->u.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage2);
             break;
         case 3:
-            *ppPageHeader = &pLsiLogic->ConfigurationPages.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage3.u.fields.Header;
-            *ppbPageData  =  pLsiLogic->ConfigurationPages.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage3.u.abPageData;
-            *pcbPage      = sizeof(pLsiLogic->ConfigurationPages.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage3);
+            *ppPageHeader = &pPages->u.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage3.u.fields.Header;
+            *ppbPageData  =  pPages->u.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage3.u.abPageData;
+            *pcbPage      = sizeof(pPages->u.SpiPages.aBuses[u8Bus].aDevicePages[u8TargetID].SCSISPIDevicePage3);
             break;
+        default:
+            rc = VERR_NOT_FOUND;
+    }
+
+    return rc;
+}
+
+static int lsilogicConfigurationSASIOUnitPageGetFromNumber(PLSILOGICSCSI pLsiLogic,
+                                                           PMptConfigurationPagesSupported pPages,
+                                                           uint8_t u8PageNumber,
+                                                           PMptExtendedConfigurationPageHeader *ppPageHeader,
+                                                           uint8_t **ppbPageData, size_t *pcbPage)
+{
+    int rc = VINF_SUCCESS;
+
+    switch(u8PageNumber)
+    {
+        case 0:
+            *ppPageHeader = &pPages->u.SasPages.SASIOUnitPage0.u.fields.ExtHeader;
+            *ppbPageData  =  pPages->u.SasPages.SASIOUnitPage0.u.abPageData;
+            *pcbPage      = sizeof(pPages->u.SasPages.SASIOUnitPage0);
+            break;
+        case 1:
+            *ppPageHeader = &pPages->u.SasPages.SASIOUnitPage1.u.fields.ExtHeader;
+            *ppbPageData  =  pPages->u.SasPages.SASIOUnitPage1.u.abPageData;
+            *pcbPage      = sizeof(pPages->u.SasPages.SASIOUnitPage1);
+            break;
+        case 2:
+            *ppPageHeader = &pPages->u.SasPages.SASIOUnitPage2.u.fields.ExtHeader;
+            *ppbPageData  =  pPages->u.SasPages.SASIOUnitPage2.u.abPageData;
+            *pcbPage      = sizeof(pPages->u.SasPages.SASIOUnitPage2);
+            break;
+        case 3:
+            *ppPageHeader = &pPages->u.SasPages.SASIOUnitPage3.u.fields.ExtHeader;
+            *ppbPageData  =  pPages->u.SasPages.SASIOUnitPage3.u.abPageData;
+            *pcbPage      = sizeof(pPages->u.SasPages.SASIOUnitPage3);
+            break;
+        default:
+            rc = VERR_NOT_FOUND;
+    }
+
+    return rc;
+}
+
+static int lsilogicConfigurationSASPHYPageGetFromNumber(PLSILOGICSCSI pLsiLogic,
+                                                        PMptConfigurationPagesSupported pPages,
+                                                        uint8_t u8PageNumber,
+                                                        MptConfigurationPageAddress PageAddress,
+                                                        PMptExtendedConfigurationPageHeader *ppPageHeader,
+                                                        uint8_t **ppbPageData, size_t *pcbPage)
+{
+    int rc = VINF_SUCCESS;
+    uint8_t uAddressForm = MPT_CONFIGURATION_PAGE_ADDRESS_GET_SAS_FORM(PageAddress);
+    PMptConfigurationPagesSas pPagesSas = &pPages->u.SasPages;
+
+    Log(("Address form %d\n", uAddressForm));
+
+    if (uAddressForm == 0) /* PHY number */
+    {
+        uint8_t u8PhyNumber = PageAddress.SASPHY.Form0.u8PhyNumber;
+
+        Log(("PHY number %d\n", u8PhyNumber));
+
+        if (u8PhyNumber >= RT_ELEMENTS(pPagesSas->aPHY))
+            return VERR_NOT_FOUND;
+
+        switch(u8PageNumber)
+        {
+            case 0:
+                *ppPageHeader = &pPagesSas->aPHY[u8PhyNumber].SASPHYPage0.u.fields.ExtHeader;
+                *ppbPageData  =  pPagesSas->aPHY[u8PhyNumber].SASPHYPage0.u.abPageData;
+                *pcbPage      = sizeof(pPagesSas->aPHY[u8PhyNumber].SASPHYPage0);
+                break;
+            case 1:
+                *ppPageHeader = &pPagesSas->aPHY[u8PhyNumber].SASPHYPage1.u.fields.ExtHeader;
+                *ppbPageData  =  pPagesSas->aPHY[u8PhyNumber].SASPHYPage1.u.abPageData;
+                *pcbPage      = sizeof(pPagesSas->aPHY[u8PhyNumber].SASPHYPage1);
+                break;
+            default:
+                rc = VERR_NOT_FOUND;
+        }
+    }
+    else if (uAddressForm == 1) /* Index form */
+    {
+        uint16_t u16Index = PageAddress.SASPHY.Form1.u16Index;
+
+        Log(("PHY index %d\n", u16Index));
+
+        if (u16Index >= RT_ELEMENTS(pPagesSas->aPHY))
+            return VERR_NOT_FOUND;
+
+        switch(u8PageNumber)
+        {
+            case 0:
+                *ppPageHeader = &pPagesSas->aPHY[u16Index].SASPHYPage0.u.fields.ExtHeader;
+                *ppbPageData  =  pPagesSas->aPHY[u16Index].SASPHYPage0.u.abPageData;
+                *pcbPage      = sizeof(pPagesSas->aPHY[u16Index].SASPHYPage0);
+                break;
+            case 1:
+                *ppPageHeader = &pPagesSas->aPHY[u16Index].SASPHYPage1.u.fields.ExtHeader;
+                *ppbPageData  =  pPagesSas->aPHY[u16Index].SASPHYPage1.u.abPageData;
+                *pcbPage      = sizeof(pPagesSas->aPHY[u16Index].SASPHYPage1);
+                break;
+            default:
+                rc = VERR_NOT_FOUND;
+        }
+    }
+    else
+        rc = VERR_NOT_FOUND; /* Correct? */
+
+
+    return rc;
+}
+
+static int lsilogicConfigurationSASDevicePageGetFromNumber(PLSILOGICSCSI pLsiLogic,
+                                                           PMptConfigurationPagesSupported pPages,
+                                                           uint8_t u8PageNumber,
+                                                           MptConfigurationPageAddress PageAddress,
+                                                           PMptExtendedConfigurationPageHeader *ppPageHeader,
+                                                           uint8_t **ppbPageData, size_t *pcbPage)
+{
+    int rc = VINF_SUCCESS;
+    uint8_t uAddressForm = MPT_CONFIGURATION_PAGE_ADDRESS_GET_SAS_FORM(PageAddress);
+    PMptConfigurationPagesSas pPagesSas = &pPages->u.SasPages;
+    PMptSASDevice pSASDevice = NULL;
+
+    Log(("Address form %d\n", uAddressForm));
+
+    if (uAddressForm == 0)
+    {
+        uint16_t u16Handle = PageAddress.SASDevice.Form0And2.u16Handle;
+
+        Log(("Get next handle %#x\n", u16Handle));
+
+        /* Get the first device? */
+        if (u16Handle == 0xffff)
+            pSASDevice = pPagesSas->pSASDeviceHead;
+        else
+        {
+            while (   pSASDevice
+                   && pSASDevice->SASDevicePage0.u.fields.u16DevHandle != u16Handle)
+                pSASDevice = pSASDevice->pNext;
+
+            if (pSASDevice)
+                pSASDevice = pSASDevice->pNext;
+        }
+    }
+    else if (uAddressForm == 1)
+    {
+        uint8_t u8TargetID = PageAddress.SASDevice.Form1.u8TargetID;
+        uint8_t u8Bus      = PageAddress.SASDevice.Form1.u8Bus;
+
+        Log(("u8TargetID=%d u8Bus=%d\n", u8TargetID, u8Bus));
+
+        pSASDevice = pPagesSas->pSASDeviceHead;
+
+        while (   pSASDevice
+               && (   pSASDevice->SASDevicePage0.u.fields.u8TargetID != u8TargetID
+                   || pSASDevice->SASDevicePage0.u.fields.u8Bus != u8Bus))
+            pSASDevice = pSASDevice->pNext;
+    }
+    else if (uAddressForm == 2)
+    {
+        uint16_t u16Handle = PageAddress.SASDevice.Form0And2.u16Handle;
+
+        Log(("Handle %#x\n", u16Handle));
+
+        pSASDevice = pPagesSas->pSASDeviceHead;
+
+        while (   pSASDevice
+               && pSASDevice->SASDevicePage0.u.fields.u16DevHandle != u16Handle)
+            pSASDevice = pSASDevice->pNext;
+    }
+
+    if (pSASDevice)
+    {
+        switch(u8PageNumber)
+        {
+            case 0:
+                *ppPageHeader = &pSASDevice->SASDevicePage0.u.fields.ExtHeader;
+                *ppbPageData  =  pSASDevice->SASDevicePage0.u.abPageData;
+                *pcbPage      = sizeof(pSASDevice->SASDevicePage0);
+                break;
+            case 1:
+                *ppPageHeader = &pSASDevice->SASDevicePage1.u.fields.ExtHeader;
+                *ppbPageData  =  pSASDevice->SASDevicePage1.u.abPageData;
+                *pcbPage      = sizeof(pSASDevice->SASDevicePage1);
+                break;
+            case 2:
+                *ppPageHeader = &pSASDevice->SASDevicePage2.u.fields.ExtHeader;
+                *ppbPageData  =  pSASDevice->SASDevicePage2.u.abPageData;
+                *pcbPage      = sizeof(pSASDevice->SASDevicePage2);
+                break;
+            default:
+                rc = VERR_NOT_FOUND;
+        }
+    }
+    else
+        rc = VERR_NOT_FOUND;
+
+    return rc;
+}
+
+/**
+ * Returns the extended configuration page header and data.
+ * @returns VINF_SUCCESS if successful
+ *          VERR_NOT_FOUND if the requested page could be found.
+ * @param   pLsiLogic           The LsiLogic controller instance.
+ * @param   pConfigurationReq   The configuration request.
+ * @param   u8PageNumber        Number of the page to get.
+ * @param   ppPageHeader        Where to store the pointer to the page header.
+ * @param   ppbPageData         Where to store the pointer to the page data.
+ */
+static int lsilogicConfigurationPageGetExtended(PLSILOGICSCSI pLsiLogic, PMptConfigurationRequest pConfigurationReq,
+                                                PMptExtendedConfigurationPageHeader *ppPageHeader,
+                                                uint8_t **ppbPageData, size_t *pcbPage)
+{
+    int rc = VINF_SUCCESS;
+
+    Log(("Extended page requested:\n"));
+    Log(("u8ExtPageType=%#x\n", pConfigurationReq->u8ExtPageType));
+    Log(("u8ExtPageLength=%d\n", pConfigurationReq->u16ExtPageLength));
+
+    switch (pConfigurationReq->u8ExtPageType)
+    {
+        case MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASIOUNIT:
+        {
+            rc = lsilogicConfigurationSASIOUnitPageGetFromNumber(pLsiLogic,
+                                                                 pLsiLogic->pConfigurationPages,
+                                                                 pConfigurationReq->u8PageNumber,
+                                                                 ppPageHeader, ppbPageData, pcbPage);
+            break;
+        }
+        case MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASPHYS:
+        {
+            rc = lsilogicConfigurationSASPHYPageGetFromNumber(pLsiLogic,
+                                                              pLsiLogic->pConfigurationPages,
+                                                              pConfigurationReq->u8PageNumber,
+                                                              pConfigurationReq->PageAddress,
+                                                              ppPageHeader, ppbPageData, pcbPage);
+            break;
+        }
+        case MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASDEVICE:
+        {
+            rc = lsilogicConfigurationSASDevicePageGetFromNumber(pLsiLogic,
+                                                                 pLsiLogic->pConfigurationPages,
+                                                                 pConfigurationReq->u8PageNumber,
+                                                                 pConfigurationReq->PageAddress,
+                                                                 ppPageHeader, ppbPageData, pcbPage);
+            break;
+        }
+        case MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASEXPANDER: /* No expanders supported */
+        case MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_ENCLOSURE: /* No enclosures supported */
         default:
             rc = VERR_NOT_FOUND;
     }
@@ -2296,7 +2572,8 @@ static int lsilogicProcessConfigurationRequest(PLSILOGICSCSI pLsiLogic, PMptConf
 {
     int rc = VINF_SUCCESS;
     uint8_t                     *pbPageData;
-    PMptConfigurationPageHeader pPageHeader;
+    PMptConfigurationPageHeader         pPageHeader;
+    PMptExtendedConfigurationPageHeader pExtPageHeader;
     uint8_t                     u8PageType, u8PageAttribute;
     size_t                      cbPage;
 
@@ -2304,6 +2581,13 @@ static int lsilogicProcessConfigurationRequest(PLSILOGICSCSI pLsiLogic, PMptConf
 
     u8PageType = MPT_CONFIGURATION_PAGE_TYPE_GET(pConfigurationReq->u8PageType);
     u8PageAttribute = MPT_CONFIGURATION_PAGE_ATTRIBUTE_GET(pConfigurationReq->u8PageType);
+
+    Log(("GuestRequest:\n"));
+    Log(("u8Action=%#x\n", pConfigurationReq->u8Action));
+    Log(("u8PageType=%#x\n", u8PageType));
+    Log(("u8PageNumber=%d\n", pConfigurationReq->u8PageNumber));
+    Log(("u8PageLength=%d\n", pConfigurationReq->u8PageLength));
+    Log(("u8PageVersion=%d\n", pConfigurationReq->u8PageVersion));
 
     /* Copy common bits from the request into the reply. */
     pReply->u8MessageLength   = 6; /* 6 32bit D-Words. */
@@ -2317,6 +2601,7 @@ static int lsilogicProcessConfigurationRequest(PLSILOGICSCSI pLsiLogic, PMptConf
         {
             /* Get the page data. */
             rc = lsilogicConfigurationIOUnitPageGetFromNumber(pLsiLogic,
+                                                              pLsiLogic->pConfigurationPages,
                                                               pConfigurationReq->u8PageNumber,
                                                               &pPageHeader, &pbPageData, &cbPage);
             break;
@@ -2325,6 +2610,7 @@ static int lsilogicProcessConfigurationRequest(PLSILOGICSCSI pLsiLogic, PMptConf
         {
             /* Get the page data. */
             rc = lsilogicConfigurationIOCPageGetFromNumber(pLsiLogic,
+                                                           pLsiLogic->pConfigurationPages,
                                                            pConfigurationReq->u8PageNumber,
                                                            &pPageHeader, &pbPageData, &cbPage);
             break;
@@ -2333,6 +2619,7 @@ static int lsilogicProcessConfigurationRequest(PLSILOGICSCSI pLsiLogic, PMptConf
         {
             /* Get the page data. */
             rc = lsilogicConfigurationManufacturingPageGetFromNumber(pLsiLogic,
+                                                                     pLsiLogic->pConfigurationPages,
                                                                      pConfigurationReq->u8PageNumber,
                                                                      &pPageHeader, &pbPageData, &cbPage);
             break;
@@ -2341,7 +2628,8 @@ static int lsilogicProcessConfigurationRequest(PLSILOGICSCSI pLsiLogic, PMptConf
         {
             /* Get the page data. */
             rc = lsilogicConfigurationSCSISPIPortPageGetFromNumber(pLsiLogic,
-                                                                   pConfigurationReq->u.MPIPortNumber.u8PortNumber,
+                                                                   pLsiLogic->pConfigurationPages,
+                                                                   pConfigurationReq->PageAddress.MPIPortNumber.u8PortNumber,
                                                                    pConfigurationReq->u8PageNumber,
                                                                    &pPageHeader, &pbPageData, &cbPage);
             break;
@@ -2350,10 +2638,26 @@ static int lsilogicProcessConfigurationRequest(PLSILOGICSCSI pLsiLogic, PMptConf
         {
             /* Get the page data. */
             rc = lsilogicConfigurationSCSISPIDevicePageGetFromNumber(pLsiLogic,
-                                                                     pConfigurationReq->u.BusAndTargetId.u8Bus,
-                                                                     pConfigurationReq->u.BusAndTargetId.u8TargetID,
+                                                                     pLsiLogic->pConfigurationPages,
+                                                                     pConfigurationReq->PageAddress.BusAndTargetId.u8Bus,
+                                                                     pConfigurationReq->PageAddress.BusAndTargetId.u8TargetID,
                                                                      pConfigurationReq->u8PageNumber,
                                                                      &pPageHeader, &pbPageData, &cbPage);
+            break;
+        }
+        case MPT_CONFIGURATION_PAGE_TYPE_BIOS:
+        {
+            rc = lsilogicConfigurationBiosPageGetFromNumber(pLsiLogic,
+                                                            pLsiLogic->pConfigurationPages,
+                                                            pConfigurationReq->u8PageNumber,
+                                                            &pPageHeader, &pbPageData, &cbPage);
+            break;
+        }
+        case MPT_CONFIGURATION_PAGE_TYPE_EXTENDED:
+        {
+            rc = lsilogicConfigurationPageGetExtended(pLsiLogic,
+                                                      pConfigurationReq,
+                                                      &pExtPageHeader, &pbPageData, &cbPage);
             break;
         }
         default:
@@ -2362,27 +2666,36 @@ static int lsilogicProcessConfigurationRequest(PLSILOGICSCSI pLsiLogic, PMptConf
 
     if (rc == VERR_NOT_FOUND)
     {
-        //AssertMsgFailed(("todo\n"));
+        Log(("Page not found\n"));
         pReply->u8PageType    = pConfigurationReq->u8PageType;
         pReply->u8PageNumber  = pConfigurationReq->u8PageNumber;
         pReply->u8PageLength  = pConfigurationReq->u8PageLength;
         pReply->u8PageVersion = pConfigurationReq->u8PageVersion;
+        pReply->u16IOCStatus  = MPT_IOCSTATUS_CONFIG_INVALID_PAGE;
         return VINF_SUCCESS;
     }
 
-    pReply->u8PageType    = pPageHeader->u8PageType;
-    pReply->u8PageNumber  = pPageHeader->u8PageNumber;
-    pReply->u8PageLength  = pPageHeader->u8PageLength;
-    pReply->u8PageVersion = pPageHeader->u8PageVersion;
+    if (u8PageType == MPT_CONFIGURATION_PAGE_TYPE_EXTENDED)
+    {
+        pReply->u8PageType       = pExtPageHeader->u8PageType;
+        pReply->u8PageNumber     = pExtPageHeader->u8PageNumber;
+        pReply->u8PageVersion    = pExtPageHeader->u8PageVersion;
+        pReply->u8ExtPageType    = pExtPageHeader->u8ExtPageType;
+        pReply->u16ExtPageLength = pExtPageHeader->u16ExtPageLength;
 
-    Log(("GuestRequest u8Action=%d\n", pConfigurationReq->u8Action));
-    Log(("u8PageType=%d\n", pPageHeader->u8PageType));
-    Log(("u8PageNumber=%d\n", pPageHeader->u8PageNumber));
-    Log(("u8PageLength=%d\n", pPageHeader->u8PageLength));
-    Log(("u8PageVersion=%d\n", pPageHeader->u8PageVersion));
+        for (int i = 0; i < pExtPageHeader->u16ExtPageLength; i++)
+            LogFlowFunc(("PageData[%d]=%#x\n", i, ((uint32_t *)pbPageData)[i]));
+    }
+    else
+    {
+        pReply->u8PageType    = pPageHeader->u8PageType;
+        pReply->u8PageNumber  = pPageHeader->u8PageNumber;
+        pReply->u8PageLength  = pPageHeader->u8PageLength;
+        pReply->u8PageVersion = pPageHeader->u8PageVersion;
 
-    for (int i = 0; i < pReply->u8PageLength; i++)
-        LogFlowFunc(("PageData[%d]=%#x\n", i, ((uint32_t *)pbPageData)[i]));
+        for (int i = 0; i < pReply->u8PageLength; i++)
+            LogFlowFunc(("PageData[%d]=%#x\n", i, ((uint32_t *)pbPageData)[i]));
+    }
 
     /*
      * Don't use the scatter gather handling code as the configuration request always have only one
@@ -2408,7 +2721,7 @@ static int lsilogicProcessConfigurationRequest(PLSILOGICSCSI pLsiLogic, PMptConf
                     GCPhysAddrPageBuffer |= (uint64_t)pConfigurationReq->SimpleSGElement.u32DataBufferAddressHigh << 32;
 
                 PDMDevHlpPhysWrite(pLsiLogic->CTX_SUFF(pDevIns), GCPhysAddrPageBuffer, pbPageData,
-                                   cbBuffer < cbPage ? cbBuffer : cbPage);
+                                   RT_MIN(cbBuffer, cbPage));
             }
             break;
         }
@@ -2423,7 +2736,7 @@ static int lsilogicProcessConfigurationRequest(PLSILOGICSCSI pLsiLogic, PMptConf
                     GCPhysAddrPageBuffer |= (uint64_t)pConfigurationReq->SimpleSGElement.u32DataBufferAddressHigh << 32;
 
                 PDMDevHlpPhysRead(pLsiLogic->CTX_SUFF(pDevIns), GCPhysAddrPageBuffer, pbPageData,
-                                  cbBuffer < cbPage ? cbBuffer : cbPage);
+                                  RT_MIN(cbBuffer, cbPage));
             }
             break;
         }
@@ -2435,151 +2748,21 @@ static int lsilogicProcessConfigurationRequest(PLSILOGICSCSI pLsiLogic, PMptConf
 }
 
 /**
- * Initializes the configuration pages.
+ * Initializes the configuration pages for the SPI SCSI controller.
  *
  * @returns nothing
  * @param   pLsiLogic    Pointer to the Lsilogic SCSI instance.
  */
-static void lsilogicInitializeConfigurationPages(PLSILOGICSCSI pLsiLogic)
+static void lsilogicInitializeConfigurationPagesSpi(PLSILOGICSCSI pLsiLogic)
 {
-    PMptConfigurationPagesSupportedSpi pPages = &pLsiLogic->ConfigurationPages.SpiPages;
+    PMptConfigurationPagesSpi pPages = &pLsiLogic->pConfigurationPages->u.SpiPages;
+
+    AssertMsg(pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI, ("Controller is not the SPI SCSI one\n"));
 
     LogFlowFunc(("pLsiLogic=%#p\n", pLsiLogic));
 
     /* Clear everything first. */
-    memset(pPages, 0, sizeof(MptConfigurationPagesSupportedSpi));
-
-    /* Manufacturing Page 0. */
-    pPages->ManufacturingPage0.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_PERSISTENT_READONLY
-                                                              | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
-    pPages->ManufacturingPage0.u.fields.Header.u8PageNumber = 0;
-    pPages->ManufacturingPage0.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing0) / 4;
-    strncpy((char *)pPages->ManufacturingPage0.u.fields.abChipName,          "VBox MPT Fusion", 16);
-    strncpy((char *)pPages->ManufacturingPage0.u.fields.abChipRevision,      "1.0", 8);
-    strncpy((char *)pPages->ManufacturingPage0.u.fields.abBoardName,         "VBox MPT Fusion", 16);
-    strncpy((char *)pPages->ManufacturingPage0.u.fields.abBoardAssembly,     "SUN", 8);
-    strncpy((char *)pPages->ManufacturingPage0.u.fields.abBoardTracerNumber, "CAFECAFECAFECAFE", 16);
-
-    /* Manufacturing Page 1 - I don't know what this contains so we leave it 0 for now. */
-    pPages->ManufacturingPage1.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_PERSISTENT_READONLY
-                                                     | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
-    pPages->ManufacturingPage1.Header.u8PageNumber = 1;
-    pPages->ManufacturingPage1.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing1) / 4;
-
-    /* Manufacturing Page 2. */
-    pPages->ManufacturingPage2.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
-                                                              | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
-    pPages->ManufacturingPage2.u.fields.Header.u8PageNumber = 2;
-    pPages->ManufacturingPage2.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing2) / 4;
-    pPages->ManufacturingPage2.u.fields.u16PCIDeviceID = LSILOGICSCSI_PCI_SPI_DEVICE_ID;
-    pPages->ManufacturingPage2.u.fields.u8PCIRevisionID = LSILOGICSCSI_PCI_SPI_REVISION_ID;
-    /* Hardware specific settings - everything 0 for now. */
-
-    /* Manufacturing Page 3. */
-    pPages->ManufacturingPage3.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
-                                                              | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
-    pPages->ManufacturingPage3.u.fields.Header.u8PageNumber = 3;
-    pPages->ManufacturingPage3.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing3) / 4;
-    pPages->ManufacturingPage3.u.fields.u16PCIDeviceID = LSILOGICSCSI_PCI_SPI_DEVICE_ID;
-    pPages->ManufacturingPage3.u.fields.u8PCIRevisionID = LSILOGICSCSI_PCI_SPI_REVISION_ID;
-    /* Chip specific settings - everything 0 for now. */
-
-    /* Manufacturing Page 4 - I don't know what this contains so we leave it 0 for now. */
-    pPages->ManufacturingPage4.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_PERSISTENT_READONLY
-                                                              | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
-    pPages->ManufacturingPage4.u.fields.Header.u8PageNumber = 4;
-    pPages->ManufacturingPage4.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing4) / 4;
-
-
-    /* I/O Unit page 0. */
-    pPages->IOUnitPage0.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
-                                                       | MPT_CONFIGURATION_PAGE_TYPE_IO_UNIT;
-    pPages->IOUnitPage0.u.fields.Header.u8PageNumber = 0;
-    pPages->IOUnitPage0.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOUnit0) / 4;
-    pPages->IOUnitPage0.u.fields.u64UniqueIdentifier = 0xcafe;
-
-    /* I/O Unit page 1. */
-    pPages->IOUnitPage1.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
-                                                       | MPT_CONFIGURATION_PAGE_TYPE_IO_UNIT;
-    pPages->IOUnitPage1.u.fields.Header.u8PageNumber = 1;
-    pPages->IOUnitPage1.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOUnit1) / 4;
-    pPages->IOUnitPage1.u.fields.fSingleFunction         = true;
-    pPages->IOUnitPage1.u.fields.fAllPathsMapped         = false;
-    pPages->IOUnitPage1.u.fields.fIntegratedRAIDDisabled = true;
-    pPages->IOUnitPage1.u.fields.f32BitAccessForced      = false;
-
-    /* I/O Unit page 2. */
-    pPages->IOUnitPage2.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_PERSISTENT
-                                                       | MPT_CONFIGURATION_PAGE_TYPE_IO_UNIT;
-    pPages->IOUnitPage2.u.fields.Header.u8PageNumber = 2;
-    pPages->IOUnitPage2.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOUnit2) / 4;
-    pPages->IOUnitPage2.u.fields.fPauseOnError       = false;
-    pPages->IOUnitPage2.u.fields.fVerboseModeEnabled = false;
-    pPages->IOUnitPage2.u.fields.fDisableColorVideo  = false;
-    pPages->IOUnitPage2.u.fields.fNotHookInt40h      = false;
-    pPages->IOUnitPage2.u.fields.u32BIOSVersion      = 0xcafecafe;
-    pPages->IOUnitPage2.u.fields.aAdapterOrder[0].fAdapterEnabled = true;
-    pPages->IOUnitPage2.u.fields.aAdapterOrder[0].fAdapterEmbedded = true;
-    pPages->IOUnitPage2.u.fields.aAdapterOrder[0].u8PCIBusNumber = 0;
-    pPages->IOUnitPage2.u.fields.aAdapterOrder[0].u8PCIDevFn     = pLsiLogic->PciDev.devfn;
-
-    /* I/O Unit page 3. */
-    pPages->IOUnitPage3.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE
-                                                       | MPT_CONFIGURATION_PAGE_TYPE_IO_UNIT;
-    pPages->IOUnitPage3.u.fields.Header.u8PageNumber = 3;
-    pPages->IOUnitPage3.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOUnit3) / 4;
-    pPages->IOUnitPage3.u.fields.u8GPIOCount = 0;
-
-    /* IOC page 0. */
-    pPages->IOCPage0.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
-                                                    | MPT_CONFIGURATION_PAGE_TYPE_IOC;
-    pPages->IOCPage0.u.fields.Header.u8PageNumber = 0;
-    pPages->IOCPage0.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOC0) / 4;
-    pPages->IOCPage0.u.fields.u32TotalNVStore      = 0;
-    pPages->IOCPage0.u.fields.u32FreeNVStore       = 0;
-    pPages->IOCPage0.u.fields.u16VendorId          = LSILOGICSCSI_PCI_VENDOR_ID;
-    pPages->IOCPage0.u.fields.u16DeviceId          = LSILOGICSCSI_PCI_SPI_DEVICE_ID;
-    pPages->IOCPage0.u.fields.u8RevisionId         = LSILOGICSCSI_PCI_SPI_REVISION_ID;
-    pPages->IOCPage0.u.fields.u32ClassCode         = LSILOGICSCSI_PCI_SPI_CLASS_CODE;
-    pPages->IOCPage0.u.fields.u16SubsystemVendorId = LSILOGICSCSI_PCI_SPI_SUBSYSTEM_VENDOR_ID;
-    pPages->IOCPage0.u.fields.u16SubsystemId       = LSILOGICSCSI_PCI_SPI_SUBSYSTEM_ID;
-
-    /* IOC page 1. */
-    pPages->IOCPage1.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE
-                                                    | MPT_CONFIGURATION_PAGE_TYPE_IOC;
-    pPages->IOCPage1.u.fields.Header.u8PageNumber = 1;
-    pPages->IOCPage1.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOC1) / 4;
-    pPages->IOCPage1.u.fields.fReplyCoalescingEnabled = false;
-    pPages->IOCPage1.u.fields.u32CoalescingTimeout    = 0;
-    pPages->IOCPage1.u.fields.u8CoalescingDepth       = 0;
-
-    /* IOC page 2. */
-    pPages->IOCPage2.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
-                                                    | MPT_CONFIGURATION_PAGE_TYPE_IOC;
-    pPages->IOCPage2.u.fields.Header.u8PageNumber = 2;
-    pPages->IOCPage2.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOC2) / 4;
-    /* Everything else here is 0. */
-
-    /* IOC page 3. */
-    pPages->IOCPage3.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
-                                                    | MPT_CONFIGURATION_PAGE_TYPE_IOC;
-    pPages->IOCPage3.u.fields.Header.u8PageNumber = 3;
-    pPages->IOCPage3.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOC3) / 4;
-    /* Everything else here is 0. */
-
-    /* IOC page 4. */
-    pPages->IOCPage4.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
-                                                    | MPT_CONFIGURATION_PAGE_TYPE_IOC;
-    pPages->IOCPage4.u.fields.Header.u8PageNumber = 4;
-    pPages->IOCPage4.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOC4) / 4;
-    /* Everything else here is 0. */
-
-    /* IOC page 6. */
-    pPages->IOCPage6.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
-                                                    | MPT_CONFIGURATION_PAGE_TYPE_IOC;
-    pPages->IOCPage6.u.fields.Header.u8PageNumber = 6;
-    pPages->IOCPage6.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOC6) / 4;
-    /* Everything else here is 0. */
+    memset(pPages, 0, sizeof(PMptConfigurationPagesSpi));
 
     for (unsigned i = 0; i < RT_ELEMENTS(pPages->aPortPages); i++)
     {
@@ -2653,6 +2836,453 @@ static void lsilogicInitializeConfigurationPages(PLSILOGICSCSI pLsiLogic)
             /* Everything else 0 for now. */
         }
     }
+}
+
+/**
+ * Generates a handle.
+ *
+ * @returns the handle.
+ * @param   pThis    The LsiLogic instance.
+ */
+DECLINLINE(uint16_t) lsilogicGetHandle(PLSILOGICSCSI pThis)
+{
+    uint16_t u16Handle = pThis->u16NextHandle++;
+    return u16Handle;
+}
+
+/**
+ * Generates a SAS address (WWID)
+ *
+ * @returns nothing.
+ * @param   pSASAddress Pointer to an unitialised SAS address.
+ * @param   iId         iId which will go into the address.
+ *
+ * @todo Generate better SAS addresses. (Request a block from SUN probably)
+ */
+void lsilogicSASAddressGenerate(PSASADDRESS pSASAddress, unsigned iId)
+{
+    pSASAddress->u8Address[0] = (0x5 << 5);
+    pSASAddress->u8Address[1] = 0x01;
+    pSASAddress->u8Address[2] = 0x02;
+    pSASAddress->u8Address[3] = 0x03;
+    pSASAddress->u8Address[4] = 0x04;
+    pSASAddress->u8Address[5] = 0x05;
+    pSASAddress->u8Address[6] = 0x06;
+    pSASAddress->u8Address[7] = iId;
+}
+
+/**
+ * Initializes the configuration pages for the SAS SCSI controller.
+ *
+ * @returns nothing
+ * @param   pThis    Pointer to the Lsilogic SCSI instance.
+ */
+static void lsilogicInitializeConfigurationPagesSas(PLSILOGICSCSI pThis)
+{
+    PMptConfigurationPagesSas pPages = &pThis->pConfigurationPages->u.SasPages;
+
+    AssertMsg(pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS, ("Controller is not the SAS SCSI one\n"));
+
+    LogFlowFunc(("pThis=%#p\n", pThis));
+
+    /* SAS I/O unit page 0 - Port specific informations. */
+    pPages->SASIOUnitPage0.u.fields.ExtHeader.u8PageType       =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                                 | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED;
+    pPages->SASIOUnitPage0.u.fields.ExtHeader.u8PageNumber     = 0;
+    pPages->SASIOUnitPage0.u.fields.ExtHeader.u8ExtPageType    = MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASIOUNIT;
+    pPages->SASIOUnitPage0.u.fields.ExtHeader.u16ExtPageLength = sizeof(MptConfigurationPageSASIOUnit0) / 4;
+    pPages->SASIOUnitPage0.u.fields.u8NumPhys = 8;
+
+    /* SAS I/O unit page 1 - Port specific settings. */
+    pPages->SASIOUnitPage1.u.fields.ExtHeader.u8PageType       =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE
+                                                                 | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED;
+    pPages->SASIOUnitPage1.u.fields.ExtHeader.u8PageNumber     = 1;
+    pPages->SASIOUnitPage1.u.fields.ExtHeader.u8ExtPageType    = MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASIOUNIT;
+    pPages->SASIOUnitPage1.u.fields.ExtHeader.u16ExtPageLength = sizeof(MptConfigurationPageSASIOUnit1) / 4;
+    pPages->SASIOUnitPage1.u.fields.u8NumPhys = pPages->SASIOUnitPage0.u.fields.u8NumPhys;
+    pPages->SASIOUnitPage1.u.fields.u16ControlFlags = 0;
+    pPages->SASIOUnitPage1.u.fields.u16AdditionalControlFlags = 0;
+
+    /* SAS I/O unit page 2 - Port specific informations. */
+    pPages->SASIOUnitPage2.u.fields.ExtHeader.u8PageType       =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                                 | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED;
+    pPages->SASIOUnitPage2.u.fields.ExtHeader.u8PageNumber     = 2;
+    pPages->SASIOUnitPage2.u.fields.ExtHeader.u8ExtPageType    = MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASIOUNIT;
+    pPages->SASIOUnitPage2.u.fields.ExtHeader.u16ExtPageLength = sizeof(MptConfigurationPageSASIOUnit2) / 4;
+
+    /* SAS I/O unit page 3 - Port specific informations. */
+    pPages->SASIOUnitPage3.u.fields.ExtHeader.u8PageType       =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                                 | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED;
+    pPages->SASIOUnitPage3.u.fields.ExtHeader.u8PageNumber     = 3;
+    pPages->SASIOUnitPage3.u.fields.ExtHeader.u8ExtPageType    = MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASIOUNIT;
+    pPages->SASIOUnitPage3.u.fields.ExtHeader.u16ExtPageLength = sizeof(MptConfigurationPageSASIOUnit3) / 4;
+
+    /* Initialize the PHY configuration */
+    for (unsigned i = 0; i < pPages->SASIOUnitPage0.u.fields.u8NumPhys; i++)
+    {
+        uint16_t u16ControllerHandle = lsilogicGetHandle(pThis);
+
+        pPages->SASIOUnitPage0.u.fields.aPHY[i].u8Port      = i;
+        pPages->SASIOUnitPage0.u.fields.aPHY[i].u8PortFlags = 0;
+        pPages->SASIOUnitPage0.u.fields.aPHY[i].u8PhyFlags  = 0;
+        pPages->SASIOUnitPage0.u.fields.aPHY[i].u8NegotiatedLinkRate = LSILOGICSCSI_SASIOUNIT0_NEGOTIATED_RATE_FAILED;
+        pPages->SASIOUnitPage0.u.fields.aPHY[i].u32ControllerPhyDeviceInfo = LSILOGICSCSI_SASIOUNIT0_DEVICE_TYPE_SET(LSILOGICSCSI_SASIOUNIT0_DEVICE_TYPE_NO);
+        pPages->SASIOUnitPage0.u.fields.aPHY[i].u16ControllerDevHandle     = u16ControllerHandle;
+        pPages->SASIOUnitPage0.u.fields.aPHY[i].u16AttachedDevHandle       = 0; /* No device attached. */
+        pPages->SASIOUnitPage0.u.fields.aPHY[i].u32DiscoveryStatus         = 0; /* No errors */
+
+        pPages->SASIOUnitPage1.u.fields.aPHY[i].u8Port           = i;
+        pPages->SASIOUnitPage1.u.fields.aPHY[i].u8PortFlags      = 0;
+        pPages->SASIOUnitPage1.u.fields.aPHY[i].u8PhyFlags       = 0;
+        pPages->SASIOUnitPage1.u.fields.aPHY[i].u8MaxMinLinkRate =   LSILOGICSCSI_SASIOUNIT1_LINK_RATE_MIN_SET(LSILOGICSCSI_SASIOUNIT1_LINK_RATE_15GB)
+                                                                   | LSILOGICSCSI_SASIOUNIT1_LINK_RATE_MAX_SET(LSILOGICSCSI_SASIOUNIT1_LINK_RATE_30GB);
+        pPages->SASIOUnitPage1.u.fields.aPHY[i].u32ControllerPhyDeviceInfo = LSILOGICSCSI_SASIOUNIT0_DEVICE_TYPE_SET(LSILOGICSCSI_SASIOUNIT0_DEVICE_TYPE_NO);
+
+        /* SAS PHY page 0. */
+        pPages->aPHY[i].SASPHYPage0.u.fields.ExtHeader.u8PageType       =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                                          | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED;
+        pPages->aPHY[i].SASPHYPage0.u.fields.ExtHeader.u8PageNumber     = 0;
+        pPages->aPHY[i].SASPHYPage0.u.fields.ExtHeader.u8ExtPageType    = MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASPHYS;
+        pPages->aPHY[i].SASPHYPage0.u.fields.ExtHeader.u16ExtPageLength = sizeof(MptConfigurationPageSASPHY0) / 4;
+        pPages->aPHY[i].SASPHYPage0.u.fields.u8AttachedPhyIdentifier = i;
+        pPages->aPHY[i].SASPHYPage0.u.fields.u32AttachedDeviceInfo   = LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_TYPE_SET(LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_TYPE_NO);
+        pPages->aPHY[i].SASPHYPage0.u.fields.u8ProgrammedLinkRate =   LSILOGICSCSI_SASIOUNIT1_LINK_RATE_MIN_SET(LSILOGICSCSI_SASIOUNIT1_LINK_RATE_15GB)
+                                                                    | LSILOGICSCSI_SASIOUNIT1_LINK_RATE_MAX_SET(LSILOGICSCSI_SASIOUNIT1_LINK_RATE_30GB);
+        pPages->aPHY[i].SASPHYPage0.u.fields.u8HwLinkRate         =   LSILOGICSCSI_SASIOUNIT1_LINK_RATE_MIN_SET(LSILOGICSCSI_SASIOUNIT1_LINK_RATE_15GB)
+                                                                    | LSILOGICSCSI_SASIOUNIT1_LINK_RATE_MAX_SET(LSILOGICSCSI_SASIOUNIT1_LINK_RATE_30GB);
+
+        /* SAS PHY page 1. */
+        pPages->aPHY[i].SASPHYPage1.u.fields.ExtHeader.u8PageType       =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                                          | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED;
+        pPages->aPHY[i].SASPHYPage1.u.fields.ExtHeader.u8PageNumber     = 1;
+        pPages->aPHY[i].SASPHYPage1.u.fields.ExtHeader.u8ExtPageType    = MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASPHYS;
+        pPages->aPHY[i].SASPHYPage1.u.fields.ExtHeader.u16ExtPageLength = sizeof(MptConfigurationPageSASPHY1) / 4;
+
+        /* Settings for present devices. */
+        if (pThis->aDeviceStates[i].pDrvBase)
+        {
+            uint16_t u16DeviceHandle = lsilogicGetHandle(pThis);
+            SASADDRESS SASAddress;
+            PMptSASDevice pSASDevice = (PMptSASDevice)RTMemAllocZ(sizeof(MptSASDevice));
+            AssertPtr(pSASDevice);
+
+            memset(&SASAddress, 0, sizeof(SASADDRESS));
+            lsilogicSASAddressGenerate(&SASAddress, i);
+
+            pPages->SASIOUnitPage0.u.fields.aPHY[i].u8NegotiatedLinkRate       = LSILOGICSCSI_SASIOUNIT0_NEGOTIATED_RATE_SET(LSILOGICSCSI_SASIOUNIT0_NEGOTIATED_RATE_30GB);
+            pPages->SASIOUnitPage0.u.fields.aPHY[i].u32ControllerPhyDeviceInfo =   LSILOGICSCSI_SASIOUNIT0_DEVICE_TYPE_SET(LSILOGICSCSI_SASIOUNIT0_DEVICE_TYPE_END)
+                                                                                 | LSILOGICSCSI_SASIOUNIT0_DEVICE_SSP_TARGET;
+            pPages->SASIOUnitPage0.u.fields.aPHY[i].u16AttachedDevHandle       = u16DeviceHandle;
+            pPages->SASIOUnitPage1.u.fields.aPHY[i].u32ControllerPhyDeviceInfo =   LSILOGICSCSI_SASIOUNIT0_DEVICE_TYPE_SET(LSILOGICSCSI_SASIOUNIT0_DEVICE_TYPE_END)
+                                                                                 | LSILOGICSCSI_SASIOUNIT0_DEVICE_SSP_TARGET;
+            pPages->SASIOUnitPage0.u.fields.aPHY[i].u16ControllerDevHandle     = u16DeviceHandle;
+
+            pPages->aPHY[i].SASPHYPage0.u.fields.u32AttachedDeviceInfo         = LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_TYPE_SET(LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_TYPE_END);
+            pPages->aPHY[i].SASPHYPage0.u.fields.SASAddress                    = SASAddress;
+            pPages->aPHY[i].SASPHYPage0.u.fields.u16OwnerDevHandle             = u16DeviceHandle;
+            pPages->aPHY[i].SASPHYPage0.u.fields.u16AttachedDevHandle          = u16DeviceHandle;
+
+            /* SAS device page 0. */
+            pSASDevice->SASDevicePage0.u.fields.ExtHeader.u8PageType       =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                                             | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED;
+            pSASDevice->SASDevicePage0.u.fields.ExtHeader.u8PageNumber     = 0;
+            pSASDevice->SASDevicePage0.u.fields.ExtHeader.u8ExtPageType    = MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASDEVICE;
+            pSASDevice->SASDevicePage0.u.fields.ExtHeader.u16ExtPageLength = sizeof(MptConfigurationPageSASDevice0) / 4;
+            pSASDevice->SASDevicePage0.u.fields.SASAddress                 = SASAddress;
+            pSASDevice->SASDevicePage0.u.fields.u16ParentDevHandle         = u16ControllerHandle;
+            pSASDevice->SASDevicePage0.u.fields.u8PhyNum                   = i;
+            pSASDevice->SASDevicePage0.u.fields.u8AccessStatus             = LSILOGICSCSI_SASDEVICE0_STATUS_NO_ERRORS;
+            pSASDevice->SASDevicePage0.u.fields.u16DevHandle               = u16DeviceHandle;
+            pSASDevice->SASDevicePage0.u.fields.u8TargetID                 = i;
+            pSASDevice->SASDevicePage0.u.fields.u8Bus                      = 0;
+            pSASDevice->SASDevicePage0.u.fields.u32DeviceInfo              =   LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_TYPE_SET(LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_TYPE_END)
+                                                                             | LSILOGICSCSI_SASIOUNIT0_DEVICE_SSP_TARGET;
+            pSASDevice->SASDevicePage0.u.fields.u16Flags                   =   LSILOGICSCSI_SASDEVICE0_FLAGS_DEVICE_PRESENT
+                                                                             | LSILOGICSCSI_SASDEVICE0_FLAGS_DEVICE_MAPPED_TO_BUS_AND_TARGET_ID
+                                                                             | LSILOGICSCSI_SASDEVICE0_FLAGS_DEVICE_MAPPING_PERSISTENT;
+            pSASDevice->SASDevicePage0.u.fields.u8PhysicalPort             = i;
+
+            /* SAS device page 1. */
+            pSASDevice->SASDevicePage1.u.fields.ExtHeader.u8PageType       =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                                             | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED;
+            pSASDevice->SASDevicePage1.u.fields.ExtHeader.u8PageNumber     = 1;
+            pSASDevice->SASDevicePage1.u.fields.ExtHeader.u8ExtPageType    = MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASDEVICE;
+            pSASDevice->SASDevicePage1.u.fields.ExtHeader.u16ExtPageLength = sizeof(MptConfigurationPageSASDevice1) / 4;
+            pSASDevice->SASDevicePage1.u.fields.SASAddress                 = SASAddress;
+            pSASDevice->SASDevicePage1.u.fields.u16DevHandle               = u16DeviceHandle;
+            pSASDevice->SASDevicePage1.u.fields.u8TargetID                 = i;
+            pSASDevice->SASDevicePage1.u.fields.u8Bus                      = 0;
+
+            /* SAS device page 2. */
+            pSASDevice->SASDevicePage2.u.fields.ExtHeader.u8PageType       =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                                              | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED;
+            pSASDevice->SASDevicePage2.u.fields.ExtHeader.u8PageNumber     = 2;
+            pSASDevice->SASDevicePage2.u.fields.ExtHeader.u8ExtPageType    = MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASDEVICE;
+            pSASDevice->SASDevicePage2.u.fields.ExtHeader.u16ExtPageLength = sizeof(MptConfigurationPageSASDevice2) / 4;
+            pSASDevice->SASDevicePage2.u.fields.SASAddress                 = SASAddress;
+
+            /* Link into device list. */
+            if (!pPages->cDevices)
+            {
+                pPages->pSASDeviceHead = pSASDevice;
+                pPages->pSASDeviceTail = pSASDevice;
+                pPages->cDevices = 1;
+            }
+            else
+            {
+                pSASDevice->pPrev = pPages->pSASDeviceTail;
+                pPages->pSASDeviceTail->pNext = pSASDevice;
+                pPages->pSASDeviceTail = pSASDevice;
+                pPages->cDevices++;
+            }
+        }
+    }
+}
+
+/**
+ * Initializes the configuration pages.
+ *
+ * @returns nothing
+ * @param   pLsiLogic    Pointer to the Lsilogic SCSI instance.
+ */
+static void lsilogicInitializeConfigurationPages(PLSILOGICSCSI pLsiLogic)
+{
+    /* Initialize the common pages. */
+    PMptConfigurationPagesSupported pPages = (PMptConfigurationPagesSupported)RTMemAllocZ(sizeof(MptConfigurationPagesSupported));
+
+    pLsiLogic->pConfigurationPages = pPages;
+
+    LogFlowFunc(("pLsiLogic=%#p\n", pLsiLogic));
+
+    /* Clear everything first. */
+    memset(pPages, 0, sizeof(MptConfigurationPagesSupported));
+
+    /* Manufacturing Page 0. */
+    pPages->ManufacturingPage0.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_PERSISTENT_READONLY
+                                                              | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
+    pPages->ManufacturingPage0.u.fields.Header.u8PageNumber = 0;
+    pPages->ManufacturingPage0.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing0) / 4;
+    strncpy((char *)pPages->ManufacturingPage0.u.fields.abChipName,          "VBox MPT Fusion", 16);
+    strncpy((char *)pPages->ManufacturingPage0.u.fields.abChipRevision,      "1.0", 8);
+    strncpy((char *)pPages->ManufacturingPage0.u.fields.abBoardName,         "VBox MPT Fusion", 16);
+    strncpy((char *)pPages->ManufacturingPage0.u.fields.abBoardAssembly,     "SUN", 8);
+    strncpy((char *)pPages->ManufacturingPage0.u.fields.abBoardTracerNumber, "CAFECAFECAFECAFE", 16);
+
+    /* Manufacturing Page 1 - I don't know what this contains so we leave it 0 for now. */
+    pPages->ManufacturingPage1.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_PERSISTENT_READONLY
+                                                     | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
+    pPages->ManufacturingPage1.Header.u8PageNumber = 1;
+    pPages->ManufacturingPage1.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing1) / 4;
+
+    /* Manufacturing Page 2. */
+    pPages->ManufacturingPage2.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                              | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
+    pPages->ManufacturingPage2.u.fields.Header.u8PageNumber = 2;
+    pPages->ManufacturingPage2.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing2) / 4;
+
+    if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
+    {
+        pPages->ManufacturingPage2.u.fields.u16PCIDeviceID = LSILOGICSCSI_PCI_SPI_DEVICE_ID;
+        pPages->ManufacturingPage2.u.fields.u8PCIRevisionID = LSILOGICSCSI_PCI_SPI_REVISION_ID;
+    }
+    else if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+    {
+        pPages->ManufacturingPage2.u.fields.u16PCIDeviceID = LSILOGICSCSI_PCI_SAS_DEVICE_ID;
+        pPages->ManufacturingPage2.u.fields.u8PCIRevisionID = LSILOGICSCSI_PCI_SAS_REVISION_ID;
+    }
+
+    /* Manufacturing Page 3. */
+    pPages->ManufacturingPage3.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                              | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
+    pPages->ManufacturingPage3.u.fields.Header.u8PageNumber = 3;
+    pPages->ManufacturingPage3.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing3) / 4;
+
+    if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
+    {
+        pPages->ManufacturingPage3.u.fields.u16PCIDeviceID = LSILOGICSCSI_PCI_SPI_DEVICE_ID;
+        pPages->ManufacturingPage3.u.fields.u8PCIRevisionID = LSILOGICSCSI_PCI_SPI_REVISION_ID;
+    }
+    else if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+    {
+        pPages->ManufacturingPage3.u.fields.u16PCIDeviceID = LSILOGICSCSI_PCI_SAS_DEVICE_ID;
+        pPages->ManufacturingPage3.u.fields.u8PCIRevisionID = LSILOGICSCSI_PCI_SAS_REVISION_ID;
+    }
+
+    /* Manufacturing Page 4 - I don't know what this contains so we leave it 0 for now. */
+    pPages->ManufacturingPage4.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_PERSISTENT_READONLY
+                                                              | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
+    pPages->ManufacturingPage4.u.fields.Header.u8PageNumber = 4;
+    pPages->ManufacturingPage4.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing4) / 4;
+
+    /* Manufacturing Page 5 - WWID settings. */
+    pPages->ManufacturingPage5.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_PERSISTENT_READONLY
+                                                              | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
+    pPages->ManufacturingPage5.u.fields.Header.u8PageNumber = 5;
+    pPages->ManufacturingPage5.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing5) / 4;
+
+    /* Manufacturing Page 6 - Product sepcific settings. */
+    pPages->ManufacturingPage6.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE
+                                                              | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
+    pPages->ManufacturingPage6.u.fields.Header.u8PageNumber = 6;
+    pPages->ManufacturingPage6.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing6) / 4;
+
+    /* Manufacturing Page 7 - Connector settings. */
+    pPages->ManufacturingPage7.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_PERSISTENT_READONLY
+                                                              | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
+    pPages->ManufacturingPage7.u.fields.Header.u8PageNumber = 7;
+    pPages->ManufacturingPage7.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing7) / 4;
+
+    /* Manufacturing Page 8 -  Product sepcific settings. */
+    pPages->ManufacturingPage8.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE
+                                                              | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
+    pPages->ManufacturingPage8.u.fields.Header.u8PageNumber = 8;
+    pPages->ManufacturingPage8.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing8) / 4;
+
+    /* Manufacturing Page 9 -  Product sepcific settings. */
+    pPages->ManufacturingPage9.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE
+                                                              | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
+    pPages->ManufacturingPage9.u.fields.Header.u8PageNumber = 9;
+    pPages->ManufacturingPage9.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing9) / 4;
+
+    /* Manufacturing Page 10 -  Product sepcific settings. */
+    pPages->ManufacturingPage10.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE
+                                                              | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING;
+    pPages->ManufacturingPage10.u.fields.Header.u8PageNumber = 10;
+    pPages->ManufacturingPage10.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageManufacturing10) / 4;
+
+    /* I/O Unit page 0. */
+    pPages->IOUnitPage0.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                       | MPT_CONFIGURATION_PAGE_TYPE_IO_UNIT;
+    pPages->IOUnitPage0.u.fields.Header.u8PageNumber = 0;
+    pPages->IOUnitPage0.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOUnit0) / 4;
+    pPages->IOUnitPage0.u.fields.u64UniqueIdentifier = 0xcafe;
+
+    /* I/O Unit page 1. */
+    pPages->IOUnitPage1.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                       | MPT_CONFIGURATION_PAGE_TYPE_IO_UNIT;
+    pPages->IOUnitPage1.u.fields.Header.u8PageNumber = 1;
+    pPages->IOUnitPage1.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOUnit1) / 4;
+    pPages->IOUnitPage1.u.fields.fSingleFunction         = true;
+    pPages->IOUnitPage1.u.fields.fAllPathsMapped         = false;
+    pPages->IOUnitPage1.u.fields.fIntegratedRAIDDisabled = true;
+    pPages->IOUnitPage1.u.fields.f32BitAccessForced      = false;
+
+    /* I/O Unit page 2. */
+    pPages->IOUnitPage2.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_PERSISTENT
+                                                       | MPT_CONFIGURATION_PAGE_TYPE_IO_UNIT;
+    pPages->IOUnitPage2.u.fields.Header.u8PageNumber = 2;
+    pPages->IOUnitPage2.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOUnit2) / 4;
+    pPages->IOUnitPage2.u.fields.fPauseOnError       = false;
+    pPages->IOUnitPage2.u.fields.fVerboseModeEnabled = false;
+    pPages->IOUnitPage2.u.fields.fDisableColorVideo  = false;
+    pPages->IOUnitPage2.u.fields.fNotHookInt40h      = false;
+    pPages->IOUnitPage2.u.fields.u32BIOSVersion      = 0xcafecafe;
+    pPages->IOUnitPage2.u.fields.aAdapterOrder[0].fAdapterEnabled = true;
+    pPages->IOUnitPage2.u.fields.aAdapterOrder[0].fAdapterEmbedded = true;
+    pPages->IOUnitPage2.u.fields.aAdapterOrder[0].u8PCIBusNumber = 0;
+    pPages->IOUnitPage2.u.fields.aAdapterOrder[0].u8PCIDevFn     = pLsiLogic->PciDev.devfn;
+
+    /* I/O Unit page 3. */
+    pPages->IOUnitPage3.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE
+                                                       | MPT_CONFIGURATION_PAGE_TYPE_IO_UNIT;
+    pPages->IOUnitPage3.u.fields.Header.u8PageNumber = 3;
+    pPages->IOUnitPage3.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOUnit3) / 4;
+    pPages->IOUnitPage3.u.fields.u8GPIOCount = 0;
+
+    /* I/O Unit page 4. */
+    pPages->IOUnitPage4.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE
+                                                       | MPT_CONFIGURATION_PAGE_TYPE_IO_UNIT;
+    pPages->IOUnitPage4.u.fields.Header.u8PageNumber = 4;
+    pPages->IOUnitPage4.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOUnit4) / 4;
+
+    /* IOC page 0. */
+    pPages->IOCPage0.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                    | MPT_CONFIGURATION_PAGE_TYPE_IOC;
+    pPages->IOCPage0.u.fields.Header.u8PageNumber = 0;
+    pPages->IOCPage0.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOC0) / 4;
+    pPages->IOCPage0.u.fields.u32TotalNVStore      = 0;
+    pPages->IOCPage0.u.fields.u32FreeNVStore       = 0;
+
+    if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
+    {
+        pPages->IOCPage0.u.fields.u16VendorId          = LSILOGICSCSI_PCI_VENDOR_ID;
+        pPages->IOCPage0.u.fields.u16DeviceId          = LSILOGICSCSI_PCI_SPI_DEVICE_ID;
+        pPages->IOCPage0.u.fields.u8RevisionId         = LSILOGICSCSI_PCI_SPI_REVISION_ID;
+        pPages->IOCPage0.u.fields.u32ClassCode         = LSILOGICSCSI_PCI_SPI_CLASS_CODE;
+        pPages->IOCPage0.u.fields.u16SubsystemVendorId = LSILOGICSCSI_PCI_SPI_SUBSYSTEM_VENDOR_ID;
+        pPages->IOCPage0.u.fields.u16SubsystemId       = LSILOGICSCSI_PCI_SPI_SUBSYSTEM_ID;
+    }
+    else if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+    {
+        pPages->IOCPage0.u.fields.u16VendorId          = LSILOGICSCSI_PCI_VENDOR_ID;
+        pPages->IOCPage0.u.fields.u16DeviceId          = LSILOGICSCSI_PCI_SAS_DEVICE_ID;
+        pPages->IOCPage0.u.fields.u8RevisionId         = LSILOGICSCSI_PCI_SAS_REVISION_ID;
+        pPages->IOCPage0.u.fields.u32ClassCode         = LSILOGICSCSI_PCI_SAS_CLASS_CODE;
+        pPages->IOCPage0.u.fields.u16SubsystemVendorId = LSILOGICSCSI_PCI_SAS_SUBSYSTEM_VENDOR_ID;
+        pPages->IOCPage0.u.fields.u16SubsystemId       = LSILOGICSCSI_PCI_SAS_SUBSYSTEM_ID;
+    }
+
+    /* IOC page 1. */
+    pPages->IOCPage1.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE
+                                                    | MPT_CONFIGURATION_PAGE_TYPE_IOC;
+    pPages->IOCPage1.u.fields.Header.u8PageNumber = 1;
+    pPages->IOCPage1.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOC1) / 4;
+    pPages->IOCPage1.u.fields.fReplyCoalescingEnabled = false;
+    pPages->IOCPage1.u.fields.u32CoalescingTimeout    = 0;
+    pPages->IOCPage1.u.fields.u8CoalescingDepth       = 0;
+
+    /* IOC page 2. */
+    pPages->IOCPage2.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                    | MPT_CONFIGURATION_PAGE_TYPE_IOC;
+    pPages->IOCPage2.u.fields.Header.u8PageNumber = 2;
+    pPages->IOCPage2.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOC2) / 4;
+    /* Everything else here is 0. */
+
+    /* IOC page 3. */
+    pPages->IOCPage3.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                    | MPT_CONFIGURATION_PAGE_TYPE_IOC;
+    pPages->IOCPage3.u.fields.Header.u8PageNumber = 3;
+    pPages->IOCPage3.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOC3) / 4;
+    /* Everything else here is 0. */
+
+    /* IOC page 4. */
+    pPages->IOCPage4.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                    | MPT_CONFIGURATION_PAGE_TYPE_IOC;
+    pPages->IOCPage4.u.fields.Header.u8PageNumber = 4;
+    pPages->IOCPage4.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOC4) / 4;
+    /* Everything else here is 0. */
+
+    /* IOC page 6. */
+    pPages->IOCPage6.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
+                                                    | MPT_CONFIGURATION_PAGE_TYPE_IOC;
+    pPages->IOCPage6.u.fields.Header.u8PageNumber = 6;
+    pPages->IOCPage6.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageIOC6) / 4;
+    /* Everything else here is 0. */
+
+    /* BIOS page 1. */
+    pPages->BIOSPage1.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE
+                                                     | MPT_CONFIGURATION_PAGE_TYPE_BIOS;
+    pPages->BIOSPage1.u.fields.Header.u8PageNumber = 1;
+    pPages->BIOSPage1.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageBIOS1) / 4;
+
+    /* BIOS page 2. */
+    pPages->BIOSPage2.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE
+                                                     | MPT_CONFIGURATION_PAGE_TYPE_BIOS;
+    pPages->BIOSPage2.u.fields.Header.u8PageNumber = 2;
+    pPages->BIOSPage2.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageBIOS2) / 4;
+
+    /* BIOS page 4. */
+    pPages->BIOSPage4.u.fields.Header.u8PageType   =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE
+                                                     | MPT_CONFIGURATION_PAGE_TYPE_BIOS;
+    pPages->BIOSPage4.u.fields.Header.u8PageNumber = 4;
+    pPages->BIOSPage4.u.fields.Header.u8PageLength = sizeof(MptConfigurationPageBIOS4) / 4;
+
+    if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
+        lsilogicInitializeConfigurationPagesSpi(pLsiLogic);
+    else if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+        lsilogicInitializeConfigurationPagesSas(pLsiLogic);
+    else
+        AssertMsgFailed(("Invalid controller type %d\n", pLsiLogic->enmCtrlType));
 }
 
 /**
@@ -3046,6 +3676,8 @@ static DECLCALLBACK(int) lsilogicLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
 {
     PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
+    SSMR3PutU32(pSSM, pThis->enmCtrlType);
+
     /* Save the device config. */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
         SSMR3PutBool(pSSM, pThis->aDeviceStates[i].pDrvBase != NULL);
@@ -3056,6 +3688,8 @@ static DECLCALLBACK(int) lsilogicLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
 static DECLCALLBACK(int) lsilogicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+
+    SSMR3PutU32   (pSSM, pLsiLogic->enmCtrlType);
 
     /* Every device first. */
     lsilogicLiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
@@ -3098,8 +3732,93 @@ static DECLCALLBACK(int) lsilogicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU32   (pSSM, pLsiLogic->uReplyPostQueueNextAddressRead);
     SSMR3PutU32   (pSSM, pLsiLogic->uRequestQueueNextEntryFreeWrite);
     SSMR3PutU32   (pSSM, pLsiLogic->uRequestQueueNextAddressRead);
-    SSMR3PutMem   (pSSM, &pLsiLogic->ConfigurationPages.SpiPages,
-                   sizeof(pLsiLogic->ConfigurationPages.SpiPages));
+
+    for (unsigned i = 0; i < pLsiLogic->cReplyQueueEntries; i++)
+        SSMR3PutU32(pSSM, pLsiLogic->pReplyFreeQueueBaseR3[i]);
+    for (unsigned i = 0; i < pLsiLogic->cReplyQueueEntries; i++)
+        SSMR3PutU32(pSSM, pLsiLogic->pReplyPostQueueBaseR3[i]);
+    for (unsigned i = 0; i < pLsiLogic->cRequestQueueEntries; i++)
+        SSMR3PutU32(pSSM, pLsiLogic->pRequestQueueBaseR3[i]);
+
+    SSMR3PutU16   (pSSM, pLsiLogic->u16NextHandle);
+
+    PMptConfigurationPagesSupported pPages = pLsiLogic->pConfigurationPages;
+
+    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage0, sizeof(MptConfigurationPageManufacturing0));
+    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage1, sizeof(MptConfigurationPageManufacturing1));
+    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage2, sizeof(MptConfigurationPageManufacturing2));
+    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage3, sizeof(MptConfigurationPageManufacturing3));
+    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage4, sizeof(MptConfigurationPageManufacturing4));
+    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage5, sizeof(MptConfigurationPageManufacturing5));
+    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage6, sizeof(MptConfigurationPageManufacturing6));
+    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage7, sizeof(MptConfigurationPageManufacturing7));
+    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage8, sizeof(MptConfigurationPageManufacturing8));
+    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage9, sizeof(MptConfigurationPageManufacturing9));
+    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage10, sizeof(MptConfigurationPageManufacturing10));
+    SSMR3PutMem   (pSSM, &pPages->IOUnitPage0, sizeof(MptConfigurationPageIOUnit0));
+    SSMR3PutMem   (pSSM, &pPages->IOUnitPage1, sizeof(MptConfigurationPageIOUnit1));
+    SSMR3PutMem   (pSSM, &pPages->IOUnitPage2, sizeof(MptConfigurationPageIOUnit2));
+    SSMR3PutMem   (pSSM, &pPages->IOUnitPage3, sizeof(MptConfigurationPageIOUnit3));
+    SSMR3PutMem   (pSSM, &pPages->IOUnitPage4, sizeof(MptConfigurationPageIOUnit4));
+    SSMR3PutMem   (pSSM, &pPages->IOCPage0, sizeof(MptConfigurationPageIOC0));
+    SSMR3PutMem   (pSSM, &pPages->IOCPage1, sizeof(MptConfigurationPageIOC1));
+    SSMR3PutMem   (pSSM, &pPages->IOCPage2, sizeof(MptConfigurationPageIOC2));
+    SSMR3PutMem   (pSSM, &pPages->IOCPage3, sizeof(MptConfigurationPageIOC3));
+    SSMR3PutMem   (pSSM, &pPages->IOCPage4, sizeof(MptConfigurationPageIOC4));
+    SSMR3PutMem   (pSSM, &pPages->IOCPage6, sizeof(MptConfigurationPageIOC6));
+    SSMR3PutMem   (pSSM, &pPages->BIOSPage1, sizeof(MptConfigurationPageBIOS1));
+    SSMR3PutMem   (pSSM, &pPages->BIOSPage2, sizeof(MptConfigurationPageBIOS2));
+    SSMR3PutMem   (pSSM, &pPages->BIOSPage4, sizeof(MptConfigurationPageBIOS4));
+
+    /* Device dependent pages */
+    if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
+    {
+        PMptConfigurationPagesSpi pSpiPages = &pPages->u.SpiPages;
+
+        SSMR3PutMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage0, sizeof(MptConfigurationPageSCSISPIPort0));
+        SSMR3PutMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage1, sizeof(MptConfigurationPageSCSISPIPort1));
+        SSMR3PutMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage2, sizeof(MptConfigurationPageSCSISPIPort2));
+
+        for (unsigned i = 0; i < RT_ELEMENTS(pSpiPages->aBuses[0].aDevicePages); i++)
+        {
+            SSMR3PutMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage0, sizeof(MptConfigurationPageSCSISPIDevice0));
+            SSMR3PutMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage1, sizeof(MptConfigurationPageSCSISPIDevice1));
+            SSMR3PutMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage2, sizeof(MptConfigurationPageSCSISPIDevice2));
+            SSMR3PutMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage3, sizeof(MptConfigurationPageSCSISPIDevice3));
+        }
+    }
+    else if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+    {
+        PMptConfigurationPagesSas pSasPages = &pPages->u.SasPages;
+
+        SSMR3PutMem(pSSM, &pSasPages->SASIOUnitPage0, sizeof(MptConfigurationPageSASIOUnit0));
+        SSMR3PutMem(pSSM, &pSasPages->SASIOUnitPage1, sizeof(MptConfigurationPageSASIOUnit1));
+        SSMR3PutMem(pSSM, &pSasPages->SASIOUnitPage2, sizeof(MptConfigurationPageSASIOUnit2));
+        SSMR3PutMem(pSSM, &pSasPages->SASIOUnitPage3, sizeof(MptConfigurationPageSASIOUnit3));
+
+        for (unsigned i = 0; i < RT_ELEMENTS(pSasPages->aPHY); i++)
+        {
+            SSMR3PutMem(pSSM, &pSasPages->aPHY[i].SASPHYPage0, sizeof(MptConfigurationPageSASPHY0));
+            SSMR3PutMem(pSSM, &pSasPages->aPHY[i].SASPHYPage1, sizeof(MptConfigurationPageSASPHY1));
+        }
+
+        /* The number of devices first. */
+        SSMR3PutU32(pSSM, pSasPages->cDevices);
+
+        PMptSASDevice pCurr = pSasPages->pSASDeviceHead;
+
+        while (pCurr)
+        {
+            SSMR3PutMem(pSSM, &pCurr->SASDevicePage0, sizeof(MptConfigurationPageSASDevice0));
+            SSMR3PutMem(pSSM, &pCurr->SASDevicePage1, sizeof(MptConfigurationPageSASDevice1));
+            SSMR3PutMem(pSSM, &pCurr->SASDevicePage2, sizeof(MptConfigurationPageSASDevice2));
+
+            pCurr = pCurr->pNext;
+        }
+    }
+    else
+        AssertMsgFailed(("Invalid controller type %d\n", pLsiLogic->enmCtrlType));
+
     /* Now the data for the BIOS interface. */
     SSMR3PutU8    (pSSM, pLsiLogic->VBoxSCSI.regIdentify);
     SSMR3PutU8    (pSSM, pLsiLogic->VBoxSCSI.uTargetDevice);
@@ -3123,10 +3842,22 @@ static DECLCALLBACK(int) lsilogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     int             rc;
 
     if (    uVersion != LSILOGIC_SAVED_STATE_VERSION
+        &&  uVersion != LSILOGIC_SAVED_STATE_VERSION_PRE_SAS
         &&  uVersion != LSILOGIC_SAVED_STATE_VERSION_VBOX_30)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     /* device config */
+    if (uVersion > LSILOGIC_SAVED_STATE_VERSION_PRE_SAS)
+    {
+        LSILOGICCTRLTYPE enmCtrlType;
+
+        rc = SSMR3GetU32(pSSM, (uint32_t *)&enmCtrlType);
+        AssertRCReturn(rc, rc);
+
+        if (enmCtrlType != pLsiLogic->enmCtrlType)
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Target config mismatch: config=%d state=%d"),
+                                    pLsiLogic->enmCtrlType, enmCtrlType);
+    }
     if (uVersion > LSILOGIC_SAVED_STATE_VERSION_VBOX_30)
     {
         for (unsigned i = 0; i < RT_ELEMENTS(pLsiLogic->aDeviceStates); i++)
@@ -3182,8 +3913,139 @@ static DECLCALLBACK(int) lsilogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     SSMR3GetU32   (pSSM, (uint32_t *)&pLsiLogic->uReplyPostQueueNextAddressRead);
     SSMR3GetU32   (pSSM, (uint32_t *)&pLsiLogic->uRequestQueueNextEntryFreeWrite);
     SSMR3GetU32   (pSSM, (uint32_t *)&pLsiLogic->uRequestQueueNextAddressRead);
-    SSMR3GetMem   (pSSM, &pLsiLogic->ConfigurationPages.SpiPages,
-                   sizeof(pLsiLogic->ConfigurationPages.SpiPages));
+
+    PMptConfigurationPagesSupported pPages = pLsiLogic->pConfigurationPages;
+
+    if (uVersion <= LSILOGIC_SAVED_STATE_VERSION_PRE_SAS)
+    {
+        PMptConfigurationPagesSpi pSpiPages = &pPages->u.SpiPages;
+        MptConfigurationPagesSupported_SSM_V2 ConfigPagesV2;
+
+        if (pLsiLogic->enmCtrlType != LSILOGICCTRLTYPE_SCSI_SPI)
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: Expected SPI SCSI controller"));
+
+        SSMR3GetMem(pSSM, &ConfigPagesV2,
+                    sizeof(MptConfigurationPagesSupported_SSM_V2));
+
+        pPages->ManufacturingPage0 = ConfigPagesV2.ManufacturingPage0;
+        pPages->ManufacturingPage1 = ConfigPagesV2.ManufacturingPage1;
+        pPages->ManufacturingPage2 = ConfigPagesV2.ManufacturingPage2;
+        pPages->ManufacturingPage3 = ConfigPagesV2.ManufacturingPage3;
+        pPages->ManufacturingPage4 = ConfigPagesV2.ManufacturingPage4;
+        pPages->IOUnitPage0 = ConfigPagesV2.IOUnitPage0;
+        pPages->IOUnitPage1 = ConfigPagesV2.IOUnitPage1;
+        pPages->IOUnitPage2 = ConfigPagesV2.IOUnitPage2;
+        pPages->IOUnitPage3 = ConfigPagesV2.IOUnitPage3;
+        pPages->IOCPage0 = ConfigPagesV2.IOCPage0;
+        pPages->IOCPage1 = ConfigPagesV2.IOCPage1;
+        pPages->IOCPage2 = ConfigPagesV2.IOCPage2;
+        pPages->IOCPage3 = ConfigPagesV2.IOCPage3;
+        pPages->IOCPage4 = ConfigPagesV2.IOCPage4;
+        pPages->IOCPage6 = ConfigPagesV2.IOCPage6;
+
+        pSpiPages->aPortPages[0].SCSISPIPortPage0 = ConfigPagesV2.aPortPages[0].SCSISPIPortPage0;
+        pSpiPages->aPortPages[0].SCSISPIPortPage1 = ConfigPagesV2.aPortPages[0].SCSISPIPortPage1;
+        pSpiPages->aPortPages[0].SCSISPIPortPage2 = ConfigPagesV2.aPortPages[0].SCSISPIPortPage2;
+
+        for (unsigned i = 0; i < RT_ELEMENTS(pPages->u.SpiPages.aBuses[0].aDevicePages); i++)
+        {
+            pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage0 = ConfigPagesV2.aBuses[0].aDevicePages[i].SCSISPIDevicePage0;
+            pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage1 = ConfigPagesV2.aBuses[0].aDevicePages[i].SCSISPIDevicePage1;
+            pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage2 = ConfigPagesV2.aBuses[0].aDevicePages[i].SCSISPIDevicePage2;
+            pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage3 = ConfigPagesV2.aBuses[0].aDevicePages[i].SCSISPIDevicePage3;
+        }
+    }
+    else
+    {
+        /* Queue content */
+        for (unsigned i = 0; i < pLsiLogic->cReplyQueueEntries; i++)
+            SSMR3GetU32(pSSM, (uint32_t *)&pLsiLogic->pReplyFreeQueueBaseR3[i]);
+        for (unsigned i = 0; i < pLsiLogic->cReplyQueueEntries; i++)
+            SSMR3GetU32(pSSM, (uint32_t *)&pLsiLogic->pReplyPostQueueBaseR3[i]);
+        for (unsigned i = 0; i < pLsiLogic->cRequestQueueEntries; i++)
+            SSMR3GetU32(pSSM, (uint32_t *)&pLsiLogic->pRequestQueueBaseR3[i]);
+
+        SSMR3GetU16(pSSM, &pLsiLogic->u16NextHandle);
+
+        /* Configuration pages */
+        SSMR3GetMem(pSSM, &pPages->ManufacturingPage0, sizeof(MptConfigurationPageManufacturing0));
+        SSMR3GetMem(pSSM, &pPages->ManufacturingPage1, sizeof(MptConfigurationPageManufacturing1));
+        SSMR3GetMem(pSSM, &pPages->ManufacturingPage2, sizeof(MptConfigurationPageManufacturing2));
+        SSMR3GetMem(pSSM, &pPages->ManufacturingPage3, sizeof(MptConfigurationPageManufacturing3));
+        SSMR3GetMem(pSSM, &pPages->ManufacturingPage4, sizeof(MptConfigurationPageManufacturing4));
+        SSMR3GetMem(pSSM, &pPages->ManufacturingPage5, sizeof(MptConfigurationPageManufacturing5));
+        SSMR3GetMem(pSSM, &pPages->ManufacturingPage6, sizeof(MptConfigurationPageManufacturing6));
+        SSMR3GetMem(pSSM, &pPages->ManufacturingPage7, sizeof(MptConfigurationPageManufacturing7));
+        SSMR3GetMem(pSSM, &pPages->ManufacturingPage8, sizeof(MptConfigurationPageManufacturing8));
+        SSMR3GetMem(pSSM, &pPages->ManufacturingPage9, sizeof(MptConfigurationPageManufacturing9));
+        SSMR3GetMem(pSSM, &pPages->ManufacturingPage10, sizeof(MptConfigurationPageManufacturing10));
+        SSMR3GetMem(pSSM, &pPages->IOUnitPage0, sizeof(MptConfigurationPageIOUnit0));
+        SSMR3GetMem(pSSM, &pPages->IOUnitPage1, sizeof(MptConfigurationPageIOUnit1));
+        SSMR3GetMem(pSSM, &pPages->IOUnitPage2, sizeof(MptConfigurationPageIOUnit2));
+        SSMR3GetMem(pSSM, &pPages->IOUnitPage3, sizeof(MptConfigurationPageIOUnit3));
+        SSMR3GetMem(pSSM, &pPages->IOUnitPage4, sizeof(MptConfigurationPageIOUnit4));
+        SSMR3GetMem(pSSM, &pPages->IOCPage0, sizeof(MptConfigurationPageIOC0));
+        SSMR3GetMem(pSSM, &pPages->IOCPage1, sizeof(MptConfigurationPageIOC1));
+        SSMR3GetMem(pSSM, &pPages->IOCPage2, sizeof(MptConfigurationPageIOC2));
+        SSMR3GetMem(pSSM, &pPages->IOCPage3, sizeof(MptConfigurationPageIOC3));
+        SSMR3GetMem(pSSM, &pPages->IOCPage4, sizeof(MptConfigurationPageIOC4));
+        SSMR3GetMem(pSSM, &pPages->IOCPage6, sizeof(MptConfigurationPageIOC6));
+        SSMR3GetMem(pSSM, &pPages->BIOSPage1, sizeof(MptConfigurationPageBIOS1));
+        SSMR3GetMem(pSSM, &pPages->BIOSPage2, sizeof(MptConfigurationPageBIOS2));
+        SSMR3GetMem(pSSM, &pPages->BIOSPage4, sizeof(MptConfigurationPageBIOS4));
+
+        /* Device dependent pages */
+        if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
+        {
+            PMptConfigurationPagesSpi pSpiPages = &pPages->u.SpiPages;
+
+            SSMR3GetMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage0, sizeof(MptConfigurationPageSCSISPIPort0));
+            SSMR3GetMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage1, sizeof(MptConfigurationPageSCSISPIPort1));
+            SSMR3GetMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage2, sizeof(MptConfigurationPageSCSISPIPort2));
+
+            for (unsigned i = 0; i < RT_ELEMENTS(pSpiPages->aBuses[0].aDevicePages); i++)
+            {
+                SSMR3GetMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage0, sizeof(MptConfigurationPageSCSISPIDevice0));
+                SSMR3GetMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage1, sizeof(MptConfigurationPageSCSISPIDevice1));
+                SSMR3GetMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage2, sizeof(MptConfigurationPageSCSISPIDevice2));
+                SSMR3GetMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage3, sizeof(MptConfigurationPageSCSISPIDevice3));
+            }
+        }
+        else if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+        {
+            PMptConfigurationPagesSas pSasPages = &pPages->u.SasPages;
+
+            SSMR3GetMem(pSSM, &pSasPages->SASIOUnitPage0, sizeof(MptConfigurationPageSASIOUnit0));
+            SSMR3GetMem(pSSM, &pSasPages->SASIOUnitPage1, sizeof(MptConfigurationPageSASIOUnit1));
+            SSMR3GetMem(pSSM, &pSasPages->SASIOUnitPage2, sizeof(MptConfigurationPageSASIOUnit2));
+            SSMR3GetMem(pSSM, &pSasPages->SASIOUnitPage3, sizeof(MptConfigurationPageSASIOUnit3));
+
+            for (unsigned i = 0; i < RT_ELEMENTS(pSasPages->aPHY); i++)
+            {
+                SSMR3GetMem(pSSM, &pSasPages->aPHY[i].SASPHYPage0, sizeof(MptConfigurationPageSASPHY0));
+                SSMR3GetMem(pSSM, &pSasPages->aPHY[i].SASPHYPage1, sizeof(MptConfigurationPageSASPHY1));
+            }
+
+            /* The number of devices first. */
+            SSMR3GetU32(pSSM, &pSasPages->cDevices);
+
+            PMptSASDevice pCurr = pSasPages->pSASDeviceHead;
+
+            for (unsigned i = 0; i < pSasPages->cDevices; i++)
+            {
+                SSMR3GetMem(pSSM, &pCurr->SASDevicePage0, sizeof(MptConfigurationPageSASDevice0));
+                SSMR3GetMem(pSSM, &pCurr->SASDevicePage1, sizeof(MptConfigurationPageSASDevice1));
+                SSMR3GetMem(pSSM, &pCurr->SASDevicePage2, sizeof(MptConfigurationPageSASDevice2));
+
+                pCurr = pCurr->pNext;
+            }
+
+            Assert(!pCurr);
+        }
+        else
+            AssertMsgFailed(("Invalid controller type %d\n", pLsiLogic->enmCtrlType));
+    }
+
     /* Now the data for the BIOS interface. */
     SSMR3GetU8  (pSSM, &pLsiLogic->VBoxSCSI.regIdentify);
     SSMR3GetU8  (pSSM, &pLsiLogic->VBoxSCSI.uTargetDevice);
@@ -3421,6 +4283,22 @@ static DECLCALLBACK(int) lsilogicDestruct(PPDMDEVINS pDevIns)
     if (pThis->pTaskCache)
         rc = RTCacheDestroy(pThis->pTaskCache);
 
+    /* Destroy device list if we emulate a SAS controller. */
+    if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+    {
+        PMptSASDevice pSASDeviceCurr = pThis->pConfigurationPages->u.SasPages.pSASDeviceHead;
+
+        while (pSASDeviceCurr)
+        {
+            PMptSASDevice pFree = pSASDeviceCurr;
+
+            pSASDeviceCurr = pSASDeviceCurr->pNext;
+            RTMemFree(pFree);
+        }
+    }
+
+    RTMemFree(pThis->pConfigurationPages);
+
     return rc;
 }
 
@@ -3592,13 +4470,9 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Cannot create task cache"));
 
-    /* Initialize per device state. */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
     {
-        char szName[24];
         PLSILOGICDEVICE pDevice = &pThis->aDeviceStates[i];
-
-        RTStrPrintf(szName, sizeof(szName), "Device%d", i);
 
         /* Initialize static parts of the device. */
         pDevice->iLUN = i;
@@ -3609,6 +4483,24 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         pDevice->IBase.pfnQueryInterface           = lsilogicDeviceQueryInterface;
         pDevice->ISCSIPort.pfnSCSIRequestCompleted = lsilogicDeviceSCSIRequestCompleted;
         pDevice->ILed.pfnQueryStatusLed            = lsilogicDeviceQueryStatusLed;
+    }
+
+    unsigned cMaxDevices;
+
+    if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
+        cMaxDevices = LSILOGICSCSI_PCI_SPI_DEVICES_MAX;
+    else if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+        cMaxDevices = LSILOGICSCSI_PCI_SAS_DEVICES_MAX;
+    else
+        AssertMsgFailed(("Invalid controller type: %d\n", pThis->enmCtrlType));
+
+    /* Initialize per device state. */
+    for (unsigned i = 0; i < cMaxDevices; i++)
+    {
+        char szName[24];
+        PLSILOGICDEVICE pDevice = &pThis->aDeviceStates[i];
+
+        RTStrPrintf(szName, sizeof(szName), "Device%d", i);
 
         /* Attach SCSI driver. */
         rc = PDMDevHlpDriverAttach(pDevIns, pDevice->iLUN, &pDevice->IBase, &pDevice->pDrvBase, szName);
