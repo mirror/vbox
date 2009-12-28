@@ -60,16 +60,28 @@
 #define LSILOGICSCSI_PCI_SAS_SUBSYSTEM_ID         (0x8000)
 #define LSILOGICSCSI_PCI_SAS_PORTS_MAX             8
 #define LSILOGICSCSI_PCI_SAS_DEVICES_PER_PORT_MAX  1
-#define LSILOGICSCSI_PCI_SAS_DEVICES_MAX          (LSILOGICSCSI_PCI_SAS_PORTS_MAX * LSILOGICSCSI_PCI_SAS_DEVICES_MAX)
+#define LSILOGICSCSI_PCI_SAS_DEVICES_MAX          (LSILOGICSCSI_PCI_SAS_PORTS_MAX * LSILOGICSCSI_PCI_SAS_DEVICES_PER_PORT_MAX)
 
 /** Maximum number of devices for both types */
 #define LSILOGIC_DEVICES_MAX LSILOGICSCSI_PCI_SPI_DEVICES_MAX
 
-/** The current saved state version. */
-#define LSILOGIC_SAVED_STATE_VERSION          2
-/** The saved state version used by VirtualBox 3.0 and earlier.  It does not
- * include the device config part. */
-#define LSILOGIC_SAVED_STATE_VERSION_VBOX_30  1
+/**
+ * A SAS address.
+ */
+#pragma pack(1)
+typedef union SASADDRESS
+{
+    /** 64bit view. */
+    uint64_t    u64Address;
+    /** 32bit view. */
+    uint32_t    u32Address[2];
+    /** 16bit view. */
+    uint16_t    u16Address[4];
+    /** Byte view. */
+    uint8_t     u8Address[8];
+} SASADDRESS, *PSASADDRESS;
+#pragma pack()
+AssertCompileSize(SASADDRESS, 8);
 
 /**
  * Possible device types we support.
@@ -784,6 +796,110 @@ typedef struct MptSCSITaskManagementReply
 AssertCompileSize(MptSCSITaskManagementReply, 24);
 
 /**
+ * Page address for SAS expander page types.
+ */
+#pragma pack(1)
+typedef union MptConfigurationPageAddressSASExpander
+{
+    struct
+    {
+        uint16_t    u16Handle;
+        uint16_t    u16Reserved;
+    } Form0And2;
+    struct
+    {
+        uint16_t    u16Handle;
+        uint8_t     u8PhyNum;
+        uint8_t     u8Reserved;
+    } Form1;
+} MptConfigurationPageAddressSASExpander, *PMptConfigurationPageAddressSASExpander;
+#pragma pack()
+
+/**
+ * Page address for SAS device page types.
+ */
+#pragma pack(1)
+typedef union MptConfigurationPageAddressSASDevice
+{
+    struct
+    {
+        uint16_t    u16Handle;
+        uint16_t    u16Reserved;
+    } Form0And2;
+    struct
+    {
+        uint8_t     u8TargetID;
+        uint8_t     u8Bus;
+        uint8_t     u8Reserved;
+    } Form1;
+} MptConfigurationPageAddressSASDevice, *PMptConfigurationPageAddressSASDevice;
+#pragma pack()
+
+/**
+ * Page address for SAS PHY page types.
+ */
+#pragma pack(1)
+typedef union MptConfigurationPageAddressSASPHY
+{
+    struct
+    {
+        uint8_t     u8PhyNumber;
+        uint8_t     u8Reserved[3];
+    } Form0;
+    struct
+    {
+        uint16_t    u16Index;
+        uint16_t    u16Reserved;
+    } Form1;
+} MptConfigurationPageAddressSASPHY, *PMptConfigurationPageAddressSASPHY;
+#pragma pack()
+
+/**
+ * Page address for SAS Enclosure page types.
+ */
+#pragma pack(1)
+typedef struct MptConfigurationPageAddressSASEnclosure
+{
+    uint16_t    u16Handle;
+    uint16_t    u16Reserved;
+} MptConfigurationPageAddressSASEnclosure, *PMptConfigurationPageAddressSASEnclosure;
+#pragma pack()
+
+/**
+ * Union of all possible address types.
+ */
+#pragma pack(1)
+typedef union MptConfigurationPageAddress
+{
+    /** 32bit view. */
+    uint32_t u32PageAddress;
+    struct
+    {
+        /** Port number to get the configuration page for. */
+        uint8_t u8PortNumber;
+        /** Reserved. */
+        uint8_t u8Reserved[3];
+    } MPIPortNumber;
+    struct
+    {
+        /** Target ID to get the configuration page for. */
+        uint8_t u8TargetID;
+        /** Bus number to get the configuration page for. */
+        uint8_t u8Bus;
+        /** Reserved. */
+        uint8_t u8Reserved[2];
+    } BusAndTargetId;
+    MptConfigurationPageAddressSASExpander  SASExpander;
+    MptConfigurationPageAddressSASDevice    SASDevice;
+    MptConfigurationPageAddressSASPHY       SASPHY;
+    MptConfigurationPageAddressSASEnclosure SASEnclosure;
+} MptConfigurationPageAddress, *PMptConfigurationPageAddress;
+#pragma pack()
+AssertCompileSize(MptConfigurationPageAddress, 4);
+
+#define MPT_CONFIGURATION_PAGE_ADDRESS_GET_SAS_FORM(x) (((x).u32PageAddress >> 28) & 0x0f)
+
+/**
  * Configuration request
  */
 #pragma pack(1)
@@ -816,28 +932,9 @@ typedef struct MptConfigurationRequest
     /** Type of the page beeing accessed. */
     uint8_t    u8PageType;
     /** Page type dependent address. */
-    union
-    {
-        /** 32bit view. */
-        uint32_t u32PageAddress;
-        struct
-        {
-            /** Port number to get the configuration page for. */
-            uint8_t u8PortNumber;
-            /** Reserved. */
-            uint8_t u8Reserved[3];
-        } MPIPortNumber;
-        struct
-        {
-            /** Target ID to get the configuration page for. */
-            uint8_t u8TargetID;
-            /** Bus number to get the configuration page for. */
-            uint8_t u8Bus;
-            /** Reserved. */
-            uint8_t u8Reserved[2];
-        } BusAndTargetId;
-    } u;
-    MptSGEntrySimple64 SimpleSGElement;
+    MptConfigurationPageAddress PageAddress;
+    /** Simple SG element describing the buffer. */
+    MptSGEntrySimple64          SimpleSGElement;
 } MptConfigurationRequest, *PMptConfigurationRequest;
 #pragma pack()
 AssertCompileSize(MptConfigurationRequest, 40);
@@ -872,8 +969,10 @@ typedef struct MptConfigurationReply
     uint8_t    u8MessageLength;
     /** Function number. */
     uint8_t    u8Function;
-    /** Reserved. */
-    uint8_t    u8Reserved2[3];
+    /** Extended page length. */
+    uint16_t   u16ExtPageLength;
+    /** Extended page type */
+    uint8_t    u8ExtPageType;
     /** Message flags. */
     uint8_t    u8MessageFlags;
     /** Message context ID. */
@@ -958,8 +1057,19 @@ typedef union MptReplyUnion
 #define MPT_CONFIGURATION_PAGE_TYPE_SCSI_SPI_PORT            (0x03)
 #define MPT_CONFIGURATION_PAGE_TYPE_SCSI_SPI_DEVICE          (0x04)
 #define MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING            (0x09)
+#define MPT_CONFIGURATION_PAGE_TYPE_EXTENDED                 (0x0F)
 
 #define MPT_CONFIGURATION_PAGE_TYPE_GET(u8PageType) ((u8PageType) & 0x0f)
+
+/**
+ * Extented page types.
+ */
+#define MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASIOUNIT       (0x10)
+#define MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASEXPANDER     (0x11)
+#define MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASDEVICE       (0x12)
+#define MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASPHYS         (0x13)
+#define MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_LOG             (0x14)
+#define MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_ENCLOSURE       (0x15)
 
 /**
  * Configuration Page header - Common to all pages.
@@ -1927,7 +2037,7 @@ typedef struct MptConfigurationPageBIOS2
                 struct
                 {
                     /** SAS address */
-                    uint64_t              u64SASAddress;
+                    SASADDRESS            SASAddress;
                     /** Reserved */
                     uint32_t              au32Reserved[3];
                     /** LUN */
@@ -2468,7 +2578,7 @@ typedef struct MptConfigurationPageSASIOUnit1
                 /** Phy flags */
                 uint8_t                           u8PhyFlags;
                 /** Max link rate */
-                uint8_t                           u8MaxLinkRate;
+                uint8_t                           u8MaxMinLinkRate;
                 /** Controller phy device info */
                 uint32_t                          u32ControllerPhyDeviceInfo;
                 /** Maximum target port connect time */
@@ -2634,9 +2744,355 @@ typedef struct MptConfigurationPageSASIOUnit3
 AssertCompileSize(MptConfigurationPageSASIOUnit3, 44);
 
 /**
- * Structure of all supported pages for the SCSI SPI controller.
+ * SAS PHY page 0 - Readonly
  */
-typedef struct MptConfigurationPagesSupportedSpi
+#pragma pack(1)
+typedef struct MptConfigurationPageSASPHY0
+{
+    /** Union. */
+    union
+    {
+        /** Byte view - variable. */
+        uint8_t                                   abPageData[1];
+        /** Field view. */
+        struct
+        {
+            /** The omnipresent header. */
+            MptExtendedConfigurationPageHeader    ExtHeader;
+            /** Owner dev handle. */
+            uint16_t                              u16OwnerDevHandle;
+            /** Reserved */
+            uint16_t                              u16Reserved0;
+            /** SAS address */
+            SASADDRESS                            SASAddress;
+            /** Attached device handle */
+            uint16_t                              u16AttachedDevHandle;
+            /** Attached phy identifier */
+            uint8_t                               u8AttachedPhyIdentifier;
+            /** Reserved */
+            uint8_t                               u8Reserved1;
+            /** Attached device information */
+            uint32_t                              u32AttachedDeviceInfo;
+            /** Programmed link rate */
+            uint8_t                               u8ProgrammedLinkRate;
+            /** Hardware link rate */
+            uint8_t                               u8HwLinkRate;
+            /** Change count */
+            uint8_t                               u8ChangeCount;
+            /** Flags */
+            uint8_t                               u8Flags;
+            /** Phy information */
+            uint32_t                              u32PhyInfo;
+        } fields;
+    } u;
+} MptConfigurationPageSASPHY0, *PMptConfigurationPageSASPHY0;
+#pragma pack()
+AssertCompileSize(MptConfigurationPageSASPHY0, 36);
+
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_TYPE_SET(x)              ((x) & 0x3)
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_TYPE_GET(x)              ((x) & 0x3)
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_TYPE_NO                  0x0
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_TYPE_END                 0x1
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_TYPE_EDGE_EXPANDER       0x2
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_TYPE_FANOUT_EXPANDER     0x3
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_SMP_INITIATOR            RT_BIT(4)
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_STP_INITIATOR            RT_BIT(5)
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_SSP_INITIATOR            RT_BIT(6)
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_SMP_TARGET               RT_BIT(8)
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_STP_TARGET               RT_BIT(9)
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_SSP_TARGET               RT_BIT(10)
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_DIRECT_ATTACHED          RT_BIT(11)
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_LSI                      RT_BIT(12)
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_ATAPI                    RT_BIT(13)
+#define LSILOGICSCSI_SASPHY0_DEV_INFO_DEVICE_SEP                      RT_BIT(14)
+
+/**
+ * SAS PHY page 1 - Readonly
+ */
+#pragma pack(1)
+typedef struct MptConfigurationPageSASPHY1
+{
+    /** Union. */
+    union
+    {
+        /** Byte view - variable. */
+        uint8_t                                   abPageData[1];
+        /** Field view. */
+        struct
+        {
+            /** The omnipresent header. */
+            MptExtendedConfigurationPageHeader    ExtHeader;
+            /** Reserved */
+            uint32_t                              u32Reserved0;
+            uint32_t                              u32InvalidDwordCound;
+            uint32_t                              u32RunningDisparityErrorCount;
+            uint32_t                              u32LossDwordSynchCount;
+            uint32_t                              u32PhyResetProblemCount;
+        } fields;
+    } u;
+} MptConfigurationPageSASPHY1, *PMptConfigurationPageSASPHY1;
+#pragma pack()
+AssertCompileSize(MptConfigurationPageSASPHY1, 28);
+
+/**
+ * SAS Device page 0 - Readonly
+ */
+#pragma pack(1)
+typedef struct MptConfigurationPageSASDevice0
+{
+    /** Union. */
+    union
+    {
+        /** Byte view - variable. */
+        uint8_t                                   abPageData[1];
+        /** Field view. */
+        struct
+        {
+            /** The omnipresent header. */
+            MptExtendedConfigurationPageHeader    ExtHeader;
+            /** Slot number */
+            uint16_t                              u16Slot;
+            /** Enclosure handle. */
+            uint16_t                              u16EnclosureHandle;
+            /** SAS address */
+            SASADDRESS                            SASAddress;
+            /** Parent device handle */
+            uint16_t                              u16ParentDevHandle;
+            /** Phy number */
+            uint8_t                               u8PhyNum;
+            /** Access status */
+            uint8_t                               u8AccessStatus;
+            /** Device handle */
+            uint16_t                              u16DevHandle;
+            /** Target ID */
+            uint8_t                               u8TargetID;
+            /** Bus */
+            uint8_t                               u8Bus;
+            /** Device info */
+            uint32_t                              u32DeviceInfo;
+            /** Flags */
+            uint16_t                              u16Flags;
+            /** Physical port */
+            uint8_t                               u8PhysicalPort;
+            /** Reserved */
+            uint8_t                               u8Reserved0;
+        } fields;
+    } u;
+} MptConfigurationPageSASDevice0, *PMptConfigurationPageSASDevice0;
+#pragma pack()
+AssertCompileSize(MptConfigurationPageSASDevice0, 36);
+
+#define LSILOGICSCSI_SASDEVICE0_STATUS_NO_ERRORS                         (0x00)
+
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_TYPE_SET(x)              ((x) & 0x3)
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_TYPE_GET(x)              ((x) & 0x3)
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_TYPE_NO                  0x0
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_TYPE_END                 0x1
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_TYPE_EDGE_EXPANDER       0x2
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_TYPE_FANOUT_EXPANDER     0x3
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_SMP_INITIATOR            RT_BIT(4)
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_STP_INITIATOR            RT_BIT(5)
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_SSP_INITIATOR            RT_BIT(6)
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_SMP_TARGET               RT_BIT(8)
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_STP_TARGET               RT_BIT(9)
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_SSP_TARGET               RT_BIT(10)
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_DIRECT_ATTACHED          RT_BIT(11)
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_LSI                      RT_BIT(12)
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_ATAPI                    RT_BIT(13)
+#define LSILOGICSCSI_SASDEVICE0_DEV_INFO_DEVICE_SEP                      RT_BIT(14)
+
+#define LSILOGICSCSI_SASDEVICE0_FLAGS_DEVICE_PRESENT                     (RT_BIT(0))
+#define LSILOGICSCSI_SASDEVICE0_FLAGS_DEVICE_MAPPED_TO_BUS_AND_TARGET_ID (RT_BIT(1))
+#define LSILOGICSCSI_SASDEVICE0_FLAGS_DEVICE_MAPPING_PERSISTENT          (RT_BIT(2))
+
+/**
+ * SAS Device page 1 - Readonly
+ */
+#pragma pack(1)
+typedef struct MptConfigurationPageSASDevice1
+{
+    /** Union. */
+    union
+    {
+        /** Byte view - variable. */
+        uint8_t                                   abPageData[1];
+        /** Field view. */
+        struct
+        {
+            /** The omnipresent header. */
+            MptExtendedConfigurationPageHeader    ExtHeader;
+            /** Reserved */
+            uint32_t                              u32Reserved0;
+            /** SAS address */
+            SASADDRESS                            SASAddress;
+            /** Reserved */
+            uint32_t                              u32Reserved;
+            /** Device handle */
+            uint16_t                              u16DevHandle;
+            /** Target ID */
+            uint8_t                               u8TargetID;
+            /** Bus */
+            uint8_t                               u8Bus;
+            /** Initial REgister device FIS */
+            uint32_t                              au32InitialRegDeviceFIS[5];
+        } fields;
+    } u;
+} MptConfigurationPageSASDevice1, *PMptConfigurationPageSASDevice1;
+#pragma pack()
+AssertCompileSize(MptConfigurationPageSASDevice1, 48);
+
+/**
+ * SAS Device page 2 - Read/Write persistent
+ */
+#pragma pack(1)
+typedef struct MptConfigurationPageSASDevice2
+{
+    /** Union. */
+    union
+    {
+        /** Byte view - variable. */
+        uint8_t                                   abPageData[1];
+        /** Field view. */
+        struct
+        {
+            /** The omnipresent header. */
+            MptExtendedConfigurationPageHeader    ExtHeader;
+            /** Physical identifier */
+            SASADDRESS                            SASAddress;
+            /** Enclosure mapping */
+            uint32_t                              u32EnclosureMapping;
+        } fields;
+    } u;
+} MptConfigurationPageSASDevice2, *PMptConfigurationPageSASDevice2;
+#pragma pack()
+AssertCompileSize(MptConfigurationPageSASDevice2, 20);
+
+/**
+ * A device entitiy containing all pages.
+ */
+typedef struct MptSASDevice
+{
+    /** Pointer to the next device if any. */
+    struct MptSASDevice            *pNext;
+    /** Pointer to the previous device if any. */
+    struct MptSASDevice            *pPrev;
+
+    MptConfigurationPageSASDevice0  SASDevicePage0;
+    MptConfigurationPageSASDevice1  SASDevicePage1;
+    MptConfigurationPageSASDevice2  SASDevicePage2;
+} MptSASDevice, *PMptSASDevice;
+
+/**
+ * SAS Expander page 0 - Readonly
+ */
+#pragma pack(1)
+typedef struct MptConfigurationPageSASExpander0
+{
+    /** Union. */
+    union
+    {
+        /** Byte view - variable. */
+        uint8_t                                   abPageData[1];
+        /** Field view. */
+        struct
+        {
+            /** The omnipresent header. */
+            MptExtendedConfigurationPageHeader    ExtHeader;
+            /** Physical port */
+            uint8_t                               u8PhysicalPort;
+            /** Reserved */
+            uint8_t                               u8Reserved0;
+            /** Enclosure handle */
+            uint16_t                              u16EnclosureHandle;
+            /** SAS address */
+            SASADDRESS                            SASAddress;
+            /** Discovery status */
+            uint32_t                              u32DiscoveryStatus;
+            /** Device handle. */
+            uint16_t                              u16DevHandle;
+            /** Parent device handle */
+            uint16_t                              u16ParentDevHandle;
+            /** Expander change count */
+            uint16_t                              u16ExpanderChangeCount;
+            /** Expander route indexes */
+            uint16_t                              u16ExpanderRouteIndexes;
+            /** Number of PHys in this expander */
+            uint8_t                               u8NumPhys;
+            /** SAS level */
+            uint8_t                               u8SASLevel;
+            /** Flags */
+            uint8_t                               u8Flags;
+            /** Reserved */
+            uint8_t                               u8Reserved1;
+        } fields;
+    } u;
+} MptConfigurationPageSASExpander0, *PMptConfigurationPageSASExpander0;
+#pragma pack()
+AssertCompileSize(MptConfigurationPageSASExpander0, 36);
+
+/**
+ * SAS Expander page 1 - Readonly
+ */
+#pragma pack(1)
+typedef struct MptConfigurationPageSASExpander1
+{
+    /** Union. */
+    union
+    {
+        /** Byte view - variable. */
+        uint8_t                                   abPageData[1];
+        /** Field view. */
+        struct
+        {
+            /** The omnipresent header. */
+            MptExtendedConfigurationPageHeader    ExtHeader;
+            /** Physical port */
+            uint8_t                               u8PhysicalPort;
+            /** Reserved */
+            uint8_t                               u8Reserved0[3];
+            /** Number of PHYs */
+            uint8_t                               u8NumPhys;
+            /** Number of the Phy the information in this page is for. */
+            uint8_t                               u8Phy;
+            /** Number of routing table entries */
+            uint16_t                              u16NumTableEntriesProgrammed;
+            /** Programmed link rate */
+            uint8_t                               u8ProgrammedLinkRate;
+            /** Hardware link rate */
+            uint8_t                               u8HwLinkRate;
+            /** Attached device handle */
+            uint16_t                              u16AttachedDevHandle;
+            /** Phy information */
+            uint32_t                              u32PhyInfo;
+            /** Attached device information */
+            uint32_t                              u32AttachedDeviceInfo;
+            /** Owner device handle. */
+            uint16_t                              u16OwnerDevHandle;
+            /** Change count */
+            uint8_t                               u8ChangeCount;
+            /** Negotiated link rate */
+            uint8_t                               u8NegotiatedLinkRate;
+            /** Phy identifier */
+            uint8_t                               u8PhyIdentifier;
+            /** Attached phy identifier */
+            uint8_t                               u8AttachedPhyIdentifier;
+            /** Reserved */
+            uint8_t                               u8Reserved1;
+            /** Discovery information */
+            uint8_t                               u8DiscoveryInfo;
+            /** Reserved */
+            uint32_t                              u32Reserved;
+        } fields;
+    } u;
+} MptConfigurationPageSASExpander1, *PMptConfigurationPageSASExpander1;
+#pragma pack()
+AssertCompileSize(MptConfigurationPageSASExpander1, 40);
+
+/**
+ * Structure of all supported pages for the SCSI SPI controller.
+ * Used to load the device state from older versions.
+ */
+typedef struct MptConfigurationPagesSupported_SSM_V2
 {
     MptConfigurationPageManufacturing0 ManufacturingPage0;
     MptConfigurationPageManufacturing1 ManufacturingPage1;
@@ -2669,12 +3125,54 @@ typedef struct MptConfigurationPagesSupportedSpi
             MptConfigurationPageSCSISPIDevice3 SCSISPIDevicePage3;
         } aDevicePages[LSILOGICSCSI_PCI_SPI_DEVICES_MAX];
     } aBuses[1]; /* Only one bus at the moment. */
-} MptConfigurationPagesSupportedSpi, *PMptConfigurationPagesSupportedSpi;
+} MptConfigurationPagesSupported_SSM_V2, *PMptConfigurationPagesSupported_SSM_V2;
+
+typedef struct MptConfigurationPagesSpi
+{
+    struct
+    {
+        MptConfigurationPageSCSISPIPort0   SCSISPIPortPage0;
+        MptConfigurationPageSCSISPIPort1   SCSISPIPortPage1;
+        MptConfigurationPageSCSISPIPort2   SCSISPIPortPage2;
+    } aPortPages[1]; /* Currently only one port supported. */
+    struct
+    {
+        struct
+        {
+            MptConfigurationPageSCSISPIDevice0 SCSISPIDevicePage0;
+            MptConfigurationPageSCSISPIDevice1 SCSISPIDevicePage1;
+            MptConfigurationPageSCSISPIDevice2 SCSISPIDevicePage2;
+            MptConfigurationPageSCSISPIDevice3 SCSISPIDevicePage3;
+        } aDevicePages[LSILOGICSCSI_PCI_SPI_DEVICES_MAX];
+    } aBuses[1]; /* Only one bus at the moment. */
+} MptConfigurationPagesSpi, *PMptConfigurationPagesSpi;
+
+#pragma pack(1)
+typedef struct MptConfigurationPagesSas
+{
+    MptConfigurationPageSASIOUnit0      SASIOUnitPage0;
+    MptConfigurationPageSASIOUnit1      SASIOUnitPage1;
+    MptConfigurationPageSASIOUnit2      SASIOUnitPage2;
+    MptConfigurationPageSASIOUnit3      SASIOUnitPage3;
+    struct
+    {
+        MptConfigurationPageSASPHY0     SASPHYPage0;
+        MptConfigurationPageSASPHY1     SASPHYPage1;
+    } aPHY[LSILOGICSCSI_PCI_SAS_PORTS_MAX];
+
+    /** Number of devices detected. */
+    uint32_t                            cDevices;
+    /** Pointer to the first SAS device. */
+    R3PTRTYPE(PMptSASDevice)            pSASDeviceHead;
+    /** Pointer to the last SAS device. */
+    R3PTRTYPE(PMptSASDevice)            pSASDeviceTail;
+} MptConfigurationPagesSas, *PMptConfigurationPagesSas;
+#pragma pack()
 
 /**
- * Structure of all supported pages for the SCSI SAS controller.
+ * Structure of all supported pages for both controllers.
  */
-typedef struct MptConfigurationPagesSupportedSas
+typedef struct MptConfigurationPagesSupported
 {
     MptConfigurationPageManufacturing0  ManufacturingPage0;
     MptConfigurationPageManufacturing1  ManufacturingPage1;
@@ -2684,7 +3182,8 @@ typedef struct MptConfigurationPagesSupportedSas
     MptConfigurationPageManufacturing5  ManufacturingPage5;
     MptConfigurationPageManufacturing6  ManufacturingPage6;
     MptConfigurationPageManufacturing7  ManufacturingPage7;
-    MptConfigurationPageManufacturing9  ManufacturingPage8;
+    MptConfigurationPageManufacturing8  ManufacturingPage8;
+    MptConfigurationPageManufacturing9  ManufacturingPage9;
     MptConfigurationPageManufacturing10 ManufacturingPage10;
     MptConfigurationPageIOUnit0         IOUnitPage0;
     MptConfigurationPageIOUnit1         IOUnitPage1;
@@ -2702,11 +3201,14 @@ typedef struct MptConfigurationPagesSupportedSas
     MptConfigurationPageBIOS2           BIOSPage2;
     /* BIOS page 3 is not described */
     MptConfigurationPageBIOS4           BIOSPage4;
-    MptConfigurationPageSASIOUnit0      SASIOUnitPage0;
-    MptConfigurationPageSASIOUnit1      SASIOUnitPage1;
-    MptConfigurationPageSASIOUnit2      SASIOUnitPage2;
-    MptConfigurationPageSASIOUnit3      SASIOUnitPage3;
-} MptConfigurationPagesSupportedSas, *PMptConfigurationPagesSupportedSas;
+
+    /** Controller dependent data. */
+    union
+    {
+        MptConfigurationPagesSpi        SpiPages;
+        MptConfigurationPagesSas        SasPages;
+    } u;
+} MptConfigurationPagesSupported, *PMptConfigurationPagesSupported;
 
 /**
  * Possible SG element types.
@@ -2717,5 +3219,136 @@ enum MPTSGENTRYTYPE
     MPTSGENTRYTYPE_SIMPLE              = 0x01,
     MPTSGENTRYTYPE_CHAIN               = 0x03
 };
+
+/**
+ * Register interface.
+ */
+
+/**
+ * Defined states that the SCSI controller can have.
+ */
+typedef enum LSILOGICSTATE
+{
+    /** Reset state. */
+    LSILOGICSTATE_RESET       = 0x00,
+    /** Ready state. */
+    LSILOGICSTATE_READY       = 0x01,
+    /** Operational state. */
+    LSILOGICSTATE_OPERATIONAL = 0x02,
+    /** Fault state. */
+    LSILOGICSTATE_FAULT       = 0x04,
+    /** 32bit size hack */
+    LSILOGICSTATE_32BIT_HACK  = 0x7fffffff
+} LSILOGICSTATE;
+
+/**
+ * Which entity needs to initialize the controller
+ * to get into the operational state.
+ */
+typedef enum LSILOGICWHOINIT
+{
+    /** Not initialized. */
+    LSILOGICWHOINIT_NOT_INITIALIZED = 0x00,
+    /** System BIOS. */
+    LSILOGICWHOINIT_SYSTEM_BIOS     = 0x01,
+    /** ROM Bios. */
+    LSILOGICWHOINIT_ROM_BIOS        = 0x02,
+    /** PCI Peer. */
+    LSILOGICWHOINIT_PCI_PEER        = 0x03,
+    /** Host driver. */
+    LSILOGICWHOINIT_HOST_DRIVER     = 0x04,
+    /** Manufacturing. */
+    LSILOGICWHOINIT_MANUFACTURING   = 0x05,
+    /** 32bit size hack. */
+    LSILOGICWHOINIT_32BIT_HACK      = 0x7fffffff
+} LSILOGICWHOINIT;
+
+
+/**
+ * IOC status codes.
+ */
+#define LSILOGIC_IOCSTATUS_SUCCESS                0x0000
+#define LSILOGIC_IOCSTATUS_INVALID_FUNCTION       0x0001
+#define LSILOGIC_IOCSTATUS_BUSY                   0x0002
+#define LSILOGIC_IOCSTATUS_INVALID_SGL            0x0003
+#define LSILOGIC_IOCSTATUS_INTERNAL_ERROR         0x0004
+#define LSILOGIC_IOCSTATUS_RESERVED               0x0005
+#define LSILOGIC_IOCSTATUS_INSUFFICIENT_RESOURCES 0x0006
+#define LSILOGIC_IOCSTATUS_INVALID_FIELD          0x0007
+#define LSILOGIC_IOCSTATUS_INVALID_STATE          0x0008
+#define LSILOGIC_IOCSTATUS_OP_STATE_NOT_SUPPOTED  0x0009
+
+/**
+ * Size of the I/O and MMIO space.
+ */
+#define LSILOGIC_PCI_SPACE_IO_SIZE  256
+#define LSILOGIC_PCI_SPACE_MEM_SIZE 128 * _1K
+
+/**
+ * Doorbell register - Used to get the status of the controller and
+ * initialise it.
+ */
+#define LSILOGIC_REG_DOORBELL 0x00
+# define LSILOGIC_REG_DOORBELL_SET_STATE(enmState)     (((enmState) & 0x0f) << 28)
+# define LSILOGIC_REG_DOORBELL_SET_USED(fUsed)         (((fUsed) ? 1 : 0) << 27)
+# define LSILOGIC_REG_DOORBELL_SET_WHOINIT(enmWhoInit) (((enmWhoInit) & 0x07) << 24)
+# define LSILOGIC_REG_DOORBELL_SET_FAULT_CODE(u16Code) (u16Code)
+# define LSILOGIC_REG_DOORBELL_GET_FUNCTION(x)         (((x) & 0xff000000) >> 24)
+# define LSILOGIC_REG_DOORBELL_GET_SIZE(x)             (((x) & 0x00ff0000) >> 16)
+
+/**
+ * Functions which can be passed through the system doorbell.
+ */
+#define LSILOGIC_DOORBELL_FUNCTION_IOC_MSG_UNIT_RESET  0x40
+#define LSILOGIC_DOORBELL_FUNCTION_IO_UNIT_RESET       0x41
+#define LSILOGIC_DOORBELL_FUNCTION_HANDSHAKE           0x42
+#define LSILOGIC_DOORBELL_FUNCTION_REPLY_FRAME_REMOVAL 0x43
+
+/**
+ * Write sequence register for the diagnostic register.
+ */
+#define LSILOGIC_REG_WRITE_SEQUENCE    0x04
+
+/**
+ * Diagnostic register - used to reset the controller.
+ */
+#define LSILOGIC_REG_HOST_DIAGNOSTIC   0x08
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_DIAG_MEM_ENABLE     (RT_BIT(0))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_DISABLE_ARM         (RT_BIT(1))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_RESET_ADAPTER       (RT_BIT(2))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_DIAG_RW_ENABLE      (RT_BIT(4))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_RESET_HISTORY       (RT_BIT(5))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_FLASH_BAD_SIG       (RT_BIT(6))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_DRWE                (RT_BIT(7))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_PREVENT_IOC_BOOT    (RT_BIT(9))
+# define LSILOGIC_REG_HOST_DIAGNOSTIC_CLEAR_FLASH_BAD_SIG (RT_BIT(10))
+
+#define LSILOGIC_REG_TEST_BASE_ADDRESS 0x0c
+#define LSILOGIC_REG_DIAG_RW_DATA      0x10
+#define LSILOGIC_REG_DIAG_RW_ADDRESS   0x14
+
+/**
+ * Interrupt status register.
+ */
+#define LSILOGIC_REG_HOST_INTR_STATUS  0x30
+# define LSILOGIC_REG_HOST_INTR_STATUS_W_MASK (RT_BIT(3))
+# define LSILOGIC_REG_HOST_INTR_STATUS_DOORBELL_STS    (RT_BIT(31))
+# define LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR      (RT_BIT(3))
+# define LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL (RT_BIT(0))
+
+/**
+ * Interrupt mask register.
+ */
+#define LSILOGIC_REG_HOST_INTR_MASK    0x34
+# define LSILOGIC_REG_HOST_INTR_MASK_W_MASK (RT_BIT(0) | RT_BIT(3) | RT_BIT(8) | RT_BIT(9))
+# define LSILOGIC_REG_HOST_INTR_MASK_IRQ_ROUTING (RT_BIT(8) | RT_BIT(9))
+# define LSILOGIC_REG_HOST_INTR_MASK_DOORBELL RT_BIT(0)
+# define LSILOGIC_REG_HOST_INTR_MASK_REPLY    RT_BIT(3)
+
+/**
+ * Queue registers.
+ */
+#define LSILOGIC_REG_REQUEST_QUEUE     0x40
+#define LSILOGIC_REG_REPLY_QUEUE       0x44
 
 #endif /* __DEVLSILOGICSCSI_H__ */

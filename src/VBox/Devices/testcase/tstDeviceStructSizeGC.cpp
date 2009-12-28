@@ -1521,12 +1521,14 @@ int main()
     GEN_CHECK_OFF(LSILOGICSCSI, uReplyPostQueueNextAddressRead);
     GEN_CHECK_OFF(LSILOGICSCSI, uRequestQueueNextEntryFreeWrite);
     GEN_CHECK_OFF(LSILOGICSCSI, uRequestQueueNextAddressRead);
-    GEN_CHECK_OFF(LSILOGICSCSI, ConfigurationPages);
+    GEN_CHECK_OFF(LSILOGICSCSI, u16NextHandle);
+    GEN_CHECK_OFF(LSILOGICSCSI, enmCtrlType);
     GEN_CHECK_OFF(LSILOGICSCSI, VBoxSCSI);
     GEN_CHECK_OFF(LSILOGICSCSI, pTaskCache);
     GEN_CHECK_OFF(LSILOGICSCSI, IBase);
     GEN_CHECK_OFF(LSILOGICSCSI, ILeds);
     GEN_CHECK_OFF(LSILOGICSCSI, pLedsConnector);
+    GEN_CHECK_OFF(LSILOGICSCSI, pConfigurationPages);
 #endif /* VBOX_WITH_LSILOGIC */
 
 #ifdef VBOX_WITH_HPET
