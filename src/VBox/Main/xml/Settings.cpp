@@ -2009,6 +2009,11 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
             sctl.storageBus = StorageBus_Floppy;
             sctl.controllerType = StorageControllerType_I82078;
         }
+        else if (strType == "LsiLogicSas")
+        {
+            sctl.storageBus = StorageBus_SAS;
+            sctl.controllerType = StorageControllerType_LsiLogicSas;
+        }
         else
             throw ConfigFileError(this, pelmController, N_("Invalid value '%s' for StorageController/@type attribute"), strType.c_str());
 
@@ -2870,6 +2875,7 @@ void MachineConfigFile::writeStorageControllers(xml::ElementNode &elmParent,
             case StorageControllerType_PIIX4: pcszType = "PIIX4"; break;
             case StorageControllerType_ICH6: pcszType = "ICH6"; break;
             case StorageControllerType_I82078: pcszType = "I82078"; break;
+            case StorageControllerType_LsiLogicSas: pcszType = "LsiLogicSas"; break;
             default: /*case StorageControllerType_PIIX3:*/ pcszType = "PIIX3"; break;
         }
         pelmController->setAttribute("type", pcszType);

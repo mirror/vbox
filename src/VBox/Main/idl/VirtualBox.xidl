@@ -13034,6 +13034,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="SATA"      value="2"/>
     <const name="SCSI"      value="3"/>
     <const name="Floppy"    value="4"/>
+    <const name="SAS"       value="5"/>
   </enum>
 
   <enum
@@ -13068,6 +13069,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="I82078"    value="7">
       <desc>A floppy disk controller; this is the only variant for floppy drives.</desc>
+    </const>
+    <const name="LsiLogicSas"  value="8">
+      <desc>A variant of the LsiLogic controller using SAS.</desc>
     </const>
   </enum>
 

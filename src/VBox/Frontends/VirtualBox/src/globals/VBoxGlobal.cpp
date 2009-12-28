@@ -1174,6 +1174,7 @@ QString VBoxGlobal::toString (StorageSlot aSlot) const
         case KStorageBus_SATA:
         case KStorageBus_SCSI:
         case KStorageBus_Floppy:
+        case KStorageBus_SAS:
             break;
 
         default:
@@ -1211,6 +1212,11 @@ QString VBoxGlobal::toString (StorageSlot aSlot) const
         case KStorageBus_Floppy:
         {
             result = mSlotTemplates [6].arg (aSlot.device);
+            break;
+        }
+        case KStorageBus_SAS:
+        {
+            result = mSlotTemplates [5].arg (aSlot.port);
             break;
         }
         default:
@@ -2699,6 +2705,7 @@ void VBoxGlobal::retranslateUi()
     mStorageBuses [KStorageBus_SATA] =      tr ("SATA", "StorageBus");
     mStorageBuses [KStorageBus_SCSI] =      tr ("SCSI", "StorageBus");
     mStorageBuses [KStorageBus_Floppy] =    tr ("Floppy", "StorageBus");
+    mStorageBuses [KStorageBus_SAS] =      tr ("SAS", "StorageBus");
 
     mStorageBusChannels [0] = tr ("Primary", "StorageBusChannel");
     mStorageBusChannels [1] = tr ("Secondary", "StorageBusChannel");
@@ -2806,6 +2813,8 @@ void VBoxGlobal::retranslateUi()
         tr ("BusLogic", "StorageControllerType");
     mStorageControllerTypes [KStorageControllerType_I82078] =
         tr ("I82078", "StorageControllerType");
+    mStorageControllerTypes [KStorageControllerType_LsiLogicSas] =
+        tr ("LsiLogic SAS", "StorageControllerType");
 
     mUSBDeviceStates [KUSBDeviceState_NotSupported] =
         tr ("Not supported", "USBDeviceState");

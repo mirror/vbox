@@ -374,6 +374,7 @@ STDMETHODIMP SystemProperties::GetMaxDevicesPerPortForStorageBus (StorageBus_T a
     {
         case StorageBus_SATA:
         case StorageBus_SCSI:
+        case StorageBus_SAS:
         {
             /* SATA and both SCSI controllers only support one device per port. */
             *aMaxDevicesPerPort = 1;
@@ -424,6 +425,11 @@ STDMETHODIMP SystemProperties::GetMinPortCountForStorageBus (StorageBus_T aBus, 
             *aMinPortCount = 1;
             break;
         }
+        case StorageBus_SAS:
+        {
+            *aMinPortCount = 8;
+            break;
+        }
         default:
             AssertMsgFailed(("Invalid bus type %d\n", aBus));
     }
@@ -461,6 +467,11 @@ STDMETHODIMP SystemProperties::GetMaxPortCountForStorageBus (StorageBus_T aBus, 
             *aMaxPortCount = 1;
             break;
         }
+        case StorageBus_SAS:
+        {
+            *aMaxPortCount = 8;
+            break;
+        }
         default:
             AssertMsgFailed(("Invalid bus type %d\n", aBus));
     }
@@ -481,6 +492,7 @@ STDMETHODIMP SystemProperties::GetMaxInstancesOfStorageBus(StorageBus_T aBus, UL
         case StorageBus_SATA:
         case StorageBus_SCSI:
         case StorageBus_IDE:
+        case StorageBus_SAS:
         case StorageBus_Floppy:
         {
             /** @todo raise the limits ASAP, per bus type */
@@ -515,6 +527,7 @@ STDMETHODIMP SystemProperties::GetDeviceTypesForStorageBus(StorageBus_T aBus,
         }
         case StorageBus_SATA:
         case StorageBus_SCSI:
+        case StorageBus_SAS:
         {
             com::SafeArray<DeviceType_T> saDeviceTypes(1);
             saDeviceTypes[0] = DeviceType_HardDisk;

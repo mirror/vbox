@@ -2849,6 +2849,7 @@ const char *Console::convertControllerTypeToDev(StorageControllerType_T enmCtrlT
     switch (enmCtrlType)
     {
         case StorageControllerType_LsiLogic:
+        case StorageControllerType_LsiLogicSas:
             return "lsilogicscsi";
         case StorageControllerType_BusLogic:
             return "buslogic";
@@ -2879,6 +2880,7 @@ HRESULT Console::convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG 
         }
         case StorageBus_SATA:
         case StorageBus_SCSI:
+        case StorageBus_SAS:
         {
             uLun = port;
             return S_OK;

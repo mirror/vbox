@@ -169,6 +169,9 @@ AbstractControllerType::AbstractControllerType (KStorageBus aBusType, KStorageCo
             case KStorageBus_Floppy:
                 mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::FloppyControllerNormal + i);
                 break;
+            case KStorageBus_SAS:
+                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::SATAControllerNormal + i);
+                break;
             default:
                 break;
         }
@@ -269,6 +272,22 @@ KStorageControllerType FloppyControllerType::first() const
 }
 
 uint FloppyControllerType::size() const
+{
+    return 1;
+}
+
+/* SAS Controller Type */
+SASControllerType::SASControllerType (KStorageControllerType aSubType)
+    : AbstractControllerType (KStorageBus_SAS, aSubType)
+{
+}
+
+KStorageControllerType SASControllerType::first() const
+{
+    return KStorageControllerType_LsiLogicSas;
+}
+
+uint SASControllerType::size() const
 {
     return 1;
 }
@@ -407,6 +426,9 @@ ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
             break;
         case KStorageBus_Floppy:
             mCtrType = new FloppyControllerType (aControllerType);
+            break;
+        case KStorageBus_SAS:
+            mCtrType = new SASControllerType (aControllerType);
             break;
         default:
             AssertMsgFailed (("Wrong Controller Type {%d}!\n", aBusType));
@@ -1022,6 +1044,11 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_Floppy) <
                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (KStorageBus_Floppy);
         }
+        case R_IsMoreSASControllersPossible:
+        {
+            return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_SAS) <
+                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (KStorageBus_SAS);
+        }
         case R_IsMoreAttachmentsPossible:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
@@ -1541,6 +1568,10 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     mAddFloppyCtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::FloppyControllerAddEn),
                                                        PixmapPool::pool()->pixmap (PixmapPool::FloppyControllerAddDis)));
 
+    mAddSASCtrAction = new QAction (this);
+    mAddSASCtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddEn),
+                                                    PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddDis)));
+
     mDelCtrAction = new QAction (this);
     mDelCtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::ControllerDelEn),
                                                  PixmapPool::pool()->pixmap (PixmapPool::ControllerDelDis)));
@@ -1616,6 +1647,7 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     connect (mAddIDECtrAction, SIGNAL (triggered (bool)), this, SLOT (addIDEController()));
     connect (mAddSATACtrAction, SIGNAL (triggered (bool)), this, SLOT (addSATAController()));
     connect (mAddSCSICtrAction, SIGNAL (triggered (bool)), this, SLOT (addSCSIController()));
+    connect (mAddSASCtrAction, SIGNAL (triggered (bool)), this, SLOT (addSASController()));
     connect (mAddFloppyCtrAction, SIGNAL (triggered (bool)), this, SLOT (addFloppyController()));
     connect (mDelCtrAction, SIGNAL (triggered (bool)), this, SLOT (delController()));
     connect (mAddAttAction, SIGNAL (triggered (bool)), this, SLOT (addAttachment()));
@@ -1791,6 +1823,7 @@ void VBoxVMSettingsHD::retranslateUi()
     mAddIDECtrAction->setText (tr ("Add IDE Controller"));
     mAddSATACtrAction->setText (tr ("Add SATA Controller"));
     mAddSCSICtrAction->setText (tr ("Add SCSI Controller"));
+    mAddSASCtrAction->setText (tr ("Add SAS Controller"));
     mAddFloppyCtrAction->setText (tr ("Add Floppy Controller"));
     mDelCtrAction->setText (tr ("Remove Controller"));
     mAddAttAction->setText (tr ("Add Attachment"));
@@ -1892,6 +1925,7 @@ void VBoxVMSettingsHD::addController()
     menu.addAction (mAddIDECtrAction);
     menu.addAction (mAddSATACtrAction);
     menu.addAction (mAddSCSICtrAction);
+    menu.addAction (mAddSASCtrAction);
     menu.addAction (mAddFloppyCtrAction);
     menu.exec (QCursor::pos());
 }
@@ -1914,6 +1948,11 @@ void VBoxVMSettingsHD::addSCSIController()
 void VBoxVMSettingsHD::addFloppyController()
 {
     addControllerWrapper (generateUniqueName (tr ("Floppy Controller")), KStorageBus_Floppy, KStorageControllerType_I82078);
+}
+
+void VBoxVMSettingsHD::addSASController()
+{
+    addControllerWrapper (generateUniqueName (tr ("SAS Controller")), KStorageBus_SAS, KStorageControllerType_LsiLogicSas);
 }
 
 void VBoxVMSettingsHD::delController()
@@ -2166,6 +2205,7 @@ void VBoxVMSettingsHD::updateActionsState()
     bool isSATAPossible = mStorageModel->data (index, StorageModel::R_IsMoreSATAControllersPossible).toBool();
     bool isSCSIPossible = mStorageModel->data (index, StorageModel::R_IsMoreSCSIControllersPossible).toBool();
     bool isFloppyPossible = mStorageModel->data (index, StorageModel::R_IsMoreFloppyControllersPossible).toBool();
+    bool isSASPossible = mStorageModel->data (index, StorageModel::R_IsMoreSASControllersPossible).toBool();
 
     bool isController = mStorageModel->data (index, StorageModel::R_IsController).toBool();
     bool isAttachment = mStorageModel->data (index, StorageModel::R_IsAttachment).toBool();
@@ -2176,6 +2216,7 @@ void VBoxVMSettingsHD::updateActionsState()
     mAddSATACtrAction->setEnabled (isSATAPossible);
     mAddSCSICtrAction->setEnabled (isSCSIPossible);
     mAddFloppyCtrAction->setEnabled (isFloppyPossible);
+    mAddSASCtrAction->setEnabled (isSASPossible);
 
     mAddAttAction->setEnabled (isController && isAttachmentsPossible);
     mAddHDAttAction->setEnabled (isController && isAttachmentsPossible);

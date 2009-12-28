@@ -130,7 +130,7 @@ HRESULT StorageController::init(Machine *aParent,
 
     ComAssertRet(aParent && !aName.isEmpty(), E_INVALIDARG);
     if (   (aStorageBus <= StorageBus_Null)
-        || (aStorageBus >  StorageBus_Floppy))
+        || (aStorageBus >  StorageBus_SAS))
         return setError (E_INVALIDARG,
             tr ("Invalid storage connection type"));
 
@@ -171,6 +171,10 @@ HRESULT StorageController::init(Machine *aParent,
             /** @todo allow 2 floppies later */
             m->bd->mPortCount = 1;
             m->bd->mStorageControllerType = StorageControllerType_I82078;
+            break;
+        case StorageBus_SAS:
+            m->bd->mPortCount = 8;
+            m->bd->mStorageControllerType = StorageControllerType_LsiLogicSas;
             break;
     }
 
@@ -383,6 +387,12 @@ STDMETHODIMP StorageController::COMSETTER(ControllerType) (StorageControllerType
                 rc = E_INVALIDARG;
             break;
         }
+        case StorageBus_SAS:
+        {
+            if (aControllerType != StorageControllerType_LsiLogicSas)
+                rc = E_INVALIDARG;
+            break;
+        }
         default:
             AssertMsgFailed(("Invalid controller type %d\n", m->bd->mStorageBus));
     }
@@ -532,6 +542,17 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
                 return setError (E_INVALIDARG,
                     tr ("Invalid port count: %lu (must be in range [%lu, %lu])"),
                         aPortCount, 1, 1);
+            break;
+        }
+        case StorageBus_SAS:
+        {
+            /*
+             * The port count is fixed to 8.
+             */
+            if (aPortCount != 8)
+                return setError (E_INVALIDARG,
+                    tr ("Invalid port count: %lu (must be in range [%lu, %lu])"),
+                        aPortCount, 8, 8);
             break;
         }
         default:

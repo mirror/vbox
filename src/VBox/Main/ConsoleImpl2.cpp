@@ -818,7 +818,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * Storage controllers.
      */
     com::SafeIfaceArray<IStorageController> ctrls;
-    PCFGMNODE aCtrlNodes[StorageControllerType_I82078 + 1] = {};
+    PCFGMNODE aCtrlNodes[StorageControllerType_LsiLogicSas + 1] = {};
     hrc = pMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));               H();
 
     for (size_t i = 0; i < ctrls.size(); ++ i)
@@ -982,6 +982,25 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 break;
             }
 
+            case StorageControllerType_LsiLogicSas:
+            {
+                rc = CFGMR3InsertInteger(pCtlInst, "PCIDeviceNo",          21);                 RC_CHECK();
+                Assert(!afPciDeviceNo[21]);
+                afPciDeviceNo[21] = true;
+                rc = CFGMR3InsertInteger(pCtlInst, "PCIFunctionNo",        0);                  RC_CHECK();
+
+                rc = CFGMR3InsertString(pCfg,  "ControllerType", "SAS1068");                    RC_CHECK();
+
+                /* Attach the status driver */
+                rc = CFGMR3InsertNode(pCtlInst, "LUN#999", &pLunL0);                            RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");          RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapSCSILeds[0]); RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                 RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Last",     15);                                RC_CHECK();
+                break;
+            }
+
             default:
                 AssertMsgFailedReturn(("invalid storage controller type: %d\n", enmCtrlType), VERR_GENERAL_FAILURE);
         }
@@ -1007,7 +1026,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertNodeF(pCtlInst, &pLunL0, "LUN#%u", uLUN);                          RC_CHECK();
 
             /* SCSI has a another driver between device and block. */
-            if (enmBus == StorageBus_SCSI)
+            if (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS)
             {
                 rc = CFGMR3InsertString(pLunL0, "Driver", "SCSI");                              RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                                 RC_CHECK();
