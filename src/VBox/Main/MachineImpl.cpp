@@ -3801,7 +3801,7 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
     CheckComArgStrNotEmptyOrNull(aName);
 
     if (   (aConnectionType <= StorageBus_Null)
-        || (aConnectionType >  StorageBus_Floppy))
+        || (aConnectionType >  StorageBus_SAS))
         return setError (E_INVALIDARG,
             tr ("Invalid connection type: %d"),
                 aConnectionType);

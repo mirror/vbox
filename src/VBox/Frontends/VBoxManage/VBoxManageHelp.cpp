@@ -394,8 +394,8 @@ void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage storagectl       <uuid|vmname>\n"
                  "                            --name <name>\n"
-                 "                            [--add <ide/sata/scsi/floppy>]\n"
-                 "                            [--controller <LsiLogic/BusLogic/IntelAhci/PIIX3/PIIX4/ICH6/I82078>]\n"
+                 "                            [--add <ide/sata/scsi/floppy/sas>]\n"
+                 "                            [--controller <LsiLogic/BusLogic/IntelAhci/PIIX3/PIIX4/ICH6/I82078/LsiLogicSas>]\n"
                  "                            [--sataideemulation<1-4> <1-30>]\n"
                  "                            [--sataportcount <1-30>]\n"
                  "                            [--remove]\n"

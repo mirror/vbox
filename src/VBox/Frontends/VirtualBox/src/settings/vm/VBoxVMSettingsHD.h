@@ -206,6 +206,19 @@ private:
     uint size() const;
 };
 
+/* SAS Controller Type */
+class SASControllerType : public AbstractControllerType
+{
+public:
+
+    SASControllerType (KStorageControllerType aSubType);
+
+private:
+
+    KStorageControllerType first() const;
+    uint size() const;
+};
+
 /* Abstract Item */
 class AbstractItem
 {
@@ -401,6 +414,7 @@ public:
         R_IsMoreSATAControllersPossible,
         R_IsMoreSCSIControllersPossible,
         R_IsMoreFloppyControllersPossible,
+        R_IsMoreSASControllersPossible,
         R_IsMoreAttachmentsPossible,
 
         R_CtrName,
@@ -542,6 +556,7 @@ private slots:
     void addSATAController();
     void addSCSIController();
     void addFloppyController();
+    void addSASController();
     void delController();
 
     void addAttachment();
@@ -592,6 +607,7 @@ private:
     QAction *mAddIDECtrAction;
     QAction *mAddSATACtrAction;
     QAction *mAddSCSICtrAction;
+    QAction *mAddSASCtrAction;
     QAction *mAddFloppyCtrAction;
     QAction *mDelCtrAction;
     QAction *mAddAttAction;
