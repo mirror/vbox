@@ -351,6 +351,7 @@ PDMBOTHCBDECL(int) lsilogicDiagnosticRead(PPDMDEVINS pDevIns, void *pvUser,
                                           RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 #ifdef IN_RING3
 static void lsilogicInitializeConfigurationPages(PLSILOGICSCSI pLsiLogic);
+static void lsilogicConfigurationPagesFree(PLSILOGICSCSI pThis);
 static int lsilogicProcessConfigurationRequest(PLSILOGICSCSI pLsiLogic, PMptConfigurationRequest pConfigurationReq,
                                                PMptConfigurationReply pReply);
 #endif
@@ -481,11 +482,41 @@ static int lsilogicHardReset(PLSILOGICSCSI pThis)
     pThis->u16NextHandle = 1;
     /** @todo: Put stuff to reset here. */
 
+    lsilogicConfigurationPagesFree(pThis);
     lsilogicInitializeConfigurationPages(pThis);
 
     /* Mark that we finished performing the reset. */
     pThis->enmState = LSILOGICSTATE_READY;
     return VINF_SUCCESS;
+}
+
+/**
+ * Frees the configuration pages if allocated.
+ *
+ * @returns nothing.
+ * @param pThis    The LsiLogic controller instance
+ */
+static void lsilogicConfigurationPagesFree(PLSILOGICSCSI pThis)
+{
+
+    if (pThis->pConfigurationPages)
+    {
+        /* Destroy device list if we emulate a SAS controller. */
+        if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+        {
+            PMptSASDevice pSASDeviceCurr = pThis->pConfigurationPages->u.SasPages.pSASDeviceHead;
+
+            while (pSASDeviceCurr)
+            {
+                PMptSASDevice pFree = pSASDeviceCurr;
+
+                pSASDeviceCurr = pSASDeviceCurr->pNext;
+                RTMemFree(pFree);
+            }
+        }
+
+        RTMemFree(pThis->pConfigurationPages);
+    }
 }
 
 /**
@@ -4283,21 +4314,7 @@ static DECLCALLBACK(int) lsilogicDestruct(PPDMDEVINS pDevIns)
     if (pThis->pTaskCache)
         rc = RTCacheDestroy(pThis->pTaskCache);
 
-    /* Destroy device list if we emulate a SAS controller. */
-    if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
-    {
-        PMptSASDevice pSASDeviceCurr = pThis->pConfigurationPages->u.SasPages.pSASDeviceHead;
-
-        while (pSASDeviceCurr)
-        {
-            PMptSASDevice pFree = pSASDeviceCurr;
-
-            pSASDeviceCurr = pSASDeviceCurr->pNext;
-            RTMemFree(pFree);
-        }
-    }
-
-    RTMemFree(pThis->pConfigurationPages);
+    lsilogicConfigurationPagesFree(pThis);
 
     return rc;
 }
