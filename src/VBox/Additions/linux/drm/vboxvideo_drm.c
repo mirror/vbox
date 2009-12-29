@@ -53,7 +53,9 @@
  *    Gareth Hughes <gareth@valinux.com>
  */
 
-#include <linux/autoconf.h>
+#ifndef AUTOCONF_INCLUDED
+# include <linux/autoconf.h>
+#endif
 #include <linux/version.h>
 #include <linux/module.h>
 

@@ -38,7 +38,9 @@
 #include <iprt/types.h>
 #define bool linux_bool
 
-#include <linux/autoconf.h>
+#ifndef AUTOCONF_INCLUDED
+# include <linux/autoconf.h>
+#endif
 #include <linux/version.h>
 
 /* We only support 2.4 and 2.6 series kernels */
