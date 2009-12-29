@@ -1996,14 +1996,14 @@ endif
 if1of ($(KBUILD_TARGET), linux)
  ifeq ($(origin VBOX_LINUX_SRC),undefined)
   ifneq ($(wildcard /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h),)
-   export VBOX_LINUX_SRC           := /lib/modules/$(shell uname -r)/build
+   export VBOX_LINUX_SRC := /lib/modules/$(shell uname -r)/build
   else
-   export VBOX_LINUX_SRC           := /usr/src/linux
+   export VBOX_LINUX_SRC := /usr/src/linux
   endif
  endif
  ifneq ($(VBOX_LINUX_SRC),)
   ifeq ($(origin VBOX_LINUX_INCS),undefined)
-   export VBOX_LINUX_INCS           := $(VBOX_LINUX_SRC)/include
+   export VBOX_LINUX_INCS := $(VBOX_LINUX_SRC)/include
    # XXX hack alert! support splitted Linux kernels (make O=<build directory>)
    # XXX put this crap elsewhere
    kernelpath := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(VBOX_LINUX_SRC)/Makefile)
@@ -2019,16 +2019,25 @@ if1of ($(KBUILD_TARGET), linux)
     endif
    endif
    ifneq ($(kernelpath),)
-    VBOX_LINUX_INCS                 += $(VBOX_LINUX_SRC)/include2 $(kernelpath)/include
+    VBOX_LINUX_INCS += $(VBOX_LINUX_SRC)/include2 $(kernelpath)/include
    else
     kernelpath := $(VBOX_LINUX_SRC)
    endif
-   VBOX_LINUX_INCS                  += $(kernelpath)/include/asm-i386/mach-default \
-                                       $(kernelpath)/include/asm-x86/mach-default \
-                                       $(kernelpath)/arch/x86/include \
-                                       $(kernelpath)/arch/x86/include/asm/mach-default \
-                                       $(kernelpath)/include
+   VBOX_LINUX_INCS  += $(kernelpath)/include/asm-i386/mach-default \
+                       $(kernelpath)/include/asm-x86/mach-default \
+                       $(kernelpath)/arch/x86/include \
+                       $(kernelpath)/arch/x86/include/asm/mach-default \
+                       $(kernelpath)/include
   endif
+ endif
+ # Since Linux 2.6.15, <linux/autoconf.h> is included like this. It cannot hurt to do the
+ # same for older Linux kernels
+ ifneq ($(wildcard $(VBOX_LINUX_SRC)/include/linux/autoconf.h),)
+  # Linux < 2.6.33
+  export VBOX_LINUX_INCLUDE := -include $(VBOX_LINUX_SRC)/include/linux/autoconf.h
+ else ifneq ($(wildcard $(VBOX_LINUX_SRC)/include/generated/autoconf.h),)
+  # Linux >= 2.6.33
+  export VBOX_LINUX_INCLUDE := -include $(VBOX_LINUX_SRC)/include/generated/autoconf.h
  endif
 endif
 
@@ -2290,7 +2299,7 @@ ifeq ($(KBUILD_TARGET),linux)
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS                = __KERNEL__ MODULE IN_RING0 IN_RT_R0
 TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_LINUX_INCS)
-TEMPLATE_VBOXR0DRV_CFLAGS              = -nostdinc -iwithprefix include \
+TEMPLATE_VBOXR0DRV_CFLAGS              = -nostdinc -iwithprefix include $(VBOX_LINUX_INCLUDE) \
 	$(VBOX_GCC_WARN) -Wstrict-prototypes $(VBOX_GCC_Wno-pointer-sign) -Wno-sign-compare \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-common
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -mpreferred-stack-boundary=2 -msoft-float

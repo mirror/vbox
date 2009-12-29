@@ -97,7 +97,9 @@
 #  define true linux_true
 #  define false linux_false
 #  define uintptr_t linux_uintptr_t
-#  include <linux/autoconf.h>
+#  ifndef AUTOCONF_INCLUDED
+#   include <linux/autoconf.h>
+#  endif
 #  include <linux/types.h>
 #  include <linux/stddef.h>
 #  undef uintptr_t
