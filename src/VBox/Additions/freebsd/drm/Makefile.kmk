@@ -1,0 +1,65 @@
+# $Id$
+## @file
+# Sub-Makefile for the vboxvideo DRM module (FreeBSD kernel OpenGL module).
+#
+
+#
+# Copyright (C) 2009 Sun Microsystems, Inc.
+#
+# Sun Microsystems, Inc. confidential
+# All rights reserved
+#
+
+
+SUB_DEPTH = ../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+INSTALLS += vboxvideo_drm vboxvideo-mod
+
+ifdef VBOX_WITH_ADDITION_DRIVERS
+ SYSMODS  += vboxvideo_drm
+endif
+ifneq ($(KBUILD_HOST),freebsd)
+$(error "The FreeBSD guest additions can only be built on FreeBSD!")
+endif
+
+#
+# Populate FILES_VBOXVIDEO_DRM_NOBIN
+#
+include $(PATH_SUB_CURRENT)/files_vboxvideo_drm
+
+# vboxvideo source
+vboxvideo-mod_INST        = $(INST_ADDITIONS)src/vboxvideo_drm/
+vboxvideo-mod_MODE        = a+r,u+w
+vboxvideo-mod_SOURCES     = $(subst ",,$(FILES_VBOXVIDEO_DRM_NOBIN))
+
+#
+# vboxvideo - The Video DRM (Direct Rendering Module) kernel module
+#
+vboxvideo_drm_TEMPLATE      = VBOXGUESTR0
+vboxvideo_drm_NAME          = vboxvideo
+vboxvideo_drm_DEFS          = VBOX_WITH_HGCM VBOX_SVN_REV=$(VBOX_SVN_REV)
+vboxvideo_drm_DEPS         += $(VBOX_SVN_REV_KMK)
+vboxvideo_drm_INCS.freebsd  = \
+	$(PATH_vboxvideo_drm) \
+	$(PATH_INS)/gen-sys-hdrs
+vboxvideo_drm_SOURCES       = vboxvideo_drm.c
+vboxvideo_drm_LIBS          = \
+	$(VBOX_LIB_VBGL_R0) \
+	$(VBOX_LIB_IPRT_GUEST_R0)
+vboxvideo_drm_ORDERDEPS.freebsd = \
+	$(PATH_INS)/gen-sys-hdrs/pci_if.h \
+	$(PATH_INS)/gen-sys-hdrs/bus_if.h \
+	$(PATH_INS)/gen-sys-hdrs/device_if.h \
+	$(PATH_vboxvideo_drm)/opt_drm.h
+vboxvideo_drm_CLEAN.freebsd = $(vboxvideo_drm_DEPS)
+
+#
+# Header for DRM not included by us.
+#
+$$(PATH_vboxvideo_drm)/opt_drm.h:
+	$(QUIET)$(MKDIR) -p $(PATH_vboxvideo_drm)
+	$(QUIET)touch $(PATH_vboxvideo_drm)/opt_drm.h
+
+include	$(KBUILD_PATH)/subfooter.kmk
+
