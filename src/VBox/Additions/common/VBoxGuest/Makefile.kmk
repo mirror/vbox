@@ -125,5 +125,18 @@ ifeq ($(KBUILD_TARGET),linux)
 
 endif # Linux
 
+ifeq ($(KBUILD_TARGET),freebsd)
+ #
+ # Install the source files and script(s).
+ #
+ include $(PATH_SUB_CURRENT)/freebsd/files_vboxguest
+ # sources and stuff.
+ INSTALLS += vboxguest-src
+ vboxguest-src_INST     = $(INST_ADDITIONS)src/vboxguest/
+ vboxguest-src_MODE     = a+r,u+w
+ vboxguest-src_SOURCES  = $(subst ",,$(FILES_VBOXGUEST_NOBIN))
+
+endif # FreeBSD
+
 include	$(KBUILD_PATH)/subfooter.kmk
 
