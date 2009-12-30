@@ -130,6 +130,8 @@
  *
  *      - \%Rfn             - Pretty printing of a function or method. It drops the
  *                            return code and parameter list.
+ *      - \%Rbn             - Prints the base name.  For dropping the path in
+ *                            order to save space when printing a path name.
  *
  * On other platforms, \%Rw? simply prints the argument in a form of 0xXXXXXXXX.
  *
@@ -159,6 +161,7 @@
 #include <iprt/ctype.h>
 #include <iprt/time.h>
 #include <iprt/net.h>
+#include <iprt/path.h>
 #include "internal/string.h"
 
 
@@ -565,6 +568,45 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
 
 
             /* Group 3 */
+
+            /*
+             * Base name printing.
+             */
+            case 'b':
+            {
+                switch (*(*ppszFormat)++)
+                {
+                    case 'n':
+                    {
+                        const char *pszLastSep;
+                        const char *psz = pszLastSep = va_arg(*pArgs, const char *);
+                        if (!VALID_PTR(psz))
+                            return pfnOutput(pvArgOutput, "<null>", sizeof("<null>") - 1);
+
+                        while ((ch = *psz) != '\0')
+                        {
+                            if (RTPATH_IS_SEP(ch))
+                            {
+                                do
+                                    psz++;
+                                while ((ch = *psz) != '\0' && RTPATH_IS_SEP(ch));
+                                if (!ch)
+                                    break;
+                                pszLastSep = psz;
+                            }
+                            psz++;
+                        }
+
+                        return pfnOutput(pvArgOutput, pszLastSep, psz - pszLastSep);
+                    }
+
+                    default:
+                        AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
+                        break;
+                }
+                break;
+            }
+
 
             /*
              * Pretty function / method name printing.
