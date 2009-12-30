@@ -1133,7 +1133,7 @@ PDMBOTHCBDECL(int) pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     {
         PPCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
         PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
-        pThis->uConfigReg = u32;
+        pThis->uConfigReg = u32 & ~3; /* Bits 0-1 are reserved and we silently clear them */
         PCI_UNLOCK(pDevIns);
     }
     /* else: 440FX does "pass through to the bus" for other writes, what ever that means.
