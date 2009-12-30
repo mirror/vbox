@@ -230,6 +230,14 @@ int main()
     CHECK42("%RI8", (int8_t)1, "1");
     CHECK42("%RI8", (int8_t)-128, "-128");
 
+    CHECK42("%Rbn", "file.c", "file.c");
+    CHECK42("%Rbn", "foo/file.c", "file.c");
+    CHECK42("%Rbn", "/foo/file.c", "file.c");
+    CHECK42("%Rbn", "/dir/subdir/", "subdir/");
+
+    CHECK42("%Rfn", "function", "function");
+    CHECK42("%Rfn", "void function(void)", "function");
+
     CHECK42("%RTfile", (RTFILE)127, "127");
     CHECK42("%RTfile", (RTFILE)12341234, "12341234");
 
