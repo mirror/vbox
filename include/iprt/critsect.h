@@ -86,7 +86,7 @@ typedef struct RTCRITSECT
     /** The semaphore to block on. */
     RTSEMEVENT                          EventSem;
     /** Lock validator record.  Only used in strict builds. */
-    R3R0PTRTYPE(PRTLOCKVALIDATORREC)    pValidatorRec;
+    R3R0PTRTYPE(PRTLOCKVALRECEXCL)      pValidatorRec;
     /** Alignmnet padding. */
     RTHCPTR                             Alignment;
 } RTCRITSECT;

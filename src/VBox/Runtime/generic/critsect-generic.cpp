@@ -68,13 +68,13 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags)
     pCritSect->cNestings            = 0;
     pCritSect->cLockers             = -1;
     pCritSect->NativeThreadOwner    = NIL_RTNATIVETHREAD;
-    int rc = RTLockValidatorRecCreate(&pCritSect->pValidatorRec, NIL_RTLOCKVALIDATORCLASS, 0, "RTCritSect", pCritSect);
+    int rc = RTLockValidatorRecExclCreate(&pCritSect->pValidatorRec, NIL_RTLOCKVALIDATORCLASS, 0, "RTCritSect", pCritSect);
     if (RT_SUCCESS(rc))
     {
         rc = RTSemEventCreate(&pCritSect->EventSem);
         if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
-        RTLockValidatorRecDestroy(&pCritSect->pValidatorRec);
+        RTLockValidatorRecExclDestroy(&pCritSect->pValidatorRec);
     }
 
     AssertRC(rc);
@@ -85,7 +85,7 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags)
 RT_EXPORT_SYMBOL(RTCritSectInitEx);
 
 
-DECL_FORCE_INLINE(int) rtCritSectTryEnter(PRTCRITSECT pCritSect, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+DECL_FORCE_INLINE(int) rtCritSectTryEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS pSrcPos)
 {
     Assert(pCritSect);
     Assert(pCritSect->u32Magic == RTCRITSECT_MAGIC);
@@ -136,7 +136,7 @@ RTDECL(int) RTCritSectTryEnter(PRTCRITSECT pCritSect)
 #ifndef RTCRTISECT_STRICT
     return rtCritSectTryEnter(pCritSect, NULL);
 #else
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
     return rtCritSectTryEnter(pCritSect, &SrcPos);
 #endif
 }
@@ -145,13 +145,13 @@ RT_EXPORT_SYMBOL(RTCritSectTryEnter);
 
 RTDECL(int) RTCritSectTryEnterDebug(PRTCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return rtCritSectTryEnter(pCritSect, &SrcPos);
 }
 RT_EXPORT_SYMBOL(RTCritSectTryEnterDebug);
 
 
-DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS pSrcPos)
 {
     Assert(pCritSect);
     Assert(pCritSect->u32Magic == RTCRITSECT_MAGIC);
@@ -237,7 +237,7 @@ RTDECL(int) RTCritSectEnter(PRTCRITSECT pCritSect)
 #ifndef RTCRITSECT_STRICT
     return rtCritSectEnter(pCritSect, NULL);
 #else
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
     return rtCritSectEnter(pCritSect, &SrcPos);
 #endif
 }
@@ -246,7 +246,7 @@ RT_EXPORT_SYMBOL(RTCritSectEnter);
 
 RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return rtCritSectEnter(pCritSect, &SrcPos);
 }
 RT_EXPORT_SYMBOL(RTCritSectEnterDebug);
@@ -293,7 +293,7 @@ RT_EXPORT_SYMBOL(RTCritSectLeave);
 
 
 
-static int rtCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+static int rtCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects, PCRTLOCKVALSRCPOS pSrcPos)
 {
     Assert(cCritSects > 0);
     AssertPtr(papCritSects);
@@ -376,7 +376,7 @@ RTDECL(int) RTCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects
 #ifndef RTCRITSECT_STRICT
     return rtCritSectEnterMultiple(cCritSects, papCritSects, NULL);
 #else
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
     return rtCritSectEnterMultiple(cCritSects, papCritSects, &SrcPos);
 #endif
 }
@@ -385,7 +385,7 @@ RT_EXPORT_SYMBOL(RTCritSectEnterMultiple);
 
 RTDECL(int) RTCritSectEnterMultipleDebug(size_t cCritSects, PRTCRITSECT *papCritSects, RTUINTPTR uId, RT_SRC_POS_DECL)
 {
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return rtCritSectEnterMultiple(cCritSects, papCritSects, &SrcPos);
 }
 RT_EXPORT_SYMBOL(RTCritSectEnterMultipleDebug);
@@ -434,7 +434,7 @@ RTDECL(int) RTCritSectDelete(PRTCRITSECT pCritSect)
     int rc = RTSemEventDestroy(EventSem);
     AssertRC(rc);
 
-    RTLockValidatorRecDestroy(&pCritSect->pValidatorRec);
+    RTLockValidatorRecExclDestroy(&pCritSect->pValidatorRec);
 
     return rc;
 }

@@ -87,7 +87,7 @@ DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectGetNativeSelf(PCPDMCRITSECT pCritSe
  * @param   pCritSect       The critical section.
  * @param   hNativeSelf     The native handle of this thread.
  */
-DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALSRCPOS pSrcPos)
 {
     AssertMsg(pCritSect->s.Core.NativeThreadOwner == NIL_RTNATIVETHREAD, ("NativeThreadOwner=%p\n", pCritSect->s.Core.NativeThreadOwner));
     Assert(!(pCritSect->s.Core.fFlags & PDMCRITSECT_FLAGS_PENDING_UNLOCK));
@@ -112,7 +112,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
  * @param   pCritSect           The critsect.
  * @param   hNativeSelf         The native thread handle.
  */
-static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALSRCPOS pSrcPos)
 {
     /*
      * Start waiting.
@@ -169,7 +169,7 @@ static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hN
  * @param   rcBusy              The status code to return when we're in GC or R0
  *                              and the section is busy.
  */
-DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRTLOCKVALSRCPOS pSrcPos)
 {
     Assert(pCritSect->s.Core.cNestings < 8);  /* useful to catch incorrect locking */
 
@@ -247,7 +247,7 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
 #ifndef PDMCRITSECT_STRICT
     return pdmCritSectEnter(pCritSect, rcBusy, NULL);
 #else
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
     return pdmCritSectEnter(pCritSect, rcBusy, &SrcPos);
 #endif
 }
@@ -274,7 +274,7 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
 VMMDECL(int) PDMCritSectEnterDebug(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
 #ifdef PDMCRITSECT_STRICT
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return pdmCritSectEnter(pCritSect, rcBusy, &SrcPos);
 #else
     return pdmCritSectEnter(pCritSect, rcBusy, NULL);
@@ -292,7 +292,7 @@ VMMDECL(int) PDMCritSectEnterDebug(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTP
  *
  * @param   pCritSect   The critical section.
  */
-static int pdmCritSectTryEnter(PPDMCRITSECT pCritSect, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+static int pdmCritSectTryEnter(PPDMCRITSECT pCritSect, PCRTLOCKVALSRCPOS pSrcPos)
 {
     /*
      * If the critical section has already been destroyed, then inform the caller.
@@ -348,7 +348,7 @@ VMMDECL(int) PDMCritSectTryEnter(PPDMCRITSECT pCritSect)
 #ifndef PDMCRITSECT_STRICT
     return pdmCritSectTryEnter(pCritSect, NULL);
 #else
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
     return pdmCritSectTryEnter(pCritSect, &SrcPos);
 #endif
 }
@@ -374,7 +374,7 @@ VMMDECL(int) PDMCritSectTryEnter(PPDMCRITSECT pCritSect)
 VMMDECL(int) PDMCritSectTryEnterDebug(PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
 #ifdef PDMCRITSECT_STRICT
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return pdmCritSectTryEnter(pCritSect, &SrcPos);
 #else
     return pdmCritSectTryEnter(pCritSect, NULL);
