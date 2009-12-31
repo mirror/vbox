@@ -53,7 +53,6 @@ PROGRAMS += \
 	tstRTBitOperations \
 	tstRTCidr \
 	tstRTCritSect \
-	tstDeadlock \
 	tstRTDigest \
 	tstDir \
 	tstDir-2 \
@@ -75,6 +74,7 @@ PROGRAMS += \
 	tstLdr-3 \
 	tstLdr-4 \
 	tstLdrLoad \
+	tstRTLockValidator \
 	tstLog \
 	tstMemAutoPtr \
 	tstRTMemPool \
@@ -168,8 +168,6 @@ tstRTCritSect_SOURCES = tstRTCritSect.cpp
 tstRTCritSectW32_TEMPLATE = VBOXR3TSTEXE
 tstRTCritSectW32_SOURCES = tstRTCritSect.cpp
 tstRTCritSectW32_DEFS = TRY_WIN32_CRIT
-
-tstDeadlock_SOURCES = tstDeadlock.cpp
 
 tstRTDigest_SOURCES = tstRTDigest.cpp
 
@@ -295,6 +293,9 @@ tstLdr-4_LIBS = \
 	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
 
 tstLdrLoad_SOURCES = tstLdrLoad.cpp
+
+tstRTLockValidator_TEMPLATE = VBOXR3TSTEXE
+tstRTLockValidator_SOURCES = tstRTLockValidator.cpp
 
 tstLog_SOURCES = tstLog.cpp
 
