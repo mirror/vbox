@@ -37,6 +37,17 @@
 
 RT_C_DECLS_BEGIN
 
+/**
+ * Record union for simplifying internal processing.
+ */
+typedef union RTLOCKVALIDATORRECUNION
+{
+    RTLOCKVALIDATORRECCORE      Core;
+    RTLOCKVALIDATORREC          Excl;
+    RTLOCKVALIDATORSHARED       Shared;
+    RTLOCKVALIDATORSHAREDONE    SharedOne;
+} RTLOCKVALIDATORRECUNION;
+
 
 /**
  * Per thread data for the lock validator.
@@ -46,13 +57,13 @@ RT_C_DECLS_BEGIN
 typedef struct RTLOCKVALIDATORPERTHREAD
 {
     /** What we're blocking on. */
-    PRTLOCKVALIDATORREC     pRec;
+    PRTLOCKVALIDATORRECUNION volatile   pRec;
     /** Where we are blocking. */
-    RTLOCKVALIDATORSRCPOS   SrcPos;
+    RTLOCKVALIDATORSRCPOS               SrcPos;
     /** Number of registered write locks, mutexes and critsects that this thread owns. */
-    int32_t volatile        cWriteLocks;
+    int32_t volatile                    cWriteLocks;
     /** Number of registered read locks that this thread owns, nesting included. */
-    int32_t volatile        cReadLocks;
+    int32_t volatile                    cReadLocks;
 } RTLOCKVALIDATORPERTHREAD;
 
 

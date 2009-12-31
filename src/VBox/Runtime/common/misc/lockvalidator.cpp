@@ -40,6 +40,7 @@
 #include <iprt/mem.h>
 #include <iprt/once.h>
 #include <iprt/semaphore.h>
+#include <iprt/string.h>
 #include <iprt/thread.h>
 
 #include "internal/lockvalidator.h"
@@ -50,6 +51,40 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+/**
+ * Deadlock detection stack entry.
+ */
+typedef struct RTLOCKVALIDATORDDENTRY
+{
+    /** The current record. */
+    PRTLOCKVALIDATORRECUNION    pRec;
+    /** The current entry number if pRec is a shared one. */
+    uint32_t                    iEntry;
+    /** The thread state of the thread we followed to get to pFirstSibling.
+     * This is only used for validating a deadlock stack.  */
+    RTTHREADSTATE               enmState;
+    /** The thread we followed to get to pFirstSibling.
+     * This is only used for validating a deadlock stack. */
+    PRTTHREADINT                pThread;
+    /** What pThread is waiting on, i.e. where we entered the circular list of
+     * siblings.  This is used for validating a deadlock stack as well as
+     * terminating the sibling walk. */
+    PRTLOCKVALIDATORRECUNION    pFirstSibling;
+} RTLOCKVALIDATORDDENTRY;
+
+
+/**
+ * Deadlock detection stack.
+ */
+typedef struct RTLOCKVALIDATORDDSTACK
+{
+    /** The number stack entries. */
+    uint32_t                    c;
+    /** The stack entries. */
+    RTLOCKVALIDATORDDENTRY      a[32];
+} RTLOCKVALIDATORDDSTACK;
+/** Pointer to a deadlock detction stack. */
+typedef RTLOCKVALIDATORDDSTACK *PRTLOCKVALIDATORDDSTACK;
 
 
 /*******************************************************************************
@@ -59,10 +94,196 @@
  * NS: RTLOCKVALIDATORREC and RTTHREADINT destruction.
  * EW: Deadlock detection.
  */
-static RTSEMXROADS g_hLockValidatorXRoads = NIL_RTSEMXROADS;
+static RTSEMXROADS      g_hLockValidatorXRoads   = NIL_RTSEMXROADS;
 /** Whether the lock validator is enabled or disabled.
  * Only applies to new locks.  */
-static bool volatile g_fLockValidatorEnabled = true;
+static bool volatile    g_fLockValidatorEnabled  = true;
+/** Set if the lock validator is quiet. */
+#ifdef RT_STRICT
+static bool volatile    g_fLockValidatorQuiet    = false;
+#else
+static bool volatile    g_fLockValidatorQuiet    = true;
+#endif
+/** Set if the lock validator may panic. */
+#ifdef RT_STRICT
+static bool volatile    g_fLockValidatorMayPanic = true;
+#else
+static bool volatile    g_fLockValidatorMayPanic = false;
+#endif
+
+
+/** Wrapper around ASMAtomicReadPtr. */
+DECL_FORCE_INLINE(PRTLOCKVALIDATORRECUNION) rtLockValidatorReadRecUnionPtr(PRTLOCKVALIDATORRECUNION volatile *ppRec)
+{
+    return (PRTLOCKVALIDATORRECUNION)ASMAtomicReadPtr((void * volatile *)ppRec);
+}
+
+
+/** Wrapper around ASMAtomicWritePtr. */
+DECL_FORCE_INLINE(void) rtLockValidatorWriteRecUnionPtr(PRTLOCKVALIDATORRECUNION volatile *ppRec, PRTLOCKVALIDATORRECUNION pRecNew)
+{
+    ASMAtomicWritePtr((void * volatile *)ppRec, pRecNew);
+}
+
+
+/** Wrapper around ASMAtomicReadPtr. */
+DECL_FORCE_INLINE(PRTTHREADINT) rtLockValidatorReadThreadHandle(RTTHREAD volatile *phThread)
+{
+    return (PRTTHREADINT)ASMAtomicReadPtr((void * volatile *)phThread);
+}
+
+
+/** Wrapper around ASMAtomicUoReadPtr. */
+DECL_FORCE_INLINE(PRTLOCKVALIDATORSHAREDONE) rtLockValidatorUoReadSharedOwner(PRTLOCKVALIDATORSHAREDONE volatile *ppOwner)
+{
+    return (PRTLOCKVALIDATORSHAREDONE)ASMAtomicUoReadPtr((void * volatile *)ppOwner);
+}
+
+
+/**
+ * Reads a volatile thread handle field and returns the thread name.
+ *
+ * @returns Thread name (read only).
+ * @param   phThread            The thread handle field.
+ */
+static const char *rtLockValidatorNameThreadHandle(RTTHREAD volatile *phThread)
+{
+    PRTTHREADINT pThread = rtLockValidatorReadThreadHandle(phThread);
+    if (!pThread)
+        return "<NIL>";
+    if (!VALID_PTR(pThread))
+        return "<INVALID>";
+    if (pThread->u32Magic != RTTHREADINT_MAGIC)
+        return "<BAD-THREAD-MAGIC>";
+    return pThread->szName;
+}
+
+
+/**
+ * Launch a simple assertion like complaint w/ panic.
+ *
+ * @param   RT_SRC_POS_DECL     Where from.
+ * @param   pszWhat             What we're complaining about.
+ * @param   ...                 Format arguments.
+ */
+static void rtLockValidatorComplain(RT_SRC_POS_DECL, const char *pszWhat, ...)
+{
+    if (!ASMAtomicUoReadBool(&g_fLockValidatorQuiet))
+    {
+        RTAssertMsg1Weak("RTLockValidator", iLine, pszFile, pszFunction);
+        va_list va;
+        va_start(va, pszWhat);
+        RTAssertMsg2WeakV(pszWhat, va);
+        va_end(va);
+    }
+    if (!ASMAtomicUoReadBool(&g_fLockValidatorQuiet))
+        RTAssertPanic();
+}
+
+
+/**
+ * Describes the lock.
+ *
+ * @param   pszPrefix           Message prefix.
+ * @param   Rec                 The lock record we're working on.
+ * @param   pszPrefix           Message suffix.
+ */
+static void rtLockValidatorComplainAboutLock(const char *pszPrefix, PRTLOCKVALIDATORRECUNION pRec, const char *pszSuffix)
+{
+    if (    VALID_PTR(pRec)
+        &&  !ASMAtomicUoReadBool(&g_fLockValidatorQuiet))
+    {
+        switch (pRec->Core.u32Magic)
+        {
+            case RTLOCKVALIDATORREC_MAGIC:
+                RTAssertMsg2AddWeak("%s%p %s xrec=%p own=%s nest=%u pos={%Rbn(%u) %Rfn %p}%s", pszPrefix,
+                                    pRec->Excl.hLock, pRec->Excl.pszName, pRec,
+                                    rtLockValidatorNameThreadHandle(&pRec->Excl.hThread), pRec->Excl.cRecursion,
+                                    pRec->Excl.SrcPos.pszFile, pRec->Excl.SrcPos.uLine, pRec->Excl.SrcPos.pszFunction, pRec->Excl.SrcPos.uId,
+                                    pszSuffix);
+                break;
+
+            case RTLOCKVALIDATORSHARED_MAGIC:
+                RTAssertMsg2AddWeak("%s%p %s srec=%p%s", pszPrefix,
+                                    pRec->Shared.hLock, pRec->Shared.pszName, pRec,
+                                    pszSuffix);
+                break;
+
+            case RTLOCKVALIDATORSHAREDONE_MAGIC:
+            {
+                PRTLOCKVALIDATORSHARED pShared = pRec->SharedOne.pSharedRec;
+                if (    VALID_PTR(pShared)
+                    &&  pShared->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC)
+                    RTAssertMsg2AddWeak("%s%p %s srec=%p trec=%p thr=%s nest=%u pos={%Rbn(%u) %Rfn %p}%s", pszPrefix,
+                                        pShared->hLock, pShared->pszName, pShared,
+                                        pRec, rtLockValidatorNameThreadHandle(&pRec->SharedOne.hThread), pRec->SharedOne.cRecursion,
+                                        pRec->SharedOne.SrcPos.pszFile, pRec->SharedOne.SrcPos.uLine, pRec->SharedOne.SrcPos.pszFunction, pRec->SharedOne.SrcPos.uId,
+                                        pszSuffix);
+                else
+                    RTAssertMsg2AddWeak("%sbad srec=%p trec=%p thr=%s nest=%u pos={%Rbn(%u) %Rfn %p}%s", pszPrefix,
+                                        pShared,
+                                        pRec, rtLockValidatorNameThreadHandle(&pRec->SharedOne.hThread), pRec->SharedOne.cRecursion,
+                                        pRec->SharedOne.SrcPos.pszFile, pRec->SharedOne.SrcPos.uLine, pRec->SharedOne.SrcPos.pszFunction, pRec->SharedOne.SrcPos.uId,
+                                        pszSuffix);
+                break;
+            }
+
+            default:
+                RTAssertMsg2AddWeak("%spRec=%p u32Magic=%#x (bad)%s", pszPrefix, pRec, pRec->Core.u32Magic, pszSuffix);
+                break;
+        }
+    }
+}
+
+
+/**
+ * Launch the initial complaint.
+ *
+ * @param   pszWhat             What we're complaining about.
+ * @param   pSrcPos             Where we are complaining from, as it were.
+ * @param   pThreadSelf         The calling thread.
+ * @param   pRec                The main lock involved. Can be NULL.
+ */
+static void rtLockValidatorComplainFirst(const char *pszWhat, PCRTLOCKVALIDATORSRCPOS pSrcPos, PRTTHREADINT pThreadSelf, PRTLOCKVALIDATORRECUNION pRec)
+{
+    if (!ASMAtomicUoReadBool(&g_fLockValidatorQuiet))
+    {
+        RTAssertMsg1Weak("RTLockValidator", pSrcPos->uLine, pSrcPos->pszFile, pSrcPos->pszFunction);
+        if (pSrcPos->uId)
+            RTAssertMsg2Weak("%s  [uId=%p thrd=%s]\n", pszWhat, pSrcPos->uId, VALID_PTR(pThreadSelf) ? pThreadSelf->szName : "<NIL>");
+        else
+            RTAssertMsg2Weak("%s\n", pszWhat, pSrcPos->uId);
+        rtLockValidatorComplainAboutLock("Lock: ", pRec, "\n");
+    }
+}
+
+
+/**
+ * Continue bitching.
+ *
+ * @param   pszFormat           Format string.
+ * @param   ...                 Format arguments.
+ */
+static void rtLockValidatorComplainMore(const char *pszFormat, ...)
+{
+    if (!ASMAtomicUoReadBool(&g_fLockValidatorQuiet))
+    {
+        va_list va;
+        va_start(va, pszFormat);
+        RTAssertMsg2AddWeakV(pszFormat, va);
+        va_end(va);
+    }
+}
+
+
+/**
+ * Raise a panic if enabled.
+ */
+static void rtLockValidatorComplainPanic(void)
+{
+    if (ASMAtomicUoReadBool(&g_fLockValidatorMayPanic))
+        RTAssertPanic();
+}
 
 
 /**
@@ -145,7 +366,7 @@ DECLHIDDEN(void) rtLockValidatorSerializeDetectionLeave(void)
 RTDECL(void) RTLockValidatorRecInit(PRTLOCKVALIDATORREC pRec, RTLOCKVALIDATORCLASS hClass,
                                     uint32_t uSubClass, const char *pszName, void *hLock)
 {
-    pRec->u32Magic      = RTLOCKVALIDATORREC_MAGIC;
+    pRec->Core.u32Magic = RTLOCKVALIDATORREC_MAGIC;
     pRec->fEnabled      = RTLockValidatorIsEnabled();
     pRec->afReserved[0] = 0;
     pRec->afReserved[1] = 0;
@@ -188,22 +409,56 @@ RTDECL(int)  RTLockValidatorRecCreate(PRTLOCKVALIDATORREC *ppRec, RTLOCKVALIDATO
 }
 
 
+/**
+ * Unlinks all siblings.
+ *
+ * This is used during record deletion and assumes no races.
+ *
+ * @param   pCore               One of the siblings.
+ */
+static void rtLockValidatorUnlinkAllSiblings(PRTLOCKVALIDATORRECCORE pCore)
+{
+    /* ASSUMES sibling destruction doesn't involve any races and that all
+       related records are to be disposed off now.  */
+    PRTLOCKVALIDATORRECUNION pSibling = (PRTLOCKVALIDATORRECUNION)pCore;
+    while (pSibling)
+    {
+        PRTLOCKVALIDATORRECUNION volatile *ppCoreNext;
+        switch (pSibling->Core.u32Magic)
+        {
+            case RTLOCKVALIDATORREC_MAGIC:
+            case RTLOCKVALIDATORREC_MAGIC_DEAD:
+                ppCoreNext = &pSibling->Excl.pSibling;
+                break;
+
+            case RTLOCKVALIDATORSHARED_MAGIC:
+            case RTLOCKVALIDATORSHARED_MAGIC_DEAD:
+                ppCoreNext = &pSibling->Shared.pSibling;
+                break;
+
+            default:
+                AssertFailed();
+                ppCoreNext = NULL;
+                break;
+        }
+        if (RT_UNLIKELY(ppCoreNext))
+            break;
+        pSibling = (PRTLOCKVALIDATORRECUNION)ASMAtomicXchgPtr((void * volatile *)ppCoreNext, NULL);
+    }
+}
+
+
 RTDECL(void) RTLockValidatorRecDelete(PRTLOCKVALIDATORREC pRec)
 {
-    Assert(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC);
+    Assert(pRec->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC);
 
     rtLockValidatorSerializeDestructEnter();
 
-    ASMAtomicWriteU32(&pRec->u32Magic, RTLOCKVALIDATORREC_MAGIC_DEAD);
+    ASMAtomicWriteU32(&pRec->Core.u32Magic, RTLOCKVALIDATORREC_MAGIC_DEAD);
     ASMAtomicWriteHandle(&pRec->hThread, NIL_RTTHREAD);
     ASMAtomicWriteHandle(&pRec->hClass, NIL_RTLOCKVALIDATORCLASS);
     if (pRec->pSibling)
-    {
-        /* ASSUMES sibling destruction doesn't involve any races.  */
-        ASMAtomicUoWritePtr((void * volatile *)&pRec->pSibling->pSibling, NULL);
-        ASMAtomicUoWritePtr((void * volatile *)&pRec->pSibling, NULL);
-    }
-
+        rtLockValidatorUnlinkAllSiblings(&pRec->Core);
     rtLockValidatorSerializeDestructLeave();
 }
 
@@ -223,7 +478,7 @@ RTDECL(void) RTLockValidatorRecDestroy(PRTLOCKVALIDATORREC *ppRec)
 RTDECL(void) RTLockValidatorSharedRecInit(PRTLOCKVALIDATORSHARED pRec, RTLOCKVALIDATORCLASS hClass,
                                           uint32_t uSubClass, const char *pszName, void *hLock)
 {
-    pRec->u32Magic      = RTLOCKVALIDATORSHARED_MAGIC;
+    pRec->Core.u32Magic = RTLOCKVALIDATORSHARED_MAGIC;
     pRec->uSubClass     = uSubClass;
     pRec->hClass        = hClass;
     pRec->hLock         = hLock;
@@ -247,7 +502,7 @@ RTDECL(void) RTLockValidatorSharedRecInit(PRTLOCKVALIDATORSHARED pRec, RTLOCKVAL
 
 RTDECL(void) RTLockValidatorSharedRecDelete(PRTLOCKVALIDATORSHARED pRec)
 {
-    Assert(pRec->u32Magic == RTLOCKVALIDATORSHARED_MAGIC);
+    Assert(pRec->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC);
 
     /*
      * Flip it into table realloc mode and take the destruction lock.
@@ -263,7 +518,7 @@ RTDECL(void) RTLockValidatorSharedRecDelete(PRTLOCKVALIDATORSHARED pRec)
         rtLockValidatorSerializeDestructEnter();
     }
 
-    ASMAtomicWriteU32(&pRec->u32Magic, RTLOCKVALIDATORSHARED_MAGIC_DEAD);
+    ASMAtomicWriteU32(&pRec->Core.u32Magic, RTLOCKVALIDATORSHARED_MAGIC_DEAD);
     ASMAtomicUoWriteHandle(&pRec->hClass, NIL_RTLOCKVALIDATORCLASS);
     if (pRec->papOwners)
     {
@@ -274,11 +529,7 @@ RTDECL(void) RTLockValidatorSharedRecDelete(PRTLOCKVALIDATORSHARED pRec)
         RTMemFree((void *)pRec->papOwners);
     }
     if (pRec->pSibling)
-    {
-        /* ASSUMES sibling destruction doesn't involve any races.  */
-        ASMAtomicUoWritePtr((void * volatile *)&pRec->pSibling->pSibling, NULL);
-        ASMAtomicUoWritePtr((void * volatile *)&pRec->pSibling, NULL);
-    }
+        rtLockValidatorUnlinkAllSiblings(&pRec->Core);
     ASMAtomicWriteBool(&pRec->fReallocating, false);
 
     rtLockValidatorSerializeDestructLeave();
@@ -303,8 +554,7 @@ rtLockValidatorSharedRecFindThread(PRTLOCKVALIDATORSHARED pShared, RTTHREAD hThr
         uint32_t const                      cMax      = pShared->cAllocated;
         for (uint32_t iEntry = 0; iEntry < cMax; iEntry++)
         {
-            PRTLOCKVALIDATORSHAREDONE pEntry;
-            pEntry = (PRTLOCKVALIDATORSHAREDONE)ASMAtomicUoReadPtr((void * volatile *)&papOwners[iEntry]);
+            PRTLOCKVALIDATORSHAREDONE pEntry = rtLockValidatorUoReadSharedOwner(&papOwners[iEntry]);
             if (pEntry && pEntry->hThread == hThread)
             {
                 rtLockValidatorSerializeDetectionLeave();
@@ -335,7 +585,7 @@ rtLockValidatorSharedRecAllocThread(PRTLOCKVALIDATORSHARED pRead, RTTHREAD hThre
     pEntry = (PRTLOCKVALIDATORSHAREDONE)RTMemAlloc(sizeof(RTLOCKVALIDATORSHAREDONE));
     if (pEntry)
     {
-        pEntry->u32Magic        = RTLOCKVALIDATORSHAREDONE_MAGIC;
+        pEntry->Core.u32Magic   = RTLOCKVALIDATORSHAREDONE_MAGIC;
         pEntry->cRecursion      = 1;
         pEntry->hThread         = hThread;
         pEntry->pDown           = NULL;
@@ -362,7 +612,7 @@ DECLINLINE(void) rtLockValidatorSharedRecFreeThread(PRTLOCKVALIDATORSHAREDONE pE
     if (pEntry)
     {
         rtLockValidatorSerializeDestructEnter();
-        ASMAtomicWriteU32(&pEntry->u32Magic, RTLOCKVALIDATORSHAREDONE_MAGIC_DEAD);
+        ASMAtomicWriteU32(&pEntry->Core.u32Magic, RTLOCKVALIDATORSHAREDONE_MAGIC_DEAD);
         ASMAtomicWriteHandle(&pEntry->hThread, NIL_RTTHREAD);
         rtLockValidatorSerializeDestructLeave();
 
@@ -398,7 +648,7 @@ static bool rtLockValidatorSharedRecMakeRoom(PRTLOCKVALIDATORSHARED pShared)
         /*
          * Try grab the privilege to reallocating the table.
          */
-        if (    pShared->u32Magic == RTLOCKVALIDATORSHARED_MAGIC
+        if (    pShared->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC
             &&  ASMAtomicCmpXchgBool(&pShared->fReallocating, true, false))
         {
             uint32_t cAllocated = pShared->cAllocated;
@@ -437,7 +687,7 @@ static bool rtLockValidatorSharedRecMakeRoom(PRTLOCKVALIDATORSHARED pShared)
         rtLockValidatorSerializeDestructLeave();
 
         rtLockValidatorSerializeDetectionEnter();
-        if (RT_UNLIKELY(pShared->u32Magic != RTLOCKVALIDATORSHARED_MAGIC))
+        if (RT_UNLIKELY(pShared->Core.u32Magic != RTLOCKVALIDATORSHARED_MAGIC))
             break;
 
         if (pShared->cAllocated >= pShared->cEntries)
@@ -460,7 +710,7 @@ static bool rtLockValidatorSharedRecMakeRoom(PRTLOCKVALIDATORSHARED pShared)
 DECLINLINE(bool) rtLockValidatorSharedRecAddThread(PRTLOCKVALIDATORSHARED pShared, PRTLOCKVALIDATORSHAREDONE pEntry)
 {
     rtLockValidatorSerializeDetectionEnter();
-    if (RT_LIKELY(pShared->u32Magic == RTLOCKVALIDATORSHARED_MAGIC)) /* paranoia */
+    if (RT_LIKELY(pShared->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC)) /* paranoia */
     {
         if (   ASMAtomicIncU32(&pShared->cEntries) > pShared->cAllocated /** @todo add fudge */
             && !rtLockValidatorSharedRecMakeRoom(pShared))
@@ -501,7 +751,7 @@ DECLINLINE(void) rtLockValidatorSharedRecRemoveAndFree(PRTLOCKVALIDATORSHARED pS
      * Remove it from the table.
      */
     rtLockValidatorSerializeDetectionEnter();
-    AssertReturnVoidStmt(pShared->u32Magic == RTLOCKVALIDATORSHARED_MAGIC, rtLockValidatorSerializeDetectionLeave());
+    AssertReturnVoidStmt(pShared->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC, rtLockValidatorSerializeDetectionLeave());
     if (RT_UNLIKELY(   iEntry >= pShared->cAllocated
                     || !ASMAtomicCmpXchgPtr((void * volatile *)&pShared->papOwners[iEntry], NULL, pEntry)))
     {
@@ -525,45 +775,38 @@ DECLINLINE(void) rtLockValidatorSharedRecRemoveAndFree(PRTLOCKVALIDATORSHARED pS
 }
 
 
-RTDECL(int) RTLockValidatorMakeSiblings(void *pvRec1, void *pvRec2)
+RTDECL(int) RTLockValidatorMakeSiblings(PRTLOCKVALIDATORRECCORE pRec1, PRTLOCKVALIDATORRECCORE pRec2)
 {
     /*
      * Validate input.
      */
-    union
-    {
-        PRTLOCKVALIDATORREC     pRec;
-        PRTLOCKVALIDATORSHARED  pShared;
-        uint32_t               *pu32Magic;
-        void                   *pv;
-    } u1, u2;
-    u1.pv = pvRec1;
-    u2.pv = pvRec2;
+    PRTLOCKVALIDATORRECUNION p1 = (PRTLOCKVALIDATORRECUNION)pRec1;
+    PRTLOCKVALIDATORRECUNION p2 = (PRTLOCKVALIDATORRECUNION)pRec2;
 
-    AssertPtrReturn(u1.pv, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(   *u1.pu32Magic == RTLOCKVALIDATORREC_MAGIC
-                 || *u1.pu32Magic == RTLOCKVALIDATORSHARED_MAGIC
+    AssertPtrReturn(p1, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(   p1->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC
+                 || p1->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC
                  , VERR_SEM_LV_INVALID_PARAMETER);
 
-    AssertPtrReturn(u2.pv, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(   *u2.pu32Magic == RTLOCKVALIDATORREC_MAGIC
-                 || *u2.pu32Magic == RTLOCKVALIDATORSHARED_MAGIC
+    AssertPtrReturn(p2, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(   p2->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC
+                 || p2->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC
                  , VERR_SEM_LV_INVALID_PARAMETER);
 
     /*
      * Link them.
      */
-    if (    *u1.pu32Magic == RTLOCKVALIDATORREC_MAGIC
-        &&  *u2.pu32Magic == RTLOCKVALIDATORSHARED_MAGIC)
+    if (    p1->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC
+        &&  p2->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC)
     {
-        u1.pRec->pSibling    = u2.pShared;
-        u2.pShared->pSibling = u1.pRec;
+        p1->Excl.pSibling   = p2;
+        p2->Shared.pSibling = p1;
     }
-    else if (    *u1.pu32Magic == RTLOCKVALIDATORSHARED_MAGIC
-             &&  *u2.pu32Magic == RTLOCKVALIDATORREC_MAGIC)
+    else if (   p1->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC
+             && p2->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC)
     {
-        u1.pShared->pSibling = u2.pRec;
-        u2.pRec->pSibling    = u1.pShared;
+        p1->Shared.pSibling = p2;
+        p2->Excl.pSibling   = p1;
     }
     else
         AssertFailedReturn(VERR_SEM_LV_INVALID_PARAMETER); /* unsupported mix */
@@ -574,7 +817,7 @@ RTDECL(int) RTLockValidatorMakeSiblings(void *pvRec1, void *pvRec2)
 
 RTDECL(int) RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
-    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRec->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     if (!pRec->fEnabled)
         return VINF_SUCCESS;
 
@@ -593,7 +836,7 @@ RTDECL(int) RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread
 
 RTDECL(int)  RTLockValidatorCheckAndRelease(PRTLOCKVALIDATORREC pRec)
 {
-    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRec->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     if (!pRec->fEnabled)
         return VINF_SUCCESS;
     AssertReturn(pRec->hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
@@ -605,7 +848,7 @@ RTDECL(int)  RTLockValidatorCheckAndRelease(PRTLOCKVALIDATORREC pRec)
 
 RTDECL(int)  RTLockValidatorCheckAndReleaseReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHREAD hThread)
 {
-    AssertReturn(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRead->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     if (!pRead->fEnabled)
         return VINF_SUCCESS;
     AssertReturn(hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
@@ -640,7 +883,7 @@ RTDECL(int)  RTLockValidatorCheckAndReleaseReadOwner(PRTLOCKVALIDATORSHARED pRea
 
 RTDECL(int) RTLockValidatorRecordRecursion(PRTLOCKVALIDATORREC pRec, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
-    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRec->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     if (!pRec->fEnabled)
         return VINF_SUCCESS;
     AssertReturn(pRec->hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
@@ -654,7 +897,7 @@ RTDECL(int) RTLockValidatorRecordRecursion(PRTLOCKVALIDATORREC pRec, PCRTLOCKVAL
 
 RTDECL(int) RTLockValidatorUnwindRecursion(PRTLOCKVALIDATORREC pRec)
 {
-    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRec->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     if (!pRec->fEnabled)
         return VINF_SUCCESS;
     AssertReturn(pRec->hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
@@ -668,8 +911,8 @@ RTDECL(int) RTLockValidatorUnwindRecursion(PRTLOCKVALIDATORREC pRec)
 
 RTDECL(int) RTLockValidatorRecordReadWriteRecursion(PRTLOCKVALIDATORREC pWrite, PRTLOCKVALIDATORSHARED pRead, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
-    AssertReturn(pWrite->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pWrite->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRead->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(pRead->fEnabled == pWrite->fEnabled, VERR_SEM_LV_INVALID_PARAMETER);
     if (!pWrite->fEnabled)
         return VINF_SUCCESS;
@@ -685,8 +928,8 @@ RTDECL(int) RTLockValidatorRecordReadWriteRecursion(PRTLOCKVALIDATORREC pWrite, 
 
 RTDECL(int) RTLockValidatorUnwindReadWriteRecursion(PRTLOCKVALIDATORREC pWrite, PRTLOCKVALIDATORSHARED pRead)
 {
-    AssertReturn(pWrite->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pWrite->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRead->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(pRead->fEnabled == pWrite->fEnabled, VERR_SEM_LV_INVALID_PARAMETER);
     if (!pWrite->fEnabled)
         return VINF_SUCCESS;
@@ -701,7 +944,7 @@ RTDECL(int) RTLockValidatorUnwindReadWriteRecursion(PRTLOCKVALIDATORREC pWrite, 
 
 RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
-    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, NIL_RTTHREAD);
+    AssertReturn(pRec->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC, NIL_RTTHREAD);
     if (!pRec->fEnabled)
         return VINF_SUCCESS;
     if (hThread == NIL_RTTHREAD)
@@ -737,7 +980,7 @@ RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
 
 RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec)
 {
-    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, NIL_RTTHREAD);
+    AssertReturn(pRec->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC, NIL_RTTHREAD);
     if (!pRec->fEnabled)
         return VINF_SUCCESS;
     RTTHREADINT *pThread = pRec->hThread;
@@ -764,7 +1007,7 @@ RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec)
 
 RTDECL(void) RTLockValidatorAddReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHREAD hThread, PCRTLOCKVALIDATORSRCPOS pSrcPos)
 {
-    AssertReturnVoid(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC);
+    AssertReturnVoid(pRead->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC);
     if (!pRead->fEnabled)
         return;
     AssertReturnVoid(hThread != NIL_RTTHREAD);
@@ -795,7 +1038,7 @@ RTDECL(void) RTLockValidatorAddReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHREAD 
 
 RTDECL(void) RTLockValidatorRemoveReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHREAD hThread)
 {
-    AssertReturnVoid(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC);
+    AssertReturnVoid(pRead->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC);
     if (!pRead->fEnabled)
         return;
     AssertReturnVoid(hThread != NIL_RTTHREAD);
@@ -883,106 +1126,344 @@ RTDECL(void) RTLockValidatorReadLockDec(RTTHREAD Thread)
 RT_EXPORT_SYMBOL(RTLockValidatorReadLockDec);
 
 
+/**
+ * Checks for stack cycles caused by another deadlock before returning.
+ *
+ * @retval  VINF_SUCCESS if the stack is simply too small.
+ * @retval  VERR_SEM_LV_EXISTING_DEADLOCK if a cycle was detected.
+ *
+ * @param   pStack              The deadlock detection stack.
+ */
+static int rtLockValidatorDdHandleStackOverflow(PRTLOCKVALIDATORDDSTACK pStack)
+{
+    for (size_t i = 0; i < RT_ELEMENTS(pStack->a) - 1; i++)
+    {
+        PRTTHREADINT pThread = pStack->a[i].pThread;
+        for (size_t j = i + 1; j < RT_ELEMENTS(pStack->a); j++)
+            if (pStack->a[j].pThread == pThread)
+                return VERR_SEM_LV_EXISTING_DEADLOCK;
+    }
+    static bool volatile s_fComplained = false;
+    if (!s_fComplained)
+    {
+        s_fComplained = true;
+        rtLockValidatorComplain(RT_SRC_POS, "lock validator stack is too small! (%zu entries)\n", RT_ELEMENTS(pStack->a));
+    }
+    return VINF_SUCCESS;
+}
+
 
 /**
- * Bitch about a deadlock.
+ * Worker for rtLockValidatorDoDeadlockCheck that checks if there is more work
+ * to be done during unwind.
  *
- * @param   pRec            The lock validator record we're going to block on.
- * @param   pThread         This thread.
- * @param   pCur            The thread we're deadlocking with.
- * @param   enmState        The sleep state.
- * @param   pSrcPos         Where we are going to deadlock.
+ * @returns true if there is more work left for this lock, false if not.
+ * @param   pRec            The current record.
+ * @param   iEntry          The current index.
+ * @param   pFirstSibling   The first record we examined.
  */
-static void rtLockValidatorComplainAboutDeadlock(PRTLOCKVALIDATORREC pRec, PRTTHREADINT pThread, RTTHREADSTATE enmState,
-                                                 PRTTHREADINT pCur, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+DECL_FORCE_INLINE(bool) rtLockValidatorDdMoreWorkLeft(PRTLOCKVALIDATORRECUNION pRec, uint32_t iEntry, PRTLOCKVALIDATORRECUNION pFirstSibling)
 {
-    RTAssertMsg1Weak(pCur == pThread ? "!!Deadlock detected!!" : "!!Deadlock exists!!", pSrcPos->uLine, pSrcPos->pszFile, pSrcPos->pszFunction);
+    PRTLOCKVALIDATORRECUNION pSibling;
 
-    /*
-     * Print the threads and locks involved.
-     */
-    PRTTHREADINT    apSeenThreads[8] = {0,0,0,0,0,0,0,0};
-    unsigned        iSeenThread = 0;
-    pCur = pThread;
-    for (unsigned iEntry = 0; pCur && iEntry < 256; iEntry++)
+    switch (pRec->Core.u32Magic)
+    {
+        case RTLOCKVALIDATORREC_MAGIC:
+            pSibling = pRec->Excl.pSibling;
+            break;
+
+        case RTLOCKVALIDATORSHARED_MAGIC:
+            if (iEntry + 1 < pRec->Shared.cAllocated)
+                return true;
+            pSibling = pRec->Excl.pSibling;
+            break;
+
+        default:
+            return false;
+    }
+    return pSibling != NULL
+        && pSibling != pFirstSibling;
+}
+
+
+/**
+ * Worker for rtLockValidatorDeadlockDetection that does the actual deadlock
+ * detection.
+ *
+ * @returns Same as rtLockValidatorDeadlockDetection.
+ * @param   pStack          The stack to use.
+ * @param   pOriginalRec    The original record.
+ * @param   pThreadSelf     The calling thread.
+ */
+static int rtLockValidatorDdDoDetection(PRTLOCKVALIDATORDDSTACK pStack, PRTLOCKVALIDATORRECUNION const pOriginalRec,
+                                        PRTTHREADINT const pThreadSelf)
+{
+    pStack->c = 0;
+
+    /* We could use a single RTLOCKVALIDATORDDENTRY variable here, but the
+       compiler may make a better job of it when using individual variables. */
+    PRTLOCKVALIDATORRECUNION    pRec            = pOriginalRec;
+    PRTLOCKVALIDATORRECUNION    pFirstSibling   = pOriginalRec;
+    uint32_t                    iEntry          = UINT32_MAX;
+    PRTTHREADINT                pThread         = NIL_RTTHREAD;
+    RTTHREADSTATE               enmState        = RTTHREADSTATE_RUNNING;
+    for (;;)
     {
         /*
-         * Print info on pCur. Determin next while doing so.
+         * Process the current record.
          */
-        RTAssertMsg2Weak(" #%u: %RTthrd/%RTnthrd %s: %s(%u) %RTptr\n",
-                         iEntry, pCur, pCur->Core.Key, pCur->szName,
-                         pCur->LockValidator.SrcPos.pszFile, pCur->LockValidator.SrcPos.uLine,
-                         pCur->LockValidator.SrcPos.pszFunction, pCur->LockValidator.SrcPos.uId);
-        PRTTHREADINT  pNext       = NULL;
-        RTTHREADSTATE enmCurState = rtThreadGetState(pCur);
-        switch (enmCurState)
+        /* Extract the (next) thread. */
+        PRTTHREADINT pNextThread;
+        switch (pRec->Core.u32Magic)
         {
-            case RTTHREADSTATE_CRITSECT:
-            case RTTHREADSTATE_EVENT:
-            case RTTHREADSTATE_EVENT_MULTI:
-            case RTTHREADSTATE_FAST_MUTEX:
-            case RTTHREADSTATE_MUTEX:
-            case RTTHREADSTATE_SPIN_MUTEX:
-            {
-                PRTLOCKVALIDATORREC pCurRec      = pCur->LockValidator.pRec;
-                RTTHREADSTATE       enmCurState2 = rtThreadGetState(pCur);
-                if (enmCurState2 != enmCurState)
+            case RTLOCKVALIDATORREC_MAGIC:
+                Assert(iEntry == UINT32_MAX);
+                pNextThread = rtLockValidatorReadThreadHandle(&pRec->Excl.hThread);
+                if (    pNextThread
+                    &&  !RTTHREAD_IS_SLEEPING(pNextThread->enmState)
+                    &&  pNextThread != pThreadSelf)
+                    pNextThread = NIL_RTTHREAD;
+                if (    pNextThread == NIL_RTTHREAD
+                    &&  pRec->Excl.pSibling
+                    &&  pRec->Excl.pSibling != pFirstSibling)
                 {
-                    RTAssertMsg2Weak(" Impossible!!! enmState=%s -> %s (%d)\n",
-                                     RTThreadStateName(enmCurState), RTThreadStateName(enmCurState2), enmCurState2);
-                    break;
+                    pRec = pRec->Excl.pSibling;
+                    continue;
                 }
-                if (   VALID_PTR(pCurRec)
-                    && pCurRec->u32Magic == RTLOCKVALIDATORREC_MAGIC)
-                {
-                    RTAssertMsg2Weak("     Waiting on %s %p [%s]: Entered %s(%u) %s %p\n",
-                                     RTThreadStateName(enmCurState), pCurRec->hLock, pCurRec->pszName,
-                                     pCurRec->SrcPos.pszFile, pCurRec->SrcPos.uLine, pCurRec->SrcPos.pszFunction, pCurRec->SrcPos.uId);
-                    pNext = pCurRec->hThread;
-                }
-                else if (VALID_PTR(pCurRec))
-                    RTAssertMsg2Weak("     Waiting on %s pCurRec=%p: invalid magic number: %#x\n",
-                                     RTThreadStateName(enmCurState), pCurRec, pCurRec->u32Magic);
-                else
-                    RTAssertMsg2Weak("     Waiting on %s pCurRec=%p: invalid pointer\n",
-                                     RTThreadStateName(enmCurState), pCurRec);
                 break;
-            }
 
-#if 0
-            case RTTHREADSTATE_RW_READ:
-            case RTTHREADSTATE_RW_WRITE:
-            {
-            }
-#endif
+            case RTLOCKVALIDATORSHARED_MAGIC:
+                /* Skip to the next sibling if same side.  ASSUMES reader priority. */
+                /** @todo The read side of a read-write lock is problematic if
+                 * the implementation prioritizes writers over readers because
+                 * that means we should could deadlock against current readers
+                 * if a writer showed up.  If the RW sem implementation is
+                 * wrapping some native API, it's not so easy to detect when we
+                 * should do this and when we shouldn't.  Checking when we
+                 * shouldn't is subject to wakeup scheduling and cannot easily
+                 * be made reliable.
+                 *
+                 * At the moment we circumvent all this mess by declaring that
+                 * readers has priority.  This is TRUE on linux, but probably
+                 * isn't on Solaris and FreeBSD. */
+                if (   pRec == pFirstSibling
+                    && pRec->Shared.pSibling != NULL
+                    && pRec->Shared.pSibling != pFirstSibling)
+                {
+                    pRec = pRec->Shared.pSibling;
+                    Assert(iEntry == UINT32_MAX);
+                    continue;
+                }
 
+                /* Scan the owner table for blocked owners. */
+                if (ASMAtomicUoReadU32(&pRec->Shared.cEntries) > 0)
+                {
+                    uint32_t                            cAllocated = ASMAtomicUoReadU32(&pRec->Shared.cAllocated);
+                    PRTLOCKVALIDATORSHAREDONE volatile *papOwners  = pRec->Shared.papOwners;
+                    while (++iEntry < cAllocated)
+                    {
+                        PRTLOCKVALIDATORSHAREDONE pEntry = rtLockValidatorUoReadSharedOwner(&papOwners[iEntry]);
+                        if (   pEntry
+                            && pEntry->Core.u32Magic == RTLOCKVALIDATORSHAREDONE_MAGIC)
+                        {
+                            pNextThread = rtLockValidatorReadThreadHandle(&pEntry->hThread);
+                            if (    pNextThread
+                                &&  !RTTHREAD_IS_SLEEPING(pNextThread->enmState)
+                                &&  pNextThread != pThreadSelf)
+                                pNextThread = NIL_RTTHREAD;
+                        }
+                        else
+                            Assert(!pEntry || pEntry->Core.u32Magic == RTLOCKVALIDATORSHAREDONE_MAGIC_DEAD);
+                    }
+                }
+
+                /* Advance to the next sibling, if any. */
+                Assert(pNextThread == NIL_RTTHREAD);
+                if (   pRec->Shared.pSibling != NULL
+                    && pRec->Shared.pSibling != pFirstSibling)
+                {
+                    pRec = pRec->Shared.pSibling;
+                    iEntry = UINT32_MAX;
+                    continue;
+                }
+                break;
+
+            case RTLOCKVALIDATORREC_MAGIC_DEAD:
+            case RTLOCKVALIDATORSHARED_MAGIC_DEAD:
+                pNextThread = NIL_RTTHREAD;
+                break;
+
+            case RTLOCKVALIDATORSHAREDONE_MAGIC:
+            case RTLOCKVALIDATORSHAREDONE_MAGIC_DEAD:
             default:
-                RTAssertMsg2Weak(" Impossible!!! enmState=%s (%d)\n", RTThreadStateName(enmCurState), enmCurState);
+                AssertMsgFailed(("%p: %#x\n", pRec, pRec->Core));
+                pNextThread = NIL_RTTHREAD;
                 break;
         }
 
-        /*
-         * Check for cycle.
-         */
-        if (iEntry && pCur == pThread)
-            break;
-        for (unsigned i = 0; i < RT_ELEMENTS(apSeenThreads); i++)
-            if (apSeenThreads[i] == pCur)
+        /* Is that thread waiting for something? */
+        RTTHREADSTATE               enmNextState = RTTHREADSTATE_RUNNING;
+        PRTLOCKVALIDATORRECUNION    pNextRec     = NULL;
+        if (   pNextThread != NIL_RTTHREAD
+            && RT_LIKELY(pNextThread->u32Magic == RTTHREADINT_MAGIC))
+        {
+            do
             {
-                RTAssertMsg2Weak(" Cycle!\n");
-                pNext = NULL;
-                break;
-            }
+                enmNextState = rtThreadGetState(pNextThread);
+                if (    !RTTHREAD_IS_SLEEPING(enmNextState)
+                    &&  pNextThread != pThreadSelf)
+                    break;
+                pNextRec = rtLockValidatorReadRecUnionPtr(&pNextThread->LockValidator.pRec);
+                if (RT_LIKELY(   !pNextRec
+                              || enmNextState == rtThreadGetState(pNextThread)))
+                    break;
+                pNextRec = NULL;
+            } while (pNextThread->u32Magic == RTTHREADINT_MAGIC);
+        }
+        if (pNextRec)
+        {
+            /*
+             * Recurse and check for deadlock.
+             */
+            uint32_t i = pStack->c;
+            if (RT_UNLIKELY(i >= RT_ELEMENTS(pStack->a)))
+                return rtLockValidatorDdHandleStackOverflow(pStack);
 
-        /*
-         * Advance to the next thread.
-         */
-        iSeenThread = (iSeenThread + 1) % RT_ELEMENTS(apSeenThreads);
-        apSeenThreads[iSeenThread] = pCur;
-        pCur = pNext;
+            pStack->c++;
+            pStack->a[i].pRec           = pRec;
+            pStack->a[i].iEntry         = iEntry;
+            pStack->a[i].enmState       = enmState;
+            pStack->a[i].pThread        = pThread;
+            pStack->a[i].pFirstSibling  = pFirstSibling;
+
+            if (RT_UNLIKELY(pNextThread == pThreadSelf))
+                return VERR_SEM_LV_DEADLOCK;
+
+            pRec            = pNextRec;
+            pFirstSibling   = pNextRec;
+            iEntry          = UINT32_MAX;
+            enmState        = enmNextState;
+            pThread         = pNextThread;
+        }
+        else if (RT_LIKELY(!pNextThread))
+        {
+            /*
+             * No deadlock here, unwind the stack and deal with any unfinished
+             * business there.
+             */
+            uint32_t i = pStack->c;
+            for (;;)
+            {
+                /* pop */
+                if (i == 0)
+                    return VINF_SUCCESS;
+                i--;
+
+                /* examine it. */
+                pRec            = pStack->a[i].pRec;
+                pFirstSibling   = pStack->a[i].pFirstSibling;
+                iEntry          = pStack->a[i].iEntry;
+                if (rtLockValidatorDdMoreWorkLeft(pRec, iEntry, pFirstSibling))
+                {
+                    enmState    = pStack->a[i].enmState;
+                    pThread     = pStack->a[i].pThread;
+                    break;
+                }
+            }
+        }
+        /* else: see if there is another thread to check for this lock. */
     }
-    AssertBreakpoint();
 }
+
+
+/**
+ * Check for the simple no-deadlock case.
+ *
+ * @returns true if no deadlock, false if further investigation is required.
+ *
+ * @param   pOriginalRec    The original record.
+ */
+DECLINLINE(int) rtLockValidatorIsSimpleNoDeadlockCase(PRTLOCKVALIDATORRECUNION pOriginalRec)
+{
+    if (    pOriginalRec->Excl.Core.u32Magic == RTLOCKVALIDATORREC_MAGIC
+        &&  !pOriginalRec->Excl.pSibling)
+    {
+        PRTTHREADINT pThread = rtLockValidatorReadThreadHandle(&pOriginalRec->Excl.hThread);
+        if (   !pThread
+            || pThread->u32Magic != RTTHREADINT_MAGIC)
+            return true;
+        RTTHREADSTATE enmState = rtThreadGetState(pThread);
+        if (!RTTHREAD_IS_SLEEPING(enmState))
+            return true;
+    }
+    return false;
+}
+
+
+/**
+ * Worker for rtLockValidatorDeadlockDetection that bitches about a deadlock.
+ *
+ * @param   pStack          The chain of locks causing the deadlock.
+ * @param   pThreadSelf     This thread.
+ * @param   pSrcPos         Where we are going to deadlock.
+ * @param   rc              The return code.
+ */
+static void rcLockValidatorDoDeadlockComplaining(PRTLOCKVALIDATORDDSTACK pStack, PRTTHREADINT pThreadSelf,
+                                                 PCRTLOCKVALIDATORSRCPOS pSrcPos, int rc)
+{
+    if (!ASMAtomicUoReadBool(&g_fLockValidatorQuiet))
+    {
+        rtLockValidatorComplainFirst(  rc == VERR_SEM_LV_DEADLOCK
+                                     ? "deadlock"
+                                     : rc == VERR_SEM_LV_EXISTING_DEADLOCK
+                                     ? "existing-deadlock"
+                                     : "!unexpected rc!",
+                                     pSrcPos, pThreadSelf, NULL);
+        rtLockValidatorComplainMore("---- start of %u entry deadlock chain ----\n", pStack->c);
+        for (uint32_t i = 0; i < pStack->c; i++)
+        {
+            char szPrefix[24];
+            RTStrPrintf(szPrefix, sizeof(szPrefix), "#%u: ", i);
+            PRTLOCKVALIDATORSHAREDONE pSharedOne = NULL;
+            if (pStack->a[i].pRec->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC)
+                pSharedOne = pStack->a[i].pRec->Shared.papOwners[pStack->a[i].iEntry];
+            if (VALID_PTR(pSharedOne) && pSharedOne->Core.u32Magic == RTLOCKVALIDATORSHAREDONE_MAGIC)
+                rtLockValidatorComplainAboutLock(szPrefix, (PRTLOCKVALIDATORRECUNION)pSharedOne, "\n");
+            else
+                rtLockValidatorComplainAboutLock(szPrefix, pStack->a[i].pRec, "\n");
+        }
+        rtLockValidatorComplainMore("---- end of deadlock chain ----\n");
+    }
+
+    rtLockValidatorComplainPanic();
+}
+
+
+/**
+ * Perform deadlock detection.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_SEM_LV_DEADLOCK
+ * @retval  VERR_SEM_LV_EXISTING_DEADLOCK
+ *
+ * @param   pRec            The record relating to the current thread's lock
+ *                          operation.
+ * @param   pThreadSelf     The current thread.
+ * @param   pSrcPos         The position of the current lock operation.
+ */
+static int rtLockValidatorDeadlockDetection(PRTLOCKVALIDATORRECUNION pRec, PRTTHREADINT pThreadSelf, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+{
+#ifdef DEBUG_bird
+    RTLOCKVALIDATORDDSTACK Stack;
+    int rc = rtLockValidatorDdDoDetection(&Stack, pRec, pThreadSelf);
+    if (RT_FAILURE(rc))
+        rcLockValidatorDoDeadlockComplaining(&Stack, pThreadSelf, pSrcPos, rc);
+    return rc;
+#else
+    return VINF_SUCCESS;
+#endif
+}
+
 
 
 RTDECL(int) RTLockValidatorCheckWriteOrderBlocking(PRTLOCKVALIDATORREC pWrite, PRTLOCKVALIDATORSHARED pRead,
@@ -992,12 +1473,14 @@ RTDECL(int) RTLockValidatorCheckWriteOrderBlocking(PRTLOCKVALIDATORREC pWrite, P
     /*
      * Fend off wild life.
      */
-    AssertPtrReturn(pWrite, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(pWrite->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    PRTLOCKVALIDATORRECUNION pWriteU = (PRTLOCKVALIDATORRECUNION)pWrite; /* (avoid break aliasing rules) */
+    AssertPtrReturn(pWriteU, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pWriteU->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    PRTLOCKVALIDATORRECUNION pReadU = (PRTLOCKVALIDATORRECUNION)pRead;
     AssertPtrReturn(pRead, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(pRead->fEnabled == pWrite->fEnabled, VERR_SEM_LV_INVALID_PARAMETER);
-    if (!pWrite->fEnabled)
+    AssertReturn(pReadU->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pReadU->Shared.fEnabled == pWriteU->Excl.fEnabled, VERR_SEM_LV_INVALID_PARAMETER);
+    if (!pWriteU->Excl.fEnabled)
         return VINF_SUCCESS;
     AssertReturn(RTTHREAD_IS_SLEEPING(enmState), VERR_SEM_LV_INVALID_PARAMETER);
     PRTTHREADINT pThread = hThread;
@@ -1012,12 +1495,11 @@ RTDECL(int) RTLockValidatorCheckWriteOrderBlocking(PRTLOCKVALIDATORREC pWrite, P
     /*
      * Check for attempts at doing a read upgrade.
      */
-    PRTLOCKVALIDATORSHAREDONE pEntry = rtLockValidatorSharedRecFindThread(pRead, hThread, NULL);
+    PRTLOCKVALIDATORSHAREDONE pEntry = rtLockValidatorSharedRecFindThread(&pReadU->Shared, hThread, NULL);
     if (pEntry)
     {
-        AssertMsgFailed(("Read lock upgrade at %s(%d) %s %p!\nRead lock take at %s(%d) %s %p!\n",
-                         pSrcPos->pszFile, pSrcPos->uLine, pSrcPos->pszFunction, pSrcPos->uId,
-                         pEntry->SrcPos.pszFile, pEntry->SrcPos.uLine, pEntry->SrcPos.pszFunction, pEntry->SrcPos.uId));
+        rtLockValidatorComplainFirst("Read lock upgrade", pSrcPos, pThread, (PRTLOCKVALIDATORRECUNION)pEntry);
+        rtLockValidatorComplainPanic();
         return VERR_SEM_LV_UPGRADE;
     }
 
@@ -1035,9 +1517,9 @@ RTDECL(int) RTLockValidatorCheckReadOrderBlocking(PRTLOCKVALIDATORSHARED pRead, 
      * Fend off wild life.
      */
     AssertPtrReturn(pRead, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(pRead->u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRead->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     AssertPtrReturn(pWrite, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(pWrite->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pWrite->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(pRead->fEnabled == pWrite->fEnabled, VERR_SEM_LV_INVALID_PARAMETER);
     if (!pRead->fEnabled)
         return VINF_SUCCESS;
@@ -1064,15 +1546,16 @@ RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
     /*
      * Fend off wild life.
      */
-    AssertPtrReturn(pRec, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(pRec->u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
-    if (!pRec->fEnabled)
+    PRTLOCKVALIDATORRECUNION pRecU = (PRTLOCKVALIDATORRECUNION)pRec;
+    AssertPtrReturn(pRecU, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pRecU->Core.u32Magic == RTLOCKVALIDATORREC_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    if (!pRecU->Excl.fEnabled)
         return VINF_SUCCESS;
     AssertReturn(RTTHREAD_IS_SLEEPING(enmState), VERR_SEM_LV_INVALID_PARAMETER);
-    PRTTHREADINT pThread = hThread;
-    AssertPtrReturn(pThread, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(pThread->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
-    RTTHREADSTATE enmThreadState = rtThreadGetState(pThread);
+    PRTTHREADINT pThreadSelf = hThread;
+    AssertPtrReturn(pThreadSelf, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(pThreadSelf->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    RTTHREADSTATE enmThreadState = rtThreadGetState(pThreadSelf);
     AssertReturn(   enmThreadState == RTTHREADSTATE_RUNNING
                  || enmThreadState == RTTHREADSTATE_TERMINATED   /* rtThreadRemove uses locks too */
                  || enmThreadState == RTTHREADSTATE_INITIALIZING /* rtThreadInsert uses locks too */
@@ -1082,153 +1565,30 @@ RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
      * Record the location and everything before changing the state and
      * performing deadlock detection.
      */
-    pThread->LockValidator.pRec = pRec;
-    rtLockValidatorCopySrcPos(&pThread->LockValidator.SrcPos, pSrcPos);
+    rtLockValidatorWriteRecUnionPtr(&pThreadSelf->LockValidator.pRec, pRecU);
+    rtLockValidatorCopySrcPos(&pThreadSelf->LockValidator.SrcPos, pSrcPos);
 
     /*
-     * Don't do deadlock detection if we're recursing and that's OK.
+     * Don't do deadlock detection if we're recursing.
      *
      * On some hosts we don't do recursion accounting our selves and there
      * isn't any other place to check for this.  semmutex-win.cpp for instance.
      */
-    if (pRec->hThread == pThread)
+    if (rtLockValidatorReadThreadHandle(&pRecU->Excl.hThread) == pThreadSelf)
     {
         if (fRecursiveOk)
             return VINF_SUCCESS;
-        AssertMsgFailed(("%p (%s)\n", pRec->hLock, pRec->pszName));
+        rtLockValidatorComplainFirst("Recursion not allowed", pSrcPos, pThreadSelf, pRecU);
+        rtLockValidatorComplainPanic();
         return VERR_SEM_LV_NESTED;
     }
 
     /*
-     * Do deadlock detection.
-     *
-     * Since we're missing proper serialization, we don't declare it a
-     * deadlock until we've got three runs with the same list length.
-     * While this isn't perfect, it should avoid out the most obvious
-     * races on SMP boxes.
+     * Perform deadlock detection.
      */
-    rtLockValidatorSerializeDetectionEnter();
-
-    PRTTHREADINT    pCur;
-    unsigned        cPrevLength = ~0U;
-    unsigned        cEqualRuns  = 0;
-    unsigned        iParanoia   = 256;
-    do
-    {
-        unsigned cLength = 0;
-        pCur = pThread;
-        for (;;)
-        {
-            /*
-             * Get the next thread.
-             */
-            PRTTHREADINT pNext = NULL;
-            for (;;)
-            {
-                RTTHREADSTATE enmCurState = rtThreadGetState(pCur);
-                switch (enmCurState)
-                {
-                    case RTTHREADSTATE_CRITSECT:
-                    case RTTHREADSTATE_EVENT:
-                    case RTTHREADSTATE_EVENT_MULTI:
-                    case RTTHREADSTATE_FAST_MUTEX:
-                    case RTTHREADSTATE_MUTEX:
-                    case RTTHREADSTATE_SPIN_MUTEX:
-                    {
-                        PRTLOCKVALIDATORREC pCurRec = pCur->LockValidator.pRec;
-                        if (    rtThreadGetState(pCur) != enmCurState
-                            ||  !VALID_PTR(pCurRec)
-                            ||  pCurRec->u32Magic != RTLOCKVALIDATORREC_MAGIC)
-                            continue;
-                        pNext = pCurRec->hThread;
-                        if (    rtThreadGetState(pCur) != enmCurState
-                            ||  pCurRec->u32Magic != RTLOCKVALIDATORREC_MAGIC
-                            ||  pCurRec->hThread != pNext)
-                            continue;
-                        break;
-                    }
-
-#if 0
-                    case RTTHREADSTATE_RW_WRITE:
-                    {
-                        PRTLOCKVALIDATORREC pCurRec = pCur->LockValidator.pRec;
-                        if (    rtThreadGetState(pCur) != enmCurState
-                            ||  !VALID_PTR(pCurRec)
-                            ||  pCurRec->u32Magic != RTLOCKVALIDATORREC_MAGIC)
-                            continue;
-
-                        break;
-                    }
-
-                    case RTTHREADSTATE_RW_READ:
-                    {
-                        PRTLOCKVALIDATORREC pCurRec = pCur->LockValidator.pRec;
-                        if (    rtThreadGetState(pCur) != enmCurState
-                            ||  !VALID_PTR(pCurRec)
-                            ||  pCurRec->u32Magic != RTLOCKVALIDATORREC_MAGIC)
-                            continue;
-                        pNext = pCurRec->hThread;
-                        if (    rtThreadGetState(pCur) != enmCurState
-                            ||  pCurRec->u32Magic != RTLOCKVALIDATORREC_MAGIC
-                            ||  pCurRec->hThread != pNext)
-                            continue;
-                        break;
-                    }
-#endif
-
-                    default:
-                        pNext = NULL;
-                        break;
-                }
-                break;
-            }
-
-            /*
-             * If we arrive at the end of the list we're good.
-             */
-            pCur = pNext;
-            if (!pCur)
-            {
-                rtLockValidatorSerializeDetectionLeave();
-                return VINF_SUCCESS;
-            }
-
-            /*
-             * If we've got back to the blocking thread id we've
-             * got a deadlock.
-             */
-            if (pCur == pThread)
-                break;
-
-            /*
-             * If we've got a chain of more than 256 items, there is some
-             * kind of cycle in the list, which means that there is already
-             * a deadlock somewhere.
-             */
-            if (cLength >= 256)
-                break;
-
-            cLength++;
-        }
-
-        /* compare with previous list run. */
-        if (cLength != cPrevLength)
-        {
-            cPrevLength = cLength;
-            cEqualRuns = 0;
-        }
-        else
-            cEqualRuns++;
-    } while (cEqualRuns < 3 && --iParanoia > 0);
-
-    /*
-     * Ok, if we ever get here, it's most likely a genuine deadlock.
-     */
-    rtLockValidatorComplainAboutDeadlock(pRec, pThread, enmState, pCur, pSrcPos);
-
-    rtLockValidatorSerializeDetectionLeave();
-
-    return VERR_SEM_LV_DEADLOCK;
+    if (rtLockValidatorIsSimpleNoDeadlockCase(pRecU))
+        return VINF_SUCCESS;
+    return rtLockValidatorDeadlockDetection(pRecU, pThreadSelf, pSrcPos);
 }
 RT_EXPORT_SYMBOL(RTLockValidatorCheckBlocking);
 
@@ -1245,4 +1605,32 @@ RTDECL(bool) RTLockValidatorIsEnabled(void)
     return ASMAtomicUoReadBool(&g_fLockValidatorEnabled);
 }
 RT_EXPORT_SYMBOL(RTLockValidatorIsEnabled);
+
+
+RTDECL(bool) RTLockValidatorSetQuiet(bool fQuiet)
+{
+    return ASMAtomicXchgBool(&g_fLockValidatorQuiet, fQuiet);
+}
+RT_EXPORT_SYMBOL(RTLockValidatorSetQuiet);
+
+
+RTDECL(bool) RTLockValidatorAreQuiet(void)
+{
+    return ASMAtomicUoReadBool(&g_fLockValidatorQuiet);
+}
+RT_EXPORT_SYMBOL(RTLockValidatorAreQuiet);
+
+
+RTDECL(bool) RTLockValidatorSetMayPanic(bool fMayPanic)
+{
+    return ASMAtomicXchgBool(&g_fLockValidatorMayPanic, fMayPanic);
+}
+RT_EXPORT_SYMBOL(RTLockValidatorSetMayPanic);
+
+
+RTDECL(bool) RTLockValidatorMayPanic(void)
+{
+    return ASMAtomicUoReadBool(&g_fLockValidatorMayPanic);
+}
+RT_EXPORT_SYMBOL(RTLockValidatorMayPanic);
 
