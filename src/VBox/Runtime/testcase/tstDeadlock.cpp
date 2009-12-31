@@ -135,7 +135,7 @@ static void test1(uint32_t cThreads)
     int rc = VINF_SUCCESS;
     for (i = 0; i < cThreads && RT_SUCCESS(rc); i++)
         RTTEST_CHECK_RC_OK(g_hTest, rc = RTThreadCreateF(&g_ahThreads[i], test1Thread, (void *)(uintptr_t)i, 0,
-                                                         RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "test1-%u", i));
+                                                         RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "test1-%02u", i));
     if (RT_SUCCESS(rc))
     {
         int rc2 = VINF_SUCCESS;

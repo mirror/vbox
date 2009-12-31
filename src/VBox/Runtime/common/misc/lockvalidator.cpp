@@ -250,7 +250,7 @@ static void rtLockValidatorComplainFirst(const char *pszWhat, PCRTLOCKVALIDATORS
     {
         RTAssertMsg1Weak("RTLockValidator", pSrcPos->uLine, pSrcPos->pszFile, pSrcPos->pszFunction);
         if (pSrcPos->uId)
-            RTAssertMsg2Weak("%s  [uId=%p thrd=%s]\n", pszWhat, pSrcPos->uId, VALID_PTR(pThreadSelf) ? pThreadSelf->szName : "<NIL>");
+            RTAssertMsg2Weak("%s  [uId=%p  thrd=%s]\n", pszWhat, pSrcPos->uId, VALID_PTR(pThreadSelf) ? pThreadSelf->szName : "<NIL>");
         else
             RTAssertMsg2Weak("%s\n", pszWhat, pSrcPos->uId);
         rtLockValidatorComplainAboutLock("Lock: ", pRec, "\n");
@@ -1443,26 +1443,30 @@ DECLINLINE(int) rtLockValidatorIsSimpleNoDeadlockCase(PRTLOCKVALIDATORRECUNION p
  * Worker for rtLockValidatorDeadlockDetection that bitches about a deadlock.
  *
  * @param   pStack          The chain of locks causing the deadlock.
+ * @param   pRec            The record relating to the current thread's lock
+ *                          operation.
  * @param   pThreadSelf     This thread.
  * @param   pSrcPos         Where we are going to deadlock.
  * @param   rc              The return code.
  */
-static void rcLockValidatorDoDeadlockComplaining(PRTLOCKVALIDATORDDSTACK pStack, PRTTHREADINT pThreadSelf,
-                                                 PCRTLOCKVALIDATORSRCPOS pSrcPos, int rc)
+static void rcLockValidatorDoDeadlockComplaining(PRTLOCKVALIDATORDDSTACK pStack, PRTLOCKVALIDATORRECUNION pRec,
+                                                 PRTTHREADINT pThreadSelf, PCRTLOCKVALIDATORSRCPOS pSrcPos, int rc)
 {
     if (!ASMAtomicUoReadBool(&g_fLockValidatorQuiet))
     {
         rtLockValidatorComplainFirst(  rc == VERR_SEM_LV_DEADLOCK
-                                     ? "deadlock"
+                                     ? "Detected deadlock!"
                                      : rc == VERR_SEM_LV_EXISTING_DEADLOCK
-                                     ? "existing-deadlock"
+                                     ? "Found existing deadlock!"
                                      : "!unexpected rc!",
-                                     pSrcPos, pThreadSelf, NULL);
-        rtLockValidatorComplainMore("---- start of %u entry deadlock chain ----\n", pStack->c);
+                                     pSrcPos,
+                                     pThreadSelf,
+                                     pStack->a[0].pRec != pRec ? pRec : NULL);
+        rtLockValidatorComplainMore("---- start of deadlock chain - %u entries ----\n", pStack->c);
         for (uint32_t i = 0; i < pStack->c; i++)
         {
             char szPrefix[24];
-            RTStrPrintf(szPrefix, sizeof(szPrefix), "#%u: ", i);
+            RTStrPrintf(szPrefix, sizeof(szPrefix), "#%02u: ", i);
             PRTLOCKVALIDATORSHAREDONE pSharedOne = NULL;
             if (pStack->a[i].pRec->Core.u32Magic == RTLOCKVALIDATORSHARED_MAGIC)
                 pSharedOne = pStack->a[i].pRec->Shared.papOwners[pStack->a[i].iEntry];
@@ -1513,7 +1517,7 @@ static int rtLockValidatorDeadlockDetection(PRTLOCKVALIDATORRECUNION pRec, PRTTH
         }
     }
 
-    rcLockValidatorDoDeadlockComplaining(&Stack, pThreadSelf, pSrcPos, rc);
+    rcLockValidatorDoDeadlockComplaining(&Stack, pRec, pThreadSelf, pSrcPos, rc);
     return rc;
 #else
     return VINF_SUCCESS;
