@@ -91,7 +91,7 @@ typedef struct RTTHREADINT
     size_t                  cbStack;
 #ifdef IN_RING3
     /** The lock validator data. */
-    RTLOCKVALIDATORPERTHREAD LockValidator;
+    RTLOCKVALPERTHREAD      LockValidator;
 #endif /* IN_RING3 */
 #ifdef IPRT_WITH_GENERIC_TLS
     /** The TLS entries for this thread. */
