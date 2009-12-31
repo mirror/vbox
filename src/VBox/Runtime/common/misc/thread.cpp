@@ -1313,7 +1313,7 @@ RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState)
 {
     Assert(RTTHREAD_IS_SLEEPING(enmState));
     PRTTHREADINT pThread = hThread;
-    if (hThread && rtThreadGetState(pThread) != RTTHREADSTATE_RUNNING)
+    if (hThread && rtThreadGetState(pThread) == RTTHREADSTATE_RUNNING)
         rtThreadSetState(pThread, enmState);
 }
 RT_EXPORT_SYMBOL(RTThreadBlocking);
@@ -1334,6 +1334,26 @@ RTDECL(void) RTThreadUnblocked(RTTHREAD hThread, RTTHREADSTATE enmCurState)
         rtThreadSetState(hThread, RTTHREADSTATE_RUNNING);
 }
 RT_EXPORT_SYMBOL(RTThreadUnblocked);
+
+
+/**
+ * Get the current thread state.
+ *
+ * @returns The thread state.
+ * @param   hThread         The thread.
+ */
+RTDECL(RTTHREADSTATE) RTThreadGetState(RTTHREAD hThread)
+{
+    RTTHREADSTATE   enmState = RTTHREADSTATE_INVALID;
+    PRTTHREADINT    pThread  = rtThreadGet(hThread);
+    if (pThread)
+    {
+        enmState = rtThreadGetState(pThread);
+        rtThreadRelease(pThread);
+    }
+    return enmState;
+}
+RT_EXPORT_SYMBOL(RTThreadGetState);
 
 
 /**

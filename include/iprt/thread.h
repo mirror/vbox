@@ -589,6 +589,14 @@ RTDECL(void) RTThreadUnblocked(RTTHREAD hThread, RTTHREADSTATE enmCurState);
 RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState);
 
 /**
+ * Get the current thread state.
+ *
+ * @returns The thread state.
+ * @param   hThread         The thread.
+ */
+RTDECL(RTTHREADSTATE) RTThreadGetState(RTTHREAD hThread);
+
+/**
  * Translate a thread state into a string.
  *
  * @returns Pointer to a read-only string containing the state name.
