@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT Testcase - Deadlock detection.
+ * IPRT Testcase - RTLockValidator.
  */
 
 /*
@@ -177,7 +177,7 @@ int main()
     /*
      * Init.
      */
-    int rc = RTTestInitAndCreate("tstRTDeadlock", &g_hTest);
+    int rc = RTTestInitAndCreate("tstRTLockValidator", &g_hTest);
     if (rc)
         return rc;
     RTTestBanner(g_hTest);
