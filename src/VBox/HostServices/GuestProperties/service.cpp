@@ -614,7 +614,9 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
     const char *pcszName = NULL;        /* shut up gcc */
     const char *pcszValue = NULL;       /* ditto */
     const char *pcszFlags = NULL;
-    uint32_t cchName, cchValue, cchFlags = 0;
+    uint32_t cchName = 0;               /* ditto */
+    uint32_t cchValue = 0;              /* ditto */
+    uint32_t cchFlags = 0;
     uint32_t fFlags = NILFLAG;
     RTTIMESPEC time;
     uint64_t u64TimeNano = RTTimeSpecGetNano(RTTimeNow(&time));
