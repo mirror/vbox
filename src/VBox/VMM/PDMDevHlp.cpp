@@ -1113,6 +1113,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_DBGFStopV(PPDMDEVINS pDevIns, const char *p
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
     int rc = DBGFR3EventSrcV(pVM, DBGFEVENT_DEV_STOP, pszFile, iLine, pszFunction, pszFormat, args);
+    if (rc == VERR_DBGF_NOT_ATTACHED)
+        rc = VINF_SUCCESS;
 
     LogFlow(("pdmR3DevHlp_DBGFStopV: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
