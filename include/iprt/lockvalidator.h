@@ -45,12 +45,12 @@ RT_C_DECLS_BEGIN
 
 /** Pointer to a record union.
  * @internal  */
-typedef union RTLOCKVALIDATORRECUNION *PRTLOCKVALIDATORRECUNION;
+typedef union RTLOCKVALRECUNION *PRTLOCKVALRECUNION;
 
 /**
  * Source position.
  */
-typedef struct RTLOCKVALIDATORSRCPOS
+typedef struct RTLOCKVALSRCPOS
 {
     /** The file where the lock was taken. */
     R3R0PTRTYPE(const char * volatile)  pszFile;
@@ -63,12 +63,12 @@ typedef struct RTLOCKVALIDATORSRCPOS
 #if HC_ARCH_BITS == 64
     uint32_t                            u32Padding; /**< Alignment padding. */
 #endif
-} RTLOCKVALIDATORSRCPOS;
-AssertCompileSize(RTLOCKVALIDATORSRCPOS, HC_ARCH_BITS == 32 ? 16 : 32);
+} RTLOCKVALSRCPOS;
+AssertCompileSize(RTLOCKVALSRCPOS, HC_ARCH_BITS == 32 ? 16 : 32);
 /* The pointer types are defined in iprt/types.h. */
 
-/** @def RTLOCKVALIDATORSRCPOS_INIT
- * Initializer for a RTLOCKVALIDATORSRCPOS variable.
+/** @def RTLOCKVALSRCPOS_INIT
+ * Initializer for a RTLOCKVALSRCPOS variable.
  *
  * @param   pszFile         The file name.  Optional (NULL).
  * @param   uLine           The line number in that file. Optional (0).
@@ -77,29 +77,29 @@ AssertCompileSize(RTLOCKVALIDATORSRCPOS, HC_ARCH_BITS == 32 ? 16 : 32);
  *                          Optional (NULL).
  */
 #if HC_ARCH_BITS == 64
-# define RTLOCKVALIDATORSRCPOS_INIT(pszFile, uLine, pszFunction, uId) \
+# define RTLOCKVALSRCPOS_INIT(pszFile, uLine, pszFunction, uId) \
     { (pszFile), (pszFunction), (uId), (uLine), 0 }
 #else
-# define RTLOCKVALIDATORSRCPOS_INIT(pszFile, uLine, pszFunction, uId) \
+# define RTLOCKVALSRCPOS_INIT(pszFile, uLine, pszFunction, uId) \
     { (pszFile), (pszFunction), (uId), (uLine) }
 #endif
 
-/** @def RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API
- * Initializer for a RTLOCKVALIDATORSRCPOS variable in a typicial debug API
+/** @def RTLOCKVALSRCPOS_INIT_DEBUG_API
+ * Initializer for a RTLOCKVALSRCPOS variable in a typicial debug API
  * variant.  Assumes RT_SRC_POS_DECL and RTHCUINTPTR uId as arguments.
  */
-#define RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API()  \
-    RTLOCKVALIDATORSRCPOS_INIT(pszFile, iLine, pszFunction, uId)
+#define RTLOCKVALSRCPOS_INIT_DEBUG_API()  \
+    RTLOCKVALSRCPOS_INIT(pszFile, iLine, pszFunction, uId)
 
-/** @def RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API
- * Initializer for a RTLOCKVALIDATORSRCPOS variable in a normal API
+/** @def RTLOCKVALSRCPOS_INIT_NORMAL_API
+ * Initializer for a RTLOCKVALSRCPOS variable in a normal API
  * variant.  Assumes iprt/asm.h is included.
  */
-#define RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API() \
-    RTLOCKVALIDATORSRCPOS_INIT(__FILE__, __LINE__, __PRETTY_FUNCTION__, (uintptr_t)ASMReturnAddress())
+#define RTLOCKVALSRCPOS_INIT_NORMAL_API() \
+    RTLOCKVALSRCPOS_INIT(__FILE__, __LINE__, __PRETTY_FUNCTION__, (uintptr_t)ASMReturnAddress())
 
 /** Pointer to a record of one ownership share.  */
-typedef struct RTLOCKVALIDATORSHARED *PRTLOCKVALIDATORSHARED;
+typedef struct RTLOCKVALRECSHRD *PRTLOCKVALRECSHRD;
 
 
 /**
@@ -109,33 +109,33 @@ typedef struct RTLOCKVALIDATORRECORE
 {
     /** The magic value indicating the record type. */
     uint32_t                            u32Magic;
-} RTLOCKVALIDATORRECCORE;
+} RTLOCKVALRECCORE;
 /** Pointer to a lock validator record core. */
-typedef RTLOCKVALIDATORRECCORE *PRTLOCKVALIDATORRECCORE;
+typedef RTLOCKVALRECCORE *PRTLOCKVALRECCORE;
 /** Pointer to a const lock validator record core. */
-typedef RTLOCKVALIDATORRECCORE const *PCRTLOCKVALIDATORRECCORE;
+typedef RTLOCKVALRECCORE const *PCRTLOCKVALRECCORE;
 
 
 /**
- * Record recording the ownership of a lock.
+ * Record recording the exclusive ownership of a lock.
  *
  * This is typically part of the per-lock data structure when compiling with
  * the lock validator.
  */
-typedef struct RTLOCKVALIDATORREC
+typedef struct RTLOCKVALRECEXCL
 {
-    /** Record core with RTLOCKVALIDATORREC_MAGIC as the magic value. */
-    RTLOCKVALIDATORRECCORE              Core;
+    /** Record core with RTLOCKVALRECEXCL_MAGIC as the magic value. */
+    RTLOCKVALRECCORE                    Core;
     /** Whether it's enabled or not. */
     bool                                fEnabled;
     /** Reserved. */
     bool                                afReserved[3];
     /** Source position where the lock was taken. */
-    RTLOCKVALIDATORSRCPOS               SrcPos;
+    RTLOCKVALSRCPOS                     SrcPos;
     /** The current owner thread. */
     RTTHREAD volatile                   hThread;
     /** Pointer to the lock record below us. Only accessed by the owner. */
-    R3R0PTRTYPE(PRTLOCKVALIDATORREC)    pDown;
+    R3R0PTRTYPE(PRTLOCKVALRECUNION)     pDown;
     /** Recursion count */
     uint32_t                            cRecursion;
     /** The lock sub-class. */
@@ -148,36 +148,36 @@ typedef struct RTLOCKVALIDATORREC
     R3R0PTRTYPE(const char *)           pszName;
     /** Pointer to the next sibling record.
      * This is used to find the read side of a read-write lock.  */
-    R3R0PTRTYPE(PRTLOCKVALIDATORRECUNION) pSibling;
-} RTLOCKVALIDATORREC;
-AssertCompileSize(RTLOCKVALIDATORREC, HC_ARCH_BITS == 32 ? 8 + 16 + 32 : 8 + 32 + 56);
+    R3R0PTRTYPE(PRTLOCKVALRECUNION) pSibling;
+} RTLOCKVALRECEXCL;
+AssertCompileSize(RTLOCKVALRECEXCL, HC_ARCH_BITS == 32 ? 8 + 16 + 32 : 8 + 32 + 56);
 /* The pointer type is defined in iprt/types.h. */
 
 /**
  * For recording the one ownership share.
  */
-typedef struct RTLOCKVALIDATORSHAREDONE
+typedef struct RTLOCKVALRECSHRDOWN
 {
-    /** Record core with RTLOCKVALIDATORSHAREDONE_MAGIC as the magic value. */
-    RTLOCKVALIDATORRECCORE              Core;
+    /** Record core with RTLOCKVALRECSHRDOWN_MAGIC as the magic value. */
+    RTLOCKVALRECCORE                    Core;
     /** Recursion count */
     uint32_t                            cRecursion;
     /** The current owner thread. */
     RTTHREAD volatile                   hThread;
     /** Pointer to the lock record below us. Only accessed by the owner. */
-    R3R0PTRTYPE(PRTLOCKVALIDATORREC)    pDown;
+    R3R0PTRTYPE(PRTLOCKVALRECUNION)     pDown;
     /** Pointer back to the shared record. */
-    R3R0PTRTYPE(PRTLOCKVALIDATORSHARED) pSharedRec;
+    R3R0PTRTYPE(PRTLOCKVALRECSHRD)      pSharedRec;
 #if HC_ARCH_BITS == 32
     /** Reserved. */
     RTHCPTR                             pvReserved;
 #endif
     /** Source position where the lock was taken. */
-    RTLOCKVALIDATORSRCPOS               SrcPos;
-} RTLOCKVALIDATORSHAREDONE;
-AssertCompileSize(RTLOCKVALIDATORSHAREDONE, HC_ARCH_BITS == 32 ? 24 + 16 : 32 + 32);
-/** Pointer to a RTLOCKVALIDATORSHAREDONE. */
-typedef RTLOCKVALIDATORSHAREDONE *PRTLOCKVALIDATORSHAREDONE;
+    RTLOCKVALSRCPOS                     SrcPos;
+} RTLOCKVALRECSHRDOWN;
+AssertCompileSize(RTLOCKVALRECSHRDOWN, HC_ARCH_BITS == 32 ? 24 + 16 : 32 + 32);
+/** Pointer to a RTLOCKVALRECSHRDOWN. */
+typedef RTLOCKVALRECSHRDOWN *PRTLOCKVALRECSHRDOWN;
 
 /**
  * Record recording the shared ownership of a lock.
@@ -185,10 +185,10 @@ typedef RTLOCKVALIDATORSHAREDONE *PRTLOCKVALIDATORSHAREDONE;
  * This is typically part of the per-lock data structure when compiling with
  * the lock validator.
  */
-typedef struct RTLOCKVALIDATORSHARED
+typedef struct RTLOCKVALRECSHRD
 {
-    /** Record core with RTLOCKVALIDATORSHARED_MAGIC as the magic value. */
-    RTLOCKVALIDATORRECCORE              Core;
+    /** Record core with RTLOCKVALRECSHRD_MAGIC as the magic value. */
+    RTLOCKVALRECCORE                    Core;
     /** The lock sub-class. */
     uint32_t volatile                   uSubClass;
     /** The lock class. */
@@ -199,7 +199,7 @@ typedef struct RTLOCKVALIDATORSHARED
     R3R0PTRTYPE(const char *)           pszName;
     /** Pointer to the next sibling record.
      * This is used to find the write side of a read-write lock.  */
-    R3R0PTRTYPE(PRTLOCKVALIDATORRECUNION) pSibling;
+    R3R0PTRTYPE(PRTLOCKVALRECUNION)     pSibling;
 
     /** The number of entries in the table.
      * Updated before inserting and after removal. */
@@ -218,13 +218,13 @@ typedef struct RTLOCKVALIDATORSHARED
     /** Alignment padding. */
     bool                                afPadding[2];
     /** Pointer to a table containing pointers to records of all the owners. */
-    R3R0PTRTYPE(PRTLOCKVALIDATORSHAREDONE volatile *) papOwners;
+    R3R0PTRTYPE(PRTLOCKVALRECSHRDOWN volatile *) papOwners;
 #if HC_ARCH_BITS == 32
     /** Alignment padding. */
     uint32_t                            u32Alignment;
 #endif
-} RTLOCKVALIDATORSHARED;
-AssertCompileSize(RTLOCKVALIDATORSHARED, HC_ARCH_BITS == 32 ? 24 + 20 + 4 : 40 + 24);
+} RTLOCKVALRECSHRD;
+AssertCompileSize(RTLOCKVALRECSHRD, HC_ARCH_BITS == 32 ? 24 + 20 + 4 : 40 + 24);
 
 
 /** @name   Special sub-class values.
@@ -243,7 +243,7 @@ AssertCompileSize(RTLOCKVALIDATORSHARED, HC_ARCH_BITS == 32 ? 24 + 20 + 4 : 40 +
 /**
  * Initialize a lock validator record.
  *
- * Use RTLockValidatorRecDelete to deinitialize it.
+ * Use RTLockValidatorRecExclDelete to deinitialize it.
  *
  * @param   pRec                The record.
  * @param   hClass              The class. If NIL, the no lock order
@@ -254,20 +254,20 @@ AssertCompileSize(RTLOCKVALIDATORSHARED, HC_ARCH_BITS == 32 ? 24 + 20 + 4 : 40 +
  * @param   pszName             The lock name (optional).
  * @param   hLock               The lock handle.
  */
-RTDECL(void) RTLockValidatorRecInit(PRTLOCKVALIDATORREC pRec, RTLOCKVALIDATORCLASS hClass,
-                                    uint32_t uSubClass, const char *pszName, void *hLock);
+RTDECL(void) RTLockValidatorRecExclInit(PRTLOCKVALRECEXCL pRec, RTLOCKVALIDATORCLASS hClass,
+                                        uint32_t uSubClass, const char *pszName, void *hLock);
 /**
  * Uninitialize a lock validator record previously initialized by
  * RTLockRecValidatorInit.
  *
  * @param   pRec                The record.  Must be valid.
  */
-RTDECL(void) RTLockValidatorRecDelete(PRTLOCKVALIDATORREC pRec);
+RTDECL(void) RTLockValidatorRecExclDelete(PRTLOCKVALRECEXCL pRec);
 
 /**
  * Create and initialize a lock validator record.
  *
- * Use RTLockValidatorRecDestroy to deinitialize and destroy the returned
+ * Use RTLockValidatorRecExclDestroy to deinitialize and destroy the returned
  * record.
  *
  * @return VINF_SUCCESS or VERR_NO_MEMORY.
@@ -280,21 +280,21 @@ RTDECL(void) RTLockValidatorRecDelete(PRTLOCKVALIDATORREC pRec);
  * @param   pszName             The lock name (optional).
  * @param   hLock               The lock handle.
  */
-RTDECL(int)  RTLockValidatorRecCreate(PRTLOCKVALIDATORREC *ppRec, RTLOCKVALIDATORCLASS hClass,
-                                      uint32_t uSubClass, const char *pszName, void *hLock);
+RTDECL(int)  RTLockValidatorRecExclCreate(PRTLOCKVALRECEXCL *ppRec, RTLOCKVALIDATORCLASS hClass,
+                                          uint32_t uSubClass, const char *pszName, void *hLock);
 
 /**
- * Deinitialize and destroy a record created by RTLockValidatorRecCreate.
+ * Deinitialize and destroy a record created by RTLockValidatorRecExclCreate.
  *
  * @param   ppRec               Pointer to the record pointer.  Will be set to
  *                              NULL.
  */
-RTDECL(void) RTLockValidatorRecDestroy(PRTLOCKVALIDATORREC *ppRec);
+RTDECL(void) RTLockValidatorRecExclDestroy(PRTLOCKVALRECEXCL *ppRec);
 
 /**
  * Initialize a lock validator record for a shared lock.
  *
- * Use RTLockValidatorSharedRecDelete to deinitialize it.
+ * Use RTLockValidatorRecSharedDelete to deinitialize it.
  *
  * @param   pRec                The shared lock record.
  * @param   hClass              The class. If NIL, the no lock order
@@ -305,15 +305,15 @@ RTDECL(void) RTLockValidatorRecDestroy(PRTLOCKVALIDATORREC *ppRec);
  * @param   pszName             The lock name (optional).
  * @param   hLock               The lock handle.
  */
-RTDECL(void) RTLockValidatorSharedRecInit(PRTLOCKVALIDATORSHARED pRec, RTLOCKVALIDATORCLASS hClass,
+RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALIDATORCLASS hClass,
                                           uint32_t uSubClass, const char *pszName, void *hLock);
 /**
  * Uninitialize a lock validator record previously initialized by
- * RTLockValidatorSharedRecInit.
+ * RTLockValidatorRecSharedInit.
  *
  * @param   pRec                The shared lock record.  Must be valid.
  */
-RTDECL(void) RTLockValidatorSharedRecDelete(PRTLOCKVALIDATORSHARED pRec);
+RTDECL(void) RTLockValidatorRecSharedDelete(PRTLOCKVALRECSHRD pRec);
 
 /**
  * Makes the two records siblings.
@@ -323,7 +323,7 @@ RTDECL(void) RTLockValidatorSharedRecDelete(PRTLOCKVALIDATORSHARED pRec);
  * @param   pRec1               Record 1.
  * @param   pRec2               Record 2.
  */
-RTDECL(int) RTLockValidatorMakeSiblings(PRTLOCKVALIDATORRECCORE pRec1, PRTLOCKVALIDATORRECCORE pRec2);
+RTDECL(int) RTLockValidatorRecMakeSiblings(PRTLOCKVALRECCORE pRec1, PRTLOCKVALRECCORE pRec2);
 
 /**
  * Check the locking order.
@@ -341,7 +341,7 @@ RTDECL(int) RTLockValidatorMakeSiblings(PRTLOCKVALIDATORRECCORE pRec1, PRTLOCKVA
  *                              out.
  * @param   pSrcPos             The source position of the lock operation.
  */
-RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, PCRTLOCKVALIDATORSRCPOS pSrcPos);
+RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD hThread, PCRTLOCKVALSRCPOS pSrcPos);
 
 /**
  * Do deadlock detection before blocking on a lock.
@@ -360,9 +360,9 @@ RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALIDATORREC pRec, RTTHREAD hThrea
  * @param   fRecursiveOk        Whether it's ok to recurse.
  * @param   pSrcPos             The source position of the lock operation.
  */
-RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread,
+RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD hThread,
                                          RTTHREADSTATE enmState, bool fRecursiveOk,
-                                         PCRTLOCKVALIDATORSRCPOS pSrcPos);
+                                         PCRTLOCKVALSRCPOS pSrcPos);
 
 /**
  * Do order checking and deadlock detection before blocking on a read/write lock
@@ -383,9 +383,9 @@ RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
  * @param   fRecursiveOk        Whether it's ok to recurse.
  * @param   pSrcPos             The source position of the lock operation.
  */
-RTDECL(int) RTLockValidatorCheckWriteOrderBlocking(PRTLOCKVALIDATORREC pWrite, PRTLOCKVALIDATORSHARED pRead,
+RTDECL(int) RTLockValidatorCheckWriteOrderBlocking(PRTLOCKVALRECEXCL pWrite, PRTLOCKVALRECSHRD pRead,
                                                    RTTHREAD hThread, RTTHREADSTATE enmState, bool fRecursiveOk,
-                                                   PCRTLOCKVALIDATORSRCPOS pSrcPos);
+                                                   PCRTLOCKVALSRCPOS pSrcPos);
 
 /**
  * Do order checking and deadlock detection before blocking on a read/write lock
@@ -406,9 +406,9 @@ RTDECL(int) RTLockValidatorCheckWriteOrderBlocking(PRTLOCKVALIDATORREC pWrite, P
  * @param   fRecursiveOk        Whether it's ok to recurse.
  * @param   pSrcPos             The source position of the lock operation.
  */
-RTDECL(int) RTLockValidatorCheckReadOrderBlocking(PRTLOCKVALIDATORSHARED pRead, PRTLOCKVALIDATORREC pWrite,
+RTDECL(int) RTLockValidatorCheckReadOrderBlocking(PRTLOCKVALRECSHRD pRead, PRTLOCKVALRECEXCL pWrite,
                                                   RTTHREAD hThread, RTTHREADSTATE enmState, bool fRecursiveOk,
-                                                  PCRTLOCKVALIDATORSRCPOS pSrcPos);
+                                                  PCRTLOCKVALSRCPOS pSrcPos);
 
 /**
  * Check the exit order and release (unset) the ownership.
@@ -422,7 +422,7 @@ RTDECL(int) RTLockValidatorCheckReadOrderBlocking(PRTLOCKVALIDATORSHARED pRead, 
  *
  * @param   pRec                The validator record.
  */
-RTDECL(int)  RTLockValidatorCheckAndRelease(PRTLOCKVALIDATORREC pRec);
+RTDECL(int)  RTLockValidatorCheckAndRelease(PRTLOCKVALRECEXCL pRec);
 
 /**
  * Check the exit order and release (unset) the shared ownership.
@@ -437,7 +437,7 @@ RTDECL(int)  RTLockValidatorCheckAndRelease(PRTLOCKVALIDATORREC pRec);
  * @param   pRead               The validator record.
  * @param   hThread             The handle of the calling thread.
  */
-RTDECL(int)  RTLockValidatorCheckAndReleaseReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHREAD hThread);
+RTDECL(int)  RTLockValidatorCheckAndReleaseReadOwner(PRTLOCKVALRECSHRD pRead, RTTHREAD hThread);
 
 /**
  * Checks and records a lock recursion.
@@ -452,7 +452,7 @@ RTDECL(int)  RTLockValidatorCheckAndReleaseReadOwner(PRTLOCKVALIDATORSHARED pRea
  * @param   pRec                The validator record.
  * @param   pSrcPos             The source position of the lock operation.
  */
-RTDECL(int) RTLockValidatorRecordRecursion(PRTLOCKVALIDATORREC pRec, PCRTLOCKVALIDATORSRCPOS pSrcPos);
+RTDECL(int) RTLockValidatorRecordRecursion(PRTLOCKVALRECEXCL pRec, PCRTLOCKVALSRCPOS pSrcPos);
 
 /**
  * Checks and records a lock unwind (releasing one recursion).
@@ -466,7 +466,7 @@ RTDECL(int) RTLockValidatorRecordRecursion(PRTLOCKVALIDATORREC pRec, PCRTLOCKVAL
  *
  * @param   pRec                The validator record.
  */
-RTDECL(int) RTLockValidatorUnwindRecursion(PRTLOCKVALIDATORREC pRec);
+RTDECL(int) RTLockValidatorUnwindRecursion(PRTLOCKVALRECEXCL pRec);
 
 /**
  * Checks and records a read/write lock read recursion done by the writer.
@@ -484,7 +484,7 @@ RTDECL(int) RTLockValidatorUnwindRecursion(PRTLOCKVALIDATORREC pRec);
  * @param   pRead               The validator record for the readers.
  * @param   pWrite              The validator record for the writer.
  */
-RTDECL(int) RTLockValidatorRecordReadWriteRecursion(PRTLOCKVALIDATORREC pWrite, PRTLOCKVALIDATORSHARED pRead, PCRTLOCKVALIDATORSRCPOS pSrcPos);
+RTDECL(int) RTLockValidatorRecordReadWriteRecursion(PRTLOCKVALRECEXCL pWrite, PRTLOCKVALRECSHRD pRead, PCRTLOCKVALSRCPOS pSrcPos);
 
 /**
  * Checks and records a read/write lock read unwind done by the writer.
@@ -500,7 +500,7 @@ RTDECL(int) RTLockValidatorRecordReadWriteRecursion(PRTLOCKVALIDATORREC pWrite, 
  * @param   pRead               The validator record for the readers.
  * @param   pWrite              The validator record for the writer.
  */
-RTDECL(int) RTLockValidatorUnwindReadWriteRecursion(PRTLOCKVALIDATORREC pWrite, PRTLOCKVALIDATORSHARED pRead);
+RTDECL(int) RTLockValidatorUnwindReadWriteRecursion(PRTLOCKVALRECEXCL pWrite, PRTLOCKVALRECSHRD pRead);
 
 /**
  * Record the specified thread as lock owner and increment the write lock count.
@@ -516,7 +516,7 @@ RTDECL(int) RTLockValidatorUnwindReadWriteRecursion(PRTLOCKVALIDATORREC pWrite, 
  *                              out.
  * @param   pSrcPos             The source position of the lock operation.
  */
-RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThread, PCRTLOCKVALIDATORSRCPOS pSrcPos);
+RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALRECEXCL pRec, RTTHREAD hThread, PCRTLOCKVALSRCPOS pSrcPos);
 
 /**
  * Clear the lock ownership and decrement the write lock count.
@@ -527,7 +527,7 @@ RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALIDATORREC pRec, RTTHREAD hThr
  *          is invalid or didn't have any owner.
  * @param   pRec                The validator record.
  */
-RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec);
+RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALRECEXCL pRec);
 
 /**
  * Adds an owner to a shared locking record.
@@ -539,7 +539,7 @@ RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALIDATORREC pRec);
  * @param   hThread             The thread to add.
  * @param   pSrcPos             The source position of the lock operation.
  */
-RTDECL(void) RTLockValidatorAddReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHREAD hThread, PCRTLOCKVALIDATORSRCPOS pSrcPos);
+RTDECL(void) RTLockValidatorAddReadOwner(PRTLOCKVALRECSHRD pRead, RTTHREAD hThread, PCRTLOCKVALSRCPOS pSrcPos);
 
 /**
  * Removes an owner from a shared locking record.
@@ -550,7 +550,7 @@ RTDECL(void) RTLockValidatorAddReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHREAD 
  * @param   pRead               The validator record.
  * @param   hThread             The thread to to remove.
  */
-RTDECL(void) RTLockValidatorRemoveReadOwner(PRTLOCKVALIDATORSHARED pRead, RTTHREAD hThread);
+RTDECL(void) RTLockValidatorRemoveReadOwner(PRTLOCKVALRECSHRD pRead, RTTHREAD hThread);
 
 /**
  * Gets the number of write locks and critical sections the specified

@@ -85,9 +85,9 @@ struct RTSEMRWINTERNAL
     pthread_rwlock_t    RWLock;
 #ifdef RTSEMRW_STRICT
     /** The validator record for the writer. */
-    RTLOCKVALIDATORREC      ValidatorWrite;
+    RTLOCKVALRECEXCL    ValidatorWrite;
     /** The validator record for the readers. */
-    RTLOCKVALIDATORSHARED   ValidatorRead;
+    RTLOCKVALRECSHRD    ValidatorRead;
 #endif
 };
 
@@ -118,9 +118,9 @@ RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
                 pThis->cWriterReads = 0;
                 pThis->Writer       = (pthread_t)-1;
 #ifdef RTSEMRW_STRICT
-                RTLockValidatorRecInit(&pThis->ValidatorWrite, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, "RTSemRW", pThis);
-                RTLockValidatorSharedRecInit(&pThis->ValidatorRead,  NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, "RTSemRW", pThis);
-                RTLockValidatorMakeSiblings(&pThis->ValidatorWrite.Core, &pThis->ValidatorRead.Core);
+                RTLockValidatorRecExclInit(&pThis->ValidatorWrite, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, "RTSemRW", pThis);
+                RTLockValidatorRecSharedInit(&pThis->ValidatorRead,  NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, "RTSemRW", pThis);
+                RTLockValidatorRecMakeSiblings(&pThis->ValidatorWrite.Core, &pThis->ValidatorRead.Core);
 #endif
                 *pRWSem = pThis;
                 return VINF_SUCCESS;
@@ -162,8 +162,8 @@ RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
     if (!rc)
     {
 #ifdef RTSEMRW_STRICT
-        RTLockValidatorSharedRecDelete(&pThis->ValidatorRead);
-        RTLockValidatorRecDelete(&pThis->ValidatorWrite);
+        RTLockValidatorRecSharedDelete(&pThis->ValidatorRead);
+        RTLockValidatorRecExclDelete(&pThis->ValidatorWrite);
 #endif
         RTMemFree(pThis);
         rc = VINF_SUCCESS;
@@ -181,7 +181,7 @@ RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
 
 RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
 {
-    PRTLOCKVALIDATORSRCPOS pSrcPos = NULL;
+    PRTLOCKVALSRCPOS pSrcPos = NULL;
 
     /*
      * Validate input.
@@ -345,7 +345,7 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
 }
 
 
-DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, PCRTLOCKVALSRCPOS pSrcPos)
 {
     /*
      * Validate input.
@@ -451,7 +451,7 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 #ifndef RTSEMRW_STRICT
     return rtSemRWRequestWrite(RWSem, cMillies, NULL);
 #else
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
     return rtSemRWRequestWrite(RWSem, cMillies, &SrcPos);
 #endif
 }
@@ -459,7 +459,7 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 
 RTDECL(int) RTSemRWRequestWriteDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return rtSemRWRequestWrite(RWSem, cMillies, &SrcPos);
 }
 
@@ -470,7 +470,7 @@ RTDECL(int) RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies)
 #ifndef RTSEMRW_STRICT
     return rtSemRWRequestWrite(RWSem, cMillies, NULL);
 #else
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
     return rtSemRWRequestWrite(RWSem, cMillies, &SrcPos);
 #endif
 }
@@ -479,7 +479,7 @@ RTDECL(int) RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies)
 RTDECL(int) RTSemRWRequestWriteNoResumeDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     /* EINTR isn't returned by the wait functions we're using. */
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return rtSemRWRequestWrite(RWSem, cMillies, &SrcPos);
 }
 

@@ -65,7 +65,7 @@ struct RTSEMMUTEXINTERNAL
     uint32_t            u32Magic;
 #ifdef RTSEMMUTEX_STRICT
     /** Lock validator record associated with this mutex. */
-    RTLOCKVALIDATORREC  ValidatorRec;
+    RTLOCKVALRECEXCL    ValidatorRec;
 #endif
 };
 
@@ -101,7 +101,7 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
                 pThis->cNesting = 0;
                 pThis->u32Magic = RTSEMMUTEX_MAGIC;
 #ifdef RTSEMMUTEX_STRICT
-                RTLockValidatorRecInit(&pThis->ValidatorRec, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, "RTSemMutex", pThis);
+                RTLockValidatorRecExclInit(&pThis->ValidatorRec, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, "RTSemMutex", pThis);
 #endif
 
                 *pMutexSem = pThis;
@@ -146,7 +146,7 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
     pThis->Owner    = (pthread_t)-1;
     pThis->cNesting = UINT32_MAX;
 #ifdef RTSEMMUTEX_STRICT
-    RTLockValidatorRecDelete(&pThis->ValidatorRec);
+    RTLockValidatorRecExclDelete(&pThis->ValidatorRec);
 #endif
     RTMemTmpFree(pThis);
 
@@ -154,7 +154,7 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
 }
 
 
-DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, PCRTLOCKVALIDATORSRCPOS pSrcPos)
+DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, PCRTLOCKVALSRCPOS pSrcPos)
 {
     /*
      * Validate input.
@@ -258,7 +258,7 @@ RTDECL(int) RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
 #ifndef RTSEMMUTEX_STRICT
     return rtSemMutexRequest(MutexSem, cMillies, NULL);
 #else
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
     return rtSemMutexRequest(MutexSem, cMillies, &SrcPos);
 #endif
 }
@@ -266,7 +266,7 @@ RTDECL(int) RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
 
 RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return rtSemMutexRequest(MutexSem, cMillies, &SrcPos);
 }
 
@@ -277,7 +277,7 @@ RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
 #ifndef RTSEMMUTEX_STRICT
     return rtSemMutexRequest(MutexSem, cMillies, NULL);
 #else
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_NORMAL_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
     return rtSemMutexRequest(MutexSem, cMillies, &SrcPos);
 #endif
 }
@@ -285,7 +285,7 @@ RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
 
 RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    RTLOCKVALIDATORSRCPOS SrcPos = RTLOCKVALIDATORSRCPOS_INIT_DEBUG_API();
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return rtSemMutexRequest(MutexSem, cMillies, &SrcPos);
 }
 
