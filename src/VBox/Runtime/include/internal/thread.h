@@ -99,7 +99,9 @@ typedef struct RTTHREADINT
 #endif
     /** Thread name. */
     char                    szName[RTTHREAD_NAME_LEN];
-} RTTHREADINT, *PRTTHREADINT;
+} RTTHREADINT;
+/** Pointer to the internal representation of a thread. */
+typedef RTTHREADINT *PRTTHREADINT;
 
 
 /** @name RTTHREADINT::fIntFlags Masks and Bits.
