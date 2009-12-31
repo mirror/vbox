@@ -119,7 +119,7 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
         pThis->Owner    = (pthread_t)~0;
         pThis->cNesting = 0;
 #ifdef RTSEMMUTEX_STRICT
-        RTLockValidatorRecInit(&pThis->ValidatorRec, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, NULL, pThis);
+        RTLockValidatorRecInit(&pThis->ValidatorRec, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, "RTSemMutex", pThis);
 #endif
 
         *pMutexSem = pThis;
