@@ -38,16 +38,17 @@
 #include <iprt/semaphore.h>
 #include "internal/iprt.h"
 
-#include <iprt/critsect.h>
-#include <iprt/alloc.h>
-#include <iprt/time.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/thread.h>
+#include <iprt/critsect.h>
 #include <iprt/err.h>
-#include <iprt/stream.h>
+#include <iprt/lockvalidator.h>
+#include <iprt/mem.h>
+#include <iprt/time.h>
+#include <iprt/thread.h>
 
 #include "internal/magics.h"
+#include "internal/strict.h"
 
 
 /*******************************************************************************
@@ -80,6 +81,12 @@ struct RTSEMRWINTERNAL
     RTSEMEVENT          WriteEvent;
     /** Need to reset ReadEvent. */
     bool                fNeedResetReadEvent;
+#ifdef RTSEMRW_STRICT
+    /** The validator record for the writer. */
+    RTLOCKVALRECEXCL    ValidatorWrite;
+    /** The validator record for the readers. */
+    RTLOCKVALRECSHRD    ValidatorRead;
+#endif
 };
 
 
@@ -120,6 +127,11 @@ RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
                         pThis->hWriter              = NIL_RTNATIVETHREAD;
                         pThis->fNeedResetReadEvent  = true;
                         pThis->u32Magic             = RTSEMRW_MAGIC;
+#ifdef RTSEMRW_STRICT
+                        RTLockValidatorRecExclInit(&pThis->ValidatorWrite, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, "RTSemRW", pThis);
+                        RTLockValidatorRecSharedInit(&pThis->ValidatorRead,  NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, "RTSemRW", pThis);
+                        RTLockValidatorRecMakeSiblings(&pThis->ValidatorWrite.Core, &pThis->ValidatorRead.Core);
+#endif
                         *pRWSem = pThis;
                         return VINF_SUCCESS;
                     }
@@ -180,6 +192,10 @@ RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
             rc = RTCritSectDelete(&pThis->CritSect);
             AssertMsgRC(rc, ("RTCritSectDelete failed! rc=%Rrc\n", rc));
 
+#ifdef RTSEMRW_STRICT
+            RTLockValidatorRecSharedDelete(&pThis->ValidatorRead);
+            RTLockValidatorRecExclDelete(&pThis->ValidatorWrite);
+#endif
             RTMemFree(pThis);
             rc = VINF_SUCCESS;
         }
