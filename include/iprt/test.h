@@ -502,7 +502,7 @@ RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...);
  * number, expression, actual and expected status codes.
  *
  * @param   hTest           The test handle.
- * @param   rcExpr          The expression resulting an IPRT status code.
+ * @param   rcExpr          The expression resulting in an IPRT status code.
  * @param   rcExpect        The expected return code. This may be referenced
  *                          more than once by the macro.
  */
@@ -520,7 +520,9 @@ RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...);
  * number, expression, actual and expected status codes, then return.
  *
  * @param   hTest           The test handle.
- * @param   rcExpr          The expression resulting an IPRT status code.
+ * @param   rcExpr          The expression resulting in an IPRT status code.
+ *                          This will be assigned to a local rcCheck variable
+ *                          that can be used as return value.
  * @param   rcExpect        The expected return code. This may be referenced
  *                          more than once by the macro.
  * @param   rcRet           The return code.
@@ -540,7 +542,7 @@ RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...);
  * number, expression, actual and expected status codes, then return.
  *
  * @param   hTest           The test handle.
- * @param   rcExpr          The expression resulting an IPRT status code.
+ * @param   rcExpr          The expression resulting in an IPRT status code.
  * @param   rcExpect        The expected return code. This may be referenced
  *                          more than once by the macro.
  */
@@ -561,13 +563,13 @@ RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...);
  * expression and status code.
  *
  * @param   hTest           The test handle.
- * @param   rcExpr          The expression resulting an IPRT status code.
+ * @param   rcExpr          The expression resulting in an IPRT status code.
  */
 #define RTTEST_CHECK_RC_OK(hTest, rcExpr) \
     do { \
         int rcCheck = (rcExpr); \
         if (RT_FAILURE(rcCheck)) { \
-            RTTestFailed((hTest), "line %u: %s: %Rrc", __LINE__, #rcExpr, rc); \
+            RTTestFailed((hTest), "line %u: %s: %Rrc", __LINE__, #rcExpr, rcCheck); \
         } \
     } while (0)
 /** @def RTTEST_CHECK_RC_OK_RET
@@ -577,14 +579,16 @@ RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...);
  * expression and status code, then return with the specified value.
  *
  * @param   hTest           The test handle.
- * @param   rcExpr          The expression resulting an IPRT status code.
+ * @param   rcExpr          The expression resulting in an IPRT status code.
+ *                          This will be assigned to a local rcCheck variable
+ *                          that can be used as return value.
  * @param   rcRet           The return code.
  */
 #define RTTEST_CHECK_RC_OK_RET(hTest, rcExpr, rcRet) \
     do { \
         int rcCheck = (rcExpr); \
         if (RT_FAILURE(rcCheck)) { \
-            RTTestFailed((hTest), "line %u: %s: %Rrc", __LINE__, #rcExpr, rc); \
+            RTTestFailed((hTest), "line %u: %s: %Rrc", __LINE__, #rcExpr, rcCheck); \
             return (rcRet); \
         } \
     } while (0)
@@ -595,13 +599,13 @@ RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...);
  * expression and status code, then return.
  *
  * @param   hTest           The test handle.
- * @param   rcExpr          The expression resulting an IPRT status code.
+ * @param   rcExpr          The expression resulting in an IPRT status code.
  */
 #define RTTEST_CHECK_RC_OK_RETV(hTest, rcExpr) \
     do { \
         int rcCheck = (rcExpr); \
         if (RT_FAILURE(rcCheck)) { \
-            RTTestFailed((hTest), "line %u: %s: %Rrc", __LINE__, #rcExpr, rc); \
+            RTTestFailed((hTest), "line %u: %s: %Rrc", __LINE__, #rcExpr, rcCheck); \
             return; \
         } \
     } while (0)
@@ -852,7 +856,7 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
  * If a different status code is return, call RTTestIFailed giving the line
  * number, expression, actual and expected status codes.
  *
- * @param   rcExpr          The expression resulting an IPRT status code.
+ * @param   rcExpr          The expression resulting in an IPRT status code.
  * @param   rcExpect        The expected return code. This may be referenced
  *                          more than once by the macro.
  */
@@ -869,7 +873,9 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
  * If a different status code is return, call RTTestIFailed giving the line
  * number, expression, actual and expected status codes, then return.
  *
- * @param   rcExpr          The expression resulting an IPRT status code.
+ * @param   rcExpr          The expression resulting in an IPRT status code.
+ *                          This will be assigned to a local rcCheck variable
+ *                          that can be used as return value.
  * @param   rcExpect        The expected return code. This may be referenced
  *                          more than once by the macro.
  * @param   rcRet           The return code.
@@ -888,7 +894,7 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
  * If a different status code is return, call RTTestIFailed giving the line
  * number, expression, actual and expected status codes, then return.
  *
- * @param   rcExpr          The expression resulting an IPRT status code.
+ * @param   rcExpr          The expression resulting in an IPRT status code.
  * @param   rcExpect        The expected return code. This may be referenced
  *                          more than once by the macro.
  */
@@ -908,7 +914,7 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
  * If the status indicates failure, call RTTestIFailed giving the line number,
  * expression and status code.
  *
- * @param   rcExpr          The expression resulting an IPRT status code.
+ * @param   rcExpr          The expression resulting in an IPRT status code.
  */
 #define RTTESTI_CHECK_RC_OK(rcExpr) \
     do { \
@@ -923,7 +929,9 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
  * If the status indicates failure, call RTTestIFailed giving the line number,
  * expression and status code, then return with the specified value.
  *
- * @param   rcExpr          The expression resulting an IPRT status code.
+ * @param   rcExpr          The expression resulting in an IPRT status code.
+ *                          This will be assigned to a local rcCheck variable
+ *                          that can be used as return value.
  * @param   rcRet           The return code.
  */
 #define RTTESTI_CHECK_RC_OK_RET(rcExpr, rcRet) \
@@ -940,7 +948,7 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
  * If the status indicates failure, call RTTestIFailed giving the line number,
  * expression and status code, then return.
  *
- * @param   rcExpr          The expression resulting an IPRT status code.
+ * @param   rcExpr          The expression resulting in an IPRT status code.
  */
 #define RTTESTI_CHECK_RC_OK_RETV(rcExpr) \
     do { \
