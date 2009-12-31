@@ -34,6 +34,7 @@
 /** @name Strictness Indicators
  * @{ */
 
+#ifdef DEBUG_bird /** @todo reenable this for everyone. Just being a little be cautious right now... */
 /** @def RTCRITSECT_STRICT
  * Enables strictness checks and lock accounting of the RTCritSect API.
  */
@@ -56,7 +57,7 @@
 #if defined(DOXYGEN_RUNNING) || (!defined(RTSEMRW_STRICT) && defined(IN_RING3) && (defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT)))
 # define RTSEMRW_STRICT
 #endif
-
+#endif /* DEBUG_bird */
 
 
 /** @} */

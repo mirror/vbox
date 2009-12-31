@@ -54,19 +54,26 @@ typedef union RTLOCKVALRECUNION
  *
  * This is part of the RTTHREADINT structure.
  */
-typedef struct RTLOCKVALIDATORPERTHREAD
+typedef struct RTLOCKVALPERTHREAD
 {
-    /** What we're blocking on. */
-    PRTLOCKVALRECUNION volatile     pRec;
     /** Where we are blocking. */
     RTLOCKVALSRCPOS                 SrcPos;
+    /** What we're blocking on. */
+    PRTLOCKVALRECUNION volatile     pRec;
     /** Number of registered write locks, mutexes and critsects that this thread owns. */
     int32_t volatile                cWriteLocks;
     /** Number of registered read locks that this thread owns, nesting included. */
     int32_t volatile                cReadLocks;
-} RTLOCKVALIDATORPERTHREAD;
+    /** Bitmap indicating which entires are free (set) and allocated (clear). */
+    uint32_t                        bmFreeShrdOwners;
+    /** Reserved for alignment purposes. */
+    uint32_t                        u32Reserved;
+    /** Statically allocated shared owner records */
+    RTLOCKVALRECSHRDOWN             aShrdOwners[32];
+} RTLOCKVALPERTHREAD;
 
 
+DECLHIDDEN(void)    rtLockValidatorInitPerThread(RTLOCKVALPERTHREAD *pPerThread);
 DECLHIDDEN(void)    rtLockValidatorSerializeDestructEnter(void);
 DECLHIDDEN(void)    rtLockValidatorSerializeDestructLeave(void);
 

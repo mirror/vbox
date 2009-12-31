@@ -366,6 +366,9 @@ PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntF
         pThread->fFlags     = fFlags;
         pThread->fIntFlags  = fIntFlags;
         pThread->enmState   = RTTHREADSTATE_INITIALIZING;
+#ifdef IN_RING3
+        rtLockValidatorInitPerThread(&pThread->LockValidator);
+#endif
         int rc = RTSemEventMultiCreate(&pThread->EventUser);
         if (RT_SUCCESS(rc))
         {

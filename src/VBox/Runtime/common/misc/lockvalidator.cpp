@@ -54,45 +54,50 @@
 /**
  * Deadlock detection stack entry.
  */
-typedef struct RTLOCKVALIDATORDDENTRY
+typedef struct RTLOCKVALDDENTRY
 {
     /** The current record. */
-    PRTLOCKVALRECUNION    pRec;
+    PRTLOCKVALRECUNION      pRec;
     /** The current entry number if pRec is a shared one. */
-    uint32_t                    iEntry;
+    uint32_t                iEntry;
     /** The thread state of the thread we followed to get to pFirstSibling.
      * This is only used for validating a deadlock stack.  */
-    RTTHREADSTATE               enmState;
+    RTTHREADSTATE           enmState;
     /** The thread we followed to get to pFirstSibling.
      * This is only used for validating a deadlock stack. */
-    PRTTHREADINT                pThread;
+    PRTTHREADINT            pThread;
     /** What pThread is waiting on, i.e. where we entered the circular list of
      * siblings.  This is used for validating a deadlock stack as well as
      * terminating the sibling walk. */
-    PRTLOCKVALRECUNION    pFirstSibling;
-} RTLOCKVALIDATORDDENTRY;
+    PRTLOCKVALRECUNION      pFirstSibling;
+} RTLOCKVALDDENTRY;
 
 
 /**
  * Deadlock detection stack.
  */
-typedef struct RTLOCKVALIDATORDDSTACK
+typedef struct RTLOCKVALDDSTACK
 {
     /** The number stack entries. */
-    uint32_t                    c;
+    uint32_t                c;
     /** The stack entries. */
-    RTLOCKVALIDATORDDENTRY      a[32];
-} RTLOCKVALIDATORDDSTACK;
+    RTLOCKVALDDENTRY        a[32];
+} RTLOCKVALDDSTACK;
 /** Pointer to a deadlock detction stack. */
-typedef RTLOCKVALIDATORDDSTACK *PRTLOCKVALIDATORDDSTACK;
+typedef RTLOCKVALDDSTACK *PRTLOCKVALDDSTACK;
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Serializing object destruction and deadlock detection.
- * NS: RTLOCKVALIDATORREC* and RTTHREADINT destruction.
- * EW: Deadlock detection.
+ *
+ * This makes sure that none of the memory examined by the deadlock detection
+ * code will become invalid (reused for other purposes or made not present)
+ * while the detection is in progress.
+ *
+ * NS: RTLOCKVALREC*, RTTHREADINT and RTLOCKVALDRECSHRD::papOwners destruction.
+ * EW: Deadlock detection and some related activities.
  */
 static RTSEMXROADS      g_hLockValidatorXRoads   = NIL_RTSEMXROADS;
 /** Whether the lock validator is enabled or disabled.
@@ -319,7 +324,7 @@ DECL_FORCE_INLINE(void) rtLockValidatorInitSrcPos(PRTLOCKVALSRCPOS pSrcPos)
 
 
 /**
- * Serializes destruction of RTLOCKVALIDATORREC* and RTTHREADINT structures.
+ * Serializes destruction of RTLOCKVALREC* and RTTHREADINT structures.
  */
 DECLHIDDEN(void) rtLockValidatorSerializeDestructEnter(void)
 {
@@ -364,6 +369,22 @@ DECLHIDDEN(void) rtLockValidatorSerializeDetectionLeave(void)
 
 
 /**
+ * Initializes the per thread lock validator data.
+ *
+ * @param   pPerThread      The data.
+ */
+DECLHIDDEN(void) rtLockValidatorInitPerThread(RTLOCKVALPERTHREAD *pPerThread)
+{
+    pPerThread->bmFreeShrdOwners = UINT32_MAX;
+
+    /* ASSUMES the rest has already been zeroed. */
+    Assert(pPerThread->pRec == NULL);
+    Assert(pPerThread->cWriteLocks == 0);
+    Assert(pPerThread->cReadLocks == 0);
+}
+
+
+/**
  * Unlinks all siblings.
  *
  * This is used during record deletion and assumes no races.
@@ -400,6 +421,48 @@ static void rtLockValidatorUnlinkAllSiblings(PRTLOCKVALRECCORE pCore)
         pSibling = (PRTLOCKVALRECUNION)ASMAtomicXchgPtr((void * volatile *)ppCoreNext, NULL);
     }
 }
+
+
+RTDECL(int) RTLockValidatorRecMakeSiblings(PRTLOCKVALRECCORE pRec1, PRTLOCKVALRECCORE pRec2)
+{
+    /*
+     * Validate input.
+     */
+    PRTLOCKVALRECUNION p1 = (PRTLOCKVALRECUNION)pRec1;
+    PRTLOCKVALRECUNION p2 = (PRTLOCKVALRECUNION)pRec2;
+
+    AssertPtrReturn(p1, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(   p1->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC
+                 || p1->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC
+                 , VERR_SEM_LV_INVALID_PARAMETER);
+
+    AssertPtrReturn(p2, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(   p2->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC
+                 || p2->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC
+                 , VERR_SEM_LV_INVALID_PARAMETER);
+
+    /*
+     * Link them (circular list).
+     */
+    if (    p1->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC
+        &&  p2->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC)
+    {
+        p1->Excl.pSibling   = p2;
+        p2->Shared.pSibling = p1;
+    }
+    else if (   p1->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC
+             && p2->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC)
+    {
+        p1->Shared.pSibling = p2;
+        p2->Excl.pSibling   = p1;
+    }
+    else
+        AssertFailedReturn(VERR_SEM_LV_INVALID_PARAMETER); /* unsupported mix */
+
+    return VINF_SUCCESS;
+}
+
+
 
 
 RTDECL(void) RTLockValidatorRecExclInit(PRTLOCKVALRECEXCL pRec, RTLOCKVALIDATORCLASS hClass,
@@ -537,15 +600,16 @@ RTDECL(void) RTLockValidatorRecSharedDelete(PRTLOCKVALRECSHRD pRec)
 
 
 /**
- * Locates a thread in a shared lock record.
+ * Locates an owner (thread) in a shared lock record.
  *
- * @returns Pointer to the thread record on success, NULL on failure..
+ * @returns Pointer to the owner entry on success, NULL on failure..
  * @param   pShared             The shared lock record.
- * @param   hThread             The thread to find.
+ * @param   hThread             The thread (owner) to find.
  * @param   piEntry             Where to optionally return the table in index.
+ *                              Optional.
  */
 DECLINLINE(PRTLOCKVALRECSHRDOWN)
-rtLockValidatorSharedRecFindThread(PRTLOCKVALRECSHRD pShared, RTTHREAD hThread, uint32_t *piEntry)
+rtLockValidatorRecSharedFindOwner(PRTLOCKVALRECSHRD pShared, RTTHREAD hThread, uint32_t *piEntry)
 {
     rtLockValidatorSerializeDetectionEnter();
 
@@ -572,53 +636,87 @@ rtLockValidatorSharedRecFindThread(PRTLOCKVALRECSHRD pShared, RTTHREAD hThread, 
 
 
 /**
- * Allocates and initializes a thread entry for the shared lock record.
+ * Allocates and initializes an owner entry for the shared lock record.
  *
- * @returns The new thread entry.
+ * @returns The new owner entry.
  * @param   pShared             The shared lock record.
- * @param   hThread             The thread handle.
+ * @param   pThreadSelf         The calling thread and owner.  Used for record
+ *                              initialization and allocation.
  * @param   pSrcPos             The source position.
  */
 DECLINLINE(PRTLOCKVALRECSHRDOWN)
-rtLockValidatorSharedRecAllocThread(PRTLOCKVALRECSHRD pRead, RTTHREAD hThread, PCRTLOCKVALSRCPOS pSrcPos)
+rtLockValidatorRecSharedAllocOwner(PRTLOCKVALRECSHRD pRead, PRTTHREADINT pThreadSelf, PCRTLOCKVALSRCPOS pSrcPos)
 {
     PRTLOCKVALRECSHRDOWN pEntry;
 
-    pEntry = (PRTLOCKVALRECSHRDOWN)RTMemAlloc(sizeof(RTLOCKVALRECSHRDOWN));
-    if (pEntry)
+    /*
+     * Check if the thread has any statically allocated records we can use.
+     */
+    unsigned iEntry = ASMBitFirstSetU32(pThreadSelf->LockValidator.bmFreeShrdOwners);
+    if (iEntry > 0)
     {
-        pEntry->Core.u32Magic   = RTLOCKVALRECSHRDOWN_MAGIC;
-        pEntry->cRecursion      = 1;
-        pEntry->hThread         = hThread;
-        pEntry->pDown           = NULL;
-        pEntry->pSharedRec      = pRead;
-#if HC_ARCH_BITS == 32
-        pEntry->pvReserved      = NULL;
-#endif
-        if (pSrcPos)
-            pEntry->SrcPos      = *pSrcPos;
-        else
-            rtLockValidatorInitSrcPos(&pEntry->SrcPos);
+        iEntry--;
+        pThreadSelf->LockValidator.bmFreeShrdOwners |= RT_BIT_32(iEntry);
+        pEntry = &pThreadSelf->LockValidator.aShrdOwners[iEntry];
+        Assert(!pEntry->fReserved);
+        pEntry->fStaticAlloc = true;
+    }
+    else
+    {
+        pEntry = (PRTLOCKVALRECSHRDOWN)RTMemAlloc(sizeof(RTLOCKVALRECSHRDOWN));
+        if (RT_UNLIKELY(!pEntry))
+            return NULL;
+        pEntry->fStaticAlloc = false;
     }
 
+    pEntry->Core.u32Magic   = RTLOCKVALRECSHRDOWN_MAGIC;
+    pEntry->cRecursion      = 1;
+    pEntry->fReserved       = true;
+    pEntry->hThread         = pThreadSelf;
+    pEntry->pDown           = NULL;
+    pEntry->pSharedRec      = pRead;
+#if HC_ARCH_BITS == 32
+    pEntry->pvReserved      = NULL;
+#endif
+    if (pSrcPos)
+        pEntry->SrcPos      = *pSrcPos;
+    else
+        rtLockValidatorInitSrcPos(&pEntry->SrcPos);
     return pEntry;
 }
 
+
 /**
- * Frees a thread entry allocated by rtLockValidatorSharedRecAllocThread.
+ * Frees an owner entry allocated by rtLockValidatorRecSharedAllocOwner.
  *
- * @param   pEntry              The thread entry.
+ * @param   pEntry              The owner entry.
  */
-DECLINLINE(void) rtLockValidatorSharedRecFreeThread(PRTLOCKVALRECSHRDOWN pEntry)
+DECLINLINE(void) rtLockValidatorRecSharedFreeOwner(PRTLOCKVALRECSHRDOWN pEntry)
 {
     if (pEntry)
     {
-        rtLockValidatorSerializeDestructEnter();
         ASMAtomicWriteU32(&pEntry->Core.u32Magic, RTLOCKVALRECSHRDOWN_MAGIC_DEAD);
-        ASMAtomicWriteHandle(&pEntry->hThread, NIL_RTTHREAD);
-        rtLockValidatorSerializeDestructLeave();
 
-        RTMemFree(pEntry);
+        PRTTHREADINT pThreadSelf = pEntry->hThread;
+        ASMAtomicXchgHandle(&pEntry->hThread, NIL_RTTHREAD, &pThreadSelf);
+        Assert(pThreadSelf == RTThreadSelf());
+
+        pEntry->fReserved = false;
+
+        Assert(pEntry->fReserved);
+        if (pEntry->fStaticAlloc)
+        {
+            uintptr_t iEntry = pEntry - &pThreadSelf->LockValidator.aShrdOwners[0];
+            AssertReleaseReturnVoid(iEntry < RT_ELEMENTS(pThreadSelf->LockValidator.aShrdOwners));
+            pThreadSelf->LockValidator.bmFreeShrdOwners &= ~RT_BIT_32(iEntry);
+        }
+        else
+        {
+            rtLockValidatorSerializeDestructEnter();
+            rtLockValidatorSerializeDestructLeave();
+
+            RTMemFree(pEntry);
+        }
     }
 }
 
@@ -632,7 +730,7 @@ DECLINLINE(void) rtLockValidatorSharedRecFreeThread(PRTLOCKVALRECSHRDOWN pEntry)
  *
  * @param   pShared             The shared lock record.
  */
-static bool rtLockValidatorSharedRecMakeRoom(PRTLOCKVALRECSHRD pShared)
+static bool rtLockValidatorRecSharedMakeRoom(PRTLOCKVALRECSHRD pShared)
 {
     for (unsigned i = 0; i < 1000; i++)
     {
@@ -703,19 +801,19 @@ static bool rtLockValidatorSharedRecMakeRoom(PRTLOCKVALRECSHRD pShared)
 
 
 /**
- * Adds a thread entry to a shared lock record.
+ * Adds an owner entry to a shared lock record.
  *
  * @returns true on success, false on serious race or we're if out of memory.
  * @param   pShared             The shared lock record.
- * @param   pEntry              The thread entry.
+ * @param   pEntry              The owner entry.
  */
-DECLINLINE(bool) rtLockValidatorSharedRecAddThread(PRTLOCKVALRECSHRD pShared, PRTLOCKVALRECSHRDOWN pEntry)
+DECLINLINE(bool) rtLockValidatorRecSharedAddOwner(PRTLOCKVALRECSHRD pShared, PRTLOCKVALRECSHRDOWN pEntry)
 {
     rtLockValidatorSerializeDetectionEnter();
     if (RT_LIKELY(pShared->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC)) /* paranoia */
     {
         if (   ASMAtomicIncU32(&pShared->cEntries) > pShared->cAllocated /** @todo add fudge */
-            && !rtLockValidatorSharedRecMakeRoom(pShared))
+            && !rtLockValidatorRecSharedMakeRoom(pShared))
             return false; /* the worker leave the lock */
 
         PRTLOCKVALRECSHRDOWN volatile  *papOwners = pShared->papOwners;
@@ -740,14 +838,14 @@ DECLINLINE(bool) rtLockValidatorSharedRecAddThread(PRTLOCKVALRECSHRD pShared, PR
 
 
 /**
- * Remove a thread entry from a shared lock record and free it.
+ * Remove an owner entry from a shared lock record and free it.
  *
  * @param   pShared             The shared lock record.
- * @param   pEntry              The thread entry to remove.
+ * @param   pEntry              The owner entry to remove.
  * @param   iEntry              The last known index.
  */
-DECLINLINE(void) rtLockValidatorSharedRecRemoveAndFree(PRTLOCKVALRECSHRD pShared, PRTLOCKVALRECSHRDOWN pEntry,
-                                                       uint32_t iEntry)
+DECLINLINE(void) rtLockValidatorRecSharedRemoveAndFreeOwner(PRTLOCKVALRECSHRD pShared, PRTLOCKVALRECSHRDOWN pEntry,
+                                                            uint32_t iEntry)
 {
     /*
      * Remove it from the table.
@@ -773,47 +871,7 @@ DECLINLINE(void) rtLockValidatorSharedRecRemoveAndFree(PRTLOCKVALRECSHRD pShared
     /*
      * Successfully removed, now free it.
      */
-    rtLockValidatorSharedRecFreeThread(pEntry);
-}
-
-
-RTDECL(int) RTLockValidatorRecMakeSiblings(PRTLOCKVALRECCORE pRec1, PRTLOCKVALRECCORE pRec2)
-{
-    /*
-     * Validate input.
-     */
-    PRTLOCKVALRECUNION p1 = (PRTLOCKVALRECUNION)pRec1;
-    PRTLOCKVALRECUNION p2 = (PRTLOCKVALRECUNION)pRec2;
-
-    AssertPtrReturn(p1, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(   p1->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC
-                 || p1->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC
-                 , VERR_SEM_LV_INVALID_PARAMETER);
-
-    AssertPtrReturn(p2, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(   p2->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC
-                 || p2->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC
-                 , VERR_SEM_LV_INVALID_PARAMETER);
-
-    /*
-     * Link them (circular list).
-     */
-    if (    p1->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC
-        &&  p2->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC)
-    {
-        p1->Excl.pSibling   = p2;
-        p2->Shared.pSibling = p1;
-    }
-    else if (   p1->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC
-             && p2->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC)
-    {
-        p1->Shared.pSibling = p2;
-        p2->Excl.pSibling   = p1;
-    }
-    else
-        AssertFailedReturn(VERR_SEM_LV_INVALID_PARAMETER); /* unsupported mix */
-
-    return VINF_SUCCESS;
+    rtLockValidatorRecSharedFreeOwner(pEntry);
 }
 
 
@@ -859,7 +917,7 @@ RTDECL(int)  RTLockValidatorCheckAndReleaseReadOwner(PRTLOCKVALRECSHRD pRead, RT
      * Locate the entry for this thread in the table.
      */
     uint32_t                iEntry = 0;
-    PRTLOCKVALRECSHRDOWN    pEntry = rtLockValidatorSharedRecFindThread(pRead, hThread, &iEntry);
+    PRTLOCKVALRECSHRDOWN    pEntry = rtLockValidatorRecSharedFindOwner(pRead, hThread, &iEntry);
     AssertReturn(pEntry, VERR_SEM_LV_NOT_OWNER);
 
     /*
@@ -877,7 +935,7 @@ RTDECL(int)  RTLockValidatorCheckAndReleaseReadOwner(PRTLOCKVALRECSHRD pRead, RT
     if (pEntry->cRecursion > 1)
         pEntry->cRecursion--;
     else
-        rtLockValidatorSharedRecRemoveAndFree(pRead, pEntry, iEntry);
+        rtLockValidatorRecSharedRemoveAndFreeOwner(pRead, pEntry, iEntry);
 
     return VINF_SUCCESS;
 }
@@ -1013,6 +1071,7 @@ RTDECL(void) RTLockValidatorAddReadOwner(PRTLOCKVALRECSHRD pRead, RTTHREAD hThre
     if (!pRead->fEnabled)
         return;
     AssertReturnVoid(hThread != NIL_RTTHREAD);
+    AssertReturnVoid(hThread->u32Magic == RTTHREADINT_MAGIC);
 
     /*
      * Recursive?
@@ -1021,7 +1080,7 @@ RTDECL(void) RTLockValidatorAddReadOwner(PRTLOCKVALRECSHRD pRead, RTTHREAD hThre
      *       insert. However, that's annoying work that makes the code big,
      *       so it can wait til later sometime.
      */
-    PRTLOCKVALRECSHRDOWN pEntry = rtLockValidatorSharedRecFindThread(pRead, hThread, NULL);
+    PRTLOCKVALRECSHRDOWN pEntry = rtLockValidatorRecSharedFindOwner(pRead, hThread, NULL);
     if (pEntry)
     {
         pEntry->cRecursion++;
@@ -1029,12 +1088,12 @@ RTDECL(void) RTLockValidatorAddReadOwner(PRTLOCKVALRECSHRD pRead, RTTHREAD hThre
     }
 
     /*
-     * Allocate a new thread entry and insert it into the table.
+     * Allocate a new owner entry and insert it into the table.
      */
-    pEntry = rtLockValidatorSharedRecAllocThread(pRead, hThread, pSrcPos);
+    pEntry = rtLockValidatorRecSharedAllocOwner(pRead, hThread, pSrcPos);
     if (    pEntry
-        &&  !rtLockValidatorSharedRecAddThread(pRead, pEntry))
-        rtLockValidatorSharedRecFreeThread(pEntry);
+        &&  !rtLockValidatorRecSharedAddOwner(pRead, pEntry))
+        rtLockValidatorRecSharedFreeOwner(pEntry);
 }
 
 
@@ -1048,13 +1107,13 @@ RTDECL(void) RTLockValidatorRemoveReadOwner(PRTLOCKVALRECSHRD pRead, RTTHREAD hT
     /*
      * Find the entry hope it's a recursive one.
      */
-    uint32_t iEntry;
-    PRTLOCKVALRECSHRDOWN pEntry = rtLockValidatorSharedRecFindThread(pRead, hThread, &iEntry);
+    uint32_t iEntry = UINT32_MAX; /* shuts up gcc */
+    PRTLOCKVALRECSHRDOWN pEntry = rtLockValidatorRecSharedFindOwner(pRead, hThread, &iEntry);
     AssertReturnVoid(pEntry);
     if (pEntry->cRecursion > 1)
         pEntry->cRecursion--;
     else
-        rtLockValidatorSharedRecRemoveAndFree(pRead, pEntry, iEntry);
+        rtLockValidatorRecSharedRemoveAndFreeOwner(pRead, pEntry, iEntry);
 }
 
 
@@ -1136,7 +1195,7 @@ RT_EXPORT_SYMBOL(RTLockValidatorReadLockDec);
  *
  * @param   pStack              The deadlock detection stack.
  */
-static int rtLockValidatorDdVerifyDeadlock(PRTLOCKVALIDATORDDSTACK pStack)
+static int rtLockValidatorDdVerifyDeadlock(PRTLOCKVALDDSTACK pStack)
 {
     uint32_t const c = pStack->c;
     for (uint32_t iPass = 0; iPass < 3; iPass++)
@@ -1166,7 +1225,7 @@ static int rtLockValidatorDdVerifyDeadlock(PRTLOCKVALIDATORDDSTACK pStack)
  *
  * @param   pStack              The deadlock detection stack.
  */
-static int rtLockValidatorDdHandleStackOverflow(PRTLOCKVALIDATORDDSTACK pStack)
+static int rtLockValidatorDdHandleStackOverflow(PRTLOCKVALDDSTACK pStack)
 {
     for (size_t i = 0; i < RT_ELEMENTS(pStack->a) - 1; i++)
     {
@@ -1231,18 +1290,18 @@ DECL_FORCE_INLINE(bool) rtLockValidatorDdMoreWorkLeft(PRTLOCKVALRECUNION pRec, u
  * @param   pOriginalRec    The original record.
  * @param   pThreadSelf     The calling thread.
  */
-static int rtLockValidatorDdDoDetection(PRTLOCKVALIDATORDDSTACK pStack, PRTLOCKVALRECUNION const pOriginalRec,
+static int rtLockValidatorDdDoDetection(PRTLOCKVALDDSTACK pStack, PRTLOCKVALRECUNION const pOriginalRec,
                                         PRTTHREADINT const pThreadSelf)
 {
     pStack->c = 0;
 
-    /* We could use a single RTLOCKVALIDATORDDENTRY variable here, but the
+    /* We could use a single RTLOCKVALDDENTRY variable here, but the
        compiler may make a better job of it when using individual variables. */
-    PRTLOCKVALRECUNION    pRec            = pOriginalRec;
-    PRTLOCKVALRECUNION    pFirstSibling   = pOriginalRec;
-    uint32_t                    iEntry          = UINT32_MAX;
-    PRTTHREADINT                pThread         = NIL_RTTHREAD;
-    RTTHREADSTATE               enmState        = RTTHREADSTATE_RUNNING;
+    PRTLOCKVALRECUNION  pRec            = pOriginalRec;
+    PRTLOCKVALRECUNION  pFirstSibling   = pOriginalRec;
+    uint32_t            iEntry          = UINT32_MAX;
+    PRTTHREADINT        pThread         = NIL_RTTHREAD;
+    RTTHREADSTATE       enmState        = RTTHREADSTATE_RUNNING;
     for (;;)
     {
         /*
@@ -1293,6 +1352,7 @@ static int rtLockValidatorDdDoDetection(PRTLOCKVALIDATORDDSTACK pStack, PRTLOCKV
                 }
 
                 /* Scan the owner table for blocked owners. */
+                pNextThread = NIL_RTTHREAD;
                 if (ASMAtomicUoReadU32(&pRec->Shared.cEntries) > 0)
                 {
                     uint32_t                        cAllocated = ASMAtomicUoReadU32(&pRec->Shared.cAllocated);
@@ -1343,8 +1403,8 @@ static int rtLockValidatorDdDoDetection(PRTLOCKVALIDATORDDSTACK pStack, PRTLOCKV
         }
 
         /* If we found a thread, check if it is still waiting for something. */
-        RTTHREADSTATE               enmNextState = RTTHREADSTATE_RUNNING;
-        PRTLOCKVALRECUNION    pNextRec     = NULL;
+        RTTHREADSTATE       enmNextState = RTTHREADSTATE_RUNNING;
+        PRTLOCKVALRECUNION  pNextRec     = NULL;
         if (   pNextThread != NIL_RTTHREAD
             && RT_LIKELY(pNextThread->u32Magic == RTTHREADINT_MAGIC))
         {
@@ -1451,7 +1511,7 @@ DECLINLINE(int) rtLockValidatorIsSimpleNoDeadlockCase(PRTLOCKVALRECUNION pOrigin
  * @param   pSrcPos         Where we are going to deadlock.
  * @param   rc              The return code.
  */
-static void rcLockValidatorDoDeadlockComplaining(PRTLOCKVALIDATORDDSTACK pStack, PRTLOCKVALRECUNION pRec,
+static void rcLockValidatorDoDeadlockComplaining(PRTLOCKVALDDSTACK pStack, PRTLOCKVALRECUNION pRec,
                                                  PRTTHREADINT pThreadSelf, PCRTLOCKVALSRCPOS pSrcPos, int rc)
 {
     if (!ASMAtomicUoReadBool(&g_fLockValidatorQuiet))
@@ -1499,7 +1559,7 @@ static void rcLockValidatorDoDeadlockComplaining(PRTLOCKVALIDATORDDSTACK pStack,
 static int rtLockValidatorDeadlockDetection(PRTLOCKVALRECUNION pRec, PRTTHREADINT pThreadSelf, PCRTLOCKVALSRCPOS pSrcPos)
 {
 #ifdef DEBUG_bird
-    RTLOCKVALIDATORDDSTACK Stack;
+    RTLOCKVALDDSTACK Stack;
     int rc = rtLockValidatorDdDoDetection(&Stack, pRec, pThreadSelf);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
@@ -1538,13 +1598,17 @@ RTDECL(int) RTLockValidatorCheckWriteOrderBlocking(PRTLOCKVALRECEXCL pWrite, PRT
     PRTLOCKVALRECUNION pWriteU = (PRTLOCKVALRECUNION)pWrite; /* (avoid break aliasing rules) */
     AssertPtrReturn(pWriteU, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(pWriteU->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+
     PRTLOCKVALRECUNION pReadU = (PRTLOCKVALRECUNION)pRead;
     AssertPtrReturn(pRead, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(pReadU->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+
     AssertReturn(pReadU->Shared.fEnabled == pWriteU->Excl.fEnabled, VERR_SEM_LV_INVALID_PARAMETER);
     if (!pWriteU->Excl.fEnabled)
         return VINF_SUCCESS;
+
     AssertReturn(RTTHREAD_IS_SLEEPING(enmState), VERR_SEM_LV_INVALID_PARAMETER);
+
     PRTTHREADINT pThread = hThread;
     AssertPtrReturn(pThread, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(pThread->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
@@ -1557,7 +1621,7 @@ RTDECL(int) RTLockValidatorCheckWriteOrderBlocking(PRTLOCKVALRECEXCL pWrite, PRT
     /*
      * Check for attempts at doing a read upgrade.
      */
-    PRTLOCKVALRECSHRDOWN pEntry = rtLockValidatorSharedRecFindThread(&pReadU->Shared, hThread, NULL);
+    PRTLOCKVALRECSHRDOWN pEntry = rtLockValidatorRecSharedFindOwner(&pReadU->Shared, hThread, NULL);
     if (pEntry)
     {
         rtLockValidatorComplainFirst("Read lock upgrade", pSrcPos, pThread, (PRTLOCKVALRECUNION)pEntry);
@@ -1613,10 +1677,13 @@ RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD hThrea
     AssertReturn(pRecU->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     if (!pRecU->Excl.fEnabled)
         return VINF_SUCCESS;
+
     AssertReturn(RTTHREAD_IS_SLEEPING(enmState), VERR_SEM_LV_INVALID_PARAMETER);
+
     PRTTHREADINT pThreadSelf = hThread;
     AssertPtrReturn(pThreadSelf, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(pThreadSelf->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+
     RTTHREADSTATE enmThreadState = rtThreadGetState(pThreadSelf);
     AssertReturn(   enmThreadState == RTTHREADSTATE_RUNNING
                  || enmThreadState == RTTHREADSTATE_TERMINATED   /* rtThreadRemove uses locks too */
