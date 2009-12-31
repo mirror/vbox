@@ -43,6 +43,13 @@
 
 RT_C_DECLS_BEGIN
 
+/** Pointer to a record union.
+ * @internal  */
+typedef union RTLOCKVALIDATORRECUNION *PRTLOCKVALIDATORRECUNION;
+
+/**
+ * Source position.
+ */
 typedef struct RTLOCKVALIDATORSRCPOS
 {
     /** The file where the lock was taken. */
@@ -96,6 +103,20 @@ typedef struct RTLOCKVALIDATORSHARED *PRTLOCKVALIDATORSHARED;
 
 
 /**
+ * Lock validator record core.
+ */
+typedef struct RTLOCKVALIDATORRECORE
+{
+    /** The magic value indicating the record type. */
+    uint32_t                            u32Magic;
+} RTLOCKVALIDATORRECCORE;
+/** Pointer to a lock validator record core. */
+typedef RTLOCKVALIDATORRECCORE *PRTLOCKVALIDATORRECCORE;
+/** Pointer to a const lock validator record core. */
+typedef RTLOCKVALIDATORRECCORE const *PCRTLOCKVALIDATORRECCORE;
+
+
+/**
  * Record recording the ownership of a lock.
  *
  * This is typically part of the per-lock data structure when compiling with
@@ -103,8 +124,8 @@ typedef struct RTLOCKVALIDATORSHARED *PRTLOCKVALIDATORSHARED;
  */
 typedef struct RTLOCKVALIDATORREC
 {
-    /** Magic value (RTLOCKVALIDATORREC_MAGIC). */
-    uint32_t                            u32Magic;
+    /** Record core with RTLOCKVALIDATORREC_MAGIC as the magic value. */
+    RTLOCKVALIDATORRECCORE              Core;
     /** Whether it's enabled or not. */
     bool                                fEnabled;
     /** Reserved. */
@@ -125,9 +146,9 @@ typedef struct RTLOCKVALIDATORREC
     RTHCPTR                             hLock;
     /** The lock name. */
     R3R0PTRTYPE(const char *)           pszName;
-    /** Pointer to the sibling record.
+    /** Pointer to the next sibling record.
      * This is used to find the read side of a read-write lock.  */
-    R3R0PTRTYPE(PRTLOCKVALIDATORSHARED) pSibling;
+    R3R0PTRTYPE(PRTLOCKVALIDATORRECUNION) pSibling;
 } RTLOCKVALIDATORREC;
 AssertCompileSize(RTLOCKVALIDATORREC, HC_ARCH_BITS == 32 ? 8 + 16 + 32 : 8 + 32 + 56);
 /* The pointer type is defined in iprt/types.h. */
@@ -137,8 +158,8 @@ AssertCompileSize(RTLOCKVALIDATORREC, HC_ARCH_BITS == 32 ? 8 + 16 + 32 : 8 + 32 
  */
 typedef struct RTLOCKVALIDATORSHAREDONE
 {
-    /** Magic value (RTLOCKVALIDATORSHAREDONE_MAGIC). */
-    uint32_t                            u32Magic;
+    /** Record core with RTLOCKVALIDATORSHAREDONE_MAGIC as the magic value. */
+    RTLOCKVALIDATORRECCORE              Core;
     /** Recursion count */
     uint32_t                            cRecursion;
     /** The current owner thread. */
@@ -166,8 +187,8 @@ typedef RTLOCKVALIDATORSHAREDONE *PRTLOCKVALIDATORSHAREDONE;
  */
 typedef struct RTLOCKVALIDATORSHARED
 {
-    /** Magic value (RTLOCKVALIDATORSHARED_MAGIC). */
-    uint32_t                            u32Magic;
+    /** Record core with RTLOCKVALIDATORSHARED_MAGIC as the magic value. */
+    RTLOCKVALIDATORRECCORE              Core;
     /** The lock sub-class. */
     uint32_t volatile                   uSubClass;
     /** The lock class. */
@@ -176,9 +197,9 @@ typedef struct RTLOCKVALIDATORSHARED
     RTHCPTR                             hLock;
     /** The lock name. */
     R3R0PTRTYPE(const char *)           pszName;
-    /** Pointer to the sibling record.
+    /** Pointer to the next sibling record.
      * This is used to find the write side of a read-write lock.  */
-    R3R0PTRTYPE(PRTLOCKVALIDATORREC)    pSibling;
+    R3R0PTRTYPE(PRTLOCKVALIDATORRECUNION) pSibling;
 
     /** The number of entries in the table.
      * Updated before inserting and after removal. */
@@ -299,10 +320,10 @@ RTDECL(void) RTLockValidatorSharedRecDelete(PRTLOCKVALIDATORSHARED pRec);
  *
  * @returns VINF_SUCCESS on success, VERR_SEM_LV_INVALID_PARAMETER if either of
  *          the records are invalid.
- * @param   pvRec1              Record 1.
- * @param   pvRec2              Record 2.
+ * @param   pRec1               Record 1.
+ * @param   pRec2               Record 2.
  */
-RTDECL(int) RTLockValidatorMakeSiblings(void *pvRec1, void *pvRec2);
+RTDECL(int) RTLockValidatorMakeSiblings(PRTLOCKVALIDATORRECCORE pRec1, PRTLOCKVALIDATORRECCORE pRec2);
 
 /**
  * Check the locking order.
@@ -607,6 +628,36 @@ RTDECL(bool) RTLockValidatorSetEnabled(bool fEnabled);
  * @returns True if enabled, false if not.
  */
 RTDECL(bool) RTLockValidatorIsEnabled(void);
+
+/**
+ * Controls whether the lock validator should be quiet or noisy (default).
+ *
+ * @returns The old setting.
+ * @param   fQuiet              The new setting.
+ */
+RTDECL(bool) RTLockValidatorSetQuiet(bool fQuiet);
+
+/**
+ * Is the lock validator quiet or noisy?
+ *
+ * @returns True if it is quiet, false if noisy.
+ */
+RTDECL(bool) RTLockValidatorAreQuiet(void);
+
+/**
+ * Makes the lock validator panic (default) or not.
+ *
+ * @returns The old setting.
+ * @param   fPanic              The new setting.
+ */
+RTDECL(bool) RTLockValidatorSetMayPanic(bool fPanic);
+
+/**
+ * Can the lock validator cause panic.
+ *
+ * @returns True if it can, false if not.
+ */
+RTDECL(bool) RTLockValidatorMayPanic(void);
 
 
 RT_C_DECLS_END
