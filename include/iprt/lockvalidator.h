@@ -105,10 +105,10 @@ typedef struct RTLOCKVALRECSHRD *PRTLOCKVALRECSHRD;
 /**
  * Lock validator record core.
  */
-typedef struct RTLOCKVALIDATORRECORE
+typedef struct RTLOCKVALRECORE
 {
     /** The magic value indicating the record type. */
-    uint32_t                            u32Magic;
+    uint32_t volatile                   u32Magic;
 } RTLOCKVALRECCORE;
 /** Pointer to a lock validator record core. */
 typedef RTLOCKVALRECCORE *PRTLOCKVALRECCORE;
@@ -148,7 +148,7 @@ typedef struct RTLOCKVALRECEXCL
     R3R0PTRTYPE(const char *)           pszName;
     /** Pointer to the next sibling record.
      * This is used to find the read side of a read-write lock.  */
-    R3R0PTRTYPE(PRTLOCKVALRECUNION) pSibling;
+    R3R0PTRTYPE(PRTLOCKVALRECUNION)     pSibling;
 } RTLOCKVALRECEXCL;
 AssertCompileSize(RTLOCKVALRECEXCL, HC_ARCH_BITS == 32 ? 8 + 16 + 32 : 8 + 32 + 56);
 /* The pointer type is defined in iprt/types.h. */
@@ -161,7 +161,11 @@ typedef struct RTLOCKVALRECSHRDOWN
     /** Record core with RTLOCKVALRECSHRDOWN_MAGIC as the magic value. */
     RTLOCKVALRECCORE                    Core;
     /** Recursion count */
-    uint32_t                            cRecursion;
+    uint16_t                            cRecursion;
+    /** Static (true) or dynamic (false) allocated record. */
+    bool                                fStaticAlloc;
+    /** Reserved. */
+    bool                                fReserved;
     /** The current owner thread. */
     RTTHREAD volatile                   hThread;
     /** Pointer to the lock record below us. Only accessed by the owner. */
@@ -356,7 +360,6 @@ RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD hThread,
  * @param   pRec                The validator record we're blocing on.
  * @param   hThread             The current thread.  Shall not be NIL_RTTHREAD!
  * @param   enmState            The sleep state.
- * @param   pvBlock             Pointer to a RTLOCKVALIDATORREC structure.
  * @param   fRecursiveOk        Whether it's ok to recurse.
  * @param   pSrcPos             The source position of the lock operation.
  */
@@ -379,7 +382,6 @@ RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD hThrea
  * @param   pRead               The validator record for the readers.
  * @param   hThread             The current thread.  Shall not be NIL_RTTHREAD!
  * @param   enmState            The sleep state.
- * @param   pvBlock             Pointer to a RTLOCKVALIDATORREC structure.
  * @param   fRecursiveOk        Whether it's ok to recurse.
  * @param   pSrcPos             The source position of the lock operation.
  */
@@ -402,7 +404,6 @@ RTDECL(int) RTLockValidatorCheckWriteOrderBlocking(PRTLOCKVALRECEXCL pWrite, PRT
  * @param   pWrite              The validator record for the writer.
  * @param   hThread             The current thread.  Shall not be NIL_RTTHREAD!
  * @param   enmState            The sleep state.
- * @param   pvBlock             Pointer to a RTLOCKVALIDATORREC structure.
  * @param   fRecursiveOk        Whether it's ok to recurse.
  * @param   pSrcPos             The source position of the lock operation.
  */
