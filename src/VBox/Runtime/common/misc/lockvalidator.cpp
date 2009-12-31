@@ -1127,6 +1127,36 @@ RT_EXPORT_SYMBOL(RTLockValidatorReadLockDec);
 
 
 /**
+ * Verifies the deadlock stack before calling it a deadlock.
+ *
+ * @retval  VERR_SEM_LV_DEADLOCK if it's a deadlock.
+ * @retval  VERR_TRY_AGAIN if something changed.
+ *
+ * @param   pStack              The deadlock detection stack.
+ */
+static int rtLockValidatorDdVerifyDeadlock(PRTLOCKVALIDATORDDSTACK pStack)
+{
+    uint32_t const c = pStack->c;
+    for (uint32_t iPass = 0; iPass < 3; iPass++)
+    {
+        for (uint32_t i = 1; i < c; i++)
+        {
+            PRTTHREADINT pThread = pStack->a[i].pThread;
+            if (pThread->u32Magic != RTTHREADINT_MAGIC)
+                return VERR_TRY_AGAIN;
+            if (rtThreadGetState(pThread) != pStack->a[i].enmState)
+                return VERR_TRY_AGAIN;
+            if (rtLockValidatorReadRecUnionPtr(&pThread->LockValidator.pRec) != pStack->a[i].pFirstSibling)
+                return VERR_TRY_AGAIN;
+        }
+        RTThreadYield();
+    }
+
+    return VERR_SEM_LV_DEADLOCK;
+}
+
+
+/**
  * Checks for stack cycles caused by another deadlock before returning.
  *
  * @retval  VINF_SUCCESS if the stack is simply too small.
@@ -1190,7 +1220,11 @@ DECL_FORCE_INLINE(bool) rtLockValidatorDdMoreWorkLeft(PRTLOCKVALIDATORRECUNION p
  * Worker for rtLockValidatorDeadlockDetection that does the actual deadlock
  * detection.
  *
- * @returns Same as rtLockValidatorDeadlockDetection.
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_SEM_LV_DEADLOCK
+ * @retval  VERR_SEM_LV_EXISTING_DEADLOCK
+ * @retval  VERR_TRY_AGAIN
+ *
  * @param   pStack          The stack to use.
  * @param   pOriginalRec    The original record.
  * @param   pThreadSelf     The calling thread.
@@ -1212,7 +1246,7 @@ static int rtLockValidatorDdDoDetection(PRTLOCKVALIDATORDDSTACK pStack, PRTLOCKV
         /*
          * Process the current record.
          */
-        /* Extract the (next) thread. */
+        /* Find the next relevan owner thread. */
         PRTTHREADINT pNextThread;
         switch (pRec->Core.u32Magic)
         {
@@ -1223,6 +1257,7 @@ static int rtLockValidatorDdDoDetection(PRTLOCKVALIDATORDDSTACK pStack, PRTLOCKV
                     &&  !RTTHREAD_IS_SLEEPING(pNextThread->enmState)
                     &&  pNextThread != pThreadSelf)
                     pNextThread = NIL_RTTHREAD;
+
                 if (    pNextThread == NIL_RTTHREAD
                     &&  pRec->Excl.pSibling
                     &&  pRec->Excl.pSibling != pFirstSibling)
@@ -1267,18 +1302,22 @@ static int rtLockValidatorDdDoDetection(PRTLOCKVALIDATORDDSTACK pStack, PRTLOCKV
                             && pEntry->Core.u32Magic == RTLOCKVALIDATORSHAREDONE_MAGIC)
                         {
                             pNextThread = rtLockValidatorReadThreadHandle(&pEntry->hThread);
-                            if (    pNextThread
-                                &&  !RTTHREAD_IS_SLEEPING(pNextThread->enmState)
-                                &&  pNextThread != pThreadSelf)
+                            if (pNextThread)
+                            {
+                                if (   pNextThread->u32Magic == RTTHREADINT_MAGIC
+                                    && RTTHREAD_IS_SLEEPING(pNextThread->enmState))
+                                    break;
                                 pNextThread = NIL_RTTHREAD;
+                            }
                         }
                         else
                             Assert(!pEntry || pEntry->Core.u32Magic == RTLOCKVALIDATORSHAREDONE_MAGIC_DEAD);
                     }
+                    if (pNextThread == NIL_RTTHREAD)
+                        break;
                 }
 
                 /* Advance to the next sibling, if any. */
-                Assert(pNextThread == NIL_RTTHREAD);
                 if (   pRec->Shared.pSibling != NULL
                     && pRec->Shared.pSibling != pFirstSibling)
                 {
@@ -1301,7 +1340,7 @@ static int rtLockValidatorDdDoDetection(PRTLOCKVALIDATORDDSTACK pStack, PRTLOCKV
                 break;
         }
 
-        /* Is that thread waiting for something? */
+        /* If we found a thread, check if it is still waiting for something. */
         RTTHREADSTATE               enmNextState = RTTHREADSTATE_RUNNING;
         PRTLOCKVALIDATORRECUNION    pNextRec     = NULL;
         if (   pNextThread != NIL_RTTHREAD
@@ -1337,7 +1376,7 @@ static int rtLockValidatorDdDoDetection(PRTLOCKVALIDATORDDSTACK pStack, PRTLOCKV
             pStack->a[i].pFirstSibling  = pFirstSibling;
 
             if (RT_UNLIKELY(pNextThread == pThreadSelf))
-                return VERR_SEM_LV_DEADLOCK;
+                return rtLockValidatorDdVerifyDeadlock(pStack);
 
             pRec            = pNextRec;
             pFirstSibling   = pNextRec;
@@ -1456,8 +1495,25 @@ static int rtLockValidatorDeadlockDetection(PRTLOCKVALIDATORRECUNION pRec, PRTTH
 #ifdef DEBUG_bird
     RTLOCKVALIDATORDDSTACK Stack;
     int rc = rtLockValidatorDdDoDetection(&Stack, pRec, pThreadSelf);
-    if (RT_FAILURE(rc))
-        rcLockValidatorDoDeadlockComplaining(&Stack, pThreadSelf, pSrcPos, rc);
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+
+    if (rc == VERR_TRY_AGAIN)
+    {
+        for (uint32_t iLoop = 0; ; iLoop++)
+        {
+            rc = rtLockValidatorDdDoDetection(&Stack, pRec, pThreadSelf);
+            if (RT_SUCCESS_NP(rc))
+                return VINF_SUCCESS;
+            if (rc != VERR_TRY_AGAIN)
+                break;
+            RTThreadYield();
+            if (iLoop >= 3)
+                return VINF_SUCCESS;
+        }
+    }
+
+    rcLockValidatorDoDeadlockComplaining(&Stack, pThreadSelf, pSrcPos, rc);
     return rc;
 #else
     return VINF_SUCCESS;
