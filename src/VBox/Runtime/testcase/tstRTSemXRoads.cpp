@@ -190,7 +190,7 @@ static bool tstBasics(void)
 
 int main()
 {
-    int rc = RTTestInitAndCreate("tstRTCidr", &g_hTest);
+    int rc = RTTestInitAndCreate("tstRTSemXRoads", &g_hTest);
     if (rc)
         return rc;
     RTTestBanner(g_hTest);
