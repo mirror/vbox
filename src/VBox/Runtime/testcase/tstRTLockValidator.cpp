@@ -32,14 +32,14 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/asm.h>                   /* for return addresses */
-#include <iprt/critsect.h>
 #include <iprt/lockvalidator.h>
 
+#include <iprt/asm.h>                   /* for return addresses */
+#include <iprt/critsect.h>
 #include <iprt/err.h>
-#include <iprt/stream.h>
-#include <iprt/thread.h>
+#include <iprt/semaphore.h>
 #include <iprt/test.h>
+#include <iprt/thread.h>
 
 
 /*******************************************************************************
@@ -168,7 +168,16 @@ static bool testIsLockValidationCompiledIn(void)
     RTTEST_CHECK_RC_OK_RET(g_hTest, RTCritSectLeave(&CritSect), false);
     RTTEST_CHECK_RC_OK_RET(g_hTest, RTCritSectDelete(&CritSect), false);
 
-    /* Add check for the other types as we add more scenarios. */
+    RTSEMRW hSemRW;
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWCreate(&hSemRW), false);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWRequestRead(hSemRW, 50), false);
+    int rc = RTSemRWRequestWrite(hSemRW, 1);
+    if (rc != VERR_SEM_LV_ILLEGAL_UPGRADE)
+        fRet = false;
+    RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), false);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWReleaseRead(hSemRW), false);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWDestroy(hSemRW), false);
+
     return fRet;
 }
 

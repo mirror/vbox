@@ -132,11 +132,11 @@ static int Test1()
     if (RT_FAILURE(rc))
         PrintError("RTSemEventMultiSignal failed (rc=%Rrc)\n", rc);
 
-    rc = RTThreadWait(Thread1, 1000, NULL);
+    rc = RTThreadWait(Thread1, 5000, NULL);
     if (RT_FAILURE(rc))
         PrintError("RTThreadWait failed for thread 1 (rc=%Rrc)\n", rc);
 
-    rc = RTThreadWait(Thread2, 1000, NULL);
+    rc = RTThreadWait(Thread2, 5000, NULL);
     if (RT_FAILURE(rc))
         PrintError("RTThreadWait failed for thread 2 (rc=%Rrc)\n", rc);
 

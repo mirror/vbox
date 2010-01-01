@@ -24,7 +24,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM//_CRITSECT
-#include "PDMInternal.h"
+#include "../PDMInternal.h"
 #include <VBox/pdmcritsect.h>
 #include <VBox/mm.h>
 #include <VBox/vmm.h>
@@ -96,7 +96,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
     ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, hNativeSelf);
 
 # ifdef PDMCRITSECT_STRICT
-    RTLockValidatorSetOwner(pCritSect->s.Core.pValidatorRec, NIL_RTTHREAD, pSrcPos);
+    RTLockValidatorRecExclSetOwner(pCritSect->s.Core.pValidatorRec, NIL_RTTHREAD, pSrcPos, true);
 # endif
 
     STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
@@ -128,7 +128,7 @@ static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hN
     SUPSEMEVENT     hEvent      = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
 # ifdef PDMCRITSECT_STRICT
     RTTHREAD        hThreadSelf = RTThreadSelfAutoAdopt();
-    int rc2 = RTLockValidatorCheckOrder(pCritSect->s.Core.pValidatorRec, hThreadSelf, pSrcPos);
+    int rc2 = RTLockValidatorRecExclCheckOrder(pCritSect->s.Core.pValidatorRec, hThreadSelf, pSrcPos);
     if (RT_FAILURE(rc2))
         return rc2;
 # else
@@ -137,8 +137,8 @@ static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hN
     for (;;)
     {
 # ifdef PDMCRITSECT_STRICT
-        int rc9 = RTLockValidatorCheckBlocking(pCritSect->s.Core.pValidatorRec, hThreadSelf, RTTHREADSTATE_CRITSECT,
-                                               !(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NO_NESTING), pSrcPos);
+        int rc9 = RTLockValidatorRecExclCheckBlocking(pCritSect->s.Core.pValidatorRec, hThreadSelf, pSrcPos,
+                                                      !(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NO_NESTING));
         if (RT_FAILURE(rc9))
             return rc9;
 # endif
@@ -400,7 +400,7 @@ VMMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallRing3)
         &&  fCallRing3
         &&  pCritSect->s.Core.pValidatorRec
         &&  pCritSect->s.Core.pValidatorRec->hThread != NIL_RTTHREAD)
-        RTLockValidatorUnsetOwner(pCritSect->s.Core.pValidatorRec);
+        RTLockValidatorRecExclReleaseOwnerUnchecked(pCritSect->s.Core.pValidatorRec);
     return rc;
 }
 #endif /* IN_RING3 */
@@ -446,7 +446,7 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
         pCritSect->s.EventToSignal   = NIL_RTSEMEVENT;
 #  if defined(PDMCRITSECT_STRICT)
         if (pCritSect->s.Core.pValidatorRec->hThread != NIL_RTTHREAD)
-            RTLockValidatorUnsetOwner(pCritSect->s.Core.pValidatorRec);
+            RTLockValidatorRecExclReleaseOwnerUnchecked(pCritSect->s.Core.pValidatorRec);
 #  endif
         Assert(!pCritSect->s.Core.pValidatorRec || pCritSect->s.Core.pValidatorRec->hThread == NIL_RTTHREAD);
 # endif

@@ -218,11 +218,12 @@ RT_EXPORT_SYMBOL(RTSemRWDestroy);
 
 RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
 {
-    struct RTSEMRWINTERNAL *pThis = RWSem;
+    PRTLOCKVALSRCPOS        pSrcPos = NULL;
 
     /*
      * Validate handle.
      */
+    struct RTSEMRWINTERNAL *pThis = RWSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
@@ -230,6 +231,16 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
     uint64_t        tsStart = 0;
     if (cMillies != RT_INDEFINITE_WAIT && cMillies != 0)
         tsStart = RTTimeNanoTS();
+
+#ifdef RTSEMRW_STRICT
+    RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
+    if (cMillies > 0)
+    {
+        int rc9 = RTLockValidatorRecSharedCheckOrder(&pThis->ValidatorRead, hThreadSelf, pSrcPos);
+        if (RT_FAILURE(rc9))
+            return rc9;
+    }
+#endif
 
     /*
      * Take critsect.
@@ -255,6 +266,9 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
     {
         pThis->cReads++;
         Assert(pThis->cReads > 0);
+#ifdef RTSEMRW_STRICT
+        RTLockValidatorSharedRecAddOwner(&pThis->ValidatorRead, hThreadSelf, pSrcPos);
+#endif
 
         RTCritSectLeave(&pThis->CritSect);
         return VINF_SUCCESS;
@@ -263,6 +277,15 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
     RTNATIVETHREAD hNativeSelf = pThis->CritSect.NativeThreadOwner;
     if (pThis->hWriter == hNativeSelf)
     {
+#ifdef RTSEMRW_STRICT
+        int rc9 = RTLockValidatorRecExclRecursionMixed(&pThis->ValidatorWrite, &pThis->ValidatorRead.Core, pSrcPos);
+        if (RT_FAILURE(rc9))
+        {
+            RTCritSectLeave(&pThis->CritSect);
+            return rc9;
+        }
+#endif
+
         pThis->cWriterReads++;
         Assert(pThis->cWriterReads > 0);
 
@@ -278,6 +301,9 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
     if (cMillies == 0)
         return VERR_TIMEOUT;
 
+#ifndef RTSEMRW_STRICT
+    RTTHREAD hThreadSelf = RTThreadSelf();
+#endif
     for (;;)
     {
         if (cMillies != RT_INDEFINITE_WAIT)
@@ -292,7 +318,15 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
                     cMilliesInitial = 1;
             }
         }
+#ifdef RTSEMRW_STRICT
+        rc = RTLockValidatorRecSharedCheckBlocking(&pThis->ValidatorRead, hThreadSelf, pSrcPos, true);
+        if (RT_FAILURE(rc))
+            break;
+#endif
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_READ);
+
         int rcWait = rc = RTSemEventMultiWait(pThis->ReadEvent, cMillies);
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_READ);
         if (RT_FAILURE(rc) && rc != VERR_TIMEOUT) /* handle timeout below */
         {
             AssertMsgRC(rc, ("RTSemEventMultiWait failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
@@ -323,6 +357,10 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
            )
         {
             pThis->cReads++;
+            Assert(pThis->cReads > 0);
+#ifdef RTSEMRW_STRICT
+            RTLockValidatorSharedRecAddOwner(&pThis->ValidatorRead, hThreadSelf, pSrcPos);
+#endif
 
             RTCritSectLeave(&pThis->CritSect);
             return VINF_SUCCESS;
@@ -371,22 +409,28 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
     {
         if (pThis->hWriter == NIL_RTNATIVETHREAD)
         {
-            if (RT_LIKELY(pThis->cReads > 0))
+#ifdef RTSEMRW_STRICT
+            rc = RTLockValidatorRecSharedCheckAndRelease(&pThis->ValidatorRead, NIL_RTTHREAD);
+            if (RT_SUCCESS(rc))
+#endif
             {
-                pThis->cReads--;
-
-                /* Kick off a writer if appropriate. */
-                if (    pThis->cWritesWaiting > 0
-                    &&  !pThis->cReads)
+                if (RT_LIKELY(pThis->cReads > 0))
                 {
-                    rc = RTSemEventSignal(pThis->WriteEvent);
-                    AssertMsgRC(rc, ("Failed to signal writers on rwsem %p, rc=%Rrc\n", RWSem, rc));
+                    pThis->cReads--;
+
+                    /* Kick off a writer if appropriate. */
+                    if (    pThis->cWritesWaiting > 0
+                        &&  !pThis->cReads)
+                    {
+                        rc = RTSemEventSignal(pThis->WriteEvent);
+                        AssertMsgRC(rc, ("Failed to signal writers on rwsem %p, rc=%Rrc\n", RWSem, rc));
+                    }
                 }
-            }
-            else
-            {
-                AssertFailed();
-                rc = VERR_NOT_OWNER;
+                else
+                {
+                    AssertFailed();
+                    rc = VERR_NOT_OWNER;
+                }
             }
         }
         else
@@ -395,7 +439,15 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
             if (pThis->hWriter == hNativeSelf)
             {
                 if (pThis->cWriterReads > 0)
-                    pThis->cWriterReads--;
+                {
+#ifdef RTSEMRW_STRICT
+                    rc = RTLockValidatorRecExclUnwindMixed(&pThis->ValidatorWrite, &pThis->ValidatorRead.Core);
+                    if (RT_SUCCESS(rc))
+#endif
+                    {
+                        pThis->cWriterReads--;
+                    }
+                }
                 else
                 {
                     AssertFailed();
@@ -421,11 +473,12 @@ RT_EXPORT_SYMBOL(RTSemRWReleaseRead);
 
 RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 {
-    struct RTSEMRWINTERNAL *pThis = RWSem;
+    PRTLOCKVALSRCPOS        pSrcPos = NULL;
 
     /*
      * Validate handle.
      */
+    struct RTSEMRWINTERNAL *pThis = RWSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
@@ -433,6 +486,17 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
     uint64_t    tsStart = 0;
     if (cMillies != RT_INDEFINITE_WAIT && cMillies != 0)
         tsStart = RTTimeNanoTS();
+
+#ifdef RTSEMRW_STRICT
+    RTTHREAD hThreadSelf = NIL_RTTHREAD;
+    if (cMillies)
+    {
+        hThreadSelf = RTThreadSelfAutoAdopt();
+        int rc9 = RTLockValidatorRecExclCheckOrder(&pThis->ValidatorWrite, hThreadSelf, pSrcPos);
+        if (RT_FAILURE(rc9))
+            return rc9;
+    }
+#endif
 
     /*
      * Take critsect.
@@ -462,7 +526,9 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 
         pThis->cWrites++;
         pThis->hWriter = hNativeSelf;
-
+#ifdef RTSEMRW_STRICT
+        RTLockValidatorRecExclSetOwner(&pThis->ValidatorWrite, hThreadSelf, pSrcPos, pThis->cWrites == 1);
+#endif
         RTCritSectLeave(&pThis->CritSect);
         return VINF_SUCCESS;
     }
@@ -481,6 +547,9 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
     if (cMillies == 0)
         return VERR_TIMEOUT;
 
+#ifndef RTSEMRW_STRICT
+    RTTHREAD hThreadSelf = RTThreadSelf();
+#endif
     for (;;)
     {
         if (cMillies != RT_INDEFINITE_WAIT)
@@ -495,7 +564,14 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
                     cMilliesInitial = 1;
             }
         }
+#ifdef RTSEMRW_STRICT
+        rc = RTLockValidatorRecExclCheckBlocking(&pThis->ValidatorWrite, hThreadSelf, pSrcPos, true);
+        if (RT_FAILURE(rc))
+            break;
+#endif
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE);
         int rcWait = rc = RTSemEventWait(pThis->WriteEvent, cMillies);
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
         if (RT_UNLIKELY(RT_FAILURE_NP(rc) && rc != VERR_TIMEOUT)) /* timeouts are handled below */
         {
             AssertMsgRC(rc, ("RTSemEventWait failed on rwsem %p, rc=%Rrc\n", RWSem, rc));
@@ -533,6 +609,9 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
             pThis->cWrites++;
             pThis->hWriter = hNativeSelf;
             pThis->cWritesWaiting--;
+#ifdef RTSEMRW_STRICT
+            RTLockValidatorRecExclSetOwner(&pThis->ValidatorWrite, hThreadSelf, pSrcPos, true);
+#endif
 
             RTCritSectLeave(&pThis->CritSect);
             return VINF_SUCCESS;
@@ -574,11 +653,11 @@ RT_EXPORT_SYMBOL(RTSemRWRequestWriteNoResume);
 
 RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
 {
-    struct RTSEMRWINTERNAL *pThis = RWSem;
 
     /*
      * Validate handle.
      */
+    struct RTSEMRWINTERNAL *pThis = RWSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
@@ -598,6 +677,18 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
         AssertMsgFailed(("Not read-write owner of rwsem %p.\n", RWSem));
         return VERR_NOT_OWNER;
     }
+
+#ifdef RTSEMRW_STRICT
+    if (pThis->cWrites > 1 || !pThis->cWriterReads) /* don't check+release if VERR_WRONG_ORDER */
+    {
+        int rc9 = RTLockValidatorRecExclReleaseOwner(&pThis->ValidatorWrite, pThis->cWrites == 1);
+        if (RT_FAILURE(rc9))
+        {
+            RTCritSectLeave(&pThis->CritSect);
+            return rc9;
+        }
+    }
+#endif
 
     /*
      * Release ownership and remove ourselves from the writers count.
