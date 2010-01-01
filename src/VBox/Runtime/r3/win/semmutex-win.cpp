@@ -150,23 +150,19 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned c
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
-#ifdef RTSEMMUTEX_STRICT
-    RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
-    RTLockValidatorCheckOrder(&pThis->ValidatorRec, hThreadSelf, pSrcPos);
-#else
-    RTTHREAD hThreadSelf = RTThreadSelf();
-#endif
-
     /*
      * Lock mutex semaphore.
      */
+    RTTHREAD hThreadSelf = NIL_RTTHREAD;
     if (cMillies > 0)
     {
 #ifdef RTSEMMUTEX_STRICT
-        int rc9 = RTLockValidatorCheckBlocking(&pThis->ValidatorRec, hThreadSelf,
-                                               RTTHREADSTATE_MUTEX, true, pSrcPos);
+        hThreadSelf = RTThreadSelfAutoAdopt();
+        int rc9 = RTLockValidatorRecExclCheckOrderAndBlocking(&pThis->ValidatorRec, hThreadSelf, pSrcPos, true);
         if (RT_FAILURE(rc9))
             return rc9;
+#else
+        hThreadSelf = RTThreadSelf();
 #endif
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX);
     }
@@ -178,8 +174,9 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned c
     {
         case WAIT_OBJECT_0:
 #ifdef RTSEMMUTEX_STRICT
-            RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, pSrcPos);
+            RTLockValidatorRecExclSetOwner(&pThis->ValidatorRec, hThreadSelf, pSrcPos, false /* we don't know */);
 #endif
+/** @todo record who owns this thing and avoid kernel calls during recursion. */
             return VINF_SUCCESS;
 
         case WAIT_TIMEOUT:          return VERR_TIMEOUT;
@@ -226,16 +223,15 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX MutexSem)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
+#ifdef RTSEMMUTEX_STRICT
+    int rc9 = RTLockValidatorRecExclReleaseOwner(&pThis->ValidatorRec, false);
+    if (RT_FAILURE(rc9))
+        return rc9;
+#endif
+
     /*
      * Unlock mutex semaphore.
      */
-#ifdef RTSEMMUTEX_STRICT
-    if (   pThis->ValidatorRec.hThread != NIL_RTTHREAD
-        && pThis->ValidatorRec.hThread == RTThreadSelf())
-        RTLockValidatorUnsetOwner(&pThis->ValidatorRec);
-    else
-        AssertMsgFailed(("%p hThread=%RTthrd\n", pThis, pThis->ValidatorRec.hThread));
-#endif
     if (ReleaseMutex(pThis->hMtx))
         return VINF_SUCCESS;
     int rc = RTErrConvertFromWin32(GetLastError());

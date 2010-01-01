@@ -90,11 +90,6 @@ DECL_FORCE_INLINE(int) rtCritSectTryEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCP
     Assert(pCritSect);
     Assert(pCritSect->u32Magic == RTCRITSECT_MAGIC);
     RTNATIVETHREAD  NativeThreadSelf = RTThreadNativeSelf();
-#ifdef RTCRITSECT_STRICT
-    RTTHREAD        ThreadSelf = RTThreadSelf();
-    if (ThreadSelf == NIL_RTTHREAD)
-        RTThreadAdopt(RTTHREADTYPE_DEFAULT, 0, NULL, &ThreadSelf);
-#endif
 
     /*
      * Try take the lock. (cLockers is -1 if it's free)
@@ -108,6 +103,11 @@ DECL_FORCE_INLINE(int) rtCritSectTryEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCP
         {
             if (!(pCritSect->fFlags & RTCRITSECT_FLAGS_NO_NESTING))
             {
+#ifdef RTCRITSECT_STRICT
+                int rc9 = RTLockValidatorRecExclRecursion(pCritSect->pValidatorRec, pSrcPos);
+                if (RT_FAILURE(rc9))
+                    return rc9;
+#endif
                 ASMAtomicIncS32(&pCritSect->cLockers);
                 pCritSect->cNestings++;
                 return VINF_SUCCESS;
@@ -124,7 +124,7 @@ DECL_FORCE_INLINE(int) rtCritSectTryEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCP
     pCritSect->cNestings = 1;
     ASMAtomicWriteHandle(&pCritSect->NativeThreadOwner, NativeThreadSelf);
 #ifdef RTCRITSECT_STRICT
-    RTLockValidatorSetOwner(pCritSect->pValidatorRec, ThreadSelf, pSrcPos);
+    RTLockValidatorRecExclSetOwner(pCritSect->pValidatorRec, NIL_RTTHREAD, pSrcPos, true);
 #endif
 
     return VINF_SUCCESS;
@@ -156,14 +156,17 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
     Assert(pCritSect);
     Assert(pCritSect->u32Magic == RTCRITSECT_MAGIC);
     RTNATIVETHREAD  NativeThreadSelf = RTThreadNativeSelf();
-#ifdef RTCRITSECT_STRICT
-    RTTHREAD        hThreadSelf = RTThreadSelfAutoAdopt();
-    RTLockValidatorCheckOrder(pCritSect->pValidatorRec, hThreadSelf, pSrcPos);
-#endif
 
-    /** If the critical section has already been destroyed, then inform the caller. */
+    /* If the critical section has already been destroyed, then inform the caller. */
     if (pCritSect->u32Magic != RTCRITSECT_MAGIC)
         return VERR_SEM_DESTROYED;
+
+#ifdef RTCRITSECT_STRICT
+    RTTHREAD        hThreadSelf = RTThreadSelfAutoAdopt();
+    int rc9 = RTLockValidatorRecExclCheckOrder(pCritSect->pValidatorRec, hThreadSelf, pSrcPos);
+    if (RT_FAILURE(rc9))
+        return rc9;
+#endif
 
     /*
      * Increment the waiter counter.
@@ -178,6 +181,14 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
         {
             if (!(pCritSect->fFlags & RTCRITSECT_FLAGS_NO_NESTING))
             {
+#ifdef RTCRITSECT_STRICT
+                rc9 = RTLockValidatorRecExclRecursion(pCritSect->pValidatorRec, pSrcPos);
+                if (RT_FAILURE(rc9))
+                {
+                    ASMAtomicDecS32(&pCritSect->cLockers);
+                    return rc9;
+                }
+#endif
                 pCritSect->cNestings++;
                 return VINF_SUCCESS;
             }
@@ -196,9 +207,8 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
         for (;;)
         {
 #ifdef RTCRITSECT_STRICT
-            int rc9 = RTLockValidatorCheckBlocking(pCritSect->pValidatorRec, hThreadSelf, RTTHREADSTATE_CRITSECT,
-                                                   !(pCritSect->fFlags & RTCRITSECT_FLAGS_NO_NESTING),
-                                                   pSrcPos);
+            int rc9 = RTLockValidatorRecExclCheckBlocking(pCritSect->pValidatorRec, hThreadSelf, pSrcPos,
+                                                          !(pCritSect->fFlags & RTCRITSECT_FLAGS_NO_NESTING));
             if (RT_FAILURE(rc9))
             {
                 ASMAtomicDecS32(&pCritSect->cLockers);
@@ -225,7 +235,7 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
     pCritSect->cNestings = 1;
     ASMAtomicWriteHandle(&pCritSect->NativeThreadOwner, NativeThreadSelf);
 #ifdef RTCRITSECT_STRICT
-    RTLockValidatorSetOwner(pCritSect->pValidatorRec, hThreadSelf, pSrcPos);
+    RTLockValidatorRecExclSetOwner(pCritSect->pValidatorRec, hThreadSelf, pSrcPos, true);
 #endif
 
     return VINF_SUCCESS;
@@ -263,6 +273,12 @@ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
     Assert(pCritSect->cLockers >= 0);
     Assert(pCritSect->NativeThreadOwner == RTThreadNativeSelf());
 
+#ifdef RTCRITSECT_STRICT
+    int rc9 = RTLockValidatorRecExclReleaseOwner(pCritSect->pValidatorRec, pCritSect->cNestings == 1);
+    if (RT_FAILURE(rc9))
+        return rc9;
+#endif
+
     /*
      * Decrement nestings, if <= 0 when we'll release the critsec.
      */
@@ -275,9 +291,6 @@ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
          * Set owner to zero.
          * Decrement waiters, if >= 0 then we have to wake one of them up.
          */
-#ifdef RTCRITSECT_STRICT
-        RTLockValidatorUnsetOwner(pCritSect->pValidatorRec);
-#endif
         ASMAtomicWriteHandle(&pCritSect->NativeThreadOwner, NIL_RTNATIVETHREAD);
         if (ASMAtomicDecS32(&pCritSect->cLockers) >= 0)
         {

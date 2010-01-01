@@ -245,6 +245,16 @@ AssertCompileSize(RTLOCKVALRECSHRD, HC_ARCH_BITS == 32 ? 24 + 20 + 4 : 40 + 24);
 /** @} */
 
 /**
+ * Makes the two records siblings.
+ *
+ * @returns VINF_SUCCESS on success, VERR_SEM_LV_INVALID_PARAMETER if either of
+ *          the records are invalid.
+ * @param   pRec1               Record 1.
+ * @param   pRec2               Record 2.
+ */
+RTDECL(int) RTLockValidatorRecMakeSiblings(PRTLOCKVALRECCORE pRec1, PRTLOCKVALRECCORE pRec2);
+
+/**
  * Initialize a lock validator record.
  *
  * Use RTLockValidatorRecExclDelete to deinitialize it.
@@ -296,6 +306,167 @@ RTDECL(int)  RTLockValidatorRecExclCreate(PRTLOCKVALRECEXCL *ppRec, RTLOCKVALIDA
 RTDECL(void) RTLockValidatorRecExclDestroy(PRTLOCKVALRECEXCL *ppRec);
 
 /**
+ * Record the specified thread as lock owner and increment the write lock count.
+ *
+ * This function is typically called after acquiring the lock.  It accounts for
+ * recursions so it can be used instead of RTLockValidatorRecExclRecursion.  Use
+ * RTLockValidatorRecExclReleaseOwner to reverse the effect.
+ *
+ * @param   pRec                The validator record.
+ * @param   hThreadSelf         The handle of the calling thread.  If not known,
+ *                              pass NIL_RTTHREAD and we'll figure it out.
+ * @param   pSrcPos             The source position of the lock operation.
+ * @param   fFirstRecursion     Set if it is the first recursion, clear if not
+ *                              sure.
+ */
+RTDECL(void) RTLockValidatorRecExclSetOwner(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf,
+                                            PCRTLOCKVALSRCPOS pSrcPos, bool fFirstRecursion);
+
+/**
+ * Check the exit order and release (unset) the ownership.
+ *
+ * This is called by routines implementing releasing an exclusive lock,
+ * typically before getting down to the final lock releaseing.  Can be used for
+ * recursive releasing instead of RTLockValidatorRecExclUnwind.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SEM_LV_WRONG_RELEASE_ORDER if the order is wrong.  Will have
+ *          done all necessary whining and breakpointing before returning.
+ * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
+ *
+ * @param   pRec                The validator record.
+ * @param   fFinalRecursion     Set if it's the final recursion, clear if not
+ *                              sure.
+ */
+RTDECL(int) RTLockValidatorRecExclReleaseOwner(PRTLOCKVALRECEXCL pRec, bool fFinalRecursion);
+
+/**
+ * Clear the lock ownership and decrement the write lock count.
+ *
+ * This is only for special cases where we wish to drop lock validation
+ * recording.  See RTLockValidatorRecExclCheckAndRelease.
+ *
+ * @param   pRec                The validator record.
+ */
+RTDECL(void) RTLockValidatorRecExclReleaseOwnerUnchecked(PRTLOCKVALRECEXCL pRec);
+
+/**
+ * Checks and records a lock recursion.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SEM_LV_NESTED if the semaphore class forbids recursion.  Gone
+ *          thru the motions.
+ * @retval  VERR_SEM_LV_WRONG_ORDER if the locking order is wrong.  Gone thru
+ *          the motions.
+ * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
+ *
+ * @param   pRec                The validator record.
+ * @param   pSrcPos             The source position of the lock operation.
+ */
+RTDECL(int) RTLockValidatorRecExclRecursion(PRTLOCKVALRECEXCL pRec, PCRTLOCKVALSRCPOS pSrcPos);
+
+/**
+ * Checks and records a lock unwind (releasing one recursion).
+ *
+ * This should be coupled with called to RTLockValidatorRecExclRecursion.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SEM_LV_WRONG_RELEASE_ORDER if the release order is wrong.  Gone
+ *          thru the motions.
+ * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
+ *
+ * @param   pRec                The validator record.
+ */
+RTDECL(int) RTLockValidatorRecExclUnwind(PRTLOCKVALRECEXCL pRec);
+
+/**
+ * Checks and records a mixed recursion.
+ *
+ * An example of a mixed recursion is a writer requesting read access to a
+ * SemRW.
+ *
+ * This should be coupled with called to RTLockValidatorRecExclUnwindMixed.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SEM_LV_NESTED if the semaphore class forbids recursion.  Gone
+ *          thru the motions.
+ * @retval  VERR_SEM_LV_WRONG_ORDER if the locking order is wrong.  Gone thru
+ *          the motions.
+ * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
+ *
+ * @param   pRec                The validator record it to accounted it to.
+ * @param   pRecMixed           The validator record it came in on.
+ * @param   pSrcPos             The source position of the lock operation.
+ */
+RTDECL(int) RTLockValidatorRecExclRecursionMixed(PRTLOCKVALRECEXCL pRec, PRTLOCKVALRECCORE pRecMixed, PCRTLOCKVALSRCPOS pSrcPos);
+
+/**
+ * Checks and records the unwinding of a mixed recursion.
+ *
+ * This should be coupled with called to RTLockValidatorRecExclRecursionMixed.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SEM_LV_WRONG_RELEASE_ORDER if the release order is wrong.  Gone
+ *          thru the motions.
+ * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
+ *
+ * @param   pRec                The validator record it was accounted to.
+ * @param   pRecMixed           The validator record it came in on.
+ */
+RTDECL(int) RTLockValidatorRecExclUnwindMixed(PRTLOCKVALRECEXCL pRec, PRTLOCKVALRECCORE pRecMixed);
+
+/**
+ * Check the exclusive locking order.
+ *
+ * This is called by routines implementing exclusive lock acquisition.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SEM_LV_WRONG_ORDER if the order is wrong.  Will have done all
+ *          necessary whining and breakpointing before returning.
+ * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
+ *
+ * @param   pRec                The validator record.
+ * @param   hThreadSelf         The handle of the calling thread.  If not known,
+ *                              pass NIL_RTTHREAD and we'll figure it out.
+ * @param   pSrcPos             The source position of the lock operation.
+ */
+RTDECL(int)  RTLockValidatorRecExclCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf, PCRTLOCKVALSRCPOS pSrcPos);
+
+/**
+ * Do deadlock detection before blocking on exclusive access to a lock.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_SEM_LV_DEADLOCK if blocking would deadlock.  Gone thru the
+ *          motions.
+ * @retval  VERR_SEM_LV_NESTED if the semaphore isn't recursive and hThread is
+ *          already the owner.  Gone thru the motions.
+ * @retval  VERR_SEM_LV_ILLEGAL_UPGRADE if it's a deadlock on the same lock.
+ *          The caller must handle any legal upgrades without invoking this
+ *          function (for now).
+ * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
+ *
+ * @param   pRec                The validator record we're blocking on.
+ * @param   hThreadSelf         The current thread.  Shall not be NIL_RTTHREAD!
+ * @param   pSrcPos             The source position of the lock operation.
+ * @param   fRecursiveOk        Whether it's ok to recurse.
+ */
+RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf,
+                                                PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk);
+
+/**
+ * RTLockValidatorRecExclCheckOrder and RTLockValidatorRecExclCheckBlocking
+ * baked into one call.
+ *
+ * @returns Any of the statuses returned by the two APIs.
+ * @param   pRec                The validator record.
+ * @param   hThreadSelf         The current thread.  Shall not be NIL_RTTHREAD!
+ * @param   pSrcPos             The source position of the lock operation.
+ * @param   fRecursiveOk        Whether it's ok to recurse.
+ */
+RTDECL(int) RTLockValidatorRecExclCheckOrderAndBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf,
+                                                        PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk);
+
+/**
  * Initialize a lock validator record for a shared lock.
  *
  * Use RTLockValidatorRecSharedDelete to deinitialize it.
@@ -320,19 +491,9 @@ RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALIDATO
 RTDECL(void) RTLockValidatorRecSharedDelete(PRTLOCKVALRECSHRD pRec);
 
 /**
- * Makes the two records siblings.
+ * Check the shared locking order.
  *
- * @returns VINF_SUCCESS on success, VERR_SEM_LV_INVALID_PARAMETER if either of
- *          the records are invalid.
- * @param   pRec1               Record 1.
- * @param   pRec2               Record 2.
- */
-RTDECL(int) RTLockValidatorRecMakeSiblings(PRTLOCKVALRECCORE pRec1, PRTLOCKVALRECCORE pRec2);
-
-/**
- * Check the locking order.
- *
- * This is called by routines implementing lock acquisition.
+ * This is called by routines implementing shared lock acquisition.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_SEM_LV_WRONG_ORDER if the order is wrong.  Will have done all
@@ -340,90 +501,68 @@ RTDECL(int) RTLockValidatorRecMakeSiblings(PRTLOCKVALRECCORE pRec1, PRTLOCKVALRE
  * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
  *
  * @param   pRec                The validator record.
- * @param   hThread             The handle of the calling thread.  If not known,
- *                              pass NIL_RTTHREAD and this method will figure it
- *                              out.
+ * @param   hThreadSelf         The handle of the calling thread.  If not known,
+ *                              pass NIL_RTTHREAD and we'll figure it out.
  * @param   pSrcPos             The source position of the lock operation.
  */
-RTDECL(int)  RTLockValidatorCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD hThread, PCRTLOCKVALSRCPOS pSrcPos);
+RTDECL(int)  RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf, PCRTLOCKVALSRCPOS pSrcPos);
 
 /**
- * Do deadlock detection before blocking on a lock.
+ * Do deadlock detection before blocking on shared access to a lock.
  *
  * @retval  VINF_SUCCESS
  * @retval  VERR_SEM_LV_DEADLOCK if blocking would deadlock.  Gone thru the
  *          motions.
  * @retval  VERR_SEM_LV_NESTED if the semaphore isn't recursive and hThread is
  *          already the owner.  Gone thru the motions.
+ * @retval  VERR_SEM_LV_ILLEGAL_UPGRADE if it's a deadlock on the same lock.
+ *          The caller must handle any legal upgrades without invoking this
+ *          function (for now).
  * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
  *
- * @param   pRec                The validator record we're blocing on.
- * @param   hThread             The current thread.  Shall not be NIL_RTTHREAD!
- * @param   enmState            The sleep state.
- * @param   fRecursiveOk        Whether it's ok to recurse.
+ * @param   pRec                The validator record we're blocking on.
+ * @param   hThreadSelf         The current thread.  Shall not be NIL_RTTHREAD!
  * @param   pSrcPos             The source position of the lock operation.
+ * @param   fRecursiveOk        Whether it's ok to recurse.
  */
-RTDECL(int) RTLockValidatorCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD hThread,
-                                         RTTHREADSTATE enmState, bool fRecursiveOk,
-                                         PCRTLOCKVALSRCPOS pSrcPos);
+RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf,
+                                                  PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk);
 
 /**
- * Do order checking and deadlock detection before blocking on a read/write lock
- * for exclusive (write) access.
+ * RTLockValidatorRecSharedCheckOrder and RTLockValidatorRecSharedCheckBlocking
+ * baked into one call.
  *
- * @retval  VINF_SUCCESS
- * @retval  VERR_SEM_LV_DEADLOCK if blocking would deadlock.  Gone thru the
- *          motions.
- * @retval  VERR_SEM_LV_NESTED if the semaphore isn't recursive and hThread is
- *          already the owner.  Gone thru the motions.
- * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
- *
- * @param   pWrite              The validator record for the writer.
- * @param   pRead               The validator record for the readers.
- * @param   hThread             The current thread.  Shall not be NIL_RTTHREAD!
- * @param   enmState            The sleep state.
- * @param   fRecursiveOk        Whether it's ok to recurse.
+ * @returns Any of the statuses returned by the two APIs.
+ * @param   pRec                The validator record.
+ * @param   hThreadSelf         The current thread.  Shall not be NIL_RTTHREAD!
  * @param   pSrcPos             The source position of the lock operation.
+ * @param   fRecursiveOk        Whether it's ok to recurse.
  */
-RTDECL(int) RTLockValidatorCheckWriteOrderBlocking(PRTLOCKVALRECEXCL pWrite, PRTLOCKVALRECSHRD pRead,
-                                                   RTTHREAD hThread, RTTHREADSTATE enmState, bool fRecursiveOk,
-                                                   PCRTLOCKVALSRCPOS pSrcPos);
+RTDECL(int) RTLockValidatorRecSharedCheckOrderAndBlocking(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf,
+                                                          PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk);
 
 /**
- * Do order checking and deadlock detection before blocking on a read/write lock
- * for shared (read) access.
+ * Adds an owner to a shared locking record.
  *
- * @retval  VINF_SUCCESS
- * @retval  VERR_SEM_LV_DEADLOCK if blocking would deadlock.  Gone thru the
- *          motions.
- * @retval  VERR_SEM_LV_NESTED if the semaphore isn't recursive and hThread is
- *          already the owner.  Gone thru the motions.
- * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
+ * Takes recursion into account.  This function is typically called after
+ * acquiring the lock in shared mode.
  *
- * @param   pRead               The validator record for the readers.
- * @param   pWrite              The validator record for the writer.
- * @param   hThread             The current thread.  Shall not be NIL_RTTHREAD!
- * @param   enmState            The sleep state.
- * @param   fRecursiveOk        Whether it's ok to recurse.
+ * @param   pRead               The validator record.
+ * @param   hThreadSelf         The calling thread and owner.
  * @param   pSrcPos             The source position of the lock operation.
  */
-RTDECL(int) RTLockValidatorCheckReadOrderBlocking(PRTLOCKVALRECSHRD pRead, PRTLOCKVALRECEXCL pWrite,
-                                                  RTTHREAD hThread, RTTHREADSTATE enmState, bool fRecursiveOk,
-                                                  PCRTLOCKVALSRCPOS pSrcPos);
+RTDECL(void) RTLockValidatorSharedRecAddOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf, PCRTLOCKVALSRCPOS pSrcPos);
 
 /**
- * Check the exit order and release (unset) the ownership.
+ * Removes an owner from a shared locking record.
  *
- * This is called by routines implementing releasing the lock.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_SEM_LV_WRONG_RELEASE_ORDER if the order is wrong.  Will have
- *          done all necessary whining and breakpointing before returning.
- * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
+ * Takes recursion into account.  This function is typically called before
+ * releaseing the lock.
  *
  * @param   pRec                The validator record.
+ * @param   hThreadSelf         The calling thread and the owner to remove.
  */
-RTDECL(int)  RTLockValidatorCheckAndRelease(PRTLOCKVALRECEXCL pRec);
+RTDECL(void) RTLockValidatorSharedRecRemoveOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf);
 
 /**
  * Check the exit order and release (unset) the shared ownership.
@@ -436,122 +575,10 @@ RTDECL(int)  RTLockValidatorCheckAndRelease(PRTLOCKVALRECEXCL pRec);
  * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
  *
  * @param   pRead               The validator record.
- * @param   hThread             The handle of the calling thread.
+ * @param   hThreadSelf         The handle of the calling thread.  If not known,
+ *                              pass NIL_RTTHREAD and we'll figure it out.
  */
-RTDECL(int)  RTLockValidatorCheckAndReleaseReadOwner(PRTLOCKVALRECSHRD pRead, RTTHREAD hThread);
-
-/**
- * Checks and records a lock recursion.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_SEM_LV_NESTED if the semaphore class forbids recursion.  Gone
- *          thru the motions.
- * @retval  VERR_SEM_LV_WRONG_ORDER if the locking order is wrong.  Gone thru
- *          the motions.
- * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
- *
- * @param   pRec                The validator record.
- * @param   pSrcPos             The source position of the lock operation.
- */
-RTDECL(int) RTLockValidatorRecordRecursion(PRTLOCKVALRECEXCL pRec, PCRTLOCKVALSRCPOS pSrcPos);
-
-/**
- * Checks and records a lock unwind (releasing one recursion).
- *
- * This should be coupled with called to RTLockValidatorRecordRecursion.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_SEM_LV_WRONG_RELEASE_ORDER if the release order is wrong.  Gone
- *          thru the motions.
- * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
- *
- * @param   pRec                The validator record.
- */
-RTDECL(int) RTLockValidatorUnwindRecursion(PRTLOCKVALRECEXCL pRec);
-
-/**
- * Checks and records a read/write lock read recursion done by the writer.
- *
- * This should be coupled with called to
- * RTLockValidatorUnwindReadWriteRecursion.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_SEM_LV_NESTED if the semaphore class forbids recursion.  Gone
- *          thru the motions.
- * @retval  VERR_SEM_LV_WRONG_ORDER if the locking order is wrong.  Gone thru
- *          the motions.
- * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
- *
- * @param   pRead               The validator record for the readers.
- * @param   pWrite              The validator record for the writer.
- */
-RTDECL(int) RTLockValidatorRecordReadWriteRecursion(PRTLOCKVALRECEXCL pWrite, PRTLOCKVALRECSHRD pRead, PCRTLOCKVALSRCPOS pSrcPos);
-
-/**
- * Checks and records a read/write lock read unwind done by the writer.
- *
- * This should be coupled with called to
- * RTLockValidatorRecordReadWriteRecursion.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_SEM_LV_WRONG_RELEASE_ORDER if the release order is wrong.  Gone
- *          thru the motions.
- * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
- *
- * @param   pRead               The validator record for the readers.
- * @param   pWrite              The validator record for the writer.
- */
-RTDECL(int) RTLockValidatorUnwindReadWriteRecursion(PRTLOCKVALRECEXCL pWrite, PRTLOCKVALRECSHRD pRead);
-
-/**
- * Record the specified thread as lock owner and increment the write lock count.
- *
- * This function is typically called after acquiring the lock.
- *
- * @returns hThread resolved.  Can return NIL_RTHREAD iff we fail to adopt the
- *          alien thread or if pRec is invalid.
- *
- * @param   pRec                The validator record.
- * @param   hThread             The handle of the calling thread.  If not known,
- *                              pass NIL_RTTHREAD and this method will figure it
- *                              out.
- * @param   pSrcPos             The source position of the lock operation.
- */
-RTDECL(RTTHREAD) RTLockValidatorSetOwner(PRTLOCKVALRECEXCL pRec, RTTHREAD hThread, PCRTLOCKVALSRCPOS pSrcPos);
-
-/**
- * Clear the lock ownership and decrement the write lock count.
- *
- * This is typically called before release the lock.
- *
- * @returns The thread handle of the previous owner.  NIL_RTTHREAD if the record
- *          is invalid or didn't have any owner.
- * @param   pRec                The validator record.
- */
-RTDECL(RTTHREAD) RTLockValidatorUnsetOwner(PRTLOCKVALRECEXCL pRec);
-
-/**
- * Adds an owner to a shared locking record.
- *
- * Takes recursion into account.  This function is typically called after
- * acquiring the lock.
- *
- * @param   pRead               The validator record.
- * @param   hThread             The thread to add.
- * @param   pSrcPos             The source position of the lock operation.
- */
-RTDECL(void) RTLockValidatorAddReadOwner(PRTLOCKVALRECSHRD pRead, RTTHREAD hThread, PCRTLOCKVALSRCPOS pSrcPos);
-
-/**
- * Removes an owner from a shared locking record.
- *
- * Takes recursion into account.  This function is typically called before
- * releaseing the lock.
- *
- * @param   pRead               The validator record.
- * @param   hThread             The thread to to remove.
- */
-RTDECL(void) RTLockValidatorRemoveReadOwner(PRTLOCKVALRECSHRD pRead, RTTHREAD hThread);
+RTDECL(int) RTLockValidatorRecSharedCheckAndRelease(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf);
 
 /**
  * Gets the number of write locks and critical sections the specified

@@ -175,11 +175,6 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
-#ifdef RTSEMMUTEX_STRICT
-    RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
-    RTLockValidatorCheckOrder(&pThis->ValidatorRec, hThreadSelf, pSrcPos);
-#endif
-
     /*
      * Check if nested request.
      */
@@ -187,10 +182,24 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
     if (    pThis->Owner == Self
         &&  pThis->cNesting > 0)
     {
+#ifdef RTSEMMUTEX_STRICT
+        int rc9 = RTLockValidatorRecExclRecursion(&pThis->ValidatorRec, pSrcPos);
+        if (RT_FAILURE(rc9))
+            return rc9;
+#endif
         ASMAtomicIncU32(&pThis->cNesting);
         return VINF_SUCCESS;
     }
-#ifndef RTSEMMUTEX_STRICT
+
+#ifdef RTSEMMUTEX_STRICT
+    RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
+    if (cMillies)
+    {
+        int rc9 = RTLockValidatorRecExclCheckOrder(&pThis->ValidatorRec, hThreadSelf, pSrcPos);
+        if (RT_FAILURE(rc9))
+            return rc9;
+    }
+#else
     RTTHREAD hThreadSelf = RTThreadSelf();
 #endif
 
@@ -230,8 +239,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
             if (pTimeout && ( pTimeout->tv_sec || pTimeout->tv_nsec ))
             {
 #ifdef RTSEMMUTEX_STRICT
-                int rc9 = RTLockValidatorCheckBlocking(&pThis->ValidatorRec, hThreadSelf,
-                                                       RTTHREADSTATE_MUTEX, true, pSrcPos);
+                int rc9 = RTLockValidatorRecExclCheckBlocking(&pThis->ValidatorRec, hThreadSelf, pSrcPos, true);
                 if (RT_FAILURE(rc9))
                     return rc9;
 #endif
@@ -298,7 +306,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
     pThis->Owner = Self;
     ASMAtomicWriteU32(&pThis->cNesting, 1);
 #ifdef RTSEMMUTEX_STRICT
-    RTLockValidatorSetOwner(&pThis->ValidatorRec, hThreadSelf, pSrcPos);
+    RTLockValidatorRecExclSetOwner(&pThis->ValidatorRec, hThreadSelf, pSrcPos, true);
 #endif
     return VINF_SUCCESS;
 }
@@ -353,6 +361,12 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX MutexSem)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
+#ifdef RTSEMMUTEX_STRICT
+    int rc9 = RTLockValidatorRecExclReleaseOwner(&pThis->ValidatorRec, pThis->cNestings != 1);
+    if (RT_FAILURE(rc9))
+        return rc9;
+#endif
+
     /*
      * Check if nested.
      */
@@ -377,9 +391,6 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX MutexSem)
     /*
      * Clear the state. (cNesting == 1)
      */
-#ifdef RTSEMMUTEX_STRICT
-    RTLockValidatorUnsetOwner(&pThis->ValidatorRec);
-#endif
     pThis->Owner = (pthread_t)~0;
     ASMAtomicWriteU32(&pThis->cNesting, 0);
 

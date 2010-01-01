@@ -858,7 +858,7 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 /** Not the lock owner according our records. */
 #define VERR_SEM_LV_NOT_OWNER               (-374)
 /** An illegal lock upgrade was attempted. */
-#define VERR_SEM_LV_UPGRADE                 (-375)
+#define VERR_SEM_LV_ILLEGAL_UPGRADE         (-375)
 /** @} */
 
 
