@@ -1132,7 +1132,8 @@ RTDECL(int) RTLockValidatorRecExclCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD hT
 
 
 RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf,
-                                                PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk)
+                                                PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
+                                                RTTHREADSTATE enmSleepState)
 {
     /*
      * Fend off wild life.
@@ -1148,17 +1149,23 @@ RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD
     AssertReturn(pThreadSelf->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     Assert(pThreadSelf == RTThreadSelf());
 
+    AssertReturn(RTTHREAD_IS_SLEEPING(enmSleepState), VERR_SEM_LV_INVALID_PARAMETER);
+
     RTTHREADSTATE enmThreadState = rtThreadGetState(pThreadSelf);
-    AssertReturn(   enmThreadState == RTTHREADSTATE_RUNNING
-                 || enmThreadState == RTTHREADSTATE_TERMINATED   /* rtThreadRemove uses locks too */
-                 || enmThreadState == RTTHREADSTATE_INITIALIZING /* rtThreadInsert uses locks too */
-                 , VERR_SEM_LV_INVALID_PARAMETER);
+    if (RT_UNLIKELY(enmThreadState != RTTHREADSTATE_RUNNING))
+    {
+        AssertReturn(   enmThreadState == RTTHREADSTATE_TERMINATED   /* rtThreadRemove uses locks too */
+                     || enmThreadState == RTTHREADSTATE_INITIALIZING /* rtThreadInsert uses locks too */
+                     , VERR_SEM_LV_INVALID_PARAMETER);
+        enmSleepState = enmThreadState;
+    }
 
     /*
      * Record the location.
      */
     rtLockValidatorWriteRecUnionPtr(&pThreadSelf->LockValidator.pRec, pRecU);
     rtLockValidatorCopySrcPos(&pThreadSelf->LockValidator.SrcPos, pSrcPos);
+    rtThreadSetState(pThreadSelf, enmSleepState);
 
     /*
      * Don't do deadlock detection if we're recursing.
@@ -1172,25 +1179,32 @@ RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD
             return VINF_SUCCESS;
         rtLockValidatorComplainFirst("Recursion not allowed", pSrcPos, pThreadSelf, pRecU);
         rtLockValidatorComplainPanic();
+        rtThreadSetState(pThreadSelf, enmThreadState);
         return VERR_SEM_LV_NESTED;
     }
 
     /*
      * Perform deadlock detection.
      */
-    if (rtLockValidatorIsSimpleNoDeadlockCase(pRecU))
-        return VINF_SUCCESS;
-    return rtLockValidatorDeadlockDetection(pRecU, pThreadSelf, pSrcPos);
+    int rc = VINF_SUCCESS;
+    if (!rtLockValidatorIsSimpleNoDeadlockCase(pRecU))
+    {
+        rc = rtLockValidatorDeadlockDetection(pRecU, pThreadSelf, pSrcPos);
+        if (RT_FAILURE(rc))
+            rtThreadSetState(pThreadSelf, enmThreadState);
+    }
+    return rc;
 }
 RT_EXPORT_SYMBOL(RTLockValidatorRecExclCheckBlocking);
 
 
 RTDECL(int) RTLockValidatorRecExclCheckOrderAndBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf,
-                                                        PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk)
+                                                        PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
+                                                        RTTHREADSTATE enmSleepState)
 {
     int rc = RTLockValidatorRecExclCheckOrder(pRec, hThreadSelf, pSrcPos);
     if (RT_SUCCESS(rc))
-        rc = RTLockValidatorRecExclCheckBlocking(pRec, hThreadSelf, pSrcPos, fRecursiveOk);
+        rc = RTLockValidatorRecExclCheckBlocking(pRec, hThreadSelf, pSrcPos, fRecursiveOk, enmSleepState);
     return rc;
 }
 RT_EXPORT_SYMBOL(RTLockValidatorRecExclCheckOrderAndBlocking);
@@ -1317,7 +1331,8 @@ RTDECL(int) RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD 
 
 
 RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf,
-                                                  PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk)
+                                                  PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
+                                                  RTTHREADSTATE enmSleepState)
 {
     /*
      * Fend off wild life.
@@ -1333,17 +1348,23 @@ RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHRE
     AssertReturn(pThreadSelf->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     Assert(pThreadSelf == RTThreadSelf());
 
+    AssertReturn(RTTHREAD_IS_SLEEPING(enmSleepState), VERR_SEM_LV_INVALID_PARAMETER);
+
     RTTHREADSTATE enmThreadState = rtThreadGetState(pThreadSelf);
-    AssertReturn(   enmThreadState == RTTHREADSTATE_RUNNING
-                 || enmThreadState == RTTHREADSTATE_TERMINATED   /* rtThreadRemove uses locks too */
-                 || enmThreadState == RTTHREADSTATE_INITIALIZING /* rtThreadInsert uses locks too */
-                 , VERR_SEM_LV_INVALID_PARAMETER);
+    if (RT_UNLIKELY(enmThreadState != RTTHREADSTATE_RUNNING))
+    {
+        AssertReturn(   enmThreadState == RTTHREADSTATE_TERMINATED   /* rtThreadRemove uses locks too */
+                     || enmThreadState == RTTHREADSTATE_INITIALIZING /* rtThreadInsert uses locks too */
+                     , VERR_SEM_LV_INVALID_PARAMETER);
+        enmSleepState = enmThreadState;
+    }
 
     /*
      * Record the location.
      */
     rtLockValidatorWriteRecUnionPtr(&pThreadSelf->LockValidator.pRec, pRecU);
     rtLockValidatorCopySrcPos(&pThreadSelf->LockValidator.SrcPos, pSrcPos);
+    rtThreadSetState(pThreadSelf, enmSleepState);
 
     /*
      * Don't do deadlock detection if we're recursing.
@@ -1355,24 +1376,32 @@ RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHRE
             return VINF_SUCCESS;
         rtLockValidatorComplainFirst("Recursion not allowed", pSrcPos, pThreadSelf, pRecU);
         rtLockValidatorComplainPanic();
+        rtThreadSetState(pThreadSelf, enmThreadState);
         return VERR_SEM_LV_NESTED;
     }
 
     /*
      * Perform deadlock detection.
      */
-    if (rtLockValidatorIsSimpleNoDeadlockCase(pRecU))
-        return VINF_SUCCESS;
-    return rtLockValidatorDeadlockDetection(pRecU, pThreadSelf, pSrcPos);
+    int rc = VINF_SUCCESS;
+    if (!rtLockValidatorIsSimpleNoDeadlockCase(pRecU))
+    {
+        rc = rtLockValidatorDeadlockDetection(pRecU, pThreadSelf, pSrcPos);
+        if (RT_FAILURE(rc))
+            rtThreadSetState(pThreadSelf, enmThreadState);
+    }
+    return rc;
 }
 RT_EXPORT_SYMBOL(RTLockValidatorRecSharedCheckBlocking);
 
 
-RTDECL(int) RTLockValidatorRecSharedCheckOrderAndBlocking(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf, PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk)
+RTDECL(int) RTLockValidatorRecSharedCheckOrderAndBlocking(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf,
+                                                          PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
+                                                          RTTHREADSTATE enmSleepState)
 {
     int rc = RTLockValidatorRecSharedCheckOrder(pRec, hThreadSelf, pSrcPos);
     if (RT_SUCCESS(rc))
-        rc = RTLockValidatorRecSharedCheckBlocking(pRec, hThreadSelf, pSrcPos, fRecursiveOk);
+        rc = RTLockValidatorRecSharedCheckBlocking(pRec, hThreadSelf, pSrcPos, fRecursiveOk, enmSleepState);
     return rc;
 }
 RT_EXPORT_SYMBOL(RTLockValidatorRecSharedCheckOrderAndBlocking);

@@ -239,11 +239,12 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
             if (pTimeout && ( pTimeout->tv_sec || pTimeout->tv_nsec ))
             {
 #ifdef RTSEMMUTEX_STRICT
-                int rc9 = RTLockValidatorRecExclCheckBlocking(&pThis->ValidatorRec, hThreadSelf, pSrcPos, true);
+                int rc9 = RTLockValidatorRecExclCheckBlocking(&pThis->ValidatorRec, hThreadSelf, pSrcPos, true, RTTHREADSTATE_MUTEX);
                 if (RT_FAILURE(rc9))
                     return rc9;
-#endif
+#else
                 RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX);
+#endif
             }
 
             long rc = sys_futex(&pThis->iState, FUTEX_WAIT, 2, pTimeout, NULL, 0);

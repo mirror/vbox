@@ -138,12 +138,13 @@ static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hN
     {
 # ifdef PDMCRITSECT_STRICT
         int rc9 = RTLockValidatorRecExclCheckBlocking(pCritSect->s.Core.pValidatorRec, hThreadSelf, pSrcPos,
-                                                      !(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NO_NESTING));
+                                                      !(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NO_NESTING),
+                                                      RTTHREADSTATE_CRITSECT);
         if (RT_FAILURE(rc9))
             return rc9;
-# endif
-
+# else
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_CRITSECT);
+# endif
         int rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_INDEFINITE_WAIT);
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_CRITSECT);
 

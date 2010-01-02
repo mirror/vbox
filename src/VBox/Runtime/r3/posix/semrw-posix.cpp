@@ -218,13 +218,13 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
     {
 #ifdef RTSEMRW_STRICT
         hThreadSelf = RTThreadSelfAutoAdopt();
-        int rc9 = RTLockValidatorRecSharedCheckOrderAndBlocking(&pThis->ValidatorRead, hThreadSelf, pSrcPos, true);
+        int rc9 = RTLockValidatorRecSharedCheckOrderAndBlocking(&pThis->ValidatorRead, hThreadSelf, pSrcPos, true, RTTHREADSTATE_RW_READ);
         if (RT_FAILURE(rc9))
             return rc9;
 #else
         hThreadSelf = RTThreadSelf();
-#endif
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_READ);
+#endif
     }
 
     if (cMillies == RT_INDEFINITE_WAIT)
@@ -380,13 +380,13 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, PCR
     {
 #ifdef RTSEMRW_STRICT
         hThreadSelf = RTThreadSelfAutoAdopt();
-        int rc9 = RTLockValidatorRecExclCheckOrderAndBlocking(&pThis->ValidatorWrite, hThreadSelf, pSrcPos, true);
+        int rc9 = RTLockValidatorRecExclCheckOrderAndBlocking(&pThis->ValidatorWrite, hThreadSelf, pSrcPos, true, RTTHREADSTATE_RW_WRITE);
         if (RT_FAILURE(rc9))
             return rc9;
 #else
         hThreadSelf = RTThreadSelf();
-#endif
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+#endif
     }
 
     if (cMillies == RT_INDEFINITE_WAIT)

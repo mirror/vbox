@@ -40,21 +40,29 @@
 #include <iprt/semaphore.h>
 #include <iprt/test.h>
 #include <iprt/thread.h>
+#include <iprt/time.h>
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 /** The testcase handle. */
-static RTTEST       g_hTest;
+static RTTEST               g_hTest;
 /** Flip this in the debugger to get some peace to single step wild code. */
-bool volatile       g_fDoNotSpin = false;
+bool volatile               g_fDoNotSpin = false;
 
 static uint32_t             g_cThreads;
 static uint32_t volatile    g_iDeadlockThread;
 static RTTHREAD             g_ahThreads[32];
 static RTCRITSECT           g_aCritSects[32];
 static RTSEMRW              g_ahSemRWs[32];
+
+/** When to stop testing. */
+static uint64_t             g_NanoTSStop;
+/** The number of deadlocks. */
+static uint32_t volatile    g_cDeadlocks;
+/** The number of loops. */
+static uint32_t volatile    g_cLoops;
 
 
 /**
@@ -280,7 +288,48 @@ static DECLCALLBACK(int) test2Thread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
-static void testIt(uint32_t cThreads, uint32_t cPasses, PFNRTTHREAD pfnThread, const char *pszName)
+static DECLCALLBACK(int) test3Thread(RTTHREAD ThreadSelf, void *pvUser)
+{
+    uintptr_t       i     = (uintptr_t)pvUser;
+    RTSEMRW         hMine = g_ahSemRWs[i];
+    RTSEMRW         hNext = g_ahSemRWs[(i + 1) % g_cThreads];
+    int             rc;
+
+    if (i & 1)
+        RTTEST_CHECK_RC_RET(g_hTest, RTSemRWRequestWrite(hMine, RT_INDEFINITE_WAIT), VINF_SUCCESS, rcCheck);
+    else
+        RTTEST_CHECK_RC_RET(g_hTest, RTSemRWRequestRead(hMine, RT_INDEFINITE_WAIT), VINF_SUCCESS, rcCheck);
+    if (testWaitForSemRWToBeOwned(hNext))
+    {
+        do
+        {
+            rc = RTSemRWRequestWrite(hNext, 60*1000);
+            if (rc != VINF_SUCCESS && rc != VERR_SEM_LV_DEADLOCK && rc != VERR_SEM_LV_ILLEGAL_UPGRADE)
+            {
+                RTTestFailed(g_hTest, "#%u: RTSemRWRequestWrite -> %Rrc\n", i, rc);
+                break;
+            }
+            if (RT_SUCCESS(rc))
+            {
+                RTTEST_CHECK_RC(g_hTest, rc = RTSemRWReleaseWrite(hNext), VINF_SUCCESS);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+            else
+                ASMAtomicIncU32(&g_cDeadlocks);
+            ASMAtomicIncU32(&g_cLoops);
+        } while (RTTimeNanoTS() < g_NanoTSStop);
+    }
+    if (i & 1)
+        RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(hMine), VINF_SUCCESS);
+    else
+        RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead(hMine), VINF_SUCCESS);
+    RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+    return VINF_SUCCESS;
+}
+
+
+static void testIt(uint32_t cThreads, uint32_t cPasses, uint64_t cNanoSecs, PFNRTTHREAD pfnThread, const char *pszName)
 {
     RTTestSubF(g_hTest, "%s, %u threads, %u passes", pszName, cThreads, cPasses);
 
@@ -296,15 +345,26 @@ static void testIt(uint32_t cThreads, uint32_t cPasses, PFNRTTHREAD pfnThread, c
         RTTEST_CHECK_RC_RETV(g_hTest, RTSemRWCreate(&g_ahSemRWs[i]), VINF_SUCCESS);
     }
 
-    uint32_t cErrors = RTTestErrorCount(g_hTest);
+    uint32_t cLoops     = 0;
+    uint32_t cDeadlocks = 0;
+    uint32_t cErrors    = RTTestErrorCount(g_hTest);
     for (uint32_t iPass = 0; iPass < cPasses && RTTestErrorCount(g_hTest) == cErrors; iPass++)
     {
 #if 0 /** @todo figure why this ain't working for either of the two tests! */
         g_iDeadlockThread = (cThreads - 1 + iPass) % cThreads;
 #endif
+        g_cLoops = 0;
+        g_cDeadlocks = 0;
+        g_NanoTSStop = cNanoSecs ? RTTimeNanoTS() + cNanoSecs : 0;
+
         int rc = testStartThreads(cThreads, pfnThread);
         if (RT_SUCCESS(rc))
-            testWaitForThreads(30*1000, true);
+            testWaitForThreads(30*1000 + cNanoSecs / 1000000, true);
+
+        RTTEST_CHECK(g_hTest, !cNanoSecs || g_cLoops > 0);
+        cLoops += g_cLoops;
+        RTTEST_CHECK(g_hTest, !cNanoSecs || g_cDeadlocks > 0);
+        cDeadlocks += g_cDeadlocks;
     }
 
     for (uint32_t i = 0; i < cThreads; i++)
@@ -313,18 +373,28 @@ static void testIt(uint32_t cThreads, uint32_t cPasses, PFNRTTHREAD pfnThread, c
         RTTEST_CHECK_RC(g_hTest, RTSemRWDestroy(g_ahSemRWs[i]), VINF_SUCCESS);
     }
     testWaitForThreads(10*1000, false);
+
+    if (cNanoSecs)
+        RTTestPrintf(g_hTest,  RTTESTLVL_ALWAYS, "cLoops=%u cDeadlocks=%u (%u%%)\n",
+                     cLoops, cDeadlocks, cLoops ? cDeadlocks * 100 / cLoops : 0);
 }
 
 
 static void test1(uint32_t cThreads, uint32_t cPasses)
 {
-    testIt(cThreads, cPasses, test1Thread, "critsect");
+    testIt(cThreads, cPasses, 0, test1Thread, "critsect");
 }
 
 
 static void test2(uint32_t cThreads, uint32_t cPasses)
 {
-    testIt(cThreads, cPasses, test2Thread, "read-write");
+    testIt(cThreads, cPasses, 0, test2Thread, "read-write");
+}
+
+
+static void test3(uint32_t cThreads, uint32_t cPasses, uint64_t cNanoSecs)
+{
+    testIt(cThreads, cPasses, cNanoSecs, test3Thread, "read-write race");
 }
 
 
@@ -382,7 +452,7 @@ int main()
      * More thorough testing without noisy output.
      */
     RTLockValidatorSetQuiet(true);
-
+#if 0
     test1( 2, 1024);
     test1( 3, 1024);
     test1( 7,  896);
@@ -397,7 +467,10 @@ int main()
     test2(10,  768);
     test2(15,  512);
     test2(30,  384);
+#endif
 
+    test3( 2,  2,  5*UINT64_C(1000000000));
+    test3(10,  1,  5*UINT64_C(1000000000));
 
     return RTTestSummaryAndDestroy(g_hTest);
 }

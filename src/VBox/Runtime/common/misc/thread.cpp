@@ -196,18 +196,6 @@ void rtThreadTerm(void)
 }
 
 
-/**
- * Sets the thread state.
- *
- * @param   pThread             The thread.
- * @param   enmNewState         The new thread state.
- */
-DECLINLINE(void) rtThreadSetState(PRTTHREADINT pThread, RTTHREADSTATE enmNewState)
-{
-    AssertCompile(sizeof(pThread->enmState) == sizeof(uint32_t));
-    ASMAtomicWriteU32((uint32_t volatile *)&pThread->enmState, enmNewState);
-}
-
 #ifdef IN_RING3
 
 DECLINLINE(void) rtThreadLockRW(void)
