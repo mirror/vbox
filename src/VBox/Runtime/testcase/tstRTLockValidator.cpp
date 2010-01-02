@@ -229,6 +229,8 @@ static DECLCALLBACK(int) test1Thread(RTTHREAD ThreadSelf, void *pvUser)
     PRTCRITSECT     pNext = &g_aCritSects[(i + 1) % g_cThreads];
 
     RTTEST_CHECK_RC_RET(g_hTest, RTCritSectEnter(pMine), VINF_SUCCESS, rcCheck);
+    if (i & 1)
+        RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(pMine), VINF_SUCCESS);
     if (testWaitForCritSectToBeOwned(pNext))
     {
         int rc;
@@ -243,8 +245,10 @@ static DECLCALLBACK(int) test1Thread(RTTHREAD ThreadSelf, void *pvUser)
         RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
         if (RT_SUCCESS(rc))
             RTTEST_CHECK_RC(g_hTest, rc = RTCritSectLeave(pNext), VINF_SUCCESS);
-        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(pMine), VINF_SUCCESS);
     }
+    if (i & 1)
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(pMine), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(pMine), VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
@@ -257,7 +261,11 @@ static DECLCALLBACK(int) test2Thread(RTTHREAD ThreadSelf, void *pvUser)
     int             rc;
 
     if (i & 1)
+    {
         RTTEST_CHECK_RC_RET(g_hTest, RTSemRWRequestWrite(hMine, RT_INDEFINITE_WAIT), VINF_SUCCESS, rcCheck);
+        if ((i & 3) == 3)
+            RTTEST_CHECK_RC(g_hTest, RTSemRWRequestWrite(hMine, RT_INDEFINITE_WAIT), VINF_SUCCESS);
+    }
     else
         RTTEST_CHECK_RC_RET(g_hTest, RTSemRWRequestRead(hMine, RT_INDEFINITE_WAIT), VINF_SUCCESS, rcCheck);
     if (testWaitForSemRWToBeOwned(hNext))
@@ -280,7 +288,11 @@ static DECLCALLBACK(int) test2Thread(RTTHREAD ThreadSelf, void *pvUser)
             RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(hNext), VINF_SUCCESS);
     }
     if (i & 1)
+    {
+        if ((i & 3) == 3)
+            RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(hMine), VINF_SUCCESS);
         RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(hMine), VINF_SUCCESS);
+    }
     else
         RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead(hMine), VINF_SUCCESS);
     RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
