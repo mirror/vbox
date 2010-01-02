@@ -512,7 +512,14 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
      * Check if the state of affairs allows write access.
      */
     RTNATIVETHREAD hNativeSelf = pThis->CritSect.NativeThreadOwner;
-    if (!pThis->cReads && (!pThis->cWrites || pThis->hWriter == hNativeSelf))
+    if (    !pThis->cReads
+        &&  (   (   !pThis->cWrites
+                 && (   !pThis->cWritesWaiting /* play fair if we can wait */
+                     || !cMillies)
+                )
+             || pThis->hWriter == hNativeSelf
+            )
+       )
     {
         /*
          * Reset the reader event semaphore if necessary.
@@ -784,3 +791,23 @@ RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW RWSem)
     return pThis->cWriterReads;
 }
 RT_EXPORT_SYMBOL(RTSemRWGetWriterReadRecursion);
+
+
+RTDECL(uint32_t) RTSemRWGetReadCount(RTSEMRW RWSem)
+{
+    /*
+     * Validate input.
+     */
+    struct RTSEMRWINTERNAL *pThis = RWSem;
+    AssertPtrReturn(pThis, 0);
+    AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
+                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
+                    0);
+
+    /*
+     * Return the requested data.
+     */
+    return pThis->cReads;
+}
+RT_EXPORT_SYMBOL(RTSemRWGetReadCount);
+
