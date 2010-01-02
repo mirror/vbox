@@ -594,6 +594,17 @@ RTDECL(uint32_t) RTSemRWGetWriteRecursion(RTSEMRW RWSem);
  */
 RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW RWSem);
 
+/**
+ * Gets the current number of reads.
+ *
+ * This includes all read recursions, so it might be higher than the number of
+ * read owners.  It does not include reads done by the current writer.
+ *
+ * @returns The read count (0 if bad semaphore handle).
+ * @param   RWSem       The Read/Write semaphore in question.
+ */
+RTDECL(uint32_t) RTSemRWGetReadCount(RTSEMRW RWSem);
+
 /** @} */
 
 
