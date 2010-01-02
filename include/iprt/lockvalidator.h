@@ -636,6 +636,14 @@ RTDECL(void) RTLockValidatorReadLockInc(RTTHREAD Thread);
  */
 RTDECL(void) RTLockValidatorReadLockDec(RTTHREAD Thread);
 
+/**
+ * Query which lock the specified thread is waiting on.
+ *
+ * @returns The lock handle value or NULL.
+ * @param   hThread     The thread in question.
+ */
+RTDECL(void *) RTLockValidatorQueryBlocking(RTTHREAD hThread);
+
 
 
 /*RTDECL(int) RTLockValidatorClassCreate();*/
