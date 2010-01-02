@@ -45,11 +45,16 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+/** The testcase handle. */
 static RTTEST       g_hTest;
+/** Flip this in the debugger to get some peace to single step wild code. */
+bool volatile       g_fDoNotSpin = false;
 
-static uint32_t     g_cThreads;
-static RTTHREAD     g_ahThreads[32];
-static RTCRITSECT   g_aCritSects[32];
+static uint32_t             g_cThreads;
+static uint32_t volatile    g_iDeadlockThread;
+static RTTHREAD             g_ahThreads[32];
+static RTCRITSECT           g_aCritSects[32];
+static RTSEMRW              g_ahSemRWs[32];
 
 
 /**
@@ -65,7 +70,31 @@ static bool testWaitForCritSectToBeOwned(PRTCRITSECT pCritSect)
     {
         if (!RTCritSectIsInitialized(pCritSect))
             return false;
-        RTThreadSleep(iLoop > 256 ? 1 : 0);
+        RTThreadSleep(g_fDoNotSpin ? 3600*1000 : iLoop > 256 ? 1 : 0);
+        iLoop++;
+    }
+    return true;
+}
+
+
+/**
+ * Spin until someone else has taken ownership (any kind) of the read-write
+ * semaphore.
+ *
+ * @returns true on success, false on abort.
+ * @param   hSemRW      The read-write semaphore.
+ */
+static bool testWaitForSemRWToBeOwned(RTSEMRW hSemRW)
+{
+    RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+    unsigned iLoop = 0;
+    for (;;)
+    {
+        if (RTSemRWGetWriteRecursion(hSemRW) > 0)
+            return true;
+        if (RTSemRWGetReadCount(hSemRW) > 0)
+            return true;
+        RTThreadSleep(g_fDoNotSpin ? 3600*1000 : iLoop > 256 ? 1 : 0);
         iLoop++;
     }
     return true;
@@ -76,19 +105,112 @@ static bool testWaitForCritSectToBeOwned(PRTCRITSECT pCritSect)
  * Waits for a thread to enter a sleeping state.
  *
  * @returns true on success, false on abort.
- * @param   hThread     The thread.
+ * @param   hThread             The thread.
+ * @param   enmDesiredState     The desired thread sleep state.
+ * @param   pvLock              The lock it should be sleeping on.
  */
-static bool testWaitForThreadToSleep(RTTHREAD hThread)
+static bool testWaitForThreadToSleep(RTTHREAD hThread, RTTHREADSTATE enmDesiredState, void *pvLock)
 {
+    RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
     for (unsigned iLoop = 0; ; iLoop++)
     {
         RTTHREADSTATE enmState = RTThreadGetState(hThread);
         if (RTTHREAD_IS_SLEEPING(enmState))
-            return true;
-        if (enmState != RTTHREADSTATE_RUNNING)
+        {
+            if (   enmState == enmDesiredState
+                && (   !pvLock
+                    || pvLock == RTLockValidatorQueryBlocking(hThread)))
+                return true;
+        }
+        else if (enmState != RTTHREADSTATE_RUNNING)
             return false;
-        RTThreadSleep(iLoop > 256 ? 1 : 0);
+        RTThreadSleep(g_fDoNotSpin ? 3600*1000 : iLoop > 256 ? 1 : 0);
     }
+}
+
+
+/**
+ * Waits for all the other threads to enter sleeping states.
+ *
+ * @returns VINF_SUCCESS on success, VERR_INTERNAL_ERROR on failure.
+ * @param   enmDesiredState     The desired thread sleep state.
+ * @param   cWaitOn             The distance to the lock they'll be waiting on,
+ *                              the lock type is derived from the desired state.
+ *                              UINT32_MAX means no special lock.
+ */
+static int testWaitForAllOtherThreadsToSleep(RTTHREADSTATE enmDesiredState, uint32_t cWaitOn)
+{
+    RTTHREAD hThreadSelf = RTThreadSelf();
+    for (uint32_t i = 0; i < g_cThreads; i++)
+    {
+        RTTHREAD hThread = g_ahThreads[i];
+        if (    hThread != NIL_RTTHREAD
+            &&  hThread != hThreadSelf)
+        {
+            void *pvLock = NULL;
+            if (cWaitOn != UINT32_MAX)
+            {
+                uint32_t j = (i + cWaitOn) % g_cThreads;
+                switch (enmDesiredState)
+                {
+                    case RTTHREADSTATE_CRITSECT:    pvLock = &g_aCritSects[j]; break;
+                    case RTTHREADSTATE_RW_WRITE:
+                    case RTTHREADSTATE_RW_READ:     pvLock = g_ahSemRWs[j]; break;
+                    default: break;
+                }
+            }
+            bool fRet = testWaitForThreadToSleep(hThread, enmDesiredState, pvLock);
+            if (!fRet)
+                return VERR_INTERNAL_ERROR;
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Worker that starts the threads.
+ *
+ * @returns Same as RTThreadCreate.
+ * @param   cThreads            The number of threads to start.
+ * @param   pfnThread           Thread function.
+ */
+static int testStartThreads(uint32_t cThreads, PFNRTTHREAD pfnThread)
+{
+    uint32_t i;
+    for (i = 0; i < RT_ELEMENTS(g_ahThreads); i++)
+        g_ahThreads[i] = NIL_RTTHREAD;
+
+    for (i = 0; i < cThreads; i++)
+        RTTEST_CHECK_RC_OK_RET(g_hTest,
+                               RTThreadCreateF(&g_ahThreads[i], pfnThread, (void *)(uintptr_t)i, 0,
+                                               RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "thread-%02u", i),
+                               rcCheck);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Worker that waits for the threads to complete.
+ *
+ * @param   cMillies            How long to wait for each.
+ * @param   fStopOnError        Whether to stop on error and heed the thread
+ *                              return status.
+ */
+static void testWaitForThreads(uint32_t cMillies, bool fStopOnError)
+{
+    uint32_t i = RT_ELEMENTS(g_ahThreads);
+    while (i-- > 0)
+        if (g_ahThreads[i] != NIL_RTTHREAD)
+        {
+            int rcThread;
+            int rc2;
+            RTTEST_CHECK_RC_OK(g_hTest, rc2 = RTThreadWait(g_ahThreads[i], cMillies, &rcThread));
+            if (RT_SUCCESS(rc2))
+                g_ahThreads[i] = NIL_RTTHREAD;
+            if (fStopOnError && (RT_FAILURE(rc2) || RT_FAILURE(rcThread)))
+                return;
+        }
 }
 
 
@@ -102,15 +224,15 @@ static DECLCALLBACK(int) test1Thread(RTTHREAD ThreadSelf, void *pvUser)
     if (testWaitForCritSectToBeOwned(pNext))
     {
         int rc;
-        if (i != g_cThreads - 1)
+        if (i != g_iDeadlockThread)
             RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(pNext), VINF_SUCCESS);
         else
         {
-            /* the last thread triggers the deadlock. */
-            for (unsigned i = 0; i < g_cThreads - 1; i++)
-                RTTEST_CHECK_RET(g_hTest, testWaitForThreadToSleep(g_ahThreads[i]), VINF_SUCCESS);
-            RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(pNext), VERR_SEM_LV_DEADLOCK);
+            RTTEST_CHECK_RC_OK(g_hTest, rc = testWaitForAllOtherThreadsToSleep(RTTHREADSTATE_CRITSECT, 1));
+            if (RT_SUCCESS(rc))
+                RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(pNext), VERR_SEM_LV_DEADLOCK);
         }
+        RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
         if (RT_SUCCESS(rc))
             RTTEST_CHECK_RC(g_hTest, rc = RTCritSectLeave(pNext), VINF_SUCCESS);
         RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(pMine), VINF_SUCCESS);
@@ -119,44 +241,92 @@ static DECLCALLBACK(int) test1Thread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
-static void test1(uint32_t cThreads)
+static DECLCALLBACK(int) test2Thread(RTTHREAD ThreadSelf, void *pvUser)
 {
-    uint32_t i;
-    RTTestSubF(g_hTest, "critsect deadlock with %u threads", cThreads);
+    uintptr_t       i     = (uintptr_t)pvUser;
+    RTSEMRW         hMine = g_ahSemRWs[i];
+    RTSEMRW         hNext = g_ahSemRWs[(i + 1) % g_cThreads];
+    int             rc;
+
+    if (i & 1)
+        RTTEST_CHECK_RC_RET(g_hTest, RTSemRWRequestWrite(hMine, RT_INDEFINITE_WAIT), VINF_SUCCESS, rcCheck);
+    else
+        RTTEST_CHECK_RC_RET(g_hTest, RTSemRWRequestRead(hMine, RT_INDEFINITE_WAIT), VINF_SUCCESS, rcCheck);
+    if (testWaitForSemRWToBeOwned(hNext))
+    {
+        if (i != g_iDeadlockThread)
+            RTTEST_CHECK_RC(g_hTest, rc = RTSemRWRequestWrite(hNext, RT_INDEFINITE_WAIT), VINF_SUCCESS);
+        else
+        {
+            RTTEST_CHECK_RC_OK(g_hTest, rc = testWaitForAllOtherThreadsToSleep(RTTHREADSTATE_RW_WRITE, 1));
+            if (RT_SUCCESS(rc))
+            {
+                if (g_cThreads > 1)
+                    RTTEST_CHECK_RC(g_hTest, rc = RTSemRWRequestWrite(hNext, RT_INDEFINITE_WAIT), VERR_SEM_LV_DEADLOCK);
+                else
+                    RTTEST_CHECK_RC(g_hTest, rc = RTSemRWRequestWrite(hNext, RT_INDEFINITE_WAIT), VERR_SEM_LV_ILLEGAL_UPGRADE);
+            }
+        }
+        RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+        if (RT_SUCCESS(rc))
+            RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(hNext), VINF_SUCCESS);
+    }
+    if (i & 1)
+        RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(hMine), VINF_SUCCESS);
+    else
+        RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead(hMine), VINF_SUCCESS);
+    RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+    return VINF_SUCCESS;
+}
+
+
+static void testIt(uint32_t cThreads, uint32_t cPasses, PFNRTTHREAD pfnThread, const char *pszName)
+{
+    RTTestSubF(g_hTest, "%s, %u threads, %u passes", pszName, cThreads, cPasses);
+
     RTTEST_CHECK_RETV(g_hTest, RT_ELEMENTS(g_ahThreads) >= cThreads);
     RTTEST_CHECK_RETV(g_hTest, RT_ELEMENTS(g_aCritSects) >= cThreads);
 
     g_cThreads = cThreads;
-    for (i = 0; i < cThreads; i++)
-        RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInit(&g_aCritSects[i]), VINF_SUCCESS);
+    g_iDeadlockThread = cThreads - 1;
 
-    for (i = 0; i < cThreads && g_ahThreads[i]; i++)
-        g_ahThreads[i] = NIL_RTTHREAD;
-    int rc = VINF_SUCCESS;
-    for (i = 0; i < cThreads && RT_SUCCESS(rc); i++)
-        RTTEST_CHECK_RC_OK(g_hTest, rc = RTThreadCreateF(&g_ahThreads[i], test1Thread, (void *)(uintptr_t)i, 0,
-                                                         RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "test1-%02u", i));
-    if (RT_SUCCESS(rc))
+    for (uint32_t i = 0; i < cThreads; i++)
     {
-        int rc2 = VINF_SUCCESS;
-        i = cThreads;
-        while (i-- > 0 && RT_SUCCESS(rc) && RT_SUCCESS(rc2))
-        {
-            RTTEST_CHECK_RC_OK(g_hTest, rc = RTThreadWait(g_ahThreads[i], 30*1000, &rc2));
-            if (RT_SUCCESS(rc))
-                g_ahThreads[i] = NIL_RTTHREAD;
-        }
+        RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInit(&g_aCritSects[i]), VINF_SUCCESS);
+        RTTEST_CHECK_RC_RETV(g_hTest, RTSemRWCreate(&g_ahSemRWs[i]), VINF_SUCCESS);
+    }
+
+    uint32_t cErrors = RTTestErrorCount(g_hTest);
+    for (uint32_t iPass = 0; iPass < cPasses && RTTestErrorCount(g_hTest) == cErrors; iPass++)
+    {
+#if 0 /** @todo figure why this ain't working for either of the two tests! */
+        g_iDeadlockThread = (cThreads - 1 + iPass) % cThreads;
+#endif
+        int rc = testStartThreads(cThreads, pfnThread);
+        if (RT_SUCCESS(rc))
+            testWaitForThreads(30*1000, true);
     }
 
     for (uint32_t i = 0; i < cThreads; i++)
-        RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectDelete(&g_aCritSects[i]), VINF_SUCCESS);
-    for (uint32_t i = 0; i < cThreads; i++)
-        if (g_ahThreads[i] != NIL_RTTHREAD)
-        {
-            RTTEST_CHECK_RC_OK(g_hTest, rc = RTThreadWait(g_ahThreads[i], 10*1000, NULL));
-            g_ahThreads[i] = NIL_RTTHREAD;
-        }
+    {
+        RTTEST_CHECK_RC(g_hTest, RTCritSectDelete(&g_aCritSects[i]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTSemRWDestroy(g_ahSemRWs[i]), VINF_SUCCESS);
+    }
+    testWaitForThreads(10*1000, false);
 }
+
+
+static void test1(uint32_t cThreads, uint32_t cPasses)
+{
+    testIt(cThreads, cPasses, test1Thread, "critsect");
+}
+
+
+static void test2(uint32_t cThreads, uint32_t cPasses)
+{
+    testIt(cThreads, cPasses, test2Thread, "read-write");
+}
+
 
 static bool testIsLockValidationCompiledIn(void)
 {
@@ -193,15 +363,41 @@ int main()
 
     RTLockValidatorSetEnabled(true);
     RTLockValidatorSetMayPanic(false);
+    RTLockValidatorSetQuiet(true);
     if (!testIsLockValidationCompiledIn())
         return RTTestErrorCount(g_hTest) > 0
             ? RTTestSummaryAndDestroy(g_hTest)
             : RTTestSkipAndDestroy(g_hTest, "deadlock detection is not compiled in");
+    RTLockValidatorSetQuiet(false);
 
-    test1(2);
-    test1(3);
-    test1(15);
-    test1(30);
+    /*
+     * Some initial tests with verbose output.
+     */
+    test1(3, 1);
+
+    test2(1, 1);
+    test2(3, 1);
+
+    /*
+     * More thorough testing without noisy output.
+     */
+    RTLockValidatorSetQuiet(true);
+
+    test1( 2, 1024);
+    test1( 3, 1024);
+    test1( 7,  896);
+    test1(10,  768);
+    test1(15,  512);
+    test1(30,  384);
+
+    test2( 1,  100);
+    test2( 2, 1024);
+    test2( 3, 1024);
+    test2( 7,  896);
+    test2(10,  768);
+    test2(15,  512);
+    test2(30,  384);
+
 
     return RTTestSummaryAndDestroy(g_hTest);
 }
