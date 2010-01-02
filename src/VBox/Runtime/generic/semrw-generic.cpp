@@ -90,6 +90,12 @@ struct RTSEMRWINTERNAL
 };
 
 
+/* No debug wrapping here. */
+#undef RTSemRWRequestRead
+#undef RTSemRWRequestReadNoResume
+#undef RTSemRWRequestWrite
+#undef RTSemRWRequestWriteNoResume
+
 
 RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
 {
@@ -216,10 +222,8 @@ RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
 RT_EXPORT_SYMBOL(RTSemRWDestroy);
 
 
-RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
+DECL_FORCE_INLINE(int) rtSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies, bool fInterruptible, PCRTLOCKVALSRCPOS pSrcPos)
 {
-    PRTLOCKVALSRCPOS        pSrcPos = NULL;
-
     /*
      * Validate handle.
      */
@@ -325,7 +329,11 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
 #else
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_READ);
 #endif
-        int rcWait = rc = RTSemEventMultiWait(pThis->ReadEvent, cMillies);
+        int rcWait;
+        if (fInterruptible)
+            rcWait = rc = RTSemEventMultiWaitNoResume(pThis->ReadEvent, cMillies);
+        else
+            rcWait = rc = RTSemEventMultiWait(pThis->ReadEvent, cMillies);
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_READ);
         if (RT_FAILURE(rc) && rc != VERR_TIMEOUT) /* handle timeout below */
         {
@@ -381,14 +389,46 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
     /* failed */
     return rc;
 }
+
+
+RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
+{
+#ifndef RTSEMRW_STRICT
+    return rtSemRWRequestRead(RWSem, cMillies, false, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    return rtSemRWRequestRead(RWSem, cMillies, false, &SrcPos);
+#endif
+}
 RT_EXPORT_SYMBOL(RTSemRWRequestRead);
+
+
+RTDECL(int) RTSemRWRequestReadDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
+    return rtSemRWRequestRead(RWSem, cMillies, false, &SrcPos);
+}
+RT_EXPORT_SYMBOL(RTSemRWRequestReadDebug);
 
 
 RTDECL(int) RTSemRWRequestReadNoResume(RTSEMRW RWSem, unsigned cMillies)
 {
-    return RTSemRWRequestRead(RWSem, cMillies);
+#ifndef RTSEMRW_STRICT
+    return rtSemRWRequestRead(RWSem, cMillies, true, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    return rtSemRWRequestRead(RWSem, cMillies, true, &SrcPos);
+#endif
 }
 RT_EXPORT_SYMBOL(RTSemRWRequestReadNoResume);
+
+
+RTDECL(int) RTSemRWRequestReadNoResumeDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
+    return rtSemRWRequestRead(RWSem, cMillies, true, &SrcPos);
+}
+RT_EXPORT_SYMBOL(RTSemRWRequestReadNoResumeDebug);
 
 
 RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
@@ -471,10 +511,8 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
 RT_EXPORT_SYMBOL(RTSemRWReleaseRead);
 
 
-RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
+DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, bool fInterruptible, PCRTLOCKVALSRCPOS pSrcPos)
 {
-    PRTLOCKVALSRCPOS        pSrcPos = NULL;
-
     /*
      * Validate handle.
      */
@@ -579,7 +617,11 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 #else
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE);
 #endif
-        int rcWait = rc = RTSemEventWait(pThis->WriteEvent, cMillies);
+        int rcWait;
+        if (fInterruptible)
+            rcWait = rc = RTSemEventWaitNoResume(pThis->WriteEvent, cMillies);
+        else
+            rcWait = rc = RTSemEventWait(pThis->WriteEvent, cMillies);
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
         if (RT_UNLIKELY(RT_FAILURE_NP(rc) && rc != VERR_TIMEOUT)) /* timeouts are handled below */
         {
@@ -650,14 +692,46 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
     }
     return rc;
 }
+
+
+RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
+{
+#ifndef RTSEMRW_STRICT
+    return rtSemRWRequestWrite(RWSem, cMillies, false, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    return rtSemRWRequestWrite(RWSem, cMillies, false, &SrcPos);
+#endif
+}
 RT_EXPORT_SYMBOL(RTSemRWRequestWrite);
+
+
+RTDECL(int) RTSemRWRequestWriteDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
+    return rtSemRWRequestWrite(RWSem, cMillies, false, &SrcPos);
+}
+RT_EXPORT_SYMBOL(RTSemRWRequestWriteDebug);
 
 
 RTDECL(int) RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies)
 {
-    return RTSemRWRequestWrite(RWSem, cMillies);
+#ifndef RTSEMRW_STRICT
+    return rtSemRWRequestWrite(RWSem, cMillies, true, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    return rtSemRWRequestWrite(RWSem, cMillies, true, &SrcPos);
+#endif
 }
 RT_EXPORT_SYMBOL(RTSemRWRequestWriteNoResume);
+
+
+RTDECL(int) RTSemRWRequestWriteNoResumeDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
+    return rtSemRWRequestWrite(RWSem, cMillies, true, &SrcPos);
+}
+RT_EXPORT_SYMBOL(RTSemRWRequestWriteNoResumeDebug);
 
 
 RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)

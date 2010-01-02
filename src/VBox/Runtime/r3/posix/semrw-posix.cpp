@@ -92,6 +92,13 @@ struct RTSEMRWINTERNAL
 };
 
 
+/* No debug wrapping here. */
+#undef RTSemRWRequestRead
+#undef RTSemRWRequestReadNoResume
+#undef RTSemRWRequestWrite
+#undef RTSemRWRequestWriteNoResume
+
+
 RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
 {
     int rc;
@@ -179,10 +186,8 @@ RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
 }
 
 
-RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
+DECL_FORCE_INLINE(int) rtSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies, PCRTLOCKVALSRCPOS pSrcPos)
 {
-    PRTLOCKVALSRCPOS pSrcPos = NULL;
-
     /*
      * Validate input.
      */
@@ -280,10 +285,40 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
 }
 
 
+RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
+{
+#ifndef RTSEMRW_STRICT
+    return rtSemRWRequestRead(RWSem, cMillies, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    return rtSemRWRequestRead(RWSem, cMillies, &SrcPos);
+#endif
+}
+
+
+RTDECL(int) RTSemRWRequestReadDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
+    return rtSemRWRequestRead(RWSem, cMillies, &SrcPos);
+}
+
+
 RTDECL(int) RTSemRWRequestReadNoResume(RTSEMRW RWSem, unsigned cMillies)
 {
     /* EINTR isn't returned by the wait functions we're using. */
-    return RTSemRWRequestRead(RWSem, cMillies);
+#ifndef RTSEMRW_STRICT
+    return rtSemRWRequestRead(RWSem, cMillies, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    return rtSemRWRequestRead(RWSem, cMillies, &SrcPos);
+#endif
+}
+
+
+RTDECL(int) RTSemRWRequestReadNoResumeDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
+    return rtSemRWRequestRead(RWSem, cMillies, &SrcPos);
 }
 
 

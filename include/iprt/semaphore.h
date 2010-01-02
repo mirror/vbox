@@ -492,6 +492,46 @@ RTDECL(int)   RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies);
 RTDECL(int)   RTSemRWRequestReadNoResume(RTSEMRW RWSem, unsigned cMillies);
 
 /**
+ * Debug version of RTSemRWRequestRead that tracks the location.
+ *
+ * @returns iprt status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INTERRUPT if the wait was interrupted.
+ * @retval  VERR_INVALID_HANDLE if RWSem is invalid.
+ *
+ * @param   RWSem       The Read/Write semaphore to request read access to.
+ * @param   cMillies    The number of milliseconds to wait.
+ * @param   uId                 Some kind of locking location ID.  Typically a
+ *                              return address up the stack.  Optional (0).
+ * @param   pszFile             The file where the lock is being acquired from.
+ *                              Optional.
+ * @param   iLine               The line number in that file.  Optional (0).
+ * @param   pszFunction         The functionn where the lock is being acquired
+ *                              from.  Optional.
+ */
+RTDECL(int)   RTSemRWRequestReadDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+
+/**
+ * Debug version of RTSemRWRequestWriteNoResume that tracks the location.
+ *
+ * @returns iprt status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INTERRUPT if the wait was interrupted.
+ * @retval  VERR_INVALID_HANDLE if RWSem is invalid.
+ *
+ * @param   RWSem       The Read/Write semaphore to request read access to.
+ * @param   cMillies    The number of milliseconds to wait.
+ * @param   uId                 Some kind of locking location ID.  Typically a
+ *                              return address up the stack.  Optional (0).
+ * @param   pszFile             The file where the lock is being acquired from.
+ *                              Optional.
+ * @param   iLine               The line number in that file.  Optional (0).
+ * @param   pszFunction         The functionn where the lock is being acquired
+ *                              from.  Optional.
+ */
+RTDECL(int)   RTSemRWRequestReadNoResumeDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+
+/**
  * Release read access to a read/write semaphore.
  *
  * @returns iprt status code.
@@ -604,6 +644,21 @@ RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW RWSem);
  * @param   RWSem       The Read/Write semaphore in question.
  */
 RTDECL(uint32_t) RTSemRWGetReadCount(RTSEMRW RWSem);
+
+/* Strict build: Remap the four request calls to the debug versions. */
+#ifdef RT_STRICT
+# ifdef ___iprt_asm_h
+#  define RTSemRWRequestRead(pCritSect, cMillies)           RTSemRWRequestReadDebug((pCritSect), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define RTSemRWRequestReadNoResume(pCritSect, cMillies)   RTSemRWRequestReadNoResumeDebug((pCritSect), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define RTSemRWRequestWrite(pCritSect, cMillies)          RTSemRWRequestWriteDebug((pCritSect), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define RTSemRWRequestWriteNoResume(pCritSect, cMillies)  RTSemRWRequestWriteNoResumeDebug((pCritSect), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+# else
+#  define RTSemRWRequestRead(pCritSect, cMillies)           RTSemRWRequestReadDebug((pCritSect), (cMillies), 0, RT_SRC_POS)
+#  define RTSemRWRequestReadNoResume(pCritSect, cMillies)   RTSemRWRequestReadNoResumeDebug((pCritSect), (cMillies), 0, RT_SRC_POS)
+#  define RTSemRWRequestWrite(pCritSect, cMillies)          RTSemRWRequestWriteDebug((pCritSect), (cMillies), 0, RT_SRC_POS)
+#  define RTSemRWRequestWriteNoResume(pCritSect, cMillies)  RTSemRWRequestWriteNoResumeDebug((pCritSect), (cMillies), 0, RT_SRC_POS)
+# endif
+#endif
 
 /** @} */
 
