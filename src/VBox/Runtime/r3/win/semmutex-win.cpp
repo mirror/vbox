@@ -158,13 +158,13 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned c
     {
 #ifdef RTSEMMUTEX_STRICT
         hThreadSelf = RTThreadSelfAutoAdopt();
-        int rc9 = RTLockValidatorRecExclCheckOrderAndBlocking(&pThis->ValidatorRec, hThreadSelf, pSrcPos, true);
+        int rc9 = RTLockValidatorRecExclCheckOrderAndBlocking(&pThis->ValidatorRec, hThreadSelf, pSrcPos, true, RTTHREADSTATE_MUTEX);
         if (RT_FAILURE(rc9))
             return rc9;
 #else
         hThreadSelf = RTThreadSelf();
-#endif
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX);
+#endif
     }
     int rc = WaitForSingleObjectEx(pThis->hMtx,
                                    cMillies == RT_INDEFINITE_WAIT ? INFINITE : cMillies,

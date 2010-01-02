@@ -433,9 +433,10 @@ RTDECL(int) RTLockValidatorRecExclUnwindMixed(PRTLOCKVALRECEXCL pRec, PRTLOCKVAL
 RTDECL(int)  RTLockValidatorRecExclCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf, PCRTLOCKVALSRCPOS pSrcPos);
 
 /**
- * Do deadlock detection before blocking on exclusive access to a lock.
+ * Do deadlock detection before blocking on exclusive access to a lock and
+ * change the thread state.
  *
- * @retval  VINF_SUCCESS
+ * @retval  VINF_SUCCESS - thread is in the specified sleep state.
  * @retval  VERR_SEM_LV_DEADLOCK if blocking would deadlock.  Gone thru the
  *          motions.
  * @retval  VERR_SEM_LV_NESTED if the semaphore isn't recursive and hThread is
@@ -449,9 +450,11 @@ RTDECL(int)  RTLockValidatorRecExclCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD h
  * @param   hThreadSelf         The current thread.  Shall not be NIL_RTTHREAD!
  * @param   pSrcPos             The source position of the lock operation.
  * @param   fRecursiveOk        Whether it's ok to recurse.
+ * @param   enmSleepState       The sleep state to enter on successful return.
  */
 RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf,
-                                                PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk);
+                                                PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
+                                                RTTHREADSTATE enmSleepState);
 
 /**
  * RTLockValidatorRecExclCheckOrder and RTLockValidatorRecExclCheckBlocking
@@ -462,9 +465,11 @@ RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD
  * @param   hThreadSelf         The current thread.  Shall not be NIL_RTTHREAD!
  * @param   pSrcPos             The source position of the lock operation.
  * @param   fRecursiveOk        Whether it's ok to recurse.
+ * @param   enmSleepState       The sleep state to enter on successful return.
  */
 RTDECL(int) RTLockValidatorRecExclCheckOrderAndBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf,
-                                                        PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk);
+                                                        PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
+                                                        RTTHREADSTATE enmSleepState);
 
 /**
  * Initialize a lock validator record for a shared lock.
@@ -508,9 +513,10 @@ RTDECL(void) RTLockValidatorRecSharedDelete(PRTLOCKVALRECSHRD pRec);
 RTDECL(int)  RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf, PCRTLOCKVALSRCPOS pSrcPos);
 
 /**
- * Do deadlock detection before blocking on shared access to a lock.
+ * Do deadlock detection before blocking on shared access to a lock and change
+ * the thread state.
  *
- * @retval  VINF_SUCCESS
+ * @retval  VINF_SUCCESS - thread is in the specified sleep state.
  * @retval  VERR_SEM_LV_DEADLOCK if blocking would deadlock.  Gone thru the
  *          motions.
  * @retval  VERR_SEM_LV_NESTED if the semaphore isn't recursive and hThread is
@@ -524,9 +530,11 @@ RTDECL(int)  RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD
  * @param   hThreadSelf         The current thread.  Shall not be NIL_RTTHREAD!
  * @param   pSrcPos             The source position of the lock operation.
  * @param   fRecursiveOk        Whether it's ok to recurse.
+ * @param   enmSleepState       The sleep state to enter on successful return.
  */
 RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf,
-                                                  PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk);
+                                                  PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
+                                                  RTTHREADSTATE enmSleepState);
 
 /**
  * RTLockValidatorRecSharedCheckOrder and RTLockValidatorRecSharedCheckBlocking
@@ -539,7 +547,8 @@ RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHRE
  * @param   fRecursiveOk        Whether it's ok to recurse.
  */
 RTDECL(int) RTLockValidatorRecSharedCheckOrderAndBlocking(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf,
-                                                          PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk);
+                                                          PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
+                                                          RTTHREADSTATE enmSleepState);
 
 /**
  * Adds an owner to a shared locking record.
