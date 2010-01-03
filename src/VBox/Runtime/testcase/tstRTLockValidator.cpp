@@ -56,6 +56,7 @@ static uint32_t             g_iDeadlockThread;
 static RTTHREAD             g_ahThreads[32];
 static RTCRITSECT           g_aCritSects[32];
 static RTSEMRW              g_ahSemRWs[32];
+static RTSEMMUTEX           g_ahSemMtxes[32];
 
 /** When to stop testing. */
 static uint64_t             g_NanoTSStop;
@@ -102,6 +103,24 @@ static bool testWaitForSemRWToBeOwned(RTSEMRW hSemRW)
             return true;
         if (RTSemRWGetReadCount(hSemRW) > 0)
             return true;
+        RTThreadSleep(g_fDoNotSpin ? 3600*1000 : iLoop > 256 ? 1 : 0);
+        iLoop++;
+    }
+    return true;
+}
+
+
+/**
+ * Spin until someone else has taken ownership of the mutex semaphore.
+ *
+ * @returns true on success, false on abort.
+ * @param   hSemMutex   The mutex sempahore.
+ */
+static bool testWaitForSemMutexToBeOwned(RTSEMMUTEX hSemMutex)
+{
+    unsigned iLoop = 0;
+    while (!RTSemMutexIsOwned(hSemMutex))
+    {
         RTThreadSleep(g_fDoNotSpin ? 3600*1000 : iLoop > 256 ? 1 : 0);
         iLoop++;
     }
@@ -168,6 +187,7 @@ static int testWaitForAllOtherThreadsToSleep(RTTHREADSTATE enmDesiredState, uint
                     case RTTHREADSTATE_CRITSECT:    pvLock = &g_aCritSects[j]; break;
                     case RTTHREADSTATE_RW_WRITE:
                     case RTTHREADSTATE_RW_READ:     pvLock = g_ahSemRWs[j]; break;
+                    case RTTHREADSTATE_MUTEX:       pvLock = g_ahSemMtxes[j]; break;
                     default: break;
                 }
             }
@@ -227,6 +247,59 @@ static void testWaitForThreads(uint32_t cMillies, bool fStopOnError)
 }
 
 
+static void testIt(uint32_t cThreads, uint32_t cPasses, uint32_t cSecs, PFNRTTHREAD pfnThread, const char *pszName)
+{
+    if (cSecs)
+        RTTestSubF(g_hTest, "%s, %u threads, %u secs", pszName, cThreads, cSecs * cPasses);
+    else
+        RTTestSubF(g_hTest, "%s, %u threads, %u passes", pszName, cThreads, cPasses);
+
+    RTTEST_CHECK_RETV(g_hTest, RT_ELEMENTS(g_ahThreads) >= cThreads);
+    RTTEST_CHECK_RETV(g_hTest, RT_ELEMENTS(g_aCritSects) >= cThreads);
+
+    g_cThreads = cThreads;
+
+    for (uint32_t i = 0; i < cThreads; i++)
+    {
+        RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInit(&g_aCritSects[i]), VINF_SUCCESS);
+        RTTEST_CHECK_RC_RETV(g_hTest, RTSemRWCreate(&g_ahSemRWs[i]), VINF_SUCCESS);
+        RTTEST_CHECK_RC_RETV(g_hTest, RTSemMutexCreate(&g_ahSemMtxes[i]), VINF_SUCCESS);
+    }
+
+    uint32_t cLoops     = 0;
+    uint32_t cDeadlocks = 0;
+    uint32_t cErrors    = RTTestErrorCount(g_hTest);
+    for (uint32_t iPass = 0; iPass < cPasses && RTTestErrorCount(g_hTest) == cErrors; iPass++)
+    {
+        g_iDeadlockThread = (cThreads - 1 + iPass) % cThreads;
+        g_cLoops          = 0;
+        g_cDeadlocks      = 0;
+        g_NanoTSStop      = cSecs ? RTTimeNanoTS() + cSecs * UINT64_C(1000000000) : 0;
+
+        int rc = testStartThreads(cThreads, pfnThread);
+        if (RT_SUCCESS(rc))
+            testWaitForThreads(30*1000 + cSecs*1000, true);
+
+        RTTEST_CHECK(g_hTest, !cSecs || g_cLoops > 0);
+        cLoops += g_cLoops;
+        RTTEST_CHECK(g_hTest, !cSecs || g_cDeadlocks > 0);
+        cDeadlocks += g_cDeadlocks;
+    }
+
+    for (uint32_t i = 0; i < cThreads; i++)
+    {
+        RTTEST_CHECK_RC(g_hTest, RTCritSectDelete(&g_aCritSects[i]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTSemRWDestroy(g_ahSemRWs[i]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTSemMutexDestroy(g_ahSemMtxes[i]), VINF_SUCCESS);
+    }
+    testWaitForThreads(10*1000, false);
+
+    if (cSecs)
+        RTTestPrintf(g_hTest,  RTTESTLVL_ALWAYS, "cLoops=%u cDeadlocks=%u (%u%%)\n",
+                     cLoops, cDeadlocks, cLoops ? cDeadlocks * 100 / cLoops : 0);
+}
+
+
 static DECLCALLBACK(int) test1Thread(RTTHREAD ThreadSelf, void *pvUser)
 {
     uintptr_t       i     = (uintptr_t)pvUser;
@@ -255,6 +328,12 @@ static DECLCALLBACK(int) test1Thread(RTTHREAD ThreadSelf, void *pvUser)
         RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(pMine), VINF_SUCCESS);
     RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(pMine), VINF_SUCCESS);
     return VINF_SUCCESS;
+}
+
+
+static void test1(uint32_t cThreads, uint32_t cPasses)
+{
+    testIt(cThreads, cPasses, 0, test1Thread, "critsect");
 }
 
 
@@ -305,6 +384,12 @@ static DECLCALLBACK(int) test2Thread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
+static void test2(uint32_t cThreads, uint32_t cPasses)
+{
+    testIt(cThreads, cPasses, 0, test2Thread, "read-write");
+}
+
+
 static DECLCALLBACK(int) test3Thread(RTTHREAD ThreadSelf, void *pvUser)
 {
     uintptr_t       i     = (uintptr_t)pvUser;
@@ -343,6 +428,12 @@ static DECLCALLBACK(int) test3Thread(RTTHREAD ThreadSelf, void *pvUser)
         RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead(hMine), VINF_SUCCESS);
     RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
     return VINF_SUCCESS;
+}
+
+
+static void test3(uint32_t cThreads, uint32_t cPasses, uint32_t cSecs)
+{
+    testIt(cThreads, cPasses, cSecs, test3Thread, "read-write race");
 }
 
 
@@ -396,78 +487,46 @@ static DECLCALLBACK(int) test4Thread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
-static void testIt(uint32_t cThreads, uint32_t cPasses, uint32_t cSecs, PFNRTTHREAD pfnThread, const char *pszName)
-{
-    if (cSecs)
-        RTTestSubF(g_hTest, "%s, %u threads, %u secs", pszName, cThreads, cSecs * cPasses);
-    else
-        RTTestSubF(g_hTest, "%s, %u threads, %u passes", pszName, cThreads, cPasses);
-
-    RTTEST_CHECK_RETV(g_hTest, RT_ELEMENTS(g_ahThreads) >= cThreads);
-    RTTEST_CHECK_RETV(g_hTest, RT_ELEMENTS(g_aCritSects) >= cThreads);
-
-    g_cThreads = cThreads;
-
-    for (uint32_t i = 0; i < cThreads; i++)
-    {
-        RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInit(&g_aCritSects[i]), VINF_SUCCESS);
-        RTTEST_CHECK_RC_RETV(g_hTest, RTSemRWCreate(&g_ahSemRWs[i]), VINF_SUCCESS);
-    }
-
-    uint32_t cLoops     = 0;
-    uint32_t cDeadlocks = 0;
-    uint32_t cErrors    = RTTestErrorCount(g_hTest);
-    for (uint32_t iPass = 0; iPass < cPasses && RTTestErrorCount(g_hTest) == cErrors; iPass++)
-    {
-        g_iDeadlockThread = (cThreads - 1 + iPass) % cThreads;
-        g_cLoops          = 0;
-        g_cDeadlocks      = 0;
-        g_NanoTSStop      = cSecs ? RTTimeNanoTS() + cSecs * UINT64_C(1000000000) : 0;
-
-        int rc = testStartThreads(cThreads, pfnThread);
-        if (RT_SUCCESS(rc))
-            testWaitForThreads(30*1000 + cSecs*1000, true);
-
-        RTTEST_CHECK(g_hTest, !cSecs || g_cLoops > 0);
-        cLoops += g_cLoops;
-        RTTEST_CHECK(g_hTest, !cSecs || g_cDeadlocks > 0);
-        cDeadlocks += g_cDeadlocks;
-    }
-
-    for (uint32_t i = 0; i < cThreads; i++)
-    {
-        RTTEST_CHECK_RC(g_hTest, RTCritSectDelete(&g_aCritSects[i]), VINF_SUCCESS);
-        RTTEST_CHECK_RC(g_hTest, RTSemRWDestroy(g_ahSemRWs[i]), VINF_SUCCESS);
-    }
-    testWaitForThreads(10*1000, false);
-
-    if (cSecs)
-        RTTestPrintf(g_hTest,  RTTESTLVL_ALWAYS, "cLoops=%u cDeadlocks=%u (%u%%)\n",
-                     cLoops, cDeadlocks, cLoops ? cDeadlocks * 100 / cLoops : 0);
-}
-
-
-static void test1(uint32_t cThreads, uint32_t cPasses)
-{
-    testIt(cThreads, cPasses, 0, test1Thread, "critsect");
-}
-
-
-static void test2(uint32_t cThreads, uint32_t cPasses)
-{
-    testIt(cThreads, cPasses, 0, test2Thread, "read-write");
-}
-
-
-static void test3(uint32_t cThreads, uint32_t cPasses, uint32_t cSecs)
-{
-    testIt(cThreads, cPasses, cSecs, test3Thread, "read-write race");
-}
-
-
 static void test4(uint32_t cThreads, uint32_t cPasses, uint32_t cSecs)
 {
     testIt(cThreads, cPasses, cSecs, test4Thread, "read-write race v2");
+}
+
+
+static DECLCALLBACK(int) test5Thread(RTTHREAD ThreadSelf, void *pvUser)
+{
+    uintptr_t       i     = (uintptr_t)pvUser;
+    RTSEMMUTEX      hMine = g_ahSemMtxes[i];
+    RTSEMMUTEX      hNext = g_ahSemMtxes[(i + 1) % g_cThreads];
+
+    RTTEST_CHECK_RC_RET(g_hTest, RTSemMutexRequest(hMine, RT_INDEFINITE_WAIT), VINF_SUCCESS, rcCheck);
+    if (i & 1)
+        RTTEST_CHECK_RC(g_hTest, RTSemMutexRequest(hMine, RT_INDEFINITE_WAIT), VINF_SUCCESS);
+    if (testWaitForSemMutexToBeOwned(hNext))
+    {
+        int rc;
+        if (i != g_iDeadlockThread)
+            RTTEST_CHECK_RC(g_hTest, rc = RTSemMutexRequest(hNext, RT_INDEFINITE_WAIT), VINF_SUCCESS);
+        else
+        {
+            RTTEST_CHECK_RC_OK(g_hTest, rc = testWaitForAllOtherThreadsToSleep(RTTHREADSTATE_MUTEX, 1));
+            if (RT_SUCCESS(rc))
+                RTTEST_CHECK_RC(g_hTest, rc = RTSemMutexRequest(hNext, RT_INDEFINITE_WAIT), VERR_SEM_LV_DEADLOCK);
+        }
+        RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+        if (RT_SUCCESS(rc))
+            RTTEST_CHECK_RC(g_hTest, rc = RTSemMutexRelease(hNext), VINF_SUCCESS);
+    }
+    if (i & 1)
+        RTTEST_CHECK_RC(g_hTest, RTSemMutexRelease(hMine), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRelease(hMine), VINF_SUCCESS);
+    return VINF_SUCCESS;
+}
+
+
+static void test5(uint32_t cThreads, uint32_t cPasses)
+{
+    testIt(cThreads, cPasses, 0, test5Thread, "mutex");
 }
 
 
@@ -517,15 +576,18 @@ int main()
     /*
      * Some initial tests with verbose output.
      */
+#if 0
     test1(3, 1);
     test2(1, 1);
     test2(3, 1);
+#endif
+    test5(3, 1);
 
     /*
      * More thorough testing without noisy output.
      */
     RTLockValidatorSetQuiet(true);
-
+#if 0
     test1( 2, 256);                     /* 256 * 4ms = 1s (approx); 4ms == fudge factor */
     test1( 3, 256);
     test1( 7, 256);
@@ -548,6 +610,14 @@ int main()
     test4( 6,  1,  2);
     test4(10,  1, 10);
     test4(30,  1, 10);
+#endif
+
+    test5( 2, 256);
+    test5( 3, 256);
+    test5( 7, 256);
+    test5(10, 256);
+    test5(15, 256);
+    test5(30, 256);
 
     return RTTestSummaryAndDestroy(g_hTest);
 }
