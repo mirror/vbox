@@ -64,10 +64,12 @@ typedef struct RTLOCKVALPERTHREAD
     int32_t volatile                cWriteLocks;
     /** Number of registered read locks that this thread owns, nesting included. */
     int32_t volatile                cReadLocks;
+    /** The thread is running inside the lock validator. */
+    bool volatile                   fInValidator;
+    /** Reserved for alignment purposes. */
+    bool                            afReserved[3];
     /** Bitmap indicating which entires are free (set) and allocated (clear). */
     uint32_t                        bmFreeShrdOwners;
-    /** Reserved for alignment purposes. */
-    uint32_t                        u32Reserved;
     /** Statically allocated shared owner records */
     RTLOCKVALRECSHRDOWN             aShrdOwners[32];
 } RTLOCKVALPERTHREAD;
