@@ -352,8 +352,8 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutex)
      * Validate.
      */
     RTSEMMUTEXINTERNAL *pThis = hMutex;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pThis, false);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, false);
 
     return pThis->Owner != (pthread_t)-1;
 }
