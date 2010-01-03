@@ -1173,7 +1173,7 @@ RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD
      * Don't do deadlock detection if we're recursing.
      *
      * On some hosts we don't do recursion accounting our selves and there
-     * isn't any other place to check for this.  semmutex-win.cpp for instance.
+     * isn't any other place to check for this.
      */
     int rc = VINF_SUCCESS;
     if (rtLockValidatorReadThreadHandle(&pRecU->Excl.hThread) == pThreadSelf)
