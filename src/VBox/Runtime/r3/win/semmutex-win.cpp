@@ -38,8 +38,8 @@
 #include <iprt/semaphore.h>
 #include "internal/iprt.h"
 
-#include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/lockvalidator.h>
 #include <iprt/mem.h>
@@ -161,7 +161,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned c
      */
     RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
     RTNATIVETHREAD hNativeOwner;
-    ASMAtomicReadHandle(&pThis->hNativeOwner, hNativeOwner);
+    ASMAtomicReadHandle(&pThis->hNativeOwner, &hNativeOwner);
     if (hNativeOwner == hNativeSelf)
     {
 #ifdef RTSEMMUTEX_STRICT
@@ -252,7 +252,7 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX MutexSem)
      */
     RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
     RTNATIVETHREAD hNativeOwner;
-    ASMAtomicReadHandle(&pThis->hNativeOwner, hNativeOwner);
+    ASMAtomicReadHandle(&pThis->hNativeOwner, &hNativeOwner);
     if (RT_UNLIKELY(hNativeOwner != hNativeSelf))
     {
         AssertMsgFailed(("Not owner of mutex %p!! hNativeSelf=%RTntrd Owner=%RTntrd cRecursions=%d\n",
@@ -300,7 +300,7 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutex)
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
     RTNATIVETHREAD hNativeOwner;
-    ASMAtomicReadHandle(&pThis->hNativeOwner, hNativeOwner);
+    ASMAtomicReadHandle(&pThis->hNativeOwner, &hNativeOwner);
     return hNativeOwner == NIL_RTNATIVETHREAD;
 }
 
