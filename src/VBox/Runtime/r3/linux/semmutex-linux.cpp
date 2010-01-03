@@ -408,3 +408,16 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX MutexSem)
     return VINF_SUCCESS;
 }
 
+
+RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutex)
+{
+    /*
+     * Validate.
+     */
+    RTSEMMUTEXINTERNAL *pThis = hMutex;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
+
+    return pThis->Owner != (pthread_t)~0;
+}
+

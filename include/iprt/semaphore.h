@@ -281,6 +281,14 @@ RTDECL(int)  RTSemMutexRequestNoResumeDebug(RTSEMMUTEX MutexSem, unsigned cMilli
  */
 RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem);
 
+/**
+ * Checks if the mutex semaphore is owned or not.
+ *
+ * @returns true if owned, false if not.
+ * @param   hMutex              The mutex semaphore.
+ */
+RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutex);
+
 /* Strict build: Remap the two request calls to the debug versions. */
 #ifdef RT_STRICT
 # ifdef ___iprt_asm_h

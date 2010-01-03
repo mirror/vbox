@@ -330,7 +330,7 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
      * Clear the state. (cNesting == 1)
      */
     pThis->Owner = (pthread_t)-1;
-    ASMAtomicXchgU32(&pThis->cNesting, 0);
+    ASMAtomicWriteU32(&pThis->cNesting, 0);
 
     /*
      * Unlock mutex semaphore.
@@ -343,5 +343,18 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     }
 
     return VINF_SUCCESS;
+}
+
+
+RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutex)
+{
+    /*
+     * Validate.
+     */
+    RTSEMMUTEXINTERNAL *pThis = hMutex;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
+
+    return pThis->Owner != (pthread_t)-1;
 }
 

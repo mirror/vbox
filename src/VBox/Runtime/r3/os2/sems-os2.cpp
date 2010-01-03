@@ -278,4 +278,20 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
 }
 
 
+RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutex);
+{
+    /*
+     * Unlock mutex semaphore.
+     */
+    PID     pid;
+    TID     tid;
+    ULONG   cRecursions;
+    int rc = DosQueryMutexSem(SEM2HND(MutexSem), &pid, &tid, &cRecursions);
+    if (!rc)
+        return cRecursions != 0;
+    AssertMsgFailed(("DosQueryMutexSem %p failed, rc=%d\n", MutexSem, rc));
+    return rc == ERROR_SEM_OWNER_DIED;
+}
+
+
 

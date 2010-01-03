@@ -55,12 +55,16 @@
 struct RTSEMMUTEXINTERNAL
 {
     /** Magic value (RTSEMMUTEX_MAGIC). */
-    uint32_t            u32Magic;
+    uint32_t                u32Magic;
+    /** Recursion count. */
+    uint32_t volatile       cRecursions;
+    /** The owner thread. */
+    RTNATIVETHREAD volatile hNativeOwner;
     /** The mutex handle. */
-    HANDLE              hMtx;
+    HANDLE                  hMtx;
 #ifdef RTSEMMUTEX_STRICT
     /** Lock validator record associated with this mutex. */
-    RTLOCKVALRECEXCL    ValidatorRec;
+    RTLOCKVALRECEXCL        ValidatorRec;
 #endif
 };
 
@@ -83,8 +87,10 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
         RTSEMMUTEXINTERNAL *pThis = (RTSEMMUTEXINTERNAL *)RTMemAlloc(sizeof(*pThis));
         if (pThis)
         {
-            pThis->u32Magic = RTSEMMUTEX_MAGIC;
-            pThis->hMtx = hMtx;
+            pThis->u32Magic     = RTSEMMUTEX_MAGIC;
+            pThis->hMtx         = hMtx;
+            pThis->hNativeOwner = NIL_RTNATIVETHREAD;
+            pThis->cRecursions  = 0;
 #ifdef RTSEMMUTEX_STRICT
             RTLockValidatorRecExclInit(&pThis->ValidatorRec,  NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, "RTSemMutex", pThis);
 #endif
@@ -151,9 +157,26 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned c
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
     /*
+     * Check for recursive entry.
+     */
+    RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
+    RTNATIVETHREAD hNativeOwner;
+    ASMAtomicReadHandle(&pThis->hNativeOwner, hNativeOwner);
+    if (hNativeOwner == hNativeSelf)
+    {
+#ifdef RTSEMMUTEX_STRICT
+        int rc9 = RTLockValidatorRecExclRecursion(&pThis->ValidatorRec, pSrcPos);
+        if (RT_FAILURE(rc9))
+            return rc9;
+#endif
+        ASMAtomicIncU32(&pThis->cRecursions);
+        return VINF_SUCCESS;
+    }
+
+    /*
      * Lock mutex semaphore.
      */
-    RTTHREAD hThreadSelf = NIL_RTTHREAD;
+    RTTHREAD        hThreadSelf = NIL_RTTHREAD;
     if (cMillies > 0)
     {
 #ifdef RTSEMMUTEX_STRICT
@@ -174,9 +197,10 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned c
     {
         case WAIT_OBJECT_0:
 #ifdef RTSEMMUTEX_STRICT
-            RTLockValidatorRecExclSetOwner(&pThis->ValidatorRec, hThreadSelf, pSrcPos, false /* we don't know */);
+            RTLockValidatorRecExclSetOwner(&pThis->ValidatorRec, hThreadSelf, pSrcPos, true);
 #endif
-/** @todo record who owns this thing and avoid kernel calls during recursion. */
+            ASMAtomicWriteHandle(&pThis->hNativeOwner, hNativeSelf);
+            ASMAtomicWriteU32(&pThis->cRecursions, 1);
             return VINF_SUCCESS;
 
         case WAIT_TIMEOUT:          return VERR_TIMEOUT;
@@ -223,19 +247,60 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX MutexSem)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
+    /*
+     * Check ownership and recursions.
+     */
+    RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
+    RTNATIVETHREAD hNativeOwner;
+    ASMAtomicReadHandle(&pThis->hNativeOwner, hNativeOwner);
+    if (RT_UNLIKELY(hNativeOwner != hNativeSelf))
+    {
+        AssertMsgFailed(("Not owner of mutex %p!! hNativeSelf=%RTntrd Owner=%RTntrd cRecursions=%d\n",
+                         pThis, hNativeSelf, hNativeOwner, pThis->cRecursions));
+        return VERR_NOT_OWNER;
+    }
+    if (pThis->cRecursions > 1)
+    {
+#ifdef RTSEMMUTEX_STRICT
+        int rc9 = RTLockValidatorRecExclUnwind(&pThis->ValidatorRec);
+        if (RT_FAILURE(rc9))
+            return rc9;
+#endif
+        ASMAtomicDecU32(&pThis->cRecursions);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Unlock mutex semaphore.
+     */
 #ifdef RTSEMMUTEX_STRICT
     int rc9 = RTLockValidatorRecExclReleaseOwner(&pThis->ValidatorRec, false);
     if (RT_FAILURE(rc9))
         return rc9;
 #endif
+    ASMAtomicWriteU32(&pThis->cRecursions, 0);
+    ASMAtomicWriteHandle(&pThis->hNativeOwner, NIL_RTNATIVETHREAD);
 
-    /*
-     * Unlock mutex semaphore.
-     */
     if (ReleaseMutex(pThis->hMtx))
         return VINF_SUCCESS;
+
     int rc = RTErrConvertFromWin32(GetLastError());
     AssertMsgFailed(("%p/%p, rc=%Rrc lasterr=%d\n", pThis, pThis->hMtx, rc, GetLastError()));
     return rc;
+}
+
+
+RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutex)
+{
+    /*
+     * Validate.
+     */
+    RTSEMMUTEXINTERNAL *pThis = hMutex;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
+
+    RTNATIVETHREAD hNativeOwner;
+    ASMAtomicReadHandle(&pThis->hNativeOwner, hNativeOwner);
+    return hNativeOwner == NIL_RTNATIVETHREAD;
 }
 
