@@ -52,7 +52,7 @@ static RTTEST               g_hTest;
 bool volatile               g_fDoNotSpin = false;
 
 static uint32_t             g_cThreads;
-static uint32_t volatile    g_iDeadlockThread;
+static uint32_t             g_iDeadlockThread;
 static RTTHREAD             g_ahThreads[32];
 static RTCRITSECT           g_aCritSects[32];
 static RTSEMRW              g_ahSemRWs[32];
@@ -127,10 +127,14 @@ static bool testWaitForThreadToSleep(RTTHREAD hThread, RTTHREADSTATE enmDesiredS
         {
             if (   enmState == enmDesiredState
                 && (   !pvLock
-                    || pvLock == RTLockValidatorQueryBlocking(hThread)))
+                    || (   pvLock == RTLockValidatorQueryBlocking(hThread)
+                        && !RTLockValidatorIsBlockedThreadInValidator(hThread) )
+                   )
+               )
                 return true;
         }
-        else if (enmState != RTTHREADSTATE_RUNNING)
+        else if (   enmState != RTTHREADSTATE_RUNNING
+                 && enmState != RTTHREADSTATE_INITIALIZING)
             return false;
         RTThreadSleep(g_fDoNotSpin ? 3600*1000 : iLoop > 256 ? 1 : 0);
     }
@@ -172,6 +176,7 @@ static int testWaitForAllOtherThreadsToSleep(RTTHREADSTATE enmDesiredState, uint
                 return VERR_INTERNAL_ERROR;
         }
     }
+    RTThreadSleep(4);                   /* fudge factor */
     return VINF_SUCCESS;
 }
 
@@ -415,9 +420,7 @@ static void testIt(uint32_t cThreads, uint32_t cPasses, uint32_t cSecs, PFNRTTHR
     uint32_t cErrors    = RTTestErrorCount(g_hTest);
     for (uint32_t iPass = 0; iPass < cPasses && RTTestErrorCount(g_hTest) == cErrors; iPass++)
     {
-#if 0 /** @todo figure why this ain't working for either of the two tests! */
         g_iDeadlockThread = (cThreads - 1 + iPass) % cThreads;
-#endif
         g_cLoops = 0;
         g_cDeadlocks = 0;
         g_NanoTSStop = cSecs ? RTTimeNanoTS() + cSecs * UINT64_C(1000000000) : 0;
@@ -492,6 +495,7 @@ static bool testIsLockValidationCompiledIn(void)
     return fRet;
 }
 
+
 int main()
 {
     /*
@@ -515,7 +519,6 @@ int main()
      * Some initial tests with verbose output.
      */
     test1(3, 1);
-
     test2(1, 1);
     test2(3, 1);
 
@@ -524,20 +527,20 @@ int main()
      */
     RTLockValidatorSetQuiet(true);
 
-    test1( 2, 1024);
-    test1( 3, 1024);
-    test1( 7,  896);
-    test1(10,  768);
-    test1(15,  512);
-    test1(30,  384);
+    test1( 2, 256);                     /* 256 * 4ms = 1s (approx); 4ms == fudge factor */
+    test1( 3, 256);
+    test1( 7, 256);
+    test1(10, 256);
+    test1(15, 256);
+    test1(30, 256);
 
-    test2( 1,  100);
-    test2( 2, 1024);
-    test2( 3, 1024);
-    test2( 7,  896);
-    test2(10,  768);
-    test2(15,  512);
-    test2(30,  384);
+    test2( 1, 256);
+    test2( 2, 256);
+    test2( 3, 256);
+    test2( 7, 256);
+    test2(10, 256);
+    test2(15, 256);
+    test2(30, 256);
 
     test3( 2,  1,  2);
     test3(10,  1,  2);

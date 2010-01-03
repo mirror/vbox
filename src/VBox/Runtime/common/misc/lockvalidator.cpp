@@ -411,6 +411,7 @@ DECLHIDDEN(void) rtLockValidatorInitPerThread(RTLOCKVALPERTHREAD *pPerThread)
     Assert(pPerThread->pRec == NULL);
     Assert(pPerThread->cWriteLocks == 0);
     Assert(pPerThread->cReadLocks == 0);
+    Assert(pPerThread->fInValidator == false);
 }
 
 
@@ -1165,6 +1166,7 @@ RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD
      */
     rtLockValidatorWriteRecUnionPtr(&pThreadSelf->LockValidator.pRec, pRecU);
     rtLockValidatorCopySrcPos(&pThreadSelf->LockValidator.SrcPos, pSrcPos);
+    ASMAtomicWriteBool(&pThreadSelf->LockValidator.fInValidator, true);
     rtThreadSetState(pThreadSelf, enmSleepState);
 
     /*
@@ -1173,26 +1175,25 @@ RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD
      * On some hosts we don't do recursion accounting our selves and there
      * isn't any other place to check for this.  semmutex-win.cpp for instance.
      */
+    int rc = VINF_SUCCESS;
     if (rtLockValidatorReadThreadHandle(&pRecU->Excl.hThread) == pThreadSelf)
     {
-        if (fRecursiveOk)
-            return VINF_SUCCESS;
-        rtLockValidatorComplainFirst("Recursion not allowed", pSrcPos, pThreadSelf, pRecU);
-        rtLockValidatorComplainPanic();
-        rtThreadSetState(pThreadSelf, enmThreadState);
-        return VERR_SEM_LV_NESTED;
+        if (!fRecursiveOk)
+        {
+            rtLockValidatorComplainFirst("Recursion not allowed", pSrcPos, pThreadSelf, pRecU);
+            rtLockValidatorComplainPanic();
+            rc = VERR_SEM_LV_NESTED;
+        }
     }
-
     /*
      * Perform deadlock detection.
      */
-    int rc = VINF_SUCCESS;
-    if (!rtLockValidatorIsSimpleNoDeadlockCase(pRecU))
-    {
+    else if (!rtLockValidatorIsSimpleNoDeadlockCase(pRecU))
         rc = rtLockValidatorDeadlockDetection(pRecU, pThreadSelf, pSrcPos);
-        if (RT_FAILURE(rc))
-            rtThreadSetState(pThreadSelf, enmThreadState);
-    }
+
+    if (RT_FAILURE(rc))
+        rtThreadSetState(pThreadSelf, enmThreadState);
+    ASMAtomicWriteBool(&pThreadSelf->LockValidator.fInValidator, false);
     return rc;
 }
 RT_EXPORT_SYMBOL(RTLockValidatorRecExclCheckBlocking);
@@ -1364,32 +1365,32 @@ RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHRE
      */
     rtLockValidatorWriteRecUnionPtr(&pThreadSelf->LockValidator.pRec, pRecU);
     rtLockValidatorCopySrcPos(&pThreadSelf->LockValidator.SrcPos, pSrcPos);
+    ASMAtomicWriteBool(&pThreadSelf->LockValidator.fInValidator, true);
     rtThreadSetState(pThreadSelf, enmSleepState);
 
     /*
      * Don't do deadlock detection if we're recursing.
      */
+    int rc = VINF_SUCCESS;
     PRTLOCKVALRECSHRDOWN pEntry = rtLockValidatorRecSharedFindOwner(&pRecU->Shared, pThreadSelf, NULL);
     if (pEntry)
     {
-        if (fRecursiveOk)
-            return VINF_SUCCESS;
-        rtLockValidatorComplainFirst("Recursion not allowed", pSrcPos, pThreadSelf, pRecU);
-        rtLockValidatorComplainPanic();
-        rtThreadSetState(pThreadSelf, enmThreadState);
-        return VERR_SEM_LV_NESTED;
+        if (!fRecursiveOk)
+        {
+            rtLockValidatorComplainFirst("Recursion not allowed", pSrcPos, pThreadSelf, pRecU);
+            rtLockValidatorComplainPanic();
+            rc =  VERR_SEM_LV_NESTED;
+        }
     }
-
     /*
      * Perform deadlock detection.
      */
-    int rc = VINF_SUCCESS;
-    if (!rtLockValidatorIsSimpleNoDeadlockCase(pRecU))
-    {
+    else if (!rtLockValidatorIsSimpleNoDeadlockCase(pRecU))
         rc = rtLockValidatorDeadlockDetection(pRecU, pThreadSelf, pSrcPos);
-        if (RT_FAILURE(rc))
-            rtThreadSetState(pThreadSelf, enmThreadState);
-    }
+
+    if (RT_FAILURE(rc))
+        rtThreadSetState(pThreadSelf, enmThreadState);
+    ASMAtomicWriteBool(&pThreadSelf->LockValidator.fInValidator, false);
     return rc;
 }
 RT_EXPORT_SYMBOL(RTLockValidatorRecSharedCheckBlocking);
@@ -1857,6 +1858,20 @@ RTDECL(void *) RTLockValidatorQueryBlocking(RTTHREAD hThread)
     return pvLock;
 }
 RT_EXPORT_SYMBOL(RTLockValidatorQueryBlocking);
+
+
+RTDECL(bool) RTLockValidatorIsBlockedThreadInValidator(RTTHREAD hThread)
+{
+    bool            fRet    = false;
+    PRTTHREADINT    pThread = rtThreadGet(hThread);
+    if (pThread)
+    {
+        fRet = ASMAtomicReadBool(&pThread->LockValidator.fInValidator);
+        rtThreadRelease(pThread);
+    }
+    return fRet;
+}
+RT_EXPORT_SYMBOL(RTLockValidatorIsBlockedThreadInValidator);
 
 
 RTDECL(bool) RTLockValidatorSetEnabled(bool fEnabled)

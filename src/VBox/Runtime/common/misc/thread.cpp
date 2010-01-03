@@ -1304,7 +1304,7 @@ RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState)
 {
     Assert(RTTHREAD_IS_SLEEPING(enmState));
     PRTTHREADINT pThread = hThread;
-    if (hThread && rtThreadGetState(pThread) == RTTHREADSTATE_RUNNING)
+    if (pThread && rtThreadGetState(pThread) == RTTHREADSTATE_RUNNING)
         rtThreadSetState(pThread, enmState);
 }
 RT_EXPORT_SYMBOL(RTThreadBlocking);

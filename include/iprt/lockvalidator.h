@@ -653,6 +653,14 @@ RTDECL(void) RTLockValidatorReadLockDec(RTTHREAD Thread);
  */
 RTDECL(void *) RTLockValidatorQueryBlocking(RTTHREAD hThread);
 
+/**
+ * Checks if the thread is running in the lock validator after it has entered a
+ * block state.
+ *
+ * @returns true if it is, false if it isn't.
+ * @param   hThread     The thread in question.
+ */
+RTDECL(bool) RTLockValidatorIsBlockedThreadInValidator(RTTHREAD hThread);
 
 
 /*RTDECL(int) RTLockValidatorClassCreate();*/
