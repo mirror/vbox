@@ -69,7 +69,7 @@ typedef struct RTLOCKVALPERTHREAD
     /** Reserved for alignment purposes. */
     bool                            afReserved[3];
     /** Bitmap indicating which entires are free (set) and allocated (clear). */
-    uint32_t                        bmFreeShrdOwners;
+    uint32_t volatile               bmFreeShrdOwners;
     /** Statically allocated shared owner records */
     RTLOCKVALRECSHRDOWN             aShrdOwners[32];
 } RTLOCKVALPERTHREAD;

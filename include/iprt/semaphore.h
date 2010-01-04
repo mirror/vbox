@@ -109,6 +109,41 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies);
  */
 RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies);
 
+/**
+ * Sets the signaller thread to one specific thread.
+ *
+ * This is only used for validating usage and deadlock detection.  When used
+ * after calls to RTSemEventAddSignaller, the specified thread will be the only
+ * signalling thread.
+ *
+ * @param   hEventSem           The event semaphore.
+ * @param   hThread             The thread that will signal it.  Pass
+ *                              NIL_RTTHREAD to indicate that there is no
+ *                              special signalling thread.
+ */
+RTDECL(void) RTSemEventSetSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread);
+
+/**
+ * To add more signalling threads.
+ *
+ * First call RTSemEventSetSignaller then add further threads with this.
+ *
+ * @param   hEventSem           The event semaphore.
+ * @param   hThread             The thread that will signal it. NIL_RTTHREAD is
+ *                              not accepted.
+ */
+RTDECL(void) RTSemEventAddSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread);
+
+/**
+ * To remove a signalling thread.
+ *
+ * Reverts work done by RTSemEventAddSignaller and RTSemEventSetSignaller.
+ *
+ * @param   hEventSem           The event semaphore.
+ * @param   hThread             A previously added thread.
+ */
+RTDECL(void) RTSemEventRemoverSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread);
+
 /** @} */
 
 

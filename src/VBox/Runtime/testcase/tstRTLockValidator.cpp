@@ -57,6 +57,13 @@ static RTTHREAD             g_ahThreads[32];
 static RTCRITSECT           g_aCritSects[32];
 static RTSEMRW              g_ahSemRWs[32];
 static RTSEMMUTEX           g_ahSemMtxes[32];
+static RTSEMEVENT           g_hSemEvt;
+static RTSEMEVENTMULTI      g_hSemEvtMulti;
+
+/** Multiple release event semaphore that is signalled by the main thread after
+ * it has started all the threads. */
+static RTSEMEVENTMULTI      g_hThreadStarteEvt;
+
 
 /** When to stop testing. */
 static uint64_t             g_NanoTSStop;
@@ -74,6 +81,9 @@ static uint32_t volatile    g_cLoops;
  */
 static bool testWaitForCritSectToBeOwned(PRTCRITSECT pCritSect)
 {
+    RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+    RTTEST_CHECK_RC_OK(g_hTest, RTSemEventMultiWait(g_hThreadStarteEvt, 10*1000));
+
     unsigned iLoop = 0;
     while (!RTCritSectIsOwned(pCritSect))
     {
@@ -96,6 +106,8 @@ static bool testWaitForCritSectToBeOwned(PRTCRITSECT pCritSect)
 static bool testWaitForSemRWToBeOwned(RTSEMRW hSemRW)
 {
     RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+    RTTEST_CHECK_RC_OK(g_hTest, RTSemEventMultiWait(g_hThreadStarteEvt, 10*1000));
+
     unsigned iLoop = 0;
     for (;;)
     {
@@ -118,6 +130,9 @@ static bool testWaitForSemRWToBeOwned(RTSEMRW hSemRW)
  */
 static bool testWaitForSemMutexToBeOwned(RTSEMMUTEX hSemMutex)
 {
+    RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+    RTTEST_CHECK_RC_OK(g_hTest, RTSemEventMultiWait(g_hThreadStarteEvt, 10*1000));
+
     unsigned iLoop = 0;
     while (!RTSemMutexIsOwned(hSemMutex))
     {
@@ -125,38 +140,6 @@ static bool testWaitForSemMutexToBeOwned(RTSEMMUTEX hSemMutex)
         iLoop++;
     }
     return true;
-}
-
-
-/**
- * Waits for a thread to enter a sleeping state.
- *
- * @returns true on success, false on abort.
- * @param   hThread             The thread.
- * @param   enmDesiredState     The desired thread sleep state.
- * @param   pvLock              The lock it should be sleeping on.
- */
-static bool testWaitForThreadToSleep(RTTHREAD hThread, RTTHREADSTATE enmDesiredState, void *pvLock)
-{
-    RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
-    for (unsigned iLoop = 0; ; iLoop++)
-    {
-        RTTHREADSTATE enmState = RTThreadGetState(hThread);
-        if (RTTHREAD_IS_SLEEPING(enmState))
-        {
-            if (   enmState == enmDesiredState
-                && (   !pvLock
-                    || (   pvLock == RTLockValidatorQueryBlocking(hThread)
-                        && !RTLockValidatorIsBlockedThreadInValidator(hThread) )
-                   )
-               )
-                return true;
-        }
-        else if (   enmState != RTTHREADSTATE_RUNNING
-                 && enmState != RTTHREADSTATE_INITIALIZING)
-            return false;
-        RTThreadSleep(g_fDoNotSpin ? 3600*1000 : iLoop > 256 ? 1 : 0);
-    }
 }
 
 
@@ -171,32 +154,70 @@ static bool testWaitForThreadToSleep(RTTHREAD hThread, RTTHREADSTATE enmDesiredS
  */
 static int testWaitForAllOtherThreadsToSleep(RTTHREADSTATE enmDesiredState, uint32_t cWaitOn)
 {
+    RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+    RTTEST_CHECK_RC_OK(g_hTest, RTSemEventMultiWait(g_hThreadStarteEvt, 10*1000));
+
     RTTHREAD hThreadSelf = RTThreadSelf();
-    for (uint32_t i = 0; i < g_cThreads; i++)
+    for (uint32_t iOuterLoop = 0; ; iOuterLoop++)
     {
-        RTTHREAD hThread = g_ahThreads[i];
-        if (    hThread != NIL_RTTHREAD
-            &&  hThread != hThreadSelf)
+        uint32_t cMissing  = 0;
+        uint32_t cWaitedOn = 0;
+        for (uint32_t i = 0; i < g_cThreads; i++)
         {
-            void *pvLock = NULL;
-            if (cWaitOn != UINT32_MAX)
+            RTTHREAD hThread = g_ahThreads[i];
+            if (hThread == NIL_RTTHREAD)
+                cMissing++;
+            else if (hThread != hThreadSelf)
             {
-                uint32_t j = (i + cWaitOn) % g_cThreads;
-                switch (enmDesiredState)
+                /*
+                 * Figure out which lock to wait for.
+                 */
+                void *pvLock = NULL;
+                if (cWaitOn != UINT32_MAX)
                 {
-                    case RTTHREADSTATE_CRITSECT:    pvLock = &g_aCritSects[j]; break;
-                    case RTTHREADSTATE_RW_WRITE:
-                    case RTTHREADSTATE_RW_READ:     pvLock = g_ahSemRWs[j]; break;
-                    case RTTHREADSTATE_MUTEX:       pvLock = g_ahSemMtxes[j]; break;
-                    default: break;
+                    uint32_t j = (i + cWaitOn) % g_cThreads;
+                    switch (enmDesiredState)
+                    {
+                        case RTTHREADSTATE_CRITSECT:    pvLock = &g_aCritSects[j]; break;
+                        case RTTHREADSTATE_RW_WRITE:
+                        case RTTHREADSTATE_RW_READ:     pvLock = g_ahSemRWs[j]; break;
+                        case RTTHREADSTATE_MUTEX:       pvLock = g_ahSemMtxes[j]; break;
+                        default: break;
+                    }
+                }
+
+                /*
+                 * Wait for this thread.
+                 */
+                for (unsigned iLoop = 0; ; iLoop++)
+                {
+                    RTTHREADSTATE enmState = RTThreadGetReallySleeping(hThread);
+                    if (RTTHREAD_IS_SLEEPING(enmState))
+                    {
+                        if (   enmState == enmDesiredState
+                            && (   !pvLock
+                                || (   pvLock == RTLockValidatorQueryBlocking(hThread)
+                                    && !RTLockValidatorIsBlockedThreadInValidator(hThread) )
+                               )
+                            && RTThreadGetNativeState(hThread) != RTTHREADNATIVESTATE_RUNNING
+                           )
+                            break;
+                    }
+                    else if (   enmState != RTTHREADSTATE_RUNNING
+                             && enmState != RTTHREADSTATE_INITIALIZING)
+                        return VERR_INTERNAL_ERROR;
+                    RTThreadSleep(g_fDoNotSpin ? 3600*1000 : iOuterLoop + iLoop > 256 ? 1 : 0);
+                    cWaitedOn++;
                 }
             }
-            bool fRet = testWaitForThreadToSleep(hThread, enmDesiredState, pvLock);
-            if (!fRet)
-                return VERR_INTERNAL_ERROR;
         }
+
+        if (!cMissing && !cWaitedOn)
+            break;
+        RTThreadSleep(g_fDoNotSpin ? 3600*1000 : iOuterLoop > 256 ? 1 : 0);
     }
-    RTThreadSleep(4);                   /* fudge factor */
+
+    RTThreadSleep(0);                   /* fudge factor */
     return VINF_SUCCESS;
 }
 
@@ -210,16 +231,23 @@ static int testWaitForAllOtherThreadsToSleep(RTTHREADSTATE enmDesiredState, uint
  */
 static int testStartThreads(uint32_t cThreads, PFNRTTHREAD pfnThread)
 {
-    uint32_t i;
-    for (i = 0; i < RT_ELEMENTS(g_ahThreads); i++)
+    RTSemEventMultiReset(g_hThreadStarteEvt);
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_ahThreads); i++)
         g_ahThreads[i] = NIL_RTTHREAD;
 
-    for (i = 0; i < cThreads; i++)
-        RTTEST_CHECK_RC_OK_RET(g_hTest,
-                               RTThreadCreateF(&g_ahThreads[i], pfnThread, (void *)(uintptr_t)i, 0,
-                                               RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "thread-%02u", i),
-                               rcCheck);
-    return VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
+    for (uint32_t i = 0; i < cThreads; i++)
+    {
+        rc = RTThreadCreateF(&g_ahThreads[i], pfnThread, (void *)(uintptr_t)i, 0,
+                             RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "thread-%02u", i);
+        RTTEST_CHECK_RC_OK(g_hTest, rc);
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemEventMultiSignal(g_hThreadStarteEvt), rcCheck);
+    return rc;
 }
 
 
@@ -249,6 +277,9 @@ static void testWaitForThreads(uint32_t cMillies, bool fStopOnError)
 
 static void testIt(uint32_t cThreads, uint32_t cPasses, uint32_t cSecs, PFNRTTHREAD pfnThread, const char *pszName)
 {
+    /*
+     * Init test.
+     */
     if (cSecs)
         RTTestSubF(g_hTest, "%s, %u threads, %u secs", pszName, cThreads, cSecs * cPasses);
     else
@@ -265,7 +296,13 @@ static void testIt(uint32_t cThreads, uint32_t cPasses, uint32_t cSecs, PFNRTTHR
         RTTEST_CHECK_RC_RETV(g_hTest, RTSemRWCreate(&g_ahSemRWs[i]), VINF_SUCCESS);
         RTTEST_CHECK_RC_RETV(g_hTest, RTSemMutexCreate(&g_ahSemMtxes[i]), VINF_SUCCESS);
     }
+    RTTEST_CHECK_RC_RETV(g_hTest, RTSemEventCreate(&g_hSemEvt), VINF_SUCCESS);
+    RTTEST_CHECK_RC_RETV(g_hTest, RTSemEventMultiCreate(&g_hSemEvtMulti), VINF_SUCCESS);
+    RTTEST_CHECK_RC_RETV(g_hTest, RTSemEventMultiCreate(&g_hThreadStarteEvt), VINF_SUCCESS);
 
+    /*
+     * The test loop.
+     */
     uint32_t cLoops     = 0;
     uint32_t cDeadlocks = 0;
     uint32_t cErrors    = RTTestErrorCount(g_hTest);
@@ -286,14 +323,24 @@ static void testIt(uint32_t cThreads, uint32_t cPasses, uint32_t cSecs, PFNRTTHR
         cDeadlocks += g_cDeadlocks;
     }
 
+    /*
+     * Cleanup.
+     */
     for (uint32_t i = 0; i < cThreads; i++)
     {
         RTTEST_CHECK_RC(g_hTest, RTCritSectDelete(&g_aCritSects[i]), VINF_SUCCESS);
         RTTEST_CHECK_RC(g_hTest, RTSemRWDestroy(g_ahSemRWs[i]), VINF_SUCCESS);
         RTTEST_CHECK_RC(g_hTest, RTSemMutexDestroy(g_ahSemMtxes[i]), VINF_SUCCESS);
     }
+    RTTEST_CHECK_RC(g_hTest, RTSemEventDestroy(g_hSemEvt), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemEventMultiDestroy(g_hSemEvtMulti), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemEventMultiDestroy(g_hThreadStarteEvt), VINF_SUCCESS);
+
     testWaitForThreads(10*1000, false);
 
+    /*
+     * Print results if applicable.
+     */
     if (cSecs)
         RTTestPrintf(g_hTest,  RTTESTLVL_ALWAYS, "cLoops=%u cDeadlocks=%u (%u%%)\n",
                      cLoops, cDeadlocks, cLoops ? cDeadlocks * 100 / cLoops : 0);
@@ -530,6 +577,58 @@ static void test5(uint32_t cThreads, uint32_t cPasses)
 }
 
 
+static DECLCALLBACK(int) test6Thread(RTTHREAD ThreadSelf, void *pvUser)
+{
+    uintptr_t       i     = (uintptr_t)pvUser;
+    PRTCRITSECT     pMine = &g_aCritSects[i];
+    PRTCRITSECT     pNext = &g_aCritSects[(i + 1) % g_cThreads];
+
+    RTTEST_CHECK_RC_RET(g_hTest, RTCritSectEnter(pMine), VINF_SUCCESS, rcCheck);
+    if (i & 1)
+        RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(pMine), VINF_SUCCESS);
+    if (testWaitForCritSectToBeOwned(pNext))
+    {
+        int rc;
+        if (i != g_iDeadlockThread)
+        {
+            RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(pNext), VINF_SUCCESS);
+            RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+            if (RT_SUCCESS(rc))
+                RTTEST_CHECK_RC(g_hTest, rc = RTCritSectLeave(pNext), VINF_SUCCESS);
+        }
+        else
+        {
+            RTTEST_CHECK_RC_OK(g_hTest, rc = testWaitForAllOtherThreadsToSleep(RTTHREADSTATE_CRITSECT, 1));
+            if (RT_SUCCESS(rc))
+            {
+                RTSemEventSetSignaller(g_hSemEvt, g_ahThreads[0]);
+                for (uint32_t iThread = 1; iThread < g_cThreads; iThread++)
+                    RTSemEventAddSignaller(g_hSemEvt, g_ahThreads[iThread]);
+                RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+                RTTEST_CHECK_RC(g_hTest, RTSemEventWait(g_hSemEvt, 10*1000), VERR_SEM_LV_DEADLOCK);
+                RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+                RTTEST_CHECK_RC(g_hTest, RTSemEventSignal(g_hSemEvt), VINF_SUCCESS);
+                RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+                RTTEST_CHECK_RC(g_hTest, RTSemEventWait(g_hSemEvt, 10*1000), VINF_SUCCESS);
+                RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+                RTSemEventSetSignaller(g_hSemEvt, NIL_RTTHREAD);
+            }
+        }
+        RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+    }
+    if (i & 1)
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(pMine), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(pMine), VINF_SUCCESS);
+    return VINF_SUCCESS;
+}
+
+
+static void test6(uint32_t cThreads, uint32_t cPasses)
+{
+    testIt(cThreads, cPasses, 0, test6Thread, "event");
+}
+
+
 static bool testIsLockValidationCompiledIn(void)
 {
     RTCRITSECT CritSect;
@@ -549,6 +648,26 @@ static bool testIsLockValidationCompiledIn(void)
     RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), false);
     RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWReleaseRead(hSemRW), false);
     RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWDestroy(hSemRW), false);
+
+#if 0 /** @todo detect it on RTSemMutex... */
+    RTSEMMUTEX hSemMtx;
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemMutexCreate(&hSemRW), false);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemMutexRequest(hSemRW, 50), false);
+    /*??*/
+    RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), false);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWRelease(hSemRW), false);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWDestroy(hSemRW), false);
+#endif
+
+    RTSEMEVENT hSemEvt;
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemEventCreate(&hSemEvt), false);
+    RTSemEventSetSignaller(hSemEvt, RTThreadSelf());
+    RTSemEventSetSignaller(hSemEvt, NIL_RTTHREAD);
+    rc = RTSemEventSignal(hSemEvt);
+    if (rc != VERR_SEM_LV_NOT_SIGNALLER)
+        fRet = false;
+    RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), false);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemEventDestroy(hSemEvt), false);
 
     return fRet;
 }
@@ -576,18 +695,18 @@ int main()
     /*
      * Some initial tests with verbose output.
      */
-#if 0
+#if 1
     test1(3, 1);
     test2(1, 1);
     test2(3, 1);
-#endif
     test5(3, 1);
+    test6(3, 1);
+#endif
 
     /*
      * More thorough testing without noisy output.
      */
     RTLockValidatorSetQuiet(true);
-#if 0
     test1( 2, 256);                     /* 256 * 4ms = 1s (approx); 4ms == fudge factor */
     test1( 3, 256);
     test1( 7, 256);
@@ -595,6 +714,7 @@ int main()
     test1(15, 256);
     test1(30, 256);
 
+#if 1
     test2( 1, 256);
     test2( 2, 256);
     test2( 3, 256);
@@ -610,7 +730,6 @@ int main()
     test4( 6,  1,  2);
     test4(10,  1, 10);
     test4(30,  1, 10);
-#endif
 
     test5( 2, 256);
     test5( 3, 256);
@@ -618,6 +737,14 @@ int main()
     test5(10, 256);
     test5(15, 256);
     test5(30, 256);
+#endif
+
+    test6( 2, 256);
+    test6( 3, 256);
+    test6( 7, 256);
+    test6(10, 256);
+    test6(15, 256);
+    test6(30, 256);
 
     return RTTestSummaryAndDestroy(g_hTest);
 }

@@ -36,6 +36,10 @@
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
+#if defined(RT_OS_LINUX)
+# include <unistd.h>
+# include <sys/syscall.h>
+#endif
 #if defined(RT_OS_SOLARIS)
 # include <sched.h>
 #endif
@@ -169,6 +173,14 @@ static void *rtThreadNativeMain(void *pvArgs)
 {
     PRTTHREADINT  pThread = (PRTTHREADINT)pvArgs;
 
+#if defined(RT_OS_LINUX)
+    /*
+     * Set the TID.
+     */
+    pThread->tid = syscall(__NR_gettid);
+    ASMMemoryFence();
+#endif
+
     /*
      * Block SIGALRM - required for timer-posix.cpp.
      * This is done to limit harm done by OSes which doesn't do special SIGALRM scheduling.
@@ -203,6 +215,10 @@ int rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNativeThread)
      */
     if (!pThread->cbStack)
         pThread->cbStack = 512*1024;
+
+#ifdef RT_OS_LINUX
+    pThread->tid = -1;
+#endif
 
     /*
      * Setup thread attributes.

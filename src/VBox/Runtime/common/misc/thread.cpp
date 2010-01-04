@@ -348,12 +348,13 @@ PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntF
             cchName = RTTHREAD_NAME_LEN - 1;
         memcpy(pThread->szName, pszName, cchName);
         pThread->szName[cchName] = '\0';
-        pThread->cRefs      = 2 + !!(fFlags & RTTHREADFLAGS_WAITABLE); /* And extra reference if waitable. */
-        pThread->rc         = VERR_PROCESS_RUNNING; /** @todo get a better error code! */
-        pThread->enmType    = enmType;
-        pThread->fFlags     = fFlags;
-        pThread->fIntFlags  = fIntFlags;
-        pThread->enmState   = RTTHREADSTATE_INITIALIZING;
+        pThread->cRefs           = 2 + !!(fFlags & RTTHREADFLAGS_WAITABLE); /* And extra reference if waitable. */
+        pThread->rc              = VERR_PROCESS_RUNNING; /** @todo get a better error code! */
+        pThread->enmType         = enmType;
+        pThread->fFlags          = fFlags;
+        pThread->fIntFlags       = fIntFlags;
+        pThread->enmState        = RTTHREADSTATE_INITIALIZING;
+        pThread->fReallySleeping = false;
 #ifdef IN_RING3
         rtLockValidatorInitPerThread(&pThread->LockValidator);
 #endif
@@ -1299,13 +1300,19 @@ int rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority)
  *
  * @param   hThread         The current thread.
  * @param   enmState        The sleep state.
+ * @param   fReallySleeping Really going to sleep now.
  */
-RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState)
+RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState, bool fReallySleeping)
 {
     Assert(RTTHREAD_IS_SLEEPING(enmState));
     PRTTHREADINT pThread = hThread;
-    if (pThread && rtThreadGetState(pThread) == RTTHREADSTATE_RUNNING)
-        rtThreadSetState(pThread, enmState);
+    if (pThread != NIL_RTTHREAD)
+    {
+        Assert(pThread == RTThreadSelf());
+        if (rtThreadGetState(pThread) == RTTHREADSTATE_RUNNING)
+            rtThreadSetState(pThread, enmState);
+        ASMAtomicWriteBool(&pThread->fReallySleeping, fReallySleeping);
+    }
 }
 RT_EXPORT_SYMBOL(RTThreadBlocking);
 
@@ -1321,8 +1328,14 @@ RT_EXPORT_SYMBOL(RTThreadBlocking);
  */
 RTDECL(void) RTThreadUnblocked(RTTHREAD hThread, RTTHREADSTATE enmCurState)
 {
-    if (hThread && rtThreadGetState(hThread) == enmCurState)
-        rtThreadSetState(hThread, RTTHREADSTATE_RUNNING);
+    PRTTHREADINT pThread = hThread;
+    if (pThread != NIL_RTTHREAD)
+    {
+        Assert(pThread == RTThreadSelf());
+        ASMAtomicWriteBool(&pThread->fReallySleeping, false);
+        if (rtThreadGetState(pThread) == enmCurState)
+            rtThreadSetState(pThread, RTTHREADSTATE_RUNNING);
+    }
 }
 RT_EXPORT_SYMBOL(RTThreadUnblocked);
 
@@ -1345,6 +1358,22 @@ RTDECL(RTTHREADSTATE) RTThreadGetState(RTTHREAD hThread)
     return enmState;
 }
 RT_EXPORT_SYMBOL(RTThreadGetState);
+
+
+RTDECL(RTTHREADSTATE) RTThreadGetReallySleeping(RTTHREAD hThread)
+{
+    RTTHREADSTATE   enmState = RTTHREADSTATE_INVALID;
+    PRTTHREADINT    pThread  = rtThreadGet(hThread);
+    if (pThread)
+    {
+        enmState = rtThreadGetState(pThread);
+        if (!ASMAtomicUoReadBool(&pThread->fReallySleeping))
+            enmState = RTTHREADSTATE_RUNNING;
+        rtThreadRelease(pThread);
+    }
+    return enmState;
+}
+RT_EXPORT_SYMBOL(RTThreadGetReallySleeping);
 
 
 /**

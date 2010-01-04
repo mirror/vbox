@@ -859,6 +859,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_SEM_LV_NOT_OWNER               (-374)
 /** An illegal lock upgrade was attempted. */
 #define VERR_SEM_LV_ILLEGAL_UPGRADE         (-375)
+/** The thread is not a valid signaller of the event. */
+#define VERR_SEM_LV_NOT_SIGNALLER           (-376)
 /** @} */
 
 

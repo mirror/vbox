@@ -187,12 +187,13 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
     {
 #ifdef RTSEMMUTEX_STRICT
         hThreadSelf = RTThreadSelfAutoAdopt();
-        int rc9 = RTLockValidatorRecExclCheckOrderAndBlocking(&pThis->ValidatorRec, hThreadSelf, pSrcPos, true, RTTHREADSTATE_MUTEX);
+        int rc9 = RTLockValidatorRecExclCheckOrderAndBlocking(&pThis->ValidatorRec, hThreadSelf, pSrcPos, true,
+                                                              RTTHREADSTATE_MUTEX, true);
         if (RT_FAILURE(rc9))
             return rc9;
 #else
         hThreadSelf = RTThreadSelf();
-        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX);
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX, true);
 #endif
     }
 

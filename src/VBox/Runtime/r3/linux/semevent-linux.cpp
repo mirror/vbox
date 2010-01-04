@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,7 +29,7 @@
  */
 
 #include <features.h>
-#if __GLIBC_PREREQ(2,6) && !defined(IPRT_WITH_FUTEX_BASED_SEMS)
+#if __GLIBC_PREREQ(2,6) && !defined(IPRT_WITH_FUTEX_BASED_SEMS)  && !defined(DEBUG_bird) //// testing 1 2 3
 
 /*
  * glibc 2.6 fixed a serious bug in the mutex implementation. We wrote this
@@ -49,12 +49,16 @@ asm volatile (".global epoll_pwait");
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/semaphore.h>
-#include <iprt/assert.h>
-#include <iprt/alloc.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
+#include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/lockvalidator.h>
+#include <iprt/mem.h>
 #include <iprt/time.h>
 #include "internal/magics.h"
+#include "internal/strict.h"
 
 #include <errno.h>
 #include <limits.h>
@@ -86,6 +90,12 @@ struct RTSEMEVENTINTERNAL
     uint32_t volatile   fSignalled;
     /** The number of waiting threads */
     int32_t volatile    cWaiters;
+#ifdef RTSEMEVENT_STRICT
+    /** Signallers. */
+    RTLOCKVALRECSHRD    Signallers;
+    /** Indicates that lock validation should be performed. */
+    bool volatile       fEverHadSignallers;
+#endif
 };
 
 
@@ -117,6 +127,12 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
         pThis->iMagic = RTSEMEVENT_MAGIC;
         pThis->cWaiters = 0;
         pThis->fSignalled = 0;
+#ifdef RTSEMEVENT_STRICT
+        RTLockValidatorRecSharedInit(&pThis->Signallers,
+                                     NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_ANY,
+                                     "RTSemEvent", pThis, true /*fSignaller*/);
+        pThis->fEverHadSignallers = false;
+#endif
         *pEventSem = pThis;
         return VINF_SUCCESS;
     }
@@ -148,6 +164,9 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     /*
      * Free the semaphore memory and be gone.
      */
+#ifdef RTSEMEVENT_STRICT
+    RTLockValidatorRecSharedDelete(&pThis->Signallers);
+#endif
     RTMemFree(pThis);
     return VINF_SUCCESS;
 }
@@ -159,8 +178,17 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
      * Validate input.
      */
     struct RTSEMEVENTINTERNAL *pThis = EventSem;
-    AssertReturn(VALID_PTR(pThis) && pThis->iMagic == RTSEMEVENT_MAGIC,
-                 VERR_INVALID_HANDLE);
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->iMagic == RTSEMEVENT_MAGIC, VERR_INVALID_HANDLE);
+
+#ifdef RTSEMEVENT_STRICT
+    if (pThis->fEverHadSignallers)
+    {
+        int rc9 = RTLockValidatorRecSharedCheckSignaller(&pThis->Signallers, NIL_RTTHREAD);
+        if (RT_FAILURE(rc9))
+            return rc9;
+    }
+#endif
 
     ASMAtomicWriteU32(&pThis->fSignalled, 1);
     if (ASMAtomicReadS32(&pThis->cWaiters) < 1)
@@ -180,16 +208,21 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
 
 static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResume)
 {
+    PCRTLOCKVALSRCPOS pSrcPos = NULL;
+
     /*
      * Validate input.
      */
     struct RTSEMEVENTINTERNAL *pThis = EventSem;
-    AssertReturn(VALID_PTR(pThis) && pThis->iMagic == RTSEMEVENT_MAGIC,
-                 VERR_INVALID_HANDLE);
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->iMagic == RTSEMEVENT_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Quickly check whether it's signaled.
      */
+    /** @todo this isn't fair if someone is already waiting on it.  They should
+     *        have the first go at it!
+     *  (ASMAtomicReadS32(&pThis->cWaiters) == 0 || !cMillies) && ... */
     if (ASMAtomicCmpXchgU32(&pThis->fSignalled, 0, 1))
         return VINF_SUCCESS;
 
@@ -214,10 +247,26 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
     /*
      * The wait loop.
      */
+#ifdef RTSEMEVENT_STRICT
+    RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
+#else
+    RTTHREAD hThreadSelf = RTThreadSelf();
+#endif
     int rc = VINF_SUCCESS;
     for (;;)
     {
+#ifdef RTSEMEVENT_STRICT
+        if (pThis->fEverHadSignallers)
+        {
+            rc = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
+                                                       RTTHREADSTATE_EVENT, true);
+            if (RT_FAILURE(rc))
+                break;
+        }
+#endif
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT, true);
         long lrc = sys_futex(&pThis->fSignalled, FUTEX_WAIT, 0, pTimeout, NULL, 0);
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT);
         if (RT_UNLIKELY(pThis->iMagic != RTSEMEVENT_MAGIC))
         {
             rc = VERR_SEM_DESTROYED;
@@ -281,6 +330,44 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
 RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
 {
     return rtSemEventWait(EventSem, cMillies, false);
+}
+
+
+RTDECL(void) RTSemEventSetSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread)
+{
+#ifdef RTSEMEVENT_STRICT
+    struct RTSEMEVENTINTERNAL *pThis = hEventSem;
+    AssertPtrReturnVoid(pThis);
+    AssertReturnVoid(pThis->iMagic == RTSEMEVENT_MAGIC);
+
+    ASMAtomicWriteBool(&pThis->fEverHadSignallers, true);
+    RTLockValidatorRecSharedResetOwner(&pThis->Signallers, hThread, NULL);
+#endif
+}
+
+
+RTDECL(void) RTSemEventAddSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread)
+{
+#ifdef RTSEMEVENT_STRICT
+    struct RTSEMEVENTINTERNAL *pThis = hEventSem;
+    AssertPtrReturnVoid(pThis);
+    AssertReturnVoid(pThis->iMagic == RTSEMEVENT_MAGIC);
+
+    ASMAtomicWriteBool(&pThis->fEverHadSignallers, true);
+    RTLockValidatorRecSharedAddOwner(&pThis->Signallers, hThread, NULL);
+#endif
+}
+
+
+RTDECL(void) RTSemEventRemoveSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread)
+{
+#ifdef RTSEMEVENT_STRICT
+    struct RTSEMEVENTINTERNAL *pThis = hEventSem;
+    AssertPtrReturnVoid(pThis);
+    AssertReturnVoid(pThis->iMagic == RTSEMEVENT_MAGIC);
+
+    RTLockValidatorRecSharedRemoveOwner(&pThis->Signallers, hThread);
+#endif
 }
 
 #endif /* glibc < 2.6 || IPRT_WITH_FUTEX_BASED_SEMS */
