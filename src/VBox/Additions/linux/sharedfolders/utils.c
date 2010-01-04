@@ -811,3 +811,10 @@ int sf_get_volume_info(struct super_block *sb, STRUCT_STATFS *stat)
 struct dentry_operations sf_dentry_ops = {
         .d_revalidate = sf_dentry_revalidate
 };
+
+void sf_init_backing_dev(void)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 24)
+    bdi_init(&sf_backing_dev_info);
+#endif
+}

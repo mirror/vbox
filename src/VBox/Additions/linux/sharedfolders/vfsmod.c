@@ -467,6 +467,8 @@ init (void)
                 return -EINVAL;
         }
 
+        sf_init_backing_dev();
+
         err = register_filesystem (&vboxsf_fs_type);
         if (err) {
                 LogFunc(("register_filesystem err=%d\n", err));

@@ -107,6 +107,8 @@ sf_dir_info_alloc (void);
 extern int
 sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
                  struct sf_dir_info *sf_d, SHFLHANDLE handle);
+extern void
+sf_init_backing_dev(void);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0)
 #define STRUCT_STATFS  struct statfs
