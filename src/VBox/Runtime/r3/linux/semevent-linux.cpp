@@ -29,7 +29,7 @@
  */
 
 #include <features.h>
-#if __GLIBC_PREREQ(2,6) && !defined(IPRT_WITH_FUTEX_BASED_SEMS)  && !defined(DEBUG_bird) //// testing 1 2 3
+#if __GLIBC_PREREQ(2,6) && !defined(IPRT_WITH_FUTEX_BASED_SEMS)
 
 /*
  * glibc 2.6 fixed a serious bug in the mutex implementation. We wrote this
