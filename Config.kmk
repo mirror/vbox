@@ -596,8 +596,6 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_WITH_SECURELABEL=
  # We'll use the native html/help viewer.
  VBOX_WITH_KCHMVIEWER=
- # Later:
- VBOX_WITH_VRDP_AUTHMOD=
  VBOX_WITH_VRDP_RDESKTOP=
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
   # Permanent (no working SDL).
