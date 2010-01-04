@@ -1435,11 +1435,12 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
 
         LogRel(("VRDPAUTH: ConsoleVRDPServer::Authenticate: loading external authentication library '%ls'\n", authLibrary.raw()));
 
-#ifdef RT_OS_DARWIN
-        int rc = RTLdrLoadAppPriv (filename.raw(), &mAuthLibrary);
-#else /* RT_OS_DARWIN */
-        int rc = RTLdrLoad (filename.raw(), &mAuthLibrary);
-#endif /* RT_OS_DARWIN */
+        int rc;
+        if (RTPathHavePath(filename.raw()))
+            rc = RTLdrLoad(filename.raw(), &mAuthLibrary);
+        else
+            rc = RTLdrLoadAppPriv(filename.raw(), &mAuthLibrary);
+
         if (RT_FAILURE(rc))
             LogRel(("VRDPAUTH: Failed to load external authentication library. Error code: %Rrc\n", rc));
 
