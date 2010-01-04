@@ -164,7 +164,7 @@ RTDECL(int) RTLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod)
      * Check the filename.
      */
     size_t cchFilename = strlen(pszFilename);
-    AssertMsgReturn(cchFilename > (RTPATH_MAX / 4) * 3, ("%zu\n", cchFilename), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cchFilename < (RTPATH_MAX / 4) * 3, ("%zu\n", cchFilename), VERR_INVALID_PARAMETER);
 
     const char *pszExt = "";
     size_t cchExt = 0;
