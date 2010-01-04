@@ -32,10 +32,15 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/semaphore.h>
-#include <iprt/assert.h>
-#include <iprt/alloc.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
+#include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/lockvalidator.h>
+#include <iprt/mem.h>
+
+#include "internal/strict.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -60,6 +65,12 @@ struct RTSEMEVENTMULTIINTERNAL
     volatile uint32_t   u32State;
     /** Number of waiters. */
     volatile uint32_t   cWaiters;
+#ifdef RTSEMEVENTMULTI_STRICT
+    /** Signallers. */
+    RTLOCKVALRECSHRD    Signallers;
+    /** Indicates that lock validation should be performed. */
+    bool volatile       fEverHadSignallers;
+#endif
 };
 
 /** The valus of the u32State variable in RTSEMEVENTMULTIINTERNAL.
@@ -72,27 +83,6 @@ struct RTSEMEVENTMULTIINTERNAL
 #define EVENTMULTI_STATE_NOT_SIGNALED    0x00ff00ff
 /** @} */
 
-
-
-/**
- * Validate an event multi semaphore handle passed to one of the interface.
- *
- * @returns true if valid.
- * @returns false if invalid.
- * @param   pThis    Pointer to the event semaphore to validate.
- */
-inline bool rtsemEventMultiValid(struct RTSEMEVENTMULTIINTERNAL *pThis)
-{
-    if ((uintptr_t)pThis < 0x10000)
-        return false;
-
-    uint32_t    u32 = pThis->u32State; /* this is volatile, so a explicit read like this is needed. */
-    if (    u32 != EVENTMULTI_STATE_NOT_SIGNALED
-        &&  u32 != EVENTMULTI_STATE_SIGNALED)
-        return false;
-
-    return true;
-}
 
 
 RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
@@ -130,6 +120,12 @@ RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
 
                         ASMAtomicXchgU32(&pThis->u32State, EVENTMULTI_STATE_NOT_SIGNALED);
                         ASMAtomicXchgU32(&pThis->cWaiters, 0);
+#ifdef RTSEMEVENTMULTI_STRICT
+                        RTLockValidatorRecSharedInit(&pThis->Signallers,
+                                                     NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_ANY,
+                                                     "RTSemEvent", pThis, true /*fSignaller*/);
+                        pThis->fEverHadSignallers = false;
+#endif
 
                         *pEventMultiSem = pThis;
                         return VINF_SUCCESS;
@@ -158,16 +154,16 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
     /*
      * Validate handle.
      */
-    if (!rtsemEventMultiValid(EventMultiSem))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", EventMultiSem));
-        return VERR_INVALID_HANDLE;
-    }
+    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    if (pThis == NIL_RTSEMEVENTMULTI)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    uint32_t u32 = pThis->u32State;
+    AssertReturn(u32 == EVENTMULTI_STATE_NOT_SIGNALED || u32 == EVENTMULTI_STATE_SIGNALED, VERR_INVALID_HANDLE);
 
     /*
      * Abort all waiters forcing them to return failure.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
     int rc;
     for (int i = 30; i > 0; i--)
     {
@@ -204,6 +200,9 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
     /*
      * Free the semaphore memory and be gone.
      */
+#ifdef RTSEMEVENTMULTI_STRICT
+    RTLockValidatorRecSharedDelete(&pThis->Signallers);
+#endif
     RTMemFree(pThis);
     return VINF_SUCCESS;
 }
@@ -214,16 +213,23 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
     /*
      * Validate input.
      */
-    if (!rtsemEventMultiValid(EventMultiSem))
+    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    uint32_t u32 = pThis->u32State;
+    AssertReturn(u32 == EVENTMULTI_STATE_NOT_SIGNALED || u32 == EVENTMULTI_STATE_SIGNALED, VERR_INVALID_HANDLE);
+
+#ifdef RTSEMEVENTMULTI_STRICT
+    if (pThis->fEverHadSignallers)
     {
-        AssertMsgFailed(("Invalid handle %p!\n", EventMultiSem));
-        return VERR_INVALID_HANDLE;
+        int rc9 = RTLockValidatorRecSharedCheckSignaller(&pThis->Signallers, NIL_RTTHREAD);
+        if (RT_FAILURE(rc9))
+            return rc9;
     }
+#endif
 
     /*
      * Lock the mutex semaphore.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
     int rc = pthread_mutex_lock(&pThis->Mutex);
     if (rc)
     {
@@ -267,16 +273,14 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
     /*
      * Validate input.
      */
-    if (!rtsemEventMultiValid(EventMultiSem))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", EventMultiSem));
-        return VERR_INVALID_HANDLE;
-    }
+    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    uint32_t u32 = pThis->u32State;
+    AssertReturn(u32 == EVENTMULTI_STATE_NOT_SIGNALED || u32 == EVENTMULTI_STATE_SIGNALED, VERR_INVALID_HANDLE);
 
     /*
      * Lock the mutex semaphore.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
     int rc = pthread_mutex_lock(&pThis->Mutex);
     if (rc)
     {
@@ -309,19 +313,19 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
 
 static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies, bool fAutoResume)
 {
+    PCRTLOCKVALSRCPOS pSrcPos = NULL;
+
     /*
      * Validate input.
      */
-    if (!rtsemEventMultiValid(EventMultiSem))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", EventMultiSem));
-        return VERR_INVALID_HANDLE;
-    }
+    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    uint32_t u32 = pThis->u32State;
+    AssertReturn(u32 == EVENTMULTI_STATE_NOT_SIGNALED || u32 == EVENTMULTI_STATE_SIGNALED, VERR_INVALID_HANDLE);
 
     /*
      * Timed or indefinite wait?
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
     if (cMillies == RT_INDEFINITE_WAIT)
     {
         /* take mutex */
@@ -351,7 +355,25 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
             }
 
             /* wait */
+#ifdef RTSEMEVENTMULTI_STRICT
+            RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
+            if (pThis->fEverHadSignallers)
+            {
+                rc = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
+                                                           RTTHREADSTATE_EVENT_MULTI, true);
+                if (RT_FAILURE(rc))
+                {
+                    ASMAtomicDecU32(&pThis->cWaiters);
+                    pthread_mutex_unlock(&pThis->Mutex);
+                    return rc;
+                }
+            }
+#else
+            RTTHREAD hThreadSelf = RTThreadSelf();
+#endif
+            RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT_MULTI, true);
             rc = pthread_cond_wait(&pThis->Cond, &pThis->Mutex);
+            RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT_MULTI);
             if (rc)
             {
                 AssertMsgFailed(("Failed to wait on event multi sem %p, rc=%d.\n", EventMultiSem, rc));
@@ -395,11 +417,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
         }
 
         /* take mutex */
-#ifdef RT_OS_DARWIN
         int rc = pthread_mutex_lock(&pThis->Mutex);
-#else
-        int rc = pthread_mutex_timedlock(&pThis->Mutex, &ts);
-#endif
         if (rc)
         {
             AssertMsg(rc == ETIMEDOUT, ("Failed to lock event multi sem %p, rc=%d.\n", EventMultiSem, rc));
@@ -424,8 +442,34 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
                 return VERR_SEM_DESTROYED;
             }
 
+            /* we're done if the timeout is 0. */
+            if (!cMillies)
+            {
+                ASMAtomicDecU32(&pThis->cWaiters);
+                rc = pthread_mutex_unlock(&pThis->Mutex);
+                return VERR_SEM_BUSY;
+            }
+
             /* wait */
+#ifdef RTSEMEVENTMULTI_STRICT
+            RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
+            if (pThis->fEverHadSignallers)
+            {
+                rc = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
+                                                           RTTHREADSTATE_EVENT_MULTI, true);
+                if (RT_FAILURE(rc))
+                {
+                    ASMAtomicDecU32(&pThis->cWaiters);
+                    pthread_mutex_unlock(&pThis->Mutex);
+                    return rc;
+                }
+            }
+#else
+            RTTHREAD hThreadSelf = RTThreadSelf();
+#endif
+            RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT_MULTI, true);
             rc = pthread_cond_timedwait(&pThis->Cond, &pThis->Mutex, &ts);
+            RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT_MULTI);
             if (rc && (rc != EINTR || !fAutoResume)) /* according to SuS this function shall not return EINTR, but linux man page says differently. */
             {
                 AssertMsg(rc == ETIMEDOUT, ("Failed to wait on event multi sem %p, rc=%d.\n", EventMultiSem, rc));
@@ -450,5 +494,46 @@ RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillie
 RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
 {
     return rtSemEventMultiWait(EventMultiSem, cMillies, false);
+}
+
+
+RTDECL(void) RTSemEventMultiSetSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread)
+{
+#ifdef RTSEMEVENTMULTI_STRICT
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
+    AssertPtrReturnVoid(pThis);
+    uint32_t u32 = pThis->u32State;
+    AssertReturnVoid(u32 == EVENTMULTI_STATE_NOT_SIGNALED || u32 == EVENTMULTI_STATE_SIGNALED);
+
+    ASMAtomicWriteBool(&pThis->fEverHadSignallers, true);
+    RTLockValidatorRecSharedResetOwner(&pThis->Signallers, hThread, NULL);
+#endif
+}
+
+
+RTDECL(void) RTSemEventMultiAddSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread)
+{
+#ifdef RTSEMEVENTMULTI_STRICT
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
+    AssertPtrReturnVoid(pThis);
+    uint32_t u32 = pThis->u32State;
+    AssertReturnVoid(u32 == EVENTMULTI_STATE_NOT_SIGNALED || u32 == EVENTMULTI_STATE_SIGNALED);
+
+    ASMAtomicWriteBool(&pThis->fEverHadSignallers, true);
+    RTLockValidatorRecSharedAddOwner(&pThis->Signallers, hThread, NULL);
+#endif
+}
+
+
+RTDECL(void) RTSemEventMultiRemoveSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread)
+{
+#ifdef RTSEMEVENTMULTI_STRICT
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
+    AssertPtrReturnVoid(pThis);
+    uint32_t u32 = pThis->u32State;
+    AssertReturnVoid(u32 == EVENTMULTI_STATE_NOT_SIGNALED || u32 == EVENTMULTI_STATE_SIGNALED);
+
+    RTLockValidatorRecSharedRemoveOwner(&pThis->Signallers, hThread);
+#endif
 }
 

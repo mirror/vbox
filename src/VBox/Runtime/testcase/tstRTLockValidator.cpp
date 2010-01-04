@@ -629,6 +629,58 @@ static void test6(uint32_t cThreads, uint32_t cPasses)
 }
 
 
+static DECLCALLBACK(int) test7Thread(RTTHREAD ThreadSelf, void *pvUser)
+{
+    uintptr_t       i     = (uintptr_t)pvUser;
+    PRTCRITSECT     pMine = &g_aCritSects[i];
+    PRTCRITSECT     pNext = &g_aCritSects[(i + 1) % g_cThreads];
+
+    RTTEST_CHECK_RC_RET(g_hTest, RTCritSectEnter(pMine), VINF_SUCCESS, rcCheck);
+    if (i & 1)
+        RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(pMine), VINF_SUCCESS);
+    if (testWaitForCritSectToBeOwned(pNext))
+    {
+        int rc;
+        if (i != g_iDeadlockThread)
+        {
+            RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(pNext), VINF_SUCCESS);
+            RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+            if (RT_SUCCESS(rc))
+                RTTEST_CHECK_RC(g_hTest, rc = RTCritSectLeave(pNext), VINF_SUCCESS);
+        }
+        else
+        {
+            RTTEST_CHECK_RC_OK(g_hTest, rc = testWaitForAllOtherThreadsToSleep(RTTHREADSTATE_CRITSECT, 1));
+            if (RT_SUCCESS(rc))
+            {
+                RTSemEventMultiSetSignaller(g_hSemEvtMulti, g_ahThreads[0]);
+                for (uint32_t iThread = 1; iThread < g_cThreads; iThread++)
+                    RTSemEventMultiAddSignaller(g_hSemEvtMulti, g_ahThreads[iThread]);
+                RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+                RTTEST_CHECK_RC(g_hTest, RTSemEventMultiReset(g_hSemEvtMulti), VINF_SUCCESS);
+                RTTEST_CHECK_RC(g_hTest, RTSemEventMultiWait(g_hSemEvtMulti, 10*1000), VERR_SEM_LV_DEADLOCK);
+                RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+                RTTEST_CHECK_RC(g_hTest, RTSemEventMultiSignal(g_hSemEvtMulti), VINF_SUCCESS);
+                RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+                RTTEST_CHECK_RC(g_hTest, RTSemEventMultiWait(g_hSemEvtMulti, 10*1000), VINF_SUCCESS);
+                RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+                RTSemEventMultiSetSignaller(g_hSemEvtMulti, NIL_RTTHREAD);
+            }
+        }
+        RTTEST_CHECK(g_hTest, RTThreadGetState(RTThreadSelf()) == RTTHREADSTATE_RUNNING);
+    }
+    if (i & 1)
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(pMine), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(pMine), VINF_SUCCESS);
+    return VINF_SUCCESS;
+}
+
+
+static void test7(uint32_t cThreads, uint32_t cPasses)
+{
+    testIt(cThreads, cPasses, 0, test7Thread, "event multi");
+}
+
 static bool testIsLockValidationCompiledIn(void)
 {
     RTCRITSECT CritSect;
@@ -669,6 +721,16 @@ static bool testIsLockValidationCompiledIn(void)
     RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), false);
     RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemEventDestroy(hSemEvt), false);
 
+    RTSEMEVENTMULTI hSemEvtMulti;
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemEventMultiCreate(&hSemEvtMulti), false);
+    RTSemEventMultiSetSignaller(hSemEvtMulti, RTThreadSelf());
+    RTSemEventMultiSetSignaller(hSemEvtMulti, NIL_RTTHREAD);
+    rc = RTSemEventMultiSignal(hSemEvtMulti);
+    if (rc != VERR_SEM_LV_NOT_SIGNALLER)
+        fRet = false;
+    RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), false);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemEventMultiDestroy(hSemEvtMulti), false);
+
     return fRet;
 }
 
@@ -702,11 +764,13 @@ int main()
     test5(3, 1);
     test6(3, 1);
 #endif
+    test7(3, 1);
 
     /*
      * More thorough testing without noisy output.
      */
     RTLockValidatorSetQuiet(true);
+#if 1
     test1( 2, 256);                     /* 256 * 4ms = 1s (approx); 4ms == fudge factor */
     test1( 3, 256);
     test1( 7, 256);
@@ -714,7 +778,6 @@ int main()
     test1(15, 256);
     test1(30, 256);
 
-#if 1
     test2( 1, 256);
     test2( 2, 256);
     test2( 3, 256);
@@ -737,7 +800,6 @@ int main()
     test5(10, 256);
     test5(15, 256);
     test5(30, 256);
-#endif
 
     test6( 2, 256);
     test6( 3, 256);
@@ -745,6 +807,16 @@ int main()
     test6(10, 256);
     test6(15, 256);
     test6(30, 256);
+#endif
+
+#if 1
+    test7( 2, 256);
+    test7( 3, 256);
+    test7( 7, 256);
+    test7(10, 256);
+    test7(15, 256);
+    test7(30, 256);
+#endif
 
     return RTTestSummaryAndDestroy(g_hTest);
 }

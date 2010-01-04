@@ -142,7 +142,7 @@ RTDECL(void) RTSemEventAddSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread);
  * @param   hEventSem           The event semaphore.
  * @param   hThread             A previously added thread.
  */
-RTDECL(void) RTSemEventRemoverSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread);
+RTDECL(void) RTSemEventRemoveSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread);
 
 /** @} */
 
@@ -210,6 +210,41 @@ RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillie
  * @param   cMillies        Number of milliseconds to wait.
  */
 RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies);
+
+/**
+ * Sets the signaller thread to one specific thread.
+ *
+ * This is only used for validating usage and deadlock detection.  When used
+ * after calls to RTSemEventAddSignaller, the specified thread will be the only
+ * signalling thread.
+ *
+ * @param   hEventMultiSem      The multiple release event semaphore.
+ * @param   hThread             The thread that will signal it.  Pass
+ *                              NIL_RTTHREAD to indicate that there is no
+ *                              special signalling thread.
+ */
+RTDECL(void) RTSemEventMultiSetSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread);
+
+/**
+ * To add more signalling threads.
+ *
+ * First call RTSemEventSetSignaller then add further threads with this.
+ *
+ * @param   hEventMultiSem      The multiple release event semaphore.
+ * @param   hThread             The thread that will signal it. NIL_RTTHREAD is
+ *                              not accepted.
+ */
+RTDECL(void) RTSemEventMultiAddSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread);
+
+/**
+ * To remove a signalling thread.
+ *
+ * Reverts work done by RTSemEventAddSignaller and RTSemEventSetSignaller.
+ *
+ * @param   hEventMultiSem      The multiple release event semaphore.
+ * @param   hThread             A previously added thread.
+ */
+RTDECL(void) RTSemEventMultiRemoveSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread);
 
 /** @} */
 
