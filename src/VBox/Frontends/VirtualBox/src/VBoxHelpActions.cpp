@@ -48,6 +48,7 @@ void VBoxHelpActions::setup (QObject *aParent)
     registerAction->setIcon (VBoxGlobal::iconSet (":/register_16px.png",
                                                   ":/register_disabled_16px.png"));
     updateAction = new QAction (aParent);
+    updateAction->setMenuRole(QAction::ApplicationSpecificRole);
     updateAction->setIcon (VBoxGlobal::iconSet (":/refresh_16px.png",
                                                 ":/refresh_disabled_16px.png"));
     aboutAction = new QAction (aParent);
