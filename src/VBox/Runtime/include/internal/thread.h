@@ -66,10 +66,17 @@ typedef struct RTTHREADINT
     uint32_t volatile       cRefs;
     /** The current thread state. */
     RTTHREADSTATE volatile  enmState;
+    /** Set when really sleeping. */
+    bool volatile           fReallySleeping;
 #if defined(RT_OS_WINDOWS) && defined(IN_RING3)
     /** The thread handle
      * This is not valid until the create function has returned! */
     uintptr_t               hThread;
+#endif
+#if defined(RT_OS_LINUX) && defined(IN_RING3)
+    /** The thread ID.
+     * This is not valid before rtThreadMain has been called by the new thread.  */
+    pid_t                   tid;
 #endif
     /** The user event semaphore. */
     RTSEMEVENTMULTI         EventUser;

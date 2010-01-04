@@ -126,7 +126,7 @@ RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
                 pThis->Writer       = (pthread_t)-1;
 #ifdef RTSEMRW_STRICT
                 RTLockValidatorRecExclInit(&pThis->ValidatorWrite, NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, "RTSemRW", pThis);
-                RTLockValidatorRecSharedInit(&pThis->ValidatorRead,  NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, "RTSemRW", pThis);
+                RTLockValidatorRecSharedInit(&pThis->ValidatorRead,  NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_NONE, "RTSemRW", pThis, false /*fSignaller*/);
                 RTLockValidatorRecMakeSiblings(&pThis->ValidatorWrite.Core, &pThis->ValidatorRead.Core);
 #endif
                 *pRWSem = pThis;
@@ -223,12 +223,13 @@ DECL_FORCE_INLINE(int) rtSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies, PCRT
     {
 #ifdef RTSEMRW_STRICT
         hThreadSelf = RTThreadSelfAutoAdopt();
-        int rc9 = RTLockValidatorRecSharedCheckOrderAndBlocking(&pThis->ValidatorRead, hThreadSelf, pSrcPos, true, RTTHREADSTATE_RW_READ);
+        int rc9 = RTLockValidatorRecSharedCheckOrderAndBlocking(&pThis->ValidatorRead, hThreadSelf, pSrcPos, true,
+                                                                RTTHREADSTATE_RW_READ, true);
         if (RT_FAILURE(rc9))
             return rc9;
 #else
         hThreadSelf = RTThreadSelf();
-        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_READ);
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_READ, true);
 #endif
     }
 
@@ -279,7 +280,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies, PCRT
 
     ASMAtomicIncU32(&pThis->cReaders);
 #ifdef RTSEMRW_STRICT
-    RTLockValidatorSharedRecAddOwner(&pThis->ValidatorRead, hThreadSelf, pSrcPos);
+    RTLockValidatorRecSharedAddOwner(&pThis->ValidatorRead, hThreadSelf, pSrcPos);
 #endif
     return VINF_SUCCESS;
 }
@@ -415,12 +416,13 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, PCR
     {
 #ifdef RTSEMRW_STRICT
         hThreadSelf = RTThreadSelfAutoAdopt();
-        int rc9 = RTLockValidatorRecExclCheckOrderAndBlocking(&pThis->ValidatorWrite, hThreadSelf, pSrcPos, true, RTTHREADSTATE_RW_WRITE);
+        int rc9 = RTLockValidatorRecExclCheckOrderAndBlocking(&pThis->ValidatorWrite, hThreadSelf, pSrcPos, true,
+                                                              RTTHREADSTATE_RW_WRITE, true);
         if (RT_FAILURE(rc9))
             return rc9;
 #else
         hThreadSelf = RTThreadSelf();
-        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE, true);
 #endif
     }
 

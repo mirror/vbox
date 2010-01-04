@@ -219,8 +219,10 @@ typedef struct RTLOCKVALRECSHRD
     bool volatile                       fReallocating;
     /** Whether it's enabled or not. */
     bool                                fEnabled;
+    /** Set if event semaphore signaller, clear if read-write semaphore. */
+    bool                                fSignaller;
     /** Alignment padding. */
-    bool                                afPadding[2];
+    bool                                fPadding;
     /** Pointer to a table containing pointers to records of all the owners. */
     R3R0PTRTYPE(PRTLOCKVALRECSHRDOWN volatile *) papOwners;
 #if HC_ARCH_BITS == 32
@@ -451,10 +453,13 @@ RTDECL(int)  RTLockValidatorRecExclCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD h
  * @param   pSrcPos             The source position of the lock operation.
  * @param   fRecursiveOk        Whether it's ok to recurse.
  * @param   enmSleepState       The sleep state to enter on successful return.
+ * @param   fReallySleeping     Is it really going to sleep now or not.  Use
+ *                              false before calls to other IPRT synchronization
+ *                              methods.
  */
 RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf,
                                                 PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
-                                                RTTHREADSTATE enmSleepState);
+                                                RTTHREADSTATE enmSleepState, bool fReallySleeping);
 
 /**
  * RTLockValidatorRecExclCheckOrder and RTLockValidatorRecExclCheckBlocking
@@ -466,10 +471,13 @@ RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD
  * @param   pSrcPos             The source position of the lock operation.
  * @param   fRecursiveOk        Whether it's ok to recurse.
  * @param   enmSleepState       The sleep state to enter on successful return.
+ * @param   fReallySleeping     Is it really going to sleep now or not.  Use
+ *                              false before calls to other IPRT synchronization
+ *                              methods.
  */
 RTDECL(int) RTLockValidatorRecExclCheckOrderAndBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf,
                                                         PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
-                                                        RTTHREADSTATE enmSleepState);
+                                                        RTTHREADSTATE enmSleepState, bool fReallySleeping);
 
 /**
  * Initialize a lock validator record for a shared lock.
@@ -484,9 +492,12 @@ RTDECL(int) RTLockValidatorRecExclCheckOrderAndBlocking(PRTLOCKVALRECEXCL pRec, 
  *                              then pass RTLOCKVALIDATOR_SUB_CLASS_NONE.
  * @param   pszName             The lock name (optional).
  * @param   hLock               The lock handle.
+ * @param   fSignaller          Set if event semaphore signaller logic should be
+ *                              applied to this record, clear if read-write
+ *                              semaphore logic should be used.
  */
-RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALIDATORCLASS hClass,
-                                          uint32_t uSubClass, const char *pszName, void *hLock);
+RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALIDATORCLASS hClass, uint32_t uSubClass,
+                                          const char *pszName, void *hLock, bool fSignaller);
 /**
  * Uninitialize a lock validator record previously initialized by
  * RTLockValidatorRecSharedInit.
@@ -531,10 +542,13 @@ RTDECL(int)  RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD
  * @param   pSrcPos             The source position of the lock operation.
  * @param   fRecursiveOk        Whether it's ok to recurse.
  * @param   enmSleepState       The sleep state to enter on successful return.
+ * @param   fReallySleeping     Is it really going to sleep now or not.  Use
+ *                              false before calls to other IPRT synchronization
+ *                              methods.
  */
 RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf,
                                                   PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
-                                                  RTTHREADSTATE enmSleepState);
+                                                  RTTHREADSTATE enmSleepState, bool fReallySleeping);
 
 /**
  * RTLockValidatorRecSharedCheckOrder and RTLockValidatorRecSharedCheckBlocking
@@ -545,10 +559,24 @@ RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHRE
  * @param   hThreadSelf         The current thread.  Shall not be NIL_RTTHREAD!
  * @param   pSrcPos             The source position of the lock operation.
  * @param   fRecursiveOk        Whether it's ok to recurse.
+ * @param   enmSleepState       The sleep state to enter on successful return.
+ * @param   fReallySleeping     Is it really going to sleep now or not.  Use
+ *                              false before calls to other IPRT synchronization
+ *                              methods.
  */
 RTDECL(int) RTLockValidatorRecSharedCheckOrderAndBlocking(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf,
                                                           PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
-                                                          RTTHREADSTATE enmSleepState);
+                                                          RTTHREADSTATE enmSleepState, bool fReallySleeping);
+
+/**
+ * Removes all current owners and makes hThread the only owner.
+ *
+ * @param   pRead               The validator record.
+ * @param   hThread             The thread handle of the owner.  NIL_RTTHREAD is
+ *                              an alias for the current thread.
+ * @param   pSrcPos             The source position of the lock operation.
+ */
+RTDECL(void) RTLockValidatorRecSharedResetOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD hThread, PCRTLOCKVALSRCPOS pSrcPos);
 
 /**
  * Adds an owner to a shared locking record.
@@ -557,10 +585,11 @@ RTDECL(int) RTLockValidatorRecSharedCheckOrderAndBlocking(PRTLOCKVALRECSHRD pRec
  * acquiring the lock in shared mode.
  *
  * @param   pRead               The validator record.
- * @param   hThreadSelf         The calling thread and owner.
+ * @param   hThread             The thread handle of the owner.  NIL_RTTHREAD is
+ *                              an alias for the current thread.
  * @param   pSrcPos             The source position of the lock operation.
  */
-RTDECL(void) RTLockValidatorSharedRecAddOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf, PCRTLOCKVALSRCPOS pSrcPos);
+RTDECL(void) RTLockValidatorRecSharedAddOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD hThread, PCRTLOCKVALSRCPOS pSrcPos);
 
 /**
  * Removes an owner from a shared locking record.
@@ -569,9 +598,10 @@ RTDECL(void) RTLockValidatorSharedRecAddOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD h
  * releaseing the lock.
  *
  * @param   pRec                The validator record.
- * @param   hThreadSelf         The calling thread and the owner to remove.
+ * @param   hThread             The thread handle of the owner.  NIL_RTTHREAD is
+ *                              an alias for the current thread.
  */
-RTDECL(void) RTLockValidatorSharedRecRemoveOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf);
+RTDECL(void) RTLockValidatorRecSharedRemoveOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD hThread);
 
 /**
  * Check the exit order and release (unset) the shared ownership.
@@ -583,11 +613,28 @@ RTDECL(void) RTLockValidatorSharedRecRemoveOwner(PRTLOCKVALRECSHRD pRec, RTTHREA
  *          done all necessary whining and breakpointing before returning.
  * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
  *
- * @param   pRead               The validator record.
- * @param   hThreadSelf         The handle of the calling thread.  If not known,
- *                              pass NIL_RTTHREAD and we'll figure it out.
+ * @param   pRec                The validator record.
+ * @param   hThreadSelf         The handle of the calling thread.  NIL_RTTHREAD
+ *                              is an alias for the current thread.
  */
 RTDECL(int) RTLockValidatorRecSharedCheckAndRelease(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf);
+
+/**
+ * Check the signaller of an event.
+ *
+ * This is called by routines implementing releasing the event sempahore (both
+ * kinds).
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SEM_LV_NOT_SIGNALLER if the thread is not in the record.  Will
+ *          have done all necessary whining and breakpointing before returning.
+ * @retval  VERR_SEM_LV_INVALID_PARAMETER if the input is invalid.
+ *
+ * @param   pRec                The validator record.
+ * @param   hThreadSelf         The handle of the calling thread.  NIL_RTTHREAD
+ *                              is an alias for the current thread.
+ */
+RTDECL(int) RTLockValidatorRecSharedCheckSignaller(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf);
 
 /**
  * Gets the number of write locks and critical sections the specified

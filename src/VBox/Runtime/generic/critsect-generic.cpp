@@ -207,16 +207,16 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
         for (;;)
         {
 #ifdef RTCRITSECT_STRICT
-            int rc9 = RTLockValidatorRecExclCheckBlocking(pCritSect->pValidatorRec, hThreadSelf, pSrcPos,
-                                                          !(pCritSect->fFlags & RTCRITSECT_FLAGS_NO_NESTING),
-                                                          RTTHREADSTATE_CRITSECT);
+            rc9 = RTLockValidatorRecExclCheckBlocking(pCritSect->pValidatorRec, hThreadSelf, pSrcPos,
+                                                      !(pCritSect->fFlags & RTCRITSECT_FLAGS_NO_NESTING),
+                                                      RTTHREADSTATE_CRITSECT, false);
             if (RT_FAILURE(rc9))
             {
                 ASMAtomicDecS32(&pCritSect->cLockers);
                 return rc9;
             }
 #else
-            RTThreadBlocking(hThreadSelf, RTTHREADSTATE_CRITSECT);
+            RTThreadBlocking(hThreadSelf, RTTHREADSTATE_CRITSECT, false);
 #endif
             int rc = RTSemEventWait(pCritSect->EventSem, RT_INDEFINITE_WAIT);
             RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_CRITSECT);

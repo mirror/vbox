@@ -123,3 +123,21 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
     return RTErrConvertFromWin32(GetLastError());
 }
 
+
+RTDECL(void) RTSemEventSetSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread)
+{
+/** @todo implement RTSemEventSetSignaller and friends for NT. */
+}
+
+
+RTDECL(void) RTSemEventAddSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread)
+{
+
+}
+
+
+RTDECL(void) RTSemEventRemoverSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread)
+{
+
+}
+

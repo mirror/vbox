@@ -585,16 +585,31 @@ RTDECL(void) RTThreadUnblocked(RTTHREAD hThread, RTTHREADSTATE enmCurState);
  *
  * @param   hThread         The current thread.
  * @param   enmState        The sleep state.
+ * @param   fReallySleeping Really going to sleep now.  Use false before calls
+ *                          to other IPRT synchronization methods.
  */
-RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState);
+RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState, bool fReallySleeping);
 
 /**
  * Get the current thread state.
+ *
+ * A thread that is reported as sleeping may actually still be running inside
+ * the lock validator or/and in the code of some other IPRT synchronization
+ * primitive.  Use RTThreadGetReallySleeping
  *
  * @returns The thread state.
  * @param   hThread         The thread.
  */
 RTDECL(RTTHREADSTATE) RTThreadGetState(RTTHREAD hThread);
+
+/**
+ * Checks if the thread is really sleeping or not.
+ *
+ * @returns RTTHREADSTATE_RUNNING if not really sleeping, otherwise the state it
+ *          is sleeping in.
+ * @param   hThread         The thread.
+ */
+RTDECL(RTTHREADSTATE) RTThreadGetReallySleeping(RTTHREAD hThread);
 
 /**
  * Translate a thread state into a string.
@@ -603,6 +618,40 @@ RTDECL(RTTHREADSTATE) RTThreadGetState(RTTHREAD hThread);
  * @param   enmState            The state.
  */
 RTDECL(const char *) RTThreadStateName(RTTHREADSTATE enmState);
+
+
+/**
+ * Native thread states returned by RTThreadNativeState.
+ */
+typedef enum RTTHREADNATIVESTATE
+{
+    /** Invalid thread handle. */
+    RTTHREADNATIVESTATE_INVALID = 0,
+    /** Unable to determine the thread state. */
+    RTTHREADNATIVESTATE_UNKNOWN,
+    /** The thread is running. */
+    RTTHREADNATIVESTATE_RUNNING,
+    /** The thread is blocked. */
+    RTTHREADNATIVESTATE_BLOCKED,
+    /** The thread is suspended / stopped. */
+    RTTHREADNATIVESTATE_SUSPENDED,
+    /** The thread has terminated. */
+    RTTHREADNATIVESTATE_TERMINATED,
+    /** Make sure it's a 32-bit type. */
+    RTTHREADNATIVESTATE_32BIT_HACK = 0x7fffffff
+} RTTHREADNATIVESTATE;
+
+
+/**
+ * Get the native state of a thread.
+ *
+ * @returns Native state.
+ * @param   hThread             The thread handle.
+ *
+ * @remarks Not yet implemented on all systems, so have a backup plan for
+ *          RTTHREADNATIVESTATE_UNKNOWN.
+ */
+RTDECL(RTTHREADNATIVESTATE) RTThreadGetNativeState(RTTHREAD hThread);
 
 
 
