@@ -257,8 +257,8 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
         if (!cMillies)
             return VERR_TIMEOUT;
         ts.tv_sec  = cMillies / 1000;
-        ts.tv_nsec = (cMillies % 1000) * 1000000;
-        u64End = RTTimeSystemNanoTS() + cMillies * 1000000;
+        ts.tv_nsec = (cMillies % 1000) * UINT32_C(1000000);
+        u64End = RTTimeSystemNanoTS() + cMillies * UINT64_C(1000000);
         pTimeout = &ts;
     }
 
@@ -287,8 +287,8 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
                 int64_t i64Diff = u64End - RTTimeSystemNanoTS();
                 if (i64Diff < 1000)
                     return VERR_TIMEOUT;
-                ts.tv_sec  = i64Diff / 1000000000;
-                ts.tv_nsec = i64Diff % 1000000000;
+                ts.tv_sec  = (uint64_t)i64Diff / UINT32_C(1000000000);
+                ts.tv_nsec = (uint64_t)i64Diff % UINT32_C(1000000000);
             }
 #ifdef RTSEMEVENTMULTI_STRICT
             if (pThis->fEverHadSignallers)
