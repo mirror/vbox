@@ -58,18 +58,24 @@ typedef struct RTLOCKVALPERTHREAD
 {
     /** Where we are blocking. */
     RTLOCKVALSRCPOS                 SrcPos;
-    /** What we're blocking on. */
+    /** What we're blocking on.
+     * The lock validator sets this, RTThreadUnblock clears it. */
     PRTLOCKVALRECUNION volatile     pRec;
-    /** Number of registered write locks, mutexes and critsects that this thread owns. */
-    int32_t volatile                cWriteLocks;
-    /** Number of registered read locks that this thread owns, nesting included. */
-    int32_t volatile                cReadLocks;
+    /** The state in which pRec that goes with pRec.
+     * RTThreadUnblocking uses this to figure out when to clear pRec. */
+    RTTHREADSTATE volatile          enmRecState;
     /** The thread is running inside the lock validator. */
     bool volatile                   fInValidator;
     /** Reserved for alignment purposes. */
     bool                            afReserved[3];
+    /** Number of registered write locks, mutexes and critsects that this thread owns. */
+    int32_t volatile                cWriteLocks;
+    /** Number of registered read locks that this thread owns, nesting included. */
+    int32_t volatile                cReadLocks;
     /** Bitmap indicating which entires are free (set) and allocated (clear). */
     uint32_t volatile               bmFreeShrdOwners;
+    /** Reserved for alignment purposes. */
+    uint32_t                        u32Reserved;
     /** Statically allocated shared owner records */
     RTLOCKVALRECSHRDOWN             aShrdOwners[32];
 } RTLOCKVALPERTHREAD;
