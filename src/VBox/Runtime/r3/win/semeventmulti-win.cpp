@@ -227,8 +227,8 @@ RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned
             AssertMsgFailed(("%u\n", rc));
         case WAIT_FAILED:
         {
-            AssertMsgFailed(("Wait on EventMultiSem %p failed, rc=%d lasterr=%d\n", pThis, rc, GetLastError()));
             int rc2 = RTErrConvertFromWin32(GetLastError());
+            AssertMsgFailed(("Wait on EventMultiSem %p failed, rc=%d lasterr=%d\n", pThis, rc, GetLastError()));
             if (rc2)
                 return rc2;
 
