@@ -660,7 +660,7 @@ AssertCompile(VBOX_DMI_TABLE_ENTR == 5);
  *       family.
  *     * One or more APICs, such as the Intel 82489DX Advanced Programmable
  *       Interrupt Controller or the integrated APIC, such as that on the
- *       Intel Pentium 735\90 and 815\100 processors, together with a discrete
+ *       Intel Pentium 735\\90 and 815\\100 processors, together with a discrete
  *       I/O APIC unit.''
  * and later:
  *   ``4.3.3 I/O APIC Entries

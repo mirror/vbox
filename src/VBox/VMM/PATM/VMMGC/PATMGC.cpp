@@ -49,7 +49,7 @@
 
 
 /**
- * #PF Virtual Handler callback for Guest access a page monitored by PATM
+ * \#PF Virtual Handler callback for Guest access a page monitored by PATM
  *
  * @returns VBox status code (appropritate for trap handling and GC return).
  * @param   pVM         VM Handle.

@@ -47,7 +47,8 @@
 #include <iprt/asm.h>
 
 /**
- * #PF Handler callback for virtual access handler ranges. (CSAM self-modifying code monitor)
+ * \#PF Handler callback for virtual access handler ranges. (CSAM self-modifying
+ * code monitor)
  *
  * Important to realize that a physical page in a range can have aliases, and
  * for ALL and WRITE handlers these will also trigger.

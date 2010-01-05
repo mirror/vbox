@@ -410,6 +410,7 @@ VMMDECL(RTRCPTR) MMHyperR3ToRC(PVM pVM, RTR3PTR R3Ptr)
 }
 
 
+#ifndef IN_RING3
 /**
  * Converts a ring-3 host context address in the Hypervisor memory region to a current context address.
  *
@@ -419,7 +420,6 @@ VMMDECL(RTRCPTR) MMHyperR3ToRC(PVM pVM, RTR3PTR R3Ptr)
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-#ifndef IN_RING3
 VMMDECL(void *) MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
 {
     uint32_t off;
@@ -468,7 +468,7 @@ VMMDECL(RTR0PTR) MMHyperRCToR0(PVM pVM, RTRCPTR RCPtr)
     return NIL_RTR0PTR;
 }
 
-
+#ifndef IN_RC
 /**
  * Converts a raw-mode context address in the Hypervisor memory region to a current context address.
  *
@@ -478,7 +478,6 @@ VMMDECL(RTR0PTR) MMHyperRCToR0(PVM pVM, RTRCPTR RCPtr)
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-#ifndef IN_RC
 VMMDECL(void *) MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
 {
     uint32_t off;
@@ -489,8 +488,7 @@ VMMDECL(void *) MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
 }
 #endif
 
-
-
+#ifndef IN_RING3
 /**
  * Converts a current context address in the Hypervisor memory region to a ring-3 host context address.
  *
@@ -500,7 +498,6 @@ VMMDECL(void *) MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-#ifndef IN_RING3
 VMMDECL(RTR3PTR) MMHyperCCToR3(PVM pVM, void *pv)
 {
     uint32_t off;
@@ -511,6 +508,7 @@ VMMDECL(RTR3PTR) MMHyperCCToR3(PVM pVM, void *pv)
 }
 #endif
 
+#ifndef IN_RING0
 /**
  * Converts a current context address in the Hypervisor memory region to a ring-0 host context address.
  *
@@ -520,7 +518,6 @@ VMMDECL(RTR3PTR) MMHyperCCToR3(PVM pVM, void *pv)
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-#ifndef IN_RING0
 VMMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
 {
     uint32_t off;
@@ -532,6 +529,7 @@ VMMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
 #endif
 
 
+#ifndef IN_RC
 /**
  * Converts a current context address in the Hypervisor memory region to a raw-mode context address.
  *
@@ -541,7 +539,6 @@ VMMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-#ifndef IN_RC
 VMMDECL(RTRCPTR) MMHyperCCToRC(PVM pVM, void *pv)
 {
     uint32_t off;

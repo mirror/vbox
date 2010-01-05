@@ -547,7 +547,7 @@ typedef VBOXHDDFORMATLOAD *PFNVBOXHDDFORMATLOAD;
 
 /** The prefix to identify Storage Plugins. */
 #define VBOX_HDDFORMAT_PLUGIN_PREFIX "VBoxHDD"
-/** The size of the prefix excluding the '\0' terminator. */
+/** The size of the prefix excluding the '\\0' terminator. */
 #define VBOX_HDDFORMAT_PLUGIN_PREFIX_LENGTH (sizeof(VBOX_HDDFORMAT_PLUGIN_PREFIX)-1)
 
 #endif

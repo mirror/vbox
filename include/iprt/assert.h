@@ -402,11 +402,15 @@ RT_C_DECLS_END
  * @{
  */
 
+
 /** @def RTASSERT_QUIET
  * This can be defined to shut up the messages for a file where this would be
  * problematic because the message printing code path passes thru it.
  * @internal */
-#ifdef RTASSERT_QUIET
+#ifdef DOXYGEN_RUNNING
+# define RTASSERT_QUIET
+#endif
+#if defined(RTASSERT_QUIET) && !defined(DOXYGEN_RUNNING)
 # define RTAssertMsg1Weak(pszExpr, uLine, pszfile, pszFunction) \
                                 do { } while (0)
 # define RTAssertMsg2Weak       if (0) RTAssertMsg2Weak

@@ -465,7 +465,7 @@ PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
  * @param   pDevIns     The device instance.
  * @param   pvUser      User argument.
  * @param   Port        Port number used for the IN operation.
- * @param   u32         The value to output.
+ * @param   pu32        Where to return the read value.
  * @param   cb          The value size in bytes.
  */
 PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
@@ -643,7 +643,7 @@ static DECLCALLBACK(void) parallelRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDel
     pThis->pDevInsRC += offDelta;
 }
 
-/** @copyfrom PIBASE::pfnqueryInterface */
+/** @copydoc PIBASE::pfnqueryInterface */
 static DECLCALLBACK(void *) parallelQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     ParallelState *pThis = PDMIBASE_2_PARALLELSTATE(pInterface);

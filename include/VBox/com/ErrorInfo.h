@@ -357,7 +357,7 @@ public:
      *  @a aIsNull is @c false (by default) or remain uninitialized (null)
      *  otherwise.
      *
-     *  @param aIsNull  @true to prevent fetching error info and leave
+     *  @param aIsNull  @c true to prevent fetching error info and leave
      *                  the instance uninitialized.
      */
     ErrorInfoKeeper (bool aIsNull = false)

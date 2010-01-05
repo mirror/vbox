@@ -3113,7 +3113,7 @@ void VirtualBox::calculateRelativePath(const Utf8Str &strPath, Utf8Str &aResult)
  * Checks if there is a hard disk, DVD or floppy image with the given ID or
  * location already registered.
  *
- * On return, sets @aConflict to the string describing the conflicting medium,
+ * On return, sets @a aConflict to the string describing the conflicting medium,
  * or sets it to @c Null if no conflicting media is found. Returns S_OK in
  * either case. A failure is unexpected.
  *

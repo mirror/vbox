@@ -36,7 +36,7 @@
  * When executing in the raw-mode context, TRPM will be managing the IDT and
  * processing all traps and interrupts.  It will also monitor the guest IDT
  * because CSAM wishes to know about changes to it (trap/interrupt/syscall
- * handler patching) and TRPM needs to keep the #\BP gate in sync (ring-3
+ * handler patching) and TRPM needs to keep the \#BP gate in sync (ring-3
  * considerations).  See TRPMR3SyncIDT and CSAMR3CheckGates.
  *
  * External interrupts will be forwarded to the host context by the quickest
