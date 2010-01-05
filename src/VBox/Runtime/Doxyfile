@@ -1161,7 +1161,8 @@ SEARCH_INCLUDES        = YES
 # undefined via #undef or recursively expanded use the := operator
 # instead of the = operator.
 
-PREDEFINED             = DOXYGEN_RUNNING __DOXYGEN__ \
+PREDEFINED             = \
+    DOXYGEN_RUNNING \
     RT_C_DECLS_END=  \
     RT_C_DECLS_BEGIN=  \
     VBOX=1 \
@@ -1172,6 +1173,8 @@ PREDEFINED             = DOXYGEN_RUNNING __DOXYGEN__ \
     R3_ARCH_BITS=HC_ARCH_BITS \
     R0_ARCH_BITS=HC_ARCH_BITS \
     RTDECL(type)=type \
+    RT_EXPORT_SYMBOL(name)= \
+    DECL_FORCE_INLINE(type)=DECLINLINE(type)
 
 #    DECLCALLBACK(type)=type
 

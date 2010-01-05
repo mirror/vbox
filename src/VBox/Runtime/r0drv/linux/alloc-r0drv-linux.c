@@ -39,7 +39,7 @@
 #include <iprt/assert.h>
 #include "r0drv/alloc-r0drv.h"
 
-#if defined(RT_ARCH_AMD64) || defined(__DOXYGEN__)
+#if defined(RT_ARCH_AMD64) || defined(DOXYGEN_RUNNING)
 /**
  * We need memory in the module range (~2GB to ~0) this can only be obtained
  * thru APIs that are not exported (see module_alloc()).

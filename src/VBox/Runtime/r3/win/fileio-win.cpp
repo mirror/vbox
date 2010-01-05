@@ -51,7 +51,7 @@
 *******************************************************************************/
 /** @def RT_DONT_CONVERT_FILENAMES
  * Define this to pass UTF-8 unconverted to the kernel. */
-#ifdef __DOXYGEN__
+#ifdef DOXYGEN_RUNNING
 # define RT_DONT_CONVERT_FILENAMES 1
 #endif
 

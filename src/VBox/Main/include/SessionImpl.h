@@ -36,7 +36,7 @@
  *  @todo Dmitry, feel free to completely change this (and/or write a better description).
  *        (The same goes for the other darwin changes.)
  */
-#ifdef __DOXYGEN__
+#ifdef DOXYGEN_RUNNING
 # define VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
 #endif
 

@@ -40,7 +40,7 @@ RT_C_DECLS_BEGIN
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#ifdef __DOXYGEN__
+#ifdef DOXYGEN_RUNNING
 /** @def LDR_WITH_NATIVE
  * Define this to get native support. */
 # define LDR_WITH_NATIVE
@@ -64,7 +64,7 @@ RT_C_DECLS_BEGIN
 /** @def LDR_WITH_MACHO
  * Define this to get mach-o support (not implemented yet). */
 # define LDR_WITH_MACHO
-#endif /* __DOXYGEN__ */
+#endif /* DOXYGEN_RUNNING */
 
 #if defined(LDR_WITH_ELF32) || defined(LDR_WITH_ELF64)
 /** @def LDR_WITH_ELF

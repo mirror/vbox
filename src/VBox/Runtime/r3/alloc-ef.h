@@ -34,7 +34,7 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#if defined(__DOXYGEN__)
+#if defined(DOXYGEN_RUNNING)
 # define RTALLOC_USE_EFENCE
 # define RTALLOC_EFENCE_IN_FRONT
 # define RTALLOC_EFENCE_FREE_FILL 'f'
@@ -90,7 +90,7 @@
  */
 #define RTALLOC_EFENCE_FILLER           0xef
 
-#if defined(__DOXYGEN__)
+#if defined(DOXYGEN_RUNNING)
 /** @def RTALLOC_EFENCE_CPP
  * This define will enable the new and delete wrappers.
  */
