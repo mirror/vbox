@@ -38,7 +38,7 @@ RT_C_DECLS_BEGIN
 /** @def RTSTR_STRICT
  * Enables strict assertions on bad string encodings.
  */
-#ifdef __DOXYGEN__
+#ifdef DOXYGEN_RUNNING
 # define RTSTR_STRICT
 #endif
 /*#define RTSTR_STRICT*/

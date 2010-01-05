@@ -56,7 +56,7 @@
 /*
  * Shut up DOXYGEN warnings and guide it properly thru the code.
  */
-#ifdef  __DOXYGEN__
+#ifdef DOXYGEN_RUNNING
 #define VBOX_WITH_STATISTICS
 #define VBOX_STRICT
 #define IN_DIS

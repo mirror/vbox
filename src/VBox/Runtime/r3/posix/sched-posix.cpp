@@ -46,7 +46,7 @@
  * Be very careful with enabling this, it may cause deadlocks when combined
  * with the 'thread' logging prefix.
  */
-#ifdef __DOXYGEN__
+#ifdef DOXYGEN_RUNNING
 #define THREAD_LOGGING
 #endif
 
