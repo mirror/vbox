@@ -1232,6 +1232,7 @@ RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD
     rtLockValidatorWriteRecUnionPtr(&pThreadSelf->LockValidator.pRec, pRecU);
     rtLockValidatorCopySrcPos(&pThreadSelf->LockValidator.SrcPos, pSrcPos);
     ASMAtomicWriteBool(&pThreadSelf->LockValidator.fInValidator, true);
+    pThreadSelf->LockValidator.enmRecState = enmSleepState;
     rtThreadSetState(pThreadSelf, enmSleepState);
 
     /*
@@ -1259,7 +1260,10 @@ RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD
     if (RT_SUCCESS(rc))
         ASMAtomicWriteBool(&pThreadSelf->fReallySleeping, fReallySleeping);
     else
+    {
         rtThreadSetState(pThreadSelf, enmThreadState);
+        rtLockValidatorWriteRecUnionPtr(&pThreadSelf->LockValidator.pRec, NULL);
+    }
     ASMAtomicWriteBool(&pThreadSelf->LockValidator.fInValidator, false);
     return rc;
 }
@@ -1433,6 +1437,7 @@ RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHRE
     rtLockValidatorWriteRecUnionPtr(&pThreadSelf->LockValidator.pRec, pRecU);
     rtLockValidatorCopySrcPos(&pThreadSelf->LockValidator.SrcPos, pSrcPos);
     ASMAtomicWriteBool(&pThreadSelf->LockValidator.fInValidator, true);
+    pThreadSelf->LockValidator.enmRecState = enmSleepState;
     rtThreadSetState(pThreadSelf, enmSleepState);
 
     /*
@@ -1460,7 +1465,10 @@ RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHRE
     if (RT_SUCCESS(rc))
         ASMAtomicWriteBool(&pThreadSelf->fReallySleeping, fReallySleeping);
     else
+    {
         rtThreadSetState(pThreadSelf, enmThreadState);
+        rtLockValidatorWriteRecUnionPtr(&pThreadSelf->LockValidator.pRec, NULL);
+    }
     ASMAtomicWriteBool(&pThreadSelf->LockValidator.fInValidator, false);
     return rc;
 }
