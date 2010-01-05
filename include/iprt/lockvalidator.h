@@ -36,7 +36,7 @@
 #include <iprt/thread.h>
 
 
-/** @defgroup grp_ldr       RTLockValidator - Lock Validator
+/** @defgroup grp_rtlockval     RTLockValidator - Lock Validator
  * @ingroup grp_rt
  * @{
  */
@@ -571,7 +571,7 @@ RTDECL(int) RTLockValidatorRecSharedCheckOrderAndBlocking(PRTLOCKVALRECSHRD pRec
 /**
  * Removes all current owners and makes hThread the only owner.
  *
- * @param   pRead               The validator record.
+ * @param   pRec                The validator record.
  * @param   hThread             The thread handle of the owner.  NIL_RTTHREAD is
  *                              an alias for the current thread.
  * @param   pSrcPos             The source position of the lock operation.
@@ -584,7 +584,7 @@ RTDECL(void) RTLockValidatorRecSharedResetOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD
  * Takes recursion into account.  This function is typically called after
  * acquiring the lock in shared mode.
  *
- * @param   pRead               The validator record.
+ * @param   pRec                The validator record.
  * @param   hThread             The thread handle of the owner.  NIL_RTTHREAD is
  *                              an alias for the current thread.
  * @param   pSrcPos             The source position of the lock operation.

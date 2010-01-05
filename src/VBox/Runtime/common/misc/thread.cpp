@@ -778,7 +778,7 @@ RT_EXPORT_SYMBOL(RTThreadCreate);
  * @param   cbStack     See RTThreadCreate.
  * @param   enmType     See RTThreadCreate.
  * @param   fFlags      See RTThreadCreate.
- * @param   pszName     Thread name format.
+ * @param   pszNameFmt  Thread name format.
  * @param   va          Format arguments.
  */
 RTDECL(int) RTThreadCreateV(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
@@ -803,7 +803,7 @@ RT_EXPORT_SYMBOL(RTThreadCreateV);
  * @param   cbStack     See RTThreadCreate.
  * @param   enmType     See RTThreadCreate.
  * @param   fFlags      See RTThreadCreate.
- * @param   pszName     Thread name format.
+ * @param   pszNameFmt  Thread name format.
  * @param   ...         Format arguments.
  */
 RTDECL(int) RTThreadCreateF(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,

@@ -112,7 +112,7 @@ typedef FNRTHANDLETABLEDELETE *PFNRTHANDLETABLEDELETE;
  * @returns IPRT status code and on success a handle table handle will be stored at the
  *          location phHandleTable points at.
  *
- * @param   pHandleTable    Where to store the handle table handle on success.
+ * @param   phHandleTable   Where to store the handle table handle on success.
  * @param   fFlags          Flags, see RTHANDLETABLE_FLAGS_*.
  * @param   uBase           The handle base value. This is the value of the
  *                          first handle to be returned.
@@ -135,7 +135,7 @@ RTDECL(int)     RTHandleTableCreateEx(PRTHANDLETABLE phHandleTable, uint32_t fFl
  *
  * @returns IPRT status code and *phHandleTable.
  *
- * @param   pHandleTable    Where to store the handle table handle on success.
+ * @param   phHandleTable   Where to store the handle table handle on success.
  */
 RTDECL(int)     RTHandleTableCreate(PRTHANDLETABLE phHandleTable);
 

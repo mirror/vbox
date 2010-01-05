@@ -137,7 +137,9 @@ RTDECL(int) RTCritSectEnter(PRTCRITSECT pCritSect);
  *
  * @param   pCritSect       The critical section.
  * @param   uId             Where we're entering the section.
- * @param   RT_SRC_POS_DECL The source position.
+ * @param   pszFile         The source position - file.
+ * @param   iLine           The source position - line.
+ * @param   pszFunction     The source position - function.
  */
 RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
@@ -163,7 +165,9 @@ RTDECL(int) RTCritSectTryEnter(PRTCRITSECT pCritSect);
  *
  * @param   pCritSect       The critical section.
  * @param   uId             Where we're entering the section.
- * @param   RT_SRC_POS_DECL The source position.
+ * @param   pszFile         The source position - file.
+ * @param   iLine           The source position - line.
+ * @param   pszFunction     The source position - function.
  */
 RTDECL(int) RTCritSectTryEnterDebug(PRTCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
@@ -196,7 +200,9 @@ RTDECL(int) RTCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects
  * @param   cCritSects      Number of critical sections in the array.
  * @param   papCritSects    Array of critical section pointers.
  * @param   uId             Where we're entering the section.
- * @param   RT_SRC_POS_DECL The source position.
+ * @param   pszFile         The source position - file.
+ * @param   iLine           The source position - line.
+ * @param   pszFunction     The source position - function.
  *
  * @remark  See RTCritSectEnterMultiple().
  */

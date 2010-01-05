@@ -39,7 +39,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt_mp RTLinuxSysfs - Linux sysfs
+/** @defgroup grp_rt_linux_sysfs    RTLinuxSysfs - Linux sysfs
  * @ingroup grp_rt
  * @{
  */

@@ -122,7 +122,7 @@ RTDECL(int) RTLocalIpcServerCancel(RTLOCALIPCSERVER hServer);
  * This is used a client process (or thread).
  *
  * @returns IPRT status code.
- * @param   VINF_SUCCESS on success and *phSession holding the session handle.
+ * @retval  VINF_SUCCESS on success and *phSession holding the session handle.
  *
  * @param   phSession           Where to store the sesson handle on success.
  * @param   pszName             The server name (see RTLocalIpcServerCreate for details).
@@ -269,7 +269,7 @@ RTDECL(int) RTLocalIpcSessionQueryUserId(RTLOCALIPCSESSION hSession, PRTUID pUid
  * @param   hSession            The session handle.
  * @param   pGid                Where to store the group ID on success.
  */
-RTDECL(int) RTLocalIpcSessionQueryGroupId(RTLOCALIPCSESSION hSession, PRTUID pUid);
+RTDECL(int) RTLocalIpcSessionQueryGroupId(RTLOCALIPCSESSION hSession, PRTGID pGid);
 
 /** @} */
 RT_C_DECLS_END

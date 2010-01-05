@@ -136,11 +136,11 @@ RTDECL(void)    RTAssertMsg2WeakV(const char *pszFormat, va_list va);
  */
 RTDECL(void)    RTAssertMsg2Add(const char *pszFormat, ...);
 /**
- * Weak version of RTAssertMsgAdd2 that forwards to RTAssertMsg2AddWeakV.
+ * Weak version of RTAssertMsg2Add that forwards to RTAssertMsg2AddWeakV.
  *
  * There is not need to override this, check out RTAssertMsg2AddWeakV instead!
  *
- * @copydoc RTAssertMsgAdd2
+ * @copydoc RTAssertMsg2Add
  */
 RTDECL(void)    RTAssertMsg2AddWeak(const char *pszFormat, ...);
 
@@ -433,7 +433,7 @@ RT_C_DECLS_END
 # define AssertBreakpoint()     do { } while (0)
 #endif
 
-/** @def rtAssertPanic()
+/** @def RTAssertPanic()
  * If RT_STRICT is defined this macro will invoke RTAssertDoPanic if
  * RTAssertShouldPanic returns true. If RT_STRICT isn't defined it won't do any
  * thing.

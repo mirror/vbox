@@ -1290,7 +1290,7 @@ RT_EXPORT_SYMBOL(RTDbgModLineByOrdinalA);
  * @param   poffDisp            Where to store the distance between the
  *                              specified address and the returned symbol.
  *                              Optional.
- * @param   pSymInfo            Where to store the symbol information.
+ * @param   pLineInfo           Where to store the line number information.
  */
 RTDECL(int) RTDbgModLineByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGLINE pLineInfo)
 {

@@ -529,7 +529,7 @@ static DECLCALLBACK(int) rtDbgModContainer_SegmentAdd(PRTDBGMODINT pMod, RTUINTP
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnRvaToSegOff */
+/** @copydoc RTDBGMODVTDBG::pfnImageSize */
 static DECLCALLBACK(RTUINTPTR) rtDbgModContainer_ImageSize(PRTDBGMODINT pMod)
 {
     PRTDBGMODCTN pThis = (PRTDBGMODCTN)pMod->pvDbgPriv;

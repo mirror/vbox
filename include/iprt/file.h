@@ -259,7 +259,7 @@ RTR3DECL(int) RTFileFromNative(PRTFILE pFile, RTHCINTPTR uNative);
  * Gets the native handle for an IPRT file handle.
  *
  * @return  The native handle.
- * @params  File            The IPRT file handle.
+ * @param   File            The IPRT file handle.
  */
 RTR3DECL(RTHCINTPTR) RTFileToNative(RTFILE File);
 
@@ -1034,13 +1034,13 @@ RTDECL(int) RTFileAioReqPrepareRead(RTFILEAIOREQ hReq, RTFILE hFile, RTFOFF off,
  * @param   hReq            The request handle.
  * @param   hFile           The file to write to.
  * @param   off             The offset to start writing at.
- * @param   pvBuf           Where to store the written bits.
- * @param   cbRead          Number of bytes to write.
+ * @param   pvBuf           The bits to write.
+ * @param   cbWrite         Number of bytes to write.
  * @param   pvUser          Opaque user data associated with this request which
  *                          can be retrieved with RTFileAioReqGetUser().
  */
 RTDECL(int) RTFileAioReqPrepareWrite(RTFILEAIOREQ hReq, RTFILE hFile, RTFOFF off,
-                                     void *pvBuf, size_t cbWrite, void *pvUser);
+                                     void const *pvBuf, size_t cbWrite, void *pvUser);
 
 /**
  * Prepares an async flush of all cached data associated with a file handle.
@@ -1093,7 +1093,7 @@ RTDECL(int) RTFileAioReqCancel(RTFILEAIOREQ hReq);
  *                          Optional since it is not relevant for all kinds of
  *                          requests.
  */
-RTDECL(int) RTFileAioReqGetRC(RTFILEAIOREQ hReq, size_t *pcbTransfered);
+RTDECL(int) RTFileAioReqGetRC(RTFILEAIOREQ hReq, size_t *pcbTransferred);
 
 
 

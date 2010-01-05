@@ -28,41 +28,6 @@
  * additional information or have any questions.
  */
 
-/** @page pg_rt_str_format_vbox    The VBox String Format Extensions
- *
- * The string formatter supports most of the non-float format types and flags.
- * See RTStrFormatV() for the full tail there. In addition we've added a number
- * of VBox specific format types. Most of these doesn't work with any flags (like
- * width, precision and such), but they should still be very useful.
- *
- * The types:
- *
- *      - \%Vrc  - Takes an integer iprt status code as argument. Will insert the
- *        status code define corresponding to the iprt status code.
- *      - \%Vrs  - Takes an integer iprt status code as argument. Will insert the
- *        short description of the specified status code.
- *      - \%Vrf  - Takes an integer iprt status code as argument. Will insert the
- *        full description of the specified status code.
- *      - \%Vra  - Takes an integer iprt status code as argument. Will insert the
- *        status code define + full description.
- *      - \%Vt   - Current thread (RTThreadSelf()).
- *      - \%Vhxd - Takes a pointer to the memory which is to be dumped in typical
- *        hex format. Use the width to specify the length, and the precision to
- *        set the number of bytes per line. Default width and precision is 16.
- *      - \%Vhxs - Takes a pointer to the memory to be displayed as a hex string,
- *        i.e. a series of space separated bytes formatted as two digit hex value.
- *        Use the width to specify the length. Default length is 16 bytes.
- *      - \%VGp   - Guest context physical address.
- *      - \%VGv   - Guest context virtual address.
- *      - \%VRv   - 32 bits guest context virtual address.
- *      - \%VHp   - Host context physical address.
- *      - \%VHv   - Host context virtual address.
- *      - \%VI[8|16|32|64] - Signed integer value of the specifed bit count.
- *      - \%VU[8|16|32|64] - Unsigned integer value of the specifed bit count.
- *      - \%VX[8|16|32|64] - Hexadecimal integer value of the specifed bit count.
- *
- */
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -79,7 +44,9 @@
 
 /**
  * Callback to format VBox formatting extentions.
- * See @ref pg_rt_str_format_vbox for a reference on the format types.
+ *
+ * @deprecated All the %V* format extensions are deprecated and will be removed
+ *             before long!
  *
  * @returns The number of bytes formatted.
  * @param   pfnOutput       Pointer to output function.

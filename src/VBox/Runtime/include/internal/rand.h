@@ -104,14 +104,14 @@ typedef struct RTRANDINT
      *          will contain the necessary buffer size.
      * @retval  VERR_NOT_SUPPORTED by non-psuedo generators.
      *
-     * @param   hRand       Handle to the random number generator.
+     * @param   pThis       Pointer to the instance data.
      * @param   pszState    Where to store the state. The returned string will be
      *                      null terminated and printable.
      * @param   pcbState    The size of the buffer pszState points to on input, the
      *                      size required / used on return (including the
      *                      terminator, thus the 'cb' instead of 'cch').
      */
-    DECLCALLBACKMEMBER(int, pfnSaveState)(RTRAND hRand, char *pszState, size_t *pcbState);
+    DECLCALLBACKMEMBER(int, pfnSaveState)(PRTRANDINT pThis, char *pszState, size_t *pcbState);
 
     /**
      * Restores the state of a pseudo generator.
@@ -122,10 +122,10 @@ typedef struct RTRANDINT
      * @retval  VERR_PARSE_ERROR if the state string is malformed.
      * @retval  VERR_NOT_SUPPORTED by non-psuedo generators.
      *
-     * @param   hRand       Handle to the random number generator.
+     * @param   pThis       Pointer to the instance data.
      * @param   pszState    The state to load.
      */
-    DECLCALLBACKMEMBER(int, pfnRestoreState)(RTRAND hRand, char const *pszState);
+    DECLCALLBACKMEMBER(int, pfnRestoreState)(PRTRANDINT pThis, char const *pszState);
 
     /**
      * Destroys the instance.

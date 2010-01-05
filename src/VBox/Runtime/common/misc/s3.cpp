@@ -862,7 +862,7 @@ RTR3DECL(int) RTS3DeleteKey(RTS3 hS3, const char* pszBucketName, const char* psz
     return rc;
 }
 
-RTR3DECL(int) RTS3GetKey(RTS3 hS3, const char* pszBucketName, const char* pszKeyName, const char* pszFileName)
+RTR3DECL(int) RTS3GetKey(RTS3 hS3, const char *pszBucketName, const char *pszKeyName, const char *pszFilename)
 {
     PRTS3INTERNAL pS3Int = hS3;
     RTS3_VALID_RETURN(pS3Int);
@@ -872,7 +872,7 @@ RTR3DECL(int) RTS3GetKey(RTS3 hS3, const char* pszBucketName, const char* pszKey
 
     /* Open the file */
     RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszFileName, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+    int rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -915,12 +915,12 @@ RTR3DECL(int) RTS3GetKey(RTS3 hS3, const char* pszBucketName, const char* pszKey
 
     /* If there was an error delete the newly created file */
     if (RT_FAILURE(rc))
-        RTFileDelete(pszFileName);
+        RTFileDelete(pszFilename);
 
     return rc;
 }
 
-RTR3DECL(int) RTS3PutKey(RTS3 hS3, const char* pszBucketName, const char* pszKeyName, const char* pszFileName)
+RTR3DECL(int) RTS3PutKey(RTS3 hS3, const char *pszBucketName, const char *pszKeyName, const char *pszFilename)
 {
     PRTS3INTERNAL pS3Int = hS3;
     RTS3_VALID_RETURN(pS3Int);
@@ -930,7 +930,7 @@ RTR3DECL(int) RTS3PutKey(RTS3 hS3, const char* pszBucketName, const char* pszKey
 
     /* Open the file */
     RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszFileName, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+    int rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return rc;
 

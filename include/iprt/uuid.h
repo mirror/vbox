@@ -76,8 +76,10 @@ RTDECL(bool)  RTUuidIsNull(PCRTUUID pUuid);
  * Compares two UUID values.
  *
  * @returns 0 if eq, < 0 or > 0.
- * @param   pUuid1          First value to compare. NULL is treated like if RTUuidIsNull() return true.
- * @param   pUuid2          Second value to compare. NULL is treated like if RTUuidIsNull() return true.
+ * @param   pUuid1          First value to compare.  NULL is treated like if
+ *                          RTUuidIsNull() return true.
+ * @param   pUuid2          Second value to compare.  NULL is treated like if
+ *                          RTUuidIsNull() return true.
  */
 RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2);
 
@@ -86,8 +88,8 @@ RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2);
  *
  * @note IPRT uses little endian byte ordering in the UUID integer fields. If
  * you want to pass IPRT UUIDs in binary representation to other UUID libraries
- * and expect to get exactly the same string representation as in IPRT, you
- * need to convert the first three integer fields (one 32 bit value, two 16 bit
+ * and expect to get exactly the same string representation as in IPRT, you need
+ * to convert the first three integer fields (one 32 bit value, two 16 bit
  * values) separately to big endian (also called network byte order).
  * Correspondingly, if you want to get the right result with UUIDs which are in
  * big endian format, you need to convert them before using this function.
@@ -95,8 +97,9 @@ RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2);
  * @sa RTUUID::Gen
  *
  * @returns 0 if eq, < 0 or > 0.
- * @param   pUuid1          First value to compare. NULL is not allowed.
- * @param   pszString2      The 2nd UUID in string form. NULL of malformed string is not permitted.
+ * @param   pUuid1          First value to compare.  NULL is not allowed.
+ * @param   pszString       The 2nd UUID in string form.  NULL or malformed
+ *                          string is not permitted.
  */
 RTDECL(int)  RTUuidCompareStr(PCRTUUID pUuid1, const char *pszString);
 

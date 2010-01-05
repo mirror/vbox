@@ -49,14 +49,14 @@
  * Create a cache for objects.
  *
  * @returns iprt status code.
- * @param   ppObjCache    Where to store the pointer to the created cache.
- * @param   cElements     Number of elements the cache can hold.
- *                        0 if unlimited size.
- * @param   cbElement     Size of one element in bytes
- * @param   fProt         Protection flags for protecting cache against concurrent access
- *                        from different threads.
- *                        RTOBJCACHE_PROTECT_REQUESTER to protect the request function.
- *                        RTOBJCACHE_PROTECT_INSERT    to protect the insert function.
+ * @param   ppCache         Where to store the pointer to the created cache.
+ * @param   cElements       Number of elements the cache can hold.
+ *                          0 if unlimited size.
+ * @param   cbElement       Size of one element in bytes
+ * @param   fProt           Protection flags for protecting cache against
+ *                          concurrent access from different threads.
+ *                          RTOBJCACHE_PROTECT_REQUEST   to protect the request function.
+ *                          RTOBJCACHE_PROTECT_INSERT    to protect the insert function.
  */
 RTDECL(int) RTCacheCreate(PRTOBJCACHE *ppCache, uint32_t cElements, size_t cbElement, uint32_t fProt)
 {

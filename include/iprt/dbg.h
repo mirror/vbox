@@ -511,10 +511,10 @@ RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Ad
  * @param   Addr            The address which closest symbol is requested.
  * @param   poffDisp        Where to return the distance between the symbol
  *                          and address. Optional.
- * @param   pSymInfo        Where to return the symbol info.
+ * @param   pSymbol         Where to return the symbol info.
  * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo, PRTDBGMOD phMod);
+RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod);
 
 /**
  * Query a symbol by address.
@@ -1099,7 +1099,7 @@ RTDECL(int)         RTDbgModLineByOrdinalA(RTDBGMOD hDbgMod, uint32_t iOrdinal, 
  * @param   poffDisp            Where to store the distance between the
  *                              specified address and the returned symbol.
  *                              Optional.
- * @param   pSymInfo            Where to store the symbol information.
+ * @param   pLineInfo           Where to store the line number information.
  */
 RTDECL(int)         RTDbgModLineByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGLINE pLineInfo);
 

@@ -1166,8 +1166,8 @@ DECLINLINE(RTDBGMOD) rtDbgAsModuleByAddr(PRTDBGASINT pDbgAs, RTUINTPTR Addr, PRT
 /**
  * Adjusts the address to correspond to the mapping of the module/segment.
  *
- * @param   pSymbol         The returned symbol info.
- * @param   pMap            The mapping record.
+ * @param   pAddr           The address to adjust (in/out).
+ * @param   iSeg            The related segment.
  * @param   hDbgMod         The module handle.
  * @param   MapAddr         The mapping address.
  * @param   iMapSeg         The segment that's mapped, NIL_RTDBGSEGIDX or
@@ -1258,6 +1258,9 @@ DECLINLINE(void) rtDbgAsAdjustLineAddress(PRTDBGLINE pLine, RTDBGMOD hDbgMod, RT
  * @param   Addr            The address of the symbol.
  * @param   cb              The size of the symbol.
  * @param   fFlags          Symbol flags.
+ * @param   piOrdinal       Where to return the symbol ordinal on success. If
+ *                          the interpreter doesn't do ordinals, this will be set to
+ *                          UINT32_MAX. Optional
  */
 RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Addr, RTUINTPTR cb, uint32_t fFlags, uint32_t *piOrdinal)
 {
@@ -1342,11 +1345,11 @@ RT_EXPORT_SYMBOL(RTDbgAsSymbolByAddr);
  * @param   Addr            The address which closest symbol is requested.
  * @param   poffDisp        Where to return the distance between the symbol
  *                          and address. Optional.
- * @param   ppSymbol        Where to return the pointer to the allocated
- *                          symbol info. Always set. Free with RTDbgSymbolFree.
+ * @param   ppSymInfo       Where to return the pointer to the allocated symbol
+ *                          info. Always set. Free with RTDbgSymbolFree.
  * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymbol, PRTDBGMOD phMod)
+RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymInfo, PRTDBGMOD phMod)
 {
     /*
      * Validate input and resolve the address.
@@ -1368,9 +1371,9 @@ RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffD
     /*
      * Forward the call.
      */
-    int rc = RTDbgModSymbolByAddrA(hMod, iSeg, offSeg, poffDisp, ppSymbol);
+    int rc = RTDbgModSymbolByAddrA(hMod, iSeg, offSeg, poffDisp, ppSymInfo);
     if (RT_SUCCESS(rc))
-        rtDbgAsAdjustSymbolValue(*ppSymbol, hMod, MapAddr, iSeg);
+        rtDbgAsAdjustSymbolValue(*ppSymInfo, hMod, MapAddr, iSeg);
     if (phMod)
         *phMod = hMod;
     else

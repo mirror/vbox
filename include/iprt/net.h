@@ -416,7 +416,7 @@ RTDECL(bool) RTNetIPv4IsDHCPValid(PCRTNETUDP pUdpHdr, PCRTNETBOOTP pDhcp, size_t
 
 /**
  * IPv4 DHCP packet.
- * @obsolete Use RTNETBOOTP.
+ * @deprecated Use RTNETBOOTP.
  */
 #pragma pack(1)
 typedef struct RTNETDHCP

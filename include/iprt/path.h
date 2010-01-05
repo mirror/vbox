@@ -268,16 +268,14 @@ RTDECL(void) RTPathStripTrailingSlash(char *pszPath);
  * @returns The path length.
  *
  * @param   pszPath     Path to find filename in.
- * @param   pcbDir      Where to put the length of the directory component.
- *                      If no directory, this will be 0. Optional.
+ * @param   pcchDir     Where to put the length of the directory component. If
+ *                      no directory, this will be 0. Optional.
  * @param   poffName    Where to store the filename offset.
  *                      If empty string or if it's ending with a slash this
  *                      will be set to -1. Optional.
  * @param   poffSuff    Where to store the suffix offset (the last dot).
  *                      If empty string or if it's ending with a slash this
  *                      will be set to -1. Optional.
- * @param   pfFlags     Where to set flags returning more information about
- *                      the path. For the future. Optional.
  */
 RTDECL(size_t) RTPathParse(const char *pszPath, size_t *pcchDir, ssize_t *poffName, ssize_t *poffSuff);
 

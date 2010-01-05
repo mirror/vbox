@@ -249,7 +249,7 @@ RTDECL(void) RTSemEventMultiRemoveSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTH
 /** @} */
 
 
-/** @defgroup grp_rt_sems_mutex     RTMutex - Mutex semaphores.
+/** @defgroup grp_rt_sems_mutex     RTSemMutex - Mutex semaphores.
  *
  * Mutex semaphores protect a section of code or data to which access must be
  * exclusive.  Only one thread can hold access to a critical section at one
@@ -660,7 +660,7 @@ RTDECL(int)   RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies);
  * @param   pszFunction         The functionn where the lock is being acquired
  *                              from.  Optional.
  */
-RTDECL(int)  RTSemRWRequestWriteDebug(RTSEMRW MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+RTDECL(int)  RTSemRWRequestWriteDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
  * Debug version of RTSemRWRequestWriteNoResume that tracks the location.

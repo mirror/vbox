@@ -33,7 +33,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/assert.h>
-/** @todo #include <iprt/param.h> for PAGE_SIZE. */
+/** @todo @code #include <iprt/param.h> @endcode for PAGE_SIZE. */
 /** @def RT_INLINE_ASM_USES_INTRIN
  * Defined as 1 if we're using a _MSC_VER 1400.
  * Otherwise defined as 0.
@@ -1048,7 +1048,6 @@ DECLINLINE(uint32_t) ASMGetCpuFamily(uint32_t uEAX)
  *
  * @returns Model.
  * @param   uEAX    EAX from ASMCpuId(1) or ASMCpuId(0x80000001).
- * @param   fIntel  Whether it's an intel CPU.
  */
 DECLINLINE(uint32_t) ASMGetCpuModelIntel(uint32_t uEAX)
 {
@@ -1063,7 +1062,6 @@ DECLINLINE(uint32_t) ASMGetCpuModelIntel(uint32_t uEAX)
  *
  * @returns Model.
  * @param   uEAX    EAX from ASMCpuId(1) or ASMCpuId(0x80000001).
- * @param   fIntel  Whether it's an intel CPU.
  */
 DECLINLINE(uint32_t) ASMGetCpuModelAMD(uint32_t uEAX)
 {
@@ -3688,12 +3686,12 @@ DECLINLINE(int32_t) ASMAtomicAddS32(int32_t volatile *pi32, int32_t i32)
  * Atomically exchanges and subtracts to an unsigned 32-bit value, ordered.
  *
  * @returns The old value.
- * @param   pu32        Pointer to the value.
- * @param   u32         Number to subtract.
+ * @param   pi32        Pointer to the value.
+ * @param   i32         Number to subtract.
  */
-DECLINLINE(uint32_t) ASMAtomicSubU32(int32_t volatile *pi32, uint32_t u32)
+DECLINLINE(uint32_t) ASMAtomicSubU32(int32_t volatile *pi32, uint32_t i32)
 {
-    return ASMAtomicAddU32((uint32_t volatile *)pi32, (uint32_t)-(int32_t)u32);
+    return ASMAtomicAddU32((uint32_t volatile *)pi32, (uint32_t)-(int32_t)i32);
 }
 
 
