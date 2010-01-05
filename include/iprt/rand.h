@@ -117,7 +117,8 @@ RTDECL(uint64_t) RTRandU64(void) RT_NO_THROW;
  * Create an instance of the default random number generator.
  *
  * @returns IPRT status code.
- * @param   hRand       Handle to the random number generator.
+ * @param   phRand      Where to return the handle to the new random number
+ *                      generator.
  */
 RTDECL(int) RTRandAdvCreate(PRTRAND phRand) RT_NO_THROW;
 

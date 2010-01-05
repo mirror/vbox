@@ -37,8 +37,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt_dbgmod     RTDbgMod - Debug Module Interperter
- * @ingroup grp_rt
+/** @addtogroup grp_rt_dbgmod
  * @internal
  * @{
  */
@@ -223,6 +222,7 @@ typedef struct RTDBGMODVTDBG
      * @param   iSeg        The segment number (0-based). RTDBGMOD_SEG_RVA can be used.
      * @param   off         The offset into the segment.
      * @param   cb          The area covered by the symbol. 0 is fine.
+     * @param   fFlags      Flags.
      * @param   piOrdinal   Where to return the symbol ordinal on success. If the
      *                      interpreter doesn't do ordinals, this will be set to
      *                      UINT32_MAX. Optional
@@ -305,6 +305,7 @@ typedef struct RTDBGMODVTDBG
      * @param   pMod        Pointer to the module structure.
      * @param   pszFile     The filename.
      * @param   cchFile     The length of the filename.
+     * @param   uLineNo     The line number.
      * @param   iSeg        The segment number (0-based).
      * @param   off         The offset into the segment.
      * @param   piOrdinal   Where to return the line number ordinal on success. If

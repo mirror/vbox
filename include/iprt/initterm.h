@@ -56,7 +56,6 @@ RTR3DECL(int) RTR3Init(void);
  * Initializes the runtime library and try initialize SUPLib too.
  *
  * @returns IPRT status code.
- * @param   pszProgramPath      The path to the program file.
  *
  * @remarks Failure to initialize SUPLib is ignored.
  */

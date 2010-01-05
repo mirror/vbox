@@ -227,9 +227,9 @@ RT_EXPORT_SYMBOL(RTNetIPv4AddUDPChecksum);
  * Adds the checksum of the TCP header to the intermediate checksum value [inlined].
  *
  * @returns 32-bit intermediary checksum value.
- * @param   pUdpHdr         Pointer to the TCP header to checksum, network endian (big).
- *                          Assums the caller has already validate it and made sure the
- *                          entire header is present.
+ * @param   pTcpHdr         Pointer to the TCP header to checksum, network
+ *                          endian (big). Assums the caller has already validate
+ *                          it and made sure the entire header is present.
  * @param   u32Sum          The 32-bit intermediate checksum value.
  */
 DECLINLINE(uint32_t) rtNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t u32Sum)
@@ -273,9 +273,9 @@ DECLINLINE(uint32_t) rtNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t u32Sum
  * Adds the checksum of the TCP header to the intermediate checksum value.
  *
  * @returns 32-bit intermediary checksum value.
- * @param   pUdpHdr         Pointer to the TCP header to checksum, network endian (big).
- *                          Assums the caller has already validate it and made sure the
- *                          entire header is present.
+ * @param   pTcpHdr         Pointer to the TCP header to checksum, network
+ *                          endian (big). Assums the caller has already validate
+ *                          it and made sure the entire header is present.
  * @param   u32Sum          The 32-bit intermediate checksum value.
  */
 RTDECL(uint32_t) RTNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t u32Sum)
@@ -289,7 +289,8 @@ RT_EXPORT_SYMBOL(RTNetIPv4AddTCPChecksum);
  * Adds the checksum of the specified data segment to the intermediate checksum value [inlined].
  *
  * @returns 32-bit intermediary checksum value.
- * @param   pUdpHdr         Pointer to the UDP header to checksum, network endian (big).
+ * @param   pvData          Pointer to the data that should be checksummed.
+ * @param   cbData          The number of bytes to checksum.
  * @param   u32Sum          The 32-bit intermediate checksum value.
  * @param   pfOdd           This is used to keep track of odd bits, initialize to false
  *                          when starting to checksum the data (aka text) after a TCP
@@ -341,7 +342,8 @@ DECLINLINE(uint32_t) rtNetIPv4AddDataChecksum(void const *pvData, size_t cbData,
  * Adds the checksum of the specified data segment to the intermediate checksum value.
  *
  * @returns 32-bit intermediary checksum value.
- * @param   pUdpHdr         Pointer to the UDP header to checksum, network endian (big).
+ * @param   pvData          The data bits to checksum.
+ * @param   cbData          The number of bytes to checksum.
  * @param   u32Sum          The 32-bit intermediate checksum value.
  * @param   pfOdd           This is used to keep track of odd bits, initialize to false
  *                          when starting to checksum the data (aka text) after a TCP

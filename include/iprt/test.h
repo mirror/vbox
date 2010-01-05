@@ -243,7 +243,7 @@ RTR3DECL(int) RTTestSummaryAndDestroy(RTTEST hTest);
  * @param   pszReasonFmt    Text explaining why, optional (NULL).
  * @param   va              Arguments for the reason format string.
  */
-RTR3DECL(int) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReason, va_list va);
+RTR3DECL(int) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReasonFmt, va_list va);
 
 /**
  * Skips the test, destroys the test instance and return an exit code.
@@ -252,9 +252,9 @@ RTR3DECL(int) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReason, va_list
  * @param   hTest           The test handle. If NIL_RTTEST we'll use the one
  *                          associated with the calling thread.
  * @param   pszReasonFmt    Text explaining why, optional (NULL).
- * @param   va              Arguments for the reason format string.
+ * @param   ...             Arguments for the reason format string.
  */
-RTR3DECL(int) RTTestSkipAndDestroy(RTTEST hTest, const char *pszReason, ...);
+RTR3DECL(int) RTTestSkipAndDestroy(RTTEST hTest, const char *pszReasonFmt, ...);
 
 /**
  * Starts a sub-test.
@@ -291,7 +291,7 @@ RTR3DECL(int) RTTestSubF(RTTEST hTest, const char *pszSubTestFmt, ...);
  * @param   hTest           The test handle. If NIL_RTTEST we'll use the one
  *                          associated with the calling thread.
  * @param   pszSubTestFmt   The sub-test name format string.
- * @param   ...             Arguments.
+ * @param   va              Arguments.
  */
 RTR3DECL(int) RTTestSubV(RTTEST hTest, const char *pszSubTestFmt, va_list va);
 
@@ -379,7 +379,6 @@ RTR3DECL(int) RTTestFailed(RTTEST hTest, const char *pszFormat, ...);
  * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
- * @param   enmLevel    Message importance level.
  * @param   pszFormat   The message.
  * @param   va          Arguments.
  */
@@ -391,7 +390,6 @@ RTR3DECL(int) RTTestFailureDetailsV(RTTEST hTest, const char *pszFormat, va_list
  * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
- * @param   enmLevel    Message importance level.
  * @param   pszFormat   The message.
  * @param   ...         Arguments.
  */
@@ -667,7 +665,7 @@ RTR3DECL(int) RTTestISubF(const char *pszSubTestFmt, ...);
  *
  * @returns Number of chars printed.
  * @param   pszSubTestFmt   The sub-test name format string.
- * @param   ...             Arguments.
+ * @param   va              Arguments.
  */
 RTR3DECL(int) RTTestISubV(const char *pszSubTestFmt, va_list va);
 

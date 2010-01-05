@@ -1025,18 +1025,18 @@ typedef const RTRCPTR  *PCRTRCPTR;
 
 /** Raw mode context pointer, unsigned integer variant. */
 typedef int32_t         RTRCINTPTR;
-/** @def RTRCUINPTR_MAX
+/** @def RTRCUINTPTR_MAX
  * The maximum value a RTRCUINPTR can have.
  */
 #define RTRCUINTPTR_MAX ((RTRCUINTPTR)UINT32_MAX)
 
 /** Raw mode context pointer, signed integer variant. */
 typedef uint32_t        RTRCUINTPTR;
-/** @def RTRCINPTR_MIN
+/** @def RTRCINTPTR_MIN
  * The minimum value a RTRCINPTR can have.
  */
 #define RTRCINTPTR_MIN ((RTRCINTPTR)INT32_MIN)
-/** @def RTRCINPTR_MAX
+/** @def RTRCINTPTR_MAX
  * The maximum value a RTRCINPTR can have.
  */
 #define RTRCINTPTR_MAX ((RTRCINTPTR)INT32_MAX)

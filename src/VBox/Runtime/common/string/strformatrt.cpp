@@ -81,7 +81,7 @@
  *      - \%RHv             - Takes a #RTHCPTR, #RTHCINTPTR or #RTHCUINTPTR value.
  *      - \%RHx             - Takes a #RTHCUINT or #RTHCINT value, formatting it as hex.
  *      - \%RRv             - Takes a #RTRCPTR, #RTRCINTPTR or #RTRCUINTPTR value.
- *      - \%RCi             - Takes a #RTCCINT value.
+ *      - \%RCi             - Takes a #RTINT value.
  *      - \%RCp             - Takes a #RTCCPHYS value.
  *      - \%RCr             - Takes a #RTCCUINTREG value.
  *      - \%RCu             - Takes a #RTUINT value.
@@ -232,7 +232,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                 {
 #define STRMEM(str) sizeof(str) - 1, str
                     { STRMEM("Ci"),      sizeof(RTINT),          10, RTSF_INT,   RTSTR_F_VALSIGNED },
-                    { STRMEM("Cp"),      sizeof(RTGCPHYS),       16, RTSF_INTW,  0 },
+                    { STRMEM("Cp"),      sizeof(RTCCPHYS),       16, RTSF_INTW,  0 },
                     { STRMEM("Cr"),      sizeof(RTCCUINTREG),    16, RTSF_INTW,  0 },
                     { STRMEM("Cu"),      sizeof(RTUINT),         10, RTSF_INT,   0 },
                     { STRMEM("Cv"),      sizeof(void *),         16, RTSF_INTW,  0 },

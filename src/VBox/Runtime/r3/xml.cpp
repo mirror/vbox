@@ -730,7 +730,7 @@ const AttributeNode* ElementNode::findAttribute(const char *pcszMatch) const
  * name and returns its value as a string.
  *
  * @param pcszMatch name of attribute to find.
- * @param str out: attribute value
+ * @param ppcsz out: attribute value
  * @return TRUE if attribute was found and str was thus updated.
  */
 bool ElementNode::getAttributeValue(const char *pcszMatch, const char *&ppcsz) const
@@ -855,7 +855,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, uint64_t &i) const
  * "yes", "no", "1" or "0" as valid values.
  *
  * @param pcszMatch name of attribute to find.
- * @param i out: attribute value; overwritten only if attribute was found
+ * @param f out: attribute value; overwritten only if attribute was found
  * @return TRUE if attribute was found and str was thus updated.
  */
 bool ElementNode::getAttributeValue(const char *pcszMatch, bool &f) const
@@ -920,7 +920,7 @@ ElementNode* ElementNode::createChild(const char *pcszElementName)
  * Creates a content node and appends it to the list of children
  * in "this".
  *
- * @param pcszElementName
+ * @param pcszContent
  * @return
  */
 ContentNode* ElementNode::addContent(const char *pcszContent)
@@ -1077,8 +1077,6 @@ NodesLoop::~NodesLoop()
  *      while (pChild = loop.forAllNodes())
  *          ...;
  * </code>
- * @param node
- * @param pcszMatch
  * @return
  */
 const ElementNode* NodesLoop::forAllNodes() const
@@ -1320,7 +1318,7 @@ struct WriteContext : IOContext
  *
  * The document that is passed in will be reset before being filled if not empty.
  *
- * @param pcszFilename in: name fo file to parse.
+ * @param strFilename in: name fo file to parse.
  * @param doc out: document to be reset and filled with data according to file contents.
  */
 void XmlFileParser::read(const iprt::MiniString &strFilename,

@@ -264,7 +264,7 @@ RTR0DECL(void) RTMemContFree(void *pv, size_t cb) RT_NO_THROW;
  * @retval  VERR_ACCESS_DENIED on error.
  *
  * @param   pvDst       The kernel mode destination address.
- * @param   R3PtrDst    The user mode source address.
+ * @param   R3PtrSrc    The user mode source address.
  * @param   cb          The number of bytes to copy.
  */
 RTR0DECL(int) RTR0MemUserCopyFrom(void *pvDst, RTR3PTR R3PtrSrc, size_t cb);
@@ -445,7 +445,7 @@ RT_C_DECLS_END
  * We can't use a more complex template here, because the g++ on RHEL 3
  * chokes on it with an internal compiler error.
  *
- * @param   T           The data type that's being managed.
+ * @tparam  T           The data type that's being managed.
  * @param   aMem        Pointer to the memory that should be free.
  */
 template <class T>
@@ -476,7 +476,7 @@ inline void *RTMemTmpAutoAllocator(void *pvOld, size_t cbNew) RT_NO_THROW
  * We can't use a more complex template here, because the g++ on RHEL 3
  * chokes on it with an internal compiler error.
  *
- * @param   T           The data type that's being managed.
+ * @tparam  T           The data type that's being managed.
  * @param   aMem        Pointer to the memory that should be free.
  */
 template <class T>
@@ -493,7 +493,7 @@ inline void RTMemTmpAutoDestructor(T *aMem) RT_NO_THROW
  * We can't use a more complex template here, because the g++ on RHEL 3
  * chokes on it with an internal compiler error.
  *
- * @param   T           The data type that's being managed.
+ * @tparam  T           The data type that's being managed.
  * @param   aMem        Pointer to the memory that should be free.
  */
 template <class T>
@@ -507,7 +507,7 @@ inline void RTMemEfAutoFree(T *aMem) RT_NO_THROW
  * Template function wrapping NULL to get the correct NilRes signature
  * for RTAutoRes.
  *
- * @param   T           The data type that's being managed.
+ * @tparam  T           The data type that's being managed.
  * @returns NULL with the right type.
  */
 template <class T>
@@ -528,10 +528,10 @@ inline T * RTMemAutoNil(void) RT_NO_THROW
  * reallocations for you if you like, but it can also take of memory
  * you hand it.
  *
- * @param   T           The data type to manage allocations for.
- * @param   Destruct    The function to be used to free the resource.
+ * @tparam  T           The data type to manage allocations for.
+ * @tparam  Destruct    The function to be used to free the resource.
  *                      This will default to RTMemFree.
- * @param   Allocator   The function to be used to allocate or reallocate
+ * @tparam  Allocator   The function to be used to allocate or reallocate
  *                      the managed memory.
  *                      This is standard realloc() like stuff, so it's possible
  *                      to support simple allocation without actually having
@@ -642,10 +642,10 @@ public:
      * @retval  true if the new allocation succeeds.
      * @retval  false on failure, no memory is associated with the object.
      *
-     * @param   cElements   The new number of elements (of the data type) to allocate.
-     *                      The size of the allocation is the number of elements times
-     *                      the size of the data type - this is currently what's passed
-     *                      down to the Allocator.
+     * @param   a_cElements The new number of elements (of the data type) to
+     *                      allocate. The size of the allocation is the number of
+     *                      elements times the size of the data type - this is
+     *                      currently what's passed down to the Allocator.
      *                      This defaults to 1.
      */
     bool realloc(size_t a_cElements = 1)

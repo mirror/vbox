@@ -831,7 +831,7 @@ RTR3DECL(int) RTTestSummaryAndDestroy(RTTEST hTest)
 }
 
 
-RTR3DECL(int) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReason, va_list va)
+RTR3DECL(int) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReasonFmt, va_list va)
 {
     PRTTESTINT pTest = hTest;
     RTTEST_GET_VALID_RETURN_RC(pTest, 2);
@@ -843,8 +843,8 @@ RTR3DECL(int) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReason, va_list
     int rc;
     if (!pTest->cErrors)
     {
-        if (pszReason)
-            RTTestPrintfNlV(hTest, RTTESTLVL_FAILURE, pszReason, va);
+        if (pszReasonFmt)
+            RTTestPrintfNlV(hTest, RTTESTLVL_FAILURE, pszReasonFmt, va);
         RTTestPrintfNl(hTest, RTTESTLVL_ALWAYS, "SKIPPED\n", pTest->cErrors);
         rc = 2;
     }
@@ -859,11 +859,11 @@ RTR3DECL(int) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReason, va_list
 }
 
 
-RTR3DECL(int) RTTestSkipAndDestroy(RTTEST hTest, const char *pszReason, ...)
+RTR3DECL(int) RTTestSkipAndDestroy(RTTEST hTest, const char *pszReasonFmt, ...)
 {
     va_list va;
-    va_start(va, pszReason);
-    int rc = RTTestSkipAndDestroyV(hTest, pszReason, va);
+    va_start(va, pszReasonFmt);
+    int rc = RTTestSkipAndDestroyV(hTest, pszReasonFmt, va);
     va_end(va);
     return rc;
 }
@@ -1128,7 +1128,6 @@ RTR3DECL(int) RTTestFailed(RTTEST hTest, const char *pszFormat, ...)
  * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
- * @param   enmLevel    Message importance level.
  * @param   pszFormat   The message.
  * @param   va          Arguments.
  */
@@ -1144,7 +1143,6 @@ RTR3DECL(int) RTTestFailureDetailsV(RTTEST hTest, const char *pszFormat, va_list
  * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
- * @param   enmLevel    Message importance level.
  * @param   pszFormat   The message.
  * @param   ...         Arguments.
  */

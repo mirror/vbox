@@ -264,7 +264,7 @@ RTR3DECL(int) RTS3GetKey(RTS3 hS3, const char *pszBucketName, const char *pszKey
  * @param   pszKeyName      Name of the new key.
  * @param   pszFilename     Name of the file to upload the content of.
  */
-RTR3DECL(int) RTS3PutKey(RTS3 hS3, const char *pszBucketName, const char *pszKeyName, const char *pszFileName);
+RTR3DECL(int) RTS3PutKey(RTS3 hS3, const char *pszBucketName, const char *pszKeyName, const char *pszFilename);
 
 /** @} */
 

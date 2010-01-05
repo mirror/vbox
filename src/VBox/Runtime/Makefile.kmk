@@ -1726,16 +1726,27 @@ ldrELFRelocatable.cpp.obj: ldrELF.obj
 #
 IPRT_DOXYFILE_INPUT_DIRS = \
 	$(PATH_ROOT)/include/iprt \
+	$(PATH_ROOT)/include/iprt/cpp \
+	$(PATH_ROOT)/include/iprt/linux \
 	$(PATH_ROOT)/include/iprt/nocrt \
 	$(PATH_ROOT)/include/iprt/nocrt/x86 \
 	$(PATH_ROOT)/include/iprt/nocrt/amd64 \
+	$(PATH_ROOT)/include/iprt/nocrt/compiler \
 	$(VBOX_PATH_RUNTIME_SRC)/include/internal \
 	$(VBOX_PATH_RUNTIME_SRC)/common/alloc \
+	$(VBOX_PATH_RUNTIME_SRC)/common/asm \
 	$(VBOX_PATH_RUNTIME_SRC)/common/checksum \
+	$(VBOX_PATH_RUNTIME_SRC)/common/dbg \
 	$(VBOX_PATH_RUNTIME_SRC)/common/err \
 	$(VBOX_PATH_RUNTIME_SRC)/common/ldr \
 	$(VBOX_PATH_RUNTIME_SRC)/common/log \
+	$(VBOX_PATH_RUNTIME_SRC)/common/math \
+	$(VBOX_PATH_RUNTIME_SRC)/common/math/amd64 \
+	$(VBOX_PATH_RUNTIME_SRC)/common/math/gcc \
+	$(VBOX_PATH_RUNTIME_SRC)/common/math/x86 \
 	$(VBOX_PATH_RUNTIME_SRC)/common/misc \
+	$(VBOX_PATH_RUNTIME_SRC)/common/path \
+	$(VBOX_PATH_RUNTIME_SRC)/common/rand \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string \
 	$(VBOX_PATH_RUNTIME_SRC)/common/table \
 	$(VBOX_PATH_RUNTIME_SRC)/common/time \

@@ -464,7 +464,7 @@
  * This is typically used to wrap description strings in structures shared
  * between R3, R0 and/or RC. The intention is to avoid the \#ifdef IN_RC mess.
  *
- * @param   pR0String   The RC string. Only referenced in RC.
+ * @param   pRCString   The RC string. Only referenced in RC.
  * @see R3STRING, R0STRING
  */
 #ifdef IN_RC
@@ -567,7 +567,7 @@
  * How to declare a non-exported function or variable.
  * @param   type    The return type of the function or the data type of the variable.
  */
-#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) || !defined(RT_USE_VISIBILITY_HIDDEN)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) || !defined(RT_USE_VISIBILITY_HIDDEN) || defined(DOXYGEN_RUNNING)
 # define DECLHIDDEN(type)       type
 #else
 # define DECLHIDDEN(type)       __attribute__((visibility("hidden"))) type
@@ -1097,7 +1097,7 @@
 /** @def RT_FROM_MEMBER
  * Convert a pointer to a structure member into a pointer to the structure.
  * @returns pointer to the structure.
- * @param   pMember Pointer to the member.
+ * @param   pMem    Pointer to the member.
  * @param   Type    Strucutre type.
  * @param   Member  Member name.
  */

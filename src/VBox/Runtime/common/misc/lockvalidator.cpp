@@ -187,7 +187,9 @@ static const char *rtLockValidatorNameThreadHandle(RTTHREAD volatile *phThread)
 /**
  * Launch a simple assertion like complaint w/ panic.
  *
- * @param   RT_SRC_POS_DECL     Where from.
+ * @param   pszFile             Where from - file.
+ * @param   iLine               Where from - line.
+ * @param   pszFunction         Where from - function.
  * @param   pszWhat             What we're complaining about.
  * @param   ...                 Format arguments.
  */
@@ -210,8 +212,8 @@ static void rtLockValidatorComplain(RT_SRC_POS_DECL, const char *pszWhat, ...)
  * Describes the lock.
  *
  * @param   pszPrefix           Message prefix.
- * @param   Rec                 The lock record we're working on.
- * @param   pszPrefix           Message suffix.
+ * @param   pRec                The lock record we're working on.
+ * @param   pszSuffix           Message suffix.
  */
 static void rtLockValidatorComplainAboutLock(const char *pszPrefix, PRTLOCKVALRECUNION pRec, const char *pszSuffix)
 {
