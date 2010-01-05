@@ -1,4 +1,4 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
  * IPRT - Low Resolution Timers, Generic RTTimerLRCreate() Implementation.
  */
