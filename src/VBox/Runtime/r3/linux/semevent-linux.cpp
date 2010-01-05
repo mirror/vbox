@@ -29,7 +29,7 @@
  */
 
 #include <features.h>
-#if __GLIBC_PREREQ(2,6) && !defined(IPRT_WITH_FUTEX_BASED_SEMS)
+#if __GLIBC_PREREQ(2,6) && !defined(IPRT_WITH_FUTEX_BASED_SEMS) && !defined(DEBUG_bird)
 
 /*
  * glibc 2.6 fixed a serious bug in the mutex implementation. We wrote this
@@ -237,8 +237,8 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
         if (!cMillies)
             return VERR_TIMEOUT;
         ts.tv_sec  = cMillies / 1000;
-        ts.tv_nsec = (cMillies % 1000) * 1000000;
-        u64End = RTTimeSystemNanoTS() + cMillies * 1000000;
+        ts.tv_nsec = (cMillies % 1000) * UINT32_C(1000000);
+        u64End = RTTimeSystemNanoTS() + cMillies * UINT64_C(1000000);
         pTimeout = &ts;
     }
 
@@ -308,8 +308,8 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
                 rc = VERR_TIMEOUT;
                 break;
             }
-            ts.tv_sec  = i64Diff / 1000000000;
-            ts.tv_nsec = i64Diff % 1000000000;
+            ts.tv_sec  = (uint64_t)i64Diff / UINT32_C(1000000000);
+            ts.tv_nsec = (uint64_t)i64Diff % UINT32_C(1000000000);
         }
     }
 
