@@ -190,9 +190,9 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned c
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX, true);
 #endif
     }
-    int rc = WaitForSingleObjectEx(pThis->hMtx,
-                                   cMillies == RT_INDEFINITE_WAIT ? INFINITE : cMillies,
-                                   TRUE /*bAlertable*/);
+    DWORD rc = WaitForSingleObjectEx(pThis->hMtx,
+                                     cMillies == RT_INDEFINITE_WAIT ? INFINITE : cMillies,
+                                     TRUE /*fAlertable*/);
     RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_MUTEX);
     switch (rc)
     {
@@ -208,10 +208,12 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned c
         case WAIT_IO_COMPLETION:    return VERR_INTERRUPTED;
         case WAIT_ABANDONED:        return VERR_SEM_OWNER_DIED;
         default:
+            AssertMsgFailed(("%u\n",  rc));
+        case WAIT_FAILED:
         {
-            AssertMsgFailed(("Wait on MutexSem %p failed, rc=%d lasterr=%d\n", MutexSem, rc, GetLastError()));
             int rc2 = RTErrConvertFromWin32(GetLastError());
-            if (rc2 != 0)
+            AssertMsgFailed(("Wait on MutexSem %p failed, rc=%d lasterr=%d\n", MutexSem, rc, GetLastError()));
+            if (rc2 != VINF_SUCCESS)
                 return rc2;
 
             AssertMsgFailed(("WaitForSingleObject(event) -> rc=%d while converted lasterr=%d\n", rc, rc2));
