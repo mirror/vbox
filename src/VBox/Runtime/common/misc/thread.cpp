@@ -523,7 +523,6 @@ PRTTHREADINT rtThreadGet(RTTHREAD Thread)
     return NULL;
 }
 
-
 /**
  * Release a per thread data structure.
  *
@@ -541,7 +540,10 @@ uint32_t rtThreadRelease(PRTTHREADINT pThread)
             rtThreadDestroy(pThread);
     }
     else
+    {
         cRefs = 0;
+        AssertFailed();
+    }
     return cRefs;
 }
 
@@ -570,7 +572,7 @@ static void rtThreadDestroy(PRTTHREADINT pThread)
     }
 
     /*
-     * Invalidate the thread structure and free it.
+     * Invalidate the thread structure.
      */
 #ifdef IN_RING3
     rtLockValidatorSerializeDestructEnter();
@@ -584,18 +586,18 @@ static void rtThreadDestroy(PRTTHREADINT pThread)
     RTSEMEVENTMULTI hEvt2    = pThread->EventTerminated;
     pThread->EventTerminated = NIL_RTSEMEVENTMULTI;
 
-    RTMemFree(pThread);
-
 #ifdef IN_RING3
     rtLockValidatorSerializeDestructLeave();
 #endif
 
     /*
-     * Destroy semaphore resources.
+     * Destroy semaphore resources and free the bugger.
      */
     RTSemEventMultiDestroy(hEvt1);
     if (hEvt2 != NIL_RTSEMEVENTMULTI)
         RTSemEventMultiDestroy(hEvt2);
+
+    RTMemFree(pThread);
 }
 
 
