@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -134,6 +134,35 @@ RTDECL(int)   RTSemEventDestroy(RTSEMEVENT EventSem)
 }
 
 
+RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
+{
+    /*
+     * Validate input.
+     */
+    struct RTSEMEVENTINTERNAL *pThis = EventSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, VERR_INVALID_HANDLE);
+
+#ifdef RTSEMEVENT_STRICT
+    if (pThis->fEverHadSignallers)
+    {
+        int rc9 = RTLockValidatorRecSharedCheckSignaller(&pThis->Signallers, NIL_RTTHREAD);
+        if (RT_FAILURE(rc9))
+            return rc9;
+    }
+#endif
+
+    /*
+     * Signal the object.
+     */
+    if (SetEvent(pThis->hev))
+        return VINF_SUCCESS;
+    DWORD dwErr = GetLastError();
+    AssertMsgFailed(("Signaling EventSem %p failed, lasterr=%d\n", pThis, dwErr));
+    return RTErrConvertFromWin32(dwErr);
+}
+
+
 RTDECL(int)   RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
 {
     PCRTLOCKVALSRCPOS pSrcPos = NULL;
@@ -175,7 +204,7 @@ RTDECL(int)   RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
             AssertMsgFailed(("%u\n", rc));
         case WAIT_FAILED:
         {
-            AssertMsgFailed(("Wait on EventSem %p failed, rc=%d lasterr=%d\n", EventSem, rc, GetLastError()));
+            AssertMsgFailed(("Wait on EventSem %p failed, rc=%d lasterr=%d\n", pThis, rc, GetLastError()));
             int rc2 = RTErrConvertFromWin32(GetLastError());
             if (rc2)
                 return rc2;
@@ -184,35 +213,6 @@ RTDECL(int)   RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
             return VERR_INTERNAL_ERROR;
         }
     }
-}
-
-
-RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
-{
-    /*
-     * Validate input.
-     */
-    struct RTSEMEVENTINTERNAL *pThis = EventSem;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, VERR_INVALID_HANDLE);
-
-#ifdef RTSEMEVENT_STRICT
-    if (pThis->fEverHadSignallers)
-    {
-        int rc9 = RTLockValidatorRecSharedCheckSignaller(&pThis->Signallers, NIL_RTTHREAD);
-        if (RT_FAILURE(rc9))
-            return rc9;
-    }
-#endif
-
-    /*
-     * Signal the object.
-     */
-    if (SetEvent(pThis->hev))
-        return VINF_SUCCESS;
-    DWORD dwErr = GetLastError();
-    AssertMsgFailed(("Signaling EventSem %p failed, lasterr=%d\n", pThis, dwErr));
-    return RTErrConvertFromWin32(dwErr);
 }
 
 
