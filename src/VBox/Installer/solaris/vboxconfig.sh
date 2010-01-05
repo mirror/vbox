@@ -192,7 +192,9 @@ module_added()
         exit 1
     fi
 
-    loadentry=`cat /etc/name_to_major | grep $1`
+    # Add a space at end of module name to make sure we have a perfect match to avoid
+    # any substring matches: e.g "vboxusb" & "vboxusbmon"
+    loadentry=`cat /etc/name_to_major | grep "$1 "`
     if test -z "$loadentry"; then
         return 1
     fi
@@ -209,8 +211,8 @@ module_loaded()
     fi
 
     modname=$1
-    # modinfo should now work properly since we prevent module autounloading
-    loadentry=`$BIN_MODINFO | grep $modname`
+    # modinfo should now work properly since we prevent module autounloading.
+    loadentry=`$BIN_MODINFO | grep "$modname "`
     if test -z "$loadentry"; then
         return 1
     fi
@@ -300,13 +302,13 @@ unload_module()
     modname=$1
     moddesc=$2
     fatal=$3
-    modid=`$BIN_MODINFO | grep $modname | cut -f 1 -d ' ' `
+    modid=`$BIN_MODINFO | grep "$modname " | cut -f 1 -d ' ' `
     if test -n "$modid"; then
         $BIN_MODUNLOAD -i $modid
         if test $? -eq 0; then
             subprint "Unloaded: $moddesc module"
         else
-            subprint "Unloading: $moddesc  ...FAILED!"
+            subprint "Unloading: $moddesc module ...FAILED!"
             if test "$fatal" = "$FATALOP"; then
                 exit 1
             fi
