@@ -186,37 +186,9 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
 }
 
 
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
+/** Goto avoidance. */
+DECL_FORCE_INLINE(int) rtSemEventWaitHandleStatus(struct RTSEMEVENTMULTIINTERNAL *pThis, DWORD rc)
 {
-    PCRTLOCKVALSRCPOS pSrcPos = NULL;
-
-    /*
-     * Validate input.
-     */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, VERR_INVALID_HANDLE);
-
-    /*
-     * Wait for condition.
-     */
-#ifdef RTSEMEVENT_STRICT
-    RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
-    if (pThis->fEverHadSignallers)
-    {
-        int rc9 = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                        RTTHREADSTATE_EVENT_MULTI, true);
-        if (RT_FAILURE(rc9))
-            return rc9;
-    }
-#else
-    RTTHREAD hThreadSelf = RTThreadSelf();
-#endif
-    RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT_MULTI, true);
-    DWORD rc = WaitForSingleObjectEx(pThis->hev,
-                                     cMillies == RT_INDEFINITE_WAIT ? INFINITE : cMillies,
-                                     TRUE /*fAlertable*/);
-    RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT_MULTI);
     switch (rc)
     {
         case WAIT_OBJECT_0:         return VINF_SUCCESS;
@@ -236,6 +208,46 @@ RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned
             return VERR_INTERNAL_ERROR;
         }
     }
+}
+
+
+RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
+{
+    PCRTLOCKVALSRCPOS pSrcPos = NULL;
+
+    /*
+     * Validate input.
+     */
+    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, VERR_INVALID_HANDLE);
+
+    /*
+     * Wait for condition.
+     */
+#ifdef RTSEMEVENT_STRICT
+    RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
+    if (pThis->fEverHadSignallers)
+    {
+        DWORD rc = WaitForSingleObjectEx(pThis->hev,
+                                         0 /*Timeout*/,
+                                         TRUE /*fAlertable*/);
+        if (rc != WAIT_TIMEOUT || cMillies == 0)
+            return rtSemEventWaitHandleStatus(pThis, rc);
+        int rc9 = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
+                                                        RTTHREADSTATE_EVENT_MULTI, true);
+        if (RT_FAILURE(rc9))
+            return rc9;
+    }
+#else
+    RTTHREAD hThreadSelf = RTThreadSelf();
+#endif
+    RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT_MULTI, true);
+    DWORD rc = WaitForSingleObjectEx(pThis->hev,
+                                     cMillies == RT_INDEFINITE_WAIT ? INFINITE : cMillies,
+                                     TRUE /*fAlertable*/);
+    RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT_MULTI);
+    return rtSemEventWaitHandleStatus(pThis, rc);
 }
 
 
