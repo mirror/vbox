@@ -304,6 +304,6 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutex)
 
     RTNATIVETHREAD hNativeOwner;
     ASMAtomicReadHandle(&pThis->hNativeOwner, &hNativeOwner);
-    return hNativeOwner == NIL_RTNATIVETHREAD;
+    return hNativeOwner != NIL_RTNATIVETHREAD;
 }
 
