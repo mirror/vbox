@@ -416,7 +416,7 @@ typedef struct _EnumProperties
 
     /**
      * Array of patterns to match the properties against, separated by '|'
-     * characters.  For backwards compatibility, '\0' is also accepted
+     * characters.  For backwards compatibility, '\\0' is also accepted
      * as a separater.
      * (IN pointer)
      * If only a single, empty pattern is given then match all.

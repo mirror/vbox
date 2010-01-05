@@ -3094,23 +3094,23 @@ typedef struct PGMCPU
     STAMCOUNTER StatRZTrap0eHandlersVirtualUnmarked;/**< RC/R0: Number of traps due to virtual access handlers found by virtual address (without proper physical flags). */
     STAMCOUNTER StatRZTrap0eHandlersUnhandled;      /**< RC/R0: Number of traps due to access outside range of monitored page(s). */
     STAMCOUNTER StatRZTrap0eHandlersInvalid;        /**< RC/R0: Number of traps due to access to invalid physical memory. */
-    STAMCOUNTER StatRZTrap0eUSNotPresentRead;       /**< RC/R0: #PF err kind */
-    STAMCOUNTER StatRZTrap0eUSNotPresentWrite;      /**< RC/R0: #PF err kind */
-    STAMCOUNTER StatRZTrap0eUSWrite;                /**< RC/R0: #PF err kind */
-    STAMCOUNTER StatRZTrap0eUSReserved;             /**< RC/R0: #PF err kind */
-    STAMCOUNTER StatRZTrap0eUSNXE;                  /**< RC/R0: #PF err kind */
-    STAMCOUNTER StatRZTrap0eUSRead;                 /**< RC/R0: #PF err kind */
-    STAMCOUNTER StatRZTrap0eSVNotPresentRead;       /**< RC/R0: #PF err kind */
-    STAMCOUNTER StatRZTrap0eSVNotPresentWrite;      /**< RC/R0: #PF err kind */
-    STAMCOUNTER StatRZTrap0eSVWrite;                /**< RC/R0: #PF err kind */
-    STAMCOUNTER StatRZTrap0eSVReserved;             /**< RC/R0: #PF err kind */
-    STAMCOUNTER StatRZTrap0eSNXE;                   /**< RC/R0: #PF err kind */
-    STAMCOUNTER StatRZTrap0eGuestPF;                /**< RC/R0: Real guest #PFs. */
-    STAMCOUNTER StatRZTrap0eGuestPFUnh;             /**< RC/R0: Real guest #PF ending up at the end of the #PF code. */
-    STAMCOUNTER StatRZTrap0eGuestPFMapping;         /**< RC/R0: Real guest #PF to HMA or other mapping. */
+    STAMCOUNTER StatRZTrap0eUSNotPresentRead;       /**< RC/R0: \#PF err kind */
+    STAMCOUNTER StatRZTrap0eUSNotPresentWrite;      /**< RC/R0: \#PF err kind */
+    STAMCOUNTER StatRZTrap0eUSWrite;                /**< RC/R0: \#PF err kind */
+    STAMCOUNTER StatRZTrap0eUSReserved;             /**< RC/R0: \#PF err kind */
+    STAMCOUNTER StatRZTrap0eUSNXE;                  /**< RC/R0: \#PF err kind */
+    STAMCOUNTER StatRZTrap0eUSRead;                 /**< RC/R0: \#PF err kind */
+    STAMCOUNTER StatRZTrap0eSVNotPresentRead;       /**< RC/R0: \#PF err kind */
+    STAMCOUNTER StatRZTrap0eSVNotPresentWrite;      /**< RC/R0: \#PF err kind */
+    STAMCOUNTER StatRZTrap0eSVWrite;                /**< RC/R0: \#PF err kind */
+    STAMCOUNTER StatRZTrap0eSVReserved;             /**< RC/R0: \#PF err kind */
+    STAMCOUNTER StatRZTrap0eSNXE;                   /**< RC/R0: \#PF err kind */
+    STAMCOUNTER StatRZTrap0eGuestPF;                /**< RC/R0: Real guest \#PFs. */
+    STAMCOUNTER StatRZTrap0eGuestPFUnh;             /**< RC/R0: Real guest \#PF ending up at the end of the \#PF code. */
+    STAMCOUNTER StatRZTrap0eGuestPFMapping;         /**< RC/R0: Real guest \#PF to HMA or other mapping. */
     STAMCOUNTER StatRZTrap0eWPEmulInRZ;             /**< RC/R0: WP=0 virtualization trap, handled. */
     STAMCOUNTER StatRZTrap0eWPEmulToR3;             /**< RC/R0: WP=0 virtualization trap, chickened out. */
-    STAMCOUNTER StatRZTrap0ePD[X86_PG_ENTRIES];     /**< RC/R0: PD distribution of the #PFs. */
+    STAMCOUNTER StatRZTrap0ePD[X86_PG_ENTRIES];     /**< RC/R0: PD distribution of the \#PFs. */
     STAMCOUNTER StatRZGuestCR3WriteHandled;         /**< RC/R0: The number of times WriteHandlerCR3() was successfully called. */
     STAMCOUNTER StatRZGuestCR3WriteUnhandled;       /**< RC/R0: The number of times WriteHandlerCR3() was called and we had to fall back to the recompiler. */
     STAMCOUNTER StatRZGuestCR3WriteConflict;        /**< RC/R0: The number of times WriteHandlerCR3() was called and a conflict was detected. */
@@ -3155,10 +3155,10 @@ typedef struct PGMCPU
     STAMCOUNTER StatRZInvalidatePagePDNPs;          /**< RC/R0: The number of times PGMInvalidatePage() was called for a not present page directory. */
     STAMCOUNTER StatRZInvalidatePagePDOutOfSync;    /**< RC/R0: The number of times PGMInvalidatePage() was called for an out of sync page directory. */
     STAMCOUNTER StatRZInvalidatePageSkipped;        /**< RC/R0: The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
-    STAMCOUNTER StatRZPageOutOfSyncUser;            /**< RC/R0: The number of times user page is out of sync was detected in #PF or VerifyAccessSyncPage. */
-    STAMCOUNTER StatRZPageOutOfSyncSupervisor;      /**< RC/R0: The number of times supervisor page is out of sync was detected in in #PF or VerifyAccessSyncPage. */
-    STAMCOUNTER StatRZPageOutOfSyncUserWrite;       /**< RC/R0: The number of times user page is out of sync was detected in #PF. */
-    STAMCOUNTER StatRZPageOutOfSyncSupervisorWrite; /**< RC/R0: The number of times supervisor page is out of sync was detected in in #PF. */
+    STAMCOUNTER StatRZPageOutOfSyncUser;            /**< RC/R0: The number of times user page is out of sync was detected in \#PF or VerifyAccessSyncPage. */
+    STAMCOUNTER StatRZPageOutOfSyncSupervisor;      /**< RC/R0: The number of times supervisor page is out of sync was detected in in \#PF or VerifyAccessSyncPage. */
+    STAMCOUNTER StatRZPageOutOfSyncUserWrite;       /**< RC/R0: The number of times user page is out of sync was detected in \#PF. */
+    STAMCOUNTER StatRZPageOutOfSyncSupervisorWrite; /**< RC/R0: The number of times supervisor page is out of sync was detected in in \#PF. */
     STAMPROFILE StatRZPrefetch;                     /**< RC/R0: PGMPrefetchPage. */
     STAMPROFILE StatRZFlushTLB;                     /**< RC/R0: Profiling of the PGMFlushTLB() body. */
     STAMCOUNTER StatRZFlushTLBNewCR3;               /**< RC/R0: The number of times PGMFlushTLB was called with a new CR3, non-global. (switch) */
@@ -3201,10 +3201,10 @@ typedef struct PGMCPU
     STAMCOUNTER StatR3InvalidatePagePDMappings;     /**< R3: The number of times PGMInvalidatePage() was called for a page directory containing mappings (no conflict). */
     STAMCOUNTER StatR3InvalidatePagePDOutOfSync;    /**< R3: The number of times PGMInvalidatePage() was called for an out of sync page directory. */
     STAMCOUNTER StatR3InvalidatePageSkipped;        /**< R3: The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
-    STAMCOUNTER StatR3PageOutOfSyncUser;            /**< R3: The number of times user page is out of sync was detected in #PF or VerifyAccessSyncPage. */
-    STAMCOUNTER StatR3PageOutOfSyncSupervisor;      /**< R3: The number of times supervisor page is out of sync was detected in in #PF or VerifyAccessSyncPage. */
-    STAMCOUNTER StatR3PageOutOfSyncUserWrite;       /**< R3: The number of times user page is out of sync was detected in #PF. */
-    STAMCOUNTER StatR3PageOutOfSyncSupervisorWrite; /**< R3: The number of times supervisor page is out of sync was detected in in #PF. */
+    STAMCOUNTER StatR3PageOutOfSyncUser;            /**< R3: The number of times user page is out of sync was detected in \#PF or VerifyAccessSyncPage. */
+    STAMCOUNTER StatR3PageOutOfSyncSupervisor;      /**< R3: The number of times supervisor page is out of sync was detected in in \#PF or VerifyAccessSyncPage. */
+    STAMCOUNTER StatR3PageOutOfSyncUserWrite;       /**< R3: The number of times user page is out of sync was detected in \#PF. */
+    STAMCOUNTER StatR3PageOutOfSyncSupervisorWrite; /**< R3: The number of times supervisor page is out of sync was detected in in \#PF. */
     STAMPROFILE StatR3Prefetch;                     /**< R3: PGMPrefetchPage. */
     STAMPROFILE StatR3FlushTLB;                     /**< R3: Profiling of the PGMFlushTLB() body. */
     STAMCOUNTER StatR3FlushTLBNewCR3;               /**< R3: The number of times PGMFlushTLB was called with a new CR3, non-global. (switch) */

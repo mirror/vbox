@@ -464,7 +464,7 @@ VMMR3DECL(bool)     PGMR3PhysMMIO2IsBase(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS G
 VMMR3DECL(int)      PGMR3PhysMMIO2GetHCPhys(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, PRTHCPHYS pHCPhys);
 VMMR3DECL(int)      PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTR0PTR pR0Ptr);
 
-/** @group PGMR3PhysRegisterRom flags.
+/** @name PGMR3PhysRegisterRom flags.
  * @{ */
 /** Inidicates that ROM shadowing should be enabled. */
 #define PGMPHYS_ROM_FLAGS_SHADOWED          RT_BIT_32(0)

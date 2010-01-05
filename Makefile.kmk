@@ -449,9 +449,13 @@ OTHER_CLEAN += \
 
 VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	include/iprt \
+	include/iprt/cpp \
+	include/iprt/linux \
 	include/VBox \
 	include/VBox/com \
 	include/VBox/HostServices \
+	include/VBox/GuestHost \
+	include/VBox/HGSMI \
 	src/VBox/VMM \
 	src/VBox/VMM/VMMR0 \
 	src/VBox/VMM/VMMGC \

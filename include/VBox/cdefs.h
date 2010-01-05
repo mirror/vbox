@@ -59,6 +59,7 @@
 #ifdef DOXYGEN_RUNNING
 #define VBOX_WITH_STATISTICS
 #define VBOX_STRICT
+#define IN_DBG
 #define IN_DIS
 #define IN_INTNET_R0
 #define IN_INTNET_R3
@@ -66,12 +67,13 @@
 #define IN_SUP_R0
 #define IN_SUP_R3
 #define IN_SUP_GC
+#define IN_SUP_STATIC
 #define IN_USBLIB
 #define IN_VBOXDDU
 #define IN_VMM_RC
 #define IN_VMM_R0
 #define IN_VMM_R3
-/** @todo fixme */
+#define IN_VMM_STATIC
 #endif
 
 

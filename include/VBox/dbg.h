@@ -351,7 +351,6 @@ typedef FNDBGCHLPPRINTFV *PFNDBGCHLPPRINTFV;
  * @returns VBox status code appropriate to return from a command.
  * @param   pCmdHlp     Pointer to the command callback structure.
  * @param   rc          The VBox status code.
- * @param   pcb         Where to store the number of bytes written.
  * @param   pszFormat   Format string for additional messages. Can be NULL.
  * @param   ...         Format arguments, optional.
  */

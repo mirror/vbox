@@ -940,7 +940,7 @@ DECLINLINE(int) PDMDrvHlpPDMQueueCreate(PPDMDRVINS pDrvIns, RTUINT cbItem, RTUIN
 }
 
 /**
- * @copydoc PDMDRVHLP::pfnGetVirtualFreq
+ * @copydoc PDMDRVHLP::pfnTMGetVirtualFreq
  */
 DECLINLINE(uint64_t) PDMDrvHlpTMGetVirtualFreq(PPDMDRVINS pDrvIns)
 {

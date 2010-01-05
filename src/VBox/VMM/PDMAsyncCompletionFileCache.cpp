@@ -235,8 +235,9 @@ static void pdmacFileCacheDestroyList(PPDMACFILELRULIST pList)
  * @param    ppbBuf           Where to store the address of the buffer if an entry with the
  *                            same size was found and fReuseBuffer is true.
  *
- * @notes This function may return fewer bytes than requested because entries
- *        may be marked as non evictable if they are used for I/O at the moment.
+ * @note    This function may return fewer bytes than requested because entries
+ *          may be marked as non evictable if they are used for I/O at the
+ *          moment.
  */
 static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t cbData,
                                            PPDMACFILELRULIST pListSrc, PPDMACFILELRULIST pGhostListDst,

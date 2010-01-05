@@ -34,7 +34,7 @@
 #include <VBox/types.h>
 #include <VBox/x86.h>
 
-/** @addgroup grp_dbgf
+/** @addtogroup grp_dbgf
  * @{ */
 
 /**
@@ -86,7 +86,7 @@ typedef const DBGFSELINFO *PCDBGFSELINFO;
 /** @}  */
 
 
-/** @def DBGFSELINFO_IS_EXPAND_DOWN
+/**
  * Tests whether the selector info describes an expand-down selector or now.
  *
  * @returns true / false.

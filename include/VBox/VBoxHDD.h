@@ -134,14 +134,14 @@ typedef struct VBOXHDDRAWPART
  */
 typedef struct VBOXHDDRAW
 {
-    /** Signature for structure. Must be 'R', 'A', 'W', '\0'. Actually a trick
+    /** Signature for structure. Must be 'R', 'A', 'W', '\\0'. Actually a trick
      * to make logging of the comment string produce sensible results. */
     char            szSignature[4];
     /** Flag whether access to full disk should be given (ignoring the
      * partition information below). */
     bool            fRawDisk;
     /** Filename for the raw disk. Ignored for partitioned raw disks.
-     * For Linux e.g. /dev/sda, and for Windows e.g. \\.\PhysicalDisk0. */
+     * For Linux e.g. /dev/sda, and for Windows e.g. \\\\.\\PhysicalDisk0. */
     const char      *pszRawDisk;
     /** Number of entries in the partitions array. */
     unsigned        cPartitions;

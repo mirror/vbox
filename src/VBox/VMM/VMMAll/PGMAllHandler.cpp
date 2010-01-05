@@ -1170,7 +1170,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
  * @param   pVM         VM Handle.
  * @param   GCPhys      Start physical address earlier passed to PGMR3HandlerPhysicalRegister().
  * @remarks Caller must take the PGM lock...
- * @threads EMT.
+ * @thread  EMT.
  */
 VMMDECL(bool) PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys)
 {
@@ -1234,7 +1234,7 @@ bool pgmHandlerPhysicalIsAll(PVM pVM, RTGCPHYS GCPhys)
  * @param   pVM             VM handle.
  * @param   GCPtr           Virtual address.
  * @remarks Will acquire the PGM lock.
- * @threads Any.
+ * @thread  Any.
  */
 VMMDECL(bool) PGMHandlerVirtualIsRegistered(PVM pVM, RTGCPTR GCPtr)
 {

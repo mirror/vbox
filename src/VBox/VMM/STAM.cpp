@@ -983,7 +983,8 @@ VMMR3DECL(int) STAMR3SnapshotU(PUVM pUVM, const char *pszPat, char **ppszSnapsho
  *                          The format of the snapshot should be XML, but that will have to be discussed
  *                          when this function is implemented.
  *                          The returned pointer must be freed by calling STAMR3SnapshotFree().
- * @param   pcchSnapshot    Where to store the size of the snapshot data. (Excluding the trailing '\0')
+ * @param   pcchSnapshot    Where to store the size of the snapshot data.
+ *                          (Excluding the trailing '\\0')
  */
 VMMR3DECL(int) STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc)
 {
