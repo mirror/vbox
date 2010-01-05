@@ -212,8 +212,8 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
     if (cMillies != RT_INDEFINITE_WAIT)
     {
         ts.tv_sec  = cMillies / 1000;
-        ts.tv_nsec = (cMillies % 1000) * 1000000;
-        u64End = RTTimeSystemNanoTS() + cMillies * 1000000;
+        ts.tv_nsec = (cMillies % 1000) * UINT32_C(1000000);
+        u64End = RTTimeSystemNanoTS() + cMillies * UINT64_C(1000000);
         pTimeout = &ts;
     }
 
@@ -287,8 +287,8 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
                     rc = VERR_TIMEOUT;
                     break;
                 }
-                ts.tv_sec  = i64Diff / 1000000000;
-                ts.tv_nsec = i64Diff % 1000000000;
+                ts.tv_sec  = (uint64_t)i64Diff / UINT32_C(1000000000);
+                ts.tv_nsec = (uint64_t)i64Diff % UINT32_C(1000000000);
             }
         }
 
