@@ -77,7 +77,7 @@
            && RT_LOWORD(additionsVersion) >  RT_LOWORD(VMMDEV_VERSION) ) )
 
 /** The saved state version. */
-#define VMMDEV_SAVED_STATE_VERSION          12
+#define VMMDEV_SAVED_STATE_VERSION          13
 /** The saved state version used by VirtualBox 3.0.
  *  This doesn't have the config part. */
 #define VMMDEV_SAVED_STATE_VERSION_VBOX_30  11
