@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - ASMAtomicCmpXchgU64().
+; IPRT - ASMAtomicCmpXchgExU64().
 ;
 
 ;
@@ -36,23 +36,26 @@
 BEGINCODE
 
 ;;
-; Atomically compares and exchanges an unsigned 64-bit int.
+; Atomically Exchange an unsigned 64-bit value, ordered.
 ;
 ; @param    pu64     x86:ebp+8   gcc:rdi  msc:rcx
 ; @param    u64New   x86:ebp+c   gcc:rsi  msc:rdx
 ; @param    u64Old   x86:ebp+14  gcc:rcx  msc:r8
+; @param    u64Old   x86:ebp+1c  gcc:rdx  msc:r9
 ;
 ; @returns  bool result: true if succesfully exchanged, false if not.
 ;           x86:al
 ;
-BEGINPROC_EXPORTED ASMAtomicCmpXchgU64
+BEGINPROC_EXPORTED ASMAtomicCmpXchgExU64
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         mov     rax, r8
         lock cmpxchg [rcx], rdx
+        mov     [r9], rax
  %else
         mov     rax, rcx
         lock cmpxchg [rdi], rsi
+        mov     [rdx], rax
  %endif
         setz    al
         movzx   eax, al
@@ -70,6 +73,9 @@ BEGINPROC_EXPORTED ASMAtomicCmpXchgU64
         mov     eax, dword [ebp+14h]
         mov     edx, dword [ebp+14h + 4]
         lock cmpxchg8b [edi]
+        mov     edi, [ebp + 1ch]
+        mov     [edi],     eax
+        mov     [edi + 4], edx
         setz    al
         movzx   eax, al
 
@@ -78,5 +84,5 @@ BEGINPROC_EXPORTED ASMAtomicCmpXchgU64
         leave
         ret
 %endif
-ENDPROC ASMAtomicCmpXchgU64
+ENDPROC ASMAtomicCmpXchgExU64
 

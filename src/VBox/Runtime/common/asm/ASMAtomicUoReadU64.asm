@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - ASMAtomicCmpXchgU64().
+; IPRT - ASMAtomicUoReadU64().
 ;
 
 ;
@@ -36,26 +36,20 @@
 BEGINCODE
 
 ;;
-; Atomically compares and exchanges an unsigned 64-bit int.
+; Atomically reads 64-bit value.
 ;
-; @param    pu64     x86:ebp+8   gcc:rdi  msc:rcx
-; @param    u64New   x86:ebp+c   gcc:rsi  msc:rdx
-; @param    u64Old   x86:ebp+14  gcc:rcx  msc:r8
+; @param   pu64     x86:ebp+8
 ;
-; @returns  bool result: true if succesfully exchanged, false if not.
-;           x86:al
+; @returns The current value. (x86:eax+edx)
 ;
-BEGINPROC_EXPORTED ASMAtomicCmpXchgU64
+;
+BEGINPROC_EXPORTED ASMAtomicUoReadU64
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
-        mov     rax, r8
-        lock cmpxchg [rcx], rdx
+        mov     rax, [rcx]
  %else
-        mov     rax, rcx
-        lock cmpxchg [rdi], rsi
+        mov     rax, [rdi]
  %endif
-        setz    al
-        movzx   eax, al
         ret
 %endif
 %ifdef RT_ARCH_X86
@@ -64,19 +58,17 @@ BEGINPROC_EXPORTED ASMAtomicCmpXchgU64
         push    ebx
         push    edi
 
-        mov     ebx, dword [ebp+0ch]
-        mov     ecx, dword [ebp+0ch + 4]
+        xor     eax, eax
+        xor     edx, edx
         mov     edi, [ebp+08h]
-        mov     eax, dword [ebp+14h]
-        mov     edx, dword [ebp+14h + 4]
-        lock cmpxchg8b [edi]
-        setz    al
-        movzx   eax, al
+        xor     ecx, ecx
+        xor     ebx, ebx
+        cmpxchg8b [edi]
 
         pop     edi
         pop     ebx
         leave
         ret
 %endif
-ENDPROC ASMAtomicCmpXchgU64
+ENDPROC ASMAtomicUoReadU64
 
