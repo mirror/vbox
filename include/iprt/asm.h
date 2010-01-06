@@ -4361,7 +4361,7 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64)
                          : "m" (u32EBX),
                            "S" (pu64));
 #   else /* !PIC */
-    __asm__ __volatile__("cmpxchg8b %1\n\t"
+    __asm__ __volatile__("lock; cmpxchg8b %1\n\t"
                          : "=A" (u64),
                            "+m" (*pu64)
                          : "0" (0),
