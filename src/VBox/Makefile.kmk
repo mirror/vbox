@@ -63,7 +63,7 @@ else
  ifdef VBOX_WITH_VRDP
   include $(PATH_SUB_CURRENT)/RDP/Makefile.kmk
  endif
- ifdef VBOX_WITH_CROGL
+ if defined(VBOX_WITH_CROGL) || defined(VBOX_WITH_HGSMI) || defined(VBOX_WITH_HGCM)
   include $(PATH_SUB_CURRENT)/GuestHost/Makefile.kmk
  endif
  ifdef VBOX_WITH_ADDITIONS
