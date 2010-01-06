@@ -44,9 +44,16 @@ BEGINCODE
 ;
 ;
 BEGINPROC_EXPORTED ASMAtomicReadU64
-%ifndef RT_ARCH_X86
- %error port me
+%ifdef RT_ARCH_AMD64
+        mfence                          ; ASSUME its present.
+ %ifdef ASM_CALL64_MSC
+        mov     rax, [rcx]
+ %else
+        mov     rax, [rdi]
+ %endif
+        ret
 %endif
+%ifdef RT_ARCH_X86
         push    ebp
         mov     ebp, esp
         push    ebx
@@ -63,5 +70,6 @@ BEGINPROC_EXPORTED ASMAtomicReadU64
         pop     ebx
         leave
         ret
+%endif
 ENDPROC ASMAtomicReadU64
 
