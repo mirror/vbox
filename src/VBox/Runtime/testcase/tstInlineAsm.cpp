@@ -585,6 +585,7 @@ static void tstASMAtomicCmpXchgU8(void)
     CHECKVAL(u.u8, 0x97, "%x"); CHECKVAL(u.u8Before, 0xcc, "%x"); CHECKVAL(u.u8After, 0xaa, "%x");
 }
 
+
 static void tstASMAtomicCmpXchgU32(void)
 {
     uint32_t u32 = 0xffffffff;
@@ -695,6 +696,23 @@ static void tstASMAtomicReadU64(void)
 
     u64 = 0xfedcba0987654321ULL;
     CHECKOP(ASMAtomicReadU64(&u64), 0xfedcba0987654321ULL, "%#llx", uint64_t);
+    CHECKVAL(u64, 0xfedcba0987654321ULL, "%#llx");
+}
+
+
+static void tstASMAtomicUoReadU64(void)
+{
+    uint64_t u64 = 0;
+
+    CHECKOP(ASMAtomicUoReadU64(&u64), 0ULL, "%#llx", uint64_t);
+    CHECKVAL(u64, 0ULL, "%#llx");
+
+    u64 = ~0ULL;
+    CHECKOP(ASMAtomicUoReadU64(&u64), ~0ULL, "%#llx", uint64_t);
+    CHECKVAL(u64, ~0ULL, "%#llx");
+
+    u64 = 0xfedcba0987654321ULL;
+    CHECKOP(ASMAtomicUoReadU64(&u64), 0xfedcba0987654321ULL, "%#llx", uint64_t);
     CHECKVAL(u64, 0xfedcba0987654321ULL, "%#llx");
 }
 
@@ -1172,6 +1190,10 @@ void tstASMBench(void)
         RTPrintf(" %-30s %3llu cycles\n", str, u64Elapsed / cRounds);
 
     BENCH(s_u32 = 0,                            "s_u32 = 0:");
+    BENCH(ASMAtomicUoReadU64(&s_u64),           "ASMAtomicUoReadU64:");
+    BENCH(ASMAtomicUoReadS64(&s_i64),           "ASMAtomicUoReadS64:");
+    BENCH(ASMAtomicReadU64(&s_u64),             "ASMAtomicReadU64:");
+    BENCH(ASMAtomicReadS64(&s_i64),             "ASMAtomicReadS64:");
     BENCH(ASMAtomicUoWriteU8(&s_u8, 0),         "ASMAtomicUoWriteU8:");
     BENCH(ASMAtomicUoWriteS8(&s_i8, 0),         "ASMAtomicUoWriteS8:");
     BENCH(ASMAtomicUoWriteU16(&s_u16, 0),       "ASMAtomicUoWriteU16:");
@@ -1242,6 +1264,7 @@ int main(int argc, char *argv[])
     tstASMAtomicCmpXchgExU32();
     tstASMAtomicCmpXchgExU64();
     tstASMAtomicReadU64();
+    tstASMAtomicUoReadU64();
     tstASMAtomicAddS32();
     tstASMAtomicDecIncS32();
     tstASMAtomicAndOrU32();
