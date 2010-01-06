@@ -458,7 +458,9 @@ $(VBOX_XML_SCHEMADEFS_CPP): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(KBUIL
 OTHER_CLEAN += $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 
 
-if (defined(VBOX_WITH_CROGL) || defined(VBOX_WITH_VIDEOHWACCEL)) && !defined(VBOX_WITH_DEBUG_VCC_CRT)
+if (   defined(VBOX_WITH_QTGUI) \
+    && (defined(VBOX_WITH_CROGL) || defined(VBOX_WITH_VIDEOHWACCEL)) \
+    && !defined(VBOX_WITH_DEBUG_VCC_CRT)
  ifneq ($(KBUILD_TARGET),darwin)
   #
   # VBoxTestOGL - OpenGL support test app.
