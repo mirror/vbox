@@ -247,7 +247,7 @@ static int rtSemRWRequestRead(RTSEMRW hRWSem, unsigned cMillies, bool fInterrupt
             /* Is the writer perhaps doing a read recursion? */
             RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
             RTNATIVETHREAD hNativeWriter;
-            ASMAtomicReadHandle(&pThis->hNativeWriter, &hNativeWriter);
+            ASMAtomicUoReadHandle(&pThis->hNativeWriter, &hNativeWriter);
             if (hNativeSelf == hNativeWriter)
             {
 #ifdef RTSEMRW_STRICT
@@ -473,7 +473,7 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
     {
         RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
         RTNATIVETHREAD hNativeWriter;
-        ASMAtomicReadHandle(&pThis->hNativeWriter, &hNativeWriter);
+        ASMAtomicUoReadHandle(&pThis->hNativeWriter, &hNativeWriter);
         AssertReturn(hNativeSelf == hNativeWriter, VERR_NOT_OWNER);
         AssertReturn(pThis->cWriterReads > 0, VERR_NOT_OWNER);
 #ifdef RTSEMRW_STRICT
@@ -516,7 +516,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW hRWSem, unsigned cMillies, bo
      */
     RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
     RTNATIVETHREAD hNativeWriter;
-    ASMAtomicReadHandle(&pThis->hNativeWriter, &hNativeWriter);
+    ASMAtomicUoReadHandle(&pThis->hNativeWriter, &hNativeWriter);
     if (hNativeSelf == hNativeWriter)
     {
         Assert((ASMAtomicReadU64(&pThis->u64State) & RTSEMRW_DIR_MASK) == (RTSEMRW_DIR_WRITE << RTSEMRW_DIR_SHIFT));
@@ -717,7 +717,7 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
 
     RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
     RTNATIVETHREAD hNativeWriter;
-    ASMAtomicReadHandle(&pThis->hNativeWriter, &hNativeWriter);
+    ASMAtomicUoReadHandle(&pThis->hNativeWriter, &hNativeWriter);
     AssertReturn(hNativeSelf == hNativeWriter, VERR_NOT_OWNER);
 
     /*
@@ -813,7 +813,7 @@ RTDECL(bool) RTSemRWIsWriteOwner(RTSEMRW RWSem)
      */
     RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
     RTNATIVETHREAD hNativeWriter;
-    ASMAtomicReadHandle(&pThis->hNativeWriter, &hNativeWriter);
+    ASMAtomicUoReadHandle(&pThis->hNativeWriter, &hNativeWriter);
     return hNativeWriter == hNativeSelf;
 }
 RT_EXPORT_SYMBOL(RTSemRWIsWriteOwner);
