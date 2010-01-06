@@ -116,17 +116,6 @@
 # define RT_INLINE_ASM_USES_INTRIN 0
 #endif
 
-/** @def RT_INLINE_ASM_GCC_4_3_X_X86
- * Used to work around some 4.3.x register allocation issues in this version of
- * the compiler. */
-#ifdef __GNUC__
-# define RT_INLINE_ASM_GCC_4_3_X_X86 (__GNUC__ == 4 && __GNUC_MINOR__ == 3 && defined(__i386__))
-#endif
-#ifndef RT_INLINE_ASM_GCC_4_3_X_X86
-# define RT_INLINE_ASM_GCC_4_3_X_X86 0
-#endif
-
-
 
 /** @defgroup grp_asm       ASM - Assembly Routines
  * @ingroup grp_rt
@@ -166,6 +155,32 @@
  *
  * @{
  */
+
+/** @def RT_INLINE_ASM_GCC_4_3_X_X86
+ * Used to work around some 4.3.x register allocation issues in this version of
+ * the compiler. */
+#ifdef __GNUC__
+# define RT_INLINE_ASM_GCC_4_3_X_X86 (__GNUC__ == 4 && __GNUC_MINOR__ == 3 && defined(__i386__))
+#endif
+#ifndef RT_INLINE_ASM_GCC_4_3_X_X86
+# define RT_INLINE_ASM_GCC_4_3_X_X86 0
+#endif
+
+/** @def RT_INLINE_DONT_USE_CMPXCHG8B
+ * i686-apple-darwin9-gcc-4.0.1 (GCC) 4.0.1 (Apple Inc. build 5493) screws up
+ * RTSemRWRequestWrite semsemrw-lockless-generic.cpp in release builds. PIC
+ * mode, x86.
+ *
+ * Some gcc 4.3.x versions may have register allocation issues with cmpxchg8b
+ * when in PIC mode on x86.
+ */
+#ifndef RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
+# define RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC \
+    (   (defined(PIC) || defined(__PIC__)) \
+     && defined(RT_ARCH_X86) \
+     && (   RT_INLINE_ASM_GCC_4_3_X_X86 \
+         || defined(RT_OS_DARWIN)) )
+#endif
 
 /** @def RT_INLINE_ASM_EXTERNAL
  * Defined as 1 if the compiler does not support inline assembly.
@@ -2807,7 +2822,8 @@ DECLINLINE(int32_t) ASMAtomicXchgS32(volatile int32_t *pi32, int32_t i32)
  * @param   pu64    Pointer to the 64-bit variable to update.
  * @param   u64     The 64-bit value to assign to *pu64.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) \
+ || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
 DECLASM(uint64_t) ASMAtomicXchgU64(volatile uint64_t *pu64, uint64_t u64);
 #else
 DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t *pu64, uint64_t u64)
@@ -3174,10 +3190,10 @@ DECLINLINE(bool) ASMAtomicCmpXchgS32(volatile int32_t *pi32, const int32_t i32Ne
  * @param   u64Old  The value to compare with.
  */
 #if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) \
- || (RT_INLINE_ASM_GCC_4_3_X_X86 && defined(IN_RING3) && defined(__PIC__))
+ || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
 DECLASM(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64New, const uint64_t u64Old);
 #else
-DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64New, uint64_t u64Old)
+DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, uint64_t u64New, uint64_t u64Old)
 {
 # if RT_INLINE_ASM_USES_INTRIN
    return _InterlockedCompareExchange64((__int64 *)pu64, u64New, u64Old) == u64Old;
@@ -3442,7 +3458,8 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS32(volatile int32_t *pi32, const int32_t i32
  * @param   u64Old  The value to compare with.
  * @param   pu64Old     Pointer store the old value at.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) \
+ || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
 DECLASM(bool) ASMAtomicCmpXchgExU64(volatile uint64_t *pu64, const uint64_t u64New, const uint64_t u64Old, uint64_t *pu64Old);
 #else
 DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t *pu64, const uint64_t u64New, const uint64_t u64Old, uint64_t *pu64Old)
@@ -4221,7 +4238,7 @@ DECLINLINE(int32_t) ASMAtomicUoReadS32(volatile int32_t *pi32)
  * @remark  This will fault if the memory is read-only!
  */
 #if (RT_INLINE_ASM_EXTERNAL && !defined(RT_ARCH_AMD64)) \
- || (RT_INLINE_ASM_GCC_4_3_X_X86 && defined(IN_RING3) && defined(__PIC__))
+ || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
 DECLASM(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64);
 #else
 DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
@@ -4299,7 +4316,8 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
  *                  The memory pointed to must be writable.
  * @remark  This will fault if the memory is read-only!
  */
-#if RT_INLINE_ASM_EXTERNAL && !defined(RT_ARCH_AMD64)
+#if #if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) \
+ || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
 DECLASM(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64);
 #else
 DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64)

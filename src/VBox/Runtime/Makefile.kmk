@@ -373,8 +373,11 @@ endif
 
 # Some versions of GCC might require this.
 RuntimeR3_SOURCES.x86 += \
+	common/asm/ASMAtomicXchgU64.asm \
 	common/asm/ASMAtomicCmpXchgU64.asm \
-	common/asm/ASMAtomicReadU64.asm
+	common/asm/ASMAtomicCmpXchgExU64.asm \
+	common/asm/ASMAtomicReadU64.asm	\
+	common/asm/ASMAtomicUoReadU64.asm
 
 ifdef IPRT_WITH_KSTUFF
  RuntimeR3_SOURCES += \
