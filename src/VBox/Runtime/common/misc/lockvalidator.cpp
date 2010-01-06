@@ -553,26 +553,38 @@ static int rtLockValidatorDdDoDetection(PRTLOCKVALDDSTACK pStack, PRTLOCKVALRECU
     uint32_t            iEntry          = UINT32_MAX;
     PRTTHREADINT        pThread         = NIL_RTTHREAD;
     RTTHREADSTATE       enmState        = RTTHREADSTATE_RUNNING;
-    for (;;)
+    for (uint32_t iLoop = 0; ; iLoop++)
     {
         /*
          * Process the current record.
          */
         RTLOCKVAL_ASSERT_PTR_ALIGN(pRec);
 
-        /* Find the next relevant owner thread. */
-        PRTTHREADINT pNextThread;
+        /* Find the next relevant owner thread and record. */
+        PRTLOCKVALRECUNION  pNextRec     = NULL;
+        RTTHREADSTATE       enmNextState = RTTHREADSTATE_RUNNING;
+        PRTTHREADINT        pNextThread  = NIL_RTTHREAD;
         switch (pRec->Core.u32Magic)
         {
             case RTLOCKVALRECEXCL_MAGIC:
                 Assert(iEntry == UINT32_MAX);
-                pNextThread = rtLockValidatorReadThreadHandle(&pRec->Excl.hThread);
-                if (    !pNextThread
-                    ||  (   pNextThread != pThreadSelf
-                         && (   pNextThread->u32Magic != RTTHREADINT_MAGIC
-                             || !RTTHREAD_IS_SLEEPING(rtThreadGetState(pNextThread)) )
-                        )
-                   )
+                for (;;)
+                {
+                    pNextThread = rtLockValidatorReadThreadHandle(&pRec->Excl.hThread);
+                    if (   !pNextThread
+                        || pNextThread->u32Magic != RTTHREADINT_MAGIC)
+                        break;
+                    enmNextState = rtThreadGetState(pNextThread);
+                    if (    !RTTHREAD_IS_SLEEPING(enmNextState)
+                        &&  pNextThread != pThreadSelf)
+                        break;
+                    pNextRec = rtLockValidatorReadRecUnionPtr(&pNextThread->LockValidator.pRec);
+                    if (RT_LIKELY(   !pNextRec
+                                  || enmNextState == rtThreadGetState(pNextThread)))
+                        break;
+                    pNextRec = NULL;
+                }
+                if (!pNextRec)
                 {
                     pRec = pRec->Excl.pSibling;
                     if (    pRec
@@ -609,7 +621,6 @@ static int rtLockValidatorDdDoDetection(PRTLOCKVALDDSTACK pStack, PRTLOCKVALRECU
                 }
 
                 /* Scan the owner table for blocked owners. */
-                pNextThread = NIL_RTTHREAD;
                 if (    ASMAtomicUoReadU32(&pRec->Shared.cEntries) > 0
                     &&  (   !pRec->Shared.fSignaller
                          || iEntry != UINT32_MAX
@@ -622,24 +633,35 @@ static int rtLockValidatorDdDoDetection(PRTLOCKVALDDSTACK pStack, PRTLOCKVALRECU
                     while (++iEntry < cAllocated)
                     {
                         PRTLOCKVALRECSHRDOWN pEntry = rtLockValidatorUoReadSharedOwner(&papOwners[iEntry]);
-                        if (   pEntry
-                            && pEntry->Core.u32Magic == RTLOCKVALRECSHRDOWN_MAGIC)
+                        if (pEntry)
                         {
-                            pNextThread = rtLockValidatorReadThreadHandle(&pEntry->hThread);
-                            if (pNextThread)
+                            for (;;)
                             {
-                                if (   pNextThread->u32Magic == RTTHREADINT_MAGIC
-                                    && (   RTTHREAD_IS_SLEEPING(rtThreadGetState(pNextThread))
-                                        || pNextThread == pThreadSelf))
+                                if (pEntry->Core.u32Magic != RTLOCKVALRECSHRDOWN_MAGIC)
                                     break;
-                                pNextThread = NIL_RTTHREAD;
+                                pNextThread = rtLockValidatorReadThreadHandle(&pEntry->hThread);
+                                if (   !pNextThread
+                                    || pNextThread->u32Magic != RTTHREADINT_MAGIC)
+                                    break;
+                                enmNextState = rtThreadGetState(pNextThread);
+                                if (    !RTTHREAD_IS_SLEEPING(enmNextState)
+                                    &&  pNextThread != pThreadSelf)
+                                    break;
+                                pNextRec = rtLockValidatorReadRecUnionPtr(&pNextThread->LockValidator.pRec);
+                                if (RT_LIKELY(   !pNextRec
+                                              || enmNextState == rtThreadGetState(pNextThread)))
+                                    break;
+                                pNextRec = NULL;
                             }
+                            if (pNextRec)
+                                break;
                         }
                         else
                             Assert(!pEntry || pEntry->Core.u32Magic == RTLOCKVALRECSHRDOWN_MAGIC_DEAD);
                     }
-                    if (pNextThread != NIL_RTTHREAD)
+                    if (pNextRec)
                         break;
+                    pNextThread = NIL_RTTHREAD;
                 }
 
                 /* Advance to the next sibling, if any. */
@@ -650,41 +672,19 @@ static int rtLockValidatorDdDoDetection(PRTLOCKVALDDSTACK pStack, PRTLOCKVALRECU
                     iEntry = UINT32_MAX;
                     continue;
                 }
-                Assert(pNextThread == NIL_RTTHREAD);
                 break;
 
             case RTLOCKVALRECEXCL_MAGIC_DEAD:
             case RTLOCKVALRECSHRD_MAGIC_DEAD:
-                pNextThread = NIL_RTTHREAD;
                 break;
 
             case RTLOCKVALRECSHRDOWN_MAGIC:
             case RTLOCKVALRECSHRDOWN_MAGIC_DEAD:
             default:
                 AssertMsgFailed(("%p: %#x\n", pRec, pRec->Core));
-                pNextThread = NIL_RTTHREAD;
                 break;
         }
 
-        /* If we found a thread, check if it is still waiting for something. */
-        RTTHREADSTATE       enmNextState = RTTHREADSTATE_RUNNING;
-        PRTLOCKVALRECUNION  pNextRec     = NULL;
-        if (   pNextThread != NIL_RTTHREAD
-            && RT_LIKELY(pNextThread->u32Magic == RTTHREADINT_MAGIC))
-        {
-            do
-            {
-                enmNextState = rtThreadGetState(pNextThread);
-                if (    !RTTHREAD_IS_SLEEPING(enmNextState)
-                    &&  pNextThread != pThreadSelf)
-                    break;
-                pNextRec = rtLockValidatorReadRecUnionPtr(&pNextThread->LockValidator.pRec);
-                if (RT_LIKELY(   !pNextRec
-                              || enmNextState == rtThreadGetState(pNextThread)))
-                    break;
-                pNextRec = NULL;
-            } while (pNextThread->u32Magic == RTTHREADINT_MAGIC);
-        }
         if (pNextRec)
         {
             /*
@@ -715,7 +715,7 @@ static int rtLockValidatorDdDoDetection(PRTLOCKVALDDSTACK pStack, PRTLOCKVALRECU
             enmState        = enmNextState;
             pThread         = pNextThread;
         }
-        else if (RT_LIKELY(!pNextThread))
+        else
         {
             /*
              * No deadlock here, unwind the stack and deal with any unfinished
@@ -762,7 +762,8 @@ static int rtLockValidatorDdDoDetection(PRTLOCKVALDDSTACK pStack, PRTLOCKVALRECU
             pThread         = pStack->a[i].pThread;
             pStack->c       = i;
         }
-        /* else: see if there is another thread to check for this lock. */
+
+        Assert(iLoop != 1000000);
     }
 }
 
