@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -237,7 +237,8 @@ public:
                     && mTeleporterEnabled    == that.mTeleporterEnabled
                     && mTeleporterPort       == that.mTeleporterPort
                     && mTeleporterAddress    == that.mTeleporterAddress
-                    && mTeleporterPassword   == that.mTeleporterPassword);
+                    && mTeleporterPassword   == that.mTeleporterPassword
+                    && mRTCUseUTC            == that.mRTCUseUTC);
         }
 
         Bstr    mName;
@@ -250,6 +251,7 @@ public:
         ULONG   mTeleporterPort;
         Bstr    mTeleporterAddress;
         Bstr    mTeleporterPassword;
+        BOOL    mRTCUseUTC;
     };
 
     /**
@@ -576,6 +578,8 @@ public:
     STDMETHOD(COMSETTER(TeleporterAddress))(IN_BSTR aAddress);
     STDMETHOD(COMGETTER(TeleporterPassword))(BSTR *aPassword);
     STDMETHOD(COMSETTER(TeleporterPassword))(IN_BSTR aPassword);
+    STDMETHOD(COMGETTER(RTCUseUTC))(BOOL *aEnabled);
+    STDMETHOD(COMSETTER(RTCUseUTC))(BOOL aEnabled);
 
     // IMachine methods
     STDMETHOD(SetBootOrder)(ULONG aPosition, DeviceType_T aDevice);

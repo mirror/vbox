@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -622,6 +622,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertNode(pDevices, "mc146818", &pDev);                             RC_CHECK();
     rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
+    BOOL fRTCUseUTC;
+    hrc = pMachine->COMGETTER(RTCUseUTC)(&fRTCUseUTC);                              H();
+    rc = CFGMR3InsertInteger(pCfg,  "UseUTC", fRTCUseUTC ? 1 : 0);
 
     /*
      * VGA.

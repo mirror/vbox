@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -55,9 +55,6 @@
 
 #include "Logging.h"
 #include "Performance.h"
-
-#include <stdio.h>
-#include <stdlib.h>
 
 #include <iprt/asm.h>
 #include <iprt/path.h>
@@ -2228,6 +2225,50 @@ Machine::COMSETTER(TeleporterPassword)(IN_BSTR aPassword)
 
     mUserData.backup();
     mUserData->mTeleporterPassword = aPassword;
+
+    return S_OK;
+}
+
+STDMETHODIMP
+Machine::COMGETTER(RTCUseUTC)(BOOL *aEnabled)
+{
+    CheckComArgOutPointerValid(aEnabled);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aEnabled = mUserData->mRTCUseUTC;
+
+    return S_OK;
+}
+
+STDMETHODIMP
+Machine::COMSETTER(RTCUseUTC)(BOOL aEnabled)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Only allow it to be set to true when PoweredOff or Aborted.
+       (Clearing it is always permitted.) */
+    if (    aEnabled
+        &&  mData->mRegistered
+        &&  (   mType != IsSessionMachine
+             || (   mData->mMachineState != MachineState_PoweredOff
+                 && mData->mMachineState != MachineState_Teleported
+                 && mData->mMachineState != MachineState_Aborted
+                )
+            )
+       )
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("The machine is not powered off (state is %s)"),
+                        Global::stringifyMachineState(mData->mMachineState));
+
+    mUserData.backup();
+    mUserData->mRTCUseUTC = aEnabled;
 
     return S_OK;
 }
@@ -5755,6 +5796,9 @@ HRESULT Machine::loadSettings(bool aRegistered)
         mUserData->mTeleporterAddress  = mData->m_pMachineConfigFile->strTeleporterAddress;
         mUserData->mTeleporterPassword = mData->m_pMachineConfigFile->strTeleporterPassword;
 
+        /* RTC */
+        mUserData->mRTCUseUTC = mData->m_pMachineConfigFile->fRTCUseUTC;
+
         /*
          *  note: all mUserData members must be assigned prior this point because
          *  we need to commit changes in order to let mUserData be shared by all
@@ -6813,6 +6857,8 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
         mData->m_pMachineConfigFile->uTeleporterPort       = mUserData->mTeleporterPort;
         mData->m_pMachineConfigFile->strTeleporterAddress  = mUserData->mTeleporterAddress;
         mData->m_pMachineConfigFile->strTeleporterPassword = mUserData->mTeleporterPassword;
+
+        mData->m_pMachineConfigFile->fRTCUseUTC = !!mUserData->mRTCUseUTC;
 
         rc = saveHardware(mData->m_pMachineConfigFile->hardwareMachine);
         if (FAILED(rc)) throw rc;
