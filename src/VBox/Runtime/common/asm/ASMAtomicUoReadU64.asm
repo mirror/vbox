@@ -63,7 +63,7 @@ BEGINPROC_EXPORTED ASMAtomicUoReadU64
         mov     edi, [ebp+08h]
         xor     ecx, ecx
         xor     ebx, ebx
-        cmpxchg8b [edi]
+        lock cmpxchg8b [edi]
 
         pop     edi
         pop     ebx
