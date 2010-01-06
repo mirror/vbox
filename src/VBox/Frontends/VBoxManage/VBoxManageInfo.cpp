@@ -397,6 +397,13 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     else
         RTPrintf("Time offset:     %lld ms\n", timeOffset);
 
+    BOOL RTCUseUTC;
+    machine->COMGETTER(RTCUseUTC)(&RTCUseUTC);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("rtcuseutc=\"%s\"\n", RTCUseUTC ? "on" : "off");
+    else
+        RTPrintf("RTC:             %s\n", RTCUseUTC ? "UTC" : "local time");
+
     BOOL hwVirtExEnabled;
     machine->GetHWVirtExProperty(HWVirtExPropertyType_Enabled, &hwVirtExEnabled);
     if (details == VMINFO_MACHINEREADABLE)

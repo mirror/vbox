@@ -28,8 +28,8 @@
  *      the default value will have been set by the constructor.
  *
  *   3) In the settings writer method, write the setting _only_ if the current settings
- *      version (stored in m->sv) is high enough. That is, for VirtualBox 3.1, write it
- *      only if (m->sv >= SettingsVersion_v1_9).
+ *      version (stored in m->sv) is high enough. That is, for VirtualBox 3.2, write it
+ *      only if (m->sv >= SettingsVersion_v1_10).
  *
  *   4) In MachineConfigFile::bumpSettingsVersionIfNeeded(), check if the new setting has
  *      a non-default value (i.e. that differs from the constructor). If so, bump the
@@ -41,7 +41,7 @@
  */
 
 /*
- * Copyright (C) 2007-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -278,7 +278,9 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
                     m->sv = SettingsVersion_v1_8;
                 else if (ulMinor == 9)
                     m->sv = SettingsVersion_v1_9;
-                else if (ulMinor > 9)
+                else if (ulMinor == 10)
+                    m->sv = SettingsVersion_v1_10;
+                else if (ulMinor > 10)
                     m->sv = SettingsVersion_Future;
             }
             else if (ulMajor > 1)
@@ -297,7 +299,7 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
     else
     {
         m->strSettingsVersionFull = VBOX_XML_VERSION_FULL;
-        m->sv = SettingsVersion_v1_9;
+        m->sv = SettingsVersion_v1_10;
     }
 }
 
@@ -544,20 +546,24 @@ void ConfigFileBase::createStubDocument()
     {
         case SettingsVersion_v1_8:
             pcszVersion = "1.8";
-        break;
+            break;
 
         case SettingsVersion_v1_9:
+            pcszVersion = "1.9";
+            break;
+
+        case SettingsVersion_v1_10:
         case SettingsVersion_Future:                // can be set if this code runs on XML files that were created by a future version of VBox;
                                                     // in that case, downgrade to current version when writing since we can't write future versions...
-            pcszVersion = "1.9";
-            m->sv = SettingsVersion_v1_9;
-        break;
+            pcszVersion = "1.10";
+            m->sv = SettingsVersion_v1_10;
+            break;
 
         default:
             // silently upgrade if this is less than 1.7 because that's the oldest we can write
             pcszVersion = "1.7";
             m->sv = SettingsVersion_v1_7;
-        break;
+            break;
     }
 
     m->pelmRoot->setAttribute("version", Utf8StrFmt("%s-%s",
@@ -1774,12 +1780,18 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         }
         else if (pelmHwChild->nameEquals("Network"))
             readNetworkAdapters(*pelmHwChild, hw.llNetworkAdapters);
+        else if (pelmHwChild->nameEquals("RTC"))
+        {
+            Utf8Str strLocalOrUTC;
+            fRTCUseUTC =    pelmHwChild->getAttributeValue("localOrUTC", strLocalOrUTC)
+                         && strLocalOrUTC == "UTC";
+        }
         else if (    (pelmHwChild->nameEquals("UART"))
                   || (pelmHwChild->nameEquals("Uart"))      // used before 1.3
                 )
             readSerialPorts(*pelmHwChild, hw.llSerialPorts);
         else if (    (pelmHwChild->nameEquals("LPT"))
-                  ||  (pelmHwChild->nameEquals("Lpt"))      // used before 1.3
+                  || (pelmHwChild->nameEquals("Lpt"))       // used before 1.3
                 )
             readParallelPorts(*pelmHwChild, hw.llParallelPorts);
         else if (pelmHwChild->nameEquals("AudioAdapter"))
@@ -2410,6 +2422,7 @@ MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
       fNameSync(true),
       fTeleporterEnabled(false),
       uTeleporterPort(0),
+      fRTCUseUTC(false),
       fCurrentStateModified(true),
       fAborted(false)
 {
@@ -2765,6 +2778,13 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
     xml::ElementNode *pelmAudio = pelmHardware->createChild("AudioAdapter");
     pelmAudio->setAttribute("controller", (hw.audioAdapter.controllerType == AudioControllerType_SB16) ? "SB16" : "AC97");
 
+    if (   m->sv >= SettingsVersion_v1_10
+        && fRTCUseUTC)
+    {
+        xml::ElementNode *pelmRTC = pelmHardware->createChild("RTC");
+        pelmRTC->setAttribute("localOrUTC", fRTCUseUTC ? "UTC" : "local");
+    }
+
     const char *pcszDriver;
     switch (hw.audioAdapter.driverType)
     {
@@ -3068,6 +3088,12 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
            )
             m->sv = SettingsVersion_v1_9;
     }
+
+    if (    m->sv < SettingsVersion_v1_10
+         && (  fRTCUseUTC
+            )
+       )
+        m->sv = SettingsVersion_v1_10;
 }
 
 /**

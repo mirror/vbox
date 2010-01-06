@@ -45,7 +45,7 @@
  *    out/<platform>/obj/Runtime/errmsgvboxcomdata.h
  *    (<result> extraction for the %Rhrc format specifier)
  *
-     Copyright (C) 2006-2009 Sun Microsystems, Inc.
+     Copyright (C) 2006-2010 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -453,8 +453,13 @@
       <!-- The big storage controller / DVD / Floppy rework (done)
            -->
     </const>
-    <const name="Future"     value="12">
-      <desc>Settings version greater than "1.9", written by a future VirtualBox version.</desc>
+    <const name="v1_10"     value="12">
+      <desc>Settings version "1.10", written by VirtualBox 3.2.x.</desc>
+      <!-- Machine changes: RTC localOrUTC (done)
+           -->
+    </const>
+    <const name="Future"     value="13">
+      <desc>Settings version greater than "1.10", written by a future VirtualBox version.</desc>
     </const>
   </enum>
 
@@ -4159,7 +4164,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="99404f50-dd10-40d3-889b-dd2f79f1e95e"
+     uuid="6d7f40fa-77be-4366-a053-f58e81453a6a"
      wsmap="managed"
      >
     <desc>
@@ -4662,6 +4667,14 @@
         The password the to check for on the target teleporter.  This is just a
         very basic measure to prevent simple hacks and operators accidentally
         beaming a virtual machine to the wrong place.
+      </desc>
+    </attribute>
+
+    <attribute name="RTCUseUTC" type="boolean">
+      <desc>
+        When set to @a true, the RTC device of the virtual machine will run
+        in UTC time, otherwise in local time. Especially Unix guests prefer
+        the time in UTC.
       </desc>
     </attribute>
 

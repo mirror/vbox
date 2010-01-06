@@ -12,7 +12,7 @@
  */
 
 /*
- * Copyright (C) 2007-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -622,6 +622,7 @@ public:
     uint32_t                uTeleporterPort;
     com::Utf8Str            strTeleporterAddress;
     com::Utf8Str            strTeleporterPassword;
+    bool                    fRTCUseUTC;
 
     bool                    fCurrentStateModified;      // optional, default is true
     RTTIMESPEC              timeLastStateChange;        // optional, defaults to now

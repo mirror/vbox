@@ -162,6 +162,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--cpuidremove <leaf>]\n"
                  "                            [--cpuidremoveall]\n"
                  "                            [--cpus <number>]\n"
+                 "                            [--rtcuseutc]\n"
                  "                            [--monitorcount <number>]\n"
                  "                            [--accelerate3d <on|off>]\n"
 #ifdef VBOX_WITH_VIDEOHWACCEL
