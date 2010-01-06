@@ -447,7 +447,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
             {
                 ASMAtomicDecU32(&pThis->cWaiters);
                 rc = pthread_mutex_unlock(&pThis->Mutex);
-                return VERR_SEM_BUSY;
+                return VERR_TIMEOUT;
             }
 
             /* wait */

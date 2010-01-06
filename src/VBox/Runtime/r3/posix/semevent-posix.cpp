@@ -416,7 +416,7 @@ DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bo
             {
                 ASMAtomicDecU32(&pThis->cWaiters);
                 rc = pthread_mutex_unlock(&pThis->Mutex);
-                return VERR_SEM_BUSY;
+                return VERR_TIMEOUT;
             }
 
             /* wait */
