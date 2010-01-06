@@ -1176,7 +1176,7 @@ void tstASMBench(void)
     static uint64_t volatile s_u64;
     static int64_t  volatile s_i64;
     register unsigned i;
-    const unsigned cRounds = 1000000;
+    const unsigned cRounds = 2000000;
     register uint64_t u64Elapsed;
 
     RTPrintf("tstInlineASM: Benchmarking:\n");
@@ -1190,8 +1190,20 @@ void tstASMBench(void)
         RTPrintf(" %-30s %3llu cycles\n", str, u64Elapsed / cRounds);
 
     BENCH(s_u32 = 0,                            "s_u32 = 0:");
+    BENCH(ASMAtomicUoReadU8(&s_u8),             "ASMAtomicUoReadU8:");
+    BENCH(ASMAtomicUoReadS8(&s_i8),             "ASMAtomicUoReadS8:");
+    BENCH(ASMAtomicUoReadU16(&s_u16),           "ASMAtomicUoReadU16:");
+    BENCH(ASMAtomicUoReadS16(&s_i16),           "ASMAtomicUoReadS16:");
+    BENCH(ASMAtomicUoReadU32(&s_u32),           "ASMAtomicUoReadU32:");
+    BENCH(ASMAtomicUoReadS32(&s_i32),           "ASMAtomicUoReadS32:");
     BENCH(ASMAtomicUoReadU64(&s_u64),           "ASMAtomicUoReadU64:");
     BENCH(ASMAtomicUoReadS64(&s_i64),           "ASMAtomicUoReadS64:");
+    BENCH(ASMAtomicReadU8(&s_u8),               "ASMAtomicReadU8:");
+    BENCH(ASMAtomicReadS8(&s_i8),               "ASMAtomicReadS8:");
+    BENCH(ASMAtomicReadU16(&s_u16),             "ASMAtomicReadU16:");
+    BENCH(ASMAtomicReadS16(&s_i16),             "ASMAtomicReadS16:");
+    BENCH(ASMAtomicReadU32(&s_u32),             "ASMAtomicReadU32:");
+    BENCH(ASMAtomicReadS32(&s_i32),             "ASMAtomicReadS32:");
     BENCH(ASMAtomicReadU64(&s_u64),             "ASMAtomicReadU64:");
     BENCH(ASMAtomicReadS64(&s_i64),             "ASMAtomicReadS64:");
     BENCH(ASMAtomicUoWriteU8(&s_u8, 0),         "ASMAtomicUoWriteU8:");
