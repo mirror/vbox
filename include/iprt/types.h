@@ -354,7 +354,8 @@ typedef const RTUINT128U *PCRTUINT128U;
 typedef DECLCALLBACK(void) FNRT(void);
 
 /** Generic function pointer.
- * With -pedantic, gcc-4 complains when casting a function to a data object, for example
+ * With -pedantic, gcc-4 complains when casting a function to a data object, for
+ * example:
  *
  * @code
  *    void foo(void)
@@ -364,12 +365,19 @@ typedef DECLCALLBACK(void) FNRT(void);
  *    void *bar = (void *)foo;
  * @endcode
  *
- * The compiler would warn with "ISO C++ forbids casting between pointer-to-function and
- * pointer-to-object". The purpose of this warning is not to bother the programmer but to
- * point out that he is probably doing something dangerous, assigning a pointer to executable
- * code to a data object.
+ * The compiler would warn with "ISO C++ forbids casting between
+ * pointer-to-function and pointer-to-object".  The purpose of this warning is
+ * not to bother the programmer but to point out that he is probably doing
+ * something dangerous, assigning a pointer to executable code to a data object.
  */
 typedef FNRT *PFNRT;
+
+/** Millisecond interval. */
+typedef uint32_t            RTMSINTERVAL;
+/** Pointer to a millisecond interval. */
+typedef RTMSINTERVAL       *PRTMSINTERVAL;
+/** Pointer to a const millisecond interval. */
+typedef const RTMSINTERVAL *PCRTMSINTERVAL;
 
 
 /** @defgroup grp_rt_types_both  Common Guest and Host Context Basic Types
@@ -1126,11 +1134,11 @@ typedef RTLDRMOD                                   *PRTLDRMOD;
 #define NIL_RTLDRMOD                                0
 
 /** Lock validator class handle. */
-typedef R3R0PTRTYPE(struct RTLOCKVALIDATORCLASSINT *) RTLOCKVALIDATORCLASS;
+typedef R3R0PTRTYPE(struct RTLOCKVALCLASSINT *)     RTLOCKVALCLASS;
 /** Pointer to a lock validator class handle. */
-typedef RTLOCKVALIDATORCLASS                       *PRTLOCKVALIDATORCLASS;
+typedef RTLOCKVALCLASS                             *PRTLOCKVALCLASS;
 /** Nil lock validator class handle. */
-#define NIL_RTLOCKVALIDATORCLASS                    ((RTLOCKVALIDATORCLASS)0)
+#define NIL_RTLOCKVALCLASS                         ((RTLOCKVALCLASS)0)
 
 /** Ring-0 memory object handle. */
 typedef R0PTRTYPE(struct RTR0MEMOBJINTERNAL *)      RTR0MEMOBJ;

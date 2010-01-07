@@ -66,6 +66,10 @@
 #define RTLOCALIPCSERVER_MAGIC          UINT32_C(0x19600201)
 /** The magic value for RTLOCALIPCSERVER::u32Magic. (Katsuhiro Otomo) */
 #define RTLOCALIPCSESSION_MAGIC         UINT32_C(0x19530414)
+/** The magic value for RTLOCKVALCLASSINT::u32Magic. (Thomas Mann) */
+#define RTLOCKVALCLASS_MAGIC            UINT32_C(0x18750605)
+/** The magic value for RTLOCKVALCLASSINT::u32Magic after destruction. */
+#define RTLOCKVALCLASS_MAGIC_DEAD       UINT32_C(0x19550812)
 /** The magic value for RTLOCKVALRECEXCL::u32Magic. (Vladimir Vladimirovich Nabokov) */
 #define RTLOCKVALRECEXCL_MAGIC          UINT32_C(0x18990422)
 /** The dead magic value for RTLOCKVALRECEXCL::u32Magic. */

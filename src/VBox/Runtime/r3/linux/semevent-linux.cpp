@@ -129,7 +129,7 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
         pThis->fSignalled = 0;
 #ifdef RTSEMEVENT_STRICT
         RTLockValidatorRecSharedInit(&pThis->Signallers,
-                                     NIL_RTLOCKVALIDATORCLASS, RTLOCKVALIDATOR_SUB_CLASS_ANY,
+                                     NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY,
                                      "RTSemEvent", pThis, true /*fSignaller*/);
         pThis->fEverHadSignallers = false;
 #endif
