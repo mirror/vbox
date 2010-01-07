@@ -259,7 +259,7 @@
              </sizepolicy>
             </property>
             <property name="whatsThis" >
-             <string>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set in UTC.</string>
+             <string>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</string>
             </property>
             <property name="text" >
              <string>Report &amp;UTC time</string>
