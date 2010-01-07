@@ -58,12 +58,10 @@
 #define LSILOGICSCSI_PCI_SAS_CLASS_CODE           (0x00)
 #define LSILOGICSCSI_PCI_SAS_SUBSYSTEM_VENDOR_ID  (0x1000)
 #define LSILOGICSCSI_PCI_SAS_SUBSYSTEM_ID         (0x8000)
-#define LSILOGICSCSI_PCI_SAS_PORTS_MAX             8
-#define LSILOGICSCSI_PCI_SAS_DEVICES_PER_PORT_MAX  1
+#define LSILOGICSCSI_PCI_SAS_PORTS_MAX             256
+#define LSILOGICSCSI_PCI_SAS_PORTS_DEFAULT           8
+#define LSILOGICSCSI_PCI_SAS_DEVICES_PER_PORT_MAX    1
 #define LSILOGICSCSI_PCI_SAS_DEVICES_MAX          (LSILOGICSCSI_PCI_SAS_PORTS_MAX * LSILOGICSCSI_PCI_SAS_DEVICES_PER_PORT_MAX)
-
-/** Maximum number of devices for both types */
-#define LSILOGIC_DEVICES_MAX LSILOGICSCSI_PCI_SPI_DEVICES_MAX
 
 /**
  * A SAS address.
@@ -1151,10 +1149,20 @@ AssertCompileSize(MptConfigurationPageManufacturing0, 76);
 #pragma pack(1)
 typedef struct MptConfigurationPageManufacturing1
 {
-    /** The omnipresent header. */
-    MptConfigurationPageHeader    Header;
-    /** VPD info - don't know what belongs here so all zero. */
-    uint8_t                       abVPDInfo[256];
+    /** Union */
+    union
+    {
+        /** Byte view */
+        uint8_t                           abPageData[260];
+        /** Field view */
+        struct
+        {
+            /** The omnipresent header. */
+            MptConfigurationPageHeader    Header;
+            /** VPD info - don't know what belongs here so all zero. */
+            uint8_t                       abVPDInfo[256];
+        } fields;
+    } u;
 } MptConfigurationPageManufacturing1, *PMptConfigurationPageManufacturing1;
 #pragma pack()
 AssertCompileSize(MptConfigurationPageManufacturing1, 260);
@@ -2436,6 +2444,32 @@ typedef struct MptConfigurationPageSCSISPIDevice3
 AssertCompileSize(MptConfigurationPageSCSISPIDevice3, 12);
 
 /**
+ * PHY entry for the SAS I/O unit page 0
+ */
+#pragma pack(1)
+typedef struct MptConfigurationPageSASIOUnit0PHY
+{
+    /** Port number */
+    uint8_t                           u8Port;
+    /** Port flags */
+    uint8_t                           u8PortFlags;
+    /** Phy flags */
+    uint8_t                           u8PhyFlags;
+    /** negotiated link rate */
+    uint8_t                           u8NegotiatedLinkRate;
+    /** Controller phy device info */
+    uint32_t                          u32ControllerPhyDeviceInfo;
+    /** Attached device handle */
+    uint16_t                          u16AttachedDevHandle;
+    /** Controller device handle */
+    uint16_t                          u16ControllerDevHandle;
+    /** Discovery status */
+    uint32_t                          u32DiscoveryStatus;
+} MptConfigurationPageSASIOUnit0PHY, *PMptConfigurationPageSASIOUnit0PHY;
+#pragma pack()
+AssertCompileSize(MptConfigurationPageSASIOUnit0PHY, 16);
+
+/**
  * SAS I/O  Unit page 0 - Readonly
  */
 #pragma pack(1)
@@ -2459,31 +2493,15 @@ typedef struct MptConfigurationPageSASIOUnit0
             uint8_t                               u8NumPhys;
             /** Reserved */
             uint8_t                               au8Reserved[3];
-            /** Content for each physical port */
-            struct
-            {
-                /** Port number */
-                uint8_t                           u8Port;
-                /** Port flags */
-                uint8_t                           u8PortFlags;
-                /** Phy flags */
-                uint8_t                           u8PhyFlags;
-                /** negotiated link rate */
-                uint8_t                           u8NegotiatedLinkRate;
-                /** Controller phy device info */
-                uint32_t                          u32ControllerPhyDeviceInfo;
-                /** Attached device handle */
-                uint16_t                          u16AttachedDevHandle;
-                /** Controller device handle */
-                uint16_t                          u16ControllerDevHandle;
-                /** Discovery status */
-                uint32_t                          u32DiscoveryStatus;
-            } aPHY[LSILOGICSCSI_PCI_SAS_PORTS_MAX];
+            /** Content for each physical port - variable depending on the amount of ports. */
+            MptConfigurationPageSASIOUnit0PHY     aPHY[1];
         } fields;
     } u;
 } MptConfigurationPageSASIOUnit0, *PMptConfigurationPageSASIOUnit0;
 #pragma pack()
-AssertCompileSize(MptConfigurationPageSASIOUnit0, 8+2+2+1+3+(LSILOGICSCSI_PCI_SAS_PORTS_MAX*16));
+AssertCompileSize(MptConfigurationPageSASIOUnit0, 8+2+2+1+3+sizeof(MptConfigurationPageSASIOUnit0PHY));
+
+#define LSILOGICSCSI_SASIOUNIT0_GET_SIZE(ports) (sizeof(MptConfigurationPageSASIOUnit0) + ((ports) - 1) * sizeof(MptConfigurationPageSASIOUnit0PHY))
 
 #define LSILOGICSCSI_SASIOUNIT0_PORT_CONFIGURATION_AUTO  RT_BIT(0)
 #define LSILOGICSCSI_SASIOUNIT0_PORT_TARGET_IOC          RT_BIT(2)
@@ -2537,6 +2555,30 @@ AssertCompileSize(MptConfigurationPageSASIOUnit0, 8+2+2+1+3+(LSILOGICSCSI_PCI_SA
 #define LSILOGICSCSI_SASIOUNIT0_DISCOVERY_STATUS_MULT_CTRLS      RT_BIT(13)
 
 /**
+ * PHY entry for the SAS I/O unit page 1
+ */
+#pragma pack(1)
+typedef struct MptConfigurationPageSASIOUnit1PHY
+{
+    /** Port number */
+    uint8_t                           u8Port;
+    /** Port flags */
+    uint8_t                           u8PortFlags;
+    /** Phy flags */
+    uint8_t                           u8PhyFlags;
+    /** Max link rate */
+    uint8_t                           u8MaxMinLinkRate;
+    /** Controller phy device info */
+    uint32_t                          u32ControllerPhyDeviceInfo;
+    /** Maximum target port connect time */
+    uint16_t                          u16MaxTargetPortConnectTime;
+    /** Reserved */
+    uint16_t                          u16Reserved;
+} MptConfigurationPageSASIOUnit1PHY, *PMptConfigurationPageSASIOUnit1PHY;
+#pragma pack()
+AssertCompileSize(MptConfigurationPageSASIOUnit1PHY, 12);
+
+/**
  * SAS I/O  Unit page 1 - Read/Write
  */
 #pragma pack(1)
@@ -2568,29 +2610,15 @@ typedef struct MptConfigurationPageSASIOUnit1
             uint8_t                               u8ReportDeviceMissingDelay;
             /** I/O device missing delay */
             uint8_t                               u8IODeviceMissingDelay;
-            /** Content for each physical port */
-            struct
-            {
-                /** Port number */
-                uint8_t                           u8Port;
-                /** Port flags */
-                uint8_t                           u8PortFlags;
-                /** Phy flags */
-                uint8_t                           u8PhyFlags;
-                /** Max link rate */
-                uint8_t                           u8MaxMinLinkRate;
-                /** Controller phy device info */
-                uint32_t                          u32ControllerPhyDeviceInfo;
-                /** Maximum target port connect time */
-                uint16_t                          u16MaxTargetPortConnectTime;
-                /** Reserved */
-                uint16_t                          u16Reserved;
-            } aPHY[LSILOGICSCSI_PCI_SAS_PORTS_MAX];
+            /** Content for each physical port - variable depending on the number of ports */
+            MptConfigurationPageSASIOUnit1PHY     aPHY[1];
         } fields;
     } u;
 } MptConfigurationPageSASIOUnit1, *PMptConfigurationPageSASIOUnit1;
 #pragma pack()
-AssertCompileSize(MptConfigurationPageSASIOUnit1, 8+12+(LSILOGICSCSI_PCI_SAS_PORTS_MAX*12));
+AssertCompileSize(MptConfigurationPageSASIOUnit1, 8+12+sizeof(MptConfigurationPageSASIOUnit1PHY));
+
+#define LSILOGICSCSI_SASIOUNIT1_GET_SIZE(ports) (sizeof(MptConfigurationPageSASIOUnit1) + ((ports) - 1) * sizeof(MptConfigurationPageSASIOUnit1PHY))
 
 #define LSILOGICSCSI_SASIOUNIT1_CONTROL_CLEAR_SATA_AFFILIATION     RT_BIT(0)
 #define LSILOGICSCSI_SASIOUNIT1_CONTROL_FIRST_LEVEL_DISCOVERY_ONLY RT_BIT(1)
@@ -3147,18 +3175,32 @@ typedef struct MptConfigurationPagesSpi
     } aBuses[1]; /* Only one bus at the moment. */
 } MptConfigurationPagesSpi, *PMptConfigurationPagesSpi;
 
+typedef struct MptPHY
+{
+    MptConfigurationPageSASPHY0     SASPHYPage0;
+    MptConfigurationPageSASPHY1     SASPHYPage1;
+} MptPHY, *PMptPHY;
+
 #pragma pack(1)
 typedef struct MptConfigurationPagesSas
 {
-    MptConfigurationPageSASIOUnit0      SASIOUnitPage0;
-    MptConfigurationPageSASIOUnit1      SASIOUnitPage1;
+    /** Size of the I/O unit page 0 */
+    uint32_t                            cbSASIOUnitPage0;
+    /** Pointer to the I/O unit page 0 */
+    PMptConfigurationPageSASIOUnit0     pSASIOUnitPage0;
+    /** Size of the I/O unit page 1 */
+    uint32_t                            cbSASIOUnitPage1;
+    /** Pointer to the I/O unit page 1 */
+    PMptConfigurationPageSASIOUnit1     pSASIOUnitPage1;
+    /** I/O unit page 2 */
     MptConfigurationPageSASIOUnit2      SASIOUnitPage2;
+    /** I/O unit page 3 */
     MptConfigurationPageSASIOUnit3      SASIOUnitPage3;
-    struct
-    {
-        MptConfigurationPageSASPHY0     SASPHYPage0;
-        MptConfigurationPageSASPHY1     SASPHYPage1;
-    } aPHY[LSILOGICSCSI_PCI_SAS_PORTS_MAX];
+
+    /** Number of PHYs in the array. */
+    uint32_t                            cPHYs;
+    /** Pointer to an array of per PHYS pages. */
+    R3PTRTYPE(PMptPHY)                  paPHYs;
 
     /** Number of devices detected. */
     uint32_t                            cDevices;
@@ -3209,6 +3251,35 @@ typedef struct MptConfigurationPagesSupported
         MptConfigurationPagesSas        SasPages;
     } u;
 } MptConfigurationPagesSupported, *PMptConfigurationPagesSupported;
+
+/**
+ * Initializes a page header.
+ */
+#define MPT_CONFIG_PAGE_HEADER_INIT(pg, type, nr, flags) \
+    (pg)->u.fields.Header.u8PageType   = flags; \
+    (pg)->u.fields.Header.u8PageNumber = nr; \
+    (pg)->u.fields.Header.u8PageLength = sizeof(type) / 4
+
+#define MPT_CONFIG_PAGE_HEADER_INIT_MANUFACTURING(pg, type, nr, flags) \
+    MPT_CONFIG_PAGE_HEADER_INIT(pg, type, nr, flags | MPT_CONFIGURATION_PAGE_TYPE_MANUFACTURING)
+
+#define MPT_CONFIG_PAGE_HEADER_INIT_IO_UNIT(pg, type, nr, flags) \
+    MPT_CONFIG_PAGE_HEADER_INIT(pg, type, nr, flags | MPT_CONFIGURATION_PAGE_TYPE_IO_UNIT)
+
+#define MPT_CONFIG_PAGE_HEADER_INIT_IOC(pg, type, nr, flags) \
+    MPT_CONFIG_PAGE_HEADER_INIT(pg, type, nr, flags | MPT_CONFIGURATION_PAGE_TYPE_IOC)
+
+#define MPT_CONFIG_PAGE_HEADER_INIT_BIOS(pg, type, nr, flags) \
+    MPT_CONFIG_PAGE_HEADER_INIT(pg, type, nr, flags | MPT_CONFIGURATION_PAGE_TYPE_BIOS)
+
+/**
+ * Initializes a extended page header.
+ */
+#define MPT_CONFIG_EXTENDED_PAGE_HEADER_INIT(pg, cb, nr, flags, exttype) \
+    (pg)->u.fields.ExtHeader.u8PageType   = flags | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED; \
+    (pg)->u.fields.ExtHeader.u8PageNumber = nr; \
+    (pg)->u.fields.ExtHeader.u8ExtPageType = exttype; \
+    (pg)->u.fields.ExtHeader.u16ExtPageLength = cb / 4
 
 /**
  * Possible SG element types.
