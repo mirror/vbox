@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009 Sun Microsystems, Inc.
+ * Copyright (C) 2009-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -87,17 +87,115 @@ typedef struct RTLOCKVALDDSTACK
 typedef RTLOCKVALDDSTACK *PRTLOCKVALDDSTACK;
 
 
+/**
+ * Reference to another class.
+ */
+typedef struct RTLOCKVALCLASSREF
+{
+    /** The class. */
+    RTLOCKVALCLASS          hClass;
+    /** The number of lookups of this class. */
+    uint32_t volatile       cLookups;
+    /** Indicates whether the entry was added automatically during order checking
+     *  (true) or manually via the API (false). */
+    bool                    fAutodidacticism;
+    /** Reserved / explicit alignment padding. */
+    bool                    afReserved[3];
+} RTLOCKVALCLASSREF;
+/** Pointer to a class reference. */
+typedef RTLOCKVALCLASSREF *PRTLOCKVALCLASSREF;
+
+
+/** Pointer to a chunk of class references. */
+typedef struct RTLOCKVALCLASSREFCHUNK *PRTLOCKVALCLASSREFCHUNK;
+/**
+ * Chunk of class references.
+ */
+typedef struct RTLOCKVALCLASSREFCHUNK
+{
+    /** Array of refs. */
+#if 0 /** @todo for testing alloction of new chunks. */
+    RTLOCKVALCLASSREF       aRefs[ARCH_BITS == 32 ? 10 : 8];
+#else
+    RTLOCKVALCLASSREF       aRefs[2];
+#endif
+    /** Pointer to the next chunk. */
+    PRTLOCKVALCLASSREFCHUNK volatile pNext;
+} RTLOCKVALCLASSREFCHUNK;
+
+
+/**
+ * Lock class.
+ */
+typedef struct RTLOCKVALCLASSINT
+{
+    /** AVL node core. */
+    AVLLU32NODECORE         Core;
+    /** Magic value (RTLOCKVALCLASS_MAGIC). */
+    uint32_t volatile       u32Magic;
+    /** Reference counter.  See RTLOCKVALCLASS_MAX_REFS. */
+    uint32_t volatile       cRefs;
+    /** Whether the class is allowed to teach it self new locking order rules. */
+    bool                    fAutodidact;
+    /** Whether this class is in the tree. */
+    bool                    fInTree;
+    bool                    afReserved[2]; /**< Explicit padding */
+    /** The minimum wait interval for which we do deadlock detection
+     *  (milliseconds). */
+    RTMSINTERVAL            cMsMinDeadlock;
+    /** The minimum wait interval for which we do order checks (milliseconds). */
+    RTMSINTERVAL            cMsMinOrder;
+    /** More padding. */
+    uint32_t                au32Reserved[ARCH_BITS == 32 ? 6 : 3];
+    /** Classes that may be taken prior to this one.
+     * This is a linked list where each node contains a chunk of locks so that we
+     * reduce the number of allocations as well as localize the data. */
+    RTLOCKVALCLASSREFCHUNK  PriorLocks;
+    /** Hash table containing frequently encountered prior locks. */
+    PRTLOCKVALCLASSREF      apPriorLocksHash[11];
+#define RTLOCKVALCLASS_HASH_STATS
+#ifdef RTLOCKVALCLASS_HASH_STATS
+    /** Hash hits. */
+    uint32_t volatile       cHashHits;
+    /** Hash misses. */
+    uint32_t volatile       cHashMisses;
+#endif
+    /** Where this class was created.
+     *  This is mainly used for finding automatically created lock classes.
+     *  @remarks The strings are stored after this structure so we won't crash
+     *           if the class lives longer than the module (dll/so/dylib) that
+     *           spawned it. */
+    RTLOCKVALSRCPOS         CreatePos;
+} RTLOCKVALCLASSINT;
+AssertCompileSize(AVLLU32NODECORE, ARCH_BITS == 32 ? 20 : 32);
+AssertCompileMemberOffset(RTLOCKVALCLASSINT, PriorLocks, 64);
+
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** Macro that asserts that a pointer is aligned correctly.
  * Only used when fighting bugs. */
 #if 1
-# define RTLOCKVAL_ASSERT_PTR_ALIGN(p)   \
+# define RTLOCKVAL_ASSERT_PTR_ALIGN(p) \
     AssertMsg(!((uintptr_t)(p) & (sizeof(uintptr_t) - 1)), ("%p\n", (p)));
 #else
 # define RTLOCKVAL_ASSERT_PTR_ALIGN(p)   do { } while (0)
 #endif
+
+/** Hashes the class handle (pointer) into an apPriorLocksHash index. */
+#define RTLOCKVALCLASS_HASH(hClass) \
+    (   (uintptr_t)(hClass) \
+      % (  RT_SIZEOFMEMB(RTLOCKVALCLASSINT, apPriorLocksHash) \
+         / sizeof(PRTLOCKVALCLASSREF)) )
+
+/** The max value for RTLOCKVALCLASSINT::cRefs. */
+#define RTLOCKVALCLASS_MAX_REFS             UINT32_C(0xffff0000)
+/** The max value for RTLOCKVALCLASSREF::cLookups. */
+#define RTLOCKVALCLASSREF_MAX_LOOKUPS       UINT32_C(0xfffe0000)
+/** The absolute max value for RTLOCKVALCLASSREF::cLookups at which it will
+ *  be set back to RTLOCKVALCLASSREF_MAX_LOOKUPS. */
+#define RTLOCKVALCLASSREF_MAX_LOOKUPS_FIX   UINT32_C(0xffff0000)
 
 
 /*******************************************************************************
@@ -128,6 +226,55 @@ static bool volatile    g_fLockValidatorMayPanic = true;
 #else
 static bool volatile    g_fLockValidatorMayPanic = false;
 #endif
+/** Serializing class tree insert and lookups. */
+static RTSEMRW          g_hLockValClassTreeRWLock = NIL_RTSEMRW;
+/** Class tree. */
+static PAVLLU32NODECORE g_LockValClassTree = NULL;
+/** Critical section serializing the teaching new rules to the classes. */
+static RTCRITSECT       g_LockValClassTeachCS;
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static void rtLockValidatorClassDestroy(RTLOCKVALCLASSINT *pClass);
+
+
+/**
+ * Lazy initialization of the lock validator globals.
+ */
+static void rtLockValidatorLazyInit(void)
+{
+    static uint32_t volatile s_fInitializing = false;
+    if (ASMAtomicCmpXchgU32(&s_fInitializing, true, false))
+    {
+        if (!RTCritSectIsInitialized(&g_LockValClassTeachCS))
+            RTCritSectInit(&g_LockValClassTeachCS);
+
+        if (g_hLockValClassTreeRWLock == NIL_RTSEMRW)
+        {
+            RTSEMRW hSemRW;
+            int rc = RTSemRWCreate(&hSemRW);
+            if (RT_SUCCESS(rc))
+                ASMAtomicWriteHandle(&g_hLockValClassTreeRWLock, hSemRW);
+        }
+
+        if (g_hLockValidatorXRoads == NIL_RTSEMXROADS)
+        {
+            RTSEMXROADS hXRoads;
+            int rc = RTSemXRoadsCreate(&hXRoads);
+            if (RT_SUCCESS(rc))
+                ASMAtomicWriteHandle(&g_hLockValidatorXRoads, hXRoads);
+        }
+
+        /** @todo register some cleanup callback if we care. */
+
+        ASMAtomicWriteU32(&s_fInitializing, false);
+    }
+    else
+        RTThreadYield();
+}
+
 
 
 /** Wrapper around ASMAtomicReadPtr. */
@@ -320,7 +467,7 @@ static void rtLockValidatorComplainPanic(void)
  * @param   pDst                The destination.
  * @param   pSrc                The source.  Can be NULL.
  */
-DECL_FORCE_INLINE(void) rtLockValidatorCopySrcPos(PRTLOCKVALSRCPOS pDst, PCRTLOCKVALSRCPOS pSrc)
+DECL_FORCE_INLINE(void) rtLockValidatorSrcPosCopy(PRTLOCKVALSRCPOS pDst, PCRTLOCKVALSRCPOS pSrc)
 {
     if (pSrc)
     {
@@ -344,7 +491,7 @@ DECL_FORCE_INLINE(void) rtLockValidatorCopySrcPos(PRTLOCKVALSRCPOS pDst, PCRTLOC
  *
  * @param   pSrcPos             The source position record.
  */
-DECL_FORCE_INLINE(void) rtLockValidatorInitSrcPos(PRTLOCKVALSRCPOS pSrcPos)
+DECL_FORCE_INLINE(void) rtLockValidatorSrcPosInit(PRTLOCKVALSRCPOS pSrcPos)
 {
     pSrcPos->pszFile        = NULL;
     pSrcPos->pszFunction    = NULL;
@@ -354,6 +501,87 @@ DECL_FORCE_INLINE(void) rtLockValidatorInitSrcPos(PRTLOCKVALSRCPOS pSrcPos)
     pSrcPos->u32Padding     = 0;
 #endif
 }
+
+
+/* sdbm:
+   This algorithm was created for sdbm (a public-domain reimplementation of
+   ndbm) database library. it was found to do well in scrambling bits,
+   causing better distribution of the keys and fewer splits. it also happens
+   to be a good general hashing function with good distribution. the actual
+   function is hash(i) = hash(i - 1) * 65599 + str[i]; what is included below
+   is the faster version used in gawk. [there is even a faster, duff-device
+   version] the magic constant 65599 was picked out of thin air while
+   experimenting with different constants, and turns out to be a prime.
+   this is one of the algorithms used in berkeley db (see sleepycat) and
+   elsewhere. */
+DECL_FORCE_INLINE(uint32_t) sdbm(const char *str, uint32_t hash)
+{
+    uint8_t *pu8 = (uint8_t *)str;
+    int c;
+
+    while ((c = *pu8++))
+        hash = c + (hash << 6) + (hash << 16) - hash;
+
+    return hash;
+}
+
+
+/**
+ * Hashes the specified source position.
+ *
+ * @returns Hash.
+ * @param   pSrcPos             The source position record.
+ */
+static uint32_t rtLockValidatorSrcPosHash(PCRTLOCKVALSRCPOS pSrcPos)
+{
+    uint32_t uHash;
+    if (   (   pSrcPos->pszFile
+            || pSrcPos->pszFunction)
+        && pSrcPos->uLine != 0)
+    {
+        uHash = 0;
+        if (pSrcPos->pszFile)
+            uHash = sdbm(pSrcPos->pszFile, uHash);
+        if (pSrcPos->pszFunction)
+            uHash = sdbm(pSrcPos->pszFunction, uHash);
+        uHash += pSrcPos->uLine;
+    }
+    else
+    {
+        Assert(pSrcPos->uId);
+        uHash = (uint32_t)pSrcPos->uId;
+    }
+
+    return uHash;
+}
+
+
+/**
+ * Compares two source positions.
+ *
+ * @returns 0 if equal, < 0 if pSrcPos1 is smaller than pSrcPos2, > 0 if
+ *          otherwise.
+ * @param   pSrcPos1            The first source position.
+ * @param   pSrcPos2            The second source position.
+ */
+static int rtLockValidatorSrcPosCompare(PCRTLOCKVALSRCPOS pSrcPos1, PCRTLOCKVALSRCPOS pSrcPos2)
+{
+    if (pSrcPos1->uLine != pSrcPos2->uLine)
+        return pSrcPos1->uLine < pSrcPos2->uLine ? -1 : 1;
+
+    int iDiff = RTStrCmp(pSrcPos1->pszFile, pSrcPos2->pszFile);
+    if (iDiff != 0)
+        return iDiff;
+
+    iDiff = RTStrCmp(pSrcPos1->pszFunction, pSrcPos2->pszFunction);
+    if (iDiff != 0)
+        return iDiff;
+
+    if (pSrcPos1->uId != pSrcPos2->uId)
+        return pSrcPos1->uId < pSrcPos2->uId ? -1 : 1;
+    return 0;
+}
+
 
 
 /**
@@ -418,6 +646,384 @@ DECLHIDDEN(void) rtLockValidatorInitPerThread(RTLOCKVALPERTHREAD *pPerThread)
 }
 
 
+RTDECL(int) RTLockValidatorClassCreateEx(PRTLOCKVALCLASS phClass, PCRTLOCKVALSRCPOS pSrcPos,
+                                         bool fAutodidact, RTMSINTERVAL cMsMinDeadlock, RTMSINTERVAL cMsMinOrder)
+{
+    Assert(cMsMinDeadlock >= 1);
+    Assert(cMsMinOrder    >= 1);
+    AssertPtr(pSrcPos);
+
+    size_t const       cbFile   = pSrcPos->pszFile ? strlen(pSrcPos->pszFile) + 1 : 0;
+    size_t const     cbFunction = pSrcPos->pszFile ? strlen(pSrcPos->pszFunction) + 1 : 0;
+    RTLOCKVALCLASSINT *pThis    = (RTLOCKVALCLASSINT *)RTMemAlloc(sizeof(*pThis) + cbFile + cbFunction);
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    pThis->Core.Key             = rtLockValidatorSrcPosHash(pSrcPos);
+    pThis->Core.uchHeight       = 0;
+    pThis->Core.pLeft           = NULL;
+    pThis->Core.pRight          = NULL;
+    pThis->Core.pList           = NULL;
+    pThis->u32Magic             = RTLOCKVALCLASS_MAGIC;
+    pThis->cRefs                = 1;
+    pThis->fAutodidact          = fAutodidact;
+    pThis->fInTree              = false;
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->afReserved); i++)
+        pThis->afReserved[i]    = false;
+    pThis->cMsMinDeadlock       = cMsMinDeadlock;
+    pThis->cMsMinOrder          = cMsMinOrder;
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->au32Reserved); i++)
+        pThis->au32Reserved[i]  = 0;
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->au32Reserved); i++)
+    {
+        pThis->PriorLocks.aRefs[i].hClass           = NIL_RTLOCKVALCLASS;
+        pThis->PriorLocks.aRefs[i].cLookups         = 0;
+        pThis->PriorLocks.aRefs[i].fAutodidacticism = false;
+        pThis->PriorLocks.aRefs[i].afReserved[0]    = false;
+        pThis->PriorLocks.aRefs[i].afReserved[1]    = false;
+        pThis->PriorLocks.aRefs[i].afReserved[2]    = false;
+    }
+    pThis->PriorLocks.pNext     = NULL;
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->apPriorLocksHash); i++)
+        pThis->apPriorLocksHash[i] = NULL;
+    rtLockValidatorSrcPosCopy(&pThis->CreatePos, pSrcPos);
+    char *pszDst = (char *)(pThis + 1);
+    pThis->CreatePos.pszFile    = pSrcPos->pszFile     ? (char *)memcpy(pszDst, pSrcPos->pszFile,     cbFile)     : NULL;
+    pszDst += cbFile;
+    pThis->CreatePos.pszFunction= pSrcPos->pszFunction ? (char *)memcpy(pszDst, pSrcPos->pszFunction, cbFunction) : NULL;
+    Assert(rtLockValidatorSrcPosHash(&pThis->CreatePos) == pThis->Core.Key);
+
+    *phClass = pThis;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTLockValidatorClassCreate(PRTLOCKVALCLASS phClass, bool fAutodidact, RT_SRC_POS_DECL)
+{
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_POS_NO_ID();
+    return RTLockValidatorClassCreateEx(phClass, &SrcPos, fAutodidact,
+                                        1 /*cMsMinDeadlock*/, 1 /*cMsMinOrder*/);
+}
+
+
+/**
+ * Internal class retainer.
+ * @returns The new reference count.
+ * @param   pClass              The class.
+ */
+DECL_FORCE_INLINE(uint32_t) rtLockValidatorClassRetain(RTLOCKVALCLASSINT *pClass)
+{
+    uint32_t cRefs = ASMAtomicIncU32(&pClass->cRefs);
+    if (cRefs > RTLOCKVALCLASS_MAX_REFS)
+        ASMAtomicWriteU32(&pClass->cRefs, RTLOCKVALCLASS_MAX_REFS);
+    return cRefs;
+}
+
+
+/**
+ * Validates and retains a lock validator class.
+ *
+ * @returns @a hClass on success, NIL_RTLOCKVALCLASS on failure.
+ * @param   hClass              The class handle.  NIL_RTLOCKVALCLASS is ok.
+ */
+DECL_FORCE_INLINE(RTLOCKVALCLASS) rtLockValidatorClassValidateAndRetain(RTLOCKVALCLASS hClass)
+{
+    if (hClass == NIL_RTLOCKVALCLASS)
+        return hClass;
+    AssertPtrReturn(hClass, NIL_RTLOCKVALCLASS);
+    AssertReturn(hClass->u32Magic == RTLOCKVALCLASS_MAGIC, NIL_RTLOCKVALCLASS);
+    rtLockValidatorClassRetain(hClass);
+    return hClass;
+}
+
+
+/**
+ * Internal class releaser.
+ * @returns The new reference count.
+ * @param   pClass              The class.
+ */
+DECL_FORCE_INLINE(uint32_t) rtLockValidatorClassRelease(RTLOCKVALCLASSINT *pClass)
+{
+    uint32_t cRefs = ASMAtomicDecU32(&pClass->cRefs);
+    if (cRefs + 1 == RTLOCKVALCLASS_MAX_REFS)
+        ASMAtomicWriteU32(&pClass->cRefs, RTLOCKVALCLASS_MAX_REFS);
+    else if (!cRefs)
+        rtLockValidatorClassDestroy(pClass);
+    return cRefs;
+}
+
+
+/**
+ * Destroys a class once there are not more references to it.
+ *
+ * @param   Class               The class.
+ */
+static void rtLockValidatorClassDestroy(RTLOCKVALCLASSINT *pClass)
+{
+    AssertReturnVoid(pClass->fInTree);
+    ASMAtomicWriteU32(&pClass->u32Magic, RTLOCKVALCLASS_MAGIC_DEAD);
+
+    PRTLOCKVALCLASSREFCHUNK pChunk = &pClass->PriorLocks;
+    while (pChunk)
+    {
+        for (uint32_t i = 0; i < RT_ELEMENTS(pChunk->aRefs); i++)
+        {
+            RTLOCKVALCLASSINT *pClass2 = pChunk->aRefs[i].hClass;
+            if (pClass2 != NIL_RTLOCKVALCLASS)
+            {
+                pChunk->aRefs[i].hClass = NIL_RTLOCKVALCLASS;
+                rtLockValidatorClassRelease(pClass2);
+            }
+        }
+
+        PRTLOCKVALCLASSREFCHUNK pNext = pChunk->pNext;
+        pChunk->pNext = NULL;
+        if (pChunk != &pClass->PriorLocks)
+            RTMemFree(pChunk);
+        pNext = pChunk;
+    }
+
+    RTMemFree(pClass);
+}
+
+
+RTDECL(RTLOCKVALCLASS) RTLockValidatorClassFindForSrcPos(PRTLOCKVALSRCPOS pSrcPos)
+{
+    if (g_hLockValClassTreeRWLock == NIL_RTSEMRW)
+        rtLockValidatorLazyInit();
+    int rcLock = RTSemRWRequestRead(g_hLockValClassTreeRWLock, RT_INDEFINITE_WAIT);
+
+    uint32_t uSrcPosHash = rtLockValidatorSrcPosHash(pSrcPos);
+    RTLOCKVALCLASSINT *pClass = (RTLOCKVALCLASSINT *)RTAvllU32Get(&g_LockValClassTree, uSrcPosHash);
+    while (pClass)
+    {
+        if (rtLockValidatorSrcPosCompare(&pClass->CreatePos, pSrcPos) == 0)
+        {
+            rtLockValidatorClassRetain(pClass);
+            break;
+        }
+        pClass = (RTLOCKVALCLASSINT *)pClass->Core.pList;
+    }
+
+    if (RT_SUCCESS(rcLock))
+        RTSemRWReleaseRead(g_hLockValClassTreeRWLock);
+    return pClass;
+}
+
+
+RTDECL(RTLOCKVALCLASS) RTLockValidatorClassForSrcPos(RT_SRC_POS_DECL)
+{
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_POS_NO_ID();
+    RTLOCKVALCLASS  hClass = RTLockValidatorClassFindForSrcPos(&SrcPos);
+    if (hClass == NIL_RTLOCKVALCLASS)
+    {
+        /*
+         * Create a new class and insert it into the tree.
+         */
+        int rc = RTLockValidatorClassCreateEx(&hClass, &SrcPos, true /*fAutodidact*/,
+                                              1 /*cMsMinDeadlock*/, 1 /*cMsMinOrder*/);
+        if (RT_SUCCESS(rc))
+        {
+            if (g_hLockValClassTreeRWLock == NIL_RTSEMRW)
+                rtLockValidatorLazyInit();
+            int rcLock = RTSemRWRequestWrite(g_hLockValClassTreeRWLock, RT_INDEFINITE_WAIT);
+
+            Assert(!hClass->fInTree);
+            hClass->fInTree = RTAvllU32Insert(&g_LockValClassTree, &hClass->Core);
+            Assert(hClass->fInTree);
+
+            if (RT_SUCCESS(rcLock))
+                RTSemRWReleaseWrite(g_hLockValClassTreeRWLock);
+            return hClass;
+        }
+    }
+    return hClass;
+}
+
+
+RTDECL(uint32_t) RTLockValidatorClassRetain(RTLOCKVALCLASS hClass)
+{
+    RTLOCKVALCLASSINT *pClass = hClass;
+    AssertPtrReturn(pClass, UINT32_MAX);
+    AssertReturn(pClass->u32Magic == RTLOCKVALCLASS_MAGIC, UINT32_MAX);
+    return rtLockValidatorClassRetain(pClass);
+}
+
+
+RTDECL(uint32_t) RTLockValidatorClassRelease(RTLOCKVALCLASS hClass)
+{
+    RTLOCKVALCLASSINT *pClass = hClass;
+    AssertPtrReturn(pClass, UINT32_MAX);
+    AssertReturn(pClass->u32Magic == RTLOCKVALCLASS_MAGIC, UINT32_MAX);
+    return rtLockValidatorClassRelease(pClass);
+}
+
+
+/**
+ * Worker for rtLockValidatorClassIsPriorClass that does a linear search thru
+ * all the chunks for @a pPriorClass.
+ *
+ * @returns true / false.
+ * @param   pClass              The class to search.
+ * @param   pPriorClass         The class to search for.
+ */
+static bool rtLockValidatorClassIsPriorClassByLinearSearch(RTLOCKVALCLASSINT *pClass, RTLOCKVALCLASSINT *pPriorClass)
+{
+    for (PRTLOCKVALCLASSREFCHUNK pChunk = &pClass->PriorLocks; pChunk; pChunk = pChunk->pNext)
+        for (uint32_t i = 0; i < RT_ELEMENTS(pChunk->aRefs); i++)
+        {
+            if (pChunk->aRefs[i].hClass == pPriorClass)
+            {
+                uint32_t cLookups = ASMAtomicIncU32(&pChunk->aRefs[i].cLookups);
+                if (RT_UNLIKELY(cLookups >= RTLOCKVALCLASSREF_MAX_LOOKUPS_FIX))
+                {
+                    ASMAtomicWriteU32(&pChunk->aRefs[i].cLookups, RTLOCKVALCLASSREF_MAX_LOOKUPS);
+                    cLookups = RTLOCKVALCLASSREF_MAX_LOOKUPS;
+                }
+
+                /* update the hash table entry. */
+                PRTLOCKVALCLASSREF *ppHashEntry = &pClass->apPriorLocksHash[RTLOCKVALCLASS_HASH(pPriorClass)];
+                if (    !(*ppHashEntry)
+                    ||  (*ppHashEntry)->cLookups + 128 < cLookups)
+                    ASMAtomicWritePtr((void * volatile *)ppHashEntry, &pChunk->aRefs[i]);
+
+#ifdef RTLOCKVALCLASS_HASH_STATS
+                ASMAtomicIncU32(&pClass->cHashMisses);
+#endif
+                return true;
+            }
+        }
+
+    return false;
+}
+
+
+/**
+ * Checks if @a pPriorClass is a known prior class.
+ *
+ * @returns true / false.
+ * @param   pClass              The class to search.
+ * @param   pPriorClass         The class to search for.
+ */
+DECL_FORCE_INLINE(bool) rtLockValidatorClassIsPriorClass(RTLOCKVALCLASSINT *pClass, RTLOCKVALCLASSINT *pPriorClass)
+{
+    /*
+     * Hash lookup here.
+     */
+    PRTLOCKVALCLASSREF pRef = pClass->apPriorLocksHash[RTLOCKVALCLASS_HASH(pPriorClass)];
+    if (    pRef
+        &&  pRef->hClass == pPriorClass)
+    {
+        uint32_t cLookups = ASMAtomicIncU32(&pRef->cLookups);
+        if (RT_UNLIKELY(cLookups >= RTLOCKVALCLASSREF_MAX_LOOKUPS_FIX))
+            ASMAtomicWriteU32(&pRef->cLookups, RTLOCKVALCLASSREF_MAX_LOOKUPS);
+#ifdef RTLOCKVALCLASS_HASH_STATS
+        ASMAtomicIncU32(&pClass->cHashHits);
+#endif
+        return true;
+    }
+
+    return rtLockValidatorClassIsPriorClassByLinearSearch(pClass, pPriorClass);
+}
+
+
+/**
+ * Adds a class to the prior list.
+ *
+ * @returns VINF_SUCCESS, VERR_NO_MEMORY or VERR_SEM_LV_WRONG_ORDER.
+ * @param   pClass              The class to work on.
+ * @param   pPriorClass         The class to add.
+ * @param   fAutodidacticism    Whether we're teaching ourselfs (true) or
+ *                              somebody is teaching us via the API (false).
+ */
+static int rtLockValidatorClassAddPriorClass(RTLOCKVALCLASSINT *pClass, RTLOCKVALCLASSINT *pPriorClass, bool fAutodidacticism)
+{
+    if (!RTCritSectIsInitialized(&g_LockValClassTeachCS))
+        rtLockValidatorLazyInit();
+    int rcLock = RTCritSectEnter(&g_LockValClassTeachCS);
+
+    /*
+     * Check that there are no conflict (no assert since we might race each other).
+     */
+    int rc = VERR_INTERNAL_ERROR_5;
+    if (!rtLockValidatorClassIsPriorClass(pPriorClass, pClass))
+    {
+        if (!rtLockValidatorClassIsPriorClass(pClass, pPriorClass))
+        {
+            /*
+             * Scan the table for a free entry, allocating a new chunk if necessary.
+             */
+            for (PRTLOCKVALCLASSREFCHUNK pChunk = &pClass->PriorLocks; ; pChunk = pChunk->pNext)
+            {
+                bool fDone = false;
+                for (uint32_t i = 0; i < RT_ELEMENTS(pChunk->aRefs); i++)
+                {
+                    ASMAtomicCmpXchgHandle(&pChunk->aRefs[i].hClass, pPriorClass, NIL_RTLOCKVALCLASS, fDone);
+                    if (fDone)
+                    {
+                        pChunk->aRefs[i].fAutodidacticism = fAutodidacticism;
+                        rc = VINF_SUCCESS;
+                        break;
+                    }
+                }
+                if (fDone)
+                    break;
+
+                /* If no more chunks, allocate a new one and insert the class before linking it. */
+                if (!pChunk->pNext)
+                {
+                    PRTLOCKVALCLASSREFCHUNK pNew = (PRTLOCKVALCLASSREFCHUNK)RTMemAlloc(sizeof(*pNew));
+                    if (!pNew)
+                    {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                    }
+                    pNew->pNext = NULL;
+                    for (uint32_t i = 0; i < RT_ELEMENTS(pNew->aRefs); i++)
+                    {
+                        pNew->aRefs[i].hClass           = NIL_RTLOCKVALCLASS;
+                        pNew->aRefs[i].cLookups         = 0;
+                        pNew->aRefs[i].fAutodidacticism = false;
+                        pNew->aRefs[i].afReserved[0]    = false;
+                        pNew->aRefs[i].afReserved[1]    = false;
+                        pNew->aRefs[i].afReserved[2]    = false;
+                    }
+
+                    pNew->aRefs[0].hClass           = pPriorClass;
+                    pNew->aRefs[0].fAutodidacticism = fAutodidacticism;
+
+                    ASMAtomicWritePtr((void * volatile *)&pChunk->pNext, pNew);
+                    rc = VINF_SUCCESS;
+                    break;
+                }
+            } /* chunk loop */
+        }
+        else
+            rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_SEM_LV_WRONG_ORDER;
+
+    if (RT_SUCCESS(rcLock))
+        RTCritSectLeave(&g_LockValClassTeachCS);
+    return rc;
+}
+
+
+RTDECL(int) RTLockValidatorClassAddPriorClass(RTLOCKVALCLASS hClass, RTLOCKVALCLASS hPriorClass)
+{
+    RTLOCKVALCLASSINT *pClass = hClass;
+    AssertPtrReturn(pClass, VERR_INVALID_HANDLE);
+    AssertReturn(pClass->u32Magic == RTLOCKVALCLASS_MAGIC, VERR_INVALID_HANDLE);
+
+    RTLOCKVALCLASSINT *pPriorClass = hPriorClass;
+    AssertPtrReturn(pPriorClass, VERR_INVALID_HANDLE);
+    AssertReturn(pPriorClass->u32Magic == RTLOCKVALCLASS_MAGIC, VERR_INVALID_HANDLE);
+
+    return rtLockValidatorClassAddPriorClass(pClass, pPriorClass, false /*fAutodidacticism*/);
+}
+
+
 /**
  * Checks if all owners are blocked - shared record operated in signaller mode.
  *
@@ -456,8 +1062,6 @@ DECL_FORCE_INLINE(bool) rtLockValidatorDdAreAllThreadsBlocked(PRTLOCKVALRECSHRD 
 
     return true;
 }
-
-
 
 
 /**
@@ -959,9 +1563,7 @@ RTDECL(int) RTLockValidatorRecMakeSiblings(PRTLOCKVALRECCORE pRec1, PRTLOCKVALRE
 }
 
 
-
-
-RTDECL(void) RTLockValidatorRecExclInit(PRTLOCKVALRECEXCL pRec, RTLOCKVALIDATORCLASS hClass,
+RTDECL(void) RTLockValidatorRecExclInit(PRTLOCKVALRECEXCL pRec, RTLOCKVALCLASS hClass,
                                         uint32_t uSubClass, const char *pszName, void *hLock)
 {
     RTLOCKVAL_ASSERT_PTR_ALIGN(pRec);
@@ -972,31 +1574,23 @@ RTDECL(void) RTLockValidatorRecExclInit(PRTLOCKVALRECEXCL pRec, RTLOCKVALIDATORC
     pRec->afReserved[0] = 0;
     pRec->afReserved[1] = 0;
     pRec->afReserved[2] = 0;
-    rtLockValidatorInitSrcPos(&pRec->SrcPos);
+    rtLockValidatorSrcPosInit(&pRec->SrcPos);
     pRec->hThread       = NIL_RTTHREAD;
     pRec->pDown         = NULL;
-    pRec->hClass        = hClass;
+    pRec->hClass        = rtLockValidatorClassValidateAndRetain(hClass);
     pRec->uSubClass     = uSubClass;
     pRec->cRecursion    = 0;
     pRec->hLock         = hLock;
     pRec->pszName       = pszName;
     pRec->pSibling      = NULL;
 
-    /* Lazily initialize the crossroads semaphore. */
-    static uint32_t volatile s_fInitializing = false;
-    if (RT_UNLIKELY(    g_hLockValidatorXRoads == NIL_RTSEMXROADS
-                    &&  ASMAtomicCmpXchgU32(&s_fInitializing, true, false)))
-    {
-        RTSEMXROADS hXRoads;
-        int rc = RTSemXRoadsCreate(&hXRoads);
-        if (RT_SUCCESS(rc))
-            ASMAtomicWriteHandle(&g_hLockValidatorXRoads, hXRoads);
-        ASMAtomicWriteU32(&s_fInitializing, false);
-    }
+    /* Lazy initialization. */
+    if (RT_UNLIKELY(g_hLockValidatorXRoads == NIL_RTSEMXROADS))
+        rtLockValidatorLazyInit();
 }
 
 
-RTDECL(int)  RTLockValidatorRecExclCreate(PRTLOCKVALRECEXCL *ppRec, RTLOCKVALIDATORCLASS hClass,
+RTDECL(int)  RTLockValidatorRecExclCreate(PRTLOCKVALRECEXCL *ppRec, RTLOCKVALCLASS hClass,
                                           uint32_t uSubClass, const char *pszName, void *pvLock)
 {
     PRTLOCKVALRECEXCL pRec;
@@ -1018,7 +1612,7 @@ RTDECL(void) RTLockValidatorRecExclDelete(PRTLOCKVALRECEXCL pRec)
 
     ASMAtomicWriteU32(&pRec->Core.u32Magic, RTLOCKVALRECEXCL_MAGIC_DEAD);
     ASMAtomicWriteHandle(&pRec->hThread, NIL_RTTHREAD);
-    ASMAtomicWriteHandle(&pRec->hClass, NIL_RTLOCKVALIDATORCLASS);
+    ASMAtomicWriteHandle(&pRec->hClass, NIL_RTLOCKVALCLASS);
     if (pRec->pSibling)
         rtLockValidatorUnlinkAllSiblings(&pRec->Core);
     rtLockValidatorSerializeDestructLeave();
@@ -1064,7 +1658,7 @@ RTDECL(void) RTLockValidatorRecExclSetOwner(PRTLOCKVALRECEXCL pRec, RTTHREAD hTh
         /*
          * Update the record.
          */
-        rtLockValidatorCopySrcPos(&pRec->SrcPos, pSrcPos);
+        rtLockValidatorSrcPosCopy(&pRec->SrcPos, pSrcPos);
         ASMAtomicUoWriteU32(&pRec->cRecursion, 1);
         ASMAtomicWriteHandle(&pRec->hThread, hThreadSelf);
 
@@ -1231,7 +1825,7 @@ RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD
      * Record the location.
      */
     rtLockValidatorWriteRecUnionPtr(&pThreadSelf->LockValidator.pRec, pRecU);
-    rtLockValidatorCopySrcPos(&pThreadSelf->LockValidator.SrcPos, pSrcPos);
+    rtLockValidatorSrcPosCopy(&pThreadSelf->LockValidator.SrcPos, pSrcPos);
     ASMAtomicWriteBool(&pThreadSelf->LockValidator.fInValidator, true);
     pThreadSelf->LockValidator.enmRecState = enmSleepState;
     rtThreadSetState(pThreadSelf, enmSleepState);
@@ -1283,7 +1877,7 @@ RTDECL(int) RTLockValidatorRecExclCheckOrderAndBlocking(PRTLOCKVALRECEXCL pRec, 
 RT_EXPORT_SYMBOL(RTLockValidatorRecExclCheckOrderAndBlocking);
 
 
-RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALIDATORCLASS hClass, uint32_t uSubClass,
+RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
                                           const char *pszName, void *hLock, bool fSignaller)
 {
     RTLOCKVAL_ASSERT_PTR_ALIGN(pRec);
@@ -1291,7 +1885,7 @@ RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALIDATO
 
     pRec->Core.u32Magic = RTLOCKVALRECSHRD_MAGIC;
     pRec->uSubClass     = uSubClass;
-    pRec->hClass        = hClass;
+    pRec->hClass        = rtLockValidatorClassValidateAndRetain(hClass);
     pRec->hLock         = hLock;
     pRec->pszName       = pszName;
     pRec->fEnabled      = RTLockValidatorIsEnabled();
@@ -1330,7 +1924,7 @@ RTDECL(void) RTLockValidatorRecSharedDelete(PRTLOCKVALRECSHRD pRec)
     }
 
     ASMAtomicWriteU32(&pRec->Core.u32Magic, RTLOCKVALRECSHRD_MAGIC_DEAD);
-    ASMAtomicUoWriteHandle(&pRec->hClass, NIL_RTLOCKVALIDATORCLASS);
+    ASMAtomicUoWriteHandle(&pRec->hClass, NIL_RTLOCKVALCLASS);
     if (pRec->papOwners)
     {
         PRTLOCKVALRECSHRDOWN volatile *papOwners = pRec->papOwners;
@@ -1436,7 +2030,7 @@ RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHRE
      * Record the location.
      */
     rtLockValidatorWriteRecUnionPtr(&pThreadSelf->LockValidator.pRec, pRecU);
-    rtLockValidatorCopySrcPos(&pThreadSelf->LockValidator.SrcPos, pSrcPos);
+    rtLockValidatorSrcPosCopy(&pThreadSelf->LockValidator.SrcPos, pSrcPos);
     ASMAtomicWriteBool(&pThreadSelf->LockValidator.fInValidator, true);
     pThreadSelf->LockValidator.enmRecState = enmSleepState;
     rtThreadSetState(pThreadSelf, enmSleepState);
@@ -1535,7 +2129,7 @@ rtLockValidatorRecSharedAllocOwner(PRTLOCKVALRECSHRD pRec, PRTTHREADINT pThreadS
     if (pSrcPos)
         pEntry->SrcPos      = *pSrcPos;
     else
-        rtLockValidatorInitSrcPos(&pEntry->SrcPos);
+        rtLockValidatorSrcPosInit(&pEntry->SrcPos);
     return pEntry;
 }
 
@@ -1879,7 +2473,7 @@ RTDECL(int) RTLockValidatorRecSharedCheckAndRelease(PRTLOCKVALRECSHRD pRec, RTTH
     /*
      * Check the release order.
      */
-    if (pRec->hClass != NIL_RTLOCKVALIDATORCLASS)
+    if (pRec->hClass != NIL_RTLOCKVALCLASS)
     {
         /** @todo order validation */
     }
