@@ -125,8 +125,8 @@ RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
                 pThis->cWriterReads = 0;
                 pThis->Writer       = (pthread_t)-1;
 #ifdef RTSEMRW_STRICT
-                RTLockValidatorRecExclInit(&pThis->ValidatorWrite, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemRW", pThis);
-                RTLockValidatorRecSharedInit(&pThis->ValidatorRead, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemRW", pThis, false /*fSignaller*/);
+                RTLockValidatorRecExclInit(&pThis->ValidatorWrite, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemRW", pThis, true);
+                RTLockValidatorRecSharedInit(&pThis->ValidatorRead, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemRW", pThis, false /*fSignaller*/, true);
                 RTLockValidatorRecMakeSiblings(&pThis->ValidatorWrite.Core, &pThis->ValidatorRead.Core);
 #endif
                 *pRWSem = pThis;
@@ -224,7 +224,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies, PCRT
 #ifdef RTSEMRW_STRICT
         hThreadSelf = RTThreadSelfAutoAdopt();
         int rc9 = RTLockValidatorRecSharedCheckOrderAndBlocking(&pThis->ValidatorRead, hThreadSelf, pSrcPos, true,
-                                                                RTTHREADSTATE_RW_READ, true);
+                                                                cMillies, RTTHREADSTATE_RW_READ, true);
         if (RT_FAILURE(rc9))
             return rc9;
 #else
@@ -417,7 +417,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, PCR
 #ifdef RTSEMRW_STRICT
         hThreadSelf = RTThreadSelfAutoAdopt();
         int rc9 = RTLockValidatorRecExclCheckOrderAndBlocking(&pThis->ValidatorWrite, hThreadSelf, pSrcPos, true,
-                                                              RTTHREADSTATE_RW_WRITE, true);
+                                                              cMillies, RTTHREADSTATE_RW_WRITE, true);
         if (RT_FAILURE(rc9))
             return rc9;
 #else

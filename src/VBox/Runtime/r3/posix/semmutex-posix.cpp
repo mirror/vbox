@@ -101,7 +101,7 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
                 pThis->cNesting = 0;
                 pThis->u32Magic = RTSEMMUTEX_MAGIC;
 #ifdef RTSEMMUTEX_STRICT
-                RTLockValidatorRecExclInit(&pThis->ValidatorRec, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemMutex", pThis);
+                RTLockValidatorRecExclInit(&pThis->ValidatorRec, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemMutex", pThis, true);
 #endif
 
                 *pMutexSem = pThis;
@@ -188,7 +188,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
 #ifdef RTSEMMUTEX_STRICT
         hThreadSelf = RTThreadSelfAutoAdopt();
         int rc9 = RTLockValidatorRecExclCheckOrderAndBlocking(&pThis->ValidatorRec, hThreadSelf, pSrcPos, true,
-                                                              RTTHREADSTATE_MUTEX, true);
+                                                              cMillies, RTTHREADSTATE_MUTEX, true);
         if (RT_FAILURE(rc9))
             return rc9;
 #else

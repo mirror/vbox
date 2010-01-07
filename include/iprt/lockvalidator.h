@@ -240,19 +240,6 @@ typedef struct RTLOCKVALRECSHRD
 AssertCompileSize(RTLOCKVALRECSHRD, HC_ARCH_BITS == 32 ? 24 + 20 + 4 : 40 + 24);
 
 
-/** @name   Special sub-class values.
- * The range 16..UINT32_MAX is available to the user, the range 0..15 is
- * reserved for the lock validator.
- * @{ */
-/** Not allowed to be taken with any other locks in the same class.
-  * This is the recommended value.  */
-#define RTLOCKVAL_SUB_CLASS_NONE        UINT32_C(0)
-/** Any order is allowed within the class. */
-#define RTLOCKVAL_SUB_CLASS_ANY         UINT32_C(1)
-/** The first user value. */
-#define RTLOCKVAL_SUB_CLASS_USER        UINT32_C(16)
-/** @} */
-
 /**
  * Makes the two records siblings.
  *
@@ -277,9 +264,11 @@ RTDECL(int) RTLockValidatorRecMakeSiblings(PRTLOCKVALRECCORE pRec1, PRTLOCKVALRE
  *                              then pass RTLOCKVAL_SUB_CLASS_NONE.
  * @param   pszName             The lock name (optional).
  * @param   hLock               The lock handle.
+ * @param   fEnabled            Pass @c false to explicitly disable lock
+ *                              validation, otherwise @c true.
  */
-RTDECL(void) RTLockValidatorRecExclInit(PRTLOCKVALRECEXCL pRec, RTLOCKVALCLASS hClass,
-                                        uint32_t uSubClass, const char *pszName, void *hLock);
+RTDECL(void) RTLockValidatorRecExclInit(PRTLOCKVALRECEXCL pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
+                                        const char *pszName, void *hLock, bool fEnabled);
 /**
  * Uninitialize a lock validator record previously initialized by
  * RTLockRecValidatorInit.
@@ -304,9 +293,11 @@ RTDECL(void) RTLockValidatorRecExclDelete(PRTLOCKVALRECEXCL pRec);
  *                              then pass RTLOCKVAL_SUB_CLASS_NONE.
  * @param   pszName             The lock name (optional).
  * @param   hLock               The lock handle.
+ * @param   fEnabled            Pass @c false to explicitly disable lock
+ *                              validation, otherwise @c true.
  */
-RTDECL(int)  RTLockValidatorRecExclCreate(PRTLOCKVALRECEXCL *ppRec, RTLOCKVALCLASS hClass,
-                                          uint32_t uSubClass, const char *pszName, void *hLock);
+RTDECL(int)  RTLockValidatorRecExclCreate(PRTLOCKVALRECEXCL *ppRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
+                                          const char *pszName, void *hLock, bool fEnabled);
 
 /**
  * Deinitialize and destroy a record created by RTLockValidatorRecExclCreate.
@@ -440,8 +431,10 @@ RTDECL(int) RTLockValidatorRecExclUnwindMixed(PRTLOCKVALRECEXCL pRec, PRTLOCKVAL
  * @param   hThreadSelf         The handle of the calling thread.  If not known,
  *                              pass NIL_RTTHREAD and we'll figure it out.
  * @param   pSrcPos             The source position of the lock operation.
+ * @param   cMillies            The timeout, in milliseconds.
  */
-RTDECL(int)  RTLockValidatorRecExclCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf, PCRTLOCKVALSRCPOS pSrcPos);
+RTDECL(int)  RTLockValidatorRecExclCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf,
+                                              PCRTLOCKVALSRCPOS pSrcPos, RTMSINTERVAL cMillies);
 
 /**
  * Do deadlock detection before blocking on exclusive access to a lock and
@@ -461,13 +454,14 @@ RTDECL(int)  RTLockValidatorRecExclCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD h
  * @param   hThreadSelf         The current thread.  Shall not be NIL_RTTHREAD!
  * @param   pSrcPos             The source position of the lock operation.
  * @param   fRecursiveOk        Whether it's ok to recurse.
+ * @param   cMillies            The timeout, in milliseconds.
  * @param   enmSleepState       The sleep state to enter on successful return.
  * @param   fReallySleeping     Is it really going to sleep now or not.  Use
  *                              false before calls to other IPRT synchronization
  *                              methods.
  */
 RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf,
-                                                PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
+                                                PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk, RTMSINTERVAL cMillies,
                                                 RTTHREADSTATE enmSleepState, bool fReallySleeping);
 
 /**
@@ -479,13 +473,14 @@ RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD
  * @param   hThreadSelf         The current thread.  Shall not be NIL_RTTHREAD!
  * @param   pSrcPos             The source position of the lock operation.
  * @param   fRecursiveOk        Whether it's ok to recurse.
+ * @param   cMillies            The timeout, in milliseconds.
  * @param   enmSleepState       The sleep state to enter on successful return.
  * @param   fReallySleeping     Is it really going to sleep now or not.  Use
  *                              false before calls to other IPRT synchronization
  *                              methods.
  */
 RTDECL(int) RTLockValidatorRecExclCheckOrderAndBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf,
-                                                        PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
+                                                        PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk, RTMSINTERVAL cMillies,
                                                         RTTHREADSTATE enmSleepState, bool fReallySleeping);
 
 /**
@@ -505,9 +500,11 @@ RTDECL(int) RTLockValidatorRecExclCheckOrderAndBlocking(PRTLOCKVALRECEXCL pRec, 
  * @param   fSignaller          Set if event semaphore signaller logic should be
  *                              applied to this record, clear if read-write
  *                              semaphore logic should be used.
+ * @param   fEnabled            Pass @c false to explicitly disable lock
+ *                              validation, otherwise @c true.
  */
 RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
-                                          const char *pszName, void *hLock, bool fSignaller);
+                                          const char *pszName, void *hLock, bool fSignaller, bool fEnabled);
 /**
  * Uninitialize a lock validator record previously initialized by
  * RTLockValidatorRecSharedInit.
@@ -531,7 +528,8 @@ RTDECL(void) RTLockValidatorRecSharedDelete(PRTLOCKVALRECSHRD pRec);
  *                              pass NIL_RTTHREAD and we'll figure it out.
  * @param   pSrcPos             The source position of the lock operation.
  */
-RTDECL(int)  RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf, PCRTLOCKVALSRCPOS pSrcPos);
+RTDECL(int)  RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf,
+                                                PCRTLOCKVALSRCPOS pSrcPos, RTMSINTERVAL cMillies);
 
 /**
  * Do deadlock detection before blocking on shared access to a lock and change
@@ -557,7 +555,7 @@ RTDECL(int)  RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD
  *                              methods.
  */
 RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf,
-                                                  PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
+                                                  PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk, RTMSINTERVAL cMillies,
                                                   RTTHREADSTATE enmSleepState, bool fReallySleeping);
 
 /**
@@ -575,7 +573,7 @@ RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHRE
  *                              methods.
  */
 RTDECL(int) RTLockValidatorRecSharedCheckOrderAndBlocking(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf,
-                                                          PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk,
+                                                          PCRTLOCKVALSRCPOS pSrcPos, bool fRecursiveOk, RTMSINTERVAL cMillies,
                                                           RTTHREADSTATE enmSleepState, bool fReallySleeping);
 
 /**
@@ -730,15 +728,20 @@ RTDECL(bool) RTLockValidatorIsBlockedThreadInValidator(RTTHREAD hThread);
  * @param   fAutodidact         Whether the class should be allowed to teach
  *                              itself new locking order rules (true), or if the
  *                              user will teach it all it needs to know (false).
+ * @param   fRecursionOk        Whether to allow lock recursion or not.
  * @param   cMsMinDeadlock      Used to raise the sleep interval at which
  *                              deadlock detection kicks in.  Minimum is 1 ms,
  *                              while RT_INDEFINITE_WAIT will disable it.
  * @param   cMsMinOrder         Used to raise the sleep interval at which lock
  *                              order validation kicks in.  Minimum is 1 ms,
  *                              while RT_INDEFINITE_WAIT will disable it.
+ *
+ * @remarks The properties can be modified after creation by the
+ *          RTLockValidatorClassSet* methods.
  */
 RTDECL(int) RTLockValidatorClassCreateEx(PRTLOCKVALCLASS phClass, PCRTLOCKVALSRCPOS pSrcPos,
-                                         bool fAutodidact, RTMSINTERVAL cMsMinDeadlock, RTMSINTERVAL cMsMinOrder);
+                                         bool fAutodidact, bool fRecursionOk,
+                                         RTMSINTERVAL cMsMinDeadlock, RTMSINTERVAL cMsMinOrder);
 
 /**
  * Creates a new lock validator class.

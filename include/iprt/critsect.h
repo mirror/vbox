@@ -101,6 +101,8 @@ typedef const RTCRITSECT *PCRTCRITSECT;
 
 /** If set, nesting(/recursion) is not allowed. */
 #define RTCRITSECT_FLAGS_NO_NESTING     UINT32_C(0x00000001)
+/** Disables lock validation. */
+#define RTCRITSECT_FLAGS_NO_LOCK_VAL    UINT32_C(0x00000002)
 
 #ifdef IN_RING3
 
@@ -113,10 +115,19 @@ RTDECL(int) RTCritSectInit(PRTCRITSECT pCritSect);
  * Initialize a critical section.
  *
  * @returns iprt status code.
- * @param   pCritSect   Pointer to the critical section structure.
- * @param   fFlags      Flags, any combination of the RTCRITSECT_FLAGS \#defines.
+ * @param   pCritSect           Pointer to the critical section structure.
+ * @param   fFlags              Flags, any combination of the RTCRITSECT_FLAGS
+ *                              \#defines.
+ * @param   hClass              The class (no reference consumed). If NIL, the
+ *                              no lock order validation will be performed on
+ *                              this lock.
+ * @param   uSubClass           The sub-class.  This is used to define lock
+ *                              order inside the same class.  If you don't know,
+ *                              then pass RTLOCKVAL_SUB_CLASS_NONE.
+ * @param   pszName             The lock name (optional).
  */
-RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags);
+RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags,
+                             RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszName);
 
 /**
  * Enter a critical section.
@@ -124,7 +135,7 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags);
  * @returns VINF_SUCCESS on success.
  * @returns VERR_SEM_NESTED if nested enter on a no nesting section. (Asserted.)
  * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
- * @param   pCritSect   The critical section.
+ * @param   pCritSect       The critical section.
  */
 RTDECL(int) RTCritSectEnter(PRTCRITSECT pCritSect);
 

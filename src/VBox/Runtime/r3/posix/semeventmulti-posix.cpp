@@ -123,7 +123,7 @@ RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
 #ifdef RTSEMEVENTMULTI_STRICT
                         RTLockValidatorRecSharedInit(&pThis->Signallers,
                                                      NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY,
-                                                     "RTSemEventMulti", pThis, true /*fSignaller*/);
+                                                     "RTSemEventMulti", pThis, true /*fSignaller*/, true);
                         pThis->fEverHadSignallers = false;
 #endif
 
@@ -360,7 +360,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
             if (pThis->fEverHadSignallers)
             {
                 rc = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                           RTTHREADSTATE_EVENT_MULTI, true);
+                                                           cMillies, RTTHREADSTATE_EVENT_MULTI, true);
                 if (RT_FAILURE(rc))
                 {
                     ASMAtomicDecU32(&pThis->cWaiters);
@@ -456,7 +456,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
             if (pThis->fEverHadSignallers)
             {
                 rc = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                           RTTHREADSTATE_EVENT_MULTI, true);
+                                                           cMillies, RTTHREADSTATE_EVENT_MULTI, true);
                 if (RT_FAILURE(rc))
                 {
                     ASMAtomicDecU32(&pThis->cWaiters);
