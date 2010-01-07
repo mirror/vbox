@@ -862,7 +862,7 @@ int handleStorageController(HandlerArg *a)
                 {
                     CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_I82078));
                 }
-                if (!RTStrICmp(pszCtlType, "lsilogicsas"))
+                else if (!RTStrICmp(pszCtlType, "lsilogicsas"))
                 {
                     CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_LsiLogicSas));
                 }
