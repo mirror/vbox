@@ -742,7 +742,7 @@ DECL_FORCE_INLINE(RTLOCKVALCLASS) rtLockValidatorClassValidateAndRetain(RTLOCKVA
  * @returns The new reference count.
  * @param   pClass              The class.
  */
-DECL_FORCE_INLINE(uint32_t) rtLockValidatorClassRelease(RTLOCKVALCLASSINT *pClass)
+DECLINLINE(uint32_t) rtLockValidatorClassRelease(RTLOCKVALCLASSINT *pClass)
 {
     uint32_t cRefs = ASMAtomicDecU32(&pClass->cRefs);
     if (cRefs + 1 == RTLOCKVALCLASS_MAX_REFS)
