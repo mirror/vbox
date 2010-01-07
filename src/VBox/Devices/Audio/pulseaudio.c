@@ -48,13 +48,25 @@ static struct pa_context           *g_pContext;
 
 typedef struct PulseVoice
 {
-    HWVoiceOut  hw;
-    void       *pPCMBuf;
-    pa_stream  *pStream;
-    int         fOpSuccess;
-    unsigned    cErrors;
+    HWVoiceOut     hw;
+    /** DAC buffer */
+    void           *pPCMBuf;
+    /** Pulse stream */
+    pa_stream      *pStream;
+    /** Pulse sample format and attribute specification */
+    pa_sample_spec SampleSpec;
+    /** Pulse playback and buffer metrics */
+    pa_buffer_attr BufAttr;
+    int            fOpSuccess;
+    /** number of logged errors */
+    unsigned       cErrors;
+    const uint8_t  *pu8PeekBuf;
+    size_t         cbPeekBuf;
+    size_t         offPeekBuf;
 } PulseVoice;
 
+/* The desired max buffer size in milliseconds. The desired latency will be
+ * calculated to be 1/10 of the value */
 static struct
 {
     int         buffer_msecs_out;
@@ -63,33 +75,8 @@ static struct
 =
 {
     INIT_FIELD (.buffer_msecs_out = ) 100,
-    INIT_FIELD (.buffer_msecs_in  = ) 100,
+    INIT_FIELD (.buffer_msecs_in  = ) 300,
 };
-
-struct pulse_params_req
-{
-    int                 freq;
-    pa_sample_format_t  pa_format;
-    int                 nchannels;
-};
-
-struct pulse_params_obt
-{
-    int                 freq;
-    pa_sample_format_t  pa_format;
-    int                 nchannels;
-    unsigned long       buffer_size;
-};
-
-static void pulse_check_fatal (PulseVoice *pulse, int rc)
-{
-    if (rc == PA_ERR_CONNECTIONTERMINATED)
-    {
-        /* XXX runtime warning */
-        LogRel(("Pulse: Audio input/output stopped!\n"));
-        pulse->cErrors = MAX_LOG_REL_ERRORS;
-    }
-}
 
 static pa_sample_format_t aud_to_pulsefmt (audfmt_e fmt)
 {
@@ -154,13 +141,20 @@ static int pulse_to_audfmt (pa_sample_format_t pulsefmt, audfmt_e *fmt, int *end
 
 static void context_state_callback(pa_context *c, void *userdata)
 {
+    PulseVoice *pPulse = (PulseVoice *)userdata;
     switch (pa_context_get_state(c))
     {
         case PA_CONTEXT_READY:
         case PA_CONTEXT_TERMINATED:
-        case PA_CONTEXT_FAILED:
             pa_threaded_mainloop_signal(g_pMainLoop, 0);
             break;
+
+        case PA_CONTEXT_FAILED:
+            LogRel(("Pulse: Audio input/output stopped!\n"));
+            pPulse->cErrors = MAX_LOG_REL_ERRORS;
+            pa_threaded_mainloop_signal(g_pMainLoop, 0);
+            break;
+
         default:
             break;
     }
@@ -175,28 +169,19 @@ static void stream_state_callback(pa_stream *s, void *userdata)
         case PA_STREAM_TERMINATED:
             pa_threaded_mainloop_signal(g_pMainLoop, 0);
             break;
+
         default:
             break;
     }
 }
 
-static void stream_latency_update_callback(pa_stream *s, void *userdata)
+static int pulse_open (int fIn, pa_stream **ppStream, pa_sample_spec *pSampleSpec,
+                       pa_buffer_attr *pBufAttr)
 {
-    pa_threaded_mainloop_signal(g_pMainLoop, 0);
-}
-
-static int pulse_open (int fIn, struct pulse_params_req *req,
-                       struct pulse_params_obt *obt, pa_stream **ppStream)
-{
-    pa_sample_spec        sspec;
-    pa_channel_map        cmap;
+    const pa_buffer_attr *pBufAttrObtained;
     pa_stream            *pStream = NULL;
-    pa_buffer_attr        bufAttr;
-    const pa_buffer_attr *pBufAttr;
-    const pa_sample_spec *pSampSpec;
-    char                  achPCMName[64];
-    pa_stream_flags_t     flags;
-    int                   ms = fIn ? conf.buffer_msecs_in : conf.buffer_msecs_out;
+    char                 achPCMName[64];
+    pa_stream_flags_t    flags = 0;
     const char           *stream_name = audio_get_stream_name();
 
     RTStrPrintf(achPCMName, sizeof(achPCMName), "%.32s%s%s%s",
@@ -204,63 +189,56 @@ static int pulse_open (int fIn, struct pulse_params_req *req,
                 stream_name ? " (" : "",
                 fIn ? "pcm_in" : "pcm_out",
                 stream_name ? ")" : "");
-    sspec.rate     = req->freq;
-    sspec.channels = req->nchannels;
-    sspec.format   = req->pa_format;
 
     LogRel(("Pulse: open %s rate=%dHz channels=%d format=%s\n",
-                fIn ? "PCM_IN" : "PCM_OUT", req->freq, req->nchannels,
-                pa_sample_format_to_string(req->pa_format)));
+                fIn ? "PCM_IN" : "PCM_OUT", pSampleSpec->rate, pSampleSpec->channels,
+                pa_sample_format_to_string(pSampleSpec->format)));
 
-    if (!pa_sample_spec_valid(&sspec))
+    if (!pa_sample_spec_valid(pSampleSpec))
     {
         LogRel(("Pulse: Unsupported sample specification\n"));
         goto fail;
     }
 
-    pa_channel_map_init_auto(&cmap, sspec.channels, PA_CHANNEL_MAP_ALSA);
-
-#if 0
-    pa_cvolume_reset(&volume, sspec.channels);
-#endif
-
     pa_threaded_mainloop_lock(g_pMainLoop);
 
-    if (!(pStream = pa_stream_new(g_pContext, achPCMName, &sspec, &cmap)))
+    if (!(pStream = pa_stream_new(g_pContext, achPCMName, pSampleSpec, /*channel_map=*/NULL)))
     {
         LogRel(("Pulse: Cannot create stream %s\n", achPCMName));
         goto unlock_and_fail;
     }
 
-    pSampSpec      = pa_stream_get_sample_spec(pStream);
-    obt->pa_format = pSampSpec->format;
-    obt->nchannels = pSampSpec->channels;
-    obt->freq      = pSampSpec->rate;
-
     pa_stream_set_state_callback(pStream, stream_state_callback, NULL);
-    pa_stream_set_latency_update_callback(pStream, stream_latency_update_callback, NULL);
 
-    memset(&bufAttr, 0, sizeof(bufAttr));
-    bufAttr.tlength   = (pa_bytes_per_second(pSampSpec) * ms) / 1000;
-    bufAttr.maxlength = (bufAttr.tlength*3) / 2;
-    bufAttr.minreq    = pa_bytes_per_second(pSampSpec) / 100;    /* 10ms */
-    bufAttr.prebuf    = bufAttr.tlength - bufAttr.minreq;
-    bufAttr.fragsize  = pa_bytes_per_second(pSampSpec) / 100;    /* 10ms */
+#if PA_API_VERSION >= 12
+    /* XXX */
+    flags |= PA_STREAM_ADJUST_LATENCY;
+#endif
 
-    flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE;
     if (fIn)
     {
-        if (pa_stream_connect_record(pStream, /*dev=*/NULL, &bufAttr, flags) < 0)
+        LogRel(("Pulse: Requested record buffer attributes: maxlength=%d fragsize=%d\n",
+                pBufAttr->maxlength, pBufAttr->fragsize));
+#if 0
+        /* not applicable as we don't use pa_stream_get_latency() and pa_stream_get_time() */
+        flags |= PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE;
+#endif
+        if (pa_stream_connect_record(pStream, /*dev=*/NULL, pBufAttr, flags) < 0)
         {
-            LogRel(("Pulse: Cannot connect record stream : %s\n",
+            LogRel(("Pulse: Cannot connect record stream: %s\n",
                     pa_strerror(pa_context_errno(g_pContext))));
             goto disconnect_unlock_and_fail;
         }
     }
     else
     {
-        if (pa_stream_connect_playback(pStream, /*dev=*/NULL, &bufAttr, flags,
-                                       NULL, NULL) < 0)
+        LogRel(("Pulse: Requested playback buffer attributes: maxlength=%d tlength=%d prebuf=%d minreq=%d\n",
+                pBufAttr->maxlength, pBufAttr->tlength, pBufAttr->prebuf, pBufAttr->minreq));
+
+        flags |= PA_STREAM_START_CORKED;
+
+        if (pa_stream_connect_playback(pStream, /*dev=*/NULL, pBufAttr, flags,
+                                       /*cvolume=*/NULL, /*sync_stream=*/NULL) < 0)
         {
             LogRel(("Pulse: Cannot connect playback stream: %s\n",
                     pa_strerror(pa_context_errno(g_pContext))));
@@ -273,6 +251,7 @@ static int pulse_open (int fIn, struct pulse_params_req *req,
     {
         pa_stream_state_t sstate;
         pa_threaded_mainloop_wait(g_pMainLoop);
+
         sstate = pa_stream_get_state(pStream);
         if (sstate == PA_STREAM_READY)
             break;
@@ -283,14 +262,13 @@ static int pulse_open (int fIn, struct pulse_params_req *req,
         }
     }
 
-    pBufAttr = pa_stream_get_buffer_attr(pStream);
-    obt->buffer_size = pBufAttr->maxlength;
+    pBufAttrObtained = pa_stream_get_buffer_attr(pStream);
+    memcpy(pBufAttr, pBufAttrObtained, sizeof(pa_buffer_attr));
+
+    LogRel(("Pulse: Obtained buffer attributes: tlength=%d maxlength=%d prebuf=%d minreq=%d fragsize=%d\n",
+            pBufAttr->tlength, pBufAttr->maxlength, pBufAttr->prebuf, pBufAttr->minreq, pBufAttr->fragsize));
 
     pa_threaded_mainloop_unlock(g_pMainLoop);
-
-    LogRel(("Pulse: buffer settings: max=%d tlength=%d prebuf=%d minreq=%d\n",
-            pBufAttr->maxlength, pBufAttr->tlength, pBufAttr->prebuf, pBufAttr->minreq));
-
     *ppStream = pStream;
     return 0;
 
@@ -310,117 +288,132 @@ fail:
 
 static int pulse_init_out (HWVoiceOut *hw, audsettings_t *as)
 {
-    PulseVoice *pulse = (PulseVoice *) hw;
-    struct pulse_params_req req;
-    struct pulse_params_obt obt;
-    audfmt_e effective_fmt;
-    int endianness;
+    PulseVoice *pPulse = (PulseVoice *) hw;
     audsettings_t obt_as;
+    int cbBuf;
 
-    req.pa_format   = aud_to_pulsefmt (as->fmt);
-    req.freq        = as->freq;
-    req.nchannels   = as->nchannels;
+    pPulse->SampleSpec.format   = aud_to_pulsefmt (as->fmt);
+    pPulse->SampleSpec.rate     = as->freq;
+    pPulse->SampleSpec.channels = as->nchannels;
 
-    if (pulse_open (/*fIn=*/0, &req, &obt, &pulse->pStream))
+    /* Note that setting maxlength to -1 does not work for older PulseAudio libraries
+     * (at least not for 0.9.10). So use the suggested value of 3/2 of tlength */
+    pPulse->BufAttr.tlength     = (pa_bytes_per_second(&pPulse->SampleSpec)
+                                  * conf.buffer_msecs_out) / 1000;
+    pPulse->BufAttr.maxlength   = (pPulse->BufAttr.tlength * 3) / 2;
+    pPulse->BufAttr.prebuf      = -1; /* Same as tlength */
+    pPulse->BufAttr.minreq      = -1; /* Pulse should set something sensible for minreq on it's own */
+
+    /* Notice that the struct BufAttr is updated to the obtained values after this call */
+    if (pulse_open (0, &pPulse->pStream, &pPulse->SampleSpec, &pPulse->BufAttr))
         return -1;
 
-    if (pulse_to_audfmt (obt.pa_format, &effective_fmt, &endianness))
+    if (pulse_to_audfmt (pPulse->SampleSpec.format, &obt_as.fmt, &obt_as.endianness))
     {
-        LogRel(("Pulse: Cannot find audio format %d\n", obt.pa_format));
+        LogRel(("Pulse: Cannot find audio format %d\n", pPulse->SampleSpec.format));
         return -1;
     }
 
-    obt_as.freq       = obt.freq;
-    obt_as.nchannels  = obt.nchannels;
-    obt_as.fmt        = effective_fmt;
-    obt_as.endianness = endianness;
+    obt_as.freq       = pPulse->SampleSpec.rate;
+    obt_as.nchannels  = pPulse->SampleSpec.channels;
 
     audio_pcm_init_info (&hw->info, &obt_as);
-    hw->samples = obt.buffer_size >> hw->info.shift;
+    cbBuf = audio_MIN(pPulse->BufAttr.tlength * 2, pPulse->BufAttr.maxlength);
 
-    pulse->pPCMBuf = RTMemAllocZ(obt.buffer_size);
-    if (!pulse->pPCMBuf)
+    pPulse->pPCMBuf = RTMemAllocZ(cbBuf);
+    if (!pPulse->pPCMBuf)
     {
-        LogRel(("Pulse: Could not allocate DAC buffer of %d bytes\n", obt.buffer_size));
+        LogRel(("Pulse: Could not allocate DAC buffer of %d bytes\n", cbBuf));
         return -1;
     }
+
+    /* Convert from bytes to frames (aka samples) */
+    hw->samples = cbBuf >> hw->info.shift;
 
     return 0;
 }
 
 static void pulse_fini_out (HWVoiceOut *hw)
 {
-    PulseVoice *pulse = (PulseVoice *)hw;
-    if (pulse->pStream)
+    PulseVoice *pPulse = (PulseVoice *)hw;
+
+    if (pPulse->pStream)
     {
-        pa_stream_disconnect(pulse->pStream);
-        pa_stream_unref(pulse->pStream);
-        pulse->pStream = NULL;
+        pa_threaded_mainloop_lock(g_pMainLoop);
+        pa_stream_disconnect(pPulse->pStream);
+        pa_stream_unref(pPulse->pStream);
+        pa_threaded_mainloop_unlock(g_pMainLoop);
+        pPulse->pStream = NULL;
     }
-    if (pulse->pPCMBuf)
+
+    if (pPulse->pPCMBuf)
     {
-        RTMemFree (pulse->pPCMBuf);
-        pulse->pPCMBuf = NULL;
+        RTMemFree (pPulse->pPCMBuf);
+        pPulse->pPCMBuf = NULL;
     }
 }
 
 static int pulse_run_out (HWVoiceOut *hw)
 {
-    PulseVoice *pulse = (PulseVoice *) hw;
-    int          csLive, csDecr = 0, csSamples, csToWrite, csAvail;
-    size_t       cbAvail, cbToWrite;
+    PulseVoice  *pPulse = (PulseVoice *) hw;
+    int          cFramesLive;
+    int          cFramesWritten = 0;
+    int          csSamples;
+    int          cFramesToWrite;
+    int          cFramesAvail;
+    size_t       cbAvail;
+    size_t       cbToWrite;
     uint8_t     *pu8Dst;
     st_sample_t *psSrc;
 
-    csLive = audio_pcm_hw_get_live_out (hw);
-    if (!csLive)
+    cFramesLive = audio_pcm_hw_get_live_out (hw);
+    if (!cFramesLive)
         return 0;
 
     pa_threaded_mainloop_lock(g_pMainLoop);
 
-    cbAvail = pa_stream_writable_size (pulse->pStream);
+    cbAvail = pa_stream_writable_size (pPulse->pStream);
     if (cbAvail == (size_t)-1)
     {
-        if (pulse->cErrors < MAX_LOG_REL_ERRORS)
+        if (pPulse->cErrors < MAX_LOG_REL_ERRORS)
         {
             int rc = pa_context_errno(g_pContext);
-            pulse->cErrors++;
+            pPulse->cErrors++;
             LogRel(("Pulse: Failed to determine the writable size: %s\n",
                      pa_strerror(rc)));
-            pulse_check_fatal(pulse, rc);
         }
         goto unlock_and_exit;
     }
 
-    csAvail   = cbAvail >> hw->info.shift; /* bytes => samples */
-    csDecr    = audio_MIN (csLive, csAvail);
-    csSamples = csDecr;
+    cFramesAvail   = cbAvail >> hw->info.shift; /* bytes => samples */
+    cFramesWritten = audio_MIN (cFramesLive, cFramesAvail);
+    csSamples      = cFramesWritten;
 
     while (csSamples)
     {
         /* split request at the end of our samples buffer */
-        csToWrite = audio_MIN (csSamples, hw->samples - hw->rpos);
-        cbToWrite = csToWrite << hw->info.shift;
-        psSrc     = hw->mix_buf + hw->rpos;
-        pu8Dst    = advance (pulse->pPCMBuf, hw->rpos << hw->info.shift);
+        cFramesToWrite = audio_MIN (csSamples, hw->samples - hw->rpos);
+        cbToWrite      = cFramesToWrite << hw->info.shift;
+        psSrc          = hw->mix_buf + hw->rpos;
+        pu8Dst         = advance (pPulse->pPCMBuf, hw->rpos << hw->info.shift);
 
-        hw->clip (pu8Dst, psSrc, csToWrite);
+        hw->clip (pu8Dst, psSrc, cFramesToWrite);
 
-        if (pa_stream_write (pulse->pStream, pu8Dst, cbToWrite,
+        if (pa_stream_write (pPulse->pStream, pu8Dst, cbToWrite,
                              /*cleanup_callback=*/NULL, 0, PA_SEEK_RELATIVE) < 0)
         {
             LogRel(("Pulse: Failed to write %d samples: %s\n",
-                    csToWrite, pa_strerror(pa_context_errno(g_pContext))));
+                    cFramesToWrite, pa_strerror(pa_context_errno(g_pContext))));
             break;
         }
-        hw->rpos   = (hw->rpos + csToWrite) % hw->samples;
-        csSamples -= csToWrite;
+        hw->rpos   = (hw->rpos + cFramesToWrite) % hw->samples;
+        csSamples -= cFramesToWrite;
     }
 
 unlock_and_exit:
     pa_threaded_mainloop_unlock(g_pMainLoop);
 
-    return csDecr;
+    return cFramesWritten;
 }
 
 static int pulse_write (SWVoiceOut *sw, void *buf, int len)
@@ -430,58 +423,65 @@ static int pulse_write (SWVoiceOut *sw, void *buf, int len)
 
 static void stream_success_callback(pa_stream *pStream, int success, void *userdata)
 {
-    PulseVoice *pulse = (PulseVoice *) userdata;
-    pulse->fOpSuccess = success;
+    PulseVoice *pPulse = (PulseVoice *) userdata;
+    pPulse->fOpSuccess = success;
     pa_threaded_mainloop_signal(g_pMainLoop, 0);
 }
 
 typedef enum
 {
-    Unpause  = 0,
-    Pause    = 1,
-    Flush    = 2,
-    Trigger  = 3
+    Unpause,
+    Pause,
+    Trigger,
+    Drain
 } pulse_cmd_t;
 
-static int pulse_ctrl (HWVoiceOut *hw, pulse_cmd_t cmd)
+static int pulse_ctrl (PulseVoice *pPulse, pulse_cmd_t cmd)
 {
-    PulseVoice *pulse = (PulseVoice *) hw;
     pa_operation *op = NULL;
+    const char *cmd_str = cmd == Unpause ? "unpause" :
+                          cmd == Pause   ? "pause"   :
+                          cmd == Trigger ? "trigger" :
+                          cmd == Drain   ? "drain"   : NULL;
 
-    if (!pulse->pStream)
+    if (!pPulse->pStream)
         return 0;
+
+    LogRel(("Pulse: ctrl cmd=%s\n", cmd_str));
 
     pa_threaded_mainloop_lock(g_pMainLoop);
     switch (cmd)
     {
         case Pause:
-            op = pa_stream_cork(pulse->pStream, 1, stream_success_callback, pulse);
+            op = pa_stream_cork(pPulse->pStream, 1, stream_success_callback, pPulse);
             break;
         case Unpause:
-            op = pa_stream_cork(pulse->pStream, 0, stream_success_callback, pulse);
+            op = pa_stream_cork(pPulse->pStream, 0, stream_success_callback, pPulse);
             break;
-        case Flush:
-            op = pa_stream_flush(pulse->pStream, stream_success_callback, pulse);
+        case Drain:
+            op = pa_stream_drain(pPulse->pStream, stream_success_callback, pPulse);
             break;
         case Trigger:
-            op = pa_stream_trigger(pulse->pStream, stream_success_callback, pulse);
+            op = pa_stream_trigger(pPulse->pStream, stream_success_callback, pPulse);
             break;
         default:
             goto unlock_and_exit;
     }
     if (!op)
     {
-        if (pulse->cErrors < MAX_LOG_REL_ERRORS)
+        if (pPulse->cErrors < MAX_LOG_REL_ERRORS)
         {
             int rc = pa_context_errno(g_pContext);
-            pulse->cErrors++;
-            LogRel(("Pulse: Failed ctrl cmd=%d to stream: %s\n",
-                    cmd, pa_strerror(pa_context_errno(g_pContext))));
-            pulse_check_fatal(pulse, rc);
+            pPulse->cErrors++;
+            LogRel(("Pulse: Failed ctrl cmd=%s to stream: %s\n", cmd_str, pa_strerror(rc)));
         }
     }
     else
+    {
+        while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
+            pa_threaded_mainloop_wait(g_pMainLoop);
         pa_operation_unref(op);
+    }
 
 unlock_and_exit:
     pa_threaded_mainloop_unlock(g_pMainLoop);
@@ -493,12 +493,15 @@ static int pulse_ctl_out (HWVoiceOut *hw, int cmd, ...)
     switch (cmd)
     {
         case VOICE_ENABLE:
-            pulse_ctrl(hw, Unpause);
-            pulse_ctrl(hw, Trigger);
+            pulse_ctrl((PulseVoice *)hw, Unpause);
             break;
+
         case VOICE_DISABLE:
-            pulse_ctrl(hw, Flush);
+            pulse_ctrl((PulseVoice *)hw, Trigger);
+            pulse_ctrl((PulseVoice *)hw, Drain);
+            pulse_ctrl((PulseVoice *)hw, Pause);
             break;
+
         default:
             return -1;
     }
@@ -507,104 +510,127 @@ static int pulse_ctl_out (HWVoiceOut *hw, int cmd, ...)
 
 static int pulse_init_in (HWVoiceIn *hw, audsettings_t *as)
 {
-    PulseVoice *pulse = (PulseVoice *) hw;
-    struct pulse_params_req req;
-    struct pulse_params_obt obt;
-    audfmt_e effective_fmt;
-    int endianness;
+    PulseVoice *pPulse = (PulseVoice *) hw;
     audsettings_t obt_as;
 
-    req.pa_format   = aud_to_pulsefmt (as->fmt);
-    req.freq        = as->freq;
-    req.nchannels   = as->nchannels;
+    pPulse->SampleSpec.format   = aud_to_pulsefmt (as->fmt);
+    pPulse->SampleSpec.rate     = as->freq;
+    pPulse->SampleSpec.channels = as->nchannels;
 
-    if (pulse_open (/*fIn=*/1, &req, &obt, &pulse->pStream))
+    /* XXX check these values */
+    pPulse->BufAttr.fragsize    = (pa_bytes_per_second(&pPulse->SampleSpec)
+                                  * conf.buffer_msecs_in) / 2000; /* one tenth */
+    pPulse->BufAttr.maxlength   = (pa_bytes_per_second(&pPulse->SampleSpec)
+                                  * conf.buffer_msecs_in) / 1000;
+    /* Other memebers of pa_buffer_attr are ignored for record streams */
+
+    if (pulse_open (1, &pPulse->pStream, &pPulse->SampleSpec, &pPulse->BufAttr))
         return -1;
 
-    if (pulse_to_audfmt (obt.pa_format, &effective_fmt, &endianness))
+    if (pulse_to_audfmt (pPulse->SampleSpec.format, &obt_as.fmt, &obt_as.endianness))
     {
-        LogRel(("Pulse: Cannot find audio format %d\n", obt.pa_format));
+        LogRel(("Pulse: Cannot find audio format %d\n", pPulse->SampleSpec.format));
         return -1;
     }
 
-    obt_as.freq       = obt.freq;
-    obt_as.nchannels  = obt.nchannels;
-    obt_as.fmt        = effective_fmt;
-    obt_as.endianness = endianness;
-
+    obt_as.freq       = pPulse->SampleSpec.rate;
+    obt_as.nchannels  = pPulse->SampleSpec.channels;
     audio_pcm_init_info (&hw->info, &obt_as);
-
-    /* pcm_in: reserve twice as the maximum buffer length because of peek()/drop(). */
-    hw->samples = 2 * (obt.buffer_size >> hw->info.shift);
-
-    /* no buffer for input */
-    pulse->pPCMBuf = NULL;
+    hw->samples       = audio_MIN(pPulse->BufAttr.fragsize * 10, pPulse->BufAttr.maxlength)
+                          >> hw->info.shift;
+    pPulse->pu8PeekBuf = NULL;
 
     return 0;
 }
 
 static void pulse_fini_in (HWVoiceIn *hw)
 {
-    PulseVoice *pulse = (PulseVoice *)hw;
-    if (pulse->pStream)
+    PulseVoice *pPulse = (PulseVoice *)hw;
+
+    if (pPulse->pStream)
     {
-        pa_stream_disconnect(pulse->pStream);
-        pa_stream_unref(pulse->pStream);
-        pulse->pStream = NULL;
-    }
-    if (pulse->pPCMBuf)
-    {
-        RTMemFree (pulse->pPCMBuf);
-        pulse->pPCMBuf = NULL;
+        pa_threaded_mainloop_lock(g_pMainLoop);
+        pa_stream_disconnect(pPulse->pStream);
+        pa_stream_unref(pPulse->pStream);
+        pa_threaded_mainloop_unlock(g_pMainLoop);
+        pPulse->pStream = NULL;
     }
 }
 
 static int pulse_run_in (HWVoiceIn *hw)
 {
-    PulseVoice *pulse = (PulseVoice *) hw;
-    int    csDead, csDecr = 0, csSamples, csRead, csAvail;
-    size_t cbAvail;
-    const void  *pu8Src;
-    st_sample_t *psDst;
+    PulseVoice *pPulse = (PulseVoice *) hw;
+    const int hwshift = hw->info.shift;
+    int       cFramesRead = 0;    /* total frames which have been read this call */
+    int       cFramesAvail;       /* total frames available from pulse at start of call */
+    int       cFramesToRead;      /* the largest amount we want/can get this call */
+    int       cFramesToPeek;      /* the largest amount we want/can get this peek */
 
-    csDead = hw->samples - audio_pcm_hw_get_live_in (hw);
-
-    if (!csDead)
-        return 0; /* no buffer available */
-
+    /* We should only call pa_stream_readable_size() once and trust the first value */
     pa_threaded_mainloop_lock(g_pMainLoop);
-
-    if (pa_stream_peek(pulse->pStream, &pu8Src, &cbAvail) < 0)
-    {
-        LogRel(("Pulse: Peek failed: %s\n",
-                pa_strerror(pa_context_errno(g_pContext))));
-        goto unlock_and_exit;
-    }
-    if (!pu8Src)
-        goto unlock_and_exit;
-
-    csAvail = cbAvail >> hw->info.shift;
-    csDecr  = audio_MIN (csDead, csAvail);
-
-    csSamples = csDecr;
-
-    while (csSamples)
-    {
-        /* split request at the end of our samples buffer */
-        psDst      = hw->conv_buf + hw->wpos;
-        csRead     = audio_MIN (csSamples, hw->samples - hw->wpos);
-        hw->conv (psDst, pu8Src, csRead, &nominal_volume);
-        hw->wpos   = (hw->wpos + csRead) % hw->samples;
-        csSamples -= csRead;
-        pu8Src     = (const void*)((uint8_t*)pu8Src + (csRead << hw->info.shift));
-    }
-
-    pa_stream_drop(pulse->pStream);
-
-unlock_and_exit:
+    cFramesAvail = pa_stream_readable_size(pPulse->pStream) >> hwshift;
     pa_threaded_mainloop_unlock(g_pMainLoop);
 
-    return csDecr;
+    /* If the buffer was not dropped last call, add what remains */
+    if (pPulse->pu8PeekBuf)
+        cFramesAvail += (pPulse->cbPeekBuf - pPulse->offPeekBuf) >> hwshift;
+
+    cFramesToRead = audio_MIN(cFramesAvail, hw->samples - audio_pcm_hw_get_live_in(hw));
+    for (; cFramesToRead; cFramesToRead -= cFramesToPeek)
+    {
+        /* If there is no data, do another peek */
+        if (!pPulse->pu8PeekBuf)
+        {
+            pa_threaded_mainloop_lock(g_pMainLoop);
+            pa_stream_peek(pPulse->pStream, (const void**)&pPulse->pu8PeekBuf, &pPulse->cbPeekBuf);
+            pa_threaded_mainloop_unlock(g_pMainLoop);
+            pPulse->offPeekBuf = 0;
+            if (!pPulse->cbPeekBuf)
+                break;
+        }
+
+        cFramesToPeek = audio_MIN((signed)(  pPulse->cbPeekBuf
+                                           - pPulse->offPeekBuf) >> hwshift,
+                                  cFramesToRead);
+
+        /* Check for wrapping around the buffer end */
+        if (hw->wpos + cFramesToPeek > hw->samples)
+        {
+            int cFramesDelta = hw->samples - hw->wpos;
+
+            hw->conv(hw->conv_buf + hw->wpos,
+                     pPulse->pu8PeekBuf + pPulse->offPeekBuf,
+                     cFramesDelta,
+                     &nominal_volume);
+
+            hw->conv(hw->conv_buf,
+                     pPulse->pu8PeekBuf + pPulse->offPeekBuf + (cFramesDelta << hwshift),
+                     cFramesToPeek - cFramesDelta,
+                     &nominal_volume);
+        }
+        else
+        {
+            hw->conv(hw->conv_buf + hw->wpos,
+                     pPulse->pu8PeekBuf + pPulse->offPeekBuf,
+                     cFramesToPeek,
+                     &nominal_volume);
+        }
+
+        cFramesRead += cFramesToPeek;
+        hw->wpos = (hw->wpos + cFramesToPeek) % hw->samples;
+        pPulse->offPeekBuf += cFramesToPeek << hwshift;
+
+        /* If the buffer is done, drop it */
+        if (pPulse->offPeekBuf == pPulse->cbPeekBuf)
+        {
+            pa_threaded_mainloop_lock(g_pMainLoop);
+            pa_stream_drop(pPulse->pStream);
+            pa_threaded_mainloop_unlock(g_pMainLoop);
+            pPulse->pu8PeekBuf = NULL;
+        }
+    }
+
+    return cFramesRead;
 }
 
 static int pulse_read (SWVoiceIn *sw, void *buf, int size)
@@ -614,6 +640,24 @@ static int pulse_read (SWVoiceIn *sw, void *buf, int size)
 
 static int pulse_ctl_in (HWVoiceIn *hw, int cmd, ...)
 {
+    PulseVoice *pPulse = (PulseVoice *)hw;
+
+    switch (cmd)
+    {
+        case VOICE_ENABLE:
+            pulse_ctrl((PulseVoice *)hw, Unpause);
+            break;
+        case VOICE_DISABLE:
+            if (pPulse->pu8PeekBuf)
+            {
+                pa_stream_drop(pPulse->pStream);
+                pPulse->pu8PeekBuf = NULL;
+            }
+            pulse_ctrl((PulseVoice *)hw, Pause);
+            break;
+        default:
+            return -1;
+    }
     return 0;
 }
 
@@ -627,18 +671,21 @@ static void *pulse_audio_init (void)
         LogRel(("Pulse: Failed to load the PulseAudio shared library! Error %Rrc\n", rc));
         return NULL;
     }
+
     if (!(g_pMainLoop = pa_threaded_mainloop_new()))
     {
         LogRel(("Pulse: Failed to allocate main loop: %s\n",
                  pa_strerror(pa_context_errno(g_pContext))));
         goto fail;
     }
+
     if (!(g_pContext = pa_context_new(pa_threaded_mainloop_get_api(g_pMainLoop), "VBox")))
     {
         LogRel(("Pulse: Failed to allocate context: %s\n",
                  pa_strerror(pa_context_errno(g_pContext))));
         goto fail;
     }
+
     if (pa_threaded_mainloop_start(g_pMainLoop) < 0)
     {
         LogRel(("Pulse: Failed to start threaded mainloop: %s\n",
@@ -688,11 +735,13 @@ fail:
         pa_context_unref(g_pContext);
         g_pContext = NULL;
     }
+
     if (g_pMainLoop)
     {
         pa_threaded_mainloop_free(g_pMainLoop);
         g_pMainLoop = NULL;
     }
+
     return NULL;
 }
 
@@ -700,17 +749,20 @@ static void pulse_audio_fini (void *opaque)
 {
     if (g_pMainLoop)
         pa_threaded_mainloop_stop(g_pMainLoop);
+
     if (g_pContext)
     {
         pa_context_disconnect(g_pContext);
         pa_context_unref(g_pContext);
         g_pContext = NULL;
     }
+
     if (g_pMainLoop)
     {
         pa_threaded_mainloop_free(g_pMainLoop);
         g_pMainLoop = NULL;
     }
+
     (void) opaque;
 }
 

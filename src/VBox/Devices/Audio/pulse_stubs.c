@@ -78,9 +78,12 @@ PROXY_STUB     (pa_stream_get_state, pa_stream_state_t,
 PROXY_STUB_VOID(pa_stream_set_state_callback,
                 (pa_stream *s, pa_stream_notify_cb_t cb, void *userdata),
                 (s, cb, userdata))
-PROXY_STUB     (pa_stream_flush, pa_operation*,
+PROXY_STUB     (pa_stream_drain, pa_operation*,
                 (pa_stream *s, pa_stream_success_cb_t cb, void *userdata),
                 (s, cb, userdata))
+PROXY_STUB     (pa_stream_trigger, pa_operation*,
+                (pa_stream *s, pa_stream_success_cb_t cb, void *userdata),
+		(s, cb, userdata))
 PROXY_STUB     (pa_stream_new, pa_stream*,
                 (pa_context *c, const char *name, const pa_sample_spec *ss,
                  const pa_channel_map *map),
@@ -97,9 +100,6 @@ PROXY_STUB     (pa_stream_cork, pa_operation*,
 PROXY_STUB     (pa_stream_drop, int,
                 (pa_stream *p),
                 (p))
-PROXY_STUB     (pa_stream_trigger, pa_operation*,
-                (pa_stream *s, pa_stream_success_cb_t cb, void *userdata),
-                (s, cb, userdata))
 PROXY_STUB     (pa_stream_writable_size, size_t,
                 (pa_stream *p),
                 (p))
@@ -155,6 +155,9 @@ PROXY_STUB_VOID(pa_threaded_mainloop_lock,
 PROXY_STUB     (pa_bytes_per_second, size_t,
                 (const pa_sample_spec *spec),
                 (spec))
+PROXY_STUB     (pa_frame_size, size_t,
+                (const pa_sample_spec *spec),
+                (spec))
 PROXY_STUB     (pa_sample_format_to_string, const char*,
                 (pa_sample_format_t f),
                 (f))
@@ -167,9 +170,15 @@ PROXY_STUB     (pa_channel_map_init_auto, pa_channel_map*,
 PROXY_STUB_VOID(pa_operation_unref,
                 (pa_operation *o),
                 (o))
+PROXY_STUB     (pa_operation_get_state, pa_operation_state_t,
+                (pa_operation *o),
+		(o))
 PROXY_STUB     (pa_strerror, const char*,
                 (int error),
                 (error))
+PROXY_STUB     (pa_stream_readable_size, size_t,
+                (pa_stream *p),
+		(p))
 
 
 typedef struct
@@ -190,13 +199,13 @@ static SHARED_FUNC SharedFuncs[] =
     ELEMENT(pa_stream_unref),
     ELEMENT(pa_stream_get_state),
     ELEMENT(pa_stream_set_state_callback),
-    ELEMENT(pa_stream_flush),
+    ELEMENT(pa_stream_drain),
+    ELEMENT(pa_stream_trigger),
     ELEMENT(pa_stream_new),
     ELEMENT(pa_stream_get_buffer_attr),
     ELEMENT(pa_stream_peek),
     ELEMENT(pa_stream_cork),
     ELEMENT(pa_stream_drop),
-    ELEMENT(pa_stream_trigger),
     ELEMENT(pa_stream_writable_size),
     ELEMENT(pa_context_connect),
     ELEMENT(pa_context_disconnect),
@@ -215,11 +224,14 @@ static SHARED_FUNC SharedFuncs[] =
     ELEMENT(pa_threaded_mainloop_start),
     ELEMENT(pa_threaded_mainloop_lock),
     ELEMENT(pa_bytes_per_second),
+    ELEMENT(pa_frame_size),
     ELEMENT(pa_sample_format_to_string),
     ELEMENT(pa_sample_spec_valid),
     ELEMENT(pa_channel_map_init_auto),
     ELEMENT(pa_operation_unref),
+    ELEMENT(pa_operation_get_state),
     ELEMENT(pa_strerror),
+    ELEMENT(pa_stream_readable_size)
 };
 #undef ELEMENT
 
