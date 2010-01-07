@@ -133,7 +133,7 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
 #ifdef RTSEMEVENT_STRICT
                         RTLockValidatorRecSharedInit(&pThis->Signallers,
                                                      NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY,
-                                                     "RTSemEvent", pThis, true /*fSignaller*/);
+                                                     "RTSemEvent", pThis, true /*fSignaller*/, true);
                         pThis->fEverHadSignallers = false;
 #endif
 
@@ -331,7 +331,7 @@ DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bo
             if (pThis->fEverHadSignallers)
             {
                 rc = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                           RTTHREADSTATE_EVENT, true);
+                                                           cMillies, RTTHREADSTATE_EVENT, true);
                 if (RT_FAILURE(rc))
                 {
                     ASMAtomicDecU32(&pThis->cWaiters);
@@ -425,7 +425,7 @@ DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bo
             if (pThis->fEverHadSignallers)
             {
                 rc = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                           RTTHREADSTATE_EVENT, true);
+                                                           cMillies, RTTHREADSTATE_EVENT, true);
                 if (RT_FAILURE(rc))
                 {
                     ASMAtomicDecU32(&pThis->cWaiters);

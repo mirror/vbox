@@ -50,12 +50,10 @@ RTDECL(int) RTSemSpinMutexCreate(PRTSEMSPINMUTEX phSpinMtx, uint32_t fFlags)
     PRTCRITSECT pCritSect = (PRTCRITSECT)RTMemAlloc(sizeof(RTCRITSECT));
     if (!pCritSect)
         return VERR_NO_MEMORY;
-    int rc = RTCritSectInit(pCritSect);
+    int rc = RTCritSectInitEx(pCritSect, RTCRITSECT_FLAGS_NO_NESTING | RTCRITSECT_FLAGS_NO_LOCK_VAL,
+                              NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemSpinMutex");
     if (RT_SUCCESS(rc))
-    {
-        pCritSect->fFlags |= RTCRITSECT_FLAGS_NO_NESTING;
         *phSpinMtx = (RTSEMSPINMUTEX)pCritSect;
-    }
     else
         RTMemFree(pCritSect);
     return rc;

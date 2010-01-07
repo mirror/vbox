@@ -131,7 +131,7 @@ RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
 #ifdef RTSEMEVENTMULTI_STRICT
         RTLockValidatorRecSharedInit(&pThis->Signallers,
                                      NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY,
-                                     "RTSemEventMulti", pThis, true /*fSignaller*/);
+                                     "RTSemEventMulti", pThis, true /*fSignaller*/, true);
         pThis->fEverHadSignallers = false;
 #endif
         *pEventMultiSem = pThis;
@@ -294,7 +294,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
             if (pThis->fEverHadSignallers)
             {
                 int rc9 = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                                RTTHREADSTATE_EVENT_MULTI, true);
+                                                                cMillie, RTTHREADSTATE_EVENT_MULTI, true);
                 if (RT_FAILURE(rc9))
                     return rc9;
             }

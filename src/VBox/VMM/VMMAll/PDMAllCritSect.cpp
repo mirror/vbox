@@ -128,7 +128,7 @@ static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hN
     SUPSEMEVENT     hEvent      = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
 # ifdef PDMCRITSECT_STRICT
     RTTHREAD        hThreadSelf = RTThreadSelfAutoAdopt();
-    int rc2 = RTLockValidatorRecExclCheckOrder(pCritSect->s.Core.pValidatorRec, hThreadSelf, pSrcPos);
+    int rc2 = RTLockValidatorRecExclCheckOrder(pCritSect->s.Core.pValidatorRec, hThreadSelf, pSrcPos, RT_INDEFINITE_WAIT);
     if (RT_FAILURE(rc2))
         return rc2;
 # else
@@ -139,7 +139,7 @@ static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hN
 # ifdef PDMCRITSECT_STRICT
         int rc9 = RTLockValidatorRecExclCheckBlocking(pCritSect->s.Core.pValidatorRec, hThreadSelf, pSrcPos,
                                                       !(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NO_NESTING),
-                                                      RTTHREADSTATE_CRITSECT, true);
+                                                      RT_INDEFINITE_WAIT, RTTHREADSTATE_CRITSECT, true);
         if (RT_FAILURE(rc9))
             return rc9;
 # else

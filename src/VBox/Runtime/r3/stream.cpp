@@ -137,12 +137,12 @@ static int rtStrmAllocLock(PRTSTREAM pStream)
     PRTCRITSECT pCritSect = (PRTCRITSECT)RTMemAlloc(sizeof(*pCritSect));
     if (!pCritSect)
         return VERR_NO_MEMORY;
-    int rc = RTCritSectInit(pCritSect);
+
+    /* The native stream lock are normally not recursive. */
+    int rc = RTCritSectInitEx(pCritSect, RTCRITSECT_FLAGS_NO_NESTING,
+                              NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemSpinMutex");
     if (RT_SUCCESS(rc))
     {
-        /* The native stream lock are normally not recursive .*/
-        pCritSect->fFlags |= RTCRITSECT_FLAGS_NO_NESTING;
-
         rc = RTCritSectEnter(pCritSect);
         if (RT_SUCCESS(rc))
         {

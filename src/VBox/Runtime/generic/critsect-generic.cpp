@@ -44,22 +44,18 @@
 #include "internal/strict.h"
 
 
-/* In strict mode we're redefining these, so undefine them now for the implementation. */
-#undef RTCritSectEnter
-#undef RTCritSectTryEnter
-#undef RTCritSectEnterMultiple
-
-
-
+#undef RTCritSectInit
 RTDECL(int) RTCritSectInit(PRTCRITSECT pCritSect)
 {
-    return RTCritSectInitEx(pCritSect, 0);
+    return RTCritSectInitEx(pCritSect, 0, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTCritSect");
 }
 RT_EXPORT_SYMBOL(RTCritSectInit);
 
 
-RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags)
+RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags, RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszName)
 {
+    AssertReturn(fFlags <= (RTCRITSECT_FLAGS_NO_NESTING | RTCRITSECT_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+
     /*
      * Initialize the structure and
      */
@@ -68,7 +64,8 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags)
     pCritSect->cNestings            = 0;
     pCritSect->cLockers             = -1;
     pCritSect->NativeThreadOwner    = NIL_RTNATIVETHREAD;
-    int rc = RTLockValidatorRecExclCreate(&pCritSect->pValidatorRec, NIL_RTLOCKVALCLASS, 0, "RTCritSect", pCritSect);
+    int rc = RTLockValidatorRecExclCreate(&pCritSect->pValidatorRec, hClass, uSubClass, pszName,
+                                          pCritSect, !(fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL));
     if (RT_SUCCESS(rc))
     {
         rc = RTSemEventCreate(&pCritSect->EventSem);
@@ -131,6 +128,7 @@ DECL_FORCE_INLINE(int) rtCritSectTryEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCP
 }
 
 
+#undef RTCritSectTryEnter
 RTDECL(int) RTCritSectTryEnter(PRTCRITSECT pCritSect)
 {
 #ifndef RTCRTISECT_STRICT
@@ -163,7 +161,7 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
 
 #ifdef RTCRITSECT_STRICT
     RTTHREAD        hThreadSelf = RTThreadSelfAutoAdopt();
-    int rc9 = RTLockValidatorRecExclCheckOrder(pCritSect->pValidatorRec, hThreadSelf, pSrcPos);
+    int rc9 = RTLockValidatorRecExclCheckOrder(pCritSect->pValidatorRec, hThreadSelf, pSrcPos, RT_INDEFINITE_WAIT);
     if (RT_FAILURE(rc9))
         return rc9;
 #endif
@@ -209,7 +207,7 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
 #ifdef RTCRITSECT_STRICT
             rc9 = RTLockValidatorRecExclCheckBlocking(pCritSect->pValidatorRec, hThreadSelf, pSrcPos,
                                                       !(pCritSect->fFlags & RTCRITSECT_FLAGS_NO_NESTING),
-                                                      RTTHREADSTATE_CRITSECT, false);
+                                                      RT_INDEFINITE_WAIT, RTTHREADSTATE_CRITSECT, false);
             if (RT_FAILURE(rc9))
             {
                 ASMAtomicDecS32(&pCritSect->cLockers);
@@ -243,6 +241,7 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
 }
 
 
+#undef RTCritSectEnter
 RTDECL(int) RTCritSectEnter(PRTCRITSECT pCritSect)
 {
 #ifndef RTCRITSECT_STRICT
@@ -385,6 +384,7 @@ static int rtCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects,
 }
 
 
+#undef RTCritSectEnterMultiple
 RTDECL(int) RTCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects)
 {
 #ifndef RTCRITSECT_STRICT

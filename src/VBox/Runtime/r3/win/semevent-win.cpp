@@ -88,7 +88,7 @@ RTDECL(int)   RTSemEventCreate(PRTSEMEVENT pEventSem)
 #ifdef RTSEMEVENT_STRICT
         RTLockValidatorRecSharedInit(&pThis->Signallers,
                                      NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY,
-                                     "RTSemEvent", pThis, true /*fSignaller*/);
+                                     "RTSemEvent", pThis, true /*fSignaller*/, true);
         pThis->fEverHadSignallers = false;
 #endif
 
@@ -212,7 +212,7 @@ RTDECL(int)   RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
         if (rc != WAIT_TIMEOUT || cMillies == 0)
             return rtSemEventWaitHandleStatus(pThis, rc);
         int rc9 = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                        RTTHREADSTATE_EVENT, true);
+                                                        cMillies, RTTHREADSTATE_EVENT, true);
         if (RT_FAILURE(rc9))
             return rc9;
     }

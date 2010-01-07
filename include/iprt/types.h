@@ -1494,6 +1494,19 @@ typedef struct RTLOCKVALSRCPOS         *PRTLOCKVALSRCPOS;
  * The structure definition is found in iprt/lockvalidator.h.  */
 typedef struct RTLOCKVALSRCPOS const   *PCRTLOCKVALSRCPOS;
 
+/** @name   Special sub-class values.
+ * The range 16..UINT32_MAX is available to the user, the range 0..15 is
+ * reserved for the lock validator.
+ * @{ */
+/** Not allowed to be taken with any other locks in the same class.
+  * This is the recommended value.  */
+#define RTLOCKVAL_SUB_CLASS_NONE        UINT32_C(0)
+/** Any order is allowed within the class. */
+#define RTLOCKVAL_SUB_CLASS_ANY         UINT32_C(1)
+/** The first user value. */
+#define RTLOCKVAL_SUB_CLASS_USER        UINT32_C(16)
+/** @} */
+
 
 #ifdef __cplusplus
 /**
