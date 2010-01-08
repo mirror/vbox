@@ -1496,7 +1496,8 @@ typedef struct RTLOCKVALSRCPOS const   *PCRTLOCKVALSRCPOS;
 
 /** @name   Special sub-class values.
  * The range 16..UINT32_MAX is available to the user, the range 0..15 is
- * reserved for the lock validator.
+ * reserved for the lock validator.  In the user range the locks can only be
+ * taking in ascending order.
  * @{ */
 /** Not allowed to be taken with any other locks in the same class.
   * This is the recommended value.  */

@@ -139,8 +139,8 @@ typedef struct RTLOCKVALCLASSINT
     bool                    fAutodidact;
     /** Whether to allow recursion. */
     bool                    fRecursionOk;
-    /** Reserved. */
-    bool                    fReserved;
+    /** Strict release order. */
+    bool                    fStrictReleaseOrder;
     /** Whether this class is in the tree. */
     bool                    fInTree;
     /** The minimum wait interval for which we do deadlock detection
@@ -371,6 +371,21 @@ static void rtLockValComplain(RT_SRC_POS_DECL, const char *pszWhat, ...)
 
 
 /**
+ * Describes the class.
+ *
+ * @param   pszPrefix           Message prefix.
+ * @param   pClass              The class to complain about.
+ * @param   uSubClass           My sub-class.
+ * @param   fVerbose            Verbose description including relations to other
+ *                              classes.
+ */
+static void rtLockValComplainAboutClass(const char *pszPrefix, RTLOCKVALCLASSINT *pClass, uint32_t uSubClass, bool fVerbose)
+{
+
+}
+
+
+/**
  * Helper for rtLockValComplainAboutLock.
  */
 DECL_FORCE_INLINE(void) rtLockValComplainAboutLockHlp(const char *pszPrefix, PRTLOCKVALRECUNION pRec, const char *pszSuffix,
@@ -496,8 +511,11 @@ static void rtLockValComplainAboutLock(const char *pszPrefix, PRTLOCKVALRECUNION
  * @param   cchIndent           The indentation in chars.
  * @param   cMinFrames          The minimum number of frames to consider
  *                              dumping.
+ * @param   pHighightRec        Record that should be marked specially in the
+ *                              dump.
  */
-static void rtLockValComplainAboutLockStack(PRTTHREADINT pThread, unsigned cchIndent, uint32_t cMinFrames)
+static void rtLockValComplainAboutLockStack(PRTTHREADINT pThread, unsigned cchIndent, uint32_t cMinFrames,
+                                            PRTLOCKVALRECUNION pHighightRec)
 {
     if (    VALID_PTR(pThread)
         &&  !ASMAtomicUoReadBool(&g_fLockValidatorQuiet)
@@ -514,7 +532,7 @@ static void rtLockValComplainAboutLockStack(PRTTHREADINT pThread, unsigned cchIn
             {
                 char szPrefix[80];
                 RTStrPrintf(szPrefix, sizeof(szPrefix), "%*s#%02u: ", cchIndent, "", i);
-                rtLockValComplainAboutLock(szPrefix, pCur, "\n");
+                rtLockValComplainAboutLock(szPrefix, pCur, pHighightRec != pCur ? "\n" : " (*)\n");
                 switch (pCur->Core.u32Magic)
                 {
                     case RTLOCKVALRECEXCL_MAGIC:    pCur = rtLockValidatorReadRecUnionPtr(&pCur->Excl.pDown);      break;
@@ -551,7 +569,7 @@ static void rtLockValComplainFirst(const char *pszWhat, PCRTLOCKVALSRCPOS pSrcPo
         else
             RTAssertMsg2Weak("%s  [thrd=%s]\n", pszWhat, VALID_PTR(pThreadSelf) ? pThreadSelf->szName : "<NIL>");
         rtLockValComplainAboutLock("Lock: ", pRec, "\n");
-        rtLockValComplainAboutLockStack(pThreadSelf, 0, 1);
+        rtLockValComplainAboutLockStack(pThreadSelf, 0, 1, pRec);
     }
 }
 
@@ -803,7 +821,7 @@ DECLHIDDEN(void) rtLockValidatorDeletePerThread(RTLOCKVALPERTHREAD *pPerThread)
 
 
 RTDECL(int) RTLockValidatorClassCreateEx(PRTLOCKVALCLASS phClass, PCRTLOCKVALSRCPOS pSrcPos,
-                                         bool fAutodidact, bool fRecursionOk,
+                                         bool fAutodidact, bool fRecursionOk, bool fStrictReleaseOrder,
                                          RTMSINTERVAL cMsMinDeadlock, RTMSINTERVAL cMsMinOrder)
 {
     Assert(cMsMinDeadlock >= 1);
@@ -825,7 +843,7 @@ RTDECL(int) RTLockValidatorClassCreateEx(PRTLOCKVALCLASS phClass, PCRTLOCKVALSRC
     pThis->cRefs                = 1;
     pThis->fAutodidact          = fAutodidact;
     pThis->fRecursionOk         = fRecursionOk;
-    pThis->fReserved            = false;
+    pThis->fStrictReleaseOrder  = fStrictReleaseOrder;
     pThis->fInTree              = false;
     pThis->cMsMinDeadlock       = cMsMinDeadlock;
     pThis->cMsMinOrder          = cMsMinOrder;
@@ -859,7 +877,7 @@ RTDECL(int) RTLockValidatorClassCreate(PRTLOCKVALCLASS phClass, bool fAutodidact
 {
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_POS_NO_ID();
     return RTLockValidatorClassCreateEx(phClass, &SrcPos,
-                                        fAutodidact, true /*fRecursionOk*/,
+                                        fAutodidact, true /*fRecursionOk*/, false /*fStrictReleaseOrder*/,
                                         1 /*cMsMinDeadlock*/, 1 /*cMsMinOrder*/);
 }
 
@@ -979,7 +997,7 @@ RTDECL(RTLOCKVALCLASS) RTLockValidatorClassForSrcPos(RT_SRC_POS_DECL)
          * Create a new class and insert it into the tree.
          */
         int rc = RTLockValidatorClassCreateEx(&hClass, &SrcPos,
-                                              true /*fAutodidact*/, true /*fRecursionOk*/,
+                                              true /*fAutodidact*/, true /*fRecursionOk*/, false /*fStrictReleaseOrder*/,
                                               1 /*cMsMinDeadlock*/, 1 /*cMsMinOrder*/);
         if (RT_SUCCESS(rc))
         {
@@ -1094,8 +1112,10 @@ DECL_FORCE_INLINE(bool) rtLockValidatorClassIsPriorClass(RTLOCKVALCLASSINT *pCla
  * @param   pPriorClass         The class to add.
  * @param   fAutodidacticism    Whether we're teaching ourselfs (true) or
  *                              somebody is teaching us via the API (false).
+ * @param   pSrcPos             Where this rule was added (optional).
  */
-static int rtLockValidatorClassAddPriorClass(RTLOCKVALCLASSINT *pClass, RTLOCKVALCLASSINT *pPriorClass, bool fAutodidacticism)
+static int rtLockValidatorClassAddPriorClass(RTLOCKVALCLASSINT *pClass, RTLOCKVALCLASSINT *pPriorClass,
+                                             bool fAutodidacticism, PCRTLOCKVALSRCPOS pSrcPos)
 {
     if (!RTCritSectIsInitialized(&g_LockValClassTeachCS))
         rtLockValidatorLazyInit();
@@ -1104,7 +1124,7 @@ static int rtLockValidatorClassAddPriorClass(RTLOCKVALCLASSINT *pClass, RTLOCKVA
     /*
      * Check that there are no conflict (no assert since we might race each other).
      */
-    int rc = VERR_INTERNAL_ERROR_5;
+    int rc = VERR_SEM_LV_INTERNAL_ERROR;
     if (!rtLockValidatorClassIsPriorClass(pPriorClass, pClass))
     {
         if (!rtLockValidatorClassIsPriorClass(pClass, pPriorClass))
@@ -1179,8 +1199,328 @@ RTDECL(int) RTLockValidatorClassAddPriorClass(RTLOCKVALCLASS hClass, RTLOCKVALCL
     AssertPtrReturn(pPriorClass, VERR_INVALID_HANDLE);
     AssertReturn(pPriorClass->u32Magic == RTLOCKVALCLASS_MAGIC, VERR_INVALID_HANDLE);
 
-    return rtLockValidatorClassAddPriorClass(pClass, pPriorClass, false /*fAutodidacticism*/);
+    return rtLockValidatorClassAddPriorClass(pClass, pPriorClass, false /*fAutodidacticism*/, NULL);
 }
+
+
+/**
+ * Unlinks all siblings.
+ *
+ * This is used during record deletion and assumes no races.
+ *
+ * @param   pCore               One of the siblings.
+ */
+static void rtLockValidatorUnlinkAllSiblings(PRTLOCKVALRECCORE pCore)
+{
+    /* ASSUMES sibling destruction doesn't involve any races and that all
+       related records are to be disposed off now.  */
+    PRTLOCKVALRECUNION pSibling = (PRTLOCKVALRECUNION)pCore;
+    while (pSibling)
+    {
+        PRTLOCKVALRECUNION volatile *ppCoreNext;
+        switch (pSibling->Core.u32Magic)
+        {
+            case RTLOCKVALRECEXCL_MAGIC:
+            case RTLOCKVALRECEXCL_MAGIC_DEAD:
+                ppCoreNext = &pSibling->Excl.pSibling;
+                break;
+
+            case RTLOCKVALRECSHRD_MAGIC:
+            case RTLOCKVALRECSHRD_MAGIC_DEAD:
+                ppCoreNext = &pSibling->Shared.pSibling;
+                break;
+
+            default:
+                AssertFailed();
+                ppCoreNext = NULL;
+                break;
+        }
+        if (RT_UNLIKELY(ppCoreNext))
+            break;
+        pSibling = (PRTLOCKVALRECUNION)ASMAtomicXchgPtr((void * volatile *)ppCoreNext, NULL);
+    }
+}
+
+
+RTDECL(int) RTLockValidatorRecMakeSiblings(PRTLOCKVALRECCORE pRec1, PRTLOCKVALRECCORE pRec2)
+{
+    /*
+     * Validate input.
+     */
+    PRTLOCKVALRECUNION p1 = (PRTLOCKVALRECUNION)pRec1;
+    PRTLOCKVALRECUNION p2 = (PRTLOCKVALRECUNION)pRec2;
+
+    AssertPtrReturn(p1, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(   p1->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC
+                 || p1->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC
+                 , VERR_SEM_LV_INVALID_PARAMETER);
+
+    AssertPtrReturn(p2, VERR_SEM_LV_INVALID_PARAMETER);
+    AssertReturn(   p2->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC
+                 || p2->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC
+                 , VERR_SEM_LV_INVALID_PARAMETER);
+
+    /*
+     * Link them (circular list).
+     */
+    if (    p1->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC
+        &&  p2->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC)
+    {
+        p1->Excl.pSibling   = p2;
+        p2->Shared.pSibling = p1;
+    }
+    else if (   p1->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC
+             && p2->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC)
+    {
+        p1->Shared.pSibling = p2;
+        p2->Excl.pSibling   = p1;
+    }
+    else
+        AssertFailedReturn(VERR_SEM_LV_INVALID_PARAMETER); /* unsupported mix */
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets the lock name for the given record.
+ *
+ * @returns Read-only lock name.
+ * @param   pRec                The lock record.
+ */
+DECL_FORCE_INLINE(const char *) rtLockValidatorRecName(PRTLOCKVALRECUNION pRec)
+{
+    switch (pRec->Core.u32Magic)
+    {
+        case RTLOCKVALRECEXCL_MAGIC:
+            return pRec->Excl.pszName;
+        case RTLOCKVALRECSHRD_MAGIC:
+            return pRec->Shared.pszName;
+        case RTLOCKVALRECSHRDOWN_MAGIC:
+            return pRec->ShrdOwner.pSharedRec ? pRec->ShrdOwner.pSharedRec->pszName : "orphaned";
+        case RTLOCKVALRECNEST_MAGIC:
+            pRec = rtLockValidatorReadRecUnionPtr(&pRec->Nest.pRec);
+            if (VALID_PTR(pRec))
+            {
+                switch (pRec->Core.u32Magic)
+                {
+                    case RTLOCKVALRECEXCL_MAGIC:
+                        return pRec->Excl.pszName;
+                    case RTLOCKVALRECSHRD_MAGIC:
+                        return pRec->Shared.pszName;
+                    case RTLOCKVALRECSHRDOWN_MAGIC:
+                        return pRec->ShrdOwner.pSharedRec ? pRec->ShrdOwner.pSharedRec->pszName : "orphaned";
+                    default:
+                        return "unknown-nested";
+                }
+            }
+            return "orphaned-nested";
+        default:
+            return "unknown";
+    }
+}
+
+
+/**
+ * Gets the class for this locking record.
+ *
+ * @returns Pointer to the class or NIL_RTLOCKVALCLASS.
+ * @param   pRec                The lock validator record.
+ */
+DECLINLINE(RTLOCKVALCLASSINT *) rtLockValidatorRecGetClass(PRTLOCKVALRECUNION pRec)
+{
+    switch (pRec->Core.u32Magic)
+    {
+        case RTLOCKVALRECEXCL_MAGIC:
+            return pRec->Excl.hClass;
+
+        case RTLOCKVALRECSHRD_MAGIC:
+            return pRec->Shared.hClass;
+
+        case RTLOCKVALRECSHRDOWN_MAGIC:
+        {
+            PRTLOCKVALRECSHRD pSharedRec = pRec->ShrdOwner.pSharedRec;
+            if (RT_LIKELY(   VALID_PTR(pSharedRec)
+                          && pSharedRec->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC))
+                return pSharedRec->hClass;
+            return NIL_RTLOCKVALCLASS;
+        }
+
+        case RTLOCKVALRECNEST_MAGIC:
+        {
+            PRTLOCKVALRECUNION pRealRec = pRec->Nest.pRec;
+            if (VALID_PTR(pRealRec))
+            {
+                switch (pRealRec->Core.u32Magic)
+                {
+                    case RTLOCKVALRECEXCL_MAGIC:
+                        return pRealRec->Excl.hClass;
+
+                    case RTLOCKVALRECSHRDOWN_MAGIC:
+                    {
+                        PRTLOCKVALRECSHRD pSharedRec = pRealRec->ShrdOwner.pSharedRec;
+                        if (RT_LIKELY(   VALID_PTR(pSharedRec)
+                                      && pSharedRec->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC))
+                            return pSharedRec->hClass;
+                        break;
+                    }
+
+                    default:
+                        AssertMsgFailed(("%p %p %#x\n", pRec, pRealRec, pRealRec->Core.u32Magic));
+                        break;
+                }
+            }
+            return NIL_RTLOCKVALCLASS;
+        }
+
+        default:
+            AssertMsgFailed(("%#x\n", pRec->Core.u32Magic));
+            return NIL_RTLOCKVALCLASS;
+    }
+}
+
+
+/**
+ * Gets the class for this locking record and the pointer to the one below it in
+ * the stack.
+ *
+ * @returns Pointer to the class or NIL_RTLOCKVALCLASS.
+ * @param   pRec                The lock validator record.
+ * @param   puSubClass          Where to return the sub-class.
+ * @param   ppDown              Where to return the pointer to the record below.
+ */
+DECL_FORCE_INLINE(RTLOCKVALCLASSINT *)
+rtLockValidatorRecGetClassesAndDown(PRTLOCKVALRECUNION pRec, uint32_t *puSubClass, PRTLOCKVALRECUNION *ppDown)
+{
+    switch (pRec->Core.u32Magic)
+    {
+        case RTLOCKVALRECEXCL_MAGIC:
+            *ppDown = pRec->Excl.pDown;
+            *puSubClass = pRec->Excl.uSubClass;
+            return pRec->Excl.hClass;
+
+        case RTLOCKVALRECSHRD_MAGIC:
+            *ppDown = NULL;
+            *puSubClass = pRec->Shared.uSubClass;
+            return pRec->Shared.hClass;
+
+        case RTLOCKVALRECSHRDOWN_MAGIC:
+        {
+            *ppDown = pRec->ShrdOwner.pDown;
+
+            PRTLOCKVALRECSHRD pSharedRec = pRec->ShrdOwner.pSharedRec;
+            if (RT_LIKELY(   VALID_PTR(pSharedRec)
+                          && pSharedRec->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC))
+            {
+                *puSubClass = pSharedRec->uSubClass;
+                return pSharedRec->hClass;
+            }
+            *puSubClass = RTLOCKVAL_SUB_CLASS_NONE;
+            return NIL_RTLOCKVALCLASS;
+        }
+
+        case RTLOCKVALRECNEST_MAGIC:
+        {
+            *ppDown = pRec->Nest.pDown;
+
+            PRTLOCKVALRECUNION pRealRec = pRec->Nest.pRec;
+            if (VALID_PTR(pRealRec))
+            {
+                switch (pRealRec->Core.u32Magic)
+                {
+                    case RTLOCKVALRECEXCL_MAGIC:
+                        *puSubClass = pRealRec->Excl.uSubClass;
+                        return pRealRec->Excl.hClass;
+
+                    case RTLOCKVALRECSHRDOWN_MAGIC:
+                    {
+                        PRTLOCKVALRECSHRD pSharedRec = pRealRec->ShrdOwner.pSharedRec;
+                        if (RT_LIKELY(   VALID_PTR(pSharedRec)
+                                      && pSharedRec->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC))
+                        {
+                            *puSubClass = pSharedRec->uSubClass;
+                            return pSharedRec->hClass;
+                        }
+                        break;
+                    }
+
+                    default:
+                        AssertMsgFailed(("%p %p %#x\n", pRec, pRealRec, pRealRec->Core.u32Magic));
+                        break;
+                }
+            }
+            *puSubClass = RTLOCKVAL_SUB_CLASS_NONE;
+            return NIL_RTLOCKVALCLASS;
+        }
+
+        default:
+            AssertMsgFailed(("%#x\n", pRec->Core.u32Magic));
+            *ppDown = NULL;
+            *puSubClass = RTLOCKVAL_SUB_CLASS_NONE;
+            return NIL_RTLOCKVALCLASS;
+    }
+}
+
+
+/**
+ * Gets the sub-class for a lock record.
+ *
+ * @returns the sub-class.
+ * @param   pRec                The lock validator record.
+ */
+DECLINLINE(uint32_t) rtLockValidatorRecGetSubClass(PRTLOCKVALRECUNION pRec)
+{
+    switch (pRec->Core.u32Magic)
+    {
+        case RTLOCKVALRECEXCL_MAGIC:
+            return pRec->Excl.uSubClass;
+
+        case RTLOCKVALRECSHRD_MAGIC:
+            return pRec->Shared.uSubClass;
+
+        case RTLOCKVALRECSHRDOWN_MAGIC:
+        {
+            PRTLOCKVALRECSHRD pSharedRec = pRec->ShrdOwner.pSharedRec;
+            if (RT_LIKELY(   VALID_PTR(pSharedRec)
+                          && pSharedRec->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC))
+                return pSharedRec->uSubClass;
+            return RTLOCKVAL_SUB_CLASS_NONE;
+        }
+
+        case RTLOCKVALRECNEST_MAGIC:
+        {
+            PRTLOCKVALRECUNION pRealRec = pRec->Nest.pRec;
+            if (VALID_PTR(pRealRec))
+            {
+                switch (pRealRec->Core.u32Magic)
+                {
+                    case RTLOCKVALRECEXCL_MAGIC:
+                        return pRec->Excl.uSubClass;
+
+                    case RTLOCKVALRECSHRDOWN_MAGIC:
+                    {
+                        PRTLOCKVALRECSHRD pSharedRec = pRealRec->ShrdOwner.pSharedRec;
+                        if (RT_LIKELY(   VALID_PTR(pSharedRec)
+                                      && pSharedRec->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC))
+                            return pSharedRec->uSubClass;
+                        break;
+                    }
+
+                    default:
+                        AssertMsgFailed(("%p %p %#x\n", pRec, pRealRec, pRealRec->Core.u32Magic));
+                        break;
+                }
+            }
+            return RTLOCKVAL_SUB_CLASS_NONE;
+        }
+
+        default:
+            AssertMsgFailed(("%#x\n", pRec->Core.u32Magic));
+            return RTLOCKVAL_SUB_CLASS_NONE;
+    }
+}
+
+
 
 
 /**
@@ -1523,19 +1863,294 @@ static void rtLockValidatorStackPopRecursion(PRTTHREADINT pThreadSelf, PRTLOCKVA
 }
 
 
-static int rtLockValidatorCheckOrderOnRequest(RTLOCKVALCLASS hClass, uint32_t uSubClass, RTTHREAD hThreadSelf,
-                                              PRTLOCKVALRECUNION pRec, PCRTLOCKVALSRCPOS pSrcPos)
+/**
+ * Helper for rtLockValidatorStackCheckLockingOrder that does the bitching and
+ * returns VERR_SEM_LV_WRONG_ORDER.
+ */
+static int rtLockValidatorStackWrongOrder(const char *pszWhat, PCRTLOCKVALSRCPOS pSrcPos, PRTTHREADINT pThreadSelf,
+                                          PRTLOCKVALRECUNION pRec1, PRTLOCKVALRECUNION pRec2,
+                                          RTLOCKVALCLASSINT *pClass1, RTLOCKVALCLASSINT *pClass2)
+
+
 {
-    /** @todo Lock Order Validation: request */
+    rtLockValComplainFirst(pszWhat, pSrcPos, pThreadSelf, pRec1);
+    rtLockValComplainAboutLock("Other lock:   ", pRec2, "\n");
+    rtLockValComplainAboutClass("My class:    ", pClass1, rtLockValidatorRecGetSubClass(pRec1), true /*fVerbose*/);
+    rtLockValComplainAboutClass("Other class: ", pClass2, rtLockValidatorRecGetSubClass(pRec2), true /*fVerbose*/);
+    rtLockValComplainAboutLockStack(pThreadSelf, 0, 0, pRec2);
+    return VERR_SEM_LV_WRONG_ORDER;
+}
+
+
+/**
+ * Checks if the sub-class order is ok or not.
+ *
+ * Used to deal with two locks from the same class.
+ *
+ * @returns true if ok, false if not.
+ * @param   uSubClass1          The sub-class of the lock that is being
+ *                              considered.
+ * @param   uSubClass2          The sub-class of the lock that is already being
+ *                              held.
+ */
+DECL_FORCE_INLINE(bool) rtLockValidatorIsSubClassOrderOk(uint32_t uSubClass1, uint32_t uSubClass2)
+{
+    if (uSubClass1 > uSubClass2)
+    {
+        /* NONE kills ANY. */
+        if (uSubClass2 == RTLOCKVAL_SUB_CLASS_NONE)
+            return false;
+        return true;
+    }
+
+    /* ANY counters all USER values. (uSubClass1 == NONE only if they are equal) */
+    AssertCompile(RTLOCKVAL_SUB_CLASS_ANY > RTLOCKVAL_SUB_CLASS_NONE);
+    if (uSubClass1 == RTLOCKVAL_SUB_CLASS_ANY)
+        return true;
+    return false;
+}
+
+
+/**
+ * Checks if the class and sub-class lock order is ok.
+ *
+ * @returns true if ok, false if not.
+ * @param   pClass1             The class of the lock that is being considered.
+ * @param   uSubClass1          The sub-class that goes with @a pClass1.
+ * @param   pClass2             The class of the lock that is already being
+ *                              held.
+ * @param   uSubClass2          The sub-class that goes with @a pClass2.
+ */
+DECL_FORCE_INLINE(bool) rtLockValidatorIsClassOrderOk(RTLOCKVALCLASSINT *pClass1, uint32_t uSubClass1,
+                                                      RTLOCKVALCLASSINT *pClass2, uint32_t uSubClass2)
+{
+    if (pClass1 == pClass2)
+        return rtLockValidatorIsSubClassOrderOk(uSubClass1, uSubClass2);
+    return rtLockValidatorClassIsPriorClass(pClass1, pClass2);
+}
+
+
+/**
+ * Checks the locking order, part two.
+ *
+ * @returns VINF_SUCCESS, VERR_SEM_LV_WRONG_ORDER or VERR_SEM_LV_INTERNAL_ERROR.
+ * @param   pClass              The lock class.
+ * @param   uSubClass           The lock sub-class.
+ * @param   pThreadSelf         The current thread.
+ * @param   pRec                The lock record.
+ * @param   pSrcPos             The source position of the locking operation.
+ */
+static int rtLockValidatorStackCheckLockingOrder2(RTLOCKVALCLASSINT * const pClass, uint32_t const uSubClass,
+                                                  PRTTHREADINT pThreadSelf, PRTLOCKVALRECUNION const pRec,
+                                                  PCRTLOCKVALSRCPOS const   pSrcPos,
+                                                  RTLOCKVALCLASSINT * const pFirstBadClass,
+                                                  PRTLOCKVALRECUNION const  pFirstBadRec,
+                                                  PRTLOCKVALRECUNION const  pFirstBadDown)
+{
+    /*
+     * Something went wrong, pCur is pointing to where.
+     */
+    if (rtLockValidatorClassIsPriorClass(pFirstBadClass, pClass))
+        return rtLockValidatorStackWrongOrder("Wrong locking order!", pSrcPos, pThreadSelf,
+                                              pRec, pFirstBadRec, pClass, pFirstBadClass);
+    if (!pClass->fAutodidact)
+        return rtLockValidatorStackWrongOrder("Wrong locking order! (unknown)", pSrcPos, pThreadSelf,
+                                              pRec, pFirstBadRec, pClass, pFirstBadClass);
+
+    /*
+     * This class is an autodidact, so we have to check out the rest of the stack
+     * for direct violations.
+     */
+    uint32_t           cNewRules = 1;
+    PRTLOCKVALRECUNION pCur      = pFirstBadDown;
+    while (pCur)
+    {
+        AssertPtrReturn(pCur, VERR_SEM_LV_INTERNAL_ERROR);
+
+        uint32_t            uPriorSubClass;
+        PRTLOCKVALRECUNION  pDown;
+        RTLOCKVALCLASSINT  *pPriorClass = rtLockValidatorRecGetClassesAndDown(pCur, &uPriorSubClass, &pDown);
+        if (pPriorClass != NIL_RTLOCKVALCLASS)
+        {
+            AssertPtrReturn(pPriorClass, VERR_SEM_LV_INTERNAL_ERROR);
+            AssertReturn(pPriorClass->u32Magic == RTLOCKVALCLASS_MAGIC, VERR_SEM_LV_INTERNAL_ERROR);
+            if (!rtLockValidatorIsClassOrderOk(pClass, uSubClass, pPriorClass, uPriorSubClass))
+            {
+                if (   pClass == pPriorClass
+                    || rtLockValidatorClassIsPriorClass(pPriorClass, pClass))
+                    return rtLockValidatorStackWrongOrder("Wrong locking order! (2nd)", pSrcPos, pThreadSelf,
+                                                          pRec, pCur, pClass, pPriorClass);
+                cNewRules++;
+            }
+        }
+
+        pCur = pDown;
+        if (!pCur)
+            return VINF_SUCCESS;
+    }
+
+    if (cNewRules == 1)
+    {
+        /*
+         * Special case the simple operation, hoping that it will be a
+         * frequent case.
+         */
+        int rc = rtLockValidatorClassAddPriorClass(pClass, pFirstBadClass, true /*fAutodidacticism*/, pSrcPos);
+        if (rc == VERR_SEM_LV_WRONG_ORDER)
+            return rtLockValidatorStackWrongOrder("Wrong locking order! (race)", pSrcPos, pThreadSelf,
+                                                  pRec, pFirstBadRec, pClass, pFirstBadClass);
+        Assert(RT_SUCCESS(rc) || rc == VERR_NO_MEMORY);
+    }
+    else
+    {
+        /*
+         * We may be adding more than one rule, so we have to take the lock
+         * before starting to add the rules.  This means we have to check
+         * the state after taking it since we might be racing someone adding
+         * a conflicting rule.
+         */
+        if (!RTCritSectIsInitialized(&g_LockValClassTeachCS))
+            rtLockValidatorLazyInit();
+        int rcLock = RTCritSectEnter(&g_LockValClassTeachCS);
+
+        /* Check */
+        pCur = pFirstBadDown;
+        while (pCur)
+        {
+            uint32_t            uPriorSubClass;
+            PRTLOCKVALRECUNION  pDown;
+            RTLOCKVALCLASSINT  *pPriorClass = rtLockValidatorRecGetClassesAndDown(pCur, &uPriorSubClass, &pDown);
+            if (pPriorClass != NIL_RTLOCKVALCLASS)
+            {
+                if (!rtLockValidatorIsClassOrderOk(pClass, uSubClass, pPriorClass, uPriorSubClass))
+                {
+                    if (   pClass == pPriorClass
+                        || rtLockValidatorClassIsPriorClass(pPriorClass, pClass))
+                    {
+                        if (RT_SUCCESS(rcLock))
+                            RTCritSectLeave(&g_LockValClassTeachCS);
+                        return rtLockValidatorStackWrongOrder("Wrong locking order! (2nd)", pSrcPos, pThreadSelf,
+                                                              pRec, pCur, pClass, pPriorClass);
+                    }
+                }
+            }
+
+            pCur = pDown;
+        }
+
+        /* Iterate the stack yet again, adding new rules this time. */
+        pCur = pFirstBadDown;
+        while (pCur)
+        {
+            uint32_t            uPriorSubClass;
+            PRTLOCKVALRECUNION  pDown;
+            RTLOCKVALCLASSINT  *pPriorClass = rtLockValidatorRecGetClassesAndDown(pCur, &uPriorSubClass, &pDown);
+            if (pPriorClass != NIL_RTLOCKVALCLASS)
+            {
+                if (!rtLockValidatorIsClassOrderOk(pClass, uSubClass, pPriorClass, uPriorSubClass))
+                {
+                    Assert(   pClass != pPriorClass
+                           && !rtLockValidatorClassIsPriorClass(pPriorClass, pClass));
+                    int rc = rtLockValidatorClassAddPriorClass(pClass, pFirstBadClass, true /*fAutodidacticism*/, pSrcPos);
+                    if (RT_FAILURE(rc))
+                    {
+                        Assert(rc == VERR_NO_MEMORY);
+                        break;
+                    }
+                    Assert(rtLockValidatorClassIsPriorClass(pPriorClass, pClass));
+                }
+            }
+
+            pCur = pDown;
+        }
+
+        if (RT_SUCCESS(rcLock))
+            RTCritSectLeave(&g_LockValClassTeachCS);
+    }
+
     return VINF_SUCCESS;
 }
 
 
-static int rtLockValidatorCheckOrderOnRelease(RTLOCKVALCLASS hClass, uint32_t uSubClass, RTTHREAD hThreadSelf,
-                                              PRTLOCKVALRECUNION pRec)
+
+/**
+ * Checks the locking order.
+ *
+ * @returns VINF_SUCCESS, VERR_SEM_LV_WRONG_ORDER or VERR_SEM_LV_INTERNAL_ERROR.
+ * @param   pClass              The lock class.
+ * @param   uSubClass           The lock sub-class.
+ * @param   pThreadSelf         The current thread.
+ * @param   pRec                The lock record.
+ * @param   pSrcPos             The source position of the locking operation.
+ */
+static int rtLockValidatorStackCheckLockingOrder(RTLOCKVALCLASSINT * const pClass, uint32_t const uSubClass,
+                                                 PRTTHREADINT pThreadSelf, PRTLOCKVALRECUNION const pRec,
+                                                 PCRTLOCKVALSRCPOS pSrcPos)
 {
-    /** @todo Lock Order Validation: release, maybe */
-    return VINF_SUCCESS;
+    /*
+     * Some internal paranoia first.
+     */
+    AssertPtr(pClass);
+    Assert(pClass->u32Magic == RTLOCKVALCLASS_MAGIC);
+    AssertPtr(pThreadSelf);
+    Assert(pThreadSelf->u32Magic == RTTHREADINT_MAGIC);
+    AssertPtr(pRec);
+    AssertPtrNull(pSrcPos);
+
+    /*
+     * Walk the stack, delegate problems to a worker routine.
+     */
+    PRTLOCKVALRECUNION pCur = pThreadSelf->LockValidator.pStackTop;
+    if (!pCur)
+        return VINF_SUCCESS;
+
+    for (;;)
+    {
+        AssertPtrReturn(pCur, VERR_SEM_LV_INTERNAL_ERROR);
+
+        uint32_t            uPriorSubClass;
+        PRTLOCKVALRECUNION  pDown;
+        RTLOCKVALCLASSINT  *pPriorClass = rtLockValidatorRecGetClassesAndDown(pCur, &uPriorSubClass, &pDown);
+        if (pPriorClass != NIL_RTLOCKVALCLASS)
+        {
+            AssertPtrReturn(pPriorClass, VERR_SEM_LV_INTERNAL_ERROR);
+            AssertReturn(pPriorClass->u32Magic == RTLOCKVALCLASS_MAGIC, VERR_SEM_LV_INTERNAL_ERROR);
+            if (RT_UNLIKELY(!rtLockValidatorIsClassOrderOk(pClass, uSubClass, pPriorClass, uPriorSubClass)))
+                return rtLockValidatorStackCheckLockingOrder2(pClass, uSubClass, pThreadSelf, pRec, pSrcPos,
+                                                              pPriorClass, pCur, pDown);
+        }
+
+        pCur = pDown;
+        if (!pCur)
+            return VINF_SUCCESS;
+    }
+}
+
+
+/**
+ * Check that the lock record is the topmost one on the stack, complain and fail
+ * if it isn't.
+ *
+ * @returns VINF_SUCCESS, VERR_SEM_LV_WRONG_RELEASE_ORDER or
+ *          VERR_SEM_LV_INVALID_PARAMETER.
+ * @param   pThreadSelf         The current thread.
+ * @param   pRec                The record.
+ */
+static int rtLockValidatorStackCheckReleaseOrder(PRTTHREADINT pThreadSelf, PRTLOCKVALRECUNION pRec)
+{
+    AssertReturn(pThreadSelf != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
+    Assert(pThreadSelf == RTThreadSelf());
+
+    PRTLOCKVALRECUNION pTop = pThreadSelf->LockValidator.pStackTop;
+    if (RT_LIKELY(   pTop == pRec
+                  || (   pTop
+                      && pTop->Core.u32Magic == RTLOCKVALRECNEST_MAGIC
+                      && pTop->Nest.pRec == pRec)))
+        return VINF_SUCCESS;
+
+    rtLockValComplainFirst("Wrong release order!", NULL, pThreadSelf, pRec);
+    rtLockValComplainPanic();
+    return VERR_SEM_LV_WRONG_ORDER;
 }
 
 
@@ -1940,19 +2555,19 @@ static void rcLockValidatorDoDeadlockComplaining(PRTLOCKVALDDSTACK pStack, PRTLO
         {
             char szPrefix[24];
             RTStrPrintf(szPrefix, sizeof(szPrefix), "#%02u: ", i);
-            PRTLOCKVALRECSHRDOWN pShrdOwner = NULL;
+            PRTLOCKVALRECUNION pShrdOwner = NULL;
             if (pStack->a[i].pRec->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC)
-                pShrdOwner = pStack->a[i].pRec->Shared.papOwners[pStack->a[i].iEntry];
+                pShrdOwner = (PRTLOCKVALRECUNION)pStack->a[i].pRec->Shared.papOwners[pStack->a[i].iEntry];
             if (VALID_PTR(pShrdOwner) && pShrdOwner->Core.u32Magic == RTLOCKVALRECSHRDOWN_MAGIC)
             {
-                rtLockValComplainAboutLock(szPrefix, (PRTLOCKVALRECUNION)pShrdOwner, "\n");
-                rtLockValComplainAboutLockStack(pShrdOwner->hThread, 5, 2);
+                rtLockValComplainAboutLock(szPrefix, pShrdOwner, "\n");
+                rtLockValComplainAboutLockStack(pShrdOwner->ShrdOwner.hThread, 5, 2, pShrdOwner);
             }
             else
             {
                 rtLockValComplainAboutLock(szPrefix, pStack->a[i].pRec, "\n");
-                if (pStack->a[i].pRec->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC);
-                    rtLockValComplainAboutLockStack(pStack->a[i].pRec->Excl.hThread, 5, 2);
+                if (pStack->a[i].pRec->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC)
+                    rtLockValComplainAboutLockStack(pStack->a[i].pRec->Excl.hThread, 5, 2, pStack->a[i].pRec);
             }
         }
         rtLockValComplainMore("---- end of deadlock chain ----\n");
@@ -2003,124 +2618,6 @@ static int rtLockValidatorDeadlockDetection(PRTLOCKVALRECUNION pRec, PRTTHREADIN
 #else
     return VINF_SUCCESS;
 #endif
-}
-
-
-/**
- * Unlinks all siblings.
- *
- * This is used during record deletion and assumes no races.
- *
- * @param   pCore               One of the siblings.
- */
-static void rtLockValidatorUnlinkAllSiblings(PRTLOCKVALRECCORE pCore)
-{
-    /* ASSUMES sibling destruction doesn't involve any races and that all
-       related records are to be disposed off now.  */
-    PRTLOCKVALRECUNION pSibling = (PRTLOCKVALRECUNION)pCore;
-    while (pSibling)
-    {
-        PRTLOCKVALRECUNION volatile *ppCoreNext;
-        switch (pSibling->Core.u32Magic)
-        {
-            case RTLOCKVALRECEXCL_MAGIC:
-            case RTLOCKVALRECEXCL_MAGIC_DEAD:
-                ppCoreNext = &pSibling->Excl.pSibling;
-                break;
-
-            case RTLOCKVALRECSHRD_MAGIC:
-            case RTLOCKVALRECSHRD_MAGIC_DEAD:
-                ppCoreNext = &pSibling->Shared.pSibling;
-                break;
-
-            default:
-                AssertFailed();
-                ppCoreNext = NULL;
-                break;
-        }
-        if (RT_UNLIKELY(ppCoreNext))
-            break;
-        pSibling = (PRTLOCKVALRECUNION)ASMAtomicXchgPtr((void * volatile *)ppCoreNext, NULL);
-    }
-}
-
-
-RTDECL(int) RTLockValidatorRecMakeSiblings(PRTLOCKVALRECCORE pRec1, PRTLOCKVALRECCORE pRec2)
-{
-    /*
-     * Validate input.
-     */
-    PRTLOCKVALRECUNION p1 = (PRTLOCKVALRECUNION)pRec1;
-    PRTLOCKVALRECUNION p2 = (PRTLOCKVALRECUNION)pRec2;
-
-    AssertPtrReturn(p1, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(   p1->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC
-                 || p1->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC
-                 , VERR_SEM_LV_INVALID_PARAMETER);
-
-    AssertPtrReturn(p2, VERR_SEM_LV_INVALID_PARAMETER);
-    AssertReturn(   p2->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC
-                 || p2->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC
-                 , VERR_SEM_LV_INVALID_PARAMETER);
-
-    /*
-     * Link them (circular list).
-     */
-    if (    p1->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC
-        &&  p2->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC)
-    {
-        p1->Excl.pSibling   = p2;
-        p2->Shared.pSibling = p1;
-    }
-    else if (   p1->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC
-             && p2->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC)
-    {
-        p1->Shared.pSibling = p2;
-        p2->Excl.pSibling   = p1;
-    }
-    else
-        AssertFailedReturn(VERR_SEM_LV_INVALID_PARAMETER); /* unsupported mix */
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Gets the lock name for the given record.
- *
- * @returns Read-only lock name.
- * @param   pRec                The lock record.
- */
-DECL_FORCE_INLINE(const char *) rtLockValidatorRecName(PRTLOCKVALRECUNION pRec)
-{
-    switch (pRec->Core.u32Magic)
-    {
-        case RTLOCKVALRECEXCL_MAGIC:
-            return pRec->Excl.pszName;
-        case RTLOCKVALRECSHRD_MAGIC:
-            return pRec->Shared.pszName;
-        case RTLOCKVALRECSHRDOWN_MAGIC:
-            return pRec->ShrdOwner.pSharedRec ? pRec->ShrdOwner.pSharedRec->pszName : "orphaned";
-        case RTLOCKVALRECNEST_MAGIC:
-            pRec = rtLockValidatorReadRecUnionPtr(&pRec->Nest.pRec);
-            if (VALID_PTR(pRec))
-            {
-                switch (pRec->Core.u32Magic)
-                {
-                    case RTLOCKVALRECEXCL_MAGIC:
-                        return pRec->Excl.pszName;
-                    case RTLOCKVALRECSHRD_MAGIC:
-                        return pRec->Shared.pszName;
-                    case RTLOCKVALRECSHRDOWN_MAGIC:
-                        return pRec->ShrdOwner.pSharedRec ? pRec->ShrdOwner.pSharedRec->pszName : "orphaned";
-                    default:
-                        return "unknown-nested";
-                }
-            }
-            return "orphaned-nested";
-        default:
-            return "unknown";
-    }
 }
 
 
@@ -2204,6 +2701,7 @@ RTDECL(void) RTLockValidatorRecExclSetOwner(PRTLOCKVALRECEXCL pRec, RTTHREAD hTh
         hThreadSelf = RTThreadSelfAutoAdopt();
         AssertReturnVoid(hThreadSelf != NIL_RTTHREAD);
     }
+    AssertReturnVoid(hThreadSelf->u32Magic == RTTHREADINT_MAGIC);
     Assert(hThreadSelf == RTThreadSelf());
 
     ASMAtomicIncS32(&hThreadSelf->LockValidator.cWriteLocks);
@@ -2256,8 +2754,26 @@ RTDECL(int)  RTLockValidatorRecExclReleaseOwner(PRTLOCKVALRECEXCL pRec, bool fFi
 {
     PRTLOCKVALRECUNION pRecU = (PRTLOCKVALRECUNION)pRec;
     AssertReturn(pRecU->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
-    if (pRecU->Excl.fEnabled)
-        rtLockValidatorRecExclReleaseOwnerUnchecked(pRecU, fFinalRecursion);
+    if (!pRecU->Excl.fEnabled)
+        return VINF_SUCCESS;
+
+    /*
+     * Check the release order.
+     */
+    if (   pRecU->Excl.hClass != NIL_RTLOCKVALCLASS
+        && pRecU->Excl.hClass->fStrictReleaseOrder
+        && pRecU->Excl.hClass->cMsMinOrder != RT_INDEFINITE_WAIT
+       )
+    {
+        int rc = rtLockValidatorStackCheckReleaseOrder(pRecU->Excl.hThread, pRecU);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /*
+     * Join paths with RTLockValidatorRecExclReleaseOwnerUnchecked.
+     */
+    rtLockValidatorRecExclReleaseOwnerUnchecked(pRecU, fFinalRecursion);
     return VINF_SUCCESS;
 }
 
@@ -2365,13 +2881,21 @@ RTDECL(int) RTLockValidatorRecExclCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD hT
 {
     PRTLOCKVALRECUNION pRecU = (PRTLOCKVALRECUNION)pRec;
     AssertReturn(pRecU->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
-    if (    !pRecU->Excl.fEnabled
-        ||  pRecU->Excl.hClass == NIL_RTLOCKVALCLASS
-        ||  pRecU->Excl.hClass->cMsMinOrder == RT_INDEFINITE_WAIT
-        ||  pRecU->Excl.hClass->cMsMinOrder > cMillies)
+    if (   !pRecU->Excl.fEnabled
+        || pRecU->Excl.hClass == NIL_RTLOCKVALCLASS
+        || pRecU->Excl.hClass->cMsMinOrder == RT_INDEFINITE_WAIT
+        || pRecU->Excl.hClass->cMsMinOrder > cMillies)
         return VINF_SUCCESS;
 
-    return rtLockValidatorCheckOrderOnRequest(pRecU->Excl.hClass, pRecU->Excl.uSubClass, hThreadSelf, pRecU, pSrcPos);
+    if (hThreadSelf == NIL_RTTHREAD)
+    {
+        hThreadSelf = RTThreadSelfAutoAdopt();
+        AssertReturn(hThreadSelf != NIL_RTTHREAD, VERR_SEM_LV_INTERNAL_ERROR);
+    }
+    AssertReturn(hThreadSelf->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    Assert(hThreadSelf == RTThreadSelf());
+
+    return rtLockValidatorStackCheckLockingOrder(pRecU->Excl.hClass, pRecU->Excl.uSubClass, hThreadSelf, pRecU, pSrcPos);
 }
 
 
@@ -2567,7 +3091,8 @@ rtLockValidatorRecSharedFindOwner(PRTLOCKVALRECSHRD pShared, RTTHREAD hThread, u
 }
 
 
-RTDECL(int) RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf, PCRTLOCKVALSRCPOS pSrcPos, RTMSINTERVAL cMillies)
+RTDECL(int) RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf,
+                                               PCRTLOCKVALSRCPOS pSrcPos, RTMSINTERVAL cMillies)
 {
     PRTLOCKVALRECUNION pRecU = (PRTLOCKVALRECUNION)pRec;
     AssertReturn(pRecU->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
@@ -2577,9 +3102,16 @@ RTDECL(int) RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD 
         || pRecU->Shared.hClass->cMsMinOrder > cMillies
         )
         return VINF_SUCCESS;
-    Assert(hThreadSelf == NIL_RTTHREAD || hThreadSelf == RTThreadSelf());
 
-    return rtLockValidatorCheckOrderOnRequest(pRecU->Shared.hClass, pRecU->Shared.uSubClass, hThreadSelf, pRecU, pSrcPos);
+    if (hThreadSelf == NIL_RTTHREAD)
+    {
+        hThreadSelf = RTThreadSelfAutoAdopt();
+        AssertReturn(hThreadSelf != NIL_RTTHREAD, VERR_SEM_LV_INTERNAL_ERROR);
+    }
+    AssertReturn(hThreadSelf->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
+    Assert(hThreadSelf == RTThreadSelf());
+
+    return rtLockValidatorStackCheckLockingOrder(pRecU->Shared.hClass, pRecU->Shared.uSubClass, hThreadSelf, pRecU, pSrcPos);
 }
 
 
@@ -2987,7 +3519,6 @@ RTDECL(void) RTLockValidatorRecSharedAddOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD h
         hThread = RTThreadSelfAutoAdopt();
         AssertReturnVoid(hThread != NIL_RTTHREAD);
     }
-    AssertReturnVoid(hThread != NIL_RTTHREAD);
     AssertReturnVoid(hThread->u32Magic == RTTHREADINT_MAGIC);
 
     /*
@@ -3064,9 +3595,10 @@ RTDECL(int) RTLockValidatorRecSharedCheckAndRelease(PRTLOCKVALRECSHRD pRec, RTTH
     if (hThreadSelf == NIL_RTTHREAD)
     {
         hThreadSelf = RTThreadSelfAutoAdopt();
-        AssertReturn(hThreadSelf != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
+        AssertReturn(hThreadSelf != NIL_RTTHREAD, VERR_SEM_LV_INTERNAL_ERROR);
     }
     Assert(hThreadSelf == RTThreadSelf());
+    AssertReturn(hThreadSelf->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
 
     /*
      * Locate the entry for this thread in the table.
@@ -3084,10 +3616,11 @@ RTDECL(int) RTLockValidatorRecSharedCheckAndRelease(PRTLOCKVALRECSHRD pRec, RTTH
      * Check the release order.
      */
     if (   pRec->hClass != NIL_RTLOCKVALCLASS
-        && pRec->hClass->cMsMinOrder != RT_INDEFINITE_WAIT)
+        && pRec->hClass->fStrictReleaseOrder
+        && pRec->hClass->cMsMinOrder != RT_INDEFINITE_WAIT
+       )
     {
-        int rc = rtLockValidatorCheckOrderOnRelease(pRec->hClass, pRec->uSubClass,
-                                                    hThreadSelf, (PRTLOCKVALRECUNION)pEntry);
+        int rc = rtLockValidatorStackCheckReleaseOrder(hThreadSelf, (PRTLOCKVALRECUNION)pEntry);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -3117,9 +3650,10 @@ RTDECL(int) RTLockValidatorRecSharedCheckSignaller(PRTLOCKVALRECSHRD pRec, RTTHR
     if (hThreadSelf == NIL_RTTHREAD)
     {
         hThreadSelf = RTThreadSelfAutoAdopt();
-        AssertReturn(hThreadSelf != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
+        AssertReturn(hThreadSelf != NIL_RTTHREAD, VERR_SEM_LV_INTERNAL_ERROR);
     }
     Assert(hThreadSelf == RTThreadSelf());
+    AssertReturn(hThreadSelf->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
 
     /*
      * Locate the entry for this thread in the table.

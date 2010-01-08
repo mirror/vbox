@@ -729,6 +729,7 @@ RTDECL(bool) RTLockValidatorIsBlockedThreadInValidator(RTTHREAD hThread);
  *                              itself new locking order rules (true), or if the
  *                              user will teach it all it needs to know (false).
  * @param   fRecursionOk        Whether to allow lock recursion or not.
+ * @param   fStrictReleaseOrder Enforce strict lock release order or not.
  * @param   cMsMinDeadlock      Used to raise the sleep interval at which
  *                              deadlock detection kicks in.  Minimum is 1 ms,
  *                              while RT_INDEFINITE_WAIT will disable it.
@@ -740,7 +741,7 @@ RTDECL(bool) RTLockValidatorIsBlockedThreadInValidator(RTTHREAD hThread);
  *          RTLockValidatorClassSet* methods.
  */
 RTDECL(int) RTLockValidatorClassCreateEx(PRTLOCKVALCLASS phClass, PCRTLOCKVALSRCPOS pSrcPos,
-                                         bool fAutodidact, bool fRecursionOk,
+                                         bool fAutodidact, bool fRecursionOk, bool fStrictReleaseOrder,
                                          RTMSINTERVAL cMsMinDeadlock, RTMSINTERVAL cMsMinOrder);
 
 /**
