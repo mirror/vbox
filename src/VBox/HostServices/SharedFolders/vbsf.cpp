@@ -497,7 +497,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
             }
 
             /** @todo don't check when creating files or directories; waste of time */
-            rc = RTPathQueryInfo(pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
+            rc = RTPathQueryInfoEx(pszFullPath, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
             if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
             {
                 uint32_t len = (uint32_t)strlen(pszFullPath);
@@ -511,7 +511,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
                     if (*src == RTPATH_DELIMITER)
                     {
                         *src = 0;
-                        rc = RTPathQueryInfo (pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
+                        rc = RTPathQueryInfoEx(pszFullPath, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
                         *src = RTPATH_DELIMITER;
                         if (rc == VINF_SUCCESS)
                         {
@@ -547,7 +547,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
                         {
                             fEndOfString = false;
                             *end = 0;
-                            rc = RTPathQueryInfo(src, &info, RTFSOBJATTRADD_NOTHING);
+                            rc = RTPathQueryInfoEx(src, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
                             Assert(rc == VINF_SUCCESS || rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND);
                         }
                         else
@@ -887,7 +887,7 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
             RTFSOBJINFO info;
 
             /** @todo Possible race left here. */
-            if (RT_SUCCESS(RTPathQueryInfo (pszPath, &info, RTFSOBJATTRADD_NOTHING)))
+            if (RT_SUCCESS(RTPathQueryInfoEx(pszPath, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK)))
             {
 #ifdef RT_OS_WINDOWS
                 info.Attr.fMode |= 0111;
@@ -1160,7 +1160,7 @@ static int vbsfLookupFile(char *pszPath, SHFLCREATEPARMS *pParms)
     RTFSOBJINFO info;
     int rc;
 
-    rc = RTPathQueryInfo (pszPath, &info, RTFSOBJATTRADD_NOTHING);
+    rc = RTPathQueryInfoEx(pszPath, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
     LogFlow(("SHFL_CF_LOOKUP\n"));
     /* Client just wants to know if the object exists. */
     switch (rc)
@@ -1252,8 +1252,8 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
             /* Query path information. */
             RTFSOBJINFO info;
 
-            rc = RTPathQueryInfo (pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
-            LogFlow(("RTPathQueryInfo returned %Rrc\n", rc));
+            rc = RTPathQueryInfoEx(pszFullPath, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+            LogFlow(("RTPathQueryInfoEx returned %Rrc\n", rc));
 
             if (RT_SUCCESS(rc))
             {
