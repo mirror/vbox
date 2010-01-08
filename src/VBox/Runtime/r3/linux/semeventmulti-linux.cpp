@@ -294,7 +294,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
             if (pThis->fEverHadSignallers)
             {
                 int rc9 = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                                cMillie, RTTHREADSTATE_EVENT_MULTI, true);
+                                                                cMillies, RTTHREADSTATE_EVENT_MULTI, true);
                 if (RT_FAILURE(rc9))
                     return rc9;
             }
