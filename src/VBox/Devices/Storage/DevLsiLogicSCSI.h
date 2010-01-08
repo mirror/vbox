@@ -1327,6 +1327,26 @@ typedef struct MptConfigurationPageManufacturing6
 AssertCompileSize(MptConfigurationPageManufacturing6, 4);
 
 /**
+ * Manufacutring page 7 - PHY element.
+ */
+#pragma pack(1)
+typedef struct MptConfigurationPageManufacturing7PHY
+{
+    /** Pinout */
+    uint32_t                  u32Pinout;
+    /** Connector name */
+    uint8_t                   szConnector[16];
+    /** Location */
+    uint8_t                   u8Location;
+    /** reserved */
+    uint8_t                   u8Reserved;
+    /** Slot */
+    uint16_t                  u16Slot;
+} MptConfigurationPageManufacturing7PHY, *PMptConfigurationPageManufacturing7PHY;
+#pragma pack()
+AssertCompileSize(MptConfigurationPageManufacturing7PHY, 24);
+
+/**
  * Manufacturing page 7 - Readonly.
  */
 #pragma pack(1)
@@ -1336,7 +1356,7 @@ typedef struct MptConfigurationPageManufacturing7
     union
     {
         /** Byte view. */
-        uint8_t                           abPageData[228];
+        uint8_t                           abPageData[1];
         /** Field view. */
         struct
         {
@@ -1352,25 +1372,15 @@ typedef struct MptConfigurationPageManufacturing7
             uint8_t                       u8NumPhys;
             /** Reserved */
             uint8_t                       au8Reserved[3];
-            /** PHY list for the SAS controller */
-            struct
-            {
-                /** Pinout */
-                uint32_t                  u32Pinout;
-                /** Connector name */
-                uint8_t                   szConnector[16];
-                /** Location */
-                uint8_t                   u8Location;
-                /** reserved */
-                uint8_t                   u8Reserved;
-                /** Slot */
-                uint16_t                  u16Slot;
-            } aPHYs[LSILOGICSCSI_PCI_SAS_PORTS_MAX];
+            /** PHY list for the SAS controller - variable depending on the number of ports */
+            MptConfigurationPageManufacturing7PHY aPHY[1];
         } fields;
     } u;
 } MptConfigurationPageManufacturing7, *PMptConfigurationPageManufacturing7;
 #pragma pack()
-AssertCompileSize(MptConfigurationPageManufacturing7, 36+(LSILOGICSCSI_PCI_SAS_PORTS_MAX * 24));
+AssertCompileSize(MptConfigurationPageManufacturing7, 36+sizeof(MptConfigurationPageManufacturing7PHY));
+
+#define LSILOGICSCSI_MANUFACTURING7_GET_SIZE(ports) (sizeof(MptConfigurationPageManufacturing7) + ((ports) - 1) * sizeof(MptConfigurationPageManufacturing7PHY))
 
 /** Flags for the flags field */
 #define LSILOGICSCSI_MANUFACTURING7_FLAGS_USE_PROVIDED_INFORMATION RT_BIT(0)
@@ -3184,6 +3194,10 @@ typedef struct MptPHY
 #pragma pack(1)
 typedef struct MptConfigurationPagesSas
 {
+    /** Size of the manufacturing page 7 */
+    uint32_t                            cbManufacturingPage7;
+    /** Pointer to the manufacturing page 7 */
+    PMptConfigurationPageManufacturing7 pManufacturingPage7;
     /** Size of the I/O unit page 0 */
     uint32_t                            cbSASIOUnitPage0;
     /** Pointer to the I/O unit page 0 */
@@ -3223,7 +3237,6 @@ typedef struct MptConfigurationPagesSupported
     MptConfigurationPageManufacturing4  ManufacturingPage4;
     MptConfigurationPageManufacturing5  ManufacturingPage5;
     MptConfigurationPageManufacturing6  ManufacturingPage6;
-    MptConfigurationPageManufacturing7  ManufacturingPage7;
     MptConfigurationPageManufacturing8  ManufacturingPage8;
     MptConfigurationPageManufacturing9  ManufacturingPage9;
     MptConfigurationPageManufacturing10 ManufacturingPage10;

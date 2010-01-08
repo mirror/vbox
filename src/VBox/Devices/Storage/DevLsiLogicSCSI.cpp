@@ -514,7 +514,8 @@ static void lsilogicConfigurationPagesFree(PLSILOGICSCSI pThis)
         /* Destroy device list if we emulate a SAS controller. */
         if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
         {
-            PMptSASDevice pSASDeviceCurr = pThis->pConfigurationPages->u.SasPages.pSASDeviceHead;
+            PMptConfigurationPagesSas pSasPages = &pThis->pConfigurationPages->u.SasPages;
+            PMptSASDevice pSASDeviceCurr = pSasPages->pSASDeviceHead;
 
             while (pSASDeviceCurr)
             {
@@ -523,6 +524,14 @@ static void lsilogicConfigurationPagesFree(PLSILOGICSCSI pThis)
                 pSASDeviceCurr = pSASDeviceCurr->pNext;
                 RTMemFree(pFree);
             }
+            if (pSasPages->paPHYs)
+                RTMemFree(pSasPages->paPHYs);
+            if (pSasPages->pManufacturingPage7)
+                RTMemFree(pSasPages->pManufacturingPage7);
+            if (pSasPages->pSASIOUnitPage0)
+                RTMemFree(pSasPages->pSASIOUnitPage0);
+            if (pSasPages->pSASIOUnitPage1)
+                RTMemFree(pSasPages->pSASIOUnitPage1);
         }
 
         RTMemFree(pThis->pConfigurationPages);
@@ -2173,9 +2182,14 @@ static int lsilogicConfigurationManufacturingPageGetFromNumber(PLSILOGICSCSI pLs
             *pcbPage      = sizeof(pPages->ManufacturingPage6);
             break;
         case 7:
-            *ppPageHeader = &pPages->ManufacturingPage7.u.fields.Header;
-            *ppbPageData  =  pPages->ManufacturingPage7.u.abPageData;
-            *pcbPage      = sizeof(pPages->ManufacturingPage7);
+            if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+            {
+                *ppPageHeader = &pPages->u.SasPages.pManufacturingPage7->u.fields.Header;
+                *ppbPageData  =  pPages->u.SasPages.pManufacturingPage7->u.abPageData;
+                *pcbPage      = pPages->u.SasPages.cbManufacturingPage7;
+            }
+            else
+                rc = VERR_NOT_FOUND;
             break;
         case 8:
             *ppPageHeader = &pPages->ManufacturingPage8.u.fields.Header;
@@ -2922,6 +2936,21 @@ static void lsilogicInitializeConfigurationPagesSas(PLSILOGICSCSI pThis)
 
     LogFlowFunc(("pThis=%#p\n", pThis));
 
+    /* Manufacturing Page 7 - Connector settings. */
+    pPages->cbManufacturingPage7 = LSILOGICSCSI_MANUFACTURING7_GET_SIZE(pThis->cPorts);
+    PMptConfigurationPageManufacturing7 pManufacturingPage7 = (PMptConfigurationPageManufacturing7)RTMemAllocZ(pPages->cbManufacturingPage7);
+    AssertPtr(pManufacturingPage7);
+    MPT_CONFIG_PAGE_HEADER_INIT_MANUFACTURING(pManufacturingPage7,
+                                              0, 7,
+                                              MPT_CONFIGURATION_PAGE_ATTRIBUTE_PERSISTENT_READONLY);
+    /* Set size manually. */
+    if (pPages->cbManufacturingPage7 / 4 > 255)
+        pManufacturingPage7->u.fields.Header.u8PageLength = 255;
+    else
+        pManufacturingPage7->u.fields.Header.u8PageLength = pPages->cbManufacturingPage7 / 4;
+    pManufacturingPage7->u.fields.u8NumPhys = pThis->cPorts;
+    pPages->pManufacturingPage7 = pManufacturingPage7;
+
     /* SAS I/O unit page 0 - Port specific informations. */
     pPages->cbSASIOUnitPage0 = LSILOGICSCSI_SASIOUNIT0_GET_SIZE(pThis->cPorts);
     PMptConfigurationPageSASIOUnit0 pSASPage0 = (PMptConfigurationPageSASIOUnit0)RTMemAllocZ(pPages->cbSASIOUnitPage0);
@@ -2969,6 +2998,8 @@ static void lsilogicInitializeConfigurationPagesSas(PLSILOGICSCSI pThis)
     {
         PMptPHY pPHYPages = &pPages->paPHYs[i];
         uint16_t u16ControllerHandle = lsilogicGetHandle(pThis);
+
+        pManufacturingPage7->u.fields.aPHY[i].u8Location = LSILOGICSCSI_MANUFACTURING7_LOCATION_AUTO;
 
         pSASPage0->u.fields.aPHY[i].u8Port      = i;
         pSASPage0->u.fields.aPHY[i].u8PortFlags = 0;
@@ -3166,11 +3197,6 @@ static void lsilogicInitializeConfigurationPages(PLSILOGICSCSI pLsiLogic)
     MPT_CONFIG_PAGE_HEADER_INIT_MANUFACTURING(&pPages->ManufacturingPage6,
                                               MptConfigurationPageManufacturing6, 6,
                                               MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE);
-
-    /* Manufacturing Page 7 - Connector settings. */
-    MPT_CONFIG_PAGE_HEADER_INIT_MANUFACTURING(&pPages->ManufacturingPage7,
-                                              MptConfigurationPageManufacturing7, 7,
-                                              MPT_CONFIGURATION_PAGE_ATTRIBUTE_PERSISTENT_READONLY);
 
     /* Manufacturing Page 8 -  Product sepcific settings. */
     MPT_CONFIG_PAGE_HEADER_INIT_MANUFACTURING(&pPages->ManufacturingPage8,
@@ -3776,7 +3802,6 @@ static DECLCALLBACK(int) lsilogicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutMem   (pSSM, &pPages->ManufacturingPage4, sizeof(MptConfigurationPageManufacturing4));
     SSMR3PutMem   (pSSM, &pPages->ManufacturingPage5, sizeof(MptConfigurationPageManufacturing5));
     SSMR3PutMem   (pSSM, &pPages->ManufacturingPage6, sizeof(MptConfigurationPageManufacturing6));
-    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage7, sizeof(MptConfigurationPageManufacturing7));
     SSMR3PutMem   (pSSM, &pPages->ManufacturingPage8, sizeof(MptConfigurationPageManufacturing8));
     SSMR3PutMem   (pSSM, &pPages->ManufacturingPage9, sizeof(MptConfigurationPageManufacturing9));
     SSMR3PutMem   (pSSM, &pPages->ManufacturingPage10, sizeof(MptConfigurationPageManufacturing10));
@@ -3816,9 +3841,11 @@ static DECLCALLBACK(int) lsilogicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     {
         PMptConfigurationPagesSas pSasPages = &pPages->u.SasPages;
 
+        SSMR3PutU32(pSSM, pSasPages->cbManufacturingPage7);
         SSMR3PutU32(pSSM, pSasPages->cbSASIOUnitPage0);
         SSMR3PutU32(pSSM, pSasPages->cbSASIOUnitPage1);
 
+        SSMR3PutMem(pSSM, pSasPages->pManufacturingPage7, pSasPages->cbManufacturingPage7);
         SSMR3PutMem(pSSM, pSasPages->pSASIOUnitPage0, pSasPages->cbSASIOUnitPage0);
         SSMR3PutMem(pSSM, pSasPages->pSASIOUnitPage1, pSasPages->cbSASIOUnitPage1);
 
@@ -4016,7 +4043,6 @@ static DECLCALLBACK(int) lsilogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
         SSMR3GetMem(pSSM, &pPages->ManufacturingPage4, sizeof(MptConfigurationPageManufacturing4));
         SSMR3GetMem(pSSM, &pPages->ManufacturingPage5, sizeof(MptConfigurationPageManufacturing5));
         SSMR3GetMem(pSSM, &pPages->ManufacturingPage6, sizeof(MptConfigurationPageManufacturing6));
-        SSMR3GetMem(pSSM, &pPages->ManufacturingPage7, sizeof(MptConfigurationPageManufacturing7));
         SSMR3GetMem(pSSM, &pPages->ManufacturingPage8, sizeof(MptConfigurationPageManufacturing8));
         SSMR3GetMem(pSSM, &pPages->ManufacturingPage9, sizeof(MptConfigurationPageManufacturing9));
         SSMR3GetMem(pSSM, &pPages->ManufacturingPage10, sizeof(MptConfigurationPageManufacturing10));
@@ -4054,19 +4080,23 @@ static DECLCALLBACK(int) lsilogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
         }
         else if (pLsiLogic->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
         {
-            uint32_t cbPage0, cbPage1, cPHYs;
+            uint32_t cbPage0, cbPage1, cPHYs, cbManufacturingPage7;
             PMptConfigurationPagesSas pSasPages = &pPages->u.SasPages;
 
+            SSMR3GetU32(pSSM, &cbManufacturingPage7);
             SSMR3GetU32(pSSM, &cbPage0);
             SSMR3GetU32(pSSM, &cbPage1);
 
             if (   (cbPage0 != pSasPages->cbSASIOUnitPage0)
-                || (cbPage1 != pSasPages->cbSASIOUnitPage1))
+                || (cbPage1 != pSasPages->cbSASIOUnitPage1)
+                || (cbManufacturingPage7 != pSasPages->cbManufacturingPage7))
                 return VERR_SSM_LOAD_CONFIG_MISMATCH;
 
+            AssertPtr(pSasPages->pManufacturingPage7);
             AssertPtr(pSasPages->pSASIOUnitPage0);
             AssertPtr(pSasPages->pSASIOUnitPage1);
 
+            SSMR3GetMem(pSSM, pSasPages->pManufacturingPage7, pSasPages->cbManufacturingPage7);
             SSMR3GetMem(pSSM, pSasPages->pSASIOUnitPage0, pSasPages->cbSASIOUnitPage0);
             SSMR3GetMem(pSSM, pSasPages->pSASIOUnitPage1, pSasPages->cbSASIOUnitPage1);
 
