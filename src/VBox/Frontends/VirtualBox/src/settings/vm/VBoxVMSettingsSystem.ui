@@ -342,7 +342,23 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="0" colspan="3">
+       <item row="6" column="1" >
+        <widget class="QCheckBox" name="mCbTCUseUTC" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+           </sizepolicy>
+         </property>
+         <property name="whatsThis" >
+          <string>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</string>
+         </property>
+         <property name="text" >
+          <string>Hardware clock in &amp;UTC time</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0" colspan="3">
         <spacer name="mSpVer1">
          <property name="orientation">
           <enum>Qt::Vertical</enum>

@@ -169,6 +169,10 @@ void VBoxVMSettingsSystem::getFrom (const CMachine &aMachine)
     /* EFI */
     mCbEFI->setChecked (mMachine.GetFirmwareType() >= KFirmwareType_EFI && mMachine.GetFirmwareType() <= KFirmwareType_EFIDUAL);
 
+    /* RTC */
+    bool rtcUseUTC = mMachine.GetRTCUseUTC ();
+    mCbTCUseUTC->setChecked (rtcUseUTC);
+
     /* CPU count */
     bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost()
                              .GetProcessorFeature (KProcessorFeature_HWVirtEx);
@@ -232,6 +236,9 @@ void VBoxVMSettingsSystem::putBackTo()
 
     /* EFI */
     mMachine.SetFirmwareType (mCbEFI->isChecked() ? KFirmwareType_EFI : KFirmwareType_BIOS);
+
+    /* RTC */
+    mMachine.SetRTCUseUTC (mCbTCUseUTC->isChecked());
 
     /* RAM size */
     mMachine.SetCPUCount (mSlCPU->value());
