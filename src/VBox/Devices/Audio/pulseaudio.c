@@ -151,7 +151,8 @@ static void context_state_callback(pa_context *c, void *userdata)
 
         case PA_CONTEXT_FAILED:
             LogRel(("Pulse: Audio input/output stopped!\n"));
-            pPulse->cErrors = MAX_LOG_REL_ERRORS;
+            if (pPulse)
+                pPulse->cErrors = MAX_LOG_REL_ERRORS;
             pa_threaded_mainloop_signal(g_pMainLoop, 0);
             break;
 
