@@ -861,6 +861,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_SEM_LV_ILLEGAL_UPGRADE         (-375)
 /** The thread is not a valid signaller of the event. */
 #define VERR_SEM_LV_NOT_SIGNALLER           (-376)
+/** Internal error in the lock validator or related components. */
+#define VERR_SEM_LV_INTERNAL_ERROR          (-377)
 /** @} */
 
 
