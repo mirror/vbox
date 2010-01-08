@@ -617,6 +617,7 @@ int handleControlVM(HandlerArg *a)
             CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
             CHECK_ERROR_BREAK(guest, SetCredentials(Bstr(a->argv[2]), Bstr(a->argv[3]), Bstr(a->argv[4]), fAllowLocalLogon));
         }
+#if 0 /* TODO: review & remove */
         else if (!strcmp(a->argv[1], "dvdattach"))
         {
             Bstr uuid;
@@ -737,6 +738,7 @@ int handleControlVM(HandlerArg *a)
             floppyMedium->COMGETTER(Id)(uuid.asOutParam());
             CHECK_ERROR(machine, MountMedium(Bstr("Floppy Controller"), 0, 0, uuid, FALSE /* aForce */));
         }
+#endif /* obsolete dvdattach/floppyattach */
 #ifdef VBOX_WITH_MEM_BALLOONING
         else if (   !strcmp(a->argv[1], "--guestmemoryballoon")
                  || !strcmp(a->argv[1], "-guestmemoryballoon"))
