@@ -64,6 +64,8 @@ typedef struct RTLOCKVALPERTHREAD
     /** The state in which pRec that goes with pRec.
      * RTThreadUnblocking uses this to figure out when to clear pRec. */
     RTTHREADSTATE volatile          enmRecState;
+    /** Top of the lock stack. */
+    PRTLOCKVALRECUNION volatile     pStackTop;
     /** The thread is running inside the lock validator. */
     bool volatile                   fInValidator;
     /** Reserved for alignment purposes. */
