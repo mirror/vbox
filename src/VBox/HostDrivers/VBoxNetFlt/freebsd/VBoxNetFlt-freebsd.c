@@ -418,7 +418,7 @@ static void vboxNetFltFreeBSDinput(void *arg, int pending)
         /* Create a copy and deliver to the virtual switch */
         pSG = RTMemTmpAlloc(RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
         vboxNetFltFreeBSDMBufToSG(pThis, m, pSG, cSegs, 0);
-        fDropIt = pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, INTNETTRUNKDIR_HOST);
+        fDropIt = pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, INTNETTRUNKDIR_WIRE);
         RTMemTmpFree(pSG);
         if (fDropIt)
             m_freem(m);
