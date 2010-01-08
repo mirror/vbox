@@ -240,7 +240,8 @@ static RTCRITSECT       g_LockValClassTeachCS;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static void rtLockValidatorClassDestroy(RTLOCKVALCLASSINT *pClass);
+static void     rtLockValidatorClassDestroy(RTLOCKVALCLASSINT *pClass);
+static uint32_t rtLockValidatorStackDepth(PRTTHREADINT pThread);
 
 
 /**
@@ -341,7 +342,7 @@ static const char *rtLockValidatorNameThreadHandle(RTTHREAD volatile *phThread)
  * @param   pszWhat             What we're complaining about.
  * @param   ...                 Format arguments.
  */
-static void rtLockValidatorComplain(RT_SRC_POS_DECL, const char *pszWhat, ...)
+static void rtLockValComplain(RT_SRC_POS_DECL, const char *pszWhat, ...)
 {
     if (!ASMAtomicUoReadBool(&g_fLockValidatorQuiet))
     {
@@ -363,7 +364,7 @@ static void rtLockValidatorComplain(RT_SRC_POS_DECL, const char *pszWhat, ...)
  * @param   pRec                The lock record we're working on.
  * @param   pszSuffix           Message suffix.
  */
-static void rtLockValidatorComplainAboutLock(const char *pszPrefix, PRTLOCKVALRECUNION pRec, const char *pszSuffix)
+static void rtLockValComplainAboutLock(const char *pszPrefix, PRTLOCKVALRECUNION pRec, const char *pszSuffix)
 {
     if (    VALID_PTR(pRec)
         &&  !ASMAtomicUoReadBool(&g_fLockValidatorQuiet))
@@ -412,6 +413,48 @@ static void rtLockValidatorComplainAboutLock(const char *pszPrefix, PRTLOCKVALRE
 
 
 /**
+ * Dump the lock stack.
+ *
+ * @param   pThread             The thread which lock stack we're gonna dump.
+ * @param   cchIndent           The indentation in chars.
+ * @param   cMinFrames          The minimum number of frames to consider
+ *                              dumping.
+ */
+static void rtLockValComplainAboutLockStack(PRTTHREADINT pThread, unsigned cchIndent, uint32_t cMinFrames)
+{
+    if (    VALID_PTR(pThread)
+        &&  !ASMAtomicUoReadBool(&g_fLockValidatorQuiet)
+        &&  pThread->u32Magic == RTTHREADINT_MAGIC
+       )
+    {
+        uint32_t cEntries = rtLockValidatorStackDepth(pThread);
+        if (cEntries >= cMinFrames)
+        {
+            RTAssertMsg2AddWeak("%*s---- start of lock stack - %u entr%s ----\n", cchIndent, "", cEntries,
+                                cEntries == 1 ? "y" : "ies");
+            PRTLOCKVALRECUNION pCur = rtLockValidatorReadRecUnionPtr(&pThread->LockValidator.pStackTop);
+            for (uint32_t i = 0; pCur; i++)
+            {
+                char szPrefix[80];
+                RTStrPrintf(szPrefix, sizeof(szPrefix), "%*s#%02u: ", cchIndent, "", i);
+                rtLockValComplainAboutLock(szPrefix, pCur, "\n");
+                switch (pCur->Core.u32Magic)
+                {
+                    case RTLOCKVALRECEXCL_MAGIC:    pCur = rtLockValidatorReadRecUnionPtr(&pCur->Excl.pDown);      break;
+                    case RTLOCKVALRECSHRDOWN_MAGIC: pCur = rtLockValidatorReadRecUnionPtr(&pCur->ShrdOwner.pDown); break;
+                    default:
+                        RTAssertMsg2AddWeak("%*s<bad stack frame>\n", cchIndent, "");
+                        pCur = NULL;
+                        break;
+                }
+            }
+            RTAssertMsg2AddWeak("%*s---- end of lock stack ----\n", cchIndent, "");
+        }
+    }
+}
+
+
+/**
  * Launch the initial complaint.
  *
  * @param   pszWhat             What we're complaining about.
@@ -419,7 +462,7 @@ static void rtLockValidatorComplainAboutLock(const char *pszPrefix, PRTLOCKVALRE
  * @param   pThreadSelf         The calling thread.
  * @param   pRec                The main lock involved. Can be NULL.
  */
-static void rtLockValidatorComplainFirst(const char *pszWhat, PCRTLOCKVALSRCPOS pSrcPos, PRTTHREADINT pThreadSelf, PRTLOCKVALRECUNION pRec)
+static void rtLockValComplainFirst(const char *pszWhat, PCRTLOCKVALSRCPOS pSrcPos, PRTTHREADINT pThreadSelf, PRTLOCKVALRECUNION pRec)
 {
     if (!ASMAtomicUoReadBool(&g_fLockValidatorQuiet))
     {
@@ -429,7 +472,8 @@ static void rtLockValidatorComplainFirst(const char *pszWhat, PCRTLOCKVALSRCPOS 
             RTAssertMsg2Weak("%s  [uId=%p  thrd=%s]\n", pszWhat, pSrcPos->uId, VALID_PTR(pThreadSelf) ? pThreadSelf->szName : "<NIL>");
         else
             RTAssertMsg2Weak("%s  [thrd=%s]\n", pszWhat, VALID_PTR(pThreadSelf) ? pThreadSelf->szName : "<NIL>");
-        rtLockValidatorComplainAboutLock("Lock: ", pRec, "\n");
+        rtLockValComplainAboutLock("Lock: ", pRec, "\n");
+        rtLockValComplainAboutLockStack(pThreadSelf, 0, 1);
     }
 }
 
@@ -440,7 +484,7 @@ static void rtLockValidatorComplainFirst(const char *pszWhat, PCRTLOCKVALSRCPOS 
  * @param   pszFormat           Format string.
  * @param   ...                 Format arguments.
  */
-static void rtLockValidatorComplainMore(const char *pszFormat, ...)
+static void rtLockValComplainMore(const char *pszFormat, ...)
 {
     if (!ASMAtomicUoReadBool(&g_fLockValidatorQuiet))
     {
@@ -455,7 +499,7 @@ static void rtLockValidatorComplainMore(const char *pszFormat, ...)
 /**
  * Raise a panic if enabled.
  */
-static void rtLockValidatorComplainPanic(void)
+static void rtLockValComplainPanic(void)
 {
     if (ASMAtomicUoReadBool(&g_fLockValidatorMayPanic))
         RTAssertPanic();
@@ -644,6 +688,7 @@ DECLHIDDEN(void) rtLockValidatorInitPerThread(RTLOCKVALPERTHREAD *pPerThread)
     Assert(pPerThread->cWriteLocks == 0);
     Assert(pPerThread->cReadLocks == 0);
     Assert(pPerThread->fInValidator == false);
+    Assert(pPerThread->pStackTop == NULL);
 }
 
 
@@ -1028,32 +1073,210 @@ RTDECL(int) RTLockValidatorClassAddPriorClass(RTLOCKVALCLASS hClass, RTLOCKVALCL
 }
 
 
-static void rtLockValidatorStackPush(PRTTHREADINT pThreadSelf, PRTLOCKVALRECUNION pRec, PCRTLOCKVALSRCPOS pSrcPos)
+/**
+ * Calculates the depth of a lock stack.
+ *
+ * @returns Number of stack frames.
+ * @param   pThread         The thread.
+ */
+static uint32_t rtLockValidatorStackDepth(PRTTHREADINT pThread)
 {
-    Assert(pThreadSelf == RTThreadSelf());
+    uint32_t            cEntries = 0;
+    PRTLOCKVALRECUNION  pCur = rtLockValidatorReadRecUnionPtr(&pThread->LockValidator.pStackTop);
+    while (pCur)
+    {
+        switch (pCur->Core.u32Magic)
+        {
+            case RTLOCKVALRECEXCL_MAGIC:
+                pCur = rtLockValidatorReadRecUnionPtr(&pCur->Excl.pDown);
+                break;
 
+            case RTLOCKVALRECSHRDOWN_MAGIC:
+                pCur = rtLockValidatorReadRecUnionPtr(&pCur->ShrdOwner.pDown);
+                break;
+
+            default:
+                AssertMsgFailedReturn(("%#x\n", pCur->Core.u32Magic), cEntries);
+        }
+        cEntries++;
+    }
+    return cEntries;
 }
 
 
+/**
+ * Checks if the stack contains @a pRec.
+ *
+ * @returns true / false.
+ * @param   pThreadSelf         The curren thread.
+ * @param   pRec                The lock record.
+ */
+static bool rtLockValidatorStackContainsRec(PRTTHREADINT pThreadSelf, PRTLOCKVALRECUNION pRec)
+{
+    PRTLOCKVALRECUNION pCur = pThreadSelf->LockValidator.pStackTop;
+    while (pCur)
+    {
+        switch (pCur->Core.u32Magic)
+        {
+            case RTLOCKVALRECEXCL_MAGIC:
+                Assert(pRec->Excl.cRecursion >= 1);
+                if (pCur->Excl.pDown == pRec)
+                    return true;
+                pCur = pCur->Excl.pDown;
+                break;
+
+            case RTLOCKVALRECSHRDOWN_MAGIC:
+                Assert(pCur->ShrdOwner.cRecursion >= 1);
+                if (pCur->ShrdOwner.pDown == pRec)
+                    return true;
+                pCur = pCur->ShrdOwner.pDown;
+                break;
+
+            default:
+                AssertMsgFailedReturn(("%#x\n", pCur->Core.u32Magic), false);
+        }
+    }
+    return false;
+}
+
+
+/**
+ * Pushes a lock onto the stack.
+ *
+ * @param   pThreadSelf         The current thread.
+ * @param   pRec                The lock record.
+ */
+static void rtLockValidatorStackPush(PRTTHREADINT pThreadSelf, PRTLOCKVALRECUNION pRec)
+{
+    Assert(pThreadSelf == RTThreadSelf());
+    Assert(!rtLockValidatorStackContainsRec(pThreadSelf, pRec));
+
+    switch (pRec->Core.u32Magic)
+    {
+        case RTLOCKVALRECEXCL_MAGIC:
+            Assert(pRec->Excl.cRecursion == 1);
+            Assert(pRec->Excl.pDown == NULL);
+            pRec->Excl.pDown = pThreadSelf->LockValidator.pStackTop;
+            break;
+
+        case RTLOCKVALRECSHRDOWN_MAGIC:
+            Assert(pRec->ShrdOwner.cRecursion == 1);
+            Assert(pRec->ShrdOwner.pDown == NULL);
+            pRec->ShrdOwner.pDown = pThreadSelf->LockValidator.pStackTop;
+            break;
+
+        case RTLOCKVALRECSHRD_MAGIC:
+        default:
+            AssertMsgFailedReturnVoid(("%#x\n",  pRec->Core.u32Magic));
+    }
+    pThreadSelf->LockValidator.pStackTop = pRec;
+}
+
+
+/**
+ * Pops a lock off the stack.
+ *
+ * @param   pThreadSelf         The current thread.
+ * @param   pRec                The lock.
+ */
 static void rtLockValidatorStackPop(PRTTHREADINT pThreadSelf, PRTLOCKVALRECUNION pRec)
 {
     Assert(pThreadSelf == RTThreadSelf());
 
+    PRTLOCKVALRECUNION pDown;
+    switch (pRec->Core.u32Magic)
+    {
+        case RTLOCKVALRECEXCL_MAGIC:
+            Assert(pRec->Excl.cRecursion == 0);
+            pDown = pRec->Excl.pDown;
+            pRec->Excl.pDown = NULL;
+            break;
+
+        case RTLOCKVALRECSHRDOWN_MAGIC:
+            Assert(pRec->ShrdOwner.cRecursion == 0);
+            pDown = pRec->ShrdOwner.pDown;
+            pRec->ShrdOwner.pDown = NULL;
+            break;
+
+        default:
+            AssertMsgFailedReturnVoid(("%#x\n",  pRec->Core.u32Magic));
+    }
+    if (pThreadSelf->LockValidator.pStackTop == pRec)
+        pThreadSelf->LockValidator.pStackTop = pDown;
+    else
+    {
+        /* find the record on top of ours */
+        PRTLOCKVALRECUNION pAbove = pThreadSelf->LockValidator.pStackTop;
+        while (pAbove)
+        {
+            switch (pAbove->Core.u32Magic)
+            {
+                case RTLOCKVALRECEXCL_MAGIC:
+                    Assert(pRec->Excl.cRecursion >= 1);
+                    if (pAbove->Excl.pDown == pRec)
+                    {
+                        pAbove->Excl.pDown = pDown;
+                        return;
+                    }
+                    pAbove = pAbove->Excl.pDown;
+                    break;
+
+                case RTLOCKVALRECSHRDOWN_MAGIC:
+                    Assert(pAbove->ShrdOwner.cRecursion >= 1);
+                    if (pAbove->ShrdOwner.pDown == pRec)
+                    {
+                        pAbove->ShrdOwner.pDown = pDown;
+                        return;
+                    }
+                    pAbove = pAbove->ShrdOwner.pDown;
+                    break;
+
+                default:
+                    AssertMsgFailedReturnVoid(("%#x\n", pAbove->Core.u32Magic));
+            }
+        }
+        AssertMsgFailed(("%p %p\n", pRec, pThreadSelf));
+    }
 }
 
 
 static void rtLockValidatorStackPushRecursion(PRTTHREADINT pThreadSelf, PRTLOCKVALRECUNION pRec, PCRTLOCKVALSRCPOS pSrcPos)
 {
     Assert(pThreadSelf == RTThreadSelf());
-    /** @todo insert a recursion record onto the stack. Keep a reasonally big pool
+    /** @todo insert a recursion record onto the stack.  Keep a reasonally big pool
      *        of them associated with each thread. */
+    switch (pRec->Core.u32Magic)
+    {
+        case RTLOCKVALRECEXCL_MAGIC:
+            Assert(pRec->Excl.cRecursion > 1);
+            break;
+
+        case RTLOCKVALRECSHRDOWN_MAGIC:
+            Assert(pRec->ShrdOwner.cRecursion > 1);
+            break;
+
+        default:
+            AssertMsgFailedReturnVoid(("%#x\n",  pRec->Core.u32Magic));
+    }
 }
 
 
 static void rtLockValidatorStackPopRecursion(PRTTHREADINT pThreadSelf, PRTLOCKVALRECUNION pRec)
 {
     Assert(pThreadSelf == RTThreadSelf());
+    switch (pRec->Core.u32Magic)
+    {
+        case RTLOCKVALRECEXCL_MAGIC:
+            Assert(pRec->Excl.cRecursion >= 1);
+            break;
 
+        case RTLOCKVALRECSHRDOWN_MAGIC:
+            Assert(pRec->ShrdOwner.cRecursion >= 1);
+            break;
+
+        default:
+            AssertMsgFailedReturnVoid(("%#x\n",  pRec->Core.u32Magic));
+    }
 }
 
 
@@ -1174,7 +1397,7 @@ static int rtLockValidatorDdHandleStackOverflow(PRTLOCKVALDDSTACK pStack)
     if (!s_fComplained)
     {
         s_fComplained = true;
-        rtLockValidatorComplain(RT_SRC_POS, "lock validator stack is too small! (%zu entries)\n", RT_ELEMENTS(pStack->a));
+        rtLockValComplain(RT_SRC_POS, "lock validator stack is too small! (%zu entries)\n", RT_ELEMENTS(pStack->a));
     }
     return VINF_SUCCESS;
 }
@@ -1468,8 +1691,8 @@ static void rcLockValidatorDoDeadlockComplaining(PRTLOCKVALDDSTACK pStack, PRTLO
             case VERR_SEM_LV_ILLEGAL_UPGRADE:   pszWhat = "Illegal lock upgrade!"; break;
             default:            AssertFailed(); pszWhat = "!unexpected rc!"; break;
         }
-        rtLockValidatorComplainFirst(pszWhat, pSrcPos, pThreadSelf, pStack->a[0].pRec != pRec ? pRec : NULL);
-        rtLockValidatorComplainMore("---- start of deadlock chain - %u entries ----\n", pStack->c);
+        rtLockValComplainFirst(pszWhat, pSrcPos, pThreadSelf, pStack->a[0].pRec != pRec ? pRec : NULL);
+        rtLockValComplainMore("---- start of deadlock chain - %u entries ----\n", pStack->c);
         for (uint32_t i = 0; i < pStack->c; i++)
         {
             char szPrefix[24];
@@ -1478,14 +1701,14 @@ static void rcLockValidatorDoDeadlockComplaining(PRTLOCKVALDDSTACK pStack, PRTLO
             if (pStack->a[i].pRec->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC)
                 pShrdOwner = pStack->a[i].pRec->Shared.papOwners[pStack->a[i].iEntry];
             if (VALID_PTR(pShrdOwner) && pShrdOwner->Core.u32Magic == RTLOCKVALRECSHRDOWN_MAGIC)
-                rtLockValidatorComplainAboutLock(szPrefix, (PRTLOCKVALRECUNION)pShrdOwner, "\n");
+                rtLockValComplainAboutLock(szPrefix, (PRTLOCKVALRECUNION)pShrdOwner, "\n");
             else
-                rtLockValidatorComplainAboutLock(szPrefix, pStack->a[i].pRec, "\n");
+                rtLockValComplainAboutLock(szPrefix, pStack->a[i].pRec, "\n");
         }
-        rtLockValidatorComplainMore("---- end of deadlock chain ----\n");
+        rtLockValComplainMore("---- end of deadlock chain ----\n");
     }
 
-    rtLockValidatorComplainPanic();
+    rtLockValComplainPanic();
 }
 
 
@@ -1612,6 +1835,28 @@ RTDECL(int) RTLockValidatorRecMakeSiblings(PRTLOCKVALRECCORE pRec1, PRTLOCKVALRE
 }
 
 
+/**
+ * Gets the lock name for the given record.
+ *
+ * @returns Read-only lock name.
+ * @param   pRec                The lock record.
+ */
+DECL_FORCE_INLINE(const char *) rtLockValidatorRecName(PRTLOCKVALRECUNION pRec)
+{
+    switch (pRec->Core.u32Magic)
+    {
+        case RTLOCKVALRECEXCL_MAGIC:
+            return pRec->Excl.pszName;
+        case RTLOCKVALRECSHRD_MAGIC:
+            return pRec->Shared.pszName;
+        case RTLOCKVALRECSHRDOWN_MAGIC:
+            return pRec->ShrdOwner.pSharedRec ? pRec->ShrdOwner.pSharedRec->pszName : "orphaned";
+        default:
+            return "unknown";
+    }
+}
+
+
 RTDECL(void) RTLockValidatorRecExclInit(PRTLOCKVALRECEXCL pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
                                         const char *pszName, void *hLock, bool fEnabled)
 {
@@ -1710,7 +1955,7 @@ RTDECL(void) RTLockValidatorRecExclSetOwner(PRTLOCKVALRECEXCL pRec, RTTHREAD hTh
         ASMAtomicUoWriteU32(&pRecU->Excl.cRecursion, 1);
         ASMAtomicWriteHandle(&pRecU->Excl.hThread, hThreadSelf);
 
-        rtLockValidatorStackPush(hThreadSelf, pRecU, pSrcPos);
+        rtLockValidatorStackPush(hThreadSelf, pRecU);
     }
 }
 
@@ -1729,7 +1974,7 @@ static void  rtLockValidatorRecExclReleaseOwnerUnchecked(PRTLOCKVALRECUNION pRec
     uint32_t c = ASMAtomicDecU32(&pRec->Excl.cRecursion);
     if (c == 0)
     {
-        rtLockValidatorStackPopRecursion(pThread, pRec);
+        rtLockValidatorStackPop(pThread, pRec);
         ASMAtomicWriteHandle(&pRec->Excl.hThread, NIL_RTTHREAD);
     }
     else
@@ -1771,15 +2016,15 @@ RTDECL(int) RTLockValidatorRecExclRecursion(PRTLOCKVALRECEXCL pRec, PCRTLOCKVALS
     if (   pRecU->Excl.hClass != NIL_RTLOCKVALCLASS
         && !pRecU->Excl.hClass->fRecursionOk)
     {
-        rtLockValidatorComplainFirst("Recursion not allowed by the class",
+        rtLockValComplainFirst("Recursion not allowed by the class",
                                      pSrcPos, pRecU->Excl.hThread, (PRTLOCKVALRECUNION)pRec);
-        rtLockValidatorComplainPanic();
+        rtLockValComplainPanic();
         return VERR_SEM_LV_NESTED;
     }
 
     Assert(pRecU->Excl.cRecursion < _1M);
     pRecU->Excl.cRecursion++;
-    rtLockValidatorStackPush(pRecU->Excl.hThread, pRecU, pSrcPos);
+    rtLockValidatorStackPushRecursion(pRecU->Excl.hThread, pRecU, pSrcPos);
     return VINF_SUCCESS;
 }
 
@@ -1793,8 +2038,8 @@ RTDECL(int) RTLockValidatorRecExclUnwind(PRTLOCKVALRECEXCL pRec)
     AssertReturn(pRecU->Excl.hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(pRecU->Excl.cRecursion > 1, VERR_SEM_LV_INVALID_PARAMETER);
 
-    rtLockValidatorStackPop(pRecU->Excl.hThread, pRecU);
     pRecU->Excl.cRecursion--;
+    rtLockValidatorStackPopRecursion(pRecU->Excl.hThread, pRecU);
     return VINF_SUCCESS;
 }
 
@@ -1815,9 +2060,9 @@ RTDECL(int) RTLockValidatorRecExclRecursionMixed(PRTLOCKVALRECEXCL pRec, PRTLOCK
     if (   pRecU->Excl.hClass != NIL_RTLOCKVALCLASS
         && !pRecU->Excl.hClass->fRecursionOk)
     {
-        rtLockValidatorComplainFirst("Mixed recursion not allowed by the class",
+        rtLockValComplainFirst("Mixed recursion not allowed by the class",
                                      pSrcPos, pRecU->Excl.hThread, (PRTLOCKVALRECUNION)pRec);
-        rtLockValidatorComplainPanic();
+        rtLockValComplainPanic();
         return VERR_SEM_LV_NESTED;
     }
 
@@ -1842,8 +2087,8 @@ RTDECL(int) RTLockValidatorRecExclUnwindMixed(PRTLOCKVALRECEXCL pRec, PRTLOCKVAL
     AssertReturn(pRecU->Excl.hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(pRecU->Excl.cRecursion > 1, VERR_SEM_LV_INVALID_PARAMETER);
 
-    rtLockValidatorStackPopRecursion(pRecU->Excl.hThread, pRecU);
     pRecU->Excl.cRecursion--;
+    rtLockValidatorStackPopRecursion(pRecU->Excl.hThread, pRecU);
     return VINF_SUCCESS;
 }
 
@@ -1914,8 +2159,8 @@ RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD
             || (   pRecU->Excl.hClass != NIL_RTLOCKVALCLASS
                 && !pRecU->Excl.hClass->fRecursionOk))
         {
-            rtLockValidatorComplainFirst("Recursion not allowed", pSrcPos, pThreadSelf, pRecU);
-            rtLockValidatorComplainPanic();
+            rtLockValComplainFirst("Recursion not allowed", pSrcPos, pThreadSelf, pRecU);
+            rtLockValComplainPanic();
             rc = VERR_SEM_LV_NESTED;
         }
     }
@@ -2123,8 +2368,8 @@ RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHRE
                 && !pRec->hClass->fRecursionOk)
             )
         {
-            rtLockValidatorComplainFirst("Recursion not allowed", pSrcPos, pThreadSelf, pRecU);
-            rtLockValidatorComplainPanic();
+            rtLockValComplainFirst("Recursion not allowed", pSrcPos, pThreadSelf, pRecU);
+            rtLockValComplainPanic();
             rc =  VERR_SEM_LV_NESTED;
         }
     }
@@ -2503,7 +2748,7 @@ RTDECL(void) RTLockValidatorRecSharedAddOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD h
         if (rtLockValidatorRecSharedAddOwner(pRec, &pEntry->ShrdOwner))
         {
             if (!pRec->fSignaller)
-                rtLockValidatorStackPush(hThread, pEntry, pSrcPos);
+                rtLockValidatorStackPush(hThread, pEntry);
         }
         else
             rtLockValidatorRecSharedFreeOwner(&pEntry->ShrdOwner);
@@ -2526,17 +2771,19 @@ RTDECL(void) RTLockValidatorRecSharedRemoveOwner(PRTLOCKVALRECSHRD pRec, RTTHREA
     uint32_t iEntry = UINT32_MAX; /* shuts up gcc */
     PRTLOCKVALRECUNION pEntry = rtLockValidatorRecSharedFindOwner(pRec, hThread, &iEntry);
     AssertReturnVoid(pEntry);
-    if (pEntry->ShrdOwner.cRecursion > 1)
-    {
-        Assert(!pRec->fSignaller);
-        rtLockValidatorStackPopRecursion(hThread, pEntry);
-        pEntry->ShrdOwner.cRecursion--;
-    }
-    else
+    AssertReturnVoid(pEntry->ShrdOwner.cRecursion > 0);
+
+    uint32_t c = --pEntry->ShrdOwner.cRecursion;
+    if (c == 0)
     {
         if (!pRec->fSignaller)
             rtLockValidatorStackPop(hThread, (PRTLOCKVALRECUNION)pEntry);
         rtLockValidatorRecSharedRemoveAndFreeOwner(pRec, &pEntry->ShrdOwner, iEntry);
+    }
+    else
+    {
+        Assert(!pRec->fSignaller);
+        rtLockValidatorStackPopRecursion(hThread, pEntry);
     }
 }
 RT_EXPORT_SYMBOL(RTLockValidatorRecSharedRemoveOwner);
@@ -2561,8 +2808,8 @@ RTDECL(int) RTLockValidatorRecSharedCheckAndRelease(PRTLOCKVALRECSHRD pRec, RTTH
     PRTLOCKVALRECUNION  pEntry = rtLockValidatorRecSharedFindOwner(pRec, hThreadSelf, &iEntry);
     if (RT_UNLIKELY(!pEntry))
     {
-        rtLockValidatorComplainFirst("Not owner (shared)", NULL, hThreadSelf, (PRTLOCKVALRECUNION)pRec);
-        rtLockValidatorComplainPanic();
+        rtLockValComplainFirst("Not owner (shared)", NULL, hThreadSelf, (PRTLOCKVALRECUNION)pRec);
+        rtLockValComplainPanic();
         return VERR_SEM_LV_NOT_OWNER;
     }
 
@@ -2582,16 +2829,14 @@ RTDECL(int) RTLockValidatorRecSharedCheckAndRelease(PRTLOCKVALRECSHRD pRec, RTTH
      * Release the ownership or unwind a level of recursion.
      */
     Assert(pEntry->ShrdOwner.cRecursion > 0);
-    if (pEntry->ShrdOwner.cRecursion > 1)
-    {
-        rtLockValidatorStackPopRecursion(hThreadSelf, pEntry);
-        pEntry->ShrdOwner.cRecursion--;
-    }
-    else
+    uint32_t c = --pEntry->ShrdOwner.cRecursion;
+    if (c == 0)
     {
         rtLockValidatorStackPop(hThreadSelf, pEntry);
         rtLockValidatorRecSharedRemoveAndFreeOwner(pRec, &pEntry->ShrdOwner, iEntry);
     }
+    else
+        rtLockValidatorStackPopRecursion(hThreadSelf, pEntry);
 
     return VINF_SUCCESS;
 }
@@ -2616,8 +2861,8 @@ RTDECL(int) RTLockValidatorRecSharedCheckSignaller(PRTLOCKVALRECSHRD pRec, RTTHR
     PRTLOCKVALRECUNION  pEntry = rtLockValidatorRecSharedFindOwner(pRec, hThreadSelf, &iEntry);
     if (RT_UNLIKELY(!pEntry))
     {
-        rtLockValidatorComplainFirst("Invalid signaller", NULL, hThreadSelf, (PRTLOCKVALRECUNION)pRec);
-        rtLockValidatorComplainPanic();
+        rtLockValComplainFirst("Invalid signaller", NULL, hThreadSelf, (PRTLOCKVALRECUNION)pRec);
+        rtLockValComplainPanic();
         return VERR_SEM_LV_NOT_SIGNALLER;
     }
     return VINF_SUCCESS;
