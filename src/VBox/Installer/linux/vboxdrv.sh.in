@@ -36,6 +36,11 @@ GROUPNAME=vboxusers
 LOG="/var/log/vbox-install.log"
 NOLSB=%NOLSB%
 DEBIAN=%DEBIAN%
+MODPROBE=/sbin/modprobe
+
+if $MODPROBE -c | grep -q '^allow_unsupported_modules  *0'; then
+  MODPROBE="$MODPROBE --allow-unsupported-modules"
+fi
 
 [ -f /lib/lsb/init-functions ] || NOLSB=yes
 [ -f /etc/vbox/vbox.cfg ] && . /etc/vbox/vbox.cfg
@@ -166,7 +171,7 @@ start()
         if [ -e /proc/sys/kernel/perf_counter_paranoid ]; then
           echo 2 > /proc/sys/kernel/perf_counter_paranoid 
         fi
-        if ! modprobe vboxdrv > /dev/null 2>&1; then
+        if ! $MODPROBE vboxdrv > /dev/null 2>&1; then
             failure "modprobe vboxdrv failed. Please use 'dmesg' to find out why"
         fi
         sleep .2
@@ -198,10 +203,10 @@ start()
         rmmod vboxdrv 2>/dev/null
         failure "Cannot change owner $GROUPNAME for device $DEVICE"
     fi
-    if ! modprobe vboxnetflt > /dev/null 2>&1; then
+    if ! $MODPROBE vboxnetflt > /dev/null 2>&1; then
         failure "modprobe vboxnetflt failed. Please use 'dmesg' to find out why"
     fi
-    if ! modprobe vboxnetadp > /dev/null 2>&1; then
+    if ! $MODPROBE vboxnetadp > /dev/null 2>&1; then
         failure "modprobe vboxnetadp failed. Please use 'dmesg' to find out why"
     fi
     succ_msg
