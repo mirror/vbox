@@ -884,7 +884,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     mAudioAdapter->initCopy (this, mPeer->mAudioAdapter);
 
     unconst(mUSBController).createObject();
-    mUSBController->init(this, mPeer->mUSBController);
+    mUSBController->initCopy(this, mPeer->mUSBController);
 
     for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot++)
     {
