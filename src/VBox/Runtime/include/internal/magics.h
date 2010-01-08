@@ -82,6 +82,10 @@
 #define RTLOCKVALRECSHRDOWN_MAGIC       UINT32_C(0x19201009)
 /** The magic value for RTLOCKVALRECSHRDOWN::u32Magic after deletion. */
 #define RTLOCKVALRECSHRDOWN_MAGIC_DEAD  UINT32_C(0x19760509)
+/** The magic value for RTLOCKVALRECNEST::u32Magic. (Anne Desclos) */
+#define RTLOCKVALRECNEST_MAGIC          UINT32_C(0x19071123)
+/** The magic value for RTLOCKVALRECNEST::u32Magic after deletion. */
+#define RTLOCKVALRECNEST_MAGIC_DEAD     UINT32_C(0x19980427)
 /** Magic number for RTMEMCACHEINT::u32Magic. (Joseph Weizenbaum) */
 #define RTMEMCACHE_MAGIC                UINT32_C(0x19230108)
 /** Dead magic number for RTMEMCACHEINT::u32Magic. */

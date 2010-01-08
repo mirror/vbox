@@ -424,7 +424,7 @@ static DECLCALLBACK(int) test1Thread(RTTHREAD ThreadSelf, void *pvUser)
     PRTCRITSECT     pNext = &g_aCritSects[(i + 1) % g_cThreads];
 
     RTTEST_CHECK_RC_RET(g_hTest, RTCritSectEnter(pMine), VINF_SUCCESS, rcCheck);
-    if (i & 1)
+    if (!(i & 1))
         RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(pMine), VINF_SUCCESS);
     if (RT_SUCCESS(testWaitForCritSectToBeOwned(pNext)))
     {
@@ -444,7 +444,7 @@ static DECLCALLBACK(int) test1Thread(RTTHREAD ThreadSelf, void *pvUser)
         if (RT_SUCCESS(rc))
             RTTEST_CHECK_RC(g_hTest, rc = RTCritSectLeave(pNext), VINF_SUCCESS);
     }
-    if (i & 1)
+    if (!(i & 1))
         RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(pMine), VINF_SUCCESS);
     RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(pMine), VINF_SUCCESS);
     return VINF_SUCCESS;

@@ -37,15 +37,40 @@
 
 RT_C_DECLS_BEGIN
 
+
+/**
+ * Record used only on the lock stack for recording the stack and source
+ * position of a recursive lock acquisition.
+ */
+typedef struct RTLOCKVALRECNEST
+{
+    RTLOCKVALRECCORE                Core;
+    /** The recursion level at this point in the stack. */
+    uint32_t                        cRecursion;
+    /** Pointer to the next record on the stack. */
+    PRTLOCKVALRECUNION volatile     pDown;
+    /** Pointer to the first recursion. */
+    PRTLOCKVALRECUNION volatile     pRec;
+    /** Pointer to the next free record when in the
+     *  RTLOCKVALPERTHREAD::pFreeNestRecs list. */
+    struct RTLOCKVALRECNEST        *pNextFree;
+    /** The source position. */
+    RTLOCKVALSRCPOS                 SrcPos;
+} RTLOCKVALRECNEST;
+/** Pointer to a recursion record. */
+typedef RTLOCKVALRECNEST *PRTLOCKVALRECNEST;
+
+
 /**
  * Record union for simplifying internal processing.
  */
 typedef union RTLOCKVALRECUNION
 {
-    RTLOCKVALRECCORE      Core;
-    RTLOCKVALRECEXCL      Excl;
-    RTLOCKVALRECSHRD      Shared;
-    RTLOCKVALRECSHRDOWN   ShrdOwner;
+    RTLOCKVALRECCORE                Core;
+    RTLOCKVALRECEXCL                Excl;
+    RTLOCKVALRECSHRD                Shared;
+    RTLOCKVALRECSHRDOWN             ShrdOwner;
+    RTLOCKVALRECNEST                Nest;
 } RTLOCKVALRECUNION;
 
 
@@ -58,14 +83,16 @@ typedef struct RTLOCKVALPERTHREAD
 {
     /** Where we are blocking. */
     RTLOCKVALSRCPOS                 SrcPos;
+    /** Top of the lock stack. */
+    PRTLOCKVALRECUNION volatile     pStackTop;
+    /** List of free recursion (nesting) record. */
+    PRTLOCKVALRECNEST               pFreeNestRecs;
     /** What we're blocking on.
      * The lock validator sets this, RTThreadUnblock clears it. */
     PRTLOCKVALRECUNION volatile     pRec;
     /** The state in which pRec that goes with pRec.
      * RTThreadUnblocking uses this to figure out when to clear pRec. */
     RTTHREADSTATE volatile          enmRecState;
-    /** Top of the lock stack. */
-    PRTLOCKVALRECUNION volatile     pStackTop;
     /** The thread is running inside the lock validator. */
     bool volatile                   fInValidator;
     /** Reserved for alignment purposes. */
@@ -84,6 +111,7 @@ typedef struct RTLOCKVALPERTHREAD
 
 
 DECLHIDDEN(void)    rtLockValidatorInitPerThread(RTLOCKVALPERTHREAD *pPerThread);
+DECLHIDDEN(void)    rtLockValidatorDeletePerThread(RTLOCKVALPERTHREAD *pPerThread);
 DECLHIDDEN(void)    rtLockValidatorSerializeDestructEnter(void);
 DECLHIDDEN(void)    rtLockValidatorSerializeDestructLeave(void);
 

@@ -576,8 +576,9 @@ static void rtThreadDestroy(PRTTHREADINT pThread)
      */
 #ifdef IN_RING3
     rtLockValidatorSerializeDestructEnter();
-#endif
 
+    rtLockValidatorDeletePerThread(&pThread->LockValidator);
+#endif
     ASMAtomicXchgU32(&pThread->u32Magic, RTTHREADINT_MAGIC_DEAD);
     ASMAtomicWritePtr(&pThread->Core.Key, (void *)NIL_RTTHREAD);
     pThread->enmType         = RTTHREADTYPE_INVALID;
