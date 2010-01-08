@@ -85,10 +85,6 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     mCbToolBarAlignment->setChecked (miniToolBarAlignment == "top");
     mCbToolBarAlignment->setEnabled (mCbShowToolBar->isChecked());
 
-    /* RTC use UTC */
-    bool rtcUseUTC = mMachine.GetRTCUseUTC ();
-    mCbTCUseUTC->setChecked (rtcUseUTC);
-
     /* Snapshot folder */
     mPsSnapshot->setPath (aMachine.GetSnapshotFolder());
     mPsSnapshot->setHomeDir (QFileInfo (mMachine.GetSettingsFilePath()).absolutePath());
@@ -123,9 +119,6 @@ void VBoxVMSettingsGeneral::putBackTo()
     /* Show Mini ToolBar at top */
     mMachine.SetExtraData (VBoxDefs::GUI_MiniToolBarAlignment,
                            mCbToolBarAlignment->isChecked() ? "top" : "bottom");
-
-    /* RTC reports time in UTC */
-    mMachine.SetRTCUseUTC (mCbTCUseUTC->isChecked());
 
     /* Saved state folder */
     if (mPsSnapshot->isModified())
