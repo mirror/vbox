@@ -67,6 +67,7 @@ bool volatile               g_fShutdown = false;
 static uint32_t             g_cThreads;
 static uint32_t             g_iDeadlockThread;
 static RTTHREAD             g_ahThreads[32];
+static RTLOCKVALCLASS       g_ahClasses[32];
 static RTCRITSECT           g_aCritSects[32];
 static RTSEMRW              g_ahSemRWs[32];
 static RTSEMMUTEX           g_ahSemMtxes[32];
@@ -339,7 +340,8 @@ static void testIt(uint32_t cThreads, uint32_t cSecs, bool fLoops, PFNRTTHREAD p
 
     for (uint32_t i = 0; i < cThreads; i++)
     {
-        RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInit(&g_aCritSects[i]), VINF_SUCCESS);
+        RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInitEx(&g_aCritSects[i], 0 /*fFlags*/, NIL_RTLOCKVALCLASS,
+                                                       RTLOCKVAL_SUB_CLASS_ANY, "RTCritSect"), VINF_SUCCESS);
         RTTEST_CHECK_RC_RETV(g_hTest, RTSemRWCreate(&g_ahSemRWs[i]), VINF_SUCCESS);
         RTTEST_CHECK_RC_RETV(g_hTest, RTSemMutexCreate(&g_ahSemMtxes[i]), VINF_SUCCESS);
     }
@@ -417,7 +419,7 @@ static void testIt(uint32_t cThreads, uint32_t cSecs, bool fLoops, PFNRTTHREAD p
 }
 
 
-static DECLCALLBACK(int) test1Thread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) testDd1Thread(RTTHREAD ThreadSelf, void *pvUser)
 {
     uintptr_t       i     = (uintptr_t)pvUser;
     PRTCRITSECT     pMine = &g_aCritSects[i];
@@ -451,13 +453,13 @@ static DECLCALLBACK(int) test1Thread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
-static void test1(uint32_t cThreads, uint32_t cSecs)
+static void testDd1(uint32_t cThreads, uint32_t cSecs)
 {
-    testIt(cThreads, cSecs, false, test1Thread, "critsect");
+    testIt(cThreads, cSecs, false, testDd1Thread, "critsect");
 }
 
 
-static DECLCALLBACK(int) test2Thread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) testDd2Thread(RTTHREAD ThreadSelf, void *pvUser)
 {
     uintptr_t       i     = (uintptr_t)pvUser;
     RTSEMRW         hMine = g_ahSemRWs[i];
@@ -507,13 +509,13 @@ static DECLCALLBACK(int) test2Thread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
-static void test2(uint32_t cThreads, uint32_t cSecs)
+static void testDd2(uint32_t cThreads, uint32_t cSecs)
 {
-    testIt(cThreads, cSecs, false, test2Thread, "read-write");
+    testIt(cThreads, cSecs, false, testDd2Thread, "read-write");
 }
 
 
-static DECLCALLBACK(int) test3Thread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) testDd3Thread(RTTHREAD ThreadSelf, void *pvUser)
 {
     uintptr_t       i     = (uintptr_t)pvUser;
     RTSEMRW         hMine = g_ahSemRWs[i];
@@ -554,13 +556,13 @@ static DECLCALLBACK(int) test3Thread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
-static void test3(uint32_t cThreads, uint32_t cSecs)
+static void testDd3(uint32_t cThreads, uint32_t cSecs)
 {
-    testIt(cThreads, cSecs, true, test3Thread, "read-write race");
+    testIt(cThreads, cSecs, true, testDd3Thread, "read-write race");
 }
 
 
-static DECLCALLBACK(int) test4Thread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) testDd4Thread(RTTHREAD ThreadSelf, void *pvUser)
 {
     uintptr_t       i     = (uintptr_t)pvUser;
     RTSEMRW         hMine = g_ahSemRWs[i];
@@ -610,13 +612,13 @@ static DECLCALLBACK(int) test4Thread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
-static void test4(uint32_t cThreads, uint32_t cSecs)
+static void testDd4(uint32_t cThreads, uint32_t cSecs)
 {
-    testIt(cThreads, cSecs, true, test4Thread, "read-write race v2");
+    testIt(cThreads, cSecs, true, testDd4Thread, "read-write race v2");
 }
 
 
-static DECLCALLBACK(int) test5Thread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) testDd5Thread(RTTHREAD ThreadSelf, void *pvUser)
 {
     uintptr_t       i     = (uintptr_t)pvUser;
     RTSEMMUTEX      hMine = g_ahSemMtxes[i];
@@ -650,13 +652,13 @@ static DECLCALLBACK(int) test5Thread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
-static void test5(uint32_t cThreads, uint32_t cSecs)
+static void testDd5(uint32_t cThreads, uint32_t cSecs)
 {
-    testIt(cThreads, cSecs, false, test5Thread, "mutex");
+    testIt(cThreads, cSecs, false, testDd5Thread, "mutex");
 }
 
 
-static DECLCALLBACK(int) test6Thread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) testDd6Thread(RTTHREAD ThreadSelf, void *pvUser)
 {
     uintptr_t       i     = (uintptr_t)pvUser;
     PRTCRITSECT     pMine = &g_aCritSects[i];
@@ -703,13 +705,13 @@ static DECLCALLBACK(int) test6Thread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
-static void test6(uint32_t cThreads, uint32_t cSecs)
+static void testDd6(uint32_t cThreads, uint32_t cSecs)
 {
-    testIt(cThreads, cSecs, false, test6Thread, "event");
+    testIt(cThreads, cSecs, false, testDd6Thread, "event");
 }
 
 
-static DECLCALLBACK(int) test7Thread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) testDd7Thread(RTTHREAD ThreadSelf, void *pvUser)
 {
     uintptr_t       i     = (uintptr_t)pvUser;
     PRTCRITSECT     pMine = &g_aCritSects[i];
@@ -757,11 +759,67 @@ static DECLCALLBACK(int) test7Thread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
-static void test7(uint32_t cThreads, uint32_t cSecs)
+static void testDd7(uint32_t cThreads, uint32_t cSecs)
 {
-    testIt(cThreads, cSecs, false, test7Thread, "event multi");
+    testIt(cThreads, cSecs, false, testDd7Thread, "event multi");
 }
 
+
+static void testLo1(void)
+{
+    RTTestSub(g_hTest, "locking order, automatic");
+
+    /* init, each critsect has its own class now. */
+    for (unsigned i = 0; i < RT_ELEMENTS(g_ahClasses); i++)
+    {
+        RTTEST_CHECK_RC_RETV(g_hTest, RTLockValidatorClassCreate(&g_ahClasses[i], true /*fAutodidact*/, RT_SRC_POS), VINF_SUCCESS);
+        RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInitEx(&g_aCritSects[i], 0, g_ahClasses[i], RTLOCKVAL_SUB_CLASS_NONE, "RTCritSectLO"), VINF_SUCCESS);
+        RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRetain(g_ahClasses[i]) == 3);
+        RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 2);
+    }
+
+    /* Enter the first 4 critsects in ascending order and thereby definining
+       this as a valid lock order.  */
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[0]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[1]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[2]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[3]), VINF_SUCCESS);
+
+    /* Now, leave and re-enter the critsects in a way that should break the
+       order and check that we get the appropriate response. */
+    int rc;
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[0]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(&g_aCritSects[0]), VERR_SEM_LV_WRONG_ORDER);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[0]), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[1]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(&g_aCritSects[1]), VERR_SEM_LV_WRONG_ORDER);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[1]), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, rc= RTCritSectEnter(&g_aCritSects[2]), VERR_SEM_LV_WRONG_ORDER);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[3]), VINF_SUCCESS);
+
+    /* Check that recursion isn't subject to order checks. */
+
+
+    /* Enable strict release order for class 2 and check that violations
+       are caught. */
+
+
+    /* clean up */
+    for (unsigned i = 0; i < RT_ELEMENTS(g_ahClasses); i++)
+    {
+        RTTEST_CHECK(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 1);
+        g_ahClasses[i] = NIL_RTLOCKVALCLASS;
+        RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectDelete(&g_aCritSects[i]), VINF_SUCCESS);
+    }
+}
 
 static bool testIsLockValidationCompiledIn(void)
 {
@@ -836,15 +894,26 @@ int main()
             : RTTestSkipAndDestroy(g_hTest, "deadlock detection is not compiled in");
     RTLockValidatorSetQuiet(false);
 
+    bool fTestDd = false;//true;
+    bool fTestLo = true;
+
     /*
      * Some initial tests with verbose output (all single pass).
      */
-    test1(3, 0);
-    test2(1, 0);
-    test2(3, 0);
-    test5(3, 0);
-    test6(3, 0);
-    test7(3, 0);
+    if (fTestDd)
+    {
+        testDd1(3, 0);
+        testDd2(1, 0);
+        testDd2(3, 0);
+        testDd5(3, 0);
+        testDd6(3, 0);
+        testDd7(3, 0);
+    }
+    if (fTestLo)
+    {
+        testLo1();
+    }
+
 
     /*
      * If successful, perform more thorough testing without noisy output.
@@ -853,49 +922,52 @@ int main()
     {
         RTLockValidatorSetQuiet(true);
 
-        test1( 2, SECS_SIMPLE_TEST);
-        test1( 3, SECS_SIMPLE_TEST);
-        test1( 7, SECS_SIMPLE_TEST);
-        test1(10, SECS_SIMPLE_TEST);
-        test1(15, SECS_SIMPLE_TEST);
-        test1(30, SECS_SIMPLE_TEST);
+        if (fTestDd)
+        {
+            testDd1( 2, SECS_SIMPLE_TEST);
+            testDd1( 3, SECS_SIMPLE_TEST);
+            testDd1( 7, SECS_SIMPLE_TEST);
+            testDd1(10, SECS_SIMPLE_TEST);
+            testDd1(15, SECS_SIMPLE_TEST);
+            testDd1(30, SECS_SIMPLE_TEST);
 
-        test2( 1, SECS_SIMPLE_TEST);
-        test2( 2, SECS_SIMPLE_TEST);
-        test2( 3, SECS_SIMPLE_TEST);
-        test2( 7, SECS_SIMPLE_TEST);
-        test2(10, SECS_SIMPLE_TEST);
-        test2(15, SECS_SIMPLE_TEST);
-        test2(30, SECS_SIMPLE_TEST);
+            testDd2( 1, SECS_SIMPLE_TEST);
+            testDd2( 2, SECS_SIMPLE_TEST);
+            testDd2( 3, SECS_SIMPLE_TEST);
+            testDd2( 7, SECS_SIMPLE_TEST);
+            testDd2(10, SECS_SIMPLE_TEST);
+            testDd2(15, SECS_SIMPLE_TEST);
+            testDd2(30, SECS_SIMPLE_TEST);
 
-        test3( 2, SECS_SIMPLE_TEST);
-        test3(10, SECS_SIMPLE_TEST);
+            testDd3( 2, SECS_SIMPLE_TEST);
+            testDd3(10, SECS_SIMPLE_TEST);
 
-        test4( 2, SECS_RACE_TEST);
-        test4( 6, SECS_RACE_TEST);
-        test4(10, SECS_RACE_TEST);
-        test4(30, SECS_RACE_TEST);
+            testDd4( 2, SECS_RACE_TEST);
+            testDd4( 6, SECS_RACE_TEST);
+            testDd4(10, SECS_RACE_TEST);
+            testDd4(30, SECS_RACE_TEST);
 
-        test5( 2, SECS_RACE_TEST);
-        test5( 3, SECS_RACE_TEST);
-        test5( 7, SECS_RACE_TEST);
-        test5(10, SECS_RACE_TEST);
-        test5(15, SECS_RACE_TEST);
-        test5(30, SECS_RACE_TEST);
+            testDd5( 2, SECS_RACE_TEST);
+            testDd5( 3, SECS_RACE_TEST);
+            testDd5( 7, SECS_RACE_TEST);
+            testDd5(10, SECS_RACE_TEST);
+            testDd5(15, SECS_RACE_TEST);
+            testDd5(30, SECS_RACE_TEST);
 
-        test6( 2, SECS_SIMPLE_TEST);
-        test6( 3, SECS_SIMPLE_TEST);
-        test6( 7, SECS_SIMPLE_TEST);
-        test6(10, SECS_SIMPLE_TEST);
-        test6(15, SECS_SIMPLE_TEST);
-        test6(30, SECS_SIMPLE_TEST);
+            testDd6( 2, SECS_SIMPLE_TEST);
+            testDd6( 3, SECS_SIMPLE_TEST);
+            testDd6( 7, SECS_SIMPLE_TEST);
+            testDd6(10, SECS_SIMPLE_TEST);
+            testDd6(15, SECS_SIMPLE_TEST);
+            testDd6(30, SECS_SIMPLE_TEST);
 
-        test7( 2, SECS_SIMPLE_TEST);
-        test7( 3, SECS_SIMPLE_TEST);
-        test7( 7, SECS_SIMPLE_TEST);
-        test7(10, SECS_SIMPLE_TEST);
-        test7(15, SECS_SIMPLE_TEST);
-        test7(30, SECS_SIMPLE_TEST);
+            testDd7( 2, SECS_SIMPLE_TEST);
+            testDd7( 3, SECS_SIMPLE_TEST);
+            testDd7( 7, SECS_SIMPLE_TEST);
+            testDd7(10, SECS_SIMPLE_TEST);
+            testDd7(15, SECS_SIMPLE_TEST);
+            testDd7(30, SECS_SIMPLE_TEST);
+        }
     }
 
     return RTTestSummaryAndDestroy(g_hTest);
