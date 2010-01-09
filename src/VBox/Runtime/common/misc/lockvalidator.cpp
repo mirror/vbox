@@ -89,7 +89,7 @@
 /** @def RTLOCKVAL_WITH_CLASS_HASH_STATS
  * Enables collection prior class hash lookup statistics, dumping them when
  * complaining about the class. */
-#if defined(DEBUG/*_bird*/) || defined(DOXYGEN_RUNNING)
+#if defined(DEBUG) || defined(DOXYGEN_RUNNING)
 # define RTLOCKVAL_WITH_CLASS_HASH_STATS
 #endif
 
