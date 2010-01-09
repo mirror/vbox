@@ -34,6 +34,7 @@
 #include <iprt/types.h>
 #include <iprt/assert.h>
 #include <iprt/thread.h>
+#include <iprt/stdarg.h>
 
 
 /** @defgroup grp_rtlockval     RTLockValidator - Lock Validator
@@ -736,13 +737,46 @@ RTDECL(bool) RTLockValidatorIsBlockedThreadInValidator(RTTHREAD hThread);
  * @param   cMsMinOrder         Used to raise the sleep interval at which lock
  *                              order validation kicks in.  Minimum is 1 ms,
  *                              while RT_INDEFINITE_WAIT will disable it.
+ * @param   pszNameFmt          Class name format string, optional (NULL).  Max
+ *                              length is 32 bytes.
+ * @param   ...                 Format string arguments.
  *
  * @remarks The properties can be modified after creation by the
  *          RTLockValidatorClassSet* methods.
  */
 RTDECL(int) RTLockValidatorClassCreateEx(PRTLOCKVALCLASS phClass, PCRTLOCKVALSRCPOS pSrcPos,
                                          bool fAutodidact, bool fRecursionOk, bool fStrictReleaseOrder,
-                                         RTMSINTERVAL cMsMinDeadlock, RTMSINTERVAL cMsMinOrder);
+                                         RTMSINTERVAL cMsMinDeadlock, RTMSINTERVAL cMsMinOrder,
+                                         const char *pszNameFmt, ...);
+
+/**
+ * Creates a new lock validator class, all properties specified.
+ *
+ * @returns IPRT status code
+ * @param   phClass             Where to return the class handle.
+ * @param   pSrcPos             The source position of the create call.
+ * @param   fAutodidact         Whether the class should be allowed to teach
+ *                              itself new locking order rules (true), or if the
+ *                              user will teach it all it needs to know (false).
+ * @param   fRecursionOk        Whether to allow lock recursion or not.
+ * @param   fStrictReleaseOrder Enforce strict lock release order or not.
+ * @param   cMsMinDeadlock      Used to raise the sleep interval at which
+ *                              deadlock detection kicks in.  Minimum is 1 ms,
+ *                              while RT_INDEFINITE_WAIT will disable it.
+ * @param   cMsMinOrder         Used to raise the sleep interval at which lock
+ *                              order validation kicks in.  Minimum is 1 ms,
+ *                              while RT_INDEFINITE_WAIT will disable it.
+ * @param   pszNameFmt          Class name format string, optional (NULL).  Max
+ *                              length is 32 bytes.
+ * @param   va                  Format string arguments.
+ *
+ * @remarks The properties can be modified after creation by the
+ *          RTLockValidatorClassSet* methods.
+ */
+RTDECL(int) RTLockValidatorClassCreateExV(PRTLOCKVALCLASS phClass, PCRTLOCKVALSRCPOS pSrcPos,
+                                          bool fAutodidact, bool fRecursionOk, bool fStrictReleaseOrder,
+                                          RTMSINTERVAL cMsMinDeadlock, RTMSINTERVAL cMsMinOrder,
+                                          const char *pszNameFmt, va_list va);
 
 /**
  * Creates a new lock validator class.
