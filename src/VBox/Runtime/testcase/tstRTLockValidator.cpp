@@ -767,15 +767,33 @@ static void testDd7(uint32_t cThreads, uint32_t cSecs)
 
 static void testLo1(void)
 {
-    RTTestSub(g_hTest, "locking order, automatic");
+    RTTestSub(g_hTest, "locking order basics");
 
-    /* init, each critsect has its own class now. */
+    /* Initialize the critsections, the first 4 has their own classes, the rest
+       use the same class and relies on the sub-class mechanism for ordering.  */
     for (unsigned i = 0; i < RT_ELEMENTS(g_ahClasses); i++)
     {
-        RTTEST_CHECK_RC_RETV(g_hTest, RTLockValidatorClassCreate(&g_ahClasses[i], true /*fAutodidact*/, RT_SRC_POS), VINF_SUCCESS);
-        RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInitEx(&g_aCritSects[i], 0, g_ahClasses[i], RTLOCKVAL_SUB_CLASS_NONE, "RTCritSectLO"), VINF_SUCCESS);
-        RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRetain(g_ahClasses[i]) == 3);
-        RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 2);
+        if (i <= 3)
+        {
+            RTTEST_CHECK_RC_RETV(g_hTest, RTLockValidatorClassCreate(&g_ahClasses[i], true /*fAutodidact*/, RT_SRC_POS), VINF_SUCCESS);
+            RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInitEx(&g_aCritSects[i], 0, g_ahClasses[i], RTLOCKVAL_SUB_CLASS_NONE, "RTCritSectLO-Auto"), VINF_SUCCESS);
+            RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRetain(g_ahClasses[i]) == 3);
+            RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 2);
+        }
+        else
+        {
+            g_ahClasses[i] = RTLockValidatorClassForSrcPos(RT_SRC_POS);
+            RTTEST_CHECK_RETV(g_hTest, g_ahClasses[i] != NIL_RTLOCKVALCLASS);
+            RTTEST_CHECK_RETV(g_hTest, i == 4 || g_ahClasses[i] == g_ahClasses[i - 1]);
+            if (i == 4)
+                RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInitEx(&g_aCritSects[i], 0, g_ahClasses[i], RTLOCKVAL_SUB_CLASS_NONE,     "RTCritSectLO-None"), VINF_SUCCESS);
+            else if (i == 5)
+                RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInitEx(&g_aCritSects[i], 0, g_ahClasses[i], RTLOCKVAL_SUB_CLASS_ANY,      "RTCritSectLO-Any"), VINF_SUCCESS);
+            else
+                RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInitEx(&g_aCritSects[i], 0, g_ahClasses[i], RTLOCKVAL_SUB_CLASS_USER + i, "RTCritSectLO-User"), VINF_SUCCESS);
+
+            RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRetain(g_ahClasses[i]) == 1 + (i - 4 + 1) * 2); /* released in cleanup. */
+        }
     }
 
     /* Enter the first 4 critsects in ascending order and thereby definining
@@ -806,16 +824,140 @@ static void testLo1(void)
     RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[3]), VINF_SUCCESS);
 
     /* Check that recursion isn't subject to order checks. */
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[0]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[1]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[2]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[3]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(&g_aCritSects[0]), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[0]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[3]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[2]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[1]), VINF_SUCCESS);
 
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[3]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[1]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[0]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[0]), VINF_SUCCESS);
+    }
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[3]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[1]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[0]), VINF_SUCCESS);
 
     /* Enable strict release order for class 2 and check that violations
        are caught. */
+    RTTEST_CHECK_RC(g_hTest, RTLockValidatorClassEnforceStrictReleaseOrder(g_ahClasses[2], true), VINF_SUCCESS);
 
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[0]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[1]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[2]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[3]), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectLeave(&g_aCritSects[2]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
+    if (RT_FAILURE(rc))
+    {
+        /* applies to recursions as well */
+        RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[2]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[3]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[3]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
+    }
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[0]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[1]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[3]), VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VINF_SUCCESS);
+
+    /* Test that sub-class order works (4 = NONE, 5 = ANY, 6+ = USER). */
+    uint32_t cErrorsBefore = RTTestErrorCount(g_hTest);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[7]), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(&g_aCritSects[4]), VERR_SEM_LV_WRONG_ORDER);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[4]), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(&g_aCritSects[5]), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[5]), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(&g_aCritSects[8]), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[8]), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(&g_aCritSects[6]), VERR_SEM_LV_WRONG_ORDER);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[6]), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(&g_aCritSects[7]), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[7]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[7]), VINF_SUCCESS);
+
+    /* Check that NONE trumps both ANY and USER. */
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[4]), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(&g_aCritSects[5]), VERR_SEM_LV_WRONG_ORDER);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[5]), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(&g_aCritSects[6]), VERR_SEM_LV_WRONG_ORDER);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[6]), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[4]), VINF_SUCCESS);
+
+    /* Take all the locks using sub-classes. */
+    if (cErrorsBefore == RTTestErrorCount(g_hTest))
+    {
+        bool fSavedQuiet = RTLockValidatorSetQuiet(true);
+        for (uint32_t i = 6; i < RT_ELEMENTS(g_aCritSects); i++)
+        {
+            RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[i]), VINF_SUCCESS);
+            RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[4]), VERR_SEM_LV_WRONG_ORDER);
+            RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[5]), VINF_SUCCESS);
+        }
+        for (uint32_t i = 6; i < RT_ELEMENTS(g_aCritSects); i++)
+        {
+            RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[i]), VINF_SUCCESS);
+            RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[5]), VINF_SUCCESS);
+        }
+        RTLockValidatorSetQuiet(fSavedQuiet);
+    }
+
+    /* Work up some hash statistics and trigger a violation to show them. */
+    for (uint32_t i = 0; i < 10240; i++)
+    {
+        RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[0]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[1]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[2]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[3]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[5]), VINF_SUCCESS);
+
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[5]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[3]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[1]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[0]), VINF_SUCCESS);
+    }
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[5]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[3]), VERR_SEM_LV_WRONG_ORDER);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[5]), VINF_SUCCESS);
 
     /* clean up */
     for (unsigned i = 0; i < RT_ELEMENTS(g_ahClasses); i++)
     {
-        RTTEST_CHECK(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 1);
+        if (i <= 3)
+            RTTEST_CHECK(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 1);
+        else
+        {
+            uint32_t cExpect = 1 + (RT_ELEMENTS(g_ahClasses) - i) * 2 - 1;
+            RTTEST_CHECK(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == cExpect);
+        }
         g_ahClasses[i] = NIL_RTLOCKVALCLASS;
         RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectDelete(&g_aCritSects[i]), VINF_SUCCESS);
     }
