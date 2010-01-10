@@ -1499,11 +1499,13 @@ typedef struct RTLOCKVALSRCPOS const   *PCRTLOCKVALSRCPOS;
  * reserved for the lock validator.  In the user range the locks can only be
  * taking in ascending order.
  * @{ */
+/** Invalid value.  */
+#define RTLOCKVAL_SUB_CLASS_INVALID     UINT32_C(0)
 /** Not allowed to be taken with any other locks in the same class.
   * This is the recommended value.  */
-#define RTLOCKVAL_SUB_CLASS_NONE        UINT32_C(0)
+#define RTLOCKVAL_SUB_CLASS_NONE        UINT32_C(1)
 /** Any order is allowed within the class. */
-#define RTLOCKVAL_SUB_CLASS_ANY         UINT32_C(1)
+#define RTLOCKVAL_SUB_CLASS_ANY         UINT32_C(2)
 /** The first user value. */
 #define RTLOCKVAL_SUB_CLASS_USER        UINT32_C(16)
 /** @} */

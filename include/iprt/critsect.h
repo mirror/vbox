@@ -124,10 +124,26 @@ RTDECL(int) RTCritSectInit(PRTCRITSECT pCritSect);
  * @param   uSubClass           The sub-class.  This is used to define lock
  *                              order inside the same class.  If you don't know,
  *                              then pass RTLOCKVAL_SUB_CLASS_NONE.
- * @param   pszName             The lock name (optional).
+ * @param   pszNameFmt          Name format string for the lock validator,
+ *                              optional (NULL). Max length is 32 bytes.
+ * @param   ...                 Format string arguments.
  */
 RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags,
-                             RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszName);
+                             RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszName, ...);
+
+/**
+ * Changes the lock validator sub-class of the critical section.
+ *
+ * It is recommended to try make sure that nobody is using this critical section
+ * while changing the value.
+ *
+ * @returns The old sub-class.  RTLOCKVAL_SUB_CLASS_INVALID is returns if the
+ *          lock validator isn't compiled in or either of the parameters are
+ *          invalid.
+ * @param   pCritSect           The critical section.
+ * @param   uSubClass           The new sub-class value.
+ */
+RTDECL(uint32_t) RTCritSectSetSubClass(PRTCRITSECT pCritSect, uint32_t uSubClass);
 
 /**
  * Enter a critical section.

@@ -455,7 +455,7 @@ static DECLCALLBACK(int) testDd1Thread(RTTHREAD ThreadSelf, void *pvUser)
 
 static void testDd1(uint32_t cThreads, uint32_t cSecs)
 {
-    testIt(cThreads, cSecs, false, testDd1Thread, "critsect");
+    testIt(cThreads, cSecs, false, testDd1Thread, "deadlock, critsect");
 }
 
 
@@ -511,7 +511,7 @@ static DECLCALLBACK(int) testDd2Thread(RTTHREAD ThreadSelf, void *pvUser)
 
 static void testDd2(uint32_t cThreads, uint32_t cSecs)
 {
-    testIt(cThreads, cSecs, false, testDd2Thread, "read-write");
+    testIt(cThreads, cSecs, false, testDd2Thread, "deadlock, read-write");
 }
 
 
@@ -558,7 +558,7 @@ static DECLCALLBACK(int) testDd3Thread(RTTHREAD ThreadSelf, void *pvUser)
 
 static void testDd3(uint32_t cThreads, uint32_t cSecs)
 {
-    testIt(cThreads, cSecs, true, testDd3Thread, "read-write race");
+    testIt(cThreads, cSecs, true, testDd3Thread, "deadlock, read-write race");
 }
 
 
@@ -614,7 +614,7 @@ static DECLCALLBACK(int) testDd4Thread(RTTHREAD ThreadSelf, void *pvUser)
 
 static void testDd4(uint32_t cThreads, uint32_t cSecs)
 {
-    testIt(cThreads, cSecs, true, testDd4Thread, "read-write race v2");
+    testIt(cThreads, cSecs, true, testDd4Thread, "deadlock, read-write race v2");
 }
 
 
@@ -654,7 +654,7 @@ static DECLCALLBACK(int) testDd5Thread(RTTHREAD ThreadSelf, void *pvUser)
 
 static void testDd5(uint32_t cThreads, uint32_t cSecs)
 {
-    testIt(cThreads, cSecs, false, testDd5Thread, "mutex");
+    testIt(cThreads, cSecs, false, testDd5Thread, "deadlock, mutex");
 }
 
 
@@ -707,7 +707,7 @@ static DECLCALLBACK(int) testDd6Thread(RTTHREAD ThreadSelf, void *pvUser)
 
 static void testDd6(uint32_t cThreads, uint32_t cSecs)
 {
-    testIt(cThreads, cSecs, false, testDd6Thread, "event");
+    testIt(cThreads, cSecs, false, testDd6Thread, "deadlock, event");
 }
 
 
@@ -761,7 +761,7 @@ static DECLCALLBACK(int) testDd7Thread(RTTHREAD ThreadSelf, void *pvUser)
 
 static void testDd7(uint32_t cThreads, uint32_t cSecs)
 {
-    testIt(cThreads, cSecs, false, testDd7Thread, "event multi");
+    testIt(cThreads, cSecs, false, testDd7Thread, "deadlock, event multi");
 }
 
 
@@ -775,7 +775,7 @@ static void testLo1(void)
     {
         if (i <= 3)
         {
-            RTTEST_CHECK_RC_RETV(g_hTest, RTLockValidatorClassCreate(&g_ahClasses[i], true /*fAutodidact*/, RT_SRC_POS), VINF_SUCCESS);
+            RTTEST_CHECK_RC_RETV(g_hTest, RTLockValidatorClassCreate(&g_ahClasses[i], true /*fAutodidact*/, RT_SRC_POS, "testLo1-%u", i), VINF_SUCCESS);
             RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInitEx(&g_aCritSects[i], 0, g_ahClasses[i], RTLOCKVAL_SUB_CLASS_NONE, "RTCritSectLO-Auto"), VINF_SUCCESS);
             RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRetain(g_ahClasses[i]) == 3);
             RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 2);
@@ -963,6 +963,119 @@ static void testLo1(void)
     }
 }
 
+
+static void testLo2(void)
+{
+    RTTestSub(g_hTest, "locking order, critsect");
+
+    /* Initialize the critsection with all different classes */
+    for (unsigned i = 0; i < 4; i++)
+    {
+        RTTEST_CHECK_RC_RETV(g_hTest, RTLockValidatorClassCreate(&g_ahClasses[i], true /*fAutodidact*/, RT_SRC_POS, "testLo2-%u", i), VINF_SUCCESS);
+        RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInitEx(&g_aCritSects[i], 0, g_ahClasses[i], RTLOCKVAL_SUB_CLASS_NONE, "RTCritSectLO"), VINF_SUCCESS);
+        RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRetain(g_ahClasses[i]) == 3);
+        RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 2);
+    }
+
+    /* Enter the first 4 critsects in ascending order and thereby definining
+       this as a valid lock order.  */
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[0]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[1]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[2]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[3]), VINF_SUCCESS);
+
+    /* Now, leave and re-enter the critsects in a way that should break the
+       order and check that we get the appropriate response. */
+    int rc;
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[0]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(&g_aCritSects[0]), VERR_SEM_LV_WRONG_ORDER);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[0]), VINF_SUCCESS);
+
+    /* Check that recursion isn't subject to order checks. */
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(&g_aCritSects[1]), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[1]), VINF_SUCCESS);
+
+    /* Enable strict release order for class 2 and check that violations
+       are caught - including recursion. */
+    RTTEST_CHECK_RC(g_hTest, RTLockValidatorClassEnforceStrictReleaseOrder(g_ahClasses[2], true), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[2]), VINF_SUCCESS);                      /* start recursion */
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[3]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[3]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VINF_SUCCESS);                      /* end recursion */
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[1]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[3]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VINF_SUCCESS);
+
+    /* clean up */
+    for (unsigned i = 0; i < 4; i++)
+    {
+        RTTEST_CHECK(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 1);
+        g_ahClasses[i] = NIL_RTLOCKVALCLASS;
+        RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectDelete(&g_aCritSects[i]), VINF_SUCCESS);
+    }
+}
+
+
+static void testLo3(void)
+{
+    RTTestSub(g_hTest, "locking order, read-write");
+
+    /* Initialize the critsection with all different classes */
+    for (unsigned i = 0; i < 4; i++)
+    {
+        RTTEST_CHECK_RC_RETV(g_hTest, RTLockValidatorClassCreate(&g_ahClasses[i], true /*fAutodidact*/, RT_SRC_POS, "testLo3-%u", i), VINF_SUCCESS);
+        RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectInitEx(&g_aCritSects[i], 0, g_ahClasses[i], RTLOCKVAL_SUB_CLASS_NONE, "RTCritSectLO"), VINF_SUCCESS);
+        RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRetain(g_ahClasses[i]) == 4);
+        RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 3);
+    }
+
+    /* Enter the first 4 critsects in ascending order and thereby definining
+       this as a valid lock order.  */
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[0]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[1]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[2]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[3]), VINF_SUCCESS);
+
+    /* Now, leave and re-enter the critsects in a way that should break the
+       order and check that we get the appropriate response. */
+    int rc;
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[0]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(&g_aCritSects[0]), VERR_SEM_LV_WRONG_ORDER);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[0]), VINF_SUCCESS);
+
+    /* Check that recursion isn't subject to order checks. */
+    RTTEST_CHECK_RC(g_hTest, rc = RTCritSectEnter(&g_aCritSects[1]), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[1]), VINF_SUCCESS);
+
+    /* Enable strict release order for class 2 and check that violations
+       are caught - including recursion. */
+    RTTEST_CHECK_RC(g_hTest, RTLockValidatorClassEnforceStrictReleaseOrder(g_ahClasses[2], true), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[2]), VINF_SUCCESS);                      /* start recursion */
+    RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[3]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[3]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VINF_SUCCESS);                      /* end recursion */
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[1]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[3]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VINF_SUCCESS);
+
+    /* clean up */
+    for (unsigned i = 0; i < 4; i++)
+    {
+        RTTEST_CHECK(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 1);
+        g_ahClasses[i] = NIL_RTLOCKVALCLASS;
+        RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectDelete(&g_aCritSects[i]), VINF_SUCCESS);
+    }
+}
+
+
 static bool testIsLockValidationCompiledIn(void)
 {
     RTCRITSECT CritSect;
@@ -1054,6 +1167,7 @@ int main()
     if (fTestLo)
     {
         testLo1();
+        testLo2();
     }
 
 

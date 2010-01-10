@@ -508,7 +508,7 @@ DECL_FORCE_INLINE(void) rtLockValComplainAboutLockHlp(const char *pszPrefix, PRT
                                 pszSuffix2, pszSuffix);
 #else
             RTAssertMsg2AddWeak("%s%p %s own=%s nest=%u pos={%Rbn(%u) %Rfn %p}%s%s", pszPrefix,
-                                pRec->Excl.hLock, pRec->Excl.pszName,
+                                pRec->Excl.hLock, pRec->Excl.szName,
                                 rtLockValidatorNameThreadHandle(&pRec->Excl.hThread), cRecursion,
                                 pSrcPos->pszFile, pSrcPos->uLine, pSrcPos->pszFunction, pSrcPos->uId,
                                 pszSuffix2, pszSuffix);
@@ -517,7 +517,7 @@ DECL_FORCE_INLINE(void) rtLockValComplainAboutLockHlp(const char *pszPrefix, PRT
 
         case RTLOCKVALRECSHRD_MAGIC:
             RTAssertMsg2AddWeak("%s%p %s srec=%p%s", pszPrefix,
-                                pRec->Shared.hLock, pRec->Shared.pszName, pRec,
+                                pRec->Shared.hLock, pRec->Shared.szName, pRec,
                                 pszSuffix);
             break;
 
@@ -534,7 +534,7 @@ DECL_FORCE_INLINE(void) rtLockValComplainAboutLockHlp(const char *pszPrefix, PRT
                                     pszSuffix2, pszSuffix);
 #else
                 RTAssertMsg2AddWeak("%s%p %s thr=%s nest=%u pos={%Rbn(%u) %Rfn %p}%s%s", pszPrefix,
-                                    pShared->hLock, pShared->pszName,
+                                    pShared->hLock, pShared->szName,
                                     rtLockValidatorNameThreadHandle(&pRec->ShrdOwner.hThread), cRecursion,
                                     pSrcPos->pszFile, pSrcPos->uLine, pSrcPos->pszFunction, pSrcPos->uId,
                                     pszSuffix2, pszSuffix);
@@ -1023,13 +1023,17 @@ RTDECL(int) RTLockValidatorClassCreateExV(PRTLOCKVALCLASS phClass, PCRTLOCKVALSR
 }
 
 
-RTDECL(int) RTLockValidatorClassCreate(PRTLOCKVALCLASS phClass, bool fAutodidact, RT_SRC_POS_DECL)
+RTDECL(int) RTLockValidatorClassCreate(PRTLOCKVALCLASS phClass, bool fAutodidact, RT_SRC_POS_DECL, const char *pszNameFmt, ...)
 {
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_POS_NO_ID();
-    return RTLockValidatorClassCreateEx(phClass, &SrcPos,
-                                        fAutodidact, true /*fRecursionOk*/, false /*fStrictReleaseOrder*/,
-                                        1 /*cMsMinDeadlock*/, 1 /*cMsMinOrder*/,
-                                        NULL /*pszName*/);
+    va_list va;
+    va_start(va, pszNameFmt);
+    int rc = RTLockValidatorClassCreateExV(phClass, &SrcPos,
+                                           fAutodidact, true /*fRecursionOk*/, false /*fStrictReleaseOrder*/,
+                                           1 /*cMsMinDeadlock*/, 1 /*cMsMinOrder*/,
+                                           pszNameFmt, va);
+    va_end(va);
+    return rc;
 }
 
 
@@ -1455,11 +1459,11 @@ DECL_FORCE_INLINE(const char *) rtLockValidatorRecName(PRTLOCKVALRECUNION pRec)
     switch (pRec->Core.u32Magic)
     {
         case RTLOCKVALRECEXCL_MAGIC:
-            return pRec->Excl.pszName;
+            return pRec->Excl.szName;
         case RTLOCKVALRECSHRD_MAGIC:
-            return pRec->Shared.pszName;
+            return pRec->Shared.szName;
         case RTLOCKVALRECSHRDOWN_MAGIC:
-            return pRec->ShrdOwner.pSharedRec ? pRec->ShrdOwner.pSharedRec->pszName : "orphaned";
+            return pRec->ShrdOwner.pSharedRec ? pRec->ShrdOwner.pSharedRec->szName : "orphaned";
         case RTLOCKVALRECNEST_MAGIC:
             pRec = rtLockValidatorReadRecUnionPtr(&pRec->Nest.pRec);
             if (VALID_PTR(pRec))
@@ -1467,11 +1471,11 @@ DECL_FORCE_INLINE(const char *) rtLockValidatorRecName(PRTLOCKVALRECUNION pRec)
                 switch (pRec->Core.u32Magic)
                 {
                     case RTLOCKVALRECEXCL_MAGIC:
-                        return pRec->Excl.pszName;
+                        return pRec->Excl.szName;
                     case RTLOCKVALRECSHRD_MAGIC:
-                        return pRec->Shared.pszName;
+                        return pRec->Shared.szName;
                     case RTLOCKVALRECSHRDOWN_MAGIC:
-                        return pRec->ShrdOwner.pSharedRec ? pRec->ShrdOwner.pSharedRec->pszName : "orphaned";
+                        return pRec->ShrdOwner.pSharedRec ? pRec->ShrdOwner.pSharedRec->szName : "orphaned";
                     default:
                         return "unknown-nested";
                 }
@@ -2797,8 +2801,8 @@ static int rtLockValidatorDeadlockDetection(PRTLOCKVALRECUNION pRec, PRTTHREADIN
 }
 
 
-RTDECL(void) RTLockValidatorRecExclInit(PRTLOCKVALRECEXCL pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
-                                        const char *pszName, void *hLock, bool fEnabled)
+RTDECL(void) RTLockValidatorRecExclInitV(PRTLOCKVALRECEXCL pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
+                                         void *hLock, bool fEnabled, const char *pszNameFmt, va_list va)
 {
     RTLOCKVAL_ASSERT_PTR_ALIGN(pRec);
     RTLOCKVAL_ASSERT_PTR_ALIGN(hLock);
@@ -2815,8 +2819,15 @@ RTDECL(void) RTLockValidatorRecExclInit(PRTLOCKVALRECEXCL pRec, RTLOCKVALCLASS h
     pRec->uSubClass     = uSubClass;
     pRec->cRecursion    = 0;
     pRec->hLock         = hLock;
-    pRec->pszName       = pszName;
     pRec->pSibling      = NULL;
+    if (pszNameFmt)
+        RTStrPrintfV(pRec->szName, sizeof(pRec->szName), pszNameFmt, va);
+    else
+    {
+        static uint32_t volatile s_cAnonymous = 0;
+        uint32_t i = ASMAtomicIncU32(&s_cAnonymous) - 1;
+        RTStrPrintf(pRec->szName, sizeof(pRec->szName), "anon-excl-%u", i);
+    }
 
     /* Lazy initialization. */
     if (RT_UNLIKELY(g_hLockValidatorXRoads == NIL_RTSEMXROADS))
@@ -2824,17 +2835,38 @@ RTDECL(void) RTLockValidatorRecExclInit(PRTLOCKVALRECEXCL pRec, RTLOCKVALCLASS h
 }
 
 
-RTDECL(int)  RTLockValidatorRecExclCreate(PRTLOCKVALRECEXCL *ppRec, RTLOCKVALCLASS hClass,
-                                          uint32_t uSubClass, const char *pszName, void *pvLock, bool fEnabled)
+RTDECL(void) RTLockValidatorRecExclInit(PRTLOCKVALRECEXCL pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
+                                        void *hLock, bool fEnabled, const char *pszNameFmt, ...)
+{
+    va_list va;
+    va_start(va, pszNameFmt);
+    RTLockValidatorRecExclInitV(pRec, hClass, uSubClass, hLock, fEnabled, pszNameFmt, va);
+    va_end(va);
+}
+
+
+RTDECL(int)  RTLockValidatorRecExclCreateV(PRTLOCKVALRECEXCL *ppRec, RTLOCKVALCLASS hClass,
+                                           uint32_t uSubClass, void *pvLock, bool fEnabled,
+                                           const char *pszNameFmt, va_list va)
 {
     PRTLOCKVALRECEXCL pRec;
     *ppRec = pRec = (PRTLOCKVALRECEXCL)RTMemAlloc(sizeof(*pRec));
     if (!pRec)
         return VERR_NO_MEMORY;
-
-    RTLockValidatorRecExclInit(pRec, hClass, uSubClass, pszName, pvLock, fEnabled);
-
+    RTLockValidatorRecExclInitV(pRec, hClass, uSubClass, pvLock, fEnabled, pszNameFmt, va);
     return VINF_SUCCESS;
+}
+
+
+RTDECL(int)  RTLockValidatorRecExclCreate(PRTLOCKVALRECEXCL *ppRec, RTLOCKVALCLASS hClass,
+                                          uint32_t uSubClass, void *pvLock, bool fEnabled,
+                                          const char *pszNameFmt, ...)
+{
+    va_list va;
+    va_start(va, pszNameFmt);
+    int rc = RTLockValidatorRecExclCreateV(ppRec, hClass, uSubClass, pvLock, fEnabled, pszNameFmt, va);
+    va_end(va);
+    return rc;
 }
 
 
@@ -2865,6 +2897,18 @@ RTDECL(void) RTLockValidatorRecExclDestroy(PRTLOCKVALRECEXCL *ppRec)
         RTLockValidatorRecExclDelete(pRec);
         RTMemFree(pRec);
     }
+}
+
+
+RTDECL(uint32_t) RTLockValidatorRecExclSetSubClass(PRTLOCKVALRECEXCL pRec, uint32_t uSubClass)
+{
+    AssertPtrReturn(pRec, RTLOCKVAL_SUB_CLASS_INVALID);
+    AssertReturn(pRec->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC, RTLOCKVAL_SUB_CLASS_INVALID);
+    AssertReturn(   uSubClass >= RTLOCKVAL_SUB_CLASS_USER
+                 || uSubClass == RTLOCKVAL_SUB_CLASS_NONE
+                 || uSubClass == RTLOCKVAL_SUB_CLASS_ANY,
+                 RTLOCKVAL_SUB_CLASS_INVALID);
+    return ASMAtomicXchgU32(&pRec->uSubClass, uSubClass);
 }
 
 
@@ -3179,8 +3223,8 @@ RTDECL(int) RTLockValidatorRecExclCheckOrderAndBlocking(PRTLOCKVALRECEXCL pRec, 
 RT_EXPORT_SYMBOL(RTLockValidatorRecExclCheckOrderAndBlocking);
 
 
-RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
-                                          const char *pszName, void *hLock, bool fSignaller, bool fEnabled)
+RTDECL(void) RTLockValidatorRecSharedInitV(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
+                                           void *hLock, bool fSignaller, bool fEnabled, const char *pszNameFmt, va_list va)
 {
     RTLOCKVAL_ASSERT_PTR_ALIGN(pRec);
     RTLOCKVAL_ASSERT_PTR_ALIGN(hLock);
@@ -3189,7 +3233,6 @@ RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLASS
     pRec->uSubClass     = uSubClass;
     pRec->hClass        = rtLockValidatorClassValidateAndRetain(hClass);
     pRec->hLock         = hLock;
-    pRec->pszName       = pszName;
     pRec->fEnabled      = fEnabled && RTLockValidatorIsEnabled();
     pRec->fSignaller    = fSignaller;
     pRec->pSibling      = NULL;
@@ -3201,9 +3244,26 @@ RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLASS
     pRec->fReallocating = false;
     pRec->fPadding      = false;
     pRec->papOwners     = NULL;
-#if HC_ARCH_BITS == 32
-    pRec->u32Alignment  = UINT32_MAX;
-#endif
+
+    /* the name */
+    if (pszNameFmt)
+        RTStrPrintfV(pRec->szName, sizeof(pRec->szName), pszNameFmt, va);
+    else
+    {
+        static uint32_t volatile s_cAnonymous = 0;
+        uint32_t i = ASMAtomicIncU32(&s_cAnonymous) - 1;
+        RTStrPrintf(pRec->szName, sizeof(pRec->szName), "anon-shrd-%u", i);
+    }
+}
+
+
+RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
+                                          void *hLock, bool fSignaller, bool fEnabled, const char *pszNameFmt, ...)
+{
+    va_list va;
+    va_start(va, pszNameFmt);
+    RTLockValidatorRecSharedInitV(pRec, hClass, uSubClass, hLock, fSignaller, fEnabled, pszNameFmt, va);
+    va_end(va);
 }
 
 

@@ -134,8 +134,10 @@ RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
                         pThis->fNeedResetReadEvent  = true;
                         pThis->u32Magic             = RTSEMRW_MAGIC;
 #ifdef RTSEMRW_STRICT
-                        RTLockValidatorRecExclInit(&pThis->ValidatorWrite, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemRW", pThis, true);
-                        RTLockValidatorRecSharedInit(&pThis->ValidatorRead, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemRW", pThis, false /*fSignaller*/, true);
+                        RTLockValidatorRecExclInit(&pThis->ValidatorWrite, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, pThis,
+                                                   true /*fEnabled*/, "RTSemRW");
+                        RTLockValidatorRecSharedInit(&pThis->ValidatorRead, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, pThis,
+                                                     false /*fSignaller*/, true /*fEnabled*/, "RTSemEvent");
                         RTLockValidatorRecMakeSiblings(&pThis->ValidatorWrite.Core, &pThis->ValidatorRead.Core);
 #endif
                         *pRWSem = pThis;
