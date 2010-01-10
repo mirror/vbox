@@ -612,7 +612,7 @@ check_mkisofs()
 
 
 #
-# Check for libxml2, needed by VBoxSettings
+# Check for libxml2, needed by VBoxSettings and Runtime.
 # 2.6.24 is known to NOT work, 2.6.26 is known to work (there is no 2.6.25 release)
 #
 check_libxml2()
@@ -2304,7 +2304,7 @@ check_gcc
 
 # the libraries
 [ "$OS" != "darwin"  ] && check_pthread
-[ $WITH_XPCOM  -eq 1 ] && check_libxml2
+check_libxml2
 [ $WITH_XPCOM  -eq 1 ] && check_libxslt
 [ $WITH_LIBIDL -eq 1 ] && check_libidl
 check_ssl
