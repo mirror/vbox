@@ -52,7 +52,8 @@ RTDECL(int) RTCritSectInit(PRTCRITSECT pCritSect)
 RT_EXPORT_SYMBOL(RTCritSectInit);
 
 
-RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags, RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszName)
+RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags, RTLOCKVALCLASS hClass, uint32_t uSubClass,
+                             const char *pszNameFmt, ...)
 {
     AssertReturn(fFlags <= (RTCRITSECT_FLAGS_NO_NESTING | RTCRITSECT_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
 
@@ -64,8 +65,16 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags, RTLOCKVALCL
     pCritSect->cNestings            = 0;
     pCritSect->cLockers             = -1;
     pCritSect->NativeThreadOwner    = NIL_RTNATIVETHREAD;
-    int rc = RTLockValidatorRecExclCreate(&pCritSect->pValidatorRec, hClass, uSubClass, pszName,
-                                          pCritSect, !(fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL));
+#ifndef RTCRITSECT_STRICT
+    pCritSect->pValidatorRec        = NULL;
+    int rc = VINF_SUCCESS;
+#else
+    va_list va;
+    va_start(va, pszNameFmt);
+    int rc = RTLockValidatorRecExclCreateV(&pCritSect->pValidatorRec, hClass, uSubClass, pCritSect,
+                                           !(fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL), pszNameFmt, va);
+    va_end(va);
+#endif
     if (RT_SUCCESS(rc))
     {
         rc = RTSemEventCreate(&pCritSect->EventSem);
@@ -80,6 +89,18 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags, RTLOCKVALCL
     return rc;
 }
 RT_EXPORT_SYMBOL(RTCritSectInitEx);
+
+
+RTDECL(uint32_t) RTCritSectSetSubClass(PRTCRITSECT pCritSect, uint32_t uSubClass)
+{
+#ifdef RTCRITSECT_STRICT
+    AssertPtrReturn(pCritSect, RTLOCKVAL_SUB_CLASS_INVALID);
+    AssertReturn(pCritSect->u32Magic == RTCRITSECT_MAGIC, RTLOCKVAL_SUB_CLASS_INVALID);
+    return RTLockValidatorRecExclSetSubClass(pCritSect->pValidatorRec, uSubClass);
+#else
+    return RTLOCKVAL_SUB_CLASS_INVALID;
+#endif
+}
 
 
 DECL_FORCE_INLINE(int) rtCritSectTryEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS pSrcPos)

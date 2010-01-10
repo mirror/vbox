@@ -92,7 +92,8 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
             pThis->hNativeOwner = NIL_RTNATIVETHREAD;
             pThis->cRecursions  = 0;
 #ifdef RTSEMMUTEX_STRICT
-            RTLockValidatorRecExclInit(&pThis->ValidatorRec, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemMutex", pThis, true);
+            RTLockValidatorRecExclInit(&pThis->ValidatorRec, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, pThis,
+                                       true /*fEnabled*/, "RTSemMutex");
 #endif
             *pMutexSem = pThis;
             return VINF_SUCCESS;

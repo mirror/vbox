@@ -152,13 +152,15 @@ typedef struct RTLOCKVALRECEXCL
     RTLOCKVALCLASS                      hClass;
     /** Pointer to the lock. */
     RTHCPTR                             hLock;
-    /** The lock name. */
-    R3R0PTRTYPE(const char *)           pszName;
     /** Pointer to the next sibling record.
      * This is used to find the read side of a read-write lock.  */
     R3R0PTRTYPE(PRTLOCKVALRECUNION)     pSibling;
+    /** The lock name.
+     * @remarks The bytes beyond 32 are for better size alignment and can be
+     *          taken and used for other purposes if it becomes necessary. */
+    char                                szName[32 + (HC_ARCH_BITS == 32 ? 12 : 8)];
 } RTLOCKVALRECEXCL;
-AssertCompileSize(RTLOCKVALRECEXCL, HC_ARCH_BITS == 32 ? 8 + 16 + 32 : 8 + 32 + 56);
+AssertCompileSize(RTLOCKVALRECEXCL, HC_ARCH_BITS == 32 ? 0x60 : 0x80);
 /* The pointer type is defined in iprt/types.h. */
 
 /**
@@ -207,8 +209,6 @@ typedef struct RTLOCKVALRECSHRD
     RTLOCKVALCLASS                      hClass;
     /** Pointer to the lock. */
     RTHCPTR                             hLock;
-    /** The lock name. */
-    R3R0PTRTYPE(const char *)           pszName;
     /** Pointer to the next sibling record.
      * This is used to find the write side of a read-write lock.  */
     R3R0PTRTYPE(PRTLOCKVALRECUNION)     pSibling;
@@ -233,12 +233,13 @@ typedef struct RTLOCKVALRECSHRD
     bool                                fPadding;
     /** Pointer to a table containing pointers to records of all the owners. */
     R3R0PTRTYPE(PRTLOCKVALRECSHRDOWN volatile *) papOwners;
-#if HC_ARCH_BITS == 32
-    /** Alignment padding. */
-    uint32_t                            u32Alignment;
-#endif
+
+    /** The lock name.
+     * @remarks The bytes beyond 32 are for better size alignment and can be
+     *          taken and used for other purposes if it becomes necessary. */
+    char                                szName[32 + (HC_ARCH_BITS == 32 ? 8 : 8)];
 } RTLOCKVALRECSHRD;
-AssertCompileSize(RTLOCKVALRECSHRD, HC_ARCH_BITS == 32 ? 24 + 20 + 4 : 40 + 24);
+AssertCompileSize(RTLOCKVALRECSHRD, HC_ARCH_BITS == 32 ? 0x50 : 0x60);
 
 
 /**
@@ -263,13 +264,36 @@ RTDECL(int) RTLockValidatorRecMakeSiblings(PRTLOCKVALRECCORE pRec1, PRTLOCKVALRE
  * @param   uSubClass           The sub-class.  This is used to define lock
  *                              order inside the same class.  If you don't know,
  *                              then pass RTLOCKVAL_SUB_CLASS_NONE.
- * @param   pszName             The lock name (optional).
  * @param   hLock               The lock handle.
  * @param   fEnabled            Pass @c false to explicitly disable lock
  *                              validation, otherwise @c true.
+ * @param   pszNameFmt          Name format string for the lock validator,
+ *                              optional (NULL). Max length is 32 bytes.
+ * @param   ...                 Format string arguments.
  */
 RTDECL(void) RTLockValidatorRecExclInit(PRTLOCKVALRECEXCL pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
-                                        const char *pszName, void *hLock, bool fEnabled);
+                                        void *hLock, bool fEnabled, const char *pszNameFmt, ...);
+/**
+ * Initialize a lock validator record.
+ *
+ * Use RTLockValidatorRecExclDelete to deinitialize it.
+ *
+ * @param   pRec                The record.
+ * @param   hClass              The class (no reference consumed). If NIL, the
+ *                              no lock order validation will be performed on
+ *                              this lock.
+ * @param   uSubClass           The sub-class.  This is used to define lock
+ *                              order inside the same class.  If you don't know,
+ *                              then pass RTLOCKVAL_SUB_CLASS_NONE.
+ * @param   hLock               The lock handle.
+ * @param   fEnabled            Pass @c false to explicitly disable lock
+ *                              validation, otherwise @c true.
+ * @param   pszNameFmt          Name format string for the lock validator,
+ *                              optional (NULL). Max length is 32 bytes.
+ * @param   va                  Format string arguments.
+ */
+RTDECL(void) RTLockValidatorRecExclInitV(PRTLOCKVALRECEXCL pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
+                                         void *hLock, bool fEnabled, const char *pszNameFmt, va_list va);
 /**
  * Uninitialize a lock validator record previously initialized by
  * RTLockRecValidatorInit.
@@ -292,13 +316,39 @@ RTDECL(void) RTLockValidatorRecExclDelete(PRTLOCKVALRECEXCL pRec);
  * @param   uSubClass           The sub-class.  This is used to define lock
  *                              order inside the same class.  If you don't know,
  *                              then pass RTLOCKVAL_SUB_CLASS_NONE.
- * @param   pszName             The lock name (optional).
  * @param   hLock               The lock handle.
  * @param   fEnabled            Pass @c false to explicitly disable lock
  *                              validation, otherwise @c true.
+ * @param   pszNameFmt          Name format string for the lock validator,
+ *                              optional (NULL). Max length is 32 bytes.
+ * @param   ...                 Format string arguments.
  */
 RTDECL(int)  RTLockValidatorRecExclCreate(PRTLOCKVALRECEXCL *ppRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
-                                          const char *pszName, void *hLock, bool fEnabled);
+                                          void *hLock, bool fEnabled, const char *pszNameFmt, ...);
+
+/**
+ * Create and initialize a lock validator record.
+ *
+ * Use RTLockValidatorRecExclDestroy to deinitialize and destroy the returned
+ * record.
+ *
+ * @return VINF_SUCCESS or VERR_NO_MEMORY.
+ * @param   ppRec               Where to return the record pointer.
+ * @param   hClass              The class (no reference consumed). If NIL, the
+ *                              no lock order validation will be performed on
+ *                              this lock.
+ * @param   uSubClass           The sub-class.  This is used to define lock
+ *                              order inside the same class.  If you don't know,
+ *                              then pass RTLOCKVAL_SUB_CLASS_NONE.
+ * @param   hLock               The lock handle.
+ * @param   fEnabled            Pass @c false to explicitly disable lock
+ *                              validation, otherwise @c true.
+ * @param   pszNameFmt          Name format string for the lock validator,
+ *                              optional (NULL). Max length is 32 bytes.
+ * @param   va                  Format string arguments.
+ */
+RTDECL(int)  RTLockValidatorRecExclCreateV(PRTLOCKVALRECEXCL *ppRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
+                                           void *hLock, bool fEnabled, const char *pszNameFmt, va_list va);
 
 /**
  * Deinitialize and destroy a record created by RTLockValidatorRecExclCreate.
@@ -307,6 +357,20 @@ RTDECL(int)  RTLockValidatorRecExclCreate(PRTLOCKVALRECEXCL *ppRec, RTLOCKVALCLA
  *                              NULL.
  */
 RTDECL(void) RTLockValidatorRecExclDestroy(PRTLOCKVALRECEXCL *ppRec);
+
+/**
+ * Sets the sub-class of the record.
+ *
+ * It is recommended to try make sure that nobody is using this class while
+ * changing the value.
+ *
+ * @returns The old sub-class.  RTLOCKVAL_SUB_CLASS_INVALID is returns if the
+ *          lock validator isn't compiled in or either of the parameters are
+ *          invalid.
+ * @param   pRec                The validator record.
+ * @param   uSubClass           The new sub-class value.
+ */
+RTDECL(uint32_t) RTLockValidatorRecExclSetSubClass(PRTLOCKVALRECEXCL pRec, uint32_t uSubClass);
 
 /**
  * Record the specified thread as lock owner and increment the write lock count.
@@ -496,16 +560,42 @@ RTDECL(int) RTLockValidatorRecExclCheckOrderAndBlocking(PRTLOCKVALRECEXCL pRec, 
  * @param   uSubClass           The sub-class.  This is used to define lock
  *                              order inside the same class.  If you don't know,
  *                              then pass RTLOCKVAL_SUB_CLASS_NONE.
- * @param   pszName             The lock name (optional).
  * @param   hLock               The lock handle.
  * @param   fSignaller          Set if event semaphore signaller logic should be
  *                              applied to this record, clear if read-write
  *                              semaphore logic should be used.
  * @param   fEnabled            Pass @c false to explicitly disable lock
  *                              validation, otherwise @c true.
+ * @param   pszNameFmt          Name format string for the lock validator,
+ *                              optional (NULL). Max length is 32 bytes.
+ * @param   ...                 Format string arguments.
  */
 RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
-                                          const char *pszName, void *hLock, bool fSignaller, bool fEnabled);
+                                          void *hLock, bool fSignaller, bool fEnabled, const char *pszNameFmt, ...);
+/**
+ * Initialize a lock validator record for a shared lock.
+ *
+ * Use RTLockValidatorRecSharedDelete to deinitialize it.
+ *
+ * @param   pRec                The shared lock record.
+ * @param   hClass              The class (no reference consumed). If NIL, the
+ *                              no lock order validation will be performed on
+ *                              this lock.
+ * @param   uSubClass           The sub-class.  This is used to define lock
+ *                              order inside the same class.  If you don't know,
+ *                              then pass RTLOCKVAL_SUB_CLASS_NONE.
+ * @param   hLock               The lock handle.
+ * @param   fSignaller          Set if event semaphore signaller logic should be
+ *                              applied to this record, clear if read-write
+ *                              semaphore logic should be used.
+ * @param   fEnabled            Pass @c false to explicitly disable lock
+ *                              validation, otherwise @c true.
+ * @param   pszNameFmt          Name format string for the lock validator,
+ *                              optional (NULL). Max length is 32 bytes.
+ * @param   va                  Format string arguments.
+ */
+RTDECL(void) RTLockValidatorRecSharedInitV(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
+                                           void *hLock, bool fSignaller, bool fEnabled, const char *pszNameFmt, va_list va);
 /**
  * Uninitialize a lock validator record previously initialized by
  * RTLockValidatorRecSharedInit.
@@ -789,8 +879,11 @@ RTDECL(int) RTLockValidatorClassCreateExV(PRTLOCKVALCLASS phClass, PCRTLOCKVALSR
  * @param   pszFile             The source position of the call, file.
  * @param   iLine               The source position of the call, line.
  * @param   pszFunction         The source position of the call, function.
+ * @param   pszNameFmt          Class name format string, optional (NULL).  Max
+ *                              length is 32 bytes.
+ * @param   ...                 Format string arguments.
  */
-RTDECL(int) RTLockValidatorClassCreate(PRTLOCKVALCLASS phClass, bool fAutodidact, RT_SRC_POS_DECL);
+RTDECL(int) RTLockValidatorClassCreate(PRTLOCKVALCLASS phClass, bool fAutodidact, RT_SRC_POS_DECL, const char *pszNameFmt, ...);
 
 /**
  * Finds a class for the specified source position.
