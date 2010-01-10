@@ -61,7 +61,7 @@
 
 /** Hashes the class handle (pointer) into an apPriorLocksHash index. */
 #define RTLOCKVALCLASS_HASH(hClass) \
-    (   (uintptr_t)(hClass) \
+    (   ((uintptr_t)(hClass) >> 6 ) \
       % (  RT_SIZEOFMEMB(RTLOCKVALCLASSINT, apPriorLocksHash) \
          / sizeof(PRTLOCKVALCLASSREF)) )
 
@@ -201,21 +201,21 @@ typedef struct RTLOCKVALCLASSINT
      * reduce the number of allocations as well as localize the data. */
     RTLOCKVALCLASSREFCHUNK  PriorLocks;
     /** Hash table containing frequently encountered prior locks. */
-    PRTLOCKVALCLASSREF      apPriorLocksHash[11];
-#ifdef RTLOCKVAL_WITH_CLASS_HASH_STATS
-    /** Hash hits. */
-    uint32_t volatile       cHashHits;
-    /** Hash misses. */
-    uint32_t volatile       cHashMisses;
-#endif
+    PRTLOCKVALCLASSREF      apPriorLocksHash[17];
+    /** Class name. (Allocated after the end of the block as usual.) */
+    char const             *pszName;
     /** Where this class was created.
      *  This is mainly used for finding automatically created lock classes.
      *  @remarks The strings are stored after this structure so we won't crash
      *           if the class lives longer than the module (dll/so/dylib) that
      *           spawned it. */
     RTLOCKVALSRCPOS         CreatePos;
-    /** Class name. (Allocated after the end of the block as usual.) */
-    char const             *pszName;
+#ifdef RTLOCKVAL_WITH_CLASS_HASH_STATS
+    /** Hash hits. */
+    uint32_t volatile       cHashHits;
+    /** Hash misses. */
+    uint32_t volatile       cHashMisses;
+#endif
 } RTLOCKVALCLASSINT;
 AssertCompileSize(AVLLU32NODECORE, ARCH_BITS == 32 ? 20 : 32);
 AssertCompileMemberOffset(RTLOCKVALCLASSINT, PriorLocks, 64);
@@ -250,9 +250,9 @@ static bool volatile    g_fLockValidatorMayPanic = true;
 static bool volatile    g_fLockValidatorMayPanic = false;
 #endif
 /** Serializing class tree insert and lookups. */
-static RTSEMRW          g_hLockValClassTreeRWLock = NIL_RTSEMRW;
+static RTSEMRW          g_hLockValClassTreeRWLock= NIL_RTSEMRW;
 /** Class tree. */
-static PAVLLU32NODECORE g_LockValClassTree = NULL;
+static PAVLLU32NODECORE g_LockValClassTree       = NULL;
 /** Critical section serializing the teaching new rules to the classes. */
 static RTCRITSECT       g_LockValClassTeachCS;
 
@@ -1005,14 +1005,18 @@ RTDECL(int) RTLockValidatorClassCreateExV(PRTLOCKVALCLASS phClass, PCRTLOCKVALSR
     pThis->PriorLocks.pNext     = NULL;
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->apPriorLocksHash); i++)
         pThis->apPriorLocksHash[i] = NULL;
-    rtLockValidatorSrcPosCopy(&pThis->CreatePos, pSrcPos);
     char *pszDst = (char *)(pThis + 1);
+    pThis->pszName              = (char *)memcpy(pszDst, szName, cbName);
+    pszDst += cbName;
+    rtLockValidatorSrcPosCopy(&pThis->CreatePos, pSrcPos);
     pThis->CreatePos.pszFile    = pSrcPos->pszFile     ? (char *)memcpy(pszDst, pSrcPos->pszFile,     cbFile)     : NULL;
     pszDst += cbFile;
     pThis->CreatePos.pszFunction= pSrcPos->pszFunction ? (char *)memcpy(pszDst, pSrcPos->pszFunction, cbFunction) : NULL;
-    pszDst += cbFunction;
     Assert(rtLockValidatorSrcPosHash(&pThis->CreatePos) == pThis->Core.Key);
-    pThis->pszName              = (char *)memcpy(pszDst, szName, cbName);
+#ifdef RTLOCKVAL_WITH_CLASS_HASH_STATS
+    pThis->cHashHits            = 0;
+    pThis->cHashMisses          = 0;
+#endif
 
     *phClass = pThis;
     return VINF_SUCCESS;
@@ -1083,7 +1087,7 @@ DECLINLINE(uint32_t) rtLockValidatorClassRelease(RTLOCKVALCLASSINT *pClass)
  */
 static void rtLockValidatorClassDestroy(RTLOCKVALCLASSINT *pClass)
 {
-    AssertReturnVoid(pClass->fInTree);
+    AssertReturnVoid(!pClass->fInTree);
     ASMAtomicWriteU32(&pClass->u32Magic, RTLOCKVALCLASS_MAGIC_DEAD);
 
     PRTLOCKVALCLASSREFCHUNK pChunk = &pClass->PriorLocks;
@@ -1103,7 +1107,7 @@ static void rtLockValidatorClassDestroy(RTLOCKVALCLASSINT *pClass)
         pChunk->pNext = NULL;
         if (pChunk != &pClass->PriorLocks)
             RTMemFree(pChunk);
-        pNext = pChunk;
+        pChunk = pNext;
     }
 
     RTMemFree(pClass);
@@ -1121,10 +1125,7 @@ RTDECL(RTLOCKVALCLASS) RTLockValidatorClassFindForSrcPos(PRTLOCKVALSRCPOS pSrcPo
     while (pClass)
     {
         if (rtLockValidatorSrcPosCompare(&pClass->CreatePos, pSrcPos) == 0)
-        {
-            rtLockValidatorClassRetain(pClass);
             break;
-        }
         pClass = (RTLOCKVALCLASSINT *)pClass->Core.pList;
     }
 
@@ -1178,6 +1179,8 @@ RTDECL(uint32_t) RTLockValidatorClassRetain(RTLOCKVALCLASS hClass)
 RTDECL(uint32_t) RTLockValidatorClassRelease(RTLOCKVALCLASS hClass)
 {
     RTLOCKVALCLASSINT *pClass = hClass;
+    if (pClass == NIL_RTLOCKVALCLASS)
+        return 0;
     AssertPtrReturn(pClass, UINT32_MAX);
     AssertReturn(pClass->u32Magic == RTLOCKVALCLASS_MAGIC, UINT32_MAX);
     return rtLockValidatorClassRelease(pClass);
@@ -1348,6 +1351,17 @@ RTDECL(int) RTLockValidatorClassAddPriorClass(RTLOCKVALCLASS hClass, RTLOCKVALCL
     AssertReturn(pPriorClass->u32Magic == RTLOCKVALCLASS_MAGIC, VERR_INVALID_HANDLE);
 
     return rtLockValidatorClassAddPriorClass(pClass, pPriorClass, false /*fAutodidacticism*/, NULL);
+}
+
+
+RTDECL(int) RTLockValidatorClassEnforceStrictReleaseOrder(RTLOCKVALCLASS hClass, bool fEnabled)
+{
+    RTLOCKVALCLASSINT *pClass = hClass;
+    AssertPtrReturn(pClass, VERR_INVALID_HANDLE);
+    AssertReturn(pClass->u32Magic == RTLOCKVALCLASS_MAGIC, VERR_INVALID_HANDLE);
+
+    ASMAtomicWriteBool(&pClass->fStrictReleaseOrder, fEnabled);
+    return VINF_SUCCESS;
 }
 
 
@@ -2075,7 +2089,8 @@ static int rtLockValidatorStackCheckLockingOrder2(RTLOCKVALCLASSINT * const pCla
     /*
      * Something went wrong, pCur is pointing to where.
      */
-    if (rtLockValidatorClassIsPriorClass(pFirstBadClass, pClass))
+    if (   pClass == pFirstBadClass
+        || rtLockValidatorClassIsPriorClass(pFirstBadClass, pClass))
         return rtLockValidatorStackWrongOrder("Wrong locking order!", pSrcPos, pThreadSelf,
                                               pRec, pFirstBadRec, pClass, pFirstBadClass);
     if (!pClass->fAutodidact)
@@ -2284,12 +2299,34 @@ static int rtLockValidatorStackCheckReleaseOrder(PRTTHREADINT pThreadSelf, PRTLO
     if (RT_LIKELY(   pTop == pRec
                   || (   pTop
                       && pTop->Core.u32Magic == RTLOCKVALRECNEST_MAGIC
-                      && pTop->Nest.pRec == pRec)))
+                      && pTop->Nest.pRec == pRec) ))
         return VINF_SUCCESS;
+
+#ifdef RTLOCKVAL_WITH_RECURSION_RECORDS
+    /* Look for a recursion record so the right frame is dumped and marked. */
+    while (pTop)
+    {
+        if (pTop->Core.u32Magic == RTLOCKVALRECNEST_MAGIC)
+        {
+            if (pTop->Nest.pRec == pRec)
+            {
+                pRec = pTop;
+                break;
+            }
+            pTop = pTop->Nest.pDown;
+        }
+        else if (pTop->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC)
+            pTop = pTop->Excl.pDown;
+        else if (pTop->Core.u32Magic == RTLOCKVALRECSHRDOWN_MAGIC)
+            pTop = pTop->ShrdOwner.pDown;
+        else
+            break;
+    }
+#endif
 
     rtLockValComplainFirst("Wrong release order!", NULL, pThreadSelf, pRec, true);
     rtLockValComplainPanic();
-    return VERR_SEM_LV_WRONG_ORDER;
+    return VERR_SEM_LV_WRONG_RELEASE_ORDER;
 }
 
 
@@ -2809,10 +2846,13 @@ RTDECL(void) RTLockValidatorRecExclDelete(PRTLOCKVALRECEXCL pRec)
 
     ASMAtomicWriteU32(&pRec->Core.u32Magic, RTLOCKVALRECEXCL_MAGIC_DEAD);
     ASMAtomicWriteHandle(&pRec->hThread, NIL_RTTHREAD);
-    ASMAtomicWriteHandle(&pRec->hClass, NIL_RTLOCKVALCLASS);
+    RTLOCKVALCLASS hClass;
+    ASMAtomicXchgHandle(&pRec->hClass, NIL_RTLOCKVALCLASS, &hClass);
     if (pRec->pSibling)
         rtLockValidatorUnlinkAllSiblings(&pRec->Core);
     rtLockValidatorSerializeDestructLeave();
+    if (hClass != NIL_RTLOCKVALCLASS)
+        RTLockValidatorClassRelease(hClass);
 }
 
 
@@ -3018,6 +3058,9 @@ RTDECL(int) RTLockValidatorRecExclUnwindMixed(PRTLOCKVALRECEXCL pRec, PRTLOCKVAL
 RTDECL(int) RTLockValidatorRecExclCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD hThreadSelf,
                                              PCRTLOCKVALSRCPOS pSrcPos, RTMSINTERVAL cMillies)
 {
+    /*
+     * Validate and adjust input.  Quit early if order validation is disabled.
+     */
     PRTLOCKVALRECUNION pRecU = (PRTLOCKVALRECUNION)pRec;
     AssertReturn(pRecU->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     if (   !pRecU->Excl.fEnabled
@@ -3033,6 +3076,12 @@ RTDECL(int) RTLockValidatorRecExclCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD hT
     }
     AssertReturn(hThreadSelf->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     Assert(hThreadSelf == RTThreadSelf());
+
+    /*
+     * Detect recursion as it isn't subject to order restrictions.
+     */
+    if (pRec->hThread == hThreadSelf)
+        return VINF_SUCCESS;
 
     return rtLockValidatorStackCheckLockingOrder(pRecU->Excl.hClass, pRecU->Excl.uSubClass, hThreadSelf, pRecU, pSrcPos);
 }
@@ -3233,6 +3282,9 @@ rtLockValidatorRecSharedFindOwner(PRTLOCKVALRECSHRD pShared, RTTHREAD hThread, u
 RTDECL(int) RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf,
                                                PCRTLOCKVALSRCPOS pSrcPos, RTMSINTERVAL cMillies)
 {
+    /*
+     * Validate and adjust input.  Quit early if order validation is disabled.
+     */
     PRTLOCKVALRECUNION pRecU = (PRTLOCKVALRECUNION)pRec;
     AssertReturn(pRecU->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     if (   !pRecU->Shared.fEnabled
@@ -3249,6 +3301,13 @@ RTDECL(int) RTLockValidatorRecSharedCheckOrder(PRTLOCKVALRECSHRD pRec, RTTHREAD 
     }
     AssertReturn(hThreadSelf->u32Magic == RTTHREADINT_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     Assert(hThreadSelf == RTThreadSelf());
+
+    /*
+     * Detect recursion as it isn't subject to order restrictions.
+     */
+    PRTLOCKVALRECUNION pEntry = rtLockValidatorRecSharedFindOwner(&pRecU->Shared, hThreadSelf, NULL);
+    if (pEntry)
+        return VINF_SUCCESS;
 
     return rtLockValidatorStackCheckLockingOrder(pRecU->Shared.hClass, pRecU->Shared.uSubClass, hThreadSelf, pRecU, pSrcPos);
 }
@@ -3959,11 +4018,11 @@ RTDECL(bool) RTLockValidatorSetQuiet(bool fQuiet)
 RT_EXPORT_SYMBOL(RTLockValidatorSetQuiet);
 
 
-RTDECL(bool) RTLockValidatorAreQuiet(void)
+RTDECL(bool) RTLockValidatorIsQuiet(void)
 {
     return ASMAtomicUoReadBool(&g_fLockValidatorQuiet);
 }
-RT_EXPORT_SYMBOL(RTLockValidatorAreQuiet);
+RT_EXPORT_SYMBOL(RTLockValidatorIsQuiet);
 
 
 RTDECL(bool) RTLockValidatorSetMayPanic(bool fMayPanic)

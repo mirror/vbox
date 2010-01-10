@@ -821,7 +821,8 @@ RTDECL(uint32_t) RTLockValidatorClassRetain(RTLOCKVALCLASS hClass);
 /**
  * Releases a reference to a lock validator class.
  *
- * @returns New reference count; UINT32_MAX if the handle is invalid.
+ * @returns New reference count. 0 if hClass is NIL_RTLOCKVALCLASS. UINT32_MAX
+ *          if the handle is invalid.
  * @param   hClass              Handle to the class.
  */
 RTDECL(uint32_t) RTLockValidatorClassRelease(RTLOCKVALCLASS hClass);
@@ -837,6 +838,15 @@ RTDECL(uint32_t) RTLockValidatorClassRelease(RTLOCKVALCLASS hClass);
  *                              is consumed.)
  */
 RTDECL(int) RTLockValidatorClassAddPriorClass(RTLOCKVALCLASS hClass, RTLOCKVALCLASS hPriorClass);
+
+/**
+ * Enables or disables the strict release order enforcing.
+ *
+ * @returns IPRT status.
+ * @param   hClass              Handle to the class to change.
+ * @param   fEnable             Enable it (true) or disable it (false).
+ */
+RTDECL(int) RTLockValidatorClassEnforceStrictReleaseOrder(RTLOCKVALCLASS hClass, bool fEnabled);
 
 /**
  * Enables / disables the lock validator for new locks.
@@ -866,7 +876,7 @@ RTDECL(bool) RTLockValidatorSetQuiet(bool fQuiet);
  *
  * @returns True if it is quiet, false if noisy.
  */
-RTDECL(bool) RTLockValidatorAreQuiet(void);
+RTDECL(bool) RTLockValidatorIsQuiet(void);
 
 /**
  * Makes the lock validator panic (default) or not.
