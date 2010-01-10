@@ -603,7 +603,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                                 --netmask <network_mask>\n"
                  "                                 --lowerip <lower_ip>\n"
                  "                                 --upperip <upper_ip>]\n"
-                 "                                [--enable | --disable]\n"
+                 "                                [--enable | --disable]\n\n"
                  "VBoxManage dhcpserver       remove --netname <network_name> |\n"
 #if defined(VBOX_WITH_NETFLT)
                  "                                   --ifname <hostonly_if_name>\n"
