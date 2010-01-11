@@ -61,17 +61,44 @@ RT_C_DECLS_BEGIN
  * Create a event semaphore.
  *
  * @returns iprt status code.
- * @param   pEventSem    Where to store the event semaphore handle.
+ * @param   phEventSem          Where to store the handle to the newly created
+ *                              event semaphore.
  */
-RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem);
+RTDECL(int)  RTSemEventCreate(PRTSEMEVENT phEventSem);
+
+/**
+ * Creates a read/write semaphore.
+ *
+ * @returns iprt status code.
+ * @param   phEventSem          Where to store the handle to the newly created
+ *                              event semaphore.
+ * @param   fFlags              Flags, any combination of the
+ *                              RTSEMEVENT_FLAGS_XXX \#defines.
+ * @param   hClass              The class (no reference consumed).  Since we
+ *                              don't do order checks on event semaphores, the
+ *                              use of the class is limited to controlling the
+ *                              timeout threshold for deadlock detection.
+ * @param   pszNameFmt          Name format string for the lock validator,
+ *                              optional (NULL).  Max length is 32 bytes.
+ * @param   ...                 Format string arguments.
+ */
+RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKVALCLASS hClass, const char *pszNameFmt, ...);
+
+/** @name RTSemMutexCreateEx flags
+ * @{ */
+/** Disables lock validation. */
+#define RTSEMEVENT_FLAGS_NO_LOCK_VAL    UINT32_C(0x00000001)
+/** @} */
+
 
 /**
  * Destroy an event semaphore.
  *
  * @returns iprt status code.
- * @param   EventSem    Handle of the
+ * @param   hEventSem           Handle of the event sempahore.  NIL_RTSEMEVENT
+ *                              is quitely ignored (VINF_SUCCESS).
  */
-RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem);
+RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem);
 
 /**
  * Signal an event semaphore.
@@ -81,9 +108,9 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem);
  * waiting/polling on that semaphore.
  *
  * @returns iprt status code.
- * @param   EventSem    The event semaphore to signal.
+ * @param   hEventSem           The event semaphore to signal.
  */
-RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem);
+RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem);
 
 /**
  * Wait for the event semaphore to be signaled, resume on interruption.
@@ -93,10 +120,10 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem);
  *
  * @returns iprt status code.
  *          Will not return VERR_INTERRUPTED.
- * @param   EventSem    The event semaphore to wait on.
- * @param   cMillies    Number of milliseconds to wait.
+ * @param   hEventSem           The event semaphore to wait on.
+ * @param   cMillies            Number of milliseconds to wait.
  */
-RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies);
+RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies);
 
 /**
  * Wait for the event semaphore to be signaled, return on interruption.
@@ -104,10 +131,10 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies);
  * This function will not resume the wait if interrupted.
  *
  * @returns iprt status code.
- * @param   EventSem    The event semaphore to wait on.
- * @param   cMillies    Number of milliseconds to wait.
+ * @param   hEventSem           The event semaphore to wait on.
+ * @param   cMillies            Number of milliseconds to wait.
  */
-RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies);
+RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, unsigned cMillies);
 
 /**
  * Sets the signaller thread to one specific thread.

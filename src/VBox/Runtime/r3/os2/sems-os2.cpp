@@ -46,13 +46,17 @@
 #define SEM2HND(Sem) ((LHANDLE)(uintptr_t)Sem)
 
 
-/* Undefine debug mappings. */
-#undef RTSemMutexRequest
-#undef RTSemMutexRequestNoResume
 
-
-RTDECL(int)   RTSemEventCreate(PRTSEMEVENT pEventSem)
+RTDECL(int)  RTSemEventCreate(PRTSEMEVENT phEventSem)
 {
+    return RTSemEventCreateEx(phEventSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, NULL);
+}
+
+
+RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKVALCLASS hClass, const char *pszNameFmt, ...)
+{
+    AssertReturn(!(fFlags & ~RTSEMEVENT_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+
     /*
      * Create the semaphore.
      * (Auto reset, not signaled, private event object.)
@@ -61,35 +65,35 @@ RTDECL(int)   RTSemEventCreate(PRTSEMEVENT pEventSem)
     int rc = DosCreateEventSem(NULL, &hev, DCE_AUTORESET | DCE_POSTONE, 0);
     if (!rc)
     {
-        *pEventSem = (RTSEMEVENT)(void *)hev;
+        *phEventSem = (RTSEMEVENT)(void *)hev;
         return VINF_SUCCESS;
     }
     return RTErrConvertFromOS2(rc);
 }
 
 
-RTDECL(int)   RTSemEventDestroy(RTSEMEVENT EventSem)
+RTDECL(int)   RTSemEventDestroy(RTSEMEVENT hEventSem)
 {
-    if (EventSem == NIL_RTSEMEVENT)     /* don't bitch */
-        return VERR_INVALID_HANDLE;
+    if (hEventSem == NIL_RTSEMEVENT)
+        return VINF_SUCCESS;
 
     /*
      * Close semaphore handle.
      */
-    int rc = DosCloseEventSem(SEM2HND(EventSem));
+    int rc = DosCloseEventSem(SEM2HND(hEventSem));
     if (!rc)
         return VINF_SUCCESS;
-    AssertMsgFailed(("Destroy EventSem %p failed, rc=%d\n", EventSem, rc));
+    AssertMsgFailed(("Destroy hEventSem %p failed, rc=%d\n", hEventSem, rc));
     return RTErrConvertFromOS2(rc);
 }
 
 
-RTDECL(int)   RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
+RTDECL(int)   RTSemEventWaitNoResume(RTSEMEVENT hEventSem, unsigned cMillies)
 {
     /*
      * Wait for condition.
      */
-    int rc = DosWaitEventSem(SEM2HND(EventSem), cMillies == RT_INDEFINITE_WAIT ? SEM_INDEFINITE_WAIT : cMillies);
+    int rc = DosWaitEventSem(SEM2HND(hEventSem), cMillies == RT_INDEFINITE_WAIT ? SEM_INDEFINITE_WAIT : cMillies);
     switch (rc)
     {
         case NO_ERROR:              return VINF_SUCCESS;
@@ -98,19 +102,19 @@ RTDECL(int)   RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
         case ERROR_INTERRUPT:       return VERR_INTERRUPTED;
         default:
         {
-            AssertMsgFailed(("Wait on EventSem %p failed, rc=%d\n", EventSem, rc));
+            AssertMsgFailed(("Wait on hEventSem %p failed, rc=%d\n", hEventSem, rc));
             return RTErrConvertFromOS2(rc);
         }
     }
 }
 
 
-RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
+RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
 {
     /*
      * Signal the object.
      */
-    int rc = DosPostEventSem(SEM2HND(EventSem));
+    int rc = DosPostEventSem(SEM2HND(hEventSem));
     switch (rc)
     {
         case NO_ERROR:
@@ -291,6 +295,7 @@ RTDECL(uint32_t) RTSemMutexSetSubClass(RTSEMMUTEX hMutexSem, uint32_t uSubClass)
 }
 
 
+#undef RTSemMutexRequestNoResume
 RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
 {
     /*

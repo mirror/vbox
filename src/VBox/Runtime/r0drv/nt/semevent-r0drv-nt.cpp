@@ -58,34 +58,39 @@ typedef struct RTSEMEVENTINTERNAL
 } RTSEMEVENTINTERNAL, *PRTSEMEVENTINTERNAL;
 
 
-RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
+RTDECL(int)  RTSemEventCreate(PRTSEMEVENT phEventSem)
 {
-    Assert(sizeof(RTSEMEVENTINTERNAL) > sizeof(void *));
-    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pThis));
-    if (pThis)
-    {
-        pThis->u32Magic = RTSEMEVENT_MAGIC;
-        KeInitializeEvent(&pThis->Event, SynchronizationEvent, FALSE);
-        *pEventSem = pThis;
-        return VINF_SUCCESS;
-    }
-    return VERR_NO_MEMORY;
+    return RTSemEventCreateEx(phEventSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, NULL);
 }
 
 
-RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
+RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKVALCLASS hClass, const char *pszNameFmt, ...)
+{
+    AssertReturn(!(fFlags & ~RTSEMEVENT_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+    AssertCompile(sizeof(RTSEMEVENTINTERNAL) > sizeof(void *));
+
+    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pThis));
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    pThis->u32Magic = RTSEMEVENT_MAGIC;
+    KeInitializeEvent(&pThis->Event, SynchronizationEvent, FALSE);
+
+    *phEventSem = pThis;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
 {
     /*
      * Validate input.
      */
-    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)EventSem;
-    if (!pThis)
-        return VERR_INVALID_PARAMETER;
-    if (pThis->u32Magic != RTSEMEVENT_MAGIC)
-    {
-        AssertMsgFailed(("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis));
-        return VERR_INVALID_PARAMETER;
-    }
+    PRTSEMEVENTINTERNAL pThis = hEventSem;
+    if (pThis == NIL_RTSEMEVENT)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
 
     /*
      * Invalidate it and signal the object just in case.
@@ -97,20 +102,14 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
 }
 
 
-RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
+RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
 {
     /*
      * Validate input.
      */
-    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)EventSem;
-    if (!pThis)
-        return VERR_INVALID_PARAMETER;
-    if (    !pThis
-        ||  pThis->u32Magic != RTSEMEVENT_MAGIC)
-    {
-        AssertMsgFailed(("pThis->u32Magic=%RX32 pThis=%p\n", pThis ? pThis->u32Magic : 0, pThis));
-        return VERR_INVALID_PARAMETER;
-    }
+    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)hEventSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
 
     /*
      * Signal the event object.
@@ -120,20 +119,14 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
 }
 
 
-static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterruptible)
+static int rtSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies, bool fInterruptible)
 {
     /*
      * Validate input.
      */
-    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)EventSem;
-    if (!pThis)
-        return VERR_INVALID_PARAMETER;
-    if (    !pThis
-        ||  pThis->u32Magic != RTSEMEVENT_MAGIC)
-    {
-        AssertMsgFailed(("pThis->u32Magic=%RX32 pThis=%p\n", pThis ? pThis->u32Magic : 0, pThis));
-        return VERR_INVALID_PARAMETER;
-    }
+    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)hEventSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
 
     /*
      * Wait for it.
@@ -169,14 +162,14 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
 }
 
 
-RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
+RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies)
 {
-    return rtSemEventWait(EventSem, cMillies, false /* fInterruptible */);
+    return rtSemEventWait(hEventSem, cMillies, false /* fInterruptible */);
 }
 
 
-RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
+RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, unsigned cMillies)
 {
-    return rtSemEventWait(EventSem, cMillies, true /* fInterruptible */);
+    return rtSemEventWait(hEventSem, cMillies, true /* fInterruptible */);
 }
 
