@@ -2359,10 +2359,13 @@ typedef struct PDMDEVHLPR3
      * @returns VBox status code.
      * @param   pDevIns             Device instance.
      * @param   pCritSect           Pointer to the critical section.
-     * @param   pszName             The name of the critical section (for
-     *                              statistics).
+     * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
+     * @param   pszNameFmt          Format string for namging the critical section.
+     *                              For statistics and lock validation.
+     * @param   va                  Arguments for the format string.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCritSectInit,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, const char *pszName));
+    DECLR3CALLBACKMEMBER(int, pfnCritSectInit,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,
+                                               const char *pszNameFmt, va_list va));
 
     /**
      * Get the real world UTC time adjusted for VM lag, user offset and warpdrive.
@@ -3701,11 +3704,26 @@ DECLINLINE(int) PDMDevHlpPDMQueueCreate(PPDMDEVINS pDevIns, RTUINT cbItem, RTUIN
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnCritSectInit
+ * Initializes a PDM critical section.
+ *
+ * The PDM critical sections are derived from the IPRT critical sections, but
+ * works in GC as well.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             Device instance.
+ * @param   pCritSect           Pointer to the critical section.
+ * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
+ * @param   pszNameFmt          Format string for namging the critical section.
+ *                              For statistics and lock validation.
+ * @param   ...                 Arguments for the format string.
  */
-DECLINLINE(int) PDMDevHlpCritSectInit(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, const char *pszName)
+DECLINLINE(int) PDMDevHlpCritSectInit(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL, const char *pszNameFmt, ...)
 {
-    return pDevIns->pDevHlpR3->pfnCritSectInit(pDevIns, pCritSect, pszName);
+    va_list va;
+    va_start(va, pszNameFmt);
+    int rc = pDevIns->pDevHlpR3->pfnCritSectInit(pDevIns, pCritSect, RT_SRC_POS_ARGS, pszNameFmt, va);
+    va_end(va);
+    return rc;
 }
 
 /**

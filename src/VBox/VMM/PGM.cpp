@@ -1285,7 +1285,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     /*
      * Initialize the PGM critical section and flush the phys TLBs
      */
-    rc = PDMR3CritSectInit(pVM, &pVM->pgm.s.CritSect, "PGM");
+    rc = PDMR3CritSectInit(pVM, &pVM->pgm.s.CritSect, RT_SRC_POS, "PGM");
     AssertRCReturn(rc, rc);
 
     PGMR3PhysChunkInvalidateTLB(pVM);

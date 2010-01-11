@@ -1139,7 +1139,7 @@ RTDECL(RTLOCKVALCLASS) RTLockValidatorClassFindForSrcPos(PRTLOCKVALSRCPOS pSrcPo
 }
 
 
-RTDECL(RTLOCKVALCLASS) RTLockValidatorClassForSrcPos(RT_SRC_POS_DECL)
+RTDECL(RTLOCKVALCLASS) RTLockValidatorClassForSrcPos(RT_SRC_POS_DECL, const char *pszNameFmt, ...)
 {
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_POS_NO_ID();
     RTLOCKVALCLASS  hClass = RTLockValidatorClassFindForSrcPos(&SrcPos);
@@ -1148,10 +1148,13 @@ RTDECL(RTLOCKVALCLASS) RTLockValidatorClassForSrcPos(RT_SRC_POS_DECL)
         /*
          * Create a new class and insert it into the tree.
          */
-        int rc = RTLockValidatorClassCreateEx(&hClass, &SrcPos,
-                                              true /*fAutodidact*/, true /*fRecursionOk*/, false /*fStrictReleaseOrder*/,
-                                              1 /*cMsMinDeadlock*/, 1 /*cMsMinOrder*/,
-                                              NULL /*pszName*/);
+        va_list va;
+        va_start(va, pszNameFmt);
+        int rc = RTLockValidatorClassCreateExV(&hClass, &SrcPos,
+                                               true /*fAutodidact*/, true /*fRecursionOk*/, false /*fStrictReleaseOrder*/,
+                                               1 /*cMsMinDeadlock*/, 1 /*cMsMinOrder*/,
+                                               pszNameFmt, va);
+        va_end(va);
         if (RT_SUCCESS(rc))
         {
             if (g_hLockValClassTreeRWLock == NIL_RTSEMRW)

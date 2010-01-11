@@ -159,7 +159,7 @@ VMMR3DECL(int) IOMR3Init(PVM pVM)
     /*
      * Initialize the REM critical section.
      */
-    int rc = PDMR3CritSectInit(pVM, &pVM->iom.s.EmtLock, "IOM EMT Lock");
+    int rc = PDMR3CritSectInit(pVM, &pVM->iom.s.EmtLock, RT_SRC_POS, "IOM EMT Lock");
     AssertRCReturn(rc, rc);
 
     /*

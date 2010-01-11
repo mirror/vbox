@@ -340,7 +340,7 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
     if (RT_SUCCESS(rc))
         rc = pdmR3CritSectInit(pVM);
     if (RT_SUCCESS(rc))
-        rc = PDMR3CritSectInit(pVM, &pVM->pdm.s.CritSect, "PDM");
+        rc = PDMR3CritSectInit(pVM, &pVM->pdm.s.CritSect, RT_SRC_POS, "PDM");
     if (RT_SUCCESS(rc))
         rc = pdmR3LdrInitU(pVM->pUVM);
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION

@@ -914,8 +914,11 @@ RTDECL(RTLOCKVALCLASS) RTLockValidatorClassFindForSrcPos(PRTLOCKVALSRCPOS pSrcPo
  * @param   pszFile             The source file.
  * @param   iLine               The line in that source file.
  * @param   pszFunction         The function name.
+ * @param   pszNameFmt          Class name format string, optional (NULL).  Max
+ *                              length is 32 bytes.
+ * @param   ...                 Format string arguments.
  */
-RTDECL(RTLOCKVALCLASS) RTLockValidatorClassForSrcPos(RT_SRC_POS_DECL);
+RTDECL(RTLOCKVALCLASS) RTLockValidatorClassForSrcPos(RT_SRC_POS_DECL, const char *pszNameFmt, ...);
 
 /**
  * Retains a reference to a lock validator class.

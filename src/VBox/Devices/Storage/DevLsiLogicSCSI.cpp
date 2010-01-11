@@ -1103,7 +1103,7 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv,
 {
     uint32_t u32 = 0;
 
-    /* Align to a 4 byte offset. */ 
+    /* Align to a 4 byte offset. */
     switch (uOffset & ~3)
     {
         case LSILOGIC_REG_REPLY_QUEUE:
@@ -4551,12 +4551,12 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Create critical sections protecting the reply post and free queues.
      */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyFreeQueueCritSect, "LsiLogicRFQ");
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyFreeQueueCritSect, RT_SRC_POS, "LsiLogicRFQ");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic: cannot create critical section for reply free queue"));
 
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyPostQueueCritSect, "LsiLogicRPQ");
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyPostQueueCritSect, RT_SRC_POS, "LsiLogicRPQ");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic: cannot create critical section for reply post queue"));

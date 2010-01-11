@@ -605,7 +605,7 @@ static int  kbd_write_keyboard(KBDState *s, int val)
             else if (s->scancode_set == 3)
                 pc_kbd_put_keycode(s, 0x3f);
         } else {
-            if (val >= 1 && val <= 3) 
+            if (val >= 1 && val <= 3)
                 s->scancode_set = val;
             kbd_queue(s, KBD_REPLY_ACK, 0);
         }
@@ -1644,9 +1644,7 @@ static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Initialize the critical section.
      */
-    char szName[24];
-    RTStrPrintf(szName, sizeof(szName), "PS2KM#%d", iInstance);
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, szName);
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "PS2KM#%d", iInstance);
     if (RT_FAILURE(rc))
         return rc;
 

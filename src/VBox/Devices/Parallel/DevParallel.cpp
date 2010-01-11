@@ -758,9 +758,7 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
      * Initialize critical section and event semaphore.
      * This must of course be done before attaching drivers or anything else which can call us back..
      */
-    char szName[24];
-    RTStrPrintf(szName, sizeof(szName), "Parallel#%d", iInstance);
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, szName);
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "Parallel#%d", iInstance);
     if (RT_FAILURE(rc))
         return rc;
 
