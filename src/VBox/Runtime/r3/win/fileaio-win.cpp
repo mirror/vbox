@@ -455,7 +455,6 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, RTMSINTERVAL
         RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
 
         /* completion status. */
-        DWORD cbTransfered;
         fSucceeded = GetOverlappedResult(pReqInt->hFile,
                                          &pReqInt->Overlapped,
                                          &cbTransfered,
