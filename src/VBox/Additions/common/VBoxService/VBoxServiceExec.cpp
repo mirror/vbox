@@ -133,9 +133,9 @@ static int VBoxServiceExecValidateFlags(const char *pszFlags)
  */
 static int VBoxServiceExecReadHostProp(const char *pszPropName, char **ppszValue, uint64_t *puTimestamp)
 {
-    char *pszFlags, *pszValue;
+    char *pszFlags;
     uint64_t uTimestamp;
-    int rc = VBoxServiceReadProp(g_uExecGuestPropSvcClientID, pszPropName, ppszValue, &pszFlags, puTimestamp);
+    int rc = VBoxServiceReadProp(g_uExecGuestPropSvcClientID, pszPropName, ppszValue, &pszFlags, &uTimestamp);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -152,13 +152,7 @@ static int VBoxServiceExecReadHostProp(const char *pszPropName, char **ppszValue
         else
         {
             VBoxServiceVerbose(2, "Exec: Read \"%s\" = \"%s\", timestamp %RU64n\n",
-                               pszPropName, pszValue, uTimestamp);
-            *ppszValue = RTStrDup(pszValue);
-            if (!*ppszValue)
-            {
-                VBoxServiceError("Exec: RTStrDup failed for \"%s\"\n", pszValue);
-                rc = VERR_NO_MEMORY;
-            }
+                               pszPropName, *ppszValue, uTimestamp);
             if (puTimestamp)
                 *puTimestamp = uTimestamp;
         }
