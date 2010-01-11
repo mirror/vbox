@@ -116,8 +116,16 @@ static long sys_futex(uint32_t volatile *uaddr, int op, int val, struct timespec
 
 
 
-RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
+RTDECL(int)  RTSemEventCreate(PRTSEMEVENT phEventSem)
 {
+    return RTSemEventCreateEx(phEventSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, NULL);
+}
+
+
+RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKVALCLASS hClass, const char *pszNameFmt, ...)
+{
+    AssertReturn(!(fFlags & ~RTSEMEVENT_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+
     /*
      * Allocate semaphore handle.
      */
@@ -128,26 +136,30 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
         pThis->cWaiters = 0;
         pThis->fSignalled = 0;
 #ifdef RTSEMEVENT_STRICT
-        RTLockValidatorRecSharedInit(&pThis->Signallers,
-                                     NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY,
-                                     pThis, true /*fSignaller*/, true /*fEnabled*/, "RTSemEvent");
+        va_list va;
+        va_start(va, pszNameFmt);
+        RTLockValidatorRecSharedInitV(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
+                                      true /*fSignaller*/, !(fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL),
+                                      pszNameFmt, va);
+        va_end(va);
         pThis->fEverHadSignallers = false;
 #endif
-        *pEventSem = pThis;
+
+        *phEventSem = pThis;
         return VINF_SUCCESS;
     }
     return  VERR_NO_MEMORY;
 }
 
 
-RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
+RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
 {
     /*
      * Validate input.
      */
-    if (EventSem == NIL_RTSEMEVENT)     /* don't bitch */
-        return VERR_INVALID_HANDLE;
-    struct RTSEMEVENTINTERNAL *pThis = EventSem;
+    struct RTSEMEVENTINTERNAL *pThis = hEventSem;
+    if (pThis == NIL_RTSEMEVENT)
+        return VINF_SUCCESS;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->iMagic == RTSEMEVENT_MAGIC, VERR_INVALID_HANDLE);
 
@@ -172,12 +184,12 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
 }
 
 
-RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
+RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMEVENTINTERNAL *pThis = EventSem;
+    struct RTSEMEVENTINTERNAL *pThis = hEventSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->iMagic == RTSEMEVENT_MAGIC, VERR_INVALID_HANDLE);
 
@@ -206,14 +218,14 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
 }
 
 
-static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResume)
+static int rtSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies, bool fAutoResume)
 {
     PCRTLOCKVALSRCPOS pSrcPos = NULL;
 
     /*
      * Validate input.
      */
-    struct RTSEMEVENTINTERNAL *pThis = EventSem;
+    struct RTSEMEVENTINTERNAL *pThis = hEventSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->iMagic == RTSEMEVENT_MAGIC, VERR_INVALID_HANDLE);
 
@@ -318,18 +330,18 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
 }
 
 
-RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
+RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies)
 {
-    int rc = rtSemEventWait(EventSem, cMillies, true);
+    int rc = rtSemEventWait(hEventSem, cMillies, true);
     Assert(rc != VERR_INTERRUPTED);
     Assert(rc != VERR_TIMEOUT || cMillies != RT_INDEFINITE_WAIT);
     return rc;
 }
 
 
-RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
+RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, unsigned cMillies)
 {
-    return rtSemEventWait(EventSem, cMillies, false);
+    return rtSemEventWait(hEventSem, cMillies, false);
 }
 
 

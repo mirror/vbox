@@ -61,69 +61,68 @@ typedef struct RTSEMEVENTINTERNAL
 
 
 
-RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
+RTDECL(int)  RTSemEventCreate(PRTSEMEVENT phEventSem)
 {
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pEventInt));
-    if (pEventInt)
-    {
-        pEventInt->u32Magic = RTSEMEVENT_MAGIC;
-        pEventInt->fState   = 0;
-        init_waitqueue_head(&pEventInt->Head);
-        *pEventSem = pEventInt;
-        return VINF_SUCCESS;
-    }
-    return VERR_NO_MEMORY;
+    return RTSemEventCreateEx(phEventSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, NULL);
+}
+
+
+RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKVALCLASS hClass, const char *pszNameFmt, ...)
+{
+    PRTSEMEVENTINTERNAL pThis;
+
+    AssertReturn(!(fFlags & ~RTSEMEVENT_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+    pThis = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pThis));
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    pThis->u32Magic = RTSEMEVENT_MAGIC;
+    pThis->fState   = 0;
+    init_waitqueue_head(&pThis->Head);
+
+    *phEventSem = pThis;
+    return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTSemEventCreate);
 
 
-RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
+RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
 {
     /*
      * Validate input.
      */
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
-    if (!pEventInt)
-        return VERR_INVALID_PARAMETER;
-    if (pEventInt->u32Magic != RTSEMEVENT_MAGIC)
-    {
-        AssertMsgFailed(("pEventInt->u32Magic=%RX32 pEventInt=%p\n", pEventInt->u32Magic, pEventInt));
-        return VERR_INVALID_PARAMETER;
-    }
+    PRTSEMEVENTINTERNAL pThis = hEventSem;
+    if (pThis == NIL_RTSEMEVENT)
+        return VINF_SUCCESS;
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
 
     /*
      * Invalidate it and signal the object just in case.
      */
-    ASMAtomicWriteU32(&pEventInt->u32Magic, ~RTSEMEVENT_MAGIC);
-    ASMAtomicWriteU32(&pEventInt->fState, 0);
-    Assert(!waitqueue_active(&pEventInt->Head));
-    wake_up_all(&pEventInt->Head);
-    RTMemFree(pEventInt);
+    ASMAtomicWriteU32(&pThis->u32Magic, ~RTSEMEVENT_MAGIC);
+    ASMAtomicWriteU32(&pThis->fState, 0);
+    Assert(!waitqueue_active(&pThis->Head));
+    wake_up_all(&pThis->Head);
+    RTMemFree(pThis);
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTSemEventDestroy);
 
 
-RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
+RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
 {
     /*
      * Validate input.
      */
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
-    if (!pEventInt)
-        return VERR_INVALID_PARAMETER;
-    if (    !pEventInt
-        ||  pEventInt->u32Magic != RTSEMEVENT_MAGIC)
-    {
-        AssertMsgFailed(("pEventInt->u32Magic=%RX32 pEventInt=%p\n", pEventInt ? pEventInt->u32Magic : 0, pEventInt));
-        return VERR_INVALID_PARAMETER;
-    }
+    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)hEventSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
 
     /*
      * Signal the event object.
      */
-    ASMAtomicWriteU32(&pEventInt->fState, 1);
-    wake_up(&pEventInt->Head);
+    ASMAtomicWriteU32(&pThis->fState, 1);
+    wake_up(&pThis->Head);
 
     return VINF_SUCCESS;
 }
@@ -134,11 +133,11 @@ RT_EXPORT_SYMBOL(RTSemEventSignal);
  * Worker for RTSemEvent and RTSemEventNoResume.
  *
  * @returns VBox status code.
- * @param   pEventInt           The event semaphore.
+ * @param   pThis           The event semaphore.
  * @param   cMillies            The number of milliseconds to wait.
  * @param   fInterruptible      Whether it's an interruptible wait or not.
  */
-static int rtSemEventWait(PRTSEMEVENTINTERNAL pEventInt, unsigned cMillies, bool fInterruptible)
+static int rtSemEventWait(PRTSEMEVENTINTERNAL pThis, unsigned cMillies, bool fInterruptible)
 {
     /*
      * Ok wait for it.
@@ -147,15 +146,15 @@ static int rtSemEventWait(PRTSEMEVENTINTERNAL pEventInt, unsigned cMillies, bool
     int     rc       = VINF_SUCCESS;
     long    lTimeout = cMillies == RT_INDEFINITE_WAIT ? MAX_SCHEDULE_TIMEOUT : msecs_to_jiffies(cMillies);
 #ifdef IPRT_DEBUG_SEMS
-    snprintf(current->comm, TASK_COMM_LEN, "e%lx", IPRT_DEBUG_SEMS_ADDRESS(pEventInt));
+    snprintf(current->comm, TASK_COMM_LEN, "e%lx", IPRT_DEBUG_SEMS_ADDRESS(pThis));
 #endif
     for (;;)
     {
         /* make everything thru schedule_timeout() atomic scheduling wise. */
-        prepare_to_wait(&pEventInt->Head, &Wait, fInterruptible ? TASK_INTERRUPTIBLE : TASK_UNINTERRUPTIBLE);
+        prepare_to_wait(&pThis->Head, &Wait, fInterruptible ? TASK_INTERRUPTIBLE : TASK_UNINTERRUPTIBLE);
 
         /* check the condition. */
-        if (ASMAtomicCmpXchgU32(&pEventInt->fState, 0, 1))
+        if (ASMAtomicCmpXchgU32(&pThis->fState, 0, 1))
             break;
 
         /* check for pending signals. */
@@ -171,7 +170,7 @@ static int rtSemEventWait(PRTSEMEVENTINTERNAL pEventInt, unsigned cMillies, bool
         after_wait(&Wait);
 
         /* Check if someone destroyed the semaphore while we were waiting. */
-        if (pEventInt->u32Magic != RTSEMEVENT_MAGIC)
+        if (pThis->u32Magic != RTSEMEVENT_MAGIC)
         {
             rc = VERR_SEM_DESTROYED;
             break;
@@ -185,48 +184,36 @@ static int rtSemEventWait(PRTSEMEVENTINTERNAL pEventInt, unsigned cMillies, bool
         }
     }
 
-    finish_wait(&pEventInt->Head, &Wait);
+    finish_wait(&pThis->Head, &Wait);
 #ifdef IPRT_DEBUG_SEMS
-    snprintf(current->comm, TASK_COMM_LEN, "e%lx:%d", IPRT_DEBUG_SEMS_ADDRESS(pEventInt), rc);
+    snprintf(current->comm, TASK_COMM_LEN, "e%lx:%d", IPRT_DEBUG_SEMS_ADDRESS(pThis), rc);
 #endif
     return rc;
 }
 
 
-RTDECL(int) RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
+RTDECL(int) RTSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies)
 {
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
-    if (!pEventInt)
-        return VERR_INVALID_PARAMETER;
-    if (    !pEventInt
-        ||  pEventInt->u32Magic != RTSEMEVENT_MAGIC)
-    {
-        AssertMsgFailed(("pEventInt->u32Magic=%RX32 pEventInt=%p\n", pEventInt ? pEventInt->u32Magic : 0, pEventInt));
-        return VERR_INVALID_PARAMETER;
-    }
+    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)hEventSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
 
-    if (ASMAtomicCmpXchgU32(&pEventInt->fState, 0, 1))
+    if (ASMAtomicCmpXchgU32(&pThis->fState, 0, 1))
         return VINF_SUCCESS;
-    return rtSemEventWait(pEventInt, cMillies, false /* fInterruptible */);
+    return rtSemEventWait(pThis, cMillies, false /* fInterruptible */);
 }
 RT_EXPORT_SYMBOL(RTSemEventWait);
 
 
-RTDECL(int) RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
+RTDECL(int) RTSemEventWaitNoResume(RTSEMEVENT hEventSem, unsigned cMillies)
 {
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
-    if (!pEventInt)
-        return VERR_INVALID_PARAMETER;
-    if (    !pEventInt
-        ||  pEventInt->u32Magic != RTSEMEVENT_MAGIC)
-    {
-        AssertMsgFailed(("pEventInt->u32Magic=%RX32 pEventInt=%p\n", pEventInt ? pEventInt->u32Magic : 0, pEventInt));
-        return VERR_INVALID_PARAMETER;
-    }
+    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)hEventSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
 
-    if (ASMAtomicCmpXchgU32(&pEventInt->fState, 0, 1))
+    if (ASMAtomicCmpXchgU32(&pThis->fState, 0, 1))
         return VINF_SUCCESS;
-    return rtSemEventWait(pEventInt, cMillies, true /* fInterruptible */);
+    return rtSemEventWait(pThis, cMillies, true /* fInterruptible */);
 }
 RT_EXPORT_SYMBOL(RTSemEventWaitNoResume);
 

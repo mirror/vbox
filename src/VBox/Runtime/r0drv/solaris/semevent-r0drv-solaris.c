@@ -69,73 +69,76 @@ typedef struct RTSEMEVENTINTERNAL
 
 
 
-RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
+RTDECL(int)  RTSemEventCreate(PRTSEMEVENT phEventSem)
 {
-    Assert(sizeof(RTSEMEVENTINTERNAL) > sizeof(void *));
-    AssertPtrReturn(pEventSem, VERR_INVALID_POINTER);
-    RT_ASSERT_PREEMPTIBLE();
-
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pEventInt));
-    if (pEventInt)
-    {
-        pEventInt->u32Magic = RTSEMEVENT_MAGIC;
-        pEventInt->cWaiters = 0;
-        pEventInt->cWaking = 0;
-        pEventInt->fSignaled = 0;
-        mutex_init(&pEventInt->Mtx, "IPRT Event Semaphore", MUTEX_DRIVER, (void *)ipltospl(DISP_LEVEL));
-        cv_init(&pEventInt->Cnd, "IPRT CV", CV_DRIVER, NULL);
-        *pEventSem = pEventInt;
-        return VINF_SUCCESS;
-    }
-    return VERR_NO_MEMORY;
+    return RTSemEventCreateEx(phEventSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, NULL);
 }
 
 
-RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
+RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKVALCLASS hClass, const char *pszNameFmt, ...)
 {
-    if (EventSem == NIL_RTSEMEVENT)
-        return VERR_INVALID_HANDLE;
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
-    AssertPtrReturn(pEventInt, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
-                    ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
-                    VERR_INVALID_HANDLE);
+    AssertCompile(sizeof(RTSEMEVENTINTERNAL) > sizeof(void *));
+    AssertReturn(!(fFlags & ~RTSEMEVENT_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(phEventSem, VERR_INVALID_POINTER);
+    RT_ASSERT_PREEMPTIBLE();
+
+    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pThis));
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    pThis->u32Magic = RTSEMEVENT_MAGIC;
+    pThis->cWaiters = 0;
+    pThis->cWaking = 0;
+    pThis->fSignaled = 0;
+    mutex_init(&pThis->Mtx, "IPRT Event Semaphore", MUTEX_DRIVER, (void *)ipltospl(DISP_LEVEL));
+    cv_init(&pThis->Cnd, "IPRT CV", CV_DRIVER, NULL);
+
+    *phEventSem = pThis;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
+{
+    PRTSEMEVENTINTERNAL pThis = hEventSem;
+    if (pThis == NIL_RTSEMEVENT)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
     RT_ASSERT_INTS_ON();
 
-    mutex_enter(&pEventInt->Mtx);
-    ASMAtomicIncU32(&pEventInt->u32Magic); /* make the handle invalid */
-    if (pEventInt->cWaiters > 0)
+    mutex_enter(&pThis->Mtx);
+    ASMAtomicIncU32(&pThis->u32Magic); /* make the handle invalid */
+    if (pThis->cWaiters > 0)
     {
         /* abort waiting thread, last man cleans up. */
-        ASMAtomicXchgU32(&pEventInt->cWaking, pEventInt->cWaking + pEventInt->cWaiters);
-        cv_broadcast(&pEventInt->Cnd);
-        mutex_exit(&pEventInt->Mtx);
+        ASMAtomicXchgU32(&pThis->cWaking, pThis->cWaking + pThis->cWaiters);
+        cv_broadcast(&pThis->Cnd);
+        mutex_exit(&pThis->Mtx);
     }
-    else if (pEventInt->cWaking)
+    else if (pThis->cWaking)
     {
         /* the last waking thread is gonna do the cleanup */
-        mutex_exit(&pEventInt->Mtx);
+        mutex_exit(&pThis->Mtx);
     }
     else
     {
-        mutex_exit(&pEventInt->Mtx);
-        cv_destroy(&pEventInt->Cnd);
-        mutex_destroy(&pEventInt->Mtx);
-        RTMemFree(pEventInt);
+        mutex_exit(&pThis->Mtx);
+        cv_destroy(&pThis->Cnd);
+        mutex_destroy(&pThis->Mtx);
+        RTMemFree(pThis);
     }
 
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
+RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
 {
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
+    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)hEventSem;
     RT_ASSERT_PREEMPT_CPUID_VAR();
-    AssertPtrReturn(pEventInt, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
-                    ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
-                    VERR_INVALID_HANDLE);
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
     RT_ASSERT_INTS_ON();
 
     /*
@@ -150,7 +153,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
      *       check whether preemption was disabled via RTThreadPreemptDisable
      *       or not and only call swtch if RTThreadPreemptDisable wasn't called.
      */
-    int fAcquired = mutex_tryenter(&pEventInt->Mtx);
+    int fAcquired = mutex_tryenter(&pThis->Mtx);
     if (!fAcquired)
     {
         if (curthread->t_intr && getpil() < DISP_LEVEL)
@@ -160,49 +163,47 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
             preempt();
             RTThreadPreemptRestore(&PreemptState);
         }
-        mutex_enter(&pEventInt->Mtx);
+        mutex_enter(&pThis->Mtx);
     }
 
-    if (pEventInt->cWaiters > 0)
+    if (pThis->cWaiters > 0)
     {
-        ASMAtomicDecU32(&pEventInt->cWaiters);
-        ASMAtomicIncU32(&pEventInt->cWaking);
-        cv_signal(&pEventInt->Cnd);
+        ASMAtomicDecU32(&pThis->cWaiters);
+        ASMAtomicIncU32(&pThis->cWaking);
+        cv_signal(&pThis->Cnd);
     }
     else
-        ASMAtomicXchgU8(&pEventInt->fSignaled, true);
+        ASMAtomicXchgU8(&pThis->fSignaled, true);
 
-    mutex_exit(&pEventInt->Mtx);
+    mutex_exit(&pThis->Mtx);
 
     RT_ASSERT_PREEMPT_CPUID();
     return VINF_SUCCESS;
 }
 
 
-static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterruptible)
+static int rtSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies, bool fInterruptible)
 {
     int rc;
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
-    AssertPtrReturn(pEventInt, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
-                    ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
-                    VERR_INVALID_HANDLE);
+    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)hEventSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
     if (cMillies)
         RT_ASSERT_PREEMPTIBLE();
 
-    mutex_enter(&pEventInt->Mtx);
+    mutex_enter(&pThis->Mtx);
 
-    if (pEventInt->fSignaled)
+    if (pThis->fSignaled)
     {
-        Assert(!pEventInt->cWaiters);
-        ASMAtomicXchgU8(&pEventInt->fSignaled, false);
+        Assert(!pThis->cWaiters);
+        ASMAtomicXchgU8(&pThis->fSignaled, false);
         rc = VINF_SUCCESS;
     }
     else if (!cMillies)
         rc = VERR_TIMEOUT;
     else
     {
-        ASMAtomicIncU32(&pEventInt->cWaiters);
+        ASMAtomicIncU32(&pThis->cWaiters);
 
         /*
          * Translate milliseconds into ticks and go to sleep.
@@ -213,17 +214,17 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
             clock_t cTimeout = ddi_get_lbolt();
             cTimeout += cTicks;
             if (fInterruptible)
-                rc = cv_timedwait_sig(&pEventInt->Cnd, &pEventInt->Mtx, cTimeout);
+                rc = cv_timedwait_sig(&pThis->Cnd, &pThis->Mtx, cTimeout);
             else
-                rc = cv_timedwait(&pEventInt->Cnd, &pEventInt->Mtx, cTimeout);
+                rc = cv_timedwait(&pThis->Cnd, &pThis->Mtx, cTimeout);
         }
         else
         {
             if (fInterruptible)
-                rc = cv_wait_sig(&pEventInt->Cnd, &pEventInt->Mtx);
+                rc = cv_wait_sig(&pThis->Cnd, &pThis->Mtx);
             else
             {
-                cv_wait(&pEventInt->Cnd, &pEventInt->Mtx);
+                cv_wait(&pThis->Cnd, &pThis->Mtx);
                 rc = 1;
             }
         }
@@ -231,50 +232,50 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
         if (rc > 0)
         {
             /* Retured due to call to cv_signal() or cv_broadcast() */
-            if (pEventInt->u32Magic != RTSEMEVENT_MAGIC)
+            if (pThis->u32Magic != RTSEMEVENT_MAGIC)
             {
                 rc = VERR_SEM_DESTROYED;
-                if (!ASMAtomicDecU32(&pEventInt->cWaking))
+                if (!ASMAtomicDecU32(&pThis->cWaking))
                 {
-                    mutex_exit(&pEventInt->Mtx);
-                    cv_destroy(&pEventInt->Cnd);
-                    mutex_destroy(&pEventInt->Mtx);
-                    RTMemFree(pEventInt);
+                    mutex_exit(&pThis->Mtx);
+                    cv_destroy(&pThis->Cnd);
+                    mutex_destroy(&pThis->Mtx);
+                    RTMemFree(pThis);
                     return rc;
                 }
             }
 
-            ASMAtomicDecU32(&pEventInt->cWaking);
+            ASMAtomicDecU32(&pThis->cWaking);
             rc = VINF_SUCCESS;
         }
         else if (rc == -1)
         {
             /* Returned due to timeout being reached */
-            if (pEventInt->cWaiters > 0)
-                ASMAtomicDecU32(&pEventInt->cWaiters);
+            if (pThis->cWaiters > 0)
+                ASMAtomicDecU32(&pThis->cWaiters);
             rc = VERR_TIMEOUT;
         }
         else
         {
             /* Returned due to pending signal */
-            if (pEventInt->cWaiters > 0)
-                ASMAtomicDecU32(&pEventInt->cWaiters);
+            if (pThis->cWaiters > 0)
+                ASMAtomicDecU32(&pThis->cWaiters);
             rc = VERR_INTERRUPTED;
         }
     }
 
-    mutex_exit(&pEventInt->Mtx);
+    mutex_exit(&pThis->Mtx);
     return rc;
 }
 
 
-RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
+RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies)
 {
-    return rtSemEventWait(EventSem, cMillies, false /* not interruptible */);
+    return rtSemEventWait(hEventSem, cMillies, false /* not interruptible */);
 }
 
 
-RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
+RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, unsigned cMillies)
 {
-    return rtSemEventWait(EventSem, cMillies, true /* interruptible */);
+    return rtSemEventWait(hEventSem, cMillies, true /* interruptible */);
 }
