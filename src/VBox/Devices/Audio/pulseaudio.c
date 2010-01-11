@@ -65,13 +65,15 @@ typedef struct PulseVoice
     int            fOpSuccess;
     /** number of logged errors */
     unsigned       cErrors;
+    /** Pulse record peek buffer */
     const uint8_t  *pu8PeekBuf;
     size_t         cbPeekBuf;
     size_t         offPeekBuf;
 } PulseVoice;
 
-/* The desired max buffer size in milliseconds. The desired latency will be
- * calculated to be 1/10 of the value */
+/* The desired buffer length in milliseconds. Will be the target total stream
+ * latency on newer version of pulse. Apparent latency can be less (or more.)
+ */
 static struct
 {
     int         buffer_msecs_out;
@@ -80,7 +82,7 @@ static struct
 =
 {
     INIT_FIELD (.buffer_msecs_out = ) 100,
-    INIT_FIELD (.buffer_msecs_in  = ) 300,
+    INIT_FIELD (.buffer_msecs_in  = ) 100,
 };
 
 static pa_sample_format_t aud_to_pulsefmt (audfmt_e fmt)
@@ -221,14 +223,16 @@ static int pulse_open (int fIn, pa_stream **ppStream, pa_sample_spec *pSampleSpe
     flags |= PA_STREAM_ADJUST_LATENCY;
 #endif
 
+#if 0
+    /* not applicable as we don't use pa_stream_get_latency() and pa_stream_get_time() */
+    flags |= PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE;
+#endif
+
     if (fIn)
     {
         LogRel(("Pulse: Requested record buffer attributes: maxlength=%d fragsize=%d\n",
                 pBufAttr->maxlength, pBufAttr->fragsize));
-#if 0
-        /* not applicable as we don't use pa_stream_get_latency() and pa_stream_get_time() */
-        flags |= PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE;
-#endif
+
         if (pa_stream_connect_record(pStream, /*dev=*/NULL, pBufAttr, flags) < 0)
         {
             LogRel(("Pulse: Cannot connect record stream: %s\n",
@@ -271,8 +275,16 @@ static int pulse_open (int fIn, pa_stream **ppStream, pa_sample_spec *pSampleSpe
     pBufAttrObtained = pa_stream_get_buffer_attr(pStream);
     memcpy(pBufAttr, pBufAttrObtained, sizeof(pa_buffer_attr));
 
-    LogRel(("Pulse: Obtained buffer attributes: tlength=%d maxlength=%d prebuf=%d minreq=%d fragsize=%d\n",
-            pBufAttr->tlength, pBufAttr->maxlength, pBufAttr->prebuf, pBufAttr->minreq, pBufAttr->fragsize));
+    if (fIn)
+    {
+        LogRel(("Pulse: Obtained buffer attributes for recording: maxlength=%d fragsize=%d\n",
+            pBufAttr->maxlength, pBufAttr->fragsize));
+    }
+    else
+    {
+        LogRel(("Pulse: Obtained buffer attributes for playback: maxlength=%d tlength=%d prebuf=%d minreq=%d\n",
+            pBufAttr->maxlength, pBufAttr->tlength, pBufAttr->prebuf, pBufAttr->minreq));
+    }
 
     pa_threaded_mainloop_unlock(g_pMainLoop);
     *ppStream = pStream;
@@ -302,8 +314,8 @@ static int pulse_init_out (HWVoiceOut *hw, audsettings_t *as)
     pPulse->SampleSpec.rate     = as->freq;
     pPulse->SampleSpec.channels = as->nchannels;
 
-    /* Note that setting maxlength to -1 does not work for older PulseAudio libraries
-     * (at least not for 0.9.10). So use the suggested value of 3/2 of tlength */
+    /* Note that setting maxlength to -1 does not work on PulseAudio servers
+     * older than 0.9.10. So use the suggested value of 3/2 of tlength */
     pPulse->BufAttr.tlength     = (pa_bytes_per_second(&pPulse->SampleSpec)
                                   * conf.buffer_msecs_out) / 1000;
     pPulse->BufAttr.maxlength   = (pPulse->BufAttr.tlength * 3) / 2;
@@ -431,81 +443,48 @@ static void stream_success_callback(pa_stream *pStream, int success, void *userd
 {
     PulseVoice *pPulse = (PulseVoice *) userdata;
     pPulse->fOpSuccess = success;
-    pa_threaded_mainloop_signal(g_pMainLoop, 0);
-}
-
-typedef enum
-{
-    Unpause,
-    Pause,
-    Trigger,
-    Drain
-} pulse_cmd_t;
-
-static int pulse_ctrl (PulseVoice *pPulse, pulse_cmd_t cmd)
-{
-    pa_operation *op = NULL;
-    const char *cmd_str = cmd == Unpause ? "unpause" :
-                          cmd == Pause   ? "pause"   :
-                          cmd == Trigger ? "trigger" :
-                          cmd == Drain   ? "drain"   : NULL;
-
-    if (!pPulse->pStream)
-        return 0;
-
-    LogRel(("Pulse: ctrl cmd=%s\n", cmd_str));
-
-    pa_threaded_mainloop_lock(g_pMainLoop);
-    switch (cmd)
-    {
-        case Pause:
-            op = pa_stream_cork(pPulse->pStream, 1, stream_success_callback, pPulse);
-            break;
-        case Unpause:
-            op = pa_stream_cork(pPulse->pStream, 0, stream_success_callback, pPulse);
-            break;
-        case Drain:
-            op = pa_stream_drain(pPulse->pStream, stream_success_callback, pPulse);
-            break;
-        case Trigger:
-            op = pa_stream_trigger(pPulse->pStream, stream_success_callback, pPulse);
-            break;
-        default:
-            goto unlock_and_exit;
-    }
-    if (!op)
+    if (!success)
     {
         if (pPulse->cErrors < MAX_LOG_REL_ERRORS)
         {
             int rc = pa_context_errno(g_pContext);
             pPulse->cErrors++;
-            LogRel(("Pulse: Failed ctrl cmd=%s to stream: %s\n", cmd_str, pa_strerror(rc)));
+            LogRel(("Pulse: Failed stream operation: %s\n", pa_strerror(rc)));
         }
     }
-    else
+    pa_threaded_mainloop_signal(g_pMainLoop, 0);
+}
+
+static int pulse_wait_for_operation (pa_operation *op)
+{
+    if (op)
     {
         while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
             pa_threaded_mainloop_wait(g_pMainLoop);
         pa_operation_unref(op);
     }
 
-unlock_and_exit:
-    pa_threaded_mainloop_unlock(g_pMainLoop);
-    return 0;
+    return 1;
 }
 
 static int pulse_ctl_out (HWVoiceOut *hw, int cmd, ...)
 {
+    PulseVoice *pPulse = (PulseVoice *) hw;
+
     switch (cmd)
     {
         case VOICE_ENABLE:
-            pulse_ctrl((PulseVoice *)hw, Unpause);
+            pa_threaded_mainloop_lock(g_pMainLoop);
+            pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 0, stream_success_callback, pPulse));
+            pa_threaded_mainloop_unlock(g_pMainLoop);
             break;
 
         case VOICE_DISABLE:
-            pulse_ctrl((PulseVoice *)hw, Trigger);
-            pulse_ctrl((PulseVoice *)hw, Drain);
-            pulse_ctrl((PulseVoice *)hw, Pause);
+            pa_threaded_mainloop_lock(g_pMainLoop);
+            pulse_wait_for_operation(pa_stream_trigger(pPulse->pStream, stream_success_callback, pPulse));
+            pulse_wait_for_operation(pa_stream_drain(pPulse->pStream, stream_success_callback, pPulse));
+            pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 1, stream_success_callback, pPulse));
+            pa_threaded_mainloop_unlock(g_pMainLoop);
             break;
 
         default:
@@ -525,9 +504,8 @@ static int pulse_init_in (HWVoiceIn *hw, audsettings_t *as)
 
     /* XXX check these values */
     pPulse->BufAttr.fragsize    = (pa_bytes_per_second(&pPulse->SampleSpec)
-                                  * conf.buffer_msecs_in) / 2000; /* one tenth */
-    pPulse->BufAttr.maxlength   = (pa_bytes_per_second(&pPulse->SampleSpec)
                                   * conf.buffer_msecs_in) / 1000;
+    pPulse->BufAttr.maxlength   = (pPulse->BufAttr.fragsize * 3) / 2;
     /* Other memebers of pa_buffer_attr are ignored for record streams */
 
     if (pulse_open (1, &pPulse->pStream, &pPulse->SampleSpec, &pPulse->BufAttr))
@@ -651,15 +629,19 @@ static int pulse_ctl_in (HWVoiceIn *hw, int cmd, ...)
     switch (cmd)
     {
         case VOICE_ENABLE:
-            pulse_ctrl((PulseVoice *)hw, Unpause);
+            pa_threaded_mainloop_lock(g_pMainLoop);
+            pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 0, stream_success_callback, pPulse));
+            pa_threaded_mainloop_unlock(g_pMainLoop);
             break;
         case VOICE_DISABLE:
+            pa_threaded_mainloop_lock(g_pMainLoop);
             if (pPulse->pu8PeekBuf)
             {
                 pa_stream_drop(pPulse->pStream);
                 pPulse->pu8PeekBuf = NULL;
             }
-            pulse_ctrl((PulseVoice *)hw, Pause);
+            pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 1, stream_success_callback, pPulse));
+            pa_threaded_mainloop_unlock(g_pMainLoop);
             break;
         default:
             return -1;
