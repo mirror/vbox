@@ -120,7 +120,8 @@ RTDECL(int) RTSemRWCreateEx(PRTSEMRW phRWSem, uint32_t fFlags,
             rc = RTSemEventMultiCreate(&pThis->ReadEvent);
             if (RT_SUCCESS(rc))
             {
-                rc = RTCritSectInitEx(&pThis->CritSect, RTCRITSECT_FLAGS_NO_LOCK_VAL, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
+                rc = RTCritSectInitEx(&pThis->CritSect, RTCRITSECT_FLAGS_NO_LOCK_VAL,
+                                      NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
                 if (RT_SUCCESS(rc))
                 {
                     /*

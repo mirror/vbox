@@ -232,8 +232,18 @@ RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned
 
 
 
-RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
+#undef RTSemMutexCreate
+RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX phMutexSem)
 {
+    return RTSemMutexCreateEx(phMutexSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
+}
+
+
+RTDECL(int) RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
+                               RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszNameFmt, ...)
+{
+    AssertReturn(!(fFlags & ~RTSEMMUTEX_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+
     /*
      * Create the semaphore.
      */
@@ -241,7 +251,8 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
     int rc = DosCreateMutexSem(NULL, &hmtx, 0, FALSE);
     if (!rc)
     {
-        *pMutexSem = (RTSEMMUTEX)(void *)hmtx;
+        /** @todo implement lock validation of OS/2 mutex semaphores. */
+        *phMutexSem = (RTSEMMUTEX)(void *)hmtx;
         return VINF_SUCCESS;
     }
 
@@ -259,6 +270,24 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
         return VINF_SUCCESS;
     AssertMsgFailed(("Destroy MutexSem %p failed, rc=%d\n", MutexSem, rc));
     return RTErrConvertFromOS2(rc);
+}
+
+
+
+RTDECL(uint32_t) RTSemMutexSetSubClass(RTSEMMUTEX hMutexSem, uint32_t uSubClass)
+{
+#if 0 /** @todo def RTSEMMUTEX_STRICT */
+    /*
+     * Validate.
+     */
+    RTSEMMUTEXINTERNAL *pThis = hMutexSem;
+    AssertPtrReturn(pThis, RTLOCKVAL_SUB_CLASS_INVALID);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, RTLOCKVAL_SUB_CLASS_INVALID);
+
+    return RTLockValidatorRecExclSetSubClass(&pThis->ValidatorRec, uSubClass);
+#else
+    return RTLOCKVAL_SUB_CLASS_INVALID;
+#endif
 }
 
 

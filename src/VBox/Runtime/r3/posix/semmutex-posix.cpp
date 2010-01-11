@@ -70,18 +70,22 @@ struct RTSEMMUTEXINTERNAL
 };
 
 
-/* Undefine debug mappings. */
-#undef RTSemMutexRequest
-#undef RTSemMutexRequestNoResume
-
-
-RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
+#undef RTSemMutexCreate
+RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX phMutexSem)
 {
-    int rc;
+    return RTSemMutexCreateEx(phMutexSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
+}
+
+
+RTDECL(int) RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
+                               RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszNameFmt, ...)
+{
+    AssertReturn(!(fFlags & ~RTSEMMUTEX_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
 
     /*
      * Allocate semaphore handle.
      */
+    int rc;
     struct RTSEMMUTEXINTERNAL *pThis = (struct RTSEMMUTEXINTERNAL *)RTMemAlloc(sizeof(struct RTSEMMUTEXINTERNAL));
     if (pThis)
     {
@@ -101,11 +105,14 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
                 pThis->cNesting = 0;
                 pThis->u32Magic = RTSEMMUTEX_MAGIC;
 #ifdef RTSEMMUTEX_STRICT
-                RTLockValidatorRecExclInit(&pThis->ValidatorRec, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, pThis,
-                                           true /*fEnabled*/, "RTSemMutex");
+                va_list va;
+                va_start(va, pszNameFmt);
+                RTLockValidatorRecExclInitV(&pThis->ValidatorRec, hClass, uSubClass, pThis,
+                                            !(fFlags & RTSEMMUTEX_FLAGS_NO_LOCK_VAL), pszNameFmt, va);
+                va_end(va);
 #endif
 
-                *pMutexSem = pThis;
+                *phMutexSem = pThis;
                 return VINF_SUCCESS;
             }
             pthread_mutexattr_destroy(&MutexAttr);
@@ -152,6 +159,23 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
     RTMemTmpFree(pThis);
 
     return VINF_SUCCESS;
+}
+
+
+RTDECL(uint32_t) RTSemMutexSetSubClass(RTSEMMUTEX hMutexSem, uint32_t uSubClass)
+{
+#ifdef RTSEMMUTEX_STRICT
+    /*
+     * Validate.
+     */
+    RTSEMMUTEXINTERNAL *pThis = hMutexSem;
+    AssertPtrReturn(pThis, RTLOCKVAL_SUB_CLASS_INVALID);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, RTLOCKVAL_SUB_CLASS_INVALID);
+
+    return RTLockValidatorRecExclSetSubClass(&pThis->ValidatorRec, uSubClass);
+#else
+    return RTLOCKVAL_SUB_CLASS_INVALID;
+#endif
 }
 
 
@@ -255,6 +279,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
 }
 
 
+#undef RTSemMutexRequest
 RTDECL(int) RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
 {
 #ifndef RTSEMMUTEX_STRICT
@@ -273,6 +298,7 @@ RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCU
 }
 
 
+#undef RTSemMutexRequestNoResume
 RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
 {
     /* (EINTR isn't returned by the wait functions we're using.) */

@@ -265,9 +265,37 @@ RTDECL(void) RTSemEventMultiRemoveSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTH
  * Create a mutex semaphore.
  *
  * @returns iprt status code.
- * @param   pMutexSem   Where to store the mutex semaphore handle.
+ * @param   phMutexSem      Where to store the mutex semaphore handle.
  */
-RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem);
+RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX phMutexSem);
+
+/**
+ * Creates a read/write semaphore.
+ *
+ * @returns iprt status code.
+ * @param   phRWSem             Where to store the handle to the newly created
+ *                              RW semaphore.
+ * @param   fFlags              Flags, any combination of the
+ *                              RTSEMMUTEX_FLAGS_XXX \#defines.
+ * @param   hClass              The class (no reference consumed).  If NIL, no
+ *                              lock order validation will be performed on this
+ *                              lock.
+ * @param   uSubClass           The sub-class.  This is used to define lock
+ *                              order within a class.  RTLOCKVAL_SUB_CLASS_NONE
+ *                              is the recommended value here.
+ * @param   pszNameFmt          Name format string for the lock validator,
+ *                              optional (NULL).  Max length is 32 bytes.
+ * @param   ...                 Format string arguments.
+ */
+RTDECL(int) RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
+                               RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszNameFmt, ...);
+
+/** @name RTSemMutexCreateEx flags
+ * @{ */
+/** Disables lock validation. */
+#define RTSEMMUTEX_FLAGS_NO_LOCK_VAL    UINT32_C(0x00000001)
+/** @} */
+
 
 /**
  * Destroy a mutex semaphore.
@@ -276,6 +304,20 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem);
  * @param   MutexSem    The mutex semaphore to destroy.
  */
 RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem);
+
+/**
+ * Changes the lock validator sub-class of the mutex semaphore.
+ *
+ * It is recommended to try make sure that nobody is using this sempahore while
+ * changing the value.
+ *
+ * @returns The old sub-class.  RTLOCKVAL_SUB_CLASS_INVALID is returns if the
+ *          lock validator isn't compiled in or either of the parameters are
+ *          invalid.
+ * @param   hMutexSem           The handle to the mutex semaphore.
+ * @param   uSubClass           The new sub-class value.
+ */
+RTDECL(uint32_t) RTSemMutexSetSubClass(RTSEMMUTEX hMutexSem, uint32_t uSubClass);
 
 /**
  * Request ownership of a mutex semaphore, resume on interruption.
@@ -580,7 +622,7 @@ RTDECL(int)   RTSemRWDestroy(RTSEMRW RWSem);
  * @returns The old sub-class.  RTLOCKVAL_SUB_CLASS_INVALID is returns if the
  *          lock validator isn't compiled in or either of the parameters are
  *          invalid.
- * @param   hSemRW              The handle to the read/write semaphore.
+ * @param   hRWSem              The handle to the read/write semaphore.
  * @param   uSubClass           The new sub-class value.
  */
 RTDECL(uint32_t) RTSemRWSetSubClass(RTSEMRW hRWSem, uint32_t uSubClass);
