@@ -195,8 +195,8 @@ if test ! -z "$xorgbin"; then
             vboxvideo32_dest_base="/usr/X11/lib/modules/drivers"
         fi
 
-        vboxmouse64_dest_base=$vboxmouse_dest_base/$solaris64dir
-        vboxvideo64_dest_base=$vboxvideo_dest_base/$solaris64dir
+        vboxmouse64_dest_base=$vboxmouse32_dest_base/$solaris64dir
+        vboxvideo64_dest_base=$vboxvideo32_dest_base/$solaris64dir
 
         # Make sure destination path exists
         if test ! -d $vboxmouse32_dest_base || test ! -d $vboxvideo32_dest_base || test ! -d $vboxmouse64_dest_base || test ! -d $vboxvideo64_dest_base; then
