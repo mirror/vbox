@@ -112,9 +112,19 @@ typedef struct RTSEMRWINTERNAL
 //#define RTSEMRW_WAIT_CNT_WR_MASK    (RTSEMRW_CNT_MASK << RTSEMRW_WAIT_CNT_WR_SHIFT)
 
 
-
+#undef RTSemRWCreate
 RTDECL(int) RTSemRWCreate(PRTSEMRW phRWSem)
 {
+    return RTSemRWCreateEx(phRWSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, "RTSemRW");
+}
+RT_EXPORT_SYMBOL(RTSemRWCreate);
+
+
+RTDECL(int) RTSemRWCreateEx(PRTSEMRW phRWSem, uint32_t fFlags,
+                            RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszNameFmt, ...)
+{
+    AssertReturn(!(fFlags & ~RTSEMRW_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+
     RTSEMRWINTERNAL *pThis = (RTSEMRWINTERNAL *)RTMemAlloc(sizeof(*pThis));
     if (!pThis)
         return VERR_NO_MEMORY;
@@ -133,10 +143,15 @@ RTDECL(int) RTSemRWCreate(PRTSEMRW phRWSem)
             pThis->cWriteRecursions     = 0;
             pThis->fNeedReset           = false;
 #ifdef RTSEMRW_STRICT
-            RTLockValidatorRecExclInit(&pThis->ValidatorWrite, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, pThis,
-                                       true /*fEnabled*/, "RTSemRW");
-            RTLockValidatorRecSharedInit(&pThis->ValidatorRead,  NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, pThis,
-                                         false /*fSignaller*/, true /*fEnabled*/, "RTSemEvent");
+            bool const fLVEnabled = !(fFlags & RTSEMRW_FLAGS_NO_LOCK_VAL);
+            va_list va;
+            va_start(va, pszNameFmt);
+            RTLockValidatorRecExclInit(&pThis->ValidatorWrite, hClass, uSubClass, pThis, fLVEnabled, pszNameFmt);
+            va_end(va);
+            va_start(va, pszNameFmt);
+            RTLockValidatorRecSharedInit(&pThis->ValidatorRead, hClass, uSubClass, pThis, false /*fSignaller*/,
+                                         fLVEnabled, pszNameFmt);
+            va_end(va);
             RTLockValidatorRecMakeSiblings(&pThis->ValidatorWrite.Core, &pThis->ValidatorRead.Core);
 #endif
 
@@ -147,6 +162,7 @@ RTDECL(int) RTSemRWCreate(PRTSEMRW phRWSem)
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTSemRWCreateEx);
 
 
 RTDECL(int) RTSemRWDestroy(RTSEMRW hRWSem)
@@ -183,6 +199,26 @@ RTDECL(int) RTSemRWDestroy(RTSEMRW hRWSem)
     RTMemFree(pThis);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTSemRWDestroy);
+
+
+RTDECL(uint32_t) RTSemRWSetSubClass(RTSEMRW hRWSem, uint32_t uSubClass)
+{
+#ifdef RTSEMRW_STRICT
+    /*
+     * Validate handle.
+     */
+    struct RTSEMRWINTERNAL *pThis = hRWSem;
+    AssertPtrReturn(pThis, RTLOCKVAL_SUB_CLASS_INVALID);
+    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, RTLOCKVAL_SUB_CLASS_INVALID);
+
+    RTLockValidatorRecSharedSetSubClass(&pThis->ValidatorRead, uSubClass);
+    return RTLockValidatorRecExclSetSubClass(&pThis->ValidatorWrite, uSubClass);
+#else
+    return RTLOCKVAL_SUB_CLASS_INVALID;
+#endif
+}
+RT_EXPORT_SYMBOL(RTSemRWSetSubClass);
 
 
 static int rtSemRWRequestRead(RTSEMRW hRWSem, unsigned cMillies, bool fInterruptible, PCRTLOCKVALSRCPOS pSrcPos)

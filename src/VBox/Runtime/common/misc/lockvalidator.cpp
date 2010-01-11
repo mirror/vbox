@@ -2806,6 +2806,9 @@ RTDECL(void) RTLockValidatorRecExclInitV(PRTLOCKVALRECEXCL pRec, RTLOCKVALCLASS 
 {
     RTLOCKVAL_ASSERT_PTR_ALIGN(pRec);
     RTLOCKVAL_ASSERT_PTR_ALIGN(hLock);
+    Assert(   uSubClass >= RTLOCKVAL_SUB_CLASS_USER
+           || uSubClass == RTLOCKVAL_SUB_CLASS_NONE
+           || uSubClass == RTLOCKVAL_SUB_CLASS_ANY);
 
     pRec->Core.u32Magic = RTLOCKVALRECEXCL_MAGIC;
     pRec->fEnabled      = fEnabled && RTLockValidatorIsEnabled();
@@ -3228,6 +3231,9 @@ RTDECL(void) RTLockValidatorRecSharedInitV(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLAS
 {
     RTLOCKVAL_ASSERT_PTR_ALIGN(pRec);
     RTLOCKVAL_ASSERT_PTR_ALIGN(hLock);
+    Assert(   uSubClass >= RTLOCKVAL_SUB_CLASS_USER
+           || uSubClass == RTLOCKVAL_SUB_CLASS_NONE
+           || uSubClass == RTLOCKVAL_SUB_CLASS_ANY);
 
     pRec->Core.u32Magic = RTLOCKVALRECSHRD_MAGIC;
     pRec->uSubClass     = uSubClass;
@@ -3300,6 +3306,18 @@ RTDECL(void) RTLockValidatorRecSharedDelete(PRTLOCKVALRECSHRD pRec)
     ASMAtomicWriteBool(&pRec->fReallocating, false);
 
     rtLockValidatorSerializeDestructLeave();
+}
+
+
+RTDECL(uint32_t) RTLockValidatorRecSharedSetSubClass(PRTLOCKVALRECSHRD pRec, uint32_t uSubClass)
+{
+    AssertPtrReturn(pRec, RTLOCKVAL_SUB_CLASS_INVALID);
+    AssertReturn(pRec->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC, RTLOCKVAL_SUB_CLASS_INVALID);
+    AssertReturn(   uSubClass >= RTLOCKVAL_SUB_CLASS_USER
+                 || uSubClass == RTLOCKVAL_SUB_CLASS_NONE
+                 || uSubClass == RTLOCKVAL_SUB_CLASS_ANY,
+                 RTLOCKVAL_SUB_CLASS_INVALID);
+    return ASMAtomicXchgU32(&pRec->uSubClass, uSubClass);
 }
 
 
