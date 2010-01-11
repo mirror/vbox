@@ -129,14 +129,6 @@ echo "Creating links..."
 if test "$currentzone" = "global"; then
     /usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
 fi
-if test ! -z "$xorgbin"; then
-    /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxClient=$vboxadditions_path/VBox.sh s
-    /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxRandR=$vboxadditions_path/VBoxRandR.sh s
-    /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxClient-all=$vboxadditions_path/1099.vboxclient s
-fi
-/usr/sbin/installf -c none $PKGINST /usr/bin/VBoxControl=$vboxadditions_path/VBox.sh s
-/usr/sbin/installf -c none $PKGINST /usr/bin/VBoxService=$vboxadditions_path/VBox.sh s
-
 
 # Install Xorg components to the required places
 if test ! -z "$xorgbin"; then
@@ -279,17 +271,20 @@ if test ! -z "$xorgbin"; then
     # Setup our VBoxClient
     echo "Configuring client..."
     vboxclient_src=$vboxadditions_path
+    vboxclient_dest="/usr/share/gnome/autostart"
+    clientinstalled=0
+    if test -d "$vboxclient_dest"; then
+        /usr/sbin/installf -c none $PKGINST $vboxclient_dest/vboxclient.desktop=$vboxadditions_path/vboxclient.desktop s
+        clientinstalled=1
+    fi
     vboxclient_dest="/usr/dt/config/Xsession.d"
     if test -d "$vboxclient_dest"; then
-        /usr/sbin/installf -c none $PKGINST "$vboxclient_dest/1099.vboxclient" f
-        cp "$vboxclient_src/1099.vboxclient" "$vboxclient_dest/1099.vboxclient"
-        chmod a+rx "$vboxclient_dest/1099.vboxclient"
-    elif test -d "/usr/share/gnome/autostart"; then
-        vboxclient_dest="/usr/share/gnome/autostart"
-        /usr/sbin/installf -c none $PKGINST "$vboxclient_dest/vboxclient.desktop" f
-        cp "$vboxclient_src/vboxclient.desktop" "$vboxclient_dest/vboxclient.desktop"
-    else
-        echo "*** Failed to configure client!! Couldn't find autostart directory."
+        /usr/sbin/installf -c none $PKGINST $vboxclient_dest/1099.vboxclient=$vboxadditions_path/1099.vboxclient s
+        clientinstalled=1
+    fi
+    if test $clientinstalled -eq 0; then
+        echo "*** Failed to configure client, couldn't find any autostart directory!"
+        # Exit as partially failed installation
         retval=2
     fi
 else
