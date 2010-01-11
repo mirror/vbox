@@ -154,12 +154,12 @@ RTDECL(int) RTSemRWCreateEx(PRTSEMRW phRWSem, uint32_t fFlags,
 }
 
 
-RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
+RTDECL(int) RTSemRWDestroy(RTSEMRW hRWSem)
 {
     /*
      * Validate input, nil handle is fine.
      */
-    struct RTSEMRWINTERNAL *pThis = RWSem;
+    struct RTSEMRWINTERNAL *pThis = hRWSem;
     if (pThis == NIL_RTSEMRW)
         return VINF_SUCCESS;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -188,7 +188,7 @@ RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
     else
     {
         ASMAtomicWriteU32(&pThis->u32Magic, RTSEMRW_MAGIC);
-        AssertMsgFailed(("Failed to destroy read-write sem %p, rc=%d.\n", RWSem, rc));
+        AssertMsgFailed(("Failed to destroy read-write sem %p, rc=%d.\n", hRWSem, rc));
         rc = RTErrConvertFromErrno(rc);
     }
 
@@ -214,12 +214,12 @@ RTDECL(uint32_t) RTSemRWSetSubClass(RTSEMRW hRWSem, uint32_t uSubClass)
 }
 
 
-DECL_FORCE_INLINE(int) rtSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies, PCRTLOCKVALSRCPOS pSrcPos)
+DECL_FORCE_INLINE(int) rtSemRWRequestRead(RTSEMRW hRWSem, RTMSINTERVAL cMillies, PCRTLOCKVALSRCPOS pSrcPos)
 {
     /*
      * Validate input.
      */
-    struct RTSEMRWINTERNAL *pThis = RWSem;
+    struct RTSEMRWINTERNAL *pThis = hRWSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
                     ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
@@ -268,7 +268,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies, PCRT
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_READ);
         if (rc)
         {
-            AssertMsgFailed(("Failed read lock read-write sem %p, rc=%d.\n", RWSem, rc));
+            AssertMsgFailed(("Failed read lock read-write sem %p, rc=%d.\n", hRWSem, rc));
             return RTErrConvertFromErrno(rc);
         }
     }
@@ -300,7 +300,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies, PCRT
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_READ);
         if (rc)
         {
-            AssertMsg(rc == ETIMEDOUT, ("Failed read lock read-write sem %p, rc=%d.\n", RWSem, rc));
+            AssertMsg(rc == ETIMEDOUT, ("Failed read lock read-write sem %p, rc=%d.\n", hRWSem, rc));
             return RTErrConvertFromErrno(rc);
         }
 #endif /* !RT_OS_DARWIN */
@@ -315,50 +315,50 @@ DECL_FORCE_INLINE(int) rtSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies, PCRT
 
 
 #undef RTSemRWRequestRead
-RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
+RTDECL(int) RTSemRWRequestRead(RTSEMRW hRWSem, RTMSINTERVAL cMillies)
 {
 #ifndef RTSEMRW_STRICT
-    return rtSemRWRequestRead(RWSem, cMillies, NULL);
+    return rtSemRWRequestRead(hRWSem, cMillies, NULL);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return rtSemRWRequestRead(RWSem, cMillies, &SrcPos);
+    return rtSemRWRequestRead(hRWSem, cMillies, &SrcPos);
 #endif
 }
 
 
-RTDECL(int) RTSemRWRequestReadDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemRWRequestReadDebug(RTSEMRW hRWSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return rtSemRWRequestRead(RWSem, cMillies, &SrcPos);
+    return rtSemRWRequestRead(hRWSem, cMillies, &SrcPos);
 }
 
 
 #undef RTSemRWRequestReadNoResume
-RTDECL(int) RTSemRWRequestReadNoResume(RTSEMRW RWSem, unsigned cMillies)
+RTDECL(int) RTSemRWRequestReadNoResume(RTSEMRW hRWSem, RTMSINTERVAL cMillies)
 {
     /* EINTR isn't returned by the wait functions we're using. */
 #ifndef RTSEMRW_STRICT
-    return rtSemRWRequestRead(RWSem, cMillies, NULL);
+    return rtSemRWRequestRead(hRWSem, cMillies, NULL);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return rtSemRWRequestRead(RWSem, cMillies, &SrcPos);
+    return rtSemRWRequestRead(hRWSem, cMillies, &SrcPos);
 #endif
 }
 
 
-RTDECL(int) RTSemRWRequestReadNoResumeDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemRWRequestReadNoResumeDebug(RTSEMRW hRWSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return rtSemRWRequestRead(RWSem, cMillies, &SrcPos);
+    return rtSemRWRequestRead(hRWSem, cMillies, &SrcPos);
 }
 
 
-RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
+RTDECL(int) RTSemRWReleaseRead(RTSEMRW hRWSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMRWINTERNAL *pThis = RWSem;
+    struct RTSEMRWINTERNAL *pThis = hRWSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
                     ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
@@ -402,19 +402,19 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
     if (rc)
     {
         ASMAtomicIncU32(&pThis->cReaders);
-        AssertMsgFailed(("Failed read unlock read-write sem %p, rc=%d.\n", RWSem, rc));
+        AssertMsgFailed(("Failed read unlock read-write sem %p, rc=%d.\n", hRWSem, rc));
         return RTErrConvertFromErrno(rc);
     }
     return VINF_SUCCESS;
 }
 
 
-DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, PCRTLOCKVALSRCPOS pSrcPos)
+DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW hRWSem, RTMSINTERVAL cMillies, PCRTLOCKVALSRCPOS pSrcPos)
 {
     /*
      * Validate input.
      */
-    struct RTSEMRWINTERNAL *pThis = RWSem;
+    struct RTSEMRWINTERNAL *pThis = hRWSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
                     ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
@@ -463,7 +463,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, PCR
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
         if (rc)
         {
-            AssertMsgFailed(("Failed write lock read-write sem %p, rc=%d.\n", RWSem, rc));
+            AssertMsgFailed(("Failed write lock read-write sem %p, rc=%d.\n", hRWSem, rc));
             return RTErrConvertFromErrno(rc);
         }
     }
@@ -494,7 +494,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, PCR
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
         if (rc)
         {
-            AssertMsg(rc == ETIMEDOUT, ("Failed read lock read-write sem %p, rc=%d.\n", RWSem, rc));
+            AssertMsg(rc == ETIMEDOUT, ("Failed read lock read-write sem %p, rc=%d.\n", hRWSem, rc));
             return RTErrConvertFromErrno(rc);
         }
 #endif /* !RT_OS_DARWIN */
@@ -511,51 +511,51 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies, PCR
 
 
 #undef RTSemRWRequestWrite
-RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
+RTDECL(int) RTSemRWRequestWrite(RTSEMRW hRWSem, RTMSINTERVAL cMillies)
 {
 #ifndef RTSEMRW_STRICT
-    return rtSemRWRequestWrite(RWSem, cMillies, NULL);
+    return rtSemRWRequestWrite(hRWSem, cMillies, NULL);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return rtSemRWRequestWrite(RWSem, cMillies, &SrcPos);
+    return rtSemRWRequestWrite(hRWSem, cMillies, &SrcPos);
 #endif
 }
 
 
-RTDECL(int) RTSemRWRequestWriteDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemRWRequestWriteDebug(RTSEMRW hRWSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return rtSemRWRequestWrite(RWSem, cMillies, &SrcPos);
+    return rtSemRWRequestWrite(hRWSem, cMillies, &SrcPos);
 }
 
 
 #undef RTSemRWRequestWriteNoResume
-RTDECL(int) RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies)
+RTDECL(int) RTSemRWRequestWriteNoResume(RTSEMRW hRWSem, RTMSINTERVAL cMillies)
 {
     /* EINTR isn't returned by the wait functions we're using. */
 #ifndef RTSEMRW_STRICT
-    return rtSemRWRequestWrite(RWSem, cMillies, NULL);
+    return rtSemRWRequestWrite(hRWSem, cMillies, NULL);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return rtSemRWRequestWrite(RWSem, cMillies, &SrcPos);
+    return rtSemRWRequestWrite(hRWSem, cMillies, &SrcPos);
 #endif
 }
 
 
-RTDECL(int) RTSemRWRequestWriteNoResumeDebug(RTSEMRW RWSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemRWRequestWriteNoResumeDebug(RTSEMRW hRWSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     /* EINTR isn't returned by the wait functions we're using. */
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return rtSemRWRequestWrite(RWSem, cMillies, &SrcPos);
+    return rtSemRWRequestWrite(hRWSem, cMillies, &SrcPos);
 }
 
 
-RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
+RTDECL(int) RTSemRWReleaseWrite(RTSEMRW hRWSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMRWINTERNAL *pThis = RWSem;
+    struct RTSEMRWINTERNAL *pThis = hRWSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
                     ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
@@ -595,7 +595,7 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
     int rc = pthread_rwlock_unlock(&pThis->RWLock);
     if (rc)
     {
-        AssertMsgFailed(("Failed write unlock read-write sem %p, rc=%d.\n", RWSem, rc));
+        AssertMsgFailed(("Failed write unlock read-write sem %p, rc=%d.\n", hRWSem, rc));
         return RTErrConvertFromErrno(rc);
     }
 
@@ -603,12 +603,12 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
 }
 
 
-RTDECL(bool) RTSemRWIsWriteOwner(RTSEMRW RWSem)
+RTDECL(bool) RTSemRWIsWriteOwner(RTSEMRW hRWSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMRWINTERNAL *pThis = RWSem;
+    struct RTSEMRWINTERNAL *pThis = hRWSem;
     AssertPtrReturn(pThis, false);
     AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
                     ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
@@ -624,12 +624,12 @@ RTDECL(bool) RTSemRWIsWriteOwner(RTSEMRW RWSem)
 }
 
 
-RTDECL(uint32_t) RTSemRWGetWriteRecursion(RTSEMRW RWSem)
+RTDECL(uint32_t) RTSemRWGetWriteRecursion(RTSEMRW hRWSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMRWINTERNAL *pThis = RWSem;
+    struct RTSEMRWINTERNAL *pThis = hRWSem;
     AssertPtrReturn(pThis, 0);
     AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
                     ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
@@ -642,12 +642,12 @@ RTDECL(uint32_t) RTSemRWGetWriteRecursion(RTSEMRW RWSem)
 }
 
 
-RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW RWSem)
+RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW hRWSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMRWINTERNAL *pThis = RWSem;
+    struct RTSEMRWINTERNAL *pThis = hRWSem;
     AssertPtrReturn(pThis, 0);
     AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
                     ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
@@ -660,12 +660,12 @@ RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW RWSem)
 }
 
 
-RTDECL(uint32_t) RTSemRWGetReadCount(RTSEMRW RWSem)
+RTDECL(uint32_t) RTSemRWGetReadCount(RTSEMRW hRWSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMRWINTERNAL *pThis = RWSem;
+    struct RTSEMRWINTERNAL *pThis = hRWSem;
     AssertPtrReturn(pThis, 0);
     AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
                     ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
