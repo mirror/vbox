@@ -155,19 +155,23 @@ int VBoxServiceReadPropUInt32(uint32_t u32ClientId, const char *pszPropName, uin
  * @param   u32ClientId     The HGCM client ID for the guest property session.
  * @param   pszName         The property name.
  * @param   pszValueFormat  The property format string.  If this is NULL then
- *                          the property will be removed.
+ *                          the property will be deleted (if possible).
  * @param   ...             Format arguments.
  */
 int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char *pszValueFormat, ...)
 {
+    AssertPtr(pszName);
     int rc;
     if (pszValueFormat != NULL)
     {
-        /** @todo Log the value as well? just copy the guts of
-         *        VbglR3GuestPropWriteValueV. */
-        VBoxServiceVerbose(3, "Writing guest property \"%s\"\n", pszName);
         va_list va;
         va_start(va, pszValueFormat);
+
+        char *pszValue = RTStrAPrintf2V(pszValueFormat, va);
+        AssertPtr(pszValue);
+        VBoxServiceVerbose(3, "Writing guest property \"%s\" = \"%s\"\n", pszName, pszValue);
+        RTStrFree(pszValue);
+
         rc = VbglR3GuestPropWriteValueV(u32ClientId, pszName, pszValueFormat, va);
         va_end(va);
         if (RT_FAILURE(rc))
@@ -175,9 +179,10 @@ int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char 
     }
     else
     {
+        VBoxServiceVerbose(3, "Deleting guest property \"%s\"\n", pszName);   
         rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, NULL);
         if (RT_FAILURE(rc))
-            VBoxServiceError("Error removing guest property \"%s\" (rc=%Rrc)\n", pszName, rc);
+            VBoxServiceError("Error deleting guest property \"%s\" (rc=%Rrc)\n", pszName, rc);
     }
     return rc;
 }
