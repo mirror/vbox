@@ -531,9 +531,37 @@ RTDECL(int) RTSemSpinMutexRelease(RTSEMSPINMUTEX hSpinMtx);
  * Creates a read/write semaphore.
  *
  * @returns iprt status code.
- * @param   pRWSem      Where to store the handle to the created RW semaphore.
+ * @param   phRWSem             Where to store the handle to the newly created
+ *                              RW semaphore.
  */
-RTDECL(int)   RTSemRWCreate(PRTSEMRW pRWSem);
+RTDECL(int)   RTSemRWCreate(PRTSEMRW phRWSem);
+
+/**
+ * Creates a read/write semaphore.
+ *
+ * @returns iprt status code.
+ * @param   phRWSem             Where to store the handle to the newly created
+ *                              RW semaphore.
+ * @param   fFlags              Flags, any combination of the RTSEMRW_FLAGS_XXX
+ *                              \#defines.
+ * @param   hClass              The class (no reference consumed).  If NIL, no
+ *                              lock order validation will be performed on this
+ *                              lock.
+ * @param   uSubClass           The sub-class.  This is used to define lock
+ *                              order within a class.  RTLOCKVAL_SUB_CLASS_NONE
+ *                              is the recommended value here.
+ * @param   pszNameFmt          Name format string for the lock validator,
+ *                              optional (NULL).  Max length is 32 bytes.
+ * @param   ...                 Format string arguments.
+ */
+RTDECL(int)   RTSemRWCreateEx(PRTSEMRW phRWSem, uint32_t fFlags,
+                              RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszNameFmt, ...);
+
+/** @name RTSemRWCreateEx flags
+ * @{ */
+/** Disables lock validation. */
+#define RTSEMRW_FLAGS_NO_LOCK_VAL   UINT32_C(0x00000001)
+/** @} */
 
 /**
  * Destroys a read/write semaphore.
@@ -542,6 +570,20 @@ RTDECL(int)   RTSemRWCreate(PRTSEMRW pRWSem);
  * @param   RWSem       The Read/Write semaphore to destroy.
  */
 RTDECL(int)   RTSemRWDestroy(RTSEMRW RWSem);
+
+/**
+ * Changes the lock validator sub-class of the read/write semaphore.
+ *
+ * It is recommended to try make sure that nobody is using this sempahore while
+ * changing the value.
+ *
+ * @returns The old sub-class.  RTLOCKVAL_SUB_CLASS_INVALID is returns if the
+ *          lock validator isn't compiled in or either of the parameters are
+ *          invalid.
+ * @param   hSemRW              The handle to the read/write semaphore.
+ * @param   uSubClass           The new sub-class value.
+ */
+RTDECL(uint32_t) RTSemRWSetSubClass(RTSEMRW hRWSem, uint32_t uSubClass);
 
 /**
  * Request read access to a read/write semaphore, resume on interruption

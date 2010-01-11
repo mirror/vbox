@@ -605,6 +605,20 @@ RTDECL(void) RTLockValidatorRecSharedInitV(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLAS
 RTDECL(void) RTLockValidatorRecSharedDelete(PRTLOCKVALRECSHRD pRec);
 
 /**
+ * Sets the sub-class of the record.
+ *
+ * It is recommended to try make sure that nobody is using this class while
+ * changing the value.
+ *
+ * @returns The old sub-class.  RTLOCKVAL_SUB_CLASS_INVALID is returns if the
+ *          lock validator isn't compiled in or either of the parameters are
+ *          invalid.
+ * @param   pRec                The validator record.
+ * @param   uSubClass           The new sub-class value.
+ */
+RTDECL(uint32_t) RTLockValidatorRecSharedSetSubClass(PRTLOCKVALRECSHRD pRec, uint32_t uSubClass);
+
+/**
  * Check the shared locking order.
  *
  * This is called by routines implementing shared lock acquisition.

@@ -99,10 +99,13 @@ typedef const RTCRITSECT *PCRTCRITSECT;
 /** RTCRITSECT::u32Magic value. (Hiromi Uehara) */
 #define RTCRITSECT_MAGIC                UINT32_C(0x19790326)
 
+/** @name RTCritSectInitEx flags / RTCRITSECT::fFlags
+ * @{ */
 /** If set, nesting(/recursion) is not allowed. */
 #define RTCRITSECT_FLAGS_NO_NESTING     UINT32_C(0x00000001)
 /** Disables lock validation. */
 #define RTCRITSECT_FLAGS_NO_LOCK_VAL    UINT32_C(0x00000002)
+/** @} */
 
 #ifdef IN_RING3
 
@@ -118,18 +121,18 @@ RTDECL(int) RTCritSectInit(PRTCRITSECT pCritSect);
  * @param   pCritSect           Pointer to the critical section structure.
  * @param   fFlags              Flags, any combination of the RTCRITSECT_FLAGS
  *                              \#defines.
- * @param   hClass              The class (no reference consumed). If NIL, the
- *                              no lock order validation will be performed on
- *                              this lock.
+ * @param   hClass              The class (no reference consumed).  If NIL, no
+ *                              lock order validation will be performed on this
+ *                              lock.
  * @param   uSubClass           The sub-class.  This is used to define lock
- *                              order inside the same class.  If you don't know,
- *                              then pass RTLOCKVAL_SUB_CLASS_NONE.
+ *                              order within a class.  RTLOCKVAL_SUB_CLASS_NONE
+ *                              is the recommended value here.
  * @param   pszNameFmt          Name format string for the lock validator,
- *                              optional (NULL). Max length is 32 bytes.
+ *                              optional (NULL).  Max length is 32 bytes.
  * @param   ...                 Format string arguments.
  */
 RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags,
-                             RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszName, ...);
+                             RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszNameFmt, ...);
 
 /**
  * Changes the lock validator sub-class of the critical section.
