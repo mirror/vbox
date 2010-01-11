@@ -3045,8 +3045,25 @@ RTDECL(int) RTLockValidatorRecExclUnwind(PRTLOCKVALRECEXCL pRec)
     if (!pRecU->Excl.fEnabled)
         return VINF_SUCCESS;
     AssertReturn(pRecU->Excl.hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
+    Assert(pRecU->Excl.hThread == RTThreadSelf());
     AssertReturn(pRecU->Excl.cRecursion > 1, VERR_SEM_LV_INVALID_PARAMETER);
 
+    /*
+     * Check the release order.
+     */
+    if (   pRecU->Excl.hClass != NIL_RTLOCKVALCLASS
+        && pRecU->Excl.hClass->fStrictReleaseOrder
+        && pRecU->Excl.hClass->cMsMinOrder != RT_INDEFINITE_WAIT
+       )
+    {
+        int rc = rtLockValidatorStackCheckReleaseOrder(pRecU->Excl.hThread, pRecU);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /*
+     * Perform the unwind.
+     */
     pRecU->Excl.cRecursion--;
     rtLockValidatorStackPopRecursion(pRecU->Excl.hThread, pRecU);
     return VINF_SUCCESS;
@@ -3063,6 +3080,7 @@ RTDECL(int) RTLockValidatorRecExclRecursionMixed(PRTLOCKVALRECEXCL pRec, PRTLOCK
                  , VERR_SEM_LV_INVALID_PARAMETER);
     if (!pRecU->Excl.fEnabled)
         return VINF_SUCCESS;
+    Assert(pRecU->Excl.hThread == RTThreadSelf());
     AssertReturn(pRecU->Excl.hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(pRecU->Excl.cRecursion > 0, VERR_SEM_LV_INVALID_PARAMETER);
 
@@ -3093,9 +3111,26 @@ RTDECL(int) RTLockValidatorRecExclUnwindMixed(PRTLOCKVALRECEXCL pRec, PRTLOCKVAL
                  , VERR_SEM_LV_INVALID_PARAMETER);
     if (!pRecU->Excl.fEnabled)
         return VINF_SUCCESS;
+    Assert(pRecU->Excl.hThread == RTThreadSelf());
     AssertReturn(pRecU->Excl.hThread != NIL_RTTHREAD, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(pRecU->Excl.cRecursion > 1, VERR_SEM_LV_INVALID_PARAMETER);
 
+    /*
+     * Check the release order.
+     */
+    if (   pRecU->Excl.hClass != NIL_RTLOCKVALCLASS
+        && pRecU->Excl.hClass->fStrictReleaseOrder
+        && pRecU->Excl.hClass->cMsMinOrder != RT_INDEFINITE_WAIT
+       )
+    {
+        int rc = rtLockValidatorStackCheckReleaseOrder(pRecU->Excl.hThread, pRecU);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /*
+     * Perform the unwind.
+     */
     pRecU->Excl.cRecursion--;
     rtLockValidatorStackPopRecursion(pRecU->Excl.hThread, pRecU);
     return VINF_SUCCESS;

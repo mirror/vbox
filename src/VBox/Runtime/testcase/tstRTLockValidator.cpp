@@ -1044,7 +1044,7 @@ static void testLo3(void)
     /* Enter the first 4 critsects in ascending order and thereby definining
        this as a valid lock order.  */
     RTTEST_CHECK_RC(g_hTest, RTSemRWRequestWrite(g_ahSemRWs[0], RT_INDEFINITE_WAIT), VINF_SUCCESS);
-    RTTEST_CHECK_RC(g_hTest, RTSemRWRequestWrite(g_ahSemRWs[1], RT_INDEFINITE_WAIT), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemRWRequestRead( g_ahSemRWs[1], RT_INDEFINITE_WAIT), VINF_SUCCESS);
     RTTEST_CHECK_RC(g_hTest, RTSemRWRequestRead( g_ahSemRWs[2], RT_INDEFINITE_WAIT), VINF_SUCCESS);
     RTTEST_CHECK_RC(g_hTest, RTSemRWRequestWrite(g_ahSemRWs[3], RT_INDEFINITE_WAIT), VINF_SUCCESS);
     RTTEST_CHECK_RC(g_hTest, RTSemRWRequestWrite(g_ahSemRWs[4], RT_INDEFINITE_WAIT), VINF_SUCCESS);
@@ -1054,33 +1054,54 @@ static void testLo3(void)
        order and check that we get the appropriate response. */
     int rc;
     RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[0]), VINF_SUCCESS);
-    RTTEST_CHECK_RC(g_hTest, rc = RTSemRWReleaseWrite(g_ahSemRWs[0]), VERR_SEM_LV_WRONG_ORDER);
+    RTTEST_CHECK_RC(g_hTest, rc = RTSemRWRequestWrite(g_ahSemRWs[0], RT_INDEFINITE_WAIT), VERR_SEM_LV_WRONG_ORDER);
     if (RT_SUCCESS(rc))
         RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[0]), VINF_SUCCESS);
 
-    /* Check that recursion isn't subject to order checks. */
-    RTTEST_CHECK_RC(g_hTest, rc = RTSemRWReleaseWrite(g_ahSemRWs[1]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead(g_ahSemRWs[1]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, rc = RTSemRWRequestRead(g_ahSemRWs[1], RT_INDEFINITE_WAIT), VERR_SEM_LV_WRONG_ORDER);
     if (RT_SUCCESS(rc))
-        RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[1]), VINF_SUCCESS);
+        RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead(g_ahSemRWs[1]), VINF_SUCCESS);
+
+    /* Check that recursion isn't subject to order checks. */
+    RTTEST_CHECK_RC(g_hTest, rc = RTSemRWRequestRead(g_ahSemRWs[2], RT_INDEFINITE_WAIT), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead(g_ahSemRWs[2]), VINF_SUCCESS);
+    RTTEST_CHECK(g_hTest, RTSemRWGetReadCount(g_ahSemRWs[2]) == 1);
+
+    RTTEST_CHECK_RC(g_hTest, rc = RTSemRWRequestWrite(g_ahSemRWs[3], RT_INDEFINITE_WAIT), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[3]), VINF_SUCCESS);
+    RTTEST_CHECK(g_hTest, RTSemRWGetWriteRecursion(g_ahSemRWs[3]) == 1);
 
     /* Enable strict release order for class 2 and 3, then check that violations
        are caught - including recursion. */
     RTTEST_CHECK_RC(g_hTest, RTLockValidatorClassEnforceStrictReleaseOrder(g_ahClasses[2], true), VINF_SUCCESS);
     RTTEST_CHECK_RC(g_hTest, RTLockValidatorClassEnforceStrictReleaseOrder(g_ahClasses[3], true), VINF_SUCCESS);
-    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead(g_ahSemRWs[2]), VINF_SUCCESS);                      /* start recursion */
-    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[3]), VINF_SUCCESS);
-    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[4]), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, RTSemRWRequestRead( g_ahSemRWs[2], RT_INDEFINITE_WAIT), VINF_SUCCESS);  /* start recursion */
+    RTTEST_CHECK(   g_hTest, RTSemRWGetReadCount(g_ahSemRWs[2]) == 2);
+    RTTEST_CHECK_RC(g_hTest, RTSemRWRequestWrite(g_ahSemRWs[3], RT_INDEFINITE_WAIT), VINF_SUCCESS);
+    RTTEST_CHECK(   g_hTest, RTSemRWGetWriteRecursion(g_ahSemRWs[3]) == 2);
+    RTTEST_CHECK_RC(g_hTest, RTSemRWRequestRead( g_ahSemRWs[4], RT_INDEFINITE_WAIT), VINF_SUCCESS);  /* (mixed) */
+
     RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead( g_ahSemRWs[2]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
     RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[3]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
+    RTTEST_CHECK(   g_hTest, RTSemRWGetWriteRecursion(g_ahSemRWs[3]) == 2);
+    RTTEST_CHECK(   g_hTest, RTSemRWGetReadCount(g_ahSemRWs[2]) == 2);
+    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead( g_ahSemRWs[4]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[3]), VINF_SUCCESS);
+    RTTEST_CHECK(   g_hTest, RTSemRWGetWriteRecursion(g_ahSemRWs[3]) == 1);
+    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead( g_ahSemRWs[2]), VINF_SUCCESS);                      /* end recursion */
+    RTTEST_CHECK(   g_hTest, RTSemRWGetReadCount(g_ahSemRWs[2]) == 1);
+
+    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead( g_ahSemRWs[2]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
+    RTTEST_CHECK(g_hTest, RTSemRWGetReadCount(g_ahSemRWs[2]) == 1);
+    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[3]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
+    RTTEST_CHECK(g_hTest, RTSemRWGetWriteRecursion(g_ahSemRWs[3]) == 1);
+    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[5]), VINF_SUCCESS);
     RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[4]), VINF_SUCCESS);
     RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[3]), VINF_SUCCESS);
-    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead( g_ahSemRWs[2]), VINF_SUCCESS);                      /* end recursion */
-    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead( g_ahSemRWs[2]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
-    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead( g_ahSemRWs[3]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
-    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[1]), VINF_SUCCESS);
-    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[4]), VINF_SUCCESS);
-    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseWrite(g_ahSemRWs[5]), VINF_SUCCESS);
-    RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead( g_ahSemRWs[3]), VINF_SUCCESS);
     RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead( g_ahSemRWs[2]), VINF_SUCCESS);
 
     /* clean up */
@@ -1186,6 +1207,7 @@ int main()
     {
         testLo1();
         testLo2();
+        testLo3();
     }
 
 
