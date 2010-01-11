@@ -103,7 +103,7 @@ public:
      *                              waitable.
      * @param   prc             Where to store the return code of the thread. Optional.
      */
-    int stop(unsigned cMillies, int *prc);
+    int stop(RTMSINTERVAL cMillies, int *prc);
 
     /** Destroy the class, stopping the thread if necessary. */
     ~VBoxGuestThread(void);

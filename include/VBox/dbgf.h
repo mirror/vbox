@@ -293,7 +293,7 @@ VMMR3DECL(int)  DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const char
 VMMR3DECL(int)  DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent);
 VMMR3DECL(int)  DBGFR3Attach(PVM pVM);
 VMMR3DECL(int)  DBGFR3Detach(PVM pVM);
-VMMR3DECL(int)  DBGFR3EventWait(PVM pVM, unsigned cMillies, PCDBGFEVENT *ppEvent);
+VMMR3DECL(int)  DBGFR3EventWait(PVM pVM, RTMSINTERVAL cMillies, PCDBGFEVENT *ppEvent);
 VMMR3DECL(int)  DBGFR3Halt(PVM pVM);
 VMMR3DECL(bool) DBGFR3IsHalted(PVM pVM);
 VMMR3DECL(bool) DBGFR3CanWait(PVM pVM);

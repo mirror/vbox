@@ -72,7 +72,7 @@ int VBoxGuestSeamlessHost::start(void)
 }
 
 /** Stops the service. */
-void VBoxGuestSeamlessHost::stop(unsigned cMillies /* = RT_INDEFINITE_WAIT */)
+void VBoxGuestSeamlessHost::stop(RTMSINTERVAL cMillies /* = RT_INDEFINITE_WAIT */)
 {
     LogFlowThisFunc(("returning\n"));
     if (!mRunning)  /* Assertion */

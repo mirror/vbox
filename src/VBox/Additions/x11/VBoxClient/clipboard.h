@@ -107,7 +107,7 @@ public:
      * Uninitialise the class.
      * @param cMillies how long to wait for the thread to stop
      */
-    void uninit(unsigned cMillies = RT_INDEFINITE_WAIT)
+    void uninit(RTMSINTERVAL cMillies = RT_INDEFINITE_WAIT)
     {
         LogFlowThisFunc(("\n"));
         if (mInit)

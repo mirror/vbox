@@ -25,7 +25,7 @@
 #include "thread.h"
 
 /** Stop the thread using its stop method and get the exit value. */
-int VBoxGuestThread::stop(unsigned cMillies, int *prc)
+int VBoxGuestThread::stop(RTMSINTERVAL cMillies, int *prc)
 {
     int rc = VINF_SUCCESS;
 

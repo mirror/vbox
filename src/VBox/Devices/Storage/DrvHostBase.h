@@ -96,7 +96,7 @@ typedef struct DRVHOSTBASE
     RTSEMEVENT              EventPoller;
 #endif
     /** The poller interval. */
-    unsigned                cMilliesPoller;
+    RTMSINTERVAL            cMilliesPoller;
     /** The shutdown indicator. */
     bool volatile           fShutdownPoller;
 

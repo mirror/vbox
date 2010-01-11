@@ -131,14 +131,14 @@ struct VNetState_st
     /** transmit buffer */
     R3PTRTYPE(uint8_t*)     pTxBuf;
     /**< Link Up(/Restore) Timer. */
-    PTMTIMERR3              pLinkUpTimer; 
+    PTMTIMERR3              pLinkUpTimer;
 #ifdef VNET_TX_DELAY
     /**< Transmit Delay Timer - R3. */
-    PTMTIMERR3              pTxTimerR3; 
+    PTMTIMERR3              pTxTimerR3;
     /**< Transmit Delay Timer - R0. */
-    PTMTIMERR0              pTxTimerR0; 
+    PTMTIMERR0              pTxTimerR0;
     /**< Transmit Delay Timer - GC. */
-    PTMTIMERRC              pTxTimerRC; 
+    PTMTIMERRC              pTxTimerRC;
 #if HC_ARCH_BITS == 64
     uint32_t    padding2;
 #endif
@@ -510,7 +510,7 @@ static int vnetCanReceive(VNETSTATE *pState)
     return rc;
 }
 
-static DECLCALLBACK(int) vnetWaitReceiveAvail(PPDMINETWORKPORT pInterface, unsigned cMillies)
+static DECLCALLBACK(int) vnetWaitReceiveAvail(PPDMINETWORKPORT pInterface, RTMSINTERVAL cMillies)
 {
     VNETSTATE *pState = IFACE_TO_STATE(pInterface, INetworkPort);
     LogFlow(("%s vnetWaitReceiveAvail(cMillies=%u)\n", INSTANCE(pState), cMillies));
@@ -899,7 +899,7 @@ static DECLCALLBACK(void) vnetTxTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return;
     vringSetNotification(&pState->VPCI, &pState->pTxQueue->VRing, true);
-    Log3(("%s vnetTxTimer: Expired, %d packets pending\n", INSTANCE(pState), 
+    Log3(("%s vnetTxTimer: Expired, %d packets pending\n", INSTANCE(pState),
           vringReadAvailIndex(&pState->VPCI, &pState->pTxQueue->VRing) - pState->pTxQueue->uNextAvailIndex));
     vnetTransmitPendingPackets(pState, pState->pTxQueue);
     vnetCsLeave(pState);
@@ -1435,7 +1435,7 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pState->INetworkConfig.pfnSetLinkState   = vnetSetLinkState;
 
     pState->pTxBuf = (uint8_t *)RTMemAllocZ(VNET_MAX_FRAME_SIZE);
-    AssertMsgReturn(pState->pTxBuf, 
+    AssertMsgReturn(pState->pTxBuf,
                     ("Cannot allocate TX buffer for virtio-net device\n"), VERR_NO_MEMORY);
 
     /* Initialize critical section. */

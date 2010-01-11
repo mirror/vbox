@@ -146,7 +146,7 @@ public:
      * Stops the service.
      * @param cMillies how long to wait for the thread to exit
      */
-    void stop(unsigned cMillies = RT_INDEFINITE_WAIT);
+    void stop(RTMSINTERVAL cMillies = RT_INDEFINITE_WAIT);
 
     /** Returns the current state of the host - i.e. requesting seamless or not. */
     meEvent getState(void) { return mState; }

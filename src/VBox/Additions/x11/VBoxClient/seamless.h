@@ -177,7 +177,7 @@ public:
         return rc;
     }
 
-    void uninit(unsigned cMillies = RT_INDEFINITE_WAIT)
+    void uninit(RTMSINTERVAL cMillies = RT_INDEFINITE_WAIT)
     {
         LogFlowThisFunc(("\n"));
         if (isInitialised)

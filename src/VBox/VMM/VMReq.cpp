@@ -75,7 +75,7 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
  *
  * @remarks See remarks on VMR3ReqCallVU.
  */
-VMMR3DECL(int) VMR3ReqCall(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, uint32_t fFlags,
+VMMR3DECL(int) VMR3ReqCall(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINTERVAL cMillies, uint32_t fFlags,
                            PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
@@ -369,7 +369,8 @@ VMMR3DECL(int) VMR3ReqCallVoidNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunc
  *
  * @remarks See remarks on VMR3ReqCallVU.
  */
-VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINTERVAL cMillies, uint32_t fFlags,
+                            PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
@@ -416,7 +417,8 @@ VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned
  *                hosts because 'int' is 32-bit.
  *                Use (void *)NULL or (uintptr_t)0 instead of NULL.
  */
-VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
+VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINTERVAL cMillies, uint32_t fFlags,
+                             PFNRT pfnFunction, unsigned cArgs, va_list Args)
 {
     LogFlow(("VMR3ReqCallV: idDstCpu=%u cMillies=%d fFlags=%#x pfnFunction=%p cArgs=%d\n", idDstCpu, cMillies, fFlags, pfnFunction, cArgs));
 
@@ -776,7 +778,7 @@ VMMR3DECL(int) VMR3ReqFree(PVMREQ pReq)
  *                          be completed. Use RT_INDEFINITE_WAIT to only
  *                          wait till it's completed.
  */
-VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
+VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, RTMSINTERVAL cMillies)
 {
     LogFlow(("VMR3ReqQueue: pReq=%p cMillies=%d\n", pReq, cMillies));
     /*
@@ -928,7 +930,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
  * @param   cMillies        Number of milliseconds to wait.
  *                          Use RT_INDEFINITE_WAIT to only wait till it's completed.
  */
-VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
+VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, RTMSINTERVAL cMillies)
 {
     LogFlow(("VMR3ReqWait: pReq=%p cMillies=%d\n", pReq, cMillies));
 

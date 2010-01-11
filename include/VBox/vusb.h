@@ -478,7 +478,7 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * @param   pInterface  Pointer to this struct.
      * @param   cMillies    Number of milliseconds to poll for completion.
      */
-    DECLR3CALLBACKMEMBER(void, pfnReapAsyncUrbs,(PVUSBIROOTHUBCONNECTOR pInterface, unsigned cMillies));
+    DECLR3CALLBACKMEMBER(void, pfnReapAsyncUrbs,(PVUSBIROOTHUBCONNECTOR pInterface, RTMSINTERVAL cMillies));
 
     /**
      * Cancels and completes - with CRC failure - all in-flight async URBs.
@@ -525,7 +525,7 @@ DECLINLINE(int) VUSBIRhSubmitUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUr
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnReapAsyncUrbs */
-DECLINLINE(void) VUSBIRhReapAsyncUrbs(PVUSBIROOTHUBCONNECTOR pInterface, unsigned cMillies)
+DECLINLINE(void) VUSBIRhReapAsyncUrbs(PVUSBIROOTHUBCONNECTOR pInterface, RTMSINTERVAL cMillies)
 {
     pInterface->pfnReapAsyncUrbs(pInterface, cMillies);
 }

@@ -957,7 +957,7 @@ VMMR3DECL(int) DBGFR3Detach(PVM pVM)
  * @param   cMillies    Number of millies to wait.
  * @param   ppEvent     Where to store the event pointer.
  */
-VMMR3DECL(int) DBGFR3EventWait(PVM pVM, unsigned cMillies, PCDBGFEVENT *ppEvent)
+VMMR3DECL(int) DBGFR3EventWait(PVM pVM, RTMSINTERVAL cMillies, PCDBGFEVENT *ppEvent)
 {
     /*
      * Check state.

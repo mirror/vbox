@@ -4538,7 +4538,7 @@ static int pcnetCanReceive(PCNetState *pThis)
 /**
  *
  */
-static DECLCALLBACK(int) pcnetWaitReceiveAvail(PPDMINETWORKPORT pInterface, unsigned cMillies)
+static DECLCALLBACK(int) pcnetWaitReceiveAvail(PPDMINETWORKPORT pInterface, RTMSINTERVAL cMillies)
 {
     PCNetState *pThis = INETWORKPORT_2_DATA(pInterface);
 

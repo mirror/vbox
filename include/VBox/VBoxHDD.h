@@ -976,7 +976,7 @@ ion.
      * @param   cMillies    Number of milliseconds to wait for the socket.
      *                      Use RT_INDEFINITE_WAIT to wait for ever.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSelectOne, (RTSOCKET Sock, unsigned cMillies));
+    DECLR3CALLBACKMEMBER(int, pfnSelectOne, (RTSOCKET Sock, RTMSINTERVAL cMillies));
 
     /**
      * Receive data from a socket.

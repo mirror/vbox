@@ -294,7 +294,7 @@ static DECLCALLBACK(err_t) devINIPInterface(struct netif *netif)
  * @param   pInterface  PDM network port interface pointer.
  * @param   cMillies    Number of milliseconds to wait. 0 means return immediately.
  */
-static DECLCALLBACK(int) devINIPWaitInputAvail(PPDMINETWORKPORT pInterface, unsigned cMillies)
+static DECLCALLBACK(int) devINIPWaitInputAvail(PPDMINETWORKPORT pInterface, RTMSINTERVAL cMillies)
 {
     LogFlow(("%s: pInterface=%p\n", __FUNCTION__, pInterface));
     LogFlow(("%s: return VINF_SUCCESS\n", __FUNCTION__));

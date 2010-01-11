@@ -355,7 +355,7 @@ typedef struct PDMUSBREG
      * @param   cMillies            How log to wait for an URB to become ripe.
      * @remarks Mandatory.
      */
-    DECLR3CALLBACKMEMBER(PVUSBURB, pfnUrbReap,(PPDMUSBINS pUsbIns, unsigned cMillies));
+    DECLR3CALLBACKMEMBER(PVUSBURB, pfnUrbReap,(PPDMUSBINS pUsbIns, RTMSINTERVAL cMillies));
 
 
     /** Just some init precaution. Must be set to PDM_USBREG_VERSION. */

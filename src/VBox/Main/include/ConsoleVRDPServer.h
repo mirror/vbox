@@ -125,7 +125,7 @@ public:
 
     void notifyRemoteUSBThreadRunning (RTTHREAD thread);
     bool isRemoteUSBThreadRunning (void);
-    void waitRemoteUSBThreadEvent (unsigned cMillies);
+    void waitRemoteUSBThreadEvent (RTMSINTERVAL cMillies);
 
     void ClipboardCreate (uint32_t u32ClientId);
     void ClipboardDelete (uint32_t u32ClientId);

@@ -1339,7 +1339,7 @@ bool ConsoleVRDPServer::isRemoteUSBThreadRunning (void)
     return mUSBBackends.fThreadRunning;
 }
 
-void ConsoleVRDPServer::waitRemoteUSBThreadEvent (unsigned cMillies)
+void ConsoleVRDPServer::waitRemoteUSBThreadEvent (RTMSINTERVAL cMillies)
 {
     int rc = RTSemEventWait (mUSBBackends.event, cMillies);
     Assert (RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
