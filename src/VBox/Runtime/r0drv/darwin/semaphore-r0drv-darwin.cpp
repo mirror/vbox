@@ -218,9 +218,7 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies, wait_interrup
 {
     PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)hEventSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC,
-                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
-                    VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
     if (cMillies)
         RT_ASSERT_PREEMPTIBLE();
 
@@ -319,159 +317,159 @@ RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, unsigned cMillies)
 
 
 
-RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
+RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI phEventMultiSem)
 {
-    Assert(sizeof(RTSEMEVENTMULTIINTERNAL) > sizeof(void *));
-    AssertPtrReturn(pEventMultiSem, VERR_INVALID_POINTER);
+    return RTSemEventMultiCreateEx(phEventMultiSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, NULL);
+}
+
+
+RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t fFlags, RTLOCKVALCLASS hClass,
+                                     const char *pszNameFmt, ...)
+{
+    AssertReturn(!(fFlags & ~RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+    AssertCompile(sizeof(RTSEMEVENTMULTIINTERNAL) > sizeof(void *));
+    AssertPtrReturn(phEventMultiSem, VERR_INVALID_POINTER);
     RT_ASSERT_PREEMPTIBLE();
 
-    PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)RTMemAlloc(sizeof(*pEventMultiInt));
-    if (pEventMultiInt)
+    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)RTMemAlloc(sizeof(*pThis));
+    if (pThis)
     {
-        pEventMultiInt->u32Magic = RTSEMEVENTMULTI_MAGIC;
-        pEventMultiInt->cWaiters = 0;
-        pEventMultiInt->cWaking = 0;
-        pEventMultiInt->fSignaled = 0;
+        pThis->u32Magic = RTSEMEVENTMULTI_MAGIC;
+        pThis->cWaiters = 0;
+        pThis->cWaking = 0;
+        pThis->fSignaled = 0;
         Assert(g_pDarwinLockGroup);
-        pEventMultiInt->pSpinlock = lck_spin_alloc_init(g_pDarwinLockGroup, LCK_ATTR_NULL);
-        if (pEventMultiInt->pSpinlock)
+        pThis->pSpinlock = lck_spin_alloc_init(g_pDarwinLockGroup, LCK_ATTR_NULL);
+        if (pThis->pSpinlock)
         {
-            *pEventMultiSem = pEventMultiInt;
+            *phEventMultiSem = pThis;
             return VINF_SUCCESS;
         }
 
-        pEventMultiInt->u32Magic = 0;
-        RTMemFree(pEventMultiInt);
+        pThis->u32Magic = 0;
+        RTMemFree(pThis);
     }
     return VERR_NO_MEMORY;
 }
 
 
-RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
 {
-    if (EventMultiSem == NIL_RTSEMEVENTMULTI)     /* don't bitch */
-        return VERR_INVALID_HANDLE;
-    PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)EventMultiSem;
-    AssertPtrReturn(pEventMultiInt, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
-                    ("pEventMultiInt=%p u32Magic=%#x\n", pEventMultiInt, pEventMultiInt->u32Magic),
-                    VERR_INVALID_HANDLE);
+    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
+    if (pThis == NIL_RTSEMEVENTMULTI)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
     RT_ASSERT_INTS_ON();
 
-    lck_spin_lock(pEventMultiInt->pSpinlock);
-    ASMAtomicIncU32(&pEventMultiInt->u32Magic); /* make the handle invalid */
-    if (pEventMultiInt->cWaiters > 0)
+    lck_spin_lock(pThis->pSpinlock);
+    ASMAtomicIncU32(&pThis->u32Magic); /* make the handle invalid */
+    if (pThis->cWaiters > 0)
     {
         /* abort waiting thread, last man cleans up. */
-        ASMAtomicXchgU32(&pEventMultiInt->cWaking, pEventMultiInt->cWaking + pEventMultiInt->cWaiters);
-        thread_wakeup_prim((event_t)pEventMultiInt, FALSE /* all threads */, THREAD_RESTART);
-        lck_spin_unlock(pEventMultiInt->pSpinlock);
+        ASMAtomicXchgU32(&pThis->cWaking, pThis->cWaking + pThis->cWaiters);
+        thread_wakeup_prim((event_t)pThis, FALSE /* all threads */, THREAD_RESTART);
+        lck_spin_unlock(pThis->pSpinlock);
     }
-    else if (pEventMultiInt->cWaking)
+    else if (pThis->cWaking)
         /* the last waking thread is gonna do the cleanup */
-        lck_spin_unlock(pEventMultiInt->pSpinlock);
+        lck_spin_unlock(pThis->pSpinlock);
     else
     {
-        lck_spin_unlock(pEventMultiInt->pSpinlock);
-        lck_spin_destroy(pEventMultiInt->pSpinlock, g_pDarwinLockGroup);
-        RTMemFree(pEventMultiInt);
+        lck_spin_unlock(pThis->pSpinlock);
+        lck_spin_destroy(pThis->pSpinlock, g_pDarwinLockGroup);
+        RTMemFree(pThis);
     }
 
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
 {
-    PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)EventMultiSem;
-    AssertPtrReturn(pEventMultiInt, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
-                    ("pEventMultiInt=%p u32Magic=%#x\n", pEventMultiInt, pEventMultiInt->u32Magic),
-                    VERR_INVALID_HANDLE);
+    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
     RT_ASSERT_PREEMPT_CPUID_VAR();
     RT_ASSERT_INTS_ON();
 
-    lck_spin_lock(pEventMultiInt->pSpinlock);
+    lck_spin_lock(pThis->pSpinlock);
 
-    ASMAtomicXchgU8(&pEventMultiInt->fSignaled, true);
-    if (pEventMultiInt->cWaiters > 0)
+    ASMAtomicXchgU8(&pThis->fSignaled, true);
+    if (pThis->cWaiters > 0)
     {
-        ASMAtomicXchgU32(&pEventMultiInt->cWaking, pEventMultiInt->cWaking + pEventMultiInt->cWaiters);
-        ASMAtomicXchgU32(&pEventMultiInt->cWaiters, 0);
-        thread_wakeup_prim((event_t)pEventMultiInt, FALSE /* all threads */, THREAD_AWAKENED);
+        ASMAtomicXchgU32(&pThis->cWaking, pThis->cWaking + pThis->cWaiters);
+        ASMAtomicXchgU32(&pThis->cWaiters, 0);
+        thread_wakeup_prim((event_t)pThis, FALSE /* all threads */, THREAD_AWAKENED);
     }
 
-    lck_spin_unlock(pEventMultiInt->pSpinlock);
+    lck_spin_unlock(pThis->pSpinlock);
 
     RT_ASSERT_PREEMPT_CPUID();
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
 {
-    PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)EventMultiSem;
-    AssertPtrReturn(pEventMultiInt, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
-                    ("pEventMultiInt=%p u32Magic=%#x\n", pEventMultiInt, pEventMultiInt->u32Magic),
-                    VERR_INVALID_HANDLE);
+    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
     RT_ASSERT_PREEMPT_CPUID_VAR();
     RT_ASSERT_INTS_ON();
 
-    lck_spin_lock(pEventMultiInt->pSpinlock);
-    ASMAtomicXchgU8(&pEventMultiInt->fSignaled, false);
-    lck_spin_unlock(pEventMultiInt->pSpinlock);
+    lck_spin_lock(pThis->pSpinlock);
+    ASMAtomicXchgU8(&pThis->fSignaled, false);
+    lck_spin_unlock(pThis->pSpinlock);
 
     RT_ASSERT_PREEMPT_CPUID();
     return VINF_SUCCESS;
 }
 
 
-static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies, wait_interrupt_t fInterruptible)
+static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies, wait_interrupt_t fInterruptible)
 {
-    PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)EventMultiSem;
-    AssertPtrReturn(pEventMultiInt, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
-                    ("pEventMultiInt=%p u32Magic=%#x\n", pEventMultiInt, pEventMultiInt->u32Magic),
-                    VERR_INVALID_HANDLE);
+    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
     if (cMillies)
         RT_ASSERT_PREEMPTIBLE();
 
-    lck_spin_lock(pEventMultiInt->pSpinlock);
+    lck_spin_lock(pThis->pSpinlock);
 
     int rc;
-    if (pEventMultiInt->fSignaled)
+    if (pThis->fSignaled)
         rc = VINF_SUCCESS;
     else if (!cMillies)
         rc = VERR_TIMEOUT;
     else
     {
-        ASMAtomicIncU32(&pEventMultiInt->cWaiters);
+        ASMAtomicIncU32(&pThis->cWaiters);
 
         wait_result_t rcWait;
         if (cMillies == RT_INDEFINITE_WAIT)
-            rcWait = lck_spin_sleep(pEventMultiInt->pSpinlock, LCK_SLEEP_DEFAULT, (event_t)pEventMultiInt, fInterruptible);
+            rcWait = lck_spin_sleep(pThis->pSpinlock, LCK_SLEEP_DEFAULT, (event_t)pThis, fInterruptible);
         else
         {
             uint64_t u64AbsTime;
             nanoseconds_to_absolutetime(cMillies * UINT64_C(1000000), &u64AbsTime);
             u64AbsTime += mach_absolute_time();
 
-            rcWait = lck_spin_sleep_deadline(pEventMultiInt->pSpinlock, LCK_SLEEP_DEFAULT,
-                                             (event_t)pEventMultiInt, fInterruptible, u64AbsTime);
+            rcWait = lck_spin_sleep_deadline(pThis->pSpinlock, LCK_SLEEP_DEFAULT,
+                                             (event_t)pThis, fInterruptible, u64AbsTime);
         }
         switch (rcWait)
         {
             case THREAD_AWAKENED:
-                Assert(pEventMultiInt->cWaking > 0);
-                if (    !ASMAtomicDecU32(&pEventMultiInt->cWaking)
-                    &&  pEventMultiInt->u32Magic != RTSEMEVENTMULTI_MAGIC)
+                Assert(pThis->cWaking > 0);
+                if (    !ASMAtomicDecU32(&pThis->cWaking)
+                    &&  pThis->u32Magic != RTSEMEVENTMULTI_MAGIC)
                 {
                     /* the event was destroyed after we woke up, as the last thread do the cleanup. */
-                    lck_spin_unlock(pEventMultiInt->pSpinlock);
+                    lck_spin_unlock(pThis->pSpinlock);
                     Assert(g_pDarwinLockGroup);
-                    lck_spin_destroy(pEventMultiInt->pSpinlock, g_pDarwinLockGroup);
-                    RTMemFree(pEventMultiInt);
+                    lck_spin_destroy(pThis->pSpinlock, g_pDarwinLockGroup);
+                    RTMemFree(pThis);
                     return VINF_SUCCESS;
                 }
                 rc = VINF_SUCCESS;
@@ -479,24 +477,24 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
 
             case THREAD_TIMED_OUT:
                 Assert(cMillies != RT_INDEFINITE_WAIT);
-                ASMAtomicDecU32(&pEventMultiInt->cWaiters);
+                ASMAtomicDecU32(&pThis->cWaiters);
                 rc = VERR_TIMEOUT;
                 break;
 
             case THREAD_INTERRUPTED:
                 Assert(fInterruptible);
-                ASMAtomicDecU32(&pEventMultiInt->cWaiters);
+                ASMAtomicDecU32(&pThis->cWaiters);
                 rc = VERR_INTERRUPTED;
                 break;
 
             case THREAD_RESTART:
                 /* Last one out does the cleanup. */
-                if (!ASMAtomicDecU32(&pEventMultiInt->cWaking))
+                if (!ASMAtomicDecU32(&pThis->cWaking))
                 {
-                    lck_spin_unlock(pEventMultiInt->pSpinlock);
+                    lck_spin_unlock(pThis->pSpinlock);
                     Assert(g_pDarwinLockGroup);
-                    lck_spin_destroy(pEventMultiInt->pSpinlock, g_pDarwinLockGroup);
-                    RTMemFree(pEventMultiInt);
+                    lck_spin_destroy(pThis->pSpinlock, g_pDarwinLockGroup);
+                    RTMemFree(pThis);
                     return VERR_SEM_DESTROYED;
                 }
 
@@ -510,20 +508,20 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
         }
     }
 
-    lck_spin_unlock(pEventMultiInt->pSpinlock);
+    lck_spin_unlock(pThis->pSpinlock);
     return rc;
 }
 
 
-RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
+RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies)
 {
-    return rtSemEventMultiWait(EventMultiSem, cMillies, THREAD_UNINT);
+    return rtSemEventMultiWait(hEventMultiSem, cMillies, THREAD_UNINT);
 }
 
 
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
+RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies)
 {
-    return rtSemEventMultiWait(EventMultiSem, cMillies, THREAD_ABORTSAFE);
+    return rtSemEventMultiWait(hEventMultiSem, cMillies, THREAD_ABORTSAFE);
 }
 
 
@@ -535,18 +533,18 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
 {
     RT_ASSERT_PREEMPTIBLE();
     AssertCompile(sizeof(RTSEMMUTEXINTERNAL) > sizeof(void *));
-    PRTSEMMUTEXINTERNAL pMutexInt = (PRTSEMMUTEXINTERNAL)RTMemAlloc(sizeof(*pMutexInt));
-    if (pMutexInt)
+    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)RTMemAlloc(sizeof(*pThis));
+    if (pThis)
     {
-        pMutexInt->u32Magic = RTSEMMUTEX_MAGIC;
+        pThis->u32Magic = RTSEMMUTEX_MAGIC;
         Assert(g_pDarwinLockGroup);
-        pMutexInt->pMtx = lck_mtx_alloc_init(g_pDarwinLockGroup, LCK_ATTR_NULL);
-        if (pMutexInt->pMtx)
+        pThis->pMtx = lck_mtx_alloc_init(g_pDarwinLockGroup, LCK_ATTR_NULL);
+        if (pThis->pMtx)
         {
-            *pMutexSem = pMutexInt;
+            *pMutexSem = pThis;
             return VINF_SUCCESS;
         }
-        RTMemFree(pMutexInt);
+        RTMemFree(pThis);
     }
     return VERR_NO_MEMORY;
 }
@@ -557,25 +555,23 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
     /*
      * Validate input.
      */
-    PRTSEMMUTEXINTERNAL pMutexInt = (PRTSEMMUTEXINTERNAL)MutexSem;
-    if (!pMutexInt)
+    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)MutexSem;
+    if (!pThis)
         return VERR_INVALID_PARAMETER;
-    AssertPtrReturn(pMutexInt, VERR_INVALID_POINTER);
-    AssertMsg(pMutexInt->u32Magic == RTSEMMUTEX_MAGIC,
-              ("pMutexInt->u32Magic=%RX32 pMutexInt=%p\n", pMutexInt->u32Magic, pMutexInt)
-              VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsg(pThis->u32Magic == RTSEMMUTEX_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
     RT_ASSERT_INTS_ON();
 
     /*
      * Invalidate it and signal the object just in case.
      */
-    ASMAtomicIncU32(&pMutexInt->u32Magic);
+    ASMAtomicIncU32(&pThis->u32Magic);
 
     Assert(g_pDarwinLockGroup);
-    lck_mtx_free(pMutexInt->pMtx, g_pDarwinLockGroup);
-    pMutexInt->pMtx = NULL;
+    lck_mtx_free(pThis->pMtx, g_pDarwinLockGroup);
+    pThis->pMtx = NULL;
 
-    RTMemFree(pMutexInt);
+    RTMemFree(pThis);
     return VINF_SUCCESS;
 }
 
@@ -585,13 +581,11 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
     /*
      * Validate input.
      */
-    PRTSEMMUTEXINTERNAL pMutexInt = (PRTSEMMUTEXINTERNAL)MutexSem;
-    if (!pMutexInt)
+    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)MutexSem;
+    if (!pThis)
         return VERR_INVALID_PARAMETER;
-    AssertPtrReturn(pMutexInt, VERR_INVALID_POINTER);
-    AssertMsg(pMutexInt->u32Magic == RTSEMMUTEX_MAGIC,
-              ("pMutexInt->u32Magic=%RX32 pMutexInt=%p\n", pMutexInt->u32Magic, pMutexInt)
-              VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsg(pThis->u32Magic == RTSEMMUTEX_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
     if (cMillies)
         RT_ASSERT_PREEMPTIBLE();
 
@@ -603,17 +597,17 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
 #else
     NTSTATUS rcNt;
     if (cMillies == RT_INDEFINITE_WAIT)
-        rcNt = KeWaitForSingleObject(&pMutexInt->Mutex, Executive, KernelMode, TRUE, NULL);
+        rcNt = KeWaitForSingleObject(&pThis->Mutex, Executive, KernelMode, TRUE, NULL);
     else
     {
         LARGE_INTEGER Timeout;
         Timeout.QuadPart = -(int64_t)cMillies * 10000;
-        rcNt = KeWaitForSingleObject(&pMutexInt->Mutex, Executive, KernelMode, TRUE, &Timeout);
+        rcNt = KeWaitForSingleObject(&pThis->Mutex, Executive, KernelMode, TRUE, &Timeout);
     }
     switch (rcNt)
     {
         case STATUS_SUCCESS:
-            if (pMutexInt->u32Magic == RTSEMMUTEX_MAGIC)
+            if (pThis->u32Magic == RTSEMMUTEX_MAGIC)
                 return VINF_SUCCESS;
             return VERR_SEM_DESTROYED;
         case STATUS_ALERTED:
@@ -623,8 +617,8 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
         case STATUS_TIMEOUT:
             return VERR_TIMEOUT;
         default:
-            AssertMsgFailed(("pMutexInt->u32Magic=%RX32 pMutexInt=%p: wait returned %lx!\n",
-                             pMutexInt->u32Magic, pMutexInt, (long)rcNt));
+            AssertMsgFailed(("pThis->u32Magic=%RX32 pThis=%p: wait returned %lx!\n",
+                             pThis->u32Magic, pThis, (long)rcNt));
             return VERR_INTERNAL_ERROR;
     }
 #endif
@@ -637,24 +631,18 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     /*
      * Validate input.
      */
-    PRTSEMMUTEXINTERNAL pMutexInt = (PRTSEMMUTEXINTERNAL)MutexSem;
-    if (!pMutexInt)
-        return VERR_INVALID_PARAMETER;
-    if (    !pMutexInt
-        ||  pMutexInt->u32Magic != RTSEMMUTEX_MAGIC)
-    {
-        AssertMsgFailed(("pMutexInt->u32Magic=%RX32 pMutexInt=%p\n", pMutexInt ? pMutexInt->u32Magic : 0, pMutexInt));
-        return VERR_INVALID_PARAMETER;
-    }
+    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)MutexSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsg(pThis->u32Magic == RTSEMMUTEX_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
     RT_ASSERT_PREEMPTIBLE();
 
     /*
      * Release the mutex.
      */
 #ifdef RT_USE_FAST_MUTEX
-    ExReleaseFastMutex(&pMutexInt->Mutex);
+    ExReleaseFastMutex(&pThis->Mutex);
 #else
-    KeReleaseMutex(&pMutexInt->Mutex, FALSE);
+    KeReleaseMutex(&pThis->Mutex, FALSE);
 #endif
     return VINF_SUCCESS;
 }

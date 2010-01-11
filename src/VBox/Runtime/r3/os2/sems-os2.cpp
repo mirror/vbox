@@ -147,8 +147,17 @@ RTDECL(void) RTSemEventRemoveSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread)
 
 
 
-RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
+RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI phEventMultiSem)
 {
+    return RTSemEventMultiCreateEx(phEventMultiSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, NULL);
+}
+
+
+RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t fFlags, RTLOCKVALCLASS hClass,
+                                     const char *pszNameFmt, ...)
+{
+    AssertReturn(!(fFlags & ~RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+
     /*
      * Create the semaphore.
      * (Manual reset, not signaled, private event object.)
@@ -157,32 +166,35 @@ RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
     int rc = DosCreateEventSem(NULL, &hev, 0, FALSE);
     if (!rc)
     {
-        *pEventMultiSem = (RTSEMEVENTMULTI)(void *)hev;
+        *phEventMultiSem = (RTSEMEVENTMULTI)(void *)hev;
         return VINF_SUCCESS;
     }
     return RTErrConvertFromOS2(rc);
 }
 
 
-RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
 {
+    if (hEventMultiSem == NIL_RTSEMEVENTMULTI)
+        return VINF_SUCCESS;
+
     /*
      * Close semaphore handle.
      */
-    int rc = DosCloseEventSem(SEM2HND(EventMultiSem));
+    int rc = DosCloseEventSem(SEM2HND(hEventMultiSem));
     if (!rc)
         return VINF_SUCCESS;
-    AssertMsgFailed(("Destroy EventMultiSem %p failed, rc=%d\n", EventMultiSem, rc));
+    AssertMsgFailed(("Destroy hEventMultiSem %p failed, rc=%d\n", hEventMultiSem, rc));
     return RTErrConvertFromOS2(rc);
 }
 
 
-RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
 {
     /*
      * Signal the object.
      */
-    int rc = DosPostEventSem(SEM2HND(EventMultiSem));
+    int rc = DosPostEventSem(SEM2HND(hEventMultiSem));
     switch (rc)
     {
         case NO_ERROR:
@@ -195,13 +207,13 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
 }
 
 
-RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
 {
     /*
      * Reset the object.
      */
     ULONG ulIgnore;
-    int rc = DosResetEventSem(SEM2HND(EventMultiSem), &ulIgnore);
+    int rc = DosResetEventSem(SEM2HND(hEventMultiSem), &ulIgnore);
     switch (rc)
     {
         case NO_ERROR:
@@ -213,12 +225,12 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
 }
 
 
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
+RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies)
 {
     /*
      * Wait for condition.
      */
-    int rc = DosWaitEventSem(SEM2HND(EventMultiSem), cMillies == RT_INDEFINITE_WAIT ? SEM_INDEFINITE_WAIT : cMillies);
+    int rc = DosWaitEventSem(SEM2HND(hEventMultiSem), cMillies == RT_INDEFINITE_WAIT ? SEM_INDEFINITE_WAIT : cMillies);
     switch (rc)
     {
         case NO_ERROR:              return VINF_SUCCESS;
@@ -227,7 +239,7 @@ RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned
         case ERROR_INTERRUPT:       return VERR_INTERRUPTED;
         default:
         {
-            AssertMsgFailed(("Wait on EventMultiSem %p failed, rc=%d\n", EventMultiSem, rc));
+            AssertMsgFailed(("Wait on hEventMultiSem %p failed, rc=%d\n", hEventMultiSem, rc));
             return RTErrConvertFromOS2(rc);
         }
     }

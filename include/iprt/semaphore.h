@@ -58,7 +58,7 @@ RT_C_DECLS_BEGIN
  * @{ */
 
 /**
- * Create a event semaphore.
+ * Create an event semaphore.
  *
  * @returns iprt status code.
  * @param   phEventSem          Where to store the handle to the newly created
@@ -67,7 +67,7 @@ RT_C_DECLS_BEGIN
 RTDECL(int)  RTSemEventCreate(PRTSEMEVENT phEventSem);
 
 /**
- * Creates a read/write semaphore.
+ * Create an event semaphore.
  *
  * @returns iprt status code.
  * @param   phEventSem          Where to store the handle to the newly created
@@ -89,7 +89,6 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
 /** Disables lock validation. */
 #define RTSEMEVENT_FLAGS_NO_LOCK_VAL    UINT32_C(0x00000001)
 /** @} */
-
 
 /**
  * Destroy an event semaphore.
@@ -182,36 +181,63 @@ RTDECL(void) RTSemEventRemoveSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread);
  * @{ */
 
 /**
- * Create a event multi semaphore.
+ * Creates a multiple release event semaphore.
  *
  * @returns iprt status code.
- * @param   pEventMultiSem  Where to store the event multi semaphore handle.
+ * @param   phEventMultiSem     Where to store the handle to the newly created
+ *                              multiple release event semaphore.
  */
-RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem);
+RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI phEventMultiSem);
+
+/**
+ * Creates a multiple release event semaphore.
+ *
+ * @returns iprt status code.
+ * @param   phEventMultiSem     Where to store the handle to the newly created
+ *                              multiple release event semaphore.
+ * @param   fFlags              Flags, any combination of the
+ *                              RTSEMEVENTMULTI_FLAGS_XXX \#defines.
+ * @param   hClass              The class (no reference consumed).  Since we
+ *                              don't do order checks on event semaphores, the
+ *                              use of the class is limited to controlling the
+ *                              timeout threshold for deadlock detection.
+ * @param   pszNameFmt          Name format string for the lock validator,
+ *                              optional (NULL).  Max length is 32 bytes.
+ * @param   ...                 Format string arguments.
+ */
+RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t fFlags, RTLOCKVALCLASS hClass,
+                                     const char *pszNameFmt, ...);
+
+/** @name RTSemMutexCreateEx flags
+ * @{ */
+/** Disables lock validation. */
+#define RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL   UINT32_C(0x00000001)
+/** @} */
 
 /**
  * Destroy an event multi semaphore.
  *
  * @returns iprt status code.
- * @param   EventMultiSem   The event multi sempahore to destroy.
+ * @param   hEventMultiSem      The multiple release event sempahore.  NIL is
+ *                              quietly ignored (VINF_SUCCESS).
  */
-RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem);
+RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem);
 
 /**
  * Signal an event multi semaphore.
  *
  * @returns iprt status code.
- * @param   EventMultiSem   The event multi semaphore to signal.
+ * @param   hEventMultiSem      The multiple release event sempahore.
  */
-RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem);
+RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem);
 
 /**
  * Resets an event multi semaphore to non-signaled state.
  *
  * @returns iprt status code.
- * @param   EventMultiSem   The event multi semaphore to reset.
+ * @param   hEventMultiSem      The multiple release event sempahore.
  */
-RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem);
+RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem);
 
 /**
  * Wait for the event multi semaphore to be signaled, resume on interruption.
@@ -221,10 +247,10 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem);
  *
  * @returns iprt status code.
  *          Will not return VERR_INTERRUPTED.
- * @param   EventMultiSem   The event multi semaphore to wait on.
- * @param   cMillies        Number of milliseconds to wait.
+ * @param   hEventMultiSem      The multiple release event sempahore.
+ * @param   cMillies            Number of milliseconds to wait.
  */
-RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies);
+RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies);
 
 
 /**
@@ -233,10 +259,10 @@ RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillie
  * This function will not resume the wait if interrupted.
  *
  * @returns iprt status code.
- * @param   EventMultiSem   The event multi semaphore to wait on.
- * @param   cMillies        Number of milliseconds to wait.
+ * @param   hEventMultiSem      The multiple release event sempahore.
+ * @param   cMillies            Number of milliseconds to wait.
  */
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies);
+RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies);
 
 /**
  * Sets the signaller thread to one specific thread.
