@@ -131,11 +131,11 @@ RTDECL(int) RTSemRWCreateEx(PRTSEMRW phRWSem, uint32_t fFlags,
                 bool const fLVEnabled = !(fFlags & RTSEMRW_FLAGS_NO_LOCK_VAL);
                 va_list va;
                 va_start(va, pszNameFmt);
-                RTLockValidatorRecExclInit(&pThis->ValidatorWrite, hClass, uSubClass, pThis, fLVEnabled, pszNameFmt);
+                RTLockValidatorRecExclInitV(&pThis->ValidatorWrite, hClass, uSubClass, pThis, fLVEnabled, pszNameFmt, va);
                 va_end(va);
                 va_start(va, pszNameFmt);
-                RTLockValidatorRecSharedInit(&pThis->ValidatorRead, hClass, uSubClass, pThis, false /*fSignaller*/,
-                                             fLVEnabled, pszNameFmt);
+                RTLockValidatorRecSharedInitV(&pThis->ValidatorRead, hClass, uSubClass, pThis, false /*fSignaller*/,
+                                              fLVEnabled, pszNameFmt, va);
                 va_end(va);
                 RTLockValidatorRecMakeSiblings(&pThis->ValidatorWrite.Core, &pThis->ValidatorRead.Core);
 #endif
@@ -580,7 +580,6 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
         pThis->cWrites--;
         return VINF_SUCCESS;
     }
-    pThis->cWrites--;
 
     /*
      * Try unlock it.
@@ -591,6 +590,7 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
         return rc9;
 #endif
 
+    pThis->cWrites--;
     ATOMIC_SET_PTHREAD_T(&pThis->Writer, (pthread_t)-1);
     int rc = pthread_rwlock_unlock(&pThis->RWLock);
     if (rc)

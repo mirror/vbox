@@ -120,7 +120,7 @@ RTDECL(int) RTSemRWCreateEx(PRTSEMRW phRWSem, uint32_t fFlags,
             rc = RTSemEventMultiCreate(&pThis->ReadEvent);
             if (RT_SUCCESS(rc))
             {
-                rc = RTCritSectInit(&pThis->CritSect);
+                rc = RTCritSectInitEx(&pThis->CritSect, RTCRITSECT_FLAGS_NO_LOCK_VAL, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
                 if (RT_SUCCESS(rc))
                 {
                     /*
@@ -141,11 +141,11 @@ RTDECL(int) RTSemRWCreateEx(PRTSEMRW phRWSem, uint32_t fFlags,
                         bool const fLVEnabled = !(fFlags & RTSEMRW_FLAGS_NO_LOCK_VAL);
                         va_list va;
                         va_start(va, pszNameFmt);
-                        RTLockValidatorRecExclInit(&pThis->ValidatorWrite, hClass, uSubClass, pThis, fLVEnabled, pszNameFmt);
+                        RTLockValidatorRecExclInitV(&pThis->ValidatorWrite, hClass, uSubClass, pThis, fLVEnabled, pszNameFmt, va);
                         va_end(va);
                         va_start(va, pszNameFmt);
-                        RTLockValidatorRecSharedInit(&pThis->ValidatorRead, hClass, uSubClass, pThis, false /*fSignaller*/,
-                                                     fLVEnabled, pszNameFmt);
+                        RTLockValidatorRecSharedInitV(&pThis->ValidatorRead, hClass, uSubClass, pThis, false /*fSignaller*/,
+                                                      fLVEnabled, pszNameFmt, va);
                         va_end(va);
                         RTLockValidatorRecMakeSiblings(&pThis->ValidatorWrite.Core, &pThis->ValidatorRead.Core);
 #endif
@@ -270,7 +270,11 @@ DECL_FORCE_INLINE(int) rtSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies, bool
     RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
     if (cMillies > 0)
     {
-        int rc9 = RTLockValidatorRecSharedCheckOrder(&pThis->ValidatorRead, hThreadSelf, pSrcPos, cMillies);
+        int rc9;
+        if (pThis->hWriter != NIL_RTTHREAD && pThis->hWriter == RTThreadNativeSelf())
+            rc9 = RTLockValidatorRecExclCheckOrder(&pThis->ValidatorWrite, hThreadSelf, pSrcPos, cMillies);
+        else
+            rc9 = RTLockValidatorRecSharedCheckOrder(&pThis->ValidatorRead, hThreadSelf, pSrcPos, cMillies);
         if (RT_FAILURE(rc9))
             return rc9;
     }
