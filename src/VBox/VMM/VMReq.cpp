@@ -636,6 +636,10 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUI
                     AssertRC(rc);
                     if (RT_FAILURE(rc))
                         return rc;
+#ifdef VBOX_STRICT
+                    for (VMCPUID idCpu = 0; idCpu < pUVM->cCpus; idCpu++)
+                        RTSemEventAddSignaller(pReq->EventSem, pUVM->aCpus[idCpu].vm.s.ThreadEMT);
+#endif
                 }
                 pReq->fEventSemClear = true;
             }
@@ -679,6 +683,10 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUI
         MMR3HeapFree(pReq);
         return rc;
     }
+#ifdef VBOX_STRICT
+    for (VMCPUID idCpu = 0; idCpu < pUVM->cCpus; idCpu++)
+        RTSemEventAddSignaller(pReq->EventSem, pUVM->aCpus[idCpu].vm.s.ThreadEMT);
+#endif
 
     /*
      * Initialize the packet and return it.
