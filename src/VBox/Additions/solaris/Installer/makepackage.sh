@@ -74,8 +74,12 @@ fi
 # Exclude directory entries to not cause conflicts (owner,group) with existing directories in the system
 find . ! -type d | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|postinstall.sh|preremove.sh|vboxguest.space|vboxguest.depend|vboxguest.copyright' | pkgproto >> prototype
 
-# Include only opt/VirtualBoxAdditions and subdirectories as we want uninstall to clean up directory structure as well
+# Include opt/VirtualBoxAdditions and subdirectories as we want uninstall to clean up directory structure as well
 find . -type d | $VBOX_GGREP -E 'opt/VirtualBoxAdditions' | pkgproto >> prototype
+
+# Include /etc/fs/vboxfs (as we need to create the subdirectory)
+find . -type d | $VBOX_GGREP -E 'etc/fs/vboxfs' | pkgproto >> prototype
+
 
 # don't grok for the class files
 filelist_fixup prototype '$2 == "none"'                                                                      '$5 = "root"; $6 = "bin"'

@@ -72,7 +72,9 @@ uncompress_files()
 }
 
 solaris64dir="amd64"
+solaris32dir="i386"
 vboxadditions_path="$BASEDIR/opt/VirtualBoxAdditions"
+vboxadditions32_path=$vboxadditions_path/$solaris32dir
 vboxadditions64_path=$vboxadditions_path/$solaris64dir
 
 # get the current zone
@@ -89,10 +91,10 @@ vboxadditionsisa_path=$vboxadditions_path/$isadir
 
 
 # uncompress if necessary
-if test -f "$vboxadditions_path/VBoxClient.Z" || test -f "$vboxadditions64_path/VBoxClient.Z"; then
+if test -f "$vboxadditions32_path/VBoxClient.Z" || test -f "$vboxadditions64_path/VBoxClient.Z"; then
     echo "Uncompressing files..."
-    if test -f "$vboxadditions_path/VBoxClient.Z"; then
-        uncompress_files "$vboxadditions_path"
+    if test -f "$vboxadditions32_path/VBoxClient.Z"; then
+        uncompress_files "$vboxadditions32_path"
     fi
     if test -f "$vboxadditions64_path/VBoxClient.Z"; then
         uncompress_files "$vboxadditions64_path"
@@ -184,20 +186,20 @@ if test ! -z "$xorgbin"; then
         echo "Installing mouse and video drivers for X.Org $xorgversion..."
 
         # Determine destination paths (snv_130 and above use "/usr/lib/xorg", older use "/usr/X11/lib"
-        vboxmouse_dest_base="/usr/lib/xorg/modules/input"
-        if test ! -d $vboxmouse_dest_base; then
-            vboxmouse_dest_base="/usr/X11/lib/modules/input"
+        vboxmouse32_dest_base="/usr/lib/xorg/modules/input"
+        if test ! -d $vboxmouse32_dest_base; then
+            vboxmouse32_dest_base="/usr/X11/lib/modules/input"
         fi
-        vboxvideo_dest_base="/usr/lib/xorg/modules/drivers"
-        if test ! -d $vboxvideo_dest_base; then
-            vboxvideo_dest_base="/usr/X11/lib/modules/drivers"
+        vboxvideo32_dest_base="/usr/lib/xorg/modules/drivers"
+        if test ! -d $vboxvideo32_dest_base; then
+            vboxvideo32_dest_base="/usr/X11/lib/modules/drivers"
         fi
 
         vboxmouse64_dest_base=$vboxmouse_dest_base/$solaris64dir
         vboxvideo64_dest_base=$vboxvideo_dest_base/$solaris64dir
 
         # Make sure destination path exists
-        if test ! -d $vboxmouse_dest_base || test ! -d $vboxvideo_dest_base || test ! -d $vboxmouse64_dest_base || test ! -d $vboxvideo64_dest_base; then
+        if test ! -d $vboxmouse32_dest_base || test ! -d $vboxvideo32_dest_base || test ! -d $vboxmouse64_dest_base || test ! -d $vboxvideo64_dest_base; then
             echo "*** Missing destination paths for mouse or video modules. Aborting."
             echo "*** Failed to install the VirtualBox X Window System drivers."
 
@@ -205,19 +207,19 @@ if test ! -z "$xorgbin"; then
             retval=2
         else
             # 32-bit x11 drivers
-            if test -f "$vboxadditions_path/$vboxmouse_src"; then
-                vboxmouse_dest="$vboxmouse_dest_base/vboxmouse_drv.so"
-                vboxvideo_dest="$vboxvideo_dest_base/vboxvideo_drv.so"
+            if test -f "$vboxadditions32_path/$vboxmouse_src"; then
+                vboxmouse_dest="$vboxmouse32_dest_base/vboxmouse_drv.so"
+                vboxvideo_dest="$vboxvideo32_dest_base/vboxvideo_drv.so"
                 /usr/sbin/installf -c none $PKGINST "$vboxmouse_dest" f
                 /usr/sbin/installf -c none $PKGINST "$vboxvideo_dest" f
-                cp "$vboxadditions_path/$vboxmouse_src" "$vboxmouse_dest"
-                cp "$vboxadditions_path/$vboxvideo_src" "$vboxvideo_dest"
+                cp "$vboxadditions32_path/$vboxmouse_src" "$vboxmouse_dest"
+                cp "$vboxadditions32_path/$vboxvideo_src" "$vboxvideo_dest"
 
                 # Removing redundent names from pkg and files from disk
-                /usr/sbin/removef $PKGINST $vboxadditions_path/vboxmouse_drv_* 1>/dev/null
-                /usr/sbin/removef $PKGINST $vboxadditions_path/vboxvideo_drv_* 1>/dev/null
-                rm -f $vboxadditions_path/vboxmouse_drv_*
-                rm -f $vboxadditions_path/vboxvideo_drv_*
+                /usr/sbin/removef $PKGINST $vboxadditions32_path/vboxmouse_drv_* 1>/dev/null
+                /usr/sbin/removef $PKGINST $vboxadditions32_path/vboxvideo_drv_* 1>/dev/null
+                rm -f $vboxadditions32_path/vboxmouse_drv_*
+                rm -f $vboxadditions32_path/vboxvideo_drv_*
             fi
 
             # 64-bit x11 drivers
@@ -304,6 +306,7 @@ fi
 # Move the appropriate module to kernel/fs & remove the unused module name from pkg and file from disk
 # 64-bit shared folder module
 if test -f "$vboxadditions64_path/$vboxfsmod"; then
+    echo "Installing 64-bit shared folders module..."
     /usr/sbin/installf -c none $PKGINST "/usr/kernel/fs/$solaris64dir/vboxfs" f
     mv -f $vboxadditions64_path/$vboxfsmod /usr/kernel/fs/$solaris64dir/vboxfs
     /usr/sbin/removef $PKGINST $vboxadditions64_path/$vboxfsmod 1>/dev/null
@@ -312,12 +315,13 @@ if test -f "$vboxadditions64_path/$vboxfsmod"; then
 fi
 
 # 32-bit shared folder module
-if test -f "$vboxadditions_path/$vboxfsmod"; then
+if test -f "$vboxadditions32_path/$vboxfsmod"; then
+    echo "Installing 32-bit shared folders module..."
     /usr/sbin/installf -c none $PKGINST "/usr/kernel/fs/vboxfs" f
-    mv -f $vboxadditions_path/$vboxfsmod /usr/kernel/fs/vboxfs
-    /usr/sbin/removef $PKGINST $vboxadditions_path/$vboxfsmod 1>/dev/null
-    /usr/sbin/removef $PKGINST $vboxadditions_path/$vboxfsunused 1>/dev/null
-    rm -f $vboxadditions_path/$vboxfsunused
+    mv -f $vboxadditions32_path/$vboxfsmod /usr/kernel/fs/vboxfs
+    /usr/sbin/removef $PKGINST $vboxadditions32_path/$vboxfsmod 1>/dev/null
+    /usr/sbin/removef $PKGINST $vboxadditions32_path/$vboxfsunused 1>/dev/null
+    rm -f $vboxadditions32_path/$vboxfsunused
 fi
 
 # install openGL extensions for X.Org
