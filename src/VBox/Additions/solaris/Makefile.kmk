@@ -102,9 +102,9 @@ VBoxISAExec_SOURCES  = $(PATH_ROOT)/src/VBox/Installer/solaris/VBoxISAExec.c
 #
 # Install to $(PATH_BIN)/additions/ files from various source paths (to pack them using rules)
 #
-solaris-add-commonbins_INST = bin/additions/
-solaris-add-commonbins_MODE = a+rx,u+w
-solaris-add-commonbins_SOURCES = \
+solaris-addcommonbins_INST = bin/additions/
+solaris-addcommonbins_MODE = a+rx,u+w
+solaris-addcommonbins_SOURCES = \
 	$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.sh \
 	$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl \
 	$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15sol.pl \
