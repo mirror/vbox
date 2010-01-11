@@ -126,14 +126,14 @@ RTDECL(int) RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
 }
 
 
-RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
+RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX hMutexSem)
 {
     /*
      * Validate input.
      */
-    if (MutexSem == NIL_RTSEMMUTEX)
+    if (hMutexSem == NIL_RTSEMMUTEX)
         return VINF_SUCCESS;
-    struct RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    struct RTSEMMUTEXINTERNAL *pThis = hMutexSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
@@ -143,7 +143,7 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
     int rc = pthread_mutex_destroy(&pThis->Mutex);
     if (rc)
     {
-        AssertMsgFailed(("Failed to destroy mutex sem %p, rc=%d.\n", MutexSem, rc));
+        AssertMsgFailed(("Failed to destroy mutex sem %p, rc=%d.\n", hMutexSem, rc));
         return RTErrConvertFromErrno(rc);
     }
 
@@ -179,12 +179,12 @@ RTDECL(uint32_t) RTSemMutexSetSubClass(RTSEMMUTEX hMutexSem, uint32_t uSubClass)
 }
 
 
-DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, PCRTLOCKVALSRCPOS pSrcPos)
+DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies, PCRTLOCKVALSRCPOS pSrcPos)
 {
     /*
      * Validate input.
      */
-    struct RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    struct RTSEMMUTEXINTERNAL *pThis = hMutexSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
@@ -229,7 +229,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_MUTEX);
         if (rc)
         {
-            AssertMsgFailed(("Failed to lock mutex sem %p, rc=%d.\n", MutexSem, rc)); NOREF(rc);
+            AssertMsgFailed(("Failed to lock mutex sem %p, rc=%d.\n", hMutexSem, rc)); NOREF(rc);
             return RTErrConvertFromErrno(rc);
         }
     }
@@ -260,7 +260,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_MUTEX);
         if (rc)
         {
-            AssertMsg(rc == ETIMEDOUT, ("Failed to lock mutex sem %p, rc=%d.\n", MutexSem, rc)); NOREF(rc);
+            AssertMsg(rc == ETIMEDOUT, ("Failed to lock mutex sem %p, rc=%d.\n", hMutexSem, rc)); NOREF(rc);
             return RTErrConvertFromErrno(rc);
         }
 #endif /* !RT_OS_DARWIN */
@@ -280,50 +280,50 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
 
 
 #undef RTSemMutexRequest
-RTDECL(int) RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
+RTDECL(int) RTSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies)
 {
 #ifndef RTSEMMUTEX_STRICT
-    return rtSemMutexRequest(MutexSem, cMillies, NULL);
+    return rtSemMutexRequest(hMutexSem, cMillies, NULL);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return rtSemMutexRequest(MutexSem, cMillies, &SrcPos);
+    return rtSemMutexRequest(hMutexSem, cMillies, &SrcPos);
 #endif
 }
 
 
-RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return rtSemMutexRequest(MutexSem, cMillies, &SrcPos);
+    return rtSemMutexRequest(hMutexSem, cMillies, &SrcPos);
 }
 
 
 #undef RTSemMutexRequestNoResume
-RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
+RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, unsigned cMillies)
 {
     /* (EINTR isn't returned by the wait functions we're using.) */
 #ifndef RTSEMMUTEX_STRICT
-    return rtSemMutexRequest(MutexSem, cMillies, NULL);
+    return rtSemMutexRequest(hMutexSem, cMillies, NULL);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return rtSemMutexRequest(MutexSem, cMillies, &SrcPos);
+    return rtSemMutexRequest(hMutexSem, cMillies, &SrcPos);
 #endif
 }
 
 
-RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return rtSemMutexRequest(MutexSem, cMillies, &SrcPos);
+    return rtSemMutexRequest(hMutexSem, cMillies, &SrcPos);
 }
 
 
-RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
+RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX hMutexSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    struct RTSEMMUTEXINTERNAL *pThis = hMutexSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
@@ -366,7 +366,7 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     int rc = pthread_mutex_unlock(&pThis->Mutex);
     if (RT_UNLIKELY(rc))
     {
-        AssertMsgFailed(("Failed to unlock mutex sem %p, rc=%d.\n", MutexSem, rc)); NOREF(rc);
+        AssertMsgFailed(("Failed to unlock mutex sem %p, rc=%d.\n", hMutexSem, rc)); NOREF(rc);
         return RTErrConvertFromErrno(rc);
     }
 
@@ -374,12 +374,12 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
 }
 
 
-RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutex)
+RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem)
 {
     /*
      * Validate.
      */
-    RTSEMMUTEXINTERNAL *pThis = hMutex;
+    RTSEMMUTEXINTERNAL *pThis = hMutexSem;
     AssertPtrReturn(pThis, false);
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, false);
 

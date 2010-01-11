@@ -246,6 +246,21 @@ RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, unsigne
 }
 
 
+RTDECL(void) RTSemEventMultiSetSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread)
+{
+    /** @todo implement RTSemEventMultiSetSignaller on OS/2 */
+}
+
+
+RTDECL(void) RTSemEventMultiAddSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread)
+{
+}
+
+
+RTDECL(void) RTSemEventMultiRemoveSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread)
+{
+}
+
 
 
 #undef RTSemMutexCreate
@@ -276,15 +291,18 @@ RTDECL(int) RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
 }
 
 
-RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
+RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX hMutexSem)
 {
+    if (hMutexSem == NIL_RTSEMMUTEX)
+        return VINF_SUCCESS;
+
     /*
      * Close semaphore handle.
      */
-    int rc = DosCloseMutexSem(SEM2HND(MutexSem));
+    int rc = DosCloseMutexSem(SEM2HND(hMutexSem));
     if (!rc)
         return VINF_SUCCESS;
-    AssertMsgFailed(("Destroy MutexSem %p failed, rc=%d\n", MutexSem, rc));
+    AssertMsgFailed(("Destroy hMutexSem %p failed, rc=%d\n", hMutexSem, rc));
     return RTErrConvertFromOS2(rc);
 }
 
@@ -308,12 +326,12 @@ RTDECL(uint32_t) RTSemMutexSetSubClass(RTSEMMUTEX hMutexSem, uint32_t uSubClass)
 
 
 #undef RTSemMutexRequestNoResume
-RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
+RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, unsigned cMillies)
 {
     /*
      * Lock mutex semaphore.
      */
-    int rc = DosRequestMutexSem(SEM2HND(MutexSem), cMillies == RT_INDEFINITE_WAIT ? SEM_INDEFINITE_WAIT : cMillies);
+    int rc = DosRequestMutexSem(SEM2HND(hMutexSem), cMillies == RT_INDEFINITE_WAIT ? SEM_INDEFINITE_WAIT : cMillies);
     switch (rc)
     {
         case NO_ERROR:              return VINF_SUCCESS;
@@ -323,26 +341,26 @@ RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
         case ERROR_SEM_OWNER_DIED:  return VERR_SEM_OWNER_DIED;
         default:
         {
-            AssertMsgFailed(("Wait on MutexSem %p failed, rc=%d\n", MutexSem, rc));
+            AssertMsgFailed(("Wait on hMutexSem %p failed, rc=%d\n", hMutexSem, rc));
             return RTErrConvertFromOS2(rc);
         }
     }
 }
 
-RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
+RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX hMutexSem)
 {
     /*
      * Unlock mutex semaphore.
      */
-    int rc = DosReleaseMutexSem(SEM2HND(MutexSem));
+    int rc = DosReleaseMutexSem(SEM2HND(hMutexSem));
     if (!rc)
         return VINF_SUCCESS;
-    AssertMsgFailed(("Release MutexSem %p failed, rc=%d\n", MutexSem, rc));
+    AssertMsgFailed(("Release hMutexSem %p failed, rc=%d\n", hMutexSem, rc));
     return RTErrConvertFromOS2(rc);
 }
 
 
-RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutex);
+RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem);
 {
     /*
      * Unlock mutex semaphore.
@@ -350,26 +368,10 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutex);
     PID     pid;
     TID     tid;
     ULONG   cRecursions;
-    int rc = DosQueryMutexSem(SEM2HND(MutexSem), &pid, &tid, &cRecursions);
+    int rc = DosQueryMutexSem(SEM2HND(hMutexSem), &pid, &tid, &cRecursions);
     if (!rc)
         return cRecursions != 0;
-    AssertMsgFailed(("DosQueryMutexSem %p failed, rc=%d\n", MutexSem, rc));
+    AssertMsgFailed(("DosQueryMutexSem %p failed, rc=%d\n", hMutexSem, rc));
     return rc == ERROR_SEM_OWNER_DIED;
-}
-
-
-RTDECL(void) RTSemEventMultiSetSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread)
-{
-    /** @todo implement RTSemEventMultiSetSignaller on OS/2 */
-}
-
-
-RTDECL(void) RTSemEventMultiAddSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread)
-{
-}
-
-
-RTDECL(void) RTSemEventMultiRemoveSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread)
-{
 }
 
