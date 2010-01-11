@@ -215,6 +215,7 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
 
     if (pstrFilename)
     {
+        // reading existing settings file:
         m->strFilename = *pstrFilename;
 
         m->pParser = new xml::XmlFileParser;
@@ -298,6 +299,7 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
     }
     else
     {
+        // creating new settings file:
         m->strSettingsVersionFull = VBOX_XML_VERSION_FULL;
         m->sv = SettingsVersion_v1_10;
     }
@@ -2778,8 +2780,7 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
     xml::ElementNode *pelmAudio = pelmHardware->createChild("AudioAdapter");
     pelmAudio->setAttribute("controller", (hw.audioAdapter.controllerType == AudioControllerType_SB16) ? "SB16" : "AC97");
 
-    if (   m->sv >= SettingsVersion_v1_10
-        && fRTCUseUTC)
+    if (   m->sv >= SettingsVersion_v1_10)
     {
         xml::ElementNode *pelmRTC = pelmHardware->createChild("RTC");
         pelmRTC->setAttribute("localOrUTC", fRTCUseUTC ? "UTC" : "local");
