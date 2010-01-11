@@ -336,6 +336,7 @@ buildserver-efifw_SOURCES = \
 	$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd=>VBoxEFI32.fd \
         $(buildserver-efifw_0_OUTDIR)/FV/VBOX64.fd=>VBoxEFI64.fd
 buildserver-efifw_CLEANS = \
+	$(buildserver-efifw_0_OUTDIR)/unpacked.ts \
 	$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd \
         $(buildserver-efifw_0_OUTDIR)/FV/VBOX64.fd \
 	$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip \
@@ -345,9 +346,11 @@ buildserver-efifw_CLEANS = \
 ## @todo Hack to get at TOOL_ZIP_UNPACK; see if this can be integrated somehow...
 include $(KBUILD_PATH)/tools/ZIP.kmk
 
-$$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd \
-+ $$(buildserver-efifw_0_OUTDIR)/FV/VBOX64.fd: $$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip
+$$(buildserver-efifw_0_OUTDIR)/unpacked.ts +| $$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd \
+ $$(buildserver-efifw_0_OUTDIR)/FV/VBOX64.fd: $$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip
+	$(call MSG_L1,Unpacking EFI firmware)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(buildserver-efifw_0_OUTDIR)
+	$(APPEND) -t $@ "done"
 
 $$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/efi_firmware.sh | $$(dir $$@)
 	$(RM) -f $@ $@.tmp
