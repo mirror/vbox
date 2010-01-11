@@ -30,7 +30,7 @@
 
 
 #include <features.h>
-#if __GLIBC_PREREQ(2,6) && !defined(IPRT_WITH_FUTEX_BASED_SEMS) && !defined(DEBUG_bird)
+#if __GLIBC_PREREQ(2,6) && !defined(IPRT_WITH_FUTEX_BASED_SEMS)
 
 /*
  * glibc 2.6 fixed a serious bug in the mutex implementation. We wrote this
@@ -118,8 +118,17 @@ static long sys_futex(int32_t volatile *uaddr, int op, int val, struct timespec 
 }
 
 
-RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
+RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI phEventMultiSem)
 {
+    return RTSemEventMultiCreateEx(phEventMultiSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, NULL);
+}
+
+
+RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t fFlags, RTLOCKVALCLASS hClass,
+                                     const char *pszNameFmt, ...)
+{
+    AssertReturn(!(fFlags & ~RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+
     /*
      * Allocate semaphore handle.
      */
@@ -129,26 +138,32 @@ RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
         pThis->u32Magic = RTSEMEVENTMULTI_MAGIC;
         pThis->iState   = 0;
 #ifdef RTSEMEVENTMULTI_STRICT
-        RTLockValidatorRecSharedInit(&pThis->Signallers,
-                                     NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY,
-                                     pThis, true /*fSignaller*/, true /*fEnabled*/, "RTSemEvent");
+        va_list va;
+        va_start(va, pszNameFmt);
+        RTLockValidatorRecSharedInitV(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
+                                      true /*fSignaller*/, !(fFlags & RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL),
+                                      pszNameFmt, va);
+        va_end(va);
         pThis->fEverHadSignallers = false;
 #endif
-        *pEventMultiSem = pThis;
+
+        *phEventMultiSem = pThis;
         return VINF_SUCCESS;
     }
     return  VERR_NO_MEMORY;
 }
 
 
-RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
-    AssertReturn(VALID_PTR(pThis) && pThis->u32Magic == RTSEMEVENTMULTI_MAGIC,
-                 VERR_INVALID_HANDLE);
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
+    if (pThis == NIL_RTSEMEVENTMULTI)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Invalidate the semaphore and wake up anyone waiting on it.
@@ -171,12 +186,12 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
 }
 
 
-RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     AssertReturn(VALID_PTR(pThis) && pThis->u32Magic == RTSEMEVENTMULTI_MAGIC,
                  VERR_INVALID_HANDLE);
 
@@ -205,12 +220,12 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
 }
 
 
-RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     AssertReturn(VALID_PTR(pThis) && pThis->u32Magic == RTSEMEVENTMULTI_MAGIC,
                  VERR_INVALID_HANDLE);
 #ifdef RT_STRICT
@@ -226,14 +241,14 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
 }
 
 
-static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies, bool fAutoResume)
+static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies, bool fAutoResume)
 {
     PCRTLOCKVALSRCPOS pSrcPos = NULL;
 
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     AssertReturn(VALID_PTR(pThis) && pThis->u32Magic == RTSEMEVENTMULTI_MAGIC,
                  VERR_INVALID_HANDLE);
 
@@ -338,17 +353,17 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
 }
 
 
-RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
+RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies)
 {
-    int rc = rtSemEventMultiWait(EventMultiSem, cMillies, true);
+    int rc = rtSemEventMultiWait(hEventMultiSem, cMillies, true);
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
 
 
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
+RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies)
 {
-    return rtSemEventMultiWait(EventMultiSem, cMillies, false);
+    return rtSemEventMultiWait(hEventMultiSem, cMillies, false);
 }
 
 

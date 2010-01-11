@@ -69,13 +69,18 @@ struct RTSEMEVENTMULTIINTERNAL
 };
 
 
-/* Undefine debug mappings. */
-#undef RTSemEventMultiWait
-#undef RTSemEventMultiWaitNoResume
 
-
-RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
+RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI phEventMultiSem)
 {
+    return RTSemEventMultiCreateEx(phEventMultiSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, NULL);
+}
+
+
+RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t fFlags, RTLOCKVALCLASS hClass,
+                                     const char *pszNameFmt, ...)
+{
+    AssertReturn(!(fFlags & ~RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+
     struct RTSEMEVENTMULTIINTERNAL *pThis = (struct RTSEMEVENTMULTIINTERNAL *)RTMemAlloc(sizeof(*pThis));
     if (!pThis)
         return VERR_NO_MEMORY;
@@ -89,13 +94,16 @@ RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
     {
         pThis->u32Magic = RTSEMEVENTMULTI_MAGIC;
 #ifdef RTSEMEVENT_STRICT
-        RTLockValidatorRecSharedInit(&pThis->Signallers,
-                                     NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY,
-                                     pThis, true /*fSignaller*/, true /*fEnabled*/, "RTSemEvent");
+        va_list va;
+        va_start(va, pszNameFmt);
+        RTLockValidatorRecSharedInitV(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
+                                      true /*fSignaller*/, !(fFlags & RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL),
+                                      pszNameFmt, va);
+        va_end(va);
         pThis->fEverHadSignallers = false;
 #endif
 
-        *pEventMultiSem = pThis;
+        *phEventMultiSem = pThis;
         return VINF_SUCCESS;
     }
 
@@ -105,11 +113,11 @@ RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
 }
 
 
-RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
 {
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     if (pThis == NIL_RTSEMEVENT)        /* don't bitch */
-        return VERR_INVALID_HANDLE;
+        return VINF_SUCCESS;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, VERR_INVALID_HANDLE);
 
@@ -129,7 +137,7 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
     {
         DWORD dwErr = GetLastError();
         rc = RTErrConvertFromWin32(dwErr);
-        AssertMsgFailed(("Destroy EventMultiSem %p failed, lasterr=%u (%Rrc)\n", pThis, dwErr, rc));
+        AssertMsgFailed(("Destroy hEventMultiSem %p failed, lasterr=%u (%Rrc)\n", pThis, dwErr, rc));
         /* Leak it. */
     }
 
@@ -137,12 +145,12 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
 }
 
 
-RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, VERR_INVALID_HANDLE);
 
@@ -161,17 +169,17 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
     if (SetEvent(pThis->hev))
         return VINF_SUCCESS;
     DWORD dwErr = GetLastError();
-    AssertMsgFailed(("Signaling EventMultiSem %p failed, lasterr=%d\n", pThis, dwErr));
+    AssertMsgFailed(("Signaling hEventMultiSem %p failed, lasterr=%d\n", pThis, dwErr));
     return RTErrConvertFromWin32(dwErr);
 }
 
 
-RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, VERR_INVALID_HANDLE);
 
@@ -181,7 +189,7 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
     if (ResetEvent(pThis->hev))
         return VINF_SUCCESS;
     DWORD dwErr = GetLastError();
-    AssertMsgFailed(("Resetting EventMultiSem %p failed, lasterr=%d\n", pThis, dwErr));
+    AssertMsgFailed(("Resetting hEventMultiSem %p failed, lasterr=%d\n", pThis, dwErr));
     return RTErrConvertFromWin32(dwErr);
 }
 
@@ -200,7 +208,7 @@ DECL_FORCE_INLINE(int) rtSemEventWaitHandleStatus(struct RTSEMEVENTMULTIINTERNAL
         case WAIT_FAILED:
         {
             int rc2 = RTErrConvertFromWin32(GetLastError());
-            AssertMsgFailed(("Wait on EventMultiSem %p failed, rc=%d lasterr=%d\n", pThis, rc, GetLastError()));
+            AssertMsgFailed(("Wait on hEventMultiSem %p failed, rc=%d lasterr=%d\n", pThis, rc, GetLastError()));
             if (rc2)
                 return rc2;
 
@@ -211,14 +219,15 @@ DECL_FORCE_INLINE(int) rtSemEventWaitHandleStatus(struct RTSEMEVENTMULTIINTERNAL
 }
 
 
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
+#undef RTSemEventMultiWaitNoResume
+RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies)
 {
     PCRTLOCKVALSRCPOS pSrcPos = NULL;
 
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, VERR_INVALID_HANDLE);
 

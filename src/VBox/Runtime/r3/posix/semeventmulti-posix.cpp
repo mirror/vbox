@@ -85,13 +85,21 @@ struct RTSEMEVENTMULTIINTERNAL
 
 
 
-RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
+RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI phEventMultiSem)
 {
-    int rc;
+    return RTSemEventMultiCreateEx(phEventMultiSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, NULL);
+}
+
+
+RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t fFlags, RTLOCKVALCLASS hClass,
+                                     const char *pszNameFmt, ...)
+{
+    AssertReturn(!(fFlags & ~RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
 
     /*
      * Allocate semaphore handle.
      */
+    int rc;
     struct RTSEMEVENTMULTIINTERNAL *pThis = (struct RTSEMEVENTMULTIINTERNAL *)RTMemAlloc(sizeof(struct RTSEMEVENTMULTIINTERNAL));
     if (pThis)
     {
@@ -121,13 +129,16 @@ RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
                         ASMAtomicXchgU32(&pThis->u32State, EVENTMULTI_STATE_NOT_SIGNALED);
                         ASMAtomicXchgU32(&pThis->cWaiters, 0);
 #ifdef RTSEMEVENTMULTI_STRICT
-                        RTLockValidatorRecSharedInit(&pThis->Signallers,
-                                                     NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY,
-                                                     pThis, true /*fSignaller*/, true /*fEnabled*/, "RTSemEvent");
+                        va_list va;
+                        va_start(va, pszNameFmt);
+                        RTLockValidatorRecSharedInitV(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
+                                                      true /*fSignaller*/, !(fFlags & RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL),
+                                                      pszNameFmt, va);
+                        va_end(va);
                         pThis->fEverHadSignallers = false;
 #endif
 
-                        *pEventMultiSem = pThis;
+                        *phEventMultiSem = pThis;
                         return VINF_SUCCESS;
                     }
 
@@ -149,12 +160,12 @@ RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
 }
 
 
-RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
 {
     /*
      * Validate handle.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     if (pThis == NIL_RTSEMEVENTMULTI)
         return VINF_SUCCESS;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -176,7 +187,7 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
     }
     if (rc)
     {
-        AssertMsgFailed(("Failed to destroy event sem %p, rc=%d.\n", EventMultiSem, rc));
+        AssertMsgFailed(("Failed to destroy event sem %p, rc=%d.\n", hEventMultiSem, rc));
         return RTErrConvertFromErrno(rc);
     }
 
@@ -193,7 +204,7 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
     }
     if (rc)
     {
-        AssertMsgFailed(("Failed to destroy event sem %p, rc=%d. (mutex)\n", EventMultiSem, rc));
+        AssertMsgFailed(("Failed to destroy event sem %p, rc=%d. (mutex)\n", hEventMultiSem, rc));
         return RTErrConvertFromErrno(rc);
     }
 
@@ -208,12 +219,12 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
 }
 
 
-RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     uint32_t u32 = pThis->u32State;
     AssertReturn(u32 == EVENTMULTI_STATE_NOT_SIGNALED || u32 == EVENTMULTI_STATE_SIGNALED, VERR_INVALID_HANDLE);
@@ -233,7 +244,7 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
     int rc = pthread_mutex_lock(&pThis->Mutex);
     if (rc)
     {
-        AssertMsgFailed(("Failed to lock event sem %p, rc=%d.\n", EventMultiSem, rc));
+        AssertMsgFailed(("Failed to lock event sem %p, rc=%d.\n", hEventMultiSem, rc));
         return RTErrConvertFromErrno(rc);
     }
 
@@ -244,12 +255,12 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
     {
         ASMAtomicXchgU32(&pThis->u32State, EVENTMULTI_STATE_SIGNALED);
         rc = pthread_cond_broadcast(&pThis->Cond);
-        AssertMsg(!rc, ("Failed to signal event sem %p, rc=%d.\n", EventMultiSem, rc));
+        AssertMsg(!rc, ("Failed to signal event sem %p, rc=%d.\n", hEventMultiSem, rc));
     }
     else if (pThis->u32State == EVENTMULTI_STATE_SIGNALED)
     {
         rc = pthread_cond_broadcast(&pThis->Cond); /* give'm another kick... */
-        AssertMsg(!rc, ("Failed to signal event sem %p, rc=%d. (2)\n", EventMultiSem, rc));
+        AssertMsg(!rc, ("Failed to signal event sem %p, rc=%d. (2)\n", hEventMultiSem, rc));
     }
     else
         rc = VERR_SEM_DESTROYED;
@@ -258,7 +269,7 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
      * Release the mutex and return.
      */
     int rc2 = pthread_mutex_unlock(&pThis->Mutex);
-    AssertMsg(!rc2, ("Failed to unlock event sem %p, rc=%d.\n", EventMultiSem, rc));
+    AssertMsg(!rc2, ("Failed to unlock event sem %p, rc=%d.\n", hEventMultiSem, rc));
     if (rc)
         return RTErrConvertFromErrno(rc);
     if (rc2)
@@ -268,12 +279,12 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
 }
 
 
-RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
+RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     uint32_t u32 = pThis->u32State;
     AssertReturn(u32 == EVENTMULTI_STATE_NOT_SIGNALED || u32 == EVENTMULTI_STATE_SIGNALED, VERR_INVALID_HANDLE);
@@ -284,7 +295,7 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
     int rc = pthread_mutex_lock(&pThis->Mutex);
     if (rc)
     {
-        AssertMsgFailed(("Failed to lock event multi sem %p, rc=%d.\n", EventMultiSem, rc));
+        AssertMsgFailed(("Failed to lock event multi sem %p, rc=%d.\n", hEventMultiSem, rc));
         return RTErrConvertFromErrno(rc);
     }
 
@@ -302,7 +313,7 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
     rc = pthread_mutex_unlock(&pThis->Mutex);
     if (rc)
     {
-        AssertMsgFailed(("Failed to unlock event multi sem %p, rc=%d.\n", EventMultiSem, rc));
+        AssertMsgFailed(("Failed to unlock event multi sem %p, rc=%d.\n", hEventMultiSem, rc));
         return RTErrConvertFromErrno(rc);
     }
 
@@ -311,14 +322,14 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
 }
 
 
-static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies, bool fAutoResume)
+static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies, bool fAutoResume)
 {
     PCRTLOCKVALSRCPOS pSrcPos = NULL;
 
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     uint32_t u32 = pThis->u32State;
     AssertReturn(u32 == EVENTMULTI_STATE_NOT_SIGNALED || u32 == EVENTMULTI_STATE_SIGNALED, VERR_INVALID_HANDLE);
@@ -332,7 +343,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
         int rc = pthread_mutex_lock(&pThis->Mutex);
         if (rc)
         {
-            AssertMsgFailed(("Failed to lock event multi sem %p, rc=%d.\n", EventMultiSem, rc));
+            AssertMsgFailed(("Failed to lock event multi sem %p, rc=%d.\n", hEventMultiSem, rc));
             return RTErrConvertFromErrno(rc);
         }
         ASMAtomicIncU32(&pThis->cWaiters);
@@ -344,13 +355,13 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
             {
                 ASMAtomicDecU32(&pThis->cWaiters);
                 rc = pthread_mutex_unlock(&pThis->Mutex);
-                AssertMsg(!rc, ("Failed to unlock event multi sem %p, rc=%d.\n", EventMultiSem, rc)); NOREF(rc);
+                AssertMsg(!rc, ("Failed to unlock event multi sem %p, rc=%d.\n", hEventMultiSem, rc)); NOREF(rc);
                 return VINF_SUCCESS;
             }
             if (pThis->u32State == EVENTMULTI_STATE_UNINITIALIZED)
             {
                 rc = pthread_mutex_unlock(&pThis->Mutex);
-                AssertMsg(!rc, ("Failed to unlock event multi sem %p, rc=%d.\n", EventMultiSem, rc)); NOREF(rc);
+                AssertMsg(!rc, ("Failed to unlock event multi sem %p, rc=%d.\n", hEventMultiSem, rc)); NOREF(rc);
                 return VERR_SEM_DESTROYED;
             }
 
@@ -376,10 +387,10 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
             RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT_MULTI);
             if (rc)
             {
-                AssertMsgFailed(("Failed to wait on event multi sem %p, rc=%d.\n", EventMultiSem, rc));
+                AssertMsgFailed(("Failed to wait on event multi sem %p, rc=%d.\n", hEventMultiSem, rc));
                 ASMAtomicDecU32(&pThis->cWaiters);
                 int rc2 = pthread_mutex_unlock(&pThis->Mutex);
-                AssertMsg(!rc2, ("Failed to unlock event multi sem %p, rc=%d.\n", EventMultiSem, rc2)); NOREF(rc2);
+                AssertMsg(!rc2, ("Failed to unlock event multi sem %p, rc=%d.\n", hEventMultiSem, rc2)); NOREF(rc2);
                 return RTErrConvertFromErrno(rc);
             }
         }
@@ -420,7 +431,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
         int rc = pthread_mutex_lock(&pThis->Mutex);
         if (rc)
         {
-            AssertMsg(rc == ETIMEDOUT, ("Failed to lock event multi sem %p, rc=%d.\n", EventMultiSem, rc));
+            AssertMsg(rc == ETIMEDOUT, ("Failed to lock event multi sem %p, rc=%d.\n", hEventMultiSem, rc));
             return RTErrConvertFromErrno(rc);
         }
         ASMAtomicIncU32(&pThis->cWaiters);
@@ -432,13 +443,13 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
             {
                 ASMAtomicDecU32(&pThis->cWaiters);
                 rc = pthread_mutex_unlock(&pThis->Mutex);
-                AssertMsg(!rc, ("Failed to unlock event multi sem %p, rc=%d.\n", EventMultiSem, rc)); NOREF(rc);
+                AssertMsg(!rc, ("Failed to unlock event multi sem %p, rc=%d.\n", hEventMultiSem, rc)); NOREF(rc);
                 return VINF_SUCCESS;
             }
             if (pThis->u32State == EVENTMULTI_STATE_UNINITIALIZED)
             {
                 rc = pthread_mutex_unlock(&pThis->Mutex);
-                AssertMsg(!rc, ("Failed to unlock event multi sem %p, rc=%d.\n", EventMultiSem, rc)); NOREF(rc);
+                AssertMsg(!rc, ("Failed to unlock event multi sem %p, rc=%d.\n", hEventMultiSem, rc)); NOREF(rc);
                 return VERR_SEM_DESTROYED;
             }
 
@@ -472,10 +483,10 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
             RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT_MULTI);
             if (rc && (rc != EINTR || !fAutoResume)) /* according to SuS this function shall not return EINTR, but linux man page says differently. */
             {
-                AssertMsg(rc == ETIMEDOUT, ("Failed to wait on event multi sem %p, rc=%d.\n", EventMultiSem, rc));
+                AssertMsg(rc == ETIMEDOUT, ("Failed to wait on event multi sem %p, rc=%d.\n", hEventMultiSem, rc));
                 ASMAtomicDecU32(&pThis->cWaiters);
                 int rc2 = pthread_mutex_unlock(&pThis->Mutex);
-                AssertMsg(!rc2, ("Failed to unlock event multi sem %p, rc=%d.\n", EventMultiSem, rc2)); NOREF(rc2);
+                AssertMsg(!rc2, ("Failed to unlock event multi sem %p, rc=%d.\n", hEventMultiSem, rc2)); NOREF(rc2);
                 return RTErrConvertFromErrno(rc);
             }
         }
@@ -483,17 +494,17 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
 }
 
 
-RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
+RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies)
 {
-    int rc = rtSemEventMultiWait(EventMultiSem, cMillies, true);
+    int rc = rtSemEventMultiWait(hEventMultiSem, cMillies, true);
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
 
 
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
+RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies)
 {
-    return rtSemEventMultiWait(EventMultiSem, cMillies, false);
+    return rtSemEventMultiWait(hEventMultiSem, cMillies, false);
 }
 
 
