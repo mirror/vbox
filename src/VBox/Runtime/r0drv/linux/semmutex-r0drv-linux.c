@@ -93,12 +93,12 @@ AssertReleaseMsgFailed(("This mutex implementation is buggy, fix it!\n"));
 RT_EXPORT_SYMBOL(RTSemMutexCreate);
 
 
-RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
+RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX hMutexSem)
 {
     /*
      * Validate input.
      */
-    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)MutexSem;
+    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)hMutexSem;
     if (pThis == NIL_RTSEMMUTEX)
         return VINF_SUCCESS;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -119,10 +119,10 @@ RT_EXPORT_SYMBOL(RTSemMutexDestroy);
 
 
 #undef RTSemMutexRequest
-RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
+RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies)
 {
     int                 rc    = VINF_SUCCESS;
-    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)MutexSem;
+    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)hMutexSem;
 
     /*
      * Validate input.
@@ -197,12 +197,12 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
 RT_EXPORT_SYMBOL(RTSemMutexRequest);
 
 
-RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
+RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX hMutexSem)
 {
     /*
      * Validate input.
      */
-    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)MutexSem;
+    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)hMutexSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 

@@ -140,17 +140,17 @@ RTDECL(int) RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
 }
 
 
-RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
+RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX hMutexSem)
 {
     /*
      * Validate input.
      */
-    if (MutexSem == NIL_RTSEMMUTEX)
+    if (hMutexSem == NIL_RTSEMMUTEX)
         return VINF_SUCCESS;
-    struct RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    struct RTSEMMUTEXINTERNAL *pThis = hMutexSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC,
-                    ("MutexSem=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
+                    ("hMutexSem=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
                     VERR_INVALID_HANDLE);
 
     /*
@@ -193,12 +193,12 @@ RTDECL(uint32_t) RTSemMutexSetSubClass(RTSEMMUTEX hMutexSem, uint32_t uSubClass)
 }
 
 
-DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoResume, PCRTLOCKVALSRCPOS pSrcPos)
+DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies, bool fAutoResume, PCRTLOCKVALSRCPOS pSrcPos)
 {
     /*
      * Validate input.
      */
-    struct RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    struct RTSEMMUTEXINTERNAL *pThis = hMutexSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
@@ -342,53 +342,53 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
 
 
 #undef RTSemMutexRequest
-RTDECL(int) RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
+RTDECL(int) RTSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies)
 {
 #ifndef RTSEMMUTEX_STRICT
-    int rc = rtSemMutexRequest(MutexSem, cMillies, true, NULL);
+    int rc = rtSemMutexRequest(hMutexSem, cMillies, true, NULL);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    int rc = rtSemMutexRequest(MutexSem, cMillies, true, &SrcPos);
+    int rc = rtSemMutexRequest(hMutexSem, cMillies, true, &SrcPos);
 #endif
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
 
 
-RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    int rc = rtSemMutexRequest(MutexSem, cMillies, true, &SrcPos);
+    int rc = rtSemMutexRequest(hMutexSem, cMillies, true, &SrcPos);
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
 
 
 #undef RTSemMutexRequestNoResume
-RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
+RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, unsigned cMillies)
 {
 #ifndef RTSEMMUTEX_STRICT
-    return rtSemMutexRequest(MutexSem, cMillies, false, NULL);
+    return rtSemMutexRequest(hMutexSem, cMillies, false, NULL);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return rtSemMutexRequest(MutexSem, cMillies, false, &SrcPos);
+    return rtSemMutexRequest(hMutexSem, cMillies, false, &SrcPos);
 #endif
 }
 
 
-RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return rtSemMutexRequest(MutexSem, cMillies, false, &SrcPos);
+    return rtSemMutexRequest(hMutexSem, cMillies, false, &SrcPos);
 }
 
 
-RTDECL(int) RTSemMutexRelease(RTSEMMUTEX MutexSem)
+RTDECL(int) RTSemMutexRelease(RTSEMMUTEX hMutexSem)
 {
     /*
      * Validate input.
      */
-    struct RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    struct RTSEMMUTEXINTERNAL *pThis = hMutexSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
@@ -439,12 +439,12 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX MutexSem)
 }
 
 
-RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutex)
+RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem)
 {
     /*
      * Validate.
      */
-    RTSEMMUTEXINTERNAL *pThis = hMutex;
+    RTSEMMUTEXINTERNAL *pThis = hMutexSem;
     AssertPtrReturn(pThis, false);
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, false);
 

@@ -354,9 +354,10 @@ RTDECL(int) RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
  * Destroy a mutex semaphore.
  *
  * @returns iprt status code.
- * @param   MutexSem    The mutex semaphore to destroy.
+ * @param   hMutexSem           The mutex semaphore to destroy.  NIL is quitely
+ *                              ignored (VINF_SUCCESS).
  */
-RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem);
+RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX hMutexSem);
 
 /**
  * Changes the lock validator sub-class of the mutex semaphore.
@@ -384,10 +385,10 @@ RTDECL(uint32_t) RTSemMutexSetSubClass(RTSEMMUTEX hMutexSem, uint32_t uSubClass)
  *
  * @returns iprt status code.
  *          Will not return VERR_INTERRUPTED.
- * @param   MutexSem    The mutex semaphore to request ownership over.
- * @param   cMillies    The number of milliseconds to wait.
+ * @param   hMutexSem           The mutex semaphore to request ownership over.
+ * @param   cMillies            The number of milliseconds to wait.
  */
-RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies);
+RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies);
 
 /**
  * Request ownership of a mutex semaphore, return on interruption.
@@ -399,17 +400,17 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies);
  * RTSemMutexRelease() call.
  *
  * @returns iprt status code.
- * @param   MutexSem    The mutex semaphore to request ownership over.
- * @param   cMillies    The number of milliseconds to wait.
+ * @param   hMutexSem           The mutex semaphore to request ownership over.
+ * @param   cMillies            The number of milliseconds to wait.
  */
-RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies);
+RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, unsigned cMillies);
 
 /**
  * Debug version of RTSemMutexRequest that tracks the location.
  *
  * @returns iprt status code.
  *          Will not return VERR_INTERRUPTED.
- * @param   MutexSem            The mutex semaphore to request ownership over.
+ * @param   hMutexSem           The mutex semaphore to request ownership over.
  * @param   cMillies            The number of milliseconds to wait.
  * @param   uId                 Some kind of locking location ID.  Typically a
  *                              return address up the stack.  Optional (0).
@@ -419,13 +420,13 @@ RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies);
  * @param   pszFunction         The functionn where the lock is being acquired
  *                              from.  Optional.
  */
-RTDECL(int)  RTSemMutexRequestDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+RTDECL(int)  RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
  * Debug version of RTSemMutexRequestNoResume that tracks the location.
  *
  * @returns iprt status code.
- * @param   MutexSem            The mutex semaphore to request ownership over.
+ * @param   hMutexSem           The mutex semaphore to request ownership over.
  * @param   cMillies            The number of milliseconds to wait.
  * @param   uId                 Some kind of locking location ID.  Typically a
  *                              return address up the stack.  Optional (0).
@@ -435,24 +436,25 @@ RTDECL(int)  RTSemMutexRequestDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHC
  * @param   pszFunction         The functionn where the lock is being acquired
  *                              from.  Optional.
  */
-RTDECL(int)  RTSemMutexRequestNoResumeDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+RTDECL(int)  RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
  * Release the ownership of a mutex semaphore.
  *
  * @returns iprt status code.
- * @param   MutexSem    The mutex to release the ownership of.
- *                      It goes without saying the the calling thread must own it.
+ * @param   hMutexSem           The mutex to release the ownership of.  It goes
+ *                              without saying the the calling thread must own
+ *                              it.
  */
-RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem);
+RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX hMutexSem);
 
 /**
  * Checks if the mutex semaphore is owned or not.
  *
  * @returns true if owned, false if not.
- * @param   hMutex              The mutex semaphore.
+ * @param   hMutexSem           The mutex semaphore.
  */
-RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutex);
+RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem);
 
 /* Strict build: Remap the two request calls to the debug versions. */
 #ifdef RT_STRICT
@@ -491,9 +493,9 @@ RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem);
  * Destroy a fast mutex semaphore.
  *
  * @returns iprt status code.
- * @param   MutexSem    The mutex semaphore to destroy.
+ * @param   hMutexSem    The mutex semaphore to destroy.
  */
-RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem);
+RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX hMutexSem);
 
 /**
  * Request ownership of a fast mutex semaphore.
@@ -503,18 +505,18 @@ RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem);
  * RTSemMutexRelease() call.
  *
  * @returns iprt status code.
- * @param   MutexSem    The mutex semaphore to request ownership over.
+ * @param   hMutexSem    The mutex semaphore to request ownership over.
  */
-RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem);
+RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX hMutexSem);
 
 /**
  * Release the ownership of a fast mutex semaphore.
  *
  * @returns iprt status code.
- * @param   MutexSem    The mutex to release the ownership of.
+ * @param   hMutexSem    The mutex to release the ownership of.
  *                      It goes without saying the the calling thread must own it.
  */
-RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX MutexSem);
+RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX hMutexSem);
 
 /** @} */
 
