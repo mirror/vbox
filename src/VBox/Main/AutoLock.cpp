@@ -251,6 +251,13 @@ struct RWLockHandle::Data
 RWLockHandle::RWLockHandle()
 {
     m = new Data();
+/** @todo Lock order validation: There are two options here:
+ *  -# Use one RTLOCKVALCLASS (share it with WriteLockHandle) and then use
+ *     sub-classes (integers) to deal with lock ordering.
+ *  -# Use different classes (RTLOCKVALCLASS) for each object and only use
+ *     sub-classes to deal with things like the media tree.
+ */
+
     int vrc = RTSemRWCreate(&m->sem);
     AssertRC(vrc);
 
@@ -275,7 +282,13 @@ RWLockHandle::RWLockHandle()
 #ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
     validateLock(LOCKVAL_SRC_POS_ARGS);
 #endif
+#if defined(RT_STRICT) && defined(VBOX_WITH_DEBUG_LOCK_VALIDATOR)
+    int vrc = RTSemRWRequestWriteDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
+#elif defined(RT_STRICT)
+    int vrc = RTSemRWRequestWriteDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
+#else
     int vrc = RTSemRWRequestWrite(m->sem, RT_INDEFINITE_WAIT);
+#endif
     AssertRC(vrc);
 }
 
@@ -294,7 +307,13 @@ RWLockHandle::RWLockHandle()
 #ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
     validateLock(LOCKVAL_SRC_POS_ARGS);
 #endif
+#if defined(RT_STRICT) && defined(VBOX_WITH_DEBUG_LOCK_VALIDATOR)
+    int vrc = RTSemRWRequestReadDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
+#elif defined(RT_STRICT)
+    int vrc = RTSemRWRequestReadDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
+#else
     int vrc = RTSemRWRequestRead(m->sem, RT_INDEFINITE_WAIT);
+#endif
     AssertRC(vrc);
 }
 
@@ -309,6 +328,7 @@ RWLockHandle::RWLockHandle()
 
 /*virtual*/ uint32_t RWLockHandle::writeLockLevel() const
 {
+    /* Note! This does not include read recursions done by the writer! */
     return RTSemRWGetWriteRecursion(m->sem);
 }
 
