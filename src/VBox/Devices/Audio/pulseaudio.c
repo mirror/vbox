@@ -633,6 +633,7 @@ static int pulse_ctl_in (HWVoiceIn *hw, int cmd, ...)
             pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 0, stream_success_callback, pPulse));
             pa_threaded_mainloop_unlock(g_pMainLoop);
             break;
+
         case VOICE_DISABLE:
             pa_threaded_mainloop_lock(g_pMainLoop);
             if (pPulse->pu8PeekBuf)
@@ -643,6 +644,7 @@ static int pulse_ctl_in (HWVoiceIn *hw, int cmd, ...)
             pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 1, stream_success_callback, pPulse));
             pa_threaded_mainloop_unlock(g_pMainLoop);
             break;
+
         default:
             return -1;
     }
