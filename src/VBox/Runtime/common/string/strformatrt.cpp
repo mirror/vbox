@@ -112,8 +112,6 @@
  *                            full description of the specified status code.
  *      - \%Rra             - Takes an integer iprt status code as argument. Will insert the
  *                            status code define + full description.
- *      - \%Rt              - Current thread (RTThreadSelf()), no arguments.
- *
  *      - \%Rwc             - Takes a long Windows error code as argument. Will insert the status
  *                            code define corresponding to the Windows error code.
  *      - \%Rwf             - Takes a long Windows error code as argument. Will insert the

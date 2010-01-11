@@ -46,8 +46,6 @@ int main()
     RTLogPrintf("%%Rrf %d: %Rrf\n", VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER);
     RTLogPrintf("%%Rra %d: %Rra\n", VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER);
 
-    RTLogPrintf("%%Rt: %Rt\n");
-
     static uint8_t au8Hex[256];
     for (unsigned iHex = 0; iHex < sizeof(au8Hex); iHex++)
         au8Hex[iHex] = (uint8_t)iHex;
