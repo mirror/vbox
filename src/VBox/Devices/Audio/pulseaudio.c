@@ -48,7 +48,12 @@ static struct pa_context           *g_pContext;
 
 typedef struct PulseVoice
 {
-    HWVoiceOut     hw;
+    /** not accessed from within this context */
+    union
+    {
+        HWVoiceOut     In;
+        HWVoiceIn      Out;
+    } hw;
     /** DAC buffer */
     void           *pPCMBuf;
     /** Pulse stream */
