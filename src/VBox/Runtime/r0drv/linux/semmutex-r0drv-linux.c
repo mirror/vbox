@@ -119,7 +119,7 @@ RT_EXPORT_SYMBOL(RTSemMutexDestroy);
 
 
 #undef RTSemMutexRequest
-RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies)
+RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
     int                 rc    = VINF_SUCCESS;
     PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)hMutexSem;

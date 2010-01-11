@@ -58,7 +58,7 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 RT_EXPORT_SYMBOL(RTThreadNativeSelf);
 
 
-RTDECL(int) RTThreadSleep(unsigned cMillies)
+RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
 {
     long cJiffies = msecs_to_jiffies(cMillies);
     set_current_state(TASK_INTERRUPTIBLE);

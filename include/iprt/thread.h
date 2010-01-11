@@ -199,7 +199,7 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void);
  *                      0 milliseconds means yielding the timeslice - deprecated!
  * @remark  See RTThreadNanoSleep() for sleeping for smaller periods of time.
  */
-RTDECL(int) RTThreadSleep(unsigned cMillies);
+RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies);
 
 /**
  * Yields the CPU.
@@ -333,7 +333,7 @@ RTDECL(int) RTThreadSetType(RTTHREAD Thread, RTTHREADTYPE enmType);
  *                              an indefinite wait.
  * @param       prc             Where to store the return code of the thread. Optional.
  */
-RTDECL(int) RTThreadWait(RTTHREAD Thread, unsigned cMillies, int *prc);
+RTDECL(int) RTThreadWait(RTTHREAD Thread, RTMSINTERVAL cMillies, int *prc);
 
 /**
  * Wait for the thread to terminate, return on interruption.
@@ -344,7 +344,7 @@ RTDECL(int) RTThreadWait(RTTHREAD Thread, unsigned cMillies, int *prc);
  *                              an indefinite wait.
  * @param       prc             Where to store the return code of the thread. Optional.
  */
-RTDECL(int) RTThreadWaitNoResume(RTTHREAD Thread, unsigned cMillies, int *prc);
+RTDECL(int) RTThreadWaitNoResume(RTTHREAD Thread, RTMSINTERVAL cMillies, int *prc);
 
 /**
  * Gets the name of the current thread thread.
@@ -405,7 +405,7 @@ RTDECL(int) RTThreadUserSignal(RTTHREAD Thread);
  * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
  *                              an indefinite wait.
  */
-RTDECL(int) RTThreadUserWait(RTTHREAD Thread, unsigned cMillies);
+RTDECL(int) RTThreadUserWait(RTTHREAD Thread, RTMSINTERVAL cMillies);
 
 /**
  * Wait for the user event, return on interruption.
@@ -415,7 +415,7 @@ RTDECL(int) RTThreadUserWait(RTTHREAD Thread, unsigned cMillies);
  * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
  *                              an indefinite wait.
  */
-RTDECL(int) RTThreadUserWaitNoResume(RTTHREAD Thread, unsigned cMillies);
+RTDECL(int) RTThreadUserWaitNoResume(RTTHREAD Thread, RTMSINTERVAL cMillies);
 
 /**
  * Reset the user event.

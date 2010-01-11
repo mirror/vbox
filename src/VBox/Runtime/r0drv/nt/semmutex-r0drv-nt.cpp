@@ -122,7 +122,7 @@ RTDECL(int) RTSemMutexDestroy(RTSEMMUTEX hMutexSem)
  *                              (RTSemMutexRequestNoResume) or not
  *                              (RTSemMutexRequest).
  */
-static int rtSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies, BOOLEAN fInterruptible)
+static int rtSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, BOOLEAN fInterruptible)
 {
     /*
      * Validate input.
@@ -173,26 +173,26 @@ static int rtSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies, BOOLEAN fI
 
 
 #undef RTSemMutexRequest
-RTDECL(int) RTSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies)
+RTDECL(int) RTSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
     return rtSemMutexRequest(hMutexSem, cMillies, FALSE /*fInterruptible*/);
 }
 
 
-RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     return RTSemMutexRequest(hMutexSem, cMillies);
 }
 
 
 #undef RTSemMutexRequestNoResume
-RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, unsigned cMillies)
+RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
     return rtSemMutexRequest(hMutexSem, cMillies, TRUE /*fInterruptible*/);
 }
 
 
-RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     return RTSemMutexRequestNoResume(hMutexSem, cMillies);
 }

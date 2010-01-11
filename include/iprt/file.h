@@ -1194,8 +1194,8 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
  *                          completed requests from.
  * @param   cMinReqs        The minimum number of requests which have to
  *                          complete before this function returns.
- * @param   cMillisTimeout  The number of milliseconds to wait before returning
- *                          VERR_TIMEOUT. Use RT_INDEFINITE_WAIT to wait
+ * @param   cMillies        The number of milliseconds to wait before returning
+ *                          VERR_TIMEOUT.  Use RT_INDEFINITE_WAIT to wait
  *                          forever.
  * @param   pahReqs         Pointer to an array where the handles of the
  *                          completed requests will be stored on success.
@@ -1211,7 +1211,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
  *          uint32_t's, this is to avoid annoying warnings when using
  *          RT_ELEMENTS and similar macros.
  */
-RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMillisTimeout,
+RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, RTMSINTERVAL cMillies,
                              PRTFILEAIOREQ pahReqs, size_t cReqs, uint32_t *pcReqs);
 
 /**

@@ -42,7 +42,7 @@
 
 
 #undef RTSemEventMultiWait              /* undo debug mapping */
-RTDECL(int) RTSemEventMultiWait(RTSEMEVENTMULTI EventSem, unsigned cMillies)
+RTDECL(int) RTSemEventMultiWait(RTSEMEVENTMULTI EventSem, RTMSINTERVAL cMillies)
 {
     int rc;
     if (cMillies == RT_INDEFINITE_WAIT)
@@ -61,7 +61,7 @@ RTDECL(int) RTSemEventMultiWait(RTSEMEVENTMULTI EventSem, unsigned cMillies)
                 uint64_t u64Elapsed = RTTimeMilliTS() - u64Start;
                 if (u64Elapsed >= cMillies)
                     return VERR_TIMEOUT;
-                rc = RTSemEventMultiWaitNoResume(EventSem, cMillies - (unsigned)u64Elapsed);
+                rc = RTSemEventMultiWaitNoResume(EventSem, cMillies - (RTMSINTERVAL)u64Elapsed);
             } while (rc == VERR_INTERRUPTED);
         }
     }

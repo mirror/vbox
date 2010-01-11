@@ -806,7 +806,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
 }
 
 
-RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMillisTimeout,
+RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, RTMSINTERVAL cMillies,
                              PRTFILEAIOREQ pahReqs, size_t cReqs, uint32_t *pcReqs)
 {
     int rc = VINF_SUCCESS;
@@ -831,10 +831,10 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
     if (RT_UNLIKELY(cMinReqs > (uint32_t)cRequestsWaiting))
         return VERR_INVALID_PARAMETER;
 
-    if (cMillisTimeout != RT_INDEFINITE_WAIT)
+    if (cMillies != RT_INDEFINITE_WAIT)
     {
-        Timeout.tv_sec  = cMillisTimeout / 1000;
-        Timeout.tv_nsec = (cMillisTimeout % 1000) * 1000000;
+        Timeout.tv_sec  = cMillies / 1000;
+        Timeout.tv_nsec = (cMillies % 1000) * 1000000;
         pTimeout = &Timeout;
         StartNanoTS = RTTimeNanoTS();
     }
@@ -963,13 +963,13 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
             if (!cMinReqs)
                 break;
 
-            if (cMillisTimeout != RT_INDEFINITE_WAIT)
+            if (cMillies != RT_INDEFINITE_WAIT)
             {
                 uint64_t TimeDiff;
 
                 /* Recalculate the timeout. */
                 TimeDiff = RTTimeSystemNanoTS() - StartNanoTS;
-                Timeout.tv_sec = Timeout.tv_sec - (TimeDiff / 1000000);
+                Timeout.tv_sec  = Timeout.tv_sec  - (TimeDiff / 1000000);
                 Timeout.tv_nsec = Timeout.tv_nsec - (TimeDiff % 1000000);
             }
 

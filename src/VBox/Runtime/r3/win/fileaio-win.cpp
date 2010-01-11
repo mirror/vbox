@@ -385,7 +385,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
     return rc;
 }
 
-RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMillisTimeout,
+RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, RTMSINTERVAL cMillies,
                              PRTFILEAIOREQ pahReqs, size_t cReqs, uint32_t *pcReqs)
 {
     /*
@@ -416,16 +416,16 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
     int rc = VINF_SUCCESS;
     int cRequestsCompleted = 0;
     while (   !pCtxInt->fWokenUp
-           && (cMinReqs > 0))
+           && cMinReqs > 0)
     {
         uint64_t     StartNanoTS = 0;
-        DWORD        dwTimeout = cMillisTimeout == RT_INDEFINITE_WAIT ? INFINITE : cMillisTimeout;
+        DWORD        dwTimeout = cMillies == RT_INDEFINITE_WAIT ? INFINITE : cMillies;
         DWORD        cbTransfered;
         LPOVERLAPPED pOverlapped;
         ULONG_PTR    lCompletionKey;
         BOOL         fSucceeded;
 
-        if (cMillisTimeout != RT_INDEFINITE_WAIT)
+        if (cMillies != RT_INDEFINITE_WAIT)
             StartNanoTS = RTTimeNanoTS();
 
         ASMAtomicXchgBool(&pCtxInt->fWaiting, true);
@@ -445,37 +445,38 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
         /* Check if we got woken up. */
         if (lCompletionKey == AIO_CONTEXT_WAKEUP_EVENT)
             break;
-        else
+
+        /* A request completed. */
+        PRTFILEAIOREQINTERNAL pReqInt = OVERLAPPED_2_RTFILEAIOREQINTERNAL(pOverlapped);
+        AssertPtr(pReqInt);
+        Assert(pReqInt->u32Magic == RTFILEAIOREQ_MAGIC);
+
+        /* Mark the request as finished. */
+        RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
+
+        /* completion status. */
+        DWORD cbTransfered;
+        fSucceeded = GetOverlappedResult(pReqInt->hFile,
+                                         &pReqInt->Overlapped,
+                                         &cbTransfered,
+                                         FALSE);
+        pReqInt->cbTransfered = cbTransfered;
+        pReqInt->Rc = VINF_SUCCESS;
+
+        pahReqs[cRequestsCompleted++] = (RTFILEAIOREQ)pReqInt;
+
+        /* Update counter. */
+        cMinReqs--;
+
+        if (cMillies != RT_INDEFINITE_WAIT)
         {
-            /* A request completed. */
-            PRTFILEAIOREQINTERNAL pReqInt = OVERLAPPED_2_RTFILEAIOREQINTERNAL(pOverlapped);
-            AssertPtr(pReqInt);
-            Assert(pReqInt->u32Magic == RTFILEAIOREQ_MAGIC);
-
-            /* Mark the request as finished. */
-            RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
-
-            /* completion status. */
-            DWORD cbTransfered;
-            fSucceeded = GetOverlappedResult(pReqInt->hFile,
-                                             &pReqInt->Overlapped,
-                                             &cbTransfered,
-                                             FALSE);
-            pReqInt->cbTransfered = cbTransfered;
-            pReqInt->Rc = VINF_SUCCESS;
-
-            pahReqs[cRequestsCompleted++] = (RTFILEAIOREQ)pReqInt;
-
-            /* Update counter. */
-            cMinReqs --;
-
-            if (cMillisTimeout != RT_INDEFINITE_WAIT)
-            {
-                /* Recalculate timeout. */
-                uint64_t NanoTS = RTTimeNanoTS();
-                uint64_t cMilliesElapsed = (NanoTS - StartNanoTS) / 1000000;
-                cMillisTimeout -= cMilliesElapsed;
-            }
+            /* Recalculate timeout. */
+            uint64_t NanoTS = RTTimeNanoTS();
+            uint64_t cMilliesElapsed = (NanoTS - StartNanoTS) / 1000000;
+            if (cMilliesElapsed < cMillies)
+                cMillies -= cMilliesElapsed;
+            else
+                cMillies = 0;
         }
     }
 

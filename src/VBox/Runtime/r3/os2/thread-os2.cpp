@@ -175,7 +175,7 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 }
 
 
-RTDECL(int)   RTThreadSleep(unsigned cMillies)
+RTDECL(int)   RTThreadSleep(RTMSINTERVAL cMillies)
 {
     LogFlow(("RTThreadSleep: cMillies=%d\n", cMillies));
     DosSleep(cMillies);

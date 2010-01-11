@@ -993,7 +993,7 @@ RT_EXPORT_SYMBOL(RTThreadUserSignal);
  * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
  *                              an indefinite wait.
  */
-RTDECL(int) RTThreadUserWait(RTTHREAD Thread, unsigned cMillies)
+RTDECL(int) RTThreadUserWait(RTTHREAD Thread, RTMSINTERVAL cMillies)
 {
     int             rc;
     PRTTHREADINT    pThread = rtThreadGet(Thread);
@@ -1017,7 +1017,7 @@ RT_EXPORT_SYMBOL(RTThreadUserWait);
  * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
  *                              an indefinite wait.
  */
-RTDECL(int) RTThreadUserWaitNoResume(RTTHREAD Thread, unsigned cMillies)
+RTDECL(int) RTThreadUserWaitNoResume(RTTHREAD Thread, RTMSINTERVAL cMillies)
 {
     int             rc;
     PRTTHREADINT    pThread = rtThreadGet(Thread);
@@ -1065,7 +1065,7 @@ RT_EXPORT_SYMBOL(RTThreadUserReset);
  * @param       prc             Where to store the return code of the thread. Optional.
  * @param       fAutoResume     Whether or not to resume the wait on VERR_INTERRUPTED.
  */
-static int rtThreadWait(RTTHREAD Thread, unsigned cMillies, int *prc, bool fAutoResume)
+static int rtThreadWait(RTTHREAD Thread, RTMSINTERVAL cMillies, int *prc, bool fAutoResume)
 {
     int rc = VERR_INVALID_HANDLE;
     if (Thread != NIL_RTTHREAD)
@@ -1115,7 +1115,7 @@ static int rtThreadWait(RTTHREAD Thread, unsigned cMillies, int *prc, bool fAuto
  *                              an indefinite wait.
  * @param       prc             Where to store the return code of the thread. Optional.
  */
-RTDECL(int) RTThreadWait(RTTHREAD Thread, unsigned cMillies, int *prc)
+RTDECL(int) RTThreadWait(RTTHREAD Thread, RTMSINTERVAL cMillies, int *prc)
 {
     int rc = rtThreadWait(Thread, cMillies, prc, true);
     Assert(rc != VERR_INTERRUPTED);
@@ -1133,7 +1133,7 @@ RT_EXPORT_SYMBOL(RTThreadWait);
  *                              an indefinite wait.
  * @param       prc             Where to store the return code of the thread. Optional.
  */
-RTDECL(int) RTThreadWaitNoResume(RTTHREAD Thread, unsigned cMillies, int *prc)
+RTDECL(int) RTThreadWaitNoResume(RTTHREAD Thread, RTMSINTERVAL cMillies, int *prc)
 {
     return rtThreadWait(Thread, cMillies, prc, false);
 }

@@ -53,7 +53,7 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 }
 
 
-RTDECL(int)   RTThreadSleep(unsigned cMillies)
+RTDECL(int)   RTThreadSleep(RTMSINTERVAL cMillies)
 {
     LARGE_INTEGER Interval;
     Interval.QuadPart = -(int64_t)cMillies * 10000;

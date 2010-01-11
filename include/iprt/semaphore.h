@@ -122,7 +122,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem);
  * @param   hEventSem           The event semaphore to wait on.
  * @param   cMillies            Number of milliseconds to wait.
  */
-RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies);
+RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies);
 
 /**
  * Wait for the event semaphore to be signaled, return on interruption.
@@ -133,7 +133,7 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies);
  * @param   hEventSem           The event semaphore to wait on.
  * @param   cMillies            Number of milliseconds to wait.
  */
-RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, unsigned cMillies);
+RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies);
 
 /**
  * Sets the signaller thread to one specific thread.
@@ -250,7 +250,7 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem);
  * @param   hEventMultiSem      The multiple release event sempahore.
  * @param   cMillies            Number of milliseconds to wait.
  */
-RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies);
+RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies);
 
 
 /**
@@ -262,7 +262,7 @@ RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, unsigned cMilli
  * @param   hEventMultiSem      The multiple release event sempahore.
  * @param   cMillies            Number of milliseconds to wait.
  */
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies);
+RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies);
 
 /**
  * Sets the signaller thread to one specific thread.
@@ -388,7 +388,7 @@ RTDECL(uint32_t) RTSemMutexSetSubClass(RTSEMMUTEX hMutexSem, uint32_t uSubClass)
  * @param   hMutexSem           The mutex semaphore to request ownership over.
  * @param   cMillies            The number of milliseconds to wait.
  */
-RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies);
+RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies);
 
 /**
  * Request ownership of a mutex semaphore, return on interruption.
@@ -403,7 +403,7 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies);
  * @param   hMutexSem           The mutex semaphore to request ownership over.
  * @param   cMillies            The number of milliseconds to wait.
  */
-RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, unsigned cMillies);
+RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies);
 
 /**
  * Debug version of RTSemMutexRequest that tracks the location.
@@ -420,7 +420,7 @@ RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, unsigned cMillies);
  * @param   pszFunction         The functionn where the lock is being acquired
  *                              from.  Optional.
  */
-RTDECL(int)  RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+RTDECL(int)  RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
  * Debug version of RTSemMutexRequestNoResume that tracks the location.
@@ -436,7 +436,7 @@ RTDECL(int)  RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, unsigned cMillies, RTH
  * @param   pszFunction         The functionn where the lock is being acquired
  *                              from.  Optional.
  */
-RTDECL(int)  RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+RTDECL(int)  RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
  * Release the ownership of a mutex semaphore.
@@ -975,7 +975,7 @@ RTDECL(int) RTSemPong(PRTPINGPONG pPP);
  * @param   pPP         Pointer to the ping-pong structure to wait on.
  * @param   cMillies    Number of milliseconds to wait.
  */
-RTDECL(int) RTSemPingWait(PRTPINGPONG pPP, unsigned cMillies);
+RTDECL(int) RTSemPingWait(PRTPINGPONG pPP, RTMSINTERVAL cMillies);
 
 /**
  * Wait function for the pong thread.
@@ -985,7 +985,7 @@ RTDECL(int) RTSemPingWait(PRTPINGPONG pPP, unsigned cMillies);
  * @param   pPP         Pointer to the ping-pong structure to wait on.
  * @param   cMillies    Number of milliseconds to wait.
  */
-RTDECL(int) RTSemPongWait(PRTPINGPONG pPP, unsigned cMillies);
+RTDECL(int) RTSemPongWait(PRTPINGPONG pPP, RTMSINTERVAL cMillies);
 
 
 /**

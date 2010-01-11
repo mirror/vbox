@@ -197,7 +197,7 @@ RTR3DECL(int)  RTTcpFlush(RTSOCKET Sock);
  * @param   cMillies    Number of milliseconds to wait for the socket.
  *                      Use RT_INDEFINITE_WAIT to wait for ever.
  */
-RTR3DECL(int)  RTTcpSelectOne(RTSOCKET Sock, unsigned cMillies);
+RTR3DECL(int)  RTTcpSelectOne(RTSOCKET Sock, RTMSINTERVAL cMillies);
 
 
 #if 0 /* skipping these for now - RTTcpServer* handles this. */

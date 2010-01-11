@@ -262,7 +262,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestRead(RTSEMRW hRWSem, RTMSINTERVAL cMillies,
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
-    unsigned        cMilliesInitial = cMillies;
+    RTMSINTERVAL    cMilliesInitial = cMillies;
     uint64_t        tsStart = 0;
     if (cMillies != RT_INDEFINITE_WAIT && cMillies != 0)
         tsStart = RTTimeNanoTS();
@@ -352,7 +352,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestRead(RTSEMRW hRWSem, RTMSINTERVAL cMillies,
             {
                 tsDelta /= 1000000;
                 if ((uint64_t)tsDelta < cMilliesInitial)
-                    cMilliesInitial = (unsigned)tsDelta;
+                    cMilliesInitial = (RTMSINTERVAL)tsDelta;
                 else
                     cMilliesInitial = 1;
             }
@@ -554,12 +554,12 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW hRWSem, RTMSINTERVAL cMillies
     /*
      * Validate handle.
      */
-    struct RTSEMRWINTERNAL *pThis = hRWSem;
+    struct RTSEMRWINTERNAL *pThis   = hRWSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
 
-    unsigned    cMilliesInitial = cMillies;
-    uint64_t    tsStart = 0;
+    RTMSINTERVAL    cMilliesInitial = cMillies;
+    uint64_t        tsStart         = 0;
     if (cMillies != RT_INDEFINITE_WAIT && cMillies != 0)
         tsStart = RTTimeNanoTS();
 
@@ -642,7 +642,7 @@ DECL_FORCE_INLINE(int) rtSemRWRequestWrite(RTSEMRW hRWSem, RTMSINTERVAL cMillies
             {
                 tsDelta /= 1000000;
                 if ((uint64_t)tsDelta < cMilliesInitial)
-                    cMilliesInitial = (unsigned)tsDelta;
+                    cMilliesInitial = (RTMSINTERVAL)tsDelta;
                 else
                     cMilliesInitial = 1;
             }
