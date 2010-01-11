@@ -290,7 +290,7 @@ VMMR3DECL(int) PDMR3ThreadCreateExternal(PVM pVM, PPPDMTHREAD ppThread, void *pv
 VMMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread);
 VMMR3DECL(int) PDMR3ThreadIAmSuspending(PPDMTHREAD pThread);
 VMMR3DECL(int) PDMR3ThreadIAmRunning(PPDMTHREAD pThread);
-VMMR3DECL(int) PDMR3ThreadSleep(PPDMTHREAD pThread, unsigned cMillies);
+VMMR3DECL(int) PDMR3ThreadSleep(PPDMTHREAD pThread, RTMSINTERVAL cMillies);
 VMMR3DECL(int) PDMR3ThreadSuspend(PPDMTHREAD pThread);
 VMMR3DECL(int) PDMR3ThreadResume(PPDMTHREAD pThread);
 #endif /* IN_RING3 */

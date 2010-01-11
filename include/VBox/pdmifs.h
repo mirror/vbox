@@ -2103,7 +2103,7 @@ typedef struct PDMINETWORKPORT
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   cMillies        Number of milliseconds to wait. 0 means return immediately.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWaitReceiveAvail,(PPDMINETWORKPORT pInterface, unsigned cMillies));
+    DECLR3CALLBACKMEMBER(int, pfnWaitReceiveAvail,(PPDMINETWORKPORT pInterface, RTMSINTERVAL cMillies));
 
     /**
      * Receive data from the network.

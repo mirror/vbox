@@ -518,7 +518,7 @@ static DECLCALLBACK(int) drvvdINIPClientClose(RTSOCKET Sock)
 }
 
 /** @copydoc VDINTERFACETCPNET::pfnSelectOne */
-static DECLCALLBACK(int) drvvdINIPSelectOne(RTSOCKET Sock, unsigned cMillies)
+static DECLCALLBACK(int) drvvdINIPSelectOne(RTSOCKET Sock, RTMSINTERVAL cMillies)
 {
     fd_set fdsetR;
     FD_ZERO(&fdsetR);

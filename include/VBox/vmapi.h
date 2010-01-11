@@ -370,9 +370,9 @@ VMMR3DECL(int)      VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnA
 VMMR3DECL(int)      VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
 VMMR3DECL(int)      VMR3SetRuntimeErrorWorker(PVM pVM);
 VMMR3DECL(uint32_t) VMR3GetRuntimeErrorCount(PVM pVM);
-VMMR3DECL(int)      VMR3ReqCall(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)      VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)      VMR3ReqCallVU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
+VMMR3DECL(int)      VMR3ReqCall(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINTERVAL cMillies, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
+VMMR3DECL(int)      VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINTERVAL cMillies, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
+VMMR3DECL(int)      VMR3ReqCallVU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINTERVAL cMillies, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
 VMMR3DECL(int)      VMR3ReqCallWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...);
 VMMR3DECL(int)      VMR3ReqCallWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...);
 VMMR3DECL(int)      VMR3ReqCallNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...);
@@ -384,8 +384,8 @@ VMMR3DECL(int)      VMR3ReqCallVoidNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pf
 VMMR3DECL(int)      VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUID idDstCpu);
 VMMR3DECL(int)      VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUID idDstCpu);
 VMMR3DECL(int)      VMR3ReqFree(PVMREQ pReq);
-VMMR3DECL(int)      VMR3ReqQueue(PVMREQ pReq, unsigned cMillies);
-VMMR3DECL(int)      VMR3ReqWait(PVMREQ pReq, unsigned cMillies);
+VMMR3DECL(int)      VMR3ReqQueue(PVMREQ pReq, RTMSINTERVAL cMillies);
+VMMR3DECL(int)      VMR3ReqWait(PVMREQ pReq, RTMSINTERVAL cMillies);
 VMMR3DECL(int)      VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu);
 VMMR3DECL(void)     VMR3NotifyGlobalFFU(PUVM pUVM, uint32_t fFlags);
 VMMR3DECL(void)     VMR3NotifyCpuFFU(PUVMCPU pUVMCpu, uint32_t fFlags);

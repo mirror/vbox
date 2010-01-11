@@ -786,18 +786,18 @@ static uint64_t tmR3CalibrateTSC(PVM pVM)
     unsigned                i;
     for (i = 0; i < RT_ELEMENTS(au64Samples); i++)
     {
-        unsigned    cMillies;
-        int         cTries   = 5;
-        uint64_t    u64Start = ASMReadTSC();
-        uint64_t    u64End;
-        uint64_t    StartTS  = RTTimeNanoTS();
-        uint64_t    EndTS;
+        RTMSINTERVAL    cMillies;
+        int             cTries   = 5;
+        uint64_t        u64Start = ASMReadTSC();
+        uint64_t        u64End;
+        uint64_t        StartTS  = RTTimeNanoTS();
+        uint64_t        EndTS;
         do
         {
             RTThreadSleep(s_auSleep[i]);
             u64End = ASMReadTSC();
             EndTS  = RTTimeNanoTS();
-            cMillies = (unsigned)((EndTS - StartTS + 500000) / 1000000);
+            cMillies = (RTMSINTERVAL)((EndTS - StartTS + 500000) / 1000000);
         } while (   cMillies == 0       /* the sleep may be interrupted... */
                  || (cMillies < 20 && --cTries > 0));
         uint64_t    u64Diff = u64End - u64Start;

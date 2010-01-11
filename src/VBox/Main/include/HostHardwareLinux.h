@@ -201,7 +201,7 @@ public:
      * @returns  Possibly other iprt status codes otherwise.
      * @param    cMillies   How long to wait for at most.
      */
-    int Wait (unsigned cMillies);
+    int Wait (RTMSINTERVAL cMillies);
     /**
      * Interrupts an active wait.  In the current implementation, the wait
      * may not return until up to two seconds after calling this method.

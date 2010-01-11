@@ -164,7 +164,7 @@ static DECLCALLBACK(void) drvNetSnifferNotifyLinkChanged(PPDMINETWORKCONNECTOR p
  * @param   pInterface      Pointer to the interface structure containing the called function pointer.
  * @thread  EMT
  */
-static DECLCALLBACK(int) drvNetSnifferWaitReceiveAvail(PPDMINETWORKPORT pInterface, unsigned cMillies)
+static DECLCALLBACK(int) drvNetSnifferWaitReceiveAvail(PPDMINETWORKPORT pInterface, RTMSINTERVAL cMillies)
 {
     PDRVNETSNIFFER pThis = PDMINETWORKPORT_2_DRVNETSNIFFER(pInterface);
     return pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, cMillies);

@@ -711,7 +711,7 @@ VMMR3DECL(int) PDMR3ThreadIAmRunning(PPDMTHREAD pThread)
  * @param   pThread     The PDM thread.
  * @param   cMillies    The number of milliseconds to sleep.
  */
-VMMR3DECL(int) PDMR3ThreadSleep(PPDMTHREAD pThread, unsigned cMillies)
+VMMR3DECL(int) PDMR3ThreadSleep(PPDMTHREAD pThread, RTMSINTERVAL cMillies)
 {
     /*
      * Assert sanity.

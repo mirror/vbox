@@ -467,7 +467,7 @@ VBoxMainHotplugWaiter::~VBoxMainHotplugWaiter ()
 /* Currently this is implemented using a timed out wait on our private DBus
  * connection.  Because the connection is private we don't have to worry about
  * blocking other users. */
-int VBoxMainHotplugWaiter::Wait(unsigned cMillies)
+int VBoxMainHotplugWaiter::Wait(RTMSINTERVAL cMillies)
 {
     int rc = VINF_SUCCESS;
 #if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
