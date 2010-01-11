@@ -26,7 +26,8 @@ if test -z "$3"; then
     exit 1
 fi
 
-VBOX_INSTALLED_DIR=$1
+VBOX_BASEPKG_DIR=$1
+VBOX_INSTALLED_DIR="$VBOX_BASEPKG_DIR"/opt/VirtualBoxAdditions
 VBOX_PKGFILENAME=$2
 VBOX_SVN_REV=$3
 
@@ -52,8 +53,15 @@ filelist_fixup()
     mv -f "tmp-$1" "$1"
 }
 
-# prepare file list
+
+# Create relative hardlinks
 cd "$VBOX_INSTALLED_DIR"
+ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxService
+ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxClient
+ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxControl
+
+# prepare file list
+cd "$VBOX_BASEPKG_DIR"
 echo 'i pkginfo=./vboxguest.pkginfo' > prototype
 echo 'i postinstall=./postinstall.sh' >> prototype
 echo 'i preremove=./preremove.sh' >> prototype
@@ -62,51 +70,24 @@ echo 'i depend=./vboxguest.depend' >> prototype
 if test -f "./vboxguest.copyright"; then
     echo 'i copyright=./vboxguest.copyright' >> prototype
 fi
-find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|postinstall.sh|preremove.sh|vboxguest.space|vboxguest.depend|vboxguest.copyright' | pkgproto >> prototype
+
+# Exclude directory entries to not cause conflicts (owner,group) with existing directories in the system
+find . ! -type d | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|postinstall.sh|preremove.sh|vboxguest.space|vboxguest.depend|vboxguest.copyright' | pkgproto >> prototype
+
+# Include only opt/VirtualBoxAdditions and subdirectories as we want uninstall to clean up directory structure as well
+find . -type d | $VBOX_GGREP -E 'opt/VirtualBoxAdditions' | pkgproto >> prototype
 
 # don't grok for the class files
-filelist_fixup prototype '$2 == "none"'                                                     '$5 = "root"; $6 = "bin"'
-filelist_fixup prototype '$2 == "none"'                                                     '$3 = "opt/VirtualBoxAdditions/"$3"="$3'
+filelist_fixup prototype '$2 == "none"'                                                                      '$5 = "root"; $6 = "bin"'
 
 # VBoxService requires suid
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/VBoxService=VBoxService"'              '$4 = "4755"'
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxService=amd64/VBoxService"'  '$4 = "4755"'
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/VBoxService"'                                       '$4 = "4755"'
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxService"'                                 '$4 = "4755"'
 
-# 32-bit vboxguest
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest=vboxguest"'              '$3 = "usr/kernel/drv/vboxguest=vboxguest"; $6="sys"'
+# vboxguest
+filelist_fixup prototype '$3 == "usr/kernel/drv/vboxguest"'                                                  '$6="sys"'
+filelist_fixup prototype '$3 == "usr/kernel/drv/amd64/vboxguest"'                                            '$6="sys"'
 
-# 64-bit vboxguest
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxguest=amd64/vboxguest"'  '$3 = "usr/kernel/drv/amd64/vboxguest=amd64/vboxguest"; $6="sys"'
-
-# vboxguest module config file
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest.conf=vboxguest.conf"'    '$3 = "usr/kernel/drv/vboxguest.conf=vboxguest.conf"'
-
-# vboxfsmount binary (always 32-bit on combined package)
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxfsmount=vboxfsmount"'         '$3 = "etc/fs/vboxfs/mount=vboxfsmount"; $6="sys"'
-
-# this is required for amd64-specific package where we do not build 32-bit binaries
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxfsmount=amd64/vboxfsmount"'   '$3 = "etc/fs/vboxfs/mount=amd64/vboxfsmount"; $6="sys"'
-
-# crogl 32-bit opengl fixup
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/VBoxOGL.so=VBoxOGL.so"'                             '$3 = "usr/lib/VBoxOGL.so=VBoxOGL.so"; $6="sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/VBoxOGLcrutil.so=VBoxOGLcrutil.so"'                 '$3 = "usr/lib/VBoxOGLcrutil.so=VBoxOGLcrutil.so"; $6="sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/VBoxOGLfeedbackspu.so=VBoxOGLfeedbackspu.so"'       '$3 = "usr/lib/VBoxOGLfeedbackspu.so=VBoxOGLfeedbackspu.so"; $6="sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/VBoxOGLpassthroughspu.so=VBoxOGLpassthroughspu.so"' '$3 = "usr/lib/VBoxOGLpassthroughspu.so=VBoxOGLpassthroughspu.so"; $6="sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/VBoxOGLarrayspu.so=VBoxOGLarrayspu.so"'             '$3 = "usr/lib/VBoxOGLarrayspu.so=VBoxOGLarrayspu.so"; $6="sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/VBoxOGLerrorspu.so=VBoxOGLerrorspu.so"'             '$3 = "usr/lib/VBoxOGLerrorspu.so=VBoxOGLerrorspu.so"; $6="sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/VBoxOGLpackspu.so=VBoxOGLpackspu.so"'               '$3 = "usr/lib/VBoxOGLpackspu.so=VBoxOGLpackspu.so"; $6="sys"'
-
-# crogl 64-bit opengl fixup
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxOGL.so=amd64/VBoxOGL.so"'                             '$3 = "usr/lib/amd64/VBoxOGL.so=amd64/VBoxOGL.so"; $6="sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxOGLcrutil.so=amd64/VBoxOGLcrutil.so"'                 '$3 = "usr/lib/amd64/VBoxOGLcrutil.so=amd64/VBoxOGLcrutil.so"; $6="sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxOGLfeedbackspu.so=amd64/VBoxOGLfeedbackspu.so"'       '$3 = "usr/lib/amd64/VBoxOGLfeedbackspu.so=amd64/VBoxOGLfeedbackspu.so"; $6="sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxOGLpassthroughspu.so=amd64/VBoxOGLpassthroughspu.so"' '$3 = "usr/lib/amd64/VBoxOGLpassthroughspu.so=amd64/VBoxOGLpassthroughspu.so"; $6="sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxOGLarrayspu.so=amd64/VBoxOGLarrayspu.so"'             '$3 = "usr/lib/amd64/VBoxOGLarrayspu.so=amd64/VBoxOGLarrayspu.so"; $6="sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxOGLerrorspu.so=amd64/VBoxOGLerrorspu.so"'             '$3 = "usr/lib/amd64/VBoxOGLerrorspu.so=amd64/VBoxOGLerrorspu.so"; $6="sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxOGLpackspu.so=amd64/VBoxOGLpackspu.so"'               '$3 = "usr/lib/amd64/VBoxOGLpackspu.so=amd64/VBoxOGLpackspu.so"; $6="sys"'
-
-
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxservice.xml=vboxservice.xml"'  '$3 = "var/svc/manifest/system/virtualbox/vboxservice.xml=vboxservice.xml"'
 echo " --- start of prototype  ---"
 cat prototype
 echo " --- end of prototype --- "
