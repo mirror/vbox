@@ -62,19 +62,29 @@ typedef struct RTSEMMUTEXINTERNAL
 } RTSEMMUTEXINTERNAL, *PRTSEMMUTEXINTERNAL;
 
 
-/* Undefine debug mappings. */
-#undef RTSemMutexRequest
-#undef RTSemMutexRequestNoResume
 
-
-RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
+RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX phMutexSem)
 {
-    PRTSEMMUTEXINTERNAL pMutexInt = (PRTSEMMUTEXINTERNAL)RTMemAlloc(sizeof(*pMutexInt));
-    if (pMutexInt)
+    return RTSemMutexCreateEx(phMutexSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
+}
+
+
+RTDECL(int)  RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
+                                RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszNameFmt, ...)
+{
+    PRTSEMMUTEXINTERNAL pThis;
+
+    AssertReturn(!(fFlags & ~RTSEMMUTEX_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+
+    pThis = (PRTSEMMUTEXINTERNAL)RTMemAlloc(sizeof(*pThis));
+    if (pThis)
     {
-        pMutexInt->u32Magic = RTSEMMUTEX_MAGIC;
-        init_waitqueue_head(&pMutexInt->Head);
-        *pMutexSem = pMutexInt;
+        pThis->u32Magic   = RTSEMMUTEX_MAGIC;
+        pThis->cRecursion = 0;
+        pThis->pOwner     = NULL;
+        init_waitqueue_head(&pThis->Head);
+
+        *phMutexSem = pThis;
 AssertReleaseMsgFailed(("This mutex implementation is buggy, fix it!\n"));
         return VINF_SUCCESS;
     }
@@ -88,78 +98,69 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
     /*
      * Validate input.
      */
-    PRTSEMMUTEXINTERNAL pMutexInt = (PRTSEMMUTEXINTERNAL)MutexSem;
-    if (!pMutexInt)
-        return VERR_INVALID_PARAMETER;
-    if (pMutexInt->u32Magic != RTSEMMUTEX_MAGIC)
-    {
-        AssertMsgFailed(("pMutexInt->u32Magic=%RX32 pMutexInt=%p\n", pMutexInt->u32Magic, pMutexInt));
-        return VERR_INVALID_PARAMETER;
-    }
+    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)MutexSem;
+    if (pThis == NIL_RTSEMMUTEX)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Invalidate it and signal the object just in case.
      */
-    ASMAtomicIncU32(&pMutexInt->u32Magic);
-    ASMAtomicXchgU32(&pMutexInt->cRecursion, 0);
-    Assert(!waitqueue_active(&pMutexInt->Head));
-    wake_up_all(&pMutexInt->Head);
-    RTMemFree(pMutexInt);
+    AssertReturn(ASMAtomicCmpXchgU32(&pThis->u32Magic, RTSEMMUTEX_MAGIC_DEAD, RTSEMMUTEX_MAGIC), VERR_INVALID_HANDLE);
+    ASMAtomicWriteU32(&pThis->cRecursion, 0);
+    Assert(!waitqueue_active(&pThis->Head));
+    wake_up_all(&pThis->Head);
+
+    RTMemFree(pThis);
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTSemMutexDestroy);
 
 
+#undef RTSemMutexRequest
 RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
 {
+    int                 rc    = VINF_SUCCESS;
+    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)MutexSem;
+
     /*
      * Validate input.
      */
-    PRTSEMMUTEXINTERNAL pMutexInt = (PRTSEMMUTEXINTERNAL)MutexSem;
-    if (!pMutexInt)
-        return VERR_INVALID_PARAMETER;
-    if (    !pMutexInt
-        ||  pMutexInt->u32Magic != RTSEMMUTEX_MAGIC)
-    {
-        AssertMsgFailed(("pMutexInt->u32Magic=%RX32 pMutexInt=%p\n", pMutexInt ? pMutexInt->u32Magic : 0, pMutexInt));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
     /*
      * Check for recursive request.
      */
-    if (pMutexInt->pOwner == current)
+    if (pThis->pOwner == current)
     {
-        Assert(pMutexInt->cRecursion < 1000);
-        ASMAtomicIncU32(&pMutexInt->cRecursion);
+        Assert(pThis->cRecursion < 1000);
+        ASMAtomicIncU32(&pThis->cRecursion);
         return VINF_SUCCESS;
     }
 
     /*
      * Try aquire it.
      */
-    if (ASMAtomicCmpXchgU32(&pMutexInt->cRecursion, 1, 0))
-    {
-        ASMAtomicXchgPtr(&pMutexInt->pOwner, current);
-        return VINF_SUCCESS;
-    }
+    if (ASMAtomicCmpXchgU32(&pThis->cRecursion, 1, 0))
+        ASMAtomicWritePtr(&pThis->pOwner, current);
     else
     {
         /*
          * Ok wait for it.
          */
         DEFINE_WAIT(Wait);
-        int     rc       = VINF_SUCCESS;
         long    lTimeout = cMillies == RT_INDEFINITE_WAIT ? MAX_SCHEDULE_TIMEOUT : msecs_to_jiffies(cMillies);
         for (;;)
         {
             /* make everything thru schedule() atomic scheduling wise. */
-            prepare_to_wait(&pMutexInt->Head, &Wait, TASK_INTERRUPTIBLE);
+            prepare_to_wait(&pThis->Head, &Wait, TASK_INTERRUPTIBLE);
 
             /* check the condition. */
-            if (ASMAtomicCmpXchgU32(&pMutexInt->cRecursion, 1, 0))
+            if (ASMAtomicCmpXchgU32(&pThis->cRecursion, 1, 0))
             {
-                ASMAtomicXchgPtr(&pMutexInt->pOwner, current);
+                ASMAtomicWritePtr(&pThis->pOwner, current);
                 break;
             }
 
@@ -176,7 +177,7 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
             after_wait(&Wait);
 
             /* Check if someone destroyed the semaphore while we was waiting. */
-            if (pMutexInt->u32Magic != RTSEMMUTEX_MAGIC)
+            if (pThis->u32Magic != RTSEMMUTEX_MAGIC)
             {
                 rc = VERR_SEM_DESTROYED;
                 break;
@@ -189,10 +190,9 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
                 break;
             }
         }
-        finish_wait(&pMutexInt->Head, &Wait);
-        return rc;
+        finish_wait(&pThis->Head, &Wait);
     }
-    return VINF_SUCCESS;
+    return rc;
 }
 RT_EXPORT_SYMBOL(RTSemMutexRequest);
 
@@ -202,31 +202,23 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     /*
      * Validate input.
      */
-    PRTSEMMUTEXINTERNAL pMutexInt = (PRTSEMMUTEXINTERNAL)MutexSem;
-    if (!pMutexInt)
-        return VERR_INVALID_PARAMETER;
-    if (    !pMutexInt
-        ||  pMutexInt->u32Magic != RTSEMMUTEX_MAGIC)
-    {
-        AssertMsgFailed(("pMutexInt->u32Magic=%RX32 pMutexInt=%p\n", pMutexInt ? pMutexInt->u32Magic : 0, pMutexInt));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (pMutexInt->pOwner != current)
-    {
-        AssertMsgFailed(("Not owner, pOwner=%p current=%p\n", (void *)pMutexInt->pOwner, (void *)current));
-        return VERR_NOT_OWNER;
-    }
+    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)MutexSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
+
+    AssertReturn(pThis->pOwner == current, VERR_NOT_OWNER);
 
     /*
      * Release the mutex.
      */
-    if (pMutexInt->cRecursion == 1)
+    if (pThis->cRecursion == 1)
     {
-        ASMAtomicXchgPtr(&pMutexInt->pOwner, NULL);
-        ASMAtomicXchgU32(&pMutexInt->cRecursion, 0);
+        ASMAtomicWritePtr(&pThis->pOwner, NULL);
+        ASMAtomicWriteU32(&pThis->cRecursion, 0);
+        wake_up(&pThis->Head);
     }
     else
-        ASMAtomicDecU32(&pMutexInt->cRecursion);
+        ASMAtomicDecU32(&pThis->cRecursion);
 
     return VINF_SUCCESS;
 }
