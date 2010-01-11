@@ -111,6 +111,8 @@ solaris-addcommonbins_SOURCES = \
 	$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15sol.pl \
 	$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11restore.pl \
 	$(VBOX_PATH_X11_ADDITION_INSTALLER)/VBoxRandR.sh \
+	$(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg.conf \
+	$(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg_modeless.conf \
 	$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/VBox.sh
 
 solaris-addcommon_INST = bin/additions/
@@ -197,7 +199,9 @@ SOLARIS_ADD_USRBIN_LINKS = \
 	VBoxControl
 
 SOLARIS_ADD_COMMON = \
-	vboxclient.desktop
+	vboxclient.desktop \
+	solaris_xorg.conf \
+	solaris_xorg_modeless.conf
 
 SOLARIS_ADD_SERVICES = \
 	vboxservice.xml
