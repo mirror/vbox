@@ -126,7 +126,12 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
     int rc = SUPSemEventCreate(pVM->pSession, (PSUPSEMEVENT)&pCritSect->Core.EventSem);
     if (RT_SUCCESS(rc))
     {
-        rc = RTLockValidatorRecExclCreate(&pCritSect->Core.pValidatorRec, NIL_RTLOCKVALCLASS, 0, pCritSect, true, "%s", pszName);
+#ifndef PDMCRITSECT_STRICT
+        pCritSect->Core.pValidatorRec = NULL;
+#else
+        rc = RTLockValidatorRecExclCreate(&pCritSect->Core.pValidatorRec, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE,
+                                          pCritSect, true, "%s", pszName);
+#endif
         if (RT_SUCCESS(rc))
         {
             /*
