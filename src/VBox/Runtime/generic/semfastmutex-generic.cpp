@@ -41,17 +41,16 @@
 
 
 
-RTDECL(int) RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem)
+RTDECL(int) RTSemFastMutexCreate(PRTSEMFASTMUTEX phFastMtx)
 {
     PRTCRITSECT pCritSect = (PRTCRITSECT)RTMemAlloc(sizeof(RTCRITSECT));
     if (!pCritSect)
         return VERR_NO_MEMORY;
-    int rc = RTCritSectInit(pCritSect);
+
+    int rc = RTCritSectInitEx(pCritSect, RTCRITSECT_FLAGS_NO_NESTING,
+                              NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
     if (RT_SUCCESS(rc))
-    {
-        /** @todo pCritSect->fFlags |= RTCRITSECT_FLAGS_NO_NESTING; */
-        *pMutexSem = (RTSEMFASTMUTEX)pCritSect;
-    }
+        *phFastMtx = (RTSEMFASTMUTEX)pCritSect;
     else
         RTMemFree(pCritSect);
     return rc;
@@ -59,11 +58,11 @@ RTDECL(int) RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem)
 RT_EXPORT_SYMBOL(RTSemFastMutexCreate);
 
 
-RTDECL(int) RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem)
+RTDECL(int) RTSemFastMutexDestroy(RTSEMFASTMUTEX hFastMtx)
 {
-    if (MutexSem == NIL_RTSEMFASTMUTEX)
+    if (hFastMtx == NIL_RTSEMFASTMUTEX)
         return VERR_INVALID_PARAMETER;
-    PRTCRITSECT pCritSect = (PRTCRITSECT)MutexSem;
+    PRTCRITSECT pCritSect = (PRTCRITSECT)hFastMtx;
     int rc = RTCritSectDelete(pCritSect);
     if (RT_SUCCESS(rc))
         RTMemFree(pCritSect);
@@ -72,16 +71,16 @@ RTDECL(int) RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem)
 RT_EXPORT_SYMBOL(RTSemFastMutexDestroy);
 
 
-RTDECL(int) RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem)
+RTDECL(int) RTSemFastMutexRequest(RTSEMFASTMUTEX hFastMtx)
 {
-    return RTCritSectEnter((PRTCRITSECT)MutexSem);
+    return RTCritSectEnter((PRTCRITSECT)hFastMtx);
 }
 RT_EXPORT_SYMBOL(RTSemFastMutexRequest);
 
 
-RTDECL(int) RTSemFastMutexRelease(RTSEMFASTMUTEX MutexSem)
+RTDECL(int) RTSemFastMutexRelease(RTSEMFASTMUTEX hFastMtx)
 {
-    return RTCritSectLeave((PRTCRITSECT)MutexSem);
+    return RTCritSectLeave((PRTCRITSECT)hFastMtx);
 }
 RT_EXPORT_SYMBOL(RTSemFastMutexRelease);
 

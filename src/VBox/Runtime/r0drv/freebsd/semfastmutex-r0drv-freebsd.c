@@ -57,63 +57,58 @@ typedef struct RTSEMFASTMUTEXINTERNAL
 } RTSEMFASTMUTEXINTERNAL, *PRTSEMFASTMUTEXINTERNAL;
 
 
-RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem)
+RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX phFastMtx)
 {
     AssertCompile(sizeof(RTSEMFASTMUTEXINTERNAL) > sizeof(void *));
-    AssertPtrReturn(pMutexSem, VERR_INVALID_POINTER);
+    AssertPtrReturn(phFastMtx, VERR_INVALID_POINTER);
 
-    PRTSEMFASTMUTEXINTERNAL pFastInt = (PRTSEMFASTMUTEXINTERNAL)RTMemAllocZ(sizeof(*pFastInt));
-    if (pFastInt)
+    PRTSEMFASTMUTEXINTERNAL pThis = (PRTSEMFASTMUTEXINTERNAL)RTMemAllocZ(sizeof(*pThis));
+    if (pThis)
     {
-        pFastInt->u32Magic = RTSEMFASTMUTEX_MAGIC;
-        sx_init(&pFastInt->SxLock, "IPRT Fast Mutex Semaphore");
-        *pMutexSem = pFastInt;
+        pThis->u32Magic = RTSEMFASTMUTEX_MAGIC;
+        sx_init(&pThis->SxLock, "IPRT Fast Mutex Semaphore");
+
+        *phFastMtx = pThis;
         return VINF_SUCCESS;
     }
     return VERR_NO_MEMORY;
 }
 
 
-RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem)
+RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX hFastMtx)
 {
-    if (MutexSem == NIL_RTSEMFASTMUTEX) /* don't bitch */
-        return VERR_INVALID_PARAMETER;
-    PRTSEMFASTMUTEXINTERNAL pFastInt = (PRTSEMFASTMUTEXINTERNAL)MutexSem;
-    AssertPtrReturn(pFastInt, VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pFastInt->u32Magic == RTSEMFASTMUTEX_MAGIC,
-                    ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
-                    VERR_INVALID_PARAMETER);
+    PRTSEMFASTMUTEXINTERNAL pThis = hFastMtx;
+    if (pThis == NIL_RTSEMFASTMUTEX)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMFASTMUTEX_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
 
-    ASMAtomicXchgU32(&pFastInt->u32Magic, RTSEMFASTMUTEX_MAGIC_DEAD);
-    sx_destroy(&pFastInt->SxLock);
-    RTMemFree(pFastInt);
+    ASMAtomicWriteU32(&pThis->u32Magic, RTSEMFASTMUTEX_MAGIC_DEAD);
+    sx_destroy(&pThis->SxLock);
+    RTMemFree(pThis);
 
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem)
+RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX hFastMtx)
 {
-    PRTSEMFASTMUTEXINTERNAL pFastInt = (PRTSEMFASTMUTEXINTERNAL)MutexSem;
-    AssertPtrReturn(pFastInt, VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pFastInt->u32Magic == RTSEMFASTMUTEX_MAGIC,
-                    ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
-                    VERR_INVALID_PARAMETER);
+    PRTSEMFASTMUTEXINTERNAL pThis = hFastMtx;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMFASTMUTEX_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
 
-    sx_xlock(&pFastInt->SxLock);
+    sx_xlock(&pThis->SxLock);
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX MutexSem)
+RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX hFastMtx)
 {
-    PRTSEMFASTMUTEXINTERNAL pFastInt = (PRTSEMFASTMUTEXINTERNAL)MutexSem;
-    AssertPtrReturn(pFastInt, VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pFastInt->u32Magic == RTSEMFASTMUTEX_MAGIC,
-                    ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
-                    VERR_INVALID_PARAMETER);
+    PRTSEMFASTMUTEXINTERNAL pThis = hFastMtx;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMFASTMUTEX_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
 
-    sx_xunlock(&pFastInt->SxLock);
+    sx_xunlock(&pThis->SxLock);
     return VINF_SUCCESS;
 }
 
