@@ -220,7 +220,7 @@ DECL_FORCE_INLINE(int) rtSemEventWaitHandleStatus(struct RTSEMEVENTMULTIINTERNAL
 
 
 #undef RTSemEventMultiWaitNoResume
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies)
+RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
 {
     PCRTLOCKVALSRCPOS pSrcPos = NULL;
 

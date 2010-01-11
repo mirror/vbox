@@ -214,7 +214,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
 }
 
 
-static int rtSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies, wait_interrupt_t fInterruptible)
+static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, wait_interrupt_t fInterruptible)
 {
     PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)hEventSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -304,13 +304,13 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies, wait_interrup
 }
 
 
-RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies)
+RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
 {
     return rtSemEventWait(hEventSem, cMillies, THREAD_UNINT);
 }
 
 
-RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, unsigned cMillies)
+RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
 {
     return rtSemEventWait(hEventSem, cMillies, THREAD_ABORTSAFE);
 }
@@ -427,7 +427,7 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
 }
 
 
-static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies, wait_interrupt_t fInterruptible)
+static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies, wait_interrupt_t fInterruptible)
 {
     PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -513,13 +513,13 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies
 }
 
 
-RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies)
+RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
 {
     return rtSemEventMultiWait(hEventMultiSem, cMillies, THREAD_UNINT);
 }
 
 
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies)
+RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
 {
     return rtSemEventMultiWait(hEventMultiSem, cMillies, THREAD_ABORTSAFE);
 }
@@ -576,7 +576,7 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX hMutexSem)
 }
 
 
-RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies)
+RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
     /*
      * Validate input.

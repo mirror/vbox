@@ -179,7 +179,7 @@ RTDECL(uint32_t) RTSemMutexSetSubClass(RTSEMMUTEX hMutexSem, uint32_t uSubClass)
 }
 
 
-DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies, PCRTLOCKVALSRCPOS pSrcPos)
+DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, PCRTLOCKVALSRCPOS pSrcPos)
 {
     /*
      * Validate input.
@@ -280,7 +280,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies
 
 
 #undef RTSemMutexRequest
-RTDECL(int) RTSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies)
+RTDECL(int) RTSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
 #ifndef RTSEMMUTEX_STRICT
     return rtSemMutexRequest(hMutexSem, cMillies, NULL);
@@ -291,7 +291,7 @@ RTDECL(int) RTSemMutexRequest(RTSEMMUTEX hMutexSem, unsigned cMillies)
 }
 
 
-RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return rtSemMutexRequest(hMutexSem, cMillies, &SrcPos);
@@ -299,7 +299,7 @@ RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, unsigned cMillies, RTHC
 
 
 #undef RTSemMutexRequestNoResume
-RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, unsigned cMillies)
+RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
     /* (EINTR isn't returned by the wait functions we're using.) */
 #ifndef RTSEMMUTEX_STRICT
@@ -311,7 +311,7 @@ RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, unsigned cMillies)
 }
 
 
-RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return rtSemMutexRequest(hMutexSem, cMillies, &SrcPos);

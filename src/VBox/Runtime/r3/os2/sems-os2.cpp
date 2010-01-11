@@ -88,7 +88,7 @@ RTDECL(int)   RTSemEventDestroy(RTSEMEVENT hEventSem)
 }
 
 
-RTDECL(int)   RTSemEventWaitNoResume(RTSEMEVENT hEventSem, unsigned cMillies)
+RTDECL(int)   RTSemEventWaitNoResume(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
 {
     /*
      * Wait for condition.
@@ -225,7 +225,7 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
 }
 
 
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies)
+RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
 {
     /*
      * Wait for condition.
@@ -326,7 +326,7 @@ RTDECL(uint32_t) RTSemMutexSetSubClass(RTSEMMUTEX hMutexSem, uint32_t uSubClass)
 
 
 #undef RTSemMutexRequestNoResume
-RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, unsigned cMillies)
+RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
     /*
      * Lock mutex semaphore.

@@ -160,7 +160,7 @@ RT_EXPORT_SYMBOL(RTSemEventMultiReset);
  * @param   cMillies            The number of milliseconds to wait.
  * @param   fInterruptible      Whether it's an interruptible wait or not.
  */
-static int rtSemEventMultiWait(PRTSEMEVENTMULTIINTERNAL pThis, unsigned cMillies, bool fInterruptible)
+static int rtSemEventMultiWait(PRTSEMEVENTMULTIINTERNAL pThis, RTMSINTERVAL cMillies, bool fInterruptible)
 {
     /*
      * Ok wait for it.
@@ -215,7 +215,7 @@ static int rtSemEventMultiWait(PRTSEMEVENTMULTIINTERNAL pThis, unsigned cMillies
 }
 
 
-RTDECL(int) RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies)
+RTDECL(int) RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
 {
     PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
     if (!pThis)
@@ -230,7 +230,7 @@ RTDECL(int) RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillie
 RT_EXPORT_SYMBOL(RTSemEventMultiWait);
 
 
-RTDECL(int) RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, unsigned cMillies)
+RTDECL(int) RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
 {
     PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
     if (!pThis)

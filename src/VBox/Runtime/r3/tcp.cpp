@@ -881,7 +881,7 @@ RTR3DECL(int)  RTTcpFlush(RTSOCKET Sock)
 }
 
 
-RTR3DECL(int)  RTTcpSelectOne(RTSOCKET Sock, unsigned cMillies)
+RTR3DECL(int)  RTTcpSelectOne(RTSOCKET Sock, RTMSINTERVAL cMillies)
 {
     fd_set fdsetR;
     FD_ZERO(&fdsetR);

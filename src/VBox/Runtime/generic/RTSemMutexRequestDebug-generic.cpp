@@ -42,7 +42,7 @@
 
 
 
-RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX Mutex, unsigned cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX Mutex, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     int rc;
     if (cMillies == RT_INDEFINITE_WAIT)
@@ -61,7 +61,7 @@ RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX Mutex, unsigned cMillies, RTHCUINT
                 uint64_t u64Elapsed = RTTimeMilliTS() - u64Start;
                 if (u64Elapsed >= cMillies)
                     return VERR_TIMEOUT;
-                rc = RTSemMutexRequestNoResumeDebug(Mutex, cMillies - (unsigned)u64Elapsed, uId, RT_SRC_POS_ARGS);
+                rc = RTSemMutexRequestNoResumeDebug(Mutex, cMillies - (RTMSINTERVAL)u64Elapsed, uId, RT_SRC_POS_ARGS);
             } while (rc == VERR_INTERRUPTED);
         }
     }

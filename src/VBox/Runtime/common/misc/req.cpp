@@ -108,7 +108,7 @@ RT_EXPORT_SYMBOL(RTReqDestroyQueue);
  * @param   cMillies        Number of milliseconds to wait for a pending request.
  *                          Use RT_INDEFINITE_WAIT to only wait till one is added.
  */
-RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, unsigned cMillies)
+RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, RTMSINTERVAL cMillies)
 {
     LogFlow(("RTReqProcess %x\n", pQueue));
     /*
@@ -210,7 +210,7 @@ RT_EXPORT_SYMBOL(RTReqProcess);
  *
  * @remarks See remarks on RTReqCallV.
  */
-RTDECL(int) RTReqCall(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+RTDECL(int) RTReqCall(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
@@ -245,7 +245,7 @@ RT_EXPORT_SYMBOL(RTReqCall);
  *
  * @remarks See remarks on RTReqCallV.
  */
-RTDECL(int) RTReqCallVoid(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+RTDECL(int) RTReqCallVoid(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
@@ -282,7 +282,7 @@ RT_EXPORT_SYMBOL(RTReqCallVoid);
  *
  * @remarks See remarks on RTReqCallV.
  */
-RTDECL(int) RTReqCallEx(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
+RTDECL(int) RTReqCallEx(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
@@ -326,7 +326,7 @@ RT_EXPORT_SYMBOL(RTReqCallEx);
  *                hosts because 'int' is 32-bit.
  *                Use (void *)NULL or (uintptr_t)0 instead of NULL.
  */
-RTDECL(int) RTReqCallV(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
+RTDECL(int) RTReqCallV(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
 {
     LogFlow(("RTReqCallV: cMillies=%d fFlags=%#x pfnFunction=%p cArgs=%d\n", cMillies, fFlags, pfnFunction, cArgs));
 
@@ -655,7 +655,7 @@ RT_EXPORT_SYMBOL(RTReqFree);
  *                          be completed. Use RT_INDEFINITE_WAIT to only
  *                          wait till it's completed.
  */
-RTDECL(int) RTReqQueue(PRTREQ pReq, unsigned cMillies)
+RTDECL(int) RTReqQueue(PRTREQ pReq, RTMSINTERVAL cMillies)
 {
     LogFlow(("RTReqQueue: pReq=%p cMillies=%d\n", pReq, cMillies));
     /*
@@ -723,7 +723,7 @@ RT_EXPORT_SYMBOL(RTReqQueue);
  * @param   cMillies        Number of milliseconds to wait.
  *                          Use RT_INDEFINITE_WAIT to only wait till it's completed.
  */
-RTDECL(int) RTReqWait(PRTREQ pReq, unsigned cMillies)
+RTDECL(int) RTReqWait(PRTREQ pReq, RTMSINTERVAL cMillies)
 {
     LogFlow(("RTReqWait: pReq=%p cMillies=%d\n", pReq, cMillies));
 

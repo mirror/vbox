@@ -196,7 +196,7 @@ RT_EXPORT_SYMBOL(RTSemPong);
  * @param   pPP         Pointer to the ping-pong structure to wait on.
  * @param   cMillies    Number of milliseconds to wait.
  */
-RTDECL(int) RTSemPingWait(PRTPINGPONG pPP, unsigned cMillies)
+RTDECL(int) RTSemPingWait(PRTPINGPONG pPP, RTMSINTERVAL cMillies)
 {
     /*
      * Validate input
@@ -229,7 +229,7 @@ RT_EXPORT_SYMBOL(RTSemPingWait);
  * @param   pPP         Pointer to the ping-pong structure to wait on.
  * @param   cMillies    Number of milliseconds to wait.
  */
-RTDECL(int) RTSemPongWait(PRTPINGPONG pPP, unsigned cMillies)
+RTDECL(int) RTSemPongWait(PRTPINGPONG pPP, RTMSINTERVAL cMillies)
 {
     /*
      * Validate input

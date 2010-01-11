@@ -287,7 +287,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
 }
 
 
-DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies, bool fAutoResume)
+DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fAutoResume)
 {
     PCRTLOCKVALSRCPOS  pSrcPos = NULL;
 
@@ -463,7 +463,7 @@ DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies, b
 }
 
 
-RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies)
+RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
 {
     int rc = rtSemEventWait(hEventSem, cMillies, true);
     Assert(rc != VERR_INTERRUPTED);
@@ -471,7 +471,7 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, unsigned cMillies)
 }
 
 
-RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, unsigned cMillies)
+RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
 {
     return rtSemEventWait(hEventSem, cMillies, false);
 }
