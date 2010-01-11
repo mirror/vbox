@@ -59,73 +59,62 @@ typedef struct RTSEMFASTMUTEXINTERNAL
 
 
 
-RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem)
+RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX phFastMtx)
 {
     /*
      * Allocate.
      */
-    PRTSEMFASTMUTEXINTERNAL pFastInt;
-    Assert(sizeof(*pFastInt) > sizeof(void *));
-    pFastInt = (PRTSEMFASTMUTEXINTERNAL)RTMemAlloc(sizeof(*pFastInt));
-    if (!pFastInt)
+    PRTSEMFASTMUTEXINTERNAL pThis;
+    Assert(sizeof(*pThis) > sizeof(void *));
+    pThis = (PRTSEMFASTMUTEXINTERNAL)RTMemAlloc(sizeof(*pThis));
+    if (!pThis)
         return VERR_NO_MEMORY;
 
     /*
      * Initialize.
      */
-    pFastInt->u32Magic = RTSEMFASTMUTEX_MAGIC;
-    ExInitializeFastMutex(&pFastInt->Mutex);
-    *pMutexSem = pFastInt;
+    pThis->u32Magic = RTSEMFASTMUTEX_MAGIC;
+    ExInitializeFastMutex(&pThis->Mutex);
+
+    *phFastMtx = pThis;
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem)
+RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX hFastMtx)
 {
     /*
      * Validate.
      */
-    PRTSEMFASTMUTEXINTERNAL pFastInt = (PRTSEMFASTMUTEXINTERNAL)MutexSem;
-    if (!pFastInt)
-        return VERR_INVALID_PARAMETER;
-    if (pFastInt->u32Magic != RTSEMFASTMUTEX_MAGIC)
-    {
-        AssertMsgFailed(("pFastInt->u32Magic=%RX32 pMutexInt=%p\n", pFastInt->u32Magic, pFastInt));
-        return VERR_INVALID_PARAMETER;
-    }
+    PRTSEMFASTMUTEXINTERNAL pThis = hFastMtx;
+    if (pThis == NIL_RTSEMFASTMUTEX)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMFASTMUTEX_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
 
-    ASMAtomicIncU32(&pFastInt->u32Magic);
-    Assert(pFastInt->Mutex.Count == 1);
-    /* It's not very clear what this Contention field really means. Seems to be a counter for the number of times contention occurred. (see e.g. http://winprogger.com/?p=6)
-     * The following assertion is therefor wrong:
-     * Assert(pFastInt->Mutex.Contention == 0);
-     */
-    RTMemFree(pFastInt);
+    ASMAtomicWriteU32(&pThis->u32Magic, RTSEMFASTMUTEX_MAGIC_DEAD);
+    Assert(pThis->Mutex.Count == 1);
+    RTMemFree(pThis);
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem)
+RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX hFastMtx)
 {
     /*
      * Validate.
      */
-    PRTSEMFASTMUTEXINTERNAL pFastInt = (PRTSEMFASTMUTEXINTERNAL)MutexSem;
-    if (    !pFastInt
-        ||  pFastInt->u32Magic != RTSEMFASTMUTEX_MAGIC)
-    {
-        AssertMsgFailed(("pFastInt->u32Magic=%RX32 pMutexInt=%p\n", pFastInt ? pFastInt->u32Magic : 0, pFastInt));
-        return VERR_INVALID_PARAMETER;
-    }
+    PRTSEMFASTMUTEXINTERNAL pThis = hFastMtx;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMFASTMUTEX_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
+
 #if 1
     /*
      * ExAcquireFastMutex will set the IRQL to APC regardless of our current
-     * level. Lowering the IRQL may screw things up, so to allow this.
+     * level.  Lowering the IRQL may screw things up, so do not allow this.
      */
 # if 0 /** @todo enable this when the logger has been fixed. */
-    AssertMsg(KeGetCurrentIrql() <= APC_LEVEL,
-              ("%d\n", KeGetCurrentIrql()),
-              VERR_INVALID_STATE);
+    AssertMsg(KeGetCurrentIrql() <= APC_LEVEL, ("%d\n", KeGetCurrentIrql()), VERR_INVALID_STATE);
 # else  /* the gentler approach. */
     KIRQL Irql = KeGetCurrentIrql();
     if (Irql > APC_LEVEL)
@@ -133,25 +122,21 @@ RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem)
 # endif
 #endif
 
-    ExAcquireFastMutex(&pFastInt->Mutex);
+    ExAcquireFastMutex(&pThis->Mutex);
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX MutexSem)
+RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX hFastMtx)
 {
     /*
      * Validate.
      */
-    PRTSEMFASTMUTEXINTERNAL pFastInt = (PRTSEMFASTMUTEXINTERNAL)MutexSem;
-    if (    !pFastInt
-        ||  pFastInt->u32Magic != RTSEMFASTMUTEX_MAGIC)
-    {
-        AssertMsgFailed(("pFastInt->u32Magic=%RX32 pMutexInt=%p\n", pFastInt ? pFastInt->u32Magic : 0, pFastInt));
-        return VERR_INVALID_PARAMETER;
-    }
+    PRTSEMFASTMUTEXINTERNAL pThis = hFastMtx;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMFASTMUTEX_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
 
-    ExReleaseFastMutex(&pFastInt->Mutex);
+    ExReleaseFastMutex(&pThis->Mutex);
     return VINF_SUCCESS;
 }
 

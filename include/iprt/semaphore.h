@@ -483,19 +483,21 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem);
  * Create a fast mutex semaphore.
  *
  * @returns iprt status code.
- * @param   pMutexSem   Where to store the mutex semaphore handle.
+ * @param   phFastMtx           Where to store the handle to the newly created
+ *                              fast mutex semaphore.
  *
  * @remarks Fast mutex semaphores are not recursive.
  */
-RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem);
+RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX phFastMtx);
 
 /**
  * Destroy a fast mutex semaphore.
  *
  * @returns iprt status code.
- * @param   hMutexSem    The mutex semaphore to destroy.
+ * @param   hFastMtx            Handle to the fast mutex semaphore.  NIL is
+ *                              quietly ignored (VINF_SUCCESS).
  */
-RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX hMutexSem);
+RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX hFastMtx);
 
 /**
  * Request ownership of a fast mutex semaphore.
@@ -505,18 +507,19 @@ RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX hMutexSem);
  * RTSemMutexRelease() call.
  *
  * @returns iprt status code.
- * @param   hMutexSem    The mutex semaphore to request ownership over.
+ * @param   hFastMtx            Handle to the fast mutex semaphore.
  */
-RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX hMutexSem);
+RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX hFastMtx);
 
 /**
  * Release the ownership of a fast mutex semaphore.
  *
  * @returns iprt status code.
- * @param   hMutexSem    The mutex to release the ownership of.
- *                      It goes without saying the the calling thread must own it.
+ * @param   hFastMtx            Handle to the fast mutex semaphore.  It goes
+ *                              without saying the the calling thread must own
+ *                              it.
  */
-RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX hMutexSem);
+RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX hFastMtx);
 
 /** @} */
 

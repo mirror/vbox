@@ -75,7 +75,7 @@ RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t 
         pThis->u32Magic = RTSEMEVENTMULTI_MAGIC;
         KeInitializeEvent(&pThis->Event, NotificationEvent, FALSE /* not signalled */);
 
-        *phEventSem = pThis;
+        *phEventMultiSem = pThis;
         return VINF_SUCCESS;
     }
     return VERR_NO_MEMORY;
