@@ -175,7 +175,7 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
     /*
      * Initialize the hyper heap critical section.
      */
-    int rc = PDMR3CritSectInit(pVM, &pVM->mm.s.pHyperHeapR3->Lock, "MM-HYPER");
+    int rc = PDMR3CritSectInit(pVM, &pVM->mm.s.pHyperHeapR3->Lock, RT_SRC_POS, "MM-HYPER");
     AssertRC(rc);
 
     /*

@@ -726,7 +726,12 @@ static const REMPARMDESC g_aArgsPDMR3CritSectInit[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PPDMCRITSECT), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(char *), NULL }
+    /* RT_SRC_POS_DECL */
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned int), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(char *), NULL },
+    { REMPARMDESC_FLAGS_ELLIPSIS,   0 }
 };
 static const REMPARMDESC g_aArgsPDMCritSectEnter[] =
 {

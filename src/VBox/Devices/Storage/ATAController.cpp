@@ -5472,7 +5472,7 @@ DECLCALLBACK(int) ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
     }
 
     /* Initialize per-controller critical section */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pCtl->lock, szName);
+    rc = PDMDevHlpCritSectInit(pDevIns, &pCtl->lock, RT_SRC_POS, "%s", szName);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI ATA: cannot initialize critical section"));
 

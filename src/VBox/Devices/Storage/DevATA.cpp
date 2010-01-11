@@ -6757,9 +6757,7 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #endif /* VBOX_WITH_STATISTICS */
 
         /* Initialize per-controller critical section */
-        char szName[24];
-        RTStrPrintf(szName, sizeof(szName), "ATA%d", i);
-        rc = PDMDevHlpCritSectInit(pDevIns, &pThis->aCts[i].lock, szName);
+        rc = PDMDevHlpCritSectInit(pDevIns, &pThis->aCts[i].lock, RT_SRC_POS, "ATA%u", i);
         if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot initialize critical section"));
     }

@@ -124,7 +124,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
     /*
      * Initialize the REM critical section.
      */
-    rc = PDMR3CritSectInit(pVM, &pVM->em.s.CritSectREM, "EM-REM");
+    rc = PDMR3CritSectInit(pVM, &pVM->em.s.CritSectREM, RT_SRC_POS, "EM-REM");
     AssertRCReturn(rc, rc);
 
     /*

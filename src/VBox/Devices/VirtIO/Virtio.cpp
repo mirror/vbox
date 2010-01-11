@@ -827,7 +827,7 @@ DECLCALLBACK(int) vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
     pState->ILeds.pfnQueryStatusLed = vpciQueryStatusLed;
 
     /* Initialize critical section. */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pState->cs, pState->szInstance);
+    rc = PDMDevHlpCritSectInit(pDevIns, &pState->cs, RT_SRC_POS, "%s", pState->szInstance);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -875,7 +875,7 @@ int vpciDestruct(VPCISTATE* pState)
 
     if (PDMCritSectIsInitialized(&pState->cs))
         PDMR3CritSectDelete(&pState->cs);
-    
+
     return VINF_SUCCESS;
 }
 

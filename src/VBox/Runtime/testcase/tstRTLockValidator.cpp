@@ -782,7 +782,7 @@ static void testLo1(void)
         }
         else
         {
-            g_ahClasses[i] = RTLockValidatorClassForSrcPos(RT_SRC_POS);
+            g_ahClasses[i] = RTLockValidatorClassForSrcPos(RT_SRC_POS, "testLo1-%u", i);
             RTTEST_CHECK_RETV(g_hTest, g_ahClasses[i] != NIL_RTLOCKVALCLASS);
             RTTEST_CHECK_RETV(g_hTest, i == 4 || g_ahClasses[i] == g_ahClasses[i - 1]);
             if (i == 4)
