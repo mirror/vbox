@@ -73,7 +73,7 @@ struct RTSEMMUTEXINTERNAL
      */
     int32_t volatile    iState;
     /** Nesting count. */
-    uint32_t volatile   cNesting;
+    uint32_t volatile   cNestings;
     /** The owner of the mutex. */
     pthread_t volatile  Owner;
     /** Magic value (RTSEMMUTEX_MAGIC). */
@@ -84,10 +84,6 @@ struct RTSEMMUTEXINTERNAL
 #endif
 };
 
-
-/* Undefine debug mappings. */
-#undef RTSemMutexRequest
-#undef RTSemMutexRequestNoResume
 
 
 /**
@@ -124,10 +120,10 @@ RTDECL(int) RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
     struct RTSEMMUTEXINTERNAL *pThis = (struct RTSEMMUTEXINTERNAL *)RTMemAlloc(sizeof(struct RTSEMMUTEXINTERNAL));
     if (pThis)
     {
-        pThis->u32Magic = RTSEMMUTEX_MAGIC;
-        pThis->iState   = 0;
-        pThis->Owner    = (pthread_t)~0;
-        pThis->cNesting = 0;
+        pThis->u32Magic     = RTSEMMUTEX_MAGIC;
+        pThis->iState       = 0;
+        pThis->Owner        = (pthread_t)~0;
+        pThis->cNestings    = 0;
 #ifdef RTSEMMUTEX_STRICT
         va_list va;
         va_start(va, pszNameFmt);
@@ -166,8 +162,8 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
         sys_futex(&pThis->iState, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
         usleep(1000);
     }
-    pThis->Owner    = (pthread_t)~0;
-    pThis->cNesting = 0;
+    pThis->Owner        = (pthread_t)~0;
+    pThis->cNestings    = 0;
 #ifdef RTSEMMUTEX_STRICT
     RTLockValidatorRecExclDelete(&pThis->ValidatorRec);
 #endif
@@ -211,14 +207,14 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
      */
     pthread_t Self = pthread_self();
     if (    pThis->Owner == Self
-        &&  pThis->cNesting > 0)
+        &&  pThis->cNestings > 0)
     {
 #ifdef RTSEMMUTEX_STRICT
         int rc9 = RTLockValidatorRecExclRecursion(&pThis->ValidatorRec, pSrcPos);
         if (RT_FAILURE(rc9))
             return rc9;
 #endif
-        ASMAtomicIncU32(&pThis->cNesting);
+        ASMAtomicIncU32(&pThis->cNestings);
         return VINF_SUCCESS;
     }
 
@@ -337,7 +333,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
      * Set the owner and nesting.
      */
     pThis->Owner = Self;
-    ASMAtomicWriteU32(&pThis->cNesting, 1);
+    ASMAtomicWriteU32(&pThis->cNestings, 1);
 #ifdef RTSEMMUTEX_STRICT
     RTLockValidatorRecExclSetOwner(&pThis->ValidatorRec, hThreadSelf, pSrcPos, true);
 #endif
@@ -345,6 +341,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies,
 }
 
 
+#undef RTSemMutexRequest
 RTDECL(int) RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
 {
 #ifndef RTSEMMUTEX_STRICT
@@ -367,6 +364,7 @@ RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX MutexSem, unsigned cMillies, RTHCU
 }
 
 
+#undef RTSemMutexRequestNoResume
 RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies)
 {
 #ifndef RTSEMMUTEX_STRICT
@@ -395,7 +393,7 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX MutexSem)
     AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
 
 #ifdef RTSEMMUTEX_STRICT
-    int rc9 = RTLockValidatorRecExclReleaseOwner(&pThis->ValidatorRec, pThis->cNestings != 1);
+    int rc9 = RTLockValidatorRecExclReleaseOwner(&pThis->ValidatorRec, pThis->cNestings == 1);
     if (RT_FAILURE(rc9))
         return rc9;
 #endif
@@ -405,27 +403,27 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX MutexSem)
      */
     pthread_t Self = pthread_self();
     if (RT_UNLIKELY(    pThis->Owner != Self
-                    ||  pThis->cNesting == 0))
+                    ||  pThis->cNestings == 0))
     {
-        AssertMsgFailed(("Not owner of mutex %p!! Self=%08x Owner=%08x cNesting=%d\n",
-                         pThis, Self, pThis->Owner, pThis->cNesting));
+        AssertMsgFailed(("Not owner of mutex %p!! Self=%08x Owner=%08x cNestings=%d\n",
+                         pThis, Self, pThis->Owner, pThis->cNestings));
         return VERR_NOT_OWNER;
     }
 
     /*
      * If nested we'll just pop a nesting.
      */
-    if (pThis->cNesting > 1)
+    if (pThis->cNestings > 1)
     {
-        ASMAtomicDecU32(&pThis->cNesting);
+        ASMAtomicDecU32(&pThis->cNestings);
         return VINF_SUCCESS;
     }
 
     /*
-     * Clear the state. (cNesting == 1)
+     * Clear the state. (cNestings == 1)
      */
     pThis->Owner = (pthread_t)~0;
-    ASMAtomicWriteU32(&pThis->cNesting, 0);
+    ASMAtomicWriteU32(&pThis->cNestings, 0);
 
     /*
      * Release the mutex.
