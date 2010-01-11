@@ -87,17 +87,18 @@ else
 endif
 
 INSTALLS          += solaris-addcommon solaris-addcommonbins
-PROGRAMS          += VBoxISAExec
+PROGRAMS          += VBoxAddISAExec
 PACKING           += $(PATH_BIN)/additions/$(PKGFILENAME)
 OTHER_CLEAN       += $(PACKING)
 
 #
-# VBoxISAExec
+# VBoxAddISAExec
 #
-VBoxISAExec_TEMPLATE = VBOXR3EXE
-VBoxISAExec_INST     = $(INST_ADDITIONS)
-VBoxISAExec_DEPS     = $(VBOX_SVN_REV_KMK)
-VBoxISAExec_SOURCES  = $(PATH_ROOT)/src/VBox/Installer/solaris/VBoxISAExec.c
+VBoxAddISAExec_TEMPLATE = VBOXR3EXE
+VBoxAddISAExec_NAME     = VBoxISAExec
+VBoxAddISAExec_INST     = $(INST_ADDITIONS)
+VBoxAddISAExec_DEPS     = $(VBOX_SVN_REV_KMK)
+VBoxAddISAExec_SOURCES  = $(PATH_ROOT)/src/VBox/Installer/solaris/VBoxISAExec.c
 
 #
 # Install to $(PATH_BIN)/additions/ files from various source paths (to pack them using rules)
@@ -218,7 +219,7 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(addprefix $(SOLARIS_VBOXADDINST_DIR_32)/,$(SOLARIS_ADD_STRIP_BINS)) \
 	$(addprefix $(SOLARIS_ADD_DRIVERINST_DIR_32)/,$(SOLARIS_ADD_DRIVERS)) \
 	$(addprefix $(SOLARIS_ADD_DRIVERINST_DIR)/,$(SOLARIS_ADD_DRIVERS_CONF)) \
-	$(addprefix $(SOLARIS_VBOXADDINST_DIR)/,$(SOLARIS_ADD_XORG_DRIVERS))
+	$(addprefix $(SOLARIS_VBOXADDINST_DIR_32)/,$(SOLARIS_ADD_XORG_DRIVERS))
 else
   SOLARIS_ARCH_ADD_DEPFILES = \
    $(addprefix $(SOLARIS_VBOXADDINST_DIR_ISA)/,$(SOLARIS_ADD_STRIP_BINS)) \
