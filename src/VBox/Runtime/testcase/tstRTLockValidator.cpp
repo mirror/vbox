@@ -1115,6 +1115,70 @@ static void testLo3(void)
 }
 
 
+static void testLo4(void)
+{
+    RTTestSub(g_hTest, "locking order, mutex");
+
+    /* Initialize the critsection with all different classes */
+    for (unsigned i = 0; i < 4; i++)
+    {
+        RTTEST_CHECK_RC_RETV(g_hTest, RTLockValidatorClassCreate(&g_ahClasses[i], true /*fAutodidact*/, RT_SRC_POS, "testLo4-%u", i), VINF_SUCCESS);
+        RTTEST_CHECK_RC_RETV(g_hTest, RTSemMutexCreateEx(&g_ahSemMtxes[i], 0, g_ahClasses[i], RTLOCKVAL_SUB_CLASS_NONE, "RTSemMutexLo4-%u", i), VINF_SUCCESS);
+        RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRetain(g_ahClasses[i]) == 3);
+        RTTEST_CHECK_RETV(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 2);
+    }
+
+    /* Check the sub-class API.*/
+    RTTEST_CHECK(g_hTest, RTSemMutexSetSubClass(g_ahSemMtxes[0], RTLOCKVAL_SUB_CLASS_ANY)  == RTLOCKVAL_SUB_CLASS_NONE);
+    RTTEST_CHECK(g_hTest, RTSemMutexSetSubClass(g_ahSemMtxes[0], RTLOCKVAL_SUB_CLASS_NONE) == RTLOCKVAL_SUB_CLASS_ANY);
+
+    /* Enter the first 4 critsects in ascending order and thereby definining
+       this as a valid lock order.  */
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRequest(g_ahSemMtxes[0], RT_INDEFINITE_WAIT), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRequest(g_ahSemMtxes[1], RT_INDEFINITE_WAIT), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRequest(g_ahSemMtxes[2], RT_INDEFINITE_WAIT), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRequest(g_ahSemMtxes[3], RT_INDEFINITE_WAIT), VINF_SUCCESS);
+
+    /* Now, leave and re-enter the critsects in a way that should break the
+       order and check that we get the appropriate response. */
+    int rc;
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRelease(g_ahSemMtxes[0]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, rc = RTSemMutexRequest(g_ahSemMtxes[0], RT_INDEFINITE_WAIT), VERR_SEM_LV_WRONG_ORDER);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTSemMutexRelease(g_ahSemMtxes[0]), VINF_SUCCESS);
+
+    /* Check that recursion isn't subject to order checks. */
+    RTTEST_CHECK_RC(g_hTest, rc = RTSemMutexRequest(g_ahSemMtxes[1], RT_INDEFINITE_WAIT), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK_RC(g_hTest, RTSemMutexRelease(g_ahSemMtxes[1]), VINF_SUCCESS);
+
+    /* Enable strict release order for class 2 and check that violations
+       are caught - including recursion. */
+    RTTEST_CHECK_RC(g_hTest, RTLockValidatorClassEnforceStrictReleaseOrder(g_ahClasses[2], true), VINF_SUCCESS);
+
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRequest(g_ahSemMtxes[2], RT_INDEFINITE_WAIT), VINF_SUCCESS);  /* start recursion */
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRequest(g_ahSemMtxes[3], RT_INDEFINITE_WAIT), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRelease(g_ahSemMtxes[2]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRelease(g_ahSemMtxes[3]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRelease(g_ahSemMtxes[2]), VINF_SUCCESS);                      /* end recursion */
+
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRelease(g_ahSemMtxes[2]), VERR_SEM_LV_WRONG_RELEASE_ORDER);
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRelease(g_ahSemMtxes[1]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRelease(g_ahSemMtxes[3]), VINF_SUCCESS);
+    RTTEST_CHECK_RC(g_hTest, RTSemMutexRelease(g_ahSemMtxes[2]), VINF_SUCCESS);
+
+    /* clean up */
+    for (unsigned i = 0; i < 4; i++)
+    {
+        RTTEST_CHECK(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 1);
+        g_ahClasses[i] = NIL_RTLOCKVALCLASS;
+        RTTEST_CHECK_RC_RETV(g_hTest, RTSemMutexDestroy(g_ahSemMtxes[i]), VINF_SUCCESS);
+    }
+}
+
+
+
+
 static bool testIsLockValidationCompiledIn(void)
 {
     RTCRITSECT CritSect;
@@ -1208,6 +1272,7 @@ int main()
         testLo1();
         testLo2();
         testLo3();
+        testLo4();
     }
 
 
