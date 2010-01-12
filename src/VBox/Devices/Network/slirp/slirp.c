@@ -119,12 +119,16 @@
     }
 
 # define acceptds_win     FD_ACCEPT
+# define acceptds_win_bit FD_ACCEPT_BIT
 # define readfds_win      FD_READ
+# define readfds_win_bit  FD_READ_BIT
 # define writefds_win     FD_WRITE
+# define writefds_win_bit FD_WRITE_BIT
 # define xfds_win         FD_OOB
+# define xfds_win_bit     FD_OOB_BIT
 
 # define DO_CHECK_FD_SET(so, events, fdset)  \
-    (((events).lNetworkEvents & fdset ## _win) && ((events).iErrorCode[fdset ## _win ## _BIT] == 0))
+    (((events).lNetworkEvents & fdset ## _win) && ((events).iErrorCode[fdset ## _win_bit] == 0))
 
 # define DO_WIN_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset)
 # define DO_UNIX_CHECK_FD_SET(so, events, fdset ) 1 /*specific for Unix API */
