@@ -36,14 +36,13 @@ static VOID winNetCfgLogger (LPCWSTR szString)
 }
 
 /** Wrapper aroung GetfullPathNameW that will try an alternative INF location.
- *  
- * The default location is the current directory.  If not found there, the 
- * alternative locatoin is the executable directory.  If not found there either, 
- * the first alternative is present to the caller. 
- */ 
+ *
+ * The default location is the current directory.  If not found there, the
+ * alternative locatoin is the executable directory.  If not found there either,
+ * the first alternative is present to the caller.
+ */
 static DWORD MyGetfullPathNameW(LPCWSTR pwszName, size_t cchFull, LPWSTR pwszFull)
 {
-#ifdef DEBUG_bird  /** @todo make this default behavior after 3.1. */
     LPWSTR pwszFilePart;
     DWORD dwSize = GetFullPathNameW(pwszName, cchFull, pwszFull, &pwszFilePart);
     if(dwSize <= 0)
@@ -65,7 +64,7 @@ static DWORD MyGetfullPathNameW(LPCWSTR pwszName, size_t cchFull, LPWSTR pwszFul
                 if(!wsz[cch])
                 {
                     dwSize = GetFullPathNameW(wsz, cchFull, pwszFull, NULL);
-                    if(   dwSize > 0 
+                    if(   dwSize > 0
                        && GetFileAttributesW(pwszFull) != INVALID_FILE_ATTRIBUTES)
                         return dwSize;
                     break;
@@ -76,7 +75,6 @@ static DWORD MyGetfullPathNameW(LPCWSTR pwszName, size_t cchFull, LPWSTR pwszFul
     }
 
     /* fallback */
-#endif
     return GetFullPathNameW(pwszName, cchFull, pwszFull, NULL);
 }
 
