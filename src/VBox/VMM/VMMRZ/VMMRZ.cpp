@@ -104,7 +104,6 @@ VMMRZDECL(int) VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLRING3 enmOperation, 
  *          needs to change it into an assertion.
  *
  * @param   pVM             The VM handle.
- * @param   pVCpu           The virtual CPU handle of the calling EMT.
  * @param   enmOperation    The operation.
  * @param   uArg            The argument to the operation.
  */
