@@ -346,9 +346,9 @@ STDMETHODIMP VMDisplay::InvalidateAndUpdate()
 
     LogFlow (("VMDisplay::InvalidateAndUpdate(): sending DPYUPDATE request\n"));
 
-    Assert(pVM);
+    Assert(gpVM);
     /* pdm.h says that this has to be called from the EMT thread */
-    int rcVBox = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY,
+    int rcVBox = VMR3ReqCallVoidWait(gpVM, VMCPUID_ANY,
                                      (PFNRT)VMDisplay::doInvalidateAndUpdate, 1, mpDrv);
     if (RT_FAILURE(rcVBox))
         rc = E_FAIL;

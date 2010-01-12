@@ -124,7 +124,7 @@ static DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser);
 *   Global Variables                                                           *
 *******************************************************************************/
 
-PVM                pVM              = NULL;
+PVM                gpVM             = NULL;
 Mouse             *gMouse           = NULL;
 VMDisplay         *gDisplay         = NULL;
 Keyboard          *gKeyboard        = NULL;
@@ -955,7 +955,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
 leave:
     LogFlow(("Returning from main()!\n"));
 
-    if (pVM)
+    if (gpVM)
     {
         /*
          * If get here because the guest terminated using ACPI off we don't have to
@@ -965,12 +965,12 @@ leave:
         if (machineState != VMSTATE_OFF)
         {
             /* Power off VM */
-            rc = VMR3PowerOff(pVM);
+            rc = VMR3PowerOff(gpVM);
             AssertRC(rc);
         }
 
         /* And destroy it */
-        rc = VMR3Destroy(pVM);
+        rc = VMR3Destroy(gpVM);
         AssertRC(rc);
     }
 
@@ -1139,11 +1139,11 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
     if (g_fReleaseLog)
     {
         static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-        static char szError[RTPATH_MAX + 128] = "";
+        static char s_szError[RTPATH_MAX + 128] = "";
         PRTLOGGER pLogger;
         rc2 = RTLogCreateEx(&pLogger, RTLOGFLAGS_PREFIX_TIME_PROG, "all",
                             "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
-                            RTLOGDEST_FILE, szError, sizeof(szError), "./VBoxBFE.log");
+                            RTLOGDEST_FILE, s_szError, sizeof(s_szError), "./VBoxBFE.log");
         if (RT_SUCCESS(rc2))
         {
             /* some introductory information */
@@ -1160,7 +1160,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
             RTLogRelSetDefaultInstance(pLogger);
         }
         else
-            RTPrintf("Could not open release log (%s)\n", szError);
+            RTPrintf("Could not open release log (%s)\n", s_szError);
     }
 
     /*
@@ -1171,7 +1171,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
     /*
      * Create empty VM.
      */
-    rc = VMR3Create(1, setVMErrorCallback, NULL, vboxbfeConfigConstructor, NULL, &pVM);
+    rc = VMR3Create(1, setVMErrorCallback, NULL, vboxbfeConfigConstructor, NULL, &gpVM);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Error: VM creation failed with %Rrc.\n", rc);
@@ -1182,7 +1182,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
     /*
      * Register VM state change handler
      */
-    rc = VMR3AtStateRegister(pVM, vmstateChangeCallback, NULL);
+    rc = VMR3AtStateRegister(gpVM, vmstateChangeCallback, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Error: VMR3AtStateRegister failed with %Rrc.\n", rc);
@@ -1201,12 +1201,11 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
             SHFLSTRING      *pFolderName, *pMapName;
             int              cbString;
             PRTUTF16         aHostPath, aMapName;
-            int              rc;
 
-            rc = RTStrToUtf16(g_pszShareDir[i], &aHostPath);
-            AssertRC(rc);
-            rc = RTStrToUtf16(g_pszShareName[i], &aMapName);
-            AssertRC(rc);
+            rc2 = RTStrToUtf16(g_pszShareDir[i], &aHostPath);
+            AssertRC(rc2);
+            rc2 = RTStrToUtf16(g_pszShareName[i], &aMapName);
+            AssertRC(rc2);
 
             cbString = (RTUtf16Len (aHostPath) + 1) * sizeof (RTUTF16);
             pFolderName = (SHFLSTRING *) RTMemAllocZ (sizeof (SHFLSTRING) + cbString);
@@ -1235,9 +1234,9 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
             parms[2].type = VBOX_HGCM_SVC_PARM_32BIT;
             parms[2].u.uint32 = !g_fShareReadOnly[i];
 
-            rc = gVMMDev->hgcmHostCall ("VBoxSharedFolders",
-                                        SHFL_FN_ADD_MAPPING, SHFL_CPARMS_ADD_MAPPING, &parms[0]);
-            AssertRC(rc);
+            rc2 = gVMMDev->hgcmHostCall ("VBoxSharedFolders",
+                                         SHFL_FN_ADD_MAPPING, SHFL_CPARMS_ADD_MAPPING, &parms[0]);
+            AssertRC(rc2);
             LogRel(("Added share %s: (%s)\n", g_pszShareName[i], g_pszShareDir[i]));
             RTMemFree (pFolderName);
             RTMemFree (pMapName);
@@ -1254,7 +1253,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
     if (g_fUSB)
     {
         gHostUSB = new HostUSB();
-        gHostUSB->init(pVM);
+        gHostUSB->init(gpVM);
     }
 #endif /* VBOXBFE_WITH_USB */
 
@@ -1276,11 +1275,11 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
             && RTPathExists(g_pszStateFile))
         {
             startProgressInfo("Restoring");
-            rc = VMR3LoadFromFile(pVM, g_pszStateFile, callProgressInfo, (uintptr_t)NULL);
+            rc = VMR3LoadFromFile(gpVM, g_pszStateFile, callProgressInfo, (uintptr_t)NULL);
             endProgressInfo();
             if (RT_SUCCESS(rc))
             {
-                rc = VMR3Resume(pVM);
+                rc = VMR3Resume(gpVM);
                 AssertRC(rc);
                 gDisplay->setRunning();
             }
@@ -1289,7 +1288,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
         }
         else
         {
-            rc = VMR3PowerOn(pVM);
+            rc = VMR3PowerOn(gpVM);
             if (RT_FAILURE(rc))
                 AssertMsgFailed(("VMR3PowerOn failed, rc=%Rrc\n", rc));
         }
@@ -1304,11 +1303,11 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
     return 0;
 
 failure:
-    if (pVM)
+    if (gpVM)
     {
-        rc2 = VMR3Destroy(pVM);
+        rc2 = VMR3Destroy(gpVM);
         AssertRC(rc2);
-        pVM = NULL;
+        gpVM = NULL;
     }
     machineState = VMSTATE_TERMINATED;
 

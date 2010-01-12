@@ -659,10 +659,10 @@ void VBoxNetDhcp::explodeConfig(void)
 
             /* Check if it exists and is configured. */
             VBoxNetDhcpLease *pLease = NULL;
-            for (size_t i = 0; i < m_Leases.size(); i++)
-                if (m_Leases[i].m_IPv4Address.u == IPv4Addr.u)
+            for (size_t j = 0; j < m_Leases.size(); j++)
+                if (m_Leases[j].m_IPv4Address.u == IPv4Addr.u)
                 {
-                    pLease = &m_Leases[i];
+                    pLease = &m_Leases[j];
                     break;
                 }
             if (pLease)

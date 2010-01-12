@@ -103,8 +103,8 @@ STDMETHODIMP MachineDebugger::COMGETTER(RecompileUser)(BOOL *enabled)
 {
     if (!enabled)
         return E_POINTER;
-    if (pVM)
-        *enabled = !EMIsRawRing3Enabled(pVM);
+    if (gpVM)
+        *enabled = !EMIsRawRing3Enabled(gpVM);
     else
         *enabled = false;
     return S_OK;
@@ -130,13 +130,13 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileUser)(BOOL enable)
             return S_OK;
         }
     }
-    if (!pVM)
+    if (!gpVM)
     {
         return E_FAIL;
     }
 
     EMRAWMODE rawModeFlag = enable ? EMRAW_RING3_DISABLE : EMRAW_RING3_ENABLE;
-    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)EMR3RawSetMode, 2, pVM, rawModeFlag);
+    int rcVBox = VMR3ReqCallWait(gpVM, VMCPUID_ANY, (PFNRT)EMR3RawSetMode, 2, gpVM, rawModeFlag);
     if (RT_SUCCESS(rcVBox))
         return S_OK;
 
@@ -155,8 +155,8 @@ STDMETHODIMP MachineDebugger::COMGETTER(RecompileSupervisor)(BOOL *enabled)
 {
     if (!enabled)
         return E_POINTER;
-    if (pVM)
-        *enabled = !EMIsRawRing0Enabled(pVM);
+    if (gpVM)
+        *enabled = !EMIsRawRing0Enabled(gpVM);
     else
         *enabled = false;
     return S_OK;
@@ -182,13 +182,13 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileSupervisor)(BOOL enable)
             return S_OK;
         }
     }
-    if (!pVM)
+    if (!gpVM)
     {
         return E_FAIL;
     }
 
     EMRAWMODE rawModeFlag = enable ? EMRAW_RING0_DISABLE : EMRAW_RING0_ENABLE;
-    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)EMR3RawSetMode, 2, pVM, rawModeFlag);
+    int rcVBox = VMR3ReqCallWait(gpVM, VMCPUID_ANY, (PFNRT)EMR3RawSetMode, 2, gpVM, rawModeFlag);
     if (RT_SUCCESS(rcVBox))
         return S_OK;
 
@@ -207,8 +207,8 @@ STDMETHODIMP MachineDebugger::COMGETTER(PATMEnabled)(BOOL *enabled)
 {
     if (!enabled)
         return E_POINTER;
-    if (pVM)
-        *enabled = PATMIsEnabled(pVM);
+    if (gpVM)
+        *enabled = PATMIsEnabled(gpVM);
     else
         *enabled = false;
     return S_OK;
@@ -235,10 +235,10 @@ STDMETHODIMP MachineDebugger::COMSETTER(PATMEnabled)(BOOL enable)
         }
     }
 
-    if (!pVM)
+    if (!gpVM)
         return E_FAIL;
 
-    PATMR3AllowPatching(pVM, enable);
+    PATMR3AllowPatching(gpVM, enable);
     return E_NOTIMPL;
 }
 
@@ -252,8 +252,8 @@ STDMETHODIMP MachineDebugger::COMGETTER(CSAMEnabled)(BOOL *enabled)
 {
     if (!enabled)
         return E_POINTER;
-    if (pVM)
-        *enabled = CSAMIsEnabled(pVM);
+    if (gpVM)
+        *enabled = CSAMIsEnabled(gpVM);
     else
         *enabled = false;
     return S_OK;
@@ -280,13 +280,13 @@ STDMETHODIMP MachineDebugger::COMSETTER(CSAMEnabled)(BOOL enable)
         }
     }
 
-    if (!pVM)
+    if (!gpVM)
         return E_FAIL;
 
     if (enable)
-        CSAMEnableScanning(pVM);
+        CSAMEnableScanning(gpVM);
     else
-        CSAMDisableScanning(pVM);
+        CSAMDisableScanning(gpVM);
     return E_NOTIMPL;
 }
 

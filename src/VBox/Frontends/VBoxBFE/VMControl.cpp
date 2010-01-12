@@ -61,7 +61,7 @@ VMCtrlPause(void)
     if (gConsole->inputGrabbed())
         gConsole->inputGrabEnd();
 
-    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMR3Suspend, 1, pVM);
+    int rcVBox = VMR3ReqCallWait(gpVM, VMCPUID_ANY, (PFNRT)VMR3Suspend, 1, gpVM);
     AssertRC(rcVBox);
     return VINF_SUCCESS;
 }
@@ -75,7 +75,7 @@ VMCtrlResume(void)
     if (machineState != VMSTATE_SUSPENDED)
         return VERR_VM_INVALID_VM_STATE;
 
-    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMR3Resume, 1, pVM);
+    int rcVBox = VMR3ReqCallWait(gpVM, VMCPUID_ANY, (PFNRT)VMR3Resume, 1, gpVM);
     AssertRC(rcVBox);
     return VINF_SUCCESS;
 }
@@ -86,7 +86,7 @@ VMCtrlResume(void)
 int
 VMCtrlReset(void)
 {
-    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMR3Reset, 1, pVM);
+    int rcVBox = VMR3ReqCallWait(gpVM, VMCPUID_ANY, (PFNRT)VMR3Reset, 1, gpVM);
     AssertRC(rcVBox);
     return VINF_SUCCESS;
 }
@@ -98,7 +98,7 @@ int
 VMCtrlACPIPowerButton(void)
 {
     PPDMIBASE pBase;
-    int vrc = PDMR3QueryDeviceLun (pVM, "acpi", 0, 0, &pBase);
+    int vrc = PDMR3QueryDeviceLun (gpVM, "acpi", 0, 0, &pBase);
     if (RT_SUCCESS (vrc))
     {
         Assert (pBase);
@@ -116,7 +116,7 @@ int
 VMCtrlACPISleepButton(void)
 {
     PPDMIBASE pBase;
-    int vrc = PDMR3QueryDeviceLun (pVM, "acpi", 0, 0, &pBase);
+    int vrc = PDMR3QueryDeviceLun (gpVM, "acpi", 0, 0, &pBase);
     if (RT_SUCCESS (vrc))
     {
         Assert (pBase);
@@ -136,8 +136,8 @@ DECLCALLBACK(int) VMSaveThread(RTTHREAD Thread, void *pvUser)
     int rc;
 
     startProgressInfo("Saving");
-    rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, 
-                         (PFNRT)VMR3Save, 5, pVM, g_pszStateFile, false /*fContinueAftewards*/, &callProgressInfo, (uintptr_t)NULL);
+    rc = VMR3ReqCallWait(gpVM, VMCPUID_ANY,
+                         (PFNRT)VMR3Save, 5, gpVM, g_pszStateFile, false /*fContinueAftewards*/, &callProgressInfo, (uintptr_t)NULL);
     AssertRC(rc);
     endProgressInfo();
     pfnQuit();
@@ -164,7 +164,7 @@ VMCtrlSave(void (*pfnQuit)(void))
 
     if (machineState == VMSTATE_RUNNING)
     {
-        rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMR3Suspend, 1, pVM);
+        rc = VMR3ReqCallWait(gpVM, VMCPUID_ANY, (PFNRT)VMR3Suspend, 1, gpVM);
         AssertRC(rc);
     }
 
