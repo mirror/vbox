@@ -67,17 +67,17 @@ struct Appliance::LocationInfo
 // opaque private instance data of Appliance class
 struct Appliance::Data
 {
- 	Data()
- 	  : pReader(NULL) {}
+    Data()
+      : pReader(NULL) {}
 
- 	~Data()
- 	{
- 	    if (pReader)
- 	    {
- 	        delete pReader;
- 	        pReader = NULL;
- 	    }
- 	}
+    ~Data()
+    {
+        if (pReader)
+        {
+            delete pReader;
+            pReader = NULL;
+        }
+    }
 
     LocationInfo locInfo; /* The location info for the currently processed OVF */
 
@@ -756,7 +756,7 @@ struct Appliance::TaskExportOVF: Appliance::TaskOVF
 
 struct MyHardDiskAttachment
 {
-    Guid                uuid;
+    Bstr                bstrUuid;
     ComPtr<IMachine>    pMachine;
     Bstr                controllerType;
     int32_t             lChannel;
@@ -1097,7 +1097,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
     // a list of images that we created/imported
     list<MyHardDiskAttachment> llHardDiskAttachments;
     list< ComPtr<IMedium> > llHardDisksCreated;
-    list<Guid> llMachinesRegistered;
+    list<Bstr> llMachinesRegistered;            // list of string UUIDs
 
     ComPtr<ISession> session;
     bool fSessionOpen = false;
@@ -1108,7 +1108,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
     // this is safe to access because this thread only gets started
     // if pReader != NULL
 
-    /* If an manifest file exists, verify the content. Therefor we need all
+    /* If an manifest file exists, verify the content. Therefore we need all
      * files which are referenced by the OVF & the OVF itself */
     Utf8Str strMfFile = manifestFileName(pTask->locInfo.strPath);
     list<Utf8Str> filesList;
@@ -1506,13 +1506,12 @@ int Appliance::importFS(TaskImportOVF *pTask)
             rc = mVirtualBox->RegisterMachine(pNewMachine);
             if (FAILED(rc)) throw rc;
 
-            Bstr newMachineId_;
-            rc = pNewMachine->COMGETTER(Id)(newMachineId_.asOutParam());
+            Bstr bstrNewMachineId;
+            rc = pNewMachine->COMGETTER(Id)(bstrNewMachineId.asOutParam());
             if (FAILED(rc)) throw rc;
-            Guid newMachineId(newMachineId_);
 
             // store new machine for roll-back in case of errors
-            llMachinesRegistered.push_back(newMachineId);
+            llMachinesRegistered.push_back(bstrNewMachineId);
 
             // Add floppies and CD-ROMs to the appropriate controllers.
             std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy);
@@ -1531,7 +1530,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                 {
                     /* In order to attach things we need to open a session
                      * for the new machine */
-                    rc = mVirtualBox->OpenSession(session, newMachineId_);
+                    rc = mVirtualBox->OpenSession(session, bstrNewMachineId);
                     if (FAILED(rc)) throw rc;
                     fSessionOpen = true;
 
@@ -1552,7 +1551,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
 
                         // this is for rollback later
                         MyHardDiskAttachment mhda;
-                        mhda.uuid = newMachineId;
+                        mhda.bstrUuid = bstrNewMachineId;
                         mhda.pMachine = pNewMachine;
                         mhda.controllerType = bstrName;
                         mhda.lChannel = 0;
@@ -1598,7 +1597,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
 
                         // this is for rollback later
                         MyHardDiskAttachment mhda;
-                        mhda.uuid = newMachineId;
+                        mhda.bstrUuid = bstrNewMachineId;
                         mhda.pMachine = pNewMachine;
 
                         ConvertDiskAttachmentValues(*pController,
@@ -1649,7 +1648,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                 {
                     /* In order to attach hard disks we need to open a session
                      * for the new machine */
-                    rc = mVirtualBox->OpenSession(session, newMachineId_);
+                    rc = mVirtualBox->OpenSession(session, bstrNewMachineId);
                     if (FAILED(rc)) throw rc;
                     fSessionOpen = true;
 
@@ -1785,7 +1784,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
 
                         // this is for rollback later
                         MyHardDiskAttachment mhda;
-                        mhda.uuid = newMachineId;
+                        mhda.bstrUuid = bstrNewMachineId;
                         mhda.pMachine = pNewMachine;
 
                         ConvertDiskAttachmentValues(hdc,
@@ -1850,7 +1849,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
              ++itM)
         {
             const MyHardDiskAttachment &mhda = *itM;
-            rc2 = mVirtualBox->OpenSession(session, Bstr(mhda.uuid));
+            rc2 = mVirtualBox->OpenSession(session, mhda.bstrUuid);
             if (SUCCEEDED(rc2))
             {
                 ComPtr<IMachine> sMachine;
@@ -1877,14 +1876,14 @@ int Appliance::importFS(TaskImportOVF *pTask)
         }
 
         // finally, deregister and remove all machines
-        list<Guid>::iterator itID;
+        list<Bstr>::iterator itID;
         for (itID = llMachinesRegistered.begin();
              itID != llMachinesRegistered.end();
              ++itID)
         {
-            const Guid &guid = *itID;
+            const Bstr &bstrGuid = *itID;
             ComPtr<IMachine> failedMachine;
-            rc2 = mVirtualBox->UnregisterMachine(guid.toUtf16(), failedMachine.asOutParam());
+            rc2 = mVirtualBox->UnregisterMachine(bstrGuid, failedMachine.asOutParam());
             if (SUCCEEDED(rc2))
                 rc2 = failedMachine->DeleteSettings();
         }
