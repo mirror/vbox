@@ -287,7 +287,7 @@ TestShortWrites(nsIInputStream* in, nsIOutputStream* out)
 
 #if 0
 
-class nsPipeObserver : public nsIInputStreamObserver, 
+class nsPipeObserver : public nsIInputStreamObserver,
                        public nsIOutputStreamObserver
 {
 public:
@@ -520,8 +520,8 @@ void
 RunTests(PRUint32 segSize, PRUint32 segCount)
 {
     nsresult rv;
-    nsIInputStream* in;
-    nsIOutputStream* out;
+    nsIInputStream* in = 0;             /* bird: initialize to quiet gcc. */
+    nsIOutputStream* out = 0;           /* ditto */
     PRUint32 bufSize;
 
     bufSize = segSize * segCount;
