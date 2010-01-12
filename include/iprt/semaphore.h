@@ -32,6 +32,9 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#if defined(RT_LOCK_STRICT_ORDER) && defined(IN_RING3)
+# include <iprt/lockvalidator.h>
+#endif
 
 
 RT_C_DECLS_BEGIN
@@ -467,6 +470,14 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem);
 # endif
 #endif
 
+/* Strict lock order: Automatically classify locks by init location. */
+#if defined(RT_LOCK_STRICT_ORDER) && defined(IN_RING3)
+# define RTSemMutexCreate(phMutexSem) \
+    RTSemMutexCreateEx((phMutexSem), 0 /*fFlags*/, \
+                       RTLockValidatorClassForSrcPos(RT_SRC_POS, NULL), \
+                       RTLOCKVAL_SUB_CLASS_NONE, NULL)
+#endif
+
 /** @} */
 
 
@@ -879,6 +890,14 @@ RTDECL(uint32_t) RTSemRWGetReadCount(RTSEMRW hRWSem);
 #  define RTSemRWRequestWrite(pCritSect, cMillies)          RTSemRWRequestWriteDebug((pCritSect), (cMillies), 0, RT_SRC_POS)
 #  define RTSemRWRequestWriteNoResume(pCritSect, cMillies)  RTSemRWRequestWriteNoResumeDebug((pCritSect), (cMillies), 0, RT_SRC_POS)
 # endif
+#endif
+
+/* Strict lock order: Automatically classify locks by init location. */
+#if defined(RT_LOCK_STRICT_ORDER) && defined(IN_RING3)
+# define RTSemRWCreate(phSemRW) \
+    RTSemRWCreateEx((phSemRW), 0 /*fFlags*/, \
+                    RTLockValidatorClassForSrcPos(RT_SRC_POS, NULL), \
+                    RTLOCKVAL_SUB_CLASS_NONE, NULL)
 #endif
 
 /** @} */

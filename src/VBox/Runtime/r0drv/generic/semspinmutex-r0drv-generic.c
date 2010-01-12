@@ -126,7 +126,7 @@ RTDECL(int) RTSemSpinMutexCreate(PRTSEMSPINMUTEX phSpinMtx, uint32_t fFlags)
     pThis->fFlags     = fFlags;
     pThis->hOwner     = NIL_RTNATIVETHREAD;
     pThis->cLockers   = 0;
-    rc = RTSemEventCreate(&pThis->hEventSem);
+    rc = RTSemEventCreateEx(&pThis->hEventSem, RTSEMEVENT_FLAGS_NO_LOCK_VAL, NIL_RTLOCKVALCLASS, NULL);
     if (RT_SUCCESS(rc))
     {
         *phSpinMtx = pThis;

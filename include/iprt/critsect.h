@@ -351,7 +351,7 @@ DECLINLINE(int32_t) RTCritSectGetWaiters(PCRTCRITSECT pCritSect)
 #endif
 
 /* Strict lock order: Automatically classify locks by init location. */
-#ifdef RT_LOCK_STRICT_ORDER
+#if defined(RT_LOCK_STRICT_ORDER) && defined(IN_RING3)
 # define RTCritSectInit(pCritSect) \
     RTCritSectInitEx((pCritSect), 0 /*fFlags*/, \
                      RTLockValidatorClassForSrcPos(RT_SRC_POS, NULL), \

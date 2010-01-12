@@ -137,7 +137,7 @@ int rtThreadInit(void)
          * We assume the caller is the 1st thread, which we'll call 'main'.
          * But first, we'll create the semaphore.
          */
-        rc = RTSemRWCreate(&g_ThreadRWSem);
+        rc = RTSemRWCreateEx(&g_ThreadRWSem, RTSEMRW_FLAGS_NO_LOCK_VAL, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
         if (RT_SUCCESS(rc))
         {
             rc = rtThreadNativeInit();
