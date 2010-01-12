@@ -165,9 +165,10 @@ endif
 TEMPLATE_XPCOM_LIBS               += $(LIB_RUNTIME)
 
 #
-# Template for building the XPCOM executables
+# Template for building the XPCOM executables.
+# Used as a base template by XPCOMTSTEXE and XPCOMIPCEXE.
 #
-TEMPLATE_XPCOMEXE                  = XPCOM executable files (testcases)
+TEMPLATE_XPCOMEXE                  = XPCOM executable files
 TEMPLATE_XPCOMEXE_EXTENDS          = XPCOM
 ## @todo undo -fPIC.
 TEMPLATE_XPCOMEXE_INCS             = ipc/ipcd/shared/src \
@@ -190,6 +191,16 @@ TEMPLATE_XPCOMEXE_LDFLAGS.l4       = $(L4_DIR)/lib/x86_586/crt0.o \
     -Wl,--export-dynamic,--dynamic-linker=libld-l4.s.so \
     -Wl,--rpath-link,$(L4_LIBDIR) \
     # -Wl,--whole-archive,--no-allow-shlib-undefined
+#    -Wno-format
+
+
+#
+# Template for building the XPCOM testcase executables
+#
+TEMPLATE_XPCOMTSTEXE               = XPCOM executable files (testcases)
+TEMPLATE_XPCOMTSTEXE_EXTENDS       = XPCOMEXE
+TEMPLATE_XPCOMTSTEXE_CXXFLAGS      = $(TEMPLATE_XPCOMEXE_CXXFLAGS) -Wno-format
+TEMPLATE_XPCOMTSTEXE_CFLAGS        = $(TEMPLATE_XPCOMEXE_CFLAGS)   -Wno-format
 
 
 #
@@ -1530,58 +1541,58 @@ endif # VBOX_WITH_PYTHON
 #
 # testcases
 #
-tstnsIFileEnumerator_TEMPLATE  = XPCOMEXE
+tstnsIFileEnumerator_TEMPLATE  = XPCOMTSTEXE
 tstnsIFileEnumerator_SOURCES   = xpcom/tests/nsIFileEnumerator.cpp
-tstnsIFileTest_TEMPLATE        = XPCOMEXE
+tstnsIFileTest_TEMPLATE        = XPCOMTSTEXE
 tstnsIFileTest_SOURCES         = xpcom/tests/nsIFileTest.cpp
-tstTestArray_TEMPLATE          = XPCOMEXE
+tstTestArray_TEMPLATE          = XPCOMTSTEXE
 tstTestArray_SOURCES           = xpcom/tests/TestArray.cpp
-tstTestAtoms_TEMPLATE          = XPCOMEXE
+tstTestAtoms_TEMPLATE          = XPCOMTSTEXE
 tstTestAtoms_SOURCES           = xpcom/tests/TestAtoms.cpp
-tstTestAutoLock_TEMPLATE       = XPCOMEXE
+tstTestAutoLock_TEMPLATE       = XPCOMTSTEXE
 tstTestAutoLock_SOURCES        = xpcom/tests/TestAutoLock.cpp
-tstTestCallTemplates_TEMPLATE  = XPCOMEXE
+tstTestCallTemplates_TEMPLATE  = XPCOMTSTEXE
 tstTestCallTemplates_SOURCES   = xpcom/tests/TestCallTemplates.cpp
-tstTestCOMPtr_TEMPLATE         = XPCOMEXE
+tstTestCOMPtr_TEMPLATE         = XPCOMTSTEXE
 tstTestCOMPtr_SOURCES          = xpcom/tests/TestCOMPtr.cpp
-tstTestCOMPtrEq_TEMPLATE       = XPCOMEXE
+tstTestCOMPtrEq_TEMPLATE       = XPCOMTSTEXE
 tstTestCOMPtrEq_SOURCES        = xpcom/tests/TestCOMPtrEq.cpp
-tstTestCRT_TEMPLATE            = XPCOMEXE
+tstTestCRT_TEMPLATE            = XPCOMTSTEXE
 tstTestCRT_SOURCES             = xpcom/tests/TestCRT.cpp
-tstTestFactory_TEMPLATE        = XPCOMEXE
+tstTestFactory_TEMPLATE        = XPCOMTSTEXE
 tstTestFactory_SOURCES         = xpcom/tests/TestFactory.cpp
-tstTestHashtables_TEMPLATE     = XPCOMEXE
+tstTestHashtables_TEMPLATE     = XPCOMTSTEXE
 tstTestHashtables_SOURCES      = xpcom/tests/TestHashtables.cpp
-tstTestID_TEMPLATE             = XPCOMEXE
+tstTestID_TEMPLATE             = XPCOMTSTEXE
 tstTestID_SOURCES              = xpcom/tests/TestID.cpp
-tstTestObserverService_TEMPLATE= XPCOMEXE
+tstTestObserverService_TEMPLATE= XPCOMTSTEXE
 tstTestObserverService_SOURCES = xpcom/tests/TestObserverService.cpp
-tstTestPermanentAtoms_TEMPLATE = XPCOMEXE
+tstTestPermanentAtoms_TEMPLATE = XPCOMTSTEXE
 tstTestPermanentAtoms_SOURCES  = xpcom/tests/TestPermanentAtoms.cpp
-tstTestPipes_TEMPLATE          = XPCOMEXE
+tstTestPipes_TEMPLATE          = XPCOMTSTEXE
 tstTestPipes_SOURCES           = xpcom/tests/TestPipes.cpp
-tstTestServMgr_TEMPLATE        = XPCOMEXE
+tstTestServMgr_TEMPLATE        = XPCOMTSTEXE
 tstTestServMgr_SOURCES         = xpcom/tests/TestServMgr.cpp
 tstTestServMgr_INCS            = xpcom/tests/services
-tstTestThreads_TEMPLATE        = XPCOMEXE
+tstTestThreads_TEMPLATE        = XPCOMTSTEXE
 tstTestThreads_SOURCES         = xpcom/tests/TestThreads.cpp
-tstTestXPIDLString_TEMPLATE    = XPCOMEXE
+tstTestXPIDLString_TEMPLATE    = XPCOMTSTEXE
 tstTestXPIDLString_SOURCES     = xpcom/tests/TestXPIDLString.cpp
-tstTestDeque_TEMPLATE          = XPCOMEXE
+tstTestDeque_TEMPLATE          = XPCOMTSTEXE
 tstTestDeque_SOURCES           = xpcom/tests/TestDeque.cpp
-tstTestAutoPtr_TEMPLATE        = XPCOMEXE
+tstTestAutoPtr_TEMPLATE        = XPCOMTSTEXE
 tstTestAutoPtr_SOURCES         = xpcom/tests/TestAutoPtr.cpp
-tstTestMinStringAPI_TEMPLATE   = XPCOMEXE
+tstTestMinStringAPI_TEMPLATE   = XPCOMTSTEXE
 tstTestMinStringAPI_SOURCES    = xpcom/tests/TestMinStringAPI.cpp
-tstTestStrings_TEMPLATE        = XPCOMEXE
+tstTestStrings_TEMPLATE        = XPCOMTSTEXE
 tstTestStrings_SOURCES         = xpcom/tests/TestStrings.cpp
-tstPrimitiveTest_TEMPLATE      = XPCOMEXE
+tstPrimitiveTest_TEMPLATE      = XPCOMTSTEXE
 tstPrimitiveTest_SOURCES       = xpcom/typelib/xpt/tests/PrimitiveTest.c
-tstSimpleTypeLib_TEMPLATE      = XPCOMEXE
+tstSimpleTypeLib_TEMPLATE      = XPCOMTSTEXE
 tstSimpleTypeLib_SOURCES       = xpcom/typelib/xpt/tests/SimpleTypeLib.c
-tstXptDump_TEMPLATE            = XPCOMEXE
+tstXptDump_TEMPLATE            = XPCOMTSTEXE
 tstXptDump_SOURCES             = xpcom/typelib/xpt/tools/xpt_dump.c
-tstXptLink_TEMPLATE            = XPCOMEXE
+tstXptLink_TEMPLATE            = XPCOMTSTEXE
 tstXptLink_SOURCES             = xpcom/typelib/xpt/tools/xpt_link.c
 
 
