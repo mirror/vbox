@@ -252,7 +252,10 @@ int handleSnapshot(HandlerArg *a)
         CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
 
         /* switch based on the command */
-        bool fDelete = false, fRestore = false;
+        bool fDelete = false,
+             fRestore = false,
+             fRestoreCurrent = false;
+
         if (!strcmp(a->argv[1], "take"))
         {
             /* there must be a name */
@@ -338,10 +341,20 @@ int handleSnapshot(HandlerArg *a)
         }
         else if (    (fDelete = !strcmp(a->argv[1], "delete"))
                   || (fRestore = !strcmp(a->argv[1], "restore"))
+                  || (fRestoreCurrent = !strcmp(a->argv[1], "restorecurrent"))
                 )
         {
+            if (fRestoreCurrent)
+            {
+                if (a->argc > 2)
+                {
+                    errorSyntax(USAGE_SNAPSHOT, "Too many arguments");
+                    rc = E_FAIL;
+                    break;
+                }
+            }
             /* exactly one parameter: snapshot name */
-            if (a->argc != 3)
+            else if (a->argc != 3)
             {
                 errorSyntax(USAGE_SNAPSHOT, "Expecting snapshot name only");
                 rc = E_FAIL;
@@ -349,28 +362,35 @@ int handleSnapshot(HandlerArg *a)
             }
 
             ComPtr<ISnapshot> pSnapshot;
+            ComPtr<IProgress> pProgress;
+            Bstr bstrSnapGuid;
 
-            /* assume it's a UUID */
-            Bstr guidSnap(a->argv[2]);
-            if (!guidSnap.isEmpty())
+            if (fRestoreCurrent)
             {
-                CHECK_ERROR_BREAK(pMachine, GetSnapshot(guidSnap, pSnapshot.asOutParam()));
+                CHECK_ERROR_BREAK(pMachine, COMGETTER(CurrentSnapshot)(pSnapshot.asOutParam()));
+                CHECK_ERROR_BREAK(pSnapshot, COMGETTER(Id)(bstrSnapGuid.asOutParam()));
             }
             else
             {
-                /* then it must be a name */
-                CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]), pSnapshot.asOutParam()));
-                pSnapshot->COMGETTER(Id)(guidSnap.asOutParam());
+                // restore or delete snapshot: then resolve cmd line argument to snapshot instance
+                // assume it's a UUID
+                bstrSnapGuid = a->argv[2];
+                if (FAILED(pMachine->GetSnapshot(bstrSnapGuid, pSnapshot.asOutParam())))
+                {
+                    // then it must be a name
+                    CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]), pSnapshot.asOutParam()));
+                    CHECK_ERROR_BREAK(pSnapshot, COMGETTER(Id)(bstrSnapGuid.asOutParam()));
+                }
             }
 
-            ComPtr<IProgress> pProgress;
             if (fDelete)
             {
-                CHECK_ERROR_BREAK(console, DeleteSnapshot(guidSnap, pProgress.asOutParam()));
+                CHECK_ERROR_BREAK(console, DeleteSnapshot(bstrSnapGuid, pProgress.asOutParam()));
             }
             else
             {
-                // must be restore
+                // restore or restore current
+                RTPrintf("Restoring snapshot %ls\n", bstrSnapGuid.raw());
                 CHECK_ERROR_BREAK(console, RestoreSnapshot(pSnapshot, pProgress.asOutParam()));
             }
 
