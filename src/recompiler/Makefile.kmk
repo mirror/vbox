@@ -94,7 +94,7 @@ $(REM_MOD)_TOOL.win.x86    = MINGW32
 $(REM_MOD)_TOOL.win.amd64  = XGCCAMD64LINUX
 $(REM_MOD)_SDKS.win.x86    = W32API
 $(REM_MOD)_ASFLAGS         = -x assembler-with-cpp
-$(REM_MOD)_CFLAGS          = -Wall -g -fno-omit-frame-pointer -fno-strict-aliasing
+$(REM_MOD)_CFLAGS          = -Wall -g -fno-omit-frame-pointer -fno-strict-aliasing -Wno-shadow
 $(REM_MOD)_CFLAGS.debug    = -O0
 $(REM_MOD)_CFLAGS.release += -fno-gcse -O2
 $(REM_MOD)_CFLAGS.profile  = $($(REM_MOD)_CFLAGS.release)
@@ -118,13 +118,13 @@ else
 endif
 $(REM_MOD)_DEFS.freebsd   += _BSD
 
-$(REM_MOD)_INCS            = 		\
-	Sun 				\
-	target-i386 			\
-	tcg 				\
-	fpu 				\
-	$(PATH_$(REM_MOD)) 		\
-	$(PATH_ROOT)/src/VBox/VMM 	\
+$(REM_MOD)_INCS            = \
+	Sun \
+	target-i386 \
+	tcg \
+	fpu \
+	$(PATH_$(REM_MOD)) \
+	$(PATH_ROOT)/src/VBox/VMM \
 	.
 ifn1of ($($(REM_MOD)_DEFS),DEBUG_TMP_LOGGING)
 $(REM_MOD)_DEFS           += LOG_USE_C99
@@ -132,19 +132,19 @@ $(REM_MOD)_INCS           <= \
 	Sun/crt
 endif
 
-$(REM_MOD)_SOURCES         = 		\
-	VBoxRecompiler.c 		\
-	cpu-exec.c	 		\
-	exec.c 				\
-	translate-all.c 		\
-	host-utils.c 			\
-	cutils.c 			\
-	tcg/tcg.c 			\
-	tcg/tcg-dyngen.c 		\
-	tcg/tcg-runtime.c 		\
-	fpu/softfloat-native.c 		\
-	target-i386/op_helper.c 	\
-	target-i386/helper.c 		\
+$(REM_MOD)_SOURCES         = \
+	VBoxRecompiler.c \
+	cpu-exec.c \
+	exec.c \
+	translate-all.c \
+	host-utils.c \
+	cutils.c \
+	tcg/tcg.c \
+	tcg/tcg-dyngen.c \
+	tcg/tcg-runtime.c \
+	fpu/softfloat-native.c \
+	target-i386/op_helper.c \
+	target-i386/helper.c \
 	target-i386/translate.c
 
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
