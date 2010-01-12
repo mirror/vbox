@@ -42,14 +42,14 @@
            && so->s == polls[so->so_poll_index].fd)                \
        {                                                           \
            polls[so->so_poll_index].events |=                      \
-               N_(fdset1 ## _poll) | N_(fdset1 ## _poll);          \
+               N_(fdset1 ## _poll) | N_(fdset2 ## _poll);          \
            break;                                                  \
        }                                                           \
        AssertRelease(poll_index < (nfds));                         \
        polls[poll_index].fd = (so)->s;                             \
        (so)->so_poll_index = poll_index;                           \
        polls[poll_index].events =                                  \
-           N_(fdset1 ## _poll) | N_(fdset1 ## _poll);              \
+           N_(fdset1 ## _poll) | N_(fdset2 ## _poll);              \
        poll_index++;                                               \
    } while (0)
 
@@ -93,6 +93,9 @@
  */
 # define ICMP_ENGAGE_EVENT(so, fdset)                do {} while (0)
 
+/*
+ * On Windows we use FD_ALL_EVENTS to ensure that we don't miss any event.
+ */
 # define DO_ENGAGE_EVENT1(so, fdset1, label)                                                    \
     do {                                                                                        \
         rc = WSAEventSelect((so)->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);                         \
