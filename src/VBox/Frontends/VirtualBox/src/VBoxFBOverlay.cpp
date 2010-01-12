@@ -5167,6 +5167,7 @@ uint32_t VBoxVHWATextureImage::calcProgramType(VBoxVHWATextureImage *pDst, const
     if((pDstCKey || pSrcCKey) && bNotIntersected)
         type |= VBOXVHWA_PROGRAM_COLORKEYNODISCARD;
 
+    NOREF(pDst);
     return type;
 }
 
