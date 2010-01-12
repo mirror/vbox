@@ -696,6 +696,9 @@ class nsTAdoptingString_CharT : public nsTXPIDLString_CharT
         // call. |str| will be truncated as a side-effect of this
         // constructor.
       nsTAdoptingString_CharT( const self_type& str )
+#ifdef VBOX /* bird: shut up annoying warnings */
+          : nsTXPIDLString_CharT()
+#endif
         {
           *this = str;
         }
