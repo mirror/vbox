@@ -394,7 +394,7 @@ int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILE
     rc = MMR3HeapAllocZEx(pEpClass->Core.pVM, MM_TAG_PDM_ASYNC_COMPLETION, sizeof(PDMACEPFILEMGR), (void **)&pAioMgrNew);
     if (RT_SUCCESS(rc))
     {
-        pAioMgrNew->fFailsafe = fFailsafe ? true : pEpClass->fFailsafe;
+        pAioMgrNew->fFailsafe = fFailsafe || pEpClass->fFailsafe;
 
         rc = RTSemEventCreate(&pAioMgrNew->EventSem);
         if (RT_SUCCESS(rc))
