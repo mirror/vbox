@@ -189,13 +189,18 @@ typedef struct RTLOCKVALCLASSINT
     bool                    fStrictReleaseOrder;
     /** Whether this class is in the tree. */
     bool                    fInTree;
+    /** Donate a reference to the next retainer. This is a hack to make
+     *  RTLockValidatorClassCreateUnique work. */
+    bool volatile           fDonateRefToNextRetainer;
+    /** Reserved future use / explicit alignment. */
+    bool                    afReserved[3];
     /** The minimum wait interval for which we do deadlock detection
      *  (milliseconds). */
     RTMSINTERVAL            cMsMinDeadlock;
     /** The minimum wait interval for which we do order checks (milliseconds). */
     RTMSINTERVAL            cMsMinOrder;
     /** More padding. */
-    uint32_t                au32Reserved[ARCH_BITS == 32 ? 6 : 3];
+    uint32_t                au32Reserved[ARCH_BITS == 32 ? 5 : 2];
     /** Classes that may be taken prior to this one.
      * This is a linked list where each node contains a chunk of locks so that we
      * reduce the number of allocations as well as localize the data. */
@@ -273,12 +278,13 @@ static void rtLockValidatorLazyInit(void)
     if (ASMAtomicCmpXchgU32(&s_fInitializing, true, false))
     {
         if (!RTCritSectIsInitialized(&g_LockValClassTeachCS))
-            RTCritSectInit(&g_LockValClassTeachCS);
+            RTCritSectInitEx(&g_LockValClassTeachCS, RTCRITSECT_FLAGS_NO_LOCK_VAL, NIL_RTLOCKVALCLASS,
+                             RTLOCKVAL_SUB_CLASS_ANY, "RTLockVal-Teach");
 
         if (g_hLockValClassTreeRWLock == NIL_RTSEMRW)
         {
             RTSEMRW hSemRW;
-            int rc = RTSemRWCreate(&hSemRW);
+            int rc = RTSemRWCreateEx(&hSemRW, RTSEMRW_FLAGS_NO_LOCK_VAL, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY, "RTLockVal-Tree");
             if (RT_SUCCESS(rc))
                 ASMAtomicWriteHandle(&g_hLockValClassTreeRWLock, hSemRW);
         }
@@ -989,6 +995,10 @@ RTDECL(int) RTLockValidatorClassCreateExV(PRTLOCKVALCLASS phClass, PCRTLOCKVALSR
     pThis->fRecursionOk         = fRecursionOk;
     pThis->fStrictReleaseOrder  = fStrictReleaseOrder;
     pThis->fInTree              = false;
+    pThis->fDonateRefToNextRetainer = false;
+    pThis->afReserved[0]        = false;
+    pThis->afReserved[1]        = false;
+    pThis->afReserved[2]        = false;
     pThis->cMsMinDeadlock       = cMsMinDeadlock;
     pThis->cMsMinOrder          = cMsMinOrder;
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->au32Reserved); i++)
@@ -1038,6 +1048,40 @@ RTDECL(int) RTLockValidatorClassCreate(PRTLOCKVALCLASS phClass, bool fAutodidact
 
 
 /**
+ * Creates a new lock validator class with a reference that is consumed by the
+ * first call to RTLockValidatorClassRetain.
+ *
+ * This is tailored for use in the parameter list of a semaphore constructor.
+ *
+ * @returns Class handle with a reference that is automatically consumed by the
+ *          first retainer.  NIL_RTLOCKVALCLASS if we run into trouble.
+ *
+ * @param   pszFile             The source position of the call, file.
+ * @param   iLine               The source position of the call, line.
+ * @param   pszFunction         The source position of the call, function.
+ * @param   pszNameFmt          Class name format string, optional (NULL).  Max
+ *                              length is 32 bytes.
+ * @param   ...                 Format string arguments.
+ */
+RTDECL(RTLOCKVALCLASS) RTLockValidatorClassCreateUnique(RT_SRC_POS_DECL, const char *pszNameFmt, ...)
+{
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_POS_NO_ID();
+    RTLOCKVALCLASSINT *pClass;
+    va_list va;
+    va_start(va, pszNameFmt);
+    int rc = RTLockValidatorClassCreateExV(&pClass, &SrcPos,
+                                           true /*fAutodidact*/, true /*fRecursionOk*/, false /*fStrictReleaseOrder*/,
+                                           1 /*cMsMinDeadlock*/, 1 /*cMsMinOrder*/,
+                                           pszNameFmt, va);
+    va_end(va);
+    if (RT_FAILURE(rc))
+        return NIL_RTLOCKVALCLASS;
+    ASMAtomicWriteBool(&pClass->fDonateRefToNextRetainer, true); /* see rtLockValidatorClassRetain */
+    return pClass;
+}
+
+
+/**
  * Internal class retainer.
  * @returns The new reference count.
  * @param   pClass              The class.
@@ -1047,6 +1091,9 @@ DECL_FORCE_INLINE(uint32_t) rtLockValidatorClassRetain(RTLOCKVALCLASSINT *pClass
     uint32_t cRefs = ASMAtomicIncU32(&pClass->cRefs);
     if (cRefs > RTLOCKVALCLASS_MAX_REFS)
         ASMAtomicWriteU32(&pClass->cRefs, RTLOCKVALCLASS_MAX_REFS);
+    else if (   cRefs == 2
+             && ASMAtomicXchgBool(&pClass->fDonateRefToNextRetainer, false))
+        cRefs = ASMAtomicDecU32(&pClass->cRefs);
     return cRefs;
 }
 
@@ -2775,7 +2822,6 @@ static void rcLockValidatorDoDeadlockComplaining(PRTLOCKVALDDSTACK pStack, PRTLO
  */
 static int rtLockValidatorDeadlockDetection(PRTLOCKVALRECUNION pRec, PRTTHREADINT pThreadSelf, PCRTLOCKVALSRCPOS pSrcPos)
 {
-#ifdef DEBUG_bird
     RTLOCKVALDDSTACK Stack;
     int rc = rtLockValidatorDdDoDetection(&Stack, pRec, pThreadSelf);
     if (RT_SUCCESS(rc))
@@ -2798,9 +2844,6 @@ static int rtLockValidatorDeadlockDetection(PRTLOCKVALRECUNION pRec, PRTTHREADIN
 
     rcLockValidatorDoDeadlockComplaining(&Stack, pRec, pThreadSelf, pSrcPos, rc);
     return rc;
-#else
-    return VINF_SUCCESS;
-#endif
 }
 
 

@@ -56,7 +56,7 @@
  * of libxml, among other things.
  *
  * The constructor and destructor of this structure are used to perform global
- * module initiaizaton and cleanup. Thee must be only one global variable of
+ * module initiaizaton and cleanup. There must be only one global variable of
  * this structure.
  */
 static

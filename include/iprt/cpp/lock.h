@@ -27,10 +27,13 @@
  * additional information or have any questions.
  */
 
-#ifndef ___iprt_lock_h
-#define ___iprt_lock_h
+#ifndef ___iprt_cpp_lock_h
+#define ___iprt_cpp_lock_h
 
 #include <iprt/critsect.h>
+#ifdef RT_LOCK_STRICT
+# include <iprt/lockvalidator.h>
+#endif
 
 RT_C_DECLS_BEGIN
 
@@ -60,7 +63,26 @@ class RTLockMtx
     public:
         RTLockMtx()
         {
+#ifdef RT_LOCK_STRICT_ORDER
+            RTCritSectInitEx(&mMtx, 0 /*fFlags*/,
+                             RTLockValidatorClassCreateUnique(RT_SRC_POS, NULL),
+                             RTLOCKVAL_SUB_CLASS_NONE, NULL);
+#else
             RTCritSectInit(&mMtx);
+#endif
+        }
+
+        /** Use to when creating locks that belongs in the same "class".  */
+        RTLockMtx(RT_SRC_POS_DECL, uint32_t uSubClass = RTLOCKVAL_SUB_CLASS_NONE)
+        {
+#ifdef RT_LOCK_STRICT_ORDER
+            RTCritSectInitEx(&mMtx, 0 /*fFlags*/,
+                             RTLockValidatorClassForSrcPos(RT_SRC_POS_ARGS, NULL),
+                             uSubClass, NULL);
+#else
+            RTCritSectInit(&mMtx);
+            RT_SRC_POS_NOREF();
+#endif
         }
 
         ~RTLockMtx()

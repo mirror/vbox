@@ -258,7 +258,7 @@ RWLockHandle::RWLockHandle()
  *     sub-classes to deal with things like the media tree.
  */
 
-    int vrc = RTSemRWCreate(&m->sem);
+    int vrc = RTSemRWCreateEx(&m->sem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
     AssertRC(vrc);
 
 #ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
@@ -282,9 +282,9 @@ RWLockHandle::RWLockHandle()
 #ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
     validateLock(LOCKVAL_SRC_POS_ARGS);
 #endif
-#if defined(RT_STRICT) && defined(VBOX_WITH_DEBUG_LOCK_VALIDATOR)
+#if defined(RT_LOCK_STRICT) && defined(VBOX_WITH_DEBUG_LOCK_VALIDATOR)
     int vrc = RTSemRWRequestWriteDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
-#elif defined(RT_STRICT)
+#elif defined(RT_LOCK_STRICT)
     int vrc = RTSemRWRequestWriteDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
 #else
     int vrc = RTSemRWRequestWrite(m->sem, RT_INDEFINITE_WAIT);
@@ -307,9 +307,9 @@ RWLockHandle::RWLockHandle()
 #ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
     validateLock(LOCKVAL_SRC_POS_ARGS);
 #endif
-#if defined(RT_STRICT) && defined(VBOX_WITH_DEBUG_LOCK_VALIDATOR)
+#if defined(RT_LOCK_STRICT) && defined(VBOX_WITH_DEBUG_LOCK_VALIDATOR)
     int vrc = RTSemRWRequestReadDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
-#elif defined(RT_STRICT)
+#elif defined(RT_LOCK_STRICT)
     int vrc = RTSemRWRequestReadDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
 #else
     int vrc = RTSemRWRequestRead(m->sem, RT_INDEFINITE_WAIT);
@@ -360,7 +360,9 @@ struct WriteLockHandle::Data
 WriteLockHandle::WriteLockHandle()
 {
     m = new Data;
-    RTCritSectInit(&m->sem);
+    /** @todo see todo in RWLockHandle::RWLockHandle(). */
+    int vrc = RTCritSectInitEx(&m->sem, 0/*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
+    AssertRC(vrc);
 
 #ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
     m->strDescription = com::Utf8StrFmt("crit %RCv", this);
@@ -384,9 +386,9 @@ WriteLockHandle::~WriteLockHandle()
     validateLock(LOCKVAL_SRC_POS_ARGS);
 #endif
 
-#if defined(RT_STRICT) && defined(VBOX_WITH_DEBUG_LOCK_VALIDATOR)
+#if defined(RT_LOCK_STRICT) && defined(VBOX_WITH_DEBUG_LOCK_VALIDATOR)
     RTCritSectEnterDebug(&m->sem, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
-#elif defined(RT_STRICT)
+#elif defined(RT_LOCK_STRICT)
     RTCritSectEnterDebug(&m->sem, (uintptr_t)ASMReturnAddress(),
                          "return address >>>", 0, __PRETTY_FUNCTION__);
 #else

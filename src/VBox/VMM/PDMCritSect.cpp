@@ -138,7 +138,11 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
             pCritSect->Core.pValidatorRec = NULL;
 #else
             rc = RTLockValidatorRecExclCreate(&pCritSect->Core.pValidatorRec,
+# ifdef RT_LOCK_STRICT_ORDER
                                               RTLockValidatorClassForSrcPos(RT_SRC_POS_ARGS, "%s", pszName),
+# else
+                                              NIL_RTLOCKVALCLASS,
+# endif
                                               RTLOCKVAL_SUB_CLASS_NONE,
                                               pCritSect, true, "%s", pszName);
 #endif
