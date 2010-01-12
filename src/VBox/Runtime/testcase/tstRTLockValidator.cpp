@@ -951,14 +951,18 @@ static void testLo1(void)
     RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[5]), VINF_SUCCESS);
 
     /* clean up */
+    //for (int i = RT_ELEMENTS(g_ahClasses) - 1; i >= 0; i--)
     for (unsigned i = 0; i < RT_ELEMENTS(g_ahClasses); i++)
     {
+        uint32_t c;
         if (i <= 3)
-            RTTEST_CHECK(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 1);
+            RTTEST_CHECK_MSG(g_hTest, (c = RTLockValidatorClassRelease(g_ahClasses[i])) == 5 - i,
+                             (g_hTest, "c=%u i=%u\n", c, i));
         else
         {
             uint32_t cExpect = 1 + (RT_ELEMENTS(g_ahClasses) - i) * 2 - 1;
-            RTTEST_CHECK(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == cExpect);
+            RTTEST_CHECK(g_hTest, (c = RTLockValidatorClassRelease(g_ahClasses[i])) == cExpect,
+                         (g_hTest, "c=%u e=%u i=%u\n", c, cExpect, i));
         }
         g_ahClasses[i] = NIL_RTLOCKVALCLASS;
         RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectDelete(&g_aCritSects[i]), VINF_SUCCESS);
@@ -1017,7 +1021,7 @@ static void testLo2(void)
     RTTEST_CHECK_RC(g_hTest, RTCritSectLeave(&g_aCritSects[2]), VINF_SUCCESS);
 
     /* clean up */
-    for (unsigned i = 0; i < 4; i++)
+    for (int i = 4 - 1; i >= 0; i--)
     {
         RTTEST_CHECK(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 1);
         g_ahClasses[i] = NIL_RTLOCKVALCLASS;
@@ -1107,9 +1111,10 @@ static void testLo3(void)
     RTTEST_CHECK_RC(g_hTest, RTSemRWReleaseRead( g_ahSemRWs[2]), VINF_SUCCESS);
 
     /* clean up */
-    for (unsigned i = 0; i < 6; i++)
+    for (int i = 6 - 1; i >= 0; i--)
     {
-        RTTEST_CHECK(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 2);
+        uint32_t c;
+        RTTEST_CHECK_MSG(g_hTest, (c = RTLockValidatorClassRelease(g_ahClasses[i])) == 2, (g_hTest, "c=%u i=%u\n", c, i));
         g_ahClasses[i] = NIL_RTLOCKVALCLASS;
         RTTEST_CHECK_RC_RETV(g_hTest, RTSemRWDestroy(g_ahSemRWs[i]), VINF_SUCCESS);
         g_ahSemRWs[i] = NIL_RTSEMRW;
@@ -1170,7 +1175,7 @@ static void testLo4(void)
     RTTEST_CHECK_RC(g_hTest, RTSemMutexRelease(g_ahSemMtxes[2]), VINF_SUCCESS);
 
     /* clean up */
-    for (unsigned i = 0; i < 4; i++)
+    for (int i = 4 - 1; i >= 0; i--)
     {
         RTTEST_CHECK(g_hTest, RTLockValidatorClassRelease(g_ahClasses[i]) == 1);
         g_ahClasses[i] = NIL_RTLOCKVALCLASS;
@@ -1181,57 +1186,92 @@ static void testLo4(void)
 
 
 
-static bool testIsLockValidationCompiledIn(void)
+static const char *testCheckIfLockValidationIsCompiledIn(void)
 {
     RTCRITSECT CritSect;
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTCritSectInit(&CritSect), false);
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTCritSectEnter(&CritSect), false);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTCritSectInit(&CritSect), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTCritSectEnter(&CritSect), "");
     bool fRet = CritSect.pValidatorRec
              && CritSect.pValidatorRec->hThread == RTThreadSelf();
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTCritSectLeave(&CritSect), false);
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTCritSectDelete(&CritSect), false);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTCritSectLeave(&CritSect), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTCritSectDelete(&CritSect), "");
+    if (!fRet)
+        return "Lock validation is not enabled for critical sections";
 
+    /* deadlock detection for RTSemRW */
     RTSEMRW hSemRW;
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWCreate(&hSemRW), false);
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWRequestRead(hSemRW, 50), false);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWCreateEx(&hSemRW, 0 /*fFlags*/, NIL_RTLOCKVALCLASS,
+                                                    RTLOCKVAL_SUB_CLASS_NONE, "RTSemRW-1"), false);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWRequestRead(hSemRW, 50), "");
     int rc = RTSemRWRequestWrite(hSemRW, 1);
+    RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWReleaseRead(hSemRW), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWDestroy(hSemRW), "");
     if (rc != VERR_SEM_LV_ILLEGAL_UPGRADE)
-        fRet = false;
-    RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), false);
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWReleaseRead(hSemRW), false);
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWDestroy(hSemRW), false);
+        return "Deadlock detection is not enabled for the read/write semaphores";
 
-#if 0 /** @todo detect it on RTSemMutex... wrong locking order? */
-    RTSEMMUTEX hSemMtx;
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemMutexCreate(&hSemRW), false);
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemMutexRequest(hSemRW, 50), false);
-    /*??*/
-    RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), false);
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWRelease(hSemRW), false);
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWDestroy(hSemRW), false);
-#endif
+    /* lock order for RTSemRW */
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWCreateEx(&hSemRW, 0 /*fFlags*/,
+                                                    RTLockValidatorClassCreateUnique(RT_SRC_POS, NULL),
+                                                    RTLOCKVAL_SUB_CLASS_NONE, "RTSemRW-2"), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWRequestRead(hSemRW, 50), "");
+    rc = RTSemRWRequestWrite(hSemRW, 1);
+    RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWReleaseRead(hSemRW), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWDestroy(hSemRW), "");
+    if (rc != VERR_SEM_LV_WRONG_ORDER)
+    {
+        RTTestPrintf(g_hTest,  RTTESTLVL_ALWAYS,  "%Rrc\n", rc);
+        return "Lock order validation is not enabled for the read/write semaphores";
+    }
 
+    /* lock order for RTSemMutex */
+    RTSEMMUTEX hSemMtx1;
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemMutexCreateEx(&hSemMtx1, 0 /*fFlags*/,
+                                                       RTLockValidatorClassCreateUnique(RT_SRC_POS, NULL),
+                                                       RTLOCKVAL_SUB_CLASS_NONE, "RTSemMtx-1"), "");
+    RTSEMMUTEX hSemMtx2;
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemMutexCreateEx(&hSemMtx2, 0 /*fFlags*/,
+                                                       RTLockValidatorClassCreateUnique(RT_SRC_POS, NULL),
+                                                       RTLOCKVAL_SUB_CLASS_NONE, "RTSemMtx-2"), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemMutexRequest(hSemMtx1, 50), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemMutexRequest(hSemMtx2, 50), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemMutexRelease(hSemMtx2), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemMutexRelease(hSemMtx1), "");
+
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemMutexRequest(hSemMtx2, 50), "");
+    rc = RTSemMutexRequest(hSemMtx1, 50);
+    RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemMutexRelease(hSemMtx2), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemMutexDestroy(hSemMtx2), "");   hSemMtx2 = NIL_RTSEMMUTEX;
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemMutexDestroy(hSemMtx1), "");   hSemMtx1 = NIL_RTSEMMUTEX;
+    if (rc != VERR_SEM_LV_WRONG_ORDER)
+        return "Lock order validation is not enabled for the mutex semaphores";
+
+    /* signaller checks on event sems. */
     RTSEMEVENT hSemEvt;
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemEventCreate(&hSemEvt), false);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemEventCreate(&hSemEvt), "");
     RTSemEventSetSignaller(hSemEvt, RTThreadSelf());
     RTSemEventSetSignaller(hSemEvt, NIL_RTTHREAD);
     rc = RTSemEventSignal(hSemEvt);
+    RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemEventDestroy(hSemEvt), "");
     if (rc != VERR_SEM_LV_NOT_SIGNALLER)
-        fRet = false;
-    RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), false);
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemEventDestroy(hSemEvt), false);
+        return "Signalling checks are not enabled for the event semaphores";
 
+    /* signaller checks on multiple release event sems. */
     RTSEMEVENTMULTI hSemEvtMulti;
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemEventMultiCreate(&hSemEvtMulti), false);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemEventMultiCreate(&hSemEvtMulti), "");
     RTSemEventMultiSetSignaller(hSemEvtMulti, RTThreadSelf());
     RTSemEventMultiSetSignaller(hSemEvtMulti, NIL_RTTHREAD);
     rc = RTSemEventMultiSignal(hSemEvtMulti);
+    RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), "");
+    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemEventMultiDestroy(hSemEvtMulti), "");
     if (rc != VERR_SEM_LV_NOT_SIGNALLER)
-        fRet = false;
-    RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), false);
-    RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemEventMultiDestroy(hSemEvtMulti), false);
+        return "Signalling checks are not enabled for the multiple release event semaphores";
 
-    return fRet;
+    /* we're good */
+    return NULL;
 }
 
 
@@ -1248,10 +1288,11 @@ int main()
     RTLockValidatorSetEnabled(true);
     RTLockValidatorSetMayPanic(false);
     RTLockValidatorSetQuiet(true);
-    if (!testIsLockValidationCompiledIn())
+    const char *pszWhyDisabled = testCheckIfLockValidationIsCompiledIn();
+    if (pszWhyDisabled)
         return RTTestErrorCount(g_hTest) > 0
             ? RTTestSummaryAndDestroy(g_hTest)
-            : RTTestSkipAndDestroy(g_hTest, "deadlock detection is not compiled in");
+            : RTTestSkipAndDestroy(g_hTest, pszWhyDisabled);
     RTLockValidatorSetQuiet(false);
 
     bool fTestDd = true;
