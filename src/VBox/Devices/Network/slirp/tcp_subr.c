@@ -362,7 +362,18 @@ tcp_sockclosed(PNATState pData, struct tcpcb *tp)
     if (   tp
         && tp->t_state >= TCPS_FIN_WAIT_2)
         soisfdisconnected(tp->t_socket);
-    if (tp)
+    /*
+     * (vasily) there're situations when the FIN or FIN,ACK are lost (Windows host)
+     * and retransmitting keeps VBox busy on sending closing sequences *very* frequent,
+     * easting a lot of CPU. To avoid this we don't sent on sockets marked as closed
+     * (see slirp.c for details about setting so_close member).
+     */
+    if (   tp
+#ifdef RT_OS_WINDOWS
+        && tp->t_socket
+        && !tp->t_socket->so_close
+#endif
+        )
         tcp_output(pData, tp);
 }
 
