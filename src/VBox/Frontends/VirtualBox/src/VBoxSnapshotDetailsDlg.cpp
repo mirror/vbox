@@ -178,7 +178,7 @@ VBoxScreenshotViewer::VBoxScreenshotViewer (QWidget *aParent, const QPixmap &aSc
 
     double aspectRatio = (double) aScreenshot.height() / aScreenshot.width();
     QSize maxSize = aScreenshot.size() + QSize (mArea->frameWidth() * 2, mArea->frameWidth() * 2);
-    QSize initSize = QSize (640, 640 * aspectRatio).boundedTo (maxSize);
+    QSize initSize = QSize (640, (int)(640 * aspectRatio)).boundedTo (maxSize);
 
     setMaximumSize (maxSize);
 
