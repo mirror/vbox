@@ -961,8 +961,8 @@ static void testLo1(void)
         else
         {
             uint32_t cExpect = 1 + (RT_ELEMENTS(g_ahClasses) - i) * 2 - 1;
-            RTTEST_CHECK(g_hTest, (c = RTLockValidatorClassRelease(g_ahClasses[i])) == cExpect,
-                         (g_hTest, "c=%u e=%u i=%u\n", c, cExpect, i));
+            RTTEST_CHECK_MSG(g_hTest, (c = RTLockValidatorClassRelease(g_ahClasses[i])) == cExpect,
+                             (g_hTest, "c=%u e=%u i=%u\n", c, cExpect, i));
         }
         g_ahClasses[i] = NIL_RTLOCKVALCLASS;
         RTTEST_CHECK_RC_RETV(g_hTest, RTCritSectDelete(&g_aCritSects[i]), VINF_SUCCESS);
