@@ -2334,20 +2334,6 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             parseTimestamp(timeLastStateChange, str);
             // constructor has called RTTimeNow(&timeLastStateChange) before
 
-#if 1 /** @todo Teleportation: Obsolete. Remove in a couple of days. */
-        if (!elmMachine.getAttributeValue("teleporterEnabled", fTeleporterEnabled)
-         && !elmMachine.getAttributeValue("liveMigrationTarget", fTeleporterEnabled))
-            fTeleporterEnabled = false;
-        if (!elmMachine.getAttributeValue("teleporterPort", uTeleporterPort)
-         && !elmMachine.getAttributeValue("liveMigrationPort", uTeleporterPort))
-            uTeleporterPort = 0;
-        if (!elmMachine.getAttributeValue("teleporterAddress", strTeleporterAddress))
-            strTeleporterAddress = "";
-        if (!elmMachine.getAttributeValue("teleporterPassword", strTeleporterPassword)
-         && !elmMachine.getAttributeValue("liveMigrationPassword", strTeleporterPassword))
-            strTeleporterPassword = "";
-#endif
-
         // parse Hardware before the other elements because other things depend on it
         const xml::ElementNode *pelmHardware;
         if (!(pelmHardware = elmMachine.findChildElement("Hardware")))
