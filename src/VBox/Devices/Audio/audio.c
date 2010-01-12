@@ -1764,7 +1764,9 @@ CaptureVoiceOut *AUD_add_capture (
     }
     else {
         HWVoiceOut *hw;
+#ifndef VBOX
         CaptureVoiceOut *cap;
+#endif
 
         cap = audio_calloc (AUDIO_FUNC, 1, sizeof (*cap));
         if (!cap) {

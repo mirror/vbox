@@ -447,7 +447,7 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
                           "%.*Rhxd\n",
                           cbFrame, cbFrame, INTNETHdrGetFramePtr(pHdr, pBuf)));
 #endif
-                    int rc = pThis->pPort->pfnReceive(pThis->pPort, INTNETHdrGetFramePtr(pHdr, pBuf), cbFrame);
+                    rc = pThis->pPort->pfnReceive(pThis->pPort, INTNETHdrGetFramePtr(pHdr, pBuf), cbFrame);
                     AssertRC(rc);
 
                     /* skip to the next frame. */
