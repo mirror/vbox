@@ -528,7 +528,7 @@ udp_listen(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_
     fd_nonblock(so->s);
     SOCKET_LOCK_CREATE(so);
     QSOCKET_LOCK(udb);
-    insque(pData, so,&udb);
+    insque(pData, so, &udb);
     NSOCK_INC();
     QSOCKET_UNLOCK(udb);
 
