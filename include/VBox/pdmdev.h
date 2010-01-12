@@ -3396,8 +3396,8 @@ DECLINLINE(int) PDMDeviceDBGFStop(PPDMDEVINS pDevIns, RT_SRC_POS_DECL, const cha
 #endif
 }
 
-
 #ifdef IN_RING3
+
 /**
  * @copydoc PDMDEVHLPR3::pfnIOPortRegister
  */
@@ -3903,8 +3903,8 @@ DECLINLINE(int) PDMDevHlpPDMThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREAD ppThrea
 {
     return pDevIns->pDevHlpR3->pfnPDMThreadCreate(pDevIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 }
-#endif /* IN_RING3 */
 
+#endif /* IN_RING3 */
 
 /**
  * @copydoc PDMDEVHLPR3::pfnGetVM
