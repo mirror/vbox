@@ -17,80 +17,75 @@
 #endif
 #include <alias.h>
 
-#if !defined(RT_OS_WINDOWS)
+#ifndef RT_OS_WINDOWS
 
-#  define DO_ENGAGE_EVENT1(so, fdset, label)                        \
-    do {                                                            \
-        if (    so->so_poll_index != -1                             \
-            && so->s == polls[so->so_poll_index].fd) {              \
-            polls[so->so_poll_index].events |= N_(fdset ## _poll);  \
-            break; /* out of this loop */                           \
-        }                                                           \
-        AssertRelease(poll_index < (nfds));                         \
-        AssertRelease(poll_index >= 0 && poll_index < (nfds));      \
-        polls[poll_index].fd = (so)->s;                             \
-        (so)->so_poll_index = poll_index;                           \
-        polls[poll_index].events = N_(fdset ## _poll);              \
-        polls[poll_index].revents = 0;                              \
-        poll_index++;                                               \
-    } while (0)
+# define DO_ENGAGE_EVENT1(so, fdset, label)                        \
+   do {                                                            \
+       if (   so->so_poll_index != -1                              \
+           && so->s == polls[so->so_poll_index].fd)                \
+       {                                                           \
+           polls[so->so_poll_index].events |= N_(fdset ## _poll);  \
+           break;                                                  \
+       }                                                           \
+       AssertRelease(poll_index < (nfds));                         \
+       AssertRelease(poll_index >= 0 && poll_index < (nfds));      \
+       polls[poll_index].fd = (so)->s;                             \
+       (so)->so_poll_index = poll_index;                           \
+       polls[poll_index].events = N_(fdset ## _poll);              \
+       polls[poll_index].revents = 0;                              \
+       poll_index++;                                               \
+   } while (0)
 
+# define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label)               \
+   do {                                                            \
+       if (   so->so_poll_index != -1                              \
+           && so->s == polls[so->so_poll_index].fd)                \
+       {                                                           \
+           polls[so->so_poll_index].events |=                      \
+               N_(fdset1 ## _poll) | N_(fdset1 ## _poll);          \
+           break;                                                  \
+       }                                                           \
+       AssertRelease(poll_index < (nfds));                         \
+       polls[poll_index].fd = (so)->s;                             \
+       (so)->so_poll_index = poll_index;                           \
+       polls[poll_index].events =                                  \
+           N_(fdset1 ## _poll) | N_(fdset1 ## _poll);              \
+       poll_index++;                                               \
+   } while (0)
 
-#  define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label)               \
-    do {                                                            \
-        if (    so->so_poll_index != -1                             \
-            && so->s == polls[so->so_poll_index].fd) {              \
-            polls[so->so_poll_index].events |=                      \
-                N_(fdset1 ## _poll) | N_(fdset1 ## _poll);          \
-            break; /* out of this loop */                           \
-        }                                                           \
-        AssertRelease(poll_index < (nfds));                         \
-        polls[poll_index].fd = (so)->s;                             \
-        (so)->so_poll_index = poll_index;                           \
-        polls[poll_index].events =                                  \
-            N_(fdset1 ## _poll) | N_(fdset1 ## _poll);              \
-        poll_index++;                                               \
-    } while (0)
+# define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
 
-#  define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
+# define DO_CHECK_FD_SET(so, events, fdset)                        \
+     (   ((so)->so_poll_index != -1)                               \
+      && ((so)->so_poll_index <= ndfs)                             \
+      && ((so)->s == polls[so->so_poll_index].fd)                  \
+      && (polls[(so)->so_poll_index].revents & N_(fdset ## _poll)))
 
-#  define DO_CHECK_FD_SET(so, events, fdset)                        \
-      (   ((so)->so_poll_index != -1)                               \
-       && ((so)->so_poll_index <= ndfs)                             \
-       && ((so)->s == polls[so->so_poll_index].fd)                  \
-       && (polls[(so)->so_poll_index].revents & N_(fdset ## _poll)))
+  /* specific for Unix API */
+# define DO_UNIX_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset) 
+  /* specific for Windows Winsock API */
+# define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0 
 
-   /* specific for Unix API */
-#  define DO_UNIX_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset) 
-   /* specific for Windows Winsock API */
-#  define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0 
+# ifndef RT_OS_LINUX
+#  define readfds_poll   (POLLRDNORM)
+#  define writefds_poll  (POLLWRNORM)
+#  define xfds_poll      (POLLRDBAND|POLLWRBAND|POLLPRI)
+# else
+#  define readfds_poll   (POLLIN)
+#  define writefds_poll  (POLLOUT)
+#  define xfds_poll      (POLLPRI)
+# endif
+# define rderr_poll      (POLLERR)
+# define rdhup_poll      (POLLHUP)
+# define nval_poll       (POLLNVAL)
 
-# ifndef RT_OS_WINDOWS
+# define ICMP_ENGAGE_EVENT(so, fdset)              \
+   do {                                            \
+       if (pData->icmp_socket.s != -1)             \
+           DO_ENGAGE_EVENT1((so), fdset, ICMP);    \
+   } while (0)
 
-#  ifndef RT_OS_LINUX
-#   define readfds_poll (POLLRDNORM)
-#   define writefds_poll (POLLWRNORM)
-#   define xfds_poll (POLLRDBAND|POLLWRBAND|POLLPRI)
-#  else
-#   define readfds_poll (POLLIN)
-#   define writefds_poll (POLLOUT)
-#   define xfds_poll (POLLPRI)
-#  endif
-#  define rderr_poll (POLLERR)
-#  define rdhup_poll (POLLHUP)
-#  define nval_poll (POLLNVAL)
-
-#  define ICMP_ENGAGE_EVENT(so, fdset)              \
-    do {                                            \
-        if (pData->icmp_socket.s != -1)             \
-            DO_ENGAGE_EVENT1((so), fdset, ICMP);    \
-    } while (0)
-# else /* !RT_OS_WINDOWS */
-#  define DO_WIN_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset)
-#  define ICMP_ENGAGE_EVENT(so, fdset) do {} while (0)
-#endif /* RT_OS_WINDOWS */
-
-#else /* defined(RT_OS_WINDOWS) */
+#else /* RT_OS_WINDOWS */
 
 /*
  * On Windows, we will be notified by IcmpSendEcho2() when the response arrives.
@@ -108,7 +103,7 @@
             LogRel(("WSAEventSelect (" #label ") error %d (so=%x, socket=%s, event=%x)\n",      \
                         error, (so), (so)->s, VBOX_SOCKET_EVENT));                              \
         }                                                                                       \
-    } while (0);                                                                                 \
+    } while (0);                                                                                \
     CONTINUE(label)
 
 # define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label) \
@@ -123,25 +118,18 @@
         CONTINUE(label);                                                    \
     }
 
-# define acceptds_win FD_ACCEPT
-# define acceptds_win_bit FD_ACCEPT_BIT
-
-# define readfds_win FD_READ
-# define readfds_win_bit FD_READ_BIT
-
-# define writefds_win FD_WRITE
-# define writefds_win_bit FD_WRITE_BIT
-
-# define xfds_win FD_OOB
-# define xfds_win_bit FD_OOB_BIT
+# define acceptds_win     FD_ACCEPT
+# define readfds_win      FD_READ
+# define writefds_win     FD_WRITE
+# define xfds_win         FD_OOB
 
 # define DO_CHECK_FD_SET(so, events, fdset)  \
-    (((events).lNetworkEvents & fdset ## _win) && ((events).iErrorCode[fdset ## _win_bit] == 0))
+    (((events).lNetworkEvents & fdset ## _win) && ((events).iErrorCode[fdset ## _win ## _BIT] == 0))
 
 # define DO_WIN_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset)
 # define DO_UNIX_CHECK_FD_SET(so, events, fdset ) 1 /*specific for Unix API */
 
-#endif /* defined(RT_OS_WINDOWS) */
+#endif /* RT_OS_WINDOWS */
 
 #define TCP_ENGAGE_EVENT1(so, fdset) \
     DO_ENGAGE_EVENT1((so), fdset, tcp)
@@ -158,11 +146,12 @@
 #define POLL_UDP_EVENTS(rc, error, so, events) \
     DO_POLL_EVENTS((rc), (error), (so), (events), udp)
 
-#define CHECK_FD_SET(so, events, set)           \
+#define CHECK_FD_SET(so, events, set) \
     (DO_CHECK_FD_SET((so), (events), set))
 
-#define WIN_CHECK_FD_SET(so, events, set)           \
+#define WIN_CHECK_FD_SET(so, events, set) \
     (DO_WIN_CHECK_FD_SET((so), (events), set))
+
 #define UNIX_CHECK_FD_SET(so, events, set) \
     (DO_UNIX_CHECK_FD_SET(so, events, set))
 
@@ -175,7 +164,7 @@
    do {                                                                                \
        LogRel(("  " #proto " %R[natsock] %R[natwinnetevents]\n", (so), (winevent)));   \
    } while (0)
-# else /* RT_OS_WINDOWS */
+# else /* !RT_OS_WINDOWS */
 #  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)         \
    do {                                                                            \
            LogRel(("  " #proto " %R[natsock] %s %s %s er: %s, %s, %s\n", (so),     \
@@ -187,11 +176,12 @@
                     CHECK_FD_SET(so, ign, nval) ? "RDNVAL":""));                   \
    } while (0)
 # endif /* !RT_OS_WINDOWS */
-#else /* VBOX_WITH_DEBUG_NAT_SOCKETS */
+#else /* !VBOX_WITH_DEBUG_NAT_SOCKETS */
 # define DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) do {} while (0)
 #endif /* !VBOX_WITH_DEBUG_NAT_SOCKETS */
 
-#define LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) DO_LOG_NAT_SOCK((so), proto, (winevent), r_fdset, w_fdset, x_fdset)
+#define LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) \
+    DO_LOG_NAT_SOCK((so), proto, (winevent), r_fdset, w_fdset, x_fdset)
 
 static void activate_port_forwarding(PNATState, const uint8_t *pEther);
 
@@ -371,7 +361,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     int rc;
     size_t bytes;
 
-#ifdef RT_OS_OS2
+# ifdef RT_OS_OS2
     /* Try various locations. */
     char *etc = getenv("ETC");
     if (etc)
@@ -389,10 +379,10 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
         RTStrmPrintf(buff, sizeof(buff), "%s/resolv.conf", _PATH_ETC);
         rc = RTFileOpen(&f, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     }
-#else
-# ifndef DEBUG_vvl
+# else /* !RT_OS_OS2 */
+#  ifndef DEBUG_vvl
     rc = RTFileOpen(&f, "/etc/resolv.conf", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-# else
+#  else
     char *home = getenv("HOME");
     RTStrPrintf(buff, sizeof(buff), "%s/resolv.conf", home);
     rc = RTFileOpen(&f, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
@@ -405,8 +395,8 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
         rc = RTFileOpen(&f, "/etc/resolv.conf", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
         Log(("NAT: DNS we're using %s\n", buff));
     }
-# endif
-#endif
+#  endif
+# endif /* !RT_OS_OS2 */
     if (RT_FAILURE(rc))
         return -1;
 
@@ -476,7 +466,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     return 0;
 }
 
-#endif
+#endif /* !RT_OS_WINDOWS */
 
 static int slirp_init_dns_list(PNATState pData)
 {
