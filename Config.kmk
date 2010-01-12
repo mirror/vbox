@@ -1161,12 +1161,8 @@ endif
 # Compiler optimization flags.
 #
 VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initializers) -Wno-unused -Wno-trigraphs
-VBOX_GCC_PEDANTIC_CXX ?= -pedantic $(VBOX_GCC_WARN) -Wno-long-long
-VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN) -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations
-ifdef VBOX_WITH_GCC_Wshadow # Note! This will become defaults once we've cleaned up the warnings.
- VBOX_GCC_PEDANTIC_CXX += -Wshadow
- VBOX_GCC_PEDANTIC_C   += -Wshadow
-endif
+VBOX_GCC_PEDANTIC_CXX ?= -pedantic -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
+VBOX_GCC_PEDANTIC_C   ?= -pedantic -Wshadow $(VBOX_GCC_WARN) -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations
 ifeq ($(KBUILD_TYPE),debug)
  VBOX_GCC_FP     ?= -fno-omit-frame-pointer
  VBOX_GCC_OPT    ?= -O0
