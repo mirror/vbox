@@ -28,9 +28,10 @@ $(eval $(patsubst %|,%$(NL),$(shell $(VBOX_BLD_PYTHON) $(PATH_SUB_CURRENT)/gen_p
 # Python Client Module - the C++/XPCOM bits.
 VBoxPythonBase_TEMPLATE = XPCOM
 VBoxPythonBase_DEFS     = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API \
-                          EXPORT_XPT_API VBOX_PYXPCOM VBOX_WITH_XPCOM 
+                          EXPORT_XPT_API VBOX_PYXPCOM VBOX_WITH_XPCOM
 VBoxPythonBase_INCS     = \
-                          src \
+	src
+VBoxPythonBase_CXXFLAGS = -Wno-format
 
 VBoxPythonBase_SOURCES  = \
 	src/module/_xpcom.cpp \
@@ -164,7 +165,7 @@ VBoxPython_TEMPLATE     = XPCOM
 
 VBoxPython_INCS       =  $(VBOX_PYTHONDEF_INC)
 if "$(KBUILD_TARGET)" == "linux"
-  VBoxPython_LIBS       = 
+  VBoxPython_LIBS       =
 else
   VBoxPython_LIBS       = $(VBOX_PYTHONDEF_LIB)
 endif

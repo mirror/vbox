@@ -1391,7 +1391,6 @@ ifdef VBOX_WITH_MULTIVERSION_PYTHON
 else
  if "$(KBUILD_TARGET)" == "darwin" && !defined(VBOX_PATH_PYTHON_INC) && !defined(VBOX_LIB_PYTHON)
   ifndef VBOX_PYTHON_FRAMEWORK
-   # Does -framework really work with CXXFLAGS and CFLAGS?
    VBOX_PYTHON_FRAMEWORK := -framework Python
    VBOX_PATH_PYTHON_INC := $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Headers
   endif
@@ -1444,6 +1443,7 @@ else
   VBoxPython_DLLSUFF = .so
  endif
  VBoxPython_LDFLAGS.darwin  = $(VBOX_PYTHON_FRAMEWORK)
+ VBoxPython_CXXFLAGS = -Wno-format
  VBoxPython_INCS = \
  	python/src \
  	$(VBOX_PATH_PYTHON_INC)
