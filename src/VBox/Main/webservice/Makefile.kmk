@@ -289,7 +289,7 @@ endif
   webtest_CXXFLAGS.win += -bigobj
  endif
  ifn1of ($(KBUILD_TARGET), win)
-  vboxtest_CXXFLAGS += -Wno-shadow
+  webtest_CXXFLAGS += -Wno-shadow
  endif
  webtest_INCS := \
  	$(VBOX_GSOAP_INCS) \
