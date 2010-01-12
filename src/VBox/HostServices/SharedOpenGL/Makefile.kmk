@@ -26,10 +26,12 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 # Target lists.
 #
+ifdef VBOX_WITH_MAIN
 DLLS      += VBoxSharedCrOpenGL	VBoxOGLrenderspu
 LIBRARIES += VBoxOGLcrserverlib	VBoxOGLcrunpacker
 BLDDIRS   += \
 	$(VBOX_PATH_CROGL_GENFILES)/
+endif
 
 ifeq ($(KBUILD_TARGET),darwin)
  #
