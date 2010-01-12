@@ -277,12 +277,12 @@ static int pulse_open (int fIn, pa_stream **ppStream, pa_sample_spec *pSampleSpe
 
     if (fIn)
     {
-        LogRel(("Pulse: Obtained buffer attributes for recording: maxlength=%d fragsize=%d\n",
+        LogRel(("Pulse:  Obtained record buffer attributes: maxlength=%d fragsize=%d\n",
             pBufAttr->maxlength, pBufAttr->fragsize));
     }
     else
     {
-        LogRel(("Pulse: Obtained buffer attributes for playback: maxlength=%d tlength=%d prebuf=%d minreq=%d\n",
+        LogRel(("Pulse:  Obtained playback buffer attributes: maxlength=%d tlength=%d prebuf=%d minreq=%d\n",
             pBufAttr->maxlength, pBufAttr->tlength, pBufAttr->prebuf, pBufAttr->minreq));
     }
 
@@ -555,6 +555,18 @@ static int pulse_run_in (HWVoiceIn *hw)
     cFramesAvail = pa_stream_readable_size(pPulse->pStream) >> hwshift;
     pa_threaded_mainloop_unlock(g_pMainLoop);
 
+    if (cFramesAvail == -1)
+    {
+        if (pPulse->cErrors < MAX_LOG_REL_ERRORS)
+        {
+            int rc = pa_context_errno(g_pContext);
+            pPulse->cErrors++;
+            LogRel(("Pulse: Failed to determine the readable size: %s\n",
+                     pa_strerror(rc)));
+        }
+        return 0;
+    }
+
     /* If the buffer was not dropped last call, add what remains */
     if (pPulse->pu8PeekBuf)
         cFramesAvail += (pPulse->cbPeekBuf - pPulse->offPeekBuf) >> hwshift;
@@ -569,7 +581,8 @@ static int pulse_run_in (HWVoiceIn *hw)
             pa_stream_peek(pPulse->pStream, (const void**)&pPulse->pu8PeekBuf, &pPulse->cbPeekBuf);
             pa_threaded_mainloop_unlock(g_pMainLoop);
             pPulse->offPeekBuf = 0;
-            if (!pPulse->cbPeekBuf)
+            if (   !pPulse->pu8PeekBuf
+                || !pPulse->cbPeekBuf)
                 break;
         }
 
