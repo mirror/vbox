@@ -2785,8 +2785,8 @@ TEMPLATE_VBOXR3NPEXE                     = VBox Ring 3 Non-pedantic
 TEMPLATE_VBOXR3NPEXE_EXTENDS             = VBOXR3EXE
 ifneq ($(KBUILD_TARGET),win) # (only gcc)
  TEMPLATE_VBOXR3NPEXE_TOOL                = $(VBOX_GCC_TOOL)
- TEMPLATE_VBOXR3NPEXE_CXXFLAGS            = $(filter-out -pedantic,$(TEMPLATE_VBOXR3EXE_CXXFLAGS)) -Wno-sign-compare
- TEMPLATE_VBOXR3NPEXE_CFLAGS              = $(filter-out -pedantic -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3EXE_CFLAGS)) -Wno-sign-compare
+ TEMPLATE_VBOXR3NPEXE_CXXFLAGS            = $(filter-out -pedantic -Wshadow,$(TEMPLATE_VBOXR3EXE_CXXFLAGS)) -Wno-sign-compare
+ TEMPLATE_VBOXR3NPEXE_CFLAGS              = $(filter-out -pedantic -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3EXE_CFLAGS)) -Wno-sign-compare
 endif
 
 
