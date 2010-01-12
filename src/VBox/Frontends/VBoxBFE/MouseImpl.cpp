@@ -57,15 +57,15 @@ typedef struct DRVMAINMOUSE
 // IMouse methods
 /////////////////////////////////////////////////////////////////////////////
 
-int Mouse::setAbsoluteCoordinates(bool fAbsolute)
+int Mouse::setAbsoluteCoordinates(bool a_fAbsolute)
 {
-    this->fAbsolute = fAbsolute;
+    this->fAbsolute = a_fAbsolute;
     return S_OK;
 }
 
-int Mouse::setNeedsHostCursor(bool fNeedsHostCursor)
+int Mouse::setNeedsHostCursor(bool a_fNeedsHostCursor)
 {
-    this->fNeedsHostCursor = fNeedsHostCursor;
+    this->fNeedsHostCursor = a_fNeedsHostCursor;
     return S_OK;
 }
 
@@ -227,7 +227,7 @@ DECLCALLBACK(int) Mouse::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, 
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "Object\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
@@ -300,9 +300,9 @@ const PDMDRVREG Mouse::DrvReg =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

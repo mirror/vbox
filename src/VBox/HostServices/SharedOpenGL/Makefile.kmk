@@ -209,14 +209,25 @@ VBoxOGLcrunpacker_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/unpack.c \
 	$(VBOX_PATH_CROGL_GENFILES)/unpack_extend.h
 
+ifn1of ($(KBUILD_TARGET), win)
+$(VBOX_PATH_CROGL_GENFILES)/unpack.c_CFLAGS = -Wno-shadow
+endif
+
 #
 # Generate files for VBoxOGLcrunpacker.
 #
-$(VBOX_PATH_CROGL_GENFILES)/unpack.c: $(addprefix $(PATH_SUB_CURRENT)/unpacker/, unpack.py unpacker_special) $(VBOX_PATH_CROGL_GENFILES)/unpack_extend.h $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+$(VBOX_PATH_CROGL_GENFILES)/unpack.c: \
+		$(addprefix $(PATH_SUB_CURRENT)/unpacker/, unpack.py unpacker_special) \
+		$(VBOX_PATH_CROGL_GENFILES)/unpack_extend.h \
+		$(VBOX_CROGL_API_FILES) \
+		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
 
-$(VBOX_PATH_CROGL_GENFILES)/unpack_extend.h: $(addprefix $(PATH_SUB_CURRENT)/unpacker/, unpack_extend.py unpacker_special) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+$(VBOX_PATH_CROGL_GENFILES)/unpack_extend.h: \
+		$(addprefix $(PATH_SUB_CURRENT)/unpacker/, unpack_extend.py unpacker_special) \
+		$(VBOX_CROGL_API_FILES) \
+		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
 

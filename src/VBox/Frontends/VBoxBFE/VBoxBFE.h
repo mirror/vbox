@@ -45,7 +45,7 @@ enum
 /** @} */
 
 extern VMSTATE     machineState;
-extern PVM         pVM;
+extern PVM         gpVM;
 extern int         gHostKey;
 extern int         gHostKeySym;
 extern bool        gfAllowFullscreenToggle;

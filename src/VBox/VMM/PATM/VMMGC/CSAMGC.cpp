@@ -88,7 +88,7 @@ VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
         /*
          * Make this particular page R/W.
          */
-        int rc = PGMShwModifyPage(pVCpu, pvFault, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
+        rc = PGMShwModifyPage(pVCpu, pvFault, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
         AssertMsgRC(rc, ("PGMShwModifyPage -> rc=%Rrc\n", rc));
         ASMInvalidatePage((void *)pvFault);
         return VINF_SUCCESS;
