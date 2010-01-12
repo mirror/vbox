@@ -1985,13 +1985,13 @@ static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t cbT
                 rmd  = next_rmd;
 
                 cbBuf = RT_MIN(4096 - (size_t)rmd.rmd1.bcnt, cbToRecv);
-                RTGCPHYS32 rbadr = PHYSADDR(pThis, rmd.rmd0.rbadr);
+                RTGCPHYS32 rbadr2 = PHYSADDR(pThis, rmd.rmd0.rbadr);
 
                 /* We have to leave the critical section here or we risk deadlocking
                  * with EMT when the write is to an unallocated page or has an access
                  * handler associated with it. See above for additional comments. */
                 PDMCritSectLeave(&pThis->CritSect);
-                PDMDevHlpPhysWrite(pDevIns, rbadr, src, cbBuf);
+                PDMDevHlpPhysWrite(pDevIns, rbadr2, src, cbBuf);
                 rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
                 AssertReleaseRC(rc);
 

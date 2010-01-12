@@ -997,8 +997,8 @@ static void pci_bios_init_device(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDe
                 uint32_t u32MMIOAddressBase = pGlobals->pci_bios_mem_addr;
 
                 /* Init devices behind the bridge and possibly other bridges as well. */
-                for (int i = 0; i <= 255; i++)
-                    pci_bios_init_device(pGlobals, uBus + 1, i, cBridgeDepth + 1, paBridgePositions);
+                for (int iDev = 0; iDev <= 255; iDev++)
+                    pci_bios_init_device(pGlobals, uBus + 1, iDev, cBridgeDepth + 1, paBridgePositions);
 
                 /* The number of bridges behind the this one is now available. */
                 pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_SUBORDINATE_BUS, pGlobals->uBus);
