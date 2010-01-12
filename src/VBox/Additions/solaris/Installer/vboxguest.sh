@@ -52,9 +52,9 @@ check_if_installed()
 module_loaded()
 {
     if test -f "/etc/name_to_major"; then
-        loadentry=`cat /etc/name_to_major | grep $1`
+        loadentry=`cat /etc/name_to_major | grep "$1 "`
     else
-        loadentry=`/usr/sbin/modinfo | grep $1`
+        loadentry=`/usr/sbin/modinfo | grep "$1 "`
     fi
     if test -z "$loadentry"; then
         return 1
@@ -92,12 +92,12 @@ start_module()
         info "VirtualBox guest kernel module already loaded."
     else
         /usr/sbin/add_drv -i'pci80ee,cafe' -m'* 0666 root sys' $MODNAME
+        sync
         if test ! vboxguest_loaded; then
             abort "Failed to load VirtualBox guest kernel module."
         elif test -c "/devices/pci@0,0/pci80ee,cafe@4:$MODNAME"; then
             info "VirtualBox guest kernel module loaded."
         else
-            stop
             abort "Aborting due to attach failure."
         fi
     fi
