@@ -288,6 +288,9 @@ endif
  ifdef VBOX_USE_VCC80
   webtest_CXXFLAGS.win += -bigobj
  endif
+ ifn1of ($(KBUILD_TARGET), win)
+  vboxtest_CXXFLAGS += -Wno-shadow
+ endif
  webtest_INCS := \
  	$(VBOX_GSOAP_INCS) \
  	$(VBOXWEB_OUT_DIR) \
