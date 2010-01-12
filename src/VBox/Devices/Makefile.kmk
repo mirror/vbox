@@ -230,6 +230,7 @@ VBoxDD_LIBS.darwin     += \
 
 VBoxDD_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD.dylib \
 	-framework CoreAudio \
+	-framework AudioUnit \
 	-framework IOKit \
 	-framework Carbon \
 	-framework DiskArbitration

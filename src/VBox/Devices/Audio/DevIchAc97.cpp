@@ -1660,12 +1660,10 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
 
     ac97Reset (pDevIns);
 
-#ifndef RT_OS_DARWIN /* coreaudio doesn't supply these. */
     if (!s->voice_pi)
         LogRel (("AC97: WARNING: Unable to open PCM IN!\n"));
     if (!s->voice_mc)
         LogRel (("AC97: WARNING: Unable to open PCM MC!\n"));
-#endif
     if (!s->voice_po)
         LogRel (("AC97: WARNING: Unable to open PCM OUT!\n"));
 
@@ -1685,7 +1683,6 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
             N_ ("No audio devices could be opened. Selecting the NULL audio backend "
                 "with the consequence that no sound is audible"));
     }
-#ifndef RT_OS_DARWIN
     else if (!s->voice_pi || !s->voice_po || !s->voice_mc)
     {
         char   szMissingVoices[128];
@@ -1703,7 +1700,6 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
                 "is working properly. Check the logfile for error messages of the audio "
                 "subsystem"), szMissingVoices);
     }
-#endif
 
     return VINF_SUCCESS;
 }
