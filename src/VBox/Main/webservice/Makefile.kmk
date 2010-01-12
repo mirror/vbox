@@ -187,6 +187,9 @@ ifdef VBOX_GSOAP_INSTALLED
  ifdef VBOX_USE_VCC80
   vboxsoap_CXXFLAGS.win += -bigobj
  endif
+ ifn1of ($(KBUILD_TARGET), win)
+  vboxsoap_CXXFLAGS += -Wno-shadow
+ endif
  vboxsoap_INCS := \
 	$(VBOX_GSOAP_INCS) \
 	$(VBOXWEB_OUT_DIR) \
