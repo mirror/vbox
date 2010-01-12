@@ -524,8 +524,8 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
         if (apHDs[i])
         {
             PDMMEDIAGEOMETRY LCHSGeometry;
-            int rc = setLogicalDiskGeometry(pBase, apHDs[i], &LCHSGeometry);
-            AssertRC(rc);
+            int rc2 = setLogicalDiskGeometry(pBase, apHDs[i], &LCHSGeometry);
+            AssertRC(rc2);
 
             if (i < 4)
             {
@@ -585,7 +585,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
             if (apHDs[i])
             {
                 PDMMEDIAGEOMETRY LCHSGeometry;
-                int rc = setLogicalDiskGeometry(pBase, apHDs[i], &LCHSGeometry);
+                rc = setLogicalDiskGeometry(pBase, apHDs[i], &LCHSGeometry);
                 AssertRC(rc);
 
                 if (i < 4)
