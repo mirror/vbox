@@ -355,6 +355,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            take <name> [--description <desc>] [--pause] |\n"
                  "                            delete <uuid>|<name> |\n"
                  "                            restore <uuid>|<name> |\n"
+                 "                            restorecurrent |\n"
                  "                            edit <uuid>|<name>|--current\n"
                  "                                 [--name <name>]\n"
                  "                                 [--description <desc>] |\n"
