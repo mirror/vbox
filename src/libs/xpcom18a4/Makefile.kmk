@@ -222,38 +222,11 @@ TEMPLATE_XPCOMBLDPROG_INCS                = \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/string \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd
-if 1 # if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.amd64)
- TEMPLATE_XPCOMBLDPROG_CFLAGS             = $(filter-out -pedantic -Wshadow, $(TEMPLATE_BLDPROG_CFLAGS)) $(VBOX_GCC_Wno-int-to-pointer-cast) $(VBOX_GCC_Wno-pointer-to-int-cast)
- TEMPLATE_XPCOMBLDPROG_CXXFLAGS.darwin    = $(TEMPLATE_BLDPROG_CXXFLAGS.darwin)     -fpascal-strings -fshort-wchar -fno-common -fno-rtti
- TEMPLATE_XPCOMBLDPROG_CXXFLAGS.solaris   = $(TEMPLATE_BLDPROG_CXXFLAGS.solaris)    -fno-omit-frame-pointer # for now anyway.
- TEMPLATE_XPCOMBLDPROG_LDFLAGS.darwin     = $(TEMPLATE_BLDPROG_LDFLAGS.darwin)      -fpascal-strings -fshort-wchar -fno-rtti -fno-exceptions
-
-else
- ## @todo This stuff is *really* ugly.
- TEMPLATE_XPCOMBLDPROG_CXXFLAGS          = -ansi -Wall -Wno-non-virtual-dtor
- TEMPLATE_XPCOMBLDPROG_CXXFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_CXXFLAGS.$(KBUILD_TARGET_ARCH))
- TEMPLATE_XPCOMBLDPROG_CXXFLAGS.release  = -O
- TEMPLATE_XPCOMBLDPROG_CXXFLAGS.profile  = -O
- TEMPLATE_XPCOMBLDPROG_CXXFLAGS.freebsd  = -pthread
- TEMPLATE_XPCOMBLDPROG_CXXFLAGS.linux    = -pthread
- TEMPLATE_XPCOMBLDPROG_CFLAGS            = -pipe -ansi -Wall -Wno-unused
- TEMPLATE_XPCOMBLDPROG_CFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_CFLAGS.$(KBUILD_TARGET_ARCH))
- TEMPLATE_XPCOMBLDPROG_CFLAGS.release    = -O
- TEMPLATE_XPCOMBLDPROG_CFLAGS.profile    = -O
- TEMPLATE_XPCOMBLDPROG_CFLAGS.freebsd    = -pthread
- TEMPLATE_XPCOMBLDPROG_CFLAGS.linux      = -pthread
- TEMPLATE_XPCOMBLDPROG_INCS.$(KBUILD_TARGET)         = $(TEMPLATE_XPCOMEXE_INCS.$(KBUILD_TARGET))
- TEMPLATE_XPCOMBLDPROG_INCS.$(KBUILD_TARGET_ARCH)    = $(TEMPLATE_XPCOMEXE_INCS.$(KBUILD_TARGET_ARCH))
- TEMPLATE_XPCOMBLDPROG_LIBPATH.$(KBUILD_TARGET)      = $(TEMPLATE_XPCOMEXE_LIBPATH.$(KBUILD_TARGET))
- TEMPLATE_XPCOMBLDPROG_LIBPATH.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_LIBPATH.$(KBUILD_TARGET_ARCH))
- ifeq ($(KBUILD_TARGET),darwin)
-  TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(KBUILD_TARGET)     = $(filter-out $(TEMPLATE_XPCOMEXE_LDFLAGS.$(KBUILD_TARGET)),$(TEMPLATE_VBOXR3NP_LDFLAGS.$(KBUILD_TARGET))) $(TEMPLATE_VBOXBLDPROG_LDFLAGS.darwin)
- else
-  TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(KBUILD_TARGET)     = $(TEMPLATE_XPCOMEXE_LDFLAGS.$(KBUILD_TARGET))
- endif
- TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_LDFLAGS.$(KBUILD_TARGET_ARCH))
-endif # End of ugly stuff.
-TEMPLATE_XPCOMBLDPROG_ORDERDEPS         = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst)))
+TEMPLATE_XPCOMBLDPROG_CFLAGS             = $(filter-out -pedantic -Wshadow, $(TEMPLATE_BLDPROG_CFLAGS)) $(VBOX_GCC_Wno-int-to-pointer-cast) $(VBOX_GCC_Wno-pointer-to-int-cast)
+TEMPLATE_XPCOMBLDPROG_CXXFLAGS.darwin    = $(TEMPLATE_BLDPROG_CXXFLAGS.darwin)     -fpascal-strings -fshort-wchar -fno-common -fno-rtti
+TEMPLATE_XPCOMBLDPROG_CXXFLAGS.solaris   = $(TEMPLATE_BLDPROG_CXXFLAGS.solaris)    -fno-omit-frame-pointer # for now anyway.
+TEMPLATE_XPCOMBLDPROG_LDFLAGS.darwin     = $(TEMPLATE_BLDPROG_LDFLAGS.darwin)      -fpascal-strings -fshort-wchar -fno-rtti -fno-exceptions
+TEMPLATE_XPCOMBLDPROG_ORDERDEPS          = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst)))
 
 
 ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
