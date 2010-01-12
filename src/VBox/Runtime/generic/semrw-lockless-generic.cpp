@@ -779,7 +779,6 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW hRWSem)
          * Update the state.
          */
         ASMAtomicWriteU32(&pThis->cWriteRecursions, 0);
-        /** @todo validate order. */
         ASMAtomicWriteHandle(&pThis->hNativeWriter, NIL_RTNATIVETHREAD);
 
         for (;;)
