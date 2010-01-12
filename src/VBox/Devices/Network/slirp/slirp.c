@@ -62,9 +62,9 @@
       && (polls[(so)->so_poll_index].revents & N_(fdset ## _poll)))
 
   /* specific for Unix API */
-# define DO_UNIX_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset) 
+# define DO_UNIX_CHECK_FD_SET(so, events, fdset) DO_CHECK_FD_SET((so), (events), fdset) 
   /* specific for Windows Winsock API */
-# define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0 
+# define DO_WIN_CHECK_FD_SET(so, events, fdset) 0 
 
 # ifndef RT_OS_LINUX
 #  define readfds_poll   (POLLRDNORM)
@@ -75,6 +75,7 @@
 #  define writefds_poll  (POLLOUT)
 #  define xfds_poll      (POLLPRI)
 # endif
+# define closefds_poll   (POLLHUP)
 # define rderr_poll      (POLLERR)
 # define rdhup_poll      (POLLHUP)
 # define nval_poll       (POLLNVAL)
@@ -129,12 +130,14 @@
 # define writefds_win_bit FD_WRITE_BIT
 # define xfds_win         FD_OOB
 # define xfds_win_bit     FD_OOB_BIT
+# define closefds_win     FD_CLOSE
+# define closefds_win_bit FD_CLOSE_BIT
 
 # define DO_CHECK_FD_SET(so, events, fdset)  \
     (((events).lNetworkEvents & fdset ## _win) && ((events).iErrorCode[fdset ## _win_bit] == 0))
 
-# define DO_WIN_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset)
-# define DO_UNIX_CHECK_FD_SET(so, events, fdset ) 1 /*specific for Unix API */
+# define DO_WIN_CHECK_FD_SET(so, events, fdset) DO_CHECK_FD_SET((so), (events), fdset)
+# define DO_UNIX_CHECK_FD_SET(so, events, fdset) 1 /*specific for Unix API */
 
 #endif /* RT_OS_WINDOWS */
 
@@ -1130,7 +1133,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
             {
                 TCP_CONNECT(pData, so);
 #if defined(RT_OS_WINDOWS)
-                if (!(NetworkEvents.lNetworkEvents & FD_CLOSE))
+                if (!CHECK_FD_SET(so, NetworkEvents, closefds))
 #endif
                     CONTINUE(tcp);
             }
@@ -1146,7 +1149,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
          * Check for FD_CLOSE events.
          * in some cases once FD_CLOSE engaged on socket it could be flashed latter (for some reasons)
          */
-        if (    (NetworkEvents.lNetworkEvents & FD_CLOSE)
+        if (    CHECK_FD_SET(so, NetworkEvents, closefds)
             ||  (so->so_close == 1))
         {
             so->so_close = 1; /* mark it */
