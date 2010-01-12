@@ -453,7 +453,7 @@ static void vmmdevRestoreSavedCommand(VBOXHGCMCMD *pCmd, VBOXHGCMCMD *pSavedCmd)
     pCmd->cLinPtrs     = pSavedCmd->cLinPtrs;
     pCmd->cLinPtrPages = pSavedCmd->cLinPtrPages;
     pCmd->paLinPtrs    = pSavedCmd->paLinPtrs;
-    
+
     /* The new allocated command owns the 'paLinPtrs' pointer. */
     pSavedCmd->paLinPtrs = NULL;
 }
@@ -1120,8 +1120,8 @@ static int vmmdevHGCMCallSaved (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCM
 
     uint32_t i;
 
-    uint32_t cLinPtrs = 0;
-    uint32_t cLinPtrPages  = 0;
+    int32_t cLinPtrs = 0;
+    int32_t cLinPtrPages = 0;
 
     if (f64Bits)
     {
