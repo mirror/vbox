@@ -36,6 +36,7 @@
 #include "audio_int.h"
 
 #include <CoreAudio/CoreAudio.h>
+#include <CoreServices/CoreServices.h>
 #include <AudioUnit/AudioUnit.h>
 
 /* todo:
