@@ -83,6 +83,10 @@
 #define IN_RT_R3
 #define IN_RT_STATIC
 #define RT_STRICT
+#define RT_LOCK_STRICT
+#define RT_LOCK_NO_STRICT
+#define RT_LOCK_STRICT_ORDER
+#define RT_LOCK_NO_STRICT_ORDER
 #define Breakpoint
 #define RT_NO_DEPRECATED_MACROS
 #define RT_EXCEPTIONS_ENABLED
@@ -1787,6 +1791,43 @@
 # define RT_STRICT
 #endif
 
+/** @todo remove this: */
+#if !defined(RT_LOCK_STRICT) && !defined(DEBUG_bird)
+# define RT_LOCK_NO_STRICT
+#endif
+#if !defined(RT_LOCK_STRICT_ORDER) && !defined(DEBUG_bird)
+# define RT_LOCK_NO_STRICT_ORDER
+#endif
+
+/** @def RT_LOCK_STRICT
+ * The \#define RT_LOCK_STRICT controls whether deadlock detection and related
+ * checks are done in the lock and semaphore code.  It is by default enabled in
+ * RT_STRICT builds, but this behavior can be overriden by defining
+ * RT_LOCK_NO_STRICT. */
+#if !defined(RT_LOCK_STRICT) && !defined(RT_LOCK_NO_STRICT) && defined(RT_STRICT)
+# define RT_LOCK_STRICT
+#endif
+/** @def RT_LOCK_NO_STRICT
+ * The \#define RT_LOCK_NO_STRICT disables RT_LOCK_STRICT.  */
+#if defined(RT_LOCK_NO_STRICT) && defined(RT_LOCK_STRICT)
+# undef RT_LOCK_STRICT
+#endif
+
+/** @def RT_LOCK_STRICT_ORDER
+ * The \#define RT_LOCK_STRICT_ORDER controls whether locking order is checked
+ * by the lock and semaphore code.  It is by default enabled in RT_STRICT
+ * builds, but this behavior can be overriden by defining
+ * RT_LOCK_NO_STRICT_ORDER. */
+#if !defined(RT_LOCK_STRICT_ORDER) && !defined(RT_LOCK_NO_STRICT_ORDER) && defined(RT_STRICT)
+# define RT_LOCK_STRICT_ORDER
+#endif
+/** @def RT_LOCK_NO_STRICT_ORDER
+ * The \#define RT_LOCK_NO_STRICT_ORDER disables RT_LOCK_STRICT_ORDER.  */
+#if defined(RT_LOCK_NO_STRICT_ORDER) && defined(RT_LOCK_STRICT_ORDER)
+# undef RT_LOCK_STRICT_ORDER
+#endif
+
+
 /** Source position. */
 #define RT_SRC_POS         __FILE__, __LINE__, __PRETTY_FUNCTION__
 
@@ -1795,6 +1836,9 @@
 
 /** Source position arguments. */
 #define RT_SRC_POS_ARGS    pszFile, iLine, pszFunction
+
+/** Applies NOREF() to the source position arguments. */
+#define RT_SRC_POS_NOREF() do { NOREF(pszFile); NOREF(iLine); NOREF(pszFunction); } while (0)
 
 /** @} */
 

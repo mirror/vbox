@@ -34,32 +34,31 @@
 /** @name Strictness Indicators
  * @{ */
 
-#ifdef DEBUG_bird /** @todo reenable this for everyone. Just being a little be cautious right now... */
 /** @def RTCRITSECT_STRICT
  * Enables strictness checks and lock accounting of the RTCritSect API.
  */
-#if defined(DOXYGEN_RUNNING) || (!defined(RTCRITSECT_STRICT) && defined(IN_RING3) && (defined(RT_STRICT) || defined(RT_LOCK_STRICT)))
+#if (!defined(RTCRITSECT_STRICT)      && defined(IN_RING3) && defined(RT_LOCK_STRICT)) || defined(DOXYGEN_RUNNING)
 # define RTCRITSECT_STRICT
 #endif
 
 /** @def RTSEMEVENT_STRICT
  * Enables strictness checks and lock accounting of the RTSemEvent API.
  */
-#if defined(DOXYGEN_RUNNING) || (!defined(RTSEMEVENT_STRICT) && defined(IN_RING3) && (defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT)))
+#if (!defined(RTSEMEVENT_STRICT)      && defined(IN_RING3) && defined(RT_LOCK_STRICT)) || defined(DOXYGEN_RUNNING)
 # define RTSEMEVENT_STRICT
 #endif
 
 /** @def RTSEMEVENTMULTI_STRICT
  * Enables strictness checks and lock accounting of the RTSemEventMulti API.
  */
-#if defined(DOXYGEN_RUNNING) || (!defined(RTSEMEVENTMULTI_STRICT) && defined(IN_RING3) && (defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT)))
+#if (!defined(RTSEMEVENTMULTI_STRICT) && defined(IN_RING3) && defined(RT_LOCK_STRICT)) || defined(DOXYGEN_RUNNING)
 # define RTSEMEVENTMULTI_STRICT
 #endif
 
 /** @def RTSEMMUTEX_STRICT
  * Enables strictness checks and lock accounting of the RTSemMutex API.
  */
-#if defined(DOXYGEN_RUNNING) || (!defined(RTSEMMUTEX_STRICT) && defined(IN_RING3) && (defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT)))
+#if (!defined(RTSEMMUTEX_STRICT)      && defined(IN_RING3) && defined(RT_LOCK_STRICT)) || defined(DOXYGEN_RUNNING)
 # define RTSEMMUTEX_STRICT
 #endif
 
@@ -67,10 +66,9 @@
 /** @def RTSEMRW_STRICT
  * Enables strictness checks and lock accounting of the RTSemRW API.
  */
-#if defined(DOXYGEN_RUNNING) || (!defined(RTSEMRW_STRICT) && defined(IN_RING3) && (defined(RT_STRICT) || defined(RT_LOCK_STRICT) || defined(RTSEM_STRICT)))
+#if (!defined(RTSEMRW_STRICT)         && defined(IN_RING3) && defined(RT_LOCK_STRICT)) || defined(DOXYGEN_RUNNING)
 # define RTSEMRW_STRICT
 #endif
-#endif /* DEBUG_bird */
 
 
 /** @} */

@@ -546,9 +546,12 @@ endif
 if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_VMMR0_DISABLE_PREEMPTION = 1
 endif
+## For testing deadlock detection and lock order validation.
+# (Temporary, will be made default for debug and strict builds soon.)
+if1of ($(KBUILD_TARGET),)
+ VBOX_WITH_STRICT_LOCKS = 1
+endif
 
-## Enabled the live migration API changes.
-#VBOX_WITH_LIVE_MIGRATION = 1
 
 #
 # Branding
@@ -1146,6 +1149,9 @@ ifdef VBOX_PATH_SHARED_LIBS
 endif
 ifdef VBOX_PATH_APP_DOCS
  DEFS += RTPATH_APP_DOCS=\"$(VBOX_PATH_APP_DOCS)\"
+endif
+ifdef VBOX_WITH_STRICT_LOCKS
+ DEFS += RT_LOCK_STRICT RT_LOCK_STRICT_ORDER
 endif
 
 #

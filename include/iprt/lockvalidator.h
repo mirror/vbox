@@ -900,6 +900,24 @@ RTDECL(int) RTLockValidatorClassCreateExV(PRTLOCKVALCLASS phClass, PCRTLOCKVALSR
 RTDECL(int) RTLockValidatorClassCreate(PRTLOCKVALCLASS phClass, bool fAutodidact, RT_SRC_POS_DECL, const char *pszNameFmt, ...);
 
 /**
+ * Creates a new lock validator class with a reference that is consumed by the
+ * first call to RTLockValidatorClassRetain.
+ *
+ * This is tailored for use in the parameter list of a semaphore constructor.
+ *
+ * @returns Class handle with a reference that is automatically consumed by the
+ *          first retainer.  NIL_RTLOCKVALCLASS if we run into trouble.
+ *
+ * @param   pszFile             The source position of the call, file.
+ * @param   iLine               The source position of the call, line.
+ * @param   pszFunction         The source position of the call, function.
+ * @param   pszNameFmt          Class name format string, optional (NULL).  Max
+ *                              length is 32 bytes.
+ * @param   ...                 Format string arguments.
+ */
+RTDECL(RTLOCKVALCLASS) RTLockValidatorClassCreateUnique(RT_SRC_POS_DECL, const char *pszNameFmt, ...);
+
+/**
  * Finds a class for the specified source position.
  *
  * @returns A handle to the class (not retained!) or NIL_RTLOCKVALCLASS.
