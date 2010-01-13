@@ -89,13 +89,13 @@ void VBoxVMSettingsAudio::prepareComboboxes()
 #endif
 #if defined Q_OS_LINUX || defined Q_OS_FREEBSD
     mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_OSS));
+# ifdef VBOX_WITH_PULSE
+    mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_Pulse));
+# endif
 #endif
 #if defined Q_OS_LINUX
 # ifdef VBOX_WITH_ALSA
     mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_ALSA));
-# endif
-# ifdef VBOX_WITH_PULSE
-    mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_Pulse));
 # endif
 #endif
 #if defined Q_OS_MACX

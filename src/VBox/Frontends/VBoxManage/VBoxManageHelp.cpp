@@ -66,6 +66,11 @@ void printUsage(USAGECATEGORY u64Cmd)
 #else
     bool fSolaris = false;
 #endif
+#ifdef RT_OS_FREEBSD
+    bool fFreeBSD = true;
+#else
+    bool fFreeBSD = false;
+#endif
 #ifdef RT_OS_DARWIN
     bool fDarwin = true;
 #else
@@ -87,6 +92,7 @@ void printUsage(USAGECATEGORY u64Cmd)
         fLinux = true;
         fWin = true;
         fSolaris = true;
+        fFreeBSD = true;
         fDarwin = true;
         fVRDP = true;
         fVBoxSDL = true;
@@ -235,6 +241,14 @@ void printUsage(USAGECATEGORY u64Cmd)
 #ifdef VBOX_WITH_ALSA
                                              "|alsa"
 #endif
+#ifdef VBOX_WITH_PULSE
+                                             "|pulse"
+#endif
+                                             );
+        }
+        if (fFreeBSD)
+        {
+            RTPrintf(                        "|oss"
 #ifdef VBOX_WITH_PULSE
                                              "|pulse"
 #endif

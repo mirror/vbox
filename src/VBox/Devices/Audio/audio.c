@@ -73,6 +73,11 @@ static struct audio_driver *drvtab[] = {
     &pulse_audio_driver,
 # endif
 #endif /* RT_OS_LINUX */
+#ifdef RT_OS_FREEBSD
+# ifdef VBOX_WITH_PULSE
+    &pulse_audio_driver,
+# endif
+#endif
 #ifdef RT_OS_DARWIN
     &coreaudio_audio_driver,
 #endif
