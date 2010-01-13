@@ -183,6 +183,7 @@ VMMDECL(int)        EMTryEnterRemLock(PVM pVM);
 VMMR3DECL(int)      EMR3Init(PVM pVM);
 VMMR3DECL(int)      EMR3InitCPU(PVM pVM);
 VMMR3DECL(void)     EMR3Relocate(PVM pVM);
+VMMR3DECL(void)     EMR3ResetCpu(PVMCPU pVCpu);
 VMMR3DECL(void)     EMR3Reset(PVM pVM);
 VMMR3DECL(int)      EMR3Term(PVM pVM);
 VMMR3DECL(int)      EMR3TermCPU(PVM pVM);

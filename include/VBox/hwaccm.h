@@ -143,6 +143,7 @@ VMMR3DECL(VBOXSTRICTRC) HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCP
 VMMR3DECL(int)          HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3DECL(int)          HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3DECL(int)          HWACCMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR3DECL(void)         HWACCMR3ResetCPU(PVMCPU pVCpu);
 
 /** @} */
 #endif /* IN_RING3 */

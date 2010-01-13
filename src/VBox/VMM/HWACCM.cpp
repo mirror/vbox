@@ -1457,6 +1457,39 @@ VMMR3DECL(int) HWACCMR3TermCPU(PVM pVM)
 }
 
 /**
+ * Resets a virtual CPU.
+ *
+ * @param pVCpu    The CPu to reset.
+ */
+VMMR3DECL(void) HWACCMR3ResetCPU(PVMCPU pVCpu)
+{
+    /* On first entry we'll sync everything. */
+    pVCpu->hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
+
+    pVCpu->hwaccm.s.vmx.cr0_mask = 0;
+    pVCpu->hwaccm.s.vmx.cr4_mask = 0;
+
+    pVCpu->hwaccm.s.fActive        = false;
+    pVCpu->hwaccm.s.Event.fPending = false;
+
+    /* Reset state information for real-mode emulation in VT-x. */
+    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = PGMMODE_REAL;
+    pVCpu->hwaccm.s.vmx.enmPrevGuestMode     = PGMMODE_REAL;
+    pVCpu->hwaccm.s.vmx.enmCurrGuestMode     = PGMMODE_REAL;
+
+    /* Reset the contents of the read cache. */
+    PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
+    for (unsigned j=0;j<pCache->Read.cValidEntries;j++)
+        pCache->Read.aFieldVal[j] = 0;
+
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    /* Magic marker for searching in crash dumps. */
+    strcpy((char *)pCache->aMagic, "VMCSCACHE Magic");
+    pCache->uMagic = UINT64_C(0xDEADBEEFDEADBEEF);
+#endif
+}
+
+/**
  * The VM is being reset.
  *
  * For the HWACCM component this means that any GDT/LDT/TSS monitors
@@ -1475,30 +1508,7 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        /* On first entry we'll sync everything. */
-        pVCpu->hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
-
-        pVCpu->hwaccm.s.vmx.cr0_mask = 0;
-        pVCpu->hwaccm.s.vmx.cr4_mask = 0;
-
-        pVCpu->hwaccm.s.fActive        = false;
-        pVCpu->hwaccm.s.Event.fPending = false;
-
-        /* Reset state information for real-mode emulation in VT-x. */
-        pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = PGMMODE_REAL;
-        pVCpu->hwaccm.s.vmx.enmPrevGuestMode     = PGMMODE_REAL;
-        pVCpu->hwaccm.s.vmx.enmCurrGuestMode     = PGMMODE_REAL;
-
-        /* Reset the contents of the read cache. */
-        PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
-        for (unsigned j=0;j<pCache->Read.cValidEntries;j++)
-            pCache->Read.aFieldVal[j] = 0;
-
-#ifdef VBOX_WITH_CRASHDUMP_MAGIC
-        /* Magic marker for searching in crash dumps. */
-        strcpy((char *)pCache->aMagic, "VMCSCACHE Magic");
-        pCache->uMagic = UINT64_C(0xDEADBEEFDEADBEEF);
-#endif
+        HWACCMR3ResetCPU(pVCpu);
     }
 
     /* Clear all patch information. */

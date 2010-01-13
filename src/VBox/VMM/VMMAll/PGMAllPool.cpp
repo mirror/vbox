@@ -4766,6 +4766,16 @@ void pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys)
 #endif /* IN_RING3 */
 
 #ifdef IN_RING3
+
+void pgmR3PoolResetCpu(PVM pVM, PVMCPU pVCpu)
+{
+    pgmR3ExitShadowModeBeforePoolFlush(pVM, pVCpu);
+
+    pgmR3ReEnterShadowModeAfterPoolFlush(pVM, pVCpu);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
+}
+
 /**
  * Flushes the entire cache.
  *
