@@ -9,9 +9,13 @@ LangString VBOX_NT4_NO_SP6 ${LANG_FRENCH}                "Le programme d'install
 
 LangString VBOX_PLATFORM_UNSUPPORTED ${LANG_FRENCH}      "Les Additions invité ne sont pas encore supportés sur cette plateforme!"
 
+LangString VBOX_SUN_FOUND ${LANG_FRENCH}                 "Une ancienne version des Sun Additions invité est installée dans cette machine virtuelle. Les Additions invité actuelles ne peuvent être installées avant que cette version ne soit désinstallée.$\r$\n$\r$\nVoulez-vous désinstaller l'ancienne version maintenant?"
+LangString VBOX_SUN_ABORTED ${LANG_FRENCH}               "Le programme ne peut pas continuer avec l'installation des Additions invité.$\r$\nVeuillez désinstaller d'abord les anciennes Sun Additions!"
+
 LangString VBOX_INNOTEK_FOUND ${LANG_FRENCH}             "Une ancienne version des Additions invité est installée dans cette machine virtuelle. Les Additions invité actuelles ne peuvent être installées avant que cette version ne soit désinstallée.$\r$\n$\r$\nVoulez-vous désinstaller l'ancienne version maintenant?"
 LangString VBOX_INNOTEK_ABORTED ${LANG_FRENCH}           "Le programme ne peut pas continuer avec l'installation des Additions invité.$\r$\nVeuillez désinstaller d'abord les anciennes Additions!"
-LangString VBOX_INNOTEK_REBOOT ${LANG_FRENCH}            "Nous vous conseillons fortement de redémarer cette machine virtuelle avant d'installer la nouvelle version des Additions invité.$\r$\nVeuillez recommencer l'installation des Additions après le redémarrage.$\r$\n$\r$\nRedémarrer maintenant?"
+
+LangString VBOX_UNINSTALL_REBOOT ${LANG_FRENCH}          "Nous vous conseillons fortement de redémarer cette machine virtuelle avant d'installer la nouvelle version des Additions invité.$\r$\nVeuillez recommencer l'installation des Additions après le redémarrage.$\r$\n$\r$\nRedémarrer maintenant?"
 
 LangString VBOX_COMPONENT_MAIN ${LANG_FRENCH}                       "Additions invité VirtualBox"
 LangString VBOX_COMPONENT_MAIN_DESC ${LANG_FRENCH}                  "Fichiers prinipaux des Additions invité VirtualBox"

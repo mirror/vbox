@@ -9,9 +9,13 @@ LangString VBOX_NT4_NO_SP6 ${LANG_ENGLISH}               "Setup has detected, th
 
 LangString VBOX_PLATFORM_UNSUPPORTED ${LANG_ENGLISH}     "Platform is not supported for Guest Additions yet!"
 
-LangString VBOX_INNOTEK_FOUND ${LANG_ENGLISH}            "An old version of the Guest Additions is installed in this virtual machine. This must be uninstalled before the current Guest Additions can be installed.$\r$\n$\r$\nDo you want to uninstall the old Guest Additions now?"
-LangString VBOX_INNOTEK_ABORTED ${LANG_ENGLISH}          "Setup cannot continue installing the Guest Additions.$\r$\nPlease uninstall old Guest Additions first!"
-LangString VBOX_INNOTEK_REBOOT ${LANG_ENGLISH}           "It is strongly recommended that you reboot this virtual machine before installing the new version of the Guest Additions.$\r$\nPlease start the Guest Additions setup again after rebooting.$\r$\n$\r$\nRestart now?"
+LangString VBOX_SUN_FOUND ${LANG_ENGLISH}                "An old version of the Sun Guest Additions is installed in this virtual machine. This must be uninstalled before the current Guest Additions can be installed.$\r$\n$\r$\nDo you want to uninstall the old Guest Additions now?"
+LangString VBOX_SUN_ABORTED ${LANG_ENGLISH}              "Setup cannot continue installing the Guest Additions.$\r$\nPlease uninstall old Sun Guest Additions first!"
+
+LangString VBOX_INNOTEK_FOUND ${LANG_ENGLISH}            "An old version of the innotek Guest Additions is installed in this virtual machine. This must be uninstalled before the current Guest Additions can be installed.$\r$\n$\r$\nDo you want to uninstall the old Guest Additions now?"
+LangString VBOX_INNOTEK_ABORTED ${LANG_ENGLISH}          "Setup cannot continue installing the Guest Additions.$\r$\nPlease uninstall old innotek Guest Additions first!"
+
+LangString VBOX_UNINSTALL_REBOOT ${LANG_ENGLISH}         "It is strongly recommended that you reboot this virtual machine before installing the new version of the Guest Additions.$\r$\nPlease start the Guest Additions setup again after rebooting.$\r$\n$\r$\nRestart now?"
 
 LangString VBOX_COMPONENT_MAIN ${LANG_ENGLISH}                      "VirtualBox Guest Additions"
 LangString VBOX_COMPONENT_MAIN_DESC ${LANG_ENGLISH}                 "Main Files of VirtualBox Guest Additions"
