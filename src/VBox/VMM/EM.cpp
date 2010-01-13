@@ -436,6 +436,19 @@ VMMR3DECL(void) EMR3Relocate(PVM pVM)
     }
 }
 
+VMMR3DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
+{
+    pVCpu->em.s.fForceRAW = false;
+
+    /* VMR3Reset may return VINF_EM_RESET or VINF_EM_SUSPEND, so transition
+        out of the HALTED state here so that enmPrevState doesn't end up as
+        HALTED when EMR3Execute returns. */
+    if (pVCpu->em.s.enmState == EMSTATE_HALTED)
+    {
+        Log(("EMR3ResetCpu: Cpu#%u %s -> %s\n", pVCpu->idCpu, emR3GetStateName(pVCpu->em.s.enmState), pVCpu->idCpu == 0 ? "EMSTATE_NONE" : "EMSTATE_WAIT_SIPI"));
+        pVCpu->em.s.enmState = pVCpu->idCpu == 0 ? EMSTATE_NONE : EMSTATE_WAIT_SIPI;
+    }
+}
 
 /**
  * Reset notification.
@@ -448,16 +461,7 @@ VMMR3DECL(void) EMR3Reset(PVM pVM)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-        pVCpu->em.s.fForceRAW = false;
-
-        /* VMR3Reset may return VINF_EM_RESET or VINF_EM_SUSPEND, so transition
-           out of the HALTED state here so that enmPrevState doesn't end up as
-           HALTED when EMR3Execute returns. */
-        if (pVCpu->em.s.enmState == EMSTATE_HALTED)
-        {
-            Log(("EMR3Reset: Cpu#%u %s -> %s\n", i, emR3GetStateName(pVCpu->em.s.enmState), i == 0 ? "EMSTATE_NONE" : "EMSTATE_WAIT_SIPI"));
-            pVCpu->em.s.enmState = i == 0 ? EMSTATE_NONE : EMSTATE_WAIT_SIPI;
-        }
+        EMR3ResetCpu(pVCpu);
     }
 }
 

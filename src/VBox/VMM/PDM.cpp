@@ -1152,6 +1152,13 @@ DECLINLINE(void) pdmR3ResetDev(PPDMDEVINS pDevIns, unsigned *pcAsync)
     }
 }
 
+VMMR3DECL(void) PDMR3ResetCpu(PVMCPU pVCpu)
+{
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_SMI);
+}
 
 /**
  * This function will notify all the devices and their attached drivers about
@@ -1244,10 +1251,7 @@ VMMR3DECL(void) PDMR3Reset(PVM pVM)
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_SMI);
+        PDMR3ResetCpu(pVCpu);
     }
     VM_FF_CLEAR(pVM, VM_FF_PDM_DMA);
 

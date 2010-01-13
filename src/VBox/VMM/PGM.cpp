@@ -2171,6 +2171,29 @@ static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode
     return 0;
 }
 
+VMMR3DECL(void) PGMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
+{
+    int rc = PGM_GST_PFN(Exit, pVCpu)(pVCpu);
+    AssertRC(rc);
+
+    rc = PGMR3ChangeMode(pVM, pVCpu, PGMMODE_REAL);
+    AssertRC(rc);
+
+    STAM_REL_COUNTER_RESET(&pVCpu->pgm.s.cGuestModeChanges);
+
+    pgmR3PoolResetCpu(pVM, pVCpu);
+
+    /*
+     * Re-init other members.
+     */
+    pVCpu->pgm.s.fA20Enabled = true;
+
+    /*
+     * Clear the FFs PGM owns.
+     */
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
+}
 
 /**
  * The VM is being reset.

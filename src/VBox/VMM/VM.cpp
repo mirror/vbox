@@ -4041,3 +4041,80 @@ VMMR3DECL(RTTHREAD) VMR3GetVMCPUThreadU(PUVM pUVM)
     return pUVCpu->vm.s.ThreadEMT;
 }
 
+DECLCALLBACK(int) vmR3HotunplugCPU(PVM pVM, VMCPUID idCpu)
+{
+    PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    /*
+     * Reset per CPU resources.
+     * Actually only needed for VT-x because the CPU
+     * seems to be still in some paged mode and startup
+     * fails after a new hotplug event.
+     * SVM works fine even without this.
+     */
+    Log(("vmR3HotunplugCPU for VCPU %d\n", idCpu));
+    PGMR3ResetCpu(pVM, pVCpu);
+    PDMR3ResetCpu(pVCpu);
+    TRPMR3ResetCpu(pVCpu);
+    CPUMR3ResetCpu(pVCpu);
+    EMR3ResetCpu(pVCpu);
+    HWACCMR3ResetCPU(pVCpu);
+    return VINF_EM_WAIT_SIPI;
+}
+
+/**
+ * Return the package and core id of a CPU.
+ *
+ * @returns VBOX status code.
+ * @param   pVM              The VM to operate on.
+ * @param   idCpu            Virtual CPU to get the ID from.
+ * @param   pidCpuCore       Where to store the core ID of the virtual CPU.
+ * @param   pidCpuPackage    Where to store the package ID of the virtual CPU.
+ */
+VMMR3DECL(int) VMR3GetCPUCoreAndPackageIdFromCPUId(PVM pVM, VMCPUID idCpu, uint32_t *pidCpuCore, uint32_t *pidCpuPackage)
+{
+    if (idCpu >= pVM->cCpus)
+        return VERR_INVALID_CPU_ID;
+
+#ifdef VBOX_WITH_MULTI_CORE
+    *pidCpuCore    = idCpu;
+    *pidCpuPackage = 0;
+#else
+    *pidCpuCore    = 0;
+    *pidCpuPackage = idCpu;
+#endif
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Unplugs a CPU from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The VM to operate on.
+ * @param   idCpu   Virtual CPU to perform the unplug operation on.
+ */
+VMMR3DECL(int) VMR3HotunplugCPU(PVM pVM, VMCPUID idCpu)
+{
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
+
+    /** @todo Destroy EMT and not needed resources. */
+    return VMR3ReqCallNoWaitU(pVM->pUVM, idCpu, (PFNRT)vmR3HotunplugCPU, 2, pVM, idCpu);
+}
+
+/**
+ * Hotplugs a CPU on the guest.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The VM to operate on.
+ * @param   idCpu   Virtual CPU to perform the hotplug operation on.
+ */
+VMMR3DECL(int) VMR3HotplugCPU(PVM pVM, VMCPUID idCpu)
+{
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
+
+    /** @todo start EMT and allocate needed resources. */
+    return VINF_SUCCESS;
+}
+
