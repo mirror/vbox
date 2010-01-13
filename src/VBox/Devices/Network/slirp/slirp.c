@@ -69,12 +69,11 @@
 # ifndef RT_OS_LINUX
 #  define readfds_poll   (POLLRDNORM)
 #  define writefds_poll  (POLLWRNORM)
-#  define xfds_poll      (POLLRDBAND|POLLWRBAND|POLLPRI)
 # else
 #  define readfds_poll   (POLLIN)
 #  define writefds_poll  (POLLOUT)
-#  define xfds_poll      (POLLPRI)
 # endif
+# define xfds_poll       (POLLPRI)
 # define closefds_poll   (POLLHUP)
 # define rderr_poll      (POLLERR)
 # define rdhup_poll      (POLLHUP)
@@ -366,7 +365,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     char buff[512];
     char buff2[256];
     RTFILE f;
-    int found = 0;
+    int fFoundNameserver = 0;
     struct in_addr tmp_addr;
     int rc;
     size_t bytes;
@@ -438,25 +437,25 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                 pDns->de_addr.s_addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_ALIAS);
             }
             TAILQ_INSERT_HEAD(&pData->pDnsList, pDns, de_list);
-            found++;
+            fFoundNameserver++;
         }
         if ((!strncmp(buff, "domain", 6) || !strncmp(buff, "search", 6)))
         {
             char *tok;
             char *saveptr;
             struct dns_domain_entry *pDomain = NULL;
-            int found = 0;
+            int fFoundDomain = 0;
             tok = strtok_r(&buff[6], " \t\n", &saveptr);
             LIST_FOREACH(pDomain, &pData->pDomainList, dd_list)
             {
                 if (   tok != NULL
                     && strcmp(tok, pDomain->dd_pszDomain) == 0)
                 {
-                    found = 1;
+                    fFoundDomain = 1;
                     break;
                 }
             }
-            if (tok != NULL && found == 0)
+            if (tok != NULL && !fFoundDomain)
             {
                 pDomain = RTMemAllocZ(sizeof(struct dns_domain_entry));
                 if (!pDomain)
@@ -471,7 +470,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
         }
     }
     RTFileClose(f);
-    if (!found)
+    if (!fFoundNameserver)
         return -1;
     return 0;
 }
@@ -1016,18 +1015,18 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
     {
         if (time_fasttimo && ((curtime - time_fasttimo) >= 2))
         {
-            STAM_PROFILE_START(&pData->StatFastTimer, a);
+            STAM_PROFILE_START(&pData->StatFastTimer, b);
             tcp_fasttimo(pData);
             time_fasttimo = 0;
-            STAM_PROFILE_STOP(&pData->StatFastTimer, a);
+            STAM_PROFILE_STOP(&pData->StatFastTimer, b);
         }
         if (do_slowtimo && ((curtime - last_slowtimo) >= 499))
         {
-            STAM_PROFILE_START(&pData->StatSlowTimer, a);
+            STAM_PROFILE_START(&pData->StatSlowTimer, c);
             ip_slowtimo(pData);
             tcp_slowtimo(pData);
             last_slowtimo = curtime;
-            STAM_PROFILE_STOP(&pData->StatSlowTimer, a);
+            STAM_PROFILE_STOP(&pData->StatSlowTimer, c);
         }
     }
 #if defined(RT_OS_WINDOWS)
@@ -1776,7 +1775,7 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
     LIST_FOREACH(rule, &pData->port_forward_rule_head, list)
     {
         struct socket *so;
-        struct alias_link *link;
+        struct alias_link *alias_link;
         struct libalias *lib;
         int flags;
         struct sockaddr sa;
@@ -1844,11 +1843,11 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
         flags = LibAliasSetMode(lib, flags, ~0);
 
         alias.s_addr =  htonl(ntohl(guest_addr) | CTL_ALIAS);
-        link = LibAliasRedirectPort(lib, psin->sin_addr, htons(rule->host_port),
-                                    alias, htons(rule->guest_port),
-                                    pData->special_addr,  -1, /* not very clear for now */
-                                    rule->proto);
-        if (!link)
+        alias_link = LibAliasRedirectPort(lib, psin->sin_addr, htons(rule->host_port),
+                                          alias, htons(rule->guest_port),
+                                          pData->special_addr,  -1, /* not very clear for now */
+                                          rule->proto);
+        if (!alias_link)
             goto remove_port_forwarding;
 
         so->so_la = lib;

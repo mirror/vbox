@@ -1159,7 +1159,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             int fds[2];
             if (pipe(&fds[0]) != 0) /** @todo RTPipeCreate() or something... */
             {
-                int rc = RTErrConvertFromErrno(errno);
+                rc = RTErrConvertFromErrno(errno);
                 AssertRC(rc);
                 return rc;
             }
