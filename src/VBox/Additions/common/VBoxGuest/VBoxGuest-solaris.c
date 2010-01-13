@@ -185,6 +185,16 @@ static kmutex_t             g_IrqMtx;
 int _init(void)
 {
     LogFlow((DEVICE_NAME ":_init\n"));
+
+    /*
+     * Prevent module autounloading.
+     */
+    modctl_t *pModCtl = mod_getctl(&g_VBoxGuestSolarisModLinkage);
+    if (pModCtl)
+        pModCtl->mod_loadflags |= MOD_NOAUTOUNLOAD;
+    else
+        LogRel((DEVICE_NAME ":failed to disable autounloading!\n"));
+
     int rc = ddi_soft_state_init(&g_pVBoxGuestSolarisState, sizeof(vboxguest_state_t), 1);
     if (!rc)
     {
@@ -419,7 +429,7 @@ static int VBoxGuestSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void
 static int VBoxGuestSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
 {
     int                 rc;
-    PVBOXGUESTSESSION   pSession;
+    PVBOXGUESTSESSION   pSession = NULL;
 
     LogFlow((DEVICE_NAME "::Open\n"));
 
@@ -471,7 +481,7 @@ static int VBoxGuestSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
 {
     LogFlow((DEVICE_NAME "::Close pid=%d\n", (int)RTProcSelf()));
 
-    PVBOXGUESTSESSION pSession;
+    PVBOXGUESTSESSION pSession = NULL;
     vboxguest_state_t *pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, getminor(Dev));
     if (!pState)
     {
@@ -502,7 +512,6 @@ static int VBoxGuestSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
     LogFlow((DEVICE_NAME "::Read\n"));
 
-    PVBOXGUESTSESSION pSession;
     vboxguest_state_t *pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, getminor(Dev));
     if (!pState)
     {
@@ -510,6 +519,7 @@ static int VBoxGuestSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred)
         return EFAULT;
     }
 
+    PVBOXGUESTSESSION pSession = pState->pSession;
     uint32_t u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
     if (pSession->u32MousePosChangedSeq != u32CurSeq)
         pSession->u32MousePosChangedSeq = u32CurSeq;
