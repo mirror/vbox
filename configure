@@ -125,6 +125,8 @@ CXX_FLAGS=""
 if [ "$OS" = "freebsd" ]; then
   INCCURL="-I/usr/local/include"
   LIBCURL="-L/usr/local/lib -lcurl"
+  INCPULSE="-I/usr/local/include"
+  LIBPULSE="-L/usr/local/lib"
 else
   INCCURL=""
   LIBCURL="-lcurl"
@@ -1181,7 +1183,7 @@ extern "C" int main(void)
 #endif
 }
 EOF
-  if test_compile "-lpulse" pulse pulse; then
+  if test_compile "$INCPULSE $LIBPULSE -lpulse" pulse pulse; then
     test_execute
   fi
 }
@@ -2324,6 +2326,15 @@ check_curl
 [ $WITH_QT4    -eq 1 ] && check_qt4
 [ $WITH_PYTHON -eq 1 ] && check_python
 
+# PulseAudio
+if [ "$OS" = "linux" -o "$OS" = "freebsd" ]; then
+  if [ $WITH_PULSE -eq 1 ]; then
+    check_pulse
+  else
+    cnf_append "VBOX_WITH_PULSE" ""
+  fi
+fi
+
 # Linux-specific
 if [ "$OS" = "linux" ]; then
   # don't check for the static libstdc++ in the PUEL version as we build the
@@ -2340,11 +2351,6 @@ if [ "$OS" = "linux" ]; then
     check_alsa
   else
     cnf_append "VBOX_WITH_ALSA" ""
-  fi
-  if [ $WITH_PULSE -eq 1 ]; then
-    check_pulse
-  else
-    cnf_append "VBOX_WITH_PULSE" ""
   fi
   if [ $WITH_DBUS -eq 0 ]; then
     cnf_append "VBOX_WITH_DBUS" ""

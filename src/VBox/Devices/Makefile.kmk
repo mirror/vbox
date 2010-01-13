@@ -985,6 +985,10 @@ ifdef VBOX_WITH_PULSE
  Drivers_SOURCES.linux+= \
 	Audio/pulseaudio.c \
 	Audio/pulse_stubs.c
+ Drivers_DEFS.freebsd += VBOX_WITH_PULSE
+ Drivers_SOURCES.freebsd+= \
+	Audio/pulseaudio.c \
+	Audio/pulse_stubs.c
 endif
 
 ifdef VBOX_WITH_USB
