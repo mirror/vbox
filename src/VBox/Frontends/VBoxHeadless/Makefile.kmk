@@ -56,6 +56,9 @@ ifdef VBOX_WITH_VRDP
  VBoxHeadless_DEFS     += VBOX_WITH_VRDP
  VBoxHeadless_SOURCES  += Framebuffer.cpp
 endif
+ifdef VBOX_WITH_GUEST_PROPS
+ VBoxHeadless_DEFS     += VBOX_WITH_GUEST_PROPS
+endif
 ifdef VBOX_WITH_HARDENING
  VBoxHeadless_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxHeadless.dylib
 endif
