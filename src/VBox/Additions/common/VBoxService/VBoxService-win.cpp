@@ -25,6 +25,7 @@
 *******************************************************************************/
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/ldr.h>
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 
@@ -34,6 +35,11 @@
 
 DWORD                 g_rcWinService = 0;
 SERVICE_STATUS_HANDLE g_hWinServiceStatus = NULL;
+
+/** Dynamically loaded function ChangeServiceConfig2() which is not available in NT4. */
+typedef BOOL (WINAPI FNCHANGESERVICECONFIG2) (SC_HANDLE hService, DWORD dwInfoLevel, LPVOID lpInfo);
+/** Pointer to FNCHANGESERVICECONFIG2. */
+typedef FNCHANGESERVICECONFIG2 *PFNCHANGESERVICECONFIG2;
 
 void WINAPI VBoxServiceWinMain (DWORD argc, LPTSTR *argv);
 
@@ -145,10 +151,11 @@ int VBoxServiceWinInstall(void)
     GetModuleFileName(NULL,imagePath,MAX_PATH);
     VBoxServiceVerbose(1, "Installing service ...\n");
 
-    hSCManager = OpenSCManager(NULL,NULL,SC_MANAGER_ALL_ACCESS);
+    hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 
-    if (NULL == hSCManager) {
-        VBoxServiceError("Could not open SCM! Error: %d\n", GetLastError());
+    if (NULL == hSCManager)
+    {
+        VBoxServiceError("Could not open SCM! Error: %ld\n", GetLastError());
         return 1;
     }
 
@@ -156,13 +163,70 @@ int VBoxServiceWinInstall(void)
                                 VBOXSERVICE_NAME, VBOXSERVICE_FRIENDLY_NAME,
                                 SERVICE_ALL_ACCESS,
                                 SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS,
-                                SERVICE_DEMAND_START,SERVICE_ERROR_NORMAL,
+                                SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL,
                                 imagePath, NULL, NULL, NULL, NULL, NULL);
+    int rc = VINF_SUCCESS;
+    if (NULL == hService) 
+    {
+        DWORD dwErr = GetLastError();
+        switch (dwErr)
+        {
 
-    if (NULL == hService) {
-        VBoxServiceError("Could not create service! Error: %d\n", GetLastError());
-        CloseServiceHandle(hSCManager);
-        return 1;
+        case ERROR_SERVICE_EXISTS:
+
+            VBoxServiceVerbose(1, "Service already exists, just updating the service config.\n");
+            hService = OpenService (hSCManager,
+                                    VBOXSERVICE_NAME,
+                                    SERVICE_ALL_ACCESS);
+            if (NULL == hService)
+            {
+                VBoxServiceError("Could not open service! Error: %ld\n", GetLastError());
+                rc = 1;
+            }
+            else
+            {
+                if (ChangeServiceConfig (hService,
+                                         SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS,
+                                         SERVICE_DEMAND_START,
+                                         SERVICE_ERROR_NORMAL,
+                                         imagePath,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         VBOXSERVICE_FRIENDLY_NAME))
+                {
+                    /* On W2K+ there's ChangeServiceConfig2() which lets us set some fields 
+                       like a longer service description. */
+                    #ifndef TARGET_NT4
+                        SERVICE_DESCRIPTION desc;
+                        /** @todo On Vista+ SERVICE_DESCRIPTION also supports localized strings! */
+                        desc. lpDescription = VBOXSERVICE_DESCRIPTION;
+                        if (FALSE == ChangeServiceConfig2(hService, 
+                                                             SERVICE_CONFIG_DESCRIPTION, /* Service info level */  
+                                                             &desc))
+                        {
+                            VBoxServiceError("Cannot set the service description! Error: %ld\n", GetLastError());
+                        }
+                    #endif
+
+                    VBoxServiceVerbose(1, "The service config has been successfully updated.\n");
+                }
+                else
+                {
+                    VBoxServiceError("Could not change service config! Error: %ld\n", GetLastError());
+                    rc = 1;
+                }
+            }
+            break;
+
+        default:
+
+            VBoxServiceError("Could not create service! Error: %ld\n", dwErr);
+            rc = 1;
+            break;
+        }
     }
     else
     {
@@ -171,8 +235,7 @@ int VBoxServiceWinInstall(void)
 
     CloseServiceHandle(hService);
     CloseServiceHandle(hSCManager);
-
-    return 0;
+    return rc;
 }
 
 int VBoxServiceWinUninstall(void)

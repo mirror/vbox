@@ -96,7 +96,9 @@ typedef VBOXSERVICE const *PCVBOXSERVICE;
 /** The service name (needed for mutex creation on Windows). */
 #define VBOXSERVICE_NAME          "VBoxService"
 /** The friendly service name. */
-#define VBOXSERVICE_FRIENDLY_NAME "VBoxService"
+#define VBOXSERVICE_FRIENDLY_NAME "VirtualBox Guest Additions Service"
+/** The service description (only W2K+ atm) */
+#define VBOXSERVICE_DESCRIPTION   "Manages VM runtime information, time synchronization, remote sysprep execution and miscellaneous utilities for guest operating systems."
 /** The following constant may be defined by including NtStatus.h. */
 #define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
 /** Structure for storing the looked up user information. */
