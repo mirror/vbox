@@ -282,7 +282,6 @@ VBoxSVC_INTERMEDIATES = \
 VBoxSVC_SOURCES = \
 	Global.cpp \
 	Logging.cpp \
-	AutoLock.cpp \
 	Matching.cpp \
 	xml/Settings.cpp \
 	VirtualBoxBase.cpp \
@@ -609,7 +608,6 @@ VBoxC_INTERMEDIATES = \
 VBoxC_SOURCES = \
 	Global.cpp \
 	Logging.cpp \
-	AutoLock.cpp \
 	VBoxDll.cpp \
 	USBDeviceImpl.cpp \
 	RemoteUSBDeviceImpl.cpp \
@@ -686,6 +684,7 @@ VBoxCOM_SOURCES         = \
 	glue/com.cpp \
 	glue/initterm.cpp \
 	glue/string.cpp \
+	glue/AutoLock.cpp \
 	glue/EventQueue.cpp \
 	glue/ErrorInfo.cpp \
 	glue/errorprint.cpp \

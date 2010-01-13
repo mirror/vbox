@@ -19,10 +19,6 @@
  * additional information or have any questions.
  */
 
-#include "AutoLock.h"
-
-#include "Logging.h"
-
 #include <iprt/cdefs.h>
 #include <iprt/critsect.h>
 #include <iprt/thread.h>
@@ -39,6 +35,7 @@
 #include <iprt/path.h>
 #include <iprt/stream.h>
 
+#include "VBox/com/AutoLock.h"
 #include <VBox/com/string.h>
 
 #include <vector>
@@ -534,10 +531,6 @@ void AutoWriteLockBase::leave()
             m->acUnlockedInLeave[i] = pHandle->writeLockLevel();
             AssertMsg(m->acUnlockedInLeave[i] >= 1, ("m->cUnlockedInLeave[%d] is %d, must be >=1!", i, m->acUnlockedInLeave[i]));
 
-#ifdef RT_LOCK_STRICT
-            LogFlowFunc(("LOCKVAL: will unlock handle %d [%s] %d times\n", i, pHandle->describe(), m->acUnlockedInLeave[i]));
-#endif
-
             for (uint32_t left = m->acUnlockedInLeave[i];
                  left;
                  --left)
@@ -565,10 +558,6 @@ void AutoWriteLockBase::enter()
         if (pHandle)
         {
             AssertMsg(m->acUnlockedInLeave[i] != 0, ("m->cUnlockedInLeave[%d] is 0! enter() without leave()?", i));
-
-#ifdef RT_LOCK_STRICT
-            LogFlowFunc(("LOCKVAL: will lock handle %d [%s] %d times\n", i, pHandle->describe(), m->acUnlockedInLeave[i]));
-#endif
 
             for (; m->acUnlockedInLeave[i]; --m->acUnlockedInLeave[i])
                 callLockImpl(*pHandle);
@@ -599,10 +588,6 @@ void AutoWriteLockBase::maybeLeave()
                 m->acUnlockedInLeave[i] = pHandle->writeLockLevel();
                 AssertMsg(m->acUnlockedInLeave[i] >= 1, ("m->cUnlockedInLeave[%d] is %d, must be >=1!", i, m->acUnlockedInLeave[i]));
 
-#ifdef RT_LOCK_STRICT
-                LogFlowFunc(("LOCKVAL: will unlock handle %d [%s] %d times\n", i, pHandle->describe(), m->acUnlockedInLeave[i]));
-#endif
-
                 for (uint32_t left = m->acUnlockedInLeave[i];
                      left;
                      --left)
@@ -630,10 +615,6 @@ void AutoWriteLockBase::maybeEnter()
         {
             if (!pHandle->isWriteLockOnCurrentThread())
             {
-#ifdef RT_LOCK_STRICT
-                LogFlowFunc(("LOCKVAL: will lock handle %d [%s] %d times\n", i, pHandle->describe(), m->acUnlockedInLeave[i]));
-#endif
-
                 for (; m->acUnlockedInLeave[i]; --m->acUnlockedInLeave[i])
                     callLockImpl(*pHandle);
             }
