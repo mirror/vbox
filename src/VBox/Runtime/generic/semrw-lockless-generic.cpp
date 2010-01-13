@@ -848,8 +848,8 @@ RTDECL(bool) RTSemRWIsWriteOwner(RTSEMRW hRWSem)
      * Validate handle.
      */
     struct RTSEMRWINTERNAL *pThis = hRWSem;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pThis, false);
+    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, false);
 
     /*
      * Check ownership.
@@ -868,8 +868,8 @@ RTDECL(uint32_t) RTSemRWGetWriteRecursion(RTSEMRW hRWSem)
      * Validate handle.
      */
     struct RTSEMRWINTERNAL *pThis = hRWSem;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pThis, 0);
+    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, 0);
 
     /*
      * Return the requested data.
@@ -885,8 +885,8 @@ RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW hRWSem)
      * Validate handle.
      */
     struct RTSEMRWINTERNAL *pThis = hRWSem;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pThis, 0);
+    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, 0);
 
     /*
      * Return the requested data.
