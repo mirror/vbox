@@ -1095,7 +1095,7 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, ui
 
         /* For type: 1 - data cache, 2 - i-cache, 3 - unified */
         partitions = 1;
-        /* Those are only to shut up compiler, as they will always 
+        /* Those are only to shut up compiler, as they will always
            get overwritten, and compiler should be able to figure that out */
         sets = associativity = sharing = level = 1;
         cores = pVM->cCpus > 32 ? 32 : pVM->cCpus;
