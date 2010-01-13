@@ -1071,7 +1071,7 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, ui
     else
         pCpuId = &pVM->cpum.s.GuestCpuIdDef;
 
-    bool fHasMoreCaches = (*pEcx == 0);
+    uint32_t cCurrentCacheIndex = *pEcx;
 
     *pEax = pCpuId->eax;
     *pEbx = pCpuId->ebx;
@@ -1087,13 +1087,54 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, ui
    }
 
     if (    iLeaf == 4
-        &&  fHasMoreCaches
+        &&  cCurrentCacheIndex < 3
         &&  pVM->cpum.s.enmGuestCpuVendor == CPUMCPUVENDOR_INTEL)
     {
-        /* Report L0 data cache, Linux'es num_cpu_cores() requires
-         * that to be non-0 to detect core count correctly. */
-        *pEax |= (1 << 5) /* level 1 */ | 1 /* 1 - data cache, 2 - i-cache, 3 - unified */ ;
-        *pEbx = 63 /* linesize 64 */ ;
+        uint32_t type, level, sharing, linesize,
+                 partitions, associativity, sets, cores;
+
+        /* For type: 1 - data cache, 2 - i-cache, 3 - unified */
+        partitions = 1;
+        /* Those are only to shut up compiler, as they will always 
+           get overwritten, and compiler should be able to figure that out */
+        sets = associativity = sharing = level = 1;
+        cores = pVM->cCpus > 32 ? 32 : pVM->cCpus;
+        switch (cCurrentCacheIndex)
+        {
+            case 0:
+                type = 1;
+                level = 1;
+                sharing = 1;
+                linesize = 64;
+                associativity = 8;
+                sets = 64;
+                break;
+            case 1:
+                level = 1;
+                type = 2;
+                sharing = 1;
+                linesize = 64;
+                associativity = 8;
+                sets = 64;
+                break;
+            case 2:
+                level = 2;
+                type = 3;
+                sharing = 2;
+                linesize = 64;
+                associativity = 24;
+                sets = 4096;
+                break;
+        }
+
+        *pEax |= ((cores - 1) << 26)        |
+                 ((sharing - 1) << 14)      |
+                 (level << 5)               |
+                 1;
+        *pEbx = (linesize - 1)               |
+                ((partitions - 1) << 12)     |
+                ((associativity - 1) << 22); /* -1 encoding */
+        *pEcx = sets - 1;
     }
 
     Log2(("CPUMGetGuestCpuId: iLeaf=%#010x %RX32 %RX32 %RX32 %RX32\n", iLeaf, *pEax, *pEbx, *pEcx, *pEdx));
@@ -2075,4 +2116,3 @@ VMMDECL(CPUMMODE) CPUMGetGuestMode(PVMCPU pVCpu)
 
     return enmMode;
 }
-
