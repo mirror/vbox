@@ -29,7 +29,8 @@
 #include <map>
 
 #include "VBox/com/ErrorInfo.h"
-#include <VBox/com/SupportErrorInfo.h>
+#include "VBox/com/SupportErrorInfo.h"
+#include "VBox/com/AutoLock.h"
 
 #include "VBox/com/VirtualBox.h"
 
@@ -39,8 +40,6 @@ namespace xml
 {
 class File;
 }
-
-#include "AutoLock.h"
 
 using namespace com;
 using namespace util;
