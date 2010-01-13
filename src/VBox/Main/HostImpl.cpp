@@ -149,6 +149,10 @@ extern bool is3DAccelerationSupported();
 
 struct Host::Data
 {
+    Data()
+        : treeLock(LOCKCLASS_OTHERLIST)
+    {};
+
     ComObjPtr<VirtualBox, ComWeakRef>
                             pParent;
 

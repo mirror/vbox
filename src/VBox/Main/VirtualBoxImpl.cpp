@@ -173,6 +173,14 @@ struct VirtualBox::Data
 {
     Data()
         : pMainConfigFile(NULL),
+          ollMachines(LOCKCLASS_VIRTUALBOXLIST),
+          ollGuestOSTypes(LOCKCLASS_VIRTUALBOXLIST),
+          ollHardDisks(LOCKCLASS_VIRTUALBOXLIST),
+          ollDVDImages(LOCKCLASS_VIRTUALBOXLIST),
+          ollFloppyImages(LOCKCLASS_VIRTUALBOXLIST),
+          ollSharedFolders(LOCKCLASS_VIRTUALBOXLIST),
+          ollDHCPServers(LOCKCLASS_VIRTUALBOXLIST),
+          mtxProgressOperations(LOCKCLASS_VIRTUALBOXLIST),
           updateReq(UPDATEREQARG),
           threadClientWatcher(NIL_RTTHREAD),
           threadAsyncEvent(NIL_RTTHREAD),
@@ -216,7 +224,6 @@ struct VirtualBox::Data
     CallbackList                        llCallbacks;
 
     RWLockHandle                        mtxProgressOperations;
-            // protects mutex operations; "leaf" lock, no other lock may be requested after this
 
     // the following are data for the client watcher thread
     const UPDATEREQTYPE                 updateReq;
@@ -3649,7 +3656,7 @@ HRESULT VirtualBox::updateSettings(const char *aOldPath, const char *aNewPath)
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    ObjectsList<Medium> ollAll;
+    ObjectsList<Medium> ollAll(LOCKCLASS_OTHERLIST);
     ollAll.appendOtherList(m->ollDVDImages);
     ollAll.appendOtherList(m->ollFloppyImages);
     ollAll.appendOtherList(m->ollHardDisks);

@@ -24,15 +24,9 @@
 
 #include <iprt/types.h>
 
-// macros for automatic lock validation;
-// use VBOX_WITH_LOCK_VALIDATOR to enable for debug mode
-#ifdef DEBUG
-# ifdef VBOX_WITH_LOCK_VALIDATOR
-#  define VBOX_WITH_DEBUG_LOCK_VALIDATOR
-# endif
-#endif
-
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+// macros for automatic lock validation; these will amount to nothing
+// unless lock validation is enabled for the runtime
+#if defined(RT_LOCK_STRICT)
 # define COMMA_LOCKVAL_SRC_POS , RT_SRC_POS
 # define LOCKVAL_SRC_POS_DECL RT_SRC_POS_DECL
 # define COMMA_LOCKVAL_SRC_POS_DECL , RT_SRC_POS_DECL
@@ -51,6 +45,33 @@ namespace util
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+// Order classes for lock validation
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * IPRT now has a sophisticated system of run-time locking classes to validate
+ * locking order. Since the Main code is handled by simpler minds, we want
+ * compile-time constants for simplicity, and we'll look up the run-time classes
+ * in AutoLock.cpp transparently. These are passed to the constructors of the
+ * LockHandle classes.
+ */
+enum MainLockValidationClasses
+{
+    LOCKCLASS_NONE = 0,
+    LOCKCLASS_VIRTUALBOXOBJECT = 1,         // highest order: VirtualBox object lock
+    LOCKCLASS_VIRTUALBOXLIST = 2,           // lock protecting a list in VirtualBox object
+                                            // (machines list, hard disk tree, shared folders list, ...)
+    LOCKCLASS_OTHERLIST = 3,                // lock protecting a list that's elsewhere
+                                            // (e.g. snapshots list in machine object)
+    LOCKCLASS_OBJECT = 4,                   // any regular object member variable  lock
+    LOCKCLASS_OBJECTSTATE = 5               // object state lock (handled by AutoCaller classes)
+};
+
+void InitAutoLockSystem();
+
+////////////////////////////////////////////////////////////////////////////////
+//
 // LockHandle and friends
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -62,8 +83,11 @@ namespace util
 class LockHandle
 {
 public:
-    LockHandle() {}
-    virtual ~LockHandle() {}
+    LockHandle()
+    {}
+
+    virtual ~LockHandle()
+    {}
 
     /**
      * Returns @c true if the current thread holds a write lock on this
@@ -86,13 +110,9 @@ public:
     virtual void lockRead(LOCKVAL_SRC_POS_DECL) = 0;
     virtual void unlockRead() = 0;
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
-    void validateLock(LOCKVAL_SRC_POS_DECL);
-    void validateUnlock();
+#ifdef RT_LOCK_STRICT
     virtual const char* describe() const = 0;
 #endif
-
-    static RTTLS s_lockingStackTlsIndex;
 
 private:
     // prohibit copy + assignment
@@ -111,7 +131,7 @@ private:
 class RWLockHandle : public LockHandle
 {
 public:
-    RWLockHandle();
+    RWLockHandle(MainLockValidationClasses lockClass);
     virtual ~RWLockHandle();
 
     virtual bool isWriteLockOnCurrentThread() const;
@@ -123,7 +143,7 @@ public:
 
     virtual uint32_t writeLockLevel() const;
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
     virtual const char* describe() const;
 #endif
 
@@ -148,7 +168,7 @@ private:
 class WriteLockHandle : public LockHandle
 {
 public:
-    WriteLockHandle();
+    WriteLockHandle(MainLockValidationClasses lockClass);
     virtual ~WriteLockHandle();
     virtual bool isWriteLockOnCurrentThread() const;
 
@@ -158,7 +178,7 @@ public:
     virtual void unlockRead();
     virtual uint32_t writeLockLevel() const;
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
     virtual const char* describe() const;
 #endif
 
@@ -245,10 +265,6 @@ protected:
 public:
     void acquire();
     void release();
-
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
-    void dumpStack(const char *pcszMessage, RT_SRC_POS_DECL);
-#endif
 
 private:
     // prohibit copy + assignment

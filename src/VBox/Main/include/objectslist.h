@@ -58,7 +58,8 @@ public:
         // the "this might hurt your head" part in
         // http://www.parashift.com/c++-faq-lite/templates.html#faq-35.18
 
-    ObjectsList()
+    ObjectsList(MainLockValidationClasses lockClass)
+        : m_lock(lockClass)
     { }
 
     ~ObjectsList()

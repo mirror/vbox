@@ -37,6 +37,7 @@
 
 #include <iprt/string.h>
 #include <iprt/path.h>
+#include <iprt/stream.h>
 
 #include <VBox/com/string.h>
 
@@ -48,187 +49,22 @@ namespace util
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Per-thread stacks for locking validation
+// RuntimeLockClass
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
-// index used for allocating thread-local storage for locking stack
-RTTLS LockHandle::s_lockingStackTlsIndex = NIL_RTTLS;
-
-/**
- * One item on the LockingStack. One of these gets pushed on the
- * stack for each lock operation and popped for each unlock.
- */
-struct LockStackItem
+class RuntimeLockClass
 {
-    LockStackItem(LockHandle *pLock_,
-                  const char *pcszFile_,
-                  unsigned uLine_,
-                  const char *pcszFunction_)
-        : pLock(pLock_),
-          pcszFile(pcszFile_),
-          uLine(uLine_),
-          pcszFunction(pcszFunction_)
-    {
-        pcszFile = RTPathFilename(pcszFile_);
-    }
-
-    LockHandle      *pLock;
-
-    // information about where the lock occured (passed down from the AutoLock classes)
-    const char      *pcszFile;
-    unsigned        uLine;
-    const char      *pcszFunction;
-};
-
-typedef std::list<LockStackItem> LockHandlesList;
-
-/**
- * LockingStack class. One of these gets created for each thread
- * that calls lock/unlock methods, and a pointer to this is
- * stored in thread-local storage.
- */
-struct LockingStack
-{
-    LockingStack()
-        : threadSelf(RTThreadSelf()),
-          pcszThreadName(NULL),
-          c(0)
-    {
-        threadSelf = RTThreadSelf();
-        pcszThreadName = RTThreadGetName(threadSelf);
-    }
-
-    RTTHREAD            threadSelf;
-    const char          *pcszThreadName;
-
-    LockHandlesList     ll;
-            // first item (front) is newest, last item (back) is oldest; I'd do it
-            // the other way round but there is no implementation for erase(reverse_iterator)
-            // which I'd need otherwise
-    size_t              c;
 };
 
 /**
- * Global helper that looks up the LockingStack structure for the
- * current thread in thread-local storage, or creates one on the
- * thread's first call.
+ * Called from initterm.cpp on process initialization (on the main thread)
+ * to give us a chance to initialize lock validation runtime data.
  */
-LockingStack* getThreadLocalLockingStack()
+void InitAutoLockSystem()
 {
-    // very first call in this process: allocate the TLS variable
-    if (LockHandle::s_lockingStackTlsIndex == NIL_RTTLS)
-    {
-        LockHandle::s_lockingStackTlsIndex = RTTlsAlloc();
-        Assert(LockHandle::s_lockingStackTlsIndex != NIL_RTTLS);
-    }
-
-    // get pointer to thread-local locking stack
-    LockingStack *pStack = (LockingStack*)RTTlsGet(LockHandle::s_lockingStackTlsIndex);
-    if (!pStack)
-    {
-        // first call on this thread:
-        pStack = new LockingStack;
-        RTTlsSet(LockHandle::s_lockingStackTlsIndex, pStack);
-    }
-
-    return pStack;
+    RTPrintf("InitAutoLockSystem\n");
 }
-
-void dumpThreadLocalLockingStack(LockingStack *pStack)
-{
-    uint32_t c = 0;
-    for (LockHandlesList::iterator it = pStack->ll.begin();
-         it != pStack->ll.end();
-         ++it)
-    {
-        LockStackItem lsi = *it;
-        LogFlow(("LOCKVAL:   lock %d under top is [%s] locked by %s (%s:%u)\n", c, lsi.pLock->describe(), lsi.pcszFunction, lsi.pcszFile, lsi.uLine));
-        ++c;
-    }
-}
-
-#endif
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// LockHandle
-//
-////////////////////////////////////////////////////////////////////////////////
-
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
-
-/**
- * If the lock validator is enabled, this gets called from the
- * lock methods to push a LockStackItem onto the thread-local
- * locking stack for tracing.
- */
-void LockHandle::validateLock(LOCKVAL_SRC_POS_DECL)
-{
-    // put "this" on locking stack
-    LockingStack *pStack = getThreadLocalLockingStack();
-    LockStackItem lsi(this, RT_SRC_POS_ARGS);
-    pStack->ll.push_front(lsi);
-    ++pStack->c;
-
-    LogFlow(("LOCKVAL [%s]: lock from %s (%s:%u), new count: %RI32\n", describe(), lsi.pcszFunction, lsi.pcszFile, lsi.uLine, (uint32_t)pStack->c));
-}
-
-/**
- * If the lock validator is enabled, this gets called from the
- * unlock methods to validate the unlock request. This pops the
- * LockStackItem from the thread-local locking stack.
- */
-void LockHandle::validateUnlock()
-{
-    // pop "this" from locking stack
-    LockingStack *pStack = getThreadLocalLockingStack();
-
-    AssertMsg(pStack->c == pStack->ll.size(), ("Locking size mismatch"));
-    AssertMsg(pStack->c > 0, ("Locking stack is empty when it should have current LockHandle on top"));
-
-    // validate that "this" is the top item on the stack
-    LockStackItem &lsiTop = pStack->ll.front();
-    if (lsiTop.pLock != this)
-    {
-        // "this" was not the last to be locked on this thread;
-        // see if it's somewhere deep under the locks
-        dumpThreadLocalLockingStack(pStack);
-
-        bool fFound;
-        uint32_t c = 0;
-        for (LockHandlesList::iterator it = pStack->ll.begin();
-             it != pStack->ll.end();
-             ++it)
-        {
-            LockStackItem &lsiThis = *it;
-            if (lsiThis.pLock == this)
-            {
-                LogFlow(("LOCKVAL [%s]: unlock, stack item was %d items under the top item, corresponsing lock was at %s (%s:%u)\n", describe(), c, lsiThis.pcszFunction, lsiThis.pcszFile, lsiThis.uLine));
-                pStack->ll.erase(it);
-                fFound = true;
-                break;
-            }
-            ++c;
-        }
-
-        if (!fFound)
-        {
-            LogFlow(("LOCKVAL [%s]: unlock, stack item not found!\n", describe()));
-            AssertMsgFailed(("Locking stack does not contain current LockHandle at all\n"));
-        }
-    }
-    else
-    {
-        pStack->ll.pop_front();
-        LogFlow(("LOCKVAL [%s]: unlock, stack item was on top, old count: %RI32\n", describe(), (uint32_t)pStack->c));
-    }
-
-    --pStack->c;
-}
-
-#endif // VBOX_WITH_DEBUG_LOCK_VALIDATOR
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -241,27 +77,24 @@ struct RWLockHandle::Data
     Data()
     { }
 
-    RTSEMRW sem;
+    RTSEMRW                     sem;
+    MainLockValidationClasses   lockClass;
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
-    com::Utf8Str strDescription;
+#ifdef RT_LOCK_STRICT
+    com::Utf8Str                strDescription;
 #endif
 };
 
-RWLockHandle::RWLockHandle()
+RWLockHandle::RWLockHandle(MainLockValidationClasses lockClass)
 {
     m = new Data();
-/** @todo Lock order validation: There are two options here:
- *  -# Use one RTLOCKVALCLASS (share it with WriteLockHandle) and then use
- *     sub-classes (integers) to deal with lock ordering.
- *  -# Use different classes (RTLOCKVALCLASS) for each object and only use
- *     sub-classes to deal with things like the media tree.
- */
+
+    m->lockClass = lockClass;
 
     int vrc = RTSemRWCreateEx(&m->sem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
     AssertRC(vrc);
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
     m->strDescription = com::Utf8StrFmt("r/w %RCv", this);
 #endif
 }
@@ -279,13 +112,8 @@ RWLockHandle::RWLockHandle()
 
 /*virtual*/ void RWLockHandle::lockWrite(LOCKVAL_SRC_POS_DECL)
 {
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
-    validateLock(LOCKVAL_SRC_POS_ARGS);
-#endif
-#if defined(RT_LOCK_STRICT) && defined(VBOX_WITH_DEBUG_LOCK_VALIDATOR)
+#if defined(RT_LOCK_STRICT)
     int vrc = RTSemRWRequestWriteDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
-#elif defined(RT_LOCK_STRICT)
-    int vrc = RTSemRWRequestWriteDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
 #else
     int vrc = RTSemRWRequestWrite(m->sem, RT_INDEFINITE_WAIT);
 #endif
@@ -294,9 +122,6 @@ RWLockHandle::RWLockHandle()
 
 /*virtual*/ void RWLockHandle::unlockWrite()
 {
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
-    validateUnlock();
-#endif
     int vrc = RTSemRWReleaseWrite(m->sem);
     AssertRC(vrc);
 
@@ -304,13 +129,8 @@ RWLockHandle::RWLockHandle()
 
 /*virtual*/ void RWLockHandle::lockRead(LOCKVAL_SRC_POS_DECL)
 {
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
-    validateLock(LOCKVAL_SRC_POS_ARGS);
-#endif
-#if defined(RT_LOCK_STRICT) && defined(VBOX_WITH_DEBUG_LOCK_VALIDATOR)
+#if defined(RT_LOCK_STRICT)
     int vrc = RTSemRWRequestReadDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
-#elif defined(RT_LOCK_STRICT)
-    int vrc = RTSemRWRequestReadDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS);
 #else
     int vrc = RTSemRWRequestRead(m->sem, RT_INDEFINITE_WAIT);
 #endif
@@ -319,9 +139,6 @@ RWLockHandle::RWLockHandle()
 
 /*virtual*/ void RWLockHandle::unlockRead()
 {
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
-    validateUnlock();
-#endif
     int vrc = RTSemRWReleaseRead(m->sem);
     AssertRC(vrc);
 }
@@ -332,7 +149,7 @@ RWLockHandle::RWLockHandle()
     return RTSemRWGetWriteRecursion(m->sem);
 }
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
 /*virtual*/ const char* RWLockHandle::describe() const
 {
     return m->strDescription.c_str();
@@ -350,21 +167,24 @@ struct WriteLockHandle::Data
     Data()
     { }
 
-    mutable RTCRITSECT sem;
+    mutable RTCRITSECT          sem;
+    MainLockValidationClasses   lockClass;
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
-    com::Utf8Str strDescription;
+#ifdef RT_LOCK_STRICT
+    com::Utf8Str                strDescription;
 #endif
 };
 
-WriteLockHandle::WriteLockHandle()
+WriteLockHandle::WriteLockHandle(MainLockValidationClasses lockClass)
 {
     m = new Data;
-    /** @todo see todo in RWLockHandle::RWLockHandle(). */
+
+    m->lockClass = lockClass;
+
     int vrc = RTCritSectInitEx(&m->sem, 0/*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
     AssertRC(vrc);
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
     m->strDescription = com::Utf8StrFmt("crit %RCv", this);
 #endif
 }
@@ -382,15 +202,8 @@ WriteLockHandle::~WriteLockHandle()
 
 /*virtual*/ void WriteLockHandle::lockWrite(LOCKVAL_SRC_POS_DECL)
 {
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
-    validateLock(LOCKVAL_SRC_POS_ARGS);
-#endif
-
-#if defined(RT_LOCK_STRICT) && defined(VBOX_WITH_DEBUG_LOCK_VALIDATOR)
+#if defined(RT_LOCK_STRICT)
     RTCritSectEnterDebug(&m->sem, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
-#elif defined(RT_LOCK_STRICT)
-    RTCritSectEnterDebug(&m->sem, (uintptr_t)ASMReturnAddress(),
-                         "return address >>>", 0, __PRETTY_FUNCTION__);
 #else
     RTCritSectEnter(&m->sem);
 #endif
@@ -398,10 +211,6 @@ WriteLockHandle::~WriteLockHandle()
 
 /*virtual*/ void WriteLockHandle::unlockWrite()
 {
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
-    validateUnlock();
-#endif
-
     RTCritSectLeave(&m->sem);
 }
 
@@ -420,7 +229,7 @@ WriteLockHandle::~WriteLockHandle()
     return RTCritSectGetRecursion(&m->sem);
 }
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
 /*virtual*/ const char* WriteLockHandle::describe() const
 {
     return m->strDescription.c_str();
@@ -439,7 +248,7 @@ typedef std::vector<uint32_t> CountsVector;
 struct AutoLockBase::Data
 {
     Data(size_t cHandles
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
          , const char *pcszFile_,
          unsigned uLine_,
          const char *pcszFunction_
@@ -448,7 +257,7 @@ struct AutoLockBase::Data
         : fIsLocked(false),
           aHandles(cHandles),       // size of array
           acUnlockedInLeave(cHandles)
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
           , pcszFile(pcszFile_),
           uLine(uLine_),
           pcszFunction(pcszFunction_)
@@ -468,7 +277,7 @@ struct AutoLockBase::Data
                                         // AutoMulti* derivatives, there will be multiple
     CountsVector    acUnlockedInLeave;  // for each lock handle, how many times the handle was unlocked in leave(); otherwise 0
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
     // information about where the lock occured (passed down from the AutoLock classes)
     const char      *pcszFile;
     unsigned        uLine;
@@ -602,15 +411,6 @@ void AutoLockBase::release()
     m->fIsLocked = false;
 }
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
-void AutoLockBase::dumpStack(const char *pcszMessage, RT_SRC_POS_DECL)
-{
-    LockingStack *pStack = getThreadLocalLockingStack();
-    LogFlow(("LOCKVAL DUMPSTACK at %s (%s:%u)\nLOCKVAL DUMPSTACK %s\n", pszFunction, pszFile, iLine, pcszMessage));
-    dumpThreadLocalLockingStack(pStack);
-}
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // AutoReadLock
@@ -645,7 +445,7 @@ void AutoLockBase::dumpStack(const char *pcszMessage, RT_SRC_POS_DECL)
  */
 /*virtual*/ void AutoReadLock::callLockImpl(LockHandle &l)
 {
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
     l.lockRead(m->pcszFile, m->uLine, m->pcszFunction);
 #else
     l.lockRead();
@@ -677,7 +477,7 @@ void AutoLockBase::dumpStack(const char *pcszMessage, RT_SRC_POS_DECL)
  */
 /*virtual*/ void AutoWriteLockBase::callLockImpl(LockHandle &l)
 {
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
     l.lockWrite(m->pcszFile, m->uLine, m->pcszFunction);
 #else
     l.lockWrite();
@@ -734,7 +534,7 @@ void AutoWriteLockBase::leave()
             m->acUnlockedInLeave[i] = pHandle->writeLockLevel();
             AssertMsg(m->acUnlockedInLeave[i] >= 1, ("m->cUnlockedInLeave[%d] is %d, must be >=1!", i, m->acUnlockedInLeave[i]));
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
             LogFlowFunc(("LOCKVAL: will unlock handle %d [%s] %d times\n", i, pHandle->describe(), m->acUnlockedInLeave[i]));
 #endif
 
@@ -766,7 +566,7 @@ void AutoWriteLockBase::enter()
         {
             AssertMsg(m->acUnlockedInLeave[i] != 0, ("m->cUnlockedInLeave[%d] is 0! enter() without leave()?", i));
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
             LogFlowFunc(("LOCKVAL: will lock handle %d [%s] %d times\n", i, pHandle->describe(), m->acUnlockedInLeave[i]));
 #endif
 
@@ -799,7 +599,7 @@ void AutoWriteLockBase::maybeLeave()
                 m->acUnlockedInLeave[i] = pHandle->writeLockLevel();
                 AssertMsg(m->acUnlockedInLeave[i] >= 1, ("m->cUnlockedInLeave[%d] is %d, must be >=1!", i, m->acUnlockedInLeave[i]));
 
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
                 LogFlowFunc(("LOCKVAL: will unlock handle %d [%s] %d times\n", i, pHandle->describe(), m->acUnlockedInLeave[i]));
 #endif
 
@@ -830,7 +630,7 @@ void AutoWriteLockBase::maybeEnter()
         {
             if (!pHandle->isWriteLockOnCurrentThread())
             {
-#ifdef VBOX_WITH_DEBUG_LOCK_VALIDATOR
+#ifdef RT_LOCK_STRICT
                 LogFlowFunc(("LOCKVAL: will lock handle %d [%s] %d times\n", i, pHandle->describe(), m->acUnlockedInLeave[i]));
 #endif
 
