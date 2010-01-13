@@ -276,9 +276,6 @@ VBoxOGLspuload_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/glloader.c \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
 
-ifn1of ($(KBUILD_TARGET), win)
-$(VBOX_PATH_CROGL_GENFILES)/glloader.c_CFLAGS = -Wno-shadow
-endif
 
 #
 # VBoxOGLspuload

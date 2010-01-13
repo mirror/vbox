@@ -209,10 +209,6 @@ VBoxOGLcrunpacker_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/unpack.c \
 	$(VBOX_PATH_CROGL_GENFILES)/unpack_extend.h
 
-ifn1of ($(KBUILD_TARGET), win)
-$(VBOX_PATH_CROGL_GENFILES)/unpack.c_CFLAGS = -Wno-shadow
-endif
-
 #
 # Generate files for VBoxOGLcrunpacker.
 #
