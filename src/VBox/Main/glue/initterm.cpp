@@ -246,9 +246,6 @@ HRESULT Initialize()
 {
     HRESULT rc = E_FAIL;
 
-    RTTHREAD hSelf = RTThreadSelf();
-    bool fIsMainThread = RTThreadIsMain(hSelf);
-
 #if !defined (VBOX_WITH_XPCOM)
 
     DWORD flags = COINIT_MULTITHREADED |
@@ -335,6 +332,7 @@ HRESULT Initialize()
      * Note! CoInitializeEx and CoUninitialize does it's own reference
      *       counting, so this exercise is entirely for the EventQueue init. */
     bool fRc;
+    RTTHREAD hSelf = RTThreadSelf ();
     if (hSelf != NIL_RTTHREAD)
         ASMAtomicCmpXchgHandle (&gCOMMainThread, hSelf, NIL_RTTHREAD, fRc);
     else
@@ -348,7 +346,7 @@ HRESULT Initialize()
         AssertComRC (rc);
         return rc;
     }
-    Assert(fIsMainThread);
+    Assert (RTThreadIsMain (hSelf));
 
     /* this is the first main thread initialization */
     Assert (gCOMMainInitCount == 0);
@@ -379,7 +377,7 @@ HRESULT Initialize()
         AssertComRC (rc);
         return rc;
     }
-    Assert(fIsMainThread);
+    Assert (RTThreadIsMain (RTThreadSelf()));
 
     /* this is the first initialization */
     gXPCOMInitCount = 1;
