@@ -1,0 +1,5 @@
+LIBRARY VBoxCredProv.dll
+
+EXPORTS
+    DllCanUnloadNow                                 PRIVATE
+    DllGetClassObject                               PRIVATE

@@ -1,0 +1,53 @@
+# $Id$
+## @file
+# Sub-Makefile for VBoxCredProv.
+#
+
+#
+# Copyright (C) 2009 Sun Microsystems, Inc.
+#
+# Sun Microsystems, Inc. confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+DLLS += VBoxCredProv
+VBoxCredProv_TEMPLATE    = VBOXGUESTR3DLL
+VBoxCredProv_DEFS        = LOG_TO_BACKDOOR VBGL_VBOXGUEST VBOX_WITH_HGCM UNICODE
+VBoxCredProv_SDKS.x86    = WINDDK
+VBoxCredProv_SOURCES  = \
+	dll.cpp \
+	guid.cpp \
+	helpers.cpp \
+	VBoxCredential.cpp \
+	VBoxCredPoller.cpp \
+	VBoxCredProv.cpp \
+	VBoxCredProv.def \
+	VBoxCredProv.rc
+
+#
+# Since this is not the default SDK we have to navigate manually to it.
+#
+VBOX_PATH_PSDK_200702    := \
+	$(PATH_DEVTOOLS)/win.x86/sdk/x200702/
+
+VBoxCredProv_INCS        := \
+	$(VBOX_PATH_PSDK_200702)/Include
+VBoxCredProv_LIBS.x86  := \
+	$(VBOX_PATH_PSDK_200702)/Lib/Uuid.Lib \
+	$(VBOX_PATH_PSDK_200702)/Lib/Credui.Lib \
+	$(VBOX_PATH_PSDK_200702)/Lib/Secur32.Lib \
+	$(VBOX_PATH_PSDK_200702)/Lib/ShLwApi.Lib
+VBoxCredProv_LIBS.amd64  := \
+	$(VBOX_PATH_PSDK_200702)/Lib/x64/Uuid.Lib \
+	$(VBOX_PATH_PSDK_200702)/Lib/x64/Credui.Lib \
+	$(VBOX_PATH_PSDK_200702)/Lib/x64/Secur32.Lib \
+	$(VBOX_PATH_PSDK_200702)/Lib/x64/ShLwApi.Lib
+
+VBoxCredProv_LIBS    += \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_VBGL_R3)
+
+include	$(KBUILD_PATH)/subfooter.kmk
