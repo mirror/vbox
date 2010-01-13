@@ -470,6 +470,19 @@ else  # !VBOX_WITH_DYNAMIC_DSDT
 
  vboxaml.hex:: $$(PATH_DevicesR3)/vboxaml.hex
 
+ # CPU hotplug version
+ DevicesR3_CLEAN        += $(PATH_DevicesR3)/vboxaml-cpuhotplug.hex $(PATH_DevicesR3)/vboxaml-cpuhotplug.hex.tmp $(PATH_DevicesR3)/vboxaml-cpuhotplug.aml
+ PC/ACPI/VBoxAcpi.cpp_DEPS = $(PATH_DevicesR3)/vboxaml-cpuhotplug.hex
+
+ $$(PATH_DevicesR3)/vboxaml-cpuhotplug.hex: $(PATH_SUB_CURRENT)/PC/vbox-cpuhotplug.dsl | $$(dir $$@)
+	$(call MSG_TOOL,iasl,DevicesR3,$<,$@)
+	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
+	$(QUIET)$(MV) $@ $@.tmp
+	$(QUIET)$(SED) -e 's/AmlCode/AmlCodeCpuHotplug/' \
+		--output $@ $@.tmp
+
+ vboxaml-cpuhotplug.hex:: $$(PATH_DevicesR3)/vboxaml-cpuhotplug.hex
+
 endif # !VBOX_WITH_DYNAMIC_DSDT
 PC/ACPI/VBoxAcpi.cpp_INCS = $(PATH_DevicesR3)
 
@@ -745,6 +758,7 @@ Drivers_SOURCES    = \
 	Input/DrvMouseQueue.cpp \
 	Network/DrvIntNet.cpp \
 	PC/DrvACPI.cpp \
+	PC/DrvAcpiCpu.cpp \
 	Serial/DrvChar.cpp \
 	Serial/DrvNamedPipe.cpp \
 	Serial/DrvRawFile.cpp \

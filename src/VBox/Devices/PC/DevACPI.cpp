@@ -148,7 +148,10 @@ enum
     SYSTEM_INFO_INDEX_CPU3_STATUS       = 8,
     SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH= 9,
     SYSTEM_INFO_INDEX_RTC_STATUS        = 10,
-    SYSTEM_INFO_INDEX_END               = 11,
+    SYSTEM_INFO_INDEX_CPU_LOCKED        = 11,
+    SYSTEM_INFO_INDEX_MADT_ADDR         = 12,
+    SYSTEM_INFO_INDEX_MADT_SIZE         = 13,
+    SYSTEM_INFO_INDEX_END               = 14,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -229,6 +232,16 @@ typedef struct ACPIState
     bool                fGCEnabled;
     /** Flag whether the R0 part of the device is enabled. */
     bool                fR0Enabled;
+    /** Physical base address of the MADT table. */
+    RTGCPHYS32          GCPhysMADTBase;
+    /** Size of the MADT table */
+    uint32_t            cbMADT;
+    /** Array of flags of attached CPUs */
+    bool                afCpuAttached[32]; /* Maximum we support atm */
+    /** Mask of locked CPUs (used by the guest) */
+    uint32_t            uCpusLocked;
+    /** Flag whether CPU hotplugging is enabled */
+    bool                fCpuHotplug;
     /** Aligning IBase. */
     bool                afAlignment[4];
 
@@ -715,6 +728,11 @@ static void acpiSetupFADT(ACPIState *s, RTGCPHYS32 addr_acpi1, RTGCPHYS32 addr_a
     fadt.u32Flags             = RT_H2LE_U32(  FADT_FL_WBINVD
                                             | FADT_FL_FIX_RTC
                                             | FADT_FL_TMR_VAL_EXT);
+
+    /* We have to force physical APIC mode or Linux can't use more than 8 CPUs */
+    if (s->fCpuHotplug)
+        fadt.u32Flags |= RT_H2LE_U32(FADT_FL_FORCE_APIC_PHYS_DEST_MODE);
+
     acpiWriteGenericAddr(&fadt.ResetReg,     1,  8, 0, 1, ACPI_RESET_BLK);
     fadt.u8ResetVal           = ACPI_RESET_REG_VAL;
     fadt.u64XFACS             = RT_H2LE_U64((uint64_t)facs_addr);
@@ -828,7 +846,7 @@ static void acpiSetupMADT(ACPIState *s, RTGCPHYS32 addr)
         lapic->u8Length    = sizeof(ACPITBLLAPIC);
         lapic->u8ProcId    = i;
         lapic->u8ApicId    = i;
-        lapic->u32Flags    = RT_H2LE_U32(LAPIC_ENABLED);
+        lapic->u32Flags    = s->afCpuAttached[i] ? RT_H2LE_U32(LAPIC_ENABLED) : 0;
         lapic++;
     }
 
@@ -844,6 +862,10 @@ static void acpiSetupMADT(ACPIState *s, RTGCPHYS32 addr)
 
     madt.header_addr()->u8Checksum = acpiChecksum(madt.data(), madt.size());
     acpiPhyscpy(s, addr, madt.data(), madt.size());
+
+    /* Save for attach/detach notifications. */
+    s->GCPhysMADTBase = addr;
+    s->cbMADT         = madt.size();
 }
 
 /* SCI IRQ */
@@ -957,6 +979,13 @@ static DECLCALLBACK(int) acpiGetGuestEnteredACPIMode(PPDMIACPIPORT pInterface, b
 {
     ACPIState *s = IACPIPORT_2_ACPISTATE(pInterface);
     *pfEntered = (s->pm1a_ctl & SCI_EN) != 0;
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) acpiGetCpuStatus(PPDMIACPIPORT pInterface, unsigned uCpu, bool *pfLocked)
+{
+    ACPIState *s = IACPIPORT_2_ACPISTATE(pInterface);
+    *pfLocked = (s->uCpusLocked & RT_BIT(uCpu)) != 0;
     return VINF_SUCCESS;
 }
 
@@ -1376,6 +1405,7 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                 case SYSTEM_INFO_INDEX_CPU3_STATUS:
                   *pu32 = s->fShowCpu
                     && s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS < s->cCpus
+                    && s->afCpuAttached[s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS]
                     ?
                       STA_DEVICE_PRESENT_MASK
                     | STA_DEVICE_ENABLED_MASK
@@ -1390,6 +1420,24 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                                            | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
                             : 0;
                     break;
+
+                case SYSTEM_INFO_INDEX_CPU_LOCKED:
+                {
+                    *pu32 = s->uCpusLocked;
+                    break;
+                }
+
+                case SYSTEM_INFO_INDEX_MADT_ADDR:
+                {
+                    *pu32 = s->GCPhysMADTBase;
+                    break;
+                }
+
+                case SYSTEM_INFO_INDEX_MADT_SIZE:
+                {
+                    *pu32 = s->cbMADT;
+                    break;
+                }
 
                 /* Solaris 9 tries to read from this index */
                 case SYSTEM_INFO_INDEX_INVALID:
@@ -1416,16 +1464,22 @@ PDMBOTHCBDECL(int) acpiSysInfoDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 
     Log(("addr=%#x cb=%d u32=%#x si=%#x\n", Port, cb, u32, s->uSystemInfoIndex));
 
-    if (cb == 4 && u32 == 0xbadc0de)
+    if (cb == 4)
     {
         switch (s->uSystemInfoIndex)
         {
             case SYSTEM_INFO_INDEX_INVALID:
+                AssertMsg(u32 == 0xbadc0de, ("u32=%u\n", u32));
                 s->u8IndexShift = 0;
                 break;
 
             case SYSTEM_INFO_INDEX_VALID:
+                AssertMsg(u32 == 0xbadc0de, ("u32=%u\n", u32));
                 s->u8IndexShift = 2;
+                break;
+
+            case SYSTEM_INFO_INDEX_CPU_LOCKED:
+                s->uCpusLocked &= ~u32; /* Unlock the CPU */
                 break;
 
             default:
@@ -2008,6 +2062,77 @@ static void acpiPciConfigWrite(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u3
     }
 }
 
+/**
+ * Attach a new CPU.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   iLUN        The logical unit which is being attached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ *
+ * @remarks This code path is not used during construction.
+ */
+static DECLCALLBACK(int) acpiAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+{
+    ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
+
+    LogFlow(("acpiAttach: pDevIns=%p iLUN=%u fFlags=%#x\n", pDevIns, iLUN, fFlags));
+
+    /* Check if it was already attached */
+    if (s->afCpuAttached[iLUN])
+        return VINF_SUCCESS;
+
+    PPDMIBASE IBaseTmp;
+    int rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &s->IBase, &IBaseTmp, "ACPI CPU");
+
+    if (RT_SUCCESS(rc))
+    {
+        /* Enable the CPU */
+        s->afCpuAttached[iLUN] = true;
+
+        /* Enable the lapic */
+        acpiSetupMADT(s, s->GCPhysMADTBase);
+        /*
+         * Lock the CPU because we don't know if the guest will use it or not.
+         * Prevents ejection while the CPU is still used 
+         */
+        s->uCpusLocked |= RT_BIT(iLUN);
+
+        /* Notify the guest */
+        update_gpe0(s, s->gpe0_sts | 0x2, s->gpe0_en);
+    }
+    return rc;
+}
+
+/**
+ * Detach notification.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   iLUN        The logical unit which is being detached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ */
+static DECLCALLBACK(void) acpiDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+{
+    ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
+
+    LogFlow(("acpiDetach: pDevIns=%p iLUN=%u fFlags=%#x\n", pDevIns, iLUN, fFlags));
+
+    /* Check if it was already detached */
+    if (s->afCpuAttached[iLUN])
+    {
+        /* Disable the CPU */
+        s->afCpuAttached[iLUN] = false;
+
+        AssertMsg(!(s->uCpusLocked & RT_BIT(iLUN)), ("CPU is still locked by the guest\n"));
+
+        /* Update the lapic state */
+        acpiSetupMADT(s, s->GCPhysMADTBase);
+
+        /* Notify the guest */
+        update_gpe0(s, s->gpe0_sts | 0x2, s->gpe0_en);
+    }
+}
+
 static DECLCALLBACK(void) acpiReset(PPDMDEVINS pDevIns)
 {
     ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
@@ -2069,6 +2194,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "FdcEnabled\0"
                               "ShowRtc\0"
                               "ShowCpu\0"
+                              "CpuHotplug\0"
                               ))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config key for ACPI device"));
@@ -2115,6 +2241,12 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"ShowCpu\""));
 
+    /* query whether we are allow CPU hotplugging */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "CpuHotplug", &s->fCpuHotplug, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"CpuHotplug\""));
+
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &s->fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         s->fGCEnabled = true;
@@ -2128,6 +2260,44 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("configuration error: failed to read R0Enabled as boolean"));
+
+    /*
+     * Interfaces
+     */
+    /* IBase */
+    s->IBase.pfnQueryInterface              = acpiQueryInterface;
+    /* IACPIPort */
+    s->IACPIPort.pfnSleepButtonPress        = acpiSleepButtonPress;
+    s->IACPIPort.pfnPowerButtonPress        = acpiPowerButtonPress;
+    s->IACPIPort.pfnGetPowerButtonHandled   = acpiGetPowerButtonHandled;
+    s->IACPIPort.pfnGetGuestEnteredACPIMode = acpiGetGuestEnteredACPIMode;
+    s->IACPIPort.pfnGetCpuStatus            = acpiGetCpuStatus;
+
+    /* The first CPU can't be attached/detached */
+    s->afCpuAttached[0] = true;
+    s->uCpusLocked |= RT_BIT(0);
+
+    /* Try to attach the other CPUs */
+    for (unsigned i = 1; i < s->cCpus; i++)
+    {
+        PPDMIBASE IBaseTmp;
+        rc = PDMDevHlpDriverAttach(pDevIns, i, &s->IBase, &IBaseTmp, "ACPI CPU");
+
+        if (RT_SUCCESS(rc))
+        {
+            s->afCpuAttached[i] = true;
+            s->uCpusLocked |= RT_BIT(i);
+            Log(("acpi: Attached CPU %u\n", i));
+        }
+        else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+        {
+            Log(("acpi: CPU %u not attached yet\n", i));
+            s->afCpuAttached[i] = false;
+        }
+        else
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach CPU object\n"));
+    }
+
 
     /* Set default port base */
     s->uPmIoPortBase = PM_PORT_BASE;
@@ -2223,17 +2393,6 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return rc;
 
-    /*
-     * Interfaces
-     */
-    /* IBase */
-    s->IBase.pfnQueryInterface              = acpiQueryInterface;
-    /* IACPIPort */
-    s->IACPIPort.pfnSleepButtonPress        = acpiSleepButtonPress;
-    s->IACPIPort.pfnPowerButtonPress        = acpiPowerButtonPress;
-    s->IACPIPort.pfnGetPowerButtonHandled   = acpiGetPowerButtonHandled;
-    s->IACPIPort.pfnGetGuestEnteredACPIMode = acpiGetGuestEnteredACPIMode;
-
    /*
     * Get the corresponding connector interface
     */
@@ -2297,9 +2456,9 @@ const PDMDEVREG g_DeviceACPI =
     /* pfnResume */
     NULL,
     /* pfnAttach */
-    NULL,
+    acpiAttach,
     /* pfnDetach */
-    NULL,
+    acpiDetach,
     /* pfnQueryInterface. */
     NULL,
     /* pfnInitComplete */

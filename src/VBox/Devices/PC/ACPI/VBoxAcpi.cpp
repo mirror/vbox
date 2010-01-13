@@ -28,6 +28,7 @@
 #include <VBox/pgm.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
+#include <VBox/cfgm.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/string.h>
@@ -38,6 +39,7 @@
 #else
 /* Statically compiled AML */
 # include <vboxaml.hex>
+# include <vboxaml-cpuhotplug.hex>
 #endif
 
 #ifdef VBOX_WITH_DYNAMIC_DSDT
@@ -139,9 +141,28 @@ int acpiPrepareDsdt(PPDMDEVINS pDevIns,  void * *ppPtr, size_t *puDsdtLen)
 #ifdef VBOX_WITH_DYNAMIC_DSDT
     return prepareDynamicDsdt(pDevIns, ppPtr, puDsdtLen);
 #else
-    patchAml(pDevIns, AmlCode, sizeof(AmlCode));
-    *ppPtr = AmlCode;
-    *puDsdtLen = sizeof(AmlCode);
+    unsigned char *pbAmlCode = NULL;
+    size_t cbAmlCode = 0;
+    bool fCpuHotplug = false;
+    int rc = CFGMR3QueryBoolDef(pDevIns->pCfgHandle, "CpuHotplug", &fCpuHotplug, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"CpuHotplug\""));
+
+    if (fCpuHotplug)
+    {
+        pbAmlCode = AmlCodeCpuHotplug;
+        cbAmlCode = sizeof(AmlCodeCpuHotplug);
+    }
+    else
+    {
+        pbAmlCode = AmlCode;
+        cbAmlCode = sizeof(AmlCode);
+    }
+
+    patchAml(pDevIns, pbAmlCode, cbAmlCode);
+    *ppPtr = pbAmlCode;
+    *puDsdtLen = cbAmlCode;
     return 0;
 #endif
 }
