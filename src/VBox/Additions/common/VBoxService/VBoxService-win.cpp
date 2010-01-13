@@ -25,7 +25,6 @@
 *******************************************************************************/
 #include <iprt/assert.h>
 #include <iprt/err.h>
-#include <iprt/ldr.h>
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 
@@ -35,11 +34,6 @@
 
 DWORD                 g_rcWinService = 0;
 SERVICE_STATUS_HANDLE g_hWinServiceStatus = NULL;
-
-/** Dynamically loaded function ChangeServiceConfig2() which is not available in NT4. */
-typedef BOOL (WINAPI FNCHANGESERVICECONFIG2) (SC_HANDLE hService, DWORD dwInfoLevel, LPVOID lpInfo);
-/** Pointer to FNCHANGESERVICECONFIG2. */
-typedef FNCHANGESERVICECONFIG2 *PFNCHANGESERVICECONFIG2;
 
 void WINAPI VBoxServiceWinMain (DWORD argc, LPTSTR *argv);
 
