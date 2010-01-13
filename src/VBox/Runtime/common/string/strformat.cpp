@@ -824,6 +824,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                         va_copy(ArgsNested, *pArgsNested);
                         Assert(pszFormatNested);
                         cch += RTStrFormatV(pfnOutput, pvArgOutput, pfnFormat, pvArgFormat, pszFormatNested, ArgsNested);
+                        va_end(ArgsNested);
                         break;
                     }
 
