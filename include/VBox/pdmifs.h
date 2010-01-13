@@ -1737,6 +1737,16 @@ typedef struct PDMIACPIPORT
      * @param   pfEnabled       Is set to true if the guest entered the ACPI mode, false otherwise.
      */
     DECLR3CALLBACKMEMBER(int, pfnGetGuestEnteredACPIMode,(PPDMIACPIPORT pInterface, bool *pfEntered));
+
+    /**
+     * Check if the given CPU is still locked by the guest.
+     *
+     * @returns VBox status code
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   uCpu            The CPU to check for.
+     * @param   pfLocked        Is set to true if the CPU is still locked by the guest, false otherwise.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetCpuStatus,(PPDMIACPIPORT pInterface, unsigned uCpu, bool *pfLocked));
 } PDMIACPIPORT;
 
 /** Pointer to an ACPI connector interface. */
