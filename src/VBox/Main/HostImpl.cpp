@@ -150,7 +150,9 @@ extern bool is3DAccelerationSupported();
 struct Host::Data
 {
     Data()
+#ifdef VBOX_WITH_USB
         : treeLock(LOCKCLASS_OTHERLIST)
+#endif
     {};
 
     ComObjPtr<VirtualBox, ComWeakRef>
