@@ -107,9 +107,9 @@ ip_input(PNATState pData, struct mbuf *m)
     ipstat.ips_total++;
     {
         int rc;
-        STAM_PROFILE_START(&pData->StatALIAS_input, a);
+        STAM_PROFILE_START(&pData->StatALIAS_input, b);
         rc = LibAliasIn(select_alias(pData, m), mtod(m, char *), m->m_len);
-        STAM_PROFILE_STOP(&pData->StatALIAS_input, a);
+        STAM_PROFILE_STOP(&pData->StatALIAS_input, b);
         Log2(("NAT: LibAlias return %d\n", rc));
         if (m->m_len != ntohs(ip->ip_len))
         {
