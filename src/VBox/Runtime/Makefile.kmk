@@ -900,7 +900,7 @@ RuntimeLnxHostR3_INCS          = \
 VBoxRT_TEMPLATE                = VBOXR3
 VBoxRT_SDKS                    = VBOX_OPENSSL VBOX_LIBXML2 VBOX_LIBCURL VBOX_BOOST
 VBoxRT_SDKS.win                = WINPSDK W2K3DDK VBOX_NTDLL
-ifeq ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING),darwin)
+if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
 VBoxRT_DEFS                    = $(filter-out RT_NO_GIP,$(RuntimeR3_DEFS)) IN_SUP_R3 IN_SUP_R3
