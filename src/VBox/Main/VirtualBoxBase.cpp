@@ -46,6 +46,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 VirtualBoxBaseProto::VirtualBoxBaseProto()
+    : mStateLock(LOCKCLASS_OBJECTSTATE)
 {
     mState = NotReady;
     mStateChangeThread = NIL_RTTHREAD;
@@ -77,7 +78,7 @@ RWLockHandle *VirtualBoxBaseProto::lockHandle() const
     if (RT_UNLIKELY(!mObjectLock))
     {
         AssertCompile (sizeof (RWLockHandle *) == sizeof (void *));
-        RWLockHandle *objLock = new RWLockHandle;
+        RWLockHandle *objLock = new RWLockHandle(LOCKCLASS_OBJECT);
         if (!ASMAtomicCmpXchgPtr ((void * volatile *) &mObjectLock, objLock, NULL))
         {
             delete objLock;

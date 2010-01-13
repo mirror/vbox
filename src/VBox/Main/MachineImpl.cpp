@@ -95,6 +95,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 Machine::Data::Data()
+    : mSnapshotsTreeLockHandle(LOCKCLASS_OTHERLIST)
 {
     mRegistered = FALSE;
     mAccessible = FALSE;
