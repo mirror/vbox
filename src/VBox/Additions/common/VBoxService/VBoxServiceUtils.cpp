@@ -166,20 +166,19 @@ int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char 
     {
         va_list va;
         va_start(va, pszValueFormat);
+        VBoxServiceVerbose(3, "Writing guest property \"%s\" = \"%N\"\n", pszName, pszValueFormat, &va);
+        va_end(va);
 
-        char *pszValue = RTStrAPrintf2V(pszValueFormat, va);
-        AssertPtr(pszValue);
-        VBoxServiceVerbose(3, "Writing guest property \"%s\" = \"%s\"\n", pszName, pszValue);
-        RTStrFree(pszValue);
-
+        va_start(va, pszValueFormat);
         rc = VbglR3GuestPropWriteValueV(u32ClientId, pszName, pszValueFormat, va);
         va_end(va);
+
         if (RT_FAILURE(rc))
              VBoxServiceError("Error writing guest property \"%s\" (rc=%Rrc)\n", pszName, rc);
     }
     else
     {
-        VBoxServiceVerbose(3, "Deleting guest property \"%s\"\n", pszName);   
+        VBoxServiceVerbose(3, "Deleting guest property \"%s\"\n", pszName);
         rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, NULL);
         if (RT_FAILURE(rc))
             VBoxServiceError("Error deleting guest property \"%s\" (rc=%Rrc)\n", pszName, rc);
