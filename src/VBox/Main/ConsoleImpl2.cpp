@@ -2854,7 +2854,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             else
             {
 #ifdef RT_OS_SOLARIS
-                /** Grab the IP number from the 'vboxnetX' instance number and add one (at least on Solaris) */
+                /* Grab the IP number from the 'vboxnetX' instance number and add one (at least on Solaris) */
                 const char *pszInstance = pszHifName;
                 pszInstance += sizeof("vboxnet") - 1;
                 int Instance = atoi(pszInstance);
