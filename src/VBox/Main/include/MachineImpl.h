@@ -94,8 +94,6 @@ class ATL_NO_VTABLE Machine :
 
 public:
 
-    enum InstanceType { IsMachine, IsSessionMachine, IsSnapshotMachine };
-
     enum InitMode { Init_New, Init_Import, Init_Registered };
 
     /**
@@ -639,7 +637,15 @@ public:
 
     // public methods only for internal purposes
 
-    InstanceType getType() const { return mType; }
+    /**
+     * Simple run-time type identification without having to enable C++ RTTI.
+     * The class IDs are defined in VirtualBoxBase.h.
+     * @return
+     */
+    virtual VBoxClsID getClassID() const
+    {
+        return clsidMachine;
+    }
 
     /// @todo (dmik) add lock and make non-inlined after revising classes
     //  that use it. Note: they should enter Machine lock to keep the returned
@@ -892,8 +898,6 @@ protected:
     void unregisterMetrics(PerformanceCollector *aCollector, Machine *aMachine);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
-    const InstanceType mType;
-
     const ComObjPtr<Machine, ComWeakRef> mPeer;
 
     const ComObjPtr<VirtualBox, ComWeakRef> mParent;
@@ -1005,6 +1009,16 @@ public:
     STDMETHOD(UnlockMedia)() { unlockMedia(); return S_OK; }
 
     // public methods only for internal purposes
+
+    /**
+     * Simple run-time type identification without having to enable C++ RTTI.
+     * The class IDs are defined in VirtualBoxBase.h.
+     * @return
+     */
+    virtual VBoxClsID getClassID() const
+    {
+        return clsidSessionMachine;
+    }
 
     bool checkForDeath();
 
@@ -1147,6 +1161,16 @@ public:
 
     // public methods only for internal purposes
 
+    /**
+     * Simple run-time type identification without having to enable C++ RTTI.
+     * The class IDs are defined in VirtualBoxBase.h.
+     * @return
+     */
+    virtual VBoxClsID getClassID() const
+    {
+        return clsidSnapshotMachine;
+    }
+
     HRESULT onSnapshotChange(Snapshot *aSnapshot);
 
     // unsafe inline public methods for internal purposes only (ensure there is
@@ -1165,8 +1189,9 @@ private:
 
 inline const Guid &Machine::getSnapshotId() const
 {
-    return mType != IsSnapshotMachine ? Guid::Empty :
-                    static_cast<const SnapshotMachine *>(this)->getSnapshotId();
+    return getClassID() != clsidSnapshotMachine
+                ? Guid::Empty
+                : static_cast<const SnapshotMachine*>(this)->getSnapshotId();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1181,7 +1206,7 @@ inline const Guid &Machine::getSnapshotId() const
  */
 inline Machine *Machine::getMachine()
 {
-    if (mType == IsSessionMachine)
+    if (getClassID() == clsidSessionMachine)
         return mPeer;
     return this;
 }

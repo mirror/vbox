@@ -40,6 +40,7 @@
 
 #include <vector>
 #include <list>
+#include <map>
 
 namespace util
 {
@@ -50,9 +51,10 @@ namespace util
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-class RuntimeLockClass
-{
-};
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
+typedef std::map<VBoxLockingClass, RTLOCKVALCLASS> LockValidationClassesMap;
+LockValidationClassesMap g_mapLockValidationClasses;
+#endif
 
 /**
  * Called from initterm.cpp on process initialization (on the main thread)
@@ -60,7 +62,55 @@ class RuntimeLockClass
  */
 void InitAutoLockSystem()
 {
-    RTPrintf("InitAutoLockSystem\n");
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
+    struct
+    {
+        VBoxLockingClass    cls;
+        const char          *pcszDescription;
+    } aClasses[] =
+    {
+        { LOCKCLASS_VIRTUALBOXOBJECT, "1-VIRTUALBOXOBJECT" },
+        { LOCKCLASS_VIRTUALBOXLIST,   "2-VIRTUALBOXLIST" },
+        { LOCKCLASS_USBPROXYSERVICE,  "3-USBPROXYSERVICE" },
+        { LOCKCLASS_HOSTOBJECT,       "4-HOSTOBJECT" },
+        { LOCKCLASS_HOSTLIST,         "5-HOSTLIST" },
+        { LOCKCLASS_OTHEROBJECT,      "6-OTHEROBJECT" },
+        { LOCKCLASS_OTHERLIST,        "7-OTHERLIST" },
+        { LOCKCLASS_OBJECTSTATE,      "8-OBJECTSTATE" }
+    };
+
+    RTLOCKVALCLASS hClass;
+    int vrc;
+    for (unsigned i = 0; i < RT_ELEMENTS(aClasses); ++i)
+    {
+        vrc = RTLockValidatorClassCreate(&hClass,
+                                         true, /*fAutodidact*/
+                                         RT_SRC_POS,
+                                         aClasses[i].pcszDescription);
+        AssertRC(vrc);
+
+        // teach the new class that the classes created previously can be held
+        // while the new class is being acquired
+        for (LockValidationClassesMap::iterator it = g_mapLockValidationClasses.begin();
+             it != g_mapLockValidationClasses.end();
+             ++it)
+        {
+            RTLOCKVALCLASS &canBeHeld = it->second;
+            vrc = RTLockValidatorClassAddPriorClass(hClass,
+                                                    canBeHeld);
+            AssertRC(vrc);
+        }
+
+        // and store the new class
+        g_mapLockValidationClasses[aClasses[i].cls] = hClass;
+    }
+
+/*    WriteLockHandle critsect1(LOCKCLASS_VIRTUALBOXOBJECT);
+    WriteLockHandle critsect2(LOCKCLASS_VIRTUALBOXLIST);
+
+    AutoWriteLock lock1(critsect1 COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock lock2(critsect2 COMMA_LOCKVAL_SRC_POS);*/
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -75,25 +125,26 @@ struct RWLockHandle::Data
     { }
 
     RTSEMRW                     sem;
-    MainLockValidationClasses   lockClass;
+    VBoxLockingClass   lockClass;
 
-#ifdef RT_LOCK_STRICT
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     com::Utf8Str                strDescription;
 #endif
 };
 
-RWLockHandle::RWLockHandle(MainLockValidationClasses lockClass)
+RWLockHandle::RWLockHandle(VBoxLockingClass lockClass)
 {
     m = new Data();
 
     m->lockClass = lockClass;
 
-    int vrc = RTSemRWCreateEx(&m->sem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
-    AssertRC(vrc);
-
-#ifdef RT_LOCK_STRICT
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     m->strDescription = com::Utf8StrFmt("r/w %RCv", this);
+    int vrc = RTSemRWCreateEx(&m->sem, 0 /*fFlags*/, g_mapLockValidationClasses[lockClass], RTLOCKVAL_SUB_CLASS_ANY, NULL);
+#else
+    int vrc = RTSemRWCreateEx(&m->sem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY, NULL);
 #endif
+    AssertRC(vrc);
 }
 
 /*virtual*/ RWLockHandle::~RWLockHandle()
@@ -109,7 +160,7 @@ RWLockHandle::RWLockHandle(MainLockValidationClasses lockClass)
 
 /*virtual*/ void RWLockHandle::lockWrite(LOCKVAL_SRC_POS_DECL)
 {
-#if defined(RT_LOCK_STRICT)
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     int vrc = RTSemRWRequestWriteDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
 #else
     int vrc = RTSemRWRequestWrite(m->sem, RT_INDEFINITE_WAIT);
@@ -126,7 +177,7 @@ RWLockHandle::RWLockHandle(MainLockValidationClasses lockClass)
 
 /*virtual*/ void RWLockHandle::lockRead(LOCKVAL_SRC_POS_DECL)
 {
-#if defined(RT_LOCK_STRICT)
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     int vrc = RTSemRWRequestReadDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
 #else
     int vrc = RTSemRWRequestRead(m->sem, RT_INDEFINITE_WAIT);
@@ -146,7 +197,7 @@ RWLockHandle::RWLockHandle(MainLockValidationClasses lockClass)
     return RTSemRWGetWriteRecursion(m->sem);
 }
 
-#ifdef RT_LOCK_STRICT
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
 /*virtual*/ const char* RWLockHandle::describe() const
 {
     return m->strDescription.c_str();
@@ -165,25 +216,26 @@ struct WriteLockHandle::Data
     { }
 
     mutable RTCRITSECT          sem;
-    MainLockValidationClasses   lockClass;
+    VBoxLockingClass   lockClass;
 
-#ifdef RT_LOCK_STRICT
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     com::Utf8Str                strDescription;
 #endif
 };
 
-WriteLockHandle::WriteLockHandle(MainLockValidationClasses lockClass)
+WriteLockHandle::WriteLockHandle(VBoxLockingClass lockClass)
 {
     m = new Data;
 
     m->lockClass = lockClass;
 
-    int vrc = RTCritSectInitEx(&m->sem, 0/*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
-    AssertRC(vrc);
-
-#ifdef RT_LOCK_STRICT
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     m->strDescription = com::Utf8StrFmt("crit %RCv", this);
+    int vrc = RTCritSectInitEx(&m->sem, 0/*fFlags*/, g_mapLockValidationClasses[lockClass], RTLOCKVAL_SUB_CLASS_ANY, NULL);
+#else
+    int vrc = RTCritSectInitEx(&m->sem, 0/*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY, NULL);
 #endif
+    AssertRC(vrc);
 }
 
 WriteLockHandle::~WriteLockHandle()
@@ -199,7 +251,7 @@ WriteLockHandle::~WriteLockHandle()
 
 /*virtual*/ void WriteLockHandle::lockWrite(LOCKVAL_SRC_POS_DECL)
 {
-#if defined(RT_LOCK_STRICT)
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     RTCritSectEnterDebug(&m->sem, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
 #else
     RTCritSectEnter(&m->sem);
@@ -226,7 +278,7 @@ WriteLockHandle::~WriteLockHandle()
     return RTCritSectGetRecursion(&m->sem);
 }
 
-#ifdef RT_LOCK_STRICT
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
 /*virtual*/ const char* WriteLockHandle::describe() const
 {
     return m->strDescription.c_str();
@@ -245,7 +297,7 @@ typedef std::vector<uint32_t> CountsVector;
 struct AutoLockBase::Data
 {
     Data(size_t cHandles
-#ifdef RT_LOCK_STRICT
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
          , const char *pcszFile_,
          unsigned uLine_,
          const char *pcszFunction_
@@ -254,7 +306,7 @@ struct AutoLockBase::Data
         : fIsLocked(false),
           aHandles(cHandles),       // size of array
           acUnlockedInLeave(cHandles)
-#ifdef RT_LOCK_STRICT
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
           , pcszFile(pcszFile_),
           uLine(uLine_),
           pcszFunction(pcszFunction_)
@@ -274,7 +326,7 @@ struct AutoLockBase::Data
                                         // AutoMulti* derivatives, there will be multiple
     CountsVector    acUnlockedInLeave;  // for each lock handle, how many times the handle was unlocked in leave(); otherwise 0
 
-#ifdef RT_LOCK_STRICT
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     // information about where the lock occured (passed down from the AutoLock classes)
     const char      *pcszFile;
     unsigned        uLine;
@@ -442,7 +494,7 @@ void AutoLockBase::release()
  */
 /*virtual*/ void AutoReadLock::callLockImpl(LockHandle &l)
 {
-#ifdef RT_LOCK_STRICT
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     l.lockRead(m->pcszFile, m->uLine, m->pcszFunction);
 #else
     l.lockRead();
@@ -474,7 +526,7 @@ void AutoLockBase::release()
  */
 /*virtual*/ void AutoWriteLockBase::callLockImpl(LockHandle &l)
 {
-#ifdef RT_LOCK_STRICT
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     l.lockWrite(m->pcszFile, m->uLine, m->pcszFunction);
 #else
     l.lockWrite();

@@ -100,6 +100,26 @@ public:
     STDMETHOD(FindUSBDeviceById) (IN_BSTR aId, IHostUSBDevice **aDevice);
 
     // public methods only for internal purposes
+
+    /**
+     * Simple run-time type identification without having to enable C++ RTTI.
+     * The class IDs are defined in VirtualBoxBase.h.
+     * @return
+     */
+    virtual VBoxClsID getClassID() const
+    {
+        return clsidHost;
+    }
+
+    /**
+     * Override of the default locking class to be used for validating lock
+     * order with the standard member lock handle.
+     */
+    virtual VBoxLockingClass getLockingClass() const
+    {
+        return LOCKCLASS_HOSTOBJECT;
+    }
+
     HRESULT loadSettings(const settings::Host &data);
     HRESULT saveSettings(settings::Host &data);
 

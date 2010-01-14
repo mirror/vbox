@@ -78,7 +78,10 @@ RWLockHandle *VirtualBoxBaseProto::lockHandle() const
     if (RT_UNLIKELY(!mObjectLock))
     {
         AssertCompile (sizeof (RWLockHandle *) == sizeof (void *));
-        RWLockHandle *objLock = new RWLockHandle(LOCKCLASS_OBJECT);
+
+        // locking class is LOCKCLASS_VIRTUALBOXOBJECT for the VirtualBox singleton,
+        // LOCKCLASS_HOSTOBJECT for the Host object and LOCKCLASS_OBJECT for any other object
+        RWLockHandle *objLock = new RWLockHandle(getLockingClass());
         if (!ASMAtomicCmpXchgPtr ((void * volatile *) &mObjectLock, objLock, NULL))
         {
             delete objLock;
