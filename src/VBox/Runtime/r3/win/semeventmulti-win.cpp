@@ -94,12 +94,22 @@ RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t 
     {
         pThis->u32Magic = RTSEMEVENTMULTI_MAGIC;
 #ifdef RTSEMEVENT_STRICT
-        va_list va;
-        va_start(va, pszNameFmt);
-        RTLockValidatorRecSharedInitV(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
-                                      true /*fSignaller*/, !(fFlags & RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL),
-                                      pszNameFmt, va);
-        va_end(va);
+        if (!pszNameFmt)
+        {
+            static uint32_t volatile s_iSemEventMultiAnon = 0;
+            RTLockValidatorRecSharedInit(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
+                                         true /*fSignaller*/, !(fFlags & RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL),
+                                         "RTSemEventMulti-%u", ASMAtomicIncU32(&s_iSemEventMultiAnon) - 1);
+        }
+        else
+        {
+            va_list va;
+            va_start(va, pszNameFmt);
+            RTLockValidatorRecSharedInitV(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
+                                          true /*fSignaller*/, !(fFlags & RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL),
+                                          pszNameFmt, va);
+            va_end(va);
+        }
         pThis->fEverHadSignallers = false;
 #endif
 
