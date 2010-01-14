@@ -4051,11 +4051,8 @@ VMMR3DECL(RTTHREAD) VMR3GetVMCPUThreadU(PUVM pUVM)
  * @param   pidCpuCore       Where to store the core ID of the virtual CPU.
  * @param   pidCpuPackage    Where to store the package ID of the virtual CPU.
  *
- * @todo    r=bird: Rename to VMR3GetCpuCoreAndPackageIdFromCpuId. We currently
- *          try avoid holding down the shift key, so 'Cpu' is favored over 'CPU'
- *          now.
  */
-VMMR3DECL(int) VMR3GetCPUCoreAndPackageIdFromCPUId(PVM pVM, VMCPUID idCpu, uint32_t *pidCpuCore, uint32_t *pidCpuPackage)
+VMMR3DECL(int) VMR3GetCpuCoreAndPackageIdFromCpuId(PVM pVM, VMCPUID idCpu, uint32_t *pidCpuCore, uint32_t *pidCpuPackage)
 {
     if (idCpu >= pVM->cCpus)
         return VERR_INVALID_CPU_ID;
@@ -4108,13 +4105,11 @@ static DECLCALLBACK(int) vmR3HotUnplugCpu(PVM pVM, VMCPUID idCpu)
  * @returns VBox status code.
  * @param   pVM     The VM to operate on.
  * @param   idCpu   Virtual CPU to perform the hot unplugging operation on.
- * @todo r=bird:  Rename to VMR3HotUnplugCpu.
  */
-VMMR3DECL(int) VMR3HotunplugCPU(PVM pVM, VMCPUID idCpu)
+VMMR3DECL(int) VMR3HotUnplugCpu(PVM pVM, VMCPUID idCpu)
 {
     AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
 
-    /** @todo Destroy EMT and not needed resources. */
     /** @todo r=bird: Don't destroy the EMT, it'll break VMMR3EmtRendezvous and
      *        broadcast requests.  Just note down somewhere that the CPU is
      *        offline and send it to SPIP wait.  Maybe modify VMCPUSTATE and push
@@ -4129,13 +4124,11 @@ VMMR3DECL(int) VMR3HotunplugCPU(PVM pVM, VMCPUID idCpu)
  * @returns VBox status code.
  * @param   pVM     The VM to operate on.
  * @param   idCpu   Virtual CPU to perform the hot plugging operation on.
- * @todo r=bird: Rename to VMR3HotPlugCpu.
  */
-VMMR3DECL(int) VMR3HotplugCPU(PVM pVM, VMCPUID idCpu)
+VMMR3DECL(int) VMR3HotPlugCpu(PVM pVM, VMCPUID idCpu)
 {
     AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
 
-    /** @todo start EMT and allocate needed resources. */
     /** @todo r-bird: Just mark it online and make sure it waits on SPIP. */
     return VINF_SUCCESS;
 }

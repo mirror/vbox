@@ -406,9 +406,9 @@ VMMR3DECL(RTTHREAD)         VMR3GetVMCPUThread(PVM pVM);
 VMMR3DECL(RTTHREAD)         VMR3GetVMCPUThreadU(PUVM pUVM);
 VMMR3DECL(RTNATIVETHREAD)   VMR3GetVMCPUNativeThread(PVM pVM);
 VMMR3DECL(RTNATIVETHREAD)   VMR3GetVMCPUNativeThreadU(PUVM pUVM);
-VMMR3DECL(int)              VMR3GetCPUCoreAndPackageIdFromCPUId(PVM pVM, VMCPUID idCpu, uint32_t *pidCpuCore, uint32_t *pidCpuPackage);
-VMMR3DECL(int)              VMR3HotunplugCPU(PVM pVM, VMCPUID idCpu);
-VMMR3DECL(int)              VMR3HotplugCPU(PVM pVM, VMCPUID idCpu);
+VMMR3DECL(int)              VMR3GetCpuCoreAndPackageIdFromCpuId(PVM pVM, VMCPUID idCpu, uint32_t *pidCpuCore, uint32_t *pidCpuPackage);
+VMMR3DECL(int)              VMR3HotUnplugCpu(PVM pVM, VMCPUID idCpu);
+VMMR3DECL(int)              VMR3HotPlugCpu(PVM pVM, VMCPUID idCpu);
 
 /** @} */
 #endif /* IN_RING3 */

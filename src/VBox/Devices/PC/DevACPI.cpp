@@ -149,9 +149,10 @@ enum
     SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH= 9,
     SYSTEM_INFO_INDEX_RTC_STATUS        = 10,
     SYSTEM_INFO_INDEX_CPU_LOCKED        = 11,
-    SYSTEM_INFO_INDEX_MADT_ADDR         = 12,
-    SYSTEM_INFO_INDEX_MADT_SIZE         = 13,
-    SYSTEM_INFO_INDEX_END               = 14,
+    SYSTEM_INFO_INDEX_CPU_LOCK_CHECK    = 12,
+    SYSTEM_INFO_INDEX_MADT_ADDR         = 13,
+    SYSTEM_INFO_INDEX_MADT_SIZE         = 14,
+    SYSTEM_INFO_INDEX_END               = 15,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -237,9 +238,11 @@ typedef struct ACPIState
     /** Size of the MADT table */
     uint32_t            cbMADT;
     /** Array of flags of attached CPUs */
-    bool                afCpuAttached[VMM_MAX_CPU_COUNT]; /**< @todo use VMCPUSET.  */
+    VMCPUSET            CpuSetAttached;
+    /** Which CPU to check for the locked status. */
+    uint32_t            idCpuLockCheck;
     /** Mask of locked CPUs (used by the guest) */
-    uint32_t            uCpusLocked;                      /**< @todo use VMCPUSET. */
+    VMCPUSET            CpuSetLocked;
     /** Flag whether CPU hot plugging is enabled */
     bool                fCpuHotPlug;
     /** Aligning IBase. */
@@ -846,7 +849,7 @@ static void acpiSetupMADT(ACPIState *s, RTGCPHYS32 addr)
         lapic->u8Length    = sizeof(ACPITBLLAPIC);
         lapic->u8ProcId    = i;
         lapic->u8ApicId    = i;
-        lapic->u32Flags    = s->afCpuAttached[i] ? RT_H2LE_U32(LAPIC_ENABLED) : 0;
+        lapic->u32Flags    = VMCPUSET_IS_PRESENT(&s->CpuSetAttached, i) ? RT_H2LE_U32(LAPIC_ENABLED) : 0;
         lapic++;
     }
 
@@ -985,7 +988,7 @@ static DECLCALLBACK(int) acpiGetGuestEnteredACPIMode(PPDMIACPIPORT pInterface, b
 static DECLCALLBACK(int) acpiGetCpuStatus(PPDMIACPIPORT pInterface, unsigned uCpu, bool *pfLocked)
 {
     ACPIState *s = IACPIPORT_2_ACPISTATE(pInterface);
-    *pfLocked = (s->uCpusLocked & RT_BIT(uCpu)) != 0;
+    *pfLocked = VMCPUSET_IS_PRESENT(&s->CpuSetLocked, uCpu);
     return VINF_SUCCESS;
 }
 
@@ -1405,7 +1408,7 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                 case SYSTEM_INFO_INDEX_CPU3_STATUS:
                   *pu32 = s->fShowCpu
                     && s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS < s->cCpus
-                    && s->afCpuAttached[s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS]
+                    && VMCPUSET_IS_PRESENT(&s->CpuSetAttached, s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS)
                     ?
                       STA_DEVICE_PRESENT_MASK
                     | STA_DEVICE_ENABLED_MASK
@@ -1423,7 +1426,17 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 
                 case SYSTEM_INFO_INDEX_CPU_LOCKED:
                 {
-                    *pu32 = s->uCpusLocked;
+                    if (s->idCpuLockCheck != UINT32_C(0xffffffff))
+                    {
+                        *pu32 = VMCPUSET_IS_PRESENT(&s->CpuSetLocked, s->idCpuLockCheck) ? 1 : 0;
+                        s->idCpuLockCheck = UINT32_C(0xffffffff); /* Make the entry invalid */
+                    }
+                    else
+                    {
+                        AssertMsgFailed(("ACPI: CPU lock check protocol violation\n"));
+                        /* Always return locked status just to be safe */
+                        *pu32 = 1;
+                    }
                     break;
                 }
 
@@ -1478,8 +1491,16 @@ PDMBOTHCBDECL(int) acpiSysInfoDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                 s->u8IndexShift = 2;
                 break;
 
+            case SYSTEM_INFO_INDEX_CPU_LOCK_CHECK:
+                if (u32 < s->cCpus)
+                    s->idCpuLockCheck = u32;
+                else
+                    LogRel(("ACPI: CPU %u does not exist\n", u32));
             case SYSTEM_INFO_INDEX_CPU_LOCKED:
-                s->uCpusLocked &= ~u32; /* Unlock the CPU */
+                if (u32 < s->cCpus)
+                    VMCPUSET_DEL(&s->CpuSetLocked, u32); /* Unlock the CPU */
+                else
+                    LogRel(("ACPI: CPU %u does not exist\n", u32));
                 break;
 
             default:
@@ -2079,7 +2100,7 @@ static DECLCALLBACK(int) acpiAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
     LogFlow(("acpiAttach: pDevIns=%p iLUN=%u fFlags=%#x\n", pDevIns, iLUN, fFlags));
 
     /* Check if it was already attached */
-    if (s->afCpuAttached[iLUN])
+    if (VMCPUSET_IS_PRESENT(&s->CpuSetAttached, iLUN))
         return VINF_SUCCESS;
 
     PPDMIBASE IBaseTmp;
@@ -2088,15 +2109,16 @@ static DECLCALLBACK(int) acpiAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
     if (RT_SUCCESS(rc))
     {
         /* Enable the CPU */
-        s->afCpuAttached[iLUN] = true;
+        VMCPUSET_ADD(&s->CpuSetAttached, iLUN);
 
-        /* Enable the lapic */
-        acpiSetupMADT(s, s->GCPhysMADTBase);
         /*
          * Lock the CPU because we don't know if the guest will use it or not.
          * Prevents ejection while the CPU is still used
          */
-        s->uCpusLocked |= RT_BIT(iLUN);
+        VMCPUSET_ADD(&s->CpuSetLocked, iLUN);
+
+        /* Enable the lapic */
+        acpiSetupMADT(s, s->GCPhysMADTBase);
 
         /* Notify the guest */
         update_gpe0(s, s->gpe0_sts | 0x2, s->gpe0_en);
@@ -2118,12 +2140,12 @@ static DECLCALLBACK(void) acpiDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
     LogFlow(("acpiDetach: pDevIns=%p iLUN=%u fFlags=%#x\n", pDevIns, iLUN, fFlags));
 
     /* Check if it was already detached */
-    if (s->afCpuAttached[iLUN])
+    if (VMCPUSET_IS_PRESENT(&s->CpuSetAttached, iLUN))
     {
-        /* Disable the CPU */
-        s->afCpuAttached[iLUN] = false;
+        AssertMsgReturnVoid(!(VMCPUSET_IS_PRESENT(&s->CpuSetLocked, iLUN)), ("CPU is still locked by the guest\n"));
 
-        AssertMsg(!(s->uCpusLocked & RT_BIT(iLUN)), ("CPU is still locked by the guest\n"));
+        /* Disable the CPU */
+        VMCPUSET_DEL(&s->CpuSetAttached, iLUN);
 
         /* Update the lapic state */
         acpiSetupMADT(s, s->GCPhysMADTBase);
@@ -2194,7 +2216,8 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "FdcEnabled\0"
                               "ShowRtc\0"
                               "ShowCpu\0"
-                              "CpuHotplug\0" /** @todo r=bird: Rename to CpuHotPlug. */
+                              "CpuHotPlug\0"
+                              "AmlFilePath\0"
                               ))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config key for ACPI device"));
@@ -2242,10 +2265,10 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                 N_("Configuration error: Failed to read \"ShowCpu\""));
 
     /* query whether we are allow CPU hot plugging */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "CpuHotplug", &s->fCpuHotPlug, false); /** @todo r=bird: Rename to CpuHotPlug. */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "CpuHotPlug", &s->fCpuHotPlug, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"CpuHotplug\""));
+                                N_("Configuration error: Failed to read \"CpuHotPlug\""));
 
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &s->fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -2273,9 +2296,13 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     s->IACPIPort.pfnGetGuestEnteredACPIMode = acpiGetGuestEnteredACPIMode;
     s->IACPIPort.pfnGetCpuStatus            = acpiGetCpuStatus;
 
+    VMCPUSET_EMPTY(&s->CpuSetAttached);
+    VMCPUSET_EMPTY(&s->CpuSetLocked);
+    s->idCpuLockCheck = UINT32_C(0xffffffff);
+
     /* The first CPU can't be attached/detached */
-    s->afCpuAttached[0] = true;
-    s->uCpusLocked |= RT_BIT(0);
+    VMCPUSET_ADD(&s->CpuSetAttached, 0);
+    VMCPUSET_ADD(&s->CpuSetLocked, 0);
 
     /* Try to attach the other CPUs */
     for (unsigned i = 1; i < s->cCpus; i++)
@@ -2287,23 +2314,20 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
             if (RT_SUCCESS(rc))
             {
-                s->afCpuAttached[i] = true;
-                s->uCpusLocked |= RT_BIT(i);
+                VMCPUSET_ADD(&s->CpuSetAttached, i);
+                VMCPUSET_ADD(&s->CpuSetLocked, i);
                 Log(("acpi: Attached CPU %u\n", i));
             }
             else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-            {
                 Log(("acpi: CPU %u not attached yet\n", i));
-                s->afCpuAttached[i] = false;
-            }
             else
                 return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach CPU object\n"));
         }
         else
         {
             /* CPU is always attached if hot-plug is not enabled. */
-            s->afCpuAttached[i] = true;
-            s->uCpusLocked |= RT_BIT(i);
+            VMCPUSET_ADD(&s->CpuSetAttached, i);
+            VMCPUSET_ADD(&s->CpuSetLocked, i);
         }
     }
 

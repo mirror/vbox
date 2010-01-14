@@ -465,8 +465,9 @@ int main()
     GEN_CHECK_OFF(ACPIState, fUseHpet);
     GEN_CHECK_OFF(ACPIState, fUseSmc);
     GEN_CHECK_OFF(ACPIState, GCPhysMADTBase);
-    GEN_CHECK_OFF(ACPIState, afCpuAttached);
-    GEN_CHECK_OFF(ACPIState, uCpusLocked);
+    GEN_CHECK_OFF(ACPIState, CpuSetAttached);
+    GEN_CHECK_OFF(ACPIState, idCpuLockCheck);
+    GEN_CHECK_OFF(ACPIState, CpuSetLocked);
     GEN_CHECK_OFF(ACPIState, fCpuHotPlug);
     GEN_CHECK_OFF(ACPIState, IBase);
     GEN_CHECK_OFF(ACPIState, IACPIPort);

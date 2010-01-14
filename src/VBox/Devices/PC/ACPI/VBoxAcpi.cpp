@@ -29,9 +29,11 @@
 #include <VBox/log.h>
 #include <VBox/param.h>
 #include <VBox/cfgm.h>
+#include <VBox/mm.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/string.h>
+#include <iprt/file.h>
 
 #ifdef VBOX_WITH_DYNAMIC_DSDT
 /* vbox.dsl - input to generate proper DSDT on the fly */
@@ -39,7 +41,6 @@
 #else
 /* Statically compiled AML */
 # include <vboxaml.hex>
-# include <vboxaml-cpuhotplug.hex>
 #endif
 
 #ifdef VBOX_WITH_DYNAMIC_DSDT
@@ -141,29 +142,82 @@ int acpiPrepareDsdt(PPDMDEVINS pDevIns,  void * *ppPtr, size_t *puDsdtLen)
 #ifdef VBOX_WITH_DYNAMIC_DSDT
     return prepareDynamicDsdt(pDevIns, ppPtr, puDsdtLen);
 #else
-    unsigned char *pbAmlCode = NULL;
+    uint8_t *pbAmlCode = NULL;
     size_t cbAmlCode = 0;
-    bool fCpuHotPlug = false;
-    int rc = CFGMR3QueryBoolDef(pDevIns->pCfgHandle, "CpuHotplug", &fCpuHotPlug, false); /** @todo r=bird: Rename to CpuHotPlug. */
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"CpuHotplug\""));
+    char *pszAmlFilePath = NULL;
+    int rc = CFGMR3QueryStringAlloc(pDevIns->pCfgHandle, "AmlFilePath", &pszAmlFilePath);
+    if (RT_SUCCESS(rc))
+    {
+        /* Load from file. */
+        RTFILE FileAml = NIL_RTFILE;
 
-    if (fCpuHotPlug)
-    {
-        pbAmlCode = AmlCodeCpuHotplug;
-        cbAmlCode = sizeof(AmlCodeCpuHotplug);
+        rc = RTFileOpen(&FileAml, pszAmlFilePath, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * An AML file contains the raw DSDT thus the size of the file
+             * is equal to the size of the DSDT.
+             */
+            uint64_t cbAmlFile = 0;
+            rc = RTFileGetSize(FileAml, &cbAmlFile);
+
+            cbAmlCode = (size_t)cbAmlFile;
+
+            /* Don't use AML files over 4GB ;) */
+            if (   RT_SUCCESS(rc)
+                && ((uint64_t)cbAmlCode == cbAmlFile))
+            {
+                pbAmlCode = (uint8_t *)RTMemAllocZ(cbAmlCode);
+                if (pbAmlCode)
+                {
+                    rc = RTFileReadAt(FileAml, 0, pbAmlCode, cbAmlCode, NULL);
+
+                    /*
+                     * We fail if reading failed or the identifier at the
+                     * beginning is wrong.
+                     */
+                    if (   RT_FAILURE(rc)
+                        || strncmp((const char *)pbAmlCode, "DSDT", 4))
+                    {
+                        RTMemFree(pbAmlCode);
+                        pbAmlCode = NULL;
+
+                        /* Return error if file header check failed */
+                        if (RT_SUCCESS(rc))
+                            rc = VERR_PARSE_ERROR;
+                    }
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+
+            RTFileClose(FileAml);
+        }
+        MMR3HeapFree(pszAmlFilePath);
     }
-    else
+    else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
-        pbAmlCode = AmlCode;
+        rc = VINF_SUCCESS;
+
+        /* Use the compiled in AML code */
         cbAmlCode = sizeof(AmlCode);
+        pbAmlCode = (uint8_t *)RTMemAllocZ(cbAmlCode);
+        if (pbAmlCode)
+            memcpy(pbAmlCode, AmlCode, cbAmlCode);
+        else
+            rc = VERR_NO_MEMORY;
     }
+    else if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"AmlFilePath\""));
 
-    patchAml(pDevIns, pbAmlCode, cbAmlCode);
-    *ppPtr = pbAmlCode;
-    *puDsdtLen = cbAmlCode;
-    return 0;
+    if (RT_SUCCESS(rc))
+    {
+        patchAml(pDevIns, pbAmlCode, cbAmlCode);
+        *ppPtr = pbAmlCode;
+        *puDsdtLen = cbAmlCode;
+    }
+    return rc;
 #endif
 }
 
@@ -172,8 +226,9 @@ int acpiCleanupDsdt(PPDMDEVINS pDevIns,  void * pPtr)
 #ifdef VBOX_WITH_DYNAMIC_DSDT
     return cleanupDynamicDsdt(pDevIns, pPtr);
 #else
-    /* Do nothing */
-    return 0;
+    if (pPtr)
+        RTMemFree(pPtr);
+    return VINF_SUCCESS;
 #endif
 }
 
