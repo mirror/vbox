@@ -1245,8 +1245,8 @@
 #if 0
 # define RT_BSWAP_U64(u64)  RT_BSWAP_U64_C(u64)
 #elif defined(__GNUC__)
-/** @todo use __builtin_constant_p? */
-# define RT_BSWAP_U64(u64)  ASMByteSwapU64(u64)
+# define RT_BSWAP_U64(u64)  (__builtin_constant_p((u64)) \
+                            ? RT_BSWAP_U64_C(u64) : ASMByteSwapU64(u64))
 #else
 # define RT_BSWAP_U64(u64)  ASMByteSwapU64(u64)
 #endif
@@ -1256,8 +1256,8 @@
 #if 0
 # define RT_BSWAP_U32(u32)  RT_BSWAP_U32_C(u32)
 #elif defined(__GNUC__)
-/** @todo use __builtin_constant_p? */
-# define RT_BSWAP_U32(u32)  ASMByteSwapU32(u32)
+# define RT_BSWAP_U32(u32)  (__builtin_constant_p((u32)) \
+                            ? RT_BSWAP_U32_C(u32) : ASMByteSwapU32(u32))
 #else
 # define RT_BSWAP_U32(u32)  ASMByteSwapU32(u32)
 #endif
@@ -1267,8 +1267,8 @@
 #if 0
 # define RT_BSWAP_U16(u16)  RT_BSWAP_U16_C(u16)
 #elif defined(__GNUC__)
-/** @todo use __builtin_constant_p? */
-# define RT_BSWAP_U16(u16)  ASMByteSwapU16(u16)
+# define RT_BSWAP_U16(u16)  (__builtin_constant_p((u16)) \
+                            ? RT_BSWAP_U16_C(u16) : ASMByteSwapU16(u16))
 #else
 # define RT_BSWAP_U16(u16)  ASMByteSwapU16(u16)
 #endif
