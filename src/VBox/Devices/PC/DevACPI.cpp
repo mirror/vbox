@@ -2280,22 +2280,31 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /* Try to attach the other CPUs */
     for (unsigned i = 1; i < s->cCpus; i++)
     {
-        PPDMIBASE IBaseTmp;
-        rc = PDMDevHlpDriverAttach(pDevIns, i, &s->IBase, &IBaseTmp, "ACPI CPU");
+        if (s->fCpuHotplug)
+        {
+            PPDMIBASE IBaseTmp;
+            rc = PDMDevHlpDriverAttach(pDevIns, i, &s->IBase, &IBaseTmp, "ACPI CPU");
 
-        if (RT_SUCCESS(rc))
-        {
-            s->afCpuAttached[i] = true;
-            s->uCpusLocked |= RT_BIT(i);
-            Log(("acpi: Attached CPU %u\n", i));
-        }
-        else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-        {
-            Log(("acpi: CPU %u not attached yet\n", i));
-            s->afCpuAttached[i] = false;
+            if (RT_SUCCESS(rc))
+            {
+                s->afCpuAttached[i] = true;
+                s->uCpusLocked |= RT_BIT(i);
+                Log(("acpi: Attached CPU %u\n", i));
+            }
+            else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+            {
+                Log(("acpi: CPU %u not attached yet\n", i));
+                s->afCpuAttached[i] = false;
+            }
+            else
+                return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach CPU object\n"));
         }
         else
-            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach CPU object\n"));
+        {
+            /* CPU is always attached if hotplug is not enabled. */
+            s->afCpuAttached[i] = true;
+            s->uCpusLocked |= RT_BIT(i);
+        }
     }
 
 
