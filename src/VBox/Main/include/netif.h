@@ -26,10 +26,12 @@
 #include <iprt/net.h>
 #include <iprt/asm.h>
 
-#define VBOXNET_IPV4ADDR_DEFAULT      "192.168.56.1"
-#define VBOXNET_IPV4NET_DEFAULT       "192.168."
-#define VBOXNET_IPV4NETPREFIX_DEFAULT 56
-#define VBOXNET_IPV4NETHOST_DEFAULT   1
+#ifndef RT_OS_WINDOWS
+#include <arpa/inet.h>
+#include <stdio.h>
+#endif /* RT_OS_WINDOWS */
+
+#define VBOXNET_IPV4ADDR_DEFAULT      0x0138A8C0  /* 192.168.56.1 */
 #define VBOXNET_IPV4MASK_DEFAULT      "255.255.255.0"
 
 #define VBOXNET_MAX_SHORT_NAME 50
@@ -140,6 +142,23 @@ DECLINLINE(Bstr) composeHardwareAddress(PRTMAC aMacPtr)
                 aMacPtr->au8[2], aMacPtr->au8[3],
                 aMacPtr->au8[4], aMacPtr->au8[5]);
     return Bstr(szTmp);
+}
+
+DECLINLINE(Bstr) getDefaultIPv4Address(Bstr bstrIfName)
+{
+    /* Get the index from the name */
+    int iInstance;
+    if (sscanf(Utf8Str(bstrIfName).raw(), "vboxnet%d", &iInstance) != 1)
+        return Bstr("0.0.0.0");
+
+    in_addr tmp;
+#if defined(RT_OS_WINDOWS)
+    tmp.S_un.S_addr = VBOXNET_IPV4ADDR_DEFAULT + (iInstance << 16);
+#else
+    tmp.s_addr = VBOXNET_IPV4ADDR_DEFAULT + (iInstance << 16);
+#endif
+    char *addr = inet_ntoa(tmp);
+    return Bstr(addr);
 }
 
 #endif  /* ___netif_h */

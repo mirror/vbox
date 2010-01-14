@@ -98,6 +98,7 @@
 #if !defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
 # include <HostNetworkInterfaceImpl.h>
 # include <netif.h>
+# include <stdlib.h>
 #endif
 
 #include "DHCPServerRunner.h"
@@ -2854,19 +2855,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             }
             else
             {
-#ifdef RT_OS_SOLARIS
-                /* Grab the IP number from the 'vboxnetX' instance number */
-                const char *pszInstance = pszHifName;
-                pszInstance += sizeof("vboxnet") - 1;
-                int Instance = VBOXNET_IPV4NETPREFIX_DEFAULT + atoi(pszInstance);
-                char szDefaultIPV4Addr[sizeof(VBOXNET_IPV4ADDR_DEFAULT) + 1];
-                RTStrPrintf(szDefaultIPV4Addr, sizeof(szDefaultIPV4Addr), "%s%d.%d", VBOXNET_IPV4NET_DEFAULT, Instance, VBOXNET_IPV4NETHOST_DEFAULT);
-                hrc = hostInterface->EnableStaticIpConfig(Bstr(szDefaultIPV4Addr),
+                /* Grab the IP number from the 'vboxnetX' instance number (see netif.h) */
+                hrc = hostInterface->EnableStaticIpConfig(getDefaultIPv4Address(Bstr(pszHifName)),
                                                           Bstr(VBOXNET_IPV4MASK_DEFAULT));
-#else
-                hrc = hostInterface->EnableStaticIpConfig(Bstr(VBOXNET_IPV4ADDR_DEFAULT),
-                                                          Bstr(VBOXNET_IPV4MASK_DEFAULT));
-#endif
             }
             
             ComAssertComRC(hrc); /** @todo r=bird: Why this isn't fatal? (H()) */
