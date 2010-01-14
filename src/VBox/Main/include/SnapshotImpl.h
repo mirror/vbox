@@ -90,7 +90,6 @@ public:
 
     // public methods only for internal purposes
 
-
     /**
      * Simple run-time type identification without having to enable C++ RTTI.
      * The class IDs are defined in VirtualBoxBase.h.
@@ -99,6 +98,15 @@ public:
     virtual VBoxClsID getClassID() const
     {
         return clsidSnapshot;
+    }
+
+    /**
+     * Override of the default locking class to be used for validating lock
+     * order with the standard member lock handle.
+     */
+    virtual VBoxLockingClass getLockingClass() const
+    {
+        return LOCKCLASS_SNAPSHOTOBJECT;
     }
 
     const ComObjPtr<Snapshot>& getParent() const;

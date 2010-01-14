@@ -1656,10 +1656,10 @@ STDMETHODIMP Medium::COMGETTER(LogicalSize)(ULONG64 *aLogicalSize)
         AutoCaller autoCaller(this);
         if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
         /* we access mParent */
         AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         if (m->pParent.isNull())
         {
@@ -3007,10 +3007,10 @@ bool Medium::isReadOnly()
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), false);
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     /* we access children */
     AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     switch (m->type)
     {
