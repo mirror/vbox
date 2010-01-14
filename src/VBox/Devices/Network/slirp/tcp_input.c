@@ -351,7 +351,7 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
      */
     tlen = ((struct ip *)ti)->ip_len;
     memset(ti->ti_x1, 0, 9);
-    ti->ti_len = htons((u_int16_t)tlen);
+    ti->ti_len = RT_H2N_U16((u_int16_t)tlen);
     len = sizeof(struct ip ) + tlen;
     /* keep checksum for ICMP reply
      * ti->ti_sum = cksum(m, len);
@@ -391,12 +391,12 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
         if ((   optlen == TCPOLEN_TSTAMP_APPA
              || (   optlen  > TCPOLEN_TSTAMP_APPA
                  && optp[TCPOLEN_TSTAMP_APPA] == TCPOPT_EOL)) &&
-                *(u_int32_t *)optp == htonl(TCPOPT_TSTAMP_HDR) &&
+                *(u_int32_t *)optp == RT_H2N_U32_C(TCPOPT_TSTAMP_HDR) &&
                 (ti->ti_flags & TH_SYN) == 0)
         {
             ts_present = 1;
-            ts_val = ntohl(*(u_int32_t *)(optp + 4));
-            ts_ecr = ntohl(*(u_int32_t *)(optp + 8));
+            ts_val = RT_N2H_U32(*(u_int32_t *)(optp + 4));
+            ts_ecr = RT_N2H_U32(*(u_int32_t *)(optp + 8));
             optp = NULL;   / * we have parsed the options * /
         }
 #endif

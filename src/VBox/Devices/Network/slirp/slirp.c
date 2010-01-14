@@ -281,8 +281,8 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             }
 
             LogRel(("NAT: adding %R[IP4] to DNS server list\n", &InAddr));
-            if ((InAddr.s_addr & htonl(IN_CLASSA_NET)) == ntohl(INADDR_LOOPBACK & IN_CLASSA_NET))
-                pDns->de_addr.s_addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_ALIAS);
+            if ((InAddr.s_addr & RT_H2N_U32_C(IN_CLASSA_NET)) == RT_N2H_U32_C(INADDR_LOOPBACK & IN_CLASSA_NET))
+                pDns->de_addr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
             else
                 pDns->de_addr.s_addr = InAddr.s_addr;
 
@@ -432,9 +432,9 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
 
             /* check */
             pDns->de_addr.s_addr = tmp_addr.s_addr;
-            if ((pDns->de_addr.s_addr & htonl(IN_CLASSA_NET)) == ntohl(INADDR_LOOPBACK & IN_CLASSA_NET))
+            if ((pDns->de_addr.s_addr & RT_H2N_U32_C(IN_CLASSA_NET)) == RT_N2H_U32_C(INADDR_LOOPBACK & IN_CLASSA_NET))
             {
-                pDns->de_addr.s_addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_ALIAS);
+                pDns->de_addr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
             }
             TAILQ_INSERT_HEAD(&pData->pDnsList, pDns, de_list);
             fFoundNameserver++;
@@ -579,7 +579,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     pData->special_addr.s_addr = u32NetAddr;
 #endif
     pData->slirp_ethaddr = &special_ethaddr[0];
-    alias_addr.s_addr = pData->special_addr.s_addr | htonl(CTL_ALIAS);
+    alias_addr.s_addr = pData->special_addr.s_addr | RT_H2N_U32_C(CTL_ALIAS);
     /* @todo: add ability to configure this staff */
 
     /* set default addresses */
@@ -608,7 +608,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 #endif
         flags |= PKT_ALIAS_LOG; /* set logging */
         flags = LibAliasSetMode(pData->proxy_alias, flags, ~0);
-        proxy_addr.s_addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_ALIAS);
+        proxy_addr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
         LibAliasSetAddress(pData->proxy_alias, proxy_addr);
         ftp_alias_load(pData);
         nbt_alias_load(pData);
@@ -1446,10 +1446,11 @@ static void arp_input(PNATState pData, struct mbuf *m)
     struct mbuf *mr;
     eh = mtod(m, struct ethhdr *);
     ah = (struct arphdr *)&eh[1];
-    htip = ntohl(*(uint32_t*)ah->ar_tip);
+    htip = RT_N2H_U32(*(uint32_t*)ah->ar_tip);
     tip = *(uint32_t*)ah->ar_tip;
 
-    ar_op = ntohs(ah->ar_op);
+    ar_op = RT_N2H_U16(ah->ar_op);
+
     switch (ar_op)
     {
         case ARPOP_REQUEST:
@@ -1478,7 +1479,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
             if (tip == pData->special_addr.s_addr)
                 goto arp_ok;
 #endif
-            if ((htip & pData->netmask) == ntohl(pData->special_addr.s_addr))
+            if ((htip & pData->netmask) == RT_N2H_U32(pData->special_addr.s_addr))
             {
                 if (   CTL_CHECK(htip, CTL_DNS)
                     || CTL_CHECK(htip, CTL_ALIAS)
@@ -1496,11 +1497,11 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 return;
 
          arp_ok:
-                rah->ar_hrd = htons(1);
-                rah->ar_pro = htons(ETH_P_IP);
+                rah->ar_hrd = RT_H2N_U16_C(1);
+                rah->ar_pro = RT_H2N_U16_C(ETH_P_IP);
                 rah->ar_hln = ETH_ALEN;
                 rah->ar_pln = 4;
-                rah->ar_op = htons(ARPOP_REPLY);
+                rah->ar_op = RT_H2N_U16_C(ARPOP_REPLY);
                 memcpy(rah->ar_sha, special_ethaddr, ETH_ALEN);
 
                 switch (htip & ~pData->netmask)
@@ -1577,7 +1578,7 @@ void slirp_input(PNATState pData, void *pvArg)
         return;
     }
     eh = mtod(m, struct ethhdr *);
-    proto = ntohs(eh->h_proto);
+    proto = RT_N2H_U16(eh->h_proto);
 #else
     Log2(("NAT: slirp_input %d\n", pkt_len));
     if (pkt_len < ETH_HLEN)
@@ -1616,7 +1617,7 @@ void slirp_input(PNATState pData, void *pvArg)
 
     m->m_len = pkt_len ;
     memcpy(m->m_data, pkt, pkt_len);
-    proto = ntohs(*(uint16_t *)(pkt + 12));
+    proto = RT_N2H_U16(*(uint16_t *)(pkt + 12));
 #endif
     /* Note: we add to align the IP header */
 
@@ -1720,7 +1721,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
         goto done;
     }
 #endif
-    eh->h_proto = htons(eth_proto);
+    eh->h_proto = RT_H2N_U16(eth_proto);
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
     m_copydata(m, 0, mlen, (char *)buf);
 #else
@@ -1815,11 +1816,11 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
                rule->host_port, rule->guest_port, &guest_addr));
 
         if (rule->proto == IPPROTO_UDP)
-            so = udp_listen(pData, rule->bind_ip.s_addr, htons(rule->host_port), guest_addr,
-                            htons(rule->guest_port), 0);
+            so = udp_listen(pData, rule->bind_ip.s_addr, RT_H2N_U16(rule->host_port), guest_addr,
+                            RT_H2N_U16(rule->guest_port), 0);
         else
-            so = solisten(pData, rule->bind_ip.s_addr, htons(rule->host_port), guest_addr,
-                          htons(rule->guest_port), 0);
+            so = solisten(pData, rule->bind_ip.s_addr, RT_H2N_U16(rule->host_port), guest_addr,
+                          RT_H2N_U16(rule->guest_port), 0);
 
         if (so == NULL)
             goto remove_port_forwarding;
@@ -1842,9 +1843,9 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
         flags |= PKT_ALIAS_REVERSE; /* set logging */
         flags = LibAliasSetMode(lib, flags, ~0);
 
-        alias.s_addr =  htonl(ntohl(guest_addr) | CTL_ALIAS);
-        alias_link = LibAliasRedirectPort(lib, psin->sin_addr, htons(rule->host_port),
-                                          alias, htons(rule->guest_port),
+        alias.s_addr = RT_H2N_U32(RT_N2H_U32(guest_addr) | CTL_ALIAS);
+        alias_link = LibAliasRedirectPort(lib, psin->sin_addr, RT_H2N_U16(rule->host_port),
+                                          alias, RT_H2N_U16(rule->guest_port),
                                           pData->special_addr,  -1, /* not very clear for now */
                                           rule->proto);
         if (!alias_link)
@@ -1904,7 +1905,7 @@ int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_b
                    int guest_port)
 {
     return add_exec(&exec_list, do_pty, (char *)args,
-                    addr_low_byte, htons(guest_port));
+                    addr_low_byte, RT_H2N_U16(guest_port));
 }
 
 void slirp_set_ethaddr_and_activate_port_forwarding(PNATState pData, const uint8_t *ethaddr, uint32_t GuestIP)
@@ -1986,7 +1987,7 @@ void slirp_set_dhcp_next_server(PNATState pData, const char *next_server)
 {
     Log2(("next_server:%s\n", next_server));
     if (next_server == NULL)
-        pData->tftp_server.s_addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_TFTP);
+        pData->tftp_server.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_TFTP);
     else
         inet_aton(next_server, &pData->tftp_server);
 }
@@ -2116,13 +2117,13 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     ehdr = mtod(m, struct ethhdr *);
     memset(ehdr->h_source, 0xff, ETH_ALEN);
     ahdr = (struct arphdr *)&ehdr[1];
-    ahdr->ar_hrd = htons(1);
-    ahdr->ar_pro = htons(ETH_P_IP);
+    ahdr->ar_hrd = RT_H2N_U16_C(1);
+    ahdr->ar_pro = RT_H2N_U16_C(ETH_P_IP);
     ahdr->ar_hln = ETH_ALEN;
     ahdr->ar_pln = 4;
-    ahdr->ar_op = htons(ARPOP_REQUEST);
+    ahdr->ar_op = RT_H2N_U16_C(ARPOP_REQUEST);
     memcpy(ahdr->ar_sha, special_ethaddr, ETH_ALEN);
-    *(uint32_t *)ahdr->ar_sip = htonl(ntohl(pData->special_addr.s_addr) | CTL_ALIAS);
+    *(uint32_t *)ahdr->ar_sip = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
     memset(ahdr->ar_tha, 0xff, ETH_ALEN); /*broadcast*/
     *(uint32_t *)ahdr->ar_tip = dst;
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF

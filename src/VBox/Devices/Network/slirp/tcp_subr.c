@@ -74,7 +74,7 @@ tcp_template(struct tcpcb *tp)
 
     memset(n->ti_x1, 0, 9);
     n->ti_pr = IPPROTO_TCP;
-    n->ti_len = htons(sizeof (struct tcpiphdr) - sizeof (struct ip));
+    n->ti_len = RT_H2N_U16(sizeof (struct tcpiphdr) - sizeof (struct ip));
     n->ti_src = so->so_faddr;
     n->ti_dst = so->so_laddr;
     n->ti_sport = so->so_fport;
@@ -155,20 +155,20 @@ tcp_respond(PNATState pData, struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf 
         xchg(ti->ti_dport, ti->ti_sport, u_int16_t);
 #undef xchg
     }
-    ti->ti_len = htons((u_short)(sizeof (struct tcphdr) + tlen));
+    ti->ti_len = RT_H2N_U16((u_short)(sizeof (struct tcphdr) + tlen));
     tlen += sizeof (struct tcpiphdr);
     m->m_len = tlen;
 
     memset(ti->ti_x1, 0, 9);
-    ti->ti_seq = htonl(seq);
-    ti->ti_ack = htonl(ack);
+    ti->ti_seq = RT_H2N_U32(seq);
+    ti->ti_ack = RT_H2N_U32(ack);
     ti->ti_x2 = 0;
     ti->ti_off = sizeof (struct tcphdr) >> 2;
     ti->ti_flags = flags;
     if (tp)
-        ti->ti_win = htons((u_int16_t) (win >> tp->rcv_scale));
+        ti->ti_win = RT_H2N_U16((u_int16_t) (win >> tp->rcv_scale));
     else
-        ti->ti_win = htons((u_int16_t)win);
+        ti->ti_win = RT_H2N_U16((u_int16_t)win);
     ti->ti_urp = 0;
     ti->ti_sum = 0;
     ti->ti_sum = cksum(m, tlen);
@@ -406,10 +406,10 @@ int tcp_fconnect(PNATState pData, struct socket *so)
         setsockopt(s, SOL_SOCKET, SO_OOBINLINE, (char *)&opt, sizeof(opt));
 
         addr.sin_family = AF_INET;
-        if ((so->so_faddr.s_addr & htonl(pData->netmask)) == pData->special_addr.s_addr)
+        if ((so->so_faddr.s_addr & RT_H2N_U32(pData->netmask)) == pData->special_addr.s_addr)
         {
             /* It's an alias */
-            switch(ntohl(so->so_faddr.s_addr) & ~pData->netmask)
+            switch(RT_N2H_U32(so->so_faddr.s_addr) & ~pData->netmask)
             {
                 case CTL_DNS:
                 case CTL_ALIAS:
@@ -424,7 +424,7 @@ int tcp_fconnect(PNATState pData, struct socket *so)
 
         DEBUG_MISC((dfd, " connect()ing, addr.sin_port=%d, "
                          "addr.sin_addr.s_addr=%.16s\n",
-                         ntohs(addr.sin_port), inet_ntoa(addr.sin_addr)));
+                         RT_N2H_U16(addr.sin_port), inet_ntoa(addr.sin_addr)));
         /* We don't care what port we get */
         ret = connect(s,(struct sockaddr *)&addr,sizeof (addr));
 

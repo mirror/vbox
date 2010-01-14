@@ -32,6 +32,7 @@ typedef int socklen_t;
 # include <windows.h>
 # include <io.h>
 #endif
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/dir.h>
