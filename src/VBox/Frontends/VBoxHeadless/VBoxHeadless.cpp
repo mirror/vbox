@@ -211,9 +211,9 @@ public:
                 hrc = gConsole->COMGETTER(Machine)(machine.asOutParam());
                 if (SUCCEEDED(hrc) && machine)
                 {
-                    Bstr value;
-                    hrc = machine->GetExtraData(Bstr("VRDP/DisconnectOnGuestLogout"), value.asOutParam());
-                    if (SUCCEEDED(hrc) && value == "1")
+                    Bstr value1;
+                    hrc = machine->GetExtraData(Bstr("VRDP/DisconnectOnGuestLogout"), value1.asOutParam());
+                    if (SUCCEEDED(hrc) && value1 == "1")
                     {
                         fDisconnectOnGuestLogout = TRUE;
                     }
