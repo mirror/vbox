@@ -125,11 +125,21 @@ RTDECL(int) RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
         pThis->Owner        = (pthread_t)~0;
         pThis->cNestings    = 0;
 #ifdef RTSEMMUTEX_STRICT
-        va_list va;
-        va_start(va, pszNameFmt);
-        RTLockValidatorRecExclInitV(&pThis->ValidatorRec, hClass, uSubClass, pThis,
-                                    !(fFlags & RTSEMMUTEX_FLAGS_NO_LOCK_VAL), pszNameFmt, va);
-        va_end(va);
+        if (!pszNameFmt)
+        {
+            static uint32_t volatile s_iMutexAnon = 0;
+            RTLockValidatorRecExclInit(&pThis->ValidatorRec, hClass, uSubClass, pThis,
+                                       !(fFlags & RTSEMMUTEX_FLAGS_NO_LOCK_VAL),
+                                       "RTSemMutex-%u", ASMAtomicIncU32(&s_iMutexAnon) - 1);
+        }
+        else
+        {
+            va_list va;
+            va_start(va, pszNameFmt);
+            RTLockValidatorRecExclInitV(&pThis->ValidatorRec, hClass, uSubClass, pThis,
+                                        !(fFlags & RTSEMMUTEX_FLAGS_NO_LOCK_VAL), pszNameFmt, va);
+            va_end(va);
+        }
 #endif
 
         *phMutexSem = pThis;

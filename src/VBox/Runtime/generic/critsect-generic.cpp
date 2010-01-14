@@ -65,15 +65,24 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags, RTLOCKVALCL
     pCritSect->cNestings            = 0;
     pCritSect->cLockers             = -1;
     pCritSect->NativeThreadOwner    = NIL_RTNATIVETHREAD;
-#ifndef RTCRITSECT_STRICT
     pCritSect->pValidatorRec        = NULL;
     int rc = VINF_SUCCESS;
-#else
-    va_list va;
-    va_start(va, pszNameFmt);
-    int rc = RTLockValidatorRecExclCreateV(&pCritSect->pValidatorRec, hClass, uSubClass, pCritSect,
+#ifdef RTCRITSECT_STRICT
+    if (!pszNameFmt)
+    {
+        static uint32_t volatile s_iCritSectAnon = 0;
+        rc = RTLockValidatorRecExclCreate(&pCritSect->pValidatorRec, hClass, uSubClass, pCritSect,
+                                          !(fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL),
+                                          "RTCritSect-%u", ASMAtomicIncU32(&s_iCritSectAnon) - 1);
+    }
+    else
+    {
+        va_list va;
+        va_start(va, pszNameFmt);
+        rc = RTLockValidatorRecExclCreateV(&pCritSect->pValidatorRec, hClass, uSubClass, pCritSect,
                                            !(fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL), pszNameFmt, va);
-    va_end(va);
+        va_end(va);
+    }
 #endif
     if (RT_SUCCESS(rc))
     {
