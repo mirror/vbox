@@ -65,15 +65,17 @@ enum VBoxLockingClass
                                             // (machines list, hard disk tree, shared folders list, ...)
     LOCKCLASS_USBPROXYSERVICE = 3,          // USB proxy service object lock
     LOCKCLASS_HOSTOBJECT = 4,               // Host object lock
-    LOCKCLASS_OTHEROBJECT = 5,              // any regular object member variable lock
-    LOCKCLASS_OTHERLIST = 6,                // lock protecting a list that's elsewhere
-                                            // (e.g. snapshots list in machine object)
+    LOCKCLASS_MACHINEOBJECT = 5,            // Machine object lock
+    LOCKCLASS_MACHINELIST = 6,              // lock protecting a list in a Machine object
     LOCKCLASS_SNAPSHOTOBJECT = 7,           // snapshot object locks (need to have lower order
-                                            // than both OTHEROBJECT and OTHERLIST since the list
-                                            // of snapshots in Machine is OTHERLIST)
-    LOCKCLASS_USBLIST = 8,                  // temporary hack to avoid having to clean up the USB filters
+                                            // than both MACHINEOBJECT and LOCKCLASS_MACHINELIST since
+                                            // the list of snapshots in Machine is LOCKCLASS_MACHINELIST)
+    LOCKCLASS_OTHEROBJECT = 8,              // any regular object member variable lock
+    LOCKCLASS_USBLIST = 9,                  // temporary hack to avoid having to clean up the USB filters
                                             // too much @todo r=dj get rid of this!
-    LOCKCLASS_OBJECTSTATE = 9               // object state lock (handled by AutoCaller classes)
+    LOCKCLASS_PROGRESSLIST = 10,             // list of progress objects in VirtualBox; no other object lock
+                                            // may be held after this!
+    LOCKCLASS_OBJECTSTATE = 11               // object state lock (handled by AutoCaller classes)
 };
 
 void InitAutoLockSystem();
