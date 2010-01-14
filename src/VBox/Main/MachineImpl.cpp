@@ -95,7 +95,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 Machine::Data::Data()
-    : mSnapshotsTreeLockHandle(LOCKCLASS_OTHERLIST)
+    : mSnapshotsTreeLockHandle(LOCKCLASS_MACHINELIST)
 {
     mRegistered = FALSE;
     mAccessible = FALSE;
@@ -630,13 +630,7 @@ void Machine::uninit()
     LogFlowThisFunc(("initFailed()=%d\n", autoUninitSpan.initFailed()));
     LogFlowThisFunc(("mRegistered=%d\n", mData->mRegistered));
 
-    /* Enter this object lock because there may be a SessionMachine instance
-     * somewhere around, that shares our data and lock but doesn't use our
-     * addCaller()/removeCaller(), and it may be also accessing the same data
-     * members. mParent lock is necessary as well because of
-     * SessionMachine::uninit(), etc.
-     */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mData->mSession.mMachine.isNull())
     {
@@ -652,16 +646,14 @@ void Machine::uninit()
          * after we return from this method (it expects the Machine instance is
          * still valid). We'll call it ourselves below.
          */
-        LogWarningThisFunc(("Session machine is not NULL (%p), "
-                             "the direct session is still open!\n",
-                             (SessionMachine *) mData->mSession.mMachine));
+        LogWarningThisFunc(("Session machine is not NULL (%p), the direct session is still open!\n",
+                            (SessionMachine*)mData->mSession.mMachine));
 
-        if (Global::IsOnlineOrTransient (mData->mMachineState))
+        if (Global::IsOnlineOrTransient(mData->mMachineState))
         {
             LogWarningThisFunc(("Setting state to Aborted!\n"));
             /* set machine state using SessionMachine reimplementation */
-            static_cast <Machine *> (mData->mSession.mMachine)
-                ->setMachineState (MachineState_Aborted);
+            static_cast<Machine*>(mData->mSession.mMachine)->setMachineState (MachineState_Aborted);
         }
 
         /*
@@ -670,7 +662,7 @@ void Machine::uninit()
          */
         mData->mSession.mMachine->uninit();
         /* SessionMachine::uninit() must set mSession.mMachine to null */
-        Assert (mData->mSession.mMachine.isNull());
+        Assert(mData->mSession.mMachine.isNull());
     }
 
     /* the lock is no more necessary (SessionMachine is uninitialized) */
@@ -9740,7 +9732,7 @@ HRESULT SessionMachine::onSharedFolderChange()
  *  Returns @c true if this machine's USB controller reports it has a matching
  *  filter for the given USB device and @c false otherwise.
  *
- *  @note Locks this object for reading.
+ *  @note Caller must have requested machine read lock.
  */
 bool SessionMachine::hasMatchingUSBFilter (const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs)
 {
@@ -9750,7 +9742,7 @@ bool SessionMachine::hasMatchingUSBFilter (const ComObjPtr<HostUSBDevice> &aDevi
     if (!autoCaller.isOk())
         return false;
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(isWriteLockOnCurrentThread(), false);
 
 #ifdef VBOX_WITH_USB
     switch (mData->mMachineState)
