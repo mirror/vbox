@@ -2099,6 +2099,10 @@ static DECLCALLBACK(int) acpiAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
 
     LogFlow(("acpiAttach: pDevIns=%p iLUN=%u fFlags=%#x\n", pDevIns, iLUN, fFlags));
 
+    AssertMsgReturn(!(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG),
+                    ("Hot-plug flag is not set\n"),
+                    VERR_NOT_SUPPORTED);
+
     /* Check if it was already attached */
     if (VMCPUSET_IS_PRESENT(&s->CpuSetAttached, iLUN))
         return VINF_SUCCESS;
@@ -2138,6 +2142,9 @@ static DECLCALLBACK(void) acpiDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
     ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
 
     LogFlow(("acpiDetach: pDevIns=%p iLUN=%u fFlags=%#x\n", pDevIns, iLUN, fFlags));
+
+    AssertMsgReturnVoid(!(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG),
+                        ("Hot-plug flag is not set\n"));
 
     /* Check if it was already detached */
     if (VMCPUSET_IS_PRESENT(&s->CpuSetAttached, iLUN))
