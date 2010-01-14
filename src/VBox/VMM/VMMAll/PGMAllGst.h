@@ -79,13 +79,11 @@ PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
     /* pgmGstGetPaePDE will return 0 if the PDPTE is marked as not present.
      * All the other bits in the PDPTE are only valid in long mode (r/w, u/s, nx). */
     X86PDEPAE   Pde = pgmGstGetPaePDE(&pVCpu->pgm.s, GCPtr);
-    bool        fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVCpu) & MSR_K6_EFER_NXE);
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
     PX86PML4E   pPml4e;
     X86PDPE     Pdpe;
     X86PDEPAE   Pde = pgmGstGetLongModePDEEx(&pVCpu->pgm.s, GCPtr, &pPml4e, &Pdpe);
-    bool        fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVCpu) & MSR_K6_EFER_NXE);
 
     Assert(pPml4e);
     if (!(pPml4e->n.u1Present & Pdpe.n.u1Present))
@@ -133,7 +131,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
                      & ((Pde.u & (X86_PTE_RW | X86_PTE_US)) | ~(uint64_t)(X86_PTE_RW | X86_PTE_US));
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_GST_TYPE)
             /* The NX bit is determined by a bitwise OR between the PT and PD */
-            if (fNoExecuteBitValid)
+            if (CPUMIsGuestNXEnabled(pVCpu))
                 *pfFlags |= (Pte.u & Pde.u & X86_PTE_PAE_NX);
 # endif
         }
@@ -151,7 +149,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
                      | ((Pde.u & X86_PDE4M_PAT) >> X86_PDE4M_PAT_SHIFT);
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_GST_TYPE)
             /* The NX bit is determined by a bitwise OR between the PT and PD */
-            if (fNoExecuteBitValid)
+            if (CPUMIsGuestNXEnabled(pVCpu))
                 *pfFlags |= (Pde.u & X86_PTE_PAE_NX);
 # endif
         }

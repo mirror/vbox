@@ -1697,6 +1697,82 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu)
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Tests if the guest has No-Execute Page Protection Enabled (NXE).
+ *
+ * @returns true if in real mode, otherwise false.
+ * @param   pVCpu       The virtual CPU handle.
+ */
+VMMDECL(bool) CPUMIsGuestNXEnabled(PVMCPU pVCpu)
+{
+    return !!(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE);
+}
+
+
+/**
+ * Tests if the guest is running in real mode or not.
+ *
+ * @returns true if in real mode, otherwise false.
+ * @param   pVCpu       The virtual CPU handle.
+ */
+VMMDECL(bool) CPUMIsGuestInRealMode(PVMCPU pVCpu)
+{
+    return !(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE);
+}
+
+
+/**
+ * Tests if the guest is running in protected or not.
+ *
+ * @returns true if in protected mode, otherwise false.
+ * @param   pVCpu       The virtual CPU handle.
+ */
+VMMDECL(bool) CPUMIsGuestInProtectedMode(PVMCPU pVCpu)
+{
+    return !!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE);
+}
+
+
+/**
+ * Tests if the guest is running in paged protected or not.
+ *
+ * @returns true if in paged protected mode, otherwise false.
+ * @param   pVCpu       The virtual CPU handle.
+ */
+VMMDECL(bool) CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu)
+{
+    return (pVCpu->cpum.s.Guest.cr0 & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG);
+}
+
+
+/**
+ * Tests if the guest is running in long mode or not.
+ *
+ * @returns true if in long mode, otherwise false.
+ * @param   pVCpu       The virtual CPU handle.
+ */
+VMMDECL(bool) CPUMIsGuestInLongMode(PVMCPU pVCpu)
+{
+    return (pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA) == MSR_K6_EFER_LMA;
+}
+
+
+/**
+ * Tests if the guest is running in PAE mode or not.
+ *
+ * @returns true if in PAE mode, otherwise false.
+ * @param   pVCpu       The virtual CPU handle.
+ */
+VMMDECL(bool) CPUMIsGuestInPAEMode(PVMCPU pVCpu)
+{
+    return (pVCpu->cpum.s.Guest.cr4 & X86_CR4_PAE)
+        && (pVCpu->cpum.s.Guest.cr0 & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG)
+        && !(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA);
+}
+
+
+
 #ifndef IN_RING0  /** @todo I don't think we need this in R0, so move it to CPUMAll.cpp? */
 
 /**

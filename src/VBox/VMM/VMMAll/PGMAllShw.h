@@ -151,7 +151,6 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
      * Get the PDE.
      */
 # if PGM_SHW_TYPE == PGM_TYPE_AMD64
-    bool            fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVCpu) & MSR_K6_EFER_NXE);
     X86PDEPAE Pde;
 
     /* PML4 */
@@ -184,7 +183,6 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     Pde.n.u1NoExecute &= Pml4e.n.u1NoExecute & Pdpe.lm.u1NoExecute;
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-    bool            fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVCpu) & MSR_K6_EFER_NXE);
     X86PDEPAE       Pde = pgmShwGetPaePDE(&pVCpu->pgm.s, GCPtr);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
@@ -252,7 +250,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
                  & ((Pde.u & (X86_PTE_RW | X86_PTE_US)) | ~(uint64_t)(X86_PTE_RW | X86_PTE_US));
 # if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE)
         /* The NX bit is determined by a bitwise OR between the PT and PD */
-        if (fNoExecuteBitValid)
+        if (CPUMIsGuestNXEnabled(pVCpu))
             *pfFlags |= (Pte.u & Pde.u & X86_PTE_PAE_NX);
 # endif
     }

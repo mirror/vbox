@@ -1667,7 +1667,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
     && PGM_SHW_TYPE != PGM_TYPE_EPT
 
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
-    bool fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVCpu) & MSR_K6_EFER_NXE);
+    bool fNoExecuteBitValid = CPUMIsGuestNXEnabled(pVCpu);
 # endif
 
     /*
@@ -2131,7 +2131,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
     bool fBigPagesSupported = !!(CPUMGetGuestCR4(pVCpu) & X86_CR4_PSE);
 # endif
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
-    bool fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVCpu) & MSR_K6_EFER_NXE);
+    bool fNoExecuteBitValid = CPUMIsGuestNXEnabled(pVCpu);
 # endif
     unsigned uPageFaultLevel;
     int rc;
@@ -2643,10 +2643,8 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
         else
         {
             PGMPOOLACCESS enmAccess;
-
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
-            const bool fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVCpu) & MSR_K6_EFER_NXE);
-            const bool fNoExecute = fNoExecuteBitValid && PdeSrc.n.u1NoExecute;
+            const bool fNoExecute = PdeSrc.n.u1NoExecute && CPUMIsGuestNXEnabled(pVCpu);
 # else
             const bool fNoExecute = false;
 # endif
