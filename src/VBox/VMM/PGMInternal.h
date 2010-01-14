@@ -3283,8 +3283,8 @@ int             pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppC
 
 int             pgmR3PoolInit(PVM pVM);
 void            pgmR3PoolRelocate(PVM pVM);
+void            pgmR3PoolResetUnpluggedCpu(PVM pVM, PVMCPU pVCpu);
 void            pgmR3PoolReset(PVM pVM);
-void            pgmR3PoolResetCpu(PVM pVM, PVMCPU pVCpu);
 void            pgmR3PoolClearAll(PVM pVM);
 
 #endif /* IN_RING3 */

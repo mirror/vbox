@@ -436,13 +436,21 @@ VMMR3DECL(void) EMR3Relocate(PVM pVM)
     }
 }
 
+
+/**
+ * Reset the EM state for a CPU.
+ *
+ * Called by EMR3Reset and hot plugging.
+ *
+ * @param   pVCpu               The virtual CPU.
+ */
 VMMR3DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
 {
     pVCpu->em.s.fForceRAW = false;
 
     /* VMR3Reset may return VINF_EM_RESET or VINF_EM_SUSPEND, so transition
-        out of the HALTED state here so that enmPrevState doesn't end up as
-        HALTED when EMR3Execute returns. */
+       out of the HALTED state here so that enmPrevState doesn't end up as
+       HALTED when EMR3Execute returns. */
     if (pVCpu->em.s.enmState == EMSTATE_HALTED)
     {
         Log(("EMR3ResetCpu: Cpu#%u %s -> %s\n", pVCpu->idCpu, emR3GetStateName(pVCpu->em.s.enmState), pVCpu->idCpu == 0 ? "EMSTATE_NONE" : "EMSTATE_WAIT_SIPI"));
@@ -450,19 +458,17 @@ VMMR3DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
     }
 }
 
+
 /**
  * Reset notification.
  *
- * @param   pVM
+ * @param   pVM                 The VM handle.
  */
 VMMR3DECL(void) EMR3Reset(PVM pVM)
 {
     Log(("EMR3Reset: \n"));
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-        EMR3ResetCpu(pVCpu);
-    }
+        EMR3ResetCpu(&pVM->aCpus[i]);
 }
 
 

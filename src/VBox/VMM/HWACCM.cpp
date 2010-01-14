@@ -1459,9 +1459,11 @@ VMMR3DECL(int) HWACCMR3TermCPU(PVM pVM)
 /**
  * Resets a virtual CPU.
  *
- * @param pVCpu    The CPu to reset.
+ * Used by HWACCMR3Reset and CPU hot plugging.
+ *
+ * @param   pVCpu   The CPU to reset.
  */
-VMMR3DECL(void) HWACCMR3ResetCPU(PVMCPU pVCpu)
+VMMR3DECL(void) HWACCMR3ResetCpu(PVMCPU pVCpu)
 {
     /* On first entry we'll sync everything. */
     pVCpu->hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
@@ -1508,7 +1510,7 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        HWACCMR3ResetCPU(pVCpu);
+        HWACCMR3ResetCpu(pVCpu);
     }
 
     /* Clear all patch information. */

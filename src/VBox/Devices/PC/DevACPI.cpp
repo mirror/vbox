@@ -237,11 +237,11 @@ typedef struct ACPIState
     /** Size of the MADT table */
     uint32_t            cbMADT;
     /** Array of flags of attached CPUs */
-    bool                afCpuAttached[32]; /* Maximum we support atm */
+    bool                afCpuAttached[VMM_MAX_CPU_COUNT]; /**< @todo use VMCPUSET.  */
     /** Mask of locked CPUs (used by the guest) */
-    uint32_t            uCpusLocked;
-    /** Flag whether CPU hotplugging is enabled */
-    bool                fCpuHotplug;
+    uint32_t            uCpusLocked;                      /**< @todo use VMCPUSET. */
+    /** Flag whether CPU hot plugging is enabled */
+    bool                fCpuHotPlug;
     /** Aligning IBase. */
     bool                afAlignment[4];
 
@@ -730,7 +730,7 @@ static void acpiSetupFADT(ACPIState *s, RTGCPHYS32 addr_acpi1, RTGCPHYS32 addr_a
                                             | FADT_FL_TMR_VAL_EXT);
 
     /* We have to force physical APIC mode or Linux can't use more than 8 CPUs */
-    if (s->fCpuHotplug)
+    if (s->fCpuHotPlug)
         fadt.u32Flags |= RT_H2LE_U32(FADT_FL_FORCE_APIC_PHYS_DEST_MODE);
 
     acpiWriteGenericAddr(&fadt.ResetReg,     1,  8, 0, 1, ACPI_RESET_BLK);
@@ -2094,7 +2094,7 @@ static DECLCALLBACK(int) acpiAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
         acpiSetupMADT(s, s->GCPhysMADTBase);
         /*
          * Lock the CPU because we don't know if the guest will use it or not.
-         * Prevents ejection while the CPU is still used 
+         * Prevents ejection while the CPU is still used
          */
         s->uCpusLocked |= RT_BIT(iLUN);
 
@@ -2194,7 +2194,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "FdcEnabled\0"
                               "ShowRtc\0"
                               "ShowCpu\0"
-                              "CpuHotplug\0"
+                              "CpuHotplug\0" /** @todo r=bird: Rename to CpuHotPlug. */
                               ))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config key for ACPI device"));
@@ -2241,8 +2241,8 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"ShowCpu\""));
 
-    /* query whether we are allow CPU hotplugging */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "CpuHotplug", &s->fCpuHotplug, false);
+    /* query whether we are allow CPU hot plugging */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "CpuHotplug", &s->fCpuHotPlug, false); /** @todo r=bird: Rename to CpuHotPlug. */
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"CpuHotplug\""));
@@ -2280,7 +2280,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /* Try to attach the other CPUs */
     for (unsigned i = 1; i < s->cCpus; i++)
     {
-        if (s->fCpuHotplug)
+        if (s->fCpuHotPlug)
         {
             PPDMIBASE IBaseTmp;
             rc = PDMDevHlpDriverAttach(pDevIns, i, &s->IBase, &IBaseTmp, "ACPI CPU");
@@ -2301,7 +2301,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         }
         else
         {
-            /* CPU is always attached if hotplug is not enabled. */
+            /* CPU is always attached if hot-plug is not enabled. */
             s->afCpuAttached[i] = true;
             s->uCpusLocked |= RT_BIT(i);
         }

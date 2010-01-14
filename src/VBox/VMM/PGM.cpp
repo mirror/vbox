@@ -2171,7 +2171,14 @@ static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode
     return 0;
 }
 
-VMMR3DECL(void) PGMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
+
+/**
+ * Resets a virtual CPU when unplugged.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pVCpu               The virtual CPU handle.
+ */
+VMMR3DECL(void) PGMR3ResetUnpluggedCpu(PVM pVM, PVMCPU pVCpu)
 {
     int rc = PGM_GST_PFN(Exit, pVCpu)(pVCpu);
     AssertRC(rc);
@@ -2181,7 +2188,7 @@ VMMR3DECL(void) PGMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
 
     STAM_REL_COUNTER_RESET(&pVCpu->pgm.s.cGuestModeChanges);
 
-    pgmR3PoolResetCpu(pVM, pVCpu);
+    pgmR3PoolResetUnpluggedCpu(pVM, pVCpu);
 
     /*
      * Re-init other members.
@@ -2194,6 +2201,7 @@ VMMR3DECL(void) PGMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
 }
+
 
 /**
  * The VM is being reset.

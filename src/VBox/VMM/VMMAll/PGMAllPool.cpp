@@ -1880,12 +1880,12 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
 
     /*
      * Found a usable page, flush it and return.
-     */   
-    int rc = pgmPoolFlushPage(pPool, pPage);  
-    /* This flush was initiated by us and not the guest, so explicitly flush the TLB. */  
+     */
+    int rc = pgmPoolFlushPage(pPool, pPage);
+    /* This flush was initiated by us and not the guest, so explicitly flush the TLB. */
     /* todo: find out why this is necessary; pgmPoolFlushPage should trigger a flush if one is really needed. */
     if (rc == VINF_SUCCESS)
-        PGM_INVL_ALL_VCPU_TLBS(pVM);  
+        PGM_INVL_ALL_VCPU_TLBS(pVM);
     return rc;
 }
 
@@ -4767,7 +4767,14 @@ void pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys)
 
 #ifdef IN_RING3
 
-void pgmR3PoolResetCpu(PVM pVM, PVMCPU pVCpu)
+
+/**
+ * Reset CPU on hot plugging.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pVCpu               The virtual CPU.
+ */
+void pgmR3PoolResetUnpluggedCpu(PVM pVM, PVMCPU pVCpu)
 {
     pgmR3ExitShadowModeBeforePoolFlush(pVM, pVCpu);
 
@@ -4775,6 +4782,7 @@ void pgmR3PoolResetCpu(PVM pVM, PVMCPU pVCpu)
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
 }
+
 
 /**
  * Flushes the entire cache.

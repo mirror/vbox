@@ -154,7 +154,7 @@
  * The pluggable drivers and devices exposes one standard interface (callback
  * table) which is used to construct, destruct, attach, detach,( ++,) and query
  * other interfaces. A device will query the interfaces required for it's
- * operation during init and hotplug.  PDM may query some interfaces during
+ * operation during init and hot-plug.  PDM may query some interfaces during
  * runtime mounting too.
  *
  * An interface here means a function table contained within the device or
@@ -1152,6 +1152,14 @@ DECLINLINE(void) pdmR3ResetDev(PPDMDEVINS pDevIns, unsigned *pcAsync)
     }
 }
 
+
+/**
+ * Resets a virtual CPU.
+ *
+ * Used by PDMR3Reset and CPU hot plugging.
+ *
+ * @param   pVCpu               The virtual CPU handle.
+ */
 VMMR3DECL(void) PDMR3ResetCpu(PVMCPU pVCpu)
 {
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
@@ -1159,6 +1167,7 @@ VMMR3DECL(void) PDMR3ResetCpu(PVMCPU pVCpu)
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_SMI);
 }
+
 
 /**
  * This function will notify all the devices and their attached drivers about
@@ -1249,10 +1258,7 @@ VMMR3DECL(void) PDMR3Reset(PVM pVM)
      * Clear all pending interrupts and DMA operations.
      */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
-        PDMR3ResetCpu(pVCpu);
-    }
+        PDMR3ResetCpu(&pVM->aCpus[idCpu]);
     VM_FF_CLEAR(pVM, VM_FF_PDM_DMA);
 
     LogFlow(("PDMR3Reset: returns void\n"));
