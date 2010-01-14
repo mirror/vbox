@@ -55,10 +55,15 @@ typedef VBOXNETADPREQ *PVBOXNETADPREQ;
 
 #define VBOXADPCTL_IFCONFIG_PATH "/sbin/ifconfig"
 
-#ifdef RT_OS_LINUX
-#define VBOXADPCTL_DEL_CMD "del"
+#if defined(RT_OS_LINUX)
+# define VBOXADPCTL_DEL_CMD "del"
+# define VBOXADPCTL_ADD_CMD "add"
+#elif defined(RT_OS_SOLARIS)
+# define VBOXADPCTL_DEL_CMD "removeif"
+# define VBOXADPCTL_ADD_CMD "addif"
 #else
-#define VBOXADPCTL_DEL_CMD "delete"
+# define VBOXADPCTL_DEL_CMD "delete"
+# define VBOXADPCTL_ADD_CMD "add"
 #endif
 
 static void showUsage(void)
@@ -223,8 +228,8 @@ int main(int argc, char *argv[])
 
 {
     char szAdapterName[VBOXNETADP_MAX_NAME_LEN];
-    char *pszAdapterName;
-    const char *pszAddress;
+    char *pszAdapterName = NULL;
+    const char *pszAddress = NULL;
     const char *pszNetworkMask = NULL;
     const char *pszOption = NULL;
     int rc = EXIT_SUCCESS;
@@ -234,6 +239,8 @@ int main(int argc, char *argv[])
     switch (argc)
     {
         case 5:
+        {
+            /* Add a netmask to existing interface */
             if (strcmp("netmask", argv[3]))
             {
                 fprintf(stderr, "Invalid argument: %s\n\n", argv[3]);
@@ -245,7 +252,11 @@ int main(int argc, char *argv[])
             pszAdapterName = argv[1];
             pszAddress = argv[2];
             break;
+        }
+
         case 4:
+        {
+            /* Remove a single address from existing interface */
             if (strcmp("remove", argv[3]))
             {
                 fprintf(stderr, "Invalid argument: %s\n\n", argv[3]);
@@ -256,7 +267,11 @@ int main(int argc, char *argv[])
             pszAdapterName = argv[1];
             pszAddress = argv[2];
             break;
+        }
+
         case 3:
+        {
+            /* Remove an existing interface */
             pszAdapterName = argv[1];
             pszAddress = argv[2];
             if (strcmp("remove", pszAddress) == 0)
@@ -264,21 +279,35 @@ int main(int argc, char *argv[])
                 rc = checkAdapterName(pszAdapterName, szAdapterName);
                 if (rc)
                     return rc;
+#ifdef RT_OS_SOLARIS
+                return 1;
+#else
                 memset(&Req, '\0', sizeof(Req));
                 snprintf(Req.szName, sizeof(Req.szName), "%s", szAdapterName);
                 return doIOCtl(VBOXNETADP_CTL_REMOVE, &Req);
+#endif
             }
             break;
+        }
+
         case 2:
+        {
+            /* Create a new interface */
             if (strcmp("add", argv[1]) == 0)
             {
+#ifdef RT_OS_SOLARIS
+                return 1;
+#else
                 memset(&Req, '\0', sizeof(Req));
                 rc = doIOCtl(VBOXNETADP_CTL_ADD, &Req);
                 if (rc == 0)
                     puts(Req.szName);
+#endif
                 return rc;
             }
             /* Fall through */
+        }
+
         default:
             fprintf(stderr, "Invalid number of arguments.\n\n");
             /* Fall through */
@@ -299,10 +328,15 @@ int main(int argc, char *argv[])
             rc = executeIfconfig(pszAdapterName, "inet6", VBOXADPCTL_DEL_CMD, pszAddress);
         else
         {
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX)
             rc = executeIfconfig(pszAdapterName, "0.0.0.0");
 #else
-            rc = executeIfconfig(pszAdapterName, "delete", pszAddress);
+            rc = executeIfconfig(pszAdapterName, VBOXADPCTL_DEL_CMD, pszAddress);
+#endif
+
+#ifdef RT_OS_SOLARIS
+            /* On Solaris we can unplumb the ipv4 interface */
+            executeIfconfig(pszAdapterName, "inet", "unplumb");
 #endif
         }
     }
@@ -311,6 +345,11 @@ int main(int argc, char *argv[])
         /* We are setting/replacing address. */
         if (strchr(pszAddress, ':'))
         {
+#ifdef RT_OS_SOLARIS
+            /* On Solaris we need to plumb the interface first if it's not already plumbed. */
+            if (executeIfconfig(pszAdapterName, "inet6") != 0)
+                executeIfconfig(pszAdapterName, "inet6", "plumb", "up");
+#endif
             /*
              * Before we set IPv6 address we'd like to remove
              * all previously assigned addresses except the
@@ -319,10 +358,17 @@ int main(int argc, char *argv[])
             if (!removeAddresses(pszAdapterName))
                 rc = EXIT_FAILURE;
             else
-                rc = executeIfconfig(pszAdapterName, "inet6", "add", pszAddress, pszOption, pszNetworkMask);
+                rc = executeIfconfig(pszAdapterName, "inet6", VBOXADPCTL_ADD_CMD, pszAddress, pszOption, pszNetworkMask);
         }
         else
+        {
+#ifdef RT_OS_SOLARIS
+            /* On Solaris we need to plumb the interface first if it's not already plumbed. */
+            if (executeIfconfig(pszAdapterName, "inet") != 0)
+                executeIfconfig(pszAdapterName, "plumb", "up");
+#endif
             rc = executeIfconfig(pszAdapterName, pszAddress, pszOption, pszNetworkMask);
+        }
     }
     return rc;
 }
