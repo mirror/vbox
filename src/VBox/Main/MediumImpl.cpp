@@ -1255,7 +1255,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  * @note All children of this hard disk get uninitialized by calling their
  *       uninit() methods.
  *
- * @note Locks getTreeLock() for writing, VirtualBox for writing.
+ * @note Caller must hold the tree lock of the medium tree this medium is on.
  */
 void Medium::uninit()
 {
@@ -1280,11 +1280,6 @@ void Medium::uninit()
     }
     else
     {
-        /* we uninit children and reset mParent
-         * and VirtualBox::removeDependentChild() needs a write lock */
-        AutoWriteLock alock1(m->pVirtualBox->lockHandle() COMMA_LOCKVAL_SRC_POS);
-        AutoWriteLock alock2(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
         MediaList::iterator it;
         for (it = m->llChildren.begin();
             it != m->llChildren.end();
@@ -3054,10 +3049,10 @@ HRESULT Medium::saveSettings(settings::Medium &data)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     /* we access mParent */
     AutoReadLock treeLock(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     data.uuid = m->id;
     data.strLocation = m->strLocation;

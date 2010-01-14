@@ -906,8 +906,6 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
      * here. It implies that this method may only be called after constructing
