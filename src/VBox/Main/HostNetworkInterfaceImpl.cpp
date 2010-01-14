@@ -25,12 +25,9 @@
 #include "Logging.h"
 #include "netif.h"
 
-#ifndef RT_OS_WINDOWS
-#include <arpa/inet.h>
-# ifdef RT_OS_FREEBSD
-#  include <netinet/in.h> /* INADDR_NONE */
-# endif
-#endif /* RT_OS_WINDOWS */
+#ifdef RT_OS_FREEBSD
+# include <netinet/in.h> /* INADDR_NONE */
+#endif /* RT_OS_FREEBSD */
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -219,7 +216,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPAddress) (BSTR *aIPAddress)
 
     if (m.IPAddress == 0)
     {
-        Bstr(VBOXNET_IPV4ADDR_DEFAULT).detachTo(aIPAddress);
+        getDefaultIPv4Address(mInterfaceName).detachTo(aIPAddress);
         return S_OK;
     }
 
@@ -560,7 +557,7 @@ HRESULT HostNetworkInterface::setVirtualBox(VirtualBox *pVBox)
         hrc = mVBox->GetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw())), tmpAddr.asOutParam());
         hrc = mVBox->GetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw())), tmpMask.asOutParam());
         if (tmpAddr.isEmpty())
-            tmpAddr = Bstr(VBOXNET_IPV4ADDR_DEFAULT);
+            tmpAddr = getDefaultIPv4Address(mInterfaceName);
         if (tmpMask.isEmpty())
             tmpMask = Bstr(VBOXNET_IPV4MASK_DEFAULT);
         m.IPAddress = inet_addr(Utf8Str(tmpAddr).raw());
