@@ -299,14 +299,14 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                  *    overflow error to allocate more receive buffers
                  */
                 STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
-                int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
+                int rc1 = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
                 STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
 
                 /*
                  * A return code != VINF_SUCCESS means that we were woken up during a VM
                  * state transistion. Drop the packet and wait for the next one.
                  */
-                if (RT_FAILURE(rc))
+                if (RT_FAILURE(rc1))
                     continue;
 
                 /*
@@ -321,8 +321,8 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                 Log2(("drvTAPAsyncIoThread: cbRead=%#x\n" "%.*Rhxd\n", cbRead, cbRead, achBuf));
                 STAM_COUNTER_INC(&pThis->StatPktRecv);
                 STAM_COUNTER_ADD(&pThis->StatPktRecvBytes, cbRead);
-                rc = pThis->pPort->pfnReceive(pThis->pPort, achBuf, cbRead);
-                AssertRC(rc);
+                rc1 = pThis->pPort->pfnReceive(pThis->pPort, achBuf, cbRead);
+                AssertRC(rc1);
             }
             else
             {
@@ -1028,7 +1028,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 #endif
     if (pipe(&fds[0]) != 0) /** @todo RTPipeCreate() or something... */
     {
-        int rc = RTErrConvertFromErrno(errno);
+        rc = RTErrConvertFromErrno(errno);
         AssertRC(rc);
         return rc;
     }

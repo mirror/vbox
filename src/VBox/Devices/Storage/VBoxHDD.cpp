@@ -1385,7 +1385,6 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         else
         {
             /* Error detected, but image opened. Close image. */
-            int rc2;
             rc2 = pImage->Backend->pfnClose(pImage->pvBackendData, false);
             AssertRC(rc2);
             pImage->pvBackendData = NULL;

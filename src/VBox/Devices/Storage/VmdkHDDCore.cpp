@@ -1548,7 +1548,7 @@ static int vmdkDescSetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
             /* Key doesn't exist, and it should be removed. Simply a no-op. */
             return VINF_SUCCESS;
         }
-        size_t cbKey = strlen(pszKey);
+        cbKey = strlen(pszKey);
         size_t cbValue = strlen(pszValue);
         ssize_t cbDiff = cbKey + 1 + cbValue + 1;
         /* Check for buffer overflow. */
@@ -2062,6 +2062,7 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData,
     int rc;
     unsigned cExtents;
     unsigned uLine;
+    unsigned i;
 
     rc = vmdkPreprocessDescriptor(pImage, pDescData, cbDescData,
                                   &pImage->Descriptor);
@@ -2114,7 +2115,7 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData,
             return rc;
     }
 
-    for (unsigned i = 0, uLine = pImage->Descriptor.uFirstExtent;
+    for (i = 0, uLine = pImage->Descriptor.uFirstExtent;
          i < cExtents; i++, uLine = pImage->Descriptor.aNextLines[uLine])
     {
         char *pszLine = pImage->Descriptor.aLines[uLine];
@@ -2826,9 +2827,9 @@ static int vmdkAllocateGrainTableCache(PVMDKIMAGE pImage)
             pImage->pGTCache = (PVMDKGTCACHE)RTMemAllocZ(sizeof(VMDKGTCACHE));
             if (!pImage->pGTCache)
                 return VERR_NO_MEMORY;
-            for (unsigned i = 0; i < VMDK_GT_CACHE_SIZE; i++)
+            for (unsigned j = 0; j < VMDK_GT_CACHE_SIZE; j++)
             {
-                PVMDKGTCACHEENTRY pGCE = &pImage->pGTCache->aGTCache[i];
+                PVMDKGTCACHEENTRY pGCE = &pImage->pGTCache->aGTCache[j];
                 pGCE->uExtent = UINT32_MAX;
             }
             pImage->pGTCache->cEntries = VMDK_GT_CACHE_SIZE;

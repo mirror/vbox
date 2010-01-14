@@ -1489,7 +1489,7 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
              * status. Thus the status may have ended up partially in the
              * data area. */
             pRequest->status = RT_N2H_U32(aResBHS[0]) & 0x000000ff;
-            uint32_t cbData = RT_N2H_U32(aResBHS[1]) & 0x00ffffff;
+            cbData = RT_N2H_U32(aResBHS[1]) & 0x00ffffff;
             if (cbData >= 2)
             {
                 uint32_t cbStat = RT_N2H_U32(((uint32_t *)aISCSIRes[1].pvSeg)[0]) >> 16;
@@ -1733,24 +1733,24 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
             if (itt == pcvResSeg[4])
             {
                 /* Copy received PDU (one segment) to caller-provided buffers. */
-                uint32_t i;
+                uint32_t j;
                 size_t cbSeg;
                 const uint8_t *pSrc;
 
                 pSrc = (const uint8_t *)aResBuf.pvSeg;
                 cbSeg = aResBuf.cbSeg;
-                for (i = 0; i < cnRes; i++)
+                for (j = 0; j < cnRes; j++)
                 {
-                    if (cbSeg > paRes[i].cbSeg)
+                    if (cbSeg > paRes[j].cbSeg)
                     {
-                        memcpy(paRes[i].pvSeg, pSrc, paRes[i].cbSeg);
-                        pSrc += paRes[i].cbSeg;
-                        cbSeg -= paRes[i].cbSeg;
+                        memcpy(paRes[j].pvSeg, pSrc, paRes[i].cbSeg);
+                        pSrc += paRes[j].cbSeg;
+                        cbSeg -= paRes[j].cbSeg;
                     }
                     else
                     {
-                        memcpy(paRes[i].pvSeg, pSrc, cbSeg);
-                        paRes[i].cbSeg = cbSeg;
+                        memcpy(paRes[j].pvSeg, pSrc, cbSeg);
+                        paRes[j].cbSeg = cbSeg;
                         cbSeg = 0;
                         break;
                     }
@@ -1760,8 +1760,8 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
                     rc = VERR_BUFFER_OVERFLOW;
                     break;
                 }
-                for (i++; i < cnRes; i++)
-                    paRes[i].cbSeg = 0;
+                for (j++; j < cnRes; j++)
+                    paRes[j].cbSeg = 0;
                 break;
             }
             else if (   cmd == ISCSIOP_NOP_IN

@@ -3436,7 +3436,7 @@ static int atapiReadSectors(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTas
 
 static int atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState)
 {
-    int rc = PDMBLOCKTXDIR_NONE;
+    int iTxDir = PDMBLOCKTXDIR_NONE;
     const uint8_t *pbPacket;
     uint32_t cbMax;
 
@@ -3549,7 +3549,7 @@ static int atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAh
                     break;
                 }
                 atapiReadSectors(pAhciPort, pAhciPortTaskState, iATAPILBA, cSectors, 2048);
-                rc = PDMBLOCKTXDIR_FROM_DEVICE;
+                iTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             }
             break;
         case SCSI_READ_CD:
@@ -3598,12 +3598,12 @@ static int atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAh
                     case 0x10:
                         /* normal read */
                         atapiReadSectors(pAhciPort, pAhciPortTaskState, iATAPILBA, cSectors, 2048);
-                        rc = PDMBLOCKTXDIR_FROM_DEVICE;
+                        iTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
                         break;
                     case 0xf8:
                         /* read all data */
                         atapiReadSectors(pAhciPort, pAhciPortTaskState, iATAPILBA, cSectors, 2352);
-                        rc = PDMBLOCKTXDIR_FROM_DEVICE;
+                        iTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
                         break;
                     default:
                         LogRel(("AHCI ATAPI: LUN#%d: CD-ROM sector format not supported\n", pAhciPort->iLUN));
@@ -3777,7 +3777,7 @@ static int atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAh
             break;
     }
 
-    return rc;
+    return iTxDir;
 }
 
 /**
@@ -5510,7 +5510,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     pSegCurr    = &pAhciPortTaskState->pSGListHead[0];
                     pSGInfoCurr = pAhciPortTaskState->paSGEntries;
 
-                    STAM_PROFILE_START(&pAhciPort->StatProfileReadWrite, a);
+                    STAM_PROFILE_START(&pAhciPort->StatProfileReadWrite, b);
 
                     while (cbTransfer)
                     {
@@ -5550,7 +5550,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                         pSGInfoCurr++;
                     }
 
-                    STAM_PROFILE_STOP(&pAhciPort->StatProfileReadWrite, a);
+                    STAM_PROFILE_STOP(&pAhciPort->StatProfileReadWrite, b);
 
                     /* Cleanup. */
                     rc = ahciScatterGatherListDestroy(pAhciPort, pAhciPortTaskState);
@@ -5881,7 +5881,6 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 {
     PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
     uint32_t u32;
-    uint32_t i;
     int rc;
 
     if (    uVersion != AHCI_SAVED_STATE_VERSION
@@ -5975,7 +5974,7 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         SSMR3GetBool(pSSM, &pThis->fGCEnabled);
 
         /* Now every port. */
-        for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
+        for (uint32_t i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
         {
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regCLB);
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regCLBU);
@@ -6013,7 +6012,7 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         }
 
         /* Now the emulated ata controllers. */
-        for (i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+        for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
         {
             rc = ataControllerLoadExec(&pThis->aCts[i], pSSM);
             if (RT_FAILURE(rc))
@@ -6850,8 +6849,8 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                        N_("AHCI: Failed to attach drive to %s"), szName);
 
 #ifdef DEBUG
-        for (uint32_t i = 0; i < AHCI_NR_COMMAND_SLOTS; i++)
-            pAhciPort->ahciIOTasks[i] = 0xff;
+        for (uint32_t j = 0; j < AHCI_NR_COMMAND_SLOTS; j++)
+            pAhciPort->ahciIOTasks[j] = 0xff;
 #endif
     }
 
@@ -6887,7 +6886,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->aCts[1].IOPortBase1  = 0x168;
     pThis->aCts[1].IOPortBase2  = 0x366;
 
-    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+    for (i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
         PAHCIATACONTROLLER pCtl = &pThis->aCts[i];
         uint32_t iPortMaster, iPortSlave;
