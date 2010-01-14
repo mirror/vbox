@@ -55,6 +55,21 @@ typedef enum
     VMMDev_Seamless_Host_Window      = 2      /**< windowed mode; each top-level guest window is represented in a host window. */
 } VMMDevSeamlessMode;
 
+/**
+ * CPU event types.
+ *
+ * Used by VbglR3CpuHotplugWaitForEvent
+ *
+ * @ingroup grp_vmmdev_req
+ */
+typedef enum
+{
+    VMMDevCpuEventType_Invalid  = 0,
+    VMMDevCpuEventType_None     = 1,
+    VMMDevCpuEventType_Plug     = 2,
+    VMMDevCpuEventType_Unplug   = 3,
+    VMMDevCpuEventType_SizeHack = 0x7fffffff
+} VMMDevCpuEventType;
 
 /**
  * HGCM service location types.
