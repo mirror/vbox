@@ -497,34 +497,83 @@ static void rtLockValComplainAboutClass(const char *pszPrefix, RTLOCKVALCLASSINT
 
 
 /**
+ * Helper for getting the class name.
+ * @returns Class name string.
+ * @param   pClass              The class.
+ */
+static const char *rtLockValComplainGetClassName(RTLOCKVALCLASSINT *pClass)
+{
+    if (!pClass)
+        return "<nil-class>";
+    if (!VALID_PTR(pClass))
+        return "<bad-class-ptr>";
+    if (pClass->u32Magic != RTLOCKVALCLASS_MAGIC)
+        return "<bad-class-magic>";
+    if (!pClass->pszName)
+        return "<no-class-name>";
+    return pClass->pszName;
+}
+
+/**
+ * Formats the sub-class.
+ *
+ * @returns Stringified sub-class.
+ * @param  uSubClass            The name.
+ * @param  pszBuf               Buffer that is big enough.
+ */
+static const char *rtLockValComplainGetSubClassName(uint32_t uSubClass, char *pszBuf)
+{
+    if (uSubClass < RTLOCKVAL_SUB_CLASS_USER)
+        switch (uSubClass)
+        {
+            case RTLOCKVAL_SUB_CLASS_NONE: return "none";
+            case RTLOCKVAL_SUB_CLASS_ANY:  return "any";
+            default:
+                RTStrPrintf(pszBuf, 32, "invl-%u", uSubClass);
+                break;
+        }
+    else
+        RTStrPrintf(pszBuf, 32, "%x", uSubClass);
+    return pszBuf;
+}
+
+
+/**
  * Helper for rtLockValComplainAboutLock.
  */
 DECL_FORCE_INLINE(void) rtLockValComplainAboutLockHlp(const char *pszPrefix, PRTLOCKVALRECUNION pRec, const char *pszSuffix,
                                                       uint32_t u32Magic, PCRTLOCKVALSRCPOS pSrcPos, uint32_t cRecursion,
-                                                      const char *pszSuffix2)
+                                                      const char *pszFrameType)
 {
+    char szBuf[32];
     switch (u32Magic)
     {
         case RTLOCKVALRECEXCL_MAGIC:
 #ifdef RTLOCKVAL_WITH_VERBOSE_DUMPS
-            RTAssertMsg2AddWeak("%s%p %s xrec=%p own=%s nest=%u pos={%Rbn(%u) %Rfn %p}%s%s", pszPrefix,
+            RTAssertMsg2AddWeak("%s%p %s xrec=%p own=%s r=%u cls=%s/%s pos={%Rbn(%u) %Rfn %p} [x%s]%s", pszPrefix,
                                 pRec->Excl.hLock, pRec->Excl.pszName, pRec,
                                 rtLockValidatorNameThreadHandle(&pRec->Excl.hThread), cRecursion,
+                                rtLockValComplainGetClassName(pRec->Excl.hClass),
+                                rtLockValComplainGetSubClassName(pRec->Excl.uSubClass, szBuf),
                                 pSrcPos->pszFile, pSrcPos->uLine, pSrcPos->pszFunction, pSrcPos->uId,
-                                pszSuffix2, pszSuffix);
+                                pszFrameType, pszSuffix);
 #else
-            RTAssertMsg2AddWeak("%s%p %s own=%s nest=%u pos={%Rbn(%u) %Rfn %p}%s%s", pszPrefix,
+            RTAssertMsg2AddWeak("%s%p %s own=%s r=%u cls=%s/%s pos={%Rbn(%u) %Rfn %p} [x%s]%s", pszPrefix,
                                 pRec->Excl.hLock, pRec->Excl.szName,
                                 rtLockValidatorNameThreadHandle(&pRec->Excl.hThread), cRecursion,
+                                rtLockValComplainGetClassName(pRec->Excl.hClass),
+                                rtLockValComplainGetSubClassName(pRec->Excl.uSubClass, szBuf),
                                 pSrcPos->pszFile, pSrcPos->uLine, pSrcPos->pszFunction, pSrcPos->uId,
-                                pszSuffix2, pszSuffix);
+                                pszFrameType, pszSuffix);
 #endif
             break;
 
         case RTLOCKVALRECSHRD_MAGIC:
-            RTAssertMsg2AddWeak("%s%p %s srec=%p%s", pszPrefix,
+            RTAssertMsg2AddWeak("%ss %p %s srec=%p cls=%s/%s [s%s]%s", pszPrefix,
                                 pRec->Shared.hLock, pRec->Shared.szName, pRec,
-                                pszSuffix);
+                                rtLockValComplainGetClassName(pRec->Shared.hClass),
+                                rtLockValComplainGetSubClassName(pRec->Shared.uSubClass, szBuf),
+                                pszFrameType, pszSuffix);
             break;
 
         case RTLOCKVALRECSHRDOWN_MAGIC:
@@ -533,24 +582,28 @@ DECL_FORCE_INLINE(void) rtLockValComplainAboutLockHlp(const char *pszPrefix, PRT
             if (    VALID_PTR(pShared)
                 &&  pShared->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC)
 #ifdef RTLOCKVAL_WITH_VERBOSE_DUMPS
-                RTAssertMsg2AddWeak("%s%p %s srec=%p trec=%p thr=%s nest=%u pos={%Rbn(%u) %Rfn %p}%s%s", pszPrefix,
+                RTAssertMsg2AddWeak("%s%p %s srec=%p trec=%p own=%s r=%u cls=%s/%s pos={%Rbn(%u) %Rfn %p} [o%s]%s", pszPrefix,
                                     pShared->hLock, pShared->pszName, pShared,
                                     pRec, rtLockValidatorNameThreadHandle(&pRec->ShrdOwner.hThread), cRecursion,
+                                    rtLockValComplainGetClassName(pShared->hClass),
+                                    rtLockValComplainGetSubClassName(pShared->uSubClass, szBuf),
                                     pSrcPos->pszFile, pSrcPos->uLine, pSrcPos->pszFunction, pSrcPos->uId,
                                     pszSuffix2, pszSuffix);
 #else
-                RTAssertMsg2AddWeak("%s%p %s thr=%s nest=%u pos={%Rbn(%u) %Rfn %p}%s%s", pszPrefix,
+                RTAssertMsg2AddWeak("%s%p %s own=%s r=%u cls=%s/%s pos={%Rbn(%u) %Rfn %p} [o%s]%s", pszPrefix,
                                     pShared->hLock, pShared->szName,
                                     rtLockValidatorNameThreadHandle(&pRec->ShrdOwner.hThread), cRecursion,
+                                    rtLockValComplainGetClassName(pShared->hClass),
+                                    rtLockValComplainGetSubClassName(pShared->uSubClass, szBuf),
                                     pSrcPos->pszFile, pSrcPos->uLine, pSrcPos->pszFunction, pSrcPos->uId,
-                                    pszSuffix2, pszSuffix);
+                                    pszFrameType, pszSuffix);
 #endif
             else
-                RTAssertMsg2AddWeak("%sbad srec=%p trec=%p thr=%s nest=%u pos={%Rbn(%u) %Rfn %p}%s%s", pszPrefix,
+                RTAssertMsg2AddWeak("%sbad srec=%p trec=%p own=%s r=%u pos={%Rbn(%u) %Rfn %p} [x%s]%s", pszPrefix,
                                     pShared,
                                     pRec, rtLockValidatorNameThreadHandle(&pRec->ShrdOwner.hThread), cRecursion,
                                     pSrcPos->pszFile, pSrcPos->uLine, pSrcPos->pszFunction, pSrcPos->uId,
-                                    pszSuffix2, pszSuffix);
+                                    pszFrameType, pszSuffix);
             break;
         }
 
@@ -569,6 +622,11 @@ DECL_FORCE_INLINE(void) rtLockValComplainAboutLockHlp(const char *pszPrefix, PRT
  */
 static void rtLockValComplainAboutLock(const char *pszPrefix, PRTLOCKVALRECUNION pRec, const char *pszSuffix)
 {
+#ifdef RTLOCKVAL_WITH_RECURSION_RECORDS
+# define FIX_REC(r)     1
+#else
+# define FIX_REC(r)     (r)
+#endif
     if (    VALID_PTR(pRec)
         &&  !ASMAtomicUoReadBool(&g_fLockValidatorQuiet))
     {
@@ -576,7 +634,7 @@ static void rtLockValComplainAboutLock(const char *pszPrefix, PRTLOCKVALRECUNION
         {
             case RTLOCKVALRECEXCL_MAGIC:
                 rtLockValComplainAboutLockHlp(pszPrefix, pRec, pszSuffix, RTLOCKVALRECEXCL_MAGIC,
-                                              &pRec->Excl.SrcPos, pRec->Excl.cRecursion, "");
+                                              &pRec->Excl.SrcPos, FIX_REC(pRec->Excl.cRecursion), "");
                 break;
 
             case RTLOCKVALRECSHRD_MAGIC:
@@ -585,7 +643,7 @@ static void rtLockValComplainAboutLock(const char *pszPrefix, PRTLOCKVALRECUNION
 
             case RTLOCKVALRECSHRDOWN_MAGIC:
                 rtLockValComplainAboutLockHlp(pszPrefix, pRec, pszSuffix, RTLOCKVALRECSHRDOWN_MAGIC,
-                                              &pRec->ShrdOwner.SrcPos, pRec->ShrdOwner.cRecursion, "");
+                                              &pRec->ShrdOwner.SrcPos, FIX_REC(pRec->ShrdOwner.cRecursion), "");
                 break;
 
             case RTLOCKVALRECNEST_MAGIC:
@@ -598,9 +656,9 @@ static void rtLockValComplainAboutLock(const char *pszPrefix, PRTLOCKVALRECUNION
                         || u32Magic == RTLOCKVALRECSHRDOWN_MAGIC)
                     )
                     rtLockValComplainAboutLockHlp(pszPrefix, pRealRec, pszSuffix, u32Magic,
-                                                  &pRec->Nest.SrcPos, pRec->Nest.cRecursion, " [recursion]");
+                                                  &pRec->Nest.SrcPos, pRec->Nest.cRecursion, "/r");
                 else
-                    RTAssertMsg2AddWeak("%sbad rrec=%p nrec=%p nest=%u pos={%Rbn(%u) %Rfn %p}%s", pszPrefix,
+                    RTAssertMsg2AddWeak("%sbad rrec=%p nrec=%p r=%u pos={%Rbn(%u) %Rfn %p}%s", pszPrefix,
                                         pRealRec, pRec, pRec->Nest.cRecursion,
                                         pRec->Nest.SrcPos.pszFile, pRec->Nest.SrcPos.uLine, pRec->Nest.SrcPos.pszFunction, pRec->Nest.SrcPos.uId,
                                         pszSuffix);
@@ -612,6 +670,7 @@ static void rtLockValComplainAboutLock(const char *pszPrefix, PRTLOCKVALRECUNION
                 break;
         }
     }
+#undef FIX_REC
 }
 
 
