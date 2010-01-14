@@ -660,6 +660,8 @@ VMMDECL(uint32_t)   CPUMGetGuestCpuIdCentaurMax(PVM pVM);
 VMMDECL(uint64_t)   CPUMGetGuestEFER(PVMCPU pVCpu);
 VMMDECL(uint64_t)   CPUMGetGuestMsr(PVMCPU pVCpu, unsigned idMsr);
 VMMDECL(void)       CPUMSetGuestMsr(PVMCPU pVCpu, unsigned idMsr, uint64_t valMsr);
+VMMDECL(CPUMCPUVENDOR)  CPUMGetGuestCpuVendor(PVM pVM);
+VMMDECL(CPUMCPUVENDOR)  CPUMGetHostCpuVendor(PVM pVM);
 /** @} */
 
 /** @name Guest Register Setters.
@@ -702,26 +704,18 @@ VMMDECL(bool)       CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeatur
 VMMDECL(void)       CPUMSetGuestCtx(PVMCPU pVCpu, const PCPUMCTX pCtx);
 /** @} */
 
+
 /** @name Misc Guest Predicate Functions.
  * @{  */
 
-
-VMMDECL(bool)           CPUMIsGuestIn16BitCode(PVMCPU pVCpu);
-VMMDECL(bool)           CPUMIsGuestIn32BitCode(PVMCPU pVCpu);
-
-VMMDECL(CPUMCPUVENDOR)  CPUMGetGuestCpuVendor(PVM pVM);
-VMMDECL(CPUMCPUVENDOR)  CPUMGetHostCpuVendor(PVM pVM);
-
-/**
- * Tests if the guest is running in real mode or not.
- *
- * @returns true if in real mode, otherwise false.
- * @param   pVM     The VM handle.
- */
-DECLINLINE(bool) CPUMIsGuestInRealMode(PVMCPU pVCpu)
-{
-    return !(CPUMGetGuestCR0(pVCpu) & X86_CR0_PE);
-}
+VMMDECL(bool)       CPUMIsGuestIn16BitCode(PVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestIn32BitCode(PVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestNXEnabled(PVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestInRealMode(PVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestInProtectedMode(PVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestInLongMode(PVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestInPAEMode(PVMCPU pVCpu);
 
 /**
  * Tests if the guest is running in real mode or not.
@@ -729,40 +723,18 @@ DECLINLINE(bool) CPUMIsGuestInRealMode(PVMCPU pVCpu)
  * @returns true if in real mode, otherwise false.
  * @param   pCtx    Current CPU context
  */
-DECLINLINE(bool) CPUMIsGuestInRealModeEx(PCPUMCTX pCtx)
+DECLINLINE(bool)    CPUMIsGuestInRealModeEx(PCPUMCTX pCtx)
 {
     return !(pCtx->cr0 & X86_CR0_PE);
 }
 
 /**
- * Tests if the guest is running in protected or not.
- *
- * @returns true if in protected mode, otherwise false.
- * @param   pVM     The VM handle.
- */
-DECLINLINE(bool) CPUMIsGuestInProtectedMode(PVMCPU pVCpu)
-{
-    return !!(CPUMGetGuestCR0(pVCpu) & X86_CR0_PE);
-}
-
-/**
  * Tests if the guest is running in paged protected or not.
  *
  * @returns true if in paged protected mode, otherwise false.
  * @param   pVM     The VM handle.
  */
-DECLINLINE(bool) CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu)
-{
-    return (CPUMGetGuestCR0(pVCpu) & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG);
-}
-
-/**
- * Tests if the guest is running in paged protected or not.
- *
- * @returns true if in paged protected mode, otherwise false.
- * @param   pVM     The VM handle.
- */
-DECLINLINE(bool) CPUMIsGuestInPagedProtectedModeEx(PCPUMCTX pCtx)
+DECLINLINE(bool)    CPUMIsGuestInPagedProtectedModeEx(PCPUMCTX pCtx)
 {
     return (pCtx->cr0 & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG);
 }
@@ -771,20 +743,9 @@ DECLINLINE(bool) CPUMIsGuestInPagedProtectedModeEx(PCPUMCTX pCtx)
  * Tests if the guest is running in long mode or not.
  *
  * @returns true if in long mode, otherwise false.
- * @param   pVM     The VM handle.
- */
-DECLINLINE(bool) CPUMIsGuestInLongMode(PVMCPU pVCpu)
-{
-    return (CPUMGetGuestEFER(pVCpu) & MSR_K6_EFER_LMA) == MSR_K6_EFER_LMA;
-}
-
-/**
- * Tests if the guest is running in long mode or not.
- *
- * @returns true if in long mode, otherwise false.
  * @param   pCtx    Current CPU context
  */
-DECLINLINE(bool) CPUMIsGuestInLongModeEx(PCPUMCTX pCtx)
+DECLINLINE(bool)    CPUMIsGuestInLongModeEx(PCPUMCTX pCtx)
 {
     return (pCtx->msrEFER & MSR_K6_EFER_LMA) == MSR_K6_EFER_LMA;
 }
@@ -796,7 +757,7 @@ DECLINLINE(bool) CPUMIsGuestInLongModeEx(PCPUMCTX pCtx)
  * @param   pVM     The VM handle.
  * @param   pCtx    Current CPU context
  */
-DECLINLINE(bool) CPUMIsGuestIn64BitCode(PVMCPU pVCpu, PCCPUMCTXCORE pCtx)
+DECLINLINE(bool)    CPUMIsGuestIn64BitCode(PVMCPU pVCpu, PCCPUMCTXCORE pCtx)
 {
     if (!CPUMIsGuestInLongMode(pVCpu))
         return false;
@@ -811,7 +772,7 @@ DECLINLINE(bool) CPUMIsGuestIn64BitCode(PVMCPU pVCpu, PCCPUMCTXCORE pCtx)
  * @param   pVM     The VM handle.
  * @param   pCtx    Current CPU context
  */
-DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCCPUMCTX pCtx)
+DECLINLINE(bool)    CPUMIsGuestIn64BitCodeEx(PCCPUMCTX pCtx)
 {
     if (!(pCtx->msrEFER & MSR_K6_EFER_LMA))
         return false;
@@ -823,25 +784,12 @@ DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCCPUMCTX pCtx)
  * Tests if the guest is running in PAE mode or not.
  *
  * @returns true if in PAE mode, otherwise false.
- * @param   pVM     The VM handle.
- */
-DECLINLINE(bool) CPUMIsGuestInPAEMode(PVMCPU pVCpu)
-{
-    return (    CPUMIsGuestInPagedProtectedMode(pVCpu)
-            &&  (CPUMGetGuestCR4(pVCpu) & X86_CR4_PAE)
-            &&  !CPUMIsGuestInLongMode(pVCpu));
-}
-
-/**
- * Tests if the guest is running in PAE mode or not.
- *
- * @returns true if in PAE mode, otherwise false.
  * @param   pCtx    Current CPU context
  */
-DECLINLINE(bool) CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
+DECLINLINE(bool)    CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
 {
-    return (    CPUMIsGuestInPagedProtectedModeEx(pCtx)
-            &&  (pCtx->cr4 & X86_CR4_PAE)
+    return (    (pCtx->cr4 & X86_CR4_PAE)
+            &&  CPUMIsGuestInPagedProtectedModeEx(pCtx)
             &&  !CPUMIsGuestInLongModeEx(pCtx));
 }
 
