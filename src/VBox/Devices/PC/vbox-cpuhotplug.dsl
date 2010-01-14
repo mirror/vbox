@@ -120,6 +120,13 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         Store (Arg0, PICM)
     }
 
+    // Method to check for the CPU status
+    Method(CPCK, 1)
+    {
+        Store (Arg0, \_SB.CPUC)
+        Return(\_SB.CPUL)
+    }
+
     // Processor object
     // #1463: Showing the CPU can make the guest do bad things on it like SpeedStep.
     // In this case, XP SP2 contains this buggy Intelppm.sys driver which wants to mess
@@ -151,7 +158,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x2))
+                    IF (CPCK(0x01))
                     {
                         Return (0xF)
                     }
@@ -177,7 +184,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x4))
+                    IF (CPCK(0x02))
                     {
                         Return (0xF)
                     }
@@ -203,7 +210,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x8))
+                    IF (CPCK(0x03))
                     {
                         Return (0xF)
                     }
@@ -229,7 +236,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x10))
+                    IF (CPCK(0x04))
                     {
                         Return (0xF)
                     }
@@ -255,7 +262,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x20))
+                    IF (CPCK(0x05))
                     {
                         Return (0xF)
                     }
@@ -281,7 +288,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x40))
+                    IF (CPCK(0x06))
                     {
                         Return (0xF)
                     }
@@ -307,7 +314,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x80))
+                    IF (CPCK(0x07))
                     {
                         Return (0xF)
                     }
@@ -333,7 +340,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x100))
+                    IF (CPCK(0x08))
                     {
                         Return (0xF)
                     }
@@ -359,7 +366,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x200))
+                    IF (CPCK(0x09))
                     {
                         Return (0xF)
                     }
@@ -385,7 +392,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x400))
+                    IF (CPCK(0x0a))
                     {
                         Return (0xF)
                     }
@@ -411,7 +418,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x800))
+                    IF (CPCK(0x0b))
                     {
                         Return (0xF)
                     }
@@ -437,7 +444,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x1000))
+                    IF (CPCK(0x0c))
                     {
                         Return (0xF)
                     }
@@ -463,7 +470,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x2000))
+                    IF (CPCK(0x0d))
                     {
                         Return (0xF)
                     }
@@ -489,7 +496,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x4000))
+                    IF (CPCK(0x0e))
                     {
                         Return (0xF)
                     }
@@ -515,7 +522,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x8000))
+                    IF (CPCK(0x0f))
                     {
                         Return (0xF)
                     }
@@ -541,7 +548,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x10000))
+                    IF (CPCK(0x10))
                     {
                         Return (0xF)
                     }
@@ -567,7 +574,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x20000))
+                    IF (CPCK(0x11))
                     {
                         Return (0xF)
                     }
@@ -593,7 +600,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x40000))
+                    IF (CPCK(0x12))
                     {
                         Return (0xF)
                     }
@@ -619,7 +626,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x80000))
+                    IF (CPCK(0x13))
                     {
                         Return (0xF)
                     }
@@ -645,7 +652,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x100000))
+                    IF (CPCK(0x14))
                     {
                         Return (0xF)
                     }
@@ -671,7 +678,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x200000))
+                    IF (CPCK(0x15))
                     {
                         Return (0xF)
                     }
@@ -697,7 +704,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x400000))
+                    IF (CPCK(0x16))
                     {
                         Return (0xF)
                     }
@@ -723,7 +730,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x800000))
+                    IF (CPCK(0x17))
                     {
                         Return (0xF)
                     }
@@ -749,7 +756,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x1000000))
+                    IF (CPCK(0x18))
                     {
                         Return (0xF)
                     }
@@ -775,7 +782,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x2000000))
+                    IF (CPCK(0x19))
                     {
                         Return (0xF)
                     }
@@ -801,7 +808,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x4000000))
+                    IF (CPCK(0x1a))
                     {
                         Return (0xF)
                     }
@@ -827,7 +834,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x8000000))
+                    IF (CPCK(0x1b))
                     {
                         Return (0xF)
                     }
@@ -853,7 +860,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x10000000))
+                    IF (CPCK(0x1c))
                     {
                         Return (0xF)
                     }
@@ -879,7 +886,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x20000000))
+                    IF (CPCK(0x1d))
                     {
                         Return (0xF)
                     }
@@ -905,7 +912,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x40000000))
+                    IF (CPCK(0x1e))
                     {
                         Return (0xF)
                     }
@@ -931,7 +938,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_STA) // Used for device presence detection
                 {
-                    IF (And(\_SB.CPUL, 0x80000000))
+                    IF (CPCK(0x1f))
                     {
                         Return (0xF)
                     }
@@ -963,127 +970,127 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             //    Notify(\_PR.HPL.CPU1, 0x3)
             //}
 
-            IF (And(\_SB.CPUL, 0x2))
+            IF (CPCK(0x01))
             {
                 Notify (\_PR.HPL.CPU1, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x4))
+            IF (CPCK(0x02))
             {
                 Notify (\_PR.HPL.CPU2, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x8))
+            IF (CPCK(0x03))
             {
                 Notify (\_PR.HPL.CPU3, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x10))
+            IF (CPCK(0x04))
             {
                 Notify (\_PR.HPL.CPU4, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x20))
+            IF (CPCK(0x05))
             {
                 Notify (\_PR.HPL.CPU5, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x40))
+            IF (CPCK(0x06))
             {
                 Notify (\_PR.HPL.CPU6, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x80))
+            IF (CPCK(0x07))
             {
                 Notify (\_PR.HPL.CPU7, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x100))
+            IF (CPCK(0x08))
             {
                 Notify (\_PR.HPL.CPU8, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x200))
+            IF (CPCK(0x09))
             {
                 Notify (\_PR.HPL.CPU9, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x400))
+            IF (CPCK(0x0a))
             {
                 Notify (\_PR.HPL.CPUA, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x800))
+            IF (CPCK(0x0b))
             {
                 Notify (\_PR.HPL.CPUB, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x1000))
+            IF (CPCK(0x0c))
             {
                 Notify (\_PR.HPL.CPUC, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x2000))
+            IF (CPCK(0x0d))
             {
                 Notify (\_PR.HPL.CPUD, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x4000))
+            IF (CPCK(0x0e))
             {
                 Notify (\_PR.HPL.CPUE, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x8000))
+            IF (CPCK(0x0f))
             {
                 Notify (\_PR.HPL.CPUF, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x10000))
+            IF (CPCK(0x10))
             {
                 Notify (\_PR.HPL.CPUG, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x20000))
+            IF (CPCK(0x11))
             {
                 Notify (\_PR.HPL.CPUH, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x40000))
+            IF (CPCK(0x12))
             {
                 Notify (\_PR.HPL.CPUI, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x80000))
+            IF (CPCK(0x13))
             {
                 Notify (\_PR.HPL.CPUJ, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x100000))
+            IF (CPCK(0x14))
             {
                 Notify (\_PR.HPL.CPUK, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x200000))
+            IF (CPCK(0x15))
             {
                 Notify (\_PR.HPL.CPUL, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x400000))
+            IF (CPCK(0x16))
             {
                 Notify (\_PR.HPL.CPUM, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x800000))
+            IF (CPCK(0x17))
             {
                 Notify (\_PR.HPL.CPUN, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x1000000))
+            IF (CPCK(0x18))
             {
                 Notify (\_PR.HPL.CPUO, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x2000000))
+            IF (CPCK(0x19))
             {
                 Notify (\_PR.HPL.CPUP, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x4000000))
+            IF (CPCK(0x1a))
             {
                 Notify (\_PR.HPL.CPUQ, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x8000000))
+            IF (CPCK(0x1b))
             {
                 Notify (\_PR.HPL.CPUR, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x10000000))
+            IF (CPCK(0x1c))
             {
                 Notify (\_PR.HPL.CPUS, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x20000000))
+            IF (CPCK(0x1d))
             {
                 Notify (\_PR.HPL.CPUT, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x40000000))
+            IF (CPCK(0x1e))
             {
                 Notify (\_PR.HPL.CPUU, 0x0)
             }
-            IF (And(\_SB.CPUL, 0x80000000))
+            IF (CPCK(0x1f))
             {
                 Notify (\_PR.HPL.CPUV, 0x0)
             }
@@ -1114,6 +1121,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             MEMH,  32,
             URTC,  32,
             CPUL,  32,
+            CPUC,  32,
             MAAD,  32,
             MASZ,  32,
             Offset (0x80),
