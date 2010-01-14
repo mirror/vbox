@@ -1666,10 +1666,6 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
     && PGM_SHW_TYPE != PGM_TYPE_NESTED     \
     && PGM_SHW_TYPE != PGM_TYPE_EPT
 
-# if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
-    bool fNoExecuteBitValid = CPUMIsGuestNXEnabled(pVCpu);
-# endif
-
     /*
      * Assert preconditions.
      */
@@ -1766,7 +1762,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
         &&  (PdeSrc.n.u1User == PdeDst.n.u1User)
         &&  (PdeSrc.n.u1Write == PdeDst.n.u1Write || !PdeDst.n.u1Write)
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
-        &&  (!fNoExecuteBitValid || PdeSrc.n.u1NoExecute == PdeDst.n.u1NoExecute)
+        &&  (PdeSrc.n.u1NoExecute == PdeDst.n.u1NoExecute || !CPUMIsGuestNXEnabled(pVCpu))
 # endif
        )
     {
@@ -2130,9 +2126,6 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
 # else
     bool fBigPagesSupported = !!(CPUMGetGuestCR4(pVCpu) & X86_CR4_PSE);
 # endif
-# if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
-    bool fNoExecuteBitValid = CPUMIsGuestNXEnabled(pVCpu);
-# endif
     unsigned uPageFaultLevel;
     int rc;
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -2158,7 +2151,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
      */
     if (    (uErr & X86_TRAP_PF_RSVD)
         ||  !pPml4eSrc->n.u1Present
-        ||  (fNoExecuteBitValid && (uErr & X86_TRAP_PF_ID) && pPml4eSrc->n.u1NoExecute)
+        ||  ((uErr & X86_TRAP_PF_ID) && pPml4eSrc->n.u1NoExecute && CPUMIsGuestNXEnabled(pVCpu))
         ||  (fWriteFault && !pPml4eSrc->n.u1Write && (fUserLevelFault || fWriteProtect))
         ||  (fUserLevelFault && !pPml4eSrc->n.u1User)
        )
@@ -2178,7 +2171,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
     if (    (uErr & X86_TRAP_PF_RSVD)
         ||  !pPdpeSrc->n.u1Present
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 /* NX, r/w, u/s bits in the PDPE are long mode only */
-        ||  (fNoExecuteBitValid && (uErr & X86_TRAP_PF_ID) && pPdpeSrc->lm.u1NoExecute)
+        ||  ((uErr & X86_TRAP_PF_ID) && pPdpeSrc->lm.u1NoExecute && CPUMIsGuestNXEnabled(pVCpu))
         ||  (fWriteFault && !pPdpeSrc->lm.u1Write && (fUserLevelFault || fWriteProtect))
         ||  (fUserLevelFault && !pPdpeSrc->lm.u1User)
 # endif
@@ -2195,7 +2188,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
     if (    (uErr & X86_TRAP_PF_RSVD)
         ||  !pPdeSrc->n.u1Present
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
-        ||  (fNoExecuteBitValid && (uErr & X86_TRAP_PF_ID) && pPdeSrc->n.u1NoExecute)
+        ||  ((uErr & X86_TRAP_PF_ID) && pPdeSrc->n.u1NoExecute && CPUMIsGuestNXEnabled(pVCpu))
 # endif
         ||  (fWriteFault && !pPdeSrc->n.u1Write && (fUserLevelFault || fWriteProtect))
         ||  (fUserLevelFault && !pPdeSrc->n.u1User) )
@@ -2291,7 +2284,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
         const GSTPTE   PteSrc = *pPteSrc;
         if (    !PteSrc.n.u1Present
 #  if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
-            ||  (fNoExecuteBitValid && (uErr & X86_TRAP_PF_ID) && PteSrc.n.u1NoExecute)
+            ||  ((uErr & X86_TRAP_PF_ID) && PteSrc.n.u1NoExecute && CPUMIsGuestNXEnabled(pVCpu))
 #  endif
             ||  (fWriteFault && !PteSrc.n.u1Write && (fUserLevelFault || fWriteProtect))
             ||  (fUserLevelFault && !PteSrc.n.u1User)

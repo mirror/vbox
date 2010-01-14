@@ -1294,7 +1294,7 @@ static void vmxR0UpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 # ifdef HWACCM_VMX_EMULATE_REALMODE
     /* Intercept all exceptions in real mode as none of them can be injected directly (#GP otherwise). */
-    if (    CPUMIsGuestInRealModeEx(pCtx) 
+    if (    CPUMIsGuestInRealModeEx(pCtx)
         &&  pVM->hwaccm.s.vmx.pRealModeTSS)
         u32TrapMask |= HWACCM_VMX_TRAP_MASK_REALMODE;
 # endif /* HWACCM_VMX_EMULATE_REALMODE */
@@ -2355,7 +2355,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if ((val & ~pVM->hwaccm.s.vmx.msr.vmx_exit.n.allowed1) != 0)
             Log(("Invalid VMX_VMCS_CTRL_EXIT_CONTROLS: one\n"));
     }
-    fWasInLongMode = CPUMIsGuestInLongMode(pVCpu);
+    fWasInLongMode = CPUMIsGuestInLongModeEx(pCtx);
 #endif
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
@@ -2374,7 +2374,7 @@ ResumeExecution:
                (int)pVCpu->hwaccm.s.idEnteredCpu, (int)RTMpCpuId(), cResume, exitReason, exitQualification));
     Assert(!HWACCMR0SuspendPending());
     /* Not allowed to switch modes without reloading the host state (32->64 switcher)!! */
-    Assert(fWasInLongMode == CPUMIsGuestInLongMode(pVCpu));
+    Assert(fWasInLongMode == CPUMIsGuestInLongModeEx(pCtx));
 
     /* Safety precaution; looping for too long here can have a very bad effect on the host */
     if (RT_UNLIKELY(++cResume > pVM->hwaccm.s.cMaxResumeLoops))
