@@ -36,6 +36,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/once.h>
@@ -239,6 +240,13 @@ AssertCompileMemberOffset(RTLOCKVALCLASSINT, PriorLocks, 64);
  * EW: Deadlock detection and some related activities.
  */
 static RTSEMXROADS      g_hLockValidatorXRoads   = NIL_RTSEMXROADS;
+/** Serializing class tree insert and lookups. */
+static RTSEMRW          g_hLockValClassTreeRWLock= NIL_RTSEMRW;
+/** Class tree. */
+static PAVLLU32NODECORE g_LockValClassTree       = NULL;
+/** Critical section serializing the teaching new rules to the classes. */
+static RTCRITSECT       g_LockValClassTeachCS;
+
 /** Whether the lock validator is enabled or disabled.
  * Only applies to new locks.  */
 static bool volatile    g_fLockValidatorEnabled  = true;
@@ -254,12 +262,8 @@ static bool volatile    g_fLockValidatorMayPanic = true;
 #else
 static bool volatile    g_fLockValidatorMayPanic = false;
 #endif
-/** Serializing class tree insert and lookups. */
-static RTSEMRW          g_hLockValClassTreeRWLock= NIL_RTSEMRW;
-/** Class tree. */
-static PAVLLU32NODECORE g_LockValClassTree       = NULL;
-/** Critical section serializing the teaching new rules to the classes. */
-static RTCRITSECT       g_LockValClassTeachCS;
+/** Whether to return an error status on wrong locking order. */
+static bool volatile    g_fLockValSoftWrongOrder = false;
 
 
 /*******************************************************************************
@@ -277,6 +281,9 @@ static void rtLockValidatorLazyInit(void)
     static uint32_t volatile s_fInitializing = false;
     if (ASMAtomicCmpXchgU32(&s_fInitializing, true, false))
     {
+        /*
+         * The locks.
+         */
         if (!RTCritSectIsInitialized(&g_LockValClassTeachCS))
             RTCritSectInitEx(&g_LockValClassTeachCS, RTCRITSECT_FLAGS_NO_LOCK_VAL, NIL_RTLOCKVALCLASS,
                              RTLOCKVAL_SUB_CLASS_ANY, "RTLockVal-Teach");
@@ -297,6 +304,34 @@ static void rtLockValidatorLazyInit(void)
                 ASMAtomicWriteHandle(&g_hLockValidatorXRoads, hXRoads);
         }
 
+#ifdef IN_RING3
+        /*
+         * Check the environment for our config variables.
+         */
+        if (RTEnvExist("IPRT_LOCK_VALIDATOR_ENABLED"))
+            ASMAtomicWriteBool(&g_fLockValidatorEnabled, true);
+        if (RTEnvExist("IPRT_LOCK_VALIDATOR_DISABLED"))
+            ASMAtomicWriteBool(&g_fLockValidatorEnabled, false);
+
+        if (RTEnvExist("IPRT_LOCK_VALIDATOR_MAY_PANIC"))
+            ASMAtomicWriteBool(&g_fLockValidatorMayPanic, true);
+        if (RTEnvExist("IPRT_LOCK_VALIDATOR_MAY_NOT_PANIC"))
+            ASMAtomicWriteBool(&g_fLockValidatorMayPanic, false);
+
+        if (RTEnvExist("IPRT_LOCK_VALIDATOR_NOT_QUIET"))
+            ASMAtomicWriteBool(&g_fLockValidatorQuiet, false);
+        if (RTEnvExist("IPRT_LOCK_VALIDATOR_QUIET"))
+            ASMAtomicWriteBool(&g_fLockValidatorQuiet, true);
+
+        if (RTEnvExist("IPRT_LOCK_VALIDATOR_STRICT_ORDER"))
+            ASMAtomicWriteBool(&g_fLockValSoftWrongOrder, false);
+        if (RTEnvExist("IPRT_LOCK_VALIDATOR_SOFT_ORDER"))
+            ASMAtomicWriteBool(&g_fLockValSoftWrongOrder, true);
+#endif
+
+        /*
+         * Register cleanup
+         */
         /** @todo register some cleanup callback if we care. */
 
         ASMAtomicWriteU32(&s_fInitializing, false);
@@ -1447,7 +1482,7 @@ static int rtLockValidatorClassAddPriorClass(RTLOCKVALCLASSINT *pClass, RTLOCKVA
             rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_SEM_LV_WRONG_ORDER;
+        rc = !g_fLockValSoftWrongOrder ? VERR_SEM_LV_WRONG_ORDER : VINF_SUCCESS;
 
     if (RT_SUCCESS(rcLock))
         RTCritSectLeave(&g_LockValClassTeachCS);
@@ -2132,7 +2167,7 @@ static int rtLockValidatorStackWrongOrder(const char *pszWhat, PCRTLOCKVALSRCPOS
     rtLockValComplainAboutClass("Other class: ", pClass2, rtLockValidatorRecGetSubClass(pRec2), true /*fVerbose*/);
     rtLockValComplainAboutLockStack(pThreadSelf, 0, 0, pRec2);
     rtLockValComplainPanic();
-    return VERR_SEM_LV_WRONG_ORDER;
+    return !g_fLockValSoftWrongOrder ? VERR_SEM_LV_WRONG_ORDER : VINF_SUCCESS;
 }
 
 
@@ -2441,7 +2476,7 @@ static int rtLockValidatorStackCheckReleaseOrder(PRTTHREADINT pThreadSelf, PRTLO
 
     rtLockValComplainFirst("Wrong release order!", NULL, pThreadSelf, pRec, true);
     rtLockValComplainPanic();
-    return VERR_SEM_LV_WRONG_RELEASE_ORDER;
+    return !g_fLockValSoftWrongOrder ? VERR_SEM_LV_WRONG_RELEASE_ORDER : VINF_SUCCESS;
 }
 
 
