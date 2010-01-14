@@ -1840,6 +1840,51 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
     /*
+     * ACPI
+     */
+    BOOL fACPI;
+    hrc = biosSettings->COMGETTER(ACPIEnabled)(&fACPI);                             H();
+    if (fACPI)
+    {
+        BOOL fShowCpu = fExtProfile;
+        /* Always show the CPU leafs when we have multiple VCPUs or when the IO-APIC is enabled.
+         * The Windows SMP kernel needs a CPU leaf or else its idle loop will burn cpu cycles; the
+         * intelppm driver refuses to register an idle state handler.
+         */
+        if ((cCpus > 1) ||  fIOAPIC)
+            fShowCpu = true;
+
+        rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cbRam);                 RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",      cbRamHole);             RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "NumCPUs",          cCpus);                 RC_CHECK();
+
+        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "FdcEnabled", fFdcEnabled);                 RC_CHECK();
+#ifdef VBOX_WITH_HPET
+        rc = CFGMR3InsertInteger(pCfg,  "HpetEnabled", fHpetEnabled);               RC_CHECK();
+#endif
+#ifdef VBOX_WITH_SMC
+        rc = CFGMR3InsertInteger(pCfg,  "SmcEnabled", fSmcEnabled);                 RC_CHECK();
+#endif
+        rc = CFGMR3InsertInteger(pCfg,  "ShowRtc", fExtProfile);                    RC_CHECK();
+
+        rc = CFGMR3InsertInteger(pCfg,  "ShowCpu", fShowCpu);                       RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 RC_CHECK();
+        Assert(!afPciDeviceNo[7]);
+        afPciDeviceNo[7] = true;
+        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 RC_CHECK();
+
+        rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
+        rc = CFGMR3InsertString(pLunL0, "Driver",               "ACPIHost");        RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+    }
+
+
+    /*
      * CFGM overlay handling.
      *
      * Here we check the extra data entries for CFGM values
@@ -1972,50 +2017,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertString(pNode, pszCFGMValueName, pszCFGMValue);
             AssertLogRelMsgRC(rc, ("failed to insert CFGM value '%s' to key '%s'\n", pszCFGMValue, pszExtraDataKey));
         }
-    }
-
-    /*
-     * ACPI
-     */
-    BOOL fACPI;
-    hrc = biosSettings->COMGETTER(ACPIEnabled)(&fACPI);                             H();
-    if (fACPI)
-    {
-        BOOL fShowCpu = fExtProfile;
-        /* Always show the CPU leafs when we have multiple VCPUs or when the IO-APIC is enabled.
-         * The Windows SMP kernel needs a CPU leaf or else its idle loop will burn cpu cycles; the
-         * intelppm driver refuses to register an idle state handler.
-         */
-        if ((cCpus > 1) ||  fIOAPIC)
-            fShowCpu = true;
-
-        rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             RC_CHECK();
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   RC_CHECK();
-        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cbRam);                 RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",      cbRamHole);             RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "NumCPUs",          cCpus);                 RC_CHECK();
-
-        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "FdcEnabled", fFdcEnabled);                 RC_CHECK();
-#ifdef VBOX_WITH_HPET
-        rc = CFGMR3InsertInteger(pCfg,  "HpetEnabled", fHpetEnabled);               RC_CHECK();
-#endif
-#ifdef VBOX_WITH_SMC
-        rc = CFGMR3InsertInteger(pCfg,  "SmcEnabled", fSmcEnabled);                 RC_CHECK();
-#endif
-        rc = CFGMR3InsertInteger(pCfg,  "ShowRtc", fExtProfile);                    RC_CHECK();
-
-        rc = CFGMR3InsertInteger(pCfg,  "ShowCpu", fShowCpu);                       RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 RC_CHECK();
-        Assert(!afPciDeviceNo[7]);
-        afPciDeviceNo[7] = true;
-        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 RC_CHECK();
-
-        rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
-        rc = CFGMR3InsertString(pLunL0, "Driver",               "ACPIHost");        RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
     }
 
 #undef STR_FREE
