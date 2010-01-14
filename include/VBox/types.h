@@ -135,11 +135,11 @@ typedef VMCPUSET const *PCVMCPUSET;
 /** Deletes a CPU from the set. */
 #define VMCPUSET_DEL(pSet, idCpu)           ASMBitClear(&(pSet)->au32Bitmap, (idCpu))
 /** Empties the set. */
-#define VMCPUSET_EMPTY(pSet, idCpu)         memset(&(pSet)->au32Bitmap, '\0', sizeof((pSet)->au32Bitmap))
+#define VMCPUSET_EMPTY(pSet)                memset(&(pSet)->au32Bitmap[0], '\0', sizeof((pSet)->au32Bitmap))
 /** Filles the set. */
-#define VMCPUSET_FILL(pSet, idCpu)          memset(&(pSet)->au32Bitmap, 0xff, sizeof((pSet)->au32Bitmap))
+#define VMCPUSET_FILL(pSet)                 memset(&(pSet)->au32Bitmap[0], 0xff, sizeof((pSet)->au32Bitmap))
 /** Filles the set. */
-#define VMCPUSET_IS_EQUAL(pSet1, pSet2)     (memcmp(&(pSet1)->au32Bitmap, &(pSet2)->au32Bitmap, sizeof((pSet1)->au32Bitmap)) == 0)
+#define VMCPUSET_IS_EQUAL(pSet1, pSet2)     (memcmp(&(pSet1)->au32Bitmap[0], &(pSet2)->au32Bitmap[0], sizeof((pSet1)->au32Bitmap)) == 0)
 
 
 /**
