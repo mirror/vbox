@@ -135,7 +135,7 @@ static int tftp_send_oack(PNATState pData,
     tp = (void *)m->m_data;
     m->m_data += sizeof(struct udpiphdr);
 
-    tp->tp_op = htons(TFTP_OACK);
+    tp->tp_op = RT_H2N_U16_C(TFTP_OACK);
     n += RTStrPrintf((char *)tp->x.tp_buf + n, M_FREEROOM(m), "%s", key) + 1;
     n += RTStrPrintf((char *)tp->x.tp_buf + n, M_FREEROOM(m), "%u", value) + 1;
 
@@ -174,8 +174,8 @@ static int tftp_send_error(PNATState pData,
     tp = (void *)m->m_data;
     m->m_data += sizeof(struct udpiphdr);
 
-    tp->tp_op = htons(TFTP_ERROR);
-    tp->x.tp_error.tp_error_code = htons(errorcode);
+    tp->tp_op = RT_H2N_U16_C(TFTP_ERROR);
+    tp->x.tp_error.tp_error_code = RT_H2N_U16(errorcode);
     strcpy((char *)tp->x.tp_error.tp_msg, msg);
 
     saddr.sin_addr = recv_tp->ip.ip_dst;
@@ -223,8 +223,8 @@ static int tftp_send_data(PNATState pData,
     tp = (void *)m->m_data;
     m->m_data += sizeof(struct udpiphdr);
 
-    tp->tp_op = htons(TFTP_DATA);
-    tp->x.tp_data.tp_block_nr = htons(block_nr);
+    tp->tp_op = RT_H2N_U16_C(TFTP_DATA);
+    tp->x.tp_data.tp_block_nr = RT_H2N_U16(block_nr);
 
     saddr.sin_addr = recv_tp->ip.ip_dst;
     saddr.sin_port = recv_tp->udp.uh_dport;
@@ -384,7 +384,7 @@ static void tftp_handle_ack(PNATState pData, struct tftp_t *tp, int pktlen)
         return;
 
     if (tftp_send_data(pData, &tftp_sessions[s],
-                       ntohs(tp->x.tp_data.tp_block_nr) + 1, tp) < 0)
+                       RT_N2H_U16(tp->x.tp_data.tp_block_nr) + 1, tp) < 0)
     {
         /* XXX */
     }
@@ -394,7 +394,7 @@ void tftp_input(PNATState pData, struct mbuf *m)
 {
     struct tftp_t *tp = (struct tftp_t *)m->m_data;
 
-    switch(ntohs(tp->tp_op))
+    switch(RT_N2H_U16(tp->tp_op))
     {
         case TFTP_RRQ:
             tftp_handle_rrq(pData, tp, m->m_len);

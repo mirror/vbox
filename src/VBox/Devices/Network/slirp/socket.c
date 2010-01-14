@@ -595,7 +595,7 @@ sorecvfrom(PNATState pData, struct socket *so)
          * but I don't know the max packet size for DNS lookups
          */
         len = M_FREEROOM(m);
-        /* if (so->so_fport != htons(53)) */
+        /* if (so->so_fport != RT_H2N_U16_C(53)) */
         rc = ioctlsocket(so->s, FIONREAD, &n);
         if (   rc == -1
             && (  errno == EAGAIN
@@ -707,7 +707,7 @@ sorecvfrom(PNATState pData, struct socket *so)
              */
             if (so->so_expire)
             {
-                if (so->so_fport != htons(53))
+                if (so->so_fport != RT_H2N_U16_C(53))
                     so->so_expire = curtime + SO_EXPIRE;
             }
             /*
@@ -715,7 +715,7 @@ sorecvfrom(PNATState pData, struct socket *so)
              *  Note: Here we can't check if dnsproxy's sent initial request
              */
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
-            if (so->so_fport == htons(53))
+            if (so->so_fport == RT_H2N_U16_C(53))
                 dnsproxy_answer(pData, so, m);
 #endif
 
@@ -764,10 +764,10 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 #endif
     paddr = (struct sockaddr_in *)&addr;
     paddr->sin_family = AF_INET;
-    if ((so->so_faddr.s_addr & htonl(pData->netmask)) == pData->special_addr.s_addr)
+    if ((so->so_faddr.s_addr & RT_H2N_U32(pData->netmask)) == pData->special_addr.s_addr)
     {
         /* It's an alias */
-        uint32_t last_byte = ntohl(so->so_faddr.s_addr) & ~pData->netmask;
+        uint32_t last_byte = RT_N2H_U32(so->so_faddr.s_addr) & ~pData->netmask;
         switch(last_byte)
         {
 #if 0
@@ -801,7 +801,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
     paddr->sin_port = so->so_fport;
 
     DEBUG_MISC((dfd, " sendto()ing, addr.sin_port=%d, addr.sin_addr.s_addr=%.16s\n",
-                ntohs(paddr->sin_port), inet_ntoa(paddr->sin_addr)));
+                RT_N2H_U16(paddr->sin_port), inet_ntoa(paddr->sin_addr)));
 
     /* Don't care what port we get */
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF

@@ -371,10 +371,10 @@ freeit:
                 int error;
 #endif
                 addr.sin_family = AF_INET;
-                if ((ip->ip_dst.s_addr & htonl(pData->netmask)) == pData->special_addr.s_addr)
+                if ((ip->ip_dst.s_addr & RT_H2N_U32(pData->netmask)) == pData->special_addr.s_addr)
                 {
                     /* It's an alias */
-                    switch (ntohl(ip->ip_dst.s_addr) & ~pData->netmask)
+                    switch (RT_N2H_U32(ip->ip_dst.s_addr) & ~pData->netmask)
                     {
                         case CTL_DNS:
                         case CTL_ALIAS:

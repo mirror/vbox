@@ -87,7 +87,7 @@ static BOOTPClient *get_new_addr(PNATState pData, struct in_addr *paddr)
     if (!bc)
         return NULL;
 
-    paddr->s_addr = htonl(ntohl(pData->special_addr.s_addr) | (bc->number + START_ADDR));
+    paddr->s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | (bc->number + START_ADDR));
     bc->addr.s_addr = paddr->s_addr;
     return bc;
 }
@@ -166,7 +166,7 @@ static BOOTPClient *find_addr(PNATState pData, struct in_addr *paddr, const uint
 
             bc = &bootp_clients[i];
             bc->allocated = 1;
-            paddr->s_addr = htonl(ntohl(pData->special_addr.s_addr) | (i + START_ADDR));
+            paddr->s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | (i + START_ADDR));
             return bc;
         }
     }
@@ -191,8 +191,8 @@ static struct mbuf *dhcp_create_msg(PNATState pData, struct bootp_t *bp, struct 
     rbp->bp_flags = bp->bp_flags;
     rbp->bp_giaddr.s_addr = bp->bp_giaddr.s_addr;
 #if 0 /*check flags*/
-    saddr.sin_port = htons(BOOTP_SERVER);
-    daddr.sin_port = htons(BOOTP_CLIENT);
+    saddr.sin_port = RT_H2N_U16_C(BOOTP_SERVER);
+    daddr.sin_port = RT_H2N_U16_C(BOOTP_CLIENT);
 #endif
     rbp->bp_htype = 1;
     rbp->bp_hlen = 6;
@@ -219,8 +219,8 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
     struct dns_domain_entry *dd = NULL;
     int added = 0;
     uint8_t *q_dns_header = NULL;
-    uint32_t lease_time = htonl(LEASE_TIME);
-    uint32_t netmask = htonl(pData->netmask);
+    uint32_t lease_time = RT_H2N_U32_C(LEASE_TIME);
+    uint32_t netmask = RT_H2N_U32(pData->netmask);
 
     rbp = mtod(m, struct bootp_t *);
     q = &rbp->bp_vend[0];
@@ -243,7 +243,7 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
         rbp->bp_ciaddr.s_addr = bc->addr.s_addr; /* Client IP address */
     }
 #ifndef VBOX_WITH_NAT_SERVICE
-    saddr.s_addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_ALIAS);
+    saddr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
 #else
     saddr.s_addr = pData->special_addr.s_addr;
 #endif
@@ -273,7 +273,7 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
 
     if (pData->use_dns_proxy || pData->use_host_resolver)
     {
-        uint32_t addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_DNS);
+        uint32_t addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_DNS);
         FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &addr);
         goto skip_dns_servers;
     }
@@ -440,7 +440,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
             }
             else
             {
-               if ((bp->bp_ciaddr.s_addr & htonl(pData->netmask)) != pData->special_addr.s_addr)
+               if ((bp->bp_ciaddr.s_addr & RT_H2N_U32(pData->netmask)) != pData->special_addr.s_addr)
                {
                    LogRel(("NAT: Client %R[IP4] requested IP -- sending NAK\n", &bp->bp_ciaddr));
                    offReply = dhcp_send_nack(pData, bp, bc, m);
@@ -464,7 +464,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
             Assert(server_ip == NULL);
             Assert(req_ip != NULL);
             ui32 = *(uint32_t *)(req_ip + 2);
-            if ((ui32 & htonl(pData->netmask)) != pData->special_addr.s_addr)
+            if ((ui32 & RT_H2N_U32(pData->netmask)) != pData->special_addr.s_addr)
             {
                 LogRel(("NAT: address %R[IP4] has been requested -- sending NAK\n", &ui32));
                 offReply = dhcp_send_nack(pData, bp, bc, m);
@@ -711,7 +711,7 @@ static void bootp_reply(PNATState pData, struct mbuf *m, int offReply, uint16_t 
     q += offReply;
 
 #ifndef VBOX_WITH_NAT_SERVICE
-    saddr.sin_addr.s_addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_ALIAS);
+    saddr.sin_addr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
 #else
     saddr.sin_addr.s_addr = pData->special_addr.s_addr;
 #endif
@@ -732,8 +732,8 @@ static void bootp_reply(PNATState pData, struct mbuf *m, int offReply, uint16_t 
         daddr.sin_addr.s_addr = INADDR_BROADCAST;
     else
         daddr.sin_addr.s_addr = rbp->bp_yiaddr.s_addr; /*unicast requested by client*/
-    saddr.sin_port = htons(BOOTP_SERVER);
-    daddr.sin_port = htons(BOOTP_CLIENT);
+    saddr.sin_port = RT_H2N_U16_C(BOOTP_SERVER);
+    daddr.sin_port = RT_H2N_U16_C(BOOTP_CLIENT);
     udp_output2(pData, NULL, m, &saddr, &daddr, IPTOS_LOWDELAY);
 }
 

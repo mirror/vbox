@@ -54,16 +54,16 @@
 # endif
 #else
 # ifndef NTOHL
-#  define NTOHL(d) ((d) = ntohl((d)))
+#  define NTOHL(d) ((d) = RT_N2H_U32((d)))
 # endif
 # ifndef NTOHS
-#  define NTOHS(d) ((d) = ntohs((u_int16_t)(d)))
+#  define NTOHS(d) ((d) = RT_N2H_U16((u_int16_t)(d)))
 # endif
 # ifndef HTONL
-#  define HTONL(d) ((d) = htonl((d)))
+#  define HTONL(d) ((d) = RT_H2N_U32((d)))
 # endif
 # ifndef HTONS
-#  define HTONS(d) ((d) = htons((u_int16_t)(d)))
+#  define HTONS(d) ((d) = RT_H2N_U16((u_int16_t)(d)))
 # endif
 #endif
 

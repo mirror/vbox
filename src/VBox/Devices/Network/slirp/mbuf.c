@@ -132,7 +132,7 @@ recheck_zone:
     if (m_freelist.m_next == &m_freelist)
     {
 #if 1
-        int rc = mbuf_zone_init(pData);
+        rc = mbuf_zone_init(pData);
         if (rc == 0)
             goto recheck_zone;
         AssertMsgFailed(("No mbufs on free list\n"));

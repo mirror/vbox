@@ -105,7 +105,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
      * Make mbuf data length reflect UDP length.
      * If not enough data to reflect UDP length, drop.
      */
-    len = ntohs((u_int16_t)uh->uh_ulen);
+    len = RT_N2H_U16((u_int16_t)uh->uh_ulen);
     Assert((ip->ip_len == len));
     Assert((ip->ip_len + iphlen == m->m_len));
 
@@ -155,15 +155,15 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     /*
      *  handle DHCP/BOOTP
      */
-    if (ntohs(uh->uh_dport) == BOOTP_SERVER)
+    if (uh->uh_dport == RT_H2N_U16_C(BOOTP_SERVER))
     {
         bootp_input(pData, m);
         goto done;
     }
 
     if (   pData->use_host_resolver
-        && ntohs(uh->uh_dport) == 53
-        && CTL_CHECK(ntohl(ip->ip_dst.s_addr), CTL_DNS))
+        && uh->uh_dport == RT_H2N_U16_C(53)
+        && CTL_CHECK(RT_N2H_U32(ip->ip_dst.s_addr), CTL_DNS))
     {
         struct sockaddr_in dst, src;
         src.sin_addr.s_addr = ip->ip_dst.s_addr;
@@ -181,8 +181,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
      *  handle TFTP
      */
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    if (   ntohs(uh->uh_dport) == TFTP_SERVER
-        && CTL_CHECK(ntohl(ip->ip_dst.s_addr), CTL_TFTP))
+    if (   uh->uh_dport == RT_H2N_U16_C(TFTP_SERVER)
+        && CTL_CHECK(RT_N2H_U32(ip->ip_dst.s_addr), CTL_TFTP))
     {
         tftp_input(pData, m);
         goto done;
@@ -258,8 +258,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
      * DNS proxy
      */
     if (   pData->use_dns_proxy
-        && (ip->ip_dst.s_addr == htonl(ntohl(pData->special_addr.s_addr) | CTL_DNS))
-        && (ntohs(uh->uh_dport) == 53))
+        && (ip->ip_dst.s_addr == RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_DNS))
+        && (uh->uh_dport == RT_H2N_U16_C(53)))
     {
         dnsproxy_query(pData, so, m, iphlen);
         goto done;
@@ -342,7 +342,7 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
     ui = mtod(m, struct udpiphdr *);
     memset(ui->ui_x1, 0, 9);
     ui->ui_pr = IPPROTO_UDP;
-    ui->ui_len = htons(m->m_len - sizeof(struct ip));
+    ui->ui_len = RT_H2N_U16(m->m_len - sizeof(struct ip));
     /* XXXXX Check for from-one-location sockets, or from-any-location sockets */
     ui->ui_src = saddr->sin_addr;
     ui->ui_dst = daddr->sin_addr;
@@ -376,17 +376,17 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
     struct sockaddr_in saddr, daddr;
 
     saddr = *addr;
-    if ((so->so_faddr.s_addr & htonl(pData->netmask)) == pData->special_addr.s_addr)
+    if ((so->so_faddr.s_addr & RT_H2N_U32(pData->netmask)) == pData->special_addr.s_addr)
     {
         saddr.sin_addr.s_addr = so->so_faddr.s_addr;
-        if ((so->so_faddr.s_addr & htonl(~pData->netmask)) == htonl(~pData->netmask))
+        if ((so->so_faddr.s_addr & RT_H2N_U32(~pData->netmask)) == RT_H2N_U32(~pData->netmask))
             saddr.sin_addr.s_addr = alias_addr.s_addr;
     }
 
     /* Any UDP packet to the loopback address must be translated to be from
      * the forwarding address, i.e. 10.0.2.2. */
-    if (   (saddr.sin_addr.s_addr & htonl(IN_CLASSA_NET))
-        == htonl(INADDR_LOOPBACK & IN_CLASSA_NET))
+    if (   (saddr.sin_addr.s_addr & RT_H2N_U32_C(IN_CLASSA_NET))
+        == RT_H2N_U32_C(INADDR_LOOPBACK & IN_CLASSA_NET))
         saddr.sin_addr.s_addr = alias_addr.s_addr;
 
     daddr.sin_addr = so->so_laddr;
@@ -481,8 +481,8 @@ udp_tos(struct socket *so)
 
     while(udptos[i].tos)
     {
-        if (   (udptos[i].fport && ntohs(so->so_fport) == udptos[i].fport)
-            || (udptos[i].lport && ntohs(so->so_lport) == udptos[i].lport))
+        if (   (udptos[i].fport && RT_N2H_U16(so->so_fport) == udptos[i].fport)
+            || (udptos[i].lport && RT_N2H_U16(so->so_lport) == udptos[i].lport))
         {
             so->so_emu = udptos[i].emu;
             return udptos[i].tos;

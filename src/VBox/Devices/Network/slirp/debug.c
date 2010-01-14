@@ -206,9 +206,9 @@ sockstats(PNATState pData)
             buff[n++] = ' ';
         buff[17] = 0;
         lprint("%s %3d   %15s %5d ",
-               buff, so->s, inet_ntoa(so->so_laddr), ntohs(so->so_lport));
+               buff, so->s, inet_ntoa(so->so_laddr), RT_N2H_U16(so->so_lport));
         lprint("%15s %5d %5d %5d\n",
-                inet_ntoa(so->so_faddr), ntohs(so->so_fport),
+                inet_ntoa(so->so_faddr), RT_N2H_U16(so->so_fport),
                 so->so_rcv.sb_cc, so->so_snd.sb_cc);
     LOOP_LABEL(tcp, so, so_next);
     }
@@ -220,9 +220,9 @@ sockstats(PNATState pData)
             buff[n++] = ' ';
         buff[17] = 0;
         lprint("%s %3d  %15s %5d  ",
-                buff, so->s, inet_ntoa(so->so_laddr), ntohs(so->so_lport));
+                buff, so->s, inet_ntoa(so->so_laddr), RT_N2H_U16(so->so_lport));
         lprint("%15s %5d %5d %5d\n",
-                inet_ntoa(so->so_faddr), ntohs(so->so_fport),
+                inet_ntoa(so->so_faddr), RT_N2H_U16(so->so_fport),
                 so->so_rcv.sb_cc, so->so_snd.sb_cc);
     LOOP_LABEL(udp, so, so_next);
     }
@@ -239,7 +239,7 @@ print_ipv4_address(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 
     AssertReturn(strcmp(pszType, "IP4") == 0, 0);
 
-    ip = ntohl(*(uint32_t*)pvValue);
+    ip = RT_N2H_U32(*(uint32_t*)pvValue);
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, IP4_ADDR_PRINTF_FORMAT,
            IP4_ADDR_PRINTF_DECOMP(ip));
 }
@@ -291,14 +291,14 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     }
 
     in_addr = (struct sockaddr_in *)&addr;
-    ip = ntohl(so->so_faddr.s_addr);
+    ip = RT_N2H_U32(so->so_faddr.s_addr);
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %4d:(proto:%u) "
             "state=%04x ip=" IP4_ADDR_PRINTF_FORMAT ":%d "
             "name=" IP4_ADDR_PRINTF_FORMAT ":%d",
             so->s, so->so_type, so->so_state, IP4_ADDR_PRINTF_DECOMP(ip),
-            ntohs(so->so_fport),
-            IP4_ADDR_PRINTF_DECOMP(ntohl(in_addr->sin_addr.s_addr)),
-            ntohs(in_addr->sin_port));
+            RT_N2H_U16(so->so_fport),
+            IP4_ADDR_PRINTF_DECOMP(RT_N2H_U32(in_addr->sin_addr.s_addr)),
+            RT_N2H_U16(in_addr->sin_port));
 }
 
 static DECLCALLBACK(size_t)
