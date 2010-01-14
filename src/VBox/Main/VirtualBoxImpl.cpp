@@ -180,7 +180,7 @@ struct VirtualBox::Data
           ollFloppyImages(LOCKCLASS_VIRTUALBOXLIST),
           ollSharedFolders(LOCKCLASS_VIRTUALBOXLIST),
           ollDHCPServers(LOCKCLASS_VIRTUALBOXLIST),
-          mtxProgressOperations(LOCKCLASS_VIRTUALBOXLIST),
+          mtxProgressOperations(LOCKCLASS_PROGRESSLIST),
           updateReq(UPDATEREQARG),
           threadClientWatcher(NIL_RTTHREAD),
           threadAsyncEvent(NIL_RTTHREAD),
@@ -2071,8 +2071,8 @@ HRESULT VirtualBox::removeProgress(IN_GUID aId)
     /* protect mProgressOperations */
     AutoWriteLock safeLock(m->mtxProgressOperations COMMA_LOCKVAL_SRC_POS);
 
-    size_t cnt = m->mapProgressOperations.erase (aId);
-    Assert (cnt == 1);
+    size_t cnt = m->mapProgressOperations.erase(aId);
+    Assert(cnt == 1);
     NOREF(cnt);
 
     return S_OK;
@@ -3656,7 +3656,7 @@ HRESULT VirtualBox::updateSettings(const char *aOldPath, const char *aNewPath)
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    ObjectsList<Medium> ollAll(LOCKCLASS_OTHERLIST);
+    ObjectsList<Medium> ollAll(LOCKCLASS_VIRTUALBOXLIST);
     ollAll.appendOtherList(m->ollDVDImages);
     ollAll.appendOtherList(m->ollFloppyImages);
     ollAll.appendOtherList(m->ollHardDisks);
