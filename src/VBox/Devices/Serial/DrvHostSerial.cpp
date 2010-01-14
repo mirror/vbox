@@ -211,9 +211,9 @@ static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHAR pInterface, const void *pv
                          : CHAR_MAX_SEND_QUEUE - (iHead - iTail) - 1;
         if (cbAvail <= 0)
         {
-#ifdef DEBUG
+# ifdef DEBUG
             uint64_t volatile u64Now = RTTimeNanoTS(); NOREF(u64Now);
-#endif
+# endif
             Log(("%s: dropping %d chars (cbAvail=%d iHead=%d iTail=%d)\n", __FUNCTION__, cbWrite - i , cbAvail, iHead, iTail));
             STAM_COUNTER_INC(&pThis->StatSendOverflows);
             break;
@@ -514,10 +514,10 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             ASMAtomicWriteU32(&pThis->iSendQueueTail, iTail);
 
             /* write it. */
-#ifdef DEBUG
+# ifdef DEBUG
             uint64_t volatile u64Now = RTTimeNanoTS(); NOREF(u64Now);
-#endif
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
+# endif
+# if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 
             size_t cbWritten;
             rc = RTFileWrite(pThis->DeviceFile, abBuf, cb, &cbWritten);
@@ -556,7 +556,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 } /* wait/write loop */
             }
 
-#elif defined(RT_OS_WINDOWS)
+# elif defined(RT_OS_WINDOWS)
             /* perform an overlapped write operation. */
             DWORD cbWritten;
             memset(&pThis->overlappedSend, 0, sizeof(pThis->overlappedSend));
@@ -580,7 +580,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                     rc = RTErrConvertFromWin32(dwRet);
             }
 
-#endif /* RT_OS_WINDOWS */
+# endif /* RT_OS_WINDOWS */
             if (RT_FAILURE(rc))
             {
                 LogRel(("HostSerial#%d: Serial Write failed with %Rrc; terminating send thread\n", pDrvIns->iInstance, rc));
@@ -598,11 +598,11 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             uint8_t abBuf[1];
             abBuf[0] = pThis->aSendQueue[iTail];
 
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
+# if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 
             rc = RTFileWrite(pThis->DeviceFile, abBuf, cbProcessed, NULL);
 
-#elif defined(RT_OS_WINDOWS)
+# elif defined(RT_OS_WINDOWS)
 
             DWORD cbBytesWritten;
             memset(&pThis->overlappedSend, 0, sizeof(pThis->overlappedSend));
@@ -627,7 +627,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                     rc = RTErrConvertFromWin32(dwRet);
             }
 
-#endif
+# endif
 
             if (RT_SUCCESS(rc))
             {
@@ -1330,7 +1330,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     int aFDs[2];
     if (pipe(aFDs) != 0)
     {
-        int rc = RTErrConvertFromErrno(errno);
+        rc = RTErrConvertFromErrno(errno);
         AssertRC(rc);
         return rc;
     }
