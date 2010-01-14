@@ -151,7 +151,7 @@ struct Host::Data
 {
     Data()
 #ifdef VBOX_WITH_USB
-        : usbListsLock(LOCKCLASS_HOSTLIST)
+        : usbListsLock(LOCKCLASS_USBLIST)
 #endif
     {};
 
