@@ -26,7 +26,8 @@
 
 // macros for automatic lock validation; these will amount to nothing
 // unless lock validation is enabled for the runtime
-#if defined(RT_LOCK_STRICT)
+#if defined(RT_LOCK_STRICT) && defined (DEBUG)
+#define VBOX_WITH_MAIN_LOCK_VALIDATION
 # define COMMA_LOCKVAL_SRC_POS , RT_SRC_POS
 # define LOCKVAL_SRC_POS_DECL RT_SRC_POS_DECL
 # define COMMA_LOCKVAL_SRC_POS_DECL , RT_SRC_POS_DECL
@@ -56,16 +57,19 @@ namespace util
  * in AutoLock.cpp transparently. These are passed to the constructors of the
  * LockHandle classes.
  */
-enum MainLockValidationClasses
+enum VBoxLockingClass
 {
     LOCKCLASS_NONE = 0,
     LOCKCLASS_VIRTUALBOXOBJECT = 1,         // highest order: VirtualBox object lock
     LOCKCLASS_VIRTUALBOXLIST = 2,           // lock protecting a list in VirtualBox object
                                             // (machines list, hard disk tree, shared folders list, ...)
-    LOCKCLASS_OTHERLIST = 3,                // lock protecting a list that's elsewhere
+    LOCKCLASS_USBPROXYSERVICE = 3,          // USB proxy service object lock
+    LOCKCLASS_HOSTOBJECT = 4,               // Host object lock
+    LOCKCLASS_HOSTLIST = 5,                 // lock protecting a list in Host object
+    LOCKCLASS_OTHEROBJECT = 6,              // any regular object member variable lock
+    LOCKCLASS_OTHERLIST = 7,                // lock protecting a list that's elsewhere
                                             // (e.g. snapshots list in machine object)
-    LOCKCLASS_OBJECT = 4,                   // any regular object member variable  lock
-    LOCKCLASS_OBJECTSTATE = 5               // object state lock (handled by AutoCaller classes)
+    LOCKCLASS_OBJECTSTATE = 8               // object state lock (handled by AutoCaller classes)
 };
 
 void InitAutoLockSystem();
@@ -110,7 +114,7 @@ public:
     virtual void lockRead(LOCKVAL_SRC_POS_DECL) = 0;
     virtual void unlockRead() = 0;
 
-#ifdef RT_LOCK_STRICT
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     virtual const char* describe() const = 0;
 #endif
 
@@ -131,7 +135,7 @@ private:
 class RWLockHandle : public LockHandle
 {
 public:
-    RWLockHandle(MainLockValidationClasses lockClass);
+    RWLockHandle(VBoxLockingClass lockClass);
     virtual ~RWLockHandle();
 
     virtual bool isWriteLockOnCurrentThread() const;
@@ -143,7 +147,7 @@ public:
 
     virtual uint32_t writeLockLevel() const;
 
-#ifdef RT_LOCK_STRICT
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     virtual const char* describe() const;
 #endif
 
@@ -168,7 +172,7 @@ private:
 class WriteLockHandle : public LockHandle
 {
 public:
-    WriteLockHandle(MainLockValidationClasses lockClass);
+    WriteLockHandle(VBoxLockingClass lockClass);
     virtual ~WriteLockHandle();
     virtual bool isWriteLockOnCurrentThread() const;
 
@@ -178,7 +182,7 @@ public:
     virtual void unlockRead();
     virtual uint32_t writeLockLevel() const;
 
-#ifdef RT_LOCK_STRICT
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     virtual const char* describe() const;
 #endif
 

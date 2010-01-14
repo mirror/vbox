@@ -328,9 +328,11 @@ bool Machine::MediaData::operator==(const MediaData &that) const
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-Machine::Machine() : mType (IsMachine) {}
+Machine::Machine()
+{}
 
-Machine::~Machine() {}
+Machine::~Machine()
+{}
 
 HRESULT Machine::FinalConstruct()
 {
@@ -546,7 +548,7 @@ HRESULT Machine::init(VirtualBox *aParent,
  */
 HRESULT Machine::registeredInit()
 {
-    AssertReturn(mType == IsMachine, E_FAIL);
+    AssertReturn(getClassID() == clsidMachine, E_FAIL);
     AssertReturn(!mData->mUuid.isEmpty(), E_FAIL);
     AssertReturn(!mData->mAccessible, E_FAIL);
 
@@ -622,8 +624,8 @@ void Machine::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
-    Assert (mType == IsMachine);
-    Assert (!!mData);
+    Assert(getClassID() == clsidMachine);
+    Assert(!!mData);
 
     LogFlowThisFunc(("initFailed()=%d\n", autoUninitSpan.initFailed()));
     LogFlowThisFunc(("mRegistered=%d\n", mData->mRegistered));
@@ -2114,7 +2116,7 @@ Machine::COMSETTER(TeleporterEnabled)(BOOL aEnabled)
        (Clearing it is always permitted.) */
     if (    aEnabled
         &&  mData->mRegistered
-        &&  (   mType != IsSessionMachine
+        &&  (   getClassID() != clsidSessionMachine
              || (   mData->mMachineState != MachineState_PoweredOff
                  && mData->mMachineState != MachineState_Teleported
                  && mData->mMachineState != MachineState_Aborted
@@ -2257,7 +2259,7 @@ Machine::COMSETTER(RTCUseUTC)(BOOL aEnabled)
        (Clearing it is always permitted.) */
     if (    aEnabled
         &&  mData->mRegistered
-        &&  (   mType != IsSessionMachine
+        &&  (   getClassID() != clsidSessionMachine
              || (   mData->mMachineState != MachineState_PoweredOff
                  && mData->mMachineState != MachineState_Teleported
                  && mData->mMachineState != MachineState_Aborted
@@ -3187,7 +3189,7 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
         // saveSettings() needs VirtualBox write lock
         AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
-        if (mType == IsSnapshotMachine)
+        if (getClassID() == clsidSnapshotMachine)
         {
             HRESULT rc = checkStateDependency(MutableStateDep);
             if (FAILED(rc)) return rc;
@@ -5369,7 +5371,7 @@ HRESULT Machine::checkStateDependency(StateDependency aDepType)
         case MutableStateDep:
         {
             if (   mData->mRegistered
-                && (   mType != IsSessionMachine  /** @todo This was just convered raw; Check if Running and Paused should actually be included here... (Live Migration) */
+                && (   getClassID() != clsidSessionMachine  /** @todo This was just convered raw; Check if Running and Paused should actually be included here... (Live Migration) */
                     || (   mData->mMachineState != MachineState_Paused
                         && mData->mMachineState != MachineState_Running
                         && mData->mMachineState != MachineState_Aborted
@@ -5386,7 +5388,7 @@ HRESULT Machine::checkStateDependency(StateDependency aDepType)
         case MutableOrSavedStateDep:
         {
             if (   mData->mRegistered
-                && (   mType != IsSessionMachine  /** @todo This was just convered raw; Check if Running and Paused should actually be included here... (Live Migration) */
+                && (   getClassID() != clsidSessionMachine  /** @todo This was just convered raw; Check if Running and Paused should actually be included here... (Live Migration) */
                     || (   mData->mMachineState != MachineState_Paused
                         && mData->mMachineState != MachineState_Running
                         && mData->mMachineState != MachineState_Aborted
@@ -5559,7 +5561,7 @@ void Machine::uninitDataAndChildObjects()
      * a result of unregistering or discarding the snapshot), outdated hard
      * disk attachments will already be uninitialized and deleted, so this
      * code will not affect them. */
-    if (!!mMediaData && (mType == IsMachine || mType == IsSnapshotMachine))
+    if (!!mMediaData && (getClassID() == clsidMachine || getClassID() == clsidSnapshotMachine))
     {
         for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
              it != mMediaData->mAttachments.end();
@@ -5573,7 +5575,7 @@ void Machine::uninitDataAndChildObjects()
         }
     }
 
-    if (mType == IsMachine)
+    if (getClassID() == clsidMachine)
     {
         /* reset some important fields of mData */
         mData->mCurrentSnapshot.setNull();
@@ -5719,7 +5721,7 @@ HRESULT Machine::findSharedFolder (CBSTR aName,
 HRESULT Machine::loadSettings(bool aRegistered)
 {
     LogFlowThisFuncEnter();
-    AssertReturn(mType == IsMachine, E_FAIL);
+    AssertReturn(getClassID() == clsidMachine, E_FAIL);
 
     AutoCaller autoCaller(this);
     AssertReturn(autoCaller.state() == InInit, E_FAIL);
@@ -5876,7 +5878,7 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
                               const Guid &aCurSnapshotId,
                               Snapshot *aParentSnapshot)
 {
-    AssertReturn (mType == IsMachine, E_FAIL);
+    AssertReturn(getClassID() == clsidMachine, E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -5947,7 +5949,7 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
  */
 HRESULT Machine::loadHardware(const settings::Hardware &data)
 {
-    AssertReturn(mType == IsMachine || mType == IsSnapshotMachine, E_FAIL);
+    AssertReturn(getClassID() == clsidMachine || getClassID() == clsidSnapshotMachine, E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -6133,7 +6135,7 @@ HRESULT Machine::loadStorageControllers(const settings::Storage &data,
                                         bool aRegistered,
                                         const Guid *aSnapshotId /* = NULL */)
 {
-    AssertReturn (mType == IsMachine || mType == IsSnapshotMachine, E_FAIL);
+    AssertReturn(getClassID() == clsidMachine || getClassID() == clsidSnapshotMachine, E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -6207,8 +6209,9 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                     bool aRegistered,
                                     const Guid *aSnapshotId /*= NULL*/)
 {
-    AssertReturn ((mType == IsMachine && aSnapshotId == NULL) ||
-                  (mType == IsSnapshotMachine && aSnapshotId != NULL), E_FAIL);
+    AssertReturn(   (getClassID() == clsidMachine && aSnapshotId == NULL)
+                 || (getClassID() == clsidSnapshotMachine && aSnapshotId != NULL),
+                 E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -6312,7 +6315,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                 rc = mParent->findHardDisk(&dev.uuid, NULL, true /* aDoSetError */, &medium);
                 if (FAILED(rc))
                 {
-                    if (mType == IsSnapshotMachine)
+                    if (getClassID() == clsidSnapshotMachine)
                     {
                         // wrap another error message around the "cannot find hard disk" set by findHardDisk
                         // so the user knows that the bad disk is in a snapshot somewhere
@@ -6330,7 +6333,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
 
                 if (medium->getType() == MediumType_Immutable)
                 {
-                    if (mType == IsSnapshotMachine)
+                    if (getClassID() == clsidSnapshotMachine)
                         return setError(E_FAIL,
                                         tr("Immutable hard disk '%s' with UUID {%RTuuid} cannot be directly attached to snapshot with UUID {%RTuuid} "
                                            "of the virtual machine '%ls' ('%s')"),
@@ -6348,7 +6351,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                     mData->m_strConfigFileFull.raw());
                 }
 
-                if (    mType != IsSnapshotMachine
+                if (    getClassID() != clsidSnapshotMachine
                      && medium->getChildren().size() != 0
                    )
                     return setError(E_FAIL,
@@ -6398,7 +6401,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
         /* associate the medium with this machine and snapshot */
         if (!medium.isNull())
         {
-            if (mType == IsSnapshotMachine)
+            if (getClassID() == clsidSnapshotMachine)
                 rc = medium->attachTo(mData->mUuid, *aSnapshotId);
             else
                 rc = medium->attachTo(mData->mUuid);
@@ -6785,7 +6788,7 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
      * saving them */
     ensureNoStateDependencies();
 
-    AssertReturn(mType == IsMachine || mType == IsSessionMachine, E_FAIL);
+    AssertReturn(getClassID() == clsidMachine || getClassID() == clsidSessionMachine, E_FAIL);
 
     BOOL currentStateModified = mData->mCurrentStateModified;
     bool settingsModified;
@@ -6899,7 +6902,7 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
          * mutable Machine instances are always not registered (i.e. private
          * to the client process that creates them) and thus don't need to
          * inform callbacks. */
-        if (mType == IsSessionMachine)
+        if (getClassID() == clsidSessionMachine)
             mParent->onMachineDataChange(mData->mUuid);
     }
 
@@ -7822,7 +7825,7 @@ void Machine::fixupMedia(bool aCommit, bool aOnline /*= false*/)
         /* commit the hard disk changes */
         mMediaData.commit();
 
-        if (mType == IsSessionMachine)
+        if (getClassID() == clsidSessionMachine)
         {
             /* attach new data to the primary machine and reshare it */
             mPeer->mMediaData.attach(mMediaData);
@@ -8273,7 +8276,7 @@ void Machine::commit()
         }
     }
 
-    if (mType == IsSessionMachine)
+    if (getClassID() == clsidSessionMachine)
     {
         /* attach new data to the primary machine and reshare it */
         mPeer->mUserData.attach (mUserData);
@@ -8298,12 +8301,12 @@ void Machine::commit()
  */
 void Machine::copyFrom(Machine *aThat)
 {
-    AssertReturnVoid (mType == IsMachine || mType == IsSessionMachine);
-    AssertReturnVoid (aThat->mType == IsSnapshotMachine);
+    AssertReturnVoid(getClassID() == clsidMachine || getClassID() == clsidSessionMachine);
+    AssertReturnVoid(aThat->getClassID() == clsidSnapshotMachine);
 
-    AssertReturnVoid (!Global::IsOnline (mData->mMachineState));
+    AssertReturnVoid(!Global::IsOnline (mData->mMachineState));
 
-    mHWData.assignCopy (aThat->mHWData);
+    mHWData.assignCopy(aThat->mHWData);
 
     // create copies of all shared folders (mHWData after attiching a copy
     // contains just references to original objects)
@@ -8404,9 +8407,6 @@ DEFINE_EMPTY_CTOR_DTOR(SessionMachine)
 HRESULT SessionMachine::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
-
-    /* set the proper type to indicate we're the SessionMachine instance */
-    unconst(mType) = IsSessionMachine;
 
 #if defined(RT_OS_WINDOWS)
     mIPCSem = NULL;

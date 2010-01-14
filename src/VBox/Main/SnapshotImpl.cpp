@@ -767,9 +767,6 @@ HRESULT SnapshotMachine::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
 
-    /* set the proper type to indicate we're the SnapshotMachine instance */
-    unconst(mType) = IsSnapshotMachine;
-
     return S_OK;
 }
 

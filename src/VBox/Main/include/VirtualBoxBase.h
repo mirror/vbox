@@ -418,6 +418,17 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 
+enum VBoxClsID
+{
+    clsidVirtualBox,
+    clsidHost,
+    clsidMachine,
+    clsidSessionMachine,
+    clsidSnapshotMachine,
+    clsidSnapshot,
+    clsidOther
+};
+
 /**
  * Abstract base class for all component classes implementing COM
  * interfaces of the VirtualBox COM library.
@@ -502,6 +513,25 @@ public:
 
     // util::Lockable interface
     virtual RWLockHandle *lockHandle() const;
+
+    /**
+     * Simple run-time type identification without having to enable C++ RTTI.
+     * The class IDs are defined in VirtualBoxBase.h.
+     * @return
+     */
+    virtual VBoxClsID getClassID() const
+    {
+        return clsidOther;
+    }
+
+    /**
+     * Override of the default locking class to be used for validating lock
+     * order with the standard member lock handle.
+     */
+    virtual VBoxLockingClass getLockingClass() const
+    {
+        return LOCKCLASS_OTHEROBJECT;
+    }
 
     /**
      * Unintialization method.
@@ -1116,8 +1146,8 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 class ATL_NO_VTABLE VirtualBoxBase
-    : virtual public VirtualBoxBaseProto
-    , public CComObjectRootEx<CComMultiThreadModel>
+    : virtual public VirtualBoxBaseProto,
+      public CComObjectRootEx<CComMultiThreadModel>
 {
 
 public:

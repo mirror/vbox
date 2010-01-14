@@ -89,6 +89,18 @@ public:
     // ISnapshot methods
 
     // public methods only for internal purposes
+
+
+    /**
+     * Simple run-time type identification without having to enable C++ RTTI.
+     * The class IDs are defined in VirtualBoxBase.h.
+     * @return
+     */
+    virtual VBoxClsID getClassID() const
+    {
+        return clsidSnapshot;
+    }
+
     const ComObjPtr<Snapshot>& getParent() const;
 
     const Utf8Str& stateFilePath() const;
