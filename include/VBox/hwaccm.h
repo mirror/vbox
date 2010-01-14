@@ -128,6 +128,7 @@ VMMR3DECL(void)         HWACCMR3Relocate(PVM pVM);
 VMMR3DECL(int)          HWACCMR3Term(PVM pVM);
 VMMR3DECL(int)          HWACCMR3TermCPU(PVM pVM);
 VMMR3DECL(void)         HWACCMR3Reset(PVM pVM);
+VMMR3DECL(void)         HWACCMR3ResetCpu(PVMCPU pVCpu);
 VMMR3DECL(void)         HWACCMR3CheckError(PVM pVM, int iStatusCode);
 VMMR3DECL(bool)         HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx);
 VMMR3DECL(void)         HWACCMR3NotifyScheduled(PVMCPU pVCpu);
@@ -143,7 +144,6 @@ VMMR3DECL(VBOXSTRICTRC) HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCP
 VMMR3DECL(int)          HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3DECL(int)          HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3DECL(int)          HWACCMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR3DECL(void)         HWACCMR3ResetCPU(PVMCPU pVCpu);
 
 /** @} */
 #endif /* IN_RING3 */

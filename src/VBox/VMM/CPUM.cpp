@@ -869,9 +869,17 @@ VMMR3DECL(int) CPUMR3TermCPU(PVM pVM)
     return 0;
 }
 
+
+/**
+ * Resets a virtual CPU.
+ *
+ * Used by CPUMR3Reset and CPU hot plugging.
+ *
+ * @param   pVCpu               The virtual CPU handle.
+ */
 VMMR3DECL(void) CPUMR3ResetCpu(PVMCPU pVCpu)
 {
-    /* @todo anything different for VCPU > 0? */
+    /** @todo anything different for VCPU > 0? */
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
     /*
@@ -946,6 +954,7 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVMCPU pVCpu)
     */
     pCtx->msrEFER                   = 0;
 }
+
 
 /**
  * Resets the CPU.

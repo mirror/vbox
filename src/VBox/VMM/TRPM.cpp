@@ -712,10 +712,19 @@ VMMR3DECL(int) TRPMR3Term(PVM pVM)
     return 0;
 }
 
+
+/**
+ * Resets a virtual CPU.
+ *
+ * Used by TRPMR3Reset and CPU hot plugging.
+ *
+ * @param   pVCpu               The virtual CPU handle.
+ */
 VMMR3DECL(void) TRPMR3ResetCpu(PVMCPU pVCpu)
 {
     pVCpu->trpm.s.uActiveVector = ~0;
 }
+
 
 /**
  * The VM is being reset.
@@ -747,10 +756,7 @@ VMMR3DECL(void) TRPMR3Reset(PVM pVM)
      * Reinitialize other members calling the relocator to get things right.
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-        TRPMR3ResetCpu(pVCpu);
-    }
+        TRPMR3ResetCpu(&pVM->aCpus[i]);
     memcpy(&pVM->trpm.s.aIdt[0], &g_aIdt[0], sizeof(pVM->trpm.s.aIdt));
     memset(pVM->trpm.s.aGuestTrapHandler, 0, sizeof(pVM->trpm.s.aGuestTrapHandler));
     TRPMR3Relocate(pVM, 0);
