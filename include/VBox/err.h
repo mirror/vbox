@@ -1491,6 +1491,13 @@
 #define VERR_COM_OBJECT_IN_USE                     (-4612)
 /** @} */
 
+/** @name VBox CPU hotplug Status codes
+ * @{
+ */
+/** CPU hotplug events from VMMDev are not monitored by the guest */
+#define VERR_CPU_HOTPLUG_NOT_MONITORED_BY_GUEST    (-4700)
+/** @} */
+
 /* SED-END */
 
 

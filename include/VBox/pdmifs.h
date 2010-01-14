@@ -1901,6 +1901,24 @@ typedef struct PDMIVMMDEVPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnVRDPChange, (PPDMIVMMDEVPORT pInterface, bool fVRDPEnabled, uint32_t u32VRDPExperienceLevel));
 
+    /**
+     * Notify the guest of CPU hot-unplug event.
+     *
+     * @returns VBox status code
+     * @param   idCpuCore    The core id of the CPU to remove.
+     * @param   idCpuPackage The package id of the CPU to remove.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnCpuHotUnplug, (PPDMIVMMDEVPORT pInterface, uint32_t idCpuCore, uint32_t idCpuPackage));
+
+    /**
+     * Notify the guest of CPU hot-plug event.
+     *
+     * @returns VBox status code
+     * @param   idCpuCore    The core id of the CPU to add.
+     * @param   idCpuPackage The package id of the CPU to add.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnCpuHotPlug, (PPDMIVMMDEVPORT pInterface, uint32_t idCpuCore, uint32_t idCpuPackage));
+
 } PDMIVMMDEVPORT;
 
 /** @name Flags for PDMIVMMDEVPORT::pfnSetCredentials.

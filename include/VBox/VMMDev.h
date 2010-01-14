@@ -91,8 +91,10 @@ RT_C_DECLS_BEGIN
 #define VMMDEV_EVENT_VRDP                                   RT_BIT(8)
 /** New mouse position data available. */
 #define VMMDEV_EVENT_MOUSE_POSITION_CHANGED                 RT_BIT(9)
+/** CPU hotplug event occurred. */
+#define VMMDEV_EVENT_CPU_HOTPLUG                            RT_BIT(10)
 /** The mask of valid events, for sanity checking. */
-#define VMMDEV_EVENT_VALID_EVENT_MASK                       UINT32_C(0x000003ff)
+#define VMMDEV_EVENT_VALID_EVENT_MASK                       UINT32_C(0x000007ff)
 /** @} */
 
 
@@ -168,6 +170,8 @@ typedef enum
     VMMDevReq_ChangeMemBalloon           = 113,
     VMMDevReq_GetVRDPChangeRequest       = 150,
     VMMDevReq_LogString                  = 200,
+    VMMDevReq_GetCpuHotPlugRequest       = 210,
+    VMMDevReq_SetCpuHotPlugStatus        = 211,
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
 
@@ -983,6 +987,45 @@ typedef struct
 AssertCompileSize(RTRECT, 16);
 AssertCompileSize(VMMDevVideoSetVisibleRegion, 24+4+16);
 
+/**
+ * CPU event types.
+ */
+typedef enum
+{
+    VMMDevCpuStatusType_Invalid  = 0,
+    VMMDevCpuStatusType_Disable  = 1,
+    VMMDevCpuStatusType_Enable   = 2,
+    VMMDevCpuStatusType_SizeHack = 0x7fffffff
+} VMMDevCpuStatusType;
+
+/**
+ * CPU hotplug event status request.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** Status type */
+    VMMDevCpuStatusType enmStatusType;
+} VMMDevCpuHotPlugStatusRequest;
+AssertCompileSize(VMMDevCpuHotPlugStatusRequest, 24+4);
+
+/**
+ * Get the ID of the changed CPU and event type.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** Event type */
+    VMMDevCpuEventType  enmEventType;
+    /** core id of the CPU changed */
+    uint32_t            idCpuCore;
+    /** package id of the CPU changed */
+    uint32_t            idCpuPackage;
+} VMMDevGetCpuHotPlugRequest;
+AssertCompileSize(VMMDevGetCpuHotPlugRequest, 24+4+4+4);
+
 #pragma pack()
 
 
@@ -1479,6 +1522,10 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevReqLogString);
         case VMMDevReq_CtlGuestFilterMask:
             return sizeof(VMMDevCtlGuestFilterMask);
+        case VMMDevReq_GetCpuHotPlugRequest:
+            return sizeof(VMMDevGetCpuHotPlugRequest);
+        case VMMDevReq_SetCpuHotPlugStatus:
+            return sizeof(VMMDevCpuHotPlugStatusRequest);
         default:
             return 0;
     }

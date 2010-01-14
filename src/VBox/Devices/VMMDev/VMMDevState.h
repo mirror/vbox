@@ -197,6 +197,15 @@ typedef struct VMMDevState
         /** Partner of ILeds. */
         R3PTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
     } SharedFolders;
+
+    /** FLag whether CPU hotplug events are monitored */
+    bool                 fCpuHotPlugEventsEnabled;
+    /** CPU hotplug event */
+    VMMDevCpuEventType   enmCpuHotPlugEvent;
+    /** Core id of the CPU to change */
+    uint32_t             idCpuCore;
+    /** Package id of the CPU to changhe */
+    uint32_t             idCpuPackage;
 } VMMDevState;
 AssertCompileMemberAlignment(VMMDevState, CritSect, 8);
 

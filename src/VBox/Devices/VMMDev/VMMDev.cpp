@@ -1623,6 +1623,51 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
+        case VMMDevReq_GetCpuHotPlugRequest:
+        {
+            VMMDevGetCpuHotPlugRequest *pReqCpuHotPlug = (VMMDevGetCpuHotPlugRequest *)pRequestHeader;
+
+            if (pRequestHeader->size != sizeof(VMMDevGetCpuHotPlugRequest))
+            {
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                pReqCpuHotPlug->enmEventType = pThis->enmCpuHotPlugEvent;
+                pReqCpuHotPlug->idCpuCore    = pThis->idCpuCore;
+                pReqCpuHotPlug->idCpuPackage = pThis->idCpuPackage;
+                pReqCpuHotPlug->header.rc    = VINF_SUCCESS;
+
+                /* Clear the event */
+                pThis->enmCpuHotPlugEvent = VMMDevCpuEventType_None;
+                pThis->idCpuCore          = UINT32_MAX;
+                pThis->idCpuPackage       = UINT32_MAX;
+            }
+            break;
+        }
+
+        case VMMDevReq_SetCpuHotPlugStatus:
+        {
+            VMMDevCpuHotPlugStatusRequest *pReqCpuHotPlugStatus = (VMMDevCpuHotPlugStatusRequest *)pRequestHeader;
+
+            if (pRequestHeader->size != sizeof(VMMDevCpuHotPlugStatusRequest))
+            {
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                pRequestHeader->rc = VINF_SUCCESS;
+
+                if (pReqCpuHotPlugStatus->enmStatusType == VMMDevCpuStatusType_Disable)
+                    pThis->fCpuHotPlugEventsEnabled = false;
+                else if (pReqCpuHotPlugStatus->enmStatusType == VMMDevCpuStatusType_Enable)
+                    pThis->fCpuHotPlugEventsEnabled = true;
+                else
+                    pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            break;
+        }
+
 #ifdef DEBUG
         case VMMDevReq_LogString:
         {
@@ -2110,6 +2155,68 @@ static DECLCALLBACK(void) vmmdevVBVAChange(PPDMIVMMDEVPORT pInterface, bool fEna
     return;
 }
 
+/**
+ * Notification that a CPU is about to be unplugged from the VM.
+ * The guest has to eject the CPU.
+ *
+ * @returns VBox status code.
+ * @param   idCpu    The id of the CPU.
+ * @param   idCpuCore    The core id of the CPU to remove.
+ * @param   idCpuPackage The package id of the CPU to remove.
+ */
+static DECLCALLBACK(int) vmmdevCpuHotUnplug(PPDMIVMMDEVPORT pInterface, uint32_t idCpuCore, uint32_t idCpuPackage)
+{
+    int rc = VINF_SUCCESS;
+    VMMDevState *pThis = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
+
+    Log(("vmmdevCpuHotUnplug: idCpuCore=%u idCpuPackage=%u\n", idCpuCore, idCpuPackage));
+
+    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+
+    if (pThis->fCpuHotPlugEventsEnabled)
+    {
+        pThis->enmCpuHotPlugEvent = VMMDevCpuEventType_Unplug;
+        pThis->idCpuCore          = idCpuCore;
+        pThis->idCpuPackage       = idCpuPackage;
+        VMMDevNotifyGuest (pThis, VMMDEV_EVENT_CPU_HOTPLUG);
+    }
+    else
+        rc = VERR_CPU_HOTPLUG_NOT_MONITORED_BY_GUEST;
+
+    PDMCritSectLeave(&pThis->CritSect);
+    return rc;
+}
+
+/**
+ * Notification that a CPU was attached to the VM
+ * The guest may use it now.
+ *
+ * @returns VBox status code.
+ * @param   idCpuCore    The core id of the CPU to add.
+ * @param   idCpuPackage The package id of the CPU to add.
+ */
+static DECLCALLBACK(int) vmmdevCpuHotPlug(PPDMIVMMDEVPORT pInterface, uint32_t idCpuCore, uint32_t idCpuPackage)
+{
+    int rc = VINF_SUCCESS;
+    VMMDevState *pThis = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
+
+    Log(("vmmdevCpuPlug: idCpuCore=%u idCpuPackage=%u\n", idCpuCore, idCpuPackage));
+
+    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+
+    if (pThis->fCpuHotPlugEventsEnabled)
+    {
+        pThis->enmCpuHotPlugEvent = VMMDevCpuEventType_Plug;
+        pThis->idCpuCore          = idCpuCore;
+        pThis->idCpuPackage       = idCpuPackage;
+        VMMDevNotifyGuest(pThis, VMMDEV_EVENT_CPU_HOTPLUG);
+    }
+    else
+        rc = VERR_CPU_HOTPLUG_NOT_MONITORED_BY_GUEST;
+
+    PDMCritSectLeave(&pThis->CritSect);
+    return rc;
+}
 
 /* -=-=-=-=-=- Saved State -=-=-=-=-=- */
 
@@ -2408,6 +2515,8 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->Port.pfnSetMemoryBalloon       = vmmdevSetMemoryBalloon;
     pThis->Port.pfnSetStatisticsInterval  = vmmdevSetStatisticsInterval;
     pThis->Port.pfnVRDPChange             = vmmdevVRDPChange;
+    pThis->Port.pfnCpuHotUnplug           = vmmdevCpuHotUnplug;
+    pThis->Port.pfnCpuHotPlug             = vmmdevCpuHotPlug;
 
     /* Shared folder LED */
     pThis->SharedFolders.Led.u32Magic     = PDMLED_MAGIC;
