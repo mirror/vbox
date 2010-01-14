@@ -139,11 +139,20 @@ struct VNetState_st
     PTMTIMERR0              pTxTimerR0;
     /**< Transmit Delay Timer - GC. */
     PTMTIMERRC              pTxTimerRC;
+
 #if HC_ARCH_BITS == 64
     uint32_t    padding2;
 #endif
 
+    uint32_t   u32i;
+    uint32_t   u32AvgDiff;
+    uint32_t   u32MinDiff;
+    uint32_t   u32MaxDiff;
+    uint64_t   u64NanoTS;
+
 #endif /* VNET_TX_DELAY */
+    /** Indicates transmission in progress -- only one thread is allowed. */
+    uint32_t                uIsTransmitting;
 
     /** PCI config area holding MAC address as well as TBD. */
     struct VNetPCIConfig    config;
@@ -169,7 +178,7 @@ struct VNetState_st
     /** Bit array of VLAN filter, one bit per VLAN ID. */
     uint8_t                 aVlanFilter[VNET_MAX_VID / sizeof(uint8_t)];
 
-#if HC_ARCH_BITS == 64
+#if HC_ARCH_BITS != 64
     uint32_t    padding3;
 #endif
 
@@ -266,6 +275,24 @@ DECLINLINE(void) vnetCsRxLeave(PVNETSTATE pState)
     // PDMCritSectLeave(&pState->csRx);
 }
 
+/**
+ * Dump a packet to debug log.
+ *
+ * @param   pState      The device state structure.
+ * @param   cpPacket    The packet.
+ * @param   cb          The size of the packet.
+ * @param   cszText     A string denoting direction of packet transfer.
+ */
+DECLINLINE(void) vnetPacketDump(PVNETSTATE pState, const uint8_t *cpPacket, size_t cb, const char *cszText)
+{
+#ifdef DEBUG
+    Log(("%s %s packet #%d (%d bytes):\n",
+         INSTANCE(pState), cszText, ++pState->u32PktNo, cb));
+    //Log3(("%.*Rhxd\n", cb, cpPacket));
+#endif
+}
+
+
 
 PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pvState)
 {
@@ -353,6 +380,7 @@ PDMBOTHCBDECL(void) vnetReset(void *pvState)
     pState->nMacFilterEntries = 0;
     memset(pState->aMacFilter,  0, VNET_MAC_FILTER_LEN * sizeof(RTMAC));
     memset(pState->aVlanFilter, 0, sizeof(pState->aVlanFilter));
+    pState->uIsTransmitting   = 0;
 }
 
 #ifdef IN_RING3
@@ -649,6 +677,8 @@ static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb)
     hdr.u8Flags   = 0;
     hdr.u8GSOType = VNETHDR_GSO_NONE;
 
+    vnetPacketDump(pState, (const uint8_t*)pvBuf, cb, "<-- Incoming");
+
     unsigned int uOffset = 0;
     for (unsigned int nElem = 0; uOffset < cb; nElem++)
     {
@@ -811,12 +841,23 @@ static DECLCALLBACK(void) vnetQueueReceive(void *pvState, PVQUEUE pQueue)
 
 static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue)
 {
+    /*
+     * Only one thread is allowed to transmit at a time, others should skip
+     * transmission as the packets will be picked up by the transmitting
+     * thread.
+     */
+    if (!ASMAtomicCmpXchgU32(&pState->uIsTransmitting, 1, 0))
+        return;
+
     if ((pState->VPCI.uStatus & VPCI_STATUS_DRV_OK) == 0)
     {
         Log(("%s Ignoring transmit requests from non-existent driver (status=0x%x).\n",
              INSTANCE(pState), pState->VPCI.uStatus));
         return;
     }
+
+    Log3(("%s vnetTransmitPendingPackets: About to trasmit %d pending packets\n", INSTANCE(pState), 
+          vringReadAvailIndex(&pState->VPCI, &pState->pTxQueue->VRing) - pState->pTxQueue->uNextAvailIndex));
 
     vpciSetWriteLed(&pState->VPCI, true);
 
@@ -848,6 +889,8 @@ static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE 
             }
             if (pState->pDrv)
             {
+                vnetPacketDump(pState, pState->pTxBuf, uOffset, "--> Outgoing");
+
                 STAM_PROFILE_START(&pState->StatTransmitSend, a);
                 int rc = pState->pDrv->pfnSend(pState->pDrv, pState->pTxBuf, uOffset);
                 STAM_PROFILE_STOP(&pState->StatTransmitSend, a);
@@ -859,6 +902,8 @@ static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE 
         STAM_PROFILE_ADV_STOP(&pState->StatTransmit, a);
     }
     vpciSetWriteLed(&pState->VPCI, false);
+
+    ASMAtomicWriteU32(&pState->uIsTransmitting, 0);
 }
 
 #ifdef VNET_TX_DELAY
@@ -872,12 +917,25 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
         Log3(("%s vnetQueueTransmit: Got kicked with notification disabled, "
               "re-enable notification and flush TX queue\n", INSTANCE(pState)));
         vnetTransmitPendingPackets(pState, pQueue);
-        vringSetNotification(&pState->VPCI, &pState->pTxQueue->VRing, true);
+        if (RT_FAILURE(vnetCsEnter(pState, VERR_SEM_BUSY)))
+            LogRel(("vnetQueueTransmit: Failed to enter critical section!/n"));
+        else
+        {
+            vringSetNotification(&pState->VPCI, &pState->pTxQueue->VRing, true);
+            vnetCsLeave(pState);
+        }
     }
     else
     {
-        vringSetNotification(&pState->VPCI, &pState->pTxQueue->VRing, false);
-        TMTimerSetMicro(pState->CTX_SUFF(pTxTimer), VNET_TX_DELAY);
+        if (RT_FAILURE(vnetCsEnter(pState, VERR_SEM_BUSY)))
+            LogRel(("vnetQueueTransmit: Failed to enter critical section!/n"));
+        else
+        {
+            vringSetNotification(&pState->VPCI, &pState->pTxQueue->VRing, false);
+            TMTimerSetMicro(pState->CTX_SUFF(pTxTimer), VNET_TX_DELAY);
+            pState->u64NanoTS = RTTimeNanoTS();
+            vnetCsLeave(pState);
+        }
     }
 }
 
@@ -895,13 +953,24 @@ static DECLCALLBACK(void) vnetTxTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 {
     VNETSTATE *pState = (VNETSTATE*)pvUser;
 
-    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
-        return;
-    vringSetNotification(&pState->VPCI, &pState->pTxQueue->VRing, true);
-    Log3(("%s vnetTxTimer: Expired, %d packets pending\n", INSTANCE(pState),
-          vringReadAvailIndex(&pState->VPCI, &pState->pTxQueue->VRing) - pState->pTxQueue->uNextAvailIndex));
+    uint32_t u32MicroDiff = (uint32_t)((RTTimeNanoTS() - pState->u64NanoTS)/1000);
+    if (u32MicroDiff < pState->u32MinDiff)
+        pState->u32MinDiff = u32MicroDiff;
+    if (u32MicroDiff > pState->u32MaxDiff)
+        pState->u32MaxDiff = u32MicroDiff;
+    pState->u32AvgDiff = (pState->u32AvgDiff * pState->u32i + u32MicroDiff) / (pState->u32i + 1);
+    pState->u32i++;
+    Log3(("vnetTxTimer: Expired, diff %9d usec, avg %9d usec, min %9d usec, max %9d usec\n",
+            u32MicroDiff, pState->u32AvgDiff, pState->u32MinDiff, pState->u32MaxDiff));
+
+//    Log3(("%s vnetTxTimer: Expired\n", INSTANCE(pState))); 
     vnetTransmitPendingPackets(pState, pState->pTxQueue);
+    if (RT_FAILURE(vnetCsEnter(pState, VERR_SEM_BUSY)))
+    {
+        LogRel(("vnetTxTimer: Failed to enter critical section!/n"));
+        return;
+    }
+    vringSetNotification(&pState->VPCI, &pState->pTxQueue->VRing, true);
     vnetCsLeave(pState);
 }
 
@@ -1485,6 +1554,9 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return rc;
     pState->pTxTimerR0 = TMTimerR0Ptr(pState->pTxTimerR3);
     pState->pTxTimerRC = TMTimerRCPtr(pState->pTxTimerR3);
+
+    pState->u32i = pState->u32AvgDiff = pState->u32MaxDiff = 0;
+    pState->u32MinDiff = ~0;
 #endif /* VNET_TX_DELAY */
 
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pState->VPCI.IBase, &pState->pDrvBase, "Network Port");
@@ -1543,6 +1615,8 @@ static DECLCALLBACK(int) vnetDestruct(PPDMDEVINS pDevIns)
 {
     VNETSTATE* pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
 
+    LogRel(("TxTimer stats (avg/min/max): %7d usec %7d usec %7d usec\n",
+            pState->u32AvgDiff, pState->u32MinDiff, pState->u32MaxDiff));
     Log(("%s Destroying instance\n", INSTANCE(pState)));
     if (pState->hEventMoreRxDescAvail != NIL_RTSEMEVENT)
     {
