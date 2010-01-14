@@ -169,7 +169,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x2, \_SB.CPUL) // Unlock the CPU
+                    Store(0x1, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -195,7 +195,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x4, \_SB.CPUL) // Unlock the CPU
+                    Store(0x2, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -221,7 +221,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x8, \_SB.CPUL) // Unlock the CPU
+                    Store(0x3, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -247,7 +247,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x10, \_SB.CPUL) // Unlock the CPU
+                    Store(0x4, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -273,7 +273,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x20, \_SB.CPUL) // Unlock the CPU
+                    Store(0x5, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -299,7 +299,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x40, \_SB.CPUL) // Unlock the CPU
+                    Store(0x6, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -325,7 +325,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x80, \_SB.CPUL) // Unlock the CPU
+                    Store(0x7, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -351,7 +351,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x100, \_SB.CPUL) // Unlock the CPU
+                    Store(0x8, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -377,7 +377,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x200, \_SB.CPUL) // Unlock the CPU
+                    Store(0x9, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -403,7 +403,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x400, \_SB.CPUL) // Unlock the CPU
+                    Store(0xa, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -429,7 +429,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x800, \_SB.CPUL) // Unlock the CPU
+                    Store(0xb, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -455,7 +455,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x1000, \_SB.CPUL) // Unlock the CPU
+                    Store(0xc, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -481,7 +481,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x2000, \_SB.CPUL) // Unlock the CPU
+                    Store(0xd, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -507,7 +507,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x4000, \_SB.CPUL) // Unlock the CPU
+                    Store(0xe, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -533,7 +533,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x8000, \_SB.CPUL) // Unlock the CPU
+                    Store(0xf, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -559,7 +559,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x10000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x10, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -585,7 +585,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x20000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x11, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -611,7 +611,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x40000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x12, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -637,7 +637,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x80000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x13, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -663,7 +663,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x100000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x14, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -689,7 +689,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x200000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x15, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -715,7 +715,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x400000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x16, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -741,7 +741,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x800000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x17, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -767,7 +767,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x1000000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x18, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -793,7 +793,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x2000000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x19, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -819,7 +819,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x4000000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x1a, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -845,7 +845,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x8000000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x1b, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -871,7 +871,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x10000000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x1c, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -897,7 +897,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x20000000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x1d, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -923,7 +923,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x40000000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x1e, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
@@ -949,7 +949,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 }
                 Method(_EJ0, 1)
                 {
-                    Store(0x80000000, \_SB.CPUL) // Unlock the CPU
+                    Store(0x1f, \_SB.CPUL) // Unlock the CPU
                     Return
                 }
             }
