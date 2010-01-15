@@ -35,6 +35,7 @@
 # define RTTIME_INCL_TIMEVAL
 # define RTTIME_INCL_TIMESPEC
 # include <time.h>
+# include <sys/time.h>
 #endif
 #include <iprt/time.h>
 
