@@ -50,6 +50,7 @@ DESC_VBOXDRV="Host"
 
 MOD_VBOXNET=vboxnet
 DESC_VBOXNET="NetAdapter"
+MOD_VBOXNET_INST=32
 
 MOD_VBOXFLT=vboxflt
 DESC_VBOXFLT="NetFilter"
@@ -531,29 +532,34 @@ cleanup_install()
         fi
     fi
 
-    # unplumb vboxnet0
-    vboxnetup=`$BIN_IFCONFIG vboxnet0 >/dev/null 2>&1`
-    if test "$?" -eq 0; then
-        $BIN_IFCONFIG vboxnet0 unplumb
-        if test "$?" -ne 0; then
-            errorprint "VirtualBox NetAdapter 'vboxnet0' couldn't be unplumbed (probably in use)."
-            if test "$fatal" = "$FATALOP"; then
-                exit 1
+    # unplumb all vboxnet instances
+    inst=0
+    while test $inst -ne $MOD_VBOXNET_INST; do
+        vboxnetup=`$BIN_IFCONFIG vboxnet$inst >/dev/null 2>&1`
+        if test "$?" -eq 0; then
+            $BIN_IFCONFIG vboxnet$inst unplumb
+            if test "$?" -ne 0; then
+                errorprint "VirtualBox NetAdapter 'vboxnet$inst' couldn't be unplumbed (probably in use)."
+                if test "$fatal" = "$FATALOP"; then
+                    exit 1
+                fi
             fi
         fi
-    fi
 
-    # unplumb vboxnet0 ipv6
-    vboxnetup=`$BIN_IFCONFIG vboxnet0 inet6 >/dev/null 2>&1`
-    if test "$?" -eq 0; then
-        $BIN_IFCONFIG vboxnet0 inet6 unplumb
-        if test "$?" -ne 0; then
-            errorprint "VirtualBox NetAdapter 'vboxnet0' IPv6 couldn't be unplumbed (probably in use)."
-            if test "$fatal" = "$FATALOP"; then
-                exit 1
+        # unplumb vboxnet0 ipv6
+        vboxnetup=`$BIN_IFCONFIG vboxnet$inst inet6 >/dev/null 2>&1`
+        if test "$?" -eq 0; then
+            $BIN_IFCONFIG vboxnet$inst inet6 unplumb
+            if test "$?" -ne 0; then
+                errorprint "VirtualBox NetAdapter 'vboxnet$inst' IPv6 couldn't be unplumbed (probably in use)."
+                if test "$fatal" = "$FATALOP"; then
+                    exit 1
+                fi
             fi
         fi
-    fi
+    
+        inst=`expr $inst + 1`
+    done
 }
 
 
@@ -571,7 +577,15 @@ postinstall()
             nwambackupfile=$nwamfile.vbox
             if test -f "$nwamfile"; then
                 sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
-                echo "vboxnet0	static 192.168.56.1" >> $nwambackupfile
+
+                # add all vboxnet instances as static to nwam
+                inst=0
+                networkn=56
+                while test $inst -ne $MOD_VBOXNET_INST; do
+                    echo "vboxnet$inst	static 192.168.$networkn.1" >> $nwambackupfile
+                    inst=`expr $inst + 1`
+                    networkn=`expr $networkn + 1`
+                done
                 mv -f $nwambackupfile $nwamfile
             fi
 
