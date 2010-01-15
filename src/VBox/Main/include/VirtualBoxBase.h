@@ -519,7 +519,7 @@ enum VBoxClsID
  */
 class ATL_NO_VTABLE VirtualBoxBase
     : public Lockable,
-      CComObjectRootEx<CComMultiThreadModel>
+      public CComObjectRootEx<CComMultiThreadModel>
 {
 public:
     enum State { NotReady, Ready, InInit, InUninit, InitFailed, Limited,
