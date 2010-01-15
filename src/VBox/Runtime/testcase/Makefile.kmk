@@ -110,7 +110,7 @@ PROGRAMS += \
 	tstTime-4 \
 	tstTimer \
 	tstTimerLR \
-	tstTimeSpec \
+	tstRTTimeSpec \
 	tstTSC \
 	tstUtf8 \
 	tstUuid
@@ -409,7 +409,8 @@ tstTimer_SOURCES = tstTimer.cpp
 
 tstTimerLR_SOURCES = tstTimerLR.cpp
 
-tstTimeSpec_SOURCES = tstTimeSpec.cpp
+tstRTTimeSpec_TEMPLATE = VBOXR3TSTEXE
+tstRTTimeSpec_SOURCES = tstRTTimeSpec.cpp
 
 tstTSC_SOURCES = tstTSC.cpp
 tstTSC_CXXFLAGS.linux += -O3
