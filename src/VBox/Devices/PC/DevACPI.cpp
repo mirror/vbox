@@ -2102,6 +2102,7 @@ static DECLCALLBACK(int) acpiAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
     AssertMsgReturn(!(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG),
                     ("Hot-plug flag is not set\n"),
                     VERR_NOT_SUPPORTED);
+    AssertReturn(iLUN < VMM_MAX_CPU_COUNT, VERR_PDM_NO_SUCH_LUN);
 
     /* Check if it was already attached */
     if (VMCPUSET_IS_PRESENT(&s->CpuSetAttached, iLUN))
