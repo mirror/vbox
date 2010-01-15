@@ -392,7 +392,7 @@ DECLINLINE(struct timespec *) RTTimeSpecGetTimespec(PCRTTIMESPEC pTime, struct t
     if (i32Nano < 0)
     {
         i32Nano += 1000000000;
-        i64++;
+        i64--;
     }
     pTimespec->tv_sec = (time_t)i64;
     pTimespec->tv_nsec = i32Nano;
@@ -488,7 +488,7 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSetNtFileTime(PRTTIMESPEC pTime, const FILETIM
  */
 DECLINLINE(int64_t) RTTimeSpecGetDosSeconds(PCRTTIMESPEC pTime)
 {
-    return (pTime->i64NanosecondsRelativeToUnixEpoch + RTTIME_OFFSET_DOS_TIME)
+    return (pTime->i64NanosecondsRelativeToUnixEpoch - RTTIME_OFFSET_DOS_TIME)
         / 1000000000;
 }
 
@@ -503,7 +503,7 @@ DECLINLINE(int64_t) RTTimeSpecGetDosSeconds(PCRTTIMESPEC pTime)
 DECLINLINE(PRTTIMESPEC) RTTimeSpecSetDosSeconds(PRTTIMESPEC pTime, int64_t i64Seconds)
 {
     pTime->i64NanosecondsRelativeToUnixEpoch = i64Seconds * 1000000000
-        - RTTIME_NT_TIME_OFFSET_UNIX;
+        + RTTIME_OFFSET_DOS_TIME;
     return pTime;
 }
 
