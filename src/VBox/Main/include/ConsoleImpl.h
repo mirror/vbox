@@ -25,7 +25,6 @@
 #define ____H_CONSOLEIMPL
 
 #include "VirtualBoxBase.h"
-#include "ProgressImpl.h"
 #include "SchemaDefs.h"
 
 class Guest;
@@ -41,6 +40,7 @@ class RemoteDisplayInfo;
 class AudioSniffer;
 class ConsoleVRDPServer;
 class VMMDev;
+class Progress;
 
 #include <VBox/vrdpapi.h>
 #include <VBox/pdmdrv.h>

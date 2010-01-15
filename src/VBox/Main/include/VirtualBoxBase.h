@@ -44,6 +44,15 @@ class File;
 using namespace com;
 using namespace util;
 
+class AutoInitSpan;
+class AutoUninitSpan;
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// COM helpers
+//
+////////////////////////////////////////////////////////////////////////////////
+
 #if !defined (VBOX_WITH_XPCOM)
 
 #include <atlcom.h>
@@ -122,7 +131,10 @@ public:
 
 #endif /* !defined (VBOX_WITH_XPCOM) */
 
-// macros
+////////////////////////////////////////////////////////////////////////////////
+//
+// Macros
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -391,8 +403,6 @@ public:
         return setError(E_NOTIMPL, tr("Method %s is not implemented"), __FUNCTION__); \
     } while (0)
 
-////////////////////////////////////////////////////////////////////////////////
-
 /**
  *  Declares an empty constructor and destructor for the given class.
  *  This is useful to prevent the compiler from generating the default
@@ -417,7 +427,17 @@ public:
     cls::cls () {}; cls::~cls () {};
 
 ////////////////////////////////////////////////////////////////////////////////
+//
+// VirtualBoxBase
+//
+////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * This enum is used in the virtual method VirtualBoxBasePro::getClassID() to
+ * allow VirtualBox classes to identify themselves. Subclasses can override
+ * that method and return a value from this enum if run-time identification is
+ * needed anywhere.
+ */
 enum VBoxClsID
 {
     clsidVirtualBox,
@@ -497,41 +517,21 @@ enum VBoxClsID
  *    directly (and therefore have both the prolog and the epilog), but this is
  *    not recommended.
  */
-class ATL_NO_VTABLE VirtualBoxBaseProto : public Lockable
+class ATL_NO_VTABLE VirtualBoxBase
+    : public Lockable,
+      CComObjectRootEx<CComMultiThreadModel>
 {
 public:
-
     enum State { NotReady, Ready, InInit, InUninit, InitFailed, Limited,
                  MayUninit, WillUninit };
 
-protected:
+    VirtualBoxBase();
+    virtual ~VirtualBoxBase();
 
-    VirtualBoxBaseProto();
-    virtual ~VirtualBoxBaseProto();
+    static const char *translate(const char *context, const char *sourceText,
+                                 const char *comment = 0);
 
 public:
-
-    // util::Lockable interface
-    virtual RWLockHandle *lockHandle() const;
-
-    /**
-     * Simple run-time type identification without having to enable C++ RTTI.
-     * The class IDs are defined in VirtualBoxBase.h.
-     * @return
-     */
-    virtual VBoxClsID getClassID() const
-    {
-        return clsidOther;
-    }
-
-    /**
-     * Override of the default locking class to be used for validating lock
-     * order with the standard member lock handle.
-     */
-    virtual VBoxLockingClass getLockingClass() const
-    {
-        return LOCKCLASS_OTHEROBJECT;
-    }
 
     /**
      * Unintialization method.
@@ -564,512 +564,25 @@ public:
     }
 
     /**
-     * Smart class that automatically increases the number of callers of the
-     * given VirtualBoxBase object when an instance is constructed and decreases
-     * it back when the created instance goes out of scope (i.e. gets destroyed).
-     *
-     * If #rc() returns a failure after the instance creation, it means that
-     * the managed VirtualBoxBase object is not Ready, or in any other invalid
-     * state, so that the caller must not use the object and can return this
-     * failed result code to the upper level.
-     *
-     * See VirtualBoxBase::addCaller(), VirtualBoxBase::addLimitedCaller() and
-     * VirtualBoxBase::releaseCaller() for more details about object callers.
-     *
-     * @param aLimited  |false| if this template should use
-     *                  VirtualiBoxBase::addCaller() calls to add callers, or
-     *                  |true| if VirtualiBoxBase::addLimitedCaller() should be
-     *                  used.
-     *
-     * @note It is preferable to use the AutoCaller and AutoLimitedCaller
-     *       classes than specify the @a aLimited argument, for better
-     *       self-descriptiveness.
+     * Simple run-time type identification without having to enable C++ RTTI.
+     * The class IDs are defined in VirtualBoxBase.h.
+     * @return
      */
-    template<bool aLimited>
-    class AutoCallerBase
+    virtual VBoxClsID getClassID() const
     {
-    public:
-
-        /**
-         * Increases the number of callers of the given object by calling
-         * VirtualBoxBase::addCaller().
-         *
-         * @param aObj      Object to add a caller to. If NULL, this
-         *                  instance is effectively turned to no-op (where
-         *                  rc() will return S_OK and state() will be
-         *                  NotReady).
-         */
-        AutoCallerBase(VirtualBoxBaseProto *aObj)
-            : mObj(aObj)
-            , mRC(S_OK)
-            , mState(NotReady)
-        {
-            if (mObj)
-                mRC = mObj->addCaller(&mState, aLimited);
-        }
-
-        /**
-         * If the number of callers was successfully increased, decreases it
-         * using VirtualBoxBase::releaseCaller(), otherwise does nothing.
-         */
-        ~AutoCallerBase()
-        {
-            if (mObj && SUCCEEDED(mRC))
-                mObj->releaseCaller();
-        }
-
-        /**
-         * Stores the result code returned by VirtualBoxBase::addCaller() after
-         * instance creation or after the last #add() call. A successful result
-         * code means the number of callers was successfully increased.
-         */
-        HRESULT rc() const { return mRC; }
-
-        /**
-         * Returns |true| if |SUCCEEDED (rc())| is |true|, for convenience.
-         * |true| means the number of callers was successfully increased.
-         */
-        bool isOk() const { return SUCCEEDED(mRC); }
-
-        /**
-         * Stores the object state returned by VirtualBoxBase::addCaller() after
-         * instance creation or after the last #add() call.
-         */
-        State state() const { return mState; }
-
-        /**
-         * Temporarily decreases the number of callers of the managed object.
-         * May only be called if #isOk() returns |true|. Note that #rc() will
-         * return E_FAIL after this method succeeds.
-         */
-        void release()
-        {
-            Assert(SUCCEEDED(mRC));
-            if (SUCCEEDED(mRC))
-            {
-                if (mObj)
-                    mObj->releaseCaller();
-                mRC = E_FAIL;
-            }
-        }
-
-        /**
-         * Restores the number of callers decreased by #release(). May only be
-         * called after #release().
-         */
-        void add()
-        {
-            Assert(!SUCCEEDED(mRC));
-            if (mObj && !SUCCEEDED(mRC))
-                mRC = mObj->addCaller(&mState, aLimited);
-        }
-
-        /**
-         * Attaches another object to this caller instance.
-         * The previous object's caller is released before the new one is added.
-         *
-         * @param aObj  New object to attach, may be @c NULL.
-         */
-        void attach(VirtualBoxBaseProto *aObj)
-        {
-            /* detect simple self-reattachment */
-            if (mObj != aObj)
-            {
-                if (mObj && SUCCEEDED(mRC))
-                    release();
-                mObj = aObj;
-                add();
-            }
-        }
-
-        /** Verbose equivalent to <tt>attach (NULL)</tt>. */
-        void detach() { attach(NULL); }
-
-    private:
-
-        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoCallerBase)
-        DECLARE_CLS_NEW_DELETE_NOOP(AutoCallerBase)
-
-        VirtualBoxBaseProto *mObj;
-        HRESULT mRC;
-        State mState;
-    };
+        return clsidOther;
+    }
 
     /**
-     * Smart class that automatically increases the number of normal
-     * (non-limited) callers of the given VirtualBoxBase object when an instance
-     * is constructed and decreases it back when the created instance goes out
-     * of scope (i.e. gets destroyed).
-     *
-     * A typical usage pattern to declare a normal method of some object (i.e. a
-     * method that is valid only when the object provides its full
-     * functionality) is:
-     * <code>
-     * STDMETHODIMP Component::Foo()
-     * {
-     *     AutoCaller autoCaller(this);
-     *     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-     *     ...
-     * </code>
-     *
-     * Using this class is equivalent to using the AutoCallerBase template with
-     * the @a aLimited argument set to |false|, but this class is preferred
-     * because provides better self-descriptiveness.
-     *
-     * See AutoCallerBase for more information about auto caller functionality.
+     * Override of the default locking class to be used for validating lock
+     * order with the standard member lock handle.
      */
-    typedef AutoCallerBase<false> AutoCaller;
-
-    /**
-     * Smart class that automatically increases the number of limited callers of
-     * the given VirtualBoxBase object when an instance is constructed and
-     * decreases it back when the created instance goes out of scope (i.e. gets
-     * destroyed).
-     *
-     * A typical usage pattern to declare a limited method of some object (i.e.
-     * a method that is valid even if the object doesn't provide its full
-     * functionality) is:
-     * <code>
-     * STDMETHODIMP Component::Bar()
-     * {
-     *     AutoLimitedCaller autoCaller(this);
-     *     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-     *     ...
-     * </code>
-     *
-     * Using this class is equivalent to using the AutoCallerBase template with
-     * the @a aLimited argument set to |true|, but this class is preferred
-     * because provides better self-descriptiveness.
-     *
-     * See AutoCallerBase for more information about auto caller functionality.
-     */
-    typedef AutoCallerBase<true> AutoLimitedCaller;
-
-protected:
-
-    /**
-     * Smart class to enclose the state transition NotReady->InInit->Ready.
-     *
-     * The purpose of this span is to protect object initialization.
-     *
-     * Instances must be created as a stack-based variable taking |this| pointer
-     * as the argument at the beginning of init() methods of VirtualBoxBase
-     * subclasses. When this variable is created it automatically places the
-     * object to the InInit state.
-     *
-     * When the created variable goes out of scope (i.e. gets destroyed) then,
-     * depending on the result status of this initialization span, it either
-     * places the object to Ready or Limited state or calls the object's
-     * VirtualBoxBase::uninit() method which is supposed to place the object
-     * back to the NotReady state using the AutoUninitSpan class.
-     *
-     * The initial result status of the initialization span is determined by the
-     * @a aResult argument of the AutoInitSpan constructor (Result::Failed by
-     * default). Inside the initialization span, the success status can be set
-     * to Result::Succeeded using #setSucceeded(), to to Result::Limited using
-     * #setLimited() or to Result::Failed using #setFailed(). Please don't
-     * forget to set the correct success status before getting the AutoInitSpan
-     * variable destroyed (for example, by performing an early return from
-     * the init() method)!
-     *
-     * Note that if an instance of this class gets constructed when the object
-     * is in the state other than NotReady, #isOk() returns |false| and methods
-     * of this class do nothing: the state transition is not performed.
-     *
-     * A typical usage pattern is:
-     * <code>
-     * HRESULT Component::init()
-     * {
-     *     AutoInitSpan autoInitSpan (this);
-     *     AssertReturn (autoInitSpan.isOk(), E_FAIL);
-     *     ...
-     *     if (FAILED (rc))
-     *         return rc;
-     *     ...
-     *     if (SUCCEEDED (rc))
-     *         autoInitSpan.setSucceeded();
-     *     return rc;
-     * }
-     * </code>
-     *
-     * @note Never create instances of this class outside init() methods of
-     *       VirtualBoxBase subclasses and never pass anything other than |this|
-     *       as the argument to the constructor!
-     */
-    class AutoInitSpan
+    virtual VBoxLockingClass getLockingClass() const
     {
-    public:
+        return LOCKCLASS_OTHEROBJECT;
+    }
 
-        enum Result { Failed = 0x0, Succeeded = 0x1, Limited = 0x2 };
-
-        AutoInitSpan(VirtualBoxBaseProto *aObj, Result aResult = Failed);
-        ~AutoInitSpan();
-
-        /**
-         * Returns |true| if this instance has been created at the right moment
-         * (when the object was in the NotReady state) and |false| otherwise.
-         */
-        bool isOk() const { return mOk; }
-
-        /**
-         * Sets the initialization status to Succeeded to indicates successful
-         * initialization. The AutoInitSpan destructor will place the managed
-         * VirtualBoxBase object to the Ready state.
-         */
-        void setSucceeded() { mResult = Succeeded; }
-
-        /**
-         * Sets the initialization status to Succeeded to indicate limited
-         * (partly successful) initialization. The AutoInitSpan destructor will
-         * place the managed VirtualBoxBase object to the Limited state.
-         */
-        void setLimited() { mResult = Limited; }
-
-        /**
-         * Sets the initialization status to Failure to indicates failed
-         * initialization. The AutoInitSpan destructor will place the managed
-         * VirtualBoxBase object to the InitFailed state and will automatically
-         * call its uninit() method which is supposed to place the object back
-         * to the NotReady state using AutoUninitSpan.
-         */
-        void setFailed() { mResult = Failed; }
-
-        /** Returns the current initialization result. */
-        Result result() { return mResult; }
-
-    private:
-
-        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoInitSpan)
-        DECLARE_CLS_NEW_DELETE_NOOP(AutoInitSpan)
-
-        VirtualBoxBaseProto *mObj;
-        Result mResult : 3; // must be at least total number of bits + 1 (sign)
-        bool mOk : 1;
-    };
-
-    /**
-     * Smart class to enclose the state transition Limited->InInit->Ready.
-     *
-     * The purpose of this span is to protect object re-initialization.
-     *
-     * Instances must be created as a stack-based variable taking |this| pointer
-     * as the argument at the beginning of methods of VirtualBoxBase
-     * subclasses that try to re-initialize the object to bring it to the Ready
-     * state (full functionality) after partial initialization (limited
-     * functionality). When this variable is created, it automatically places
-     * the object to the InInit state.
-     *
-     * When the created variable goes out of scope (i.e. gets destroyed),
-     * depending on the success status of this initialization span, it either
-     * places the object to the Ready state or brings it back to the Limited
-     * state.
-     *
-     * The initial success status of the re-initialization span is |false|. In
-     * order to make it successful, #setSucceeded() must be called before the
-     * instance is destroyed.
-     *
-     * Note that if an instance of this class gets constructed when the object
-     * is in the state other than Limited, #isOk() returns |false| and methods
-     * of this class do nothing: the state transition is not performed.
-     *
-     * A typical usage pattern is:
-     * <code>
-     * HRESULT Component::reinit()
-     * {
-     *     AutoReinitSpan autoReinitSpan (this);
-     *     AssertReturn (autoReinitSpan.isOk(), E_FAIL);
-     *     ...
-     *     if (FAILED (rc))
-     *         return rc;
-     *     ...
-     *     if (SUCCEEDED (rc))
-     *         autoReinitSpan.setSucceeded();
-     *     return rc;
-     * }
-     * </code>
-     *
-     * @note Never create instances of this class outside re-initialization
-     * methods of VirtualBoxBase subclasses and never pass anything other than
-     * |this| as the argument to the constructor!
-     */
-    class AutoReinitSpan
-    {
-    public:
-
-        AutoReinitSpan(VirtualBoxBaseProto *aObj);
-        ~AutoReinitSpan();
-
-        /**
-         * Returns |true| if this instance has been created at the right moment
-         * (when the object was in the Limited state) and |false| otherwise.
-         */
-        bool isOk() const { return mOk; }
-
-        /**
-         * Sets the re-initialization status to Succeeded to indicates
-         * successful re-initialization. The AutoReinitSpan destructor will place
-         * the managed VirtualBoxBase object to the Ready state.
-         */
-        void setSucceeded() { mSucceeded = true; }
-
-    private:
-
-        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoReinitSpan)
-        DECLARE_CLS_NEW_DELETE_NOOP(AutoReinitSpan)
-
-        VirtualBoxBaseProto *mObj;
-        bool mSucceeded : 1;
-        bool mOk : 1;
-    };
-
-    /**
-     * Smart class to enclose the state transition Ready->InUnnit->NotReady,
-     * InitFailed->InUnnit->NotReady or WillUninit->InUnnit->NotReady.
-     *
-     * The purpose of this span is to protect object uninitialization.
-     *
-     * Instances must be created as a stack-based variable taking |this| pointer
-     * as the argument at the beginning of uninit() methods of VirtualBoxBase
-     * subclasses. When this variable is created it automatically places the
-     * object to the InUninit state, unless it is already in the NotReady state
-     * as indicated by #uninitDone() returning |true|. In the latter case, the
-     * uninit() method must immediately return because there should be nothing
-     * to uninitialize.
-     *
-     * When this variable goes out of scope (i.e. gets destroyed), it places the
-     * object to NotReady state.
-     *
-     * A typical usage pattern is:
-     * <code>
-     * void Component::uninit()
-     * {
-     *     AutoUninitSpan autoUninitSpan (this);
-     *     if (autoUninitSpan.uninitDone())
-     *         return;
-     *     ...
-     * }
-     * </code>
-     *
-     * @note The constructor of this class blocks the current thread execution
-     *       until the number of callers added to the object using #addCaller()
-     *       or AutoCaller drops to zero. For this reason, it is forbidden to
-     *       create instances of this class (or call uninit()) within the
-     *       AutoCaller or #addCaller() scope because it is a guaranteed
-     *       deadlock.
-     *
-     * @note Never create instances of this class outside uninit() methods and
-     *       never pass anything other than |this| as the argument to the
-     *       constructor!
-     */
-    class AutoUninitSpan
-    {
-    public:
-
-        AutoUninitSpan(VirtualBoxBaseProto *aObj);
-        ~AutoUninitSpan();
-
-        /** |true| when uninit() is called as a result of init() failure */
-        bool initFailed() { return mInitFailed; }
-
-        /** |true| when uninit() has already been called (so the object is NotReady) */
-        bool uninitDone() { return mUninitDone; }
-
-    private:
-
-        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoUninitSpan)
-        DECLARE_CLS_NEW_DELETE_NOOP(AutoUninitSpan)
-
-        VirtualBoxBaseProto *mObj;
-        bool mInitFailed : 1;
-        bool mUninitDone : 1;
-    };
-
-    /**
-     * Smart class to enclose the state transition Ready->MayUninit->NotReady or
-     * Ready->MayUninit->WillUninit.
-     *
-     * The purpose of this span is to safely check if unintialization is
-     * possible at the given moment and seamlessly perform it if so.
-     *
-     * Instances must be created as a stack-based variable taking |this| pointer
-     * as the argument at the beginning of methods of VirtualBoxBase
-     * subclasses that want to uninitialize the object if a necessary set of
-     * criteria is met and leave it Ready otherwise.
-     *
-     * When this variable is created it automatically places the object to the
-     * MayUninit state if it is Ready, does nothing but returns |true| in
-     * response to #alreadyInProgress() if it is already in MayUninit, or
-     * returns a failure in response to #rc() in any other case. The example
-     * below shows how the user must react in latter two cases.
-     *
-     * When this variable goes out of scope (i.e. gets destroyed), it places the
-     * object back to Ready state unless #acceptUninit() is called in which case
-     * the object is placed to WillUninit state and uninit() is immediately
-     * called after that.
-     *
-     * A typical usage pattern is:
-     * <code>
-     * void Component::uninit()
-     * {
-     *     AutoMayUninitSpan mayUninitSpan (this);
-     *     if (FAILED(mayUninitSpan.rc())) return mayUninitSpan.rc();
-     *     if (mayUninitSpan.alreadyInProgress())
-     *          return S_OK;
-     *     ...
-     *     if (FAILED (rc))
-     *         return rc; // will go back to Ready
-     *     ...
-     *     if (SUCCEEDED (rc))
-     *         mayUninitSpan.acceptUninit(); // will call uninit()
-     *     return rc;
-     * }
-     * </code>
-     *
-     * @note The constructor of this class blocks the current thread execution
-     *       until the number of callers added to the object using #addCaller()
-     *       or AutoCaller drops to zero. For this reason, it is forbidden to
-     *       create instances of this class (or call uninit()) within the
-     *       AutoCaller or #addCaller() scope because it is a guaranteed
-     *       deadlock.
-     */
-    class AutoMayUninitSpan
-    {
-    public:
-
-        AutoMayUninitSpan(VirtualBoxBaseProto *aObj);
-        ~AutoMayUninitSpan();
-
-        /**
-         * Returns a failure if the AutoMayUninitSpan variable was constructed
-         * at an improper time. If there is a failure, do nothing but return
-         * it to the caller.
-         */
-        HRESULT rc() { return mRC; }
-
-        /**
-         * Returns |true| if AutoMayUninitSpan is already in progress on some
-         * other thread. If it's the case, do nothing but return S_OK to
-         * the caller.
-         */
-        bool alreadyInProgress() { return mAlreadyInProgress; }
-
-        /*
-         * Accepts uninitialization and causes the destructor to go to
-         * WillUninit state and call uninit() afterwards.
-         */
-        void acceptUninit() { mAcceptUninit = true; }
-
-    private:
-
-        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoMayUninitSpan)
-        DECLARE_CLS_NEW_DELETE_NOOP(AutoMayUninitSpan)
-
-        VirtualBoxBaseProto *mObj;
-
-        HRESULT mRC;
-        bool mAlreadyInProgress : 1;
-        bool mAcceptUninit : 1;
-    };
+    virtual RWLockHandle *lockHandle() const;
 
     /**
      * Returns a lock handle used to protect the primary state fields (used by
@@ -1106,8 +619,17 @@ private:
 
     /** User-level object lock for subclasses */
     mutable RWLockHandle *mObjectLock;
+
+    friend class AutoInitSpan;
+    friend class AutoReinitSpan;
+    friend class AutoUninitSpan;
+    friend class AutoMayUninitSpan;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// VirtualBoxSupportTranslation, VirtualBoxSupportErrorInfoImpl
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -1126,14 +648,14 @@ private:
  *  @param C    VirtualBoxBase subclass to add the error info support to
  */
 #define VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(C) \
-    virtual HRESULT addCaller(VirtualBoxBaseProto::State *aState = NULL, \
+    virtual HRESULT addCaller(VirtualBoxBase::State *aState = NULL, \
                               bool aLimited = false) \
     { \
-        VirtualBoxBaseProto::State protoState; \
-        HRESULT rc = VirtualBoxBaseProto::addCaller(&protoState, aLimited); \
+        VirtualBoxBase::State protoState; \
+        HRESULT rc = VirtualBoxBase::addCaller(&protoState, aLimited); \
         if (FAILED(rc)) \
         { \
-            if (protoState == VirtualBoxBaseProto::Limited) \
+            if (protoState == VirtualBoxBase::Limited) \
                 rc = setError(rc, tr("The object functionality is limited")); \
             else \
                 rc = setError(rc, tr("The object is not ready")); \
@@ -1142,34 +664,6 @@ private:
             *aState = protoState; \
         return rc; \
     } \
-
-////////////////////////////////////////////////////////////////////////////////
-
-class ATL_NO_VTABLE VirtualBoxBase
-    : virtual public VirtualBoxBaseProto,
-      public CComObjectRootEx<CComMultiThreadModel>
-{
-
-public:
-    VirtualBoxBase()
-    {}
-
-    virtual ~VirtualBoxBase()
-    {}
-
-    /**
-     *  Virtual unintialization method. Called during parent object's
-     *  uninitialization, if the given subclass instance is a dependent child of
-     *  a class derived from VirtualBoxBaseWithChildren (@sa
-     *  VirtualBoxBaseWithChildren::addDependentChild). In this case, this
-     *  method's implementation must call setReady (false),
-     */
-    virtual void uninit()
-    {}
-
-    static const char *translate(const char *context, const char *sourceText,
-                                 const char *comment = 0);
-};
 
 ////////////////////////////////////////////////////////////////////////////////
 
