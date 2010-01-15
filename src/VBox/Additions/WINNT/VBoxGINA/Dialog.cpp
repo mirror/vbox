@@ -177,7 +177,7 @@ INT_PTR CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog b
                             /* If the domain value has a dot (.) in it, it is a FQDN (Fully Qualified Domain Name)
                              * which will not work with the combo box selection because Windows only keeps the
                              * NETBIOS names to the left most part of the domain name there. Of course a FQDN
-                             * then will not be found by the search in the block below.
+                             * then will not be found by the search in the block above.
                              *
                              * To solve this problem the FQDN domain value will be appended at the user name value
                              * (Kerberos style) using an "@", e.g. "<user-name>@full.qualified.domain".
