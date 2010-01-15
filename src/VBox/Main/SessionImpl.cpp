@@ -31,6 +31,7 @@
 #include "ConsoleImpl.h"
 #include "Global.h"
 
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <VBox/err.h>

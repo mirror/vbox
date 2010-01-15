@@ -20,6 +20,7 @@
  */
 
 #include "NetworkAdapterImpl.h"
+#include "AutoCaller.h"
 #include "Logging.h"
 #include "MachineImpl.h"
 #include "GuestOSTypeImpl.h"

@@ -24,6 +24,7 @@
 #include "KeyboardImpl.h"
 #include "ConsoleImpl.h"
 
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <VBox/com/array.h>

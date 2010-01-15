@@ -25,8 +25,10 @@
 *******************************************************************************/
 #include "ConsoleImpl.h"
 #include "Global.h"
-#include "Logging.h"
 #include "ProgressImpl.h"
+
+#include "AutoCaller.h"
+#include "Logging.h"
 
 #include <iprt/err.h>
 #include <iprt/rand.h>

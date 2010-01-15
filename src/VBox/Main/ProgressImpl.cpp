@@ -28,7 +28,7 @@
 #include <nsCOMPtr.h>
 #endif /* defined (VBOX_WITH_XPCOM) */
 
-#include "ProgressImpl.h"
+#include "ProgressCombinedImpl.h"
 
 #include "VirtualBoxImpl.h"
 #include "VirtualBoxErrorInfoImpl.h"

@@ -22,6 +22,7 @@
  */
 
 #include "HostNetworkInterfaceImpl.h"
+#include "AutoCaller.h"
 #include "Logging.h"
 #include "netif.h"
 

@@ -68,6 +68,7 @@
 #include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
+#include "AutoCaller.h"
 #include "Logging.h"
 #include "objectslist.h"
 

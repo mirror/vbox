@@ -24,6 +24,7 @@
 #include "SystemPropertiesImpl.h"
 #include "VirtualBoxImpl.h"
 #include "MachineImpl.h"
+#include "AutoCaller.h"
 #include "Logging.h"
 
 // generated header

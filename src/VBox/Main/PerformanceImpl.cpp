@@ -23,6 +23,7 @@
 
 #include "PerformanceImpl.h"
 
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <iprt/process.h>

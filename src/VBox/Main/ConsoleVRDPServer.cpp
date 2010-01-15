@@ -27,6 +27,7 @@
 #include "KeyboardImpl.h"
 #include "MouseImpl.h"
 
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <iprt/asm.h>

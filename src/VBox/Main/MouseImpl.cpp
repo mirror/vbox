@@ -25,6 +25,7 @@
 #include "DisplayImpl.h"
 #include "VMMDev.h"
 
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <VBox/pdmdrv.h>

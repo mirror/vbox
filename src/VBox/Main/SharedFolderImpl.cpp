@@ -24,6 +24,7 @@
 #include "MachineImpl.h"
 #include "ConsoleImpl.h"
 
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <iprt/param.h>

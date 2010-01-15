@@ -22,6 +22,7 @@
  */
 
 #include "MediumFormatImpl.h"
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <VBox/VBoxHDD.h>

@@ -68,7 +68,7 @@
 #include <SnapshotImpl.h>
 #include <MediumImpl.h>
 #include <MediumFormatImpl.h>
-#include <ProgressImpl.h>
+#include <ProgressCombinedImpl.h>
 #include <VRDPServerImpl.h>
 #include <SharedFolderImpl.h>
 #include <HostImpl.h>

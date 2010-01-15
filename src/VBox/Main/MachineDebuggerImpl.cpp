@@ -25,6 +25,8 @@
 
 #include "Global.h"
 #include "ConsoleImpl.h"
+
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <VBox/em.h>

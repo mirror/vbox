@@ -23,6 +23,7 @@
 #include "MachineImpl.h"
 #include "VirtualBoxImpl.h"
 #include "GuestOSTypeImpl.h"
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <iprt/string.h>

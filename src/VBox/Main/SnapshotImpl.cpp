@@ -24,6 +24,7 @@
 #include "MachineImpl.h"
 #include "MediumImpl.h"
 #include "Global.h"
+#include "ProgressImpl.h"
 
 // @todo these three includes are required for about one or two lines, try
 // to remove them and put that code in shared code in MachineImplcpp
@@ -31,6 +32,7 @@
 #include "USBControllerImpl.h"
 #include "VirtualBoxImpl.h"
 
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <iprt/path.h>

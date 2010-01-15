@@ -22,6 +22,7 @@
 #include "ParallelPortImpl.h"
 #include "MachineImpl.h"
 #include "VirtualBoxImpl.h"
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <iprt/string.h>

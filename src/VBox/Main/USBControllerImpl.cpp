@@ -30,6 +30,7 @@
 # include "HostUSBDeviceImpl.h"
 # include "USBProxyService.h"
 #endif
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <iprt/string.h>
