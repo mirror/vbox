@@ -164,7 +164,7 @@ int main()
      * Nested
      */
     RTTestSub(hTest, "Nested (%N)");
-    testNested(__LINE__, "42 2684354560 42 asdf 42", "42 %u 42 %s 42", 2684354560, "asdf");
+    testNested(__LINE__, "42 2684354560 42 asdf 42", "42 %u 42 %s 42", 2684354560U, "asdf");
     testNested(__LINE__, "", "");
 
     /*
