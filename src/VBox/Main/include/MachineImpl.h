@@ -25,7 +25,6 @@
 #define ____H_MACHINEIMPL
 
 #include "VirtualBoxBase.h"
-#include "ProgressImpl.h"
 #include "SnapshotImpl.h"
 #include "VRDPServerImpl.h"
 #include "MediumAttachmentImpl.h"
