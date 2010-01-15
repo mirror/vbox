@@ -354,13 +354,11 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
         RTGCPHYS    GCPhys = NIL_RTGCPHYS;
 
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-#   if PGM_GST_TYPE == PGM_TYPE_AMD64
-        bool fBigPagesSupported = true;
-#   else
-        bool fBigPagesSupported = !!(CPUMGetGuestCR4(pVCpu) & X86_CR4_PSE);
-#   endif
         if (    PdeSrc.b.u1Size
-            &&  fBigPagesSupported)
+#   if PGM_GST_TYPE != PGM_TYPE_AMD64
+            &&  CPUMIsGuestPageSizeExtEnabled(pVCpu)
+#   endif
+            )
             GCPhys = GST_GET_PDE_BIG_PG_GCPHYS(PdeSrc)
                     | ((RTGCPHYS)pvFault & (GST_BIG_PAGE_OFFSET_MASK ^ PAGE_OFFSET_MASK));
         else
@@ -1081,7 +1079,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
     const bool      fIsBigPage  = PdeSrc.b.u1Size;
 # else
-    const bool      fIsBigPage  = PdeSrc.b.u1Size && (CPUMGetGuestCR4(pVCpu) & X86_CR4_PSE);
+    const bool      fIsBigPage  = PdeSrc.b.u1Size && CPUMIsGuestPageSizeExtEnabled(pVCpu);
 # endif
 
 # ifdef IN_RING3
@@ -1738,7 +1736,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
     const bool      fBigPage = PdeSrc.b.u1Size;
 # else
-    const bool      fBigPage = PdeSrc.b.u1Size && (CPUMGetGuestCR4(pVCpu) & X86_CR4_PSE);
+    const bool      fBigPage = PdeSrc.b.u1Size && CPUMIsGuestPageSizeExtEnabled(pVCpu);
 # endif
     RTGCPHYS        GCPhys;
     if (!fBigPage)
@@ -2118,14 +2116,9 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
  */
 PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, PGSTPDE pPdeSrc, RTGCPTR GCPtrPage)
 {
-    bool fWriteProtect      = !!(CPUMGetGuestCR0(pVCpu) & X86_CR0_WP);
-    bool fUserLevelFault    = !!(uErr & X86_TRAP_PF_US);
-    bool fWriteFault        = !!(uErr & X86_TRAP_PF_RW);
-# if PGM_GST_TYPE == PGM_TYPE_AMD64
-    bool fBigPagesSupported = true;
-# else
-    bool fBigPagesSupported = !!(CPUMGetGuestCR4(pVCpu) & X86_CR4_PSE);
-# endif
+    bool fUserLevelFault      = !!(uErr & X86_TRAP_PF_US);
+    bool fWriteFault          = !!(uErr & X86_TRAP_PF_RW);
+    bool fMaybeWriteProtFault = fWriteFault && (fUserLevelFault || CPUMIsGuestR0WriteProtEnabled(pVCpu));
     unsigned uPageFaultLevel;
     int rc;
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -2152,7 +2145,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
     if (    (uErr & X86_TRAP_PF_RSVD)
         ||  !pPml4eSrc->n.u1Present
         ||  ((uErr & X86_TRAP_PF_ID) && pPml4eSrc->n.u1NoExecute && CPUMIsGuestNXEnabled(pVCpu))
-        ||  (fWriteFault && !pPml4eSrc->n.u1Write && (fUserLevelFault || fWriteProtect))
+        ||  (fMaybeWriteProtFault && !pPml4eSrc->n.u1Write)
         ||  (fUserLevelFault && !pPml4eSrc->n.u1User)
        )
     {
@@ -2172,7 +2165,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
         ||  !pPdpeSrc->n.u1Present
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 /* NX, r/w, u/s bits in the PDPE are long mode only */
         ||  ((uErr & X86_TRAP_PF_ID) && pPdpeSrc->lm.u1NoExecute && CPUMIsGuestNXEnabled(pVCpu))
-        ||  (fWriteFault && !pPdpeSrc->lm.u1Write && (fUserLevelFault || fWriteProtect))
+        ||  (fMaybeWriteProtFault && !pPdpeSrc->lm.u1Write)
         ||  (fUserLevelFault && !pPdpeSrc->lm.u1User)
 # endif
        )
@@ -2190,7 +2183,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
         ||  ((uErr & X86_TRAP_PF_ID) && pPdeSrc->n.u1NoExecute && CPUMIsGuestNXEnabled(pVCpu))
 # endif
-        ||  (fWriteFault && !pPdeSrc->n.u1Write && (fUserLevelFault || fWriteProtect))
+        ||  (fMaybeWriteProtFault && !pPdeSrc->n.u1Write)
         ||  (fUserLevelFault && !pPdeSrc->n.u1User) )
     {
         uPageFaultLevel = 2;
@@ -2201,7 +2194,11 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
      * First check the easy case where the page directory has been marked read-only to track
      * the dirty bit of an emulated BIG page
      */
-    if (pPdeSrc->b.u1Size && fBigPagesSupported)
+    if (   pPdeSrc->b.u1Size
+#  if PGM_GST_TYPE != PGM_TYPE_AMD64
+        && CPUMIsGuestPageSizeExtEnabled(pVCpu)
+#  endif
+       )
     {
         /* Mark guest page directory as accessed */
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
@@ -2286,7 +2283,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
 #  if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
             ||  ((uErr & X86_TRAP_PF_ID) && PteSrc.n.u1NoExecute && CPUMIsGuestNXEnabled(pVCpu))
 #  endif
-            ||  (fWriteFault && !PteSrc.n.u1Write && (fUserLevelFault || fWriteProtect))
+            ||  (fMaybeWriteProtFault && !PteSrc.n.u1Write)
             ||  (fUserLevelFault && !PteSrc.n.u1User)
            )
         {
@@ -2462,7 +2459,11 @@ l_UpperLevelPageFault:
             pPdeSrc->n.u1Present)
     {
         /* Check the present bit as the shadow tables can cause different error codes by being out of sync. */
-        if (pPdeSrc->b.u1Size && fBigPagesSupported)
+        if (   pPdeSrc->b.u1Size
+#  if PGM_GST_TYPE != PGM_TYPE_AMD64
+            && CPUMIsGuestPageSizeExtEnabled(pVCpu)
+#  endif
+           )
         {
             TRPMSetErrorCode(pVCpu, uErr | X86_TRAP_PF_P); /* page-level protection violation */
         }
@@ -2620,7 +2621,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
         const bool      fPageTable = !PdeSrc.b.u1Size;
 # else
-        const bool      fPageTable = !PdeSrc.b.u1Size || !(CPUMGetGuestCR4(pVCpu) & X86_CR4_PSE);
+        const bool      fPageTable = !PdeSrc.b.u1Size || !CPUMIsGuestPageSizeExtEnabled(pVCpu);
 # endif
         PPGMPOOLPAGE    pShwPage;
         RTGCPHYS        GCPhys;
@@ -3545,7 +3546,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
     bool            fBigPagesSupported = true;
 # else
-    bool            fBigPagesSupported = !!(CPUMGetGuestCR4(pVCpu) & X86_CR4_PSE);
+    bool            fBigPagesSupported = CPUMIsGuestPageSizeExtEnabled(pVCpu);
 # endif
     PPGMCPU         pPGM = &pVCpu->pgm.s;
     RTGCPHYS        GCPhysGst;              /* page address derived from the guest page tables. */

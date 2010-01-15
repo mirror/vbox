@@ -1711,6 +1711,42 @@ VMMDECL(bool) CPUMIsGuestNXEnabled(PVMCPU pVCpu)
 
 
 /**
+ * Tests if the guest has the Page Size Extension enabled (PSE).
+ *
+ * @returns true if in real mode, otherwise false.
+ * @param   pVCpu       The virtual CPU handle.
+ */
+VMMDECL(bool) CPUMIsGuestPageSizeExtEnabled(PVMCPU pVCpu)
+{
+    return !!(pVCpu->cpum.s.Guest.cr4 & X86_CR4_PSE);
+}
+
+
+/**
+ * Tests if the guest has the paging enabled (PG).
+ *
+ * @returns true if in real mode, otherwise false.
+ * @param   pVCpu       The virtual CPU handle.
+ */
+VMMDECL(bool) CPUMIsGuestPagingEnabled(PVMCPU pVCpu)
+{
+    return !!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PG);
+}
+
+
+/**
+ * Tests if the guest has the paging enabled (PG).
+ *
+ * @returns true if in real mode, otherwise false.
+ * @param   pVCpu       The virtual CPU handle.
+ */
+VMMDECL(bool) CPUMIsGuestR0WriteProtEnabled(PVMCPU pVCpu)
+{
+    return !!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_WP);
+}
+
+
+/**
  * Tests if the guest is running in real mode or not.
  *
  * @returns true if in real mode, otherwise false.

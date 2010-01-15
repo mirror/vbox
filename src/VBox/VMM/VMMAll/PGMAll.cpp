@@ -892,8 +892,6 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE
     if (    !pPdpe->n.u1Present
         &&  !(pPdpe->u & X86_PDPE_PG_MASK))
     {
-        bool        fNestedPaging = HWACCMIsNestedPagingActive(pVM);
-        bool        fPaging       = !!(CPUMGetGuestCR0(pVCpu) & X86_CR0_PG);
         RTGCPTR64   GCPdPt;
         PGMPOOLKIND enmKind;
 
@@ -902,7 +900,7 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE
         PGMDynLockHCPage(pVM, (uint8_t *)pPdpe);
 # endif
 
-        if (fNestedPaging || !fPaging)
+        if (HWACCMIsNestedPagingActive(pVM) || !CPUMIsGuestPagingEnabled(pVCpu))
         {
             /* AMD-V nested paging or real/protected mode without paging */
             GCPdPt  = (RTGCPTR64)iPdPt << X86_PDPT_SHIFT;
@@ -1022,8 +1020,7 @@ int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, 
     PPGMPOOL       pPool         = pVM->pgm.s.CTX_SUFF(pPool);
     const unsigned iPml4         = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     PX86PML4E      pPml4e        = pgmShwGetLongModePML4EPtr(pPGM, iPml4);
-    bool           fNestedPaging = HWACCMIsNestedPagingActive(pVM);
-    bool           fPaging       = !!(CPUMGetGuestCR0(pVCpu) & X86_CR0_PG);
+    bool           fNestedPagingOrNoGstPaging = HWACCMIsNestedPagingActive(pVM) || !CPUMIsGuestPagingEnabled(pVCpu);
     PPGMPOOLPAGE   pShwPage;
     int            rc;
 
@@ -1038,7 +1035,7 @@ int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, 
 
         Assert(pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 
-        if (fNestedPaging || !fPaging)
+        if (fNestedPagingOrNoGstPaging)
         {
             /* AMD-V nested paging or real/protected mode without paging */
             GCPml4  = (RTGCPTR64)iPml4 << X86_PML4_SHIFT;
@@ -1078,7 +1075,7 @@ int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, 
         RTGCPTR64   GCPdPt;
         PGMPOOLKIND enmKind;
 
-        if (fNestedPaging || !fPaging)
+        if (fNestedPagingOrNoGstPaging)
         {
             /* AMD-V nested paging or real/protected mode without paging */
             GCPdPt  = (RTGCPTR64)iPdPt << X86_PDPT_SHIFT;
