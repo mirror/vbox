@@ -18,6 +18,7 @@
  */
 
 #include <windows.h>
+#include <stdio.h>      /* Needed for swprintf() */
 #include "Dialog.h"
 #include "WinWlx.h"
 #include "Helper.h"
@@ -155,24 +156,56 @@ INT_PTR CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog b
                 /* query the credentials from VBox */
                 if (credentialsRetrieve())
                 {
-                    if (hwndUserId)
-                        SendMessage(hwndUserId, WM_SETTEXT, 0, (LPARAM)g_Username);
-                    if (hwndPassword)
-                        SendMessage(hwndPassword, WM_SETTEXT, 0, (LPARAM)g_Password);
+                    BOOL bIsFQDN = FALSE;
+                    wchar_t szUserFQDN[512]; /* VMMDEV_CREDENTIALS_STRLEN + 255 bytes max. for FQDN */
                     if (hwndDomain)
                     {
                         /* search the domain combo box for our required domain and select it */
-                        Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Find domain entry ...\n"));
+                        Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Trying to find domain entry in combo box ...\n"));
                         DWORD dwIndex = (DWORD) SendMessage(hwndDomain, CB_FINDSTRING,
                                                             0, (LPARAM)g_Domain);
                         if (dwIndex != CB_ERR)
                         {
-                            Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Found domain at pos %ld\n", dwIndex));
+                            Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Found domain at combo box pos %ld\n", dwIndex));
                             SendMessage(hwndDomain, CB_SETCURSEL, (WPARAM) dwIndex, 0);
                             EnableWindow(hwndDomain, FALSE);
                         }
-                        else Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Domain entry not found!"));
+                        else 
+                        {
+                            Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Domain not found in combo box ...\n"));
+
+                            /* If the domain value has a dot (.) in it, it is a FQDN (Fully Qualified Domain Name)
+                             * which will not work with the combo box selection because Windows only keeps the
+                             * NETBIOS names to the left most part of the domain name there. Of course a FQDN
+                             * then will not be found by the search in the block below.
+                             *
+                             * To solve this problem the FQDN domain value will be appended at the user name value
+                             * (Kerberos style) using an "@", e.g. "<user-name>@full.qualified.domain".
+                             *
+                             */
+                            size_t l = wcslen(g_Domain);
+                            if (l > 255)
+                                Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Warning! FQDN is too long (max 255 bytes), will be truncated!\n"));
+
+                            if (   l > 0 
+                                && wcslen(g_Username) > 0
+                                && wcsstr(g_Domain, L".") != NULL) /* if we found a dot (.) in the domain name, this has to be a FQDN */
+                            {
+                                Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Domain seems to be a FQDN!\n"));
+                                swprintf(szUserFQDN, sizeof(szUserFQDN) / sizeof(wchar_t), L"%s@%s", g_Username, g_Domain);
+                                bIsFQDN = TRUE;
+                            }
+                        }
                     }
+                    if (hwndUserId)
+                    {
+                        if (!bIsFQDN)
+                            SendMessage(hwndUserId, WM_SETTEXT, 0, (LPARAM)g_Username);
+                        else
+                            SendMessage(hwndUserId, WM_SETTEXT, 0, (LPARAM)szUserFQDN);                               
+                    }
+                    if (hwndPassword)
+                        SendMessage(hwndPassword, WM_SETTEXT, 0, (LPARAM)g_Password);
 
                     /* we got the credentials, null them out */
                     credentialsReset();
