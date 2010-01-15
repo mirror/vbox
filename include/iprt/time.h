@@ -354,7 +354,7 @@ DECLINLINE(struct timeval *) RTTimeSpecGetTimeval(PCRTTIMESPEC pTime, struct tim
     if (i32Micro < 0)
     {
         i32Micro += 1000000;
-        i64++;
+        i64--;
     }
     pTimeval->tv_sec = (time_t)i64;
     pTimeval->tv_usec = i32Micro;
