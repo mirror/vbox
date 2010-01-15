@@ -20,6 +20,7 @@
  */
 
 #include "GuestOSTypeImpl.h"
+#include "AutoCaller.h"
 #include "Logging.h"
 #include <iprt/cpp/utils.h>
 

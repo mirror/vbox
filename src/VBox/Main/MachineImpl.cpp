@@ -53,6 +53,7 @@
 # include "USBProxyService.h"
 #endif
 
+#include "AutoCaller.h"
 #include "Logging.h"
 #include "Performance.h"
 

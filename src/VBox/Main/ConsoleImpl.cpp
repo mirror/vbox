@@ -59,6 +59,7 @@
 #include "RemoteUSBDeviceImpl.h"
 #include "SharedFolderImpl.h"
 #include "AudioSnifferInterface.h"
+#include "ProgressCombinedImpl.h"
 #include "ConsoleVRDPServer.h"
 #include "VMMDev.h"
 #include "package-generated.h"
@@ -66,6 +67,7 @@
 // generated header
 #include "SchemaDefs.h"
 
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <VBox/com/array.h>

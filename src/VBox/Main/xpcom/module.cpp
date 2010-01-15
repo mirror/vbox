@@ -36,6 +36,7 @@
 #include "KeyboardImpl.h"
 #include "MouseImpl.h"
 #include "DisplayImpl.h"
+#include "ProgressCombinedImpl.h"
 #include "MachineDebuggerImpl.h"
 #include "USBDeviceImpl.h"
 #include "RemoteUSBDeviceImpl.h"

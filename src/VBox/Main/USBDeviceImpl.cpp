@@ -22,6 +22,8 @@
  */
 
 #include "USBDeviceImpl.h"
+
+#include "AutoCaller.h"
 #include "Logging.h"
 
 // constructor / destructor

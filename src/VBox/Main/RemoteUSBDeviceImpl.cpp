@@ -23,6 +23,8 @@
  */
 
 #include "RemoteUSBDeviceImpl.h"
+
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <VBox/err.h>

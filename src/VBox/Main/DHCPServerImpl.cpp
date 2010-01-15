@@ -23,6 +23,7 @@
 
 #include "DHCPServerRunner.h"
 #include "DHCPServerImpl.h"
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <VBox/settings.h>

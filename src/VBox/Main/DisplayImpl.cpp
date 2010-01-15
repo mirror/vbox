@@ -26,6 +26,7 @@
 #include "ConsoleVRDPServer.h"
 #include "VMMDev.h"
 
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <iprt/semaphore.h>

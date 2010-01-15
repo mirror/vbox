@@ -27,6 +27,7 @@
 #include "ConsoleImpl.h"
 #include "VMMDev.h"
 
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <VBox/VMMDev.h>

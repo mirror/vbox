@@ -41,6 +41,7 @@
 
 #include "HostNetworkInterfaceImpl.h"
 
+#include "AutoCaller.h"
 #include "Logging.h"
 
 using namespace std;

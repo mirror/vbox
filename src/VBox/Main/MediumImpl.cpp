@@ -26,6 +26,7 @@
 #include "SystemPropertiesImpl.h"
 #include "VirtualBoxImpl.h"
 
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <VBox/com/array.h>
@@ -195,7 +196,7 @@ struct Medium::Task : public com::SupportErrorInfoBase
                    };
 
     Medium *that;
-    VirtualBoxBaseProto::AutoCaller m_autoCaller;
+    AutoCaller m_autoCaller;
 
     ComObjPtr<Progress> m_pProgress;
     Operation m_operation;

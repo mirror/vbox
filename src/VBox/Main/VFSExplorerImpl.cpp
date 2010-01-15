@@ -34,6 +34,7 @@
 #include "VirtualBoxImpl.h"
 #include "ProgressImpl.h"
 
+#include "AutoCaller.h"
 #include "Logging.h"
 
 ////////////////////////////////////////////////////////////////////////////////
