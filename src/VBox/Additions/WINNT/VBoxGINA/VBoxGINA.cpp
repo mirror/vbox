@@ -409,6 +409,7 @@ BOOL WINAPI WlxIsLogoffOk(PVOID pWlxContext)
         // if it's ok to logoff, finish with the stored credentials
         // and scrub the buffers
         //
+        credentialsReset();
 
     }
     return bSuccess;
