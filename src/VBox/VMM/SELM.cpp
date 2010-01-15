@@ -1945,8 +1945,8 @@ VMMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned 
     CPUMGetGuestGDTR(pVCpu, &GDTR);
 
     /* Check selector TI and GDT limit. */
-    if (    SelLdt & X86_SEL_LDT
-        ||  (SelLdt > GDTR.cbGdt))
+    if (   (SelLdt & X86_SEL_LDT)
+        || SelLdt > GDTR.cbGdt)
         return VERR_INVALID_SELECTOR;
 
     /* Read descriptor from GC. */
