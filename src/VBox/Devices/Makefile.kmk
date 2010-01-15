@@ -842,7 +842,9 @@ define def_vbox_slirp_alias_cflags
   $(file)_INCS += $(1)/slirp/libalias
   $(file)_INCS += $(1)/slirp
   $(file)_INCS += $(1)/slirp/dnsproxy
-  $(file)_CFLAGS += -Wno-shadow
+  ifneq ($(KBUILD_TARGET),win)
+   $(file)_CFLAGS += -Wno-shadow
+  endif
 endef
 $(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
 $(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_slirp_alias_cflags, Network)))
