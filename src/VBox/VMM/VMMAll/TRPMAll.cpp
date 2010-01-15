@@ -435,11 +435,11 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
         Assert(PATMAreInterruptsEnabledByCtxCore(pVM, pRegFrame));
         Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS));
 
-        /* Get the current privilege level. */
-        cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
-
         if (GCPtrIDT && iGate * sizeof(VBOXIDTE) >= cbIDT)
             goto failure;
+
+        /* Get the current privilege level. */
+        cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
 
         /*
          * BIG TODO: The checks are not complete. see trap and interrupt dispatching section in Intel docs for details
