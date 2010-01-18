@@ -1065,7 +1065,7 @@ RTDECL(int) RTLogGroupSettings(PRTLOGGER pLogger, const char *pszVar)
 
         while ((ch = *pszVar) == '+' || ch == '-' || ch == ' ' || ch == '\t' || ch == '\n' || ch == ';')
         {
-            if (ch == '+' || ch == '-' || ';')
+            if (ch == '+' || ch == '-' || ch == ';')
                 fEnabled = ch != '-';
             pszVar++;
         }
