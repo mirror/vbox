@@ -5144,6 +5144,504 @@ HRESULT Medium::taskThreadCreateDiff(Task &task, void *pvdOperationIfaces, bool 
 }
 
 /**
+ * Implementation code called from Medium::taskThread for the "merge" task.
+ * @param task
+ * @param pvdOperationIfaces
+ * @return
+ */
+HRESULT Medium::taskThreadMerge(Task &task, void *pvdOperationIfaces, bool fIsAsync)
+{
+    HRESULT rc = S_OK;
+
+    PVDINTERFACE vdOperationIfaces = (PVDINTERFACE)pvdOperationIfaces;
+
+    /* The lock is also used as a signal from the task initiator (which
+     * releases it only after RTThreadCreate()) that we can start the
+     * job. We don't actually need the lock for anything else since the
+     * object is protected by MediumState_Deleting and we don't modify
+     * its sensitive fields below */
+    {
+        AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
+    }
+
+    MergeChain *chain = task.d.chain.get();
+
+    try
+    {
+        PVBOXHDD hdd;
+        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        try
+        {
+            /* Open all hard disks in the chain (they are in the
+             * {parent,child} order in there. Note that we don't lock
+             * objects in this chain since they must be in states
+             * (Deleting and LockedWrite) that prevent from changing
+             * their format and location fields from outside. */
+
+            for (MergeChain::const_iterator it = chain->begin();
+                    it != chain->end(); ++ it)
+            {
+                /* complex sanity (sane complexity) */
+                Assert((chain->isForward() &&
+                        ((*it != chain->back() &&
+                            (*it)->m->state == MediumState_Deleting) ||
+                            (*it == chain->back() &&
+                            (*it)->m->state == MediumState_LockedWrite))) ||
+                        (!chain->isForward() &&
+                        ((*it != chain->front() &&
+                            (*it)->m->state == MediumState_Deleting) ||
+                            (*it == chain->front() &&
+                            (*it)->m->state == MediumState_LockedWrite))));
+
+                Assert(*it == chain->target() ||
+                        (*it)->m->backRefs.size() == 0);
+
+                /* open the first image with VDOPEN_FLAGS_INFO because
+                 * it's not necessarily the base one */
+                vrc = VDOpen(hdd, (*it)->m->strFormat.c_str(),
+                                (*it)->m->strLocationFull.c_str(),
+                                it == chain->begin() ?
+                                    VD_OPEN_FLAGS_INFO : 0,
+                                (*it)->m->vdDiskIfaces);
+                if (RT_FAILURE(vrc))
+                    throw vrc;
+            }
+
+            unsigned start = chain->isForward() ?
+                0 : (unsigned)chain->size() - 1;
+            unsigned end = chain->isForward() ?
+                (unsigned)chain->size() - 1 : 0;
+
+            vrc = VDMerge(hdd, start, end, vdOperationIfaces);
+            if (RT_FAILURE(vrc))
+                throw vrc;
+
+            /* update parent UUIDs */
+            /// @todo VDMerge should be taught to do so, including the
+            /// multiple children case
+            if (chain->isForward())
+            {
+                /* target's UUID needs to be updated (note that target
+                 * is the only image in the container on success) */
+                vrc = VDSetParentUuid(hdd, 0, chain->parent()->m->id);
+                if (RT_FAILURE(vrc))
+                    throw vrc;
+            }
+            else
+            {
+                /* we need to update UUIDs of all source's children
+                 * which cannot be part of the container at once so
+                 * add each one in there individually */
+                if (chain->children().size() > 0)
+                {
+                    for (MediaList::const_iterator it = chain->children().begin();
+                            it != chain->children().end();
+                            ++it)
+                    {
+                        /* VD_OPEN_FLAGS_INFO since UUID is wrong yet */
+                        vrc = VDOpen(hdd, (*it)->m->strFormat.c_str(),
+                                        (*it)->m->strLocationFull.c_str(),
+                                        VD_OPEN_FLAGS_INFO,
+                                        (*it)->m->vdDiskIfaces);
+                        if (RT_FAILURE(vrc))
+                            throw vrc;
+
+                        vrc = VDSetParentUuid(hdd, 1,
+                                                chain->target()->m->id);
+                        if (RT_FAILURE(vrc))
+                            throw vrc;
+
+                        vrc = VDClose(hdd, false /* fDelete */);
+                        if (RT_FAILURE(vrc))
+                            throw vrc;
+                    }
+                }
+            }
+        }
+        catch (HRESULT aRC) { rc = aRC; }
+        catch (int aVRC)
+        {
+            throw setError(E_FAIL,
+                            tr("Could not merge the hard disk '%s' to '%s'%s"),
+                            chain->source()->m->strLocationFull.raw(),
+                            chain->target()->m->strLocationFull.raw(),
+                            vdError(aVRC).raw());
+        }
+
+        VDDestroy(hdd);
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    HRESULT rc2;
+
+    bool saveSettingsFailed = false;
+
+    if (SUCCEEDED(rc))
+    {
+        /* all hard disks but the target were successfully deleted by
+         * VDMerge; reparent the last one and uninitialize deleted */
+
+        /* we set mParent & children() (note that thatLock is released
+         * here), but lock VirtualBox first to follow the rule */
+        AutoWriteLock alock1(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
+        AutoWriteLock alock2(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+        Medium *pSource = chain->source();
+        Medium *pTarget = chain->target();
+
+        if (chain->isForward())
+        {
+            /* first, unregister the target since it may become a base
+             * hard disk which needs re-registration */
+            rc2 = pTarget->m->pVirtualBox->unregisterHardDisk(pTarget, false /* aSaveSettings */);
+            AssertComRC(rc2);
+
+            /* then, reparent it and disconnect the deleted branch at
+             * both ends (chain->parent() is source's parent) */
+            pTarget->deparent();
+            pTarget->m->pParent = chain->parent();
+            if (pTarget->m->pParent)
+            {
+                pTarget->m->pParent->m->llChildren.push_back(pTarget);
+                pSource->deparent();
+            }
+
+            /* then, register again */
+            rc2 = pTarget->m->pVirtualBox->registerHardDisk(pTarget, false /* aSaveSettings */);
+            AssertComRC(rc2);
+        }
+        else
+        {
+            Assert(pTarget->getChildren().size() == 1);
+            Medium *targetChild = pTarget->getChildren().front();
+
+            /* disconnect the deleted branch at the elder end */
+            targetChild->deparent();
+
+            const MediaList &children = chain->children();
+
+            /* reparent source's chidren and disconnect the deleted
+             * branch at the younger end m*/
+            if (children.size() > 0)
+            {
+                /* obey {parent,child} lock order */
+                AutoWriteLock sourceLock(pSource COMMA_LOCKVAL_SRC_POS);
+
+                for (MediaList::const_iterator it = children.begin();
+                        it != children.end();
+                        ++it)
+                {
+                    AutoWriteLock childLock(*it COMMA_LOCKVAL_SRC_POS);
+
+                    Medium *p = *it;
+                    p->deparent();  // removes p from source
+                    pTarget->m->llChildren.push_back(p);
+                    p->m->pParent = pTarget;
+                }
+            }
+        }
+
+        /* try to save the hard disk registry */
+        rc = m->pVirtualBox->saveSettings();
+
+        if (SUCCEEDED(rc))
+        {
+            /* unregister and uninitialize all hard disks in the chain
+             * but the target */
+
+            for (MergeChain::iterator it = chain->begin();
+                    it != chain->end();)
+            {
+                if (*it == chain->target())
+                {
+                    ++ it;
+                    continue;
+                }
+
+                rc2 = (*it)->m->pVirtualBox->
+                    unregisterHardDisk(*it, false /* aSaveSettings */);
+                AssertComRC(rc2);
+
+                /* now, uninitialize the deleted hard disk (note that
+                 * due to the Deleting state, uninit() will not touch
+                 * the parent-child relationship so we need to
+                 * uninitialize each disk individually) */
+
+                /* note that the operation initiator hard disk (which is
+                 * normally also the source hard disk) is a special case
+                 * -- there is one more caller added by Task to it which
+                 * we must release. Also, if we are in sync mode, the
+                 * caller may still hold an AutoCaller instance for it
+                 * and therefore we cannot uninit() it (it's therefore
+                 * the caller's responsibility) */
+                if (*it == this)
+                    task.m_autoCaller.release();
+
+                /* release the caller added by MergeChain before
+                 * uninit() */
+                (*it)->releaseCaller();
+
+                if (fIsAsync || *it != this)
+                    (*it)->uninit();
+
+                /* delete (to prevent uninitialization in MergeChain
+                 * dtor) and advance to the next item */
+                it = chain->erase(it);
+            }
+
+            /* Note that states of all other hard disks (target, parent,
+             * children) will be restored by the MergeChain dtor */
+        }
+        else
+        {
+            /* too bad if we fail, but we'll need to rollback everything
+             * we did above to at least keep the HD tree in sync with
+             * the current registry on disk */
+
+            saveSettingsFailed = true;
+
+            /// @todo NEWMEDIA implement a proper undo
+
+            AssertFailed();
+        }
+    }
+
+    if (FAILED(rc))
+    {
+        /* Here we come if either VDMerge() failed (in which case we
+         * assume that it tried to do everything to make a further
+         * retry possible -- e.g. not deleted intermediate hard disks
+         * and so on) or VirtualBox::saveSettings() failed (where we
+         * should have the original tree but with intermediate storage
+         * units deleted by VDMerge()). We have to only restore states
+         * (through the MergeChain dtor) unless we are run synchronously
+         * in which case it's the responsibility of the caller as stated
+         * in the mergeTo() docs. The latter also implies that we
+         * don't own the merge chain, so release it in this case. */
+
+        if (!fIsAsync)
+            task.d.chain.release();
+
+        NOREF(saveSettingsFailed);
+    }
+
+    return rc;
+}
+
+/**
+ * Implementation code called from Medium::taskThread for the "clone" task.
+ * @param task
+ * @param pvdOperationIfaces
+ * @return
+ */
+HRESULT Medium::taskThreadClone(Task &task, void *pvdOperationIfaces)
+{
+    HRESULT rc = S_OK;
+
+    PVDINTERFACE vdOperationIfaces = (PVDINTERFACE)pvdOperationIfaces;
+
+    ComObjPtr<Medium> &pTarget = task.d.target;
+    ComObjPtr<Medium> &pParent = task.d.parentDisk;
+
+    /* Lock all in {parent,child} order. The lock is also used as a
+     * signal from the task initiator (which releases it only after
+     * RTThreadCreate()) that we can start the job. */
+    AutoMultiWriteLock3 thisLock(this, pTarget, pParent COMMA_LOCKVAL_SRC_POS);
+
+    ImageChain *srcChain = task.d.source.get();
+    ImageChain *parentChain = task.d.parent.get();
+
+    uint64_t size = 0, logicalSize = 0;
+
+    /* The object may request a specific UUID (through a special form of
+     * the setLocation() argument). Otherwise we have to generate it */
+    Guid targetId = pTarget->m->id;
+    bool generateUuid = targetId.isEmpty();
+    if (generateUuid)
+    {
+        targetId.create();
+        /* VirtualBox::registerHardDisk() will need UUID */
+        unconst(pTarget->m->id) = targetId;
+    }
+
+    try
+    {
+        PVBOXHDD hdd;
+        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        try
+        {
+            /* Open all hard disk images in the source chain. */
+            for (MediaList::const_iterator it = srcChain->begin();
+                 it != srcChain->end();
+                 ++it)
+            {
+                /* sanity check */
+                Assert((*it)->m->state == MediumState_LockedRead);
+
+                /** Open all images in read-only mode. */
+                vrc = VDOpen(hdd,
+                             (*it)->m->strFormat.c_str(),
+                             (*it)->m->strLocationFull.c_str(),
+                             VD_OPEN_FLAGS_READONLY,
+                             (*it)->m->vdDiskIfaces);
+                if (RT_FAILURE(vrc))
+                    throw setError(E_FAIL,
+                                    tr("Could not open the hard disk storage unit '%s'%s"),
+                                    (*it)->m->strLocationFull.raw(),
+                                    vdError(vrc).raw());
+            }
+
+            Utf8Str targetFormat(pTarget->m->strFormat);
+            Utf8Str targetLocation(pTarget->m->strLocationFull);
+
+            Assert(    pTarget->m->state == MediumState_Creating
+                    || pTarget->m->state == MediumState_LockedWrite);
+            Assert(m->state == MediumState_LockedRead);
+            Assert(pParent.isNull() || pParent->m->state == MediumState_LockedRead);
+
+            /* unlock before the potentially lengthy operation */
+            thisLock.leave();
+
+            /* ensure the target directory exists */
+            rc = VirtualBox::ensureFilePathExists(targetLocation);
+            if (FAILED(rc)) throw rc;
+
+            PVBOXHDD targetHdd;
+            vrc = VDCreate(m->vdDiskIfaces, &targetHdd);
+            ComAssertRCThrow(vrc, E_FAIL);
+
+            try
+            {
+                /* Open all hard disk images in the parent chain. */
+                for (MediaList::const_iterator it = parentChain->begin();
+                     it != parentChain->end();
+                     ++it)
+                {
+                    /** @todo r=klaus (*it) is not locked, lots of
+                        * race opportunities below */
+                    /* sanity check */
+                    Assert(    (*it)->m->state == MediumState_LockedRead
+                            || (*it)->m->state == MediumState_LockedWrite);
+
+                    /* Open all images in appropriate mode. */
+                    vrc = VDOpen(targetHdd,
+                                 (*it)->m->strFormat.c_str(),
+                                 (*it)->m->strLocationFull.c_str(),
+                                 ((*it)->m->state == MediumState_LockedWrite) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
+                                 (*it)->m->vdDiskIfaces);
+                    if (RT_FAILURE(vrc))
+                        throw setError(E_FAIL,
+                                       tr("Could not open the hard disk storage unit '%s'%s"),
+                                       (*it)->m->strLocationFull.raw(),
+                                       vdError(vrc).raw());
+                }
+
+                /** @todo r=klaus target isn't locked, race getting the state */
+                vrc = VDCopy(hdd,
+                             VD_LAST_IMAGE,
+                             targetHdd,
+                             targetFormat.c_str(),
+                             pTarget->m->state == MediumState_Creating ? targetLocation.raw() : (char *)NULL,
+                             false,
+                             0,
+                             task.d.variant,
+                             targetId.raw(),
+                             NULL,
+                             pTarget->m->vdDiskIfaces,
+                             vdOperationIfaces);
+                if (RT_FAILURE(vrc))
+                    throw setError(E_FAIL,
+                                    tr("Could not create the clone hard disk '%s'%s"),
+                                    targetLocation.raw(), vdError(vrc).raw());
+
+                size = VDGetFileSize(targetHdd, 0);
+                logicalSize = VDGetSize(targetHdd, 0) / _1M;
+            }
+            catch (HRESULT aRC) { rc = aRC; }
+
+            VDDestroy(targetHdd);
+        }
+        catch (HRESULT aRC) { rc = aRC; }
+
+        VDDestroy(hdd);
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    /* Only do the parent changes for newly created images. */
+    if (pTarget->m->state == MediumState_Creating)
+    {
+        if (SUCCEEDED(rc))
+        {
+            /* we set mParent & children() (note that thatLock is released
+                * here), but lock VirtualBox first to follow the rule */
+            AutoWriteLock alock1(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
+            AutoWriteLock alock2(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+            Assert(pTarget->m->pParent.isNull());
+
+            if (pParent)
+            {
+                /* associate the clone with the parent and deassociate
+                    * from VirtualBox */
+                pTarget->m->pParent = pParent;
+                pParent->m->llChildren.push_back(pTarget);
+
+                /* register with mVirtualBox as the last step and move to
+                    * Created state only on success (leaving an orphan file is
+                    * better than breaking media registry consistency) */
+                rc = pParent->m->pVirtualBox->registerHardDisk(pTarget);
+
+                if (FAILED(rc))
+                    /* break parent association on failure to register */
+                    pTarget->deparent();     // removes target from parent
+            }
+            else
+            {
+                /* just register  */
+                rc = m->pVirtualBox->registerHardDisk(pTarget);
+            }
+        }
+    }
+
+    thisLock.maybeEnter();
+
+    if (pTarget->m->state == MediumState_Creating)
+    {
+        if (SUCCEEDED(rc))
+        {
+            pTarget->m->state = MediumState_Created;
+
+            pTarget->m->size = size;
+            pTarget->m->logicalSize = logicalSize;
+        }
+        else
+        {
+            /* back to NotCreated on failure */
+            pTarget->m->state = MediumState_NotCreated;
+
+            /* reset UUID to prevent it from being reused next time */
+            if (generateUuid)
+                unconst(pTarget->m->id).clear();
+        }
+    }
+
+    /* Everything is explicitly unlocked when the task exits,
+     * as the task destruction also destroys the source chain. */
+
+    /* Make sure the source chain is released early. It could happen
+     * that we get a deadlock in Appliance::Import when Medium::Close
+     * is called & the source chain is released at the same time. */
+    task.d.source.reset();
+
+    return rc;
+}
+
+
+/**
  * Thread function for time-consuming tasks.
  *
  * The Task structure passed to @a pvUser must be allocated using new and will
@@ -5199,494 +5697,13 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
             rc = that->taskThreadCreateDiff(*task, (void*)vdOperationIfaces, fIsAsync);
         break;
 
-        ////////////////////////////////////////////////////////////////////////
-
         case Task::Merge:
-        {
-            /* The lock is also used as a signal from the task initiator (which
-             * releases it only after RTThreadCreate()) that we can start the
-             * job. We don't actually need the lock for anything else since the
-             * object is protected by MediumState_Deleting and we don't modify
-             * its sensitive fields below */
-            {
-                AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
-            }
-
-            MergeChain *chain = task->d.chain.get();
-
-#if 0
-            LogFlow(("*** MERGE forward = %RTbool\n", chain->isForward()));
-#endif
-
-            try
-            {
-                PVBOXHDD hdd;
-                int vrc = VDCreate(that->m->vdDiskIfaces, &hdd);
-                ComAssertRCThrow(vrc, E_FAIL);
-
-                try
-                {
-                    /* Open all hard disks in the chain (they are in the
-                     * {parent,child} order in there. Note that we don't lock
-                     * objects in this chain since they must be in states
-                     * (Deleting and LockedWrite) that prevent from changing
-                     * their format and location fields from outside. */
-
-                    for (MergeChain::const_iterator it = chain->begin();
-                         it != chain->end(); ++ it)
-                    {
-                        /* complex sanity (sane complexity) */
-                        Assert((chain->isForward() &&
-                                ((*it != chain->back() &&
-                                  (*it)->m->state == MediumState_Deleting) ||
-                                 (*it == chain->back() &&
-                                  (*it)->m->state == MediumState_LockedWrite))) ||
-                               (!chain->isForward() &&
-                                ((*it != chain->front() &&
-                                  (*it)->m->state == MediumState_Deleting) ||
-                                 (*it == chain->front() &&
-                                  (*it)->m->state == MediumState_LockedWrite))));
-
-                        Assert(*it == chain->target() ||
-                               (*it)->m->backRefs.size() == 0);
-
-                        /* open the first image with VDOPEN_FLAGS_INFO because
-                         * it's not necessarily the base one */
-                        vrc = VDOpen(hdd, (*it)->m->strFormat.c_str(),
-                                      (*it)->m->strLocationFull.c_str(),
-                                      it == chain->begin() ?
-                                          VD_OPEN_FLAGS_INFO : 0,
-                                      (*it)->m->vdDiskIfaces);
-                        if (RT_FAILURE(vrc))
-                            throw vrc;
-#if 0
-                        LogFlow(("*** MERGE disk = %s\n", (*it)->m->strLocationFull.raw()));
-#endif
-                    }
-
-                    unsigned start = chain->isForward() ?
-                        0 : (unsigned)chain->size() - 1;
-                    unsigned end = chain->isForward() ?
-                        (unsigned)chain->size() - 1 : 0;
-#if 0
-                    LogFlow(("*** MERGE from %d to %d\n", start, end));
-#endif
-                    vrc = VDMerge(hdd, start, end, vdOperationIfaces);
-                    if (RT_FAILURE(vrc))
-                        throw vrc;
-
-                    /* update parent UUIDs */
-                    /// @todo VDMerge should be taught to do so, including the
-                    /// multiple children case
-                    if (chain->isForward())
-                    {
-                        /* target's UUID needs to be updated (note that target
-                         * is the only image in the container on success) */
-                        vrc = VDSetParentUuid(hdd, 0, chain->parent()->m->id);
-                        if (RT_FAILURE(vrc))
-                            throw vrc;
-                    }
-                    else
-                    {
-                        /* we need to update UUIDs of all source's children
-                         * which cannot be part of the container at once so
-                         * add each one in there individually */
-                        if (chain->children().size() > 0)
-                        {
-                            for (MediaList::const_iterator it = chain->children().begin();
-                                 it != chain->children().end();
-                                 ++it)
-                            {
-                                /* VD_OPEN_FLAGS_INFO since UUID is wrong yet */
-                                vrc = VDOpen(hdd, (*it)->m->strFormat.c_str(),
-                                             (*it)->m->strLocationFull.c_str(),
-                                             VD_OPEN_FLAGS_INFO,
-                                             (*it)->m->vdDiskIfaces);
-                                if (RT_FAILURE(vrc))
-                                    throw vrc;
-
-                                vrc = VDSetParentUuid(hdd, 1,
-                                                      chain->target()->m->id);
-                                if (RT_FAILURE(vrc))
-                                    throw vrc;
-
-                                vrc = VDClose(hdd, false /* fDelete */);
-                                if (RT_FAILURE(vrc))
-                                    throw vrc;
-                            }
-                        }
-                    }
-                }
-                catch (HRESULT aRC) { rc = aRC; }
-                catch (int aVRC)
-                {
-                    throw setError(E_FAIL,
-                                   tr("Could not merge the hard disk '%s' to '%s'%s"),
-                                   chain->source()->m->strLocationFull.raw(),
-                                   chain->target()->m->strLocationFull.raw(),
-                                   that->vdError(aVRC).raw());
-                }
-
-                VDDestroy(hdd);
-            }
-            catch (HRESULT aRC) { rc = aRC; }
-
-            HRESULT rc2;
-
-            bool saveSettingsFailed = false;
-
-            if (SUCCEEDED(rc))
-            {
-                /* all hard disks but the target were successfully deleted by
-                 * VDMerge; reparent the last one and uninitialize deleted */
-
-                /* we set mParent & children() (note that thatLock is released
-                 * here), but lock VirtualBox first to follow the rule */
-                AutoWriteLock alock1(that->m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-                AutoWriteLock alock2(that->m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
-                Medium *pSource = chain->source();
-                Medium *pTarget = chain->target();
-
-                if (chain->isForward())
-                {
-                    /* first, unregister the target since it may become a base
-                     * hard disk which needs re-registration */
-                    rc2 = pTarget->m->pVirtualBox->unregisterHardDisk(pTarget, false /* aSaveSettings */);
-                    AssertComRC(rc2);
-
-                    /* then, reparent it and disconnect the deleted branch at
-                     * both ends (chain->parent() is source's parent) */
-                    pTarget->deparent();
-                    pTarget->m->pParent = chain->parent();
-                    if (pTarget->m->pParent)
-                    {
-                        pTarget->m->pParent->m->llChildren.push_back(pTarget);
-                        pSource->deparent();
-                    }
-
-                    /* then, register again */
-                    rc2 = pTarget->m->pVirtualBox->registerHardDisk(pTarget, false /* aSaveSettings */);
-                    AssertComRC(rc2);
-                }
-                else
-                {
-                    Assert(pTarget->getChildren().size() == 1);
-                    Medium *targetChild = pTarget->getChildren().front();
-
-                    /* disconnect the deleted branch at the elder end */
-                    targetChild->deparent();
-
-                    const MediaList &children = chain->children();
-
-                    /* reparent source's chidren and disconnect the deleted
-                     * branch at the younger end m*/
-                    if (children.size() > 0)
-                    {
-                        /* obey {parent,child} lock order */
-                        AutoWriteLock sourceLock(pSource COMMA_LOCKVAL_SRC_POS);
-
-                        for (MediaList::const_iterator it = children.begin();
-                             it != children.end();
-                             ++it)
-                        {
-                            AutoWriteLock childLock(*it COMMA_LOCKVAL_SRC_POS);
-
-                            Medium *p = *it;
-                            p->deparent();  // removes p from source
-                            pTarget->m->llChildren.push_back(p);
-                            p->m->pParent = pTarget;
-                        }
-                    }
-                }
-
-                /* try to save the hard disk registry */
-                rc = that->m->pVirtualBox->saveSettings();
-
-                if (SUCCEEDED(rc))
-                {
-                    /* unregister and uninitialize all hard disks in the chain
-                     * but the target */
-
-                    for (MergeChain::iterator it = chain->begin();
-                         it != chain->end();)
-                    {
-                        if (*it == chain->target())
-                        {
-                            ++ it;
-                            continue;
-                        }
-
-                        rc2 = (*it)->m->pVirtualBox->
-                            unregisterHardDisk(*it, false /* aSaveSettings */);
-                        AssertComRC(rc2);
-
-                        /* now, uninitialize the deleted hard disk (note that
-                         * due to the Deleting state, uninit() will not touch
-                         * the parent-child relationship so we need to
-                         * uninitialize each disk individually) */
-
-                        /* note that the operation initiator hard disk (which is
-                         * normally also the source hard disk) is a special case
-                         * -- there is one more caller added by Task to it which
-                         * we must release. Also, if we are in sync mode, the
-                         * caller may still hold an AutoCaller instance for it
-                         * and therefore we cannot uninit() it (it's therefore
-                         * the caller's responsibility) */
-                        if (*it == that)
-                            task->m_autoCaller.release();
-
-                        /* release the caller added by MergeChain before
-                         * uninit() */
-                        (*it)->releaseCaller();
-
-                        if (fIsAsync || *it != that)
-                            (*it)->uninit();
-
-                        /* delete (to prevent uninitialization in MergeChain
-                         * dtor) and advance to the next item */
-                        it = chain->erase(it);
-                    }
-
-                    /* Note that states of all other hard disks (target, parent,
-                     * children) will be restored by the MergeChain dtor */
-                }
-                else
-                {
-                    /* too bad if we fail, but we'll need to rollback everything
-                     * we did above to at least keep the HD tree in sync with
-                     * the current registry on disk */
-
-                    saveSettingsFailed = true;
-
-                    /// @todo NEWMEDIA implement a proper undo
-
-                    AssertFailed();
-                }
-            }
-
-            if (FAILED(rc))
-            {
-                /* Here we come if either VDMerge() failed (in which case we
-                 * assume that it tried to do everything to make a further
-                 * retry possible -- e.g. not deleted intermediate hard disks
-                 * and so on) or VirtualBox::saveSettings() failed (where we
-                 * should have the original tree but with intermediate storage
-                 * units deleted by VDMerge()). We have to only restore states
-                 * (through the MergeChain dtor) unless we are run synchronously
-                 * in which case it's the responsibility of the caller as stated
-                 * in the mergeTo() docs. The latter also implies that we
-                 * don't own the merge chain, so release it in this case. */
-
-                if (!fIsAsync)
-                    task->d.chain.release();
-
-                NOREF(saveSettingsFailed);
-            }
-
-            break;
-        }
-
-        ////////////////////////////////////////////////////////////////////////
+            rc = that->taskThreadMerge(*task, (void*)vdOperationIfaces, fIsAsync);
+        break;
 
         case Task::Clone:
-        {
-            ComObjPtr<Medium> &pTarget = task->d.target;
-            ComObjPtr<Medium> &pParent = task->d.parentDisk;
-
-            /* Lock all in {parent,child} order. The lock is also used as a
-             * signal from the task initiator (which releases it only after
-             * RTThreadCreate()) that we can start the job. */
-            AutoMultiWriteLock3 thatLock(that, pTarget, pParent COMMA_LOCKVAL_SRC_POS);
-
-            ImageChain *srcChain = task->d.source.get();
-            ImageChain *parentChain = task->d.parent.get();
-
-            uint64_t size = 0, logicalSize = 0;
-
-            /* The object may request a specific UUID (through a special form of
-             * the setLocation() argument). Otherwise we have to generate it */
-            Guid targetId = pTarget->m->id;
-            bool generateUuid = targetId.isEmpty();
-            if (generateUuid)
-            {
-                targetId.create();
-                /* VirtualBox::registerHardDisk() will need UUID */
-                unconst(pTarget->m->id) = targetId;
-            }
-
-            try
-            {
-                PVBOXHDD hdd;
-                int vrc = VDCreate(that->m->vdDiskIfaces, &hdd);
-                ComAssertRCThrow(vrc, E_FAIL);
-
-                try
-                {
-                    /* Open all hard disk images in the source chain. */
-                    for (MediaList::const_iterator it = srcChain->begin();
-                         it != srcChain->end();
-                         ++it)
-                    {
-                        /* sanity check */
-                        Assert((*it)->m->state == MediumState_LockedRead);
-
-                        /** Open all images in read-only mode. */
-                        vrc = VDOpen(hdd, (*it)->m->strFormat.c_str(),
-                                     (*it)->m->strLocationFull.c_str(),
-                                     VD_OPEN_FLAGS_READONLY,
-                                     (*it)->m->vdDiskIfaces);
-                        if (RT_FAILURE(vrc))
-                        {
-                            throw setError(E_FAIL,
-                                           tr("Could not open the hard disk storage unit '%s'%s"),
-                                           (*it)->m->strLocationFull.raw(),
-                                           that->vdError(vrc).raw());
-                        }
-                    }
-
-                    Utf8Str targetFormat(pTarget->m->strFormat);
-                    Utf8Str targetLocation(pTarget->m->strLocationFull);
-
-                    Assert(    pTarget->m->state == MediumState_Creating
-                           ||  pTarget->m->state == MediumState_LockedWrite);
-                    Assert(that->m->state == MediumState_LockedRead);
-                    Assert(pParent.isNull() || pParent->m->state == MediumState_LockedRead);
-
-                    /* unlock before the potentially lengthy operation */
-                    thatLock.leave();
-
-                    /* ensure the target directory exists */
-                    rc = VirtualBox::ensureFilePathExists(targetLocation);
-                    if (FAILED(rc)) throw rc;
-
-                    PVBOXHDD targetHdd;
-                    vrc = VDCreate(that->m->vdDiskIfaces, &targetHdd);
-                    ComAssertRCThrow(vrc, E_FAIL);
-
-                    try
-                    {
-                        /* Open all hard disk images in the parent chain. */
-                        for (MediaList::const_iterator it = parentChain->begin();
-                             it != parentChain->end();
-                             ++it)
-                        {
-                            /** @todo r=klaus (*it) is not locked, lots of
-                             * race opportunities below */
-                            /* sanity check */
-                            Assert(    (*it)->m->state == MediumState_LockedRead
-                                   ||  (*it)->m->state == MediumState_LockedWrite);
-
-                            /* Open all images in appropriate mode. */
-                            vrc = VDOpen(targetHdd, (*it)->m->strFormat.c_str(),
-                                         (*it)->m->strLocationFull.c_str(),
-                                         ((*it)->m->state == MediumState_LockedWrite) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
-                                         (*it)->m->vdDiskIfaces);
-                            if (RT_FAILURE(vrc))
-                            {
-                                throw setError(E_FAIL,
-                                               tr("Could not open the hard disk storage unit '%s'%s"),
-                                               (*it)->m->strLocationFull.raw(),
-                                               that->vdError(vrc).raw());
-                            }
-                        }
-
-                        /** @todo r=klaus target isn't locked, race getting the state */
-                        vrc = VDCopy(hdd, VD_LAST_IMAGE, targetHdd,
-                                     targetFormat.c_str(),
-                                     pTarget->m->state == MediumState_Creating ? targetLocation.raw() : (char *)NULL,
-                                     false, 0,
-                                     task->d.variant, targetId.raw(), NULL,
-                                     pTarget->m->vdDiskIfaces,
-                                     vdOperationIfaces);
-                        if (RT_FAILURE(vrc))
-                        {
-                            throw setError(E_FAIL,
-                                           tr("Could not create the clone hard disk '%s'%s"),
-                                           targetLocation.raw(), that->vdError(vrc).raw());
-                        }
-                        size = VDGetFileSize(targetHdd, 0);
-                        logicalSize = VDGetSize(targetHdd, 0) / _1M;
-                    }
-                    catch (HRESULT aRC) { rc = aRC; }
-
-                    VDDestroy(targetHdd);
-                }
-                catch (HRESULT aRC) { rc = aRC; }
-
-                VDDestroy(hdd);
-            }
-            catch (HRESULT aRC) { rc = aRC; }
-
-            /* Only do the parent changes for newly created images. */
-            if (pTarget->m->state == MediumState_Creating)
-            {
-                if (SUCCEEDED(rc))
-                {
-                    /* we set mParent & children() (note that thatLock is released
-                     * here), but lock VirtualBox first to follow the rule */
-                    AutoWriteLock alock1(that->m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-                    AutoWriteLock alock2(that->m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
-                    Assert(pTarget->m->pParent.isNull());
-
-                    if (pParent)
-                    {
-                        /* associate the clone with the parent and deassociate
-                         * from VirtualBox */
-                        pTarget->m->pParent = pParent;
-                        pParent->m->llChildren.push_back(pTarget);
-
-                        /* register with mVirtualBox as the last step and move to
-                         * Created state only on success (leaving an orphan file is
-                         * better than breaking media registry consistency) */
-                        rc = pParent->m->pVirtualBox->registerHardDisk(pTarget);
-
-                        if (FAILED(rc))
-                            /* break parent association on failure to register */
-                            pTarget->deparent();     // removes target from parent
-                    }
-                    else
-                    {
-                        /* just register  */
-                        rc = that->m->pVirtualBox->registerHardDisk(pTarget);
-                    }
-                }
-            }
-
-            thatLock.maybeEnter();
-
-            if (pTarget->m->state == MediumState_Creating)
-            {
-                if (SUCCEEDED(rc))
-                {
-                    pTarget->m->state = MediumState_Created;
-
-                    pTarget->m->size = size;
-                    pTarget->m->logicalSize = logicalSize;
-                }
-                else
-                {
-                    /* back to NotCreated on failure */
-                    pTarget->m->state = MediumState_NotCreated;
-
-                    /* reset UUID to prevent it from being reused next time */
-                    if (generateUuid)
-                        unconst(pTarget->m->id).clear();
-                }
-            }
-
-            /* Everything is explicitly unlocked when the task exits,
-             * as the task destruction also destroys the source chain. */
-
-            /* Make sure the source chain is released early. It could happen
-             * that we get a deadlock in Appliance::Import when Medium::Close
-             * is called & the source chain is released at the same time. */
-            task->d.source.reset();
-            break;
-        }
-
-        ////////////////////////////////////////////////////////////////////////
+            rc = that->taskThreadClone(*task, (void*)vdOperationIfaces);
+        break;
 
         case Task::Delete:
         {
