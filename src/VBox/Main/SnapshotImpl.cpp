@@ -1759,7 +1759,6 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 
         /* grab differencing hard disks from the old attachments that will
          * become unused and need to be auto-deleted */
-
         std::list< ComObjPtr<MediumAttachment> > llDiffAttachmentsToDelete;
 
         for (MediaData::AttachmentList::const_iterator it = mMediaData.backedUpData()->mAttachments.begin();
@@ -1800,7 +1799,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         mData->mLastStateChange = snapshotTimeStamp;
 
         // detach the current-state diffs that we detected above and build a list of
-        // images to delete _after_ saveSettings()
+        // image files to delete _after_ saveSettings()
 
         MediaList llDiffsToDelete;
 
@@ -1834,15 +1833,15 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         alock.leave();
 
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        if (fNeedsSaveSettings)
-            // VirtualBox.xml needs saving too: must not hold machine lock at this point!
-            mParent->saveSettings();
-
         alock.enter();
 
-        // save all settings, reset the modified flag and commit;
+        // save machine settings, reset the modified flag and commit;
         rc = saveSettings(SaveS_ResetCurStateModified | saveFlags);
         if (FAILED(rc)) throw rc;
+
+        // let go of the locks while we're deleting image files below
+        alock.leave();
+        vboxLock.release();
 
         // from here on we cannot roll back on failure any more
 
@@ -1853,10 +1852,17 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             ComObjPtr<Medium> &pMedium = *it;
             LogFlowThisFunc(("Deleting old current state in differencing image '%s'\n", pMedium->getName().raw()));
 
-            HRESULT rc2 = pMedium->deleteStorageAndWait(NULL /*aProgress*/, NULL /*pfNeedsSaveSettings*/ );
+            HRESULT rc2 = pMedium->deleteStorageAndWait(NULL /*aProgress*/, &fNeedsSaveSettings);
             // ignore errors here because we cannot roll back after saveSettings() above
             if (SUCCEEDED(rc2))
                 pMedium->uninit();
+        }
+
+        if (fNeedsSaveSettings)
+        {
+            // finally, VirtualBox.xml needs saving too
+            vboxLock.acquire();
+            mParent->saveSettings();
         }
     }
     catch (HRESULT aRC)

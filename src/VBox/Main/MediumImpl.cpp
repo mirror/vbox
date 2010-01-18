@@ -4129,7 +4129,7 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
 
     if (FAILED(rc)) return rc;
 
-    ComObjPtr <Progress> progress;
+    ComObjPtr<Progress> progress;
 
     if (aProgress != NULL)
     {
