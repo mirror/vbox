@@ -24,7 +24,6 @@
 # Clara, CA 95054 USA or visit http://www.sun.com if you need
 # additional information or have any questions.
 #
-#
 
 set -e
 set -x
