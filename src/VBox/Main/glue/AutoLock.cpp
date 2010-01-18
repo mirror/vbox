@@ -624,38 +624,6 @@ void AutoWriteLockBase::enter()
 }
 
 /**
- * Same as #leave() but checks if the current thread actally owns the lock
- * and only proceeds in this case. As a result, as opposed to #leave(),
- * doesn't assert when called with no lock being held.
- */
-void AutoWriteLockBase::maybeLeave()
-{
-    // unlock in reverse order!
-    uint32_t i = m->aHandles.size();
-    for (HandlesVector::reverse_iterator it = m->aHandles.rbegin();
-         it != m->aHandles.rend();
-         ++it)
-    {
-        --i;            // array index is zero based, decrement with every loop since we iterate backwards
-        LockHandle *pHandle = *it;
-        if (pHandle)
-        {
-            if (pHandle->isWriteLockOnCurrentThread())
-            {
-                m->acUnlockedInLeave[i] = pHandle->writeLockLevel();
-                AssertMsg(m->acUnlockedInLeave[i] >= 1, ("m->cUnlockedInLeave[%d] is %d, must be >=1!", i, m->acUnlockedInLeave[i]));
-
-                for (uint32_t left = m->acUnlockedInLeave[i];
-                     left;
-                     --left)
-                    callUnlockImpl(*pHandle);
-            }
-        }
-        ++i;
-    }
-}
-
-/**
  * Same as #enter() but checks if the current thread actally owns the lock
  * and only proceeds if not. As a result, as opposed to #enter(), doesn't
  * assert when called with the lock already being held.
