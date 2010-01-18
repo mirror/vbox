@@ -223,9 +223,10 @@ static void drvvdErrorCallback(void *pvUser, int rc, RT_SRC_POS_DECL,
          * deadlock: We are probably executed in a thread context != EMT
          * and the EM thread would wait until every thread is suspended
          * but we would wait for the EM thread ... */
-        pDrvIns->pDrvHlp->pfnVMSetRuntimeErrorV(pDrvIns, /* fFlags=*/ 0, "DrvVD", pszFormat, va);
+
+        PDMDrvHlpVMSetRuntimeErrorV(pDrvIns, /* fFlags=*/ 0, "DrvVD", pszFormat, va);
     else
-        pDrvIns->pDrvHlp->pfnVMSetErrorV(pDrvIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
+        PDMDrvHlpVMSetErrorV(pDrvIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
 }
 
 /*******************************************************************************

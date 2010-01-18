@@ -204,7 +204,7 @@ static void mmHyperUnlock(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @param   cb          Number of bytes to allocate.
  * @param   uAlignment  Required memory alignment in bytes.
- *                      Values are 0,8,16,32 and PAGE_SIZE.
+ *                      Values are 0,8,16,32,64 and PAGE_SIZE.
  *                      0 -> default alignment, i.e. 8 bytes.
  * @param   enmTag      The statistics tag.
  * @param   ppv         Where to store the address to the allocated
@@ -225,6 +225,7 @@ static int mmHyperAllocInternal(PVM pVM, size_t cb, unsigned uAlignment, MMTAG e
         case 8:
         case 16:
         case 32:
+        case 64:
             cbAligned = RT_ALIGN_32(cb, MMHYPER_HEAP_ALIGN_MIN);
             if (!cbAligned || cbAligned < cb)
             {

@@ -48,6 +48,9 @@
  @{ */
 /** The attach/detach command is not a hotplug event. */
 #define PDM_TACH_FLAGS_NOT_HOT_PLUG     RT_BIT_32(0)
+/** Indicates that no attach or detach callbacks should be made.
+ * This is mostly for internal use.  */
+#define PDM_TACH_FLAGS_NO_CALLBACKS     RT_BIT_32(1)
 /* @} */
 
 

@@ -1299,7 +1299,7 @@ static void audio_run_out (AudioState *s)
 
     while ((hw = audio_pcm_hw_find_any_enabled_out (s, hw))) {
         int played;
-        int live, free, nb_live, cleanup_required, prev_rpos;
+        int live, myfree, nb_live, cleanup_required, prev_rpos;
 
         live = audio_pcm_hw_get_live_out2 (hw, &nb_live);
         if (!nb_live) {
@@ -1329,9 +1329,9 @@ static void audio_run_out (AudioState *s)
         if (!live) {
             for (sw = hw->sw_head.lh_first; sw; sw = sw->entries.le_next) {
                 if (sw->active) {
-                    free = audio_get_free (sw);
-                    if (free > 0) {
-                        sw->callback.fn (sw->callback.opaque, free);
+                    myfree = audio_get_free (sw);
+                    if (myfree > 0) {
+                        sw->callback.fn (sw->callback.opaque, myfree);
                     }
                 }
             }
@@ -1375,9 +1375,9 @@ static void audio_run_out (AudioState *s)
             }
 
             if (sw->active) {
-                free = audio_get_free (sw);
-                if (free > 0) {
-                    sw->callback.fn (sw->callback.opaque, free);
+                myfree = audio_get_free (sw);
+                if (myfree > 0) {
+                    sw->callback.fn (sw->callback.opaque, myfree);
                 }
             }
         }
@@ -1704,7 +1704,7 @@ static int AUD_init (PPDMDRVINS pDrvIns, const char *drvname)
             conf.period.ticks = 1;
         }
         else {
-            conf.period.ticks = pDrvIns->pDrvHlp->pfnTMGetVirtualFreq (pDrvIns)
+            conf.period.ticks = PDMDrvHlpTMGetVirtualFreq (pDrvIns)
                 / conf.period.hz;
         }
     }
@@ -1977,7 +1977,7 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
 
 /**
  * Construct an AUDIO driver instance.
- *  
+ *
  * @copydoc FNPDMDRVCONSTRUCT
  */
 static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)

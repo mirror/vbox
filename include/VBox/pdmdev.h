@@ -3258,7 +3258,7 @@ typedef struct PDMDEVINS
     /** Structure version. PDM_DEVINS_VERSION defines the current version. */
     uint32_t                    u32Version;
     /** Device instance number. */
-    RTUINT                      iInstance;
+    uint32_t                    iInstance;
 
     /** Pointer the GC PDM Device API. */
     PCPDMDEVHLPRC               pDevHlpRC;

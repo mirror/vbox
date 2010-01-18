@@ -503,7 +503,7 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
      */
     if (pszFilename)
     {
-        int rc = pThis->pDrvIns->pDrvHlp->pfnMountPrepare(pThis->pDrvIns, pszFilename, pszCoreDriver);
+        int rc = PDMDrvHlpMountPrepare(pThis->pDrvIns, pszFilename, pszCoreDriver);
         if (RT_FAILURE(rc))
         {
             Log(("drvblockMount: Prepare failed for \"%s\" rc=%Rrc\n", pszFilename, rc));
@@ -559,7 +559,7 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
      * Failed, detatch the media driver.
      */
     AssertMsgFailed(("No media interface!\n"));
-    int rc2 = pThis->pDrvIns->pDrvHlp->pfnDetach(pThis->pDrvIns, fTachFlags);
+    int rc2 = PDMDrvHlpDetach(pThis->pDrvIns, fTachFlags);
     AssertRC(rc2);
     pThis->pDrvMedia = NULL;
     return rc;
@@ -591,7 +591,7 @@ static DECLCALLBACK(int) drvblockUnmount(PPDMIMOUNT pInterface, bool fForce)
     /*
      * Detach the media driver and query it's interface.
      */
-    int rc = pThis->pDrvIns->pDrvHlp->pfnDetach(pThis->pDrvIns, 0 /*fFlags*/);
+    int rc = PDMDrvHlpDetach(pThis->pDrvIns, 0 /*fFlags*/);
     if (RT_FAILURE(rc))
     {
         Log(("drvblockUnmount: Detach failed rc=%Rrc\n", rc));

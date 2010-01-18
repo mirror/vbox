@@ -203,16 +203,20 @@ typedef struct PDMDRVINSINT
 {
     /** Pointer to the driver instance above.
      * This is NULL for the topmost drive. */
-    PPDMDRVINS                      pUp;
+    R3PTRTYPE(PPDMDRVINS)           pUp;
     /** Pointer to the driver instance below.
      * This is NULL for the bottommost driver. */
-    PPDMDRVINS                      pDown;
+    R3PTRTYPE(PPDMDRVINS)           pDown;
     /** Pointer to the logical unit this driver chained on. */
-    PPDMLUN                         pLun;
+    R3PTRTYPE(PPDMLUN)              pLun;
     /** Pointer to driver structure from which this was instantiated. */
-    PPDMDRV                         pDrv;
-    /** Pointer to the VM this instance was created for. */
-    PVM                             pVM;
+    R3PTRTYPE(PPDMDRV)              pDrv;
+    /** Pointer to the VM this instance was created for, ring-3 context. */
+    PVMR3                           pVMR3;
+    /** Pointer to the VM this instance was created for, ring-0 context. */
+    PVMR0                           pVMR0;
+    /** Pointer to the VM this instance was created for, raw-mode context. */
+    PVMRC                           pVMRC;
     /** Flag indicating that the driver is being detached and destroyed.
      * (Helps detect potential recursive detaching.) */
     bool                            fDetaching;
@@ -221,12 +225,13 @@ typedef struct PDMDRVINSINT
     bool                            fVMSuspended;
     /** Indicates that the driver has been reset already. */
     bool                            fVMReset;
+    /** Set if allocated on the hyper heap, false if on the ring-3 heap. */
+    bool                            fHyperHeap;
     /** Pointer to the asynchronous notification callback set while in
      * PDMUSBREG::pfnVMSuspend or PDMUSBREG::pfnVMPowerOff. */
     R3PTRTYPE(PFNPDMDRVASYNCNOTIFY) pfnAsyncNotify;
     /** Configuration handle to the instance node. */
-    PCFGMNODE                       pCfgHandle;
-
+    R3PTRTYPE(PCFGMNODE)            pCfgHandle;
 } PDMDRVINSINT;
 
 
@@ -1040,7 +1045,7 @@ typedef PDMUSERPERVM *PPDMUSERPERVM;
 *   Global Variables                                                           *
 *******************************************************************************/
 #ifdef IN_RING3
-extern const PDMDRVHLP      g_pdmR3DrvHlp;
+extern const PDMDRVHLPR3    g_pdmR3DrvHlp;
 extern const PDMDEVHLPR3    g_pdmR3DevHlpTrusted;
 extern const PDMDEVHLPR3    g_pdmR3DevHlpUnTrusted;
 extern const PDMPICHLPR3    g_pdmR3DevPicHlp;
@@ -1093,6 +1098,8 @@ int         pdmR3UsbRegisterHub(PVM pVM, PPDMDRVINS pDrvIns, uint32_t fVersions,
 int         pdmR3UsbVMInitComplete(PVM pVM);
 
 int         pdmR3DrvInit(PVM pVM);
+int         pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDMDRVINS pDrvAbove,
+                                PPDMLUN pLun, PPDMIBASE *ppBaseInterface);
 int         pdmR3DrvDetach(PPDMDRVINS pDrvIns, uint32_t fFlags);
 void        pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags);
 PPDMDRV     pdmR3DrvLookup(PVM pVM, const char *pszName);
