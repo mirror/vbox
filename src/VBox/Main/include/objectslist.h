@@ -58,8 +58,8 @@ public:
         // the "this might hurt your head" part in
         // http://www.parashift.com/c++-faq-lite/templates.html#faq-35.18
 
-    ObjectsList(VBoxLockingClass lockClass)
-        : m_lock(lockClass)
+    ObjectsList(RWLockHandle &lockHandle)
+        : m_lock(lockHandle)
     { }
 
     ~ObjectsList()
@@ -200,7 +200,7 @@ public:
 
 private:
     MyList          m_ll;
-    RWLockHandle    m_lock;
+    RWLockHandle    &m_lock;
 };
 
 #endif
