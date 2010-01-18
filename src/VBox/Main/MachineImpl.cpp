@@ -2831,7 +2831,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         mediumLock.release();
         alock.release();
 
-        AutoWriteLock(mParent COMMA_LOCKVAL_SRC_POS);
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
         mParent->saveSettings();
     }
 
