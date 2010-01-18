@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox File System for Solaris Guests, VNode implementation.
+ * VirtualBox File System for Solaris Guests, VNode header.
  */
 
 /*
@@ -19,8 +19,8 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxFS_node_Solaris_h
-#define	__VBoxFS_node_Solaris_h
+#ifndef ___VBoxFS_node_Solaris_h
+#define	___VBoxFS_node_Solaris_h
 
 #include <sys/t_lock.h>
 #include <sys/avl.h>
@@ -74,4 +74,4 @@ extern kmutex_t sffs_lock;
 }
 #endif
 
-#endif	/* __VBoxFS_node_Solaris_h */
+#endif	/* !___VBoxFS_node_Solaris_h */

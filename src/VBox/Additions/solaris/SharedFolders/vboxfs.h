@@ -83,5 +83,5 @@ extern void vboxvfs_InitVNode(vboxvfs_globinfo_t *pVBoxVFSGlobalInfo, vboxvfs_vn
 }
 #endif
 
-#endif /* ___VBoxVFS_Solaris_h */
+#endif /* !___VBoxVFS_Solaris_h */
 
