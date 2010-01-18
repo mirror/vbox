@@ -174,13 +174,18 @@ struct VirtualBox::Data
 {
     Data()
         : pMainConfigFile(NULL),
-          ollMachines(LOCKCLASS_LISTOFMACHINES),
-          ollGuestOSTypes(LOCKCLASS_LISTOFOTHEROBJECTS),
-          ollHardDisks(LOCKCLASS_LISTOFMEDIA),
-          ollDVDImages(LOCKCLASS_LISTOFMEDIA),
-          ollFloppyImages(LOCKCLASS_LISTOFMEDIA),
-          ollSharedFolders(LOCKCLASS_LISTOFOTHEROBJECTS),
-          ollDHCPServers(LOCKCLASS_LISTOFOTHEROBJECTS),
+          lockMachines(LOCKCLASS_LISTOFMACHINES),
+          ollMachines(lockMachines),
+          lockGuestOSTypes(LOCKCLASS_LISTOFOTHEROBJECTS),
+          ollGuestOSTypes(lockGuestOSTypes),
+          lockMedia(LOCKCLASS_LISTOFMEDIA),
+          ollHardDisks(lockMedia),
+          ollDVDImages(lockMedia),
+          ollFloppyImages(lockMedia),
+          lockSharedFolders(LOCKCLASS_LISTOFOTHEROBJECTS),
+          ollSharedFolders(lockSharedFolders),
+          lockDHCPServers(LOCKCLASS_LISTOFOTHEROBJECTS),
+          ollDHCPServers(lockDHCPServers),
           mtxProgressOperations(LOCKCLASS_PROGRESSLIST),
           updateReq(UPDATEREQARG),
           threadClientWatcher(NIL_RTTHREAD),
@@ -202,29 +207,38 @@ struct VirtualBox::Data
     const ComObjPtr<PerformanceCollector> pPerformanceCollector;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
-    // the following lists all have an RWLockHandle as a member and are locked
-    // individually; getting the VirtualBox object lock is NOT necessary, but
-    // see the remarks which ObjectsList method lock themselves and which require
-    // external locking
+    // Each of the following lists use a particular lock handle that protects the
+    // list as a whole. As opposed to version 3.1 and earlier, these lists no
+    // longer need the main VirtualBox object lock, but only the respective list
+    // lock. In each case, the locking order is defined that the list must be
+    // requested before object locks of members of the lists (see the order definitions
+    // in AutoLock.h; e.g. LOCKCLASS_LISTOFMACHINES before LOCKCLASS_MACHINEOBJECT).
+    RWLockHandle                        lockMachines;
     MachinesOList                       ollMachines;
+
+    RWLockHandle                        lockGuestOSTypes;
     GuestOSTypesOList                   ollGuestOSTypes;
 
-    MediaOList                          ollHardDisks,           // only base hard disks; the RWLockHandle in here is also used
-                                                                // for hardDiskTreeLockHandle()
+    // All the media lists are protected by the following locking handle:
+    RWLockHandle                        lockMedia;
+    MediaOList                          ollHardDisks,
                                         ollDVDImages,
                                         ollFloppyImages;
-    SharedFoldersOList                  ollSharedFolders;
-    DHCPServersOList                    ollDHCPServers;
-
     // the hard disks map is an additional map sorted by UUID for quick lookup
-    // and contains ALL hard disks (base and differencing);
-    // the map must also be protected by ollHardDisks.getLockHandle()!
+    // and contains ALL hard disks (base and differencing); it is protected by
+    // the same lock as the other media lists above
     HardDiskMap                         mapHardDisks;
 
+    RWLockHandle                        lockSharedFolders;
+    SharedFoldersOList                  ollSharedFolders;
+
+    RWLockHandle                        lockDHCPServers;
+    DHCPServersOList                    ollDHCPServers;
+
+    RWLockHandle                        mtxProgressOperations;
     ProgressMap                         mapProgressOperations;
     CallbackList                        llCallbacks;
 
-    RWLockHandle                        mtxProgressOperations;
 
     // the following are data for the client watcher thread
     const UPDATEREQTYPE                 updateReq;
@@ -3657,7 +3671,8 @@ HRESULT VirtualBox::updateSettings(const char *aOldPath, const char *aNewPath)
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    ObjectsList<Medium> ollAll(LOCKCLASS_LISTOFMEDIA);
+    RWLockHandle tmpLock(LOCKCLASS_LISTOFMEDIA);        // not really necessary but the ObjectsList<> constructor wants one
+    ObjectsList<Medium> ollAll(tmpLock);
     ollAll.appendOtherList(m->ollDVDImages);
     ollAll.appendOtherList(m->ollFloppyImages);
     ollAll.appendOtherList(m->ollHardDisks);
