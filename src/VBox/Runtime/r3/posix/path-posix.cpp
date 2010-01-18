@@ -709,7 +709,7 @@ int rtPathPosixRename(const char *pszSrc, const char *pszDst, unsigned fRename, 
                     Assert(SrcStat.st_ino && DstStat.st_ino);
                     if (    SrcStat.st_dev == DstStat.st_dev
                         &&  SrcStat.st_ino == DstStat.st_ino
-                        &&  (SrcStat.st_mode & S_IFMT) == (SrcStat.st_mode & S_IFMT))
+                        &&  (SrcStat.st_mode & S_IFMT) == (DstStat.st_mode & S_IFMT))
                     {
                         /*
                          * It's likely that we're talking about the same file here.
