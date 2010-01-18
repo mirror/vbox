@@ -27,7 +27,7 @@
 #include <iprt/err.h>
 #include <iprt/assert.h>
 
-#if defined(DEBUG)
+#if defined(RT_LOCK_STRICT)
 # include <iprt/asm.h> // for ASMReturnAddress
 #endif
 
