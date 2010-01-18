@@ -572,6 +572,20 @@ STDMETHODIMP Session::OnMediumChange(IMediumAttachment *aMediumAttachment, BOOL 
     return mConsole->onMediumChange(aMediumAttachment, aForce);
 }
 
+STDMETHODIMP Session::OnCPUChange(ULONG aCPU, BOOL aRemove)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
+    AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
+
+    return mConsole->onCPUChange(aCPU, aRemove);
+}
+
 STDMETHODIMP Session::OnVRDPServerChange()
 {
     LogFlowThisFunc(("\n"));

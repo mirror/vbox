@@ -193,6 +193,11 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnCPUChange)(ULONG aCPU, BOOL aRemove)
+    {
+        return S_OK;
+    }
+
     STDMETHOD(OnVRDPServerChange)()
     {
         return S_OK;

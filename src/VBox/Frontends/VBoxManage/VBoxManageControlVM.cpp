@@ -115,6 +115,32 @@ int handleControlVM(HandlerArg *a)
         {
             CHECK_ERROR_BREAK(console, Reset());
         }
+        else if (!strcmp(a->argv[1], "unplugcpu"))
+        {
+            if (a->argc <= 1 + 1)
+            {
+                errorArgument("Missing argument to '%s'. Expected CPU number.", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+
+            unsigned n = parseNum(a->argv[2], 32, "CPU");
+
+            CHECK_ERROR_BREAK(sessionMachine, HotUnplugCPU(n));
+        }
+        else if (!strcmp(a->argv[1], "plugcpu"))
+        {
+            if (a->argc <= 1 + 1)
+            {
+                errorArgument("Missing argument to '%s'. Expected CPU number.", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+
+            unsigned n = parseNum(a->argv[2], 32, "CPU");
+
+            CHECK_ERROR_BREAK(sessionMachine, HotPlugCPU(n));
+        }
         else if (!strcmp(a->argv[1], "poweroff"))
         {
             ComPtr<IProgress> progress;

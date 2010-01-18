@@ -93,6 +93,7 @@ public:
     STDMETHOD(OnSharedFolderChange) (Scope_T aScope);
     STDMETHOD(OnStorageControllerChange) ();
     STDMETHOD(OnMediumChange)(IMediumAttachment *iMediumAttachment);
+    STDMETHOD(OnCPUChange)(ULONG aCPU, BOOL aRemove);
     STDMETHOD(OnRuntimeError)(BOOL fFatal, IN_BSTR id, IN_BSTR message);
     STDMETHOD(OnCanShowWindow)(BOOL *canShow);
     STDMETHOD(OnShowWindow) (ULONG64 *winId);

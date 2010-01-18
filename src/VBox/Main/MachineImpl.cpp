@@ -155,6 +155,7 @@ Machine::HWData::HWData()
     mHWVersion = "2"; /** @todo get the default from the schema if that is possible. */
     mMemorySize = 128;
     mCPUCount = 1;
+    mCPUHotPlugEnabled = false;
     mMemoryBalloonSize = 0;
     mStatisticsUpdateInterval = 0;
     mVRAMSize = 8;
@@ -188,6 +189,9 @@ Machine::HWData::HWData()
     mGuestPropertyNotificationPatterns = "";
 
     mFirmwareType = FirmwareType_BIOS;
+
+    for (size_t i = 0; i < RT_ELEMENTS(mCPUAttached); i++)
+        mCPUAttached[i] = false;
 }
 
 Machine::HWData::~HWData()
@@ -216,12 +220,20 @@ bool Machine::HWData::operator==(const HWData &that) const
         mPAEEnabled != that.mPAEEnabled ||
         mSyntheticCpu != that.mSyntheticCpu ||
         mCPUCount != that.mCPUCount ||
+        mCPUHotPlugEnabled != that.mCPUHotPlugEnabled ||
         mClipboardMode != that.mClipboardMode)
         return false;
 
     for (size_t i = 0; i < RT_ELEMENTS (mBootOrder); ++i)
         if (mBootOrder [i] != that.mBootOrder [i])
             return false;
+
+
+    for (size_t i = 0; i < RT_ELEMENTS(mCPUAttached); i++)
+    {
+        if (mCPUAttached[i] != that.mCPUAttached[i])
+            return false;
+    }
 
     if (mSharedFolders.size() != that.mSharedFolders.size())
         return false;
@@ -1074,7 +1086,7 @@ STDMETHODIMP Machine::COMGETTER(CPUCount) (ULONG *CPUCount)
 
 STDMETHODIMP Machine::COMSETTER(CPUCount) (ULONG CPUCount)
 {
-    /* check RAM limits */
+    /* check CPU limits */
     if (    CPUCount < SchemaDefs::MinCPUCount
          || CPUCount > SchemaDefs::MaxCPUCount
        )
@@ -1087,6 +1099,18 @@ STDMETHODIMP Machine::COMSETTER(CPUCount) (ULONG CPUCount)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    /* We cant go below the current number of CPUs if hotplug is enabled*/
+    if (mHWData->mCPUHotPlugEnabled)
+    {
+        for (unsigned idx = CPUCount; idx < SchemaDefs::MaxCPUCount; idx++)
+        {
+            if (mHWData->mCPUAttached[idx])
+                return setError(E_INVALIDARG,
+                                tr(": %lu (must be higher than or equal to %lu)"),
+                                CPUCount, idx+1);
+        }
+    }
+
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
@@ -1094,6 +1118,77 @@ STDMETHODIMP Machine::COMSETTER(CPUCount) (ULONG CPUCount)
     mHWData->mCPUCount = CPUCount;
 
     return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(CPUHotPlugEnabled) (BOOL *enabled)
+{
+    if (!enabled)
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this);
+
+    *enabled = mHWData->mCPUHotPlugEnabled;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(CPUHotPlugEnabled) (BOOL enabled)
+{
+    HRESULT rc = S_OK;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this);
+
+    rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    if (mHWData->mCPUHotPlugEnabled != enabled)
+    {
+        if (enabled)
+        {
+            mHWData.backup();
+
+            /* Add the amount of CPUs currently attached */
+            for (unsigned i = 0; i < mHWData->mCPUCount; i++)
+            {
+                mHWData->mCPUAttached[i] = true;
+            }
+        }
+        else
+        {
+            /*
+             * We can disable hotplug only if the amount of maximum CPUs is equal
+             * to the amount of attached CPUs
+             */
+            unsigned cCpusAttached = 0;
+            unsigned iHighestId = 0;
+
+            for (unsigned i = 0; i < SchemaDefs::MaxCPUCount; i++)
+            {
+                if (mHWData->mCPUAttached[i])
+                {
+                    cCpusAttached++;
+                    iHighestId = i;
+                }
+            }
+
+            if (   (cCpusAttached != mHWData->mCPUCount)
+                || (iHighestId >= mHWData->mCPUCount))
+                return setError(E_INVALIDARG,
+                                tr("CPU hotplugging can't be disabled because the maximum number of CPUs is not equal to the amount of CPUs attached\n"));
+
+            mHWData.backup();
+        }
+    }
+
+    mHWData->mCPUHotPlugEnabled = enabled;
+
+    return rc;
 }
 
 STDMETHODIMP Machine::COMGETTER(VRAMSize) (ULONG *memorySize)
@@ -4256,6 +4351,108 @@ STDMETHODIMP Machine::ReadSavedScreenshotPNGToArray(ULONG *aWidth, ULONG *aHeigh
     return S_OK;
 }
 
+STDMETHODIMP Machine::HotPlugCPU(ULONG aCpu)
+{
+    HRESULT rc = S_OK;
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this);
+
+    if (!mHWData->mCPUHotPlugEnabled)
+        return setError(E_INVALIDARG, tr("CPU hotplug is not enabled"));
+
+    if (aCpu >= mHWData->mCPUCount)
+        return setError(E_INVALIDARG, tr("CPU id exceeds number of possible CPUs [0:%lu]"), mHWData->mCPUCount-1);
+
+    if (mHWData->mCPUAttached[aCpu])
+        return setError(VBOX_E_OBJECT_IN_USE, tr("CPU %lu is already attached"), aCpu);
+
+    alock.leave();
+    rc = onCPUChange(aCpu, false);
+    alock.enter();
+    if (FAILED(rc)) return rc;
+
+    mHWData.backup();
+    mHWData->mCPUAttached[aCpu] = true;
+
+    /* Save settings if online */
+    if (Global::IsOnline(mData->mMachineState))
+        SaveSettings();
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::HotUnplugCPU(ULONG aCpu)
+{
+    HRESULT rc = S_OK;
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this);
+
+    if (!mHWData->mCPUHotPlugEnabled)
+        return setError(E_INVALIDARG, tr("CPU hotplug is not enabled"));
+
+    if (aCpu >= SchemaDefs::MaxCPUCount)
+        return setError(E_INVALIDARG,
+                        tr("CPU index exceeds maximum CPU count (must be in range [0:%lu])"),
+                        SchemaDefs::MaxCPUCount);
+
+    if (!mHWData->mCPUAttached[aCpu])
+        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("CPU %lu is not attached"), aCpu);
+
+    /* CPU 0 can't be detached */
+    if (aCpu == 0)
+        return setError(E_INVALIDARG, tr("It is not possible to detach CPU 0"));
+
+    alock.leave();
+    rc = onCPUChange(aCpu, true);
+    alock.enter();
+    if (FAILED(rc)) return rc;
+
+    mHWData.backup();
+    mHWData->mCPUAttached[aCpu] = false;
+
+    /* Save settings if online */
+    if (Global::IsOnline(mData->mMachineState))
+        SaveSettings();
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::GetCPUStatus(ULONG aCpu, BOOL *aCpuAttached)
+{
+    LogFlowThisFunc(("\n"));
+
+    CheckComArgNotNull(aCpuAttached);
+
+    *aCpuAttached = false;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this);
+
+    /* If hotplug is enabled the CPU is always enabled. */
+    if (!mHWData->mCPUHotPlugEnabled)
+    {
+        if (aCpu < mHWData->mCPUCount)
+            *aCpuAttached = true;
+    }
+    else
+    {
+        if (aCpu < SchemaDefs::MaxCPUCount)
+            *aCpuAttached = mHWData->mCPUAttached[aCpu];
+    }
+
+    return S_OK;
+}
+
 // public methods for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
@@ -5959,7 +6156,21 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mPAEEnabled                  = data.fPAE;
         mHWData->mSyntheticCpu                = data.fSyntheticCpu;
 
-        mHWData->mCPUCount = data.cCPUs;
+        mHWData->mCPUCount          = data.cCPUs;
+        mHWData->mCPUHotPlugEnabled = data.fCpuHotPlug;
+
+        // cpu
+        if (mHWData->mCPUHotPlugEnabled)
+        {
+            for (settings::CpuList::const_iterator it = data.llCpus.begin();
+                it != data.llCpus.end();
+                ++it)
+            {
+                const settings::Cpu &cpu = *it;
+
+                mHWData->mCPUAttached[cpu.ulId] = true;
+            }
+        }
 
         // cpuid leafs
         for (settings::CpuIdLeafsList::const_iterator it = data.llCpuIdLeafs.begin();
@@ -6982,7 +7193,22 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
                 data.llCpuIdLeafs.push_back(mHWData->mCpuIdExtLeafs[idx]);
         }
 
-        data.cCPUs = mHWData->mCPUCount;
+        data.cCPUs       = mHWData->mCPUCount;
+        data.fCpuHotPlug = mHWData->mCPUHotPlugEnabled;
+
+        data.llCpus.clear();
+        if (data.fCpuHotPlug)
+        {
+            for (unsigned idx = 0; idx < data.cCPUs; idx++)
+            {
+                if (mHWData->mCPUAttached[idx])
+                {
+                    settings::Cpu cpu;
+                    cpu.ulId = idx;
+                    data.llCpus.push_back(cpu);
+                }
+            }
+        }
 
         // memory
         data.ulMemorySizeMB = mHWData->mMemorySize;
@@ -9653,6 +9879,29 @@ HRESULT SessionMachine::onMediumChange(IMediumAttachment *aAttachment, BOOL aFor
         return S_OK;
 
     return directControl->OnMediumChange(aAttachment, aForce);
+}
+
+/**
+ *  @note Locks this object for reading.
+ */
+HRESULT SessionMachine::onCPUChange(ULONG aCPU, BOOL aRemove)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    ComPtr<IInternalSessionControl> directControl;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnCPUChange(aCPU, aRemove);
 }
 
 /**

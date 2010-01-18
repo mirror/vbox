@@ -70,6 +70,9 @@ enum
     MODIFYVM_NESTEDPAGING,
     MODIFYVM_VTXVPID,
     MODIFYVM_CPUS,
+    MODIFYVM_CPUHOTPLUG,
+    MODIFYVM_PLUGCPU,
+    MODIFYVM_UNPLUGCPU,
     MODIFYVM_SETCPUID,
     MODIFYVM_DELCPUID,
     MODIFYVM_DELALLCPUID,
@@ -152,6 +155,9 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--cpuidremove",              MODIFYVM_DELCPUID,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX},
     { "--cpuidremoveall",           MODIFYVM_DELALLCPUID,               RTGETOPT_REQ_NOTHING},
     { "--cpus",                     MODIFYVM_CPUS,                      RTGETOPT_REQ_UINT32 },
+    { "--cpuhotplug",               MODIFYVM_CPUHOTPLUG,                RTGETOPT_REQ_BOOL_ONOFF },
+    { "--plugcpu",                  MODIFYVM_PLUGCPU,                   RTGETOPT_REQ_UINT32 },
+    { "--unplugcpu",                MODIFYVM_UNPLUGCPU,                 RTGETOPT_REQ_UINT32 },
     { "--rtcuseutc",                MODIFYVM_RTCUSEUTC,                 RTGETOPT_REQ_BOOL_ONOFF },
     { "--monitorcount",             MODIFYVM_MONITORCOUNT,              RTGETOPT_REQ_UINT32 },
     { "--accelerate3d",             MODIFYVM_ACCELERATE3D,              RTGETOPT_REQ_BOOL_ONOFF },
@@ -419,6 +425,24 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_RTCUSEUTC:
             {
                 CHECK_ERROR(machine, COMSETTER(RTCUseUTC)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_CPUHOTPLUG:
+            {
+                CHECK_ERROR(machine, COMSETTER(CPUHotPlugEnabled)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_PLUGCPU:
+            {
+                CHECK_ERROR(machine, HotPlugCPU(ValueUnion.u32));
+                break;
+            }
+
+            case MODIFYVM_UNPLUGCPU:
+            {
+                CHECK_ERROR(machine, HotUnplugCPU(ValueUnion.u32));
                 break;
             }
 
