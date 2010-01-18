@@ -70,7 +70,7 @@ static void doUsage(char const *line, char const *name = "", char const *command
 /** Enumerate the different parts of the usage we might want to print out */
 enum g_eUsage
 {
-#ifdef RT_OS_LINUX
+#ifdef RT_OS_WINDOWS
     GET_VIDEO_ACCEL,
     SET_VIDEO_ACCEL,
     LIST_CUST_MODES,
@@ -93,7 +93,7 @@ static void usage(g_eUsage eWhich = USAGE_ALL)
 
 /* Exclude the Windows bits from the test version.  Anyone who needs to test
  * them can fix this. */
-#if defined(RT_OS_LINUX) && !defined(VBOX_CONTROL_TEST)
+#if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
     if ((GET_VIDEO_ACCEL == eWhich) || (USAGE_ALL == eWhich))
         doUsage("", g_pszProgName, "getvideoacceleration");
     if ((SET_VIDEO_ACCEL == eWhich) || (USAGE_ALL == eWhich))
