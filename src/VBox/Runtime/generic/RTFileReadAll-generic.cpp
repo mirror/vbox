@@ -38,7 +38,7 @@
 
 RTDECL(int) RTFileReadAll(const char *pszFilename, void **ppvFile, size_t *pcbFile)
 {
-    return RTFileReadAllEx(pszFilename, 0, RTFOFF_MAX, 0, ppvFile, pcbFile);
+    return RTFileReadAllEx(pszFilename, 0, RTFOFF_MAX, RTFILE_RDALL_O_DENY_WRITE, ppvFile, pcbFile);
 }
 RT_EXPORT_SYMBOL(RTFileReadAll);
 

@@ -851,6 +851,27 @@ RTDECL(int)   RTSemRWReleaseWrite(RTSEMRW hRWSem);
 RTDECL(bool)  RTSemRWIsWriteOwner(RTSEMRW hRWSem);
 
 /**
+ * Checks if the caller is one of the read owners of the sempahore.
+ *
+ * @note    !CAUTION!  This API doesn't work reliably if lock validation isn't
+ *          enabled. Meaning, the answer is not trustworhty unless
+ *          RT_LOCK_STRICT or RTSEMRW_STRICT was defined at build time.  Also,
+ *          make sure you do not use RTSEMRW_FLAGS_NO_LOCK_VAL when creating
+ *          the semaphore.  And finally, if you used a locking class, don't
+ *          disable deadlock detection by setting cMsMinDeadlock to
+ *          RT_INDEFINITE_WAIT.
+ *
+ *          In short, only use this for assertions.
+ *
+ * @returns true if reader, false if not.
+ * @param   hRWSem              Handle to the read/write semaphore.
+ * @param   fWannaHear          What you'd like to hear when lock validation is
+ *                              not available.  (For avoiding asserting all over
+ *                              the place.)
+ */
+RTDECL(bool)  RTSemRWIsReadOwner(RTSEMRW hRWSem, bool fWannaHear);
+
+/**
  * Gets the write recursion count.
  *
  * @returns The write recursion count (0 if bad semaphore handle).

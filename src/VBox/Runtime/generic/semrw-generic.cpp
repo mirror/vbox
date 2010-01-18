@@ -868,11 +868,10 @@ RT_EXPORT_SYMBOL(RTSemRWReleaseWrite);
 
 RTDECL(bool) RTSemRWIsWriteOwner(RTSEMRW hRWSem)
 {
-    struct RTSEMRWINTERNAL *pThis = hRWSem;
-
     /*
      * Validate handle.
      */
+    struct RTSEMRWINTERNAL *pThis = hRWSem;
     AssertPtrReturn(pThis, false);
     AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, false);
 
@@ -885,6 +884,44 @@ RTDECL(bool) RTSemRWIsWriteOwner(RTSEMRW hRWSem)
     return hWriter == hNativeSelf;
 }
 RT_EXPORT_SYMBOL(RTSemRWIsWriteOwner);
+
+
+RTDECL(bool)  RTSemRWIsReadOwner(RTSEMRW hRWSem, bool fWannaHear)
+{
+    /*
+     * Validate handle.
+     */
+    struct RTSEMRWINTERNAL *pThis = hRWSem;
+    AssertPtrReturn(pThis, false);
+    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, false);
+
+    /*
+     * Check write ownership.  The writer is also a valid reader.
+     */
+    RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
+    RTNATIVETHREAD hWriter;
+    ASMAtomicUoReadHandle(&pThis->hWriter, &hWriter);
+    if (hWriter == hNativeSelf)
+        return true;
+    if (hWriter != NIL_RTNATIVETHREAD)
+        return false;
+
+#ifdef RTSEMRW_STRICT
+    /*
+     * Ask the lock validator.
+     */
+    return RTLockValidatorRecSharedIsOwner(&pThis->ValidatorRead, NIL_RTTHREAD);
+#else
+    /*
+     * If there are no reads we cannot be one of them... But if there are we
+     * cannot know and can only return what the caller want to hear.
+     */
+    if (pThis->cReads == 0)
+        return false;
+    return fWannaHear;
+#endif
+}
+RT_EXPORT_SYMBOL(RTSemRWIsReadOwner);
 
 
 RTDECL(uint32_t) RTSemRWGetWriteRecursion(RTSEMRW hRWSem)
