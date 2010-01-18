@@ -122,6 +122,11 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnCPUChange)(ULONG aCPU, BOOL aRemove)
+    {
+        return S_OK;
+    }
+
     STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter)
     {
         return S_OK;

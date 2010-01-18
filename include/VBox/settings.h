@@ -450,6 +450,16 @@ struct CpuIdLeaf
 };
 typedef std::list<CpuIdLeaf> CpuIdLeafsList;
 
+struct Cpu
+{
+    Cpu()
+        : ulId(UINT32_MAX)
+    {}
+
+    uint32_t                ulId;
+};
+typedef std::list<Cpu> CpuList;
+
 struct Hardware
 {
     Hardware();
@@ -464,6 +474,8 @@ struct Hardware
                         fSyntheticCpu,
                         fPAE;
     uint32_t            cCPUs;
+    bool                fCpuHotPlug;            // requires settings version 1.11 (VirtualBox 3.2)
+    CpuList             llCpus;                 // requires settings version 1.11 (VirtualBox 3.2)
     CpuIdLeafsList      llCpuIdLeafs;
 
     uint32_t            ulMemorySizeMB;
@@ -592,6 +604,7 @@ public:
 
     void readNetworkAdapters(const xml::ElementNode &elmHardware, NetworkAdaptersList &ll);
     void readCpuIdTree(const xml::ElementNode &elmCpuid, CpuIdLeafsList &ll);
+    void readCpuTree(const xml::ElementNode &elmCpu, CpuList &ll);
     void readSerialPorts(const xml::ElementNode &elmUART, SerialPortsList &ll);
     void readParallelPorts(const xml::ElementNode &elmLPT, ParallelPortsList &ll);
     void readGuestProperties(const xml::ElementNode &elmGuestProperties, Hardware &hw);

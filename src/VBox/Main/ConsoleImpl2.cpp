@@ -1850,13 +1850,16 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     hrc = biosSettings->COMGETTER(ACPIEnabled)(&fACPI);                             H();
     if (fACPI)
     {
+        BOOL fCpuHotPlug = false;
         BOOL fShowCpu = fExtProfile;
         /* Always show the CPU leafs when we have multiple VCPUs or when the IO-APIC is enabled.
          * The Windows SMP kernel needs a CPU leaf or else its idle loop will burn cpu cycles; the
          * intelppm driver refuses to register an idle state handler.
          */
-        if ((cCpus > 1) ||  fIOAPIC)
+        if ((cCpus > 1) || fIOAPIC)
             fShowCpu = true;
+
+        hrc = pMachine->COMGETTER(CPUHotPlugEnabled)(&fCpuHotPlug);                 H();
 
         rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             RC_CHECK();
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
@@ -1877,6 +1880,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pCfg,  "ShowRtc", fExtProfile);                    RC_CHECK();
 
         rc = CFGMR3InsertInteger(pCfg,  "ShowCpu", fShowCpu);                       RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "CpuHotPlug", fCpuHotPlug);                 RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 RC_CHECK();
         Assert(!afPciDeviceNo[7]);
         afPciDeviceNo[7] = true;
@@ -1885,6 +1889,24 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
         rc = CFGMR3InsertString(pLunL0, "Driver",               "ACPIHost");        RC_CHECK();
         rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+
+        /* Attach the dummy CPU drivers */
+        for (ULONG iCpuCurr = 1; iCpuCurr < cCpus; iCpuCurr++)
+        {
+            BOOL fCpuAttached = true;
+
+            if (fCpuHotPlug)
+            {
+                hrc = pMachine->GetCPUStatus(iCpuCurr, &fCpuAttached);              H();
+            }
+
+            if (fCpuAttached)
+            {
+                rc = CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%u", iCpuCurr);             RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",           "ACPICpu");         RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                       RC_CHECK();
+            }
+        }
     }
 
 

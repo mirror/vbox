@@ -178,6 +178,7 @@ public:
     HRESULT onParallelPortChange (IParallelPort *aParallelPort);
     HRESULT onStorageControllerChange ();
     HRESULT onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce);
+    HRESULT onCPUChange(ULONG aCPU, BOOL aRemove);
     HRESULT onVRDPServerChange();
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange (BOOL aGlobal);
@@ -447,7 +448,11 @@ private:
                                           bool fHostDrive, const char *pszPath,
                                           const char *pszFormat, bool fPassthrough,
                                           bool fForce);
+    static DECLCALLBACK(int) unplugCpu (Console *pThis, unsigned uCpu);
+    static DECLCALLBACK(int) plugCpu (Console *pThis, unsigned uCpu);
     HRESULT doMediumChange(IMediumAttachment *aMediumAttachment, bool fForce);
+    HRESULT doCPURemove(ULONG aCpu);
+    HRESULT doCPUAdd(ULONG aCpu);
 
 #ifdef VBOX_DYNAMIC_NET_ATTACH
     HRESULT doNetworkAdapterChange (const char *pszDevice, unsigned uInstance,

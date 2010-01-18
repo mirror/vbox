@@ -288,6 +288,14 @@ STDMETHODIMP CallbackWrapper::OnMediumChange(IMediumAttachment *aMediumAttachmen
     return mConsoleCallback->OnMediumChange(aMediumAttachment);
 }
 
+STDMETHODIMP CallbackWrapper::OnCPUChange(ULONG aCPU, BOOL aRemove)
+{
+    if (mConsoleCallback.isNull())
+        return S_OK;
+
+    return mConsoleCallback->OnCPUChange(aCPU, aRemove);
+}
+
 STDMETHODIMP CallbackWrapper::OnRuntimeError(BOOL fFatal, IN_BSTR id, IN_BSTR message)
 {
     if (mConsoleCallback.isNull())

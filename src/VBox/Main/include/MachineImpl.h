@@ -295,7 +295,10 @@ public:
         BOOL           mPAEEnabled;
         BOOL           mSyntheticCpu;
         ULONG          mCPUCount;
+        BOOL           mCPUHotPlugEnabled;
         BOOL           mAccelerate3DEnabled;
+
+        BOOL           mCPUAttached[SchemaDefs::MaxCPUCount];
 
         settings::CpuIdLeaf mCpuIdStdLeafs[10];
         settings::CpuIdLeaf mCpuIdExtLeafs[10];
@@ -530,6 +533,8 @@ public:
     STDMETHOD(COMSETTER(MemorySize))(ULONG memorySize);
     STDMETHOD(COMGETTER(CPUCount))(ULONG *cpuCount);
     STDMETHOD(COMSETTER(CPUCount))(ULONG cpuCount);
+    STDMETHOD(COMGETTER(CPUHotPlugEnabled))(BOOL *enabled);
+    STDMETHOD(COMSETTER(CPUHotPlugEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(MemoryBalloonSize))(ULONG *memoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize))(ULONG memoryBalloonSize);
     STDMETHOD(COMGETTER(StatisticsUpdateInterval))(ULONG *statisticsUpdateInterval);
@@ -633,6 +638,9 @@ public:
     STDMETHOD(ReadSavedThumbnailToArray)(BOOL aBGR, ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(QuerySavedScreenshotPNGSize)(ULONG *aSize, ULONG *aWidth, ULONG *aHeight);
     STDMETHOD(ReadSavedScreenshotPNGToArray)(ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData));
+    STDMETHOD(HotPlugCPU(ULONG aCpu));
+    STDMETHOD(HotUnplugCPU(ULONG aCpu));
+    STDMETHOD(GetCPUStatus(ULONG aCpu, BOOL *aCpuAttached));
 
     // public methods only for internal purposes
 
@@ -716,6 +724,7 @@ public:
     virtual HRESULT onVRDPServerChange() { return S_OK; }
     virtual HRESULT onUSBControllerChange() { return S_OK; }
     virtual HRESULT onStorageControllerChange() { return S_OK; }
+    virtual HRESULT onCPUChange(ULONG /* aCPU */, BOOL /* aRemove */) { return S_OK; }
     virtual HRESULT onMediumChange(IMediumAttachment * /* mediumAttachment */, BOOL /* force */) { return S_OK; }
     virtual HRESULT onSharedFolderChange() { return S_OK; }
 
@@ -1035,6 +1044,7 @@ public:
     HRESULT onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce);
     HRESULT onSerialPortChange(ISerialPort *serialPort);
     HRESULT onParallelPortChange(IParallelPort *parallelPort);
+    HRESULT onCPUChange(ULONG aCPU, BOOL aRemove);
     HRESULT onVRDPServerChange();
     HRESULT onUSBControllerChange();
     HRESULT onUSBDeviceAttach(IUSBDevice *aDevice,

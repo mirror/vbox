@@ -1729,6 +1729,249 @@ STDMETHODIMP Console::Reset()
     return rc;
 }
 
+DECLCALLBACK(int) Console::unplugCpu(Console *pThis, unsigned uCpu)
+{
+    LogFlowFunc(("pThis=%p uCpu=%u\n", pThis, uCpu));
+
+    AssertReturn(pThis, VERR_INVALID_PARAMETER);
+
+    int vrc = PDMR3DeviceDetach(pThis->mpVM, "acpi", 0, uCpu, 0);
+    Log(("UnplugCpu: rc=%Rrc\n", vrc));
+
+    return vrc;
+}
+
+STDMETHODIMP Console::doCPURemove(ULONG aCpu)
+{
+    HRESULT rc = S_OK;
+
+    LogFlowThisFuncEnter();
+    LogFlowThisFunc(("mMachineState=%d\n", mMachineState));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this);
+
+    if (   mMachineState != MachineState_Running
+        && mMachineState != MachineState_Teleporting
+        && mMachineState != MachineState_LiveSnapshotting
+       )
+        return setError(VBOX_E_INVALID_VM_STATE,
+            tr("Invalid machine state: %s"),
+            Global::stringifyMachineState(mMachineState));
+
+    /* protect mpVM */
+    AutoVMCaller autoVMCaller(this);
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+
+    /* Check if the CPU is present */
+    BOOL fCpuAttached;
+    rc = mMachine->GetCPUStatus(aCpu, &fCpuAttached);
+    if (FAILED(rc)) return rc;
+
+    if (!fCpuAttached)
+        return setError(E_FAIL,
+                        tr("CPU %d is not attached"), aCpu);
+
+    /* Check if the CPU is unlocked */
+    PPDMIBASE pBase;
+    int vrc = PDMR3QueryDeviceLun(mpVM, "acpi", 0, aCpu, &pBase);
+    bool fLocked = true;
+    if (RT_SUCCESS(vrc))
+    {
+        uint32_t idCpuCore, idCpuPackage;
+
+        /* Notify the guest if possible. */
+        vrc = VMR3GetCpuCoreAndPackageIdFromCpuId(mpVM, aCpu, &idCpuCore, &idCpuPackage);
+        AssertRC(vrc);
+
+        Assert(pBase);
+
+        PPDMIACPIPORT pPort =
+            (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
+
+        vrc = getVMMDev()->getVMMDevPort()->pfnCpuHotUnplug(getVMMDev()->getVMMDevPort(), idCpuCore, idCpuPackage);
+        if (RT_SUCCESS(vrc))
+        {
+            unsigned cTries = 10;
+
+            do
+            {
+                /* It will take some time until the event is processed in the guest. Wait  */
+                vrc = pPort ? pPort->pfnGetCpuStatus(pPort, aCpu, &fLocked) : VERR_INVALID_POINTER;
+
+                if (RT_SUCCESS(vrc) && !fLocked)
+                    break;
+
+                /* Sleep a bit */
+                RTThreadSleep(100);
+            } while (cTries-- > 0);
+        }
+        else if (vrc == VERR_CPU_HOTPLUG_NOT_MONITORED_BY_GUEST)
+        {
+            /* Query one time. It is possible that the user ejected the CPU. */
+            vrc = pPort ? pPort->pfnGetCpuStatus(pPort, aCpu, &fLocked) : VERR_INVALID_POINTER;
+        }
+    }
+
+    /* If the CPU was unlocked we can detach it now. */
+    if (RT_SUCCESS(vrc) && !fLocked)
+    {
+        /*
+         * Call worker in EMT, that's faster and safer than doing everything
+         * using VMR3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
+         * here to make requests from under the lock in order to serialize them.
+         */
+        PVMREQ pReq;
+        vrc = VMR3ReqCall(mpVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
+                          (PFNRT)Console::unplugCpu, 2,
+                          this, aCpu);
+
+        /* leave the lock before a VMR3* call (EMT will call us back)! */
+        alock.leave();
+
+        if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
+        {
+            vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
+            AssertRC(vrc);
+            if (RT_SUCCESS(vrc))
+                vrc = pReq->iStatus;
+        }
+        VMR3ReqFree(pReq);
+
+        if (RT_SUCCESS(vrc))
+        {
+            /* Detach it from the VM  */
+            vrc = VMR3HotUnplugCpu(mpVM, aCpu);
+            AssertRC(vrc);
+        }
+        else
+           rc = setError(VBOX_E_VM_ERROR,
+                         tr("Hot-Remove failed (rc=%Rrc)"), vrc);
+    }
+    else
+        rc = setError(VBOX_E_VM_ERROR,
+                      tr("Hot-Remove was aborted because the CPU may still be used by the guest"), VERR_RESOURCE_BUSY);
+
+    LogFlowThisFunc(("mMachineState=%d, rc=%08X\n", mMachineState, rc));
+    LogFlowThisFuncLeave();
+    return rc;
+}
+
+DECLCALLBACK(int) Console::plugCpu(Console *pThis, unsigned uCpu)
+{
+    LogFlowFunc(("pThis=%p uCpu=%u\n", pThis, uCpu));
+
+    AssertReturn(pThis, VERR_INVALID_PARAMETER);
+
+    int rc = VMR3HotPlugCpu(pThis->mpVM, uCpu);
+    AssertRC(rc);
+
+    PCFGMNODE pInst = CFGMR3GetChild(CFGMR3GetRoot(pThis->mpVM), "Devices/acpi/0/");
+    AssertRelease(pInst);
+    /* nuke anything which might have been left behind. */
+    CFGMR3RemoveNode(CFGMR3GetChildF(pInst, "LUN#%d", uCpu));
+
+#define RC_CHECK() do { if (RT_FAILURE(rc)) { AssertReleaseRC(rc); break; } } while (0)
+
+    PCFGMNODE pLunL0;
+    PCFGMNODE pCfg;
+    rc = CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%d", uCpu);     RC_CHECK();
+    rc = CFGMR3InsertString(pLunL0, "Driver",       "ACPICpu"); RC_CHECK();
+    rc = CFGMR3InsertNode(pLunL0,   "Config",       &pCfg);     RC_CHECK();
+
+    /*
+     * Attach the driver.
+     */
+    PPDMIBASE pBase;
+    rc = PDMR3DeviceAttach(pThis->mpVM, "acpi", 0, uCpu, 0, &pBase); RC_CHECK();
+
+    Log(("PlugCpu: rc=%Rrc\n", rc));
+
+    CFGMR3Dump(pInst);
+
+    return VINF_SUCCESS;
+}
+
+STDMETHODIMP Console::doCPUAdd(ULONG aCpu)
+{
+    HRESULT rc = S_OK;
+
+    LogFlowThisFuncEnter();
+    LogFlowThisFunc(("mMachineState=%d\n", mMachineState));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this);
+
+    if (   mMachineState != MachineState_Running
+        && mMachineState != MachineState_Teleporting
+        && mMachineState != MachineState_LiveSnapshotting
+        /** @todo r=bird: This should be allowed on paused VMs as well. Later.  */
+       )
+        return setError(VBOX_E_INVALID_VM_STATE,
+            tr("Invalid machine state: %s"),
+            Global::stringifyMachineState(mMachineState));
+
+    /* protect mpVM */
+    AutoVMCaller autoVMCaller(this);
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+
+    /* Check if the CPU is present */
+    BOOL fCpuAttached;
+    rc = mMachine->GetCPUStatus(aCpu, &fCpuAttached);
+    if (FAILED(rc)) return rc;
+
+    if (fCpuAttached)
+        return setError(E_FAIL,
+                        tr("CPU %d is already attached"), aCpu);
+
+    /*
+     * Call worker in EMT, that's faster and safer than doing everything
+     * using VMR3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
+     * here to make requests from under the lock in order to serialize them.
+     */
+    PVMREQ pReq;
+    int vrc = VMR3ReqCall(mpVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
+                          (PFNRT)Console::plugCpu, 2,
+                          this, aCpu);
+
+    /* leave the lock before a VMR3* call (EMT will call us back)! */
+    alock.leave();
+
+    if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
+    {
+        vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
+        AssertRC(vrc);
+        if (RT_SUCCESS(vrc))
+            vrc = pReq->iStatus;
+    }
+    VMR3ReqFree(pReq);
+
+    rc = RT_SUCCESS(vrc) ? S_OK :
+        setError(VBOX_E_VM_ERROR,
+            tr("Could not add CPU to the machine (%Rrc)"),
+            vrc);
+
+    if (RT_SUCCESS(vrc))
+    {
+        uint32_t idCpuCore, idCpuPackage;
+
+        /* Notify the guest if possible. */
+        vrc = VMR3GetCpuCoreAndPackageIdFromCpuId(mpVM, aCpu, &idCpuCore, &idCpuPackage);
+        AssertRC(vrc);
+
+        vrc = getVMMDev()->getVMMDevPort()->pfnCpuHotPlug(getVMMDev()->getVMMDevPort(), idCpuCore, idCpuPackage);
+        /** @todo warning if the guest doesn't support it */
+    }
+
+    LogFlowThisFunc(("mMachineState=%d, rc=%08X\n", mMachineState, rc));
+    LogFlowThisFuncLeave();
+    return rc;
+}
+
 STDMETHODIMP Console::Pause()
 {
     LogFlowThisFuncEnter();
@@ -3729,6 +3972,47 @@ HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForc
         CallbackList::iterator it = mCallbacks.begin();
         while (it != mCallbacks.end())
             (*it++)->OnMediumChange(aMediumAttachment);
+    }
+
+    LogFlowThisFunc(("Leaving rc=%#x\n", rc));
+    return rc;
+}
+
+/**
+ * Called by IInternalSessionControl::OnCPUChange().
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::onCPUChange(ULONG aCPU, BOOL aRemove)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Don't do anything if the VM isn't running */
+    if (!mpVM)
+        return S_OK;
+
+    HRESULT rc = S_OK;
+
+    /* protect mpVM */
+    AutoVMCaller autoVMCaller(this);
+    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+
+    if (aRemove)
+        rc = doCPURemove(aCPU);
+    else
+        rc = doCPUAdd(aCPU);
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED(rc))
+    {
+        CallbackList::iterator it = mCallbacks.begin();
+        while (it != mCallbacks.end())
+            (*it++)->OnCPUChange(aCPU, aRemove);
     }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));

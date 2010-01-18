@@ -29,7 +29,7 @@
  *
  *   3) In the settings writer method, write the setting _only_ if the current settings
  *      version (stored in m->sv) is high enough. That is, for VirtualBox 3.2, write it
- *      only if (m->sv >= SettingsVersion_v1_10).
+ *      only if (m->sv >= SettingsVersion_v1_11).
  *
  *   4) In MachineConfigFile::bumpSettingsVersionIfNeeded(), check if the new setting has
  *      a non-default value (i.e. that differs from the constructor). If so, bump the
@@ -81,7 +81,7 @@ using namespace settings;
 #define VBOX_XML_NAMESPACE      "http://www.innotek.de/VirtualBox-settings"
 
 /** VirtualBox XML settings version number substring ("x.y")  */
-#define VBOX_XML_VERSION        "1.9"
+#define VBOX_XML_VERSION        "1.11"
 
 /** VirtualBox XML settings version platform substring */
 #if defined (RT_OS_DARWIN)
@@ -281,7 +281,9 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
                     m->sv = SettingsVersion_v1_9;
                 else if (ulMinor == 10)
                     m->sv = SettingsVersion_v1_10;
-                else if (ulMinor > 10)
+                else if (ulMinor == 11)
+                    m->sv = SettingsVersion_v1_11;
+                else if (ulMinor > 11)
                     m->sv = SettingsVersion_Future;
             }
             else if (ulMajor > 1)
@@ -301,7 +303,7 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
     {
         // creating new settings file:
         m->strSettingsVersionFull = VBOX_XML_VERSION_FULL;
-        m->sv = SettingsVersion_v1_10;
+        m->sv = SettingsVersion_v1_11;
     }
 }
 
@@ -555,10 +557,15 @@ void ConfigFileBase::createStubDocument()
             break;
 
         case SettingsVersion_v1_10:
-        case SettingsVersion_Future:                // can be set if this code runs on XML files that were created by a future version of VBox;
-                                                    // in that case, downgrade to current version when writing since we can't write future versions...
             pcszVersion = "1.10";
             m->sv = SettingsVersion_v1_10;
+            break;
+
+        case SettingsVersion_v1_11:
+        case SettingsVersion_Future:                // can be set if this code runs on XML files that were created by a future version of VBox;
+                                                    // in that case, downgrade to current version when writing since we can't write future versions...
+            pcszVersion = "1.11";
+            m->sv = SettingsVersion_v1_11;
             break;
 
         default:
@@ -1262,6 +1269,7 @@ Hardware::Hardware()
           fSyntheticCpu(false),
           fPAE(false),
           cCPUs(1),
+          fCpuHotPlug(false),
           ulMemorySizeMB((uint32_t)-1),
           ulVRAMSizeMB(8),
           cMonitors(1),
@@ -1283,6 +1291,27 @@ Hardware::Hardware()
 #if HC_ARCH_BITS == 64 || defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
     fPAE = true;
 #endif
+}
+
+/**
+ * Called from MachineConfigFile::readHardware() to read cpu information.
+ * @param elmCpuid
+ * @param ll
+ */
+void MachineConfigFile::readCpuTree(const xml::ElementNode &elmCpu,
+                                    CpuList &ll)
+{
+    xml::NodesLoop nl1(elmCpu, "Cpu");
+    const xml::ElementNode *pelmCpu;
+    while ((pelmCpu = nl1.forAllNodes()))
+    {
+        Cpu cpu;
+
+        if (!pelmCpu->getAttributeValue("id", cpu.ulId))
+            throw ConfigFileError(this, pelmCpu, N_("Required Cpu/@id attribute is missing"));
+
+        ll.push_back(cpu);
+    }
 }
 
 /**
@@ -1559,7 +1588,15 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     pelmCPUChild->getAttributeValue("count", hw.cCPUs);
             }
 
+            pelmHwChild->getAttributeValue("hotplug", hw.fCpuHotPlug);
+
             const xml::ElementNode *pelmCPUChild;
+            if (hw.fCpuHotPlug)
+            {
+                if ((pelmCPUChild = pelmHwChild->findChildElement("CpuTree")))
+                    readCpuTree(*pelmCPUChild, hw.llCpus);
+            }
+
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtEx")))
             {
                 pelmCPUChild->getAttributeValue("enabled", hw.fHardwareVirt);
@@ -2467,6 +2504,26 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
     if (hw.fSyntheticCpu)
         pelmCPU->createChild("SyntheticCpu")->setAttribute("enabled", hw.fSyntheticCpu);
     pelmCPU->setAttribute("count", hw.cCPUs);
+
+    if (m->sv >= SettingsVersion_v1_11)
+    {
+        pelmCPU->setAttribute("hotplug", hw.fCpuHotPlug);
+
+        xml::ElementNode *pelmCpuTree = NULL;
+        for (CpuList::const_iterator it = hw.llCpus.begin();
+             it != hw.llCpus.end();
+             ++it)
+        {
+            const Cpu &cpu = *it;
+
+            if (pelmCpuTree == NULL)
+                 pelmCpuTree = pelmCPU->createChild("CpuTree");
+
+            xml::ElementNode *pelmCpu = pelmCpuTree->createChild("Cpu");
+            pelmCpu->setAttribute("id", cpu.ulId);
+        }
+    }
+
     xml::ElementNode *pelmCpuIdTree = NULL;
     for (CpuIdLeafsList::const_iterator it = hw.llCpuIdLeafs.begin();
          it != hw.llCpuIdLeafs.end();
@@ -3080,6 +3137,12 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             )
        )
         m->sv = SettingsVersion_v1_10;
+
+    // Version 1.11 is required for CPU hotplugging
+    if (   (m->sv < SettingsVersion_v1_11)
+        && (hardwareMachine.fCpuHotPlug)
+       )
+        m->sv = SettingsVersion_v1_11;
 }
 
 /**

@@ -545,6 +545,11 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnCPUChange)(ULONG /*aCPU*/, BOOL /* aRemove */)
+    {
+        return S_OK;
+    }
+
     STDMETHOD(OnRuntimeError)(BOOL fFatal, IN_BSTR id, IN_BSTR message)
     {
         MachineState_T machineState;

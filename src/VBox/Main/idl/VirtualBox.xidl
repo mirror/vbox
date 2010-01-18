@@ -458,8 +458,13 @@
       <!-- Machine changes: RTC localOrUTC (done)
            -->
     </const>
-    <const name="Future"     value="13">
-      <desc>Settings version greater than "1.10", written by a future VirtualBox version.</desc>
+    <const name="v1_11"     value="13">
+      <desc>Settings version "1.10", written by VirtualBox 3.2.x.</desc>
+      <!-- CPU hot-plug support
+           -->
+    </const>
+    <const name="Future"     value="14">
+      <desc>Settings version greater than "1.11", written by a future VirtualBox version.</desc>
     </const>
   </enum>
 
@@ -4355,6 +4360,12 @@
       <desc>Number of virtual CPUs in the VM.</desc>
     </attribute>
 
+    <attribute name="CPUHotPlugEnabled" type="boolean">
+      <desc>
+        This setting determines whether VirtualBox allows CPU
+        hotplugging for this machine.</desc>
+    </attribute>
+
     <attribute name="memorySize" type="unsigned long">
       <desc>System memory size in megabytes.</desc>
     </attribute>
@@ -5931,6 +5942,44 @@
         </desc>
       </param>
     </method>
+
+    <method name="HotPlugCPU">
+      <desc>
+        Plugs a CPU into the machine.
+      </desc>
+      <param name="cpu" type="unsigned long" dir="in">
+        <desc>
+          The CPU id to insert.
+        </desc>
+      </param>
+    </method>
+
+    <method name="HotUnplugCPU">
+      <desc>
+        Removes a CPU from the machine.
+      </desc>
+      <param name="cpu" type="unsigned long" dir="in">
+        <desc>
+          The CPU id to remove.
+        </desc>
+      </param>
+    </method>
+
+    <method name="GetCPUStatus">
+      <desc>
+        Plugs a CPU into the machine.
+      </desc>
+      <param name="cpu" type="unsigned long" dir="in">
+        <desc>
+          The CPU id to check for.
+        </desc>
+      </param>
+      <param name="attached" type="boolean" dir="return">
+        <desc>
+          Status of the CPU.
+        </desc>
+      </param>
+    </method>
 </interface>
 
   <!--
@@ -6115,6 +6164,18 @@
       </desc>
       <param name="mediumAttachment" type="IMediumAttachment" dir="in">
         <desc>Medium attachment that is subject to change.</desc>
+      </param>
+    </method>
+
+    <method name="onCPUChange">
+      <desc>
+        Notification when a CPU changes.
+      </desc>
+      <param name="cpu" type="unsigned long" dir="in">
+        <desc>The CPU which changed</desc>
+      </param>
+      <param name="add" type="boolean" dir="in">
+        <desc>Flag whether the CPU was added or removed</desc>
       </param>
     </method>
 
@@ -12705,6 +12766,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       <param name="mediumAttachment" type="IMediumAttachment" dir="in"/>
       <param name="force" type="boolean" dir="in"/>
+    </method>
+
+    <method name="onCPUChange">
+      <desc>
+        Notification when a CPU changes.
+      </desc>
+      <param name="cpu" type="unsigned long" dir="in">
+        <desc>The CPU which changed</desc>
+      </param>
+      <param name="add" type="boolean" dir="in">
+        <desc>Flag whether the CPU was added or removed</desc>
+      </param>
     </method>
 
     <method name="onVRDPServerChange">

@@ -538,6 +538,13 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnCPUChange)(ULONG aCPU, BOOL aRemove)
+    {
+        NOREF(aCPU);
+        NOREF(aRemove);
+        return S_OK;
+    }
+
     STDMETHOD(OnSerialPortChange) (ISerialPort *aSerialPort)
     {
         NOREF(aSerialPort);
