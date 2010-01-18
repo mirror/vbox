@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -135,13 +135,13 @@ void vboxClientUsage(const char *pcszFileName)
     RTPrintf("Usage: %s --clipboard|--display|--checkhostversion|--seamless [-d|--nodaemon]\n", pcszFileName);
     RTPrintf("Start the VirtualBox X Window System guest services.\n\n");
     RTPrintf("Options:\n");
-    RTPrintf("  --clipboard      start the shared clipboard service\n");
-    RTPrintf("  --display     start the display management service\n");
+    RTPrintf("  --clipboard        start the shared clipboard service\n");
+    RTPrintf("  --display          start the display management service\n");
 # ifdef VBOX_WITH_GUEST_PROPS
-    RTPrintf("  --checkhostversion      start the host version notifier service\n");
+    RTPrintf("  --checkhostversion start the host version notifier service\n");
 # endif
-    RTPrintf("  --seamless       start the seamless windows service\n");
-    RTPrintf("  -d, --nodaemon   continue running as a system service\n");
+    RTPrintf("  --seamless         start the seamless windows service\n");
+    RTPrintf("  -d, --nodaemon     continue running as a system service\n");
     RTPrintf("\n");
     exit(0);
 }
