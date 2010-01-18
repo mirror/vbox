@@ -132,8 +132,8 @@ static int drvIntNetUpdateMacAddress(PDRVINTNET pThis)
     SetMacAddressReq.hIf = pThis->hIf;
     int rc = pThis->pConfigIf->pfnGetMac(pThis->pConfigIf, &SetMacAddressReq.Mac);
     if (RT_SUCCESS(rc))
-        rc = pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS,
-                                                        &SetMacAddressReq, sizeof(SetMacAddressReq));
+        rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS,
+                                     &SetMacAddressReq, sizeof(SetMacAddressReq));
 
     Log(("drvIntNetUpdateMacAddress: %.*Rhxs rc=%Rrc\n", sizeof(SetMacAddressReq.Mac), &SetMacAddressReq.Mac, rc));
     return rc;
@@ -160,8 +160,8 @@ static int drvIntNetSetActive(PDRVINTNET pThis, bool fActive)
     SetActiveReq.pSession = NIL_RTR0PTR;
     SetActiveReq.hIf = pThis->hIf;
     SetActiveReq.fActive = fActive;
-    int rc = pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_ACTIVE,
-                                                        &SetActiveReq, sizeof(SetActiveReq));
+    int rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_ACTIVE,
+                                     &SetActiveReq, sizeof(SetActiveReq));
 
     Log(("drvIntNetUpdateMacAddress: fActive=%d rc=%Rrc\n", fActive, rc));
     AssertRC(rc);
@@ -298,7 +298,7 @@ static DECLCALLBACK(int) drvIntNetSend(PPDMINETWORKCONNECTOR pInterface, const v
         SendReq.Hdr.cbReq = sizeof(SendReq);
         SendReq.pSession = NIL_RTR0PTR;
         SendReq.hIf = pThis->hIf;
-        pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
+        PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
 
         rc = drvIntNetRingWriteFrame(pThis->pBuf, &pThis->pBuf->Send, pvBuf, (uint32_t)cb);
     }
@@ -310,7 +310,7 @@ static DECLCALLBACK(int) drvIntNetSend(PPDMINETWORKCONNECTOR pInterface, const v
         SendReq.Hdr.cbReq = sizeof(SendReq);
         SendReq.pSession = NIL_RTR0PTR;
         SendReq.hIf = pThis->hIf;
-        rc = pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
+        rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
     }
 
     STAM_PROFILE_STOP(&pThis->StatTransmit, a);
@@ -338,7 +338,7 @@ static DECLCALLBACK(void) drvIntNetSetPromiscuousMode(PPDMINETWORKCONNECTOR pInt
     Req.pSession        = NIL_RTR0PTR;
     Req.hIf             = pThis->hIf;
     Req.fPromiscuous    = fPromiscuous;
-    int rc = pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE, &Req, sizeof(Req));
+    int rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE, &Req, sizeof(Req));
     LogFlow(("drvIntNetSetPromiscuousMode: fPromiscuous=%RTbool\n", fPromiscuous));
     AssertRC(rc);
 }
@@ -506,7 +506,7 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
         WaitReq.hIf          = pThis->hIf;
         WaitReq.cMillies     = 30000; /* 30s - don't wait forever, timeout now and then. */
         STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
-        int rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_WAIT, &WaitReq, sizeof(WaitReq));
+        int rc = PDMDrvHlpSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_WAIT, &WaitReq, sizeof(WaitReq));
         if (    RT_FAILURE(rc)
             &&  rc != VERR_TIMEOUT
             &&  rc != VERR_INTERRUPTED)
@@ -729,7 +729,7 @@ static DECLCALLBACK(void) drvIntNetDestruct(PPDMDRVINS pDrvIns)
         CloseReq.pSession = NIL_RTR0PTR;
         CloseReq.hIf = pThis->hIf;
         pThis->hIf = INTNET_HANDLE_INVALID;
-        int rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_CLOSE, &CloseReq, sizeof(CloseReq));
+        int rc = PDMDrvHlpSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_CLOSE, &CloseReq, sizeof(CloseReq));
         AssertRC(rc);
     }
 
@@ -1066,7 +1066,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
      * Create the interface.
      */
     OpenReq.hIf = INTNET_HANDLE_INVALID;
-    rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_OPEN, &OpenReq, sizeof(OpenReq));
+    rc = PDMDrvHlpSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_OPEN, &OpenReq, sizeof(OpenReq));
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Failed to open/create the internal network '%s'"), pThis->szNetwork);
@@ -1083,7 +1083,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     GetRing3BufferReq.pSession = NIL_RTR0PTR;
     GetRing3BufferReq.hIf = pThis->hIf;
     GetRing3BufferReq.pRing3Buf = NULL;
-    rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, &GetRing3BufferReq, sizeof(GetRing3BufferReq));
+    rc = PDMDrvHlpSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, &GetRing3BufferReq, sizeof(GetRing3BufferReq));
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Failed to get ring-3 buffer for the newly created interface to '%s'"), pThis->szNetwork);

@@ -71,7 +71,7 @@ int main()
     int rc = 0;
     printf("tstVMStructSize: TESTING\n");
 
-    printf("struct VM: %d bytes\n", (int)sizeof(VM));
+    printf("info: struct VM: %d bytes\n", (int)sizeof(VM));
 
 #define CHECK_PADDING_VM(align, member) \
     do \
@@ -104,7 +104,7 @@ int main()
     do { \
         if (RT_OFFSETOF(CPUMCTX, member) - RT_OFFSETOF(CPUMCTX, edi) != RT_OFFSETOF(CPUMCTXCORE, member)) \
         { \
-            printf("CPUMCTX/CORE:: %s!\n", #member); \
+            printf("error! CPUMCTX/CORE:: %s!\n", #member); \
             rc++; \
         } \
     } while (0)
@@ -218,13 +218,13 @@ int main()
     PVM pVM;
     if ((RT_OFFSETOF(VM, selm.s.Tss) & PAGE_OFFSET_MASK) > PAGE_SIZE - sizeof(pVM->selm.s.Tss))
     {
-        printf("SELM:Tss is crossing a page!\n");
+        printf("error! SELM:Tss is crossing a page!\n");
         rc++;
     }
     PRINT_OFFSET(VM, selm.s.TssTrap08);
     if ((RT_OFFSETOF(VM, selm.s.TssTrap08) & PAGE_OFFSET_MASK) > PAGE_SIZE - sizeof(pVM->selm.s.TssTrap08))
     {
-        printf("SELM:TssTrap08 is crossing a page!\n");
+        printf("error! SELM:TssTrap08 is crossing a page!\n");
         rc++;
     }
     CHECK_MEMBER_ALIGNMENT(VM, trpm.s.aIdt, 16);
@@ -294,7 +294,7 @@ int main()
     /* CPUMHOSTCTX - lss pair */
     if (RT_OFFSETOF(CPUMHOSTCTX, esp) + 4 != RT_OFFSETOF(CPUMHOSTCTX, ss))
     {
-        printf("error: CPUMHOSTCTX lss has been split up!\n");
+        printf("error! CPUMHOSTCTX lss has been split up!\n");
         rc++;
     }
 #endif
@@ -378,18 +378,18 @@ int main()
     CHECK_SIZE(VMCPUSET, 32);
     if (sizeof(VMCPUSET) * 8 < VMM_MAX_CPU_COUNT)
     {
-        printf("error: VMCPUSET is too small for VMM_MAX_CPU_COUNT=%u!\n", VMM_MAX_CPU_COUNT);
+        printf("error! VMCPUSET is too small for VMM_MAX_CPU_COUNT=%u!\n", VMM_MAX_CPU_COUNT);
         rc++;
     }
 
-    printf("struct UVM: %d bytes\n", (int)sizeof(UVM));
+    printf("info: struct UVM: %d bytes\n", (int)sizeof(UVM));
 
     CHECK_PADDING_UVM(32, vm);
     CHECK_PADDING_UVM(32, mm);
     CHECK_PADDING_UVM(32, pdm);
     CHECK_PADDING_UVM(32, stam);
 
-    printf("struct UVMCPU: %d bytes\n", (int)sizeof(UVMCPU));
+    printf("info: struct UVMCPU: %d bytes\n", (int)sizeof(UVMCPU));
     CHECK_PADDING_UVMCPU(32, vm);
 
     /*
